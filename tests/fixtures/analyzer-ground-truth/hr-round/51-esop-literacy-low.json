@@ -1,0 +1,28 @@
+{
+  "name": "Unicorn offers ESOP; candidate never surfaces strike / cliff / vest",
+  "notes": "v5.4.0 realism: esop_literacy_low — pre-IPO equity accepted without four-term probe.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior product engineer, 8 years across Swiggy and Dunzo, currently on the discovery surface.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-search — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible at one month gross with manager sign-off.", "time": "" },
+      { "speaker": "ai", "text": "On the offer side — we structure senior comp with a meaningful ESOP component, and there's a RSU-equivalent grant at promotion. How does that fit your expectations?", "time": "" },
+      { "speaker": "user", "text": "That sounds great, equity is definitely interesting at this stage of company.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your current CTC.", "time": "" },
+      { "speaker": "user", "text": "₹44 LPA fixed, ₹6 LPA variable paid out at 85% historically, ₹3 LPA joining bonus already vested.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the discovery ranking pipeline to cut p95 from 800ms to 220ms; owned spec to launch over four months.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's agentic-discovery roadmap and the catalog scale are the exact problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["esop_literacy_low"],
+    "must_not_include": ["empty_transcript", "salary_breakup_vague"]
+  }
+}

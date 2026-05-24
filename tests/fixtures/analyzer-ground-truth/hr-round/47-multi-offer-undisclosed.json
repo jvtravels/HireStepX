@@ -1,0 +1,28 @@
+{
+  "name": "Candidate gives vague 'a few places' answer to other-offers probe",
+  "notes": "v5.4.0 realism: multi_offer_undisclosed — vague no-stage / no-company / no-timeline answer = weak leverage signal.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior backend engineer, 9 years at Flipkart on the payments squad, owned the UPI reliability workstream end to end.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-payments — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Cut UPI failure rate from 4.2% to 1.1% over an eight-month rollout — owned spec, on-call, and post-mortem cycle.", "time": "" },
+      { "speaker": "ai", "text": "Are you interviewing elsewhere — any active offers or processes?", "time": "" },
+      { "speaker": "user", "text": "Yeah, a few places. Some are quite serious actually.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹48 LPA fixed, ₹6 LPA variable paid out at ~85% historically, ₹4 LPA joining bonus already vested, RSU vest of ₹25 LPA over 4 years.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's agentic-payments roadmap and the catalog scale are exactly the problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["multi_offer_undisclosed"],
+    "must_not_include": ["empty_transcript", "salary_breakup_vague"]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Candidate frames reason-for-leaving as 'no growth, manager wasn't supportive'",
+  "notes": "v5.4.0 realism: reason_for_leaving_blame_framing — softer than badmouthing but reads as the problem will follow.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Backend engineer, 5 years at a Bangalore product company on the search team.", "time": "" },
+      { "speaker": "ai", "text": "What's the reason for leaving your current company?", "time": "" },
+      { "speaker": "user", "text": "Honestly, there's been no growth for me there. My manager wasn't supportive and there was a lot of politics around who got the high-visibility projects. I wasn't really valued for what I brought to the team.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Built the query-rewriting layer for our search stack — cut zero-result queries by 38% over a 4-month rollout.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹28 LPA fixed, ₹4 LPA variable paid out at 80% historically, ₹2 LPA joining bonus.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your engineering blog on vector search and the catalog scale you're at line up with where I want to take my skills next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["reason_for_leaving_blame_framing"],
+    "must_not_include": ["empty_transcript", "user_badmouthing_employer"]
+  }
+}

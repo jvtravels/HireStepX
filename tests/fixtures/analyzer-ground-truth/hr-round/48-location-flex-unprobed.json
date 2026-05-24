@@ -1,0 +1,26 @@
+{
+  "name": "HR names Hyderabad base location; candidate never probes relocation",
+  "notes": "v5.4.0 realism: location_flex_unprobed — FAANG India / GCC relocation package missed.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior data engineer, 8 years across PhonePe and Razorpay, currently on the streaming-platform team.", "time": "" },
+      { "speaker": "ai", "text": "Quick context — this role is based out of Hyderabad, primary reporting location is the GCC campus there. Walk me through your background.", "time": "" },
+      { "speaker": "user", "text": "Built the real-time fraud-scoring pipeline at PhonePe, then moved to Razorpay to own their streaming ingest layer — 8M events per second steady state.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into the agentic-data space — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹52 LPA fixed, ₹8 LPA variable paid out at 85% historically, ₹6 LPA joining bonus, RSU vest of ₹30 LPA over 4 years.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's streaming-platform scale and the agentic roadmap are exactly the problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["location_flex_unprobed"],
+    "must_not_include": ["empty_transcript", "salary_breakup_vague"]
+  }
+}

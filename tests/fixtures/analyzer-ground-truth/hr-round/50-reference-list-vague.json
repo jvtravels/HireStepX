@@ -1,0 +1,28 @@
+{
+  "name": "Candidate affirms references but never names them",
+  "notes": "v5.4.0 realism: reference_list_vague — 'yeah I have a couple' without proper nouns reads as not pre-cleared.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Backend engineer, 6 years across Cred and Razorpay, currently on the ledger team.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into the agentic-finance space — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Do you have professional references ready — ex-managers or peers we can speak to?", "time": "" },
+      { "speaker": "user", "text": "Yeah, I have a couple of references ready to go.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the double-entry ledger to cut reconciliation lag from 24h to 90s — owned spec to launch over six months.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible at one month gross with manager sign-off and handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹38 LPA fixed, ₹5 LPA variable paid out at 85% historically, ₹3 LPA joining bonus, RSU vest of ₹15 LPA over 4 years.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's ledger-consensus roadmap and the catalog scale are the exact problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["reference_list_vague"],
+    "must_not_include": ["empty_transcript", "reference_refusal"]
+  }
+}

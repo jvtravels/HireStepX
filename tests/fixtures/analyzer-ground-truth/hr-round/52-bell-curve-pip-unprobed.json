@@ -1,0 +1,35 @@
+{
+  "name": "Senior candidate never probes calibration / stack-rank / PIP history",
+  "notes": "v5.4.0 realism: bell_curve_pip_unprobed — universal at Amazon / Microsoft / TCS / Wipro.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "target_company": "Amazon",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior software engineer, 10 years across Flipkart and Walmart Labs, currently on the fulfillment-platform team owning warehouse-routing.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-supply-chain — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the warehouse-routing engine to cut SLA breaches from 12% to 3%; owned spec to launch over seven months across 14 warehouses.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a hard cross-functional disagreement and how you resolved it.", "time": "" },
+      { "speaker": "user", "text": "Ops wanted same-day promise extended to tier-2 cities; engineering capacity wouldn't hold. Ran a 6-week shadow rollout, brought CFO-grade data, narrowed the pilot to two cities. Aligned in 3 weeks.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹58 LPA fixed, ₹10 LPA variable paid out at 85% historically, ₹5 LPA joining bonus, RSU vest of ₹40 LPA over 4 years.", "time": "" },
+      { "speaker": "ai", "text": "BGV — payslips, Form 16, UAN, relieving letters — all in order?", "time": "" },
+      { "speaker": "user", "text": "Yes. Form 16 for last 3 years, UAN active, last 6 payslips, relieving letter from Flipkart ready to share.", "time": "" },
+      { "speaker": "ai", "text": "Any active offers elsewhere?", "time": "" },
+      { "speaker": "user", "text": "Final round at Razorpay, expecting offer by next Tuesday. Another conversation at Swiggy in early stages.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's last-mile optimization work and the scale of the SCOT org are the exact problems I want to solve next.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for me before we wrap?", "time": "" },
+      { "speaker": "user", "text": "Yes — what does the team-structure look like, and what does success in the first 90 days look like?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["bell_curve_pip_unprobed"],
+    "must_not_include": ["empty_transcript", "reverse_interview_low_quality"]
+  }
+}

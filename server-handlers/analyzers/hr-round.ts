@@ -133,9 +133,11 @@ const BREAKUP_GENUINELY_UNKNOWN = /\b(?:i (?:don'?t|do not) (?:actually )?know (
    the difficulty + transcript length (mid+ with long-form session). */
 const DEFERENTIAL_OPENER = /\b(?:respected (?:sir|ma'?am|madam)|honou?rable (?:sir|ma'?am)|it'?s (?:an |such )?(?:honou?r|privilege|great honou?r) (?:to be|to have|to be (?:considered|here))|thank you so much (?:for|sir|ma'?am)[^.]{0,40}opportunity|thanks (?:a lot |so much )?(?:for|sir|ma'?am)[^.]{0,40}opportunity|(?:first of all|firstly)[\s,]+thank you[^.]{0,40}(?:sir|ma'?am|opportunity)|i'?m (?:very |so |really )?(?:grateful|thankful|honou?red) (?:to|for|that)[^.]{0,40}(?:opportunity|considered|shortlist))\b/i;
 
-/* Comp held until close — positive signal. Candidate does NOT raise
-   salary / CTC in their first 3 user turns. Indian HR rewards this
-   pattern: it reads as candidate prioritising role-fit over money. */
+/* Candidate-raises-comp pattern — shared by `comp_held_until_close`
+   (positive signal: held off in the first 3 turns) and
+   `ctc_first_question_user` (negative signal: opened with it). Single
+   canonical regex; the two detection blocks differ only in which
+   turn-window they apply it to. */
 const COMP_RAISED_BY_USER = /\b(?:what(?:'?s| is) the (?:ctc|package|salary|pay|comp)|how much (?:does|will) (?:this|the role) pay|salary range|ctc range|package (?:offered|kya hai)|what are you offering|expected (?:ctc|package))\b/i;
 
 /* Reference-check stalling — HR asks for ex-manager references and the
@@ -265,10 +267,67 @@ const DOWNGRADE_DEFENSIVE = /\b(?:not (?:a |really )?downgrade|that'?s not|title
 const CERT_PROBE = /\b(?:when did you (?:get|earn|clear) (?:the |your )?(?:aws|gcp|azure|pmp|csm|scrum|cka|ckad)|cert(?:ificate|ification) (?:date|valid|expir|number)|verify (?:your )?cert|cert(?:ificate)? id)\b/i;
 const CERT_VAGUE = /\b(?:long (?:back|time ago)|few years (?:back|ago)|don'?t remember|some time (?:back|ago)|2 or 3 years|approximately|pata nahi|exact date)\b/i;
 
-/* CTC-first opening — candidate's very first or second turn asks about
-   salary before role/team is even discussed. Indian HR reads this as
-   transactional / unprofessional. */
-const CTC_FIRST_USER = /\b(?:what(?:'s| is) the (?:ctc|package|salary|pay)|how much (?:does|will) (?:this|the role) pay|salary range|ctc range|package (?:offered|kya hai)|what are you offering)\b/i;
+/* CTC-first opening uses the same pattern as COMP_RAISED_BY_USER —
+   see the canonical regex defined above. Kept as a separate const
+   name for clarity at the call site. */
+const CTC_FIRST_USER = COMP_RAISED_BY_USER;
+
+/* ── v5.4.0 realism additions ──────────────────────────────────────
+ * Four HIGH-severity universal Indian-HR rituals not previously
+ * detectable + three MEDIUM signals (ESOP literacy, bell-curve probe,
+ * buyout split). All gated to long-form sessions so brisk TA screens
+ * don't false-fire. */
+
+/* multi_offer_undisclosed — HR probes "are you interviewing elsewhere"
+   and the candidate answers vaguely ("yeah a few places") with no
+   stage / company / timeline. Vague = weak leverage; HR uses this to
+   size urgency. Honest specifics ("Razorpay round 3, offer expected by
+   Friday") are the strong signal. */
+const OTHER_OFFERS_PROMPT = /\b(?:other (?:offers?|processes?|interviews?)|interviewing elsewhere|active (?:offers?|processes?|conversations?)|in (?:the )?market with|elsewhere in (?:the )?market|kahin aur (?:interview|offer|process))\b/i;
+const OTHER_OFFERS_VAGUE = /\b(?:yeah|yes|a few|couple of|some|two[- ]three|a couple)\b[^.]{0,60}\b(?:places?|companies|processes?|offers?|interviews?)\b/i;
+const OTHER_OFFERS_SPECIFIC = /\b(?:round\s*[1-9]|final round|hr round|onsite|offer (?:in hand|by|expected|on)|by (?:friday|monday|tuesday|wednesday|thursday|next week|end of (?:week|month))|\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)|(?:at |with )[A-Z][\w]+(?:[\s.][A-Z][\w]+){0,2})/;
+
+/* location_flex_unprobed — FAANG India / GCC critical. Base-location
+   (Hyd / Blr / Pune / Gurgaon) is non-negotiable but candidate never
+   probes (a) base city, (b) relocation assistance, (c) temporary WFH
+   for relo window. */
+const HR_NAMED_CITY = /\b(?:hyderabad|hyd|bangalore|bengaluru|blr|bangaluru|chennai|pune|gurgaon|gurugram|noida|delhi ncr|mumbai|bombay|kolkata|ahmedabad|kochi|trivandrum|chandigarh|base (?:location|city)|primary location|reporting location)\b/i;
+const RELO_PROBED = /\b(?:relocat|relo|joining bonus for relo|(?:temporary|temp) (?:wfh|remote)|when do i need to be in|moving (?:cost|allowance)|relocation (?:assistance|allowance|package)|housing (?:allowance|support))\b/i;
+
+/* reason_for_leaving_blame_framing — softer than BADMOUTHING. Catches
+   subtler blame: "no growth", "wasn't valued", "politics". Universal
+   Indian-HR screen — softer than "toxic" but equally disqualifying. */
+const REASON_LEAVING_PROMPT = /\b(?:reason for (?:leaving|change|switch)|why (?:are you )?leaving|why (?:do you want to|are you looking to) (?:leave|move|switch))\b/i;
+const BLAME_FRAMING = /\b(?:no growth|wasn'?t (?:supported|valued|heard|recognized|respected)|politics|favoritism|biased|manager (?:didn'?t|wasn'?t|isn'?t)|hr (?:didn'?t|wasn'?t)|toxic culture|no learning|stuck (?:there|in)|nothing to learn|micromanag|not (?:appreciated|valued))\b/i;
+const FORWARD_FRAME = /\b(?:next (?:challenge|step|chapter)|want to (?:build|learn|own|drive|move into|grow into)|(?:looking|ready) for (?:a |the )?(?:next|new|bigger)|fresh (?:problem|domain|space)|domain (?:change|shift)|move into|expand my)\b/i;
+
+/* reference_list_vague — distinct from REFERENCE_REFUSAL. Candidate
+   offers references but doesn't NAME them ("yeah I have references",
+   "couple of ex-managers" with no proper noun). Real HR scores
+   named > vague. */
+const REFERENCE_AFFIRMED_VAGUE = /\b(?:yeah|yes|sure|definitely)[^.]{0,40}\b(?:references?|ex[- ]?managers?|previous managers?|former managers?)\b/i;
+const REFERENCE_NAMED = /\b(?:from |at |my (?:manager|lead|director|VP|head) (?:at|from)|who was my)\s+[A-Z][\w]+|\b(?:Mr\.?|Ms\.?|Mrs\.?|Dr\.?)\s+[A-Z][\w]+|\b[A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+from|\s+at|\s+\()/;
+
+/* esop_literacy_low — product-unicorn / startup HR offers ESOP/RSU
+   and candidate doesn't show literacy on the standard four terms:
+   strike, cliff, vest schedule, double-trigger, FMV/409A. Critical
+   for unicorn / pre-IPO comp. Distinct from comp_breakup_probe_missing
+   (which fires when HR mentions benefits in general). */
+const ESOP_HR_MENTION = /\b(?:esop|rsu|stock options?|equity (?:grant|package)|stock grant)\b/i;
+const ESOP_LITERACY = /\b(?:strike (?:price|kya)|cliff (?:period|of|kitna)|vest (?:schedule|over|kitna)|double[- ]?trigger|fmv|409a|liquidation (?:preference)?|exercise window|tax on exercise|exercise period|preferred (?:stock|shares?)|common (?:stock|shares?)|secondary (?:sale|liquidity))\b/i;
+
+/* bell_curve_pip_unprobed — universal at Amazon India / Microsoft
+   India / TCS / Wipro. Candidate never probes performance
+   calibration / stack rank / bell curve / PIP history / attrition.
+   Long-form mid+ session expected to surface this. */
+const BELL_CURVE_PROBED = /\b(?:bell curve|stack rank|forced rank|performance calibration|pip\b|performance improvement|attrition (?:rate|in)|regretted attrition|rating (?:distribution|cycle|curve)|calibration (?:cycle|process))\b/i;
+
+/* buyout_split_unaddressed — when buyout is discussed but candidate
+   doesn't probe WHO pays (new employer reimburses vs candidate self-
+   funds vs split). Real negotiation lever; missing = lakhs left on
+   table. */
+const BUYOUT_MENTIONED = /\bbuy[- ]?out\b/i;
+const BUYOUT_SPLIT_PROBED = /\b(?:reimburs|new (?:company|employer) (?:pay|cover|fund|reimburs)|split (?:the )?buyout|joining bonus (?:offset|cover|adjust)|who (?:pays|covers|funds) the buyout|covered by|offset (?:against|by) (?:joining|signing))\b/i;
 
 /* ── Resume cross-checks ─────────────────────────────────────────────
  * When the cron loads the user's resume by resume_version_id, three
@@ -411,6 +470,10 @@ const CLUSTERS: ReadonlyArray<{ label: string; theme: string; members: ReadonlyA
       "current_employer_counter_unresolved",
       "probation_terms_unprobed",
       "bond_terms_unprobed",
+      "salary_breakup_unknown_owned",
+      "esop_literacy_low",
+      "bell_curve_pip_unprobed",
+      "buyout_split_unaddressed",
     ],
   },
   {
@@ -421,6 +484,7 @@ const CLUSTERS: ReadonlyArray<{ label: string; theme: string; members: ReadonlyA
       "resume_gap_unaddressed",
       "job_hopping_pattern",
       "user_badmouthing_employer",
+      "reason_for_leaving_blame_framing",
     ],
   },
   {
@@ -432,13 +496,28 @@ const CLUSTERS: ReadonlyArray<{ label: string; theme: string; members: ReadonlyA
       "moonlighting_flat_denial",
       "genai_flat_denial",
       "pedigree_evasion",
+      "over_deferential_opener",
+      "multi_offer_undisclosed",
+      "reference_list_vague",
+    ],
+  },
+  {
+    label: "logistics",
+    theme: "logistics clarity",
+    members: [
+      "vague_notice_period",
+      "notice_period_shallow",
+      "joining_date_overpromise",
+      "rto_flat_refusal",
+      "family_constraint_freeze",
+      "location_flex_unprobed",
     ],
   },
 ];
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v5.3.0",
+  version: "hr-round-v5.4.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -714,21 +793,6 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             severity: "low",
             flag: "over_deferential_opener",
           });
-        }
-      }
-    }
-
-    /* comp_held_until_close — positive signal. Candidate does NOT
-       raise salary / CTC in their first 3 user turns. Indian HR
-       rewards this pattern as prioritising role-fit over money.
-       Only credit-worthy on long-form sessions where there was time
-       for the candidate to surface comp early but they didn't. */
-    {
-      if (transcript.length > 8) {
-        const firstUserTurns = transcript.filter(isUser).slice(0, 3);
-        const raisedCompEarly = firstUserTurns.some((t) => COMP_RAISED_BY_USER.test(t.text || ""));
-        if (!raisedCompEarly && !flags.has("ctc_first_question_user")) {
-          flags.add("comp_held_until_close");
         }
       }
     }
@@ -1149,6 +1213,159 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
+    /* comp_held_until_close — positive signal. Candidate did NOT raise
+       salary / CTC in their first 3 user turns. Indian HR rewards this
+       as role-first register. Must run AFTER ctc_first_question_user
+       so the guard at L730 actually suppresses double-credit. Only
+       credit-worthy on long-form sessions where there was time to
+       surface comp early but the candidate chose not to. */
+    {
+      if (transcript.length > 8) {
+        const firstUserTurns = transcript.filter(isUser).slice(0, 3);
+        const raisedCompEarly = firstUserTurns.some((t) => COMP_RAISED_BY_USER.test(t.text || ""));
+        if (!raisedCompEarly && !flags.has("ctc_first_question_user")) {
+          flags.add("comp_held_until_close");
+        }
+      }
+    }
+
+    /* ── v5.4.0 realism additions ────────────────────────────────── */
+
+    // multi_offer_undisclosed — HR probed other offers; user answered
+    // vaguely ("yeah a few places") with no stage / company / timeline.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!(isAi(t) && OTHER_OFFERS_PROMPT.test(t.text || ""))) continue;
+      const r = replyTo(transcript, i);
+      if (!r || !r.text) continue;
+      if (OTHER_OFFERS_VAGUE.test(r.text) && !OTHER_OFFERS_SPECIFIC.test(r.text)) {
+        flags.add("multi_offer_undisclosed");
+        gaps.push({
+          dimension: "commitment_signal",
+          expected: "When HR asks about other offers, give stage + company + timeline ('final round at Razorpay, offer expected by Friday'). Specifics convert into negotiating leverage; vague answers signal weak market option",
+          observed: "Candidate gave a vague 'a few places' answer with no stage / company / timeline — HR reads this as either no real competing process or unwilling to disclose",
+          severity: "high",
+          flag: "multi_offer_undisclosed",
+        });
+        break;
+      }
+    }
+
+    // location_flex_unprobed — HR named a base city; candidate never
+    // probed relocation / temp WFH / housing. FAANG India / GCC critical.
+    {
+      const hrNamedCity = transcript.some((t) => isAi(t) && HR_NAMED_CITY.test(t.text || ""));
+      const userProbedRelo = transcript.some((t) => isUser(t) && RELO_PROBED.test(t.text || ""));
+      if (hrNamedCity && !userProbedRelo && transcript.length > 8) {
+        flags.add("location_flex_unprobed");
+        gaps.push({
+          dimension: "logistics_clarity",
+          expected: "When HR mentions base city / reporting location, probe relocation assistance, temporary WFH window during the move, and housing allowance. FAANG India / GCC base-city is non-negotiable — knowing the support package is non-trivial money",
+          observed: "Base city was mentioned but candidate never asked about relocation support, temp-remote window, or housing allowance — leaves lakhs of relo benefits on the table",
+          severity: "high",
+          flag: "location_flex_unprobed",
+        });
+      }
+    }
+
+    // reason_for_leaving_blame_framing — softer than badmouthing.
+    // "no growth", "wasn't valued", "politics" without a forward frame.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!(isAi(t) && REASON_LEAVING_PROMPT.test(t.text || ""))) continue;
+      const r = replyTo(transcript, i);
+      if (!r || !r.text) continue;
+      if (BLAME_FRAMING.test(r.text) && !FORWARD_FRAME.test(r.text) && !flags.has("user_badmouthing_employer")) {
+        flags.add("reason_for_leaving_blame_framing");
+        gaps.push({
+          dimension: "professionalism",
+          expected: "Reason-for-leaving should lead with the FORWARD frame ('want to move into agentic-search domain') not the BACKWARD blame ('no growth there, manager wasn't supportive'). Indian HR uses this exact diff to score maturity",
+          observed: "Candidate framed leaving via blame ('no growth', 'wasn't valued', 'politics') without a forward / pull frame — softer than badmouthing but reads as the candidate the problem will follow",
+          severity: "high",
+          flag: "reason_for_leaving_blame_framing",
+        });
+        break;
+      }
+    }
+
+    // reference_list_vague — candidate affirms references but never
+    // names them. Distinct from reference_refusal (no references) and
+    // reference_initial_hedge (recovered after stall).
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!(isAi(t) && REFERENCE_PROMPT.test(t.text || ""))) continue;
+      const r = replyTo(transcript, i);
+      if (!r || !r.text) continue;
+      if (
+        REFERENCE_AFFIRMED_VAGUE.test(r.text) &&
+        !REFERENCE_NAMED.test(r.text) &&
+        !flags.has("reference_refusal") &&
+        !flags.has("reference_initial_hedge")
+      ) {
+        flags.add("reference_list_vague");
+        gaps.push({
+          dimension: "compliance_readiness",
+          expected: "Reference list should be NAMED: 'my manager Anand at Swiggy' or 'Priya, who was my lead at Razorpay'. Real HR weights named > vague — vague reads as a list you haven't actually pre-cleared",
+          observed: "Candidate confirmed references exist but never named them — HR assumes the list isn't actually pre-cleared with the named referees",
+          severity: "medium",
+          flag: "reference_list_vague",
+        });
+        break;
+      }
+    }
+
+    // esop_literacy_low — HR offered ESOP/RSU and candidate never
+    // surfaced any of strike / cliff / vest / double-trigger / FMV.
+    {
+      const hrMentionedEsop = transcript.some((t) => isAi(t) && ESOP_HR_MENTION.test(t.text || ""));
+      const userShowedLiteracy = transcript.some((t) => isUser(t) && ESOP_LITERACY.test(t.text || ""));
+      if (hrMentionedEsop && !userShowedLiteracy && transcript.length > 8) {
+        flags.add("esop_literacy_low");
+        gaps.push({
+          dimension: "comp_transparency",
+          expected: "When ESOP / RSU / equity is offered, ask the standard four: strike price + cliff (typically 1 yr) + vest schedule (4 yr standard) + double-trigger (for unicorns) / FMV (for private cos). At pre-IPO / unicorn comp this is six- to seven-figure exposure",
+          observed: "ESOP / RSU was on the table but candidate never surfaced strike / cliff / vest / double-trigger / FMV — accepting equity blind is the classic pre-IPO regret pattern",
+          severity: "medium",
+          flag: "esop_literacy_low",
+        });
+      }
+    }
+
+    // bell_curve_pip_unprobed — mid+ session, long-form, candidate
+    // never probes performance calibration / stack rank / PIP history.
+    {
+      const level = (session.difficulty || "").toLowerCase();
+      const isMidPlus = level === "mid" || level === "senior" || level === "lead" || level === "executive";
+      const candidateProbed = transcript.some((t) => isUser(t) && BELL_CURVE_PROBED.test(t.text || ""));
+      if (isMidPlus && transcript.length > 12 && !candidateProbed) {
+        flags.add("bell_curve_pip_unprobed");
+        gaps.push({
+          dimension: "switch_rationale_honesty",
+          expected: "At mid+ HR rounds at Amazon / Microsoft / TCS / Wipro, ask about performance calibration cycle, bell-curve / stack-rank policy, PIP history, and regretted-attrition rate. These are the structural factors that decide whether you're set up to succeed",
+          observed: "Long-form mid+ session but candidate never asked about bell curve / stack rank / PIP / attrition — these are the calibration realities that bite 6-12 months in",
+          severity: "medium",
+          flag: "bell_curve_pip_unprobed",
+        });
+      }
+    }
+
+    // buyout_split_unaddressed — buyout discussed, candidate didn't
+    // probe who pays (new employer reimburses vs candidate self-funds).
+    {
+      const buyoutMentioned = BUYOUT_MENTIONED.test(allText);
+      const splitProbed = transcript.some((t) => BUYOUT_SPLIT_PROBED.test(t.text || ""));
+      if (buyoutMentioned && !splitProbed && transcript.length > 8) {
+        flags.add("buyout_split_unaddressed");
+        gaps.push({
+          dimension: "negotiation_protection",
+          expected: "When buyout is on the table, probe WHO pays: new employer reimburses vs candidate self-funds vs offset against joining bonus. This is a lakhs-level negotiation lever — buyout cost is typically 1-3 months gross",
+          observed: "Buyout came up in the conversation but the funding question was never raised — leaves the split as a default 'candidate self-funds' which costs lakhs",
+          severity: "medium",
+          flag: "buyout_split_unaddressed",
+        });
+      }
+    }
+
     /* ── Resume cross-checks (silent no-op when resume null) ─── */
     if (resume) {
       const resumeAgg = summarizeResume(resume);
@@ -1369,6 +1586,13 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("designation_downgrade_defensive")) tips.push("Don't dismiss the title question. Frame it: 'Titles map to your leveling; I care about the scope and the problem space — happy to align on what your X-level looks like.'");
     if (flags.has("certification_gap_evasion")) tips.push("Know your cert dates and IDs cold. HR verifies via Credly/AWS directly — vague answers + a discrepancy read as resume inflation.");
     if (flags.has("ctc_first_question_user")) tips.push("Don't open with salary. Establish role / team / scope first; surface comp once HR signals discovery is wrapping. Asking comp upfront reads as transactional.");
+    if (flags.has("multi_offer_undisclosed")) tips.push("When HR asks about other offers, name the stage and timeline: 'Razorpay round 3, expecting offer by Friday' or 'Final HR round at Swiggy next week'. Vague 'a few places' answers fail twice — HR assumes either no real competing process or unwilling to disclose. Specifics convert into negotiation leverage; vagueness leaves it on the table.");
+    if (flags.has("location_flex_unprobed")) tips.push("Base city was named but you never probed the relocation package — that's lakhs left on the table. Ask cleanly: 'What's the relocation assistance? Is there a temporary WFH window during the move? Housing allowance? Is the joining bonus structured to offset moving costs?' FAANG India / GCC base-city is non-negotiable, but the support package is very negotiable.");
+    if (flags.has("reason_for_leaving_blame_framing")) tips.push("Lead with the FORWARD frame, not the BACKWARD blame. 'No growth, manager wasn't supportive' reads as the problem will follow you. Reframe: 'Want to move into [domain] — current role is mature for me there.' Same factual reason, mature register. Indian HR scores this exact diff on every senior switch.");
+    if (flags.has("reference_list_vague")) tips.push("Name your references: 'Anand, who was my manager at Swiggy' or 'Priya, my lead at Razorpay'. 'Yeah I have a couple' reads as a list you haven't actually pre-cleared with the named referees. Have two named, pre-aligned references ready before the round.");
+    if (flags.has("esop_literacy_low")) tips.push("Equity was on the table and you didn't surface the four standard probes: strike price, cliff (typically 1 yr), vest schedule (4 yr standard), double-trigger (at unicorns) / FMV / 409A (at private cos). At pre-IPO / unicorn comp this is six- to seven-figure exposure — accepting blind is the classic post-joining regret.");
+    if (flags.has("bell_curve_pip_unprobed")) tips.push("At mid-senior at Amazon / Microsoft / TCS / Wipro / Infosys, ask about performance calibration cycle, bell-curve / stack-rank policy, PIP history, and regretted-attrition rate. These are the structural factors that decide whether you'll succeed 6-12 months in — and the answer telegraphs a LOT about the team culture.");
+    if (flags.has("buyout_split_unaddressed")) tips.push("Buyout came up but you didn't ask WHO pays. The default is candidate self-funds — but new employer reimbursement is standard at FAANG / GCC and negotiable at most product cos. Ask: 'Is buyout reimbursed, or offset against joining bonus, or candidate-funded?' One question = potentially 1-3 months of gross salary back in your pocket.");
     if (flags.has("dimensions_thin_coverage")) tips.push("Real Indian HR covers 7 dimensions. Re-run with notice/BGV/counter-offer/benefits prompts.");
     if (flags.has("resume_transcript_mismatch")) tips.push("Every employer you say out loud should already be on your resume. BGV pulls the resume as source-of-truth — verbal employers that aren't listed read as fabrication.");
     if (flags.has("resume_gap_unaddressed")) tips.push("Your resume shows a ≥3-month employment gap. Don't wait for the real interviewer to corner you — pre-prep a one-liner: 'between Mar 2022 and Jan 2023 I [studied / cared for family / took a sabbatical to ship X]; here's what I did with the time.'");
