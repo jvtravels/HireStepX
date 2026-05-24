@@ -790,7 +790,7 @@ function renderCanonicalProseBody(
         return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
       }
       if (action.mode === "walkaway") {
-        return "Looking at where your expectations sit versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Appreciate your time.";
+        return "Looking at where your expectations sit versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Thanks for taking the time to speak with us.";
       }
       return "Let's pause the discussion here. Take your time on it and revert when you're ready.";
 
