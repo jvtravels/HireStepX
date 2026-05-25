@@ -90,11 +90,18 @@ function buildMarketDataReferenceAsk(sources: string[]): string {
   if (names.length === 1) joined = names[0];
   else if (names.length === 2) joined = `${names[0]} and ${names[1]}`;
   else joined = `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  /* PDF#44 follow-up (2026-05-25) — closing line was "let me walk you
+   * through how we're framing the fitment", which is the same teaser
+   * dodge class fixed in info-disclosure.ts: a promise the next turn
+   * never delivers. Replace with a concrete question that advances the
+   * negotiation — which level/grade are they benchmarking against — so
+   * the candidate's answer either narrows the comparison or lets the
+   * planner pivot to band-anchor on the next turn. */
   return (
     `Right — ${joined} numbers are useful as a floor, but they aggregate ` +
     `across grades and don't always reflect the level rubric. For your ` +
-    `level specifically, our internal band sits on a different basis. Let me ` +
-    `walk you through how we're framing the fitment.`
+    `level specifically, our internal band sits on a different basis — ` +
+    `which level or comparable role were you benchmarking against on ${joined}?`
   );
 }
 
