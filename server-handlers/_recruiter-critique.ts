@@ -583,10 +583,35 @@ export function recommendWalkAway(state: NegotiationState): {
     state.highestOfferMade >= band.maxStretch - 0.01 &&
     turn >= 8
   ) {
-    return {
-      walk: true,
-      reason: `At ceiling ₹${band.maxStretch}L after ${turn} turns. Close-or-walk window has closed.`,
-    };
+    /* PDF#45 B1 (2026-05-26) — premature-walk guard. If the candidate
+     * is ACTIVELY ENGAGING via lever-explore ("what else can you add?",
+     * "what can you add to match?", "any other levers?") the recruiter
+     * should NOT walk — the candidate is signalling willingness to
+     * close on non-cash levers. Walking here mistakes engagement for
+     * impasse. Detect via the last candidate utterance in the log:
+     * structural pattern matches Indian-recruiter lever-explore cues
+     * (add / additional / anything else / what more / match / bridge /
+     * other lever / other component / non-cash). */
+    const log = state.conversationLog ?? [];
+    let lastCandidateText = "";
+    for (let i = log.length - 1; i >= 0; i--) {
+      const e = log[i];
+      if (e && e.speaker === "candidate" && typeof e.text === "string") {
+        lastCandidateText = e.text;
+        break;
+      }
+    }
+    const LEVER_EXPLORE_ENGAGEMENT_RE =
+      /\b(?:what\s+(?:else|more|other)\s+can\s+you\s+(?:add|offer|do|provide|stretch|extend|include)|can\s+you\s+(?:add|stretch|include|throw\s+in|sweeten|push|bridge|extend)\s+(?:something|anything|more|additional|extra|the\s+(?:gap|offer))|(?:add|sweeten|bridge|stretch|push|extend)\s+(?:the\s+)?(?:offer|number|gap|package|deal|fitment)|anything\s+else\s+(?:you\s+can\s+(?:add|offer|do)|on\s+the\s+table)|other\s+(?:levers?|components?|knobs?|options?)|what\s+more\s+(?:can\s+you|do\s+you)|how\s+(?:can|do)\s+you\s+(?:bridge|close|match|cover)\s+(?:the\s+)?gap|match\s+(?:the\s+)?(?:other|competing)\s+offer|something\s+more|sweeten\s+the\s+deal|non[\s-]?cash\s+(?:levers?|options?)|joining\s+bonus|sign[\s-]?on|relocation|esops?|stock|equity|retention)\b/i;
+    if (lastCandidateText && LEVER_EXPLORE_ENGAGEMENT_RE.test(lastCandidateText)) {
+      /* Candidate is leaning in on levers — hold position, do not walk.
+       * The planner's lever-explore cascade owns the next turn. */
+    } else {
+      return {
+        walk: true,
+        reason: `At ceiling ₹${band.maxStretch}L after ${turn} turns. Close-or-walk window has closed.`,
+      };
+    }
   }
 
   return { walk: false, reason: "" };

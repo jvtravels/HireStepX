@@ -34,13 +34,27 @@ describe("close-recap-formal planner state (Fix 4)", () => {
     expect(action.kind).toBe("close-recap-formal");
   });
 
-  it("close-recap-formal carries fixed / variable / JB / notice / BGV trigger / OL ETA", () => {
+  it("close-recap-formal carries fixed / variable / JB / notice / BGV trigger / OL ETA when discussed", () => {
+    /* PDF#45 B2 (2026-05-26) — recap-hallucination guard. Notice / BGV
+     * / OL ETA only render when the corresponding discovery topics
+     * were discussed (state.infoAsked / state.noticeJoining). Populate
+     * those signals so the full structured recap renders. */
     const s = init({
       phase: "closing-push",
       highestOfferMade: 24,
       verbalAcceptanceTurn: 6,
       turnIndex: 6,
       lastJoiningBonusOffered: 2,
+      infoAsked: ["notice-period-ask", "bgv-concern"],
+      noticeJoining: {
+        noticePeriodDays: 60,
+        buyoutRequested: false,
+        joiningBonusAsk: null,
+        earlyJoinPreferred: false,
+        joiningBonusClawbackDiscussed: false,
+        lastWorkingDayText: null,
+        hasAny: true,
+      },
     });
     const action = planNextAction(s);
     if (action.kind !== "close-recap-formal") throw new Error("wrong kind");
@@ -51,13 +65,46 @@ describe("close-recap-formal planner state (Fix 4)", () => {
     expect(action.offerLetterEta).toMatch(/business day|week|hours/i);
   });
 
-  it("canonical prose enumerates fitment + variable + JB + notice + BGV + OL + 'sounds good?'", () => {
+  it("close-recap-formal OMITS notice / BGV / OL ETA when never discussed (PDF#45 B2)", () => {
+    /* PDF#45 B2 (2026-05-26) — verify the recap does NOT hallucinate
+     * notice / BGV / OL ETA when the underlying topics were never
+     * raised in the session. Pure-state acceptance with no discovery
+     * on process topics → recap renders ONLY the cash fitment. */
     const s = init({
       phase: "closing-push",
       highestOfferMade: 24,
       verbalAcceptanceTurn: 6,
       turnIndex: 6,
       lastJoiningBonusOffered: 2,
+    });
+    const action = planNextAction(s);
+    if (action.kind !== "close-recap-formal") throw new Error("wrong kind");
+    expect(action.noticePeriodWeeks).toBeUndefined();
+    expect(action.bgvStartTrigger).toBeUndefined();
+    expect(action.offerLetterEta).toBeUndefined();
+    const prose = renderCanonicalProse(action, s);
+    expect(prose).not.toMatch(/notice/i);
+    expect(prose).not.toMatch(/BGV|background verif/i);
+    expect(prose).not.toMatch(/offer letter/i);
+  });
+
+  it("canonical prose enumerates fitment + variable + JB + notice + BGV + OL + 'sounds good?' when discussed", () => {
+    const s = init({
+      phase: "closing-push",
+      highestOfferMade: 24,
+      verbalAcceptanceTurn: 6,
+      turnIndex: 6,
+      lastJoiningBonusOffered: 2,
+      infoAsked: ["notice-period-ask", "bgv-concern"],
+      noticeJoining: {
+        noticePeriodDays: 60,
+        buyoutRequested: false,
+        joiningBonusAsk: null,
+        earlyJoinPreferred: false,
+        joiningBonusClawbackDiscussed: false,
+        lastWorkingDayText: null,
+        hasAny: true,
+      },
     });
     const action = planNextAction(s);
     const prose = renderCanonicalProse(action, s);

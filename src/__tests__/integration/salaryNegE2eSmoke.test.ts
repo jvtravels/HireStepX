@@ -339,10 +339,16 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
       state = turn.state;
       if (turn.action.kind === "close-recap-formal") {
         const lc = turn.canonical.toLowerCase();
+        /* PDF#45 B2 (2026-05-26) — recap-hallucination guard. Only the
+         * always-present cash fitment (fixed + variable) is asserted.
+         * Notice / BGV / OL ETA render only when the candidate
+         * actually raised those topics; this smoke run may close early
+         * (counter cascade converges before notice/BGV probes fire),
+         * in which case the recap correctly omits them. The recap's
+         * structural anchor is the closing prefix + "sounds good?". */
         expect(lc).toContain("fixed");
         expect(lc).toContain("variable");
-        expect(lc).toContain("notice");
-        expect(lc).toContain("bgv");
+        expect(lc).toMatch(/sounds good/);
         sawRecap = true;
         break;
       }

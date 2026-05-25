@@ -35,12 +35,24 @@ export function proseCloseRecapFormal(
   if (action.retentionBonusLpa != null && action.retentionBonusLpa > 0) {
     parts.push(`retention bonus ₹${action.retentionBonusLpa}L split across the retention window`);
   }
-  parts.push(`notice ${action.noticePeriodWeeks} weeks`);
+  /* PDF#45 B2 (2026-05-26) — recap-hallucination guard. Render notice
+   * / BGV / OL ETA only when the planner populated them (the planner
+   * leaves them undefined when no corresponding discovery topic was
+   * discussed). Prevents the recap from fabricating "notice 9 weeks /
+   * BGV post-acceptance / OL 2-3 business days" boilerplate when none
+   * of these were ever raised in the session. */
+  if (action.noticePeriodWeeks != null) {
+    parts.push(`notice ${action.noticePeriodWeeks} weeks`);
+  }
   if (action.proposedJoiningDate) {
     parts.push(`proposed joining ${action.proposedJoiningDate}`);
   }
-  parts.push(`BGV starts ${action.bgvStartTrigger}`);
-  parts.push(`offer letter in ${action.offerLetterEta}`);
+  if (action.bgvStartTrigger) {
+    parts.push(`BGV starts ${action.bgvStartTrigger}`);
+  }
+  if (action.offerLetterEta) {
+    parts.push(`offer letter in ${action.offerLetterEta}`);
+  }
   const urgencyTail =
     state.cumulativeUrgency === "firm"
       ? " Given your timeline, we'll fast-track the offer letter — expect it within 24 hours of BGV initiation."

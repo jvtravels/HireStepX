@@ -5132,6 +5132,29 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     next.closeFired = true;
   }
 
+  /* PDF#45 B3 (2026-05-26) — terminal-phase lock on bot-side close.
+   * When the recruiter ships a close-acceptance recap, flip phase to
+   * "accepted" immediately so the NEXT turn the planner short-circuits
+   * at the `state.phase === "accepted"` gate (line ~1397) instead of
+   * falling back into the discovery / probe cascade. Without this,
+   * the bot would emit the formal close recap AND THEN, on the very
+   * next turn (after candidate confirmation), re-enter discovery —
+   * the transcript regression showed a recap at T11 followed by
+   * "What's your current notice period?" at T12. Symmetric path for
+   * close-walkaway → walked-away. Terminal phases set by the candidate
+   * (acceptance / walk-away parser path) are preserved by the
+   * `!isTerminalPhase(next.phase)` guard at the derivePhase site
+   * below — this fires only when phase is still non-terminal at the
+   * moment the bot ships the close. */
+  if (move.lever === "close-acceptance" && !isTerminalPhase(next.phase)) {
+    next.phase = "accepted";
+    if (next.acceptedAtTurn == null) next.acceptedAtTurn = state.turnIndex;
+    if (next.verbalAcceptanceTurn == null) next.verbalAcceptanceTurn = state.turnIndex;
+  } else if (move.lever === "close-walkaway" && !isTerminalPhase(next.phase)) {
+    next.phase = "walked-away";
+    if (next.walkedAwayAtTurn == null) next.walkedAwayAtTurn = state.turnIndex;
+  }
+
   /* Phase 28 — record the kernel-computed JB amount when a JB lever
      fires so close-acceptance can include it in the recap. Sticky:
      once set, only an upward replacement clobbers it (a subsequent JB

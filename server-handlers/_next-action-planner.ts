@@ -301,10 +301,19 @@ export type NextAction =
       variableLpa: number;
       joiningBonusLpa?: number;
       retentionBonusLpa?: number;
-      noticePeriodWeeks: number;
+      /* PDF#45 B2 (2026-05-26) — recap-hallucination fix. These four
+       * structural-fitment fields are now OPTIONAL. The recap previously
+       * fabricated default values for notice / BGV-trigger / OL-ETA even
+       * when none of those topics had been discussed (transcript T11
+       * regression: "joining bonus ₹1.3L with 12-month clawback, notice
+       * 9 weeks, BGV starts post-acceptance, offer letter in 2-3 business
+       * days" — none of which the candidate ever raised). The recap now
+       * only renders fields whose corresponding state has been populated
+       * by an actual discovery turn. */
+      noticePeriodWeeks?: number;
       proposedJoiningDate?: string;
-      bgvStartTrigger: string;
-      offerLetterEta: string;
+      bgvStartTrigger?: string;
+      offerLetterEta?: string;
       satisfiesTopic: SatisfiesTopic;
     }
   /* Fix 1 (2026-05-16) — Real Indian-context negotiation levers. Each
@@ -4002,8 +4011,31 @@ function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
   const variableMax = state.band.variableMax ?? Math.max(0, Math.round((total - baseStretch) * 10) / 10);
   const fixedLpa = Math.min(total, baseStretch);
   const variableLpa = Math.max(0, Math.min(variableMax, Math.round((total - fixedLpa) * 10) / 10));
-  const noticeDays = state.noticeJoining?.noticePeriodDays ?? 60;
-  const noticePeriodWeeks = Math.max(1, Math.round(noticeDays / 7));
+  /* PDF#45 B2 (2026-05-26) — recap-hallucination guard. Only emit
+   * structural-fitment fields when the underlying state was actually
+   * populated by a discovery turn. Previously these defaulted to
+   * fabricated values ("notice 9 weeks", "BGV post-acceptance",
+   * "OL 2-3 business days") even when no such topic had ever been
+   * discussed in the session. Discussed-signal sources:
+   *   - notice: state.noticeJoining.noticePeriodDays (extractor stamp)
+   *             OR state.infoAsked.includes("notice-period-ask")
+   *   - bgv:    state.infoAsked.includes("bgv-concern")
+   *             OR state.candidateProfile?.bgvAnxiety
+   *   - OL ETA: gated behind notice OR bgv discussion — there's no
+   *             standalone "candidate asked for OL ETA" signal, but
+   *             once the candidate has engaged on process topics the
+   *             ETA is a coherent close-out detail (not a hallucination). */
+  const noticeDiscussed =
+    (state.noticeJoining?.noticePeriodDays != null && state.noticeJoining.noticePeriodDays > 0) ||
+    state.infoAsked.includes("notice-period-ask");
+  const bgvDiscussed =
+    state.infoAsked.includes("bgv-concern") ||
+    state.candidateProfile?.bgvAnxiety === true;
+  const noticePeriodWeeks = noticeDiscussed
+    ? Math.max(1, Math.round((state.noticeJoining?.noticePeriodDays ?? 60) / 7))
+    : undefined;
+  const bgvStartTrigger = bgvDiscussed ? "post-acceptance, on signed offer letter" : undefined;
+  const offerLetterEta = (noticeDiscussed || bgvDiscussed) ? "2-3 business days" : undefined;
   return {
     kind: "close-recap-formal",
     fixedLpa,
@@ -4012,8 +4044,8 @@ function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
     retentionBonusLpa: undefined,
     noticePeriodWeeks,
     proposedJoiningDate: undefined,
-    bgvStartTrigger: "post-acceptance, on signed offer letter",
-    offerLetterEta: "2-3 business days",
+    bgvStartTrigger,
+    offerLetterEta,
     satisfiesTopic: "close-recap-formal",
     _move: {
       lever: "close-acceptance",
@@ -4021,8 +4053,9 @@ function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
       joiningBonusAmount: state.lastJoiningBonusOffered ?? undefined,
       rationale:
         `Candidate verbally accepted; emit structured close recap (fixed ₹${fixedLpa}L, variable ₹${variableLpa}L, ` +
-        `JB ${state.lastJoiningBonusOffered != null ? `₹${state.lastJoiningBonusOffered}L` : "none"}, ` +
-        `notice ${noticePeriodWeeks}w, OL ETA 2-3 business days).`,
+        `JB ${state.lastJoiningBonusOffered != null ? `₹${state.lastJoiningBonusOffered}L` : "none"}` +
+        `${noticePeriodWeeks != null ? `, notice ${noticePeriodWeeks}w` : ""}` +
+        `${offerLetterEta != null ? `, OL ETA ${offerLetterEta}` : ""}).`,
       actionKind: "close-recap-formal",
       askedTopic: "close-recap-formal",
     },
