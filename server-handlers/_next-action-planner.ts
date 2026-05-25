@@ -4028,9 +4028,13 @@ function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
   const noticeDiscussed =
     (state.noticeJoining?.noticePeriodDays != null && state.noticeJoining.noticePeriodDays > 0) ||
     state.infoAsked.includes("notice-period-ask");
-  const bgvDiscussed =
-    state.infoAsked.includes("bgv-concern") ||
-    state.candidateProfile?.bgvAnxiety === true;
+  /* BGV signal: candidateProfile.bgvAnxiety is the structural flag set
+   * by the profile detector when the candidate raises BGV concerns
+   * (background-verification anxiety / documentation queries). The
+   * "bgv-concern" token is an AskedTopic, not an InfoIntent, so it
+   * isn't a member of state.infoAsked — bgvAnxiety is the single
+   * source of truth for "candidate raised BGV in this session". */
+  const bgvDiscussed = state.candidateProfile?.bgvAnxiety === true;
   const noticePeriodWeeks = noticeDiscussed
     ? Math.max(1, Math.round((state.noticeJoining?.noticePeriodDays ?? 60) / 7))
     : undefined;

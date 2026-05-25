@@ -45,7 +45,8 @@ describe("close-recap-formal planner state (Fix 4)", () => {
       verbalAcceptanceTurn: 6,
       turnIndex: 6,
       lastJoiningBonusOffered: 2,
-      infoAsked: ["notice-period-ask", "bgv-concern"],
+      infoAsked: ["notice-period-ask"],
+      candidateProfile: { bgvAnxiety: true } as never,
       noticeJoining: {
         noticePeriodDays: 60,
         buyoutRequested: false,
@@ -95,7 +96,8 @@ describe("close-recap-formal planner state (Fix 4)", () => {
       verbalAcceptanceTurn: 6,
       turnIndex: 6,
       lastJoiningBonusOffered: 2,
-      infoAsked: ["notice-period-ask", "bgv-concern"],
+      infoAsked: ["notice-period-ask"],
+      candidateProfile: { bgvAnxiety: true } as never,
       noticeJoining: {
         noticePeriodDays: 60,
         buyoutRequested: false,
