@@ -21,8 +21,12 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
+// v6.10 — analyzer-side regex constants were extracted from
+// `campus-placement.ts` to `_campus-regex.ts`. The parity test now reads
+// the regex module directly. The const declarations carry an `export `
+// prefix there, which the source-extraction regex below tolerates.
 const ANALYZER = fs.readFileSync(
-  path.resolve(__dirname, "../../server-handlers/analyzers/campus-placement.ts"),
+  path.resolve(__dirname, "../../server-handlers/analyzers/_campus-regex.ts"),
   "utf-8",
 );
 const CHIPS = fs.readFileSync(
@@ -30,11 +34,11 @@ const CHIPS = fs.readFileSync(
   "utf-8",
 );
 
-/* Pull the source of a `const NAME = /.../i;` line from the file text.
- * Returns the raw pattern string without delimiters or flags so the two
- * sides can be compared regardless of variable naming. */
+/* Pull the source of a `[export] const NAME = /.../i;` line from the file
+ * text. Returns the raw pattern string without delimiters or flags so the
+ * two sides can be compared regardless of variable naming. */
 function patternSource(text: string, constName: string): string {
-  const re = new RegExp(`const\\s+${constName}\\s*(?::\\s*RegExp)?\\s*=\\s*(/.+/)([gimsuy]*)\\s*;`);
+  const re = new RegExp(`(?:export\\s+)?const\\s+${constName}\\s*(?::\\s*RegExp)?\\s*=\\s*(/.+/)([gimsuy]*)\\s*;`);
   const m = text.match(re);
   if (!m) throw new Error(`Could not find regex const ${constName}`);
   // Strip leading + trailing slash
