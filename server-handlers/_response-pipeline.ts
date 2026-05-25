@@ -103,6 +103,7 @@ export async function generateBotReply(
   state: NegotiationState,
   generateAiText: GenerateAiTextFn,
   candidateAnswer?: string,
+  distinctId?: string,
 ): Promise<PipelineResult> {
   /* PDF #45 fix (2026-05-22) — outermost safety net. User-reported
    * Flipkart Sr PD session DIED on T17 after a frustration-recovery
@@ -113,7 +114,7 @@ export async function generateBotReply(
    * and end the session. Wrap the whole pipeline so the worst case
    * is a benign continuation prompt, never a session-killer. */
   try {
-    return await generateBotReplyInner(state, generateAiText, candidateAnswer);
+    return await generateBotReplyInner(state, generateAiText, candidateAnswer, distinctId);
   } catch (err) {
     void err;
     return {
@@ -130,6 +131,7 @@ async function generateBotReplyInner(
   state: NegotiationState,
   generateAiText: GenerateAiTextFn,
   candidateAnswer?: string,
+  distinctId?: string,
 ): Promise<PipelineResult> {
   const rawAction = planNextAction(state);
   /* Audit follow-up (2026-05-21) — planner → pipeline shape guard.
@@ -141,26 +143,51 @@ async function generateBotReplyInner(
    * malformed planner output at the boundary and degrade to a safe
    * terminal-restate (which has no contract requirements other than
    * canonical-verbatim) before the LLM is invoked. */
-  const action: NextAction =
-    rawAction && typeof rawAction === "object" && typeof (rawAction as { kind?: unknown }).kind === "string" && (rawAction as { kind: string }).kind.length > 0
-      ? rawAction
-      : ({ kind: "terminal-restate" } as NextAction);
+  const actionShapeOk =
+    rawAction && typeof rawAction === "object" && typeof (rawAction as { kind?: unknown }).kind === "string" && (rawAction as { kind: string }).kind.length > 0;
+  const action: NextAction = actionShapeOk
+    ? (rawAction as NextAction)
+    : ({ kind: "terminal-restate" } as NextAction);
+  if (!actionShapeOk) {
+    /* Audit follow-up (2026-05-25) — emit observability when the planner
+     * shape-guard fires. Without this, a future planner regression that
+     * returns malformed actions in prod is silently degraded to
+     * terminal-restate with zero signal. Fire-and-forget to PostHog so
+     * ops can alert on count > 0. */
+    // eslint-disable-next-line no-console
+    console.warn("[planner-shape-guard] degraded malformed action", {
+      raw_kind: (rawAction as { kind?: unknown } | null)?.kind ?? null,
+      phase: (state as { phase?: string }).phase ?? null,
+      turn_index: (state as { turnIndex?: number }).turnIndex ?? null,
+    });
+    void captureServerEvent(
+      "negotiation_planner_malformed",
+      distinctId ?? (state as { sessionId?: string }).sessionId ?? "anonymous",
+      {
+        raw_kind: typeof (rawAction as { kind?: unknown } | null)?.kind === "string"
+          ? (rawAction as { kind: string }).kind
+          : null,
+        phase: (state as { phase?: string }).phase ?? null,
+        turn_index: (state as { turnIndex?: number }).turnIndex ?? null,
+      },
+    );
+  }
   const move = actionToLever(action, state);
 
-  /* AR2 telemetry wire-in (2026-05-25) — surface turn-coherence warnings
-   * to PostHog so live regressions get caught the way the regression
-   * harness catches them in tests. The validator is dev-gated internally
-   * (NODE_ENV !== "production"), so this call returns [] in prod by
-   * design — production flips the flag at deploy-time via env override
-   * when ops wants to sample. The fire-and-forget posthog emit cannot
-   * throw (telemetry contract), so we don't await or wrap. */
+  /* AR2 telemetry wire-in (2026-05-25, prod-arm 2026-05-25b) — surface
+   * turn-coherence warnings to PostHog so live regressions get caught
+   * the way the regression harness catches them in tests. In prod the
+   * sample rate is controlled by POSTHOG_COHERENCE_SAMPLE (0..1, default
+   * 0 = off). Set to 0.1 at launch, ramp to 1.0 after burn-in. The
+   * fire-and-forget posthog emit cannot throw (telemetry contract), so
+   * we don't await or wrap. */
   try {
     const prevAi = state.lastShippedAction
       ? (state.lastShippedAction as NextAction)
       : null;
     const warnings = validateTurnCoherence(prevAi, candidateAnswer ?? null, action, state);
     if (warnings.length > 0) {
-      void emitCoherenceWarnings(state, warnings);
+      void emitCoherenceWarnings(state, warnings, distinctId);
     }
   } catch {
     /* never break the pipeline on a telemetry path */
@@ -2070,7 +2097,17 @@ export function validateTurnCoherence(
   nextAiTurn: NextAction | null,
   state: NegotiationState,
 ): readonly CoherenceWarning[] {
-  if (process.env.NODE_ENV === "production") return [];
+  /* Production gate (2026-05-25b). In prod, sample by
+   * POSTHOG_COHERENCE_SAMPLE (0..1). Default 0 keeps prod silent until
+   * ops explicitly opts in. Dev/test always runs at 100% so the
+   * regression harness sees every warning. Parse defensively: a
+   * malformed env value (NaN, negative, > 1) collapses to 0. */
+  if (process.env.NODE_ENV === "production") {
+    const raw = Number(process.env.POSTHOG_COHERENCE_SAMPLE);
+    const rate = Number.isFinite(raw) ? Math.max(0, Math.min(1, raw)) : 0;
+    if (rate === 0) return [];
+    if (rate < 1 && Math.random() >= rate) return [];
+  }
   const surfaced: CoherenceWarning[] = [];
   if (prevAiTurn == null || nextAiTurn == null) return surfaced;
 
@@ -2163,14 +2200,19 @@ export function validateTurnCoherence(
 async function emitCoherenceWarnings(
   state: NegotiationState,
   warnings: readonly CoherenceWarning[],
+  distinctId?: string,
 ): Promise<void> {
-  /* In production, validateTurnCoherence short-circuits to [] (dev-only
-   * gate). If a future config flips that gate on, this emit path is
-   * already wired — no further changes needed. */
+  /* Prod sampling is owned by validateTurnCoherence (POSTHOG_COHERENCE_SAMPLE).
+   * Prefer the route-supplied distinctId (derived via distinctIdFrom(req,
+   * userId) so person-on-events joins to the same user across events);
+   * fall back to sessionId, then "anonymous". */
   if (warnings.length === 0) return;
-  const sessionId = (state as { sessionId?: string }).sessionId ?? "anonymous";
+  const id =
+    distinctId ??
+    (state as { sessionId?: string }).sessionId ??
+    "anonymous";
   for (const w of warnings) {
-    void captureServerEvent("negotiation_coherence_warning", sessionId, {
+    void captureServerEvent("negotiation_coherence_warning", id, {
       kind: w.kind,
       topic: w.topic,
       prev_action_kind: w.prevKind,

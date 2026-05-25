@@ -159,6 +159,7 @@ export async function generateAiText(
   llm: LlmCaller,
   userId?: string,
   promptVariant?: PromptVariant,
+  distinctId?: string,
 ): Promise<{
   text: string;
   source: "llm" | "llm-retry" | "fallback";
@@ -193,7 +194,7 @@ export async function generateAiText(
   const pipelineLlm: GenerateAiTextFn = async (sys, usr) => {
     return llm(sys, usr, { userId });
   };
-  const result = await generateBotReply(state, pipelineLlm, candidateAnswer);
+  const result = await generateBotReply(state, pipelineLlm, candidateAnswer, distinctId);
   /* Telemetry — decisionLog picker reflects the pipeline source. */
   if (!state.decisionLog) state.decisionLog = [];
   state.decisionLog.push({
@@ -413,7 +414,7 @@ export default async function handler(
       });
       const move = pickAiMove(state);
       const promptVariant = selectPromptVariant(state.sessionId);
-      const { text, source, failureKinds, envelopeMissingAttempts, action: initAction } = await generateAiText(state, move, "", llm, auth.userId, promptVariant);
+      const { text, source, failureKinds, envelopeMissingAttempts, action: initAction } = await generateAiText(state, move, "", llm, auth.userId, promptVariant, distinctId);
       const initMoveTag: MoveTag = deriveMoveTag(initAction, state);
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
@@ -657,7 +658,7 @@ export default async function handler(
         envelopeMissingAttempts = 0;
       } else {
         const promptVariantTurn = selectPromptVariant(state.sessionId);
-        const gen = await generateAiText(state, move, sanitizedAnswer, llm, auth.userId, promptVariantTurn);
+        const gen = await generateAiText(state, move, sanitizedAnswer, llm, auth.userId, promptVariantTurn, distinctId);
         text = gen.text;
         source = gen.source;
         failureKinds = gen.failureKinds;
