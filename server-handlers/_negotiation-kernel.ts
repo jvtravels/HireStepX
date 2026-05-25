@@ -4280,10 +4280,23 @@ export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFa
  * planner.ts) which routes to a phase-appropriate force-advance action
  * rather than re-routing state.phase directly (that path is reserved
  * for the natural derivePhase cascade). */
+/* PDF#48 B4 (2026-05-25) — counter-phase budget raised from 4 to 7.
+ *
+ * Real recruiter counter spirals run longer than 4 turns: anchor →
+ * candidate-counter-1 → revise/lever-explore → candidate-counter-2 →
+ * competing-offer-probe → competing-credibility-followup → close-
+ * recap-formal. That's 6-7 AI turns in counter-group phases, before
+ * the formal close fires. The prior cap of 4 was forcing premature
+ * stalemate routing whenever the counter spiral got a normal amount
+ * of back-and-forth. PDF#48 Flipkart Sr PD session terminated after
+ * the competing-credibility probe because counter-phase had already
+ * consumed >4 turns (some of them wasted by the META-evaluator
+ * restyle leak fixed in 0133fcb). Raise to 7 so the session ends
+ * with a framed close turn, not a hard cliff. */
 const MAX_TURNS_PER_PHASE = {
   discovery: 5,
   anchoring: 3,
-  counter: 4,
+  counter: 7,
 } as const;
 
 const DISCOVERY_PHASES: ReadonlySet<NegotiationPhase> = new Set([

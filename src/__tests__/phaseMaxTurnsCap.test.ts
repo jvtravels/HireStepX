@@ -154,11 +154,15 @@ describe("AR3 — anchoring phase maxTurns cap", () => {
 });
 
 describe("AR3 — counter phase maxTurns cap", () => {
-  it("counter exceeded → stalemate", () => {
+  /* PDF#48 B4 (2026-05-25) — counter cap raised from 4 to 7 so a
+   * normal counter spiral (anchor → counter-1 → revise → counter-2 →
+   * lever-explore → competing-probe → competing-followup) fits inside
+   * its budget before the AR3 force-advance routes to stalemate. */
+  it("counter exceeded (>7) → stalemate", () => {
     const s = mkState({
       phase: "counter-offer",
-      turnIndex: 14,
-      phaseEnteredAtTurn: 9, // 14 - 9 = 5 > 4 (cap)
+      turnIndex: 18,
+      phaseEnteredAtTurn: 9, // 18 - 9 = 9 > 7 (new cap)
       candidateCurrentCtc: 18,
       candidateTarget: 30,
       highestOfferMade: 26,
@@ -170,7 +174,7 @@ describe("AR3 — counter phase maxTurns cap", () => {
   it("lever-explore exceeded → stalemate", () => {
     const s = mkState({
       phase: "lever-explore",
-      turnIndex: 14,
+      turnIndex: 18,
       phaseEnteredAtTurn: 9,
       candidateCurrentCtc: 18,
       candidateTarget: 30,
@@ -178,6 +182,22 @@ describe("AR3 — counter phase maxTurns cap", () => {
     });
     const next = derivePhase(s);
     expect(next).toBe("stalemate");
+  });
+
+  it("counter within new 7-turn budget → not force-advanced to terminal", () => {
+    const s = mkState({
+      phase: "counter-offer",
+      turnIndex: 14,
+      phaseEnteredAtTurn: 9, // 14 - 9 = 5, NOT > 7 (within budget)
+      candidateCurrentCtc: 18,
+      candidateTarget: 30,
+      highestOfferMade: 26,
+    });
+    const next = derivePhase(s);
+    /* Natural cascade still owns the transition; AR3 must NOT have
+     * forced an advance. Pre-PDF#48 this would have hit the 4-turn
+     * cap and routed to stalemate at this turn count. */
+    expect(next).not.toBe("stalemate");
   });
 });
 
