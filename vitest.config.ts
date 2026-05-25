@@ -17,6 +17,24 @@ export default defineConfig({
       ".next",
     ],
     setupFiles: ["./src/__tests__/vitest-setup.ts"],
+    /* PDF#45 audit pass 3 (2026-05-26) — raise per-test timeout to
+     * absorb cold-import latency on `_negotiate-turn-helpers.ts`
+     * (the kernel's mega-module). Six system-prompt token tests
+     * (midLevel / realWorld / seniorAndProcess / wave2 / wave3 /
+     * wave4 flow) call `await import("../../server-handlers/
+     * _negotiate-turn-helpers")` inside the test body; under full-
+     * suite parallel transform load that import alone has been
+     * observed to push past the vitest default of 5000 ms even
+     * though each test does only a string-contains check after the
+     * import resolves. Pass cleanly in isolation. A 15 s ceiling
+     * gives a comfortable margin without masking real regressions —
+     * any individual test that legitimately needs more than 15 s
+     * is doing something it shouldn't. */
+    testTimeout: 15000,
+    /* Match hookTimeout to testTimeout so beforeAll / afterAll that
+     * also touch the kernel module don't trip on the same cold-
+     * import latency. */
+    hookTimeout: 15000,
     coverage: {
       // v8 is the built-in provider — no extra deps needed.
       provider: "v8",
