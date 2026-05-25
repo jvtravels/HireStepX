@@ -131,6 +131,15 @@ export const BANNED_RECRUITER_IDIOM = [
   "i'd love to",
   "i would love to",
   "excited to",
+  /* PDF#48 (2026-05-25) — META-EVALUATOR LEAK phrases. Restyle
+   * occasionally drifts into evaluator/analyst voice instead of
+   * recruiter voice ("the counter offer is within Flipkart's budget
+   * band", "discuss the specifics of the offer to finalize"). Banned
+   * at the prompt layer; validateRestyle enforces with
+   * META_EVALUATOR_LEAK_RE as the structural fallback. */
+  "counter offer is within",
+  "specifics of the offer to finalize",
+  "to finalize the offer",
 ] as const;
 
 export const PREFERRED_RECRUITER_IDIOM = [

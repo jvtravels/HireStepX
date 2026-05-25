@@ -1238,6 +1238,36 @@ const INTERNAL_DEFER_LEAK_RE =
 const INVENTED_MARKET_JARGON_RE =
   /\bmarket\s+mode\b|\bmode\s+as\s+(?:hot|cold|tight|loose)\b/i;
 
+/** PDF#48 (2026-05-25) — META-EVALUATOR / THIRD-PERSON SELF-REFERENCE.
+ *
+ *  Captured drifts from PDF#48 Flipkart session:
+ *    - "The counter offer is within Flipkart's budget band."
+ *    - "We'll need to discuss the specifics of the offer to finalize it."
+ *  These are evaluator/analyst-voiced lines that leaked through restyle.
+ *  Real recruiters speak in first person ("we", "our band") and never
+ *  narrate offer-finalization meta-process or refer to their own
+ *  company in third-person possessive. Reject so the canonical line
+ *  (recruiter-voiced by construction) ships instead.
+ *
+ *  Patterns are narrow on purpose: the third-person clause requires
+ *  a Proper-Noun possessive ("Flipkart's"/"Amazon's") so generic
+ *  "within our band" passes; the finalize-specifics clause requires
+ *  both "specifics" AND "of the offer" + "finalize/close/conclude"
+ *  so plain "let's discuss specifics" passes. */
+const META_EVALUATOR_LEAK_RE = new RegExp(
+  [
+    // "within [Company]'s budget band / band / policy / guidelines / offer-range"
+    String.raw`\bwithin\s+[A-Z][a-z]+(?:'s|s)\s+(?:budget\s+band|band|policy|guidelines|range|offer\s+range)\b`,
+    // "the counter offer is within …" — opener of evaluator dodge
+    String.raw`\bthe\s+counter[\s-]*offer\s+is\s+within\b`,
+    // "discuss the specifics of the offer to finalize/close/conclude"
+    String.raw`\bdiscuss\s+(?:the\s+)?specifics?\s+of\s+(?:the\s+)?offer\s+to\s+(?:finalize|close|conclude)\b`,
+    // generic finalize-meta-process narration
+    String.raw`\bto\s+finalize\s+(?:the\s+)?offer\s+(?:later|once|after|when|with)\b`,
+  ].join("|"),
+  "i",
+);
+
 /** LN2 / Audit Pass 4 (PDF#27, 2026-05-17) — non-Indian currency / unit
  *  vocab. Indian recruiters quote compensation in ₹ + LPA / lakhs;
  *  any occurrence of USD / EUR / GBP / "annual salary" / "per year" /
@@ -1399,6 +1429,14 @@ export function validateRestyle(
   }
   if (INTERNAL_TERMINOLOGY_LEAK_RE.test(restyled)) {
     return { valid: false, reason: "internal-terminology-leak" };
+  }
+  /* PDF#48 (2026-05-25) — META-EVALUATOR / THIRD-PERSON SELF-REF.
+   * Same family as terminology-leak: catches the LLM voicing offer-
+   * finalization process or referring to its own company in third
+   * person. Pattern is narrow (requires both Proper-noun possessive
+   * + band-style noun, or "specifics of the offer + finalize"). */
+  if (META_EVALUATOR_LEAK_RE.test(restyled)) {
+    return { valid: false, reason: "meta-evaluator-leak" };
   }
   /* PDF#33 Move A (2026-05-18) — TEASER-PROSE GATE.
    *

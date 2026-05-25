@@ -140,3 +140,64 @@ describe("validateRestyle — PDF#27 Fix 1: internal-terminology leak", () => {
     expect(r.valid).toBe(true);
   });
 });
+
+/* PDF#48 (2026-05-25) — META-EVALUATOR / THIRD-PERSON SELF-REFERENCE
+ * leak. Captured in the Flipkart Sr PD session: when candidate asked
+ * "so what is your counter offer?" the restyle drifted to evaluator
+ * voice ("The counter offer is within Flipkart's budget band. We'll
+ * need to discuss the specifics of the offer to finalize it.") and
+ * dodged the candidate's direct ask. validateRestyle now rejects so
+ * the canonical (recruiter-voiced) line ships. */
+describe("validateRestyle — PDF#48: meta-evaluator leak", () => {
+  const canonical = "We can revise the fitment to ₹44L total.";
+
+  it("PDF#48 fixture: 'counter offer is within Flipkart's budget band' → meta-evaluator-leak", () => {
+    const r = validateRestyle(
+      canonical,
+      "The counter offer is within Flipkart's budget band. We'll need to discuss the specifics of the offer to finalize it.",
+      mkState(),
+    );
+    expect(r.valid).toBe(false);
+    expect(r.reason).toBe("meta-evaluator-leak");
+  });
+
+  it("'within Amazon's band' variant → meta-evaluator-leak", () => {
+    const r = validateRestyle(
+      canonical,
+      "Your number is within Amazon's band on this grade.",
+      mkState(),
+    );
+    expect(r.valid).toBe(false);
+    expect(r.reason).toBe("meta-evaluator-leak");
+  });
+
+  it("'discuss the specifics of the offer to finalize' variant → meta-evaluator-leak", () => {
+    const r = validateRestyle(
+      canonical,
+      "Let me see — we'll discuss the specifics of the offer to finalize it.",
+      mkState(),
+    );
+    expect(r.valid).toBe(false);
+    expect(r.reason).toBe("meta-evaluator-leak");
+  });
+
+  it("legitimate first-person 'within our band' → valid", () => {
+    const r = validateRestyle(
+      canonical,
+      "Your number is within our band for this grade.",
+      mkState(),
+    );
+    expect(r.valid).toBe(true);
+  });
+
+  it("clean recruiter line (no meta-evaluator vocabulary) → not meta-evaluator-leak", () => {
+    const r = validateRestyle(
+      canonical,
+      "We can revise the fitment to ₹44L total. How does that look?",
+      mkState(),
+    );
+    /* Either valid, or rejected for some OTHER reason — but never
+     * meta-evaluator-leak, because this line is recruiter-voiced. */
+    expect(r.reason).not.toBe("meta-evaluator-leak");
+  });
+});
