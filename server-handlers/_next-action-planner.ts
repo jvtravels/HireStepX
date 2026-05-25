@@ -50,7 +50,6 @@ import type { NegotiationRoundPersona } from "./_negotiation-rounds";
 import { registerNextActionPlanner } from "./_planner-registry";
 import { classifyRoleFamily, getCompanyHikeCap } from "./_company-band-tiers";
 import {
-  getNextDiscoveryQuestion,
   getNextOrderedDiscoveryItem,
   getNextOrderedDiscoveryQuestion,
   isDiscoveryComplete,
@@ -2191,29 +2190,40 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             },
           };
         }
-        const next = getNextDiscoveryQuestion(
-          state.discoveryChecklist,
-          roleFamily,
-          /* PDF#27 Fix 3 (2026-05-17) — propagate the same skipRecord
-           * the ordered cascade used; the legacy fallback was the route
-           * by which the 3-strike consecutive-topic cap got bypassed. */
-          skipRecord ?? undefined,
-        );
-        if (next != null) {
-          return {
-            kind: "discovery-probe",
-            item: next.item,
-            ask: next.prompt,
-            satisfiesTopic: next.item,
-            _move: {
-              lever: "probe",
-              newTotalLpa: null,
-              rationale: `Discovery incomplete (next: ${next.item}) — ask: ${next.prompt}`,
-              askedTopic: next.item,
-            },
-          };
-        }
+        /* PDF#46 (2026-05-25) — legacy fallback path removed. It used a
+         * different priority order than DISCOVERY_SEQUENCE (target was
+         * LAST, before notice+competing) which caused topics to fire
+         * out-of-order whenever the ordered cascade returned null but
+         * the checklist still had un-answered items. Only the ordered
+         * cascade drives sequencing now. */
       }
+    }
+    /* PDF#46 (2026-05-25) — hard gate: never anchor before the
+     * candidate's target/expected CTC has been asked. Honors the
+     * discovery checklist (the source of truth) — if a checklist exists
+     * and targetAnswered is still false, route to a discovery-probe for
+     * target before opening with an offer. Legacy sessions (no
+     * checklist) are exempt because they bypass discovery entirely. The
+     * opener-as-discovery branch (turnIndex === 0) is also exempt
+     * because canonical-prose renders it as a currentCtc probe, not an
+     * anchor. */
+    if (
+      state.turnIndex > 0 &&
+      state.discoveryChecklist != null &&
+      state.discoveryChecklist.targetAnswered !== true
+    ) {
+      return {
+        kind: "discovery-probe",
+        item: "targetAnswered",
+        ask: "Before I share the band — what's your target / expected CTC for this move?",
+        satisfiesTopic: "targetAnswered",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: "Anchor gate — targetAnswered still false; must surface expected CTC before opening with an offer.",
+          askedTopic: "targetAnswered",
+        },
+      };
     }
     const clampedOpener = clampAnchorAgainstCandidateAsk(
       state.band.initialOffer,
@@ -3666,12 +3676,20 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
       }
       return "";
     })();
-    const DIRECTIONAL_RE = /\b(growth|ownership|upside|learning|culture|trajectory|impact|equity|meaningful|long.?term)\b/i;
+    /* PDF#46 (2026-05-25) — "equity" removed from directional list.
+     * Candidates use "equity" to name the package component ("no equity"
+     * in response to ESOP probe), not to express forward-looking value.
+     * Letting it trigger the growth probe caused turn-4 random-question
+     * complaints. Also gate against negation prefixes so utterances like
+     * "no there is no growth" / "not interested in upside" don't fire. */
+    const DIRECTIONAL_RE = /\b(growth|ownership|upside|learning|culture|trajectory|impact|meaningful|long.?term)\b/i;
     const HAS_SPECIFIC_NUMBER_RE = /\d+(?:\.\d+)?\s*(?:LPA|L\b|lakh|lakhs?|lac|lacs)/i;
+    const NEGATION_RE = /\b(?:no|not|none|nothing|don'?t|doesn'?t|isn'?t|aren'?t|never)\b/i;
     if (
       lastCandidateText &&
       DIRECTIONAL_RE.test(lastCandidateText) &&
-      !HAS_SPECIFIC_NUMBER_RE.test(lastCandidateText)
+      !HAS_SPECIFIC_NUMBER_RE.test(lastCandidateText) &&
+      !NEGATION_RE.test(lastCandidateText)
     ) {
       return {
         kind: "reactive-followup",
@@ -3828,8 +3846,11 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
       {
         flag: profile.wantsJoiningBonus,
         topic: "wants-joining-bonus",
-        ask: "On the joining bonus — is it to cover a notice-period buyout, or to make up for a pending variable payout at your current place? The clawback is typically 12 months pro-rata.",
-        rationale: "Candidate asked for JB — probe whether it's notice buyout vs variable bridge to size correctly and surface clawback context.",
+        /* PDF#46 (2026-05-25) — never volunteer "buyout" first. Probe
+         * the bridge purpose without naming buyout; candidate can name
+         * it themselves if relevant. Clawback context stays. */
+        ask: "On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
+        rationale: "Candidate asked for JB — probe the bridge purpose without naming buyout; surface clawback context.",
       },
       {
         flag: profile.wantsRelocationAllowance,

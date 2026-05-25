@@ -565,7 +565,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: overpromise, clarifies",
-      "prose": "On the joining bonus — is it to cover a notice-period buyout, or to make up for a pending variable payout at your current place? The clawback is typically 12 months pro-rata.",
+      "prose": "On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
       "actionKind": "reactive-followup",
       "keywords": [
         "overpromise",
@@ -727,7 +727,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: repeat, final",
-      "prose": "On the joining bonus — is it to cover a notice-period buyout, or to make up for a pending variable payout at your current place? The clawback is typically 12 months pro-rata.",
+      "prose": "On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
       "actionKind": "reactive-followup",
       "keywords": [
         "repeat",
@@ -774,8 +774,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: maintained, order",
-      "prose": "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?",
-      "actionKind": "reactive-followup",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
       "keywords": [
         "maintained",
         "order"
@@ -948,7 +948,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: understands, recurring, fixed",
-      "prose": "On the joining bonus — is it to cover a notice-period buyout, or to make up for a pending variable payout at your current place? The clawback is typically 12 months pro-rata.",
+      "prose": "On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
       "actionKind": "reactive-followup",
       "keywords": [
         "understands",
@@ -1632,7 +1632,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: connects, timeline, comp",
-      "prose": "On the joining bonus — is it to cover a notice-period buyout, or to make up for a pending variable payout at your current place? The clawback is typically 12 months pro-rata.",
+      "prose": "On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
       "actionKind": "reactive-followup",
       "keywords": [
         "connects",
@@ -1679,7 +1679,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: unsupported, timing",
-      "prose": "On the joining bonus — is it to cover a notice-period buyout, or to make up for a pending variable payout at your current place? The clawback is typically 12 months pro-rata.",
+      "prose": "On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
       "actionKind": "reactive-followup",
       "keywords": [
         "unsupported",
