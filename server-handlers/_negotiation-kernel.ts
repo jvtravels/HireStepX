@@ -3266,8 +3266,40 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * budget-deflection (which masked the ask and trickled into an
    * abrupt-termination chain). The kernel stamp `offerAskedAtTurn`
    * lets the planner pick the closing-push lever on the very next call. */
-  const OFFER_ASK_RE =
-    /\b(?:what'?s\s+(?:the\s+)?offer|share\s+(?:the\s+)?offer|initial\s+offer|what\s+are\s+you\s+offering|what'?s\s+on\s+offer|(?:what(?:'?s|\s+is)\s+your\s+)?(?:final|last|best(?:\s+and\s+final)?)\s+(?:offer|number|fitment)|best\s+and\s+final)\b/i;
+  /* PDF#44 (2026-05-26) — STRUCTURAL widening. Prior regex enumerated
+   * fixture-specific spellings ("what's the offer", "share the offer")
+   * and missed real fixtures like "what is your offer?" (Flipkart
+   * Sr-PD T3) — the determiner "the" vs possessor "your" should not
+   * make the difference. Rewrote as three structural shapes:
+   *
+   *   (A) ASK-VERB + (possessor) + OFFER-NOUN
+   *       Verbs: what(?:'s| is| are), tell me, share, give me, can
+   *       you (share|tell|give), provide.
+   *       Possessor (optional): the / your / this / a.
+   *       Offer-nouns: offer, fitment, number(s), package, range,
+   *       on offer, offer range.
+   *
+   *   (B) Adjective-qualified offer ask (final / last / best) —
+   *       preserved from PDF#42.
+   *
+   *   (C) Bare "best and final" — preserved.
+   *
+   * Generalises across "what's the offer?", "what is your offer?",
+   * "tell me the offer", "share your number", "what's the package"
+   * without enumerating each fixture. */
+  const OFFER_ASK_RE = new RegExp(
+    [
+      // (A) ASK-VERB + optional possessor + offer-noun
+      String.raw`\b(?:what(?:'?s|\s+is|\s+are)|tell\s+me|share|give\s+me|can\s+you\s+(?:share|tell\s+me|give\s+me|provide)|provide)\s+(?:the\s+|your\s+|this\s+|a\s+|me\s+)*(?:initial\s+|standing\s+)?(?:offer|fitment|number|numbers|package|range|on\s+offer|offer\s+range)\b`,
+      // (B) adjective-qualified (final / last / best (and final))
+      String.raw`(?:what(?:'?s|\s+is)\s+your\s+)?\b(?:final|last|best(?:\s+and\s+final)?)\s+(?:offer|number|fitment)\b`,
+      // (C) bare "best and final"
+      String.raw`\bbest\s+and\s+final\b`,
+      // (D) "what are you offering"
+      String.raw`\bwhat\s+are\s+you\s+offering\b`,
+    ].join("|"),
+    "i",
+  );
   const offerAskedAtTurn = OFFER_ASK_RE.test(answer)
     ? state.turnIndex
     : (state.offerAskedAtTurn ?? null);
