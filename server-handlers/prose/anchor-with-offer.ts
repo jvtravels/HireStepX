@@ -40,7 +40,7 @@ export function proseAnchorWithOffer(
     : helpers.selectBySectorPersona(persona, {
         "it-services":   " That's the grade fitment as per our band for this role.",
         "gcc":           " That's anchored to the global band for this level.",
-        "indian-unicorn":" The cash sits inside our band; ESOP grant is on top.",
+        "indian-unicorn":" The cash sits inside our band; ESOP grant follows the same level — I'll share the annual-value figure before the offer letter.",
         "early-startup": " Cash is tight at this stage, but equity % is where we can stretch.",
         "bfsi":          " Fixed sits as per our regulatory band; variable is on the performance cycle.",
         /* Realism-Audit Fix 1 — three new sector personas. */

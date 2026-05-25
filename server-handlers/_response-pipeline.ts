@@ -812,8 +812,14 @@ export function isLeadingAckRotationRepeat(
   const next = normalizeForLoopCompare(proposed);
   return prior.length > 0 && next.length > 0 && prior === next;
 }
+/* PDF#46 (2026-05-25) — stub no longer punts the question back to the
+ * candidate. The prior "what would be most useful to cover next from
+ * your side?" reads as the recruiter giving up on driving the
+ * conversation, which is exactly what the user flagged. The new stub
+ * acknowledges the loop, defers to the next turn for substance, and
+ * keeps agency on the recruiter side. */
 const LOOP_BREAKER_STUB =
-  "Let me try that differently — what would be most useful to cover next from your side?";
+  "Right — let me take a beat on the structure and come back to you with something concrete.";
 
 /* ─── validators ───────────────────────────────────────────────────── */
 
