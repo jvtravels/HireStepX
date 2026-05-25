@@ -294,6 +294,15 @@ async function generateBotReplyInner(
    * unreachable; keeping the boundary check guards against future
    * regressions of the same class. */
   if (META_DIRECTIVE_TOKENS_RE.test(result.text)) {
+    /* PDF#45 BUG-4 (2026-05-25) — surface which branch is leaking the
+     * meta-directive so we can fix it at the source instead of relying
+     * on this boundary swap. */
+    void captureServerEvent("negotiation_pipeline_meta_directive_leak", state.sessionId ?? "unknown", {
+      actionKind: action.kind,
+      phase: state.phase,
+      turnIndex: state.turnIndex,
+      textSample: result.text.slice(0, 200),
+    });
     return {
       text: "Happy to address that — let me come back to where we were.",
       source: "canonical-fallback",
@@ -312,6 +321,12 @@ async function generateBotReplyInner(
    * artifacts. Boundary-swap to a safe stub so the candidate never
    * sees the seams. */
   if (PROMPT_ARTIFACT_RE.test(result.text)) {
+    void captureServerEvent("negotiation_pipeline_prompt_artifact_leak", state.sessionId ?? "unknown", {
+      actionKind: action.kind,
+      phase: state.phase,
+      turnIndex: state.turnIndex,
+      textSample: result.text.slice(0, 200),
+    });
     return {
       text: "Let me circle back on that — give me a beat to think it through.",
       source: "canonical-fallback",
@@ -326,6 +341,12 @@ async function generateBotReplyInner(
    * fails to produce visible prose ships a neutral stub so the session
    * can recover gracefully. */
   if (!result.text || !result.text.trim()) {
+    void captureServerEvent("negotiation_pipeline_empty_render", state.sessionId ?? "unknown", {
+      actionKind: action.kind,
+      phase: state.phase,
+      turnIndex: state.turnIndex,
+      source: result.source,
+    });
     return {
       text: "Let me come back to that in a moment.",
       source: "canonical-fallback",
@@ -351,7 +372,11 @@ async function generateBotReplyInner(
     if (proposed.length > 0) {
       const log = state.conversationLog ?? [];
       let dup = false;
-      for (let i = log.length - 1, seen = 0; i >= 0 && seen < 3; i--) {
+      /* PDF#45 BUG-3 fix (2026-05-25) — widened from last-3 to last-8 AI
+       * turns. Flipkart Sr-PD T13/T21 shipped the verbatim "Could you say
+       * more about what's most important..." 8 turns apart; 3-turn window
+       * was too short-sighted. */
+      for (let i = log.length - 1, seen = 0; i >= 0 && seen < 8; i--) {
         const e = log[i];
         if (!e || e.speaker !== "ai" || !e.text) continue;
         seen++;

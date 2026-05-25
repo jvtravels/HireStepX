@@ -2457,6 +2457,28 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         },
       };
     }
+    /* PDF#45 BUG-2 fix (2026-05-25) — Flipkart Sr-PD session triple-asked
+     * the candidate's target after they had already stated it. Once
+     * candidateTarget is set, the probe-expectations fallback must NOT
+     * fire — reroute to band-anchor (no offer yet) or counter-offer
+     * (offer on the table). */
+    if (state.candidateTarget != null) {
+      if (state.highestOfferMade === 0) {
+        return {
+          kind: "band-anchor-with-rationale",
+          satisfiesTopic: "band-anchor-with-rationale",
+          _move: {
+            lever: "benefits-summary",
+            newTotalLpa: null,
+            rationale: `Candidate target ₹${state.candidateTarget}L already on the table; anchor the band instead of re-probing expectations.`,
+            actionKind: "band-anchor-with-rationale",
+            askedTopic: "band-anchor-with-rationale",
+          },
+        };
+      }
+      const derived: NegotiationState = { ...state, phase: "counter-offer" };
+      return planNextActionInternal(derived);
+    }
     return {
       kind: "probe-expectations",
       satisfiesTopic: "targetAsked",
@@ -2978,6 +3000,18 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * concessions take effect first and the band-ceiling still wins
      * as a hard ceiling when the multiplied gap would overshoot. */
     split = split * spiralMultiplier;
+    /* PDF#45 BUG-5 fix (2026-05-25) — Flipkart Sr-PD session shipped a
+     * first concession of ~8% of the gap. With market signals stacked
+     * (calibrated, named competing offer, hot market) the first counter
+     * should clear a floor of 15% of (aspiration - floor); otherwise the
+     * candidate hears a token move and walks. Floor only applies on
+     * round-0 (first counter), so subsequent rounds still taper. */
+    if (spiralRound === 0 && counterCount === 0) {
+      const MIN_FIRST_CONCESSION_FRACTION = 0.15;
+      if (split < MIN_FIRST_CONCESSION_FRACTION) {
+        split = MIN_FIRST_CONCESSION_FRACTION;
+      }
+    }
     /* Counter-offer side keeps 1-decimal precision: the concession-curve
      * arithmetic (risk × multiplier × spiralMultiplier × marketMode boost)
      * relies on small numeric differences for the anti-exploitation and
@@ -3772,8 +3806,16 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
       {
         flag: profile.wantsHigherBase,
         topic: "wants-higher-base",
-        ask: "Understood that a higher fixed matters to you — is that to cover EMIs, or to set a stronger base for your next appraisal? Helps me structure the fitment correctly.",
-        rationale: "Candidate signalled preference for higher base — probe motivation (cashflow vs anchor) to size the fixed:variable split.",
+        /* PDF#45 BUG-1 fix (2026-05-25) — old prose was "is that to
+         * cover EMIs, or to set a stronger base for your next appraisal?".
+         * Real Indian HR doesn't probe personal cashflow ("EMIs") — too
+         * personal, reads as intrusive. Reframe to a neutral
+         * priority question that still surfaces the motivation
+         * (immediate fixed vs long-term base anchor) without naming
+         * personal finance. The fixed:variable split decision works
+         * either way. */
+        ask: "Got it — higher fixed makes sense. Is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
+        rationale: "Candidate signalled preference for higher base — probe motivation (in-hand-now vs base-anchor) to size the fixed:variable split.",
       },
       {
         flag: profile.wantsJoiningBonus,

@@ -202,10 +202,13 @@ describe("PDF#42 — Flipkart Senior PD competitor-match / closing-pass bugs", (
     expect(action.topic).toBe("wants-higher-base");
 
     const prose = renderCanonicalProse(action, s);
-    /* The wired canonical for wants-higher-base talks about fixed
-     * weight and appraisal — NEVER the freelanced refusal that
-     * shipped in production ("base salary is a fixed component"). */
-    expect(prose).toMatch(/fixed weight|appraisal|EMI/i);
+    /* The wired canonical for wants-higher-base must engage with the
+     * fixed/base preference and probe motivation — NEVER the freelanced
+     * refusal that shipped in production ("base salary is a fixed
+     * component"). PDF#45 (2026-05-25) replaced the EMI/appraisal
+     * framing with neutral in-hand-now vs base-anchor probe; widened
+     * assertion accordingly. */
+    expect(prose).toMatch(/higher fixed|fixed weight|appraisal|EMI|in[-\s]?hand|stronger base|next cycle/i);
     expect(prose).not.toMatch(/we don'?t negotiate it separately/i);
   });
 

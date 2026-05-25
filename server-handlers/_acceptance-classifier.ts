@@ -488,6 +488,13 @@ const HEDGE_VETO_PATTERNS: RegExp[] = [
   /\bi\s+(?:will|need to|have to)\s+(?:think|consider|sleep on)\b/i,
   /\bi\s+appreciate\b/i,
   /\bthank\s+you\s+for\s+clarifying\b/i,
+  /* PDF#45 BUG-6 (2026-05-25) — Flipkart Sr-PD session phantom-accepted
+   * mid-breakdown-question. Strict acceptance gate (used by closing UI)
+   * must veto when the candidate is asking for the structure/breakdown
+   * in the same utterance — that's a probe, not a commitment. */
+  /\b(?:walk\s+me\s+through|break\s*down|breakdown|the\s+structure|the\s+split|how\s+does\s+(?:it|that)\s+(?:work|break)|what(?:'s|\s+is)\s+the\s+(?:split|structure|breakdown|fixed|variable))\b/i,
+  /\bcan\s+you\s+(?:share|tell|show|explain|clarify|elaborate)\b/i,
+  /\bcould\s+you\s+(?:share|tell|show|explain|clarify|elaborate)\b/i,
 ];
 
 export interface ExplicitAcceptanceResult {
