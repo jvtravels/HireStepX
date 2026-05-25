@@ -304,7 +304,7 @@ async function generateBotReplyInner(
       textSample: result.text.slice(0, 200),
     });
     return {
-      text: "Happy to address that — let me come back to where we were.",
+      text: safeCanonical(action, state),
       source: "canonical-fallback",
       action,
       move,
@@ -328,7 +328,7 @@ async function generateBotReplyInner(
       textSample: result.text.slice(0, 200),
     });
     return {
-      text: "Let me circle back on that — give me a beat to think it through.",
+      text: safeCanonical(action, state),
       source: "canonical-fallback",
       action,
       move,
@@ -348,7 +348,7 @@ async function generateBotReplyInner(
       source: result.source,
     });
     return {
-      text: "Let me come back to that in a moment.",
+      text: safeCanonical(action, state),
       source: "canonical-fallback",
       action,
       move,
@@ -404,7 +404,7 @@ async function generateBotReplyInner(
         },
       );
       return {
-        text: LOOP_BREAKER_STUB,
+        text: safeCanonical(action, state),
         source: "canonical-fallback",
         action,
         move,
@@ -819,20 +819,42 @@ export function isLeadingAckRotationRepeat(
   const next = normalizeForLoopCompare(proposed);
   return prior.length > 0 && next.length > 0 && prior === next;
 }
-/* PDF#46 (2026-05-25) — stub no longer punts the question back to the
- * candidate. The prior "what would be most useful to cover next from
- * your side?" reads as the recruiter giving up on driving the
- * conversation, which is exactly what the user flagged. The new stub
- * acknowledges the loop, defers to the next turn for substance, and
- * keeps agency on the recruiter side. */
-/* PDF#47 (2026-05-25) — the prior "take a beat … come back with
- * something concrete" reads as a closing punt mid-discovery
- * (candidate replied "structure of what? you have not given your
- * offer"). The stub now re-engages with a real question so the
- * conversation keeps moving even when the LLM/canonical layer is
- * rejected. */
+/* LOOP_BREAKER_STUB fires when the canonical line for the PLANNED
+ * action would itself be a repeat (verbatim-repeat / leading-ack
+ * rotation). Re-rendering canonical can't help here — it would just
+ * loop again — so we ship a generic "different-angle" nudge to break
+ * the cycle. Validation-reject branches (META leak, prompt artifact,
+ * empty text, unsanctioned close prose) do NOT use this stub; they
+ * fall back through `safeCanonical(action, state)` to the planner's
+ * intended line, since the planned action is still valid even when
+ * the LLM's rendering of it isn't. */
 const LOOP_BREAKER_STUB =
   "Let me come at that from a different angle — what's been guiding the number you have in mind for this move?";
+
+/* PDF#47 (2026-05-25) — structural fix. Validation-rejection branches
+ * (META directive leak, prompt-artifact leak, empty LLM output,
+ * unsanctioned close prose) used to ship hardcoded English strings.
+ * That meant rejecting one LLM output replaced it with text that
+ * ignored the planner's action — and the candidate saw a
+ * conversation that didn't match what was supposed to happen on this
+ * turn. The planner's action (`discovery-probe`, `anchor-with-offer`,
+ * etc.) is still the kernel's intended move; only the LLM's
+ * rendering of it is suspect. Re-rendering through the canonical
+ * layer gives the kernel-correct line for the planned action. If
+ * canonical itself throws (coverage gap), surface a benign deferral
+ * so the turn doesn't crash. */
+function safeCanonical(
+  action: NextAction,
+  state: NegotiationState,
+): string {
+  try {
+    const text = renderCanonicalProse(action, state);
+    if (text && text.trim()) return text;
+  } catch {
+    /* fall through */
+  }
+  return "Let me come back to that in a moment.";
+}
 
 /* ─── validators ───────────────────────────────────────────────────── */
 
