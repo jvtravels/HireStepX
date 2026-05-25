@@ -355,6 +355,56 @@ async function generateBotReplyInner(
       rejectReason: "empty-text",
     };
   }
+  /* PDF#46 (2026-05-25) — unsanctioned close-language guard. The
+   * Flipkart Sr-PD transcript shipped "Our final offer is within the
+   * budgeted range, but I need to discuss the details with the hiring
+   * manager first." mid-flow (turn ~22, no close-action from the
+   * planner). The LLM hallucinated terminal framing on a non-terminal
+   * action and the session died one turn later. Strip these tokens
+   * when the planner's action is NOT a close / final-offer kind, and
+   * also reject "next cycle / appraisal cycle" prose (turn 19's "How
+   * does the base split look for the next cycle?" — confused FY27
+   * appraisal with the current negotiation). */
+  {
+    const CLOSE_KINDS = new Set<string>([
+      "close",
+      "auto-accept",
+      "terminal-restate",
+      "polite-walkaway",
+      "close-recap-formal",
+      "final-offer",
+    ]);
+    const UNSANCTIONED_CLOSE_RE =
+      /\b(?:final\s+offer|hiring\s+manager(?:'s)?\s+(?:approval|sign[- ]?off)|need\s+to\s+(?:check|discuss|loop)\s+with\s+(?:the\s+)?(?:hiring\s+manager|hm|leadership)|internal\s+approval|budgeted\s+range)\b/i;
+    const NEXT_CYCLE_RE =
+      /\b(?:next\s+(?:appraisal\s+)?cycle|next\s+review\s+cycle|next\s+year'?s?\s+appraisal)\b/i;
+    if (
+      !CLOSE_KINDS.has(action.kind) &&
+      (UNSANCTIONED_CLOSE_RE.test(result.text) ||
+        NEXT_CYCLE_RE.test(result.text))
+    ) {
+      void captureServerEvent(
+        "negotiation_pipeline_unsanctioned_close",
+        state.sessionId ?? "unknown",
+        {
+          actionKind: action.kind,
+          phase: state.phase,
+          turnIndex: state.turnIndex,
+          textSample: result.text.slice(0, 200),
+          trigger: UNSANCTIONED_CLOSE_RE.test(result.text)
+            ? "close-language"
+            : "next-cycle",
+        },
+      );
+      return {
+        text: LOOP_BREAKER_STUB,
+        source: "canonical-fallback",
+        action,
+        move,
+        rejectReason: "unsanctioned-close-language",
+      };
+    }
+  }
   /* User-reported bug (2026-05-22, Flipkart transcript T17/T19) —
    * recent-bot-prose de-dup. The byte-identical "Coming back to the
    * structure — okay. Happy to address that — let me come back to

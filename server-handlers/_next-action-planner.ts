@@ -3409,11 +3409,17 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     }
   }
 
-  /* Rule: variable-comfort — candidate disclosed current CTC AND the
-   * variable share is meaningful (>25%). Real recruiters probe whether
-   * the candidate has been hitting payouts in full before treating
-   * variable as banked. */
-  if (delta.disclosedCurrentCtc && !hasFired("variable-comfort")) {
+  /* Rule: variable-comfort — variable share is meaningful (>25%) on
+   * the current-CTC breakdown. Real recruiters probe whether the
+   * candidate has been hitting payouts in full before treating variable
+   * as banked.
+   *
+   * PDF#46 (2026-05-25) — fire whenever the breakdown is populated
+   * with a high variable share, not only on the turn currentCtc was
+   * first disclosed. The Flipkart Sr-PD transcript disclosed total
+   * (36L) on turn 2 and base (14L → 22L implicit variable, 61% share)
+   * on turn 4; the per-turn delta gate meant the probe never fired. */
+  if (!hasFired("variable-comfort")) {
     const breakdown = state.candidateComponentBreakdown;
     const total =
       breakdown && breakdown.base != null && breakdown.variable != null

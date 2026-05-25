@@ -2642,7 +2642,12 @@ export function useInterviewEngine() {
         !isNegotiationKernelTerminal() &&
         nextStep?.type === "closing"
       ) {
-        const placeholderText = "Could you say more about what's most important to you in the package — base, joining bonus, equity, or somewhere else?";
+        /* PDF#46 (2026-05-25) — neutral placeholder. The prior text asked
+         * a priority question that often contradicted what the candidate
+         * just said (e.g. they said "Total CTC" and the placeholder still
+         * probed base/JB/equity). Use a benign wait-string instead; the
+         * real kernel response overwrites this slot when it resolves. */
+        const placeholderText = "Let me take a look at the structure on my side — one moment.";
         setInterviewScript(prev => {
           const placeholder: InterviewStep = {
             type: "question",

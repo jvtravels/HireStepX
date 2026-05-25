@@ -3,8 +3,8 @@
   "total": 120,
   "counts": {
     "PASS": 0,
-    "PARTIAL": 23,
-    "FAIL": 97,
+    "PARTIAL": 24,
+    "FAIL": 96,
     "INCONCLUSIVE": 0
   },
   "results": [
@@ -30,9 +30,9 @@
       "stage": "S02_BREAKUP",
       "persona": "P03",
       "severity": "Critical",
-      "verdict": "FAIL",
-      "reason": "0/4 keywords present; prose missing: understands, expectation, variable, fixed",
-      "prose": "You shared a range — to plan the fitment cleanly, where in that range do you actually see yourself landing? Helps me take a more specific number to leadership.",
+      "verdict": "PARTIAL",
+      "reason": "1/4 keywords present",
+      "prose": "50% variable is significant — what's your comfort with that share, and have you been hitting payouts in full?",
       "actionKind": "reactive-followup",
       "keywords": [
         "understands",
@@ -40,7 +40,9 @@
         "variable",
         "fixed"
       ],
-      "hits": []
+      "hits": [
+        "variable"
+      ]
     },
     {
       "tcId": "TC003",
