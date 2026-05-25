@@ -140,6 +140,14 @@ export const BANNED_RECRUITER_IDIOM = [
   "counter offer is within",
   "specifics of the offer to finalize",
   "to finalize the offer",
+  /* PDF#48 B1 (2026-05-25) — restyle drift on `lever-explore`. The
+   * canonical "Let me see what else we can structure on the fitment"
+   * was being paraphrased into a teaser ("Let's explore the fitment
+   * further") that promises engagement without delivering. Ban the
+   * paraphrase so the canonical (or its number-aware variant) ships. */
+  "explore the fitment further",
+  "explore the fitment more",
+  "explore further on the fitment",
 ] as const;
 
 export const PREFERRED_RECRUITER_IDIOM = [
@@ -856,8 +864,20 @@ function renderCanonicalProseBody(
     case "counter-offer":
       return proseCounterOffer(action, state, helpers);
 
-    case "lever-explore":
+    case "lever-explore": {
+      /* PDF#48 B2 (2026-05-25) — number-aware lever-explore. When the
+       * candidate just gave a counter number (lastCandidateCounterLpa)
+       * but the planner picked lever-explore (counter above band /
+       * headroom exhausted / counter-round cap), engage with the
+       * stated number rather than emitting a generic structural
+       * filler. Real recruiters acknowledge what was just put on the
+       * table before pivoting to non-cash levers. */
+      const counter = state.lastCandidateCounterLpa;
+      if (typeof counter === "number" && counter > 0) {
+        return `On the ₹${counter}L ask — that's above the cash band I can structure on this grade. Let me see what else we can put together on the fitment.`;
+      }
       return "Let me see what else we can structure on the fitment.";
+    }
 
     case "hold-firm":
       return state.highestOfferMade > 0
