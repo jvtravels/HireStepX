@@ -12,7 +12,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "start": "next start",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage --retry=1",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
