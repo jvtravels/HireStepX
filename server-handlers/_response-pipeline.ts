@@ -24,7 +24,7 @@
  * Pure orchestration. The LLM caller is injected so tests can mock it.
  */
 
-import { isVerbatimRepeat, type NegotiationState, type AiMove, type NegotiationPhase } from "./_negotiation-kernel";
+import { isVerbatimRepeat, isTerminalPhase, type NegotiationState, type AiMove, type NegotiationPhase } from "./_negotiation-kernel";
 import { planNextAction, actionToLever, type NextAction } from "./_next-action-planner";
 import {
   renderCanonicalProse,
@@ -145,7 +145,7 @@ async function generateBotReplyInner(
    * canonical-verbatim) before the LLM is invoked. */
   const actionShapeOk =
     rawAction && typeof rawAction === "object" && typeof (rawAction as { kind?: unknown }).kind === "string" && (rawAction as { kind: string }).kind.length > 0;
-  const action: NextAction = actionShapeOk
+  let action: NextAction = actionShapeOk
     ? (rawAction as NextAction)
     : ({ kind: "terminal-restate" } as NextAction);
   if (!actionShapeOk) {
@@ -171,6 +171,41 @@ async function generateBotReplyInner(
         turn_index: (state as { turnIndex?: number }).turnIndex ?? null,
       },
     );
+  }
+  /* PDF#44 BUG-2/3 fix (2026-05-25) — Flipkart Sr-PD session: derivePhase
+   * flipped phase to "stalemate" by turn budget while the planner kept
+   * returning non-terminal kinds (info-disclosure, lever-explore, …) which
+   * the route handler then shipped concurrently with `terminal=true`. From
+   * the candidate's view the session ended silently mid-thought. Boundary
+   * guard: if state.phase is terminal but the planner-picked action.kind
+   * isn't in the recognised terminal-prose set, force-substitute
+   * `terminal-restate` so the closing turn ALWAYS ships a closing line.
+   * Kept narrow to the known terminal-prose kinds; new closing kinds
+   * should be added here as they're introduced. */
+  const TERMINAL_KINDS = new Set<string>([
+    "close",
+    "auto-accept",
+    "terminal-restate",
+    "polite-walkaway",
+    "close-recap-formal",
+  ]);
+  if (isTerminalPhase((state as { phase: NegotiationPhase }).phase) && !TERMINAL_KINDS.has(action.kind)) {
+    // eslint-disable-next-line no-console
+    console.warn("[terminal-phase-guard] forcing terminal-restate", {
+      planned_kind: action.kind,
+      phase: (state as { phase?: string }).phase ?? null,
+      turn_index: (state as { turnIndex?: number }).turnIndex ?? null,
+    });
+    void captureServerEvent(
+      "negotiation_terminal_phase_substitution",
+      distinctId ?? (state as { sessionId?: string }).sessionId ?? "anonymous",
+      {
+        planned_kind: action.kind,
+        phase: (state as { phase?: string }).phase ?? null,
+        turn_index: (state as { turnIndex?: number }).turnIndex ?? null,
+      },
+    );
+    action = { kind: "terminal-restate" } as NextAction;
   }
   const move = actionToLever(action, state);
 
@@ -326,6 +361,36 @@ async function generateBotReplyInner(
         }
       }
       if (dup) {
+        /* PDF#44 BUG-1 fix (2026-05-25) — Flipkart Sr-PD session shipped
+         * LOOP_BREAKER_STUB twice in a row ("Let me try that differently"
+         * then "I realise I'm circling — let's reset"). The stub is the
+         * dedup escape hatch; if the very next turn ALSO produces a
+         * duplicate, the stub itself becomes the loop. Escalate to a
+         * terminal close instead of re-shipping a slightly-reworded stub.
+         * Detection: look back through last 3 AI turns for the stub
+         * text (normalized). */
+        const normalizedStub = normalizeForLoopCompare(LOOP_BREAKER_STUB);
+        let stubAlreadyShipped = false;
+        const log2 = state.conversationLog ?? [];
+        for (let i = log2.length - 1, seen = 0; i >= 0 && seen < 3; i--) {
+          const e = log2[i];
+          if (!e || e.speaker !== "ai" || !e.text) continue;
+          seen++;
+          if (normalizeForLoopCompare(e.text) === normalizedStub) {
+            stubAlreadyShipped = true;
+            break;
+          }
+        }
+        if (stubAlreadyShipped) {
+          /* Stub fired in the last 3 AI turns — escalate to terminal close. */
+          return {
+            text: "I don't think we're making progress here — let me close this out for now. We'll come back if anything else opens up on your side.",
+            source: "canonical-fallback",
+            action,
+            move,
+            rejectReason: `loop-breaker-escalate:${result.rejectReason ?? result.source}`,
+          };
+        }
         return {
           text: LOOP_BREAKER_STUB,
           source: "canonical-fallback",

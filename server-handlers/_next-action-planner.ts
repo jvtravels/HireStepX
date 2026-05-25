@@ -1418,7 +1418,14 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   /* Bug-report 11/12 (2026-05-14) — auto-accept: candidate counter
-   * BELOW current offer → close at the close-floor (=highestOfferMade). */
+   * BELOW current offer → close at the close-floor (=highestOfferMade).
+   * Gate is restricted to current-turn counters (lastCandidateCounterLpa)
+   * — a sticky intake target alone is not enough to fire close.
+   * (PDF#44 attempted to broaden this to candidateTarget but
+   * closeFloorInvariant guards the narrower contract; the right place to
+   * address PDF#44 Bug A is to ensure lastCandidateCounterLpa stamps
+   * correctly when the candidate states a counter, not to weaken the
+   * gate.) */
   if (
     state.lastCandidateCounterLpa != null &&
     state.highestOfferMade > 0 &&
@@ -2247,7 +2254,13 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   /* Intent overrides — package breakdown / benefits / comp-structure /
-   * notice / hike-pct. */
+   * notice / hike-pct. One-shot per lever (benefits-summary): once we've
+   * enumerated the breakdown, the planner falls through to probe rather
+   * than re-disclosing. PDF#44 Bug B (the candidate's second breakdown
+   * ask returning a dodge) is mitigated by the substantive prose in
+   * prose/info-disclosure.ts — the FIRST disclosure is now informative
+   * enough that a re-ask is rare; the loop-breaker escalation at the
+   * pipeline boundary catches the residual case. */
   const wantsBreakdown =
     state.highestOfferMade > 0 &&
     !state.leversUsed.includes("benefits-summary") &&
