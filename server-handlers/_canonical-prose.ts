@@ -790,7 +790,7 @@ function renderCanonicalProseBody(
         return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
       }
       if (action.mode === "walkaway") {
-        return "Looking at where your expectations sit versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Thanks for taking the time to speak with us.";
+        return "Looking at where your expectations are versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Thanks for taking the time to speak with us.";
       }
       return "Let's pause the discussion here. Take your time on it and revert when you're ready.";
 
@@ -842,7 +842,7 @@ function renderCanonicalProseBody(
       return "What fitment were you expecting for this role?";
 
     case "probe-justification":
-      return "Help me understand the basis for that number — where is the expectation coming from?";
+      return "Help me understand — how did you arrive at that number?";
 
     case "counter-offer":
       return proseCounterOffer(action, state, helpers);
@@ -856,7 +856,7 @@ function renderCanonicalProseBody(
         : "We'll hold here as per our band for this grade. Take some time on it and revert.";
 
     case "rescission":
-      return "Given how this discussion has gone, we'll have to step back from the offer.";
+      return "Given how this discussion has gone, we won't be able to move ahead with this offer.";
 
     case "lever-grade-upgrade": {
       const anchor = selectEscalationAnchor(action, state);
@@ -872,7 +872,7 @@ function renderCanonicalProseBody(
       /* PDF#33 Move A (2026-05-18) — replaced teaser "Let me walk you
        * through how the refresh cadence works for this grade" with
        * the substantive content directly: cadence + sizing band. */
-      return "On the RSU side — there's an annual refresh at the appraisal cycle on top of the initial vest. The refresh is typically 30 to 40% of the initial grant for on-track performance, and higher for top performers.";
+      return "On the RSU side — there's a fresh grant every year at the appraisal cycle, on top of your joining grant. The yearly grant is usually 30 to 40% of the joining grant if your rating is on track, and higher if you're rated top performer.";
 
     case "lever-relocation": {
       const anchor = selectEscalationAnchor(action, state);
@@ -882,7 +882,7 @@ function renderCanonicalProseBody(
     case "lever-perf-bonus-cadence":
       /* PDF#33 Move A (2026-05-18) — replaced teaser tail with the
        * substantive payout shape directly. */
-      return "Looking at the structure — performance bonus is tied to the March appraisal cycle, with a mid-year correction window for top performers. Target payout is 100% for on-track ratings, going up to 150% for top performers and 0% if the rating is below the threshold.";
+      return "On the performance bonus — it's paid out at the March appraisal cycle, with a mid-year top-up for top performers. The standard payout is 100% if your rating is on track, going up to 150% for top performers and 0% if the rating is below the threshold.";
 
     case "ctc-inflation-anchor": {
       /* Audit fix 2026-05-21 — recruiter weaponises CTC-vs-in-hand
@@ -928,7 +928,7 @@ function renderCanonicalProseBody(
     case "internal-equity-defense": {
       const median = action.peerBandMedianLpa;
       const top = action.peerBandTopLpa;
-      return `Let me be upfront with you — your peers at ${gradeLabel(state)} in our team are between ₹${median} and ₹${top} LPA fixed. Going above that creates a parity issue inside the team, which I'd need to get cleared with the Comp team — and that approval only comes through for a clear niche-skill case. The number we're discussing is already at the top end of what I can close without that exception.`;
+      return `Let me be upfront with you — others at ${gradeLabel(state)} level in our team are between ₹${median} and ₹${top} LPA fixed. Going above that means you'd be paid more than people at the same level who've been here longer, which I'd have to get specially cleared with the Comp team — and that only goes through for a clear niche-skill case. The number we're discussing is already at the top end of what I can close without that exception.`;
     }
 
     case "comparative-anchoring": {
@@ -937,7 +937,7 @@ function renderCanonicalProseBody(
       if (action.quartile === "top") {
         return `Just to frame this — at ${targetStr}, you'd be at the top end of the ${gradeLabel(state)} band. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
       }
-      return `At ${targetStr}, you'd be landing at the median of the ${gradeLabel(state)} band — comfortable spot, headroom for the appraisal cycle.`;
+      return `At ${targetStr}, you'd be in the middle of the ${gradeLabel(state)} band — a good place to start, with room to grow at the next appraisal.`;
     }
 
     case "anchor-with-offer":
@@ -1018,7 +1018,7 @@ function renderCanonicalProseBody(
           "fmcg-management": "on the joining-bonus side",
           "default": "on the joining bonus side",
         });
-        return `Checked${askClause} — we can move ₹${move}L ${lever}. The headline band stays as is. How does this sound?`;
+        return `Checked${askClause} — we can move ₹${move}L ${lever}. The overall number stays the same. How does this sound?`;
       }
       /* return-hold */
       const holdTail = selectBySectorPersona(persona, {
@@ -1048,7 +1048,7 @@ function renderCanonicalProseBody(
        * holding the fitment open when the candidate stalls without
        * leverage. Frames the exit politely but unambiguously — kindly
        * revert by EOD tomorrow or we move on. */
-      return "Sure, take your time. I'll be honest — without a firm decision on your side or a competing offer to work against, I won't be able to hold this fitment open for too long. Kindly revert with a clear answer by EOD tomorrow, otherwise we'll need to move forward with other candidates.";
+      return "Sure, take your time. To be honest — without a firm decision from your side or a competing offer to work against, I won't be able to keep this offer pending for long. Kindly revert with a clear answer by EOD tomorrow, otherwise we'll have to move ahead with other candidates.";
     }
 
     case "fake-leverage-challenge": {
@@ -1073,16 +1073,16 @@ function renderCanonicalProseBody(
       const co = action.competingCompany;
       const competingOffer = action.competingOffer;
       if (co) {
-        return `Got it — that's a real number from ${co}. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land within striking distance of that, are we in the same range?`;
+        return `Got it — that's a real number from ${co}. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land close to that number, are we in the same range?`;
       }
-      return `Got it — that's a real number. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land within striking distance of that, are we in the same range?`;
+      return `Got it — that's a real number. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land close to that number, are we in the same range?`;
     }
 
     case "anchor-defense-hike-strong": {
       /* Phase 3 missing-lever set (2026-05-17) — rebuts "only X% hike"
        * complaint with peer-context framing. Numbers come from the
        * planner payload; prose echoes them verbatim. */
-      return `Honestly, ₹${action.offer} LPA on ₹${action.currentCtc} is a ${action.hikePct}% hike — for this grade, peers in the market typically see 8-12% bumps on lateral moves. We're already well above that range.`;
+      return `Honestly, ₹${action.offer} LPA on ₹${action.currentCtc} is a ${action.hikePct}% hike — for this grade, peers in the market typically get 8-12% when changing jobs at the same level. We're already well above that range.`;
     }
 
     case "post-acceptance-document-request": {
@@ -1132,7 +1132,7 @@ function renderCanonicalProseBody(
 
     case "band-anchor-with-rationale": {
       const lo = state.band.initialOffer;
-      return `As per the band for this grade, the fitment comes to ₹${lo} LPA. That's based on the role scope and internal parity within the team, not a single market benchmark.`;
+      return `As per the band for this grade, the fitment comes to ₹${lo} LPA. That's based on what the role demands and what others in the team at this level are at — not just one market reference.`;
     }
 
     case "close-recap-formal":
