@@ -538,13 +538,84 @@ export function recommendWalkAway(state: NegotiationState): {
    * 0.95× (tolerate more), neutral 1.0× (legacy behaviour). */
   const walkMult = getWalkAwayThresholdMultiplier(state.marketMode ?? "neutral");
 
+  /* PDF#45 B1 (2026-05-26, audit pass 2) — universal lever-explore
+   * engagement guard. Hoisted out of condition (4) into a top-level
+   * gate so ALL four walk conditions respect candidate engagement.
+   * The prior version only protected the "at ceiling + 8 turns"
+   * cliff; conditions (1)/(2)/(3) could still walk on an engaged
+   * candidate (e.g. target > 1.2× maxStretch but actively asking
+   * "how about a joining bonus to bridge?"). When the candidate's
+   * last utterance signals lever-explore engagement, no walk fires —
+   * the planner's lever-explore cascade owns the next turn. */
+  const lastCandidateText = (() => {
+    const log = state.conversationLog ?? [];
+    for (let i = log.length - 1; i >= 0; i--) {
+      const e = log[i];
+      if (e && e.speaker === "candidate" && typeof e.text === "string") {
+        return e.text;
+      }
+    }
+    return "";
+  })();
+  /* Disengagement carve-out: phrases like "no thanks, can you add
+   * anything?" or "I'm out — anything else?" combine a decline cue
+   * with an engagement verb. The decline wins. Checked FIRST so a
+   * decline-token within 30 chars before an engagement verb blocks
+   * the engagement match. */
+  const DISENGAGEMENT_PREFIX_RE =
+    /\b(?:no\s+thanks|no\s+thank\s+you|i.?m\s+out|i\s+pass|i.?ll\s+pass|not\s+interested|i\s+decline|walking\s+away|i.?m\s+done|forget\s+it|nevermind|never\s+mind)\b[\s\S]{0,30}/i;
+  /* Engagement detector — broadened in audit pass 2 to cover:
+   *   - "how about <X>?" / "how about adding X?"
+   *   - "what's the max / absolute max / ceiling / stretch"
+   *   - "stretch the budget / stretch your budget"
+   *   - "best you can do" / "any room"
+   *   - "throw in / kick in / include" (non-cash sweeteners)
+   *   - "match the gap / bridge the gap / cover the gap"
+   *   - bare cash-lever nouns ("joining bonus", "sign-on", "ESOPs",
+   *     "equity", "retention", "relocation") when paired with an
+   *     interrogative or modal cue.
+   */
+  const LEVER_EXPLORE_ENGAGEMENT_RE = new RegExp(
+    [
+      // ask-verb + engagement object
+      String.raw`what\s+(?:else|more|other)\s+can\s+you\s+(?:add|offer|do|provide|stretch|extend|include|throw\s+in|kick\s+in)`,
+      String.raw`can\s+you\s+(?:add|stretch|include|throw\s+in|kick\s+in|sweeten|push|bridge|extend|match|cover|close)\s+(?:something|anything|more|additional|extra|the\s+(?:gap|offer|package|deal|fitment))`,
+      String.raw`(?:add|sweeten|bridge|stretch|push|extend|match|cover|close)\s+(?:the\s+)?(?:offer|number|gap|package|deal|fitment|budget)`,
+      String.raw`anything\s+else\s+(?:you\s+can\s+(?:add|offer|do)|on\s+the\s+table|in\s+the\s+(?:mix|pot))`,
+      String.raw`other\s+(?:levers?|components?|knobs?|options?|line\s+items?)`,
+      String.raw`what\s+more\s+(?:can\s+you|do\s+you|is\s+there)`,
+      // "how about <noun>?" — re-anchor probe
+      String.raw`how\s+about\s+(?:a\s+|an\s+|the\s+|some\s+|adding\s+|including\s+|throwing\s+in\s+)?\w+`,
+      // ceiling / max probes
+      String.raw`what.?s\s+(?:the\s+)?(?:absolute\s+)?(?:max(?:imum)?|ceiling|cap|top|best|stretch|limit)`,
+      String.raw`(?:best|max|highest)\s+(?:you\s+can\s+(?:do|offer|go|stretch)|on\s+offer)`,
+      String.raw`any\s+(?:room|flex(?:ibility)?|wiggle\s+room|movement|stretch|budget)`,
+      // gap-bridging
+      String.raw`(?:bridge|close|match|cover)\s+(?:the\s+)?gap`,
+      String.raw`match\s+(?:the\s+)?(?:other|competing|existing)\s+offer`,
+      // bare engagement verbs
+      String.raw`something\s+more`,
+      String.raw`sweeten\s+the\s+deal`,
+      String.raw`non[\s-]?cash\s+(?:levers?|options?|components?)`,
+      // bare lever nouns paired with interrogative / modal / hedge
+      String.raw`(?:joining\s+bonus|sign[\s-]?on|relocation|esops?|stock|equity|retention|rsu|grant|variable\s+(?:component|bump))\b[^.!?]{0,40}(?:\?|can\s+you|could\s+you|is\s+(?:that|it|this)|any|possible|maybe|perhaps)`,
+      String.raw`(?:\?|can\s+you|could\s+you|any|possible|maybe|perhaps)[^.!?]{0,40}\b(?:joining\s+bonus|sign[\s-]?on|relocation|esops?|equity|retention|rsu)`,
+    ].join("|"),
+    "i",
+  );
+  const candidateIsEngaging =
+    lastCandidateText.length > 0 &&
+    !DISENGAGEMENT_PREFIX_RE.test(lastCandidateText) &&
+    LEVER_EXPLORE_ENGAGEMENT_RE.test(lastCandidateText);
+
   /* (1) target far above ceiling with no flex (3+ stale turns). */
   if (
     target != null &&
     band &&
     typeof band.maxStretch === "number" &&
     target > band.maxStretch * 1.2 * walkMult &&
-    turn >= 3
+    turn >= 3 &&
+    !candidateIsEngaging
   ) {
     return {
       walk: true,
@@ -553,14 +624,22 @@ export function recommendWalkAway(state: NegotiationState): {
   }
 
   /* (2) final-offer asserted thrice, candidate still hasn't moved. */
-  if ((state.finalOfferAssertedCount ?? 0) >= 3 && !state.walkAwayReturned) {
+  if (
+    (state.finalOfferAssertedCount ?? 0) >= 3 &&
+    !state.walkAwayReturned &&
+    !candidateIsEngaging
+  ) {
     return {
       walk: true,
       reason: `Final-offer asserted ${state.finalOfferAssertedCount} times without convergence. Continuing erodes credibility.`,
     };
   }
 
-  /* (3) stacked bad-actor signals — too risky to onboard. */
+  /* (3) stacked bad-actor signals — too risky to onboard. NOTE: this
+   * condition is NOT gated by the engagement guard. Bad-actor signals
+   * (postAcceptanceRenege + bgvAnxiety, or PIP + offerRescindedHistory)
+   * are structural risk, not negotiation deadlock — engagement on the
+   * lever surface doesn't reduce the requisition-protection risk. */
   if (profile) {
     const renegeRisk =
       profile.postAcceptanceRenege &&
@@ -581,37 +660,13 @@ export function recommendWalkAway(state: NegotiationState): {
     band &&
     typeof band.maxStretch === "number" &&
     state.highestOfferMade >= band.maxStretch - 0.01 &&
-    turn >= 8
+    turn >= 8 &&
+    !candidateIsEngaging
   ) {
-    /* PDF#45 B1 (2026-05-26) — premature-walk guard. If the candidate
-     * is ACTIVELY ENGAGING via lever-explore ("what else can you add?",
-     * "what can you add to match?", "any other levers?") the recruiter
-     * should NOT walk — the candidate is signalling willingness to
-     * close on non-cash levers. Walking here mistakes engagement for
-     * impasse. Detect via the last candidate utterance in the log:
-     * structural pattern matches Indian-recruiter lever-explore cues
-     * (add / additional / anything else / what more / match / bridge /
-     * other lever / other component / non-cash). */
-    const log = state.conversationLog ?? [];
-    let lastCandidateText = "";
-    for (let i = log.length - 1; i >= 0; i--) {
-      const e = log[i];
-      if (e && e.speaker === "candidate" && typeof e.text === "string") {
-        lastCandidateText = e.text;
-        break;
-      }
-    }
-    const LEVER_EXPLORE_ENGAGEMENT_RE =
-      /\b(?:what\s+(?:else|more|other)\s+can\s+you\s+(?:add|offer|do|provide|stretch|extend|include)|can\s+you\s+(?:add|stretch|include|throw\s+in|sweeten|push|bridge|extend)\s+(?:something|anything|more|additional|extra|the\s+(?:gap|offer))|(?:add|sweeten|bridge|stretch|push|extend)\s+(?:the\s+)?(?:offer|number|gap|package|deal|fitment)|anything\s+else\s+(?:you\s+can\s+(?:add|offer|do)|on\s+the\s+table)|other\s+(?:levers?|components?|knobs?|options?)|what\s+more\s+(?:can\s+you|do\s+you)|how\s+(?:can|do)\s+you\s+(?:bridge|close|match|cover)\s+(?:the\s+)?gap|match\s+(?:the\s+)?(?:other|competing)\s+offer|something\s+more|sweeten\s+the\s+deal|non[\s-]?cash\s+(?:levers?|options?)|joining\s+bonus|sign[\s-]?on|relocation|esops?|stock|equity|retention)\b/i;
-    if (lastCandidateText && LEVER_EXPLORE_ENGAGEMENT_RE.test(lastCandidateText)) {
-      /* Candidate is leaning in on levers — hold position, do not walk.
-       * The planner's lever-explore cascade owns the next turn. */
-    } else {
-      return {
-        walk: true,
-        reason: `At ceiling ₹${band.maxStretch}L after ${turn} turns. Close-or-walk window has closed.`,
-      };
-    }
+    return {
+      walk: true,
+      reason: `At ceiling ₹${band.maxStretch}L after ${turn} turns. Close-or-walk window has closed.`,
+    };
   }
 
   return { walk: false, reason: "" };
