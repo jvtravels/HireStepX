@@ -1810,6 +1810,29 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       const derived: NegotiationState = { ...state, phase: "counter-offer" };
       return planNextActionInternal(derived);
     }
+
+    /* PDF#44 Bug A (2026-05-25, re-read of Flipkart Sr-PD session) —
+     * candidate stated expectation of ₹46L against an offer of ₹42.4L.
+     * lastCandidateCounterLpa stamped correctly (46 > 42.4) but phase had
+     * already advanced past "range-disclosure" to "offer-presented" /
+     * "probe-expectations" (target not yet bound when derivePhase ran, or
+     * cleared by a subsequent non-numeric filler turn). The L1799 override
+     * misses, the info-disclosure intent-override at L2285+ eats the
+     * turn, and the candidate's counter never reaches the counter-offer
+     * planner branch. Widen the override to fire across any non-terminal
+     * phase that ISN'T already counter-offer (which has its own native
+     * branch at L2703). Same bounded-recursion guard: the recursive call
+     * sees phase === "counter-offer" so this branch is skipped. */
+    if (
+      state.lastCandidateCounterLpa != null &&
+      state.lastCandidateCounterLpa > state.highestOfferMade &&
+      state.phase !== "counter-offer" &&
+      state.phase !== "range-disclosure" &&
+      state.phase !== "opening"
+    ) {
+      const derived: NegotiationState = { ...state, phase: "counter-offer" };
+      return planNextActionInternal(derived);
+    }
   }
 
   /* PDF#18 — range-disclosure phase override.
