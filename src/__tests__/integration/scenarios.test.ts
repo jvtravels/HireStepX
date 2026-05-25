@@ -234,8 +234,10 @@ describe("Scenario D — Terminal accept + post-acceptance dispatch", () => {
     expect(next.acceptedAtTurn).toBe(8);
     expect(typeof next.postAcceptanceMessage).toBe("string");
     const msg = next.postAcceptanceMessage ?? "";
-    expect(msg).toMatch(/PF UAN/);
-    expect(msg).toMatch(/Form 16/);
+    /* PDF#45 follow-up (2026-05-25) — trimmed checklist; relieving-letter
+     * lives in the BGV partner blurb now. */
+    expect(msg).toMatch(/Aadhaar/);
+    expect(msg).toMatch(/PAN/);
     expect(msg).toMatch(/Relieving-letter/i);
     expect(msg).toMatch(/BGV/i);
   });
@@ -333,12 +335,12 @@ describe("Scenario E — PDF#18 reproduction (Senior Product Designer → QA Eng
     const next = applyCandidateAnswer(s, "I accept the offer.");
     expect(next.phase).toBe("accepted");
     const msg = next.postAcceptanceMessage ?? "";
-    /* Documents */
-    expect(msg).toMatch(/PF UAN/);
+    /* Documents — PDF#45 trimmed checklist (identity only); remaining
+     * docs are referenced via the BGV partner blurb. */
+    expect(msg).toMatch(/Aadhaar/);
+    expect(msg).toMatch(/PAN/);
     expect(msg).toMatch(/payslips/i);
-    expect(msg).toMatch(/Form 16/);
     expect(msg).toMatch(/Relieving-letter/i);
-    /* Notice / joining-date lock */
     expect(msg.toLowerCase()).toMatch(/joining[-\s]date/);
   });
 

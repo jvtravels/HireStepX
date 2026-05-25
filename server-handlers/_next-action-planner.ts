@@ -2396,8 +2396,12 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
          * valueProof) should NOT drop the recruiter back into a
          * discovery cascade — they get folded into reactive follow-
          * ups in counter / recap prose downstream instead. */
+        /* PDF#45 follow-up (2026-05-25) — notice-period is NOT orthogonal:
+         * real HR always confirms notice before close. Keeping it in the
+         * post-anchor discovery cascade ensures the recruiter asks for
+         * noticePeriodDays even after an anchor has been placed, so the
+         * close-recap-formal can quote a concrete joining target. */
         const ORTHOGONAL_POST_ANCHOR_ITEMS: ReadonlySet<string> = new Set([
-          "noticePeriodAsked",
           "competingOffersAsked",
           "valueProofAsked",
         ]);
@@ -3541,9 +3545,13 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     if (days != null && days >= 60) {
       return {
         kind: "reactive-followup",
+        /* PDF#45 follow-up (2026-05-25) — real Indian HR never names
+         * "buyout" first; that's a candidate-side ask. Surface the
+         * runway and ask about flexibility — the candidate will name
+         * buyout, garden leave, or KT plan themselves if relevant. */
         ask:
-          `${days} days is a long runway — would your current employer entertain a buyout, ` +
-          "or are you locked in?",
+          `${days} days is a long runway — any flexibility on that timeline, ` +
+          "or is it firm on your current employer's side?",
         trigger: "notice-period-long",
         topic: "notice-buyout",
         satisfiesTopic: "notice-buyout",

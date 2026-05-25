@@ -49,9 +49,18 @@ export function proseAnchorWithOffer(
         "fmcg-management": " That's the band for the leadership-development cohort; the trajectory matters more than the joining number.",
         "default":       "",
       });
+  /* PDF#45 follow-up (2026-05-25) — joining bonus surfaced in the
+   * anchor line when one has already been sized. Real Indian HR
+   * recruiters lay out Total / Fixed / Variable / Joining in the same
+   * breath so the candidate sees the full structure before reacting. */
+  const jb = state.lastJoiningBonusOffered;
+  const jbTail =
+    typeof jb === "number" && jb > 0
+      ? ` Plus a ₹${jb} LPA joining bonus.`
+      : "";
   if (typeof variableMax === "number" && variableMax > 0) {
     const fixedComponent = Math.max(0, action.initialOffer - variableMax);
-    return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA — ₹${fixedComponent} LPA fixed plus a ₹${variableMax} LPA target on the performance cycle.${tail} Let me know your thoughts.`;
+    return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA — ₹${fixedComponent} LPA fixed plus a ₹${variableMax} LPA target on the performance cycle.${jbTail}${tail} Let me know your thoughts.`;
   }
-  return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA.${tail} Let me know your thoughts.`;
+  return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA.${jbTail}${tail} Let me know your thoughts.`;
 }

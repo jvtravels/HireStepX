@@ -3,8 +3,8 @@
   "total": 120,
   "counts": {
     "PASS": 0,
-    "PARTIAL": 22,
-    "FAIL": 98,
+    "PARTIAL": 23,
+    "FAIL": 97,
     "INCONCLUSIVE": 0
   },
   "results": [
@@ -252,16 +252,18 @@
       "stage": "S09_NOTICE",
       "persona": "P05",
       "severity": "High",
-      "verdict": "FAIL",
-      "reason": "0/3 keywords present; prose missing: realistically, timeline, treats",
-      "prose": "90 days is a long runway — would your current employer entertain a buyout, or are you locked in?",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "90 days is a long runway — any flexibility on that timeline, or is it firm on your current employer's side?",
       "actionKind": "reactive-followup",
       "keywords": [
         "realistically",
         "timeline",
         "treats"
       ],
-      "hits": []
+      "hits": [
+        "timeline"
+      ]
     },
     {
       "tcId": "TC016",

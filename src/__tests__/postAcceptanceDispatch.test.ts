@@ -55,14 +55,17 @@ describe("F2 — post-acceptance dispatch wiring", () => {
     expect(dispatchBlock).not.toMatch(/state\.phase\s*===\s*["']walked-away["']/);
   });
 
-  it("strict-accept flow attaches a message containing PF UAN, Form 16, BGV, and relieving-letter tokens", () => {
+  it("strict-accept flow attaches a message containing Aadhaar, PAN, BGV, and relieving-letter tokens", () => {
+    /* PDF#45 follow-up (2026-05-25) — doc checklist trimmed to identity
+     * docs (Aadhaar + PAN). The BGV partner section still mentions
+     * relieving-letter chain as part of the async hand-off blurb. */
     const s = stateOnVergeOfAccept();
     const next = applyCandidateAnswer(s, "Yes, please send me the offer letter — I accept.");
     expect(next.phase).toBe("accepted");
     expect(next.postAcceptanceMessage).toBeDefined();
     const msg = next.postAcceptanceMessage!;
-    expect(msg).toMatch(/PF UAN/);
-    expect(msg).toMatch(/Form 16/);
+    expect(msg).toMatch(/Aadhaar/);
+    expect(msg).toMatch(/PAN/);
     expect(msg).toMatch(/BGV/);
     expect(msg).toMatch(/[Rr]elieving-letter/);
   });
@@ -70,26 +73,21 @@ describe("F2 — post-acceptance dispatch wiring", () => {
   it("dispatch concatenation preserves the LLM prose AND the kernel scaffold", () => {
     const s = stateOnVergeOfAccept();
     const next = applyCandidateAnswer(s, "Yes, please send me the offer letter — I accept.");
-    /* Simulate the handler's dispatch: LLM produced some close prose,
-     * the handler appends the kernel-built scaffold. */
     const llmText = "Welcome aboard.";
     const final = next.postAcceptanceMessage && !llmText.includes(next.postAcceptanceMessage)
       ? llmText.trim() + "\n\n" + next.postAcceptanceMessage
       : llmText;
     expect(final).toContain("Welcome aboard.");
-    expect(final).toContain("PF UAN");
+    expect(final).toContain("Aadhaar");
   });
 
   it("dispatch is idempotent — applying the same scaffold twice produces no duplication", () => {
     const s = stateOnVergeOfAccept();
     const next = applyCandidateAnswer(s, "Yes, please send me the offer letter — I accept.");
     const msg = next.postAcceptanceMessage!;
-    /* The handler guards with !text.includes(state.postAcceptanceMessage)
-     * so re-application is a no-op. */
     const firstPass = "Welcome.\n\n" + msg;
     const secondPass = firstPass.includes(msg) ? firstPass : firstPass + "\n\n" + msg;
-    /* Count occurrences of a unique scaffold token. */
-    const occurrences = secondPass.split("PF UAN").length - 1;
+    const occurrences = secondPass.split("Aadhaar card").length - 1;
     expect(occurrences).toBe(1);
   });
 

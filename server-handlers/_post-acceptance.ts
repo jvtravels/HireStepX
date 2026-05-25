@@ -17,13 +17,15 @@
 
 import type { NegotiationState } from "./_negotiation-kernel";
 
+/* PDF#45 follow-up (2026-05-25) — trimmed to identity docs only.
+ * Prior list (PF UAN, payslips, ITR, Form 16, education originals,
+ * relieving-letter chain) overwhelmed candidates at the verbal-accept
+ * boundary and read like a BGV demand-letter. Real recruiter practice
+ * at the close turn is to confirm identity-on-file (Aadhaar + PAN);
+ * the BGV partner handles the rest asynchronously over the next 48h. */
 const DOC_CHECKLIST: ReadonlyArray<string> = [
-  "PF UAN number",
-  "Last 3 months' payslips",
-  "Most recent Income Tax Return acknowledgment",
-  "Form 16 (current FY and previous FY)",
-  "Education originals (X / XII / graduation marksheets + degree)",
-  "Relieving-letter chain (all prior employers)",
+  "Aadhaar card",
+  "PAN card",
 ];
 
 export interface PostAcceptanceOptions {
@@ -62,7 +64,7 @@ export function buildPostAcceptanceMessage(
   /* 3. BGV alignment. */
   if (includeBgv) {
     sections.push(
-      "BGV: our partner will revert within 48 hours. Please respond promptly — gaps in the relieving-letter chain are the #1 onboarding blocker, so flag any issue today rather than at week 4.",
+      "BGV: our partner will reach out within 48 hours to collect the rest (payslips, relieving-letter chain, etc.) — please respond promptly when they do.",
     );
   }
 

@@ -84,16 +84,13 @@ describe("_post-acceptance — buildPostAcceptanceMessage", () => {
     expect(msg).toMatch(/₹2L joining bonus/);
   });
 
-  it("lists all six doc checklist items in order", () => {
+  it("lists the identity doc checklist items in order", () => {
+    /* PDF#45 follow-up (2026-05-25) — checklist trimmed to Aadhaar +
+     * PAN; remaining docs (payslips, ITR, Form 16, education originals,
+     * relieving-letter chain) are collected asynchronously by the BGV
+     * partner. */
     const msg = buildPostAcceptanceMessage(makeState());
-    const expectedOrder = [
-      "PF UAN",
-      "payslips",
-      "Income Tax Return",
-      "Form 16",
-      "Education originals",
-      "Relieving-letter chain",
-    ];
+    const expectedOrder = ["Aadhaar card", "PAN card"];
     let idx = -1;
     for (const tok of expectedOrder) {
       const next = msg.indexOf(tok);

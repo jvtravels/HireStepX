@@ -80,19 +80,20 @@ describe("Sprint A2 — getCompanyHikeCap clamps the counter-offer ceiling", () 
 });
 
 describe("Sprint A3 — buildPostAcceptanceMessage dispatched from terminal accept", () => {
-  it("explicit acceptance attaches postAcceptanceMessage with PF UAN + Form 16 + relieving-letter content", () => {
+  it("explicit acceptance attaches postAcceptanceMessage with Aadhaar + PAN + relieving-letter content", () => {
+    /* PDF#45 follow-up (2026-05-25) — checklist trimmed to identity
+     * docs; relieving-letter is now in the BGV partner blurb. */
     let s = makeState({
       highestOfferMade: 16,
       acceptedAtTurn: null,
-      turnIndex: 9, // past minTurnsBeforeClose=8
+      turnIndex: 9,
       minTurnsBeforeClose: 8,
     });
-    // Drive an explicit-accept utterance.
     s = applyCandidateAnswer(s, "Yes, I accept the offer. Please send the offer letter.");
     expect(s.phase).toBe("accepted");
     expect(s.postAcceptanceMessage).toBeTruthy();
-    expect(s.postAcceptanceMessage).toMatch(/PF UAN/);
-    expect(s.postAcceptanceMessage).toMatch(/Form 16/);
+    expect(s.postAcceptanceMessage).toMatch(/Aadhaar/);
+    expect(s.postAcceptanceMessage).toMatch(/PAN/);
     expect(s.postAcceptanceMessage).toMatch(/relieving-letter/);
   });
 

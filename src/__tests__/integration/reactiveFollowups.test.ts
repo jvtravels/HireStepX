@@ -96,7 +96,10 @@ describe("reactive follow-ups — planner gate (commit 4)", () => {
     const p = planned(s);
     expect(p?.kind).toBe("reactive-followup");
     expect(p?.topic).toBe("notice-buyout");
-    expect(p?.ask).toMatch(/buyout|locked in/i);
+    /* PDF#45 follow-up (2026-05-25) — HR softened: never names "buyout"
+     * first; probes flexibility / firmness instead. Topic stays
+     * "notice-buyout" for ledger continuity. */
+    expect(p?.ask).toMatch(/flexibility|firm|runway|timeline/i);
   });
 
   it("short notice does NOT trigger buyout probe", () => {
