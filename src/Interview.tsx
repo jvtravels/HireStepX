@@ -306,9 +306,6 @@ function InterviewInner() {
 
   return (
     <InterviewProvider value={engine}>
-    <a href="#composer" className="sr-only" onFocus={(ev) => { ev.currentTarget.classList.remove("sr-only"); ev.currentTarget.classList.add("skip-to-content"); }} onBlur={(ev) => { ev.currentTarget.classList.add("sr-only"); ev.currentTarget.classList.remove("skip-to-content"); }}>
-      Skip to composer
-    </a>
     <div style={{
       width: "100vw", height: "100vh", background: e.cream,
       display: "flex", flexDirection: "column", overflow: "hidden",
