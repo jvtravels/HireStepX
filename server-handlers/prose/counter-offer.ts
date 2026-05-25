@@ -29,6 +29,22 @@ export function proseCounterOffer(
   } else if (round >= 1) {
     spiralLead = "We've already moved on fitment once. Let me see what's possible at this stage.";
   }
+  /* PDF#46 B6 (2026-05-25) — component-aware lead. When the candidate
+   * framed their counter at the base level ("46L total, 44L base, 2L
+   * JB"), acknowledge the base ask vs our fixed component before
+   * pivoting to the total. Real recruiters engage with the structure
+   * the candidate proposed, not just the headline number. */
+  if (
+    typeof action.candidateProposedBaseLpa === "number" &&
+    action.candidateProposedBaseLpa > 0
+  ) {
+    const ourFixed = action.counterFixedLpa;
+    const baseAck =
+      typeof ourFixed === "number"
+        ? `On your ₹${action.candidateProposedBaseLpa}L base ask — our fixed component lands at ₹${ourFixed}L on the structure I can hold.`
+        : `On your ₹${action.candidateProposedBaseLpa}L base ask — let me come at this on the total side.`;
+    spiralLead = `${baseAck} ${spiralLead}`;
+  }
   if (total != null && total > 0) {
     /* Phase 5 Session B (2026-05-19) — round-persona overlay
      * preempts the sector body when multi-round is on. */

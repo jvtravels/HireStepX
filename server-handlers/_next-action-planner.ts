@@ -277,6 +277,13 @@ export type NextAction =
       counterTotalLpa: number;
       counterFixedLpa?: number;
       counterVariableLpa?: number;
+      /* PDF#46 B6 (2026-05-25) — component-aware counter engagement.
+       * When the candidate's counter is framed at the component level
+       * ("46L total, 44L base, 2L JB"), surface their stated base on
+       * the action so canonical prose can acknowledge the gap against
+       * our fixed component, rather than responding to the bare
+       * total. Optional — absent when the counter is total-only. */
+      candidateProposedBaseLpa?: number;
       satisfiesTopic: SatisfiesTopic;
     }
   | { kind: "lever-explore"; from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default" }
@@ -3053,11 +3060,38 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       counterVariableLpa =
         Math.round(Math.max(0, Math.min(variableMax, newTotal - base)) * 10) / 10;
     }
+    /* PDF#46 B6 (2026-05-25) — surface candidate's stated base on the
+     * counter action when their latest counter named one. Heuristic:
+     * we're post-anchor (highestOfferMade > 0), the breakdown has a
+     * non-null base, and the stated total roughly matches our parsed
+     * lastCandidateCounterLpa — meaning the breakdown belongs to the
+     * counter utterance, not a stale discovery-phase capture. */
+    let candidateProposedBaseLpa: number | undefined;
+    {
+      const cb = state.candidateComponentBreakdown;
+      const counterTotal = state.lastCandidateCounterLpa;
+      if (
+        state.highestOfferMade > 0 &&
+        cb != null &&
+        typeof cb.base === "number" &&
+        cb.base > 0 &&
+        typeof counterTotal === "number" &&
+        counterTotal > 0
+      ) {
+        const v = typeof cb.variable === "number" ? cb.variable : 0;
+        const breakdownTotal = cb.base + v;
+        /* allow up to ±1L slack to absorb JB / ESOP framings */
+        if (Math.abs(breakdownTotal - counterTotal) <= Math.max(1, counterTotal * 0.05)) {
+          candidateProposedBaseLpa = Math.round(cb.base * 10) / 10;
+        }
+      }
+    }
     return {
       kind: "counter-offer",
       counterTotalLpa: newTotal,
       counterFixedLpa,
       counterVariableLpa,
+      candidateProposedBaseLpa,
       satisfiesTopic: "counter-base",
       _move: {
         lever: "counter-base",
