@@ -1201,6 +1201,13 @@ export function buildRestylePrompt(
     `- PLAIN-ENGLISH BIAS: if the canonical line is short and asks one thing, the restyle should also be short and ask one thing. Prefer "what's the vesting schedule?" over "kindly share the vesting structure as per company policy"; prefer "how does the base split look?" over "kindly revert with the base-split details". Recruiter prose should sound like a human, not a form letter.\n` +
     `- You MAY change word order, contractions, opening phrases.\n` +
     `- If the canonical line opens with an acknowledgement of the candidate's prior turn ("Noted on …", "Got it on …", "Understood on …", "Appreciate the colour …"), KEEP an acknowledgement gesture in your restyle — you may rephrase it (e.g. "Thanks for that —", "Fair enough —") but do not strip it. Do NOT use the formulaic "Right, on X —" template; vary the lead.\n` +
+    /* PDF#46 B3 (2026-05-25) — inverse rule. The anchor canonical
+     * opens with "So for this grade, the fitment we're able to offer
+     * is ₹X LPA …" — no ack. The LLM was prefixing "Right." anyway,
+     * which made the recruiter sound dismissive (PDF#46 turn 8: "Right.
+     * So for this grade, the fitment we're able to offer is ₹42.4
+     * LPA"). Mirror the keep-rule with a do-not-add rule. */
+    `- If the canonical line does NOT open with an acknowledgement, do NOT add a leading acknowledgement word ("Right.", "Okay.", "Got it.", "Fair enough.", "Sure.") to your restyle. Open with the substantive content of the canonical.\n` +
     `- OPENER ROTATION: do NOT open three turns in a row with the same family of acknowledgement. If the recent AI turns have already opened with "Thanks for that …" / "Appreciate …", switch to a different family ("Fair enough …", "Got it …", "Noted …", "Understood …", "Okay …"). Cadence variety matters — a candidate hearing the same opener five turns running reads it as parrot-speak.\n` +
     `- IDIOM CAP: use AT MOST ONE Indian-recruiter idiom from the preferred list per utterance. Stacking two or more (e.g. "fitment" + "as per the band" + "broadly aligned") reads as parody. On short PROBE lines (<= 15 words asking one question) the cap drops to ZERO — keep it plain.\n` +
     `- DO NOT pad with tautologies like "the total CTC as per your current band" — the candidate's current CTC is already band-anchored; "what's your current CTC?" suffices.\n` +
