@@ -355,16 +355,13 @@ async function generateBotReplyInner(
       rejectReason: "empty-text",
     };
   }
-  /* PDF#46 (2026-05-25) — unsanctioned close-language guard. The
-   * Flipkart Sr-PD transcript shipped "Our final offer is within the
-   * budgeted range, but I need to discuss the details with the hiring
-   * manager first." mid-flow (turn ~22, no close-action from the
-   * planner). The LLM hallucinated terminal framing on a non-terminal
-   * action and the session died one turn later. Strip these tokens
-   * when the planner's action is NOT a close / final-offer kind, and
-   * also reject "next cycle / appraisal cycle" prose (turn 19's "How
-   * does the base split look for the next cycle?" — confused FY27
-   * appraisal with the current negotiation). */
+  /* PDF#46 / #47 (2026-05-25) — unsanctioned-close guard. Catches the
+   * narrow case where the LLM frames a non-terminal reply AS the
+   * close ("our final offer is …", "this is our final position",
+   * "best we can do"). The wider "next cycle / appraisal cycle"
+   * framing is now prevented upstream in buildRestylePrompt /
+   * buildAnswerCandidatePrompt banned lines, so it's no longer a
+   * regex concern here. */
   {
     const CLOSE_KINDS = new Set<string>([
       "close",
@@ -374,21 +371,11 @@ async function generateBotReplyInner(
       "close-recap-formal",
       "final-offer",
     ]);
-    /* PDF#47 (2026-05-25) — narrowed. The original regex caught
-     * "hiring manager", "budgeted range", "need to discuss" anywhere
-     * in the reply — but those are normal recruiter words in
-     * mid-discovery ("the band our hiring manager set", "let me
-     * discuss the structure"). Now we only reject text that frames
-     * the CURRENT reply as the close: "our final offer is", "best we
-     * can do", "this is our final position". */
     const UNSANCTIONED_CLOSE_RE =
       /\b(?:(?:this|that|our)\s+is\s+(?:our|the)\s+final\s+(?:offer|position|number)|our\s+final\s+offer\s+is|final\s+offer\s+is\s+within|best\s+(?:we\s+can\s+do|and\s+final))\b/i;
-    const NEXT_CYCLE_RE =
-      /\b(?:next\s+(?:appraisal\s+)?cycle|next\s+review\s+cycle|next\s+year'?s?\s+appraisal)\b/i;
     if (
       !CLOSE_KINDS.has(action.kind) &&
-      (UNSANCTIONED_CLOSE_RE.test(result.text) ||
-        NEXT_CYCLE_RE.test(result.text))
+      UNSANCTIONED_CLOSE_RE.test(result.text)
     ) {
       void captureServerEvent(
         "negotiation_pipeline_unsanctioned_close",
@@ -398,9 +385,7 @@ async function generateBotReplyInner(
           phase: state.phase,
           turnIndex: state.turnIndex,
           textSample: result.text.slice(0, 200),
-          trigger: UNSANCTIONED_CLOSE_RE.test(result.text)
-            ? "close-language"
-            : "next-cycle",
+          trigger: "close-language",
         },
       );
       return {

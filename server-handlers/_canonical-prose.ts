@@ -1208,6 +1208,12 @@ export function buildRestylePrompt(
     `- You MUST NOT add any specific numbers not in the canonical line.\n` +
     `- You MUST NOT add any facts (company policy, team size, perks, benefits) not in the canonical line.\n` +
     `- You MUST NOT change the meaning or the question being asked.\n` +
+    /* PDF#47 (2026-05-25) — banned next-cycle framing. The Flipkart
+     * Sr-PD transcript shipped "How does the base split look for the
+     * next cycle?" mid-discovery, conflating the current negotiation
+     * with the FY27 appraisal. Banned at the prompt layer so the
+     * pipeline doesn't have to regex-reject after the fact. */
+    `- You MUST NOT reference future appraisal cycles ("next cycle", "next appraisal cycle", "next review cycle", "next year's appraisal"). This negotiation is about the joining offer, not future cycles.\n` +
     `- Keep it to one short paragraph.\n` +
     `- Do not add closing pleasantries like "looking forward to your answer".\n\n` +
     `OUTPUT: just the restyled line, no preamble.`;
@@ -1246,6 +1252,7 @@ export function buildAnswerCandidatePrompt(
     `- Do NOT invent numbers, policies, perks, dates, or commitments.\n` +
     `- NEVER mention internal vocabulary in your answer — banned words include: "fact pack", "factPack", "the system", "the prompt", "internal data", "according to my data", "I don't have data on", "missing from my context". Speak in plain recruiter idiom only. If a fact is missing, defer gracefully (e.g. "that's something the HM walks through later") without referring to your data source.\n` +
     `- If you cannot answer from the data, say "that's something the HM walks through later" — do NOT mention data sources, fact packs, internal notes, or any meta-reference to where information comes from.\n` +
+    `- You MUST NOT reference future appraisal cycles ("next cycle", "next appraisal cycle", "next review cycle", "next year's appraisal"). This negotiation is about the joining offer, not future cycles.\n` +
     `- Keep it conversational, max 2 sentences, max 25 words per sentence. Real recruiters speak in short clauses. If multiple concepts come up, name the top one and ask "which one do you want to dig into?" instead of bundling them.\n\n` +
     `OUTPUT: just your answer, no preamble.`;
   const user =
