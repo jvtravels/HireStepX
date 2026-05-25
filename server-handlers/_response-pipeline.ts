@@ -1858,6 +1858,20 @@ export function validateRestyle(
       }
     }
   }
+  /* PDF#46 B3 (2026-05-25) — leading-ack-injection guard. The restyle
+   * prompt tells the LLM not to add a leading ack ("Right.", "Okay.",
+   * "Got it.") when the canonical line doesn't have one — the anchor
+   * canonical opens with "So for this grade …", and the LLM was
+   * prefixing "Right." anyway, reading as dismissive. Prompt rules
+   * are advisory; this guard enforces. Placed last so more-specific
+   * ack rules (ack-without-disclosure, contract-shape) name the
+   * primary failure when both apply. */
+  if (
+    !LEADING_ACK_RE_PIPELINE.test(canonical) &&
+    LEADING_ACK_RE_PIPELINE.test(restyled)
+  ) {
+    return { valid: false, reason: "leading-ack-injection" };
+  }
   return { valid: true };
 }
 
