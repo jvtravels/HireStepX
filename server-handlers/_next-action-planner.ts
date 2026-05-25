@@ -2418,9 +2418,17 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
          * post-anchor discovery cascade ensures the recruiter asks for
          * noticePeriodDays even after an anchor has been placed, so the
          * close-recap-formal can quote a concrete joining target. */
+        /* PDF#44 (2026-05-26) — fixedVariableSplit on the candidate's
+         * CURRENT comp is retrospective: once an anchor is on the
+         * table the breakdown conversation shifts to OUR offer (via
+         * the breakdown-request path), not the candidate's historic
+         * split. Treating it as orthogonal post-anchor prevents the
+         * recruiter from regressing into a "what's your current
+         * fixed/variable split?" probe right after anchoring. */
         const ORTHOGONAL_POST_ANCHOR_ITEMS: ReadonlySet<string> = new Set([
           "competingOffersAsked",
           "valueProofAsked",
+          "fixedVariableSplitAsked",
         ]);
         const allowProbeWithOfferOnTable =
           state.highestOfferMade === 0 ||

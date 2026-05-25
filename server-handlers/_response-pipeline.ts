@@ -1291,6 +1291,42 @@ const THIRD_PERSON_BAND_POSSESSIVE_RE =
  *  make a concrete revision or ask a concrete question — they do
  *  not editorialize about the negotiation process. Three captured
  *  drift idioms, named explicitly: */
+/** PDF#44 (2026-05-26) — INTERVIEW-PREP FRAME LEAK.
+ *
+ *  Structural property: a salary-negotiation seat NEVER scores the
+ *  candidate on technical/behavioural axes. Frames like "gauge your
+ *  problem-solving skills", "think on your feet", or "which one do
+ *  you want to dig into" belong to a behavioural-interview rubric,
+ *  not to a recruiter discussing compensation. When the LLM drifts
+ *  into that frame the leak shape is stable: an interviewer-voice
+ *  evaluation noun ("skills", "ability", "approach") paired with a
+ *  cognition idiom ("think on your feet", "problem-solving",
+ *  "communication"), OR a probe inviting the candidate to "dig into"
+ *  / "walk through" / "tackle" a question (interview-show framing).
+ *
+ *  Two structural shapes, no per-fixture phrase enumeration:
+ *
+ *  (a) `\b(?:gauge|assess|evaluate|test)\s+your\s+\w+\s+skills?\b` —
+ *      explicit "we're judging you on X skills" framing.
+ *  (b) cognition idioms specific to interview-prep coaching:
+ *      "problem-solving (skills|abilit*)" / "think on your feet" /
+ *      "on the fly".
+ *  (c) "which (one|question) (do you|would you) (want|like) to
+ *      (dig into|tackle|attempt|walk through|explore)" — the
+ *      interview-show pick-a-question prompt.
+ *
+ *  Any hit trips `interview-prep-frame-leak`. */
+const INTERVIEW_PREP_FRAME_LEAK_RE = new RegExp(
+  [
+    String.raw`\b(?:gauge|assess|evaluate|test)\s+your\s+\w+(?:\s+\w+)?\s+skills?\b`,
+    String.raw`\bproblem[\s-]*solving\s+(?:skills?|abilit\w+|approach)\b`,
+    String.raw`\bthink\s+on\s+your\s+feet\b`,
+    String.raw`\bon\s+the\s+fly\b`,
+    String.raw`\bwhich\s+(?:one|question)\s+(?:do\s+you|would\s+you)\s+(?:want|like|prefer)\s+to\s+(?:dig\s+into|tackle|attempt|walk\s+through|explore|try)\b`,
+  ].join("|"),
+  "i",
+);
+
 const OFFER_PROCESS_NARRATION_RE = new RegExp(
   [
     // "discuss the specifics of the offer to finalize/close/conclude"
@@ -1478,6 +1514,14 @@ export function validateRestyle(
     OFFER_PROCESS_NARRATION_RE.test(restyled)
   ) {
     return { valid: false, reason: "meta-evaluator-leak" };
+  }
+  /* PDF#44 (2026-05-26) — INTERVIEW-PREP FRAME LEAK.
+   * Salary-negotiation seat must never frame the candidate on
+   * technical/behavioural-interview axes ("gauge your problem-
+   * solving skills", "which one do you want to dig into"). The
+   * detector is structural (shape, not enumerated phrase). */
+  if (INTERVIEW_PREP_FRAME_LEAK_RE.test(restyled)) {
+    return { valid: false, reason: "interview-prep-frame-leak" };
   }
   /* PDF#33 Move A (2026-05-18) — TEASER-PROSE GATE.
    *

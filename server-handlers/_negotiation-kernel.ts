@@ -3399,13 +3399,54 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * a second time. Routing "why" to clarify-prior-question forces the
    * canonical-prose surface to re-explain inline rather than letting
    * the LLM re-emit the prior refusal sentence. */
-  const CLARIFICATION_REQUEST_RE =
-    /^[\s"'""''.,!?-]*(?:what(?:'?s|\s+is|\s+does|\s+are)?\s+(?:that|this|it|those|these|they)(?:\s+mean(?:s|ing)?)?|what\s+(?:do\s+you\s+mean|does\s+(?:that|this|it)\s+mean)|huh|i\s+(?:don'?t\s+(?:understand|know\s+what(?:'?s|\s+(?:that|this)))|am\s+(?:confused|not\s+sure\s+what))|explain(?:\s+(?:that|this|it|please))?|come\s+again|sorry,?\s+what|pardon|meaning(?:\s+of\s+(?:that|this|it))?|why(?:\s+not|\s+is\s+(?:that|this|it))?|how\s+come|\?)\s*\??[\s.!]*$/i;
+  /* PDF#44 (2026-05-26) — STRUCTURAL clarification detector.
+   *
+   * Clarification asks have one of FOUR structural shapes — all
+   * other "WH-word + noun" forms are substantive content asks
+   * (e.g. "what's the offer?" — asks for the offer; "what does
+   * the equity look like?" — asks about equity) and MUST NOT be
+   * routed to clarify-prior-question:
+   *
+   *   (A) WH-word paired with a deictic pronoun (no topical noun):
+   *       "what is that", "what does this mean", "what do you
+   *       mean", "why is that", etc. The deictic refers BACK to
+   *       the bot's prior turn — a definitional clarification ask.
+   *   (B) Bare WH-word / interjection of confusion:
+   *       "what?", "why?", "huh?", "pardon?", "sorry?", "?".
+   *   (C) First-person confusion frame:
+   *       "i don't understand", "i'm not sure what", "i'm
+   *       confused", "i don't know what this/that is".
+   *   (D) Explicit clarification verb:
+   *       "can you clarify / specify / repeat / rephrase /
+   *       elaborate / explain", "come again", "explain that".
+   *
+   * Covers every captured fixture (PDF#34 "what is that?",
+   * PDF#41 "why?", PDF#44 "can you specify…?") without flagging
+   * topic-bearing asks like "what's the offer?". */
+  const CLARIFICATION_REQUEST_RE = new RegExp(
+    [
+      // (A) WH + deictic
+      String.raw`^[\s"'""''.,!?-]*what(?:'?s|\s+is|\s+does|\s+are)?\s+(?:that|this|it|those|these|they)(?:\s+mean(?:s|ing)?)?\s*\??[\s.!]*$`,
+      String.raw`^[\s"'""''.,!?-]*what\s+(?:do\s+you\s+mean|does\s+(?:that|this|it)\s+mean)\s*\??[\s.!]*$`,
+      String.raw`^[\s"'""''.,!?-]*why(?:\s+not|\s+is\s+(?:that|this|it))?\s*\??[\s.!]*$`,
+      String.raw`^[\s"'""''.,!?-]*how\s+come\s*\??[\s.!]*$`,
+      // (B) bare WH / interjections
+      String.raw`^[\s"'""''.,!?-]*(?:huh|pardon|sorry,?\s*what|meaning(?:\s+of\s+(?:that|this|it))?|\?)\s*\??[\s.!]*$`,
+      // (C) first-person confusion
+      String.raw`^[\s"'""''.,!?-]*i\s+(?:don'?t\s+(?:understand|know\s+what(?:'?s|\s+(?:that|this)))|am\s+(?:confused|not\s+sure\s+what)|'?m\s+(?:confused|not\s+sure\s+what))`,
+      // (D) explicit clarification verb (allowed to carry a tail —
+      //     "can you specify which number" is a clarifying ask)
+      String.raw`\bcan\s+you\s+(?:clarify|specify|repeat|rephrase|elaborate|explain)\b`,
+      String.raw`^[\s"'""''.,!?-]*(?:come\s+again|explain(?:\s+(?:that|this|it|please))?)\s*\??[\s.!]*$`,
+    ].join("|"),
+    "i",
+  );
+  const aTrim = answer.trim();
   const lastAnswerWasClarification =
-    answer.trim().length > 0 &&
-    answer.trim().length <= 40 &&
-    !/\d/.test(answer) &&
-    CLARIFICATION_REQUEST_RE.test(answer.trim());
+    aTrim.length > 0 &&
+    aTrim.length <= 40 &&
+    !/\d/.test(aTrim) &&
+    CLARIFICATION_REQUEST_RE.test(aTrim);
   const lastAnswerClarificationAtTurn = lastAnswerWasClarification
     ? state.turnIndex
     : (state.lastAnswerClarificationAtTurn ?? null);
