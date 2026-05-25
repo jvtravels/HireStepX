@@ -338,6 +338,6 @@ describe("PDF#36 A1 — leading-ack rotation loop guard at pipeline boundary", (
     /* Result must NOT be the LLM rotation; loop-breaker stub must
      * ship instead. */
     expect(result.text).not.toBe("Okay. I won't be able to share that detail upfront.");
-    expect(/take a beat|try that differently|circling|step back|cover next/i.test(result.text)).toBe(true);
+    expect(/come at that from a different angle|take a beat|try that differently|circling|step back|cover next/i.test(result.text)).toBe(true);
   });
 });

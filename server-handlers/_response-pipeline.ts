@@ -374,8 +374,15 @@ async function generateBotReplyInner(
       "close-recap-formal",
       "final-offer",
     ]);
+    /* PDF#47 (2026-05-25) — narrowed. The original regex caught
+     * "hiring manager", "budgeted range", "need to discuss" anywhere
+     * in the reply — but those are normal recruiter words in
+     * mid-discovery ("the band our hiring manager set", "let me
+     * discuss the structure"). Now we only reject text that frames
+     * the CURRENT reply as the close: "our final offer is", "best we
+     * can do", "this is our final position". */
     const UNSANCTIONED_CLOSE_RE =
-      /\b(?:final\s+offer|hiring\s+manager(?:'s)?\s+(?:approval|sign[- ]?off)|need\s+to\s+(?:check|discuss|loop)\s+with\s+(?:the\s+)?(?:hiring\s+manager|hm|leadership)|internal\s+approval|budgeted\s+range)\b/i;
+      /\b(?:(?:this|that|our)\s+is\s+(?:our|the)\s+final\s+(?:offer|position|number)|our\s+final\s+offer\s+is|final\s+offer\s+is\s+within|best\s+(?:we\s+can\s+do|and\s+final))\b/i;
     const NEXT_CYCLE_RE =
       /\b(?:next\s+(?:appraisal\s+)?cycle|next\s+review\s+cycle|next\s+year'?s?\s+appraisal)\b/i;
     if (
@@ -818,8 +825,14 @@ export function isLeadingAckRotationRepeat(
  * conversation, which is exactly what the user flagged. The new stub
  * acknowledges the loop, defers to the next turn for substance, and
  * keeps agency on the recruiter side. */
+/* PDF#47 (2026-05-25) — the prior "take a beat … come back with
+ * something concrete" reads as a closing punt mid-discovery
+ * (candidate replied "structure of what? you have not given your
+ * offer"). The stub now re-engages with a real question so the
+ * conversation keeps moving even when the LLM/canonical layer is
+ * rejected. */
 const LOOP_BREAKER_STUB =
-  "Right — let me take a beat on the structure and come back to you with something concrete.";
+  "Let me come at that from a different angle — what's been guiding the number you have in mind for this move?";
 
 /* ─── validators ───────────────────────────────────────────────────── */
 

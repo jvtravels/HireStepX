@@ -2642,12 +2642,15 @@ export function useInterviewEngine() {
         !isNegotiationKernelTerminal() &&
         nextStep?.type === "closing"
       ) {
-        /* PDF#46 (2026-05-25) — neutral placeholder. The prior text asked
-         * a priority question that often contradicted what the candidate
-         * just said (e.g. they said "Total CTC" and the placeholder still
-         * probed base/JB/equity). Use a benign wait-string instead; the
-         * real kernel response overwrites this slot when it resolves. */
-        const placeholderText = "Let me take a look at the structure on my side — one moment.";
+        /* PDF#47 (2026-05-25) — the prior "Let me take a look at the
+         * structure on my side — one moment" wait-string read as the
+         * recruiter stalling and, on the rare path where the kernel
+         * reply doesn't overwrite this slot, left the candidate with
+         * no question to answer (PDF#47 ended with three turns showing
+         * exactly this placeholder). Use a neutral discovery probe so
+         * the conversation can continue even if the kernel reply is
+         * delayed or rejected. */
+        const placeholderText = "While I check the structure on my side — what's been guiding the number you have in mind for this move?";
         setInterviewScript(prev => {
           const placeholder: InterviewStep = {
             type: "question",
