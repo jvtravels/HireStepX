@@ -4280,23 +4280,23 @@ export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFa
  * planner.ts) which routes to a phase-appropriate force-advance action
  * rather than re-routing state.phase directly (that path is reserved
  * for the natural derivePhase cascade). */
-/* PDF#48 B4 (2026-05-25) — counter-phase budget raised from 4 to 7.
- *
- * Real recruiter counter spirals run longer than 4 turns: anchor →
- * candidate-counter-1 → revise/lever-explore → candidate-counter-2 →
- * competing-offer-probe → competing-credibility-followup → close-
- * recap-formal. That's 6-7 AI turns in counter-group phases, before
- * the formal close fires. The prior cap of 4 was forcing premature
- * stalemate routing whenever the counter spiral got a normal amount
- * of back-and-forth. PDF#48 Flipkart Sr PD session terminated after
- * the competing-credibility probe because counter-phase had already
- * consumed >4 turns (some of them wasted by the META-evaluator
- * restyle leak fixed in 0133fcb). Raise to 7 so the session ends
- * with a framed close turn, not a hard cliff. */
+/* PDF#48 B4 (2026-05-25) — counter-phase cap STAYS at 4. The earlier
+ * patchwork raised it to 7, which was just a kicking-the-can magic
+ * number. The structural issue was the ROUTING: when counter
+ * exhausts, the prior force-advance went straight to `stalemate`
+ * (hard cliff). Real recruiter close-out has one framed beat in
+ * between — a closing-push restate ("this is what we can do, let
+ * me know"). With `forcedPhaseFor("counter")` now routing through
+ * `closing-push` (and `closing-push` itself force-advancing to
+ * `stalemate` when ITS budget exhausts), the counter-spiral budget
+ * of 4 turns is correct: 4 counter-group turns + 4 closing-push
+ * turns = 8 turn-runway before terminal, with a framed close beat
+ * in between. The PDF#48 Flipkart session would emit the closing-
+ * push restate at turn 14 instead of the abrupt stalemate. */
 const MAX_TURNS_PER_PHASE = {
   discovery: 5,
   anchoring: 3,
-  counter: 7,
+  counter: 4,
 } as const;
 
 const DISCOVERY_PHASES: ReadonlySet<NegotiationPhase> = new Set([
@@ -4322,11 +4322,16 @@ function phaseGroupOf(
   return null;
 }
 
-/** AR3 — phase-group force-advance target. Discovery → range-disclosure
- *  if a signal (currentCtc OR target) is known else stalemate; anchoring
- *  → counter-offer; counter → stalemate. Returned phase MUST still pass
- *  canTransitionPhase at the caller; this helper just names the
- *  preferred next bucket. */
+/** AR3 — phase-group force-advance target.
+ *
+ *  Discovery → range-disclosure if a signal (currentCtc OR target)
+ *  is known else stalemate; anchoring → counter-offer; counter →
+ *  closing-push when still in counter-offer / lever-explore (gives
+ *  the recruiter one framed close beat before terminal), then →
+ *  stalemate when even closing-push has overstayed.
+ *
+ *  Returned phase MUST still pass canTransitionPhase at the caller;
+ *  this helper just names the preferred next bucket. */
 function forcedPhaseFor(
   group: "discovery" | "anchoring" | "counter",
   state: NegotiationState,
@@ -4338,7 +4343,10 @@ function forcedPhaseFor(
     return "stalemate";
   }
   if (group === "anchoring") return "counter-offer";
-  return "stalemate";
+  /* counter group: route through closing-push first. Once closing-
+   * push itself overstays its budget, terminate to stalemate. */
+  if (state.phase === "closing-push") return "stalemate";
+  return "closing-push";
 }
 
 export function derivePhase(state: NegotiationState): NegotiationPhase {

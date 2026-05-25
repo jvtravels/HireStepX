@@ -260,7 +260,6 @@ describe("kernel chaos — turn-cycle invariants", () => {
       sessionId: s.sessionId,
       role: s.role,
       company: s.company,
-      band: s.band,
     };
     for (let i = 0; i < CANDIDATE_INPUTS.length; i++) {
       const candText = CANDIDATE_INPUTS[i];
@@ -271,7 +270,18 @@ describe("kernel chaos — turn-cycle invariants", () => {
       expect(s.sessionId).toBe(frozen.sessionId);
       expect(s.role).toBe(frozen.role);
       expect(s.company).toBe(frozen.company);
-      expect(s.band).toEqual(frozen.band);
+      /* Band identity matches the INV-K2 contract: kernel CAN
+       * legitimately rebase the band on a candidate disclosure
+       * (fresher-rebase, persona-application etc.). Assert
+       * well-shaped + internally-consistent rather than ref/value
+       * equality. The freeze contract is sessionId/role/company;
+       * band is intentionally a soft-frozen field. */
+      expect(typeof s.band.initialOffer).toBe("number");
+      expect(typeof s.band.maxStretch).toBe("number");
+      expect(typeof s.band.walkAway).toBe("number");
+      expect(typeof s.band.hasEquity).toBe("boolean");
+      expect(s.band.walkAway).toBeLessThanOrEqual(s.band.initialOffer);
+      expect(s.band.initialOffer).toBeLessThanOrEqual(s.band.maxStretch);
     }
   });
 

@@ -1238,32 +1238,67 @@ const INTERNAL_DEFER_LEAK_RE =
 const INVENTED_MARKET_JARGON_RE =
   /\bmarket\s+mode\b|\bmode\s+as\s+(?:hot|cold|tight|loose)\b/i;
 
-/** PDF#48 (2026-05-25) — META-EVALUATOR / THIRD-PERSON SELF-REFERENCE.
+/** PDF#48 (2026-05-25) — RECRUITER-VOICE INVARIANT.
  *
- *  Captured drifts from PDF#48 Flipkart session:
- *    - "The counter offer is within Flipkart's budget band."
- *    - "We'll need to discuss the specifics of the offer to finalize it."
- *  These are evaluator/analyst-voiced lines that leaked through restyle.
- *  Real recruiters speak in first person ("we", "our band") and never
- *  narrate offer-finalization meta-process or refer to their own
- *  company in third-person possessive. Reject so the canonical line
- *  (recruiter-voiced by construction) ships instead.
+ *  Structural property: the recruiter is the FIRST-PERSON speaker
+ *  inside the seat. The restyle must not contain analyst/evaluator
+ *  framings that name a company-as-possessor of the band, policy,
+ *  range, etc. — those describe the negotiation FROM OUTSIDE the
+ *  seat. Two complementary detectors:
  *
- *  Patterns are narrow on purpose: the third-person clause requires
- *  a Proper-Noun possessive ("Flipkart's"/"Amazon's") so generic
- *  "within our band" passes; the finalize-specifics clause requires
- *  both "specifics" AND "of the offer" + "finalize/close/conclude"
- *  so plain "let's discuss specifics" passes. */
-const META_EVALUATOR_LEAK_RE = new RegExp(
+ *  (a) `hasThirdPersonCompanySelfRef(state)` — bare possessive of
+ *      state.company anywhere in the line. Catches "at Infosys's
+ *      grade" / "Infosys's guidelines" even without a band-noun.
+ *      Parameterised on state.company so it generalises across the
+ *      curator without enumerating per-company fixtures.
+ *
+ *  (b) `THIRD_PERSON_BAND_POSSESSIVE_RE` — any capitalised possessor
+ *      (other than first-person "our") followed by a band-shaped
+ *      noun ("band", "budget band", "policy", "guidelines", "range",
+ *      "offer range", "grade"). Catches cross-company analyst
+ *      framings like "within Amazon's band on this grade" even when
+ *      Amazon isn't the seat — the SHAPE is the leak, not the name.
+ *
+ *  Either signal trips `meta-evaluator-leak`. */
+function hasThirdPersonCompanySelfRef(
+  restyled: string,
+  state: NegotiationState,
+): boolean {
+  const company = (state.company ?? "").trim();
+  if (!company) return false;
+  const escaped = company.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const possessiveRe = new RegExp(
+    String.raw`\b${escaped}(?:'s|s')\b`,
+    "i",
+  );
+  return possessiveRe.test(restyled);
+}
+
+/* Capitalised-possessor + band-noun (analyst voice). The possessor
+ * MUST start uppercase (proper noun); "our" / "your" / "their"
+ * lower-case forms are excluded so first-person "our band" passes.
+ * Band-nouns are the analyst's vocabulary for "what the company can
+ * pay" — recruiter speech uses these AFTER "our", never AFTER a
+ * named entity. */
+const THIRD_PERSON_BAND_POSSESSIVE_RE =
+  /\b[A-Z][a-zA-Z]+(?:'s|s')\s+(?:budget\s+band|band|policy|guidelines|range|offer\s+range|grade)\b/;
+
+/** PDF#48 (2026-05-25) — OFFER-PROCESS NARRATION GATE.
+ *
+ *  Distinct from third-person self-ref: this is the LLM narrating
+ *  its own future actions instead of executing them ("we'll discuss
+ *  the specifics to finalize the offer"). Real recruiters either
+ *  make a concrete revision or ask a concrete question — they do
+ *  not editorialize about the negotiation process. Three captured
+ *  drift idioms, named explicitly: */
+const OFFER_PROCESS_NARRATION_RE = new RegExp(
   [
-    // "within [Company]'s budget band / band / policy / guidelines / offer-range"
-    String.raw`\bwithin\s+[A-Z][a-z]+(?:'s|s)\s+(?:budget\s+band|band|policy|guidelines|range|offer\s+range)\b`,
-    // "the counter offer is within …" — opener of evaluator dodge
-    String.raw`\bthe\s+counter[\s-]*offer\s+is\s+within\b`,
     // "discuss the specifics of the offer to finalize/close/conclude"
     String.raw`\bdiscuss\s+(?:the\s+)?specifics?\s+of\s+(?:the\s+)?offer\s+to\s+(?:finalize|close|conclude)\b`,
-    // generic finalize-meta-process narration
+    // "to finalize the offer later/once/after/when/with"
     String.raw`\bto\s+finalize\s+(?:the\s+)?offer\s+(?:later|once|after|when|with)\b`,
+    // "the counter offer is within …" (evaluator-opener dodge; pairs with self-ref guard but stands alone)
+    String.raw`\bthe\s+counter[\s-]*offer\s+is\s+within\b`,
   ].join("|"),
   "i",
 );
@@ -1430,12 +1465,18 @@ export function validateRestyle(
   if (INTERNAL_TERMINOLOGY_LEAK_RE.test(restyled)) {
     return { valid: false, reason: "internal-terminology-leak" };
   }
-  /* PDF#48 (2026-05-25) — META-EVALUATOR / THIRD-PERSON SELF-REF.
-   * Same family as terminology-leak: catches the LLM voicing offer-
-   * finalization process or referring to its own company in third
-   * person. Pattern is narrow (requires both Proper-noun possessive
-   * + band-style noun, or "specifics of the offer + finalize"). */
-  if (META_EVALUATOR_LEAK_RE.test(restyled)) {
+  /* PDF#48 (2026-05-25) — RECRUITER-VOICE INVARIANT.
+   * Two structural gates: (a) no third-person possessive of
+   * state.company (the seat speaker never names her own employer
+   * in third person), (b) no offer-process narration idioms
+   * ("discuss specifics to finalize"). Both surface as
+   * `meta-evaluator-leak` so the existing telemetry continues
+   * to bucket them together. */
+  if (
+    hasThirdPersonCompanySelfRef(restyled, state) ||
+    THIRD_PERSON_BAND_POSSESSIVE_RE.test(restyled) ||
+    OFFER_PROCESS_NARRATION_RE.test(restyled)
+  ) {
     return { valid: false, reason: "meta-evaluator-leak" };
   }
   /* PDF#33 Move A (2026-05-18) — TEASER-PROSE GATE.

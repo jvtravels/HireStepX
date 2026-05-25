@@ -154,49 +154,65 @@ describe("AR3 — anchoring phase maxTurns cap", () => {
 });
 
 describe("AR3 — counter phase maxTurns cap", () => {
-  /* PDF#48 B4 (2026-05-25) — counter cap raised from 4 to 7 so a
-   * normal counter spiral (anchor → counter-1 → revise → counter-2 →
-   * lever-explore → competing-probe → competing-followup) fits inside
-   * its budget before the AR3 force-advance routes to stalemate. */
-  it("counter exceeded (>7) → stalemate", () => {
+  /* PDF#48 B4 (2026-05-25) — counter group routes through closing-push.
+   * When counter-offer / lever-explore overstay their 4-turn budget,
+   * AR3 force-advances to closing-push (one framed close beat) rather
+   * than slamming the cliff to stalemate. closing-push itself, when
+   * it overstays the same counter-group budget, force-advances to
+   * stalemate — the two-step routing gives the recruiter a runway to
+   * emit a clean close-out line before terminal. */
+  it("counter-offer exceeded (>4) → closing-push (NOT stalemate)", () => {
     const s = mkState({
       phase: "counter-offer",
-      turnIndex: 18,
-      phaseEnteredAtTurn: 9, // 18 - 9 = 9 > 7 (new cap)
+      turnIndex: 14,
+      phaseEnteredAtTurn: 9, // 14 - 9 = 5 > 4 (cap)
       candidateCurrentCtc: 18,
       candidateTarget: 30,
       highestOfferMade: 26,
     });
     const next = derivePhase(s);
-    expect(next).toBe("stalemate");
+    expect(next).toBe("closing-push");
   });
 
-  it("lever-explore exceeded → stalemate", () => {
+  it("lever-explore exceeded → closing-push", () => {
     const s = mkState({
       phase: "lever-explore",
-      turnIndex: 18,
+      turnIndex: 14,
       phaseEnteredAtTurn: 9,
       candidateCurrentCtc: 18,
       candidateTarget: 30,
       highestOfferMade: 26,
     });
     const next = derivePhase(s);
+    expect(next).toBe("closing-push");
+  });
+
+  it("closing-push exceeded → stalemate (terminal step)", () => {
+    const s = mkState({
+      phase: "closing-push",
+      turnIndex: 14,
+      phaseEnteredAtTurn: 9, // 14 - 9 = 5 > 4 (cap)
+      candidateCurrentCtc: 18,
+      candidateTarget: 30,
+      highestOfferMade: 26,
+    });
+    const next = derivePhase(s);
     expect(next).toBe("stalemate");
   });
 
-  it("counter within new 7-turn budget → not force-advanced to terminal", () => {
+  it("counter within 4-turn budget → not force-advanced", () => {
     const s = mkState({
       phase: "counter-offer",
-      turnIndex: 14,
-      phaseEnteredAtTurn: 9, // 14 - 9 = 5, NOT > 7 (within budget)
+      turnIndex: 12,
+      phaseEnteredAtTurn: 9, // 12 - 9 = 3, NOT > 4
       candidateCurrentCtc: 18,
       candidateTarget: 30,
       highestOfferMade: 26,
     });
     const next = derivePhase(s);
     /* Natural cascade still owns the transition; AR3 must NOT have
-     * forced an advance. Pre-PDF#48 this would have hit the 4-turn
-     * cap and routed to stalemate at this turn count. */
+     * forced an advance to closing-push or stalemate. */
+    expect(next).not.toBe("closing-push");
     expect(next).not.toBe("stalemate");
   });
 });

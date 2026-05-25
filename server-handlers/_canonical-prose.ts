@@ -140,14 +140,24 @@ export const BANNED_RECRUITER_IDIOM = [
   "counter offer is within",
   "specifics of the offer to finalize",
   "to finalize the offer",
-  /* PDF#48 B1 (2026-05-25) — restyle drift on `lever-explore`. The
-   * canonical "Let me see what else we can structure on the fitment"
-   * was being paraphrased into a teaser ("Let's explore the fitment
-   * further") that promises engagement without delivering. Ban the
-   * paraphrase so the canonical (or its number-aware variant) ships. */
-  "explore the fitment further",
-  "explore the fitment more",
-  "explore further on the fitment",
+] as const;
+
+/** PDF#48 B1 (2026-05-25) — paraphrase-family bans expressed as regex
+ *  patterns rather than literal phrases. Some restyle drifts have many
+ *  near-synonyms ("explore the fitment further" / "explore the fitment
+ *  more" / "explore further on the fitment") and enumerating each as a
+ *  literal is the kind of pattern-matching patchwork the audit calls
+ *  out. Instead we capture the SHAPE: "explore" + any modifier + "the
+ *  fitment" is a teaser idiom regardless of word order.
+ *
+ *  These patterns extend BANNED_RECRUITER_IDIOM_RE structurally. */
+export const BANNED_RECRUITER_IDIOM_PATTERNS: readonly string[] = [
+  /* "explore the fitment further/more", "explore further on the
+   * fitment", "explore around the fitment" — all teaser variants
+   * that promise engagement without delivering. The canonical
+   * lever-explore line ("Let me see what else we can structure on
+   * the fitment.") is what should ship instead. */
+  String.raw`\bexplor(?:e|ing)\b[^.!?]{0,40}\bfitment\b`,
 ] as const;
 
 export const PREFERRED_RECRUITER_IDIOM = [
@@ -360,11 +370,15 @@ export const RANGE_DASH_RE = /(?:[-\u2013\u2014]|to)/;
  *  for validator use. Allowed surface forms include contractions /
  *  spacing variants (e.g. "circle back", "circle-back"). */
 export const BANNED_RECRUITER_IDIOM_RE = new RegExp(
-  "\\b(" +
+  "(?:\\b(" +
     BANNED_RECRUITER_IDIOM
       .map((p) => p.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"))
       .join("|") +
-    ")\\b",
+    ")\\b" +
+    (BANNED_RECRUITER_IDIOM_PATTERNS.length > 0
+      ? "|" + BANNED_RECRUITER_IDIOM_PATTERNS.join("|")
+      : "") +
+    ")",
   "i",
 );
 
