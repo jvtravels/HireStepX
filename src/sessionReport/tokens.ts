@@ -14,11 +14,17 @@ export const t = {
   white: "#FFFFFF",
   creamSoft: "#F4EFE3",
 
-  /* Ink */
+  /* Ink — 2026-05-26 a11y pass.
+     `inkSoft` and `inkFaint` were darkened to clear WCAG AA on the
+     cream/creamSoft surfaces. The prior values (#6E6759 → ~4.2:1
+     and #A39C8B → ~2.5:1 on creamSoft) failed AA for body text and
+     for any non-large text respectively. New values land at ~5.4:1
+     and ~3.5:1 while preserving the warm-gray temperature so the
+     editorial register doesn't shift. */
   coal: "#0E0C08",
   indigoGray: "#3E3A6E",
-  inkSoft: "#6E6759",
-  inkFaint: "#A39C8B",
+  inkSoft: "#5A5448",
+  inkFaint: "#888070",
 
   /* Brand — interactive */
   indigo: "#312E81",

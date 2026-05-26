@@ -65,14 +65,14 @@ export const SESSION_REPORT_STYLES = `
   .ir-tab-btn {
     background: transparent; border: none; cursor: pointer;
     padding: 8px 0; margin-right: 18px;
-    font-family: inherit; font-size: 13px; font-weight: 500; color: #6E6759;
+    font-family: inherit; font-size: 13px; font-weight: 500; color: #5A5448;
     border-bottom: 2px solid transparent;
     transition: color 160ms, border-color 160ms;
   }
   .ir-tab-btn[aria-selected="true"] { color: #312E81; border-bottom-color: #312E81; }
   .ir-thumb-btn {
     background: transparent; border: 1px solid #EBE5D2; border-radius: 8px;
-    padding: 6px 10px; cursor: pointer; color: #6E6759;
+    padding: 6px 10px; cursor: pointer; color: #5A5448;
     transition: border-color 160ms, color 160ms, background 160ms;
   }
   .ir-thumb-btn:hover { border-color: #B45309; color: #B45309; }
@@ -99,28 +99,95 @@ export const SESSION_REPORT_STYLES = `
     border-radius: 14px; padding: 22px;
     box-shadow: 0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04);
   }
-  .nfr-tldr-card {
-    background: linear-gradient(135deg, #0E0C08 0%, #312E81 100%);
-    color: #FFFFFF; border-radius: 16px;
-    padding: 26px 30px; margin-bottom: 24px;
+  /* ─── TL;DR (2026-05-26 editorial rework) ───
+     Prior implementation: dark gradient card with a 4-up grid of
+     26px mono numbers. Visually loud, semantically inverted (the
+     verdict sentence is the useful payload, not the metrics) — and
+     a textbook example of the "hero-metric template" banned by
+     this project's design system.
+     New shape: a pull-quote-grade serif verdict carries the visual
+     weight, and the metrics sit beneath as a quiet 2-up label/value
+     lockup divided by hairlines. Lives on cream like the rest of
+     the report; the dark hero was a category-reflex outlier in an
+     editorial surface. */
+  .nfr-tldr {
+    margin-bottom: 28px;
+    border-top: 1px solid #B45309;
+    border-bottom: 1px solid #EBE5D2;
+    padding: 22px 0 26px;
   }
-  .nfr-tldr-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
-    padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.15);
+  .nfr-tldr-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+    color: #B45309;
+    margin-bottom: 14px;
   }
+  .nfr-tldr-verdict {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 30px; line-height: 1.25; font-weight: 400;
+    color: #0E0C08; letter-spacing: -0.4px;
+    max-width: 760px;
+    margin: 0 0 22px;
+  }
+  .nfr-tldr-evidence {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 4px 32px;
+  }
+  .nfr-tldr-evidence-row {
+    display: grid; grid-template-columns: minmax(140px, 1fr) auto;
+    align-items: baseline; gap: 14px;
+    padding: 12px 0;
+    border-top: 1px solid #EBE5D2;
+  }
+  .nfr-tldr-evidence-label {
+    font-size: 12px; color: #5A5448; line-height: 1.4;
+  }
+  .nfr-tldr-evidence-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px; font-weight: 700; letter-spacing: -0.2px;
+    white-space: nowrap;
+  }
+  .nfr-tldr-evidence-hint {
+    grid-column: 1 / -1;
+    font-size: 11px; color: #888070; line-height: 1.4;
+    margin-top: 2px;
+  }
+  .nfr-tldr-tone-good    { color: #15803D; }
+  .nfr-tldr-tone-warn    { color: #B45309; }
+  .nfr-tldr-tone-bad     { color: #B91C1C; }
+  .nfr-tldr-tone-neutral { color: #0E0C08; }
   .nfr-time-pill {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; background: #E5E2F2; color: #312E81;
     border-radius: 5px; font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; font-weight: 600; cursor: pointer;
-    border: 1px solid #E5E2F2; transition: all 160ms ease;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid #E5E2F2;
   }
-  .nfr-time-pill:hover { background: #312E81; color: #FFFFFF; }
+  /* Screen-reader-only utility — visually hidden, available to
+     assistive tech. Used to add "at ..." context to bare time-
+     stamp pills so they don't read as bare numbers. */
+  .sr-only {
+    position: absolute !important;
+    width: 1px !important; height: 1px !important;
+    padding: 0 !important; margin: -1px !important;
+    overflow: hidden !important; clip: rect(0,0,0,0) !important;
+    white-space: nowrap !important; border: 0 !important;
+  }
+  /* Visible keyboard focus ring — applied to every actually-
+     interactive surface in the report. Uses the indigo accent at
+     2px to read at a glance on cream. */
+  .nfr-anchor:focus-visible,
+  .nfr-btn-primary:focus-visible,
+  .nfr-btn-secondary:focus-visible {
+    outline: 2px solid #312E81;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
   .nfr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .nfr-table th {
     padding: 11px 14px; font-size: 10px; font-weight: 700;
     letter-spacing: 0.8px; text-transform: uppercase;
-    color: #6E6759; text-align: left; background: #F4EFE3;
+    color: #5A5448; text-align: left; background: #F4EFE3;
   }
   .nfr-table td { padding: 11px 14px; font-size: 13px; color: #0E0C08; }
   .nfr-table tr { border-top: 1px solid #EBE5D2; }
@@ -135,6 +202,63 @@ export const SESSION_REPORT_STYLES = `
   .nfr-pill-bad  { background: #FEE2E2; color: #B91C1C; }
   .nfr-pill-warn { background: rgba(180,83,9,0.12); color: #B45309; }
   .nfr-pill-neutral { background: #F4EFE3; color: #0E0C08; }
+
+  /* ─── Shared NFR primitives (2026-05-26 audit) ───
+     Three shapes carry most repeated chrome across the 15 panels:
+     info tiles (cream callouts), tone cards (event rows colored by
+     good/warn/bad), and small mono uppercase eyebrow labels. The
+     prior implementation rolled all three inline-styled at every
+     call site AND used a 3px colored border-left as the tone accent
+     — a side-stripe pattern the design system bans. These classes
+     replace all three with full 1px tone-tinted borders + faint
+     tone-tinted backgrounds + a leading dot for tone cards. */
+  .nfr-info-tile {
+    padding: 14px 16px;
+    background: #F4EFE3;
+    border: 1px solid #EBE5D2;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #5A5448;
+    line-height: 1.55;
+  }
+  .nfr-info-tile-compact { padding: 10px 14px; font-size: 12px; }
+  .nfr-info-tile-roomy   { padding: 16px 18px; }
+  .nfr-tone-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    column-gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid;
+    background: transparent;
+  }
+  .nfr-tone-card-good { border-color: rgba(21,128,61,0.30);  background: rgba(21,128,61,0.06); }
+  .nfr-tone-card-warn { border-color: rgba(180,83,9,0.30);   background: rgba(180,83,9,0.06); }
+  .nfr-tone-card-bad  { border-color: rgba(185,28,28,0.28);  background: rgba(185,28,28,0.05); }
+  .nfr-tone-dot {
+    width: 8px; height: 8px; border-radius: 999px;
+    align-self: center; flex-shrink: 0;
+  }
+  .nfr-tone-dot-good { background: #15803D; }
+  .nfr-tone-dot-warn { background: #B45309; }
+  .nfr-tone-dot-bad  { background: #B91C1C; }
+  .nfr-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+    color: #5A5448;
+  }
+  .nfr-quote {
+    padding: 12px 14px;
+    background: #F4EFE3;
+    border: 1px solid #EBE5D2;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #0E0C08;
+    font-style: italic;
+  }
+
   .nfr-letter-actions {
     display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;
   }
@@ -164,16 +288,17 @@ export const SESSION_REPORT_STYLES = `
     .nfr-grid-2up { grid-template-columns: 1fr !important; gap: 14px !important; }
     .nfr-grid-3up { grid-template-columns: 1fr !important; gap: 12px !important; }
     .nfr-panel { padding: 18px !important; border-radius: 12px !important; }
-    .nfr-tldr-card { padding: 20px 22px !important; }
-    .nfr-tldr-stats { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
-    .nfr-tldr-stats > div > div:last-child { font-size: 12px !important; }  /* hint copy bumped on mobile so 26px → 11px ratio is less harsh */
+    .nfr-tldr { padding: 18px 0 20px !important; }
+    .nfr-tldr-verdict { font-size: 24px !important; line-height: 1.3 !important; }
+    .nfr-tldr-evidence { grid-template-columns: 1fr !important; gap: 0 !important; }
+    .nfr-tldr-evidence-value { font-size: 15px !important; }
     .nfr-section-band { padding: 14px 16px !important; gap: 12px !important; }
     .nfr-table th, .nfr-table td { padding: 8px 10px !important; font-size: 12px !important; }
     .nfr-table th { font-size: 9px !important; }
     .nfr-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
   }
   @media (max-width: 420px) {
-    .nfr-tldr-stats { grid-template-columns: 1fr !important; gap: 12px !important; }
+    .nfr-tldr-verdict { font-size: 21px !important; }
     .nfr-letter-actions { flex-direction: column !important; }
     .nfr-btn-primary, .nfr-btn-secondary { width: 100% !important; }
     /* Phase rail is decorative at narrow widths — pill list below carries the same info more legibly */
@@ -238,7 +363,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-feedback-row { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .ir-feedback-tag {
     background: transparent; border: 1px solid #EBE5D2; border-radius: 999px;
-    padding: 5px 12px; cursor: pointer; color: #6E6759;
+    padding: 5px 12px; cursor: pointer; color: #5A5448;
     font-family: inherit; font-size: 12px; font-weight: 500;
     transition: all 160ms ease;
   }
@@ -332,7 +457,7 @@ export const SESSION_REPORT_STYLES = `
     font-family: inherit;
     font-size: 12px;
     font-weight: 500;
-    color: #6E6759;
+    color: #5A5448;
     text-decoration: none;
     white-space: nowrap;
     transition: color 160ms, background 160ms;
@@ -341,7 +466,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-jump-link-num {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
-    color: #A39C8B;
+    color: #888070;
     font-weight: 700;
     letter-spacing: 0.06em;
   }
@@ -387,7 +512,7 @@ export const SESSION_REPORT_STYLES = `
     line-height: 1.4;
   }
   .ir-calibration-bands {
-    color: #6E6759;
+    color: #5A5448;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
   }
@@ -442,10 +567,10 @@ export const SESSION_REPORT_STYLES = `
     font-size: 13px;
     color: #2A241B;
   }
-  .ir-trend-item-label { color: #6E6759; font-size: 12px; }
+  .ir-trend-item-label { color: #5A5448; font-size: 12px; }
   .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
   .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-  .ir-trend-delta-flat { color: #A39C8B; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .ir-trend-delta-flat { color: #888070; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
 
   /* ─── Per-Q inline pills (frequency + length verdict) ─── */
   .ir-q-meta-pill {
@@ -459,7 +584,7 @@ export const SESSION_REPORT_STYLES = `
     letter-spacing: 0.04em;
     background: #FFFFFF;
     border: 1px solid #EBE5D2;
-    color: #6E6759;
+    color: #5A5448;
   }
   .ir-q-meta-pill.too-short  { color: #B91C1C; border-color: rgba(196,112,90,0.30); background: rgba(196,112,90,0.06); }
   .ir-q-meta-pill.too-long   { color: #B45309; border-color: rgba(180,83,9,0.30);  background: rgba(180,83,9,0.06); }
@@ -495,7 +620,7 @@ export const SESSION_REPORT_STYLES = `
     color: #2A241B;
   }
   .ir-redflag-item-title { color: #B91C1C; font-weight: 600; }
-  .ir-redflag-item-quote { color: #6E6759; font-style: italic; display: block; margin-top: 2px; }
+  .ir-redflag-item-quote { color: #5A5448; font-style: italic; display: block; margin-top: 2px; }
 
   /* Likely follow-up callout (coach column, weak/partial only) */
   .ir-likely-followup {
@@ -569,7 +694,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-note-body {
     font-family: 'Satoshi', sans-serif;
     font-size: 13px;
-    color: #6E6759;
+    color: #5A5448;
     line-height: 1.55;
     margin: 0;
   }
@@ -578,8 +703,8 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-note-card.persistent { border-left-color: #B45309; }
   .ir-coach-note-card.story-reuse { border-left-color: #312E81; }
   .ir-coach-note-card.story-reuse .ir-coach-note-eyebrow { color: #312E81; }
-  .ir-coach-note-card.blind-spot { border-left-color: #A39C8B; }
-  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #6E6759; }
+  .ir-coach-note-card.blind-spot { border-left-color: #888070; }
+  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #5A5448; }
 
   /* ─── Thought-bubble timeline (collapsed by default) ─── */
   .ir-thought-toggle {
@@ -592,7 +717,7 @@ export const SESSION_REPORT_STYLES = `
     padding: 8px 14px;
     font-family: 'Satoshi', sans-serif;
     font-size: 12px;
-    color: #6E6759;
+    color: #5A5448;
     cursor: pointer;
     transition: border-color 160ms, color 160ms;
   }
@@ -613,7 +738,7 @@ export const SESSION_REPORT_STYLES = `
     margin-top: 10px;
     font-family: 'Satoshi', sans-serif;
     font-size: 11px;
-    color: #6E6759;
+    color: #5A5448;
   }
   .ir-thought-legend-swatch {
     display: inline-block;
@@ -651,7 +776,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-bias-example {
     display: block;
     font-family: 'Satoshi', 'Inter', sans-serif;
-    font-size: 11px; color: #6E6759; font-style: italic;
+    font-size: 11px; color: #5A5448; font-style: italic;
     margin: 4px 0 6px;
   }
   .ir-bias-tip {
@@ -663,7 +788,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-poll-row {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     font-family: 'Satoshi', 'Inter', sans-serif;
-    font-size: 12px; color: #6E6759;
+    font-size: 12px; color: #5A5448;
   }
   .ir-poll-yes, .ir-poll-no {
     background: transparent;
@@ -671,7 +796,7 @@ export const SESSION_REPORT_STYLES = `
     border-radius: 999px;
     padding: 4px 12px;
     cursor: pointer;
-    font-family: inherit; font-size: 12px; color: #6E6759;
+    font-family: inherit; font-size: 12px; color: #5A5448;
     transition: all 160ms;
   }
   .ir-poll-yes:hover, .ir-poll-no:hover { border-color: #B45309; color: #B45309; }

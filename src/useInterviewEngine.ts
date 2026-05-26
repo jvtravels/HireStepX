@@ -1138,6 +1138,35 @@ export function useInterviewEngine() {
     const step = interviewScript[currentStep];
     if (!step) return;
 
+    /* PDF#46 (2026-05-26) — pendingKernel hold.
+     *
+     * A structural placeholder slot (pre-inserted before each
+     * salary-neg AI turn so the engine has somewhere to land while
+     * the async kernel call resolves) carries `pendingKernel: true`
+     * and NO user-facing text. The engine MUST NOT advance past
+     * `thinking` while the slot is pending — that would fire TTS
+     * on an empty string and append an empty AI bubble to the
+     * transcript, both of which are worse than the previous
+     * fake-question failure mode. We hold in `thinking`; when the
+     * kernel-resolve path replaces this slot with a followUpStep
+     * (no pendingKernel flag), the effect's step-identity dep flips
+     * and the effect re-fires through the normal speaking path.
+     *
+     * The dep array on this effect now includes `step.pendingKernel`
+     * (see the bottom of the effect) so the re-fire actually
+     * happens; without the dep, an interviewScript-slot replacement
+     * at the same currentStep with the same length doesn't trigger
+     * any of the existing deps. */
+    if (step.pendingKernel) {
+      // Cancel any in-flight TTS from a previous (non-pending) step
+      // — important when this slot was inserted mid-turn while the
+      // engine was finishing the prior turn's speech.
+      ttsCancelRef.current?.();
+      ttsCancelRef.current = null;
+      setPhase("thinking");
+      return;
+    }
+
     /* Runtime closing-step sanitizer for salary-negotiation.
        The LLM occasionally fabricates a final ₹ figure in the closing
        step that's BELOW the highest offer it actually made earlier in
@@ -1898,9 +1927,14 @@ export function useInterviewEngine() {
       if (safetyTimer) clearTimeout(safetyTimer);
       ttsCancelRef.current?.();
     };
-  // interviewScript.length: re-run when follow-up steps are inserted at currentStep
+  // interviewScript.length: re-run when follow-up steps are inserted at currentStep.
+  // interviewScript[currentStep]?.pendingKernel: PDF#46 — re-run when the kernel-
+  //   resolve path replaces a pending placeholder with a real followUpStep. The
+  //   replacement keeps array length identical so the .length dep alone never fires;
+  //   without this dep the engine would stay parked in `thinking` forever even after
+  //   the kernel returned prose.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, aiVoiceEnabled, interviewScript.length]);
+  }, [currentStep, aiVoiceEnabled, interviewScript.length, interviewScript[currentStep]?.pendingKernel]);
 
   // Handle user "finishing" their answer
   const advancingRef = useRef(false);
@@ -2642,24 +2676,57 @@ export function useInterviewEngine() {
         !isNegotiationKernelTerminal() &&
         nextStep?.type === "closing"
       ) {
-        /* PDF#47 (2026-05-25) — the prior "Let me take a look at the
-         * structure on my side — one moment" wait-string read as the
-         * recruiter stalling and, on the rare path where the kernel
-         * reply doesn't overwrite this slot, left the candidate with
-         * no question to answer (PDF#47 ended with three turns showing
-         * exactly this placeholder). Use a neutral discovery probe so
-         * the conversation can continue even if the kernel reply is
-         * delayed or rejected. */
-        const placeholderText = "While I check the structure on my side — what's been guiding the number you have in mind for this move?";
+        /* PDF#46 (2026-05-26) — STRUCTURAL FIX for the placeholder
+         * leak.
+         *
+         * The two prior attempts at this slot both failed because
+         * they baked user-visible content into the structural slot:
+         *
+         *   PDF#43 (silent wait — "Let me take a look on my side,
+         *           one moment"): left the candidate staring at
+         *           nothing if the kernel reply dropped (PDF#47
+         *           reproduced this end-of-session).
+         *   PDF#47 (fake question — "While I check the structure
+         *           on my side, what's been guiding the number"):
+         *           when the kernel reply dropped, that hardcoded
+         *           question shipped verbatim AS the recruiter's
+         *           next turn, multiple times in a row, because
+         *           every salary-neg AI turn pre-inserts this slot.
+         *           PDF#46 caught it asked four times character-
+         *           identical to four different user answers.
+         *
+         * Both shapes are bandaids on the same architectural
+         * mistake: a structural slot (the kernel needs space to
+         * land) is sharing its representation with a user-facing
+         * slot (the kernel has filled the space with real prose).
+         *
+         * The clean cut: `pendingKernel: true`. The slot exists so
+         * the engine has somewhere to advance into, but it carries
+         * NO user-facing text. The engine's main flow effect treats
+         * pendingKernel as a hold signal — no TTS fires, no
+         * transcript append, no mic prompt. When the kernel-resolve
+         * path at line ~1619 replaces the slot with a real
+         * followUpStep (which doesn't carry the flag), the effect's
+         * step-identity dep flips and the engine proceeds through
+         * the normal speaking → listening flow.
+         *
+         * If the kernel reply legitimately never arrives, the
+         * holding-state is still preferable to shipping a fake
+         * question: the user sees "thinking" — true; the user
+         * doesn't see a fabricated recruiter question — also true.
+         * A future surface can layer a retry/error UI on top of
+         * sustained pendingKernel, but the lying-recruiter failure
+         * mode is closed by this slot alone. */
         setInterviewScript(prev => {
           const placeholder: InterviewStep = {
             type: "question",
-            aiText: placeholderText,
-            aiTextDisplay: placeholderText,
+            aiText: "",
+            aiTextDisplay: "",
             thinkingDuration: 300,
             speakingDuration: 4500,
             waitForUser: true,
-            scoreNote: "Negotiation kernel placeholder — replaced by live kernel response on resolve",
+            pendingKernel: true,
+            scoreNote: "Negotiation kernel placeholder — invisible until kernel resolve",
           };
           return [...prev.slice(0, nextIdx), placeholder, ...prev.slice(nextIdx)];
         });

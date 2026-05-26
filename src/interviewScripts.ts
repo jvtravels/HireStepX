@@ -40,6 +40,30 @@ export interface InterviewStep {
       Mode toggle. Optional: scripted / non-negotiation turns omit it
       and the chip renderer falls back to null. */
   moveTag?: MoveTag;
+  /** PDF#46 (2026-05-26) — structural placeholder marker.
+   *
+   * Salary-negotiation pre-inserts a question slot before each AI
+   * turn so the engine has somewhere to land while the async kernel
+   * call resolves (the static 3-step script has only one question
+   * slot, the kernel needs N turns). The slot was previously
+   * authored with a hardcoded "While I check the structure on my
+   * side — what's been guiding..." string; when the kernel
+   * overwrite raced or dropped, that string shipped verbatim to the
+   * user and was indistinguishable from a real recruiter question.
+   * PDF#46 showed it asked four times character-identical across
+   * different user answers — the bot looked brain-damaged.
+   *
+   * `pendingKernel: true` means the slot exists for the kernel to
+   * fill but has no user-facing text yet. The engine MUST hold in
+   * `thinking` (no TTS, no transcript append, no mic prompt) and
+   * the renderer MUST treat the slot as a thinking indicator only
+   * (no question text rendered). When the kernel-resolve path
+   * replaces the slot with a real followUpStep, that step does NOT
+   * carry the flag, so the engine's effect re-fires and proceeds
+   * through the normal speaking → listening flow.
+   *
+   * Cleared implicitly: nothing else sets it. */
+  pendingKernel?: boolean;
 }
 
 export const scriptsByType: Record<string, InterviewStep[]> = {
