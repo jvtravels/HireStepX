@@ -123,6 +123,37 @@ describe("PDF#46 — salary-neg placeholder slot contract", () => {
     expect(src).not.toMatch(forbidden);
   });
 
+  it("PDF#46 follow-up b: the pendingKernel branch MUST NOT early-return (would orphan the kernel promise)", async () => {
+    /* The original PDF#46 implementation `return`-ed early when
+     * `step.pendingKernel` was true. That short-circuited the rest of
+     * the main flow effect — including the `Promise.race([pendingFollowUp,
+     * timeout]).then(...)` consumer at line ~1576 — so kernel SUCCESS
+     * never replaced the placeholder AND kernel FAILURE never salvaged.
+     * Engine sat in "thinking..." indefinitely; users observed it after
+     * answers like "my current ctc is 24 LPA".
+     *
+     * The fix is to set phase=thinking and FALL THROUGH so the existing
+     * resolve handler at line ~1576 attaches and either mutates the
+     * placeholder's aiText with real prose (success) or fires
+     * replacePendingKernelWithSalvage (failure).
+     *
+     * Lock the contract: the `if (step.pendingKernel)` block must NOT
+     * contain a bare `return;` as its terminating statement. The branch
+     * body should end with the brace, with a fall-through comment. */
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const filePath = path.resolve(__dirname, "../useInterviewEngine.ts");
+    const src = await fs.readFile(filePath, "utf-8");
+    // Find the `if (step.pendingKernel) {` block and capture its body.
+    const blockMatch = src.match(/if\s*\(\s*step\.pendingKernel\s*\)\s*\{([\s\S]*?)\n\s{4}\}/);
+    expect(blockMatch).not.toBeNull();
+    const body = blockMatch![1];
+    // Bare `return;` (not `return result;` etc.) AT THE START OF A LINE
+    // is the failure mode. Comments referring to `return;` are filtered
+    // because they're not at indent-0 of the body line.
+    expect(body).not.toMatch(/^\s*return\s*;\s*$/m);
+  });
+
   it("PDF#46 follow-up: a pendingKernel salvage path must exist in the kernel-null branch", async () => {
     /* The PDF#46 fix introduced `pendingKernel: true` placeholders so
      * the engine can hold in "thinking" while the kernel resolves. If

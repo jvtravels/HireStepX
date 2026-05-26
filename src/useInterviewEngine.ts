@@ -1143,28 +1143,45 @@ export function useInterviewEngine() {
      * A structural placeholder slot (pre-inserted before each
      * salary-neg AI turn so the engine has somewhere to land while
      * the async kernel call resolves) carries `pendingKernel: true`
-     * and NO user-facing text. The engine MUST NOT advance past
-     * `thinking` while the slot is pending — that would fire TTS
-     * on an empty string and append an empty AI bubble to the
-     * transcript, both of which are worse than the previous
-     * fake-question failure mode. We hold in `thinking`; when the
-     * kernel-resolve path replaces this slot with a followUpStep
-     * (no pendingKernel flag), the effect's step-identity dep flips
-     * and the effect re-fires through the normal speaking path.
+     * and NO user-facing text. We hold in `thinking` until the
+     * kernel-resolve path at line ~1619 mutates this slot's aiText
+     * into the real kernel prose (via the existing closure-mutation
+     * hack at line ~1881) AND replaces the script slot via
+     * setInterviewScript (which clears pendingKernel, flips the dep
+     * array, re-fires the effect).
      *
-     * The dep array on this effect now includes `step.pendingKernel`
+     * The dep array on this effect includes `step.pendingKernel`
      * (see the bottom of the effect) so the re-fire actually
      * happens; without the dep, an interviewScript-slot replacement
      * at the same currentStep with the same length doesn't trigger
-     * any of the existing deps. */
+     * any of the existing deps.
+     *
+     * PDF#46 follow-up b (2026-05-26) — the original implementation
+     * here `return`-ed early on `step.pendingKernel`. That early-return
+     * orphaned `pendingFollowUpRef.current`: the Promise.race consumer
+     * at line ~1576 never attached on placeholder slots, so kernel
+     * SUCCESS never replaced the placeholder AND kernel FAILURE never
+     * salvaged. Engine sat in "thinking..." indefinitely (observed in
+     * prod 2026-05-26 with a still-stuck session after the 34873e7
+     * salvage attempt, because the salvage call site was downstream of
+     * the early-return and therefore also unreachable).
+     *
+     * Fix: cancel TTS + set phase=thinking, then FALL THROUGH so the
+     * normal flow at line ~1488+ reads pendingFollowUpRef and attaches
+     * the Promise.race consumer. The placeholder's empty aiText is
+     * safe through that path because (a) the thinking-phrase TTS at
+     * line ~1552 is an independent bridge string, not step.aiText;
+     * (b) startSpeaking only fires AFTER the resolve handler has
+     * either mutated step.aiText with real prose (success) or called
+     * replacePendingKernelWithSalvage (failure). The one remaining
+     * race — thinkingSafetyTimer at line ~1481 firing startSpeaking on
+     * the still-empty placeholder if the kernel takes >12s — is
+     * defused there by gating on `step.aiText` being non-empty. */
     if (step.pendingKernel) {
-      // Cancel any in-flight TTS from a previous (non-pending) step
-      // — important when this slot was inserted mid-turn while the
-      // engine was finishing the prior turn's speech.
       ttsCancelRef.current?.();
       ttsCancelRef.current = null;
       setPhase("thinking");
-      return;
+      // fall through — DO NOT early-return; see comment above.
     }
 
     /* Runtime closing-step sanitizer for salary-negotiation.
@@ -1477,9 +1494,15 @@ export function useInterviewEngine() {
       }
     };
 
-    // Thinking-phase safety: if stuck in "thinking" for >12s, force-start speaking
+    // Thinking-phase safety: if stuck in "thinking" for >12s, force-start speaking.
+    // PDF#46 follow-up b: gate on step.aiText being non-empty. On a pendingKernel
+    // placeholder (aiText:""), the Promise.race resolve handler at line ~1881
+    // mutates step.aiText into the real kernel prose before firing startSpeaking;
+    // if THIS safety timer fires first while step.aiText is still empty, we'd
+    // speak nothing and instantly hit onSpeechEnd against an empty bubble. Let
+    // the Promise.race 13s timeout handle the still-pending case via salvage.
     const thinkingSafetyTimer = setTimeout(() => {
-      if (!isStale()) {
+      if (!isStale() && step.aiText) {
         console.warn("[interview] thinking-phase safety timeout — forcing startSpeaking");
         startSpeaking();
       }
