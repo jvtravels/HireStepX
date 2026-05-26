@@ -223,6 +223,55 @@ function QuoteBlock({ children }: { children: React.ReactNode }) {
   return <div className="nfr-quote">&ldquo;{children}&rdquo;</div>;
 }
 
+/* Tone → token color. Was repeated as a ternary at five call sites
+ * (PhaseLadderPanel, AnchorBracketPanel, NPVMathPanel, Cohort, Archetype).
+ * Now: one switch, one place to change if the palette shifts. */
+function toneToColor(tone: Tone): string {
+  switch (tone) {
+    case "good": return t.success;
+    case "warn": return t.copper;
+    case "bad":  return t.error;
+    case "neutral": return t.coal;
+  }
+}
+
+/* Header chip — the small uppercase mono pill row above the report
+ * title. Was three near-identical 16-line inline-styled <span> blocks
+ * (main eyebrow / tier band / recruiter persona). Same chrome, three
+ * call sites, two variants: the lead chip uses the copper-soft accent;
+ * the trailing meta chips use the cream-soft neutral. */
+function HeaderChip({
+  variant = "neutral",
+  title,
+  children,
+}: {
+  variant?: "accent" | "neutral";
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const isAccent = variant === "accent";
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "3px 10px",
+        background: isAccent ? t.copperSoft : t.creamSoft,
+        color: isAccent ? t.copper : t.inkSoft,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: 0.8,
+        borderRadius: 6,
+        textTransform: "uppercase",
+        fontFamily: f.mono,
+        border: isAccent ? "none" : `1px solid ${t.line}`,
+      }}
+      title={title}
+    >
+      {children}
+    </span>
+  );
+}
+
 function PlayableTime({ at }: { at: string }) {
   /* 2026-05-26 a11y pass — the prior implementation carried
      `role="button"`, `tabIndex={0}`, and a tooltip ("Jump to this
@@ -693,7 +742,7 @@ function AnchorBracketPanel({ outcome }: { outcome: NegotiationOutcome }) {
     none: { label: "No counter named", tone: "bad" as const, ladder: 0 },
   };
   const m = map[bracket.type];
-  const toneColor = m.tone === "good" ? t.success : m.tone === "warn" ? t.copper : t.error;
+  const toneColor = toneToColor(m.tone);
   return (
     <div className="nfr-panel">
       <SectionHeader
@@ -1206,7 +1255,7 @@ function NPVMathPanel({ outcome }: { outcome: NegotiationOutcome }) {
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <tbody>
           {rows.map((r, i) => {
-            const tone = r.tone === "bad" ? t.error : r.tone === "good" ? t.success : t.coal;
+            const tone = toneToColor(r.tone);
             const isLast = i === rows.length - 1;
             return (
               <tr
@@ -1367,13 +1416,14 @@ function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcom
       />
       <div className="nfr-grid-3up">
         {outcome.drills.map((d, i) => (
+          /* Chrome (padding/bg/border/radius) lives on .nfr-info-tile-roomy
+           * so it matches the cream-callout shape used elsewhere in the
+           * report. The flex-column + gap is the only drill-card-specific
+           * layout, kept inline. */
           <div
             key={i}
-            style={{
-              padding: 18, background: t.creamSoft, borderRadius: 10,
-              border: `1px solid ${t.line}`,
-              display: "flex", flexDirection: "column", gap: 10,
-            }}
+            className="nfr-info-tile-roomy nfr-info-tile"
+            style={{ display: "flex", flexDirection: "column", gap: 10 }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <EyebrowLabel color={t.indigo} marginBottom={0}>DRILL {i + 1}</EyebrowLabel>
@@ -1410,6 +1460,35 @@ function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcom
    offer — under both old and new regimes. Side-by-side because
    regime selection is the single largest ₹/month delta most Indian
    candidates miss. */
+/* One side of the two-column take-home stat lockup. Was two identical
+ * 18-line inline blocks differing only by label + which `salaryMeta`
+ * field flowed in. Local to InHandMonthlyCard — not exported because
+ * the shape (label / big mono number with /mo suffix / tax footnote)
+ * is specific to this card. */
+function RegimeTile({
+  label, monthly, taxFootnote,
+}: { label: string; monthly: string; taxFootnote: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 22, fontWeight: 700, fontFamily: f.mono,
+          color: t.coal, lineHeight: 1.1,
+        }}
+      >
+        {monthly}
+        <span style={{ fontSize: 12, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>/mo</span>
+      </div>
+      <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.mono }}>
+        {taxFootnote}
+      </div>
+    </div>
+  );
+}
+
 function InHandMonthlyCard({
   salaryMeta,
 }: {
@@ -1451,46 +1530,16 @@ function InHandMonthlyCard({
           gap: 16,
         }}
       >
-        <div>
-          <div style={{ fontSize: 11, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
-            New regime (FY 2025-26)
-          </div>
-          <div
-            style={{
-              fontSize: 22,
-              fontWeight: 700,
-              fontFamily: f.mono,
-              color: t.coal,
-              lineHeight: 1.1,
-            }}
-          >
-            {fmtInr(salaryMeta.monthlyTakeHomeNewRegimeInr)}
-            <span style={{ fontSize: 12, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>/mo</span>
-          </div>
-          <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.mono }}>
-            {fmtTaxLpa(salaryMeta.annualTaxNewRegimeLpa)}
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: 11, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
-            Old regime
-          </div>
-          <div
-            style={{
-              fontSize: 22,
-              fontWeight: 700,
-              fontFamily: f.mono,
-              color: t.coal,
-              lineHeight: 1.1,
-            }}
-          >
-            {fmtInr(salaryMeta.monthlyTakeHomeOldRegimeInr)}
-            <span style={{ fontSize: 12, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>/mo</span>
-          </div>
-          <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.mono }}>
-            {fmtTaxLpa(salaryMeta.annualTaxOldRegimeLpa)}
-          </div>
-        </div>
+        <RegimeTile
+          label="New regime (FY 2025-26)"
+          monthly={fmtInr(salaryMeta.monthlyTakeHomeNewRegimeInr)}
+          taxFootnote={fmtTaxLpa(salaryMeta.annualTaxNewRegimeLpa)}
+        />
+        <RegimeTile
+          label="Old regime"
+          monthly={fmtInr(salaryMeta.monthlyTakeHomeOldRegimeInr)}
+          taxFootnote={fmtTaxLpa(salaryMeta.annualTaxOldRegimeLpa)}
+        />
       </div>
       <div
         style={{
@@ -1525,58 +1574,19 @@ export function NegotiationFullReport({
       }}
     >
       <div style={{ marginBottom: 18 }}>
-        <div
-          style={{
-            display: "inline-block", padding: "3px 10px",
-            background: t.copperSoft, color: t.copper,
-            fontSize: 10, fontWeight: 700, letterSpacing: 0.8,
-            borderRadius: 6, textTransform: "uppercase", fontFamily: f.mono,
-          }}
-        >
-          Salary Negotiation · Full Report
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <HeaderChip variant="accent">Salary Negotiation · Full Report</HeaderChip>
+          {salaryMeta?.tierBucketLabel && (
+            <HeaderChip title="Compensation band the analyzer scored you against (Phase 1 of SCORE_IMPROVEMENT_PLAN).">
+              Tier · {salaryMeta.tierBucketLabel}
+            </HeaderChip>
+          )}
+          {salaryMeta?.recruiterPersonaLabel && salaryMeta.recruiterPersona !== "default" && (
+            <HeaderChip title="Indian recruiter sector archetype the analyzer scored against (Phase 3 of SCORE_IMPROVEMENT_PLAN).">
+              {salaryMeta.recruiterPersonaLabel}
+            </HeaderChip>
+          )}
         </div>
-        {salaryMeta?.tierBucketLabel && (
-          <span
-            style={{
-              display: "inline-block",
-              marginLeft: 8,
-              padding: "3px 10px",
-              background: t.creamSoft,
-              color: t.inkSoft,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: 0.8,
-              borderRadius: 6,
-              textTransform: "uppercase",
-              fontFamily: f.mono,
-              border: `1px solid ${t.line}`,
-            }}
-            title="Compensation band the analyzer scored you against (Phase 1 of SCORE_IMPROVEMENT_PLAN)."
-          >
-            Tier · {salaryMeta.tierBucketLabel}
-          </span>
-        )}
-        {salaryMeta?.recruiterPersonaLabel && salaryMeta.recruiterPersona !== "default" && (
-          <span
-            style={{
-              display: "inline-block",
-              marginLeft: 8,
-              padding: "3px 10px",
-              background: t.creamSoft,
-              color: t.inkSoft,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: 0.8,
-              borderRadius: 6,
-              textTransform: "uppercase",
-              fontFamily: f.mono,
-              border: `1px solid ${t.line}`,
-            }}
-            title="Indian recruiter sector archetype the analyzer scored against (Phase 3 of SCORE_IMPROVEMENT_PLAN)."
-          >
-            {salaryMeta.recruiterPersonaLabel}
-          </span>
-        )}
         <h2
           id="ir-section-negotiation"
           style={{ fontFamily: f.serif, fontSize: 26, margin: "10px 0 6px", color: t.coal, letterSpacing: -0.4 }}
@@ -1820,6 +1830,32 @@ function NextRoundCTA({
    the single most legible visualisation of the call's actual
    movement. Lives at the top of Part 1 to anchor the rest of
    the breakdown. */
+/* Big rupee-amount pill — used inside OfferTrajectory for both the
+ * recruiter offer chain and the candidate's stated ask. Same shape;
+ * the `ask` variant swaps cream→copper-soft to read as the candidate's
+ * counter-anchor against the recruiter's offers. */
+function AmountPill({
+  variant,
+  children,
+}: { variant: "offer" | "ask"; children: React.ReactNode }) {
+  const isAsk = variant === "ask";
+  return (
+    <span
+      style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        fontFamily: f.serif, fontSize: 16, fontWeight: 600,
+        color: isAsk ? t.copper : t.coal,
+        padding: "6px 12px",
+        background: isAsk ? t.copperSoft : t.cream,
+        border: `1px solid ${isAsk ? "rgba(180,83,9,0.20)" : t.line}`,
+        borderRadius: 999,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
   const offers = outcome.offers ?? [];
   if (offers.length === 0) return null;
@@ -1856,15 +1892,7 @@ function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
       <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
         {offers.map((o, i) => (
           <li key={i} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontFamily: f.serif, fontSize: 16, fontWeight: 600, color: t.coal,
-                padding: "6px 12px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 999,
-              }}
-            >
-              ₹{o.total} LPA
-            </span>
+            <AmountPill variant="offer">₹{o.total} LPA</AmountPill>
             {i < offers.length - 1 && <span aria-hidden style={{ color: t.inkFaint, fontSize: 14 }}>→</span>}
           </li>
         ))}
@@ -1875,15 +1903,7 @@ function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
               <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, textTransform: "uppercase", letterSpacing: 0.6 }}>
                 your ask
               </span>
-              <span
-                style={{
-                  display: "inline-flex", alignItems: "center",
-                  fontFamily: f.serif, fontSize: 16, fontWeight: 600, color: t.copper,
-                  padding: "6px 12px", background: t.copperSoft, border: "1px solid rgba(180,83,9,0.20)", borderRadius: 999,
-                }}
-              >
-                ₹{outcome.candidateAsk} LPA
-              </span>
+              <AmountPill variant="ask">₹{outcome.candidateAsk} LPA</AmountPill>
             </li>
           </>
         )}
