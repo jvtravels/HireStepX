@@ -1361,6 +1361,19 @@ export function useInterviewEngine() {
       let transcriptRevealed = false;
       const revealTranscript = () => {
         if (transcriptRevealed || isStale()) return;
+        /* Empty-aiText guard. If a placeholder leak (pendingKernel
+         * resolve handler never mutated step.aiText) lands here, we
+         * MUST NOT push an empty bubble — the UI would then show
+         * "Karthik, ready when you are" with no visible question and
+         * the candidate has nothing to answer. Bail loudly instead so
+         * the phase doesn't advance into a silent listening state. */
+        if (!step.aiText || step.aiText.trim() === "") {
+          console.error("[interview] revealTranscript: empty step.aiText — skipping bubble append (placeholder leak?)");
+          track("empty_aitext_at_reveal", { step: currentStep });
+          flagTtsError("Question failed to load — refresh to retry.");
+          transcriptRevealed = true; // suppress re-entry
+          return;
+        }
         transcriptRevealed = true;
         setTranscript(prev => [...prev, {
           speaker: "ai",
@@ -1409,6 +1422,17 @@ export function useInterviewEngine() {
       safetyTimer = setTimeout(() => {
         if (!localSpeechEnded) {
           console.warn("[interview] TTS safety timeout — forcing phase transition");
+          /* Surface to UI: when the safety timer fires it almost always
+           * means audio never started (autoplay block, voice provider
+           * stalled, or worse). Without a visible notice the candidate
+           * sees the persona flip to "ready when you are" with no
+           * spoken question and no explanation. The toast + the
+           * revealTranscript inside onSpeechEnd together give them
+           * both the text AND the reason. */
+          track("tts_safety_timeout", { step: currentStep, autoplayBlocked: isAutoplayBlocked() });
+          flagTtsError(isAutoplayBlocked()
+            ? "Browser blocked audio autoplay — read the question above."
+            : "Audio didn't start — read the question above.");
           onSpeechEnd();
         }
       }, safetyMs);
@@ -2604,11 +2628,17 @@ export function useInterviewEngine() {
                   lever: turnRes.move.lever,
                   terminal: Boolean(turnRes.terminal),
                 });
+                const replayPicked = [turnRes.aiTextDisplay, turnRes.aiText, turnRes.text]
+                  .find(s => typeof s === "string" && s.trim().length > 0);
+                if (!replayPicked) {
+                  track("negotiate_turn_failed", { reason: "empty_text_in_replay" });
+                  return null;
+                }
                 return {
                   needsFollowUp: true,
                   /* Same canonical-pair read as the non-replay branch
                    * below — see Bug 2 PDF#25 comment. */
-                  followUpText: turnRes.aiTextDisplay ?? turnRes.aiText ?? turnRes.text,
+                  followUpText: replayPicked,
                   followUpType: "negotiation",
                   conversationDone: turnRes.terminal,
                   moveTag: turnRes.moveTag,
@@ -2666,9 +2696,25 @@ export function useInterviewEngine() {
                * constructor copy it through verbatim. `turnRes.text` is
                * still present (legacy) but is no longer the field the
                * animation hook synchronises with. */
+              /* `??` falls through on nullish only. The kernel
+               * occasionally emits empty strings ("") for aiTextDisplay /
+               * aiText / text (LLM returned an empty stream, server
+               * stripped to nothing after sanitization, etc.). Those
+               * pass `??` and propagate as followUpText="", which the
+               * downstream handler at line ~1680 silently drops via
+               * `result.followUpText &&` — the step never gets aiText
+               * populated and the candidate is stuck on "ready when
+               * you are" with no question. Filter empty strings here
+               * and report null upstream so the salvage path runs. */
+              const pickedText = [turnRes.aiTextDisplay, turnRes.aiText, turnRes.text]
+                .find(s => typeof s === "string" && s.trim().length > 0);
+              if (!pickedText) {
+                track("negotiate_turn_failed", { reason: "empty_text_in_turn_response" });
+                return null;
+              }
               return {
                 needsFollowUp: true,
-                followUpText: turnRes.aiTextDisplay ?? turnRes.aiText ?? turnRes.text,
+                followUpText: pickedText,
                 followUpType: "negotiation",
                 conversationDone: turnRes.terminal,
                 moveTag: turnRes.moveTag,
