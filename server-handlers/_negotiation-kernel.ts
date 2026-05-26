@@ -58,7 +58,7 @@ import { classifyNumberRoles } from "./_number-role-classifier";
 import { isWalkAway } from "./_walkaway-detection";
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
 import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
-import { buildPostAcceptanceMessage } from "./_post-acceptance";
+import { buildPostAcceptanceMessageChunks } from "./_post-acceptance";
 import { detectInHandFraming, backComputeCtcFromInHand } from "./_in-hand-vs-ctc";
 import { detectRangeDisclosure, detectTrialCloseAsked, detectTrialCloseResponse } from "./_trial-close-detector";
 import {
@@ -1154,6 +1154,18 @@ export interface NegotiationState {
    * back-compat. */
   postAcceptanceMessage?: string;
 
+  /* PDF#48 follow-up (2026-05-26) — structured chunks of the same
+   * post-acceptance content, one logical beat per entry (congrats,
+   * doc checklist, BGV, counter-offer heads-up, joining-date). The
+   * joined-string `postAcceptanceMessage` above is a back-compat view
+   * of these chunks (joined with paragraph breaks); the chunks array
+   * is the forward-compatible source of truth for a future engine
+   * fan-out that renders one bubble per beat instead of one wall-of-
+   * text bubble. Populated alongside `postAcceptanceMessage` whenever
+   * `attachPostAcceptanceMessage` fires; readers that don't fan out
+   * yet can ignore this field. Optional for back-compat. */
+  postAcceptanceFollowups?: string[];
+
   /* Sprint A.4 (2026-05-15) — current employer (free-form, normalized
    * downstream). Detected from utterances; threaded into the
    * counter-offer-risk detector so the well-funded-employer signal can
@@ -2006,7 +2018,14 @@ function normalizeQuotes(s: string): string {
 
 function attachPostAcceptanceMessage(next: NegotiationState): void {
   if (next.postAcceptanceMessage) return;
-  next.postAcceptanceMessage = buildPostAcceptanceMessage(next);
+  /* Populate both views in one call so the joined-string consumer
+   * (current negotiate-turn dispatch) and the chunks consumer (future
+   * engine fan-out) read consistent data — single source, two
+   * projections. The chunks array is the forward-compatible shape;
+   * see the field doc on NegotiationState.postAcceptanceFollowups. */
+  const chunks = buildPostAcceptanceMessageChunks(next);
+  next.postAcceptanceFollowups = chunks;
+  next.postAcceptanceMessage = chunks.join("\n\n");
 }
 
 /** Audit Pass 2 Fix C (2026-05-16) — single helper for the

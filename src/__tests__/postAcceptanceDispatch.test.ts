@@ -100,4 +100,54 @@ describe("F2 — post-acceptance dispatch wiring", () => {
     expect(msg).toMatch(/retention counter/);
     expect(msg).toMatch(/joining date|joining-date/i);
   });
+
+  /* PDF#48 follow-up (2026-05-26) — chunks shape.
+   *
+   * The kernel must populate `postAcceptanceFollowups` alongside the
+   * joined `postAcceptanceMessage` so future engine work can fan out
+   * one bubble per beat instead of dumping the entire onboarding
+   * scaffold as a wall of text. Until the engine fans out, the
+   * joined string remains canonical, so this test pins both the
+   * chunks SHAPE and the joined-string EQUIVALENCE. */
+  it("postAcceptanceFollowups is populated alongside postAcceptanceMessage", () => {
+    const s = stateOnVergeOfAccept();
+    const next = applyCandidateAnswer(s, "Yes, please send me the offer letter — I accept.");
+    expect(next.postAcceptanceFollowups).toBeDefined();
+    const chunks = next.postAcceptanceFollowups!;
+    expect(Array.isArray(chunks)).toBe(true);
+    /* Exactly 5 beats by default (congrats, docs, BGV, counter-offer
+     * heads-up, joining-date lock). Both BGV + counter-offer are on
+     * by default; the optional flags can drop them. */
+    expect(chunks.length).toBe(5);
+    /* Beat 1 is the headline — congrats + close lock. */
+    expect(chunks[0]).toMatch(/Congratulations/);
+    expect(chunks[0]).toMatch(/Locking the close/);
+    /* Docs heading + items travel as a single beat so the future
+     * fan-out doesn't render the heading and each item as separate
+     * bubbles. */
+    expect(chunks[1]).toMatch(/Documents we'll need/);
+    expect(chunks[1]).toMatch(/Aadhaar/);
+    expect(chunks[1]).toMatch(/PAN/);
+    /* BGV alignment lives on its own beat. */
+    expect(chunks[2]).toMatch(/BGV/);
+    /* Counter-offer warning lives on its own beat — this is the
+     * piece of news a candidate most needs to hear distinctly, not
+     * buried mid-paragraph. */
+    expect(chunks[3]).toMatch(/retention counter/);
+    /* Joining-date lock closes. */
+    expect(chunks[4]).toMatch(/joining date|joining-date/i);
+  });
+
+  it("joined postAcceptanceMessage uses paragraph breaks, not single newlines (readability)", () => {
+    /* The prior single-newline join produced a wall-of-text on the
+     * single-bubble consumer. Paragraph breaks ("\n\n") give the
+     * candidate visible section spacing within the same bubble while
+     * the engine fan-out is being designed. */
+    const s = stateOnVergeOfAccept();
+    const next = applyCandidateAnswer(s, "Yes, please send me the offer letter — I accept.");
+    const msg = next.postAcceptanceMessage!;
+    expect(msg).toContain("\n\n");
+    /* Sanity: the joined string equals the chunks joined with \n\n. */
+    expect(msg).toBe(next.postAcceptanceFollowups!.join("\n\n"));
+  });
 });
