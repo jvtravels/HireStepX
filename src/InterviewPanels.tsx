@@ -1383,7 +1383,6 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             return (
               <article
                 key={`${msg.speaker}-${msg.time}-${i}`}
-                role="article"
                 aria-label={isAi ? `${speakerName} (recruiter) at ${msg.time}` : `You at ${msg.time}`}
                 style={{ display: "flex", gap: 10 }}
               >

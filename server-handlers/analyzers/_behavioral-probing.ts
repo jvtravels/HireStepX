@@ -146,7 +146,7 @@ export function isFailureQuestion(text: string): boolean {
  * okay) are allowed before the stock phrase since natural speech often
  * starts with them. */
 export const REHEARSED_OPENER_RE =
-  /^(?:\s*(?:so|well|okay|alright|sure)\s*[,.\-]?\s*){0,2}(?:let\s+me\s+(?:tell|share|walk)\s+you\s+(?:about|through)\s+(?:a\s+(?:time|story|situation|scenario)|the\s+time)|i\s+would\s+like\s+to\s+(?:share|tell|narrate)|i\s+(?:will|would)\s+(?:like\s+to\s+)?(?:begin|start)\s+(?:by|with)|allow\s+me\s+to\s+(?:share|narrate|elaborate)|to\s+answer\s+(?:this|your)\s+question(?:\s+[,.\-]?\s*i)?|in\s+response\s+to\s+(?:this|your)\s+question|as\s+per\s+(?:my|the)\s+(?:experience|understanding)|i\s+have\s+a\s+(?:very\s+)?(?:good|relevant|perfect)\s+example|there\s+was\s+(?:one|a)\s+(?:instance|time|situation)\s+(?:in|when|where)\s+my)/i;
+  /^(?:\s*(?:so|well|okay|alright|sure)\s*[,.-]?\s*){0,2}(?:let\s+me\s+(?:tell|share|walk)\s+you\s+(?:about|through)\s+(?:a\s+(?:time|story|situation|scenario)|the\s+time)|i\s+would\s+like\s+to\s+(?:share|tell|narrate)|i\s+(?:will|would)\s+(?:like\s+to\s+)?(?:begin|start)\s+(?:by|with)|allow\s+me\s+to\s+(?:share|narrate|elaborate)|to\s+answer\s+(?:this|your)\s+question(?:\s+[,.-]?\s*i)?|in\s+response\s+to\s+(?:this|your)\s+question|as\s+per\s+(?:my|the)\s+(?:experience|understanding)|i\s+have\s+a\s+(?:very\s+)?(?:good|relevant|perfect)\s+example|there\s+was\s+(?:one|a)\s+(?:instance|time|situation)\s+(?:in|when|where)\s+my)/i;
 
 /* Hedge-token regex for the low-conviction-delivery signal. Captures
  * filler markers ("um", "uh"), epistemic hedges ("I think", "maybe",
