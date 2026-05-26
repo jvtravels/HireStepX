@@ -40,7 +40,7 @@
 
 import React, { useState } from "react";
 import type { Question } from "./types";
-import { t, f, shadows } from "./tokens";
+import { t, f, shadows, radius } from "./tokens";
 import {
   NPV_MODEL,
   derivePhases,
@@ -100,7 +100,7 @@ function FreshnessChip({ source, n, asOf, methodologyUrl }: {
   const baseStyle = {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`,
-    borderRadius: 999, fontSize: 10, fontFamily: f.mono,
+    borderRadius: radius.pill, fontSize: 10, fontFamily: f.mono,
     color: t.inkSoft, letterSpacing: 0.3,
     textDecoration: "none",
   } as const;
@@ -217,6 +217,45 @@ function EyebrowLabel({
   );
 }
 
+/* OutlinedCard — the white/cream surface + 1px line + radius.card +
+ * uniform padding shape that the two OfferTrajectory states and a few
+ * other one-off wrappers were rolling inline. Variants distinguish
+ * the bright "this is the recorded record" white card from the muted
+ * "this is a contextual stat lockup" cream card.
+ *
+ * Deliberately NOT generalising to a "Card" component for the whole
+ * report — the .nfr-panel class is already the canonical panel chrome.
+ * This primitive is for the smaller in-panel callouts that aren't
+ * panels themselves but want consistent edge treatment. */
+function OutlinedCard({
+  variant = "white",
+  padding = 22,
+  marginBottom,
+  children,
+  style,
+}: {
+  variant?: "white" | "cream";
+  padding?: number | string;
+  marginBottom?: number | string;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={{
+        background: variant === "cream" ? t.creamSoft : t.white,
+        border: `1px solid ${t.line}`,
+        borderRadius: radius.card,
+        padding,
+        ...(marginBottom !== undefined ? { marginBottom } : null),
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function QuoteBlock({ children }: { children: React.ReactNode }) {
   /* Quotation marks live in JSX (not CSS pseudo-elements) so the
      glyph is selectable + accessible to copy/paste. */
@@ -260,7 +299,7 @@ function HeaderChip({
         fontSize: 10,
         fontWeight: 700,
         letterSpacing: 0.8,
-        borderRadius: 6,
+        borderRadius: radius.tile,
         textTransform: "uppercase",
         fontFamily: f.mono,
         border: isAccent ? "none" : `1px solid ${t.line}`,
@@ -343,7 +382,7 @@ function SectionBand({
         style={{
           padding: "5px 11px", background: accent, color: "#FFFFFF",
           fontSize: 10, fontWeight: 700, letterSpacing: 1.4,
-          borderRadius: 4, textTransform: "uppercase", fontFamily: f.mono,
+          borderRadius: radius.sm, textTransform: "uppercase", fontFamily: f.mono,
           flexShrink: 0,
         }}
       >
@@ -589,7 +628,7 @@ function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
       </div>
       <div className="nfr-phase-rail" style={{ display: "flex", gap: 4, marginBottom: 16, marginTop: 4 }}>
         {phases.map((p) => (
-          <div key={p.num} style={{ flex: 1, height: 8, borderRadius: 4, background: p.reached ? t.success : t.line }} />
+          <div key={p.num} style={{ flex: 1, height: 8, borderRadius: radius.sm, background: p.reached ? t.success : t.line }} />
         ))}
       </div>
       {/* Find the index of the first unreached stage — that's the
@@ -613,7 +652,7 @@ function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
                     padding: "12px 14px",
                     background: bg,
                     border: `1px solid ${border}`,
-                    borderRadius: 10,
+                    borderRadius: radius.xl,
                     opacity: p.reached || isNext ? 1 : 0.6,
                   }}
                 >
@@ -764,7 +803,7 @@ function AnchorBracketPanel({ outcome }: { outcome: NegotiationOutcome }) {
           <div
             key={i}
             style={{
-              flex: 1, height: 6, borderRadius: 3,
+              flex: 1, height: 6, borderRadius: radius.rail,
               background: i <= m.ladder ? toneColor : t.line,
             }}
           />
@@ -801,7 +840,7 @@ function VerbalHabitsPanel({ outcome }: { outcome: NegotiationOutcome }) {
               style={{
                 display: "grid", gridTemplateColumns: "auto 1fr auto",
                 gap: 12, alignItems: "center",
-                padding: "10px 12px", background: t.creamSoft, borderRadius: 6,
+                padding: "10px 12px", background: t.creamSoft, borderRadius: radius.tile,
               }}
             >
               <div style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 700, color: t.error, minWidth: 32 }}>
@@ -826,7 +865,7 @@ function VerbalHabitsPanel({ outcome }: { outcome: NegotiationOutcome }) {
         <div>
           <EyebrowLabel color={t.error}>DISCLOSURE LEAKS · {leaks.length}</EyebrowLabel>
           {leaks.map((l, i) => (
-            <div key={i} style={{ padding: "10px 12px", background: t.error100, borderRadius: 6, marginBottom: 6 }}>
+            <div key={i} style={{ padding: "10px 12px", background: t.error100, borderRadius: radius.tile, marginBottom: 6 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: t.error, fontFamily: f.mono, marginBottom: 2 }}>
                 <PlayableTime at={l.at} />
                 <span>· {l.leak}</span>
@@ -858,7 +897,7 @@ function SilenceMapPanel({ outcome }: { outcome: NegotiationOutcome }) {
               gap: 12, alignItems: "center",
               padding: "10px 14px",
               background: s.healthy ? t.success100 : t.error100,
-              borderRadius: 6,
+              borderRadius: radius.tile,
             }}
           >
             <PlayableTime at={s.at} />
@@ -955,7 +994,7 @@ function renderLetterWithPlaceholders(letter: string): React.ReactNode {
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 12,
             fontWeight: 600,
-            borderRadius: 4,
+            borderRadius: radius.sm,
             margin: "0 1px",
           }}
         >
@@ -1100,7 +1139,7 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
           display: "flex", alignItems: "center", gap: 8,
           padding: "8px 14px", marginBottom: 10,
           background: "#FEF3C7", border: `1px solid ${t.warning}`,
-          borderRadius: 8, fontSize: 12, color: t.coal,
+          borderRadius: radius.lg, fontSize: 12, color: t.coal,
         }}
       >
         <span style={{ fontWeight: 600, color: t.warning }}>Heads up</span>
@@ -1116,7 +1155,7 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
         style={{
           margin: "0 0 16px",
           padding: 22, background: t.cream, border: `1px solid ${t.lineStrong}`,
-          borderRadius: 10, fontFamily: f.sans, fontSize: 14,
+          borderRadius: radius.xl, fontFamily: f.sans, fontSize: 14,
           color: t.coal, lineHeight: 1.65, whiteSpace: "pre-line",
           wordBreak: "break-word", overflow: "auto",
         }}
@@ -1213,14 +1252,14 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
           </div>
           <div
             style={{
-              height: 12, background: t.line, borderRadius: 6,
+              height: 12, background: t.line, borderRadius: radius.tile,
               position: "relative", marginBottom: 8, marginTop: 16,
             }}
           >
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "25%", background: t.error100, borderRadius: "6px 0 0 6px" }} />
             <div style={{ position: "absolute", left: "25%", top: 0, bottom: 0, width: "50%", background: "rgba(180,83,9,0.18)" }} />
             <div style={{ position: "absolute", left: "75%", top: 0, bottom: 0, right: 0, background: t.success100, borderRadius: "0 6px 6px 0" }} />
-            <div style={{ position: "absolute", left: `${p}%`, top: -4, bottom: -4, width: 4, background: t.coal, borderRadius: 2, transform: "translateX(-2px)" }} />
+            <div style={{ position: "absolute", left: `${p}%`, top: -4, bottom: -4, width: 4, background: t.coal, borderRadius: radius.rail, transform: "translateX(-2px)" }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: t.inkFaint, fontFamily: f.mono, letterSpacing: 0.4 }}>
             <span>p25</span><span>p50</span><span>p75</span>
@@ -1397,7 +1436,7 @@ function ArchetypePanel({ outcome, priorSessionCount }: { outcome: NegotiationOu
         </div>
       )}
 
-      <div style={{ padding: 14, background: t.success100, borderRadius: 8, fontSize: 13, color: t.coal }}>
+      <div style={{ padding: 14, background: t.success100, borderRadius: radius.lg, fontSize: 13, color: t.coal }}>
         <EyebrowLabel color={t.success} marginBottom={4}>THE FIX</EyebrowLabel>
         {a.fix}
       </div>
@@ -1507,7 +1546,7 @@ function InHandMonthlyCard({
         padding: "14px 16px",
         background: t.creamSoft,
         border: `1px solid ${t.line}`,
-        borderRadius: 12,
+        borderRadius: radius.bar,
       }}
     >
       <div
@@ -1568,7 +1607,7 @@ export function NegotiationFullReport({
     <section
       aria-labelledby="ir-section-negotiation"
       style={{
-        background: t.white, border: `1px solid ${t.line}`, borderRadius: 16,
+        background: t.white, border: `1px solid ${t.line}`, borderRadius: radius.shell,
         padding: "28px clamp(16px, 4vw, 32px)", boxShadow: shadows.card,
         scrollMarginTop: 72,
       }}
@@ -1723,7 +1762,7 @@ export function NegotiationFullReport({
         </summary>
         <pre
           style={{
-            marginTop: 10, padding: 14, borderRadius: 10,
+            marginTop: 10, padding: 14, borderRadius: radius.xl,
             background: t.cream, border: `1px solid ${t.line}`,
             fontFamily: f.mono, fontSize: 11, lineHeight: 1.55,
             whiteSpace: "pre-wrap", wordBreak: "break-word",
@@ -1792,7 +1831,7 @@ function NextRoundCTA({
       style={{
         marginTop: 24, padding: "24px 26px",
         background: t.indigo, color: "#FFFFFF",
-        borderRadius: 14, display: "flex",
+        borderRadius: radius.card, display: "flex",
         alignItems: "center", justifyContent: "space-between",
         gap: 20, flexWrap: "wrap",
       }}
@@ -1811,7 +1850,7 @@ function NextRoundCTA({
           background: "#FFFFFF",
           color: t.indigo,
           border: "none",
-          borderRadius: 8,
+          borderRadius: radius.lg,
           fontSize: 14,
           fontWeight: 600,
           cursor: "pointer",
@@ -1848,7 +1887,7 @@ function AmountPill({
         padding: "6px 12px",
         background: isAsk ? t.copperSoft : t.cream,
         border: `1px solid ${isAsk ? "rgba(180,83,9,0.20)" : t.line}`,
-        borderRadius: 999,
+        borderRadius: radius.pill,
       }}
     >
       {children}
@@ -1868,26 +1907,16 @@ function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
      whether the report is broken. */
   if (offers.length === 1 && outcome.candidateAsk === null) {
     return (
-      <div
-        style={{
-          background: t.white, border: `1px solid ${t.line}`,
-          borderRadius: 14, padding: 22, marginBottom: 18,
-        }}
-      >
+      <OutlinedCard marginBottom={18}>
         <EyebrowLabel marginBottom={10}>What happened</EyebrowLabel>
         <div style={{ fontSize: 14, color: t.coal, lineHeight: 1.6 }}>
           They opened at <strong style={{ fontFamily: f.serif }}>₹{initial} LPA</strong>. You didn't name a counter, so this became the final number. The conversation never moved past the offer-reaction stage.
         </div>
-      </div>
+      </OutlinedCard>
     );
   }
   return (
-    <div
-      style={{
-        background: t.white, border: `1px solid ${t.line}`,
-        borderRadius: 14, padding: 22, marginBottom: 18,
-      }}
-    >
+    <OutlinedCard marginBottom={18}>
       <EyebrowLabel marginBottom={10}>Offer progression</EyebrowLabel>
       <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
         {offers.map((o, i) => (
@@ -1916,6 +1945,6 @@ function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
           )}
         </div>
       )}
-    </div>
+    </OutlinedCard>
   );
 }

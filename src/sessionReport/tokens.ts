@@ -61,6 +61,23 @@ export const f = {
   mono: "'JetBrains Mono', 'SF Mono', monospace",
 } as const;
 
+/* Radius scale. Prior to 2026-05-26 these were sprinkled as magic
+   numbers (3, 4, 6, 8, 10, 12, 14, 16, 999) across NegotiationFullReport,
+   making it impossible to tighten the report's curvature without grepping
+   for two-digit literals. Names are by role, not by value, so a future
+   reskin can shift the scale without churning every call site. */
+export const radius = {
+  rail: 3,        // anchor-bracket rungs; phase-rail bars
+  sm: 4,          // header eyebrow chips; phase-rail segments
+  tile: 6,        // small evidence tiles (silence rows, habit rows, leaks)
+  lg: 8,          // CTA buttons; reminder banners; "THE FIX" tile
+  xl: 10,         // letter body; transcript pre; phase-ladder rows
+  bar: 12,        // cohort percentile bar; in-hand monthly card
+  card: 14,       // outlined cards (offer trajectory, etc.); bottom CTA
+  shell: 16,      // outermost report section shell
+  pill: 999,      // any fully-rounded pill (FreshnessChip, AmountPill)
+} as const;
+
 export const shadows = {
   card: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
   cta: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
