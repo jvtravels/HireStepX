@@ -122,4 +122,34 @@ describe("PDF#46 — salary-neg placeholder slot contract", () => {
       /ai(?:Text|TextDisplay)\s*:\s*["'`][^"'`]*structure on my side[^"'`]*one moment[^"'`]*["'`]/i;
     expect(src).not.toMatch(forbidden);
   });
+
+  it("PDF#46 follow-up: a pendingKernel salvage path must exist in the kernel-null branch", async () => {
+    /* The PDF#46 fix introduced `pendingKernel: true` placeholders so
+     * the engine can hold in "thinking" while the kernel resolves. If
+     * the kernel-turn returns null (network drop, 5xx, blocked
+     * client) the resolve handler MUST replace the placeholder with
+     * a non-pending step — otherwise the user sits on "Karthik Nair ·
+     * thinking..." forever with no escape (observed in prod).
+     *
+     * This test pins the watchdog in place: a salvage function name
+     * must appear, the salvage must produce a non-pending step
+     * (type:"closing"), and the resolve handler's null-result and
+     * .catch branches must both invoke it. Comments matching the
+     * literal are filtered out by requiring a call-site `()`. */
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const filePath = path.resolve(__dirname, "../useInterviewEngine.ts");
+    const src = await fs.readFile(filePath, "utf-8");
+    // The salvage helper must be declared.
+    expect(src).toMatch(/replacePendingKernelWithSalvage\s*=\s*\(/);
+    // It must be invoked from at least two sites (null-result + catch).
+    const callMatches = src.match(/replacePendingKernelWithSalvage\(\)/g) ?? [];
+    expect(callMatches.length).toBeGreaterThanOrEqual(2);
+    // The salvage step must NOT carry pendingKernel:true (would re-park).
+    const salvageBlock = src.match(/const salvageStep:\s*InterviewStep\s*=\s*{[\s\S]*?};/);
+    expect(salvageBlock).not.toBeNull();
+    expect(salvageBlock![0]).not.toMatch(/pendingKernel\s*:\s*true/);
+    // The salvage must terminate the negotiation cleanly — type:"closing".
+    expect(salvageBlock![0]).toMatch(/type\s*:\s*["']closing["']/);
+  });
 });

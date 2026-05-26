@@ -1488,6 +1488,49 @@ export function useInterviewEngine() {
     const pendingFollowUp = pendingFollowUpRef.current;
     const isSalaryNegConversation = interviewType === "salary-negotiation";
 
+    /* PDF#46 follow-up — placeholder-leak watchdog.
+     *
+     * When the kernel-turn returns null (or its containing Promise
+     * rejects) we MUST clear any pendingKernel placeholder at
+     * currentStep before the engine's main flow effect re-evaluates
+     * — otherwise the placeholder's `pendingKernel: true` keeps the
+     * effect parked in phase="thinking" indefinitely and the user
+     * sits on the "Karthik Nair · thinking..." screen with no escape.
+     *
+     * Salvage strategy: rewrite the placeholder slot in-place as a
+     * closing step (waitForUser:false) with honest fallback prose so
+     * the engine routes into phase="done" and surfaces the report.
+     * We do NOT fabricate a recruiter question (PDF#47 failure) and
+     * we do NOT leave the slot silent (PDF#43 failure) — we
+     * acknowledge the failure honestly, keep the candidate's prior
+     * answers in transcript, and end the round cleanly.
+     *
+     * Returns true if a salvage actually fired so the caller can
+     * skip its own startSpeaking() schedule (the script replacement
+     * re-fires the main effect on the new non-pending slot). */
+    const replacePendingKernelWithSalvage = (): boolean => {
+      const cur = interviewScript[currentStep];
+      if (!cur?.pendingKernel) return false;
+      const salvageText =
+        "Sorry, I lost the connection on my side for a moment. Your responses so far are saved — let's wrap here and you can pick this up in the next round.";
+      const salvageStep: InterviewStep = {
+        type: "closing",
+        aiText: salvageText,
+        aiTextDisplay: salvageText,
+        thinkingDuration: 300,
+        speakingDuration: Math.max(3500, Math.round((salvageText.split(/\s+/).length / 150) * 60 * 1000) + 1500),
+        waitForUser: false,
+        scoreNote: "Negotiation kernel salvage — kernel reply unavailable",
+      };
+      setInterviewScript(prev => {
+        if (!prev[currentStep]?.pendingKernel) return prev;
+        /* Truncate the tail too — any further pre-inserted placeholders
+         * would re-park the engine after the salvage closing speaks. */
+        return [...prev.slice(0, currentStep), salvageStep];
+      });
+      return true;
+    };
+
     if (pendingFollowUp) {
       pendingFollowUpRef.current = null;
       const timeout = new Promise<null>(r => setTimeout(() => r(null), isSalaryNegConversation ? 13000 : 4000));
@@ -1883,9 +1926,42 @@ export function useInterviewEngine() {
         } else if (!interviewEndedRef.current) {
           // Follow-up timed out or returned needsFollowUp=false
           if (isSalaryNegConversation) {
-            // Thinking phrase already spoken — go directly to main response
-            const microDelay = randomDelay(200, 500);
-            setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
+            // PDF#46 follow-up (2026-05-26) — placeholder salvage.
+            //
+            // When the kernel-turn returns null (network drop, 5xx,
+            // ERR_BLOCKED_BY_CLIENT, parse failure) the placeholder
+            // slot we pre-inserted at line ~2720 stays `pendingKernel:
+            // true` with empty aiText. The main flow effect at line
+            // ~1135 reads that flag and HOLDS in phase="thinking"
+            // forever. The PDF#46 comment claimed silent-hold is
+            // "preferable to shipping a fake question" — true, but
+            // without an escape hatch the user sits in "thinking..."
+            // indefinitely (observed in prod 2026-05-26). Salvage
+            // here: if the placeholder is still at currentStep,
+            // replace it with a graceful closing step that
+            // acknowledges the failure honestly and routes the engine
+            // into phase="done" so the report surfaces what we have.
+            // No fabricated recruiter prose — just an honest "we lost
+            // the connection on our side, your responses are saved."
+            //
+            // The replacement flips interviewScript[currentStep].
+            // pendingKernel from true to undefined, which is wired into
+            // this effect's dep array (line ~1937). The effect re-fires
+            // on the new step shape, hits the non-pending speaking path
+            // with the salvage step's real aiText, and continues
+            // normally. No explicit startSpeaking() call needed — and
+            // calling it here would speak the closure-captured (stale)
+            // placeholder step instead of the salvage.
+            const salvaged = replacePendingKernelWithSalvage();
+            if (!salvaged) {
+              // Slot wasn't a pendingKernel placeholder — restore the
+              // pre-PDF#46 behaviour of attempting to speak whatever is
+              // there. (Reachable when needsFollowUp=false on a non-
+              // pending slot — rare today, but a future code path could
+              // legitimately resolve null without ever pre-inserting.)
+              const microDelay = randomDelay(200, 500);
+              setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
+            }
           } else {
             const quality = lastAnswerQualityRef.current;
             const pauseRange = quality === "strong" ? [1200, 2000] : quality === "decent" ? [800, 1400] : [500, 900];
@@ -1896,8 +1972,12 @@ export function useInterviewEngine() {
       }).catch(() => {
         if (!isStale() && !interviewEndedRef.current) {
           if (isSalaryNegConversation) {
-            const microDelay = randomDelay(200, 500);
-            setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
+            // PDF#46 follow-up — same salvage as the null-result branch.
+            const salvaged = replacePendingKernelWithSalvage();
+            if (!salvaged) {
+              const microDelay = randomDelay(200, 500);
+              setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
+            }
           } else {
             const microDelay = (thinkingPhrase !== null) ? randomDelay(800, 1500) : step.thinkingDuration;
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startWithThinkingPhrase(); }, microDelay);
