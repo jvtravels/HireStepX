@@ -787,6 +787,17 @@ export interface NegotiationState {
 
   /* AI moves made */
   highestOfferMade: number;              // best number AI has put on table (LPA)
+  /** PDF#48 (2026-05-26) — turn index on which the kernel first put a
+   *  specific number on the table (the moment `highestOfferMade`
+   *  transitioned from 0 to > 0). Lets the premature-close guard ask
+   *  "how many candidate turns have elapsed since the offer landed?" —
+   *  the structural invariant the auto-close bug violated was that
+   *  acceptance could lock in on the SAME turn the offer was first
+   *  spoken, before the candidate had any chance to counter. Set once
+   *  in applyAiMove at the same site that bumps highestOfferMade.
+   *  Optional / nullable for backward-compat with sessions started
+   *  before this field existed; absent ≡ never anchored. */
+  firstOfferAtTurn?: number | null;
   leversUsed: NegotiationLever[];        // ordered history
   lastAiText: string;                    // for verbatim-repeat detection
 
@@ -2169,6 +2180,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     candidateAskedAsRange: false,
     highestOfferMade: 0,
+    firstOfferAtTurn: null,
     leversUsed: [],
     lastAiText: "",
     lastJoiningBonusOffered: null,
@@ -2665,8 +2677,64 @@ export function canCloseSession(
   if (reason === "max-turns") return true;
   /* Explicit decline always passes the guard. */
   if (reason === "decline") return true;
-  /* Strict explicit accept is one of the four canonical valid-close
-   * conditions — always passes. */
+  /* PDF#48 (2026-05-26) — structural anti-premature-close invariant.
+   *
+   * The bug: a candidate answered three data-collection questions
+   * (current CTC, base split, "no there is not equity"). The kernel
+   * announced ₹30.4 LPA on turn 4 and on the SAME turn fired
+   * close-acceptance with a full post-acceptance message ("Locking the
+   * close at ₹30.4L... Aadhaar, PAN, BGV, retention-counter warning,
+   * joining-date lock") — all in one turn. The candidate never had a
+   * chance to counter, ask for breakdown, or even react.
+   *
+   * The trigger was a soft-accept false-positive: parseAcceptance read
+   * a candidate utterance (likely "no there is not equity" parsed via
+   * the medium-confidence path, or an empty Continue press) as
+   * acceptance, the planner stamped verbalAcceptanceTurn = turnIndex
+   * via the PDF#36 A2 fast-path, and `_next-action-planner.ts:1765`
+   * fired close-acceptance the same turn the offer was first spoken.
+   *
+   * The root invariant being violated: an "accept" cannot logically
+   * exist BEFORE an offer the candidate has seen and processed. The
+   * minimum-viable structural guarantee is one full candidate turn
+   * AFTER the first offer was announced. Without that, acceptance is
+   * by definition a parse artifact — there is nothing yet to accept.
+   *
+   * Gate BOTH strict-accept and soft-accept (this code-path; the
+   * caller at line 4188 / 4261 routes both through here) on:
+   *
+   *   firstOfferAtTurn != null
+   *     AND turnIndex > firstOfferAtTurn          (≥1 candidate turn elapsed)
+   *
+   * If the candidate has named a counter, that's prima facie proof
+   * they processed the offer and the gate releases immediately —
+   * counter-then-accept is a normal negotiation path. Strict-accept
+   * also gets a same-turn release ONLY if the LANGUAGE is explicit
+   * (the candidate literally said "I accept" / "send the offer
+   * letter") rather than soft-accept proxies.
+   *
+   * No real session loses anything from this guard: a candidate who
+   * wants to accept can do so on the very next turn. A candidate who
+   * doesn't want to accept stops being silently force-closed. */
+  /* Soft-accept ONLY: when we can prove the offer landed THIS turn
+   * (firstOfferAtTurn === turnIndex) AND the candidate hasn't named a
+   * counter, block the close. This catches the PDF#48 trigger where
+   * a candidate utterance answering an unrelated probe ("no there is
+   * not equity" answering the ESOPs question) gets parsed by the
+   * soft-accept proxy as acceptance on the same turn the offer was
+   * first announced. Strict explicit acceptance ("I accept", "please
+   * send the offer letter") is unambiguous human consent and is NOT
+   * gated — a candidate who literally says "I accept" to a same-turn
+   * offer should be allowed to close. */
+  if (reason === "soft-accept") {
+    if (state.firstOfferAtTurn != null && state.firstOfferAtTurn === state.turnIndex) {
+      const candidateCountered =
+        state.lastCandidateCounterLpa != null || state.candidateTarget != null;
+      if (!candidateCountered) return false;
+    }
+  }
+  /* Strict explicit accept past the structural gate is one of the four
+   * canonical valid-close conditions — always passes. */
   if (reason === "accept") return true;
   const min = state.minTurnsBeforeClose ?? 8;
   /* Hard system cap (60) always passes regardless of min. */
@@ -4246,7 +4314,28 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
          * whenever the candidate signals acceptance over a standing
          * offer. */
         if (hasOffer) {
-          next.verbalAcceptanceTurn = state.turnIndex;
+          /* PDF#48 (2026-05-26) — same structural invariant as
+           * canCloseSession. The PDF#36 A2 patch stamped
+           * verbalAcceptanceTurn here so the planner's post-anchor
+           * close gate (_next-action-planner.ts:1765) could fire
+           * same-turn. That fast-path is what produced the
+           * PDF#48 auto-close: parseAcceptance medium-confidence
+           * false-positive → stamp → planner fires close-
+           * acceptance on the turn the offer was first announced.
+           *
+           * Block the stamp ONLY when we can prove the offer
+           * landed THIS turn (firstOfferAtTurn === turnIndex) AND
+           * the candidate hasn't named a counter. Otherwise (offer
+           * was on the table from a prior turn, OR candidate has
+           * countered, OR firstOfferAtTurn is null from a fixture/
+           * legacy state) the PDF#36 A2 behavior is preserved. */
+          const stampedThisTurn =
+            state.firstOfferAtTurn != null && state.firstOfferAtTurn === state.turnIndex;
+          const candidateCountered =
+            state.lastCandidateCounterLpa != null || state.candidateTarget != null;
+          if (!stampedThisTurn || candidateCountered) {
+            next.verbalAcceptanceTurn = state.turnIndex;
+          }
         }
         /* Not strict-accepted and no implicit-accept proxy: hold the
          * phase instead of closing. Derive phase normally. */
@@ -5017,6 +5106,18 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   }
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;
+    /* PDF#48 (2026-05-26) — stamp the first-offer turn the moment the
+     * AI commits a specific number. One-shot: don't update on
+     * subsequent disclosures (the candidate's "had a chance to react"
+     * window is measured from FIRST anchor, not the highest). Used by
+     * canCloseSession to block acceptance closes that fire on the same
+     * turn the offer is announced (the kernel's parseAcceptance was
+     * tripping false-positives like "no there is not equity" on the
+     * very turn the offer landed; structurally that turn cannot be
+     * accepting an offer the candidate hasn't seen yet). */
+    if (state.firstOfferAtTurn == null) {
+      next.firstOfferAtTurn = next.turnIndex;
+    }
   }
   /* PDF #18 root-cause wiring (2026-05-15) — anchor lock on first numeric
    * disclosure. Before this wire, lockAnchor / effectiveAnchorLpa were
