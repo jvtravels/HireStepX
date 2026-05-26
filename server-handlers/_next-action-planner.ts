@@ -40,6 +40,7 @@ import {
   clampToCloseFloor,
   validateComponentConstraints,
   canCloseSession,
+  canDiscloseSpecificNumber,
   clampAnchorAgainstCandidateAsk,
   effectiveAnchorLpa,
   type NegotiationState,
@@ -2237,6 +2238,52 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           lever: "probe",
           newTotalLpa: null,
           rationale: "Anchor gate — targetAnswered still false; must surface expected CTC before opening with an offer.",
+          askedTopic: "targetAnswered",
+        },
+      };
+    }
+    /* PDF#48 follow-up (2026-05-26) — second anchor gate for legacy
+     * sessions without a discoveryChecklist.
+     *
+     * The checklist gate above is necessary but not sufficient: when
+     * state.discoveryChecklist is null (legacy session shapes, older
+     * sessions started before the checklist was wired, or kernel
+     * fixtures that never populate it) the gate exempts the session
+     * and the planner falls through to open-with-offer unconditionally.
+     * That's how the PDF#48 session reached "we can offer ₹30.4 LPA"
+     * after only 3 data-collection probes — the kernel never asked
+     * the candidate's target because no checklist made it ask.
+     *
+     * `canDiscloseSpecificNumber` (defined at _negotiation-kernel.ts
+     * ~line 2587) is the broader heuristic that already encodes the
+     * recruiter-anchors-first policy: disclose only when the
+     * candidate has anchored OR the probe has been refused 2+ times.
+     * It was defined for exactly this purpose but was orphaned —
+     * never called by the planner. Wire it as a belt-and-braces gate
+     * after the checklist gate. When it returns false AND we have no
+     * checklist to defer to, emit the same target-probe that the
+     * checklist branch above would emit. */
+    if (
+      state.turnIndex >= 2 &&
+      state.discoveryChecklist == null &&
+      !canDiscloseSpecificNumber(state)
+    ) {
+      /* Turn-index gate: turn 1 (the very first AI turn) is the
+       * legitimate opener — rendered by canonical-prose as a currentCtc
+       * probe, not as a band disclosure. Preserve that exemption so the
+       * legacy single-turn opener still routes through open-with-offer
+       * (locked by activePhaseGating turn-1 test). On turn 2+ the
+       * opener is behind us; if no checklist deferred the gate and the
+       * candidate still hasn't anchored, ask for the target. */
+      return {
+        kind: "discovery-probe",
+        item: "targetAnswered",
+        ask: "Before I share the band — what's your target / expected CTC for this move?",
+        satisfiesTopic: "targetAnswered",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: "Anchor gate (checklist-null path) — canDiscloseSpecificNumber=false; must surface expected CTC before opening with an offer.",
           askedTopic: "targetAnswered",
         },
       };

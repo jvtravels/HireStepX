@@ -40,7 +40,9 @@ import {
   applyCandidateAnswer,
   canCloseSession,
   type NegotiationBand,
+  type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
+import { planNextAction } from "../../server-handlers/_next-action-planner";
 
 const band: NegotiationBand = { initialOffer: 30, maxStretch: 35, walkAway: 25, hasEquity: true };
 
@@ -109,6 +111,43 @@ describe("PDF#48 — premature-close guard on offer-announcement turn", () => {
     const s = stateWithFirstOfferThisTurn();
     const after = applyCandidateAnswer(s, "I accept the offer, please send the letter");
     expect(after.phase).toBe("accepted");
+  });
+
+  it("planner: legacy session (no discoveryChecklist) at turn ≥2 with no candidate target routes to target-probe instead of open-with-offer", () => {
+    /* The PDF#48 session reached the offer-anchor on turn 4 because
+     * state.discoveryChecklist was null and the checklist gate at
+     * planner:2226 exempted legacy sessions, falling through to
+     * open-with-offer unconditionally. The belt-and-braces gate added
+     * at planner:~2244 (post-checklist) now consults
+     * canDiscloseSpecificNumber — when it returns false (no target
+     * named, < 2 probe refusals), emit the target-probe instead. */
+    const s0 = initState({ sessionId: "pdf48-planner", role: "design", company: "Flipkart", band });
+    const s: NegotiationState = {
+      ...s0,
+      phase: "opening",
+      turnIndex: 3,
+      discoveryChecklist: undefined,
+      probeRefusalCount: 0,
+    };
+    const action = planNextAction(s);
+    expect(action.kind).toBe("discovery-probe");
+    if (action.kind === "discovery-probe") {
+      expect(action.item).toBe("targetAnswered");
+    }
+  });
+
+  it("planner: turn-1 legacy session (the opener itself) is preserved — opens with offer", () => {
+    /* The opener is rendered by canonical-prose as a currentCtc
+     * probe, not as a band disclosure. Don't intercept it. */
+    const s0 = initState({ sessionId: "pdf48-opener", role: "design", company: "Flipkart", band });
+    const s: NegotiationState = {
+      ...s0,
+      phase: "opening",
+      turnIndex: 1,
+      discoveryChecklist: undefined,
+    };
+    const action = planNextAction(s);
+    expect(action.kind).toBe("open-with-offer");
   });
 
   it("backward-compat: when firstOfferAtTurn is null (legacy fixtures), the guard does not fire", () => {
