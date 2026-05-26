@@ -176,11 +176,24 @@ describe("PDF#46 — salary-neg placeholder slot contract", () => {
     // It must be invoked from at least two sites (null-result + catch).
     const callMatches = src.match(/replacePendingKernelWithSalvage\(\)/g) ?? [];
     expect(callMatches.length).toBeGreaterThanOrEqual(2);
-    // The salvage step must NOT carry pendingKernel:true (would re-park).
-    const salvageBlock = src.match(/const salvageStep:\s*InterviewStep\s*=\s*{[\s\S]*?};/);
-    expect(salvageBlock).not.toBeNull();
-    expect(salvageBlock![0]).not.toMatch(/pendingKernel\s*:\s*true/);
-    // The salvage must terminate the negotiation cleanly — type:"closing".
-    expect(salvageBlock![0]).toMatch(/type\s*:\s*["']closing["']/);
+    // The salvage step must NOT carry pendingKernel:true (would re-park)
+    // and must terminate the negotiation cleanly. Implementation shape
+    // changed in the de-fabrication pass: salvageStep is now a ternary
+    // between (a) a clone of the script's authored closing and (b) a
+    // minimal honest closing fallback. We assert the binding exists, the
+    // closing type is present in the salvage region, and no
+    // pendingKernel:true appears in that region.
+    const salvageBindingIdx = src.indexOf("const salvageStep:");
+    expect(salvageBindingIdx).toBeGreaterThan(-1);
+    // Scan ~2 KB after the binding — enough to cover both ternary arms.
+    const salvageRegion = src.slice(salvageBindingIdx, salvageBindingIdx + 2000);
+    expect(salvageRegion).not.toMatch(/pendingKernel\s*:\s*true/);
+    expect(salvageRegion).toMatch(/type\s*:\s*["']closing["']/);
+    // De-fabrication contract: the "lost the connection" recruiter
+    // utterance was the original PDF#46 follow-up b patchwork — it
+    // leaked fake recruiter prose into the transcript every time the
+    // salvage fired. The current salvage clones the script's authored
+    // closing (or a minimal honest closing) instead.
+    expect(salvageRegion).not.toMatch(/lost the connection/i);
   });
 });

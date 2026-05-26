@@ -1534,19 +1534,41 @@ export function useInterviewEngine() {
     const replacePendingKernelWithSalvage = (): boolean => {
       const cur = interviewScript[currentStep];
       if (!cur?.pendingKernel) return false;
-      const salvageText =
-        "Sorry, I lost the connection on my side for a moment. Your responses so far are saved — let's wrap here and you can pick this up in the next round.";
-      const salvageStep: InterviewStep = {
-        type: "closing",
-        aiText: salvageText,
-        aiTextDisplay: salvageText,
-        thinkingDuration: 300,
-        speakingDuration: Math.max(3500, Math.round((salvageText.split(/\s+/).length / 150) * 60 * 1000) + 1500),
-        waitForUser: false,
-        scoreNote: "Negotiation kernel salvage — kernel reply unavailable",
-      };
+      /* Use the script's OWN scripted closing slot rather than fabricate
+       * recruiter prose about a lost connection. Earlier iterations of
+       * this salvage shipped "Sorry, I lost the connection on my side
+       * for a moment..." — that's two failures stacked: (a) it leaks a
+       * fake recruiter utterance into the transcript exactly like the
+       * PDF#47 placeholder leak we already fixed, and (b) it admits a
+       * failure mode to the user that the underlying fixes (25 s engine
+       * sentinel + one-retry inside the kernel IIFE, see ~line 1559 and
+       * ~line 2540) are designed to make exceedingly rare. When the
+       * salvage DOES fire (genuine outage after retry), the cleanest
+       * exit is the same closing the script would have used at the end
+       * of a normal round — terminate cleanly, surface the report. */
       setInterviewScript(prev => {
         if (!prev[currentStep]?.pendingKernel) return prev;
+        /* Find the script's authored closing — every salary-neg script
+         * carries one as the final slot. We clone its prose so the
+         * salvage utterance is indistinguishable from a normal close.
+         * If none exists (defensive — shouldn't happen on salary-neg),
+         * a minimal honest close is used. */
+        const authoredClosing = [...prev].reverse().find(s => s.type === "closing" && !s.pendingKernel);
+        const salvageStep: InterviewStep = authoredClosing
+          ? {
+              ...authoredClosing,
+              waitForUser: false,
+              scoreNote: "Negotiation kernel salvage — used scripted closing",
+            }
+          : {
+              type: "closing",
+              aiText: "Alright, I think we've reached a good place. Take some time to think it over, and reach out if anything's unclear.",
+              aiTextDisplay: "Alright, I think we've reached a good place. Take some time to think it over, and reach out if anything's unclear.",
+              thinkingDuration: 300,
+              speakingDuration: 5000,
+              waitForUser: false,
+              scoreNote: "Negotiation kernel salvage — generic closing fallback",
+            };
         /* Truncate the tail too — any further pre-inserted placeholders
          * would re-park the engine after the salvage closing speaks. */
         return [...prev.slice(0, currentStep), salvageStep];
@@ -1556,7 +1578,20 @@ export function useInterviewEngine() {
 
     if (pendingFollowUp) {
       pendingFollowUpRef.current = null;
-      const timeout = new Promise<null>(r => setTimeout(() => r(null), isSalaryNegConversation ? 13000 : 4000));
+      /* Timeout strategy: salary-neg trusts the inner `postKernel`
+       * AbortController (14 s) as the single source of truth — a parallel
+       * 13 s race here used to fire BEFORE the server gave up, declaring
+       * "kernel failed" while the LLM was still 500 ms from a clean reply
+       * and shipping the salvage closing in the user's face. The IIFE at
+       * line ~2398 always resolves (success or null) within the inner
+       * abort window, so a race is redundant. We keep a 25 s safety
+       * sentinel ONLY to catch a genuine code-level hang (e.g. the IIFE
+       * itself awaits something un-aborted) — well past the kernel's
+       * own deadline so it doesn't race with success. For non-salary
+       * paths the legacy 4 s race is preserved (those code paths are
+       * tuned to it). */
+      const timeoutMs = isSalaryNegConversation ? 25_000 : 4_000;
+      const timeout = new Promise<null>(r => setTimeout(() => r(null), timeoutMs));
 
       // For salary-neg: speak thinking phrase IMMEDIATELY to eliminate dead air,
       // then wait for follow-up API in background. This means the user hears
@@ -2524,17 +2559,37 @@ export function useInterviewEngine() {
                   });
                 } catch { /* non-fatal */ }
               }
-              const turnRes = await negotiationKernelTurn({
+              /* Single-retry on transient null. The original
+               * implementation returned null on the first failure —
+               * meaning a single dropped packet / cold-start blip / 502
+               * mid-stream wrote off the entire turn and (with the
+               * salvage path) ended the session prematurely. Production
+               * kernel-turn failures are dominated by transient causes
+               * (LLM provider cold starts, brief 502s during deploys),
+               * so a single retry with a short backoff catches the
+               * majority without doubling the average latency. Two
+               * consecutive nulls is a real outage — we surface that
+               * honestly. */
+              let turnRes = await negotiationKernelTurn({
                 state: negotiationKernelStateRef.current,
                 candidateAnswer: answerText,
               });
               if (!turnRes) {
-                /* Observability — silent null here was the previous
-                   behaviour and made kernel-turn failures invisible
-                   in PostHog. Network drops, 400 invalid-state, 5xx
-                   LLM crashes all collapse to null; tag the path so
-                   we can see hit rate. */
-                track("negotiate_turn_failed", { reason: "null_response" });
+                track("negotiate_turn_failed", { reason: "null_response_first" });
+                await new Promise(r => setTimeout(r, 600));
+                turnRes = await negotiationKernelTurn({
+                  state: negotiationKernelStateRef.current,
+                  candidateAnswer: answerText,
+                });
+              }
+              if (!turnRes) {
+                /* Observability — silent null was the original
+                 * behaviour and made kernel-turn failures invisible in
+                 * PostHog. Network drops, 400 invalid-state, 5xx LLM
+                 * crashes all collapse to null after the retry too;
+                 * tag the path so we can see persistent-failure rate
+                 * distinct from first-shot failure rate. */
+                track("negotiate_turn_failed", { reason: "null_response_after_retry" });
                 return null;
               }
               negotiationKernelStateRef.current = turnRes.state;
