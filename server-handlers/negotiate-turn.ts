@@ -487,15 +487,31 @@ export default async function handler(
        * consumer reads from a single canonical pair. The legacy `text`
        * field is preserved for backward compatibility (telemetry, IDB
        * draft writers, idempotency cache readers). */
+      /* Final-mile empty-text guard for the init opener. The opener IS
+       * the first thing the candidate ever sees; blank here is the
+       * worst failure mode ("QUESTION FAILED TO LOAD" on session start). */
+      let initText = text;
+      let initSource = source;
+      if (!initText || !initText.trim()) {
+        void captureServerEvent("kernel_empty_text_at_response_boundary", distinctId, {
+          turn_index: state.turnIndex,
+          phase: state.phase,
+          lever: move.lever,
+          source: initSource,
+          where: "init",
+        }, req);
+        initText = "Thanks for hopping on — before we get into the numbers, walk me through where you are in your current role and what's driving this move.";
+        initSource = "fallback";
+      }
       return new Response(
         JSON.stringify({
           ok: true,
           state: serializeState(state),
-          text,
-          aiText: text,
-          aiTextDisplay: text,
+          text: initText,
+          aiText: initText,
+          aiTextDisplay: initText,
           move,
-          source,
+          source: initSource,
           terminal,
           moveTag: initMoveTag,
         }),
@@ -857,7 +873,15 @@ export default async function handler(
             prior_fallback_streak: streak,
             circuit_breaker_skipped: skipDueToStreak,
           }, req);
-          if (!skipDueToStreak) {
+          /* Breaker is only safe to skip when the LLM text is itself
+           * usable. An empty / whitespace `text` here (LLM returned
+           * nothing, sanitizers stripped to nil) would otherwise ship
+           * "" downstream and trigger the client's empty-aiText guard
+           * ("QUESTION FAILED TO LOAD"). Imperfect deterministic prose
+           * beats no prose at all — force the fallback in that case. */
+          const llmTextUsable =
+            typeof text === "string" && text.trim().length > 0;
+          if (!skipDueToStreak || !llmTextUsable) {
             text = contractFallbackProse(contract.violations);
             source = "fallback";
           }
@@ -954,6 +978,24 @@ export default async function handler(
           /* Useful delta for funnels: how far over initial did we end? */
           offer_over_initial_lpa: state.highestOfferMade - state.band.initialOffer,
         }, req);
+      }
+
+      /* PDF#50 follow-up (2026-05-27) — final-mile empty-text guard.
+       * Every upstream layer (pipeline safeCanonical, contract fallback,
+       * outer try/catch) is supposed to keep `text` non-empty, but if
+       * ANY of them regresses, the client renders "QUESTION FAILED TO
+       * LOAD." This is the last seam before the wire; a benign continue-
+       * the-conversation line is strictly better than blank. */
+      if (!text || !text.trim()) {
+        void captureServerEvent("kernel_empty_text_at_response_boundary", distinctId, {
+          turn_index: state.turnIndex,
+          phase: state.phase,
+          lever: move.lever,
+          source,
+          where: "turn",
+        }, req);
+        text = "Let me come back to that — what would be most useful to cover next from your side?";
+        source = "fallback";
       }
 
       /* Bug 2 fix (PDF#25, 2026-05-16) — single canonical field pair for
