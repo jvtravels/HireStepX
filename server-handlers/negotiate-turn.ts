@@ -72,6 +72,15 @@ import { inferCompanyMode } from "./_market-mode";
 import { generateBotReply, type GenerateAiTextFn } from "./_response-pipeline";
 import { deriveMoveTag, type MoveTag } from "./_move-tag";
 import type { NextAction } from "./_next-action-planner";
+/* PDF#48 (2026-05-27) — response contract + terminal-intent classifier.
+ * Architectural seam, not another helper module. See file headers for
+ * the audit rationale + the eight failure modes this prevents. */
+import { detectTerminalIntent, gracefulCloseResponse } from "./_terminal-intent";
+import {
+  validateResponseContract,
+  contractFallbackProse,
+  disclosedTopicsFromLog,
+} from "./_response-contract";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -633,6 +642,24 @@ export default async function handler(
       }
 
       state = applyCandidateAnswer(state, sanitizedAnswer);
+
+      /* PDF#48 Layer 2 — terminal-intent pre-classifier.
+       *
+       * Before the regular planner runs, check whether the candidate's
+       * last utterance is a hard terminal intent (reject offer, withdraw,
+       * end interview). If so, bypass the LLM entirely and ship a
+       * deterministic graceful-close response. The session would
+       * otherwise see the AI continue pitching benefits at a candidate
+       * who already said they're rejecting (PDF#48 turn 14). */
+      const terminalIntent = detectTerminalIntent(sanitizedAnswer);
+      if (terminalIntent) {
+        void captureServerEvent("kernel_terminal_intent_detected", distinctId, {
+          intent: terminalIntent,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+        }, req);
+      }
+
       const move = pickAiMove(state);
 
       let text: string;
@@ -647,7 +674,21 @@ export default async function handler(
         family: "meta",
         hint: "When the conversation drifts off-topic, recruiters redirect to the negotiation — stay focused on terms.",
       };
-      if (adversarial.shouldShortCircuit) {
+      if (terminalIntent) {
+        /* PDF#48 Layer 2 — graceful close. The candidate signalled a
+         * hard terminal intent; ship deterministic close prose and
+         * skip the LLM. The picked move still applies so phase /
+         * telemetry stay coherent. */
+        text = gracefulCloseResponse(terminalIntent, { company: state.company });
+        source = "deflection";
+        failureKinds = [];
+        envelopeMissingAttempts = 0;
+        moveTag = {
+          label: "Graceful close",
+          family: "meta",
+          hint: "When a candidate explicitly rejects or asks to end, recruiters acknowledge and close — they do not keep selling.",
+        };
+      } else if (adversarial.shouldShortCircuit) {
         /* Skip the LLM. The canned deflection is neutral and redirects
          * the candidate back to the negotiation topic. The picked move
          * still applies to state (so phase/lever progress stays
@@ -760,6 +801,49 @@ export default async function handler(
           }, req);
         }
       }
+
+      /* PDF#48 Layer 1 + 3 — response contract validator.
+       *
+       * Final post-LLM enforcement seam. The validator checks:
+       *   - walk-away / max-stretch leak (PDF#48 turn 11)
+       *   - internal kernel taxonomy ("market mode soft" — turn 11)
+       *   - filler/no-information phrases (turn 8 base-split non-answer)
+       *   - topic drift (asked CTC, answered medical — turns 6, 7, 12, 13)
+       *   - unauthorized numbers not on the kernel's move whitelist
+       *   - terminal-intent ignore (defense in depth)
+       *
+       * On violation we ship a deterministic fallback line rather than
+       * regenerating in-line (the LLM round-trip cost is non-trivial
+       * and the fallback prose is already neutral + forward-moving).
+       * A future revision can add an LLM regeneration round here using
+       * the `regenerateHint` field; for now the fallback discipline
+       * keeps the candidate from ever seeing the violation surface.
+       *
+       * Skipped for the `deflection` source (terminal-intent + adversarial
+       * paths already ship deterministic prose that's exempt from the
+       * topic checks — by design they redirect rather than respond). */
+      if (source !== "deflection") {
+        const contract = validateResponseContract({
+          text,
+          move,
+          state,
+          candidateLastUtterance: sanitizedAnswer,
+        });
+        if (!contract.ok) {
+          void captureServerEvent("kernel_response_contract_violation", distinctId, {
+            violations: contract.violations.join(","),
+            evidence: contract.evidence.slice(0, 3).join(" | ").slice(0, 240),
+            turn_index: state.turnIndex,
+            phase: state.phase,
+            lever: move.lever,
+            source,
+            disclosed_topics: disclosedTopicsFromLog(state).join(",") || null,
+          }, req);
+          text = contractFallbackProse(contract.violations);
+          source = "fallback";
+        }
+      }
+
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
 
