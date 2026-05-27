@@ -458,4 +458,111 @@ describe("PDF#48 — response contract", () => {
       expect(r.violations).not.toContain("premature-close");
     });
   });
+
+  describe("PDF#50 — drift over-fire regression (statements treated as questions)", () => {
+    /* PDF#50 transcript reproduction. The bot probed "what's the base
+     * split?" and the candidate STATED "Base is 36 LPA". The prior
+     * validator treated this disclosure as if the candidate had asked
+     * about base, then rejected any AI response that probed a different
+     * component (variable, joining-bonus, etc.) as topic-drift. The
+     * resulting filler-fallback ("Let me check on that specifically...")
+     * shipped on a turn that should have been a clean probe. Three
+     * consecutive fallbacks in PDF#50 cascaded into "QUESTION FAILED
+     * TO LOAD". */
+    it("does NOT trip topic-drift when candidate STATES a topic (no question shape)", () => {
+      const r = validateResponseContract({
+        text: "Got it. What about variable on top of that?",
+        move: BASE_MOVE,
+        state: baseState({ phase: "opening", turnIndex: 3, candidateCurrentCtc: 50 } as Partial<NegotiationState>),
+        candidateLastUtterance: "Base is 36 LPA",
+      });
+      expect(r.violations).not.toContain("topic-drift");
+    });
+
+    it("does NOT trip topic-drift on plain disclosures ('my current ctc is 50 LPA')", () => {
+      const r = validateResponseContract({
+        text: "Got it on the total — what's the base split?",
+        move: BASE_MOVE,
+        state: baseState({ phase: "opening", turnIndex: 1 } as Partial<NegotiationState>),
+        candidateLastUtterance: "my current ctc is 50 LPA",
+      });
+      expect(r.violations).not.toContain("topic-drift");
+    });
+
+    it("still trips topic-drift when candidate actually ASKED about a topic and AI pivoted", () => {
+      const r = validateResponseContract({
+        text: "We offer a comprehensive medical insurance plan with family coverage and term life benefits.",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "What's the base salary?",
+      });
+      expect(r.violations).toContain("topic-drift");
+    });
+
+    it("still trips topic-drift on numeric question with no number in response", () => {
+      const r = validateResponseContract({
+        text: "Let me think about that.",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "How much is the base?",
+      });
+      expect(r.violations).toContain("topic-drift");
+    });
+  });
+
+  describe("PDF#50 — internal-phase-name leak (taxonomy expansion)", () => {
+    /* PDF#50 turn 6: the bot shipped "During the opening phase, we focus
+     * on understanding your expectations and requirements." That's a
+     * direct leak of the kernel's phase enum into recruiter prose. The
+     * prior taxonomy regex caught "anchor", "market mode", "walk-away"
+     * — but not "opening phase" / "discovery phase" / "counter-offer
+     * phase" / "range-disclosure". This regression test pins the
+     * expanded coverage. */
+    it("rejects 'opening phase' leak", () => {
+      const r = validateResponseContract({
+        text: "During the opening phase, we focus on understanding your expectations and requirements.",
+        move: BASE_MOVE,
+        state: baseState({ phase: "opening" } as Partial<NegotiationState>),
+        candidateLastUtterance: "what do you want to check?",
+      });
+      expect(r.violations).toContain("internal-taxonomy");
+    });
+
+    it("rejects 'discovery phase' leak", () => {
+      const r = validateResponseContract({
+        text: "We're still in the discovery phase, so I need a few more numbers.",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "what next?",
+      });
+      expect(r.violations).toContain("internal-taxonomy");
+    });
+
+    it("rejects 'counter-offer phase' and 'range-disclosure' leaks", () => {
+      const r1 = validateResponseContract({
+        text: "Since we're in the counter-offer phase now, I'd like your number.",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "ok",
+      });
+      expect(r1.violations).toContain("internal-taxonomy");
+      const r2 = validateResponseContract({
+        text: "We just did our range-disclosure for the role.",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "ok",
+      });
+      expect(r2.violations).toContain("internal-taxonomy");
+    });
+
+    it("allows plain 'opening' / 'discovery' without 'phase' qualifier (legitimate English)", () => {
+      const r = validateResponseContract({
+        text: "Let's open this up — what are you looking for on the total?",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "ok",
+      });
+      expect(r.violations).not.toContain("internal-taxonomy");
+    });
+  });
 });

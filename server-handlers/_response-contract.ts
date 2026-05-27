@@ -138,7 +138,7 @@ export interface ContractResult {
  * PDF#48 transcript where "market mode for the offer is soft" leaked
  * the `MarketMode` enum verbatim. */
 const INTERNAL_TAXONOMY_RE =
-  /\b(?:market\s+mode|fitment\s+band|stretch\s+band|max[- ]?stretch|walk[- ]?away|anchor(?:ing)?\s+(?:point|number)|cumulative\s+urgency|move\s+tag|lever\s+(?:strict|soft|hold)|kernel|hardBandCap|hard[- ]?band[- ]?cap|finalOfferAsserted|verbalAcceptance|infoAsked|vossTactics)\b/i;
+  /\b(?:market\s+mode|fitment\s+band|stretch\s+band|max[- ]?stretch|walk[- ]?away|anchor(?:ing)?\s+(?:point|number)|cumulative\s+urgency|move\s+tag|lever\s+(?:strict|soft|hold)|kernel|hardBandCap|hard[- ]?band[- ]?cap|finalOfferAsserted|verbalAcceptance|infoAsked|vossTactics|(?:opening|discovery|range[- ]?disclosure|probe[- ]?expectations|counter[- ]?offer|lever[- ]?explore|closing[- ]?push|walked[- ]?away|stalemate|accepted)\s+phase|phase\s+(?:opening|discovery|range[- ]?disclosure|probe[- ]?expectations|counter[- ]?offer|lever[- ]?explore|closing[- ]?push)|discovery\s+(?:stage|checklist)|reactive\s+followup|component[- ]?probe|trial[- ]?close|range[- ]disclosure|probe[- ]expectations|lever[- ]explore|closing[- ]push)\b/i;
 
 /* Filler-pattern regex — LLM "I have no information so I'll wave
  * my hands" phrases. These shipped in PDF#48 turn 8: "a mix of
@@ -235,8 +235,6 @@ function classifyCandidateQuestion(text: string): {
   isDirectQuestion: boolean;
   topics: ResponseTopic[];
 } {
-  const scores = topicScores(text);
-  const topics = Array.from(scores.keys());
   const isNumericQuestion =
     /\b(?:how\s+much|what(?:'s| is)\s+(?:the\s+)?(?:base|total|ctc|budget|breakdown|number|figure|amount)|give\s+me\s+(?:the\s+)?(?:number|figure|breakdown)|provide\s+(?:the\s+)?(?:clear\s+)?(?:number|breakdown)|can\s+you\s+(?:share|provide|give|tell\s+me)\s+(?:the\s+)?(?:number|figure|breakdown|amount))\b/i.test(text || "")
     || /\b(?:in\s+your\s+budget|is\s+\d+\s+(?:lpa|lakhs?)\s+in\s+(?:your\s+)?budget)\b/i.test(text || "");
@@ -248,6 +246,17 @@ function classifyCandidateQuestion(text: string): {
     /\?\s*$/.test(t)
     || /^(?:what|how|when|where|why|which|who|is|are|do|does|did|can|could|would|will|should)\b/i.test(t)
     || /\b(?:can\s+you|could\s+you|do\s+you\s+have|is\s+there|are\s+there)\b/i.test(t);
+  /* PDF#50 fix (2026-05-27) — topics are only meaningful for the
+   * drift / role-reversal checks when the candidate ACTUALLY asked
+   * something. The prior version returned every topic-keyword that
+   * appeared in the text, which meant a plain disclosure ("Base is
+   * 36 LPA") got read as "candidate asked about base" and any AI
+   * response that moved to a different topic (e.g. probing variable
+   * next) tripped topic-drift → filler-fallback. The fix: gate
+   * topics on question-shape. Statement utterances return [];
+   * questions return their topic keywords as before. */
+  const topics: ResponseTopic[] =
+    isDirectQuestion || isNumericQuestion ? Array.from(topicScores(text).keys()) : [];
   return { isNumericQuestion, isDirectQuestion, topics };
 }
 
