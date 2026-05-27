@@ -80,6 +80,8 @@ import {
   validateResponseContract,
   contractFallbackProse,
   disclosedTopicsFromLog,
+  shouldSkipContractDueToFallbackStreak,
+  recentFallbackStreak,
 } from "./_response-contract";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -830,6 +832,20 @@ export default async function handler(
           candidateLastUtterance: sanitizedAnswer,
         });
         if (!contract.ok) {
+          /* PDF#50 fix (2026-05-27) — cascading-fallback circuit breaker.
+           *
+           * The validator is a safety net. When it over-fires for 2
+           * turns running, the THIRD validator-driven fallback collapses
+           * the conversation: candidate sees the bot defer 3× in a row,
+           * runtime aborts with "QUESTION FAILED TO LOAD."
+           *
+           * If the prior 2+ AI turns were already fallback prose, ship
+           * the LLM text RAW this turn (it may be imperfect, but a real
+           * answer beats a third deferral). Still emit telemetry so we
+           * can see what the validator wanted to flag — we just don't
+           * act on it. */
+          const streak = recentFallbackStreak(state);
+          const skipDueToStreak = shouldSkipContractDueToFallbackStreak(state);
           void captureServerEvent("kernel_response_contract_violation", distinctId, {
             violations: contract.violations.join(","),
             evidence: contract.evidence.slice(0, 3).join(" | ").slice(0, 240),
@@ -838,9 +854,13 @@ export default async function handler(
             lever: move.lever,
             source,
             disclosed_topics: disclosedTopicsFromLog(state).join(",") || null,
+            prior_fallback_streak: streak,
+            circuit_breaker_skipped: skipDueToStreak,
           }, req);
-          text = contractFallbackProse(contract.violations);
-          source = "fallback";
+          if (!skipDueToStreak) {
+            text = contractFallbackProse(contract.violations);
+            source = "fallback";
+          }
         }
       }
 

@@ -562,6 +562,62 @@ export function disclosedTopicsFromLog(state: NegotiationState): ResponseTopic[]
   return out;
 }
 
+/* PDF#50 fix (2026-05-27) — cascading-fallback circuit breaker.
+ *
+ * PDF#50 transcript showed 3 consecutive turns where the validator
+ * rejected the LLM and shipped a deferral fallback ("Let me check
+ * on that specifically and share the concrete number..." → "Let me
+ * confirm the exact figure and come back to you before the offer
+ * letter."). The candidate sees the bot give up three times in a
+ * row, the runtime gives up, the session terminates with "QUESTION
+ * FAILED TO LOAD."
+ *
+ * The validator is a safety net, not a wrecking ball. After 2
+ * consecutive AI turns that match a fallback signature, this helper
+ * reports `true` so the caller can SKIP validation on the current
+ * turn and ship the LLM text raw (with telemetry). The LLM's prose
+ * may still be imperfect, but a real answer beats a third deferral.
+ *
+ * Detection: exact-prefix match against the set of strings returned
+ * by contractFallbackProse. Tight gate — paraphrased fallbacks
+ * (impossible because the function returns fixed strings) won't
+ * trigger, so false positives are not a concern. */
+const KNOWN_FALLBACK_PROSE_PREFIXES: string[] = [
+  "Understood — let's wrap here",
+  "Let me confirm the exact figure on our side",
+  "Fair question — let me confirm the specific number",
+  "I think we've covered that earlier",
+  "Got it — noted. What else would you like to walk through",
+  "Let me check on that specifically",
+  "Let me note that and come back to you",
+];
+
+export function recentFallbackStreak(state: NegotiationState): number {
+  const log = state.conversationLog ?? [];
+  let streak = 0;
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (!e || e.speaker !== "ai") continue;
+    const text = (e.text || "").trim();
+    if (!text) break;
+    const matched = KNOWN_FALLBACK_PROSE_PREFIXES.some(p => text.startsWith(p));
+    if (matched) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+/** True when the contract validator should be SKIPPED for this turn
+ *  because the prior 2+ AI turns were already fallback prose. The
+ *  caller still logs telemetry on what would have fired; it just
+ *  doesn't replace the LLM text. */
+export function shouldSkipContractDueToFallbackStreak(state: NegotiationState): boolean {
+  return recentFallbackStreak(state) >= 2;
+}
+
 /* Fallback prose used when a regenerated response fails the
  * contract a second time. Chosen to be neutral, brief, and forward-
  * moving so the session doesn't deadlock. The caller picks based on
