@@ -111,7 +111,18 @@ export type ContractViolation =
    * and the AI responded with another question instead of an answer.
    * Real recruiters answer the question or defer explicitly; they
    * don't bounce it back. */
-  | "role-reversal";
+  | "role-reversal"
+  /* Premature close (PDF#49 — 2026-05-27) — the LLM emitted closing-
+   * shape prose ("thanks for the conversation, we'll be in touch with
+   * next steps") on a turn the planner did NOT route to a terminal
+   * action. PDF#49 reproduction: candidate disclosed "my current ctc
+   * is 50 LPA" on turn 0 (Senior Product Designer / Flipkart, band
+   * 30-50 LPA). Planner correctly emitted `component-probe`, kernel
+   * stayed in `opening`, but the LLM jumped to the script's pre-
+   * canned closing line as if the negotiation were over. This
+   * violation is the post-LLM safety net: closing prose without a
+   * planner-emitted terminal action is structurally invalid. */
+  | "premature-close";
 
 export interface ContractResult {
   ok: boolean;
@@ -141,6 +152,28 @@ const FILLER_PATTERNS: RegExp[] = [
   /\b(?:final|exact|specific)\s+(?:numbers|details|terms)\s+will\s+be\s+(?:shared|provided|determined)\s+(?:later|in\s+the\s+offer\s+letter)\b.*\bspecific/i,
   /\boverall\s+compensation\s+structure\b/i,
 ];
+
+/* Closing-shape detector (PDF#49 — 2026-05-27). Phrases that are
+ * structurally a "wrapping the conversation" line: thank-you-for-time
+ * pairings, next-steps stamps, get-back-to-you stamps. We match the
+ * SHAPE — not literal exact-match — so paraphrases of the canned
+ * "Thanks for the conversation today. We'll be in touch with next
+ * steps." also trip. The check is gated on planner-non-terminal +
+ * no-terminal-intent so legitimate close turns are unaffected. */
+const CLOSING_SHAPE_RE = new RegExp(
+  [
+    String.raw`\bwe.?ll\s+be\s+in\s+touch\b`,
+    String.raw`\b(?:we.?ll|i.?ll)\s+(?:get\s+back|come\s+back|circle\s+back|reach\s+out)\s+to\s+you\s+(?:soon|shortly|with|on|about)?(?:\s+next\s+steps)?\b`,
+    String.raw`\bnext\s+steps\s+(?:soon|shortly|will\s+follow|will\s+be\s+shared|to\s+follow)\b`,
+    String.raw`\b(?:with|about|on|regarding)\s+(?:the\s+)?next\s+steps\b`,
+    String.raw`\bthanks?\s+for\s+(?:the\s+)?(?:conversation|chat|call|discussion)\s+today\b`,
+    String.raw`\bthank\s+you\s+for\s+(?:the\s+)?(?:conversation|chat|call|discussion)\s+today\b`,
+    String.raw`\bthat.?s\s+all\s+(?:from|i\s+had)\s+(?:my\s+side|for\s+(?:today|now))\b`,
+    String.raw`\bwe.?ll\s+wrap\s+(?:up\s+)?here\b`,
+    String.raw`\bappreciate\s+(?:you\s+)?taking\s+the\s+time\s+today\b`,
+  ].join("|"),
+  "i",
+);
 
 /* Topic-keyword map. Coarse — purpose is detecting drift, not
  * semantic search. Each entry is (topic → regex of keywords that
@@ -402,6 +435,53 @@ export function validateResponseContract(input: ContractInput): ContractResult {
     hints.push(`The candidate asked a direct question. Answer it with the kernel-provided number/topic, or defer explicitly ("I'll come back to you with that"). Do not respond with another question.`);
   }
 
+  /* 4d. Premature close (PDF#49 — 2026-05-27).
+   *
+   * Closing-shape prose ("thanks for the conversation today",
+   * "we'll be in touch with next steps", "appreciate your time —
+   * we'll get back to you") is only legal when the planner routed
+   * to a terminal action. Otherwise the LLM jumped the script —
+   * exact PDF#49 shape: candidate disclosed current CTC on turn 0,
+   * LLM shipped the script's pre-canned closing line as if the
+   * negotiation were over.
+   *
+   * Gates (ALL must hold to fire):
+   *   (a) response matches CLOSING_SHAPE_RE
+   *   (b) planner action.kind is non-terminal
+   *   (c) candidate's last utterance did NOT signal terminal intent
+   *       (terminal-intent path already catches that — don't double-
+   *       fire)
+   *   (d) state.phase is non-terminal (kernel didn't itself decide
+   *       to close via the walked-away/stalemate/accepted machinery)
+   */
+  const plannedKindRaw = (state as NegotiationState & {
+    plannedNextAction?: { kind?: string } | null;
+  }).plannedNextAction;
+  const plannedKind: string | null =
+    plannedKindRaw && typeof plannedKindRaw === "object" && "kind" in plannedKindRaw
+      ? String((plannedKindRaw as { kind?: unknown }).kind ?? "")
+      : null;
+  const TERMINAL_ACTION_KINDS = new Set<string>([
+    "close",
+    "terminal-restate",
+    "polite-walkaway",
+    "live-walk-away",
+    "close-recap-formal",
+    "auto-accept",
+    "post-acceptance-document-request",
+  ]);
+  const TERMINAL_PHASES = new Set<string>(["accepted", "walked-away", "stalemate"]);
+  if (
+    CLOSING_SHAPE_RE.test(text)
+    && (plannedKind == null || !TERMINAL_ACTION_KINDS.has(plannedKind))
+    && detectTerminalIntent(candidateLastUtterance) == null
+    && !TERMINAL_PHASES.has(String(state.phase ?? ""))
+  ) {
+    violations.push("premature-close");
+    evidence.push(`closing-shape prose with planner action=${plannedKind ?? "?"}, phase=${state.phase}`);
+    hints.push(`Do NOT emit a closing line. The planner routed to "${plannedKind ?? "(unknown)"}" — keep the negotiation moving. Closing prose ("thanks for the conversation", "we'll be in touch", "next steps") is only legal when the candidate has accepted, walked away, or asked to end the call.`);
+  }
+
   /* 5. Terminal-intent ignore (defense in depth). */
   const intent: TerminalIntent = detectTerminalIntent(candidateLastUtterance);
   if (intent && !/\b(?:understood|wrap|close|appreciate|withdraw|mark)\b/i.test(text)) {
@@ -495,6 +575,13 @@ export function contractFallbackProse(violations: ContractViolation[]): string {
    * conversation forward instead of restating. */
   if (violations.includes("repeated-topic")) {
     return "I think we've covered that earlier — happy to revisit any specifics in writing. Is there anything else you'd like me to confirm?";
+  }
+  /* Premature close — the LLM tried to wrap the conversation while
+   * the planner is still mid-negotiation. The fallback steers BACK
+   * into the conversation with an open-ended invitation, so the next
+   * turn picks up the negotiation instead of stalling on a goodbye. */
+  if (violations.includes("premature-close")) {
+    return "Got it — noted. What else would you like to walk through on the offer?";
   }
   if (violations.includes("filler-non-answer") || violations.includes("topic-drift")) {
     return "Let me check on that specifically and share the concrete number with you in writing.";

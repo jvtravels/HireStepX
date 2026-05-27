@@ -343,5 +343,119 @@ describe("PDF#48 — response contract", () => {
       const p = contractFallbackProse(["filler-non-answer"]);
       expect(p).toMatch(/concrete|specifics|in writing/i);
     });
+
+    it("returns a forward-motion continuation for premature-close", () => {
+      const p = contractFallbackProse(["premature-close"]);
+      expect(p).toMatch(/walk through|else|noted/i);
+      /* Must NOT itself contain closing-shape language. */
+      expect(p).not.toMatch(/be in touch|next steps|conversation today/i);
+    });
+  });
+
+  describe("PDF#49 — premature close (closing prose on a non-terminal planner action)", () => {
+    /* PDF#49 reproduction: candidate disclosed "my current ctc is 50 LPA"
+     * on turn 0 (Flipkart Senior Product Designer, band 30-50 LPA). The
+     * kernel correctly held phase=opening and the planner routed to
+     * component-probe. The LLM jumped past the probe and shipped the
+     * pre-canned closing line. The validator must reject that. */
+    const pdf49State = (overrides: Partial<NegotiationState> = {}): NegotiationState =>
+      baseState({
+        phase: "opening",
+        turnIndex: 0,
+        highestOfferMade: 0,
+        candidateTarget: null,
+        plannedNextAction: { kind: "component-probe" },
+        ...overrides,
+      } as Partial<NegotiationState>);
+
+    it("rejects 'thanks for the conversation today, we'll be in touch with next steps' on a non-terminal planner turn", () => {
+      const r = validateResponseContract({
+        text: "Thanks for the conversation today, Jay. We'll be in touch with next steps soon.",
+        move: BASE_MOVE,
+        state: pdf49State(),
+        candidateLastUtterance: "my current ctc is 50 LPA",
+      });
+      expect(r.ok).toBe(false);
+      expect(r.violations).toContain("premature-close");
+    });
+
+    it("rejects 'we'll be in touch shortly' on a discovery-probe turn", () => {
+      const r = validateResponseContract({
+        text: "Got it. We'll be in touch shortly with next steps.",
+        move: BASE_MOVE,
+        state: pdf49State({ plannedNextAction: { kind: "discovery-probe" } } as Partial<NegotiationState>),
+        candidateLastUtterance: "my current ctc is 36 LPA",
+      });
+      expect(r.ok).toBe(false);
+      expect(r.violations).toContain("premature-close");
+    });
+
+    it("allows the SAME closing prose when the planner DID route to close (terminal action)", () => {
+      const r = validateResponseContract({
+        text: "Thanks for the conversation today. We'll be in touch with next steps.",
+        move: BASE_MOVE,
+        state: pdf49State({
+          phase: "walked-away",
+          plannedNextAction: { kind: "close" },
+        } as Partial<NegotiationState>),
+        candidateLastUtterance: "I'll have to pass on this offer",
+      });
+      expect(r.violations).not.toContain("premature-close");
+    });
+
+    it("allows closing prose when the candidate signalled terminal intent (terminal-intent path owns the close)", () => {
+      const r = validateResponseContract({
+        text: "Understood — we'll wrap here. Appreciate the time.",
+        move: BASE_MOVE,
+        state: pdf49State(),
+        candidateLastUtterance: "I want to reject this offer",
+      });
+      expect(r.violations).not.toContain("premature-close");
+    });
+
+    it("allows normal probe prose on the same non-terminal turn (no closing shape, no violation)", () => {
+      const r = validateResponseContract({
+        text: "Got it — ₹50 LPA. Quick one: what's the base vs variable split on that?",
+        move: BASE_MOVE,
+        state: pdf49State(),
+        candidateLastUtterance: "my current ctc is 50 LPA",
+      });
+      expect(r.violations).not.toContain("premature-close");
+    });
+
+    it("rejects 'that's all from my side' wrap-up on a non-terminal turn", () => {
+      const r = validateResponseContract({
+        text: "That's all from my side for today. Thanks for the chat.",
+        move: BASE_MOVE,
+        state: pdf49State({ plannedNextAction: { kind: "counter-offer" } } as Partial<NegotiationState>),
+        candidateLastUtterance: "could we go up to 55?",
+      });
+      expect(r.ok).toBe(false);
+      expect(r.violations).toContain("premature-close");
+    });
+
+    it("rejects when planner action is missing (defaults to non-terminal — fail-closed)", () => {
+      const r = validateResponseContract({
+        text: "Thanks for the conversation today. We'll be in touch.",
+        move: BASE_MOVE,
+        state: pdf49State({ plannedNextAction: null } as Partial<NegotiationState>),
+        candidateLastUtterance: "my current ctc is 42 LPA",
+      });
+      expect(r.ok).toBe(false);
+      expect(r.violations).toContain("premature-close");
+    });
+
+    it("does NOT fire when phase is terminal (kernel already decided to close)", () => {
+      const r = validateResponseContract({
+        text: "Thanks for the conversation today. We'll be in touch with next steps.",
+        move: BASE_MOVE,
+        state: pdf49State({
+          phase: "stalemate",
+          plannedNextAction: null,
+        } as Partial<NegotiationState>),
+        candidateLastUtterance: "ok",
+      });
+      expect(r.violations).not.toContain("premature-close");
+    });
   });
 });
