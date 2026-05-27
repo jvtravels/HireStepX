@@ -99,7 +99,19 @@ export type ContractViolation =
   | "filler-non-answer"
   | "topic-drift"
   | "terminal-intent-ignored"
-  | "unauthorized-number";
+  | "unauthorized-number"
+  /* Layer 4 enforcement (2026-05-27) — AI re-explained a topic that
+   * was already covered earlier in the conversation. The candidate
+   * has heard about medical/PF/joining-bonus already; restating it
+   * without being asked reads as filler and burns turn budget.
+   * Derived from disclosedTopicsFromLog(state) gated on "the
+   * candidate did NOT ask about this topic again." */
+  | "repeated-topic"
+  /* Role-reversal (2026-05-27) — candidate asked a direct question
+   * and the AI responded with another question instead of an answer.
+   * Real recruiters answer the question or defer explicitly; they
+   * don't bounce it back. */
+  | "role-reversal";
 
 export interface ContractResult {
   ok: boolean;
@@ -156,20 +168,94 @@ const TOPIC_KEYWORDS: Record<ResponseTopic, RegExp> = {
   "deferral": /\b(?:share\s+later|come\s+back|circle\s+back|check\s+and\s+revert)\b/i,
 };
 
+/* Topic-scoring (2026-05-27 — false-positive reduction).
+ *
+ * The original drift check matched topics with a single keyword hit,
+ * which produced false-positives in production: a CTC-breakdown
+ * answer that incidentally mentioned "medical" once would classify
+ * as medical-topic and trip the drift detector against a base-pay
+ * question. The fix: count keyword hits per topic and only consider
+ * topics with score ≥1, then for drift comparison weight by score.
+ *
+ * Concretely: an answer scoring base=4 medical=1 will not drift-flag
+ * against a base question, even though "medical" appears, because
+ * the dominant topic clearly matches what was asked. */
+function topicScores(text: string): Map<ResponseTopic, number> {
+  const out = new Map<ResponseTopic, number>();
+  const lower = (text || "").toLowerCase();
+  for (const [topic, re] of Object.entries(TOPIC_KEYWORDS) as Array<[ResponseTopic, RegExp]>) {
+    /* Reconstruct with /g so we can count, not just test. The source
+     * regexes are defined with /i — preserve case-insensitivity. */
+    const globalRe = new RegExp(re.source, "gi");
+    const matches = lower.match(globalRe);
+    if (matches && matches.length > 0) out.set(topic, matches.length);
+  }
+  return out;
+}
+
 /* Question-shape detectors for the candidate's last utterance.
  * Catches "what is the base?" / "can you give the breakdown" /
  * "is 32 in budget?" — patterns where the candidate asked a
  * specific question and the response is expected to address it. */
-function classifyCandidateQuestion(text: string): { isNumericQuestion: boolean; topics: ResponseTopic[] } {
-  const t = (text || "").toLowerCase();
-  const topics: ResponseTopic[] = [];
-  for (const [topic, re] of Object.entries(TOPIC_KEYWORDS) as Array<[ResponseTopic, RegExp]>) {
-    if (re.test(t)) topics.push(topic);
-  }
+function classifyCandidateQuestion(text: string): {
+  isNumericQuestion: boolean;
+  isDirectQuestion: boolean;
+  topics: ResponseTopic[];
+} {
+  const scores = topicScores(text);
+  const topics = Array.from(scores.keys());
   const isNumericQuestion =
     /\b(?:how\s+much|what(?:'s| is)\s+(?:the\s+)?(?:base|total|ctc|budget|breakdown|number|figure|amount)|give\s+me\s+(?:the\s+)?(?:number|figure|breakdown)|provide\s+(?:the\s+)?(?:clear\s+)?(?:number|breakdown)|can\s+you\s+(?:share|provide|give|tell\s+me)\s+(?:the\s+)?(?:number|figure|breakdown|amount))\b/i.test(text || "")
     || /\b(?:in\s+your\s+budget|is\s+\d+\s+(?:lpa|lakhs?)\s+in\s+(?:your\s+)?budget)\b/i.test(text || "");
-  return { isNumericQuestion, topics };
+  /* Direct-question detector — used by the role-reversal check.
+   * Fires on (a) a trailing "?", (b) standard interrogatives at
+   * sentence start, or (c) "can/could you / do you have" frames. */
+  const t = (text || "").trim();
+  const isDirectQuestion =
+    /\?\s*$/.test(t)
+    || /^(?:what|how|when|where|why|which|who|is|are|do|does|did|can|could|would|will|should)\b/i.test(t)
+    || /\b(?:can\s+you|could\s+you|do\s+you\s+have|is\s+there|are\s+there)\b/i.test(t);
+  return { isNumericQuestion, isDirectQuestion, topics };
+}
+
+/* Dominant topic by score (helper for repeated-topic + drift checks).
+ * Returns null when no topic crosses the threshold. */
+function dominantTopic(scores: Map<ResponseTopic, number>, minScore = 1): ResponseTopic | null {
+  let best: ResponseTopic | null = null;
+  let bestScore = minScore - 1;
+  for (const [topic, score] of scores) {
+    if (score > bestScore) {
+      best = topic;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+/* Role-reversal detector — the response is a question (or a string of
+ * them) with no concrete deliverable. We define "no concrete
+ * deliverable" as: no LPA number AND no graceful-close / deferral
+ * acknowledgement. A trailing ask is fine if the response ALSO
+ * answered the question first. */
+function isResponseAllQuestion(text: string): boolean {
+  const t = (text || "").trim();
+  if (!t) return false;
+  /* Strip the question marks and see if anything declarative
+   * remains. If the response is mostly questions with no statements,
+   * each "sentence" ends in "?" or "?." */
+  const sentences = t.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+  if (sentences.length === 0) return false;
+  const questionSentences = sentences.filter(s => /\?\s*$/.test(s.trim()));
+  /* Role-reversal if ≥half the response is questions AND ≥1 question
+   * exists AND the whole response has no LPA number. */
+  if (questionSentences.length === 0) return false;
+  if (questionSentences.length * 2 < sentences.length) return false;
+  const hasNumber = /\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l\b|cr)/i.test(t);
+  if (hasNumber) return false;
+  /* Allow if the response acknowledges + defers explicitly — that's
+   * not a bounce-back, that's a clean deferral. */
+  if (/\b(?:come\s+back|circle\s+back|let\s+me\s+confirm|share\s+(?:with\s+you\s+)?in\s+writing|in\s+the\s+offer\s+letter)\b/i.test(t)) return false;
+  return true;
 }
 
 /* Extract every plausible LPA / lakh / numeric figure from prose.
@@ -242,27 +328,78 @@ export function validateResponseContract(input: ContractInput): ContractResult {
     }
   }
 
-  /* 4. Topic drift. Only check when the candidate asked a clear
-   * question — if they made a statement ("my current is 24 LPA"),
-   * no drift check applies. */
+  /* 4. Topic drift — score-based (2026-05-27 false-positive reduction).
+   *
+   * Drift fires when ALL of these hold:
+   *   (a) candidate asked about identifiable topics
+   *   (b) response has zero hits on any asked topic
+   *   (c) response has a clear dominant topic OF ITS OWN with score≥2
+   *
+   * (c) is the key safety valve — without it, a generic acknowledgement
+   * ("noted, will follow up") that has zero topic keywords trips
+   * drift even though it's a valid deferral. With (c), drift only
+   * fires when the response is actively about something ELSE. */
   const question = classifyCandidateQuestion(candidateLastUtterance);
+  const responseScores = topicScores(text);
   if (question.topics.length > 0 || question.isNumericQuestion) {
-    /* Detect the response's topics. */
-    const responseTopics: ResponseTopic[] = [];
-    for (const [topic, re] of Object.entries(TOPIC_KEYWORDS) as Array<[ResponseTopic, RegExp]>) {
-      if (re.test(text)) responseTopics.push(topic);
-    }
-    const overlap = question.topics.filter(t => responseTopics.includes(t));
-    if (question.topics.length > 0 && overlap.length === 0) {
+    const overlap = question.topics.filter(t => responseScores.has(t));
+    const responseDominant = dominantTopic(responseScores, 2);
+    if (
+      question.topics.length > 0
+      && overlap.length === 0
+      && responseDominant !== null
+      && !question.topics.includes(responseDominant)
+    ) {
       violations.push("topic-drift");
-      evidence.push(`asked=[${question.topics.join(",")}] answered=[${responseTopics.join(",") || "none"}]`);
-      hints.push(`The candidate asked about [${question.topics.join(", ")}]. Address that topic, do not pivot to a different topic.`);
+      evidence.push(`asked=[${question.topics.join(",")}] dominant-answered=${responseDominant}`);
+      hints.push(`The candidate asked about [${question.topics.join(", ")}]. Address that topic, do not pivot to ${responseDominant}.`);
     }
     if (question.isNumericQuestion && proseNumbers.length === 0) {
       violations.push("topic-drift");
       evidence.push("numeric-question with no number in response");
       hints.push(`The candidate asked a numeric question. Either give the kernel-provided number or defer explicitly ("I'll come back to you with the number"). Do not produce a vague non-answer.`);
     }
+  }
+
+  /* 4b. Repeated-topic (Layer 4 enforcement, 2026-05-27).
+   *
+   * The AI re-explained a topic that was already covered in an earlier
+   * AI turn AND the candidate didn't ask about it again. Layer 4
+   * memory (disclosedTopicsFromLog) gives us the "already-said" set;
+   * we gate on "candidate didn't ask" so re-confirmation when
+   * specifically asked is still allowed.
+   *
+   * Only fires for topics where re-explanation has a real signature
+   * (≥3 keyword hits in the response — a single mention is fine).
+   * This keeps the check from blocking natural language flow where
+   * a previously-covered topic surfaces as a brief reference. */
+  const disclosed = new Set(disclosedTopicsFromLog(state));
+  for (const [topic, score] of responseScores) {
+    if (
+      score >= 3
+      && disclosed.has(topic)
+      && !question.topics.includes(topic)
+    ) {
+      violations.push("repeated-topic");
+      evidence.push(`repeated=${topic} (score=${score}, candidate-did-not-ask)`);
+      hints.push(`The topic "${topic}" was already covered in an earlier turn and the candidate did not ask again. Move to a new topic instead of re-explaining.`);
+      break;
+    }
+  }
+
+  /* 4c. Role-reversal (2026-05-27).
+   *
+   * Candidate asked a direct question; AI responded with another
+   * question (no answer, no concrete deliverable, no deferral
+   * acknowledgement). Fires only when BOTH sides of the reversal hold
+   * — a question from candidate AND a question-only response from AI.
+   * Allow legitimate "I want to make sure I understand — were you
+   * asking about X or Y?" clarifications by gating on no-number AND
+   * no-deferral simultaneously inside isResponseAllQuestion. */
+  if (question.isDirectQuestion && isResponseAllQuestion(text)) {
+    violations.push("role-reversal");
+    evidence.push("candidate asked, AI returned a question without answering");
+    hints.push(`The candidate asked a direct question. Answer it with the kernel-provided number/topic, or defer explicitly ("I'll come back to you with that"). Do not respond with another question.`);
   }
 
   /* 5. Terminal-intent ignore (defense in depth). */
@@ -346,6 +483,18 @@ export function contractFallbackProse(violations: ContractViolation[]): string {
   }
   if (violations.includes("walk-away-leak") || violations.includes("unauthorized-number")) {
     return "Let me confirm the exact figure on our side and come back to you before the offer letter.";
+  }
+  /* Role-reversal needs a forward-motion answer, not just a deferral.
+   * The original response was a bounce-back; the fallback at least
+   * commits to producing a real answer next. */
+  if (violations.includes("role-reversal")) {
+    return "Fair question — let me confirm the specific number with the team and share it back with you in writing.";
+  }
+  /* Repeated-topic: the AI was re-explaining something already covered.
+   * The fallback acknowledges the prior coverage and moves the
+   * conversation forward instead of restating. */
+  if (violations.includes("repeated-topic")) {
+    return "I think we've covered that earlier — happy to revisit any specifics in writing. Is there anything else you'd like me to confirm?";
   }
   if (violations.includes("filler-non-answer") || violations.includes("topic-drift")) {
     return "Let me check on that specifically and share the concrete number with you in writing.";

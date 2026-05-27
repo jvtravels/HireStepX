@@ -205,6 +205,129 @@ describe("PDF#48 — response contract", () => {
     });
   });
 
+  /* 2026-05-27 follow-up — gap-closing regressions. */
+  describe("Layer 4 enforcement — repeated-topic violation", () => {
+    it("rejects re-explanation of a topic already covered (candidate didn't ask)", () => {
+      const state = baseState({
+        conversationLog: [
+          { speaker: "ai", text: "The standard medical cover includes family, self, and parents — group policy." },
+          { speaker: "candidate", text: "ok" },
+          { speaker: "ai", text: "PF is as per statute." },
+          { speaker: "candidate", text: "what's the base?" },
+        ],
+      });
+      const r = validateResponseContract({
+        text: "The medical insurance covers family, self, and parents under a group medical policy. The medical cover is comprehensive.",
+        move: BASE_MOVE,
+        state,
+        candidateLastUtterance: "what's the base?",
+      });
+      expect(r.ok).toBe(false);
+      expect(r.violations).toContain("repeated-topic");
+    });
+
+    it("allows re-confirmation when the candidate asked again", () => {
+      const state = baseState({
+        conversationLog: [
+          { speaker: "ai", text: "The standard medical cover includes family, self, and parents." },
+        ],
+      });
+      const r = validateResponseContract({
+        text: "The medical cover does include parents, yes — group medical policy. Family medical + parents medical, full coverage.",
+        move: BASE_MOVE,
+        state,
+        candidateLastUtterance: "can you confirm the medical cover includes parents?",
+      });
+      expect(r.violations).not.toContain("repeated-topic");
+    });
+  });
+
+  describe("Role-reversal violation", () => {
+    it("rejects bouncing a direct question back as another question", () => {
+      const r = validateResponseContract({
+        text: "What aspect of the offer would you like to discuss? Are you looking at base, or total?",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "what is the base?",
+      });
+      expect(r.ok).toBe(false);
+      expect(r.violations).toContain("role-reversal");
+    });
+
+    it("allows answer-then-ask (answer first, ask second)", () => {
+      const r = validateResponseContract({
+        text: "The base is ₹20 LPA of the ₹30.4 LPA total. Does that work for your end?",
+        move: BASE_MOVE,
+        state: baseState({
+          conversationLog: [
+            { speaker: "ai", text: "fitment 30.4" },
+            { speaker: "candidate", text: "what is the base?" },
+          ],
+        }),
+        candidateLastUtterance: "what is the base?",
+      });
+      expect(r.violations).not.toContain("role-reversal");
+    });
+
+    it("allows a clean deferral (no question, no number, but an explicit defer)", () => {
+      const r = validateResponseContract({
+        text: "Let me come back to you with the exact base number in writing before the offer letter.",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "what is the base?",
+      });
+      expect(r.violations).not.toContain("role-reversal");
+    });
+  });
+
+  describe("Topic-drift — false-positive reduction", () => {
+    it("allows a CTC-breakdown answer that incidentally mentions medical once", () => {
+      const r = validateResponseContract({
+        text: "The total CTC of ₹30.4 LPA breaks down as ₹20 LPA base, ₹4 LPA variable, ₹4 LPA ESOP, ₹2 LPA fixed cash, plus medical and PF on top.",
+        move: BASE_MOVE,
+        state: baseState(),
+        candidateLastUtterance: "can you give me the CTC breakdown?",
+      });
+      /* Response is dominantly about base/variable/esop/fixed-cash —
+       * a single mention of medical should not trigger drift. */
+      expect(r.violations).not.toContain("topic-drift");
+    });
+  });
+
+  describe("Expanded terminal-intent patterns", () => {
+    it("catches 'I'm gonna have to say no'", () => {
+      expect(detectTerminalIntent("I'm gonna have to say no")).toBe("reject-offer");
+    });
+
+    it("catches 'this isn't going to work for me'", () => {
+      expect(detectTerminalIntent("this isn't going to work for me")).toBe("reject-offer");
+    });
+
+    it("catches 'I'll have to pass'", () => {
+      expect(detectTerminalIntent("yeah, I'll have to pass")).toBe("reject-offer");
+    });
+
+    it("catches 'take myself out of the process'", () => {
+      expect(detectTerminalIntent("I'm going to take myself out of the process")).toBe("withdraw");
+    });
+
+    it("still does not false-positive on negotiation moves", () => {
+      expect(detectTerminalIntent("this number isn't going to work for the base alone")).toBeNull();
+    });
+  });
+
+  describe("Fallback prose for new violations", () => {
+    it("returns a forward-motion answer for role-reversal", () => {
+      const p = contractFallbackProse(["role-reversal"]);
+      expect(p).toMatch(/confirm|in writing|share/i);
+    });
+
+    it("returns a topic-acknowledge fallback for repeated-topic", () => {
+      const p = contractFallbackProse(["repeated-topic"]);
+      expect(p).toMatch(/covered|earlier|specifics/i);
+    });
+  });
+
   describe("contract fallback prose", () => {
     it("returns terminal-close prose when terminal-intent was ignored", () => {
       const p = contractFallbackProse(["terminal-intent-ignored"]);

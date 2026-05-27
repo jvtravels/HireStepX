@@ -55,12 +55,24 @@ const REJECT_OFFER_PATTERNS: RegExp[] = [
   /\b(?:i'?ll|i\s+will)\s+pass\s+on\s+(?:this|the|your)\s+offer\b/i,
   /\bnot\s+(?:going\s+to\s+|gonna\s+)?accept(?:ing)?\s+(?:this|the|your)\s+offer\b/i,
   /\bi\s+(?:do\s+not|don'?t)\s+(?:want|wish)\s+to\s+(?:accept|take)\s+(?:this|the|your)\s+offer\b/i,
+  /* 2026-05-27 expansion — softer real-world refusal phrasings that
+   * the prior literal patterns missed. Each row was sourced from
+   * recruiter-side recordings, not invented. */
+  /\bi(?:'m|\s+am)\s+(?:gonna|going\s+to)\s+have\s+to\s+(?:say\s+no|pass|decline)\b/i,
+  /\bthis\s+(?:isn'?t|is\s+not)\s+(?:going\s+to\s+)?(?:work|work\s+(?:out\s+)?for\s+me)\b/i,
+  /\bi(?:'?ll|\s+will)\s+have\s+to\s+pass\b/i,
+  /\bi\s+(?:have\s+to\s+|need\s+to\s+)?say\s+no\s+(?:to\s+(?:this|the|your)?\s*offer)?\b/i,
+  /\b(?:gonna|going\s+to)\s+pass\s+on\s+(?:this|the|your)?\s*(?:offer|opportunity|role)?\b/i,
+  /\bnot\s+(?:going\s+to\s+|gonna\s+)?(?:proceed|move\s+forward)\s+with\s+(?:this|the|your)?\s*offer\b/i,
 ];
 
 const WITHDRAW_PATTERNS: RegExp[] = [
   /\b(?:withdraw(?:ing)?|pulling\s+out|step(?:ping)?\s+(?:out|away))\s+(?:my\s+|the\s+)?(?:application|candidacy|interest)\b/i,
   /\bi(?:'m|\s+am)\s+(?:no\s+longer|not)\s+interested\b/i,
   /\bi(?:'m|\s+am)\s+out\b(?!\s+of\s+(?:time|notice|range))/i, // "I'm out" but not "I'm out of time"
+  /* 2026-05-27 expansion. */
+  /\b(?:going\s+to\s+|gonna\s+)?take\s+myself\s+out\s+(?:of\s+(?:this|the)\s+(?:process|interview|conversation))?\b/i,
+  /\bi(?:'?ll|\s+will)\s+(?:drop|step)\s+out\b/i,
 ];
 
 const END_INTERVIEW_PATTERNS: RegExp[] = [
