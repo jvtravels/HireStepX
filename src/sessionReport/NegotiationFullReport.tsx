@@ -152,13 +152,29 @@ function FreshnessChip({ source, n, asOf, methodologyUrl }: {
  * `.nfr-tone-card-*`, `.nfr-eyebrow`, `.nfr-quote`) so the React
  * surface stays declarative.
  *
- * Decision: NOT splitting this file into per-panel modules. With 15
- * panels and ~1900 LOC, a `panels/` directory would yield ~120 LOC
- * average files but add an import graph the rest of the app doesn't
- * touch (this view is the only consumer). The leverage win is the
- * primitive extraction; the module split is investment without
- * compounding return for an archive-tier surface. Revisit if the
- * panel count crosses 20 or panels start being reused elsewhere. */
+ * Decision (2026-05-26, reconfirmed 2026-05-27): NOT splitting this
+ * file into per-panel modules. The 2026-05-27 audit re-evaluated
+ * with: 16 panels, 1950 LOC, file still has a single consumer
+ * (SessionReportView for salary-neg sessions). A `panels/` directory
+ * would yield ~120 LOC average files but add 16 imports, 16
+ * round-trips through the import graph, and 16 new module surfaces
+ * to maintain — investment without compounding return when no panel
+ * is reused elsewhere and each panel is already self-contained and
+ * grep-able. The primitive extraction (this section) is where the
+ * real leverage lives.
+ *
+ * Revisit if any of these change:
+ *   • panel count crosses 20
+ *   • any panel becomes reused outside NegotiationFullReport
+ *   • a panel grows past ~250 LOC (currently the max is
+ *     CounterOfferLetterPanel at ~160 LOC including helpers)
+ *
+ * 2026-05-27 additions to this section:
+ *   • PanelEmptyState — the `nfr-panel + SectionHeader + InfoTile`
+ *     shape appeared at 3 call sites (ConcessionAnalysis turn-zero,
+ *     AnchorBracket no-bracket, Archetype <2-sessions).
+ *   • EventRow — the `grid auto/1fr/auto` tonal row pattern appeared
+ *     at 2 call sites (VerbalHabits costly-phrases, SilenceMap moments). */
 
 type Tone = "good" | "warn" | "bad" | "neutral";
 
@@ -260,6 +276,91 @@ function QuoteBlock({ children }: { children: React.ReactNode }) {
   /* Quotation marks live in JSX (not CSS pseudo-elements) so the
      glyph is selectable + accessible to copy/paste. */
   return <div className="nfr-quote">&ldquo;{children}&rdquo;</div>;
+}
+
+/* PanelEmptyState — the `nfr-panel + SectionHeader + InfoTile` shape
+ * for panels that have a header to render but no data to surface yet.
+ * The rule across all 3 prior call sites: render the header so the
+ * user can see what's being measured, render an honest "we don't
+ * have the signal" tile underneath (NOT a fabricated verdict). The
+ * InfoTile body varies — pass it as children. */
+function PanelEmptyState({
+  index,
+  title,
+  subtitle,
+  infoSize = "default",
+  children,
+}: {
+  index: string;
+  title: string;
+  subtitle?: string;
+  infoSize?: "compact" | "default" | "roomy";
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="nfr-panel">
+      <SectionHeader index={index} title={title} subtitle={subtitle} />
+      <InfoTile size={infoSize}>{children}</InfoTile>
+    </div>
+  );
+}
+
+/* EventRow — `display: grid; auto / 1fr / auto` tonal row for
+ * timeline-style events (verbal habits, silence moments). The two
+ * prior call sites had the same 3-column layout (leading marker /
+ * primary+secondary text / trailing pill) and differed only in the
+ * background tint (creamSoft vs success100/error100). Tone-tinted
+ * variants drive the background from a token, so the row reads as
+ * an extension of the report's existing tone vocabulary.
+ *
+ * For "neutral" rows on cream the background is creamSoft; for
+ * good/bad rows it's the matching token100 wash. The leading +
+ * trailing slots can be omitted (renders as an aria-hidden filler
+ * to keep the grid columns stable). */
+function EventRow({
+  tone = "neutral",
+  leading,
+  primary,
+  secondary,
+  trailing,
+  paddingX = 12,
+}: {
+  tone?: "neutral" | "good" | "warn" | "bad";
+  leading?: React.ReactNode;
+  primary: React.ReactNode;
+  secondary?: React.ReactNode;
+  trailing?: React.ReactNode;
+  paddingX?: number;
+}) {
+  const bg =
+    tone === "good" ? t.success100 :
+    tone === "bad"  ? t.error100   :
+    tone === "warn" ? "rgba(180,83,9,0.08)" :
+    t.creamSoft;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "auto 1fr auto",
+        gap: 12,
+        alignItems: "center",
+        padding: `10px ${paddingX}px`,
+        background: bg,
+        borderRadius: radius.tile,
+      }}
+    >
+      {leading ?? <span aria-hidden />}
+      <div style={{ minWidth: 0 }}>
+        {primary}
+        {secondary !== undefined && secondary !== null && (
+          <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>
+            {secondary}
+          </div>
+        )}
+      </div>
+      {trailing ?? <span aria-hidden />}
+    </div>
+  );
 }
 
 /* Tone → token color. Was repeated as a ternary at five call sites
@@ -700,20 +801,17 @@ function ConcessionAnalysisPanel({ outcome }: { outcome: NegotiationOutcome }) {
   if (events.length === 0) {
     if (offerRounds < 2) return null;
     return (
-      <div className="nfr-panel">
-        <SectionHeader
-          index="02"
-          title="When they pushed back, did you fold?"
-          subtitle={`${offerRounds} offer rounds tracked.`}
-        />
-        <InfoTile>
-          We tracked the rupee trajectory across {offerRounds} rounds (see the
-          outcome record above), but we don't have a transcript-grounded
-          read on how you responded to each pushback in this session.
-          Next round: name a defended range up front so each recruiter
-          counter has something specific to push against.
-        </InfoTile>
-      </div>
+      <PanelEmptyState
+        index="02"
+        title="When they pushed back, did you fold?"
+        subtitle={`${offerRounds} offer rounds tracked.`}
+      >
+        We tracked the rupee trajectory across {offerRounds} rounds (see the
+        outcome record above), but we don't have a transcript-grounded
+        read on how you responded to each pushback in this session.
+        Next round: name a defended range up front so each recruiter
+        counter has something specific to push against.
+      </PanelEmptyState>
     );
   }
   const held = events.filter(e => e.outcome === "held").length;
@@ -756,22 +854,19 @@ function AnchorBracketPanel({ outcome }: { outcome: NegotiationOutcome }) {
   if (!bracket) {
     if (outcome.candidateAsk === null) return null;
     return (
-      <div className="nfr-panel">
-        <SectionHeader
-          index="03"
-          title="The way you named your number"
-          subtitle={`You countered with ₹${outcome.candidateAsk} LPA.`}
-        />
-        <InfoTile>
-          We logged your counter but don't have a transcript-grounded
-          read on how you framed it (single number, range, or range
-          with justification). The strongest move next round: name a
-          defended range, e.g. "I was anchoring at ₹X-Y based on what
-          I'm seeing in the market and where I am in other
-          conversations", so the recruiter has to produce a
-          counter-justification rather than just naming a lower number.
-        </InfoTile>
-      </div>
+      <PanelEmptyState
+        index="03"
+        title="The way you named your number"
+        subtitle={`You countered with ₹${outcome.candidateAsk} LPA.`}
+      >
+        We logged your counter but don't have a transcript-grounded
+        read on how you framed it (single number, range, or range
+        with justification). The strongest move next round: name a
+        defended range, e.g. "I was anchoring at ₹X-Y based on what
+        I'm seeing in the market and where I am in other
+        conversations", so the recruiter has to produce a
+        counter-justification rather than just naming a lower number.
+      </PanelEmptyState>
     );
   }
   const map = {
@@ -835,29 +930,28 @@ function VerbalHabitsPanel({ outcome }: { outcome: NegotiationOutcome }) {
         <EyebrowLabel>TOP COSTLY PHRASES</EyebrowLabel>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {outcome.verbalHabits.map((h, i) => (
-            <div
+            <EventRow
               key={i}
-              style={{
-                display: "grid", gridTemplateColumns: "auto 1fr auto",
-                gap: 12, alignItems: "center",
-                padding: "10px 12px", background: t.creamSoft, borderRadius: radius.tile,
-              }}
-            >
-              <div style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 700, color: t.error, minWidth: 32 }}>
-                ×{h.count}
-              </div>
-              <div>
+              tone="neutral"
+              leading={
+                <div style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 700, color: t.error, minWidth: 32 }}>
+                  ×{h.count}
+                </div>
+              }
+              primary={
                 <div style={{ fontSize: 13, fontWeight: 500, color: t.coal, fontFamily: f.mono }}>
                   "{h.phrase}"
                 </div>
-                <div style={{ fontSize: 11, color: t.inkSoft, marginTop: 2 }}>{h.cost}</div>
-              </div>
-              {h.timestamps && h.timestamps.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", maxWidth: 180 }}>
-                  {h.timestamps.map((ts, j) => <PlayableTime key={j} at={ts} />)}
-                </div>
-              )}
-            </div>
+              }
+              secondary={<span style={{ fontSize: 11 }}>{h.cost}</span>}
+              trailing={
+                h.timestamps && h.timestamps.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", maxWidth: 180 }}>
+                    {h.timestamps.map((ts, j) => <PlayableTime key={j} at={ts} />)}
+                  </div>
+                ) : undefined
+              }
+            />
           ))}
         </div>
       </div>
@@ -890,25 +984,19 @@ function SilenceMapPanel({ outcome }: { outcome: NegotiationOutcome }) {
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {outcome.silenceMoments.map((s, i) => (
-          <div
+          <EventRow
             key={i}
-            style={{
-              display: "grid", gridTemplateColumns: "auto 1fr auto",
-              gap: 12, alignItems: "center",
-              padding: "10px 14px",
-              background: s.healthy ? t.success100 : t.error100,
-              borderRadius: radius.tile,
-            }}
-          >
-            <PlayableTime at={s.at} />
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: t.coal }}>{s.duration} silence</div>
-              <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 2 }}>{s.context}</div>
-            </div>
-            <span className={`nfr-pill ${s.healthy ? "nfr-pill-good" : "nfr-pill-bad"}`}>
-              {s.healthy ? "Served you" : "Filled too fast"}
-            </span>
-          </div>
+            tone={s.healthy ? "good" : "bad"}
+            paddingX={14}
+            leading={<PlayableTime at={s.at} />}
+            primary={<div style={{ fontSize: 13, fontWeight: 600, color: t.coal }}>{s.duration} silence</div>}
+            secondary={s.context}
+            trailing={
+              <span className={`nfr-pill ${s.healthy ? "nfr-pill-good" : "nfr-pill-bad"}`}>
+                {s.healthy ? "Served you" : "Filled too fast"}
+              </span>
+            }
+          />
         ))}
       </div>
     </div>
@@ -1363,17 +1451,15 @@ function ArchetypePanel({ outcome, priorSessionCount }: { outcome: NegotiationOu
   if (!outcome.archetype) {
     if ((priorSessionCount ?? 0) < 2) {
       return (
-        <div className="nfr-panel">
-          <SectionHeader
-            index="11"
-            title="The pattern across your sessions"
-            subtitle="We need at least two negotiation sessions to spot a pattern."
-          />
-          <InfoTile size="roomy">
-            Run one more negotiation session and we'll show you the habit
-            you keep repeating, and the single move that breaks the pattern.
-          </InfoTile>
-        </div>
+        <PanelEmptyState
+          index="11"
+          title="The pattern across your sessions"
+          subtitle="We need at least two negotiation sessions to spot a pattern."
+          infoSize="roomy"
+        >
+          Run one more negotiation session and we'll show you the habit
+          you keep repeating, and the single move that breaks the pattern.
+        </PanelEmptyState>
       );
     }
     return null;
