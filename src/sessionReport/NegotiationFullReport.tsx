@@ -431,8 +431,15 @@ function PlayableTime({ at }: { at: string }) {
   );
 }
 
-function SectionHeader({ index, title, subtitle, accent = t.indigo }: {
+function SectionHeader({ index, title, subtitle, accent = t.indigo, aside }: {
   index: string; title: string; subtitle?: string; accent?: string;
+  /* Optional trailing slot — renders to the right of the title block on
+   * a baseline-aligned row. Three panels (PhaseLadder, CohortPlacement,
+   * Counterparty) used to wrap SectionHeader in an identical
+   * `display:flex; space-between` div to pin a stat tile or freshness
+   * chip alongside the title. That wrapper now lives here so the call
+   * sites don't repeat the same 3-property style object. */
+  aside?: React.ReactNode;
 }) {
   /* 2026-05-26 a11y pass — panel titles are now real h4 elements
      under the chapter h3 (SectionBand) and the page h2 ("The full
@@ -440,8 +447,8 @@ function SectionHeader({ index, title, subtitle, accent = t.indigo }: {
      heading-tree screen readers can navigate. The visual styling
      (serif 18px, weight 600, kerned) is preserved via inline style;
      UA defaults for h4 (browser-tinted margin / weight) are reset. */
-  return (
-    <div style={{ marginBottom: 14, display: "flex", alignItems: "baseline", gap: 12 }}>
+  const headBlock = (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
       <span
         style={{
           fontSize: 11, fontWeight: 700, letterSpacing: 0.8,
@@ -463,6 +470,21 @@ function SectionHeader({ index, title, subtitle, accent = t.indigo }: {
         </h4>
         {subtitle && <div style={{ fontSize: 13, color: t.inkSoft, marginTop: 2 }}>{subtitle}</div>}
       </div>
+    </div>
+  );
+  if (!aside) {
+    return <div style={{ marginBottom: 14 }}>{headBlock}</div>;
+  }
+  return (
+    <div
+      style={{
+        marginBottom: 14,
+        display: "flex", justifyContent: "space-between",
+        alignItems: "flex-start", gap: 16,
+      }}
+    >
+      {headBlock}
+      <div style={{ flexShrink: 0 }}>{aside}</div>
     </div>
   );
 }
@@ -714,19 +736,19 @@ function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
   const reachedColor = reached >= 4 ? t.success : reached >= 2 ? t.copper : t.error;
   return (
     <div className="nfr-panel">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-        <SectionHeader
-          index="01"
-          title="How far you got in the negotiation"
-          subtitle={`A strong negotiation moves through ${total} stages, from naming a counter all the way to closing.`}
-        />
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.mono, color: reachedColor, lineHeight: 1 }}>
-            {reached}<span style={{ color: t.inkFaint, fontWeight: 500 }}> / {total}</span>
+      <SectionHeader
+        index="01"
+        title="How far you got in the negotiation"
+        subtitle={`A strong negotiation moves through ${total} stages, from naming a counter all the way to closing.`}
+        aside={
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.mono, color: reachedColor, lineHeight: 1 }}>
+              {reached}<span style={{ color: t.inkFaint, fontWeight: 500 }}> / {total}</span>
+            </div>
+            <EyebrowLabel marginBottom={0} marginTop={4}>Stages</EyebrowLabel>
           </div>
-          <EyebrowLabel marginBottom={0} marginTop={4}>Stages</EyebrowLabel>
-        </div>
-      </div>
+        }
+      />
       <div className="nfr-phase-rail" style={{ display: "flex", gap: 4, marginBottom: 16, marginTop: 4 }}>
         {phases.map((p) => (
           <div key={p.num} style={{ flex: 1, height: 8, borderRadius: radius.sm, background: p.reached ? t.success : t.line }} />
@@ -958,15 +980,27 @@ function VerbalHabitsPanel({ outcome }: { outcome: NegotiationOutcome }) {
       {leaks.length > 0 && (
         <div>
           <EyebrowLabel color={t.error}>DISCLOSURE LEAKS · {leaks.length}</EyebrowLabel>
-          {leaks.map((l, i) => (
-            <div key={i} style={{ padding: "10px 12px", background: t.error100, borderRadius: radius.tile, marginBottom: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: t.error, fontFamily: f.mono, marginBottom: 2 }}>
-                <PlayableTime at={l.at} />
-                <span>· {l.leak}</span>
-              </div>
-              <div style={{ fontSize: 11, color: t.inkSoft, marginTop: 2 }}>{l.cost}</div>
-            </div>
-          ))}
+          {/* Migrated to EventRow tone="bad" — was hand-rolling the same
+              error100-bg + tile-radius + leading-time pattern that
+              EventRow already owns. Visual: identical (paddingX=12 matches
+              the prior 10px 12px; the extra 2px on Y is intentional —
+              EventRow's default 10px brings the leak rows into the same
+              vertical rhythm as the costly-phrases rows above). */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {leaks.map((l, i) => (
+              <EventRow
+                key={i}
+                tone="bad"
+                leading={<PlayableTime at={l.at} />}
+                primary={
+                  <div style={{ fontSize: 12, fontWeight: 600, color: t.error, fontFamily: f.mono }}>
+                    · {l.leak}
+                  </div>
+                }
+                secondary={<span style={{ fontSize: 11 }}>{l.cost}</span>}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -1298,28 +1332,28 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
   const hasAttribution = typeof outcome.cohortN === "number" && !!outcome.cohortFreshness;
   return (
     <div className="nfr-panel">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-        <SectionHeader
-          index="08"
-          title="Where your offer sits vs others like you"
-          subtitle={outcome.cohortLabel ?? "Compared to candidates with the same role + level + company tier."}
-        />
-        {hasAttribution ? (
-          <FreshnessChip
-            source="Cohort data"
-            n={outcome.cohortN}
-            asOf={outcome.cohortFreshness}
-            methodologyUrl={outcome.cohortMethodologyUrl}
-          />
-        ) : (
-          <span
-            className="nfr-pill nfr-pill-neutral"
-            title="Cohort attribution not yet available; treat the placement as an early estimate."
-          >
-            Early estimate
-          </span>
-        )}
-      </div>
+      <SectionHeader
+        index="08"
+        title="Where your offer sits vs others like you"
+        subtitle={outcome.cohortLabel ?? "Compared to candidates with the same role + level + company tier."}
+        aside={
+          hasAttribution ? (
+            <FreshnessChip
+              source="Cohort data"
+              n={outcome.cohortN}
+              asOf={outcome.cohortFreshness}
+              methodologyUrl={outcome.cohortMethodologyUrl}
+            />
+          ) : (
+            <span
+              className="nfr-pill nfr-pill-neutral"
+              title="Cohort attribution not yet available; treat the placement as an early estimate."
+            >
+              Early estimate
+            </span>
+          )
+        }
+      />
       {/* When attribution is wired (n + freshness), show the big
           authoritative percentile + bar. When it isn't, the percentile
           is an internal estimate — we render a verbal phrase only,
@@ -1422,16 +1456,16 @@ function CounterpartyPanel({ outcome }: { outcome: NegotiationOutcome }) {
   if (!outcome.counterpartyFacts || outcome.counterpartyFacts.length === 0) return null;
   return (
     <div className="nfr-panel">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-        <SectionHeader
-          index="10"
-          title="How this company usually negotiates"
-          subtitle="What we've learned about this employer specifically: where they're flexible, where they're not."
-        />
-        {outcome.counterpartySource && (
-          <FreshnessChip source={outcome.counterpartySource} asOf="last 30d" />
-        )}
-      </div>
+      <SectionHeader
+        index="10"
+        title="How this company usually negotiates"
+        subtitle="What we've learned about this employer specifically: where they're flexible, where they're not."
+        aside={
+          outcome.counterpartySource ? (
+            <FreshnessChip source={outcome.counterpartySource} asOf="last 30d" />
+          ) : undefined
+        }
+      />
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {outcome.counterpartyFacts.map((cf, i) => {
           const tone: "good" | "warn" | "bad" =
