@@ -4747,6 +4747,20 @@ export interface AiMove {
   /** Commit 4 (2026-05-15) — NextAction kind discriminator carried on
    *  the move for telemetry / decisionLog inspection. Optional. */
   actionKind?: string;
+  /** PDF#51 (2026-05-28) — deterministic-prose payload for the new
+   *  `answer-direct` NextAction kind. When set, negotiate-turn.ts
+   *  short-circuits the LLM call and ships this string verbatim. Pre-
+   *  resolved by the planner via `renderCandidateQuestionResponse`
+   *  (persona overrides already applied). Mirrors the structural
+   *  bypass that terminal-intent + adversarial + STT-garble already
+   *  use for their canned responses — same pattern, planner-driven. */
+  deterministicProse?: string;
+  /** 2026-05-29 audit follow-up — telemetry slice for the 14-topic
+   *  curated bank. Set ONLY when `actionKind === "answer-direct"` so
+   *  `kernel_answer_direct_deterministic` can be filtered per topic
+   *  (coverage / quality regressions per curated entry). Mirrors
+   *  `route.topic` from `_question-router.ts`. */
+  answerDirectTopic?: string;
 }
 
 /** Bug-report 12 (2026-05-14) — close-floor invariant. Every

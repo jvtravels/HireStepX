@@ -66,6 +66,22 @@ import { marketDataSources } from "./_candidate-profile";
 import { resumeConfirmsCompany } from "./_resume-fact-pack";
 import { hasConcreteTell } from "./_competing-offer-detail";
 import { getRecruiterSectorPersona } from "./_indian-recruiter-personas";
+/* PDF#51 (2026-05-28) — unified candidate-question router. Replaces
+ * the planner's two inline regex tests (DIRECT_ANCHOR_ASK_RE @ ~1228,
+ * BREAKDOWN_REQUEST_RE @ ~4313) AND wires a deterministic-prose path
+ * for the 14 curated topics that pre-2026-05-28 always went through
+ * the LLM-factPack reactive-followup branch. See `_question-router.ts`
+ * for the design log. */
+import {
+  routeCandidateQuestion,
+  latestCandidateText,
+  BREAKDOWN_ASK_RE,
+  type QuestionRoute,
+} from "./_question-router";
+import {
+  renderCandidateQuestionResponse,
+  type CandidateQuestionTopic,
+} from "./_candidate-question";
 
 /** Polish 3 (2026-05-16) — render the reactive followup for a
  *  candidate who cited external market data. When the candidate named
@@ -241,6 +257,32 @@ export type NextAction =
    * The topic is recorded in state.reactiveFollowupsFired via the
    * move.askedTopic plumbing so the same probe doesn't re-fire. */
   | { kind: "reactive-followup"; ask: string; trigger: string; topic: DiscoveryTopic; satisfiesTopic: SatisfiesTopic }
+  /* PDF#51 (2026-05-28) — deterministic answer-direct.
+   *
+   * Fires when `routeCandidateQuestion` resolves the candidate's last
+   * utterance to one of the 14 curated topics in `_candidate-question.ts`
+   * AND `renderCandidateQuestionResponse` returns curated prose (the
+   * response bank has an entry for the topic + active persona).
+   *
+   * Pre-2026-05-28, that prose existed in the response bank but the
+   * planner had no way to ship it: every direct-answer turn routed
+   * through the legacy `reactive-followup` with `topic: "answer-direct"`,
+   * which delegated to the LLM-factPack path. The LLM had access to
+   * the same context but routinely hallucinated numbers and topics
+   * the kernel never authorised. This kind carries the curated prose
+   * inline so negotiate-turn.ts can short-circuit the LLM entirely —
+   * mirrors the terminal-intent / adversarial / STT-garble bypasses
+   * that already existed.
+   *
+   * `topic` is preserved so telemetry can attribute deterministic
+   * answers per topic. `prose` is the resolved candidate-facing text
+   * (persona resolution already happened in `renderCandidateQuestionResponse`). */
+  | {
+      kind: "answer-direct";
+      topic: CandidateQuestionTopic;
+      prose: string;
+      satisfiesTopic: SatisfiesTopic;
+    }
   /* ResumeFactPack track Step 4 (2026-05-16) — credibility-probe. Fires
    * when the candidate states a current-company affiliation and the
    * ResumeFactPack does NOT confirm it (no fuzzy match against latestRole
@@ -1181,6 +1223,76 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
+  /* PDF#51 (2026-05-28) — single question-router call per turn.
+   *
+   * Replaces three inline regex tests (DIRECT_ANCHOR_ASK_RE here,
+   * BREAKDOWN_REQUEST_RE further down via detectOfferBreakdownRequest,
+   * and the 14-topic curated path that pre-2026-05-28 only existed in
+   * `_candidate-question.ts` with no planner consumer). The router is
+   * pure and the result drives three branches:
+   *
+   *   - `anchor-ask`    → existing open-with-offer preemption below
+   *   - `breakdown-ask` → existing inflation-truth / offer-breakdown
+   *                       disclosure branch further down
+   *   - `topical`       → new answer-direct deterministic-prose branch
+   *                       (LLM is skipped in negotiate-turn.ts)
+   *
+   * Computed once at the top of planNextAction so each branch reads
+   * the same routing decision. `latestCandidateText` centralises the
+   * conversationLog walk that four call sites used to duplicate. */
+  const lastCandidateUtterance = latestCandidateText(state);
+  const questionRoute: QuestionRoute | null =
+    routeCandidateQuestion(lastCandidateUtterance);
+
+  /* PDF#51 (2026-05-28) — direct anchor-ask preemption.
+   *
+   * The Flipkart Senior Product Designer transcript showed the
+   * candidate asking "so what's your offer?" three turns in a row
+   * while the planner held its course through the discovery cascade
+   * (currentCtc → target → notice period → THEN anchor). Real
+   * recruiters do not hold discovery hostage when the candidate has
+   * directly asked for the number; they share the headline and let
+   * discovery continue in parallel.
+   *
+   * Gates (ALL must hold):
+   *   (a) router classified the utterance as `anchor-ask`
+   *       (pattern lives in `_question-router.ts:ANCHOR_ASK_RE`),
+   *   (b) the band exists and has an initialOffer,
+   *   (c) no anchor has been disclosed yet (highestOfferMade === 0),
+   *   (d) phase is non-terminal — closed sessions don't re-anchor.
+   *
+   * When all four hold, force `open-with-offer` with the band's
+   * initialOffer regardless of where the discovery cascade thinks
+   * we are. */
+  if (
+    questionRoute?.kind === "anchor-ask" &&
+    !isTerminalPhase(state.phase) &&
+    state.highestOfferMade === 0 &&
+    state.band?.initialOffer != null
+  ) {
+    const clampedOpener = clampAnchorAgainstCandidateAsk(
+      state.band.initialOffer,
+      state.candidateTarget,
+      state.band.walkAway,
+    );
+    return {
+      kind: "open-with-offer",
+      satisfiesTopic: "open-with-offer",
+      _move: {
+        lever: "open-with-offer",
+        newTotalLpa: clampedOpener,
+        rationale:
+          `PDF#51 direct anchor-ask preemption — candidate asked for the ` +
+          `offer at turn ${state.turnIndex}; ship band.initialOffer ` +
+          `(₹${clampedOpener} LPA${
+            clampedOpener < state.band.initialOffer
+              ? `, clamped from ${state.band.initialOffer}`
+              : ""
+          }) instead of holding discovery hostage.`,
+      },
+    };
+  }
+
   /* Audit fix 2026-05-21 — CTC-inflation truth follow-up. Priority-
    * positioned RIGHT AFTER the clarification-request branch (and BEFORE
    * stalled-discovery / discovery cascades) so that a candidate's
@@ -1226,14 +1338,13 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * truth above. Reuses the same buildCtcInflationBreakdown helper so
    * the disclosed numbers match the inflation-anchor mix. */
   {
-    const log = state.conversationLog ?? [];
-    let lastCandidate = "";
-    for (let i = log.length - 1; i >= 0; i--) {
-      if (log[i].speaker === "candidate") {
-        lastCandidate = log[i].text ?? "";
-        break;
-      }
-    }
+    /* PDF#51 (2026-05-28) — reuse the top-of-function router result
+     * rather than re-walking the conversation log. The router already
+     * classifies `breakdown-ask` as a distinct route; the inline
+     * `detectOfferBreakdownRequest(lastCandidate)` call below is kept
+     * as a belt-and-suspenders so legacy tests that mock the helper
+     * directly keep passing. */
+    const lastCandidate = lastCandidateUtterance;
     const offerLpa =
       state.highestOfferMade > 0
         ? state.highestOfferMade
@@ -1297,7 +1408,13 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       !candidateHasCounterPhrase &&
       !looksLikeNonCashBreakdown &&
       lastCandidate &&
-      detectOfferBreakdownRequest(lastCandidate)
+      /* PDF#51 (2026-05-28) — accept either the unified router's
+       * classification OR the legacy regex helper. Both reduce to
+       * BREAKDOWN_ASK_RE today (the helper now imports the regex
+       * from the router); the dual-check is paranoia against drift
+       * if either side is monkey-patched in tests. */
+      (questionRoute?.kind === "breakdown-ask" ||
+        detectOfferBreakdownRequest(lastCandidate))
     ) {
       const action = planCtcInflationTruth(offerLpa);
       if (action != null) return action;
@@ -3481,6 +3598,59 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
       !offerAskedThisTurn &&
       !wiredProfileTopicMatches
     ) {
+      /* PDF#51 (2026-05-28) — deterministic-prose preempt.
+       *
+       * If the unified router resolves the candidate's question to one
+       * of the 14 curated topics AND the response bank returns prose
+       * for the active persona, ship the new `answer-direct` NextAction
+       * kind. negotiate-turn.ts detects this kind via the _move flag
+       * and SKIPS the LLM call — the prose ships byte-for-byte from
+       * the response bank. Wins over the legacy reactive-followup
+       * branch below because (a) curated prose is more reliable than
+       * the LLM-factPack output and (b) hallucination risk drops to
+       * zero for matched topics. Falls through to the LLM path for
+       * non-topical direct questions (intent-only / open-direct). */
+      const route = routeCandidateQuestion(latestCandidateText(state));
+      if (route?.kind === "topical") {
+        const prose = renderCandidateQuestionResponse(
+          route.topic,
+          state.recruiterSectorPersona ?? null,
+          state.roundPersona ?? null,
+          /* 2026-05-29 realism-pass — pass sessionId+turn as the variant
+           * seed so paraphrase rotation is consistent within a session
+           * but diverges across sessions, and re-asks within a session
+           * pick a different phrasing. See `hashSeed` in
+           * _candidate-question.ts. */
+          `${state.sessionId}:${state.turnIndex}`,
+          /* 2026-05-29 realism-pass — phase-tinted variants. Passing the
+           * active phase lets `budget-disclosure`, `range-grade-leverage`,
+           * `fixed-variable-split`, and `notice-buyout` shift register
+           * during `closing-push` (warmer / urgent) and during `opening`
+           * (more guarded). See the precedence rule in
+           * `renderCandidateQuestionResponse`. */
+          state.phase ?? null,
+        );
+        if (prose) {
+          return {
+            kind: "answer-direct",
+            topic: route.topic,
+            prose,
+            satisfiesTopic: "answer-direct",
+            _move: {
+              lever: "probe",
+              newTotalLpa: null,
+              rationale:
+                `PDF#51 deterministic answer-direct — candidate asked ` +
+                `about "${route.topic}" at turn ${state.turnIndex}; ` +
+                `ship curated response-bank prose, skip LLM.`,
+              actionKind: "answer-direct",
+              askedTopic: "answer-direct",
+              deterministicProse: prose,
+              answerDirectTopic: route.topic,
+            },
+          };
+        }
+      }
       /* BUG E fix (PDF#31, 2026-05-18) — `ask` MUST be candidate-facing
        * prose, never an internal directive. Previously this field carried
        * "Answer the candidate's question first; checklist advance pauses
@@ -4224,7 +4394,7 @@ export function detectInHandFollowupAfterInflation(
 ): boolean {
   if (!state.leversUsed?.includes("ctc-inflation-anchor")) return false;
   if (!candidateUtterance || typeof candidateUtterance !== "string") return false;
-  return BREAKDOWN_REQUEST_RE.test(candidateUtterance);
+  return BREAKDOWN_ASK_RE.test(candidateUtterance);
 }
 
 /** Audit fix (2026-05-22) — breakdown/recap request regex, shared by the
@@ -4239,9 +4409,13 @@ export function detectInHandFollowupAfterInflation(
  *  the planner read it as "ship a breakdown" and routed to inflation-
  *  truth with numbers below the band floor). The deeper anchor here:
  *  bare nouns are ambient, request VERBS (share, give, can you,
- *  what's, summarize) are what mark intent. */
-export const BREAKDOWN_REQUEST_RE =
-  /\b(?:in[\s-]?hand|take[\s-]?home|guaranteed\s+cash|what.?s\s+(?:guaranteed|fixed)|monthly\s+take[\s-]?home|after\s+tax|summari[sz]e|recap)\b|(?:share|give|provide|walk\s+me\s+through|explain|tell\s+me|can\s+you|could\s+you|what(?:'?s| is)|need|want)\s+(?:me\s+|us\s+)?(?:the\s+|a\s+|an\s+)?(?:break(?:down|up)|split|structure|components?)\b|(?:break(?:down|up)|split|structure|components?)\s+of\s+(?:the\s+|this\s+|that\s+|\d)|what\s+is\s+(?:the\s+)?base\b|base\s*,?\s*variable\s*,?\s*bonus/i;
+ *  what's, summarize) are what mark intent.
+ *
+ *  PDF#51 (2026-05-28) — the regex now lives in `_question-router.ts`
+ *  as `BREAKDOWN_ASK_RE` so the unified router and the legacy helper
+ *  share one source of truth. The re-export below keeps the existing
+ *  public name + import sites stable. */
+export { BREAKDOWN_ASK_RE as BREAKDOWN_REQUEST_RE } from "./_question-router";
 
 /** Audit fix (2026-05-22) — detect ANY candidate breakdown / recap
  *  request. Used by the planner's offer-breakdown branch to ship a
@@ -4254,7 +4428,7 @@ export function detectOfferBreakdownRequest(
   candidateUtterance: string,
 ): boolean {
   if (!candidateUtterance || typeof candidateUtterance !== "string") return false;
-  return BREAKDOWN_REQUEST_RE.test(candidateUtterance);
+  return BREAKDOWN_ASK_RE.test(candidateUtterance);
 }
 
 /** Pure: build the truthful follow-up action using the same numbers as

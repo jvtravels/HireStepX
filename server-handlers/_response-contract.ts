@@ -53,6 +53,9 @@
 
 import type { NegotiationState, AiMove } from "./_negotiation-kernel";
 import { detectTerminalIntent, type TerminalIntent } from "./_terminal-intent";
+/* PDF#51 (2026-05-28) — unified question router. See header in
+ * `_question-router.ts` for the consolidation log. */
+import { routeQuestionShape } from "./_question-router";
 
 /* Future Layer 5 contract — the structured envelope the LLM should
  * eventually emit in place of free-form prose. Keeping the type
@@ -213,7 +216,10 @@ const TOPIC_KEYWORDS: Record<ResponseTopic, RegExp> = {
  * Concretely: an answer scoring base=4 medical=1 will not drift-flag
  * against a base question, even though "medical" appears, because
  * the dominant topic clearly matches what was asked. */
-function topicScores(text: string): Map<ResponseTopic, number> {
+/* exported 2026-05-28 — consumed by `_question-router.ts` so the
+ * router and the validator share one keyword index (single source of
+ * truth for ResponseTopic detection). */
+export function topicScores(text: string): Map<ResponseTopic, number> {
   const out = new Map<ResponseTopic, number>();
   const lower = (text || "").toLowerCase();
   for (const [topic, re] of Object.entries(TOPIC_KEYWORDS) as Array<[ResponseTopic, RegExp]>) {
@@ -226,38 +232,27 @@ function topicScores(text: string): Map<ResponseTopic, number> {
   return out;
 }
 
-/* Question-shape detectors for the candidate's last utterance.
- * Catches "what is the base?" / "can you give the breakdown" /
- * "is 32 in budget?" — patterns where the candidate asked a
- * specific question and the response is expected to address it. */
+/* PDF#51 (2026-05-28) — local glue around the unified router.
+ *
+ * Pre-2026-05-28, this function carried its own regex copies for
+ * isDirectQuestion / isNumericQuestion plus a `topicScores` call to
+ * build the topics list — a THIRD classifier alongside the planner's
+ * inline regexes and `_candidate-question.ts`'s 14-topic ladder. The
+ * router (`_question-router.ts`) collapsed all three; this is now a
+ * thin field-projection so the rest of the validator keeps its
+ * existing `question.{isDirectQuestion, isNumericQuestion, topics}`
+ * accessor surface without churning every call site. */
 function classifyCandidateQuestion(text: string): {
   isNumericQuestion: boolean;
   isDirectQuestion: boolean;
   topics: ResponseTopic[];
 } {
-  const isNumericQuestion =
-    /\b(?:how\s+much|what(?:'s| is)\s+(?:the\s+)?(?:base|total|ctc|budget|breakdown|number|figure|amount)|give\s+me\s+(?:the\s+)?(?:number|figure|breakdown)|provide\s+(?:the\s+)?(?:clear\s+)?(?:number|breakdown)|can\s+you\s+(?:share|provide|give|tell\s+me)\s+(?:the\s+)?(?:number|figure|breakdown|amount))\b/i.test(text || "")
-    || /\b(?:in\s+your\s+budget|is\s+\d+\s+(?:lpa|lakhs?)\s+in\s+(?:your\s+)?budget)\b/i.test(text || "");
-  /* Direct-question detector — used by the role-reversal check.
-   * Fires on (a) a trailing "?", (b) standard interrogatives at
-   * sentence start, or (c) "can/could you / do you have" frames. */
-  const t = (text || "").trim();
-  const isDirectQuestion =
-    /\?\s*$/.test(t)
-    || /^(?:what|how|when|where|why|which|who|is|are|do|does|did|can|could|would|will|should)\b/i.test(t)
-    || /\b(?:can\s+you|could\s+you|do\s+you\s+have|is\s+there|are\s+there)\b/i.test(t);
-  /* PDF#50 fix (2026-05-27) — topics are only meaningful for the
-   * drift / role-reversal checks when the candidate ACTUALLY asked
-   * something. The prior version returned every topic-keyword that
-   * appeared in the text, which meant a plain disclosure ("Base is
-   * 36 LPA") got read as "candidate asked about base" and any AI
-   * response that moved to a different topic (e.g. probing variable
-   * next) tripped topic-drift → filler-fallback. The fix: gate
-   * topics on question-shape. Statement utterances return [];
-   * questions return their topic keywords as before. */
-  const topics: ResponseTopic[] =
-    isDirectQuestion || isNumericQuestion ? Array.from(topicScores(text).keys()) : [];
-  return { isNumericQuestion, isDirectQuestion, topics };
+  const shape = routeQuestionShape(text || "");
+  return {
+    isNumericQuestion: shape.isNumericQuestion,
+    isDirectQuestion: shape.isDirectQuestion,
+    topics: shape.topics,
+  };
 }
 
 /* Dominant topic by score (helper for repeated-topic + drift checks).
@@ -273,6 +268,55 @@ function dominantTopic(scores: Map<ResponseTopic, number>, minScore = 1): Respon
   }
   return best;
 }
+
+/* Short-clarification gate (PDF#51 — 2026-05-28).
+ *
+ * Recruiters legitimately ask ≤3-word clarifications back ("which one?",
+ * "what role?", "got it — base or total?") and the role-reversal check
+ * was firing on them, forcing the validator into a deferral fallback
+ * that read as evasion. A clarification of ≤4 tokens is allowed; it's
+ * a turn-taking move, not a refusal to answer.
+ *
+ * Tokens are counted on the candidate's question itself (the trigger
+ * for role-reversal), not the AI response. */
+function isShortClarification(text: string): boolean {
+  const t = (text || "").trim();
+  if (!t) return false;
+  const tokens = t.replace(/[?!.,;:]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  return tokens.length > 0 && tokens.length <= 4;
+}
+
+/* PDF#51 follow-up (2026-05-28) — AI-side short-clarification gate.
+ *
+ * Mirror of `isShortClarification` for the AI's response. Used to
+ * exempt legitimate short clarifying questions ("base or total?",
+ * "which round?", "are we talking about the offer or your target?")
+ * from role-reversal, since the AI sometimes needs to disambiguate
+ * BEFORE it can give the kernel's number. The cap is 15 words — long
+ * enough for a natural clarifier, short enough that an evasive
+ * monologue cannot squeak through. */
+function isAiShortClarification(text: string): boolean {
+  const t = (text || "").trim();
+  if (!t) return false;
+  const tokens = t.replace(/[?!.,;:]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0 || tokens.length > 15) return false;
+  /* Must look like a clarifying question — ends with `?` and uses
+   * disjunctive ("or") or interrogative shape. Plain short statements
+   * like "Got it." don't count; we want REAL clarifications. */
+  if (!/\?\s*$/.test(t)) return false;
+  return true;
+}
+
+/* Deferral / acknowledgement language (PDF#51 — 2026-05-28).
+ *
+ * Used to exempt legitimate "I'll come back to you with that figure"
+ * answers from the topic-drift "numeric-question with no number"
+ * violation. Without this exemption, the validator demands a concrete
+ * number on every numeric question, which is wrong: the recruiter is
+ * sometimes genuinely deferring (e.g. variable split TBD before offer
+ * letter). */
+const DEFERRAL_RE =
+  /\b(?:come\s+back|circle\s+back|let\s+me\s+confirm|let\s+me\s+check|share\s+(?:with\s+you\s+)?in\s+writing|in\s+the\s+offer\s+letter|before\s+the\s+offer\s+letter|get\s+back\s+to\s+you|i'?ll\s+confirm|i\s+will\s+confirm|share\s+the\s+(?:exact\s+)?(?:number|figure|breakdown)|need\s+to\s+check)\b/i;
 
 /* Role-reversal detector — the response is a question (or a string of
  * them) with no concrete deliverable. We define "no concrete
@@ -326,6 +370,24 @@ export function validateResponseContract(input: ContractInput): ContractResult {
   const violations: ContractViolation[] = [];
   const evidence: string[] = [];
   const hints: string[] = [];
+
+  /* PDF#51 (2026-05-28) — deterministic answer-direct bypass.
+   *
+   * When the planner shipped a curated response-bank string via the
+   * new `answer-direct` NextAction kind, every topic/drift/role-
+   * reversal/unauthorized-number check would either no-op or
+   * false-fire because the prose is hand-written, not LLM-generated.
+   * The walk-away / internal-taxonomy / filler / terminal-intent
+   * checks still matter (defense-in-depth against a buggy response
+   * bank entry), so we run them; everything else is short-circuited.
+   *
+   * The runtime detects the bypass by reading `input.move.actionKind`
+   * — set to the literal string "answer-direct" by the planner when
+   * the topical branch fires. negotiate-turn.ts already skips the
+   * LLM for this kind; this validator-side exemption ensures the
+   * post-hoc layer doesn't override the deterministic prose with a
+   * fallback. */
+  const isAnswerDirect = input.move.actionKind === "answer-direct";
 
   /* 1. Walk-away leak — the walk-away figure must never appear in
    * prose. Numeric tolerance ±0.05 LPA to account for rounding
@@ -383,7 +445,7 @@ export function validateResponseContract(input: ContractInput): ContractResult {
    * fires when the response is actively about something ELSE. */
   const question = classifyCandidateQuestion(candidateLastUtterance);
   const responseScores = topicScores(text);
-  if (question.topics.length > 0 || question.isNumericQuestion) {
+  if (!isAnswerDirect && (question.topics.length > 0 || question.isNumericQuestion)) {
     const overlap = question.topics.filter(t => responseScores.has(t));
     const responseDominant = dominantTopic(responseScores, 2);
     if (
@@ -396,7 +458,12 @@ export function validateResponseContract(input: ContractInput): ContractResult {
       evidence.push(`asked=[${question.topics.join(",")}] dominant-answered=${responseDominant}`);
       hints.push(`The candidate asked about [${question.topics.join(", ")}]. Address that topic, do not pivot to ${responseDominant}.`);
     }
-    if (question.isNumericQuestion && proseNumbers.length === 0) {
+    if (question.isNumericQuestion && proseNumbers.length === 0 && !DEFERRAL_RE.test(text)) {
+      /* PDF#51 (2026-05-28) — exempt explicit deferrals. A response that
+       * says "I'll confirm the exact figure before the offer letter" is
+       * a legitimate answer to a numeric question; the prior version
+       * tripped this and replaced the recruiter's clean deferral with a
+       * filler-fallback that read worse. */
       violations.push("topic-drift");
       evidence.push("numeric-question with no number in response");
       hints.push(`The candidate asked a numeric question. Either give the kernel-provided number or defer explicitly ("I'll come back to you with the number"). Do not produce a vague non-answer.`);
@@ -418,7 +485,8 @@ export function validateResponseContract(input: ContractInput): ContractResult {
   const disclosed = new Set(disclosedTopicsFromLog(state));
   for (const [topic, score] of responseScores) {
     if (
-      score >= 3
+      !isAnswerDirect
+      && score >= 3
       && disclosed.has(topic)
       && !question.topics.includes(topic)
     ) {
@@ -438,7 +506,27 @@ export function validateResponseContract(input: ContractInput): ContractResult {
    * Allow legitimate "I want to make sure I understand — were you
    * asking about X or Y?" clarifications by gating on no-number AND
    * no-deferral simultaneously inside isResponseAllQuestion. */
-  if (question.isDirectQuestion && isResponseAllQuestion(text)) {
+  if (
+    !isAnswerDirect
+    && question.isDirectQuestion
+    && isResponseAllQuestion(text)
+    && !isShortClarification(candidateLastUtterance)
+    /* PDF#51 follow-up (2026-05-28) — two-sided clarification gate.
+     * The candidate-side gate above only exempts ≤4-token questions
+     * FROM the candidate. A legitimate AI clarification ("base or
+     * total?", "which round are you in?") fired role-reversal even
+     * when the candidate's question was substantive, because the AI
+     * needed disambiguation before it could answer. Allow the AI's
+     * own response to be a SHORT (≤15 words) clarifying question
+     * without tripping the role-reversal check. The other gates
+     * (isResponseAllQuestion already requires no number, no deferral)
+     * keep this from leaking through for evasive answers. */
+    && !isAiShortClarification(text)
+  ) {
+    /* PDF#51 (2026-05-28) — exempt ≤4-token candidate clarification.
+     * "Which one?" / "Base or total?" / "Got it — base?" are valid
+     * recruiter clarifiers, not role-reversal. The check still fires
+     * for substantive questions returned with another question. */
     violations.push("role-reversal");
     evidence.push("candidate asked, AI returned a question without answering");
     hints.push(`The candidate asked a direct question. Answer it with the kernel-provided number/topic, or defer explicitly ("I'll come back to you with that"). Do not respond with another question.`);
@@ -505,7 +593,7 @@ export function validateResponseContract(input: ContractInput): ContractResult {
    * ceiling that wasn't part of the move). Soft check — only fires
    * when move.newTotalLpa is the authoritative delivery. */
   const moveNumbers = collectMoveNumbers(input.move);
-  if (moveNumbers.length > 0 && proseNumbers.length > 0) {
+  if (!isAnswerDirect && moveNumbers.length > 0 && proseNumbers.length > 0) {
     const unauthorized = proseNumbers.filter(n => !moveNumbers.some(m => Math.abs(n - m) < 0.05) && !isMentionedInRecentLog(n, state));
     if (unauthorized.length > 0) {
       violations.push("unauthorized-number");
@@ -544,6 +632,25 @@ function isMentionedInRecentLog(n: number, state: NegotiationState): boolean {
    * disclosed numbers are conversation-public. */
   if (state.highestOfferMade != null && Math.abs(state.highestOfferMade - n) < 0.05) return true;
   if (state.candidateTarget != null && Math.abs(state.candidateTarget - n) < 0.05) return true;
+  /* PDF#51 (2026-05-28) — the candidate's own disclosed current CTC and
+   * the band's initialOffer figure are also conversation-public:
+   * (a) candidateCurrentCtc was named BY the candidate, so restating it
+   *     ("you're at ₹24 LPA today") is a paraphrase, not a leak;
+   * (b) the band's initialOffer was the recruiter's opening number and
+   *     is therefore public the moment turn-1's offer step ran. The
+   *     unauthorized-number rule was firing on both, forcing fallback
+   *     prose on legitimate restatements during anchor-disclosure. */
+  if (state.candidateCurrentCtc != null && Math.abs(state.candidateCurrentCtc - n) < 0.05) return true;
+  if (state.band?.initialOffer != null && Math.abs(state.band.initialOffer - n) < 0.05) return true;
+  /* PDF#51 follow-up (2026-05-28) — competing-offer figure is also
+   * conversation-public. The candidate volunteered it (state.competingOffer
+   * is only populated after the candidate or their fact-pack stated a
+   * specific competing number); restating it during counter-offer
+   * phase ("vs your competing 50 LPA from X") is a paraphrase, not a
+   * leak. Pre-2026-05-28 this tripped unauthorized-number on every
+   * legitimate competing-offer reference and pushed the response into
+   * a filler-fallback. */
+  if (state.competingOffer != null && Math.abs(state.competingOffer - n) < 0.05) return true;
   return false;
 }
 
@@ -552,9 +659,21 @@ function isMentionedInRecentLog(n: number, state: NegotiationState): boolean {
  * spoken-already memory — without requiring state migration. The
  * planner / restyle prompt can consume this to avoid re-explaining
  * topics. */
+/* PDF#51 follow-up (2026-05-28) — recency window. Pre-2026-05-28 this
+ * scanned the ENTIRE conversation log, which meant a topic mentioned
+ * on turn 2 blocked legitimate re-explanation on turn 11 (the
+ * candidate naturally circles back to ESOPs / notice / variable after
+ * intermediate negotiation turns, and the validator was firing
+ * repeated-topic on the re-mention even though the original mention
+ * was many turns ago). Window the AI turns to the most recent 4 —
+ * roughly one negotiation "round" of back-and-forth. */
+const DISCLOSED_TOPIC_RECENCY_AI_TURNS = 4;
+
 export function disclosedTopicsFromLog(state: NegotiationState): ResponseTopic[] {
   const log = state.conversationLog ?? [];
-  const aiText = log.filter(e => e.speaker === "ai").map(e => e.text).join(" \n ");
+  const aiTurns = log.filter(e => e.speaker === "ai");
+  const recentAi = aiTurns.slice(-DISCLOSED_TOPIC_RECENCY_AI_TURNS);
+  const aiText = recentAi.map(e => e.text).join(" \n ");
   const out: ResponseTopic[] = [];
   for (const [topic, re] of Object.entries(TOPIC_KEYWORDS) as Array<[ResponseTopic, RegExp]>) {
     if (re.test(aiText)) out.push(topic);

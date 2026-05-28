@@ -76,6 +76,7 @@ import type { NextAction } from "./_next-action-planner";
  * Architectural seam, not another helper module. See file headers for
  * the audit rationale + the eight failure modes this prevents. */
 import { detectTerminalIntent, gracefulCloseResponse } from "./_terminal-intent";
+import { detectSttGarbling, sttRepromptResponse } from "./_stt-sanity";
 import {
   validateResponseContract,
   contractFallbackProse,
@@ -678,6 +679,30 @@ export default async function handler(
         }, req);
       }
 
+      /* PDF#51 Fix 3 (2026-05-28) — STT sanity gate.
+       *
+       * When the incoming audio was garbled by speech-to-text into
+       * 1-3 character fragments, the kernel used to fold the noise
+       * into the conversation log and ask the LLM to respond — at
+       * which point the LLM hallucinated (PDF#51 turn 9: fabricated
+       * concession; turn 14: repeated stale anchor). Detect the
+       * obvious garble shapes here and short-circuit to a
+       * deterministic re-prompt. State still advances so a stuck
+       * mic cannot spin indefinitely. We skip this gate when
+       * adversarial input already short-circuited or terminal-intent
+       * fired, since those branches own the response. */
+      const sttGarbling = !terminalIntent && !injectionDetected
+        ? detectSttGarbling(sanitizedAnswer)
+        : { garbled: false, reason: null };
+      if (sttGarbling.garbled) {
+        void captureServerEvent("kernel_stt_garbling", distinctId, {
+          reason: sttGarbling.reason,
+          input_length: sanitizedAnswer.length,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+        }, req);
+      }
+
       const move = pickAiMove(state);
 
       let text: string;
@@ -705,6 +730,53 @@ export default async function handler(
           label: "Graceful close",
           family: "meta",
           hint: "When a candidate explicitly rejects or asks to end, recruiters acknowledge and close — they do not keep selling.",
+        };
+      } else if (move.actionKind === "answer-direct" && typeof move.deterministicProse === "string" && move.deterministicProse.length > 0) {
+        /* PDF#51 (2026-05-28) — deterministic answer-direct.
+         *
+         * The planner resolved the candidate's question to one of the
+         * 14 curated topics in `_candidate-question.ts` and stashed the
+         * persona-resolved response-bank prose on the move. Skip the
+         * LLM entirely; the curated string is the answer. Same bypass
+         * shape as terminal-intent / adversarial / STT-garble — the
+         * LLM never sees a turn we have a known-correct answer for.
+         *
+         * Telemetry captures the topic so we can attribute which
+         * deterministic answers ship and detect regressions in the
+         * response bank. */
+        text = move.deterministicProse;
+        source = "deflection";
+        failureKinds = [];
+        envelopeMissingAttempts = 0;
+        moveTag = {
+          label: "Answering directly",
+          family: "meta",
+          hint: "When a candidate asks a substantive question, recruiters answer first — curated prose shipped instead of an LLM turn.",
+        };
+        /* 2026-05-29 audit follow-up — emit `topic` and `action_kind`
+         * so coverage / quality regressions are sliceable per curated
+         * topic, not just aggregate. `action_kind` is redundant with
+         * the event name today but future-proofs the slice if we add
+         * other deterministic bypass kinds. */
+        void captureServerEvent("kernel_answer_direct_deterministic", distinctId, {
+          turn_index: state.turnIndex,
+          phase: state.phase,
+          prose_length: move.deterministicProse.length,
+          topic: move.answerDirectTopic ?? null,
+          action_kind: move.actionKind,
+        }, req);
+      } else if (sttGarbling.garbled) {
+        /* PDF#51 Fix 3 — STT-garble re-prompt. Deterministic prose,
+         * no LLM call. Move tag flags this as a meta turn so the
+         * transparency layer shows the candidate why we stalled. */
+        text = sttRepromptResponse();
+        source = "deflection";
+        failureKinds = [];
+        envelopeMissingAttempts = 0;
+        moveTag = {
+          label: "Asking the candidate to repeat",
+          family: "meta",
+          hint: "When audio garbles, recruiters ask for a repeat instead of guessing — that's what just happened.",
         };
       } else if (adversarial.shouldShortCircuit) {
         /* Skip the LLM. The canned deflection is neutral and redirects

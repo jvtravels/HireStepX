@@ -66,6 +66,11 @@ export function proseReactiveFollowup(
         classified,
         helpers.sectorPersona,
         helpers.activeRoundPersona,
+        /* 2026-05-29 realism-pass — sessionId+turn seeds variant rotation. */
+        `${state.sessionId}:${state.turnIndex}`,
+        /* 2026-05-29 realism-pass — active phase drives the closing-warm /
+         * opening-guarded tone tint when the topic has a phase entry. */
+        state.phase ?? null,
       );
       if (prose) return prose;
     }

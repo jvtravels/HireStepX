@@ -130,14 +130,21 @@ describe("reactive follow-ups — planner gate (commit 4)", () => {
   });
 
   it("candidate question triggers answer-direct (pauses checklist advance)", () => {
+    /* 2026-05-29 — updated to reflect PDF#51 (2026-05-28) deterministic-
+     * prose preempt. The candidate's "fixed/variable split" question
+     * resolves via `routeCandidateQuestion` to the `fixed-variable-split`
+     * curated topic, and the planner now ships the dedicated
+     * `answer-direct` NextAction kind (LLM-bypass), not the legacy
+     * `reactive-followup{ topic: "answer-direct" }` wrapper. The intent
+     * — pause checklist advance, answer the candidate first — is
+     * unchanged; the discriminator moved. */
     const s = applyCandidateAnswer(
       fresh({ turnIndex: 1, phase: "opening" }),
       "Quick question — what's the fixed/variable split at your end?",
     );
     const p = planned(s);
-    expect(p?.kind).toBe("reactive-followup");
-    expect(p?.topic).toBe("answer-direct");
-    expect(p?.trigger).toBe("askedQuestion");
+    expect(p?.kind).toBe("answer-direct");
+    expect((p as { topic?: string })?.topic).toBe("fixed-variable-split");
   });
 
   it("fired topic does NOT re-fire in the same session", () => {

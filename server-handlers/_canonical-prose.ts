@@ -833,6 +833,17 @@ function renderCanonicalProseBody(
     case "reactive-followup":
       return proseReactiveFollowup(action, state, helpers);
 
+    /* PDF#51 (2026-05-28) — deterministic answer-direct. The planner
+     * already resolved the response-bank prose via
+     * renderCandidateQuestionResponse and stashed it on the action;
+     * canonical-prose just hands it back. negotiate-turn.ts normally
+     * short-circuits this kind before reaching canonical-prose (the
+     * LLM bypass uses move.deterministicProse), but the case stays
+     * here so legacy callers that DO traverse canonical-prose for
+     * answer-direct (restyle fallback, tests) ship the same string. */
+    case "answer-direct":
+      return action.prose;
+
     case "probe-mismatch":
       return "Before we get to the fitment, can you walk me through how your current work maps to this role?";
 

@@ -254,6 +254,15 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "discovery",
         hint: "Recruiters test the basis for your ask — market data, role scope, and comparable offers travel further than personal need.",
       };
+    /* PDF#51 (2026-05-28) — deterministic answer-direct. The recruiter
+     * is shipping curated response-bank prose; the transparency layer
+     * should mark it as a substantive answer, not a probe. */
+    case "answer-direct":
+      return {
+        label: "Answering directly",
+        family: "meta",
+        hint: "When a candidate asks a substantive question, recruiters answer first — the planner shipped curated prose for this topic instead of routing through the LLM.",
+      };
     case "reactive-followup":
       return {
         label: "Reacting to your last point",
