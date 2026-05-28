@@ -40,7 +40,7 @@
 
 import React, { useState } from "react";
 import type { Question } from "./types";
-import { t, f, shadows, radius } from "./tokens";
+import { t, f, shadows, radius, space } from "./tokens";
 import {
   NPV_MODEL,
   derivePhases,
@@ -174,7 +174,48 @@ function FreshnessChip({ source, n, asOf, methodologyUrl }: {
  *     shape appeared at 3 call sites (ConcessionAnalysis turn-zero,
  *     AnchorBracket no-bracket, Archetype <2-sessions).
  *   • EventRow — the `grid auto/1fr/auto` tonal row pattern appeared
- *     at 2 call sites (VerbalHabits costly-phrases, SilenceMap moments). */
+ *     at 2 call sites (VerbalHabits costly-phrases, SilenceMap moments).
+ *
+ * 2026-05-28 additions:
+ *   • PanelShell — the `<div className="nfr-panel"><SectionHeader …/>…</div>`
+ *     wrapper appeared at 12 call sites. Now one primitive carries the
+ *     panel chrome contract; PanelEmptyState became a one-line consumer.
+ *     CounterOfferLetterPanel is the lone holdout because it opens with
+ *     a "MOST ACTIONABLE" pill row above the section header.
+ *   • .nfr-vstack-{sm,md,lg,xl} (styles.ts) — replaces 8+ instances of
+ *     `display:flex; flexDirection:column; gap:N` inline. The gap values
+ *     map to the spacing scale in tokens.ts.
+ *   • space.* tokens (tokens.ts) — names the recurring inline spacing
+ *     literals (xs/sm/md/lg/xl/row/block/panel/panelPad/partGap). Replaces
+ *     scattered 4/6/8/10/12/14/16/18 across panel internals.
+ *   • NPVMathPanel — table now uses the existing `.nfr-table` class +
+ *     a new `.nfr-table-total` modifier instead of hand-rolling the
+ *     border-collapse + cream-wash + bold-last-row chrome inline.
+ *
+ * 2026-05-28 part-2 audit:
+ *   • Copper-tint tokens — 6 hardcoded `rgba(180,83,9, …)` strings with
+ *     5 different alphas (0.06 / 0.08 / 0.18 / 0.20, plus the existing
+ *     copperSoft 0.12) lived inline across PhaseLadder, ToneCard,
+ *     SectionBand, CohortPlacement, ArchetypePanel, and AmountPill.
+ *     Now tokens.ts carries copperWash / copperTint / copperSoft /
+ *     copperMid / copperBorder named by role on the surface.
+ *
+ *   • StatTile — considered and rejected. Three sites (PhaseLadder
+ *     aside, CohortPlacement headline, RegimeTile) superficially share
+ *     a label-plus-mono-value shape, but each differs on every styling
+ *     axis: alignment, label position (above / below / beside), the
+ *     role of the secondary element (faded denominator vs. inline /mo
+ *     suffix vs. sibling phrase), and scale (32 / 22 / 56 px). A
+ *     primitive that fits all three needs 6+ props for 2-3 consumers,
+ *     none reused elsewhere — net negative. Local RegimeTile stays
+ *     local; the other two stay inline as one-off shapes.
+ *
+ *   • No file split — re-evaluated. File now 2110 LOC (up ~160 since
+ *     last audit). None of the documented revisit criteria are met:
+ *     panel count steady at 16, max-panel still ~155 LOC
+ *     (CounterOfferLetterPanel), single consumer (SessionReportView).
+ *     Splitting would add 16 import sites and 16 module surfaces with
+ *     no compounding return. Reaffirmed: one file. */
 
 type Tone = "good" | "warn" | "bad" | "neutral";
 
@@ -298,10 +339,9 @@ function PanelEmptyState({
   children: React.ReactNode;
 }) {
   return (
-    <div className="nfr-panel">
-      <SectionHeader index={index} title={title} subtitle={subtitle} />
+    <PanelShell index={index} title={title} subtitle={subtitle}>
       <InfoTile size={infoSize}>{children}</InfoTile>
-    </div>
+    </PanelShell>
   );
 }
 
@@ -335,7 +375,7 @@ function EventRow({
   const bg =
     tone === "good" ? t.success100 :
     tone === "bad"  ? t.error100   :
-    tone === "warn" ? "rgba(180,83,9,0.08)" :
+    tone === "warn" ? t.copperTint :
     t.creamSoft;
   return (
     <div
@@ -527,6 +567,49 @@ function SectionBand({
   );
 }
 
+
+/* PanelShell — the `<div className="nfr-panel"><SectionHeader … />…</div>`
+ * wrapper that opens 13 of the 16 panels. The prior implementation
+ * had each panel re-open this scaffolding by hand, which meant:
+ * (a) any panel-chrome change (border, padding, radius) had to be
+ * applied at 13 call sites or the .nfr-panel class itself, (b) the
+ * "panel has a header" invariant was structural in JSX rather than
+ * enforced by the type, (c) the EmptyState variant (`PanelEmptyState`)
+ * looked like a different shape when it's really PanelShell + a single
+ * InfoTile child.
+ *
+ * The full-panel variant accepts the SectionHeader props inline so
+ * call sites read as one block per panel instead of two. Pass
+ * `index=""` to suppress the header (no panel currently needs this,
+ * but the type carries it for future). */
+function PanelShell({
+  index,
+  title,
+  subtitle,
+  accent,
+  aside,
+  children,
+}: {
+  index: string;
+  title: string;
+  subtitle?: string;
+  accent?: string;
+  aside?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="nfr-panel">
+      <SectionHeader
+        index={index}
+        title={title}
+        subtitle={subtitle}
+        accent={accent}
+        aside={aside}
+      />
+      {children}
+    </div>
+  );
+}
 
 /* ─── Panels ─────────────────────────────────────────────────── */
 
@@ -735,21 +818,20 @@ function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
   const total = phases.length;
   const reachedColor = reached >= 4 ? t.success : reached >= 2 ? t.copper : t.error;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="01"
-        title="How far you got in the negotiation"
-        subtitle={`A strong negotiation moves through ${total} stages, from naming a counter all the way to closing.`}
-        aside={
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.mono, color: reachedColor, lineHeight: 1 }}>
-              {reached}<span style={{ color: t.inkFaint, fontWeight: 500 }}> / {total}</span>
-            </div>
-            <EyebrowLabel marginBottom={0} marginTop={4}>Stages</EyebrowLabel>
+    <PanelShell
+      index="01"
+      title="How far you got in the negotiation"
+      subtitle={`A strong negotiation moves through ${total} stages, from naming a counter all the way to closing.`}
+      aside={
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.mono, color: reachedColor, lineHeight: 1 }}>
+            {reached}<span style={{ color: t.inkFaint, fontWeight: 500 }}> / {total}</span>
           </div>
-        }
-      />
-      <div className="nfr-phase-rail" style={{ display: "flex", gap: 4, marginBottom: 16, marginTop: 4 }}>
+          <EyebrowLabel marginBottom={0} marginTop={4}>Stages</EyebrowLabel>
+        </div>
+      }
+    >
+      <div className="nfr-phase-rail" style={{ display: "flex", gap: space.xs, marginBottom: space.block, marginTop: space.xs }}>
         {phases.map((p) => (
           <div key={p.num} style={{ flex: 1, height: 8, borderRadius: radius.sm, background: p.reached ? t.success : t.line }} />
         ))}
@@ -762,10 +844,10 @@ function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
       {(() => {
         const nextIdx = phases.findIndex(p => !p.reached);
         return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="nfr-vstack-md">
             {phases.map((p, i) => {
               const isNext = i === nextIdx;
-              const bg = p.reached ? t.success100 : isNext ? "rgba(180,83,9,0.06)" : t.creamSoft;
+              const bg = p.reached ? t.success100 : isNext ? t.copperWash : t.creamSoft;
               const border = p.reached ? t.success : isNext ? t.copper : t.line;
               return (
                 <div
@@ -805,7 +887,7 @@ function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
           </div>
         );
       })()}
-    </div>
+    </PanelShell>
   );
 }
 
@@ -838,13 +920,12 @@ function ConcessionAnalysisPanel({ outcome }: { outcome: NegotiationOutcome }) {
   }
   const held = events.filter(e => e.outcome === "held").length;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="02"
-        title="When they pushed back, did you fold?"
-        subtitle={`You held ${held} of ${events.length} pushbacks.`}
-      />
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <PanelShell
+      index="02"
+      title="When they pushed back, did you fold?"
+      subtitle={`You held ${held} of ${events.length} pushbacks.`}
+    >
+      <div className="nfr-vstack">
         {events.map((e, i) => {
           const tone: "good" | "warn" | "bad" =
             e.outcome === "held" ? "good" : e.outcome === "deflected" ? "warn" : "bad";
@@ -862,7 +943,7 @@ function ConcessionAnalysisPanel({ outcome }: { outcome: NegotiationOutcome }) {
           );
         })}
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
@@ -900,22 +981,21 @@ function AnchorBracketPanel({ outcome }: { outcome: NegotiationOutcome }) {
   const m = map[bracket.type];
   const toneColor = toneToColor(m.tone);
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="03"
-        title="The way you named your number"
-        subtitle="There are 4 ways to counter an offer, from weakest to strongest."
-      />
-      <div style={{ marginBottom: 12 }}>
+    <PanelShell
+      index="03"
+      title="The way you named your number"
+      subtitle="There are 4 ways to counter an offer, from weakest to strongest."
+    >
+      <div style={{ marginBottom: space.xl }}>
         <span className={`nfr-pill nfr-pill-${m.tone}`}>{m.label}</span>
       </div>
       {bracket.quote && (
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ marginBottom: space.xl }}>
           <QuoteBlock>{bracket.quote}</QuoteBlock>
         </div>
       )}
       <div style={{ fontSize: 13, color: t.inkSoft, lineHeight: 1.55 }}>{bracket.verdict}</div>
-      <div style={{ marginTop: 16, display: "flex", gap: 6 }}>
+      <div style={{ marginTop: space.block, display: "flex", gap: space.sm }}>
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
@@ -929,12 +1009,12 @@ function AnchorBracketPanel({ outcome }: { outcome: NegotiationOutcome }) {
       <div
         style={{
           display: "flex", justifyContent: "space-between",
-          marginTop: 6, fontSize: 10, color: t.inkFaint, letterSpacing: 0.4,
+          marginTop: space.sm, fontSize: 10, color: t.inkFaint, letterSpacing: 0.4,
         }}
       >
         <span>NONE</span><span>SINGLE</span><span>RANGE</span><span>RANGE + JUSTIFY</span>
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
@@ -942,15 +1022,14 @@ function VerbalHabitsPanel({ outcome }: { outcome: NegotiationOutcome }) {
   if (!outcome.verbalHabits || outcome.verbalHabits.length === 0) return null;
   const leaks = outcome.disclosureLeaks ?? [];
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="04"
-        title="Words you said that hurt your offer"
-        subtitle="Phrases like 'I think', 'kind of', or 'sounds fair' make recruiters lower their offer. Click the timestamp to listen back."
-      />
-      <div style={{ marginBottom: leaks.length > 0 ? 18 : 0 }}>
+    <PanelShell
+      index="04"
+      title="Words you said that hurt your offer"
+      subtitle="Phrases like 'I think', 'kind of', or 'sounds fair' make recruiters lower their offer. Click the timestamp to listen back."
+    >
+      <div style={{ marginBottom: leaks.length > 0 ? space.panel : 0 }}>
         <EyebrowLabel>TOP COSTLY PHRASES</EyebrowLabel>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="nfr-vstack-md">
           {outcome.verbalHabits.map((h, i) => (
             <EventRow
               key={i}
@@ -986,7 +1065,7 @@ function VerbalHabitsPanel({ outcome }: { outcome: NegotiationOutcome }) {
               the prior 10px 12px; the extra 2px on Y is intentional —
               EventRow's default 10px brings the leak rows into the same
               vertical rhythm as the costly-phrases rows above). */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div className="nfr-vstack-sm">
             {leaks.map((l, i) => (
               <EventRow
                 key={i}
@@ -1003,20 +1082,19 @@ function VerbalHabitsPanel({ outcome }: { outcome: NegotiationOutcome }) {
           </div>
         </div>
       )}
-    </div>
+    </PanelShell>
   );
 }
 
 function SilenceMapPanel({ outcome }: { outcome: NegotiationOutcome }) {
   if (!outcome.silenceMoments || outcome.silenceMoments.length === 0) return null;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="05"
-        title="When you went quiet, and whether it helped"
-        subtitle="Silence after you name a number is your friend. Silence when you should be pushing back is your enemy."
-      />
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <PanelShell
+      index="05"
+      title="When you went quiet, and whether it helped"
+      subtitle="Silence after you name a number is your friend. Silence when you should be pushing back is your enemy."
+    >
+      <div className="nfr-vstack">
         {outcome.silenceMoments.map((s, i) => (
           <EventRow
             key={i}
@@ -1033,28 +1111,25 @@ function SilenceMapPanel({ outcome }: { outcome: NegotiationOutcome }) {
           />
         ))}
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
 function UnaskedLeversPanel({ outcome }: { outcome: NegotiationOutcome }) {
   if (!outcome.unaskedLevers || outcome.unaskedLevers.length === 0) return null;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="06"
-        title="Questions you should have asked but didn't"
-        subtitle="Each of these would likely have unlocked more money. We explain what each is worth."
-      />
+    <PanelShell
+      index="06"
+      title="Questions you should have asked but didn't"
+      subtitle="Each of these would likely have unlocked more money. We explain what each is worth."
+    >
       {/* Side-stripe replaced with a leading numbered marker — the
           set is a SHORTLIST of N specific questions, so numbering
           carries the visual rhythm honestly (a stripe was just
           chrome). */}
       <ol
-        style={{
-          listStyle: "none", padding: 0, margin: 0,
-          display: "flex", flexDirection: "column", gap: 14,
-        }}
+        className="nfr-vstack-lg"
+        style={{ listStyle: "none", padding: 0, margin: 0 }}
       >
         {outcome.unaskedLevers.map((l, i) => (
           <li key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 14 }}>
@@ -1075,7 +1150,7 @@ function UnaskedLeversPanel({ outcome }: { outcome: NegotiationOutcome }) {
           </li>
         ))}
       </ol>
-    </div>
+    </PanelShell>
   );
 }
 
@@ -1096,6 +1171,52 @@ const GLOSSARY: Record<string, string> = {
     "An upfront one-time bonus paid when you sign. Usually used to offset unvested ESOPs you're leaving behind at your current employer.",
 };
 
+/* PlaceholderPill — the yellow `<Recruiter>` / `<Your name>` tag the
+ * counter-offer letter renders for every `<...>` token. Semantic, not
+ * decorative: the tag signals "you MUST replace this before sending".
+ * Inline yellow background + dashed warning border carries the
+ * affordance without copy. */
+function PlaceholderPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "1px 6px",
+        background: t.warning100,
+        border: `1px dashed ${t.warning}`,
+        color: t.coal,
+        fontFamily: f.mono,
+        fontSize: 12,
+        fontWeight: 600,
+        borderRadius: radius.sm,
+        margin: "0 1px",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/* GlossaryTerm — dotted-underline + native `title` tooltip. Used by
+ * decorateGlossary to mark terms a first-time negotiator may not know
+ * (variable pay, refresh policy, signing component, …). `cursor: help`
+ * is the browser-standard affordance for "definition available on
+ * hover". The native title attribute works on touch via long-press
+ * without a JS dependency. */
+function GlossaryTerm({ definition, children }: { definition: string; children: React.ReactNode }) {
+  return (
+    <span
+      title={definition}
+      style={{
+        borderBottom: `1px dotted ${t.inkFaint}`,
+        cursor: "help",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 /* Splits a letter body on `<Anything>` placeholder tokens AND on
    glossary terms. Placeholders become yellow pills (must-replace);
    glossary terms become dotted-underlined hover-tooltipped phrases. */
@@ -1104,25 +1225,7 @@ function renderLetterWithPlaceholders(letter: string): React.ReactNode {
   const parts = letter.split(/(<[^>]+>)/g);
   return parts.map((part, i) => {
     if (/^<[^>]+>$/.test(part)) {
-      return (
-        <span
-          key={i}
-          style={{
-            display: "inline-block",
-            padding: "1px 6px",
-            background: "#FEF3C7",
-            border: `1px dashed ${t.warning}`,
-            color: t.coal,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 12,
-            fontWeight: 600,
-            borderRadius: radius.sm,
-            margin: "0 1px",
-          }}
-        >
-          {part}
-        </span>
-      );
+      return <PlaceholderPill key={i}>{part}</PlaceholderPill>;
     }
     // For non-placeholder runs, decorate glossary terms.
     return <React.Fragment key={i}>{decorateGlossary(part)}</React.Fragment>;
@@ -1139,16 +1242,9 @@ function decorateGlossary(text: string): React.ReactNode {
     const def = GLOSSARY[seg.toLowerCase()];
     if (def) {
       return (
-        <span
-          key={j}
-          title={def}
-          style={{
-            borderBottom: `1px dotted ${t.inkFaint}`,
-            cursor: "help",
-          }}
-        >
+        <GlossaryTerm key={j} definition={def}>
           {seg}
-        </span>
+        </GlossaryTerm>
       );
     }
     return seg;
@@ -1276,7 +1372,7 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
       <div
         style={{
           margin: "0 0 16px",
-          padding: 22, background: t.cream, border: `1px solid ${t.lineStrong}`,
+          padding: space.panelPad, background: t.cream, border: `1px solid ${t.lineStrong}`,
           borderRadius: radius.xl, fontFamily: f.sans, fontSize: 14,
           color: t.coal, lineHeight: 1.65, whiteSpace: "pre-line",
           wordBreak: "break-word", overflow: "auto",
@@ -1331,29 +1427,28 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
      calibrate how much to weigh it. */
   const hasAttribution = typeof outcome.cohortN === "number" && !!outcome.cohortFreshness;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="08"
-        title="Where your offer sits vs others like you"
-        subtitle={outcome.cohortLabel ?? "Compared to candidates with the same role + level + company tier."}
-        aside={
-          hasAttribution ? (
-            <FreshnessChip
-              source="Cohort data"
-              n={outcome.cohortN}
-              asOf={outcome.cohortFreshness}
-              methodologyUrl={outcome.cohortMethodologyUrl}
-            />
-          ) : (
-            <span
-              className="nfr-pill nfr-pill-neutral"
-              title="Cohort attribution not yet available; treat the placement as an early estimate."
-            >
-              Early estimate
-            </span>
-          )
-        }
-      />
+    <PanelShell
+      index="08"
+      title="Where your offer sits vs others like you"
+      subtitle={outcome.cohortLabel ?? "Compared to candidates with the same role + level + company tier."}
+      aside={
+        hasAttribution ? (
+          <FreshnessChip
+            source="Cohort data"
+            n={outcome.cohortN}
+            asOf={outcome.cohortFreshness}
+            methodologyUrl={outcome.cohortMethodologyUrl}
+          />
+        ) : (
+          <span
+            className="nfr-pill nfr-pill-neutral"
+            title="Cohort attribution not yet available; treat the placement as an early estimate."
+          >
+            Early estimate
+          </span>
+        )
+      }
+    >
       {/* When attribution is wired (n + freshness), show the big
           authoritative percentile + bar. When it isn't, the percentile
           is an internal estimate — we render a verbal phrase only,
@@ -1379,7 +1474,7 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
             }}
           >
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "25%", background: t.error100, borderRadius: "6px 0 0 6px" }} />
-            <div style={{ position: "absolute", left: "25%", top: 0, bottom: 0, width: "50%", background: "rgba(180,83,9,0.18)" }} />
+            <div style={{ position: "absolute", left: "25%", top: 0, bottom: 0, width: "50%", background: t.copperMid }} />
             <div style={{ position: "absolute", left: "75%", top: 0, bottom: 0, right: 0, background: t.success100, borderRadius: "0 6px 6px 0" }} />
             <div style={{ position: "absolute", left: `${p}%`, top: -4, bottom: -4, width: 4, background: t.coal, borderRadius: radius.rail, transform: "translateX(-2px)" }} />
           </div>
@@ -1399,7 +1494,7 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
           </span>
         </div>
       )}
-    </div>
+    </PanelShell>
   );
 }
 
@@ -1407,32 +1502,29 @@ function NPVMathPanel({ outcome }: { outcome: NegotiationOutcome }) {
   const rows = computeNpvRows(outcome);
   if (rows.length === 0) return null;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="09"
-        title="What this offer is really worth, after tax"
-        subtitle="The headline rupee number minus tax and inflation: the actual rupees that hit your bank account."
-      />
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+    <PanelShell
+      index="09"
+      title="What this offer is really worth, after tax"
+      subtitle="The headline rupee number minus tax and inflation: the actual rupees that hit your bank account."
+    >
+      {/* Chrome lives on `.nfr-table` (width/border-collapse/font-size)
+          and `.nfr-table-total` (cream wash + bold label) so the row
+          rhythm matches the rest of the report's tables. The tone color
+          on the value cell stays inline since it's per-row data, not
+          chrome. */}
+      <table className="nfr-table">
         <tbody>
           {rows.map((r, i) => {
             const tone = toneToColor(r.tone);
             const isLast = i === rows.length - 1;
             return (
-              <tr
-                key={i}
-                style={{
-                  borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
-                  background: isLast ? t.creamSoft : "transparent",
-                }}
-              >
-                <td style={{ padding: "12px 8px", color: isLast ? t.coal : t.inkSoft, fontWeight: isLast ? 700 : 400 }}>
-                  {r.label}
-                </td>
+              <tr key={i} className={isLast ? "nfr-table-total" : undefined}>
+                <td>{r.label}</td>
                 <td
+                  className={isLast ? "nfr-table-total-value" : undefined}
                   style={{
-                    padding: "12px 8px", textAlign: "right", fontFamily: f.mono,
-                    fontWeight: isLast ? 800 : 600, fontSize: isLast ? 16 : 13, color: tone,
+                    textAlign: "right", fontFamily: f.mono,
+                    fontWeight: isLast ? 800 : 600, color: tone,
                   }}
                 >
                   {r.value}
@@ -1448,25 +1540,24 @@ function NPVMathPanel({ outcome }: { outcome: NegotiationOutcome }) {
       <div style={{ fontSize: 11, color: t.inkFaint, fontStyle: "italic", marginTop: 12, lineHeight: 1.5 }}>
         Assumes the {Math.round(NPV_MODEL.incomeTaxRate * 100)}% Indian income-tax slab + {Math.round(NPV_MODEL.annualInflation * 100)}% annual inflation over a {NPV_MODEL.horizonYears}-year horizon. If your slab or inflation expectations differ, the take-home and today's-rupees rows will shift accordingly.
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
 function CounterpartyPanel({ outcome }: { outcome: NegotiationOutcome }) {
   if (!outcome.counterpartyFacts || outcome.counterpartyFacts.length === 0) return null;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="10"
-        title="How this company usually negotiates"
-        subtitle="What we've learned about this employer specifically: where they're flexible, where they're not."
-        aside={
-          outcome.counterpartySource ? (
-            <FreshnessChip source={outcome.counterpartySource} asOf="last 30d" />
-          ) : undefined
-        }
-      />
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <PanelShell
+      index="10"
+      title="How this company usually negotiates"
+      subtitle="What we've learned about this employer specifically: where they're flexible, where they're not."
+      aside={
+        outcome.counterpartySource ? (
+          <FreshnessChip source={outcome.counterpartySource} asOf="last 30d" />
+        ) : undefined
+      }
+    >
+      <div className="nfr-vstack">
         {outcome.counterpartyFacts.map((cf, i) => {
           const tone: "good" | "warn" | "bad" =
             cf.tone === "good" ? "good" : cf.tone === "bad" ? "bad" : "warn";
@@ -1477,7 +1568,7 @@ function CounterpartyPanel({ outcome }: { outcome: NegotiationOutcome }) {
           );
         })}
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
@@ -1500,36 +1591,35 @@ function ArchetypePanel({ outcome, priorSessionCount }: { outcome: NegotiationOu
   }
   const a = outcome.archetype;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="11"
-        title="The pattern we see across all your sessions"
-        subtitle="What you keep getting right, and the one habit that keeps holding you back."
-      />
-      <div style={{ marginBottom: 12 }}>
+    <PanelShell
+      index="11"
+      title="The pattern we see across all your sessions"
+      subtitle="What you keep getting right, and the one habit that keeps holding you back."
+    >
+      <div style={{ marginBottom: space.xl }}>
         <span className="nfr-pill nfr-pill-warn">REPEATED PATTERN</span>
       </div>
-      <div style={{ fontSize: 18, fontWeight: 600, color: t.coal, marginBottom: 10, letterSpacing: -0.2, fontFamily: f.serif }}>
+      <div style={{ fontSize: 18, fontWeight: 600, color: t.coal, marginBottom: space.lg, letterSpacing: -0.2, fontFamily: f.serif }}>
         {a.title}
       </div>
-      <div style={{ fontSize: 13, color: t.inkSoft, lineHeight: 1.6, marginBottom: 18 }}>{a.body}</div>
+      <div style={{ fontSize: 13, color: t.inkSoft, lineHeight: 1.6, marginBottom: space.panel }}>{a.body}</div>
 
       {a.arc && a.arc.length > 0 && (
-        <div style={{ marginBottom: 18 }}>
-          <EyebrowLabel marginBottom={10}>{(a.arcMetric ?? "TREND").toUpperCase()} ACROSS SESSIONS</EyebrowLabel>
+        <div style={{ marginBottom: space.panel }}>
+          <EyebrowLabel marginBottom={space.lg}>{(a.arcMetric ?? "TREND").toUpperCase()} ACROSS SESSIONS</EyebrowLabel>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: `repeat(${a.arc.length}, 1fr)`,
-              gap: 10, alignItems: "end", height: 110,
+              gap: space.lg, alignItems: "end", height: 110,
             }}
           >
             {a.arc.map((p, i) => {
               const max = Math.max(...a.arc!.map(x => x.score));
               const color = p.score < 35 ? t.error : p.score > 70 ? t.success : t.copper;
-              const bg = p.score < 35 ? t.error100 : p.score > 70 ? t.success100 : "rgba(180,83,9,0.12)";
+              const bg = p.score < 35 ? t.error100 : p.score > 70 ? t.success100 : t.copperSoft;
               return (
-                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: space.sm }}>
                   <div style={{ fontSize: 11, fontFamily: f.mono, fontWeight: 700, color }}>
                     {p.score}
                   </div>
@@ -1556,23 +1646,22 @@ function ArchetypePanel({ outcome, priorSessionCount }: { outcome: NegotiationOu
         </div>
       )}
 
-      <div style={{ padding: 14, background: t.success100, borderRadius: radius.lg, fontSize: 13, color: t.coal }}>
-        <EyebrowLabel color={t.success} marginBottom={4}>THE FIX</EyebrowLabel>
+      <div style={{ padding: space.row, background: t.success100, borderRadius: radius.lg, fontSize: 13, color: t.coal }}>
+        <EyebrowLabel color={t.success} marginBottom={space.xs}>THE FIX</EyebrowLabel>
         {a.fix}
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
 function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcome; onLaunchDrill?: (slug: string) => void }) {
   if (!outcome.drills || outcome.drills.length === 0) return null;
   return (
-    <div className="nfr-panel">
-      <SectionHeader
-        index="12"
-        title="Drills for the next 5 days"
-        subtitle="Each drill targets one specific habit you can fix this week."
-      />
+    <PanelShell
+      index="12"
+      title="Drills for the next 5 days"
+      subtitle="Each drill targets one specific habit you can fix this week."
+    >
       <div className="nfr-grid-3up">
         {outcome.drills.map((d, i) => (
           /* Chrome (padding/bg/border/radius) lives on .nfr-info-tile-roomy
@@ -1581,8 +1670,7 @@ function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcom
            * layout, kept inline. */
           <div
             key={i}
-            className="nfr-info-tile-roomy nfr-info-tile"
-            style={{ display: "flex", flexDirection: "column", gap: 10 }}
+            className="nfr-info-tile-roomy nfr-info-tile nfr-vstack"
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <EyebrowLabel color={t.indigo} marginBottom={0}>DRILL {i + 1}</EyebrowLabel>
@@ -1608,7 +1696,7 @@ function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcom
           </div>
         ))}
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
@@ -1732,7 +1820,7 @@ export function NegotiationFullReport({
         scrollMarginTop: 72,
       }}
     >
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: space.panel }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <HeaderChip variant="accent">Salary Negotiation · Full Report</HeaderChip>
           {salaryMeta?.tierBucketLabel && (
@@ -1752,7 +1840,7 @@ export function NegotiationFullReport({
         >
           The full breakdown of your negotiation
         </h2>
-        <div style={{ fontSize: 13, color: t.inkSoft, marginBottom: 16, maxWidth: 720 }}>
+        <div style={{ fontSize: 13, color: t.inkSoft, marginBottom: space.block, maxWidth: 720 }}>
           Each panel below turns one negotiation skill into something you can act on, not a score.
         </div>
         <StartHereHint outcome={outcome} daysUntilInterview={daysUntilInterview} />
@@ -1784,7 +1872,7 @@ export function NegotiationFullReport({
         <InHandMonthlyCard salaryMeta={salaryMeta} />
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <div className="nfr-vstack-xl">
         <PhaseLadderPanel outcome={outcome} />
         <div className="nfr-grid-2up">
           <ConcessionAnalysisPanel outcome={outcome} />
@@ -1805,9 +1893,9 @@ export function NegotiationFullReport({
         title="What to do before your real round"
         subtitle="A draft email you can send, the questions to ask next time, and the things to prepare."
         accent={t.copper}
-        bg="rgba(180,83,9,0.08)"
+        bg={t.copperTint}
       />
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <div className="nfr-vstack-xl">
         <UnaskedLeversPanel outcome={outcome} />
         <CounterOfferLetterPanel outcome={outcome} role={role} company={company} />
       </div>
@@ -1833,7 +1921,7 @@ export function NegotiationFullReport({
               accent={t.warning}
               bg={t.warning100}
             />
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div className="nfr-vstack-xl">
               {willRenderCohort && <CohortPlacementPanel outcome={outcome} />}
               {(willRenderNpv || willRenderCounterparty) && (
                 <div className="nfr-grid-2up">
@@ -1867,7 +1955,7 @@ export function NegotiationFullReport({
               accent={t.indigoDeep}
               bg={t.indigo100}
             />
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div className="nfr-vstack-xl">
               {willRenderArchetype && <ArchetypePanel outcome={outcome} priorSessionCount={priorSessionCount} />}
               {willRenderDrills && <DrillPlanPanel outcome={outcome} onLaunchDrill={onLaunchDrill} />}
             </div>
@@ -2006,7 +2094,7 @@ function AmountPill({
         color: isAsk ? t.copper : t.coal,
         padding: "6px 12px",
         background: isAsk ? t.copperSoft : t.cream,
-        border: `1px solid ${isAsk ? "rgba(180,83,9,0.20)" : t.line}`,
+        border: `1px solid ${isAsk ? t.copperBorder : t.line}`,
         borderRadius: radius.pill,
       }}
     >
@@ -2027,7 +2115,7 @@ function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
      whether the report is broken. */
   if (offers.length === 1 && outcome.candidateAsk === null) {
     return (
-      <OutlinedCard marginBottom={18}>
+      <OutlinedCard marginBottom={space.panel}>
         <EyebrowLabel marginBottom={10}>What happened</EyebrowLabel>
         <div style={{ fontSize: 14, color: t.coal, lineHeight: 1.6 }}>
           They opened at <strong style={{ fontFamily: f.serif }}>₹{initial} LPA</strong>. You didn't name a counter, so this became the final number. The conversation never moved past the offer-reaction stage.
@@ -2036,7 +2124,7 @@ function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
     );
   }
   return (
-    <OutlinedCard marginBottom={18}>
+    <OutlinedCard marginBottom={space.panel}>
       <EyebrowLabel marginBottom={10}>Offer progression</EyebrowLabel>
       <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
         {offers.map((o, i) => (

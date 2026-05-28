@@ -259,6 +259,31 @@ export const SESSION_REPORT_STYLES = `
     font-style: italic;
   }
 
+  /* Vertical stack utility (2026-05-28). Eight panels were inlining
+     the identical display:flex + flex-direction:column + gap:N
+     three-property style object with N in {6,8,10,18}. The size
+     variants map to the spacing scale in tokens.ts so a future
+     tightening of the rhythm only touches one place. */
+  .nfr-vstack    { display: flex; flex-direction: column; gap: 10px; }
+  .nfr-vstack-sm { gap: 6px; }
+  .nfr-vstack-md { gap: 8px; }
+  .nfr-vstack-lg { gap: 14px; }
+  .nfr-vstack-xl { gap: 18px; }
+
+  /* Table-total row modifier (2026-05-28). Pairs with .nfr-table for
+     the NPVMathPanel "today's rupees" highlighted final row — the
+     prior implementation hand-rolled the cream wash + bold label +
+     larger mono value inline. */
+  .nfr-table-total td {
+    background: #F4EFE3;
+    font-weight: 700;
+    color: #0E0C08;
+  }
+  .nfr-table-total .nfr-table-total-value {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
   .nfr-letter-actions {
     display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;
   }

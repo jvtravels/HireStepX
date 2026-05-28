@@ -32,9 +32,19 @@ export const t = {
   indigo100: "#E5E2F2",
   indigoRing: "rgba(49, 46, 129, 0.20)",
 
-  /* Brand — editorial */
+  /* Brand — editorial.
+     2026-05-28 audit: the four extra tints below replace six hardcoded
+     `rgba(180, 83, 9, …)` strings (alphas 0.06 / 0.08 / 0.18 / 0.20) that
+     were sprinkled across PhaseLadder, ToneCard, SectionBand Part 2,
+     CohortPlacement, ArchetypePanel, and AmountPill. Named by their role
+     on the surface (wash / tint / mid / border) rather than by alpha,
+     so a future tightening of the copper scale touches one file. */
   copper: "#B45309",
-  copperSoft: "rgba(180, 83, 9, 0.12)",
+  copperWash: "rgba(180, 83, 9, 0.06)",   // faintest wash (next-row in PhaseLadder)
+  copperTint: "rgba(180, 83, 9, 0.08)",   // tone-card warn bg + Part 2 section band
+  copperSoft: "rgba(180, 83, 9, 0.12)",   // mid-tint (archetype bar bg, accent chip)
+  copperMid:  "rgba(180, 83, 9, 0.18)",   // distribution band middle (cohort bar)
+  copperBorder: "rgba(180, 83, 9, 0.20)", // copper-toned border (AmountPill ask)
   copper100: "#F4E5D8",
 
   /* Status */
@@ -76,6 +86,26 @@ export const radius = {
   card: 14,       // outlined cards (offer trajectory, etc.); bottom CTA
   shell: 16,      // outermost report section shell
   pill: 999,      // any fully-rounded pill (FreshnessChip, AmountPill)
+} as const;
+
+/* Spacing scale. Prior to 2026-05-28 these were inline literals
+   (4, 6, 8, 10, 12, 14, 16, 18, 22, 24, 28) sprinkled across
+   NegotiationFullReport's flex/grid gap + padding + margin sites.
+   The .nfr-* CSS classes own the panel-level chrome; this scale is
+   for the remaining in-component layout that doesn't earn a class.
+   Names are by role on the report's rhythm, not by value — a future
+   tightening of the scale touches one file. */
+export const space = {
+  xs: 4,    // tight inline gaps (icon ↔ label, segment gutters)
+  sm: 6,    // small column gaps (anchor ladder rungs, button rows)
+  md: 8,    // default flex-column gap inside a panel section
+  lg: 10,   // tone-row stacks (concession events, silence rows)
+  xl: 12,   // pill-row gaps; small marginBottom between blocks
+  row: 14,  // standard between-block marginBottom inside a panel
+  block: 16, // between-section marginBottom inside a panel
+  panel: 18, // between-panel gap in Part-N column stacks
+  panelPad: 22, // panel/letter-body interior padding (matches .nfr-panel)
+  partGap: 28,  // marginBottom around the bottom CTA / transcript
 } as const;
 
 export const shadows = {
