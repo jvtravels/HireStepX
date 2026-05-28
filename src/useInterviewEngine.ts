@@ -1361,18 +1361,26 @@ export function useInterviewEngine() {
       let transcriptRevealed = false;
       const revealTranscript = () => {
         if (transcriptRevealed || isStale()) return;
-        /* Empty-aiText guard. If a placeholder leak (pendingKernel
-         * resolve handler never mutated step.aiText) lands here, we
-         * MUST NOT push an empty bubble — the UI would then show
-         * "Karthik, ready when you are" with no visible question and
-         * the candidate has nothing to answer. Bail loudly instead so
-         * the phase doesn't advance into a silent listening state. */
+        /* Empty-aiText recovery. If a placeholder leak (pendingKernel
+         * resolve handler never mutated step.aiText, or the kernel
+         * returned empty prose) lands here, the OLD behaviour was to
+         * flagTtsError("Question failed to load — refresh to retry")
+         * and freeze the UI on a "QUESTION FAILED TO LOAD" overlay —
+         * a hard-stop visible to the candidate. Replaced with silent
+         * in-place recovery: write safe recruiter prose into the
+         * step so the bubble reveals normally and the candidate has
+         * a question to answer. Telemetry still fires so we can see
+         * the underlying empty-text rate. */
         if (!step.aiText || step.aiText.trim() === "") {
-          console.error("[interview] revealTranscript: empty step.aiText — skipping bubble append (placeholder leak?)");
+          console.warn("[interview] revealTranscript: empty step.aiText — recovering with safe prose");
           track("empty_aitext_at_reveal", { step: currentStep });
-          flagTtsError("Question failed to load — refresh to retry.");
-          transcriptRevealed = true; // suppress re-entry
-          return;
+          const recovery = interviewType === "salary-negotiation"
+            ? "So tell me — where are you in the process right now, and what's driving this move?"
+            : "Let's pick up from where you are — share what's been on your mind.";
+          step.aiText = recovery;
+          if ("aiTextDisplay" in step) {
+            (step as { aiTextDisplay?: string }).aiTextDisplay = recovery;
+          }
         }
         transcriptRevealed = true;
         setTranscript(prev => [...prev, {

@@ -447,24 +447,14 @@ function InterviewInner() {
             LiveCaptions typewriter would fight with the inline accent
             mid-stream. Once speech ends and we're listening, the accent
             renders. */}
-        {/* Empty-aiText recovery panel.
-            When phase === "listening" with no question text on the step,
-            the candidate sees only "ready when you are" + Start speaking
-            with nothing to answer — the symptom screenshotted on turn 5
-            of a salary-negotiation session. Render an actionable recovery
-            card here so they aren't stuck. The Composer below already
-            exposes the Skip link; we surface it explicitly with a label
-            so they understand what's happening. */}
-        {!step?.aiText && phase === "listening" && (
-          <div className="iv-question-wrap" style={{ maxWidth: 920, width: "100%" }}>
-            <CanvasPlainHeading>
-              <span style={{ display: "block", color: e.copper, fontSize: "0.7em", letterSpacing: 0.5, marginBottom: 6, textTransform: "uppercase", fontFamily: ef.sans }}>
-                Question failed to load
-              </span>
-              We had trouble loading the next question. Use the Skip link below to move on.
-            </CanvasPlainHeading>
-          </div>
-        )}
+        {/* PDF#50 follow-up c (2026-05-28) — the "QUESTION FAILED TO LOAD"
+            overlay that used to live here was the symptom user-reported as
+            "the product is broken." It turned a silent placeholder race
+            into a hard-stop wall. The empty-aiText path is now silently
+            recovered upstream in useInterviewEngine.revealTranscript
+            (writes safe recruiter prose into the step), so by the time
+            phase === "listening" the bubble already has content. No
+            overlay needed; no overlay shown. */}
         {step?.aiText && phase !== "done" && (() => {
           // aiTextDisplay is the fully sanitized version (no [pause:long],
           // no *foo*, no _word_). Falls back to aiText for legacy/scripted
