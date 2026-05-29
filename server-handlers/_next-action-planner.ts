@@ -59,8 +59,10 @@ import { recommendWalkAway } from "./_recruiter-critique";
 import { estimateCounterOfferRisk } from "./_counter-offer-risk";
 import {
   getHikeJustificationProbe,
+  HIKE_JUSTIFICATION_THRESHOLD,
   shouldProbeHikeJustification,
 } from "./_hike-justification-probe";
+import { sessionJitter } from "./_session-jitter";
 import { analyzeEquityClarity } from "./_trial-close-detector";
 import { marketDataSources } from "./_candidate-profile";
 import { resumeConfirmsCompany } from "./_resume-fact-pack";
@@ -3697,7 +3699,14 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
       total != null && total > 0 && breakdown.variable != null
         ? (breakdown.variable / total) * 100
         : 0;
-    if (variableSharePct > 25) {
+    /* 2026-05-29 realism-pass — per-session ±5% jitter on the 25%
+     * canonical threshold. Some recruiters probe at 23%, some at 27%;
+     * a hard cliff at exactly 25% reads as a switch. Deterministic by
+     * sessionId so a given candidate sees a stable threshold across
+     * turns, but two sessions diverge. */
+    const variableThreshold =
+      25 + sessionJitter(state.sessionId, "variable-comfort", 5);
+    if (variableSharePct > variableThreshold) {
       const pctRounded = Math.round(variableSharePct);
       return {
         kind: "reactive-followup",
@@ -3710,7 +3719,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
         _move: {
           lever: "probe",
           newTotalLpa: null,
-          rationale: `Candidate disclosed ${pctRounded}% variable share — probe comfort + payout history before banking it.`,
+          rationale: `Candidate disclosed ${pctRounded}% variable share (threshold ${variableThreshold.toFixed(1)}%) — probe comfort + payout history before banking it.`,
           actionKind: "reactive-followup",
           askedTopic: "variable-comfort",
         },
@@ -3860,11 +3869,23 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     !hasFired("hike-justification")
   ) {
     const valueProofProvided = state.candidateProfile?.valueProofProvided === true;
-    const should = shouldProbeHikeJustification({
-      currentCtcLpa: state.candidateCurrentCtc,
-      expectedCtcLpa: state.candidateTarget,
-      valueProofProvided,
-    });
+    /* 2026-05-29 realism-pass — per-session ±5% jitter on the 30%
+     * canonical threshold. Real recruiters' patience for un-proved
+     * hikes varies; some fire at 25%, some at 35%. Deterministic by
+     * sessionId so the trigger is stable within a session, varies
+     * across sessions. Distinct salt from "variable-comfort" so the
+     * two axes don't co-vary. */
+    const hikeThreshold =
+      HIKE_JUSTIFICATION_THRESHOLD +
+      sessionJitter(state.sessionId, "hike-justification", 0.05);
+    const should = shouldProbeHikeJustification(
+      {
+        currentCtcLpa: state.candidateCurrentCtc,
+        expectedCtcLpa: state.candidateTarget,
+        valueProofProvided,
+      },
+      hikeThreshold,
+    );
     if (should) {
       const roleFamily = classifyRoleFamily(state.role);
       const ask = getHikeJustificationProbe(roleFamily);
@@ -3877,7 +3898,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
         _move: {
           lever: "probe",
           newTotalLpa: null,
-          rationale: `Expected CTC > 30% over current with no value proof — role-specific impact probe (${roleFamily}).`,
+          rationale: `Expected CTC > ${(hikeThreshold * 100).toFixed(1)}% over current with no value proof — role-specific impact probe (${roleFamily}).`,
           actionKind: "reactive-followup",
           askedTopic: "hike-justification",
         },

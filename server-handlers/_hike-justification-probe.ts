@@ -46,15 +46,22 @@ export function computeHikeDelta(
   return (expectedCtc - currentCtc) / currentCtc;
 }
 
-/** Returns true iff the candidate is asking for a >30% jump and has
- *  NOT yet provided role-specific value proof. Pure. */
+/** Returns true iff the candidate is asking for a >threshold jump and
+ *  has NOT yet provided role-specific value proof. Pure.
+ *
+ *  `thresholdOverride` lets the planner pass a per-session jittered
+ *  threshold (see `_session-jitter.ts`) so the trigger reads as a soft
+ *  band (25%-35%) rather than a hard cliff at exactly 30%. When omitted,
+ *  falls back to the canonical `HIKE_JUSTIFICATION_THRESHOLD`. */
 export function shouldProbeHikeJustification(
   input: HikeJustificationInputs,
+  thresholdOverride?: number,
 ): boolean {
   if (input.valueProofProvided) return false;
   const delta = computeHikeDelta(input.currentCtcLpa, input.expectedCtcLpa);
   if (delta == null) return false;
-  return delta > HIKE_JUSTIFICATION_THRESHOLD;
+  const threshold = thresholdOverride ?? HIKE_JUSTIFICATION_THRESHOLD;
+  return delta > threshold;
 }
 
 /** Role-family-specific probe template. Pure. */

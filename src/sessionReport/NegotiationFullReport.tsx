@@ -1757,19 +1757,9 @@ function InHandMonthlyCard({
         borderRadius: radius.bar,
       }}
     >
-      <div
-        style={{
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: 0.8,
-          textTransform: "uppercase",
-          color: t.inkSoft,
-          marginBottom: 8,
-          fontFamily: f.mono,
-        }}
-      >
+      <EyebrowLabel marginBottom={8}>
         Take-home on closing offer · ₹{salaryMeta.closingTotalLpa?.toFixed(1)} LPA
-      </div>
+      </EyebrowLabel>
       <div
         style={{
           display: "grid",
