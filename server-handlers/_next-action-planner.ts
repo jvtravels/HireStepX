@@ -2044,6 +2044,20 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * the consumer: it routes to anchor-with-band regardless of
    * currentCtc disclosure state, single-fire per session.
    *
+   * 2026-05-29 TECH-DEBT NOTE — double-anchor with the PDF#51 router.
+   * The router-based `anchor-ask → open-with-offer` path (line ~1270)
+   * also handles the offer-ask cue, and currently fires FIRST. That
+   * leaves this gate to re-fire `anchor-with-offer` on the very next
+   * turn, double-disclosing the band floor in user-facing prose. The
+   * obvious gate (`skip if open-with-offer in askedTopics` OR `skip if
+   * highestOfferMade > 0`) cascades into a probe-triple downstream
+   * because the post-anchor T+1 fallback paths weren't designed for
+   * the case where T-1 already anchored cleanly. Closing this needs a
+   * restructure of the discovery cascade's "what to do post-anchor"
+   * fallback, not just a gate flip. Keeping the redundant anchor for
+   * now; the second instance reads as a re-statement, not a
+   * contradiction, so it's cosmetic rather than wrong.
+   *
    * Gating:
    *   - PRE_ANCHOR_PHASES only (counter / closing-push are past).
    *   - Recency: offerAskedAtTurn >= turnIndex - 1 (window of one
@@ -3650,6 +3664,11 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
             phase: state.phase ?? null,
             sessionId: state.sessionId,
             turnIndex: state.turnIndex,
+            /* 2026-05-29 realism-pass Fix #3 — mirror the candidate's
+             * inferred register so a "just tell me the number" candidate
+             * gets tighter prose and a "kindly share" candidate doesn't
+             * get hit with "Yeah so, here's the deal" tics. */
+            candidateRegister: state.candidateRegister ?? null,
           });
           return {
             kind: "answer-direct",

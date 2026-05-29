@@ -28,12 +28,22 @@
 
 import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 import type { NegotiationPhase } from "./_negotiation-kernel";
+import type { CandidateRegister } from "./_candidate-register";
 
 export interface HumanizeContext {
   sector?: RecruiterSectorPersona | null;
   phase?: NegotiationPhase | null;
   sessionId?: string | null;
   turnIndex?: number;
+  /* 2026-05-29 realism-pass Fix #3 — candidate register (inferred from
+   * their utterance history). Biases layer probabilities so the
+   * recruiter mirrors the candidate's register:
+   *   - direct  → drop tic/hedge/checkback rates (no padding for
+   *               someone who wants the number)
+   *   - formal  → tic-pick avoids casual openers ("Yeah so")
+   *   - casual  → unchanged (default rates already conversational)
+   *   - neutral → unchanged (default rates) */
+  candidateRegister?: CandidateRegister | null;
 }
 
 /* FNV-1a — duplicated from `_session-jitter.ts` to keep the realism
@@ -128,25 +138,40 @@ export function humanizeRecruiterProse(
   if (!prose) return prose;
   let out = prose;
 
-  /* Layer 1 — persona-tic prefix. ~22% hit rate when sector is set. */
-  if (ctx.sector && diceHit(ctx, "tic-fire", 0.22)) {
-    const tics = PERSONA_TICS[ctx.sector] ?? PERSONA_TICS.default;
+  /* Register-conditioned layer probabilities. The candidate's inferred
+   * register (formal / casual / direct / neutral) modulates how much
+   * the recruiter pads. Direct candidates ("just tell me the number")
+   * get tighter prose; formal candidates trigger filtered tic selection
+   * (no "Yeah so" register-mismatches). */
+  const register = ctx.candidateRegister ?? "neutral";
+  const ticRate = register === "direct" ? 0.08 : 0.22;
+  const hedgeRate = register === "direct" ? 0.08 : 0.18;
+  const checkbackRate = register === "direct" ? 0.10 : 0.22;
+
+  /* Layer 1 — persona-tic prefix. Rate depends on candidate register.
+   * For formal candidates, filter the tic pool to drop casual openers
+   * ("Yeah so", "Yeah") so the recruiter doesn't sound mismatched. */
+  if (ctx.sector && diceHit(ctx, "tic-fire", ticRate)) {
+    let tics = PERSONA_TICS[ctx.sector] ?? PERSONA_TICS.default;
+    if (register === "formal") {
+      const filtered = tics.filter((t) => !/^yeah\b/i.test(t));
+      if (filtered.length > 0) tics = filtered;
+    }
     const tic = tics[Math.floor(rand01(ctx, "tic-pick") * tics.length)];
     out = `${tic}, ${lowercaseFirst(out)}`;
   }
 
-  /* Layer 2 — mid-sentence hedge. ~18% hit rate. Requires a comma in
-   * the prose (so the hedge has a natural insertion site); skips if
-   * the only comma is in the first 3 words (we'd hedge before content). */
+  /* Layer 2 — mid-sentence hedge. Rate depends on candidate register. */
   const firstComma = out.indexOf(",");
-  if (firstComma > 8 && diceHit(ctx, "hedge-fire", 0.18)) {
+  if (firstComma > 8 && diceHit(ctx, "hedge-fire", hedgeRate)) {
     const hedge = HEDGES[Math.floor(rand01(ctx, "hedge-pick") * HEDGES.length)];
     out = out.slice(0, firstComma) + `, ${hedge},` + out.slice(firstComma + 1);
   }
 
-  /* Layer 3 — checkback suffix. ~22% hit rate, only on prose ≥40 words. */
+  /* Layer 3 — checkback suffix. Rate depends on candidate register;
+   * still gated on prose ≥40 words. */
   const wordCount = out.split(/\s+/).filter(Boolean).length;
-  if (wordCount >= 40 && diceHit(ctx, "checkback-fire", 0.22)) {
+  if (wordCount >= 40 && diceHit(ctx, "checkback-fire", checkbackRate)) {
     const cb = CHECKBACKS[Math.floor(rand01(ctx, "checkback-pick") * CHECKBACKS.length)];
     /* Strip a trailing terminator + whitespace, then append. Keeps
      * us from producing "...end of prose. Does that make sense?" with

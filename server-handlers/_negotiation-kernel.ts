@@ -53,6 +53,7 @@ import { getCompanyTier } from "../data/company-tiers";
 import { classifyQuestionIntent, type QuestionIntent } from "./_question-intent";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
 import { normalizeForParsing } from "./_speech-normalize";
+import { classifyFromLog } from "./_candidate-register";
 import { classifyCandidateArchetype } from "./_candidate-archetype";
 import { classifyNumberRoles } from "./_number-role-classifier";
 import { isWalkAway } from "./_walkaway-detection";
@@ -1306,6 +1307,21 @@ export interface NegotiationState {
    * sessions serialized before this field. */
   candidateQuestionServeCount?: Partial<Record<string, number>>;
 
+  /* 2026-05-29 realism-pass — candidate register classifier output.
+   *
+   * Inferred register of the candidate ("formal" | "casual" | "direct" |
+   * "neutral") based on their last-N utterances. Recomputed by
+   * applyCandidateAnswer on every candidate turn via
+   * classifyFromLog(state.conversationLog). Consumed downstream by
+   * humanizeRecruiterProse to bias persona-tic selection so the
+   * recruiter mirrors the candidate's register instead of speaking past
+   * it.
+   *
+   * Defaults to "neutral" until enough signal accumulates (≥2 hits in
+   * one bucket within a 5-utterance window). Optional + nullable for
+   * back-compat with sessions serialized before this field. */
+  candidateRegister?: "formal" | "casual" | "direct" | "neutral";
+
   /* Polish 2 (2026-05-16) — per-topic fire-history (turn indices at
    * which each topic was fired). The legacy `reactiveFollowupsFired`
    * is single-fire dedup; this parallel ledger lets refireable topics
@@ -2402,6 +2418,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     /* 2026-05-29 realism-pass — per-topic answer-direct serve count for
      * strict variant rotation. Empty at start. */
     candidateQuestionServeCount: {},
+    /* 2026-05-29 realism-pass — candidate register classifier output.
+     * Defaults to neutral; recomputed each candidate turn. */
+    candidateRegister: "neutral",
     /* Fix 1 (2026-05-16) — leversFired ledger for Indian-context
      * structural levers. Empty at session start. */
     leversFired: [],
@@ -3616,12 +3635,17 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     state.highestOfferMade > 0 && OFFER_RECAP_RE.test(answer)
       ? state.turnIndex
       : (state.lastAnswerOfferRecapAtTurn ?? null);
+  const nextConversationLog = appendConversation(state.conversationLog, "candidate", answer);
+  /* 2026-05-29 realism-pass — recompute candidate register from the
+   * fresh log (including the just-applied candidate utterance). Pure
+   * call, idempotent, defaults to "neutral" when signal is thin. */
+  const candidateRegister = classifyFromLog(nextConversationLog);
   const next: NegotiationState = {
     ...state,
     leversUsed: [...state.leversUsed],
     vossTacticsUsed: [...state.vossTacticsUsed],
     infoAsked: [...state.infoAsked],
-    conversationLog: appendConversation(state.conversationLog, "candidate", answer),
+    conversationLog: nextConversationLog,
     repetitionComplaintAtTurn,
     offerAskedAtTurn,
     lastAnswerUncertainAt,
@@ -3629,6 +3653,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     lastAnswerNoiseAtTurn,
     lastAnswerClarificationAtTurn,
     lastAnswerOfferRecapAtTurn,
+    candidateRegister,
   };
   /* PDF#32 BUG H (2026-05-18) — askedTopics tail rewind.
    * When the prior AI turn pushed an askedTopics entry and the
@@ -5694,6 +5719,17 @@ export function validateState(state: unknown): asserts state is NegotiationState
       throw new Error("state.reactiveFollowupsFired");
     }
   }
+  /* 2026-05-29 realism-pass — candidateRegister validator. */
+  if (s.candidateRegister !== undefined) {
+    if (
+      s.candidateRegister !== "formal"
+      && s.candidateRegister !== "casual"
+      && s.candidateRegister !== "direct"
+      && s.candidateRegister !== "neutral"
+    ) {
+      throw new Error("state.candidateRegister");
+    }
+  }
   /* Polish 2 (2026-05-16) — reactiveFollowupsFireLog validator. */
   if (s.reactiveFollowupsFireLog !== undefined) {
     if (
@@ -6177,6 +6213,11 @@ export function deserializeState(json: string): NegotiationState {
      * default. Pre-realism-pass sessions deserialise with an empty map. */
     candidateQuestionServeCount:
       (s.candidateQuestionServeCount as Partial<Record<string, number>> | undefined) ?? {},
+    /* 2026-05-29 realism-pass — candidateRegister back-compat default.
+     * Pre-realism-pass sessions deserialise as neutral; first candidate
+     * turn after resume recomputes. */
+    candidateRegister:
+      (s.candidateRegister as NegotiationState["candidateRegister"]) ?? "neutral",
     /* Polish 2 (2026-05-16) — per-topic fire-history. Back-compat
      * default = empty record. */
     reactiveFollowupsFireLog:

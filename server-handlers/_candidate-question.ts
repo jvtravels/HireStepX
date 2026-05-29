@@ -194,6 +194,13 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
       "Quick on the ESOP — the offer letter keeps cash CTC and equity on separate lines. Fixed plus variable on one side, ESOPs with the vest schedule and cliff on the other. So the cash piece reads as guaranteed and the ESOPs sit as a four-year layer on top.",
       "On equity — we don't bundle ESOPs into the headline CTC number. The letter shows fixed, variable, and the ESOP grant separately, with the vest and cliff spelled out. Think of the cash as your base and the equity as the four-year upside.",
     ],
+    phaseTinted: {
+      /* Closing-push register: educational tone drops, recruiter wants
+       * to lock the cash piece and treat ESOPs as the upside that
+       * doesn't block the close. */
+      "closing-push":
+        "On ESOPs — let's not let equity slow us down here. The cash side is what you're getting guaranteed; ESOPs are a four-year layer on top with vest and cliff in the letter. Sign on the cash and the equity comes attached.",
+    },
     sectorOverrides: {
       "early-startup":
         "On the ESOP piece — at this stage equity is a meaningful chunk of the total: the offer letter shows fixed, variable, and ESOPs separately with a 4-year vest and a 1-year cliff. The cash sits where the market is; the ESOP is the upside if we get to the next round.",
@@ -258,6 +265,13 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
       "On in-hand — the monthly is a band, not a fixed number, because it moves with your declarations: HRA, LTA, NPS, the standard flexi heads. Once we lock fitment I'll get the structuring sheet over so you can plan it properly.",
       "Take-home depends on how you declare — HRA, NPS, LTA shift the monthly meaningfully. The letter will show a range, not a single figure. We can sit on the structuring sheet together once the fitment piece is closed.",
     ],
+    phaseTinted: {
+      /* Closing-push: stop explaining the structuring mechanics in
+       * detail, push to lock fitment and handle in-hand math
+       * post-signature with the comp team. */
+      "closing-push":
+        "On in-hand — let's not get bogged down in the structuring math now. Lock fitment today and I'll have the comp team sit with you on the structuring sheet within the week. You'll have the take-home pinned before joining.",
+    },
   },
   "review-cycle": {
     base:
@@ -290,6 +304,12 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
       "On benefits — over and above the cash CTC: group medical for self + family, gratuity, PF per statute, plus the flexi allowances. I'll share the full benefits sheet with the offer letter so you have everything in one place.",
       "Outside cash CTC — there's medical (self plus family), gratuity, PF, and the standard flexi heads. Not headline-grabbing but it adds up. Full sheet goes with the offer.",
     ],
+    phaseTinted: {
+      /* Closing-push: don't re-walk benefits, defer to written sheet.
+       * The objective shifts from informing to closing. */
+      "closing-push":
+        "On benefits — the full sheet's already going across with the letter, so you'll have medical, gratuity, PF, flexi — all of it in writing within the day. Read it once you have it. For now let's not let the non-cash piece slow the close.",
+    },
   },
   "notice-buyout": {
     base:
@@ -310,6 +330,13 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
       "On variable — target-based, not guaranteed. Payout runs zero to two-hundred percent of target against KPIs locked in the first quarter. The individual-vs-company KPI split moves with grade; comp team owns the policy doc, which you'll see post-joining.",
       "Variable's a target, not a floor — anywhere between zero and 200% based on quarterly KPI performance. KPIs get locked in Q1, and the individual / company weight depends on the grade you're slotted at. Policy doc shares post-joining.",
     ],
+    phaseTinted: {
+      /* Closing-push: drop the policy-doc framing and speak to the
+       * candidate's actual concern — that the variable might be a
+       * downside risk on the headline. Reframe to "target = realistic". */
+      "closing-push":
+        "On variable — last thing I want is for the variable line to be the reason you hesitate. Targets here aren't aspirational, they're built off historical achievement at the grade — most folks land around 100% or better. Sign the offer and you'll see the KPI sheet in your first week.",
+    },
   },
   "range-grade-leverage": {
     base:
@@ -334,6 +361,13 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
       "On structuring — standard flexi shape: HRA, LTA, NPS, meal card. Not the most aggressive optimisation, but it covers the usual heads cleanly. Sheet goes across once fitment is locked so you can plan declarations.",
       "Tax-wise — we're on the standard flexi plan, not a bespoke setup. HRA, LTA, NPS, meal card all configurable. Once the fitment is closed I'll get the sheet to you and you can map your declarations against it.",
     ],
+    phaseTinted: {
+      /* Closing-push: the structuring conversation gets explicitly
+       * deferred to post-signature. Recruiter is no longer offering
+       * to plan, just promising the sheet lands soon. */
+      "closing-push":
+        "On structuring — flexi heads are what they are, no creative optimisation on the table. Sign and the sheet lands with you the same week — you'll have a clean view of HRA, NPS, LTA before you have to declare anything. Don't let the tax piece hold up the close.",
+    },
   },
   "channel-switch": {
     base:
@@ -342,6 +376,13 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
       "On a call works — let me get your range to the panel first, then I'll set up a slot. We'll close the open points quicker on a call than going back and forth on email.",
       "Yeah, happy to take it on a call. Let me take your number to the panel, then we'll find a slot — open items move faster on a call than they do over email.",
     ],
+    phaseTinted: {
+      /* Closing-push: urgency on the call ask. No "let me first take
+       * the range to the panel" — we're past that, the call is to
+       * close, not to scope. */
+      "closing-push":
+        "Let's get on a call today — I'll send a slot for this evening. Faster than another email thread and I'd rather we close the open points face to face. Bring your questions and we'll close them in one sitting.",
+    },
     sectorOverrides: {
       /* Startup casual register — early-startup recruiters drop into
        * "yeah let's just hop on a call" energy. */
