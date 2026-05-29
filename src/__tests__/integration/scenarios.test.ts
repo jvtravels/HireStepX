@@ -392,3 +392,45 @@ describe("Scenario E — PDF#18 reproduction (Senior Product Designer → QA Eng
     expect(r.move.lever).toBe("probe");
   });
 });
+
+/* ─── Scenario F — Dead-input wiring (callTimeIso + powerSignals) ──── *
+ *
+ * Regression guard for the 2026-05-30 dead-input wiring. The kernel
+ * exposes `callTimeIso` and `powerSignals` on `InitStateInput`, but
+ * `negotiate-turn.ts` previously didn't pass either, so the power-
+ * dynamics + time-context features were dormant in live sessions.
+ * This scenario asserts that when init receives both, the derived
+ * fields actually land on state. */
+
+describe("Scenario F — dead-input wiring activates power + time context", () => {
+  const BAND: NegotiationBand = { initialOffer: 14, maxStretch: 18, walkAway: 11 };
+
+  it("callTimeIso → timeContext bucket; powerSignals.quarterTiming → recruiterPower", () => {
+    /* Friday 17:30 IST in mid-quarter — should bucket as friday-rush, and
+     * the explicit quarter-end signal should drive recruiterPower negative. */
+    const fridayEveningIst = "2026-05-29T12:00:00.000Z"; // 17:30 IST, Fri
+    const s = initState({
+      sessionId: "scen-f-deadinputs",
+      role: "Software Engineer",
+      company: "tech-co",
+      band: BAND,
+      callTimeIso: fridayEveningIst,
+      powerSignals: { quarterTiming: "quarter-end" },
+    });
+    expect(s.timeContext).toBe("friday-rush");
+    expect(s.powerSignals?.quarterTiming).toBe("quarter-end");
+    expect(typeof s.recruiterPower).toBe("number");
+    expect(s.recruiterPower!).toBeLessThan(0);
+  });
+
+  it("defaults are safe when both inputs omitted (back-compat)", () => {
+    const s = initState({
+      sessionId: "scen-f-defaults",
+      role: "Software Engineer",
+      company: "tech-co",
+      band: BAND,
+    });
+    expect(s.timeContext).toBe("midweek-standard");
+    expect(s.recruiterPower).toBe(0);
+  });
+});

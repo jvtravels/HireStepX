@@ -409,6 +409,36 @@ export default async function handler(
         band: serverBand,
         company,
       });
+      /* 2026-05-30 dead-input wiring.
+       *
+       *   • callTimeIso — the call is happening now; the server clock is
+       *     the honest source. Activates `timeContext` (Mon-fresh, EOD-
+       *     Friday, lunch-distracted, after-hours-tired, weekend) and the
+       *     prefix overlay.
+       *   • powerSignals.quarterTiming — derived from the same server
+       *     date. Indian fiscal calendar (Apr-Mar). M1 of quarter →
+       *     fresh-quarter; M3 → quarter-end; Jan-Mar → annual-sprint
+       *     (Indian FY close). M2 → mid-quarter (no power bump).
+       *
+       *   Other PowerSignals fields (openReqMonths, pipelineDepth) need
+       *   ATS / req-tracking data we don't have at the API boundary —
+       *   leaving them undefined keeps the scalar honest. Mid-session
+       *   `candidateHasCompetingProcess` auto-flips via regex in
+       *   applyCandidateAnswer, so that signal lights up on its own. */
+      const initNow = new Date();
+      const initCallTimeIso = initNow.toISOString();
+      const initQuarterTiming: import("./_negotiation-kernel").PowerSignals["quarterTiming"] = (() => {
+        // IST month (Asia/Kolkata) — fiscal year Apr-Mar, Q1 = Apr-Jun.
+        const istMonth = Number(
+          new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", month: "numeric" }).format(initNow)
+        );
+        if (istMonth >= 1 && istMonth <= 3) return "annual-sprint"; // FY close
+        const fyMonthIdx = (istMonth - 4 + 12) % 12;                // 0..11 within FY
+        const monthInQuarter = fyMonthIdx % 3;                      // 0=M1, 1=M2, 2=M3
+        if (monthInQuarter === 0) return "fresh-quarter";
+        if (monthInQuarter === 2) return "quarter-end";
+        return "mid-quarter";
+      })();
       let state = initState({
         sessionId: body.sessionId || crypto.randomUUID(),
         role,
@@ -423,6 +453,8 @@ export default async function handler(
         parsedResume: body.parsedResume ?? null,
         recruiterSectorPersona: initRecruiterSectorPersona,
         tierBucketHint: initTierBucket,
+        callTimeIso: initCallTimeIso,
+        powerSignals: { quarterTiming: initQuarterTiming },
       });
       const move = pickAiMove(state);
       const promptVariant = selectPromptVariant(state.sessionId);
