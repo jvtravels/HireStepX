@@ -1284,6 +1284,28 @@ export interface NegotiationState {
    * with sessions serialized before commit 4. */
   reactiveFollowupsFired?: DiscoveryTopic[];
 
+  /* 2026-05-29 realism-pass — strict in-session variant rotation.
+   *
+   * The 14-topic curated bank has 2-5 paraphrase variants per entry.
+   * The renderer hashes (sessionId, turnIndex) to pick an index, so
+   * within a session, re-asks of the same topic on different turns
+   * land on DIFFERENT seeds — but with 3 variants there's a 1/3
+   * collision probability that the second ask gets the same variant
+   * as the first.
+   *
+   * This ledger tracks per-topic serve count (number of times the
+   * planner emitted an answer-direct for that curated topic in this
+   * session). The renderer adds the count to the hash index, giving
+   * strict non-repetition: ask #1 → variant 0, ask #2 → variant 1,
+   * ask #3 → variant 2, ask #4 wraps to variant 0 (or whatever the
+   * shifted hash lands on). Real recruiters never re-phrase identically
+   * within a single call.
+   *
+   * Keyed by the candidate-question topic string (e.g. "variable-comfort",
+   * "esop-structure"). Optional + nullable for back-compat with
+   * sessions serialized before this field. */
+  candidateQuestionServeCount?: Partial<Record<string, number>>;
+
   /* Polish 2 (2026-05-16) — per-topic fire-history (turn indices at
    * which each topic was fired). The legacy `reactiveFollowupsFired`
    * is single-fire dedup; this parallel ledger lets refireable topics
@@ -2377,6 +2399,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     reactiveFollowupsFired: [],
     /* Polish 2 (2026-05-16) — per-topic fire-history. Empty at start. */
     reactiveFollowupsFireLog: {},
+    /* 2026-05-29 realism-pass — per-topic answer-direct serve count for
+     * strict variant rotation. Empty at start. */
+    candidateQuestionServeCount: {},
     /* Fix 1 (2026-05-16) — leversFired ledger for Indian-context
      * structural levers. Empty at session start. */
     leversFired: [],
@@ -4955,6 +4980,19 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       [move.askedTopic]: [...priorTurns, state.turnIndex],
     };
   }
+  /* 2026-05-29 realism-pass — increment the per-topic serve count
+   * whenever an answer-direct fires for a specific curated topic. The
+   * renderer reads this on the NEXT planNextAction so a repeat ask of
+   * the same topic strictly advances to the next variant. Pure / sticky;
+   * never reset within a session. */
+  if (move.actionKind === "answer-direct" && typeof move.answerDirectTopic === "string") {
+    const priorCounts = state.candidateQuestionServeCount ?? {};
+    const key = move.answerDirectTopic;
+    next.candidateQuestionServeCount = {
+      ...priorCounts,
+      [key]: (priorCounts[key] ?? 0) + 1,
+    };
+  }
   /* Fix 1 (2026-05-16) — record structural lever emissions onto the
    * leversFired ledger so the planner's pickStructuralLever rotation
    * advances correctly. Gated on actionKind being one of the new
@@ -5636,6 +5674,21 @@ export function validateState(state: unknown): asserts state is NegotiationState
   }
   /* Negotiation-flow redesign commit 4 (2026-05-15) — reactiveFollowupsFired
    * is optional + sticky. Reject only malformed shape. */
+  /* 2026-05-29 realism-pass — candidateQuestionServeCount validator. */
+  if (s.candidateQuestionServeCount !== undefined) {
+    if (
+      s.candidateQuestionServeCount === null ||
+      typeof s.candidateQuestionServeCount !== "object" ||
+      Array.isArray(s.candidateQuestionServeCount)
+    ) {
+      throw new Error("state.candidateQuestionServeCount");
+    }
+    for (const v of Object.values(s.candidateQuestionServeCount)) {
+      if (!isFiniteNonNegInt(v)) {
+        throw new Error("state.candidateQuestionServeCount.value");
+      }
+    }
+  }
   if (s.reactiveFollowupsFired !== undefined) {
     if (!Array.isArray(s.reactiveFollowupsFired) || !s.reactiveFollowupsFired.every((v) => typeof v === "string")) {
       throw new Error("state.reactiveFollowupsFired");
@@ -6120,6 +6173,10 @@ export function deserializeState(json: string): NegotiationState {
      * Optional for back-compat with sessions serialized before commit 4. */
     reactiveFollowupsFired:
       (s.reactiveFollowupsFired as DiscoveryTopic[] | undefined) ?? [],
+    /* 2026-05-29 realism-pass — candidateQuestionServeCount back-compat
+     * default. Pre-realism-pass sessions deserialise with an empty map. */
+    candidateQuestionServeCount:
+      (s.candidateQuestionServeCount as Partial<Record<string, number>> | undefined) ?? {},
     /* Polish 2 (2026-05-16) — per-topic fire-history. Back-compat
      * default = empty record. */
     reactiveFollowupsFireLog:

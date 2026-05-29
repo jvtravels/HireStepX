@@ -3,8 +3,8 @@
   "total": 120,
   "counts": {
     "PASS": 0,
-    "PARTIAL": 24,
-    "FAIL": 96,
+    "PARTIAL": 23,
+    "FAIL": 97,
     "INCONCLUSIVE": 0
   },
   "results": [
@@ -69,8 +69,8 @@
       "severity": "Critical",
       "verdict": "PARTIAL",
       "reason": "1/2 keywords present",
-      "prose": "On the budget — I can't share the full internal band, but the fitment sits in a defined corridor for this grade. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned.",
-      "actionKind": "reactive-followup",
+      "prose": "Right, on the budget piece — early to be giving you the internal band, but the fitment for this grade sits in a defined corridor. If you can share what you're broadly looking for, I'll tell you upfront if we're in the same neighbourhood.",
+      "actionKind": "answer-direct",
       "keywords": [
         "stuck",
         "get"
@@ -137,8 +137,8 @@
       "severity": "High",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On the structure — the breakup will include fixed cash, variable target (paid quarterly against KPIs), and ESOPs as a separate component. Are you comfortable with that shape, or would you want me to size the fixed harder against the variable?",
-      "actionKind": "reactive-followup",
+      "prose": "Look, structure-wise it's fixed plus a quarterly variable against KPIs, with ESOPs sitting separately. Happy to size the fixed harder if that's what works better for you — just say the word.",
+      "actionKind": "answer-direct",
       "keywords": [
         "importance",
         "respects",
@@ -220,8 +220,8 @@
       "severity": "High",
       "verdict": "PARTIAL",
       "reason": "3/4 keywords present",
-      "prose": "On the ESOP piece — equity is reported separately from cash CTC: the offer letter splits fixed, variable, and ESOPs with the vesting schedule and cliff. So you'll see the cash component as guaranteed and the ESOP as a 4-year grant on top.",
-      "actionKind": "reactive-followup",
+      "prose": "Right, quick on the ESOP — the offer letter keeps cash CTC and equity on separate lines. Fixed plus variable on one side, ESOPs with the vest schedule and cliff on the other. So the cash piece reads as guaranteed and the ESOPs sit as a four-year layer on top.",
+      "actionKind": "answer-direct",
       "keywords": [
         "treat",
         "fixed",
@@ -289,9 +289,9 @@
       "persona": "P03",
       "severity": "Medium",
       "verdict": "PARTIAL",
-      "reason": "2/4 keywords present",
-      "prose": "On the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer.",
-      "actionKind": "reactive-followup",
+      "reason": "1/4 keywords present",
+      "prose": "On appraisal — the cycle runs on the company calendar, and joiners typically come in pro-rated once they've crossed the qualifying tenure. I'll have the dates and the eligibility rule written into the offer alongside the comp piece.",
+      "actionKind": "answer-direct",
       "keywords": [
         "realistically",
         "handles",
@@ -299,7 +299,6 @@
         "cycle"
       ],
       "hits": [
-        "review",
         "cycle"
       ]
     },
@@ -423,8 +422,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: unfairly, lowball",
-      "prose": "On the location piece — the fitment doesn't change for remote or different-city, but the allowance structure (HRA, location pay) does shift to match the policy for that city. I can pull the city-wise structuring before we lock the offer.",
-      "actionKind": "reactive-followup",
+      "prose": "On location — the headline fitment holds whether you're remote or in a different city, but the allowance heads (HRA, location pay) move to match the city policy. I can have the city-wise structuring pulled before we lock the letter.",
+      "actionKind": "answer-direct",
       "keywords": [
         "unfairly",
         "lowball"
@@ -438,8 +437,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: promises, avoids",
-      "prose": "On the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer.",
-      "actionKind": "reactive-followup",
+      "prose": "Right, on the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer. Does that make sense?",
+      "actionKind": "answer-direct",
       "keywords": [
         "promises",
         "avoids"
@@ -454,7 +453,7 @@
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: respects, document, timing",
       "prose": "Noted on the verification piece — slips can come at the formal BGV stage. For now let's first align on whether the range works for you, and then I'll move it through the panel.",
-      "actionKind": "reactive-followup",
+      "actionKind": "answer-direct",
       "keywords": [
         "respects",
         "document",
@@ -469,8 +468,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: prematurely, force, proof",
-      "prose": "Noted on the verification piece — slips can come at the formal BGV stage. For now let's first align on whether the range works for you, and then I'll move it through the panel.",
-      "actionKind": "reactive-followup",
+      "prose": "On verification — let's keep that for the BGV stage where it formally belongs. Right now I just want to know if the range works for you, then I'll take it forward.",
+      "actionKind": "answer-direct",
       "keywords": [
         "prematurely",
         "force",
@@ -534,8 +533,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: promise, future, vague",
-      "prose": "On the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer.",
-      "actionKind": "reactive-followup",
+      "prose": "Review-wise — fixed cycle on the company calendar, pro-rated participation for joiners after the qualifying tenure. Happy to get both the cycle dates and the eligibility rule confirmed in writing when the offer goes out.",
+      "actionKind": "answer-direct",
       "keywords": [
         "promise",
         "future",
@@ -550,8 +549,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/2 keywords present",
-      "prose": "On the variable piece — variable is target-based, not guaranteed: payout sits between 0 and 200% of target against KPIs that get locked in the first quarter. The split between individual and company KPIs varies by grade — I can have the comp team share the policy doc once you're onboarded.",
-      "actionKind": "reactive-followup",
+      "prose": "Variable's a target, I mean, not a floor — anywhere between zero and 200% based on quarterly KPI performance. KPIs get locked in Q1, and the individual / company weight depends on the grade you're slotted at. Policy doc shares post-joining. Right?",
+      "actionKind": "answer-direct",
       "keywords": [
         "clarifies",
         "variable"
@@ -582,8 +581,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/4 keywords present",
-      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
-      "actionKind": "reactive-followup",
+      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), right, gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter. Does that make sense?",
+      "actionKind": "answer-direct",
       "keywords": [
         "understands",
         "take",
@@ -678,8 +677,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: integrates, joining, comp",
-      "prose": "On the notice piece — buyout support is case-by-case and tied to the urgency from the hiring side. If they want an early join, I can take the buyout ask to the panel with your notice-period letter as evidence.",
-      "actionKind": "reactive-followup",
+      "prose": "Honestly, on buyout — that's case-by-case, driven by how urgently the hiring side wants you to start. If early join matters to them, I can carry the buyout ask to the panel — but I'll need your notice letter as evidence to back it. Does that make sense?",
+      "actionKind": "answer-direct",
       "keywords": [
         "integrates",
         "joining",
@@ -744,8 +743,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: prevents, mismatch, late",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "prose": "On range — internal bands stay internal, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether we're in the same neighbourhood; if not, I'll carry the delta to the panel. You with me?",
+      "actionKind": "answer-direct",
       "keywords": [
         "prevents",
         "mismatch",
@@ -761,7 +760,7 @@
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: repeated, refusal, forward",
       "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "actionKind": "answer-direct",
       "keywords": [
         "repeated",
         "refusal",
@@ -913,19 +912,16 @@
       "stage": "S07_COMPONENTS",
       "persona": "P19",
       "severity": "Medium",
-      "verdict": "PARTIAL",
-      "reason": "2/3 keywords present",
-      "prose": "On the in-hand piece — the monthly take-home depends on your tax declarations and structuring (HRA, LTA, NPS), so the offer letter will show a band rather than a single number. We can walk through the structuring sheet once the fitment is locked.",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: understands, take, home",
+      "prose": "On in-hand — the monthly is a band, not a fixed number, because it moves with your declarations: HRA, LTA, NPS, the standard flexi heads. Once we lock fitment I'll get the structuring sheet over so you can plan it properly.",
       "actionKind": "reactive-followup",
       "keywords": [
         "understands",
         "take",
         "home"
       ],
-      "hits": [
-        "take",
-        "home"
-      ]
+      "hits": []
     },
     {
       "tcId": "TC057",
@@ -966,8 +962,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On the ESOP piece — equity is reported separately from cash CTC: the offer letter splits fixed, variable, and ESOPs with the vesting schedule and cliff. So you'll see the cash component as guaranteed and the ESOP as a 4-year grant on top.",
-      "actionKind": "reactive-followup",
+      "prose": "On the ESOP piece — equity is reported separately from cash CTC: the offer letter splits fixed, right, variable, and ESOPs with the vesting schedule and cliff. So you'll see the cash component as guaranteed and the ESOP as a 4-year grant on top.",
+      "actionKind": "answer-direct",
       "keywords": [
         "correctly",
         "handles",
@@ -984,8 +980,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/4 keywords present",
-      "prose": "On the ESOP piece — equity is reported separately from cash CTC: the offer letter splits fixed, variable, and ESOPs with the vesting schedule and cliff. So you'll see the cash component as guaranteed and the ESOP as a 4-year grant on top.",
-      "actionKind": "reactive-followup",
+      "prose": "On equity — we don't bundle ESOPs into the headline CTC number. The letter shows fixed, variable, and the ESOP grant separately, with the vest and cliff spelled out. Think of the cash as your base and the equity as the four-year upside.",
+      "actionKind": "answer-direct",
       "keywords": [
         "equity",
         "doesn",
@@ -1003,8 +999,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "prose": "On range — internal bands stay internal, I mean, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether we're in the same neighbourhood; if not, I'll carry the delta to the panel. Does that make sense?",
+      "actionKind": "answer-direct",
       "keywords": [
         "recognizes",
         "grade",
@@ -1104,8 +1100,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/4 keywords present",
-      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
-      "actionKind": "reactive-followup",
+      "prose": "Outside cash CTC — there's medical (self plus family), gratuity, PF, and the standard flexi heads. Not headline-grabbing but it adds up. Full sheet goes with the offer.",
+      "actionKind": "answer-direct",
       "keywords": [
         "components",
         "includes",
@@ -1123,8 +1119,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: budget, trap, max",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "prose": "Range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it.",
+      "actionKind": "answer-direct",
       "keywords": [
         "budget",
         "trap",
@@ -1198,16 +1194,18 @@
       "stage": "S05_BUDGET",
       "persona": "P14",
       "severity": "Medium",
-      "verdict": "FAIL",
-      "reason": "0/3 keywords present; prose missing: handles, concern, level",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "Range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it. Right?",
+      "actionKind": "answer-direct",
       "keywords": [
         "handles",
         "concern",
         "level"
       ],
-      "hits": []
+      "hits": [
+        "level"
+      ]
     },
     {
       "tcId": "TC074",
@@ -1340,18 +1338,16 @@
       "stage": "S05_BUDGET",
       "persona": "P03",
       "severity": "Medium",
-      "verdict": "PARTIAL",
-      "reason": "1/3 keywords present",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: transparent, internal, details",
+      "prose": "Range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it.",
+      "actionKind": "answer-direct",
       "keywords": [
         "transparent",
         "internal",
         "details"
       ],
-      "hits": [
-        "internal"
-      ]
+      "hits": []
     },
     {
       "tcId": "TC083",
@@ -1360,8 +1356,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: advisory, avoids, tax",
-      "prose": "On the structuring piece — the breakup is built around the standard flexi plan (HRA, LTA, NPS, meal card). It's not aggressively optimised but it covers the usual heads. Once we lock the fitment I can have the structuring sheet shared so you can plan your declarations.",
-      "actionKind": "reactive-followup",
+      "prose": "Right, on the structuring piece — the breakup is built around the standard flexi plan (HRA, LTA, NPS, meal card). It's not aggressively optimised but it covers the usual heads. Once we lock the fitment I can have the structuring sheet shared so you can plan your declarations. Does that make sense?",
+      "actionKind": "answer-direct",
       "keywords": [
         "advisory",
         "avoids",
@@ -1536,8 +1532,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
-      "actionKind": "reactive-followup",
+      "prose": "On benefits — over and above the cash CTC: group medical for self + family, gratuity, PF per statute, plus the flexi allowances. I'll share the full benefits sheet with the offer letter so you have everything in one place. You with me?",
+      "actionKind": "answer-direct",
       "keywords": [
         "understand",
         "components",
@@ -1569,8 +1565,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: clarifies, bonus, basis",
-      "prose": "On the variable piece — variable is target-based, not guaranteed: payout sits between 0 and 200% of target against KPIs that get locked in the first quarter. The split between individual and company KPIs varies by grade — I can have the comp team share the policy doc once you're onboarded.",
-      "actionKind": "reactive-followup",
+      "prose": "Variable's a target, not a floor — anywhere between zero and 200% based on quarterly KPI performance. KPIs get locked in Q1, and the individual / company weight depends on the grade you're slotted at. Policy doc shares post-joining.",
+      "actionKind": "answer-direct",
       "keywords": [
         "clarifies",
         "bonus",
@@ -1585,8 +1581,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: promise, avoids, fake",
-      "prose": "On the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer.",
-      "actionKind": "reactive-followup",
+      "prose": "On appraisal — the cycle runs on the company calendar, and joiners typically come in pro-rated once they've crossed the qualifying tenure. I'll have the dates and the eligibility rule written into the offer alongside the comp piece.",
+      "actionKind": "answer-direct",
       "keywords": [
         "promise",
         "avoids",
@@ -1616,8 +1612,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "prose": "Range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it.",
+      "actionKind": "answer-direct",
       "keywords": [
         "logically",
         "feedback",
@@ -1697,7 +1693,7 @@
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
       "prose": "On the in-hand piece — the monthly take-home depends on your tax declarations and structuring (HRA, LTA, NPS), so the offer letter will show a band rather than a single number. We can walk through the structuring sheet once the fitment is locked.",
-      "actionKind": "reactive-followup",
+      "actionKind": "answer-direct",
       "keywords": [
         "understands",
         "monthly",
@@ -1761,8 +1757,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: keeps, role",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "prose": "On range — internal bands stay internal, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether we're in the same neighbourhood; if not, I'll carry the delta to the panel.",
+      "actionKind": "answer-direct",
       "keywords": [
         "keeps",
         "role"
@@ -1777,7 +1773,7 @@
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: respects, mode",
       "prose": "I'll let you frame it the way you're comfortable — just share what's true for you and we'll work from there.",
-      "actionKind": "reactive-followup",
+      "actionKind": "answer-direct",
       "keywords": [
         "respects",
         "mode"
@@ -1809,7 +1805,7 @@
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: guidance, ethical",
       "prose": "I'll let you frame it the way you're comfortable — just share what's true for you and we'll work from there.",
-      "actionKind": "reactive-followup",
+      "actionKind": "answer-direct",
       "keywords": [
         "guidance",
         "ethical"
@@ -1854,8 +1850,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: handles, mapping, level",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
-      "actionKind": "reactive-followup",
+      "prose": "Right, on the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "answer-direct",
       "keywords": [
         "handles",
         "mapping",
@@ -1871,7 +1867,7 @@
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: professional, process, keeps",
       "prose": "Happy to take this on a call — let me set up a time once I've taken your range back to the panel. We can close the open points faster on a call than over email.",
-      "actionKind": "reactive-followup",
+      "actionKind": "answer-direct",
       "keywords": [
         "professional",
         "process",
@@ -1886,8 +1882,8 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
-      "actionKind": "reactive-followup",
+      "prose": "On benefits — over and above the cash CTC: group medical for self + family, gratuity, PF per statute, plus the flexi allowances. I'll share the full benefits sheet with the offer letter so you have everything in one place.",
+      "actionKind": "answer-direct",
       "keywords": [
         "separately",
         "benefits",
@@ -1904,8 +1900,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: professional, safe",
-      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
-      "actionKind": "reactive-followup",
+      "prose": "On benefits — over and above the cash CTC: group medical for self + family, I mean, gratuity, PF per statute, plus the flexi allowances. I'll share the full benefits sheet with the offer letter so you have everything in one place.",
+      "actionKind": "answer-direct",
       "keywords": [
         "professional",
         "safe"

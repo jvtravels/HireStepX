@@ -422,6 +422,20 @@ export function renderCandidateQuestionResponse(
   round: NegotiationRoundPersona | null | undefined,
   variantSeed?: string | null,
   phase?: NegotiationPhase | null,
+  /* 2026-05-29 realism-pass — strict in-session non-repetition.
+   *
+   * Per-topic count of how many times this curated topic has ALREADY
+   * been served in the current session (state.candidateQuestionServeCount
+   * in `_negotiation-kernel.ts`). The renderer adds this to the hash
+   * index, so ask #1 → base, ask #2 → variant 0, ask #3 → variant 1,
+   * etc, wrapping at `candidates.length`. With 3 variants + the base,
+   * the first FOUR re-asks land on four distinct phrasings; a fifth
+   * re-ask wraps. Real recruiters never re-phrase identically within
+   * a single call.
+   *
+   * Pass 0 (or omit) to use pure hash rotation — back-compat for
+   * call sites that haven't wired the count yet. */
+  serveCount?: number,
 ): string | null {
   const entry = RESPONSE_BANK[topic];
   if (!entry) return null;
@@ -437,8 +451,9 @@ export function renderCandidateQuestionResponse(
   const variants = entry.variants;
   if (variantSeed && variants && variants.length > 0) {
     const candidates = [entry.base, ...variants];
-    const idx = hashSeed(`${variantSeed}|${topic}`) % candidates.length;
-    return candidates[idx];
+    const baseIdx = hashSeed(`${variantSeed}|${topic}`) % candidates.length;
+    const shifted = (baseIdx + (serveCount ?? 0)) % candidates.length;
+    return candidates[shifted];
   }
   return entry.base;
 }

@@ -63,6 +63,7 @@ import {
   shouldProbeHikeJustification,
 } from "./_hike-justification-probe";
 import { sessionJitter } from "./_session-jitter";
+import { humanizeRecruiterProse } from "./_recruiter-prose-realism";
 import { analyzeEquityClarity } from "./_trial-close-detector";
 import { marketDataSources } from "./_candidate-profile";
 import { resumeConfirmsCompany } from "./_resume-fact-pack";
@@ -3631,12 +3632,29 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
            * (more guarded). See the precedence rule in
            * `renderCandidateQuestionResponse`. */
           state.phase ?? null,
+          /* 2026-05-29 realism-pass — strict in-session variant rotation.
+           * Pass the per-topic serve count so a re-ask of the same topic
+           * lands on the next variant, not a hash collision with the
+           * prior phrasing. The kernel increments this map after every
+           * answer-direct ships (see `_negotiation-kernel.ts`). */
+          (state.candidateQuestionServeCount ?? {})[route.topic] ?? 0,
         );
         if (prose) {
+          /* 2026-05-29 realism-pass — humanize the curated prose with a
+           * persona-tic prefix + mid-sentence hedge + checkback suffix.
+           * Probabilistic by (sessionId, turnIndex), so most utterances
+           * ship unchanged and the bank's accuracy is preserved. See
+           * `_recruiter-prose-realism.ts` for the layer rules. */
+          const spokenProse = humanizeRecruiterProse(prose, {
+            sector: state.recruiterSectorPersona ?? null,
+            phase: state.phase ?? null,
+            sessionId: state.sessionId,
+            turnIndex: state.turnIndex,
+          });
           return {
             kind: "answer-direct",
             topic: route.topic,
-            prose,
+            prose: spokenProse,
             satisfiesTopic: "answer-direct",
             _move: {
               lever: "probe",
@@ -3644,10 +3662,10 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
               rationale:
                 `PDF#51 deterministic answer-direct — candidate asked ` +
                 `about "${route.topic}" at turn ${state.turnIndex}; ` +
-                `ship curated response-bank prose, skip LLM.`,
+                `ship curated response-bank prose (humanized), skip LLM.`,
               actionKind: "answer-direct",
               askedTopic: "answer-direct",
-              deterministicProse: prose,
+              deterministicProse: spokenProse,
               answerDirectTopic: route.topic,
             },
           };
