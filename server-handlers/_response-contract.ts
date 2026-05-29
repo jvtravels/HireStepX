@@ -272,18 +272,25 @@ function dominantTopic(scores: Map<ResponseTopic, number>, minScore = 1): Respon
 /* Short-clarification gate (PDF#51 — 2026-05-28).
  *
  * Recruiters legitimately ask ≤3-word clarifications back ("which one?",
- * "what role?", "got it — base or total?") and the role-reversal check
- * was firing on them, forcing the validator into a deferral fallback
- * that read as evasion. A clarification of ≤4 tokens is allowed; it's
- * a turn-taking move, not a refusal to answer.
+ * "what role?", "base or total?") and the role-reversal check was
+ * firing on them, forcing the validator into a deferral fallback that
+ * read as evasion. A clarification of ≤3 tokens is allowed; it's a
+ * turn-taking move, not a refusal to answer.
  *
  * Tokens are counted on the candidate's question itself (the trigger
- * for role-reversal), not the AI response. */
+ * for role-reversal), not the AI response.
+ *
+ * 2026-05-29 — tightened cap from ≤4 to ≤3. The 4-token cap was
+ * letting substantive 4-word questions like "what is the base?"
+ * masquerade as clarifiers, suppressing role-reversal when the AI
+ * bounced them back as another question. All originally-targeted
+ * recruiter clarifiers ("what?", "which one?", "base or total?") are
+ * ≤3 tokens, so the lower cap still covers them. */
 function isShortClarification(text: string): boolean {
   const t = (text || "").trim();
   if (!t) return false;
   const tokens = t.replace(/[?!.,;:]+/g, " ").trim().split(/\s+/).filter(Boolean);
-  return tokens.length > 0 && tokens.length <= 4;
+  return tokens.length > 0 && tokens.length <= 3;
 }
 
 /* PDF#51 follow-up (2026-05-28) — AI-side short-clarification gate.

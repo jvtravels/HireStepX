@@ -162,10 +162,16 @@ describe("PDF#27 8-turn replay smoke — discovery-loop class closed", () => {
       );
       expect(validation.valid).toBe(true);
 
-      /* Track the band-anchor fire site (assertion 4). */
+      /* Track the band-anchor fire site (assertion 4). PDF#51 added the
+       * router-based `anchor-ask → open-with-offer` short-circuit; that
+       * path is the band-anchor lever for the offer-ask cue this test
+       * pins. The original PDF#27 Fix 5 PRE_ANCHOR gate (anchor-with-offer
+       * / band-anchor-with-rationale) is still the fallback for the
+       * non-router cases, so we count all three kinds. */
       if (
         turn.action.kind === "anchor-with-offer" ||
-        turn.action.kind === "band-anchor-with-rationale"
+        turn.action.kind === "band-anchor-with-rationale" ||
+        turn.action.kind === "open-with-offer"
       ) {
         if (bandAnchorSeenAt == null) bandAnchorSeenAt = t + 1; // 1-indexed by candidate turn
       }
