@@ -44,8 +44,10 @@ import {
   clampAnchorAgainstCandidateAsk,
   effectiveAnchorLpa,
   type NegotiationState,
+  type NegotiationPhase,
   type AiMove,
   type DiscoveryTopic,
+  type ContradictionTopic,
 } from "./_negotiation-kernel";
 import type { NegotiationRoundPersona } from "./_negotiation-rounds";
 import { registerNextActionPlanner } from "./_planner-registry";
@@ -63,12 +65,20 @@ import {
   shouldProbeHikeJustification,
 } from "./_hike-justification-probe";
 import { sessionJitter } from "./_session-jitter";
-import { humanizeRecruiterProse } from "./_recruiter-prose-realism";
+import {
+  humanizeRecruiterProse,
+  applyFallibilityOverlay,
+  applyPersonaTicSignature,
+  applyContextRefOverlay,
+} from "./_recruiter-prose-realism";
+import { timeContextToMoodDelta } from "./_recruiter-time-context";
+import { getCandidateFirstName } from "./_candidate-name";
 import { analyzeEquityClarity } from "./_trial-close-detector";
 import { marketDataSources } from "./_candidate-profile";
 import { resumeConfirmsCompany } from "./_resume-fact-pack";
 import { hasConcreteTell } from "./_competing-offer-detail";
 import { getRecruiterSectorPersona } from "./_indian-recruiter-personas";
+import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 /* PDF#51 (2026-05-28) — unified candidate-question router. Replaces
  * the planner's two inline regex tests (DIRECT_ANCHOR_ASK_RE @ ~1228,
  * BREAKDOWN_REQUEST_RE @ ~4313) AND wires a deterministic-prose path
@@ -495,6 +505,24 @@ export type NextAction =
    * on the same topic. Not probe-producing in the satisfiesTopic sense
    * but carries one so the askedTopics ledger records the recovery. */
   | { kind: "acknowledge-and-recover"; satisfiesTopic: SatisfiesTopic }
+  /* Memory feature (2026-05-29) — contradiction-callout. Fires when the
+   * candidate's CURRENT turn restated a previously-recorded claim with a
+   * different value (numeric drift outside ±10% on CTC / expected /
+   * notice, or a competing-offer amount drift while the company name
+   * matches). The kernel's applyCandidateAnswer stamps the signal on
+   * state.lastContradiction; the planner consumes it and surfaces the
+   * gap in canonical-prose. Priority slot: above stall / discovery /
+   * counter branches, below frustration recovery and live-walk-away
+   * (crisis levers). Not probe-producing. */
+  | {
+      kind: "contradiction-callout";
+      topic: ContradictionTopic;
+      oldValue: number | string;
+      newValue: number | string;
+      firstSeenTurn: number;
+      oldLabel?: string;
+      newLabel?: string;
+    }
   /* PDF#35 Move 1 (2026-05-18) — offer-recap. Post-anchor branch that
    * fires when the candidate has asked to hear the offer again /
    * summarise / restate the CTC. Distinct from `info-disclosure` (which
@@ -558,7 +586,94 @@ export type NextAction =
        *  ("checked — we can move ₹2L on joining bonus") OR null when
        *  the return mode is "hold". Always null in "open" mode. */
       returnConcessionLpa: number | null;
+    }
+  /* Paraphrase-loop feature (2026-05-29) — compress the deal so far back
+   * to the candidate as a recap-with-confirmation gate. Fires at most
+   * once per session, just before manager-consult-stall or phase
+   * transition to close, gated on ≥3 distinct facts disclosed. */
+  | {
+      kind: "paraphrase-recap";
+      facts: Array<{ label: string; value: string }>;
+      sectorVariant: "formal" | "casual";
+    }
+  /* Bad-faith tactic injections (2026-05-29). Each fires at most once
+   * per session. Low-priority — only emitted when no normal action
+   * preempts. Carries `tactic` for the report layer / detection. */
+  | { kind: "exploding-offer-pressure"; tactic: "exploding-offer-pressure"; deadline: "eod" | "friday" | "24h" }
+  | { kind: "fake-competing-candidate"; tactic: "fake-competing-candidate" }
+  | { kind: "vague-promise"; tactic: "vague-promise"; topic: "wfh" | "joining-bonus" | "title" }
+  /* Prior-context feature (2026-05-29) — caller-declared upfront
+   * context (existing competing offer or current-employer retention
+   * package) shapes the recruiter's opening moves. Acks fire turn 1-2
+   * (HIGH priority, ahead of routine cascade); the mid-stage reactions
+   * fire when the user pushes back citing the existing context or when
+   * a retention package is structurally strong. */
+  | { kind: "acknowledge-existing-offer"; company: string; amountLpa: number; signed: boolean; deadline?: string }
+  | { kind: "match-existing-offer-prose"; company: string; competingAmountLpa: number; withinBand: boolean }
+  | { kind: "acknowledge-retention-offer"; amountLpa: number; tenure: "immediate" | "midYear" | "cycleEnd" }
+  | { kind: "retention-trump-warning"; retentionLpa: number; currentCtcLpa: number }
+  /* Memory-callback feature (2026-05-29) — real recruiters periodically
+   * call back to a fact the candidate stated earlier ("you mentioned X").
+   * Surfaces ONE recorded userClaim warmly. Fires at most once per
+   * session, after turn 3, sector-flavored (formal vs casual). */
+  | {
+      kind: "callback-prior-context";
+      claim: "currentCtc" | "expectedCtc" | "competingOffer" | "noticePeriod" | "currentRole";
+      /** Snapshot of the value being called back to — kept on the action
+       *  so the prose arm can render without re-reading state. */
+      value: number | string;
+      /** Company name only for competingOffer; null for the rest. */
+      companyLabel: string | null;
+      /** Turn the claim was first seen — informs "earlier" framing. */
+      firstSeenTurn: number;
+    }
+  /* Competing-offer warm acknowledgment (2026-05-29). Separate from
+   * competitor-match (which negotiates) — this is pure respectful
+   * acknowledgment of the candidate's market value, fired the FIRST
+   * turn after a competingOffer claim lands in userClaims. Once per
+   * session. */
+  | {
+      kind: "competing-offer-warm-ack";
+      company: string;
+      amountLpa: number;
+    }
+  /* Calibrated-surprise lowball feature (2026-05-29) — real recruiters
+   * probe with calibrated surprise when a candidate's anchor lands
+   * meaningfully below band floor. Single-fire per session via
+   * state.calibratedSurpriseFired; gate on recruiterAffinity ≥ -1
+   * (a cooled recruiter quietly accepts the lowball instead of
+   * coaching). Numbers are echoed verbatim from the candidate's stated
+   * anchor — the band floor is invoked but the precise band is NEVER
+   * disclosed. */
+  | {
+      kind: "calibrated-surprise-lowball";
+      tactic: "calibrated-surprise-lowball";
+      candidateAnchor: number;
+      bandFloor: number;
+      gapPct: number;
+    }
+  /* Calibrated-surprise lowball — Branch A follow-up. Fires the turn
+   * AFTER the probe when applyCandidateAnswer classified the reply as
+   * a double-down (state.acceptedLowball === true). Quietly accepts the
+   * candidate's lowball anchor and moves to packaging — the cynical
+   * real-world variant of "they didn't read the signal". */
+  | {
+      kind: "accept-lowball-quiet";
+      candidateAnchor: number;
     };
+
+/** Bad-faith tactic injection kinds (2026-05-29). These are flavor
+ *  injects — the recruiter uses a classic manipulation play (deadline
+ *  pressure, fake competing candidate, vague non-binding promise). They
+ *  fire at most once per session each, gated by state.tacticsUsed, and
+ *  only when no normal priority action preempts. Detecting / naming
+ *  them out loud as the candidate is recorded into
+ *  state.userCaughtTactics so the report layer can surface it as a
+ *  positive coaching signal. */
+export type TacticKind =
+  | "exploding-offer-pressure"
+  | "fake-competing-candidate"
+  | "vague-promise";
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
  *  the required `satisfiesTopic` field). Used by the ship-site to gate
@@ -920,6 +1035,245 @@ function buildUncertaintyRangeAsk(itemRoot: string): string {
   return "Rough range or ballpark is fine — no need for an exact number.";
 }
 
+/* Paraphrase-loop feature (2026-05-29) — recap-before-decision gate.
+ *
+ * Fires at most once per session, just before manager-consult-stall OR
+ * before phase transition into close (proxied via state.phase ===
+ * "closing-push"). Requires ≥3 distinct disclosed facts in userClaims.
+ * Skipped if the last 2 AI turns already contained a recap pattern. */
+const PARAPHRASE_MIN_FACTS = 3;
+const RECENT_RECAP_RE = /\bso if i|let me recap|to summari[sz]e\b/i;
+
+function _collectParaphraseFacts(
+  state: NegotiationState,
+): Array<{ label: string; value: string }> {
+  const claims = state.userClaims ?? {};
+  const facts: Array<{ label: string; value: string; firstSeenTurn: number }> = [];
+  if (claims.expectedCtc != null) {
+    facts.push({
+      label: "base ask",
+      value: `₹${claims.expectedCtc.value}L`,
+      firstSeenTurn: claims.expectedCtc.firstSeenTurn,
+    });
+  }
+  if (claims.noticePeriod != null) {
+    facts.push({
+      label: "notice",
+      value: `${claims.noticePeriod.value}-day notice`,
+      firstSeenTurn: claims.noticePeriod.firstSeenTurn,
+    });
+  }
+  if (claims.currentCtc != null) {
+    facts.push({
+      label: "current",
+      value: `current at ₹${claims.currentCtc.value}L`,
+      firstSeenTurn: claims.currentCtc.firstSeenTurn,
+    });
+  }
+  if (claims.competingOffer != null) {
+    facts.push({
+      label: "competing",
+      value: `${claims.competingOffer.value.company} at ₹${claims.competingOffer.value.amount}L`,
+      firstSeenTurn: claims.competingOffer.firstSeenTurn,
+    });
+  }
+  if (claims.currentRole != null) {
+    facts.push({
+      label: "current role",
+      value: String(claims.currentRole.value),
+      firstSeenTurn: claims.currentRole.firstSeenTurn,
+    });
+  }
+  /* Most-recent first (largest firstSeenTurn). */
+  facts.sort((a, b) => b.firstSeenTurn - a.firstSeenTurn);
+  return facts.slice(0, 4).map((f) => ({ label: f.label, value: f.value }));
+}
+
+function _recentRecapInTranscript(state: NegotiationState): boolean {
+  const log = state.conversationLog ?? [];
+  let aiSeen = 0;
+  for (let i = log.length - 1; i >= 0 && aiSeen < 2; i--) {
+    const e = log[i];
+    if (e?.speaker !== "ai" || typeof e.text !== "string") continue;
+    aiSeen++;
+    if (RECENT_RECAP_RE.test(e.text)) return true;
+  }
+  return false;
+}
+
+function _sectorParaphraseVariant(
+  persona: RecruiterSectorPersona,
+): "formal" | "casual" {
+  if (
+    persona === "bfsi" ||
+    persona === "psu" ||
+    persona === "consulting-mbb" ||
+    persona === "consulting-big4"
+  ) {
+    return "formal";
+  }
+  return "casual";
+}
+
+/** Calibrated-surprise lowball feature (2026-05-29) — planner gate.
+ *
+ *  Real recruiters who hear a candidate anchor meaningfully BELOW band
+ *  floor don't silently accept; they probe with calibrated surprise.
+ *  This gate fires when:
+ *    1. The candidate has disclosed a numeric anchor (userClaims.expectedCtc
+ *       OR candidateTarget).
+ *    2. That anchor sits at < 0.80 × band floor (band.walkAway). The
+ *       20% threshold is the "meaningful undershoot" mark — anything
+ *       smaller (5-19%) is just optimistic anchoring and doesn't fire.
+ *    3. Single-fire per session (state.calibratedSurpriseFired).
+ *    4. Recruiter affinity ≥ -1. Below -1 the recruiter has already
+ *       cooled on the candidate and quietly pockets the lowball — the
+ *       cynical real-world variant.
+ *
+ *  Branch-A follow-up (accept-lowball-quiet) ships when applyCandidateAnswer
+ *  classified the candidate's reply as a double-down (acceptedLowball
+ *  was stamped). That branch ALSO needs to short-circuit before the
+ *  routine cascade so the recruiter quietly closes rather than
+ *  re-engaging discovery / counter-offer arms. */
+const CALIBRATED_SURPRISE_THRESHOLD = 0.80;
+
+function maybePlanCalibratedSurprise(
+  state: NegotiationState,
+): PlannedAction | null {
+  /* Branch A follow-up — applyCandidateAnswer stamped acceptedLowball
+   * on the prior turn; ship the quiet accept now. Single-fire by the
+   * very nature of `acceptedLowball` being sticky-true and us also
+   * requiring `calibratedSurpriseFired` (which only flips once). */
+  if (
+    state.acceptedLowball === true &&
+    state.calibratedSurpriseFired === true &&
+    !isTerminalPhase(state.phase)
+  ) {
+    /* Don't re-fire the accept after the planner has already shipped
+     * it once: applyAiMove stamps `acceptLowballQuietFiredAtTurn`. */
+    if (state.acceptLowballQuietFiredAtTurn == null) {
+      const anchor =
+        state.calibratedSurpriseContext?.candidateAnchor ??
+        state.userClaims?.expectedCtc?.value ??
+        state.candidateTarget ??
+        0;
+      return {
+        kind: "accept-lowball-quiet",
+        candidateAnchor: anchor,
+        _move: {
+          lever: "close-acceptance",
+          newTotalLpa: anchor,
+          actionKind: "accept-lowball-quiet",
+          rationale:
+            `Calibrated-surprise lowball — candidate doubled down on ` +
+            `₹${anchor}L after the probe. Quiet accept; coaching surfaces ` +
+            `acceptedLowball=true on the report.`,
+        },
+      } as PlannedAction;
+    }
+  }
+
+  /* Open-gate — already fired? */
+  if (state.calibratedSurpriseFired === true) return null;
+  /* Recruiter affinity gate. */
+  const affinity = state.recruiterAffinity ?? 0;
+  if (affinity < -1) return null;
+  /* Terminal phases skip. */
+  if (isTerminalPhase(state.phase)) return null;
+  /* Phase gate — only fire during anchor-discovery; once an offer is on
+   * the table or candidate is countering live, the routine close/counter
+   * cascade owns the turn. */
+  if (
+    state.phase !== "opening" &&
+    state.phase !== "range-disclosure" &&
+    state.phase !== "probe-expectations"
+  ) {
+    return null;
+  }
+  /* If recruiter has already put an offer on the table, the surprise
+   * window has closed — fall through to the offer/close cascade. */
+  if ((state.highestOfferMade ?? 0) > 0) return null;
+  if (state.lastCandidateCounterLpa != null) return null;
+  /* Numeric anchor must be disclosed. */
+  const anchor =
+    state.userClaims?.expectedCtc?.value ??
+    state.candidateTarget ??
+    null;
+  if (anchor == null || !Number.isFinite(anchor) || anchor <= 0) return null;
+  /* Band floor — use walkAway (real recruiter floor). */
+  const floor = state.band?.walkAway;
+  if (typeof floor !== "number" || floor <= 0) return null;
+  /* 20% under floor gate. */
+  const ratio = anchor / floor;
+  if (ratio >= CALIBRATED_SURPRISE_THRESHOLD) return null;
+  const gapPct = 1 - ratio;
+  return {
+    kind: "calibrated-surprise-lowball",
+    tactic: "calibrated-surprise-lowball",
+    candidateAnchor: anchor,
+    bandFloor: floor,
+    gapPct,
+    _move: {
+      lever: "probe",
+      newTotalLpa: null,
+      actionKind: "calibrated-surprise-lowball",
+      rationale:
+        `Calibrated-surprise lowball probe — candidate anchored at ` +
+        `₹${anchor}L vs band floor ₹${floor}L (${(gapPct * 100).toFixed(0)}% ` +
+        `under). Single-fire; affinity=${affinity}.`,
+    },
+  } as PlannedAction;
+}
+
+function maybePlanParaphraseRecap(
+  state: NegotiationState,
+): PlannedAction | null {
+  /* Single-fire. */
+  if (state.paraphraseFired === true) return null;
+  /* Fact-count gate. */
+  const facts = _collectParaphraseFacts(state);
+  if (facts.length < PARAPHRASE_MIN_FACTS) return null;
+  /* Recent-recap skip. */
+  if (_recentRecapInTranscript(state)) return null;
+  /* Trigger context: about to fire manager-consult-stall (open) OR phase
+   * is closing-push. Mirror manager-consult open-gate predicates so the
+   * paraphrase runs the turn BEFORE the stall would open. */
+  const aboutToStallOpen = (() => {
+    if ((state.stallTurnsRemaining ?? 0) > 0) return false; /* return-turn, not open */
+    if (state.turnIndex < 1) return false;
+    const freshAsk = state.lastCandidateCounterLpa;
+    if (freshAsk == null || freshAsk <= state.band.maxStretch) return false;
+    if ((state.stallsFiredCount ?? 0) >= STALL_SESSION_CAP) return false;
+    const personaCfg = getRecruiterSectorPersona(state.recruiterSectorPersona ?? "default");
+    const personaIsHighStall =
+      personaCfg.id === "psu" ||
+      personaCfg.id === "consulting-big4" ||
+      personaCfg.stallProbability >= STALL_PROBABILITY_GATE;
+    if (!personaIsHighStall) return false;
+    if (state.phase !== "counter-offer" && state.phase !== "offer-presented") return false;
+    return true;
+  })();
+  const aboutToClose = state.phase === "closing-push";
+  if (!aboutToStallOpen && !aboutToClose) return null;
+
+  const persona: RecruiterSectorPersona = state.recruiterSectorPersona ?? "default";
+  const variant = _sectorParaphraseVariant(persona);
+  return {
+    kind: "paraphrase-recap",
+    facts,
+    sectorVariant: variant,
+    _move: {
+      lever: "hold-firm",
+      newTotalLpa: state.highestOfferMade || state.band.initialOffer,
+      actionKind: "paraphrase-recap",
+      rationale:
+        `Paraphrase-recap: ${facts.length} disclosed facts; ` +
+        `trigger=${aboutToStallOpen ? "pre-manager-stall" : "pre-close"}; ` +
+        `variant=${variant}.`,
+    },
+  } as PlannedAction;
+}
+
 /** Realism-Audit Fix 3 (2026-05-22) — manager-consult stall gate.
  *
  *  Returns the stall PlannedAction (open OR return) when all gate
@@ -1063,9 +1417,36 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    *
    * The stall genuinely models a leverage move; coaching downstream
    * can observe `stallsFiredCount` and `lastStallContext`. */
+  /* Calibrated-surprise lowball (2026-05-29) — fires BEFORE the
+   * paraphrase / counter-offer / anchor cascade so the probe interrupts
+   * the standard flow when the candidate undershoots band floor by ≥20%.
+   * Also handles the Branch A follow-up (`accept-lowball-quiet`) when
+   * the prior turn classification stamped `acceptedLowball`. */
+  {
+    const cs = maybePlanCalibratedSurprise(state);
+    if (cs !== null) return cs;
+  }
+  /* Paraphrase-loop feature (2026-05-29) — pre-empt manager-consult-stall
+   * and close so the recap fires the turn BEFORE the decision push. */
+  {
+    const paraphrase = maybePlanParaphraseRecap(state);
+    if (paraphrase !== null) return paraphrase;
+  }
   {
     const stallSelected = maybePlanManagerConsultStall(state);
     if (stallSelected !== null) return stallSelected;
+  }
+
+  /* Prior-context feature (2026-05-29) — HIGH priority on turn 1-2
+   * when the user declared an upfront competing-offer or retention
+   * context. Mid-stage `match-existing-offer-prose` and
+   * `retention-trump-warning` pre-empt routine stalls but sit BEHIND
+   * the terminal-cap and manager-consult-stall crisis branches above.
+   * Skipped silently when state.priorContext is undefined (back-compat
+   * byte-identity with the pre-feature cascade). */
+  {
+    const pre = maybePlanPriorContextAction(state);
+    if (pre !== null) return pre;
   }
 
   /* PDF#38 BUG-D (2026-05-20) — stuck-progress terminal close. PDF#38
@@ -1483,6 +1864,35 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
+  /* Memory feature (2026-05-29) — contradiction-callout. Fires when the
+   * candidate's current turn restated a previously-recorded claim with a
+   * value outside ±10% drift (set by applyCandidateAnswer on
+   * state.lastContradiction). Priority slot: above stall / discovery /
+   * counter branches so the bot reconciles the gap BEFORE asking the
+   * next question or moving money. Sits BELOW frustration recovery
+   * (above) and below the terminal walked-away / stalemate close
+   * branches (at the very top of the cascade) so crisis paths still
+   * win. Single-fire per turn — applyAiMove clears
+   * lastContradiction. */
+  if (state.lastContradiction != null) {
+    const c = state.lastContradiction;
+    return {
+      kind: "contradiction-callout",
+      topic: c.topic,
+      oldValue: c.oldValue,
+      newValue: c.newValue,
+      firstSeenTurn: c.firstSeenTurn,
+      oldLabel: c.oldLabel,
+      newLabel: c.newLabel,
+      _move: {
+        lever: "acknowledge-and-recover",
+        newTotalLpa: null,
+        rationale: `Memory: candidate contradicted earlier claim on ${c.topic} (was ${c.oldValue} at turn ${c.firstSeenTurn}, now ${c.newValue}); call out the gap and ask which is authoritative.`,
+        actionKind: "contradiction-callout",
+      },
+    };
+  }
+
   /* Fix 4 (2026-05-16) — formal close recap. Phase is closing-push (or
    * accepted in the same turn the candidate verbally accepted). Fires
    * before the terminal `accepted` close so the candidate gets a full
@@ -1761,6 +2171,25 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * they fire even on simulated states without a per-turn delta. */
     const wired = planWiredProfileFollowup(state);
     if (wired) return wired;
+  }
+
+  /* Memory-callback feature (2026-05-29) — competing-offer warm
+   * acknowledgment. Slotted AFTER reactive-followup (so structural
+   * leverage challenges like fake-leverage-challenge / competitor-match
+   * still pre-empt) but ABOVE routine probes — adds genuine warmth
+   * when the conversational space allows. Single-fire per session. */
+  {
+    const warmAck = maybePlanCompetingOfferWarmAck(state);
+    if (warmAck !== null) return warmAck;
+  }
+
+  /* Memory-callback feature (2026-05-29) — periodic call-back to a
+   * prior-stated fact. Same priority slot as the warm-ack: BELOW
+   * crisis/contradiction/reactive branches, ABOVE routine discovery
+   * probes. Single-fire per session; turn ≥ 4. */
+  {
+    const cb = maybePlanCallbackPriorContext(state);
+    if (cb !== null) return cb;
   }
 
   /* PDF #17 — probe-mismatch routing. */
@@ -3210,6 +3639,35 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
 
     if (state.walkAwayReturned) split *= 0.5;
 
+    /* Affinity-dynamic feature (2026-05-29) — recruiter's per-call
+     * affinity modulates concession headroom: +1 = +5% headroom,
+     * -1 = -5%, capped at ±15% (i.e. ±3 cumulative affinity). Applied
+     * multiplicatively to `split` (the gap-fraction). Conservative —
+     * affinity = 0 → no-op (byte-identical to pre-feature behavior). */
+    const affinity = state.recruiterAffinity ?? 0;
+    if (affinity !== 0) {
+      const affMult = 1 + Math.max(-0.15, Math.min(0.15, affinity * 0.05));
+      split *= affMult;
+    }
+
+    /* 2026-05-30 time-context — concession headroom multiplier from the
+     * derived time-context. Default "midweek-standard" → 1.0 (no-op).
+     * Stacks multiplicatively with affinity. friday-rush 0.7 tightens
+     * the gap-fraction; monday-fresh 1.2 loosens it. */
+    const tCtx = state.timeContext ?? "midweek-standard";
+    const timeMult = timeContextToMoodDelta(tCtx).concessionHeadroom;
+    if (timeMult !== 1.0) {
+      split *= timeMult;
+    }
+
+    /* Recruiter-power-dynamics feature (2026-05-29) — power inverse
+     * modulates concession headroom. recruiterPower +3 → 0.85× (recruiter
+     * strong, tighter); -3 → 1.15× (recruiter hungry, wider). Power 0 →
+     * 1.0× (no-op, byte-identical to pre-feature behaviour). Stacks
+     * multiplicatively with affinity + time-context. */
+    const powerHeadroom = 1 + Math.max(-0.15, Math.min(0.15, -(state.recruiterPower ?? 0) * 0.05));
+    split *= powerHeadroom;
+
     if (split > 0.95) split = 0.95;
     /* perfect 1 (2026-05-16) — apply the spiral multiplier to the
      * gap-fraction. Composed multiplicatively with the existing
@@ -3299,6 +3757,18 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
+  /* Bad-faith tactic injection (2026-05-29) — low-priority flavor
+   * injects. Each tactic single-fires per session, gated by
+   * state.tacticsUsed. The cascade above is the normal priority path;
+   * only when nothing preempts do we consider a manipulation play.
+   * Order below is the tactic priority (exploding-offer first because
+   * it's only available late, then competing-candidate, then the
+   * vague-promise filler). */
+  {
+    const tactic = maybePlanTacticInject(state);
+    if (tactic !== null) return tactic;
+  }
+
   /* Fix 1 (2026-05-16) — Indian-context structural lever rotation. Fires
    * ONLY after the legacy cash-lever rotation (equity-grant, joining-
    * bonus, notice-buyout, benefits-summary) is fully exhausted — i.e.
@@ -3317,6 +3787,455 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
 
   /* lever-explore / closing-push: rotate non-cash levers. */
   return wrapLeverExplore(legacyMove, "default");
+}
+
+/** Prior-context feature (2026-05-29) — emits a high-priority action
+ *  shaped by the user's upfront-declared context (existingCompetingOffer
+ *  / retentionOffer). Two firing windows:
+ *    - turn 1-2 acknowledgements: `acknowledge-existing-offer` and
+ *      `acknowledge-retention-offer` fire ONCE each at the start of the
+ *      session so the recruiter immediately registers the leverage.
+ *    - mid-stage reactions: `match-existing-offer-prose` fires when
+ *      the candidate pushes back citing the existing offer, and
+ *      `retention-trump-warning` fires once mid-stage when the retention
+ *      is structurally strong (>= 1.25× current CTC).
+ *
+ *  Single-fire semantics are tracked via reactiveFollowupsFired (same
+ *  ledger the rest of the planner uses) so a re-entry of the same
+ *  cascade doesn't double-fire. Returns null when no priorContext is
+ *  declared OR when no gate fires this turn. Pure. */
+export function maybePlanPriorContextAction(
+  state: NegotiationState,
+): PlannedAction | null {
+  const ctx = state.priorContext;
+  if (!ctx) return null;
+  if (isTerminalPhase(state.phase)) return null;
+  const fired = state.reactiveFollowupsFired ?? [];
+
+  /* Turn 1-2 acknowledgements. These pre-empt the routine discovery
+   * cascade so the recruiter signals up-front that the context has
+   * landed. Single-fire per session. */
+  if (state.turnIndex <= 2) {
+    if (ctx.existingCompetingOffer && !fired.includes("acknowledge-existing-offer" as DiscoveryTopic)) {
+      const off = ctx.existingCompetingOffer;
+      return {
+        kind: "acknowledge-existing-offer",
+        company: off.company,
+        amountLpa: off.amountLpa,
+        signed: off.signed,
+        deadline: off.deadline,
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          actionKind: "acknowledge-existing-offer",
+          askedTopic: "acknowledge-existing-offer",
+          rationale:
+            `priorContext.existingCompetingOffer declared at session init ` +
+            `(${off.company} @ ₹${off.amountLpa}L, signed=${off.signed}); ` +
+            `acknowledge upfront on turn ${state.turnIndex} so candidate ` +
+            `knows we've registered the leverage before discovery begins.`,
+        },
+      };
+    }
+    if (ctx.retentionOffer && !fired.includes("acknowledge-retention-offer" as DiscoveryTopic)) {
+      const r = ctx.retentionOffer;
+      return {
+        kind: "acknowledge-retention-offer",
+        amountLpa: r.amountLpa,
+        tenure: r.tenure,
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          actionKind: "acknowledge-retention-offer",
+          askedTopic: "acknowledge-retention-offer",
+          rationale:
+            `priorContext.retentionOffer declared at session init ` +
+            `(₹${r.amountLpa}L, ${r.tenure}); ack on turn ${state.turnIndex} ` +
+            `and probe whether retention is enough or candidate wants more.`,
+        },
+      };
+    }
+  }
+
+  /* Mid-stage retention-trump warning. Fires ONCE when the retention
+   * package is structurally strong relative to currentCtc (>= 1.25×).
+   * Doesn't pre-empt closes / crisis actions — placed at "preempt
+   * routine stalls" priority. */
+  if (
+    ctx.retentionOffer &&
+    state.candidateCurrentCtc != null &&
+    state.candidateCurrentCtc > 0 &&
+    ctx.retentionOffer.amountLpa >= state.candidateCurrentCtc * 1.25 &&
+    state.turnIndex >= 3 &&
+    !fired.includes("retention-trump-warning" as DiscoveryTopic)
+  ) {
+    return {
+      kind: "retention-trump-warning",
+      retentionLpa: ctx.retentionOffer.amountLpa,
+      currentCtcLpa: state.candidateCurrentCtc,
+      _move: {
+        lever: "hold-firm",
+        newTotalLpa: state.highestOfferMade || null,
+        actionKind: "retention-trump-warning",
+        askedTopic: "retention-trump-warning",
+        rationale:
+          `retentionOffer ₹${ctx.retentionOffer.amountLpa}L >= 1.25× ` +
+          `currentCtc ₹${state.candidateCurrentCtc}L; signal sign-off ` +
+          `requirement on turn ${state.turnIndex}.`,
+      },
+    };
+  }
+
+  /* Mid-stage match-existing-offer prose. Fires when the candidate's
+   * latest utterance references the existing offer ("but my X offer is
+   * Y", "I have ABC at Z LPA", etc.) AND we have not yet emitted this
+   * arm. The within-band test feeds the prose arm so the recruiter
+   * either matches (within band) or politely declines (above band). */
+  if (
+    ctx.existingCompetingOffer &&
+    state.turnIndex >= 2 &&
+    !fired.includes("match-existing-offer-prose" as DiscoveryTopic)
+  ) {
+    const last = latestCandidateText(state).toLowerCase();
+    const off = ctx.existingCompetingOffer;
+    const co = off.company.toLowerCase();
+    const mentionsCompany = co.length > 1 && last.includes(co);
+    const mentionsAmount = last.includes(String(off.amountLpa));
+    const pushbackTokens =
+      /\b(but|already|i have|i've got|hold(?:ing)?|matching|match it|offer (?:from|of)|standing offer)\b/.test(
+        last,
+      );
+    if ((mentionsCompany || mentionsAmount) && pushbackTokens) {
+      const cap = state.band?.maxStretch ?? Infinity;
+      const withinBand = off.amountLpa <= cap;
+      return {
+        kind: "match-existing-offer-prose",
+        company: off.company,
+        competingAmountLpa: off.amountLpa,
+        withinBand,
+        _move: {
+          lever: withinBand ? "counter-base" : "hold-firm",
+          newTotalLpa: withinBand ? off.amountLpa : state.highestOfferMade || null,
+          actionKind: "match-existing-offer-prose",
+          askedTopic: "match-existing-offer-prose",
+          rationale:
+            `priorContext.existingCompetingOffer cited by candidate at turn ` +
+            `${state.turnIndex} (${off.company} @ ₹${off.amountLpa}L); ` +
+            `withinBand=${withinBand}.`,
+        },
+      };
+    }
+  }
+
+  return null;
+}
+
+/** Memory-callback feature (2026-05-29) — periodically reference a fact
+ *  the candidate stated earlier so the recruiter sounds like they're
+ *  listening. Picks the MOST RECENT recorded claim (highest
+ *  firstSeenTurn) from state.userClaims that hasn't been called back
+ *  yet. Single-fire per session via reactiveFollowupsFired ledger
+ *  ("callback-prior-context"). Returns null when:
+ *    - terminal phase
+ *    - turn < 4 (need facts to call back to)
+ *    - userClaims absent / empty
+ *    - already fired this session
+ *
+ *  Pure. */
+export function maybePlanCallbackPriorContext(
+  state: NegotiationState,
+): PlannedAction | null {
+  if (isTerminalPhase(state.phase)) return null;
+  /* Don't interrupt active negotiation phases — the recruiter calls
+   * back during conversational space, not mid-counter or post-anchor.
+   * Restricted to the pure pre-anchor `opening` phase AND only
+   * when no offer is on the table; once an offer is made, the rest
+   * of the cascade owns the conversational floor. */
+  if (state.phase !== "opening") return null;
+  if (state.highestOfferMade > 0) return null;
+  if (state.turnIndex < 4) return null;
+  const fired = state.reactiveFollowupsFired ?? [];
+  if (fired.includes("callback-prior-context" as DiscoveryTopic)) return null;
+  /* Don't fire when the candidate's CURRENT turn brought a fresh
+   * disclosure — the reactive-followup branch above should own that
+   * turn. Callback is for "space" turns. */
+  const d = state.lastTurnDelta;
+  if (
+    d &&
+    (d.disclosedCurrentCtc ||
+      d.disclosedExpectedCtc ||
+      d.disclosedNoticePeriod ||
+      d.disclosedCompetingOffer ||
+      d.disclosedFixedVariableSplit ||
+      d.disclosedValueProof ||
+      d.askedQuestion)
+  ) {
+    return null;
+  }
+  const claims = state.userClaims;
+  if (!claims) return null;
+  /* Build candidates list — (key, firstSeenTurn, value, label). Picks
+   * most-recent unaddressed. */
+  type Candidate = {
+    claim: "currentCtc" | "expectedCtc" | "competingOffer" | "noticePeriod" | "currentRole";
+    value: number | string;
+    companyLabel: string | null;
+    firstSeenTurn: number;
+  };
+  const candidates: Candidate[] = [];
+  if (claims.currentCtc) {
+    candidates.push({
+      claim: "currentCtc",
+      value: claims.currentCtc.value,
+      companyLabel: null,
+      firstSeenTurn: claims.currentCtc.firstSeenTurn,
+    });
+  }
+  if (claims.expectedCtc) {
+    candidates.push({
+      claim: "expectedCtc",
+      value: claims.expectedCtc.value,
+      companyLabel: null,
+      firstSeenTurn: claims.expectedCtc.firstSeenTurn,
+    });
+  }
+  if (claims.competingOffer) {
+    candidates.push({
+      claim: "competingOffer",
+      value: claims.competingOffer.value.amount,
+      companyLabel: claims.competingOffer.value.company,
+      firstSeenTurn: claims.competingOffer.firstSeenTurn,
+    });
+  }
+  if (claims.noticePeriod) {
+    candidates.push({
+      claim: "noticePeriod",
+      value: claims.noticePeriod.value,
+      companyLabel: null,
+      firstSeenTurn: claims.noticePeriod.firstSeenTurn,
+    });
+  }
+  if (claims.currentRole) {
+    candidates.push({
+      claim: "currentRole",
+      value: claims.currentRole.value,
+      companyLabel: null,
+      firstSeenTurn: claims.currentRole.firstSeenTurn,
+    });
+  }
+  if (candidates.length === 0) return null;
+  /* Most-recent first; stable tiebreak by declaration order. */
+  candidates.sort((a, b) => b.firstSeenTurn - a.firstSeenTurn);
+  const pick = candidates[0];
+  return {
+    kind: "callback-prior-context",
+    claim: pick.claim,
+    value: pick.value,
+    companyLabel: pick.companyLabel,
+    firstSeenTurn: pick.firstSeenTurn,
+    _move: {
+      lever: "probe",
+      newTotalLpa: null,
+      actionKind: "callback-prior-context",
+      askedTopic: "callback-prior-context" as DiscoveryTopic,
+      rationale:
+        `Memory-callback (2026-05-29): surfacing recorded userClaim ` +
+        `${pick.claim} (firstSeenTurn=${pick.firstSeenTurn}) at turn ` +
+        `${state.turnIndex} so the recruiter sounds like they're tracking ` +
+        `earlier-stated facts.`,
+    },
+  };
+}
+
+/** Competing-offer warm-acknowledgment (2026-05-29). Fires once per
+ *  session when state.userClaims.competingOffer was first seen on the
+ *  PRIOR candidate turn (i.e. the claim is fresh and we haven't yet
+ *  acknowledged it). Distinct from competitor-match (which negotiates)
+ *  — this is pure respectful acknowledgment of market value. Skipped
+ *  when terminal, when priorContext.existingCompetingOffer is present
+ *  (acknowledge-existing-offer covers that flow), or when already
+ *  fired. Pure. */
+export function maybePlanCompetingOfferWarmAck(
+  state: NegotiationState,
+): PlannedAction | null {
+  if (isTerminalPhase(state.phase)) return null;
+  /* Don't interrupt active counter / lever / close phases — by then
+   * the competing-offer leverage is being handled by competitor-match
+   * / fake-leverage-challenge. Warm-ack is for early acknowledgment. */
+  const EARLY_PHASES = new Set<NegotiationPhase>([
+    "opening",
+    "range-disclosure",
+  ]);
+  if (!EARLY_PHASES.has(state.phase)) return null;
+  if (state.highestOfferMade > 0) return null;
+  const fired = state.reactiveFollowupsFired ?? [];
+  if (fired.includes("competing-offer-warm-ack" as DiscoveryTopic)) return null;
+  /* Don't double-up with priorContext acknowledgment. */
+  if (state.priorContext?.existingCompetingOffer) return null;
+  const co = state.userClaims?.competingOffer;
+  if (!co) return null;
+  return {
+    kind: "competing-offer-warm-ack",
+    company: co.value.company,
+    amountLpa: co.value.amount,
+    _move: {
+      lever: "probe",
+      newTotalLpa: null,
+      actionKind: "competing-offer-warm-ack",
+      askedTopic: "competing-offer-warm-ack" as DiscoveryTopic,
+      rationale:
+        `Competing-offer warm-ack (2026-05-29): userClaims.competingOffer ` +
+        `recorded at turn ${co.firstSeenTurn} (${co.value.company} @ ` +
+        `₹${co.value.amount}L); emit respectful market-value acknowledgment ` +
+        `before any negotiation pushback.`,
+    },
+  };
+}
+
+/** Deterministic non-negative integer hash for tactic slot / variant
+ *  selection. Pure FNV-1a-style over (sessionId || "", salt). Null
+ *  sessionId hashes to a constant — tests that don't carry a session
+ *  see stable behaviour. */
+function tacticHash(sessionId: string | null | undefined, salt: string): number {
+  const s = `${sessionId ?? ""}|${salt}`;
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/** Bad-faith tactic injection (2026-05-29). Returns a low-priority
+ *  tactic PlannedAction or null when no tactic gate fires.
+ *
+ *  Gates:
+ *   - exploding-offer-pressure: turn ≥ 6, candidate hasn't accepted,
+ *     not in terminal phase. Once per session.
+ *   - fake-competing-candidate: turn ≥ 4, candidate is over-band on
+ *     their ask (candidateTarget > band.maxStretch). Once per session.
+ *   - vague-promise: any mid-stage turn (≥ 2, not terminal). Low
+ *     probability — fires deterministically once on a turn matching a
+ *     simple session-jittered slot so we don't spam. Once per session.
+ *
+ *  All three skip when state.tacticsUsed already contains them. The
+ *  function checks gates in priority order (exploding > competing >
+ *  vague-promise) and returns the first eligible. */
+export function maybePlanTacticInject(
+  state: NegotiationState,
+): PlannedAction | null {
+  if (isTerminalPhase(state.phase)) return null;
+  const used: TacticKind[] = (state.tacticsUsed ?? []) as TacticKind[];
+  const usedSet = new Set<TacticKind>(used);
+
+  /* Exploding-offer pressure — turn 6+, no acceptance yet, mid-arc only. */
+  if (
+    !usedSet.has("exploding-offer-pressure") &&
+    state.turnIndex >= 6 &&
+    state.phase === "counter-offer" &&
+    state.acceptedAtTurn == null
+  ) {
+    const deadlines: ("eod" | "friday" | "24h")[] = ["eod", "friday", "24h"];
+    const pick = deadlines[tacticHash(state.sessionId, "exploding-offer-deadline") % 3];
+    return {
+      kind: "exploding-offer-pressure",
+      tactic: "exploding-offer-pressure",
+      deadline: pick,
+      _move: {
+        lever: "hold-firm",
+        newTotalLpa: state.highestOfferMade || null,
+        actionKind: "exploding-offer-pressure",
+        rationale:
+          `Bad-faith tactic inject (exploding-offer-pressure): turn ` +
+          `${state.turnIndex} ≥ 6 and candidate has not accepted; ` +
+          `single-fire per session. Deadline=${pick}.`,
+      },
+    };
+  }
+
+  /* Fake competing candidate — turn 4+, candidate is over-band. */
+  if (
+    !usedSet.has("fake-competing-candidate") &&
+    state.turnIndex >= 4 &&
+    state.phase === "counter-offer" &&
+    state.candidateTarget != null &&
+    state.band != null &&
+    state.candidateTarget > state.band.maxStretch
+  ) {
+    return {
+      kind: "fake-competing-candidate",
+      tactic: "fake-competing-candidate",
+      _move: {
+        lever: "hold-firm",
+        newTotalLpa: state.highestOfferMade || null,
+        actionKind: "fake-competing-candidate",
+        rationale:
+          `Bad-faith tactic inject (fake-competing-candidate): turn ` +
+          `${state.turnIndex} ≥ 4 and candidate is over-band ` +
+          `(target ₹${state.candidateTarget}L > maxStretch ₹${state.band.maxStretch}L); ` +
+          `single-fire per session.`,
+      },
+    };
+  }
+
+  /* Vague non-binding promise — mid-stage, low-probability slot. */
+  if (
+    !usedSet.has("vague-promise") &&
+    state.turnIndex >= 2
+  ) {
+    const slot = tacticHash(state.sessionId, `vague-promise-${state.turnIndex}`) % 5;
+    if (slot === 0) {
+      const topics: ("wfh" | "joining-bonus" | "title")[] = ["wfh", "joining-bonus", "title"];
+      const pick = topics[tacticHash(state.sessionId, "vague-promise-topic") % 3];
+      return {
+        kind: "vague-promise",
+        tactic: "vague-promise",
+        topic: pick,
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade || null,
+          actionKind: "vague-promise",
+          rationale:
+            `Bad-faith tactic inject (vague-promise): turn ${state.turnIndex} ` +
+            `slot match; soft non-binding promise on ${pick}. Single-fire per session.`,
+        },
+      };
+    }
+  }
+
+  return null;
+}
+
+/** Detect whether the candidate's latest utterance NAMED a bad-faith
+ *  tactic the recruiter used this session. Returns the tactic kind
+ *  matched (or null). Used by the scoring layer to credit the user
+ *  with a positive coaching signal. Pure — no IO. */
+export function detectUserCaughtTactic(
+  utterance: string,
+  tacticsUsed: TacticKind[] | undefined,
+): TacticKind | null {
+  if (!utterance || typeof utterance !== "string") return null;
+  const used = new Set<TacticKind>(tacticsUsed ?? []);
+  const u = utterance.toLowerCase();
+  if (
+    used.has("exploding-offer-pressure") &&
+    /\b(exploding|deadline|artificial|pressur(?:e|ing)|why\s+(?:the\s+)?rush|by\s+(?:eod|friday|tomorrow))\b/.test(u)
+  ) {
+    return "exploding-offer-pressure";
+  }
+  if (
+    used.has("fake-competing-candidate") &&
+    /\b(another\s+candidate|competing\s+candidate|other\s+candidate|that'?s\s+(?:a\s+)?(?:bluff|pressure))\b/.test(u)
+  ) {
+    return "fake-competing-candidate";
+  }
+  if (
+    used.has("vague-promise") &&
+    /\b(non[-\s]?binding|in\s+writing|written|vague|let'?s\s+put\s+(?:it|that)\s+in\s+(?:the\s+)?offer|specific|commit(?:ment)?|guarantee)\b/.test(u)
+  ) {
+    return "vague-promise";
+  }
+  return null;
 }
 
 /* Fix 1 (2026-05-16) — sample the next un-fired structural lever based on
@@ -3652,6 +4571,11 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
            * prior phrasing. The kernel increments this map after every
            * answer-direct ships (see `_negotiation-kernel.ts`). */
           (state.candidateQuestionServeCount ?? {})[route.topic] ?? 0,
+          /* 2026-05-29 realism-pass P0-2 — candidate register threads
+           * into the renderer so topics with `registerVariants` pick a
+           * register-mirrored response. Falls through to phaseTinted /
+           * variant rotation when no register entry exists. */
+          state.candidateRegister ?? null,
         );
         if (prose) {
           /* 2026-05-29 realism-pass — humanize the curated prose with a
@@ -3659,17 +4583,45 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
            * Probabilistic by (sessionId, turnIndex), so most utterances
            * ship unchanged and the bank's accuracy is preserved. See
            * `_recruiter-prose-realism.ts` for the layer rules. */
-          const spokenProse = humanizeRecruiterProse(prose, {
+          /* 2026-05-30 conversational-realism chain (mirrors canonical-
+           * prose exit). Sequential: ctxRef → personaTic →
+           * humanizeRecruiterProse → fallibility. Each overlay is a
+           * no-op when its gate misses, so byte-equivalence with the
+           * canonical-prose fallback path is preserved. */
+          const persona = state.recruiterSectorPersona ?? "default";
+          const sid = state.sessionId ?? "";
+          const overlaysActive = sid.length > 0 && persona !== "default";
+          let chained = prose;
+          if (overlaysActive) {
+            chained = applyContextRefOverlay(chained, persona, sid);
+            chained = applyPersonaTicSignature(chained, sid, persona);
+          }
+          chained = humanizeRecruiterProse(chained, {
             sector: state.recruiterSectorPersona ?? null,
             phase: state.phase ?? null,
             sessionId: state.sessionId,
             turnIndex: state.turnIndex,
-            /* 2026-05-29 realism-pass Fix #3 — mirror the candidate's
-             * inferred register so a "just tell me the number" candidate
-             * gets tighter prose and a "kindly share" candidate doesn't
-             * get hit with "Yeah so, here's the deal" tics. */
             candidateRegister: state.candidateRegister ?? null,
+            candidateFirstName: getCandidateFirstName(state),
+            mood: state.recruiterMood ?? null,
+            moodDynamic: state.recruiterMoodDynamic ?? null,
+            coldLineAlreadyFired:
+              state.recruiterMoodColdLineFiredAtTurn != null,
+            rewarmLineAlreadyFired:
+              state.recruiterMoodRewarmLineFiredAtTurn != null,
           });
+          if (overlaysActive) {
+            chained = applyFallibilityOverlay(chained, {
+              mood:
+                (state.recruiterMoodDynamic && state.recruiterMoodDynamic !== "baseline"
+                  ? state.recruiterMoodDynamic
+                  : state.recruiterMood) ?? null,
+              turnIndex: state.turnIndex,
+              packageComplexity: computePackageComplexityLocal(state),
+              sessionId: state.sessionId,
+            });
+          }
+          const spokenProse = chained;
           return {
             kind: "answer-direct",
             topic: route.topic,
@@ -4515,3 +5467,20 @@ export function planCtcInflationTruth(headlineCtcLpa: number): PlannedAction | n
     },
   };
 }
+
+/* 2026-05-30 conversational-realism — package-complexity helper shared
+ * with the canonical-prose chain so both call sites compute the same
+ * fallibility-overlay input. Mirrors `computePackageComplexity` in
+ * `_canonical-prose.ts`. */
+function computePackageComplexityLocal(state: NegotiationState): number {
+  if ((state.highestOfferMade ?? 0) <= 0) return 0;
+  const levers = new Set(state.leversUsed ?? []);
+  let n = 1;
+  if ((state.lastJoiningBonusOffered ?? null) != null || levers.has("joining-bonus")) n += 1;
+  if (levers.has("equity-grant")) n += 1;
+  if (levers.has("ctc-inflation-anchor")) n += 1;
+  if (levers.has("notice-buyout")) n += 1;
+  if (levers.has("benefits-summary")) n += 1;
+  return n;
+}
+

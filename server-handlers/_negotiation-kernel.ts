@@ -44,6 +44,18 @@ import {
  * straight off the kernel barrel (qa-120-matrix.test.ts and others). */
 export type { RecruiterSectorPersona };
 import {
+  deriveRecruiterMood,
+  type RecruiterMood,
+  type RecruiterMoodDynamic,
+} from "./_recruiter-prose-realism";
+/* Re-export the mood type alongside the persona for the same reason. */
+export type { RecruiterMood };
+import {
+  deriveTimeContext,
+  type TimeContext,
+} from "./_recruiter-time-context";
+export type { TimeContext };
+import {
   type NegotiationRoundPersona,
   selectNextRoundPersona,
   ROUND_PERSONA_SEQUENCE,
@@ -344,7 +356,18 @@ export type DiscoveryTopic =
    * Pushed onto state.askedTopics by applyAiMove so the F7 ledger sees
    * the single-fire emission; the planner consults
    * lastAnswerClarificationAtTurn to decide whether to re-fire. */
-  | "clarify-prior-question";
+  | "clarify-prior-question"
+  /* Prior-context feature (2026-05-29) — caller-declared upfront
+   * context shapers. Stamped through applyAiMove's askedTopics push so
+   * the planner observes single-fire via reactiveFollowupsFired. They
+   * are NOT discovery probes — the bot is acknowledging / reacting to
+   * context the user declared at session init, not asking a fresh
+   * question — so the askedTopics ledger entry doubles as a "this arm
+   * fired" marker rather than a discovery-completion stamp. */
+  | "acknowledge-existing-offer"
+  | "acknowledge-retention-offer"
+  | "match-existing-offer-prose"
+  | "retention-trump-warning";
 
 /** Exhaustiveness helper. Used in topic switches so adding a new
  *  DiscoveryTopic literal lights up at every consumer site that hasn't
@@ -394,6 +417,12 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "acknowledge-and-recover",
   /* PDF#34 Fix 3 (2026-05-18). */
   "clarify-prior-question",
+  /* Prior-context feature (2026-05-29) — caller-declared upfront
+   * context shapers. */
+  "acknowledge-existing-offer",
+  "acknowledge-retention-offer",
+  "match-existing-offer-prose",
+  "retention-trump-warning",
 ]);
 
 export function isDiscoveryTopic(s: string): s is DiscoveryTopic {
@@ -918,6 +947,54 @@ export interface NegotiationState {
    * backfills to "default" on load. */
   recruiterSectorPersona?: RecruiterSectorPersona;
 
+  /* 2026-05-29 mood-pass — recruiter personality mood. Three buckets
+   * (warm / brusque / frantic) seeded once at session start from a
+   * hash of sessionId so it's deterministic per session and varies
+   * across sessions. Affects tone only — the planner, move-picker,
+   * and band math are mood-blind. Optional on the interface for
+   * back-compat with hand-constructed test fixtures and with in-flight
+   * sessions serialised before this field shipped; consumers treat
+   * undefined as "warm" (current behaviour). */
+  recruiterMood?: import("./_recruiter-prose-realism").RecruiterMood;
+
+  /* 2026-05-30 time-context — derived once at session init from the
+   * caller-provided `callTimeIso`. Optional / back-compat: undefined or
+   * absent on serialized state defaults to "midweek-standard" (behavioral
+   * no-op). Affects concession headroom and mood-cool probability;
+   * never mutated after initState. */
+  timeContext?: import("./_recruiter-time-context").TimeContext;
+
+  /* 2026-05-29 mood-shift-pass — DYNAMIC mood overlay. The baseline
+   * `recruiterMood` is seeded once at init and never changes (the
+   * recruiter's personality). `recruiterMoodDynamic` shifts during
+   * the call in response to candidate behaviour:
+   *
+   *   baseline  — use seeded mood (back-compat, default)
+   *   cooled    — recruiter pushed back, behaves brusque-like for
+   *               up to MOOD_COOLED_TTL turns or until a rewarm
+   *               trigger fires
+   *   rewarmed  — candidate conceded after cooling; behaves warm-like
+   *
+   * Trigger plumbing:
+   *   - `recruiterMoodDynamicEnteredAtTurn`: turn the current dynamic
+   *     state was entered. Used to TTL `cooled` back to `baseline`.
+   *   - `consecutiveOverBandAsks`: streak counter for one of the cool
+   *     triggers (3+ in a row).
+   *   - `recruiterMoodColdLineFiredAtTurn` / `RewarmLineFiredAtTurn`:
+   *     once-per-session gates so the cold line / rewarm prefix
+   *     don't spam every turn the recruiter is in the cooled state.
+   *
+   * All optional for back-compat with serialised in-flight state. */
+  recruiterMoodDynamic?: import("./_recruiter-prose-realism").RecruiterMoodDynamic;
+  recruiterMoodDynamicEnteredAtTurn?: number | null;
+  consecutiveOverBandAsks?: number;
+  recruiterMoodColdLineFiredAtTurn?: number | null;
+  recruiterMoodRewarmLineFiredAtTurn?: number | null;
+  /* Highest candidate target seen so far this session — used to detect
+   * concession (drop of ≥10% from prior ask). Pure-derived; updated in
+   * applyMoodShift. */
+  recruiterMoodPeakCandidateAskLpa?: number | null;
+
   /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall state.
    *
    * Models the multi-turn "let me check with my manager and revert"
@@ -1285,6 +1362,19 @@ export interface NegotiationState {
    * with sessions serialized before commit 4. */
   reactiveFollowupsFired?: DiscoveryTopic[];
 
+  /* Bad-faith tactic injection ledger (2026-05-29). The planner pushes
+   * a tactic kind here when it emits a tactic action so the same tactic
+   * cannot fire twice in the same session. Optional + nullable for
+   * back-compat with sessions serialized before this field. */
+  tacticsUsed?: string[];
+
+  /* Bad-faith tactic detection by the user (2026-05-29). When the
+   * candidate names/calls out a tactic the recruiter used this session,
+   * detectUserCaughtTactic() pushes the tactic kind here so the report
+   * layer can surface it as a positive coaching signal in NPS / quality
+   * scoring. Optional + nullable for back-compat. */
+  userCaughtTactics?: string[];
+
   /* 2026-05-29 realism-pass — strict in-session variant rotation.
    *
    * The 14-topic curated bank has 2-5 paraphrase variants per entry.
@@ -1580,6 +1670,214 @@ export interface NegotiationState {
   }>;
   multiRoundEnabled?: boolean;
   perRoundBand?: Record<NegotiationRoundPersona, NegotiationBand>;
+
+  /** Memory feature (2026-05-29) — recorded user claims with the turn at
+   *  which each was FIRST seen. The kernel writes the claim on first
+   *  mention; subsequent mentions are compared against the recorded value
+   *  to detect contradictions (±10% tolerance on numeric claims). Optional
+   *  for back-compat. */
+  userClaims?: UserClaims;
+
+  /** Prior-context feature (2026-05-29) — caller-declared context the
+   *  user announces UP FRONT at session init (NOT parsed from
+   *  utterances). Lets the kernel + planner adjust strategy from turn
+   *  zero when the candidate already holds a competing written offer or
+   *  a retention package from their current employer. SET ONCE at
+   *  initState via NegotiationKernelInput.priorContext; the planner
+   *  reads it on every turn but never mutates it. Optional / fully
+   *  back-compat — when absent the planner behaves byte-identically to
+   *  the pre-feature cascade. */
+  priorContext?: PriorContext;
+
+  /** Memory feature (2026-05-29) — one-shot contradiction signal stamped
+   *  by applyCandidateAnswer when the current turn's parsed claim
+   *  disagrees with the recorded value (outside ±10% on numbers). The
+   *  planner consumes this to fire contradiction-callout; applyAiMove
+   *  clears it so a single contradiction doesn't re-fire forever. */
+  lastContradiction?: ContradictionSignal | null;
+
+  /** Affinity-dynamic feature (2026-05-29) — recruiter's per-call affinity
+   *  toward the candidate. Clamped to [-3, +3]. Starts at 0. Updated each
+   *  candidate turn by applyAffinitySignals based on rapport markers.
+   *  Affects mood cool/rewarm probability, concession headroom, and prose
+   *  warmth/cool overlay. Optional for back-compat. */
+  recruiterAffinity?: number;
+  affinityLedger?: AffinityLedgerEntry[];
+
+  /** Paraphrase-loop feature (2026-05-29) — single-fire marker for the
+   *  paraphrase-recap action. Set to true by applyAiMove the first turn
+   *  the planner emits `paraphrase-recap`; never reset. Optional for
+   *  back-compat with sessions serialized before the feature shipped. */
+  paraphraseFired?: boolean;
+  /** Calibrated-surprise lowball feature (2026-05-29) — single-fire
+   *  marker for the `calibrated-surprise-lowball` action. Set true by
+   *  applyAiMove the first turn the planner emits the probe. Never reset
+   *  so the probe doesn't refire in the same session even if a fresh
+   *  lowball anchor is later detected. */
+  calibratedSurpriseFired?: boolean;
+  /** Calibrated-surprise lowball feature — context carried from the
+   *  probe-fire turn so the next applyCandidateAnswer can classify the
+   *  candidate's reply (double-down vs revise-up vs ask-why) against the
+   *  same numbers the probe used. Cleared once the reply lands. */
+  calibratedSurpriseContext?: {
+    firedAtTurn: number;
+    candidateAnchor: number;
+    bandFloor: number;
+  } | null;
+  /** Calibrated-surprise lowball feature — sticky marker set when the
+   *  candidate doubled down on the lowball anchor after the probe (Branch
+   *  A). The report layer surfaces this as a coaching moment ("you left
+   *  money on the table"). Never reset. */
+  acceptedLowball?: boolean;
+  /** Calibrated-surprise lowball feature — turn the recruiter's quiet
+   *  accept (`accept-lowball-quiet`) was shipped. Used by the planner to
+   *  avoid re-firing the accept across subsequent turns (the close
+   *  transition handles terminal stickiness from there). Null when the
+   *  Branch-A accept hasn't fired this session. */
+  acceptLowballQuietFiredAtTurn?: number | null;
+  /** Paraphrase-loop feature (2026-05-29) — confirmation-gate ledger.
+   *  When the candidate replies to a paraphrase with a correction
+   *  ("no, my notice is actually 90 days"), the kernel stamps the topic
+   *  + raw correction text here so subsequent turns can reference it.
+   *  Sticky once set; never cleared. */
+  paraphraseCorrections?: Array<{
+    turn: number;
+    topic: string;
+    correction: string;
+  }>;
+
+  /** Recruiter-power-dynamics feature (2026-05-29) — scalar derived from
+   *  `powerSignals` at init via `computeRecruiterPower`. Clamped to
+   *  [-3, +3]. Default 0. May be recomputed mid-session ONLY when a new
+   *  signal is detected (e.g. competing-process disclosure). Optional
+   *  for back-compat. */
+  recruiterPower?: number;
+  /** Recruiter-power-dynamics feature (2026-05-29) — caller-declared
+   *  signal bundle, plus mid-session detections. Optional for back-compat;
+   *  default `{}`. */
+  powerSignals?: PowerSignals;
+}
+
+/** Affinity-dynamic feature (2026-05-29). */
+export type AffinityReason =
+  | "rapport-signal"
+  | "respect-marker"
+  | "abrasive-tone"
+  | "value-prop-signal"
+  | "wasted-time"
+  | "transparency"
+  | "evasion";
+
+export interface AffinityLedgerEntry {
+  turn: number;
+  delta: number;
+  reason: AffinityReason;
+}
+
+/** Memory feature (2026-05-29) — per-claim record with first-seen turn. */
+export interface UserClaimRecord<T> {
+  value: T;
+  firstSeenTurn: number;
+}
+
+export interface UserClaims {
+  currentCtc?: UserClaimRecord<number>;
+  expectedCtc?: UserClaimRecord<number>;
+  competingOffer?: UserClaimRecord<{ company: string; amount: number }>;
+  noticePeriod?: UserClaimRecord<number>;
+  currentRole?: UserClaimRecord<string>;
+}
+
+/** Prior-context feature (2026-05-29) — user-declared upfront context
+ *  at session start. Distinguished from in-utterance signals
+ *  (`competingOffer`, `userClaims.competingOffer`, `competingOfferDetail`)
+ *  by SOURCE: the user declared these BEFORE the simulation began, so
+ *  the planner can shape opening moves around them without waiting for
+ *  the discovery cascade to surface them. SET ONCE at init; never
+ *  mutated. */
+export interface PriorContext {
+  /** Existing competing offer the candidate already holds in hand.
+   *  `signed` distinguishes a written/letter-stage offer from a verbal
+   *  one (verbal: recruiter probes for credibility; signed: recruiter
+   *  acknowledges immediately and engages with the number). */
+  existingCompetingOffer?: {
+    company: string;
+    amountLpa: number;
+    deadline?: string;
+    signed: boolean;
+  };
+  /** Retention package the candidate's CURRENT employer has offered to
+   *  keep them. Tenure indicates payout horizon: immediate (one-shot
+   *  bonus now), midYear (next review), cycleEnd (full appraisal). */
+  retentionOffer?: {
+    fromCurrentEmployer: true;
+    amountLpa: number;
+    tenure: "immediate" | "midYear" | "cycleEnd";
+  };
+}
+
+/** Recruiter-power-dynamics feature (2026-05-29) — caller-declared
+ *  signals about the recruiter's external pressure. Folded once at
+ *  init via `computeRecruiterPower` into a scalar `recruiterPower` on
+ *  state. Default `{}` → power 0 → identity behavior. */
+export interface PowerSignals {
+  /** Months the requisition has been open. >=6 strongly hungry; >=3 mildly. */
+  openReqMonths?: number;
+  /** How many other late-stage candidates the recruiter has lined up. */
+  pipelineDepth?: number;
+  /** Hiring-cycle timing. */
+  quarterTiming?: "fresh-quarter" | "mid-quarter" | "quarter-end" | "annual-sprint";
+  /** True when the candidate has stated a competing live process. May be
+   *  caller-declared OR auto-flipped by `applyCandidateAnswer` when the
+   *  utterance discloses one mid-session. */
+  candidateHasCompetingProcess?: boolean;
+}
+
+/** Pure: fold signal bundle into a scalar in [-3, +3]. Positive = recruiter
+ *  has leverage (open-req young, deep pipeline, fresh quarter); negative =
+ *  recruiter is hungry (req aged, no pipeline, EOQ pressure, candidate has
+ *  competing process). */
+export function computeRecruiterPower(signals: PowerSignals): number {
+  let p = 0;
+  const m = signals.openReqMonths;
+  if (typeof m === "number" && Number.isFinite(m)) {
+    if (m >= 6) p += -2;
+    else if (m >= 3) p += -1;
+    /* m <= 1 → 0, else 0 (no bump in the "fresh" range either) */
+  }
+  const d = signals.pipelineDepth;
+  if (typeof d === "number" && Number.isFinite(d)) {
+    if (d >= 4) p += 2;
+    else if (d >= 2) p += 1;
+    else if (d === 0) p += -1;
+  }
+  switch (signals.quarterTiming) {
+    case "quarter-end": p += -1; break;
+    case "annual-sprint": p += -2; break;
+    case "fresh-quarter": p += 1; break;
+    default: break;
+  }
+  if (signals.candidateHasCompetingProcess === true) p += -1;
+  if (p > 3) p = 3;
+  if (p < -3) p = -3;
+  return p;
+}
+
+export type ContradictionTopic =
+  | "currentCtc"
+  | "expectedCtc"
+  | "competingOffer"
+  | "noticePeriod"
+  | "currentRole";
+
+export interface ContradictionSignal {
+  topic: ContradictionTopic;
+  oldValue: number | string;
+  newValue: number | string;
+  firstSeenTurn: number;
+  /** Company name for competingOffer; unused for numeric topics. */
+  oldLabel?: string;
+  newLabel?: string;
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -2103,6 +2401,22 @@ export interface InitStateInput {
   perfCycle?: string | null;
   equityStructure?: string | null;
   candidateName?: string | null;
+  /* Prior-context feature (2026-05-29) — caller-declared upfront
+   * context (existing competing offer or retention package). Optional
+   * and SET ONCE here; the planner reads it on every turn but the
+   * kernel never mutates it. */
+  priorContext?: PriorContext;
+  /* 2026-05-30 time-context — ISO-8601 timestamp of the call. Used to
+   * derive `timeContext` once at session init via `deriveTimeContext`.
+   * Optional; undefined defaults to "midweek-standard" (no behavioral
+   * change). Treated as a one-shot input — never re-evaluated mid-call,
+   * since a single negotiation is a single moment in time. */
+  callTimeIso?: string;
+  /* Recruiter-power-dynamics feature (2026-05-29) — caller-declared
+   * signal bundle. Folded into `recruiterPower` once at init via
+   * `computeRecruiterPower`. Undefined → power 0, signals {}, behavior
+   * is identity. */
+  powerSignals?: PowerSignals;
 }
 
 export interface InitStateExtras {
@@ -2236,6 +2550,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     competingOffer: null,
     candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     candidateAskedAsRange: false,
+    userClaims: {},
+    lastContradiction: null,
     highestOfferMade: 0,
     firstOfferAtTurn: null,
     leversUsed: [],
@@ -2265,6 +2581,26 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
         band: input.band,
         company: input.company,
       }),
+    /* 2026-05-29 mood-pass — seed the recruiter mood from a hash of
+     * sessionId. Deterministic per session, roughly even split across
+     * the three buckets. Pure / no I/O. Mood affects prose tone only
+     * (see `_recruiter-prose-realism.ts`); planner/strategy is
+     * mood-blind. */
+    recruiterMood: deriveRecruiterMood(input.sessionId),
+    /* 2026-05-30 time-context — derive once at session init. Undefined
+     * callTimeIso → "midweek-standard" (behavioral no-op). Single
+     * negotiation = single moment in time; never re-derived. */
+    timeContext: deriveTimeContext({ callTimeIso: input.callTimeIso }),
+    /* 2026-05-29 mood-shift-pass — dynamic mood overlay starts at
+     * baseline (no shift). applyMoodShift in applyCandidateAnswer
+     * transitions baseline → cooled → rewarmed based on candidate
+     * behaviour. */
+    recruiterMoodDynamic: "baseline",
+    recruiterMoodDynamicEnteredAtTurn: null,
+    consecutiveOverBandAsks: 0,
+    recruiterMoodColdLineFiredAtTurn: null,
+    recruiterMoodRewarmLineFiredAtTurn: null,
+    recruiterMoodPeakCandidateAskLpa: null,
     /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall state. */
     stallTurnsRemaining: 0,
     stallsFiredCount: 0,
@@ -2413,6 +2749,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
      * de-dupe ledger. Empty at session start; each reactive-followup
      * emission pushes its topic. */
     reactiveFollowupsFired: [],
+    /* Bad-faith tactic injection ledgers (2026-05-29). Empty at start. */
+    tacticsUsed: [],
+    userCaughtTactics: [],
     /* Polish 2 (2026-05-16) — per-topic fire-history. Empty at start. */
     reactiveFollowupsFireLog: {},
     /* 2026-05-29 realism-pass — per-topic answer-direct serve count for
@@ -2461,6 +2800,26 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       input.multiRoundEnabled === true
         ? (input.perRoundBand ?? deriveDefaultPerRoundBand(input.band))
         : undefined,
+    /* Prior-context feature (2026-05-29) — pass-through. Undefined
+     * when caller doesn't declare; otherwise frozen for session
+     * lifetime. */
+    priorContext: input.priorContext,
+    /* Affinity-dynamic feature (2026-05-29). */
+    recruiterAffinity: 0,
+    affinityLedger: [],
+    /* Paraphrase-loop feature (2026-05-29). */
+    paraphraseFired: false,
+    paraphraseCorrections: [],
+    /* Calibrated-surprise lowball feature (2026-05-29). */
+    calibratedSurpriseFired: false,
+    calibratedSurpriseContext: null,
+    acceptedLowball: false,
+    acceptLowballQuietFiredAtTurn: null,
+    /* Recruiter-power-dynamics feature (2026-05-29) — scalar derived
+     * once at init from caller-declared signals. Undefined input →
+     * {} signals and power 0 (identity behavior). */
+    powerSignals: input.powerSignals ?? {},
+    recruiterPower: computeRecruiterPower(input.powerSignals ?? {}),
   };
 }
 
@@ -3330,6 +3689,341 @@ export function parseCandidateAnswer(
   };
 }
 
+/* 2026-05-29 mood-shift-pass — recruiter mood transition helper.
+ *
+ * Real recruiters' mood SHIFTS during a call:
+ *   - Cool: visibly colder when the candidate pushes hard. Triggers:
+ *       1. 3+ consecutive over-band asks (candidate keeps asking
+ *          beyond maxStretch), OR
+ *       2. explicit pushback at counter-offer phase (user rejects
+ *          the recruiter's latest move at counter-offer), OR
+ *       3. detected user-confrontation phrases ("that's ridiculous",
+ *          "you're lowballing", "you're joking", "this is a joke")
+ *   - Rewarm: re-warm when the candidate concedes after being cooled.
+ *       1. Drop in their ask by ≥10%, OR
+ *       2. explicit acceptance phrases ("ok that works", "fair enough",
+ *          "that's fair", "deal", "sounds reasonable")
+ *
+ * Cool persists for up to MOOD_COOLED_TTL turns or until a rewarm
+ * trigger fires; after TTL expires it auto-resets to baseline (the
+ * recruiter eventually settles back, not into rewarm — rewarm is a
+ * positive response to candidate concession, not a passive decay).
+ *
+ * The function mutates `n` in place (consistent with the
+ * applyCandidateAnswer pattern of folding facts onto `next`). */
+const MOOD_COOLED_TTL = 4;
+const CONFRONTATION_RE =
+  /\b(?:that'?s\s+ridiculous|you'?re\s+lowballing|low[\s-]?balling|you'?re\s+joking|this\s+is\s+(?:a\s+)?joke|that'?s\s+(?:a\s+)?joke|insulting|disrespectful|waste\s+of\s+(?:my\s+)?time|are\s+you\s+serious)\b/i;
+const ACCEPTANCE_SOFT_RE =
+  /\b(?:ok(?:ay)?\s+(?:that\s+)?works|fair\s+enough|that'?s\s+fair|sounds\s+reasonable|sounds\s+fair|that\s+works\s+for\s+me|deal|i\s+can\s+(?:work\s+with|live\s+with)\s+that)\b/i;
+
+const COUNTER_PUSHBACK_RE =
+  /\b(?:not\s+enough|too\s+low|need\s+more|come\s+up|won'?t\s+work|can'?t\s+accept|push\s+(?:the\s+)?(?:band|range|number|offer)|stretch\s+(?:more|further)|i'?ll\s+pass)\b/i;
+
+/* FNV-1a 32-bit — local copy to avoid importing _session-jitter or
+ * _recruiter-prose-realism (kernel module is the dependency root). */
+function fnv1a32(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/* Affinity-dynamic feature (2026-05-29) — pattern-match candidate
+ * utterance for rapport / respect / abrasion / transparency / value-
+ * prop / evasion / stalling signals. Updates state.recruiterAffinity
+ * (clamped to [-3, +3]) and appends to state.affinityLedger.
+ *
+ * Per-turn delta cap: ±2. Cumulative cap: [-3, +3].
+ *
+ * Pure / deterministic; no I/O. Called from finalize() in
+ * applyCandidateAnswer AFTER applyMoodShift so the mood-shift can read
+ * the prior affinity (we order detection AFTER mood-shift so the next
+ * planner call sees the freshly-updated affinity, but the CURRENT
+ * mood-shift reads pre.recruiterAffinity — see applyMoodShift). */
+const AFFINITY_PER_TURN_CAP = 2;
+const AFFINITY_MIN = -3;
+const AFFINITY_MAX = 3;
+
+const TRANSPARENCY_RE =
+  /\b(?:to be honest|honestly|let me be (?:upfront|honest|straight)|upfront|frankly|to be (?:upfront|frank|candid)|i'?ll be honest|i'?ll be upfront|i'?ll level with you)\b/i;
+const VALUE_PROP_NUM_RE =
+  /\b(?:led|drove|delivered|grew|scaled|took|increased|reduced|cut|saved|generated|owned)\b[^.!?]{0,80}(?:\d+|\$\d|₹\d|\bcrore\b|\blakh\b|\bmillion\b|\bbillion\b|%)/i;
+const ABRASIVE_RE =
+  /\b(?:you don'?t get it|that'?s ridiculous|lowballing|lowball|you'?re wasting|stop wasting|insulting|joke|are you serious|ridiculous offer|cheap|stingy|shut up|nonsense|garbage|bullshit|bs\b)\b/i;
+/* "Evasion" — uses a 3-turn-running heuristic. We approximate by counting
+ * "i don't want to share / not comfortable / let's skip / pass on that"
+ * style cues. */
+const EVASION_RE =
+  /\b(?:i (?:don'?t|do not) want to (?:share|disclose|say)|not (?:comfortable|sure i want)|let'?s skip|pass on that|rather not say|prefer not to|that'?s personal|move on|next question)\b/i;
+
+function detectAffinitySignals(
+  answer: string,
+  pre: NegotiationState,
+): { deltas: Array<{ delta: number; reason: AffinityReason }>; totalCap: number } {
+  const out: Array<{ delta: number; reason: AffinityReason }> = [];
+  const a = answer || "";
+  if (!a.trim()) return { deltas: out, totalCap: AFFINITY_PER_TURN_CAP };
+
+  /* Respect-marker — name use + thanks/appreciate. We split the test so
+   * the gratitude keyword matches case-insensitively but the proper-noun
+   * (candidate addressing recruiter by name) is recognised as a capital-
+   * starting word in the original casing. */
+  const thanksHit = /\b(?:thanks?|thank you|appreciate|appreciated|cheers)\b/i.test(a);
+  const nameHit = /\b[A-Z][a-z]{2,}\b/.test(a);
+  if (thanksHit && nameHit) {
+    out.push({ delta: 1, reason: "respect-marker" });
+  }
+
+  /* Rapport-signal — mirror phrasing. Light heuristic: the candidate
+   * echoes a recruiter-introduced noun phrase from the prior AI turn.
+   * Look at pre.lastAiText for shared 2-3-word phrases. */
+  const lastAi = (pre.lastAiText || "").toLowerCase();
+  if (lastAi.length > 0) {
+    const candidateLower = a.toLowerCase();
+    /* Pull candidate ≥6-char noun-ish tokens from lastAi (fitment, joining
+     * bonus, comp committee, variable, hike, band, etc.) */
+    const MIRROR_VOCAB =
+      /(fitment|joining bonus|comp committee|comp-committee|variable|stretch|band|esop|grade|hike|equity|cliff|notice period|in[- ]hand|loop|grade fitment)/g;
+    let matched = false;
+    let m: RegExpExecArray | null;
+    while ((m = MIRROR_VOCAB.exec(lastAi)) !== null) {
+      if (candidateLower.includes(m[1])) {
+        matched = true;
+        break;
+      }
+    }
+    if (matched) {
+      out.push({ delta: 1, reason: "rapport-signal" });
+    }
+  }
+
+  /* Transparency cues. */
+  if (TRANSPARENCY_RE.test(a)) {
+    out.push({ delta: 1, reason: "transparency" });
+  }
+
+  /* Value-prop signal — impact + numbers. */
+  if (VALUE_PROP_NUM_RE.test(a)) {
+    out.push({ delta: 1, reason: "value-prop-signal" });
+  }
+
+  /* Abrasive — bigger negative weight. */
+  if (ABRASIVE_RE.test(a)) {
+    out.push({ delta: -2, reason: "abrasive-tone" });
+  }
+
+  /* Evasion — single-turn heuristic. */
+  if (EVASION_RE.test(a)) {
+    out.push({ delta: -1, reason: "evasion" });
+  }
+
+  /* Wasted-time — repeats prior turn's content nearly verbatim. */
+  const log = pre.conversationLog ?? [];
+  let lastUser: string | null = null;
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (e?.speaker === "candidate" && typeof e.text === "string" && e.text.trim()) {
+      lastUser = e.text.trim().toLowerCase();
+      break;
+    }
+  }
+  if (lastUser) {
+    const curr = a.trim().toLowerCase();
+    if (curr.length >= 10) {
+      const overlap = lastUser === curr ||
+        (curr.length >= 0.7 * lastUser.length &&
+          (lastUser.includes(curr.slice(0, Math.max(15, Math.floor(curr.length * 0.6))))));
+      if (overlap) {
+        out.push({ delta: -1, reason: "wasted-time" });
+      }
+    }
+  }
+
+  return { deltas: out, totalCap: AFFINITY_PER_TURN_CAP };
+}
+
+function applyAffinitySignals(
+  n: NegotiationState,
+  pre: NegotiationState,
+  answer: string,
+): void {
+  const turn = n.turnIndex;
+  const { deltas } = detectAffinitySignals(answer, pre);
+  if (deltas.length === 0) return;
+
+  /* Cap the per-turn aggregate delta. Apply caps separately to positive
+   * and negative sums so a single abrasive (-2) plus a respect (+1) lands
+   * at -1, not capped. We want: net = clamp(sum, -2, +2). */
+  let posSum = 0;
+  let negSum = 0;
+  for (const d of deltas) {
+    if (d.delta > 0) posSum += d.delta;
+    else if (d.delta < 0) negSum += d.delta;
+  }
+  if (posSum > AFFINITY_PER_TURN_CAP) posSum = AFFINITY_PER_TURN_CAP;
+  if (negSum < -AFFINITY_PER_TURN_CAP) negSum = -AFFINITY_PER_TURN_CAP;
+  const net = posSum + negSum;
+  if (net === 0) return;
+
+  const prevAffinity = pre.recruiterAffinity ?? 0;
+  let nextAffinity = prevAffinity + net;
+  if (nextAffinity > AFFINITY_MAX) nextAffinity = AFFINITY_MAX;
+  if (nextAffinity < AFFINITY_MIN) nextAffinity = AFFINITY_MIN;
+  n.recruiterAffinity = nextAffinity;
+
+  /* Append to ledger — record each detected reason (use net delta on the
+   * first dominant reason to keep ledger compact). Append all individual
+   * detections so analyzers can see what fired. */
+  const ledger = [...(pre.affinityLedger ?? [])];
+  /* Compose effective applied delta proportional to net direction; emit
+   * one entry per detected reason. We DON'T re-clamp inside the entries —
+   * the cumulative state tracks the truth; the ledger is per-detection. */
+  for (const d of deltas) {
+    ledger.push({ turn, delta: d.delta, reason: d.reason });
+  }
+  n.affinityLedger = ledger;
+}
+
+function applyMoodShift(
+  n: NegotiationState,
+  pre: NegotiationState,
+  parsed: { target?: number | null },
+  answer: string,
+): void {
+  const ans = (answer || "").toLowerCase();
+  const turn = n.turnIndex;
+  const band = n.band;
+  const prevDynamic: RecruiterMoodDynamic = pre.recruiterMoodDynamic ?? "baseline";
+
+  /* Track peak candidate ask across the session — used by concession
+   * detection. Capture BEFORE we evaluate concession so a fresh higher
+   * ask updates the peak first; concession compares the CURRENT ask
+   * against the PRIOR peak. */
+  const priorPeak = pre.recruiterMoodPeakCandidateAskLpa ?? null;
+  const currentTarget = (parsed as { target?: number | null }).target ?? null;
+
+  /* ---------- 1. Over-band streak counter ---------- */
+  let overBandStreak = pre.consecutiveOverBandAsks ?? 0;
+  if (currentTarget != null && band && typeof band.maxStretch === "number") {
+    if (currentTarget > band.maxStretch + 0.01) {
+      overBandStreak += 1;
+    } else {
+      /* Within-band ask resets the streak. */
+      overBandStreak = 0;
+    }
+  }
+  n.consecutiveOverBandAsks = overBandStreak;
+
+  /* ---------- 2. Detect cool / rewarm trigger signals ---------- */
+  const confrontation = CONFRONTATION_RE.test(ans);
+  const softAccept = ACCEPTANCE_SOFT_RE.test(ans);
+  const rejectedAtCounter =
+    pre.phase === "counter-offer" && COUNTER_PUSHBACK_RE.test(ans);
+  const overBandPush = overBandStreak >= 3;
+
+  /* Concession: candidate's new target is ≥10% below their prior peak. */
+  let concession = false;
+  if (currentTarget != null && priorPeak != null && priorPeak > 0) {
+    concession = currentTarget <= priorPeak * 0.9;
+  }
+
+  /* Update peak AFTER concession check so the next turn compares
+   * against the updated peak. */
+  let newPeak = priorPeak;
+  if (currentTarget != null) {
+    newPeak = priorPeak == null ? currentTarget : Math.max(priorPeak, currentTarget);
+  }
+  n.recruiterMoodPeakCandidateAskLpa = newPeak;
+
+  /* ---------- 3. Transition decisions ---------- */
+  let nextDynamic: RecruiterMoodDynamic = prevDynamic;
+  let enteredAt = pre.recruiterMoodDynamicEnteredAtTurn ?? null;
+
+  /* Rewarm wins over cool when both fire on the same turn — a
+   * concession after being cooled IS the recovery signal even if the
+   * same utterance happens to be over-band. Rewarm is gated on the
+   * recruiter having BEEN cooled this session. */
+  const wasCooled = prevDynamic === "cooled";
+  const canRewarm = wasCooled && (concession || softAccept);
+  let canCool =
+    !canRewarm &&
+    (confrontation || overBandPush || rejectedAtCounter);
+
+  /* Affinity-dynamic feature (2026-05-29) — affinity ≥ +2 halves the
+   * probability of cooling; affinity ≤ -2 boosts it by ~50%. Deterministic
+   * FNV gate keyed on (sessionId, turnIndex). When canCool is already
+   * false we don't suppress to true (negative affinity doesn't manufacture
+   * confrontation that wasn't there); we only modulate the existing
+   * candidate-side trigger. */
+  const affinity = pre.recruiterAffinity ?? 0;
+  if (canCool && pre.sessionId) {
+    const hashSeed = `affinity-cool|${pre.sessionId}|${turn}`;
+    const u = fnv1a32(hashSeed) / 0x100000000;
+    if (affinity >= 2) {
+      /* 50% suppression of the cool trigger. */
+      if (u < 0.5) canCool = false;
+    } else if (affinity <= -2) {
+      /* Already-cooling: leave as is (no further amplification needed).
+       * Boost mode is also fold into rewarm gating below: shorter rewarm
+       * window. Nothing additional here. */
+    }
+  }
+
+  /* 2026-05-30 time-context cool-bumper — Friday-rush and after-hours-
+   * tired recruiters get terser more readily. When canCool is already
+   * triggered, leave alone (already cooling). When canCool is false but
+   * we're in a time-context that drains energy/time AND there's some
+   * negative signal this turn (overBandStreak ≥ 2 OR confrontation OR
+   * rejectedAtCounter), flip canCool with ~30% probability. Deterministic
+   * FNV gate keyed on (sessionId, turnIndex, time-context). */
+  const tCtx = pre.timeContext ?? "midweek-standard";
+  if (
+    !canCool &&
+    pre.sessionId &&
+    (tCtx === "friday-rush" || tCtx === "after-hours-tired") &&
+    (overBandStreak >= 2 || confrontation || rejectedAtCounter)
+  ) {
+    const hashSeed = `time-cool-bump|${pre.sessionId}|${turn}|${tCtx}`;
+    const u = fnv1a32(hashSeed) / 0x100000000;
+    if (u < 0.3) canCool = true;
+  }
+
+  if (!canCool && affinity <= -2 && pre.sessionId &&
+             (overBandStreak >= 2 || ans.length > 0)) {
+    /* Negative affinity: when over-band streak hits 2 (one shy of the
+     * baseline 3-streak trigger), a deterministic ~50% gate trips cool
+     * early. This implements the "+50% probability" half of the spec
+     * symmetrically with the positive-affinity suppression. */
+    if (overBandStreak >= 2) {
+      const hashSeed = `affinity-cool-boost|${pre.sessionId}|${turn}`;
+      const u = fnv1a32(hashSeed) / 0x100000000;
+      if (u < 0.5) canCool = true;
+    }
+  }
+
+  if (canRewarm) {
+    nextDynamic = "rewarmed";
+    enteredAt = turn;
+  } else if (canCool) {
+    /* Re-cool resets the entered-at timestamp so the TTL window
+     * restarts. */
+    nextDynamic = "cooled";
+    enteredAt = turn;
+  } else if (prevDynamic === "cooled" && enteredAt != null && (turn - enteredAt) > MOOD_COOLED_TTL) {
+    /* TTL expiry → settle back to baseline (NOT rewarmed, since the
+     * candidate never gave us a positive signal). */
+    nextDynamic = "baseline";
+    enteredAt = null;
+  }
+
+  n.recruiterMoodDynamic = nextDynamic;
+  n.recruiterMoodDynamicEnteredAtTurn = enteredAt;
+}
+
+
 /* ─── State transition: fold candidate's answer into state ───────── */
 
 /** Apply a candidate turn to state. Returns a new state — never
@@ -3352,6 +4046,19 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      and it's a one-way trapdoor (the flag is sticky). */
   if (state.phase === "walked-away" && (answer || "").trim().length > 0 &&
       !isWalkAway(answer)) {
+    /* 2026-05-29 audit pass — walkAwayReturned is documented as a
+     * one-way trapdoor (sticky once true). If the kernel ever re-enters
+     * this reopen branch with the flag ALREADY true, something
+     * upstream reset the flag illegally — surface it as a hard error
+     * rather than silently re-flipping. The flag drives split-half
+     * stiffening in the planner and event emission in kernel-audit;
+     * a silent reset breaks both. */
+    if (state.walkAwayReturned === true) {
+      throw new Error(
+        "kernel-invariant: walkAwayReturned reset to false between turns " +
+        `(session=${state.sessionId} turn=${state.turnIndex})`,
+      );
+    }
     const reopened: NegotiationState = {
       ...state,
       leversUsed: [...state.leversUsed],
@@ -3676,6 +4383,16 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * (terminal-accept / soft-accept / walk-away / regular / phase-only)
    * symmetric. Pure — mutates the draft `n` in place. */
   const finalize = (n: NegotiationState): NegotiationState => {
+    /* 2026-05-29 mood-shift-pass — recruiter mood shift transitions.
+     * Runs BEFORE planNextAction so the planner-emitted prose this
+     * turn already reflects any cool/rewarm shift. Pure; only mutates
+     * the dynamic-mood ledger fields. */
+    applyMoodShift(n, pre, parsed, answer);
+    /* Affinity-dynamic feature (2026-05-29) — runs AFTER applyMoodShift
+     * so this turn's mood-shift reads pre.recruiterAffinity (the prior
+     * cumulative value). The planner call below reads the freshly
+     * updated affinity via n.recruiterAffinity. */
+    applyAffinitySignals(n, pre, answer);
     n.lastTurnDelta = computeTurnDelta(pre, n, parsed, answer);
     /* Perfect 3 (2026-05-16) — promote per-turn urgencySignal to sticky
      * state.cumulativeUrgency via the monotone upgrade rule. Done BEFORE
@@ -3694,6 +4411,32 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       /* In-place copy of advanced fields onto `n` so the rest of finalize
        * sees the post-transition state. */
       Object.assign(n, advanced);
+    }
+    /* Bad-faith tactic detection (2026-05-29). If the candidate's
+     * latest utterance names a tactic the recruiter has already used
+     * this session, push the tactic kind onto userCaughtTactics so the
+     * report layer can credit a positive coaching signal. Inlined here
+     * to avoid a kernel → planner cycle; mirrors detectUserCaughtTactic
+     * in _next-action-planner.ts. */
+    {
+      const used = n.tacticsUsed ?? [];
+      if (used.length > 0 && typeof answer === "string" && answer.length > 0) {
+        const u = answer.toLowerCase();
+        const caught = [...(n.userCaughtTactics ?? [])];
+        const pushIfNew = (k: string) => {
+          if (used.includes(k) && !caught.includes(k)) caught.push(k);
+        };
+        if (/\b(exploding|deadline|artificial|pressur(?:e|ing)|why\s+(?:the\s+)?rush|by\s+(?:eod|friday|tomorrow))\b/.test(u)) {
+          pushIfNew("exploding-offer-pressure");
+        }
+        if (/\b(another\s+candidate|competing\s+candidate|other\s+candidate|that'?s\s+(?:a\s+)?(?:bluff|pressure))\b/.test(u)) {
+          pushIfNew("fake-competing-candidate");
+        }
+        if (/\b(non[-\s]?binding|in\s+writing|written|vague|let'?s\s+put\s+(?:it|that)\s+in\s+(?:the\s+)?offer|specific|commit(?:ment)?|guarantee)\b/.test(u)) {
+          pushIfNew("vague-promise");
+        }
+        n.userCaughtTactics = caught;
+      }
     }
     /* Commit 3 (2026-05-15) — stamp planNextAction so the brief and the
      * move-picker read the SAME action without recomputing. The planner
@@ -3759,6 +4502,213 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   if (parsed.currentCtc != null) next.candidateCurrentCtc = parsed.currentCtc;
   if (parsed.competing != null) next.competingOffer = parsed.competing;
   if (parsed.targetAsRange) next.candidateAskedAsRange = true;
+
+  /* Memory feature (2026-05-29) — record claims on first mention; on
+   * subsequent mentions detect contradictions outside ±10%. The kernel
+   * stamps `lastContradiction` once per turn; the planner reads it to
+   * fire `contradiction-callout` next. applyAiMove clears the signal
+   * so a single contradiction doesn't re-fire forever. */
+  const claimsBefore: UserClaims = state.userClaims ?? {};
+  const claimsNext: UserClaims = { ...claimsBefore };
+  let contradiction: ContradictionSignal | null = state.lastContradiction ?? null;
+  const NUMERIC_TOLERANCE = 0.10;
+  const recordNumeric = (
+    topic: "currentCtc" | "expectedCtc" | "noticePeriod",
+    parsedValue: number | null | undefined,
+  ): void => {
+    if (parsedValue == null || !Number.isFinite(parsedValue)) return;
+    const prior = claimsBefore[topic];
+    if (prior == null) {
+      claimsNext[topic] = { value: parsedValue, firstSeenTurn: state.turnIndex };
+      return;
+    }
+    const drift = Math.abs(parsedValue - prior.value) / Math.max(Math.abs(prior.value), 1e-9);
+    if (drift > NUMERIC_TOLERANCE && contradiction == null) {
+      contradiction = {
+        topic,
+        oldValue: prior.value,
+        newValue: parsedValue,
+        firstSeenTurn: prior.firstSeenTurn,
+      };
+    }
+  };
+  recordNumeric("currentCtc", parsed.currentCtc);
+  /* Audit Fix #2 contract — a "fixed"-scoped target ("₹26 LPA fixed at
+   * minimum") refers to a component, not the total package; routing it
+   * to candidateTargetFixed (above) means it must NOT be compared
+   * against the prior total-package expectedCtc claim or the
+   * contradiction detector spuriously fires. Only total-scoped targets
+   * feed the expectedCtc ledger. */
+  if (parsed.targetComponent !== "fixed") {
+    recordNumeric("expectedCtc", parsed.target);
+  }
+  recordNumeric("noticePeriod", parsed.noticeJoining.noticePeriodDays);
+
+  /* Competing offer — composite (company + amount). Contradict when the
+   * company matches but the amount drifts beyond ±10%, OR when the
+   * company changes and an amount is given (we treat that as a new
+   * claim — last-stated wins for company tracking, no callout). */
+  const competingCompany = parsed.competingOfferDetail.company;
+  const competingAmount = parsed.competingOfferDetail.amount ?? parsed.competing ?? null;
+  if (competingCompany != null && competingAmount != null && Number.isFinite(competingAmount)) {
+    const prior = claimsBefore.competingOffer;
+    if (prior == null) {
+      claimsNext.competingOffer = {
+        value: { company: competingCompany, amount: competingAmount },
+        firstSeenTurn: state.turnIndex,
+      };
+    } else if (prior.value.company.toLowerCase() === competingCompany.toLowerCase()) {
+      const drift = Math.abs(competingAmount - prior.value.amount) /
+        Math.max(Math.abs(prior.value.amount), 1e-9);
+      if (drift > NUMERIC_TOLERANCE && contradiction == null) {
+        contradiction = {
+          topic: "competingOffer",
+          oldValue: prior.value.amount,
+          newValue: competingAmount,
+          firstSeenTurn: prior.firstSeenTurn,
+          oldLabel: prior.value.company,
+          newLabel: competingCompany,
+        };
+      }
+    }
+  }
+
+  /* currentRole tracking is reserved on the type; a parser hook for
+   * role-restatement claims will be wired in alongside the role-mismatch
+   * detector. For now the field is populated only via direct state
+   * seeding (e.g. tests / replay fixtures). */
+
+  next.userClaims = claimsNext;
+  next.lastContradiction = contradiction;
+
+  /* Recruiter-power-dynamics feature (2026-05-29) — mid-session
+   * competing-process disclosure detector. Regex sweep on the raw
+   * candidate utterance. If matched AND the signal hasn't already been
+   * flipped, set powerSignals.candidateHasCompetingProcess = true and
+   * recompute recruiterPower. Pure / idempotent: a second match no-ops. */
+  {
+    const a = (answer || "").toString();
+    const COMPETING_PROCESS_RES: RegExp[] = [
+      /another offer (in hand|already)/i,
+      /in (the )?final round(s)? at /i,
+      /competing offer/i,
+      /I have an offer from /i,
+      /interviewing (with|at) (next week|tomorrow)/i,
+    ];
+    const priorSignals = next.powerSignals ?? {};
+    if (priorSignals.candidateHasCompetingProcess !== true) {
+      const hit = COMPETING_PROCESS_RES.some((re) => re.test(a));
+      if (hit) {
+        const updated: PowerSignals = {
+          ...priorSignals,
+          candidateHasCompetingProcess: true,
+        };
+        next.powerSignals = updated;
+        next.recruiterPower = computeRecruiterPower(updated);
+      }
+    }
+  }
+
+  /* Paraphrase-loop feature (2026-05-29) — confirmation-gate detection.
+   * If the LAST AI turn shipped a paraphrase-recap (state.paraphraseFired
+   * went true on the prior applyAiMove) AND the candidate just replied
+   * with a "no, actually X" pattern, log a correction event so subsequent
+   * planner cascades can reference it as priorContext. The simple
+   * yes/right/correct reply is a no-op (no behavioral change). */
+  if (state.paraphraseFired === true) {
+    const a = (answer || "").trim();
+    if (a) {
+      const NEG_CORRECTION_RE =
+        /\b(?:no|nope|actually|correction|to clarify|wait,?\s+)\b[^.!?]{0,200}/i;
+      const lowered = a.toLowerCase();
+      const isAffirm = /^(?:yes|yeah|right|correct|that'?s right|got it|sure)\b/.test(lowered);
+      if (!isAffirm && NEG_CORRECTION_RE.test(a)) {
+        const corrections = [...(state.paraphraseCorrections ?? [])];
+        /* Lightweight topic detection — surface the dominant noun. */
+        let topic = "general";
+        if (/\bnotice\b/i.test(a)) topic = "noticePeriod";
+        else if (/\bjoining|join\b/i.test(a)) topic = "joining";
+        else if (/\bbase|expected|ask\b/i.test(a)) topic = "expectedCtc";
+        else if (/\bcurrent\b/i.test(a)) topic = "currentCtc";
+        else if (/\bcompeting|offer\b/i.test(a)) topic = "competingOffer";
+        corrections.push({
+          turn: state.turnIndex,
+          topic,
+          correction: a.slice(0, 240),
+        });
+        next.paraphraseCorrections = corrections;
+      }
+    }
+  }
+
+  /* Calibrated-surprise lowball feature (2026-05-29) — branch detection.
+   * If the PRIOR turn shipped the probe (state.calibratedSurpriseContext
+   * is populated), classify the candidate's reply into one of:
+   *   A — double-down: yes/comfortable/no number revision  → acceptedLowball
+   *   B — revise up:   utterance contains a NEW higher number → wasn't lowballing
+   *   C — ask why:     "why / what's the band / what should it be"
+   * Each branch updates the affinity ledger; A also stamps acceptedLowball.
+   * Context is cleared so the classification only fires once per probe.
+   */
+  if (state.calibratedSurpriseContext != null) {
+    const ctx = state.calibratedSurpriseContext;
+    const raw = (answer || "").trim();
+    const lowered = raw.toLowerCase();
+    /* Branch C — ask why / band probe. Check FIRST so questions don't
+     * get mis-classified as a double-down. */
+    const ASK_WHY_RE =
+      /\b(?:why\s+(?:do\s+you|would\s+you|did\s+you)|what(?:'?s|\s+is)\s+(?:the|your)?\s*band|what\s+should\s+it\s+be|how\s+(?:come|did\s+you)|on\s+what\s+basis|what(?:'?s|\s+is)\s+the\s+(?:floor|range|benchmark))\b/i;
+    /* Numeric-revision detection: look for an explicit revision phrase
+     * OR a number that is materially HIGHER than the prior anchor. */
+    const REVISION_HINT_RE =
+      /\b(?:actually|on reflection|revise|let me revise|reconsider|raise|bump|change(?:d)?\s+(?:my\s+)?(?:mind|number)|update(?:d)?\s+(?:my\s+)?(?:ask|number))\b/i;
+    /* Cheap LPA-shaped number scan — anything plausibly above prior anchor. */
+    const numRe = /(\d+(?:\.\d+)?)\s*(?:l|lpa|lakh|lakhs|cr|crore)?/gi;
+    let revisedAnchor: number | null = null;
+    let m: RegExpExecArray | null;
+    while ((m = numRe.exec(lowered)) !== null) {
+      const n = Number(m[1]);
+      if (!Number.isFinite(n)) continue;
+      /* Treat 5..200 as a plausible LPA value. Bigger numbers (like
+       * "60000 USD" or "180000") are not interpreted here. */
+      if (n > ctx.candidateAnchor && n >= 5 && n <= 200) {
+        if (revisedAnchor == null || n > revisedAnchor) revisedAnchor = n;
+      }
+    }
+    const isAskWhy = ASK_WHY_RE.test(raw);
+    const isRevise =
+      revisedAnchor != null ||
+      (REVISION_HINT_RE.test(raw) && /\d/.test(raw));
+    const ledger = [...(next.affinityLedger ?? state.affinityLedger ?? [])];
+    let nextAffinity = next.recruiterAffinity ?? state.recruiterAffinity ?? 0;
+    if (isAskWhy) {
+      /* Branch C — no flag change, no affinity delta. */
+    } else if (isRevise && revisedAnchor != null) {
+      /* Branch B — transparency reward. */
+      ledger.push({ turn: state.turnIndex, delta: 1, reason: "transparency" });
+      nextAffinity = Math.min(AFFINITY_MAX, nextAffinity + 1);
+      /* Update userClaims.expectedCtc to the revised number so the rest
+       * of the cascade engages with the new anchor. */
+      const claims = { ...(next.userClaims ?? state.userClaims ?? {}) };
+      claims.expectedCtc = {
+        value: revisedAnchor,
+        firstSeenTurn:
+          claims.expectedCtc?.firstSeenTurn ?? state.turnIndex,
+      };
+      next.userClaims = claims;
+      next.candidateTarget = revisedAnchor;
+    } else {
+      /* Branch A (default) — double-down. */
+      next.acceptedLowball = true;
+      ledger.push({ turn: state.turnIndex, delta: -1, reason: "wasted-time" });
+      nextAffinity = Math.max(AFFINITY_MIN, nextAffinity - 1);
+    }
+    next.affinityLedger = ledger;
+    next.recruiterAffinity = nextAffinity;
+    /* Clear the context — branch classification is one-shot. */
+    next.calibratedSurpriseContext = null;
+  }
+
   /* Component breakdown — merge non-null fields into sticky state.
      Last-stated wins per component; previously-stated components
      persist when the current turn names only one. */
@@ -4909,6 +5859,10 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      * acknowledge-and-recover on every subsequent turn until the
      * candidate happens to send a non-frustrated utterance. */
     lastUserFrustrated: false,
+    /* Memory feature (2026-05-29) — contradiction signal is one-shot,
+     * same shape as lastUserFrustrated. The userClaims record persists
+     * across turns; only the per-turn callout trigger is cleared. */
+    lastContradiction: null,
   };
   /* PDF#38 BUG-B (2026-05-20) — single-fire advance from probe-mismatch
    * to discovery. The planner routes the FIRST substantive turn through
@@ -5039,6 +5993,22 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       next.leversFired = firedLevers;
     }
   }
+  /* Bad-faith tactic ledger stamp (2026-05-29). Push the actionKind
+   * onto state.tacticsUsed when the planner emitted a tactic-injection
+   * action so the same tactic cannot re-fire in the session. */
+  const TACTIC_ACTION_KINDS = new Set<string>([
+    "exploding-offer-pressure",
+    "fake-competing-candidate",
+    "vague-promise",
+  ]);
+  if (move.actionKind && TACTIC_ACTION_KINDS.has(move.actionKind)) {
+    const tacticsUsed = state.tacticsUsed ?? [];
+    if (!tacticsUsed.includes(move.actionKind)) {
+      next.tacticsUsed = [...tacticsUsed, move.actionKind];
+    } else {
+      next.tacticsUsed = tacticsUsed;
+    }
+  }
   /* Phase 2 Indian-HR redesign (2026-05-17) — stamp the post-acceptance
    * documentation-request turn marker so the planner emits the lever
    * exactly once per session. */
@@ -5100,6 +6070,41 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     state.competitorMatchFiredAtTurn == null
   ) {
     next.competitorMatchFiredAtTurn = state.turnIndex;
+  }
+  /* Paraphrase-loop feature (2026-05-29) — single-fire marker. */
+  if (move.actionKind === "paraphrase-recap" && state.paraphraseFired !== true) {
+    next.paraphraseFired = true;
+  }
+  /* Calibrated-surprise lowball feature (2026-05-29) — single-fire
+   * marker + carry forward the probe context so the next
+   * applyCandidateAnswer can classify the candidate's reply. */
+  if (
+    move.actionKind === "calibrated-surprise-lowball" &&
+    state.calibratedSurpriseFired !== true
+  ) {
+    next.calibratedSurpriseFired = true;
+    /* Extract the probe context from the move rationale-adjacent fields.
+     * Planner stashes the numbers on the action payload; applyAiMove only
+     * sees the AiMove. Use sticky state values it was computed from. */
+    const anchor =
+      state.userClaims?.expectedCtc?.value ??
+      state.candidateTarget ??
+      0;
+    const floor = state.band?.walkAway ?? state.band?.initialOffer ?? 0;
+    next.calibratedSurpriseContext = {
+      firedAtTurn: state.turnIndex,
+      candidateAnchor: anchor,
+      bandFloor: floor,
+    };
+  }
+  /* Branch A follow-up (2026-05-29) — `accept-lowball-quiet` is the
+   * recruiter's accept move after the candidate doubled down on the
+   * lowball. Stamp the turn so the planner gate doesn't re-fire. */
+  if (
+    move.actionKind === "accept-lowball-quiet" &&
+    state.acceptLowballQuietFiredAtTurn == null
+  ) {
+    next.acceptLowballQuietFiredAtTurn = state.turnIndex;
   }
   /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall state
    * advancement. Three transitions, all keyed off `move.actionKind`:
@@ -5177,6 +6182,23 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
        * ledger. The stall genuinely advances state (stallTurnsRemaining
        * / stallsFiredCount / lastStallContext) — see _next-action-planner. */
       "manager-consult-stall",
+      /* Bad-faith tactic injections (2026-05-29) — flavour pressure
+       * plays, not probes; they don't push the askedTopics ledger. */
+      "exploding-offer-pressure",
+      "fake-competing-candidate",
+      "vague-promise",
+      /* Memory feature (2026-05-29) — contradiction-callout is a
+       * reconciliation action (acknowledge-and-recover lever), not a
+       * discovery probe; it bypasses the askedTopics ledger. */
+      "contradiction-callout",
+      /* Paraphrase-loop feature (2026-05-29) — recap action, not a probe. */
+      "paraphrase-recap",
+      /* Calibrated-surprise lowball (2026-05-29) — flavour reaction +
+       * Branch A quiet accept; neither pushes onto the askedTopics
+       * ledger (the probe is a meta-comment on the anchor, not a
+       * discovery item). */
+      "calibrated-surprise-lowball",
+      "accept-lowball-quiet",
     ]);
     const fallbackRaw =
       (move.actionKind && move.actionKind !== "reactive-followup" ? move.actionKind : null) ??
@@ -5603,6 +6625,53 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (typeof band.maxStretch !== "number" || !Number.isFinite(band.maxStretch)) throw new Error("state.band.maxStretch");
   if (typeof band.walkAway !== "number" || !Number.isFinite(band.walkAway)) throw new Error("state.band.walkAway");
   if (typeof band.hasEquity !== "boolean") throw new Error("state.band.hasEquity");
+  /* 2026-05-29 audit pass — band ordering invariants. Pre-existing
+   * shape checks only proved the three numbers were finite; nothing
+   * caught a band-resolver bug that emitted walkAway > initialOffer
+   * (recruiter opens below their own floor) or maxStretch <
+   * initialOffer (recruiter can't move up at all). Both were
+   * representable in the type, both ship as silently wrong sessions.
+   * Assert the natural ordering here so the resolver fails fast
+   * instead of producing a session that bottoms out at turn 2. */
+  if (!(band.walkAway > 0)) throw new Error("state.band.walkAway-non-positive");
+  if (!(band.initialOffer >= band.walkAway)) throw new Error("state.band.initialOffer-below-walkAway");
+  if (!(band.maxStretch >= band.initialOffer)) throw new Error("state.band.maxStretch-below-initialOffer");
+  /* Component bounds (Phase 12) — when present, base bounds and
+   * variable cap must be non-negative and base bounds must be ordered. */
+  if (band.baseFloor !== undefined) {
+    if (typeof band.baseFloor !== "number" || !Number.isFinite(band.baseFloor) || band.baseFloor < 0) {
+      throw new Error("state.band.baseFloor");
+    }
+  }
+  if (band.baseStretch !== undefined) {
+    if (typeof band.baseStretch !== "number" || !Number.isFinite(band.baseStretch) || band.baseStretch < 0) {
+      throw new Error("state.band.baseStretch");
+    }
+    if (typeof band.baseFloor === "number" && !(band.baseStretch >= band.baseFloor)) {
+      throw new Error("state.band.baseStretch-below-baseFloor");
+    }
+  }
+  if (band.variableMax !== undefined) {
+    if (typeof band.variableMax !== "number" || !Number.isFinite(band.variableMax) || band.variableMax < 0) {
+      throw new Error("state.band.variableMax");
+    }
+  }
+  /* Fresher-flow probation extension — probationOffer must sit at or
+   * below initialOffer (it's the reduced rate during probation, not a
+   * higher number). */
+  if (band.probationOffer !== undefined) {
+    if (typeof band.probationOffer !== "number" || !Number.isFinite(band.probationOffer) || band.probationOffer <= 0) {
+      throw new Error("state.band.probationOffer");
+    }
+    if (band.probationOffer > band.initialOffer) {
+      throw new Error("state.band.probationOffer-above-initialOffer");
+    }
+  }
+  if (band.probationMonths !== undefined) {
+    if (typeof band.probationMonths !== "number" || !Number.isFinite(band.probationMonths) || band.probationMonths <= 0) {
+      throw new Error("state.band.probationMonths");
+    }
+  }
   if (typeof s.phase !== "string" || !VALID_PHASES.has(s.phase as NegotiationPhase)) throw new Error("state.phase");
   if (!isFiniteNonNegInt(s.turnIndex)) throw new Error("state.turnIndex");
   if (!isFiniteNonNegInt(s.maxTurns) || s.maxTurns === 0) throw new Error("state.maxTurns");
@@ -5752,6 +6821,17 @@ export function validateState(state: unknown): asserts state is NegotiationState
       throw new Error("state.leversFired");
     }
   }
+  /* Bad-faith tactic ledgers validator (2026-05-29). */
+  if (s.tacticsUsed !== undefined) {
+    if (!Array.isArray(s.tacticsUsed) || !s.tacticsUsed.every((v) => typeof v === "string")) {
+      throw new Error("state.tacticsUsed");
+    }
+  }
+  if (s.userCaughtTactics !== undefined) {
+    if (!Array.isArray(s.userCaughtTactics) || !s.userCaughtTactics.every((v) => typeof v === "string")) {
+      throw new Error("state.userCaughtTactics");
+    }
+  }
   /* Audit follow-up (2026-05-21) — answeredQuestionLedger validator.
    * Optional for back-compat. When present, every value must be
    * { answerText: string, turn: finite non-neg int }. */
@@ -5803,9 +6883,45 @@ export function validateState(state: unknown): asserts state is NegotiationState
     s.recruiterSectorPersona !== "psu" &&
     s.recruiterSectorPersona !== "consulting-big4" &&
     s.recruiterSectorPersona !== "fmcg-management" &&
+    /* 2026-05-29 sector-flavor pass — edtech + MBB personas. */
+    s.recruiterSectorPersona !== "edtech" &&
+    s.recruiterSectorPersona !== "consulting-mbb" &&
     s.recruiterSectorPersona !== "default"
   ) {
     throw new Error("state.recruiterSectorPersona");
+  }
+  /* 2026-05-29 mood-pass — recruiterMood validator. Optional for
+   * back-compat with in-flight sessions and partial-state test
+   * fixtures; deserializeState backfills to "warm". */
+  if (
+    s.recruiterMood !== undefined &&
+    s.recruiterMood !== "warm" &&
+    s.recruiterMood !== "brusque" &&
+    s.recruiterMood !== "frantic"
+  ) {
+    throw new Error("state.recruiterMood");
+  }
+  /* 2026-05-30 time-context validator. Optional; deserializeState
+   * backfills to "midweek-standard" when absent on serialized state. */
+  if (
+    s.timeContext !== undefined &&
+    s.timeContext !== "monday-fresh" &&
+    s.timeContext !== "midweek-standard" &&
+    s.timeContext !== "friday-rush" &&
+    s.timeContext !== "lunch-distracted" &&
+    s.timeContext !== "after-hours-tired" &&
+    s.timeContext !== "weekend-unusual"
+  ) {
+    throw new Error("state.timeContext");
+  }
+  /* 2026-05-29 mood-shift-pass — recruiterMoodDynamic validator. */
+  if (
+    s.recruiterMoodDynamic !== undefined &&
+    s.recruiterMoodDynamic !== "baseline" &&
+    s.recruiterMoodDynamic !== "cooled" &&
+    s.recruiterMoodDynamic !== "rewarmed"
+  ) {
+    throw new Error("state.recruiterMoodDynamic");
   }
   if (s.candidateComponentBreakdown !== undefined) {
     const cb = s.candidateComponentBreakdown as Record<string, unknown>;
@@ -6142,6 +7258,28 @@ export function deserializeState(json: string): NegotiationState {
      * the legacy prose surfaces (no persona-conditional overrides). */
     recruiterSectorPersona:
       (s.recruiterSectorPersona as RecruiterSectorPersona | undefined) ?? "default",
+    /* 2026-05-29 mood-pass — back-compat: legacy sessions get "warm"
+     * (current behaviour). New sessions overwrite at initState. */
+    recruiterMood:
+      (s.recruiterMood as RecruiterMood | undefined) ?? "warm",
+    /* 2026-05-30 time-context — back-compat: serialized state from before
+     * this field shipped defaults to "midweek-standard" (no-op). */
+    timeContext:
+      (s.timeContext as TimeContext | undefined) ?? "midweek-standard",
+    /* 2026-05-29 mood-shift-pass — backfill defaults preserve
+     * baseline behaviour for legacy sessions. */
+    recruiterMoodDynamic:
+      (s.recruiterMoodDynamic as RecruiterMoodDynamic | undefined) ?? "baseline",
+    recruiterMoodDynamicEnteredAtTurn:
+      (s.recruiterMoodDynamicEnteredAtTurn as number | null | undefined) ?? null,
+    consecutiveOverBandAsks:
+      (s.consecutiveOverBandAsks as number | undefined) ?? 0,
+    recruiterMoodColdLineFiredAtTurn:
+      (s.recruiterMoodColdLineFiredAtTurn as number | null | undefined) ?? null,
+    recruiterMoodRewarmLineFiredAtTurn:
+      (s.recruiterMoodRewarmLineFiredAtTurn as number | null | undefined) ?? null,
+    recruiterMoodPeakCandidateAskLpa:
+      (s.recruiterMoodPeakCandidateAskLpa as number | null | undefined) ?? null,
     /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall state.
      * In-flight sessions serialised before this fix shipped backfill
      * to 0 / null so the planner gate treats them as "no stall in
@@ -6255,6 +7393,28 @@ export function deserializeState(json: string): NegotiationState {
     roundTransitions:
       (s.roundTransitions as NegotiationState["roundTransitions"] | undefined) ?? [],
     perRoundBand: (s.perRoundBand as NegotiationState["perRoundBand"]) ?? undefined,
+    /* Affinity-dynamic feature (2026-05-29) — back-compat defaults. */
+    recruiterAffinity: (s.recruiterAffinity as number | undefined) ?? 0,
+    affinityLedger:
+      (s.affinityLedger as AffinityLedgerEntry[] | undefined) ?? [],
+    /* Paraphrase-loop feature (2026-05-29) — back-compat default. */
+    paraphraseFired: (s.paraphraseFired as boolean | undefined) ?? false,
+    paraphraseCorrections:
+      (s.paraphraseCorrections as NegotiationState["paraphraseCorrections"]) ?? [],
+    /* Calibrated-surprise lowball feature (2026-05-29) — back-compat
+     * defaults. Legacy sessions deserialise with the probe never having
+     * fired and no acceptance-of-lowball flag set. */
+    calibratedSurpriseFired:
+      (s.calibratedSurpriseFired as boolean | undefined) ?? false,
+    calibratedSurpriseContext:
+      (s.calibratedSurpriseContext as NegotiationState["calibratedSurpriseContext"]) ?? null,
+    acceptedLowball: (s.acceptedLowball as boolean | undefined) ?? false,
+    acceptLowballQuietFiredAtTurn:
+      (s.acceptLowballQuietFiredAtTurn as number | null | undefined) ?? null,
+    /* Recruiter-power-dynamics feature (2026-05-29) — back-compat
+     * defaults preserve identity behaviour for legacy sessions. */
+    recruiterPower: (s.recruiterPower as number | undefined) ?? 0,
+    powerSignals: (s.powerSignals as PowerSignals | undefined) ?? {},
   };
 }
 

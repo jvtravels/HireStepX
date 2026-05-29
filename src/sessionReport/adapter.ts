@@ -18,6 +18,7 @@ import type {
 import type { DashboardSession } from "../dashboardTypes";
 import { detectBias, countBias, BIAS_LABELS, type BiasPatternKind } from "../biasDetector";
 import { stripProsodyMarkup } from "../_prosody";
+import { pickIdealAnswerSnippet } from "./_idealAnswerSnippets";
 import type {
   AnswerSpan,
   BiasFinding,
@@ -142,7 +143,12 @@ export function sessionReportToInterviewResult(
           classifications: report.reverseInterview.classifications,
         }
       : undefined,
-    negotiationOutcome: isNegotiation ? buildNegotiationOutcome(report) : undefined,
+    negotiationOutcome: isNegotiation
+      ? attachPowerContext(
+          attachLowballEvent(buildNegotiationOutcome(report), session.negotiationMetrics?.lowballEvent),
+          session.negotiationMetrics?.powerContext,
+        )
+      : undefined,
     kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
   };
 }
@@ -204,6 +210,30 @@ function buildNegotiationOutcome(report: SessionReport): InterviewResultData["ne
   }
 
   return { offers, finalTotal, outcome, candidateAsk, percentileWithinBand };
+}
+
+/** Splice the kernel-derived calibrated-surprise lowball event onto the
+ *  outcome. The kernel computes it via buildLowballEvent(finalState)
+ *  upstream (see useInterviewEngine); the adapter just threads it
+ *  through so the panel can render. */
+function attachLowballEvent(
+  outcome: InterviewResultData["negotiationOutcome"],
+  lowballEvent: NonNullable<DashboardSession["negotiationMetrics"]>["lowballEvent"],
+): InterviewResultData["negotiationOutcome"] {
+  if (!outcome || !lowballEvent) return outcome;
+  return { ...outcome, lowballEvent };
+}
+
+/** Recruiter-power-dynamics feature (2026-05-29) — splice the kernel-derived
+ *  power context onto the outcome. The engine computes it via
+ *  `buildPowerContext(finalState)` upstream (see useInterviewEngine); the
+ *  adapter just threads it through. */
+function attachPowerContext(
+  outcome: InterviewResultData["negotiationOutcome"],
+  powerContext: NonNullable<DashboardSession["negotiationMetrics"]>["powerContext"],
+): InterviewResultData["negotiationOutcome"] {
+  if (!outcome || !powerContext) return outcome;
+  return { ...outcome, powerContext };
 }
 
 /** Aggregate bias-pattern hits across all answers, attach a
@@ -457,6 +487,10 @@ function adaptQuestion(
     likelyFollowUp: q.likelyFollowUp
       ? stripProsodyMarkup(`${q.likelyFollowUp.question} ${q.likelyFollowUp.why}`)
       : undefined,
+    idealAnswerSnippet: pickIdealAnswerSnippet(
+      stripProsodyMarkup(q.question),
+      isSkipped || q.verdict === "skipped" ? "weak" : q.verdict
+    ),
   };
 }
 

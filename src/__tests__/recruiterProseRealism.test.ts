@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { humanizeRecruiterProse } from "../../server-handlers/_recruiter-prose-realism";
+import {
+  humanizeRecruiterProse,
+  deriveRecruiterMood,
+} from "../../server-handlers/_recruiter-prose-realism";
 
 const BASE = "Our range for this band sits at 28 to 34 LPA, with the variable component capped at 18%.";
 
@@ -107,5 +110,96 @@ describe("humanizeRecruiterProse", () => {
 
   it("returns empty input unchanged", () => {
     expect(humanizeRecruiterProse("", { sessionId: "x", turnIndex: 1 })).toBe("");
+  });
+});
+
+/* 2026-05-29 mood-pass — smoke tests for the recruiter mood layer.
+ * One per mood, asserting tone shifts on a sample arm without changing
+ * meaning. Strategy / planner is unaffected (no kernel state is
+ * touched here — the humanizer is pure). */
+describe("humanizeRecruiterProse — mood layer", () => {
+  const ARM =
+    "Just to be clear, our range for this band sits at 28 to 34 LPA. " +
+    "We anchor against market data refreshed quarterly. " +
+    "Maybe we can discuss the variable split, and let me know if that helps.";
+
+  it("warm: occasionally adds a 'Sure,' / 'Yeah,' / 'Right,' prefix and preserves the anchor", () => {
+    let warmHit = 0;
+    const N = 300;
+    for (let i = 0; i < N; i++) {
+      const out = humanizeRecruiterProse(ARM, {
+        /* Mood layer is sector-anchored so byte-identical contract paths
+         * (no sector) pass through unchanged. Pick "default" so no tic
+         * prefix masks the warm-mood prefix on most rolls. */
+        sector: "default",
+        sessionId: `warm-s-${i}`,
+        turnIndex: 0,
+        mood: "warm",
+      });
+      expect(out).toContain("28 to 34 LPA");
+      /* Look only for warm-specific prefixes ("Sure," / "Yeah,") — the
+       * tic layer's "Right," / "Look," may also fire and would muddy the
+       * rate. */
+      if (/^(?:Sure|Yeah),\s/.test(out)) warmHit++;
+    }
+    /* p ≈ 0.10 — allow a wide band; warm fire is suppressed when a tic
+     * prefix already fired (~22% of the time on a sectored ctx). */
+    const rate = warmHit / N;
+    expect(rate).toBeGreaterThan(0.02);
+    expect(rate).toBeLessThan(0.20);
+  });
+
+  it("brusque: strips softeners ('just', 'maybe') and trims trailing pleasantries", () => {
+    /* Force the mood layer so the deterministic dice can't hide the
+     * effect; the production seed is per-session so any single session
+     * either gets the mood or doesn't. */
+    const out = humanizeRecruiterProse(ARM, {
+      sessionId: "brusque-fixed",
+      turnIndex: 0,
+      mood: "brusque",
+      __forceLayer: { mood: true },
+    });
+    expect(out).toContain("28 to 34 LPA");
+    /* "Just to be clear, " — leading softener clause gets cut down. */
+    expect(out.toLowerCase()).not.toContain("just to be clear");
+    /* "Maybe we can ..." — softener removed. */
+    expect(out.toLowerCase()).not.toMatch(/\bmaybe\b/);
+    /* Trailing pleasantry "and let me know if that helps" stripped. */
+    expect(out.toLowerCase()).not.toContain("let me know if that helps");
+  });
+
+  it("frantic: adds pause tics and occasional self-interruptions without altering numbers", () => {
+    let fillerHit = 0;
+    let interruptHit = 0;
+    const N = 400;
+    for (let i = 0; i < N; i++) {
+      const out = humanizeRecruiterProse(ARM, {
+        sector: "default",
+        sessionId: `frantic-s-${i}`,
+        turnIndex: 0,
+        mood: "frantic",
+      });
+      expect(out).toContain("28 to 34 LPA");
+      if (/^(?:Uh|Umm),\s/i.test(out)) fillerHit++;
+      if (/wait, sorry —|actually, sorry —/i.test(out)) interruptHit++;
+    }
+    /* Pause tic ~22%; self-interruption ~15% — wide bands. */
+    expect(fillerHit / N).toBeGreaterThan(0.10);
+    expect(fillerHit / N).toBeLessThan(0.40);
+    expect(interruptHit / N).toBeGreaterThan(0.05);
+    expect(interruptHit / N).toBeLessThan(0.30);
+  });
+
+  it("deriveRecruiterMood: deterministic per sessionId, spreads across the three buckets", () => {
+    expect(deriveRecruiterMood("s-1")).toBe(deriveRecruiterMood("s-1"));
+    expect(deriveRecruiterMood(null)).toBe("warm");
+    expect(deriveRecruiterMood(undefined)).toBe("warm");
+    const counts: Record<string, number> = { warm: 0, brusque: 0, frantic: 0 };
+    for (let i = 0; i < 600; i++) counts[deriveRecruiterMood(`sess-${i}`)]++;
+    /* Each bucket should land within a wide range around ~200 (33%). */
+    for (const k of ["warm", "brusque", "frantic"]) {
+      expect(counts[k]).toBeGreaterThan(100);
+      expect(counts[k]).toBeLessThan(300);
+    }
   });
 });

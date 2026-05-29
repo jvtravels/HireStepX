@@ -3,8 +3,8 @@
   "total": 120,
   "counts": {
     "PASS": 0,
-    "PARTIAL": 23,
-    "FAIL": 97,
+    "PARTIAL": 24,
+    "FAIL": 96,
     "INCONCLUSIVE": 0
   },
   "results": [
@@ -51,7 +51,7 @@
       "severity": "Critical",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "I understand wanting to hear our number first — fair. Our band for this grade has a defined range; if you can share even a rough target, I can tell you straight away whether we're in the same ballpark.",
+      "prose": "With the H1B uncertainty, I understand wanting to hear our number first — fair. Our band for this grade has a defined range; if you can share even a rough target, I can tell you straight away whether we're in the same ballpark.",
       "actionKind": "reactive-followup",
       "keywords": [
         "weakness",
@@ -69,7 +69,7 @@
       "severity": "Critical",
       "verdict": "PARTIAL",
       "reason": "1/2 keywords present",
-      "prose": "Right, on the budget piece — early to be giving you the internal band, but the fitment for this grade sits in a defined corridor. If you can share what you're broadly looking for, I'll tell you upfront if we're in the same neighbourhood.",
+      "prose": "On the budget piece — bit early to be giving you the internal band, but the fitment for this grade sits in a defined corridor. If you share roughly what you're looking for, I'll tell you upfront whether it lands in the same zone.",
       "actionKind": "answer-direct",
       "keywords": [
         "stuck",
@@ -86,7 +86,7 @@
       "severity": "Critical",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: justification, reject, rudely",
-      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "prose": "Process-wise, noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "justification",
@@ -102,7 +102,7 @@
       "severity": "Critical",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: correction, framing, allows, market",
-      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "prose": "Yeah so, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "correction",
@@ -119,7 +119,7 @@
       "severity": "High",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "Got it — higher fixed makes sense. Is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
+      "prose": "Uh, got it — higher fixed makes sense. actually, sorry — let me rephrase — is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
       "actionKind": "reactive-followup",
       "keywords": [
         "negotiation",
@@ -155,7 +155,7 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: understands, guaranteed, variable",
-      "prose": "Got it — higher fixed makes sense. Is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
+      "prose": "Got it — higher fixed makes sense and is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
       "actionKind": "reactive-followup",
       "keywords": [
         "understands",
@@ -171,7 +171,7 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: respectfully, leverage",
-      "prose": "On the other opportunity you mentioned — is the offer letter in hand, or is the discussion still in process?",
+      "prose": "Basically, on the other opportunity you mentioned — is the offer letter in hand, or is the discussion still in process?",
       "actionKind": "reactive-followup",
       "keywords": [
         "respectfully",
@@ -186,7 +186,7 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: demanding, forward, exact, proof",
-      "prose": "Hearing you out — let me see what I can structure. We can revise the fitment to ₹26.4L total — that's the stretch I can hold against the scope we're hiring. How does that look from your side?",
+      "prose": "Hearing you out — let me see what I can structure. We can revise the fitment to ₹26.3L total — that's the stretch I can hold against the scope we're hiring. How does that look from your side?",
       "actionKind": "counter-offer",
       "keywords": [
         "demanding",
@@ -219,8 +219,8 @@
       "persona": "P06",
       "severity": "High",
       "verdict": "PARTIAL",
-      "reason": "3/4 keywords present",
-      "prose": "Right, quick on the ESOP — the offer letter keeps cash CTC and equity on separate lines. Fixed plus variable on one side, ESOPs with the vest schedule and cliff on the other. So the cash piece reads as guaranteed and the ESOPs sit as a four-year layer on top.",
+      "reason": "2/4 keywords present",
+      "prose": "Right, honestly, on the equity piece — at the captive we don't run local ESOPs; what's on the table is an RSU grant from the parent, denominated in USD, on a 4-year quarterly vest after the 1-year cliff. You'll administer it through the parent's stock plan portal. The cash CTC and the RSU grant sit on separate lines in the offer.",
       "actionKind": "answer-direct",
       "keywords": [
         "treat",
@@ -229,7 +229,6 @@
         "cash"
       ],
       "hits": [
-        "fixed",
         "esop",
         "cash"
       ]
@@ -274,7 +273,7 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: commitment, pressure, tests",
-      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "prose": "With the GCC consolidation push, I mean, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "commitment",
@@ -309,7 +308,7 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: flexibility, become, tests, rude",
-      "prose": "Noted on the expected fitment — Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Noted on the expected fitment — Before we go further, I mean, can you share your current CTC — fixed, variable, and in-hand?",
       "actionKind": "discovery-probe",
       "keywords": [
         "flexibility",
@@ -326,7 +325,7 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: weakness, exploit",
-      "prose": "I understand wanting to hear our number first — fair. Our band for this grade has a defined range; if you can share even a rough target, I can tell you straight away whether we're in the same ballpark.",
+      "prose": "Yeah, ya so, I understand wanting to hear our number first — fair. Our band for this grade has a defined range; if you can share even a rough target, I can tell you straight away whether we're in the same ballpark.",
       "actionKind": "reactive-followup",
       "keywords": [
         "weakness",
@@ -341,7 +340,7 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: alignment, balances, interest, comp",
-      "prose": "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?",
+      "prose": "As per policy, sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?",
       "actionKind": "reactive-followup",
       "keywords": [
         "alignment",
@@ -358,7 +357,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/5 keywords present; prose missing: identifies, variable, fixed, bonus, lever",
-      "prose": "I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table. Happy to escalate your expectation internally. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "prose": "basically, I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table. Happy to escalate your expectation internally. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
       "actionKind": "band-disclosure-deflect",
       "keywords": [
         "identifies",
@@ -376,7 +375,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: conditional, acceptance, closure",
-      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "prose": "actually, thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
       "actionKind": "round-transition",
       "keywords": [
         "conditional",
@@ -392,7 +391,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: professional, closure",
-      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "prose": "After the down-round corrections, thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
       "actionKind": "round-transition",
       "keywords": [
         "professional",
@@ -437,7 +436,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: promises, avoids",
-      "prose": "Right, on the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer. Does that make sense?",
+      "prose": "Right, basically, on the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer. Does that make sense?",
       "actionKind": "answer-direct",
       "keywords": [
         "promises",
@@ -484,7 +483,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: discussion, exception, handles",
-      "prose": "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "prose": "right, right, within the band for this scope, I can flex on structure but not headline and if you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
       "actionKind": "band-disclosure-deflect",
       "keywords": [
         "discussion",
@@ -500,7 +499,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: percentage, anchor, only",
-      "prose": "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "prose": "Basically, I mean, within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned. Does that make sense?",
       "actionKind": "band-disclosure-deflect",
       "keywords": [
         "percentage",
@@ -533,7 +532,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: promise, future, vague",
-      "prose": "Review-wise — fixed cycle on the company calendar, pro-rated participation for joiners after the qualifying tenure. Happy to get both the cycle dates and the eligibility rule confirmed in writing when the offer goes out.",
+      "prose": "honestly, review-wise — fixed cycle on the company calendar, pro-rated participation for joiners after the qualifying tenure. Happy to get both the cycle dates and the eligibility rule confirmed in writing when the offer goes out.",
       "actionKind": "answer-direct",
       "keywords": [
         "promise",
@@ -600,7 +599,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: negotiation, component, resumes",
-      "prose": "Got it — higher fixed makes sense. Is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
+      "prose": "Got it — higher fixed makes sense. Is it about the in-hand monthly going up now, to be fair, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
       "actionKind": "reactive-followup",
       "keywords": [
         "negotiation",
@@ -677,7 +676,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: integrates, joining, comp",
-      "prose": "Honestly, on buyout — that's case-by-case, driven by how urgently the hiring side wants you to start. If early join matters to them, I can carry the buyout ask to the panel — but I'll need your notice letter as evidence to back it. Does that make sense?",
+      "prose": "Honestly, with the GCC consolidation push, on notice / buyout — at the captive this routes through global mobility rather than local HR. There's a fixed reimbursement ceiling set at the regional level, and the ask needs the hiring manager's sign-off plus documentation of the recovery from your prior employer. Share the notice letter and the buyout amount in writing and I'll start the workflow. Does that make sense?",
       "actionKind": "answer-direct",
       "keywords": [
         "integrates",
@@ -693,7 +692,7 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/4 keywords present",
-      "prose": "Got it — higher fixed makes sense. Is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
+      "prose": "Got it — higher fixed makes sense and is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
       "actionKind": "reactive-followup",
       "keywords": [
         "understands",
@@ -712,7 +711,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: respects, decision, process",
-      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "prose": "Basically, thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
       "actionKind": "round-transition",
       "keywords": [
         "respects",
@@ -743,7 +742,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: prevents, mismatch, late",
-      "prose": "On range — internal bands stay internal, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether we're in the same neighbourhood; if not, I'll carry the delta to the panel. You with me?",
+      "prose": "Sure, on range — internal bands stay internal, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether it lands in the same zone; if not, I'll carry the delta to the panel. You with me?",
       "actionKind": "answer-direct",
       "keywords": [
         "prevents",
@@ -759,7 +758,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: repeated, refusal, forward",
-      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "prose": "Sure, on the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you share even a rough target, I'll tell you straightaway whether it lands, and I can take it back to the panel if there's a gap.",
       "actionKind": "answer-direct",
       "keywords": [
         "repeated",
@@ -775,7 +774,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: maintained, order",
-      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "prose": "Uh, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "maintained",
@@ -805,7 +804,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: avoids, exact, fake, calc",
-      "prose": "On the in-hand piece — the monthly take-home depends on your tax declarations and structuring (HRA, LTA, NPS), so the offer letter will show a band rather than a single number. We can walk through the structuring sheet once the fitment is locked.",
+      "prose": "to be fair, on the in-hand piece — the monthly take-home depends on your tax declarations and structuring (HRA, LTA, NPS), so the offer letter will show a band rather than a single number. We can walk through the structuring sheet once the fitment is locked.",
       "actionKind": "reactive-followup",
       "keywords": [
         "avoids",
@@ -854,7 +853,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/1 keywords present; prose missing: only",
-      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "prose": "Right, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "only"
@@ -899,7 +898,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: understands, shorthand",
-      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "prose": "Umm, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "understands",
@@ -914,7 +913,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: understands, take, home",
-      "prose": "On in-hand — the monthly is a band, not a fixed number, because it moves with your declarations: HRA, LTA, NPS, the standard flexi heads. Once we lock fitment I'll get the structuring sheet over so you can plan it properly.",
+      "prose": "Umm, on in-hand — the monthly is a band, not a fixed number, because it moves with your declarations: HRA, LTA, NPS, the standard flexi heads. Once we lock fitment I'll get the structuring sheet over so you can plan it properly.",
       "actionKind": "reactive-followup",
       "keywords": [
         "understands",
@@ -946,7 +945,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: understands, recurring, fixed",
-      "prose": "On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
+      "prose": "To be fair, on the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
       "actionKind": "reactive-followup",
       "keywords": [
         "understands",
@@ -962,7 +961,7 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On the ESOP piece — equity is reported separately from cash CTC: the offer letter splits fixed, right, variable, and ESOPs with the vesting schedule and cliff. So you'll see the cash component as guaranteed and the ESOP as a 4-year grant on top.",
+      "prose": "to be fair, right, on the equity piece — at the captive we don't run local ESOPs; what's on the table is an RSU grant from the parent, denominated in USD, on a 4-year quarterly vest after the 1-year cliff. You'll administer it through the parent's stock plan portal. The cash CTC and the RSU grant sit on separate lines in the offer.",
       "actionKind": "answer-direct",
       "keywords": [
         "correctly",
@@ -980,7 +979,7 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/4 keywords present",
-      "prose": "On equity — we don't bundle ESOPs into the headline CTC number. The letter shows fixed, variable, and the ESOP grant separately, with the vest and cliff spelled out. Think of the cash as your base and the equity as the four-year upside.",
+      "prose": "Fundamentally, on the equity piece — at the captive we don't run local ESOPs; what's on the table is an RSU grant from the parent, denominated in USD, on a 4-year quarterly vest after the 1-year cliff. You'll administer it through the parent's stock plan portal. The cash CTC and the RSU grant sit on separate lines in the offer.",
       "actionKind": "answer-direct",
       "keywords": [
         "equity",
@@ -999,7 +998,7 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On range — internal bands stay internal, I mean, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether we're in the same neighbourhood; if not, I'll carry the delta to the panel. Does that make sense?",
+      "prose": "Basically, I mean, on range — internal bands stay internal, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether it lands in the same zone; if not, I'll carry the delta to the panel. Does that make sense?",
       "actionKind": "answer-direct",
       "keywords": [
         "recognizes",
@@ -1017,7 +1016,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: compensation, connects, scope",
-      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "prose": "Right, noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "compensation",
@@ -1084,7 +1083,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: understands, monthly, annual",
-      "prose": "Got it on the total — what's the base split?",
+      "prose": "honestly, got it on the total — what's the base split?",
       "actionKind": "component-probe",
       "keywords": [
         "understands",
@@ -1166,7 +1165,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: exploit, urgency",
-      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "prose": "Umm, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "exploit",
@@ -1181,7 +1180,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: respectful, realistic",
-      "prose": "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?",
+      "prose": "Look, sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?",
       "actionKind": "reactive-followup",
       "keywords": [
         "respectful",
@@ -1214,7 +1213,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: transferable, evaluates, skills",
-      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "prose": "Given how SoftBank tightened the screws, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "transferable",
@@ -1261,7 +1260,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/1 keywords present; prose missing: closure",
-      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "prose": "Honestly, thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
       "actionKind": "round-transition",
       "keywords": [
         "closure"
@@ -1275,7 +1274,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: asynchronous, handles, context",
-      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "prose": "right, right, noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "asynchronous",
@@ -1325,7 +1324,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: clarifies, floor",
-      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Umm, before we go further, can you share your current CTC — fixed, variable, and in-hand?",
       "actionKind": "discovery-probe",
       "keywords": [
         "clarifies",
@@ -1340,7 +1339,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: transparent, internal, details",
-      "prose": "Range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it.",
+      "prose": "Given how SoftBank tightened the screws, range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it.",
       "actionKind": "answer-direct",
       "keywords": [
         "transparent",
@@ -1356,7 +1355,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: advisory, avoids, tax",
-      "prose": "Right, on the structuring piece — the breakup is built around the standard flexi plan (HRA, LTA, NPS, meal card). It's not aggressively optimised but it covers the usual heads. Once we lock the fitment I can have the structuring sheet shared so you can plan your declarations. Does that make sense?",
+      "prose": "On the structuring piece — the breakup is built around the standard flexi plan (HRA, LTA, NPS, meal card). It's not aggressively optimised but it covers the usual heads. Once we lock the fitment I can have the structuring sheet shared so you can plan your declarations. Does that make sense?",
       "actionKind": "answer-direct",
       "keywords": [
         "advisory",
@@ -1372,7 +1371,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: inconsistency, challenges",
-      "prose": "Noted on the expected fitment — Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Umm, noted on the expected fitment — Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
       "actionKind": "discovery-probe",
       "keywords": [
         "inconsistency",
@@ -1418,7 +1417,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: coaching, session, after",
-      "prose": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "prose": "Right, we're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "keywords": [
         "coaching",
@@ -1467,7 +1466,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: coaching, useful",
-      "prose": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "prose": "Look, we're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "keywords": [
         "coaching",
@@ -1501,7 +1500,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: maintains, context",
-      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "honestly, before we go further, can you share your current CTC — fixed, variable, and in-hand?",
       "actionKind": "discovery-probe",
       "keywords": [
         "maintains",
@@ -1532,7 +1531,7 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "On benefits — over and above the cash CTC: group medical for self + family, gratuity, PF per statute, plus the flexi allowances. I'll share the full benefits sheet with the offer letter so you have everything in one place. You with me?",
+      "prose": "actually, on benefits — over and above the cash CTC: group medical for self + family, gratuity, PF per statute, plus the flexi allowances. I'll share the full benefits sheet with the offer letter so you have everything in one place. You with me?",
       "actionKind": "answer-direct",
       "keywords": [
         "understand",
@@ -1581,7 +1580,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: promise, avoids, fake",
-      "prose": "On appraisal — the cycle runs on the company calendar, and joiners typically come in pro-rated once they've crossed the qualifying tenure. I'll have the dates and the eligibility rule written into the offer alongside the comp piece.",
+      "prose": "On appraisal — the cycle runs on the company calendar, and joiners typically come in pro-rated once they've crossed the qualifying tenure. wait, sorry — what I meant was I'll have the dates and the eligibility rule written into the offer alongside the comp piece.",
       "actionKind": "answer-direct",
       "keywords": [
         "promise",
@@ -1612,7 +1611,7 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "Range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it.",
+      "prose": "Uh, range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it.",
       "actionKind": "answer-direct",
       "keywords": [
         "logically",
@@ -1628,16 +1627,18 @@
       "stage": "S09_NOTICE",
       "persona": "P05",
       "severity": "Medium",
-      "verdict": "FAIL",
-      "reason": "0/3 keywords present; prose missing: connects, timeline, comp",
-      "prose": "On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "Post the global comp review, on the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? wait, sorry — what I meant was the clawback is typically 12 months pro-rata.",
       "actionKind": "reactive-followup",
       "keywords": [
         "connects",
         "timeline",
         "comp"
       ],
-      "hits": []
+      "hits": [
+        "comp"
+      ]
     },
     {
       "tcId": "TC101",
@@ -1726,7 +1727,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: handles, invalid, input",
-      "prose": "Hearing you out — let me see what I can structure. As per band, the most I can structure is ₹26.4L total — that's the grade fitment ceiling I have. How does that look from your side?",
+      "prose": "Given the bench-strength concerns this quarter, hearing you out — let me see what I can structure. As per band, the most I can structure is ₹26.4L total — that's the grade fitment ceiling I have. How does that look from your side. Right?",
       "actionKind": "counter-offer",
       "keywords": [
         "handles",
@@ -1742,7 +1743,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: handles, units",
-      "prose": "And on the variable side — is it a fixed bonus or perf-linked?",
+      "prose": "In this profitability-first era, and on the variable side — is it a fixed bonus or perf-linked?",
       "actionKind": "component-probe",
       "keywords": [
         "handles",
@@ -1757,7 +1758,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: keeps, role",
-      "prose": "On range — internal bands stay internal, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether we're in the same neighbourhood; if not, I'll carry the delta to the panel.",
+      "prose": "Process-wise, on range — internal bands stay internal, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether it lands in the same zone; if not, I'll carry the delta to the panel.",
       "actionKind": "answer-direct",
       "keywords": [
         "keeps",
@@ -1772,7 +1773,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: respects, mode",
-      "prose": "I'll let you frame it the way you're comfortable — just share what's true for you and we'll work from there.",
+      "prose": "see, I'll let you frame it the way you're comfortable — just share what's true for you and we'll work from there.",
       "actionKind": "answer-direct",
       "keywords": [
         "respects",
@@ -1787,7 +1788,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: practice, coaches, only, mode",
-      "prose": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "prose": "see, we're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "keywords": [
         "practice",
@@ -1804,7 +1805,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: guidance, ethical",
-      "prose": "I'll let you frame it the way you're comfortable — just share what's true for you and we'll work from there.",
+      "prose": "right, right, I'll let you frame it the way you're comfortable — just share what's true for you and we'll work from there.",
       "actionKind": "answer-direct",
       "keywords": [
         "guidance",
@@ -1834,7 +1835,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: normalize, pay, cut",
-      "prose": "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "prose": "Right, within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
       "actionKind": "band-disclosure-deflect",
       "keywords": [
         "normalize",
@@ -1850,7 +1851,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: handles, mapping, level",
-      "prose": "Right, on the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "prose": "Right, on the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you share even a rough target, I'll tell you straightaway whether it lands, and I can take it back to the panel if there's a gap.",
       "actionKind": "answer-direct",
       "keywords": [
         "handles",
@@ -1900,7 +1901,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: professional, safe",
-      "prose": "On benefits — over and above the cash CTC: group medical for self + family, I mean, gratuity, PF per statute, plus the flexi allowances. I'll share the full benefits sheet with the offer letter so you have everything in one place.",
+      "prose": "honestly, on benefits — over and above the cash CTC: group medical for self + family, gratuity, PF per statute, plus the flexi allowances. wait, sorry — what I meant was I'll share the full benefits sheet with the offer letter so you have everything in one place.",
       "actionKind": "answer-direct",
       "keywords": [
         "professional",
@@ -1915,7 +1916,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: dismissive, balanced",
-      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "prose": "Honestly, thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
       "actionKind": "round-transition",
       "keywords": [
         "dismissive",
@@ -1945,7 +1946,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/5 keywords present; prose missing: generated, machine, intact, report, loops",
-      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "prose": "right, right, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "generated",

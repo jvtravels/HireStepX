@@ -42,6 +42,8 @@ export type RecruiterSectorPersona =
   | "psu"
   | "consulting-big4"
   | "fmcg-management"
+  | "edtech"
+  | "consulting-mbb"
   | "default";
 
 /** Realism-Audit Fix 4 — pushback shape vocabulary extended. */
@@ -54,6 +56,8 @@ export type RecruiterSectorPushbackStyle =
   | "cadre-pay-rigid"     // psu — Pay-Commission driven, base un-movable
   | "internal-equity-cap" // big-4 consulting — fitment-to-level, internal-equity policed
   | "ldp-trajectory"      // fmcg-management — leadership-development-program framing
+  | "sector-correction-defensive" // edtech — post-2023 reset, ESOPs underwater, growth math reset
+  | "cohort-band-rigid"   // consulting-mbb — pre-MBA intake cohort band, base un-negotiable
   | "consultative";       // default
 
 /** Realism-Audit Fix 4 — tiered cap by current CTC.
@@ -398,6 +402,83 @@ const PERSONAS: Record<RecruiterSectorPersona, RecruiterSectorPersonaConfig> = {
       "the talent council reviews fitment",
     ],
   },
+  /* Realism-Audit (2026-05-29) — Edtech (Byju's / Vedantu / UpGrad /
+   * Unacademy / Physics Wallah / WhiteHat Jr). Post-2023 sector
+   * correction: ESOPs deeply underwater, joining bonuses gone, bands
+   * re-cut, recruiters defensive about growth-math. */
+  "edtech": {
+    id: "edtech",
+    displayName: "Edtech recruiter",
+    hikeCap: 0.20,
+    hikeCapTiers: {
+      ltLow: 0.32,
+      midLow: 0.22,
+      midHigh: 0.16,
+      high: 0.12,
+      thresholds: [9, 22, 50],
+    },
+    bandSpread: 0.10,
+    pushbackStyle: "sector-correction-defensive",
+    prefersEsop: true,
+    stallProbability: 0.50,
+    idiomBias: [
+      "sector correction",
+      "ESOPs are underwater",
+      "growth math has reset",
+      "we're being conservative",
+      "joining bonus is rare these days",
+      "burn-rate discipline",
+      "post-COVID realism",
+      "the bands got re-cut",
+      "we're not 2021 anymore",
+      "BU-level P&L matters now",
+      "let me be straight with you on the package",
+      "strike vs FMV side by side",
+      "long bet on the next up-round",
+      "unit economics first",
+      "we're not in growth-at-all-costs mode",
+      "let me check with the BU head",
+    ],
+  },
+  /* Realism-Audit (2026-05-29) — Consulting MBB tier-1 strategy
+   * (McKinsey / BCG / Bain / A.T. Kearney). Pre-MBA intake-cohort
+   * banding is rigid — base set by intake year, no negotiation lane
+   * on fixed. Bonus + study-leave + B-school sponsorship are the
+   * levers. */
+  "consulting-mbb": {
+    id: "consulting-mbb",
+    displayName: "MBB / tier-1 strategy consulting recruiter",
+    hikeCap: 0.18,
+    hikeCapTiers: {
+      ltLow: 0.30,
+      midLow: 0.22,
+      midHigh: 0.16,
+      high: 0.12,
+      thresholds: [12, 28, 65],
+    },
+    bandSpread: 0.08,
+    pushbackStyle: "cohort-band-rigid",
+    prefersEsop: false,
+    stallProbability: 0.60,
+    idiomBias: [
+      "pre-MBA cohort band",
+      "the band is set by intake year",
+      "study leave for the GMAT window",
+      "performance bonus is the lever",
+      "global comp committee",
+      "up-or-out clock",
+      "regional partnership sets the band",
+      "B-school sponsorship clause",
+      "year-end ranking drives the bonus",
+      "intake-cohort fitment",
+      "People & Capabilities owns the fitment",
+      "annexure for sponsorship terms",
+      "no negotiation lane on base",
+      "associate to consultant to project leader ladder",
+      "global mobility programme",
+      "let me check with the regional partner",
+    ],
+  },
   "default": {
     id: "default",
     displayName: "Recruiter",
@@ -466,6 +547,22 @@ export function selectRecruiterSectorPersona(opts: {
 }): RecruiterSectorPersona {
   const tier = opts.tierBucket ?? null;
   const band = opts.band ?? null;
+  const company = (opts.company ?? "").toLowerCase().trim();
+
+  /* 0. Company-name hint — wins over tier when the company is one of
+   *    the known sector exemplars. Edtech + MBB are the strongest
+   *    signals because they slot poorly into the tier-bucket lattice
+   *    (edtech sits between unicorn / startup depending on stage;
+   *    MBB sits adjacent to consulting-big4 but with rigid pre-MBA
+   *    cohort bands the Big-4 sector wording doesn't capture). */
+  if (company) {
+    if (/\b(?:mckinsey|bcg|boston\s+consulting|bain|a\.?\s*t\.?\s*kearney|at\s+kearney|kearney)\b/.test(company)) {
+      return "consulting-mbb";
+    }
+    if (/\b(?:byju'?s|byjus|vedantu|upgrad|unacademy|physics\s*wallah|pw|whitehat|cuemath|simplilearn|toppr|doubtnut|extramarks|lido)\b/.test(company)) {
+      return "edtech";
+    }
+  }
 
   /* 1. Tier-bucket wins when unambiguous. */
   switch (tier) {

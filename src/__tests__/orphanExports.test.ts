@@ -49,6 +49,7 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["isFlatAck", "PDF#35 Move 3 — flat-ack predicate helper; consumed inside _negotiation-kernel.ts by parseCandidateAnswer's noise detector (rg excludes the defining file); exported for unit-test ergonomics and downstream wiring (2026-05-18)"],
   ["deriveDefaultPerRoundBand", "Phase 5 Session A — multi-round per-round band defaulter; consumed inside _negotiation-kernel.ts by initState when multiRoundEnabled=true (rg excludes the defining file); exported for unit-testability and so Session B prose layer can derive the same defaults (2026-05-19)"],
   ["maybeAdvanceRound", "Phase 5 Session A — multi-round round-end trigger; consumed inside _negotiation-kernel.ts by applyAiMove + applyCandidateAnswer's finalize (rg excludes the defining file); exported for unit-test ergonomics (2026-05-19)"],
+  ["computeRecruiterPower", "Recruiter-power-dynamics feature (2026-05-29) — consumed inside _negotiation-kernel.ts by initState + applyCandidateAnswer's mid-session disclosure detector (rg excludes the defining file); exported for unit-test coverage of the signal-sum + clamp math"],
   ["ROUND_PERSONA_SEQUENCE", "Phase 5 Session A — ordered round-persona tuple; re-exported from _negotiation-kernel.ts for downstream consumers and tests; primary consumer is the multiRoundKernel test suite + Session B prose layer (2026-05-19)"],
 
   /* ── Kernel public API exposed for direct external consumers ───────── */

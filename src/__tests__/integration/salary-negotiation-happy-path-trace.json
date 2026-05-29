@@ -27,7 +27,7 @@
       "candidate": "Thanks for reaching out. I've read about the role — happy to walk through where I am right now and what I'm looking for.",
       "phaseBefore": "opening",
       "phaseAfter": "opening",
-      "recruiterProse": "Let's start with your current side — what's the total CTC at present?",
+      "recruiterProse": "Actually, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "archetype": null,
       "highestOfferMade": 0
@@ -57,7 +57,7 @@
       "candidate": "Got it — could you share what the fitment looks like for this grade?",
       "phaseBefore": "range-disclosure",
       "phaseAfter": "range-disclosure",
-      "recruiterProse": "Got it. I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "recruiterProse": "Got it. I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, right, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
       "actionKind": "band-disclosure-deflect",
       "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 0
@@ -67,7 +67,7 @@
       "candidate": "I've reviewed the breakup — the fixed is lower than I expected. Can we revisit it? My target is ₹26 LPA fixed at minimum.",
       "phaseBefore": "range-disclosure",
       "phaseAfter": "range-disclosure",
-      "recruiterProse": "Right. I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "recruiterProse": "Actually, right. I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
       "actionKind": "band-disclosure-deflect",
       "archetype": "P15_HARD_ANCHOR",
       "highestOfferMade": 0
@@ -77,7 +77,7 @@
       "candidate": "That works directionally — if you can get fixed to ₹26 LPA, I'm ready to move forward. Let's close.",
       "phaseBefore": "range-disclosure",
       "phaseAfter": "range-disclosure",
-      "recruiterProse": "Glad we're in the same range — Okay. I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "recruiterProse": "Glad we're in the same range — Okay. I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, I mean, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
       "actionKind": "band-disclosure-deflect",
       "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 0
@@ -97,7 +97,7 @@
       "candidate": "I'm aligned. Let's wrap this up.",
       "phaseBefore": "range-disclosure",
       "phaseAfter": "range-disclosure",
-      "recruiterProse": "Right. I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "recruiterProse": "Actually, right. I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
       "actionKind": "band-disclosure-deflect",
       "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 0
@@ -107,7 +107,7 @@
       "candidate": "Confirmed — I accept the offer. Please send the letter across; I'll align with my current employer on the LWD.",
       "phaseBefore": "range-disclosure",
       "phaseAfter": "accepted",
-      "recruiterProse": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "recruiterProse": "Actually, we're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 0

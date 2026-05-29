@@ -55,7 +55,14 @@ describe("PDF#48 B2 — lever-explore engages the candidate's counter number", (
   it("ships the generic canonical when no candidate counter is on file", () => {
     const state = mkState({ lastCandidateCounterLpa: null });
     const prose = renderCanonicalProse(action, state);
-    expect(prose).toBe("Let me see what else we can structure on the fitment.");
+    /* Substring match — the humanizer at the renderCanonicalProse exit
+     * point (2026-05-29 realism-pass P0-1) may prepend a persona-tic
+     * ("Right, ...") deterministically by (sessionId, turnIndex). The
+     * regression we're guarding is that the generic CANONICAL BODY ships
+     * unchanged; the humanizer wrap is intentional and tested in
+     * `_recruiter-prose-realism.test.ts`. */
+    expect(prose).toContain("let me see what else we can structure on the fitment.");
+    expect(prose).not.toContain("46");
   });
 
   it("does not emit the banned drift phrase 'explore the fitment further'", () => {

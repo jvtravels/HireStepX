@@ -6,6 +6,12 @@
  * 2026-05-19). Other topics carry deterministic prose either inline or
  * via the planner-supplied `action.ask` (sanitised before reaching
  * the candidate).
+ *
+ * 2026-05-29 realism-pass P0-1 (cross-arm completion) — the humanizer
+ * (persona-tic / mid-sentence-hedge / checkback) now wraps the SINGLE
+ * exit point of `renderCanonicalProse`, not per-branch here. This arm
+ * returns curated prose verbatim and lets the outer layer humanize.
+ * Double-humanization is avoided by removing the per-branch wraps.
  */
 
 import type { NegotiationState } from "../_negotiation-kernel";
@@ -27,8 +33,10 @@ export function proseReactiveFollowup(
   }
   const topic = action.topic;
   if (topic === "variable-comfort") {
-    return action.ask
-      || "Your variable component is on the higher side — what has been your payout history, and are you comfortable with that structure continuing?";
+    return (
+      action.ask
+      || "Your variable component is on the higher side — what has been your payout history, and are you comfortable with that structure continuing?"
+    );
   }
   if (topic === "competing-credibility") {
     return "On the other opportunity you mentioned — is the offer letter in hand, or is the discussion still in process?";
@@ -37,8 +45,10 @@ export function proseReactiveFollowup(
     return "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?";
   }
   if (topic === "hike-justification") {
-    return action.ask
-      || "That's a meaningful jump on your current fitment — help me understand what's anchoring the expectation at that level.";
+    return (
+      action.ask
+      || "That's a meaningful jump on your current fitment — help me understand what's anchoring the expectation at that level."
+    );
   }
   if (topic === "equity-clarity") {
     /* PDF#33 (2026-05-18) — substantive probe, not a teaser. Prior
@@ -71,6 +81,16 @@ export function proseReactiveFollowup(
         /* 2026-05-29 realism-pass — active phase drives the closing-warm /
          * opening-guarded tone tint when the topic has a phase entry. */
         state.phase ?? null,
+        /* 2026-05-29 realism-pass — per-(session, topic) serveCount
+         * threads through the legacy reactive-followup path too. The
+         * planner increments `candidateQuestionServeCount[topic]` after
+         * every answer-direct ships, so a re-ask via the legacy fallback
+         * still picks the next paraphrase rather than colliding with the
+         * prior phrasing. Defensive nullish coalescing keeps snapshot
+         * tests with bare states deterministic. */
+        (state.candidateQuestionServeCount ?? {})[classified] ?? 0,
+        /* 2026-05-29 realism-pass P0-2 — register-mirrored variants. */
+        state.candidateRegister ?? null,
       );
       if (prose) return prose;
     }

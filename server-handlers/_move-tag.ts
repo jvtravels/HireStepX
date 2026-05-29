@@ -436,6 +436,13 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "meta",
         hint: "The recruiter heard you repeat yourself and is course-correcting — a healthy signal, but watch that the next move actually advances the topic.",
       };
+    /* ── Meta — contradiction callout (Memory feature 2026-05-29) ── */
+    case "contradiction-callout":
+      return {
+        label: "Calling out a contradiction",
+        family: "meta",
+        hint: "The recruiter remembered your earlier number and is flagging the gap — pick the real number and stick with it.",
+      };
     /* PDF#35 Move 1 — post-anchor offer-recap (2026-05-18) */
     case "offer-recap":
       return {
@@ -496,6 +503,80 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
           action.mode === "return-move"
             ? "The recruiter came back with a small concession after the stall. This is real movement; weigh it against your walk-away."
             : "The recruiter held the band after the stall. The leverage tactic was a hold, not a setup for movement.",
+      };
+    /* Bad-faith tactic injections (2026-05-29). */
+    case "exploding-offer-pressure":
+      return {
+        label: "Artificial deadline pressure",
+        family: "meta",
+        hint:
+          "The recruiter is manufacturing urgency to compress your evaluation window. Call it out and ask for a genuine reason the deadline exists; real approval windows survive a short extension.",
+      };
+    case "fake-competing-candidate":
+      return {
+        label: "Fake competing candidate",
+        family: "meta",
+        hint:
+          "The recruiter is hinting at another candidate to pressure you. Ask for specifics — when real, recruiters don't volunteer it; when fake, they retreat under questioning.",
+      };
+    case "vague-promise":
+      return {
+        label: "Vague non-binding promise",
+        family: "meta",
+        hint:
+          "The recruiter is dangling a soft commitment (WFH, joining bonus, title) without putting it in writing. Ask for it on the offer letter — if it can't be documented, it isn't real.",
+      };
+    /* Prior-context / memory-callback / warm-ack families (2026-05-29). */
+    case "acknowledge-existing-offer":
+    case "acknowledge-retention-offer":
+    case "competing-offer-warm-ack":
+      return {
+        label: "Acknowledging your prior context",
+        family: "meta",
+        hint:
+          "The recruiter is acknowledging context you brought into the room. This is rapport, not a concession — don't soften your ask in response.",
+      };
+    case "match-existing-offer-prose":
+      return {
+        label: "Reaction to existing offer",
+        family: "anchor",
+        hint:
+          "The recruiter is reacting to a competing offer you've already disclosed. Watch whether they match, stretch on a different lever, or politely decline — each signals different room.",
+      };
+    case "retention-trump-warning":
+      return {
+        label: "Retention-match needs sign-off",
+        family: "meta",
+        hint:
+          "The recruiter is flagging that matching your retention requires escalation. This usually means real movement is possible but slower — don't restate your ask while the stall is live.",
+      };
+    case "callback-prior-context":
+      return {
+        label: "Memory callback",
+        family: "meta",
+        hint:
+          "The recruiter is referencing a fact you stated earlier. This is a credibility / rapport play — confirm the fact or correct it crisply, don't re-anchor.",
+      };
+    case "paraphrase-recap":
+      return {
+        label: "Paraphrase recap",
+        family: "meta",
+        hint:
+          "The recruiter is compressing the deal so far and asking you to confirm. Reply with a clean yes/no — if anything's off, correct it crisply now.",
+      };
+    case "calibrated-surprise-lowball":
+      return {
+        label: "Calibrated surprise (lowball)",
+        family: "anchor",
+        hint:
+          "The recruiter is probing because your anchor landed well below band floor. Revise up with confidence — this is a signal that you're undervaluing yourself.",
+      };
+    case "accept-lowball-quiet":
+      return {
+        label: "Quiet accept of lowball",
+        family: "anchor",
+        hint:
+          "The recruiter probed your lowball anchor and you held — they're now packaging at that number. You left money on the table; remember this for the next round.",
       };
   }
   /* Exhaustiveness fallback — TS's stricter Vercel build flags this

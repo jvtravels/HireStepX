@@ -291,6 +291,99 @@ export function scoreNegotiationBehaviourDetailed(
   return { score, breakdown };
 }
 
+/** Calibrated-surprise lowball event builder (2026-05-29).
+ *
+ * Closes the report-integration gap: kernel state already tracks
+ * `calibratedSurpriseFired`, `acceptedLowball`, and the
+ * `calibratedSurpriseContext` { candidateAnchor, bandFloor } slice,
+ * but no callsite yet projects them onto the report-shaped
+ * `NegotiationOutcome.lowballEvent`. This is that projection.
+ *
+ * Returns undefined when the surprise probe did NOT fire — by
+ * construction the panel only renders the coaching note when the
+ * recruiter actually probed. `gapPct` is derived here (kernel context
+ * carries the raw anchor + floor; the percentage is a presentation
+ * concern). */
+export interface LowballEvent {
+  candidateAnchor: number;
+  bandFloor: number;
+  gapPct: number;
+  recruiterProbed: boolean;
+  candidateHeld: boolean;
+}
+
+export function buildLowballEvent(
+  state: NegotiationState,
+): LowballEvent | undefined {
+  if (state.calibratedSurpriseFired !== true) return undefined;
+  /* Prefer the context snapshot taken at probe-fire time — it pins the
+   * exact numbers the probe measured against, even if the candidate
+   * later revises their anchor (Branch B). Fall back to live state for
+   * sessions persisted before the context was introduced. */
+  const ctx = state.calibratedSurpriseContext ?? null;
+  const candidateAnchor =
+    ctx?.candidateAnchor ??
+    state.userClaims?.expectedCtc?.value ??
+    state.candidateTarget ??
+    0;
+  const bandFloor =
+    ctx?.bandFloor ??
+    state.band?.walkAway ??
+    state.band?.initialOffer ??
+    0;
+  const gapPct =
+    bandFloor > 0
+      ? Math.max(0, (bandFloor - candidateAnchor) / bandFloor)
+      : 0;
+  return {
+    candidateAnchor,
+    bandFloor,
+    gapPct,
+    recruiterProbed: true,
+    candidateHeld: state.acceptedLowball === true,
+  };
+}
+
+/* Recruiter-power-dynamics feature (2026-05-29) — outcome projection.
+ * Returns undefined when no signals were supplied AND no mid-session
+ * detection flipped candidateHasCompetingProcess (i.e. the signal bundle
+ * is fully empty). Posture is derived from the scalar; candidateLeverage
+ * is the inverse. */
+export interface PowerContext {
+  recruiterPower: number;
+  signals: {
+    openReqMonths?: number;
+    pipelineDepth?: number;
+    quarterTiming?: "fresh-quarter" | "mid-quarter" | "quarter-end" | "annual-sprint";
+    candidateHasCompetingProcess?: boolean;
+  };
+  posture: "strong" | "neutral" | "hungry";
+  candidateLeverage: "low" | "neutral" | "high";
+}
+
+export function buildPowerContext(
+  state: NegotiationState,
+): PowerContext | undefined {
+  const signals = state.powerSignals ?? {};
+  const hasAny =
+    signals.openReqMonths !== undefined ||
+    signals.pipelineDepth !== undefined ||
+    signals.quarterTiming !== undefined ||
+    signals.candidateHasCompetingProcess !== undefined;
+  if (!hasAny) return undefined;
+  const power = state.recruiterPower ?? 0;
+  const posture: PowerContext["posture"] =
+    power >= 2 ? "strong" : power <= -2 ? "hungry" : "neutral";
+  const candidateLeverage: PowerContext["candidateLeverage"] =
+    posture === "strong" ? "low" : posture === "hungry" ? "high" : "neutral";
+  return {
+    recruiterPower: power,
+    signals: { ...signals },
+    posture,
+    candidateLeverage,
+  };
+}
+
 /** Legacy scalar API — preserved for callers that only want the number. */
 export function scoreNegotiationBehaviour(
   m: Pick<NegotiationMetrics,

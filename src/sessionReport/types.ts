@@ -78,6 +78,13 @@ export interface Question {
   frequencyPct?: number;
   frequencyNote?: string;
   likelyFollowUp?: string;
+  /** Short "good alternative" the candidate could have said — teaches by
+   *  example. Surfaces as a collapsed-looking "Try this instead" block at
+   *  the bottom of weak-band question cards. The `text` is the ideal
+   *  short answer; `whyBetter` is a one-line rationale that frames the
+   *  delta (what the alternative does that the actual answer didn't).
+   *  Optional — block is omitted entirely when absent. */
+  idealAnswerSnippet?: { text: string; whyBetter: string };
 }
 
 export interface CalibrationBand {
@@ -263,6 +270,41 @@ export interface InterviewResultData {
     /** Recommended drills sequenced for the next 5 days. Each links to
      *  a runnable drill via slug or external URL. Optional. */
     drills?: Array<{ slug?: string; title: string; goal: string; effort: string }>;
+    /** Calibrated-surprise lowball event — populated only when the
+     *  kernel fired the `calibrated-surprise-lowball` probe in response
+     *  to a candidate anchor that came in significantly under the band
+     *  floor. Surfaces as a coaching insight in the UnaskedLeversPanel
+     *  (Part 2 — Action). Absent for every session where the probe
+     *  did not fire. */
+    lowballEvent?: {
+      /** The LPA the candidate stated as their anchor. */
+      candidateAnchor: number;
+      /** The band floor (walkAway) in LPA the probe was measured against. */
+      bandFloor: number;
+      /** Fractional gap (e.g. 0.22 = 22% under floor). */
+      gapPct: number;
+      /** True when the recruiter calibrated-surprise probe actually fired
+       *  — by construction the lowballEvent only exists when this is true. */
+      recruiterProbed: boolean;
+      /** True when the candidate doubled down after the probe (held the
+       *  lowball); false when they revised up. */
+      candidateHeld: boolean;
+    };
+    /** Recruiter-power-dynamics feature (2026-05-29) — caller-declared
+     *  external pressure context for the recruiter on this call, with the
+     *  derived posture / candidate-leverage labels. Absent when no signals
+     *  were supplied AND no mid-session detection fired. */
+    powerContext?: {
+      recruiterPower: number;
+      signals: {
+        openReqMonths?: number;
+        pipelineDepth?: number;
+        quarterTiming?: "fresh-quarter" | "mid-quarter" | "quarter-end" | "annual-sprint";
+        candidateHasCompetingProcess?: boolean;
+      };
+      posture: "strong" | "neutral" | "hungry";
+      candidateLeverage: "low" | "neutral" | "high";
+    };
   };
 
   /** Kernel-aware negotiation metrics — present only when the session

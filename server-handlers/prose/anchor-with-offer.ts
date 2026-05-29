@@ -47,6 +47,8 @@ export function proseAnchorWithOffer(
         "psu":           " That's the grade fitment as per the pay-scale matrix; HRA and LTC are on top per government norms.",
         "consulting-big4": " That's the fitment to the level — internal equity caps any movement at this band.",
         "fmcg-management": " That's the band for the leadership-development cohort; the trajectory matters more than the joining number.",
+        "edtech":        " That's the band post our sector reset — the comp committee is holding tight on headline cash this cycle.",
+        "consulting-mbb":" That's the cohort fitment partners have signed off on within M&G policy for this band.",
         "default":       "",
       });
   /* PDF#45 follow-up (2026-05-25) — joining bonus surfaced in the

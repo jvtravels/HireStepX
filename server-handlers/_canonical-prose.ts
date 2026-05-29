@@ -44,6 +44,13 @@ import { proseClarifyPriorQuestion } from "./prose/clarify-prior-question";
 import { proseRoundTransition } from "./prose/round-transition";
 import { proseCloseRecapFormal } from "./prose/close-recap-formal";
 import { proseInfoDisclosure } from "./prose/info-disclosure";
+import {
+  humanizeRecruiterProse,
+  applyFallibilityOverlay,
+  applyPersonaTicSignature,
+  applyContextRefOverlay,
+} from "./_recruiter-prose-realism";
+import { timeContextPrefix } from "./_recruiter-time-context";
 /* Phase 5 Session B (2026-05-19) — keep `getNegotiationRoundPersona`
  * imported so downstream consumers (e.g. analyzer / UI label
  * resolvers re-exporting via this module) have one canonical lookup.
@@ -382,31 +389,31 @@ export const BANNED_RECRUITER_IDIOM_RE = new RegExp(
   "i",
 );
 
-/** Best-effort first-name extraction. Prefers the typed
- *  `state.candidateName` field (threaded from intake) and falls back
- *  to scanning the conversation log for an "I'm X" / "my name is X"
- *  signature when no name was passed in. Returns null when neither
- *  source yields a name — caller substitutes a generic fallback. */
-function getCandidateFirstName(state: NegotiationState): string | null {
-  /* Preferred: typed init field from intake. Kernel-first cleanup
-   * (2026-05-16). */
-  if (state.candidateName && state.candidateName.trim().length > 0) {
-    const first = state.candidateName.trim().split(/\s+/)[0];
-    if (first && first.length <= 20) return first;
-  }
-  /* Fallback: scan conversation log. Some sessions deserialize without a
-   * candidateName (legacy state) or the candidate introduces themselves
-   * mid-flow. */
-  const log = state.conversationLog ?? [];
-  for (let i = log.length - 1; i >= 0; i--) {
-    const e = log[i];
-    if (e && e.speaker === "candidate") {
-      const m = e.text?.match(/\b(?:I['’]?m|my name is|this is)\s+([A-Z][a-z]+)\b/);
-      if (m && m[1].length <= 20) return m[1];
-    }
-  }
-  return null;
-}
+/** 2026-05-29 realism-pass P1 — Hinglish tokens deliberately shipped in
+ *  curated sectorPhaseOverrides (e.g. indian-unicorn × closing-push for
+ *  budget-disclosure carries "haan na" / "achha" / "thoda" / "bata do").
+ *  If a future contributor extends `BANNED_RECRUITER_IDIOM` with one of
+ *  these tokens, the response-bank linter will fail every Hinglish
+ *  variant — they should look here first for the documented exception.
+ *  The linter imports this array verbatim. Keep tokens lowercase and
+ *  word-bounded; the linter applies its own /i flag. */
+export const ALLOWED_HINGLISH_TOKENS: ReadonlyArray<RegExp> = [
+  /\bachha\b/i,
+  /\bhaan\b/i,
+  /\bna\b/i,
+  /\bthoda\b/i,
+  /\bbata do\b/i,
+  /\bbasically\b/i,
+  /\bhai\b/i,
+  /\bka\b/i,
+  /\bitself\b/i,
+];
+
+/* 2026-05-29 realism-pass P0-1 audit follow-up — extracted to
+ * `./_candidate-name.ts` so the planner-level humanize call site can
+ * thread the same proper-noun guard without inlining a partial
+ * duplicate. Re-exported here for back-compat with internal call sites. */
+import { getCandidateFirstName } from "./_candidate-name";
 
 /** perfect 5 (2026-05-16) — grade label for band-anchor framing.
  *
@@ -680,12 +687,41 @@ export function buildDiscoveryAck(
  *  the detected sentiment. Openings carry their own greeting cadence;
  *  formal close recaps and walk-aways have their own tone register and
  *  an emotional prefix would feel out of place. */
-const SENTIMENT_PREFIX_SUPPRESSED_KINDS = new Set<string>([
+/* 2026-05-29 realism-pass P0-1 audit follow-up — typed as
+ * `Set<NextAction["kind"]>` (was `Set<string>`). A typo like
+ * "ferminal-restate" now fails at compile rather than silently
+ * skipping the suppression. Adding a new NextAction kind doesn't
+ * require touching this set; if a contributor adds a terminal-tone
+ * kind they must consciously decide whether to add it (the typecheck
+ * surfaces the affordance via autocomplete on `NextAction["kind"]`). */
+const SENTIMENT_PREFIX_SUPPRESSED_KINDS = new Set<NextAction["kind"]>([
   "open-with-offer",
   "close-recap-formal",
+  /* 2026-05-29 realism-pass P0-1 audit follow-up — `answer-direct` is
+   * pre-humanized at the planner (for the LLM-bypass deterministicProse
+   * ship path) WITHOUT a sentiment prefix. Suppressing the prefix on
+   * the canonical-prose fallback path keeps both paths byte-identical
+   * for the candidate-question reactive flow. */
+  "answer-direct",
   /* walk-away surfaces as either `close` with mode "walkaway" or
    * `live-walk-away` with mode "walk" — both handled below at the
    * call site so we can inspect the mode field. */
+]);
+
+/** 2026-05-29 realism-pass P0-1 audit follow-up — kinds where the
+ *  persona-tic / hedge / checkback layers DILUTE intent. Walk-aways,
+ *  terminal-restate, and formal close-recap carry their own tone
+ *  register; prepending a "Look, " or hedging "honestly" in the middle
+ *  reads as evasive ("Look, the fitment stands at ₹42L"). Mirrors
+ *  SENTIMENT_PREFIX_SUPPRESSED_KINDS for tone-register parity. The
+ *  `close` and `live-walk-away` mode-checks happen at the call site
+ *  (action.mode is not on every NextAction kind). */
+const HUMANIZER_SUPPRESSED_KINDS = new Set<NextAction["kind"]>([
+  "terminal-restate",
+  "close-recap-formal",
+  /* 2026-05-29 realism-pass — `answer-direct` is pre-humanized at the
+   * planner; re-humanizing here would double-tic. */
+  "answer-direct",
 ]);
 
 /** FL2 / Audit Pass 4 (PDF#27, 2026-05-17) — action kinds that are
@@ -696,7 +732,7 @@ const SENTIMENT_PREFIX_SUPPRESSED_KINDS = new Set<string>([
  *  bot reads as transactional ("nothing landed, but here's another
  *  question"). open-with-offer is excluded — it IS the turn-0 opener
  *  and there's no prior candidate utterance to bridge from. */
-const PROBE_KINDS_NEEDING_BRIDGE = new Set<string>([
+const PROBE_KINDS_NEEDING_BRIDGE = new Set<NextAction["kind"]>([
   "discovery-probe",
   "component-probe",
   "anchor-with-offer",
@@ -714,6 +750,840 @@ const PROBE_KINDS_NEEDING_BRIDGE = new Set<string>([
  *  (otherwise we'd get "Got it. Noted on the current side — …"). */
 const CANONICAL_OPENS_WITH_ACK_RE =
   /^(?:Noted|Got it|Understood|Appreciate|Right[,\s—]|Thanks for that|Fair enough|Fine,?\s+so|Okay[,.]?\s+on|Alright[,.]?\s+on)\b/i;
+
+/** Per-kind canonical-prose arm. Each entry produces the body for one
+ *  NextAction.kind. Carved out of the in-function switch (2026-05-29)
+ *  so the dispatch reduces to a single lookup. The 10 prose/<kind>.ts
+ *  sibling modules extracted in the 2026-05-22 carve-out are wired
+ *  through this table as well, so every kind dispatches uniformly.
+ *
+ *  The mapped-type shape guarantees exhaustiveness — adding a new
+ *  NextAction.kind without an entry here is a compile-time error. */
+type ProseArmFn<K extends NextAction["kind"]> = (
+  action: Extract<NextAction, { kind: K }>,
+  state: NegotiationState,
+  helpers: ProseHelpers,
+) => string;
+type ProseArmRegistry = { [K in NextAction["kind"]]: ProseArmFn<K> };
+
+const PROSE_ARMS: ProseArmRegistry = {
+  "terminal-restate": (_action, state) =>
+    state.highestOfferMade > 0
+      ? `The fitment stands at ₹${state.highestOfferMade}L as per our band for this grade. Take your time and revert.`
+      : "We've broadly covered the relevant points here. Take your time and revert.",
+
+  "close": (action, state) => {
+    if (action.mode === "accept") {
+      const anchor = selectEscalationAnchor(action, state);
+      return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
+    }
+    if (action.mode === "walkaway") {
+      return "Looking at where your expectations are versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Thanks for taking the time to speak with us.";
+    }
+    return "Let's pause the discussion here. Take your time on it and revert when you're ready.";
+  },
+
+  "auto-accept": (action, state) => {
+    const anchor = selectEscalationAnchor(action, state);
+    return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
+  },
+
+  "reactive-followup": (action, state, helpers) =>
+    proseReactiveFollowup(action, state, helpers),
+
+  /* PDF#51 (2026-05-28) — deterministic answer-direct. The planner
+   * already resolved the response-bank prose via
+   * renderCandidateQuestionResponse and stashed it on the action;
+   * canonical-prose just hands it back. negotiate-turn.ts normally
+   * short-circuits this kind before reaching canonical-prose (the
+   * LLM bypass uses move.deterministicProse), but the case stays
+   * here so legacy callers that DO traverse canonical-prose for
+   * answer-direct (restyle fallback, tests) ship the same string. */
+  "answer-direct": (action) => action.prose,
+
+  "probe-mismatch": () =>
+    "Before we get to the fitment, can you walk me through how your current work maps to this role?",
+
+  /* ResumeFactPack track Step 4 (2026-05-16) — Indian-recruiter
+   * idiom. Surfaces the resume↔stated-affiliation gap without
+   * accusation. Tokens "resume" + both company names are required
+   * by the NextActionContract restyle gate. */
+  "credibility-probe": (action) =>
+    `Quick check — your resume mentions ${action.resumeCompany}; you're currently with ${action.statedCompany}?`,
+
+  "live-walk-away": (action, state) => {
+    if (action.mode === "walk") {
+      return "Looks like this may not be the right fit at this stage — thanks for taking the time to speak with us.";
+    }
+    if (action.mode === "hold-firm") {
+      return state.highestOfferMade > 0
+        ? `We'll hold the fitment at ₹${state.highestOfferMade}L for now as per our band for this grade.`
+        : "We'll hold here for now as per our band for this grade.";
+    }
+    return "Let me probe a little further before we move ahead.";
+  },
+
+  "band-disclosure-deflect": (action, state, helpers) =>
+    proseBandDisclosureDeflect(action, state, helpers),
+
+  "discovery-probe": (action, state, helpers) =>
+    proseDiscoveryProbe(action, state, helpers),
+
+  "open-with-offer": (action, state, helpers) =>
+    proseOpenWithOffer(action, state, helpers),
+
+  "lever-loop-guard": () =>
+    "Take some time to think it through and revert with where you'd like to land.",
+
+  "info-disclosure": (action, state, helpers) =>
+    proseInfoDisclosure(action, state, helpers),
+
+  "probe-expectations": () => "What fitment were you expecting for this role?",
+
+  "probe-justification": () => "Help me understand — how did you arrive at that number?",
+
+  "counter-offer": (action, state, helpers) =>
+    proseCounterOffer(action, state, helpers),
+
+  "lever-explore": (_action, state) => {
+    /* PDF#48 B2 (2026-05-25) — number-aware lever-explore. When the
+     * candidate just gave a counter number (lastCandidateCounterLpa)
+     * but the planner picked lever-explore (counter above band /
+     * headroom exhausted / counter-round cap), engage with the
+     * stated number rather than emitting a generic structural
+     * filler. Real recruiters acknowledge what was just put on the
+     * table before pivoting to non-cash levers. */
+    const counter = state.lastCandidateCounterLpa;
+    if (typeof counter === "number" && counter > 0) {
+      return `On the ₹${counter}L ask — that's above the cash band I can structure on this grade. Let me see what else we can put together on the fitment.`;
+    }
+    return "Let me see what else we can structure on the fitment.";
+  },
+
+  "hold-firm": (_action, state) =>
+    state.highestOfferMade > 0
+      ? `We'll hold the fitment at ₹${state.highestOfferMade}L as per our band for this grade. Take some time on it and revert.`
+      : "We'll hold here as per our band for this grade. Take some time on it and revert.",
+
+  "rescission": () =>
+    "Given how this discussion has gone, we won't be able to move ahead with this offer.",
+
+  "lever-grade-upgrade": (action, state) => {
+    const anchor = selectEscalationAnchor(action, state);
+    return `On the structure side — let me check with ${anchor} if there's scope to position you a grade higher. That changes both the grade and the fitment together.`;
+  },
+
+  "lever-retention-bonus": (action, state) => {
+    const anchor = selectEscalationAnchor(action, state);
+    return `On the structure — we can add a retention bonus paid out across the first 12-18 months, over and above the fitment. Let me run the exact split past ${anchor} and revert.`;
+  },
+
+  /* PDF#33 Move A (2026-05-18) — replaced teaser "Let me walk you
+   * through how the refresh cadence works for this grade" with
+   * the substantive content directly: cadence + sizing band. */
+  "lever-rsu-refresh": () =>
+    "On the RSU side — there's a fresh grant every year at the appraisal cycle, on top of your joining grant. The yearly grant is usually 30 to 40% of the joining grant if your rating is on track, and higher if you're rated top performer.",
+
+  "lever-relocation": (action, state) => {
+    const anchor = selectEscalationAnchor(action, state);
+    return `On the relocation side — we have a standard relocation allowance plus temporary accommodation support for the first few weeks. Let me confirm the exact amount with ${anchor} and revert.`;
+  },
+
+  /* PDF#33 Move A (2026-05-18) — replaced teaser tail with the
+   * substantive payout shape directly. */
+  "lever-perf-bonus-cadence": () =>
+    "On the performance bonus — it's paid out at the March appraisal cycle, with a mid-year top-up for top performers. The standard payout is 100% if your rating is on track, going up to 150% for top performers and 0% if the rating is below the threshold.",
+
+  /* Audit fix 2026-05-21 — recruiter weaponises CTC-vs-in-hand
+   * confusion. Numbers are accurate; the framing is the lie.
+   * The simulator allows this once per session so the candidate
+   * learns to ALWAYS ask "what's the guaranteed in-hand?". The
+   * truth-on-followup is handled by the `ctc-inflation-truth`
+   * arm below — same underlying numbers, honest framing. */
+  "ctc-inflation-anchor": (action) =>
+    `We can do ₹${action.ctcLpa}L total package — that's ₹${action.fixedLpa}L fixed, ` +
+    `₹${action.variableLpa}L variable on annual rating, ESOPs worth ₹${action.esopPaperLpa}L ` +
+    `at last fair-market-value, ₹${action.joiningBonusLpa}L joining bonus, and our standard ` +
+    `benefits package (gratuity, PF employer, NPS, insurance) worth around ₹${action.benefitsLpa}L. ` +
+    `So overall ₹${action.ctcLpa}L on the table.`,
+
+  /* Audit fix 2026-05-21 — candidate asked for the in-hand
+   * breakdown after the inflated anchor. Truthful framing of the
+   * same numbers. Teaches defense, not deception-as-skill. */
+  "ctc-inflation-truth": (action) =>
+    `Fair question — let me break it down honestly. The guaranteed cash is the ₹${action.fixedLpa}L fixed; ` +
+    `that's what hits your account month after month. The ₹${action.variableLpa}L variable is at-risk on the annual rating cycle — ` +
+    `most years it pays out 80-100%, but it's not contractual. The ₹${action.esopPaperLpa}L ESOPs are paper value at last FMV — ` +
+    `actual realisable value depends on buyback windows and vesting completion. The ₹${action.joiningBonusLpa}L joining bonus is ` +
+    `one-time, amortised over year one, and carries a clawback if you leave early. Benefits ₹${action.benefitsLpa}L is gratuity / ` +
+    `PF / NPS / insurance — real value, but non-cash. So the headline ₹${action.ctcLpa}L is the full envelope; ` +
+    `the guaranteed annual cash is ₹${action.fixedLpa}L fixed.`,
+
+  "lever-joining-bonus-explained": (_action, state) => {
+    const jb = state.lastJoiningBonusOffered;
+    const jbPart = jb != null && jb > 0 ? `₹${jb}L ` : "";
+    /* Audit fix 2026-05-21: clawback window scales with amount and
+     * tier — not a flat 12mo. Resolver consults the JB amount + the
+     * company tier (IT-services → service bond; MNC India → 24mo;
+     * else ladder by amount). */
+    const clawback = clawbackForCompany(jb ?? 0, state.company);
+    return `On the joining bonus — the ${jbPart}is one-time, paid with the first month's payroll, and carries a ${clawback.description} Let me know if you want the exact wording before I revert internally.`;
+  },
+
+  "internal-equity-defense": (action, state) => {
+    const median = action.peerBandMedianLpa;
+    const top = action.peerBandTopLpa;
+    return `Let me be upfront with you — others at ${gradeLabel(state)} level in our team are between ₹${median} and ₹${top} LPA fixed. Going above that means you'd be paid more than people at the same level who've been here longer, which I'd have to get specially cleared with the Comp team — and that only goes through for a clear niche-skill case. The number we're discussing is already at the top end of what I can close without that exception.`;
+  },
+
+  "comparative-anchoring": (action, state) => {
+    const target = state.candidateTarget;
+    const targetStr = target != null && target > 0 ? `₹${target} LPA` : "where you're anchoring";
+    if (action.quartile === "top") {
+      return `Just to frame this — at ${targetStr}, you'd be at the top end of the ${gradeLabel(state)} band. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
+    }
+    return `At ${targetStr}, you'd be in the middle of the ${gradeLabel(state)} band — a good place to start, with room to grow at the next appraisal.`;
+  },
+
+  "anchor-with-offer": (action, state, helpers) =>
+    proseAnchorWithOffer(action, state, helpers),
+
+  /* PDF#35 Move 1 (2026-05-18) — post-anchor offer-recap. The
+   * candidate has asked to be REMINDED of the standing offer
+   * ("what was the offer again?"); we recap highestOfferMade
+   * without re-anchoring or moving the band. When component
+   * metadata is available, surface the fixed/variable split so
+   * the candidate doesn't have to ask twice. */
+  "offer-recap": (action, state) => {
+    const variableMax = state.band?.variableMax;
+    if (typeof variableMax === "number" && variableMax > 0) {
+      const fixedComponent = Math.max(0, action.offerLpa - variableMax);
+      return `Just to recap — the fitment on the table is ₹${action.offerLpa} LPA, with ₹${fixedComponent} LPA fixed and ₹${variableMax} LPA target variable on the performance cycle. Let me know what's on your mind.`;
+    }
+    return `Just to recap — the fitment on the table is ₹${action.offerLpa} LPA. Let me know what's on your mind.`;
+  },
+
+  /* PDF#29 Bug 7 (2026-05-18) — frustration recovery. Number-free,
+   * carries the required "apolog" token so the contract entry
+   * pins the move's repair semantics. Partial line; the planner
+   * could chain a next non-redundant action behind this in a v2
+   * (acceptable to ship standalone for v1 — lastUserFrustrated is
+   * cleared in applyAiMove so the next turn resumes the normal
+   * cascade). */
+  "acknowledge-and-recover": () =>
+    "You're right, my apologies — let me not loop on that. Moving on.",
+
+  /* Memory feature (2026-05-29) — contradiction-callout. Polite-but-firm
+   * reconciliation. Two variants rotated by turnIndex parity so
+   * back-to-back contradictions don't read like the exact same canned
+   * line. */
+  "contradiction-callout": (action, state) => {
+    const variant = state.turnIndex % 2;
+    const topicLabel = (() => {
+      switch (action.topic) {
+        case "currentCtc": return "current CTC";
+        case "expectedCtc": return "expected CTC";
+        case "competingOffer": return action.oldLabel != null
+          ? `the ${action.oldLabel} offer`
+          : "the competing offer";
+        case "noticePeriod": return "your notice period";
+        case "currentRole": return "your current role";
+      }
+    })();
+    const isNumeric =
+      action.topic === "currentCtc" ||
+      action.topic === "expectedCtc" ||
+      action.topic === "competingOffer" ||
+      action.topic === "noticePeriod";
+    const unit = action.topic === "noticePeriod" ? " days" : " LPA";
+    const fmt = (v: number | string) =>
+      isNumeric ? `₹${v}${unit}` : `"${v}"`;
+    if (variant === 0) {
+      return `Earlier you mentioned ${topicLabel} at ${fmt(action.oldValue)} — now you're saying ${fmt(action.newValue)}. Help me reconcile which is the actual current number?`;
+    }
+    return `Just to make sure I have this right — on ${topicLabel} you'd told me ${fmt(action.oldValue)} earlier, and now I'm hearing ${fmt(action.newValue)}. Which one should I take to the panel?`;
+  },
+
+  "clarify-prior-question": (action, state, helpers) =>
+    proseClarifyPriorQuestion(action, state, helpers),
+
+  /* Paraphrase-loop feature (2026-05-29) — compress the deal back as a
+   * confirmation gate. Sector-tinted (formal vs casual) and tail-varied
+   * ("Right?", "Did I catch it?", "That track?", "Have I got it?"). */
+  "paraphrase-recap": (action, state, _helpers) => {
+    void _helpers;
+    const facts = action.facts;
+    const top = facts.slice(0, Math.min(facts.length, 4));
+    const factStr = top.map((f) => f.value).join(", ");
+    const tailPick = (state.turnIndex + facts.length) % 4;
+    const tails = ["Right?", "Did I catch it?", "That track?", "Have I got it?"];
+    const tail = tails[tailPick];
+    if (action.sectorVariant === "formal") {
+      const leadPick = (state.turnIndex + facts.length) % 2;
+      const lead = leadPick === 0
+        ? "Let me confirm — "
+        : "Just to recap before I take this to comp — ";
+      return `${lead}${factStr}. ${tail}`;
+    }
+    return `So if I heard you — ${factStr}. ${tail}`;
+  },
+
+  "manager-consult-stall": (action, state, helpers) => {
+    /* Realism-Audit Fix 3 (2026-05-22) — multi-turn stall move.
+     *
+     * Three modes:
+     *   - "open" — recruiter receives the over-band ask and defers to
+     *     their manager / HR head / comp committee. No outcome yet;
+     *     the next AI turn ships the deterministic return.
+     *   - "return-move" — recruiter returns from the consult with a
+     *     small concession (typically JB-shaped, ₹0.5–2L).
+     *   - "return-hold" — recruiter returns and confirms the band
+     *     stays. The stall has been TRUTHFUL in coaching terms: the
+     *     state genuinely advanced through stallTurnsRemaining.
+     *
+     * Persona-flavoured idiom comes from the persona's idiomBias
+     * bank via `recruiterSectorPersonaPromptFragment` upstream; the
+     * canonical line carries the core stall semantics. */
+    const persona = helpers.sectorPersona;
+    const ask = action.stalledAskLpa;
+    const askClause = ask != null ? ` on the ₹${ask}L ask` : "";
+    if (action.mode === "open") {
+      const opener = selectBySectorPersona(persona, {
+        "it-services": "Let me check with the HR head on this and revert by EOD",
+        "gcc": "Let me loop in the global TA partner on this and revert by tomorrow",
+        "indian-unicorn": "Let me run this past the founders and revert by tomorrow",
+        "early-startup": "Let me check with the founders on this and revert by tomorrow",
+        "bfsi": "Let me take this to the business head and revert by tomorrow",
+        "psu": "Kindly note this will need to go to the establishment section — we'll revert as per process",
+        "consulting-big4": "Let me discuss in the comp-committee meeting tomorrow and revert",
+        "fmcg-management": "Let me check with the talent council and revert by tomorrow",
+        "edtech": "Let me check with the founders' office — post the sector reset, even routine fitments need a fresh pass",
+        "consulting-mbb": "Let me take this to the partner panel at the M&G review and revert post the sign-off",
+        "default": "Let me check with my manager on this and revert by tomorrow",
+      });
+      return `${opener}${askClause}. I want to come back with a clear answer rather than commit to something I can't hold.`;
+    }
+    if (action.mode === "return-move") {
+      const move = action.returnConcessionLpa ?? 0;
+      const lever = selectBySectorPersona(persona, {
+        "it-services": "on the joining bonus side",
+        "gcc": "on the stock refresh side",
+        "indian-unicorn": "on the ESOP grant side",
+        "early-startup": "on the equity % side",
+        "bfsi": "on the variable / joining bonus side",
+        "psu": "via the HRA classification",
+        "consulting-big4": "on the joining-bonus side",
+        "consulting-mbb": "on the performance-bonus side",
+        "fmcg-management": "on the joining-bonus side",
+        "edtech": "on the joining-bonus side",
+        "default": "on the joining bonus side",
+      });
+      /* Realism-Audit Fix (2026-05-29) — frame the bump as a hard-won
+       * panel approval, not a casual recruiter concession. Real Indian
+       * recruiters perform approval theatre: "panel holds on base, but
+       * I pushed and got X authorized" reads more credible AND teaches
+       * users to spot the manoeuvre. Sector-flavoured authority frame. */
+      const authority = selectBySectorPersona(persona, {
+        "bfsi": "comp committee approved a ₹{move}L deferred bump — that's the regulatory ceiling on what I can move without RBI-side review",
+        "psu": "approval came through with grade-pay adjustment of ₹{move}L on top — that's what cadre rules allow without a fresh CPC clarification",
+        "consulting-big4": "comp committee signed off on a ₹{move}L bump {lever} — that's the internal-equity ceiling at this level",
+        "consulting-mbb": "the partner panel authorised a ₹{move}L nudge {lever} — that's the band ceiling without a fresh cohort exception",
+        "indian-unicorn": "founders gave me a green light on ₹{move}L extra {lever} — that's the max I can pull without re-opening the cap table conversation",
+        "early-startup": "founders signed off on ₹{move}L extra {lever} — that's the runway ceiling on what I can hold",
+        "gcc": "the global TA partner authorised ₹{move}L {lever} — that's the comp-grid ceiling without a fresh level review",
+        "it-services": "HR head came back — band holds on the base, but they authorised ₹{move}L {lever} as a goodwill move",
+        "fmcg-management": "talent council came back — band holds, but they authorised ₹{move}L {lever} for the LDP cohort",
+        "edtech": "founders came back — sector-correction band holds, but they authorised ₹{move}L {lever} as a one-time goodwill move",
+        "default": "manager came back — the panel holds on the base, but they authorised ₹{move}L {lever} as a goodwill move",
+      })
+        .replace("{move}", String(move))
+        .replace("{lever}", lever);
+      return `${authority}. Still below your ask${askClause}, but it's the max bandwidth on this round.`;
+    }
+    /* return-hold */
+    const holdTail = selectBySectorPersona(persona, {
+      "it-services": "as per band, the grade fitment is what we have",
+      "gcc": "the global band for this level holds",
+      "indian-unicorn": "cash side is held; equity is where we have room",
+      "early-startup": "cash runway is the constraint; equity is the only lever",
+      "bfsi": "the regulatory band holds; variable is the only flex",
+      "psu": "the pay scale is fixed as per government norms",
+      "consulting-big4": "internal equity at this level holds the fitment",
+      "fmcg-management": "the band for the LDP cohort is internal-policy driven",
+      "edtech": "post the sector correction, the comp committee is holding the band tight — no flex on the headline",
+      "consulting-mbb": "the partner-level cohort band holds; M&G policy doesn't allow a stretch beyond the published ladder for this batch",
+      "default": "the band stays as it is",
+    });
+    return `Checked${askClause} — ${holdTail}. I'd rather be straight with you than promise something I can't hold.`;
+  },
+
+  /* Phase 3 missing-lever set (2026-05-17) — distinct stall move.
+   * Real Indian HR escalation: after two cash concessions, further
+   * movement requires panel sign-off. The recruiter explicitly says
+   * "let me check with leadership" and commits to a revert window. */
+  "panel-approval-stall": () =>
+    "Honestly, anything further on this will need panel approval. Let me check with leadership and revert by EOD — how does this sound?",
+
+  /* Phase 3 missing-lever set (2026-05-17) — AI declines to continue
+   * holding the fitment open when the candidate stalls without
+   * leverage. Frames the exit politely but unambiguously — kindly
+   * revert by EOD tomorrow or we move on. */
+  "polite-walkaway": () =>
+    "Sure, take your time. To be honest — without a firm decision from your side or a competing offer to work against, I won't be able to keep this offer pending for long. Kindly revert with a clear answer by EOD tomorrow, otherwise we'll have to move ahead with other candidates.",
+
+  /* fake-leverage-challenge (2026-05-17) — soft Indian-HR probe for
+   * proof of the competing offer. "would you mind" is the natural
+   * polite register; "make a stronger case to the panel" matches
+   * the existing band-disclosure-deflect / panel-approval-stall
+   * register. No LPA numbers — numberPolicy is "forbidden". */
+  "fake-leverage-challenge": (action) => {
+    const co = action.competingCompany;
+    if (co) {
+      return `You'd mentioned the competing offer from ${co} — would you mind sharing the offer letter, or even a redacted version? It helps me make a stronger case to the panel for matching it.`;
+    }
+    return `On the competing offer you'd mentioned — would you mind sharing the letter, or even a redacted version? It helps me make a stronger case to the panel for matching it.`;
+  },
+
+  /* PDF#42 BUG-A (2026-05-21) — recruiter-owned response to a
+   * substantiated, above-offer competing number. Indian-HR
+   * register: panel escalation + concrete revert window + soft
+   * close-readiness probe. No new numbers beyond echoing the
+   * candidate's competing total; numberPolicy is "echo-only". */
+  "competitor-match": (action, state) => {
+    const co = action.competingCompany;
+    const competingOffer = action.competingOffer;
+    /* Reality check (2026-05-29) — don't parrot inflated competing
+     * numbers. If the stated counter sits above 1.5× the role's band
+     * cap (maxStretch), it's almost certainly inflated for this band;
+     * politely flag the gap instead of validating it. */
+    const bandCap = state.band?.maxStretch;
+    const INFLATION_TOLERANCE = 1.5;
+    const implausible =
+      typeof bandCap === "number" &&
+      bandCap > 0 &&
+      typeof competingOffer === "number" &&
+      competingOffer > bandCap * INFLATION_TOLERANCE;
+    if (implausible) {
+      const src = co ? ` from ${co}` : "";
+      return `₹${competingOffer} LPA${src} is well above what we're seeing for this band — can you share which company/role that's for, or even a redacted offer letter? I'd want to make sure I'm taking the right comparison back to the panel.`;
+    }
+    if (co) {
+      return `Got it — that's a real number from ${co}. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land close to that number, are we in the same range?`;
+    }
+    return `Got it — that's a real number. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land close to that number, are we in the same range?`;
+  },
+
+  /* Phase 3 missing-lever set (2026-05-17) — rebuts "only X% hike"
+   * complaint with peer-context framing. Numbers come from the
+   * planner payload; prose echoes them verbatim. */
+  "anchor-defense-hike-strong": (action) =>
+    `Honestly, ₹${action.offer} LPA on ₹${action.currentCtc} is a ${action.hikePct}% hike — for this grade, peers in the market typically get 8-12% when changing jobs at the same level. We're already well above that range.`,
+
+  /* Fires once after verbal acceptance + formal close-recap. Trimmed to
+   * PAN + Aadhaar only — sufficient to generate the offer letter. The
+   * BGV team requests payslips / Form 16 / bank statements / relieving
+   * letters separately in a later workflow.
+   *
+   * Crack 6 (2026-05-17) — banned-idiom fix. The prior phrasing leaned
+   * on "reach out" which is on BANNED_RECRUITER_IDIOM (US-tech register;
+   * Indian recruiters say "revert"). Switched to "will revert
+   * separately" so the canonical passes the banned-idiom gate. */
+  "post-acceptance-document-request": () =>
+    "Congratulations! To get started with the offer letter, can you please share scanned copies of your PAN card and Aadhaar card on this email itself. Our BGV team will revert separately for the remaining documents.",
+
+  /* AP3-F2 (2026-05-17) — component-aware discovery prose. The bot
+   * has the candidate's total currentCtc but needs the per-component
+   * structure (base / variable / ESOP) before anchoring at senior
+   * grades. Templates use Indian-recruiter idiom; no numbers. */
+  "component-probe": (action, state) => {
+    if (action.component === "base") {
+      return "Got it on the total — what's the base split?";
+    }
+    if (action.component === "variable") {
+      /* PDF#33 Move B1 (2026-05-18) — when the variable was derived
+       * as the total−base complement (variableInferred=true), confirm
+       * the implied number with the candidate rather than silently
+       * binding it. If they explicitly meant base = total (no
+       * variable), this gives them a clean opportunity to correct.
+       * Otherwise we treat the inferred value as ratified. */
+      const bd = state.candidateComponentBreakdown;
+      const total = state.candidateCurrentCtc;
+      if (bd?.variableInferred === true && bd.variable != null && total != null) {
+        return `Quick check — that puts variable at around ₹${bd.variable} LPA on the ₹${total} LPA total, right? Or is the base the full number?`;
+      }
+      return "And on the variable side — is it a fixed bonus or perf-linked?";
+    }
+    /* esop — softened from "ESOPs in play?" (PDF#33 audit, 2026-05-18).
+     * PDF#45 second-pass audit (2026-05-22) — split from a compound
+     * "presence AND vesting" probe into a single-fact presence probe.
+     * Vesting structure is a follow-up that only makes sense once the
+     * candidate has confirmed presence; bundling both on one turn made
+     * the candidate drop one half. Reactive-followup carries the
+     * vesting-shape probe on the next turn. */
+    return "On the equity side — does your current package include any ESOPs or RSUs?";
+  },
+
+  "band-anchor-with-rationale": (_action, state) => {
+    const lo = state.band.initialOffer;
+    return `As per the band for this grade, the fitment comes to ₹${lo} LPA. That's based on what the role demands and what others in the team at this level are at — not just one market reference.`;
+  },
+
+  "close-recap-formal": (action, state, helpers) =>
+    proseCloseRecapFormal(action, state, helpers),
+
+  "round-transition": (action, state, helpers) =>
+    proseRoundTransition(action, state, helpers),
+
+  /* Bad-faith tactic — exploding-offer pressure. Two short variants
+   * keyed off the deadline so the candidate has to recognise the
+   * pressure rather than a specific phrasing. Indian-recruiter register
+   * ("kindly revert", "EOD", "let's close this"). */
+  "exploding-offer-pressure": (action) => {
+    if (action.deadline === "friday") {
+      return "One thing — we'll need a decision from your side by Friday. The approval window from leadership shuts after that, and I'd hate for us to lose the slot. Kindly revert by then.";
+    }
+    if (action.deadline === "24h") {
+      return "Honestly, I'll be straight with you — the panel needs a confirmation in the next 24 hours. After that the headcount goes back to the pool. Let's close this from your side by tomorrow.";
+    }
+    /* eod */
+    return "Quick one — we'll need your confirmation by EOD today. Finance is locking the offers for this cycle, and beyond that I can't hold the fitment. Kindly revert by EOD.";
+  },
+
+  /* Bad-faith tactic — fake competing candidate. Indian-recruiter
+   * idiom: "another candidate", "ready to sign at the current band",
+   * gentle nudge rather than overt threat. */
+  "fake-competing-candidate": () =>
+    "Just being upfront with you — there's another candidate also in the final round, and they're ready to sign at the current band itself. I'd much rather close this with you, but the panel won't hold the slot indefinitely. Where can you genuinely land?",
+
+  /* Prior-context feature (2026-05-29) — acknowledge an existing
+   * competing offer the user declared at session init. Two variants
+   * rotated by turnIndex parity. Asks ONE clarifier — deadline
+   * pressure for unsigned offers, signed-vs-verbal status when the
+   * signed flag is true (recruiters still confirm written terms). */
+  "acknowledge-existing-offer": (action, state) => {
+    const variant = state.turnIndex % 2;
+    const tail = action.signed
+      ? " You'd mentioned the offer letter is already in hand — is that the full fitment, or are some components still being negotiated?"
+      : " You'd mentioned this is verbal at the moment — when is the formal letter expected, and is there a deadline they've set?";
+    if (variant === 0) {
+      return `Noted on the ${action.company} offer at ₹${action.amountLpa} LPA — that's good context for us to work with.${tail}`;
+    }
+    return `Right, taking the ${action.company} offer at ₹${action.amountLpa} LPA as a working reference.${tail}`;
+  },
+
+  /* Prior-context feature (2026-05-29) — react when the candidate
+   * pushes back citing the existing offer. Two flavours: match (within
+   * band) or polite decline (above band). Sector-aware on the
+   * within-band variant — unicorn frames it as equity stretch, BFSI as
+   * deferred-comp, etc. */
+  "match-existing-offer-prose": (action, state, helpers) => {
+    const persona = helpers.sectorPersona;
+    const variant = state.turnIndex % 2;
+    if (action.withinBand) {
+      const lever = selectBySectorPersona(persona, {
+        "it-services": "joining-bonus side",
+        "gcc": "RSU refresh and joining-bonus side",
+        "indian-unicorn": "ESOP stretch so we can beat that on the equity side",
+        "early-startup": "equity % — that's where we have genuine room to beat them",
+        "bfsi": "variable plus the deferred-comp side as per RBI norms",
+        "psu": "as per scale — within the HRA + special-allowance classification",
+        "consulting-big4": "joining-bonus and grade-position side",
+        "fmcg-management": "joining-bonus and the LDP cohort stretch",
+        "edtech": "joining-bonus side — though post-correction the council keeps that lean",
+        "consulting-mbb": "sign-on and performance-bonus side, within the M&G cohort band the partners have already approved",
+        "default": "joining-bonus side",
+      });
+      if (variant === 0) {
+        return `On the ${action.company} number at ₹${action.competingAmountLpa} LPA — that sits within our band for this grade. Let me work the ${lever} and revert with a fitment that lands at or above that.`;
+      }
+      return `Fair — the ${action.company} ask at ₹${action.competingAmountLpa} LPA is workable for us. I'll structure on the ${lever} and come back with the matched fitment.`;
+    }
+    /* Above-band: politely decline. */
+    const declineReason = selectBySectorPersona(persona, {
+      "it-services": "service-line margins don't allow us to go there on this grade",
+      "gcc": "global band for this level holds; we can't beat that headline number",
+      "indian-unicorn": "cash band is held; we can stretch on equity but not the headline cash",
+      "early-startup": "cash runway is the real constraint — equity is the only lever we have",
+      "bfsi": "RBI deferred-comp constraints cap where we can land on the headline",
+      "psu": "the pay scale is fixed as per government norms — we can't match that number",
+      "consulting-big4": "internal equity at this level holds the fitment as per policy",
+      "fmcg-management": "the band for the LDP cohort is internal-policy driven and capped",
+      "edtech": "post the BYJU-era reset the comp committee has pulled bands in — we genuinely can't stretch to that number this cycle",
+      "consulting-mbb": "the M&G partner band for this cohort is fixed; even with a stretch exception we wouldn't clear that headline",
+      "default": "the band for this grade doesn't stretch to that number",
+    });
+    if (variant === 0) {
+      return `Honestly, ₹${action.competingAmountLpa} LPA from ${action.company} is above where we can land for this grade — ${declineReason}. I'd rather be straight with you than commit to something I can't hold.`;
+    }
+    return `To be upfront — matching ₹${action.competingAmountLpa} LPA isn't on the table for us; ${declineReason}. If ${action.company} is genuinely closer to what you want, take that seriously.`;
+  },
+
+  /* Prior-context feature (2026-05-29) — acknowledge a retention
+   * package the current employer has offered. Two variants. Probes
+   * counter-strategy: is the retention enough, or what does the user
+   * want beyond it. */
+  "acknowledge-retention-offer": (action, state) => {
+    const variant = state.turnIndex % 2;
+    const tenureLabel =
+      action.tenure === "immediate"
+        ? "as an immediate one-shot"
+        : action.tenure === "midYear"
+          ? "at the mid-year review"
+          : "at the full appraisal cycle";
+    if (variant === 0) {
+      return `Noted on the ₹${action.amountLpa} LPA retention from your current side, paid ${tenureLabel}. Quick one — is that retention enough to make you stay, or are you looking for something beyond it to move?`;
+    }
+    return `Got it — your current employer's put ₹${action.amountLpa} LPA on the table ${tenureLabel} to keep you. What's the gap you're looking to close on our side that retention doesn't cover?`;
+  },
+
+  /* Prior-context feature (2026-05-29) — retention-trump warning.
+   * Acknowledges that the retention package is structurally strong
+   * (>= 1.25× currentCtc) and signals that matching it will require
+   * panel / sign-off. Sector-aware on the sign-off framing — BFSI
+   * cites RBI deferred-comp constraints, unicorn frames equity as the
+   * lever to beat retention, PSU defers to establishment scale. */
+  "retention-trump-warning": (action, state, helpers) => {
+    const persona = helpers.sectorPersona;
+    const variant = state.turnIndex % 2;
+    const signOff = selectBySectorPersona(persona, {
+      "it-services": "the HR head plus the service-line P&L owner",
+      "gcc": "the global comp partner plus the local TA head",
+      "indian-unicorn": "the founders — but we can stretch on equity to beat it",
+      "early-startup": "the founders directly; equity is the only lever that can beat it",
+      "bfsi": "the business head — and RBI deferred-comp constraints cap how far we can go on headline",
+      "psu": "the establishment section as per process; matching is outside the regular scale",
+      "consulting-big4": "the comp committee at the partner level",
+      "fmcg-management": "the talent council at the brand-head level",
+      "edtech": "the founders' office — post the sector reset, retention-match calls are no longer a recruiter-level decision",
+      "consulting-mbb": "the M&G partner panel; matching a retention this strong is outside the regular cohort band and needs a documented exception",
+      "default": "leadership directly",
+    });
+    if (variant === 0) {
+      return `Honestly, ₹${action.retentionLpa} LPA against your current ₹${action.currentCtcLpa} LPA is a strong retention — that's a real lever your side has put on the table. Matching it from our side isn't a regular fitment call; it'll need sign-off from ${signOff}. Let me check and revert.`;
+    }
+    return `To be straight with you — a retention of ₹${action.retentionLpa} LPA on top of ₹${action.currentCtcLpa} LPA is well above the standard hike envelope. Closing the gap from our side will need ${signOff}, not just a regular fitment approval. Let me take this back and revert.`;
+  },
+
+  /* Memory-callback feature (2026-05-29) — warmly surface ONE
+   * earlier-stated fact so the recruiter sounds like they were
+   * actually listening. Sector-flavored: BFSI / consulting / PSU use
+   * formal phrasing ("Earlier in our conversation you noted..."),
+   * unicorn / startup / edtech use casual ("hey, you mentioned X —
+   * what's the latest?"). Two variants per claim-kind, rotated by
+   * state.turnIndex parity. */
+  "callback-prior-context": (action, state, helpers) => {
+    const persona = helpers.sectorPersona;
+    const formal = selectBySectorPersona(persona, {
+      "it-services": false,
+      "gcc": false,
+      "indian-unicorn": false,
+      "early-startup": false,
+      "bfsi": true,
+      "psu": true,
+      "consulting-big4": true,
+      "fmcg-management": true,
+      "edtech": false,
+      "consulting-mbb": true,
+      "default": false,
+    });
+    const variant = state.turnIndex % 2;
+    const lead = formal
+      ? "Earlier in our conversation you noted"
+      : "Hey, you mentioned";
+    if (action.claim === "competingOffer") {
+      const company = action.companyLabel ?? "that competing offer";
+      if (formal) {
+        return variant === 0
+          ? `${lead} ${company} earlier — may I ask whether they are still in the picture?`
+          : `Coming back to a point from earlier — you had flagged ${company}. Where does that conversation stand at the moment?`;
+      }
+      return variant === 0
+        ? `You mentioned ${company} earlier — are they still in the picture?`
+        : `Quick one — you'd flagged ${company} earlier. What's the latest there?`;
+    }
+    if (action.claim === "currentCtc") {
+      const lpa = action.value;
+      if (formal) {
+        return variant === 0
+          ? `${lead} you are currently at ₹${lpa} LPA — let me anchor the discussion off that for a moment.`
+          : `To revisit a point you made earlier — your current package is ₹${lpa} LPA. Let me reference that as we continue.`;
+      }
+      return variant === 0
+        ? `You said you're at ₹${lpa} LPA right now — let's anchor off that for a sec.`
+        : `Hey, you're at ₹${lpa} LPA right now, yeah? Let me come back to that.`;
+    }
+    if (action.claim === "noticePeriod") {
+      const n = action.value;
+      if (formal) {
+        return variant === 0
+          ? `${lead} the notice period at ${n} — we can absorb that with a joining bonus on our side.`
+          : `Returning to a point from earlier — you had flagged the notice at ${n}. We can structure a joining bonus to absorb it.`;
+      }
+      return variant === 0
+        ? `Earlier you flagged the notice period at ${n} — we can absorb that with a joining bonus.`
+        : `Hey, on the notice side — you'd said ${n}, right? Joining bonus can cover that.`;
+    }
+    if (action.claim === "expectedCtc") {
+      const lpa = action.value;
+      if (formal) {
+        return variant === 0
+          ? `${lead} your expectation at ₹${lpa} LPA — let me come back to that as we shape the fitment.`
+          : `Coming back to a number you shared earlier — ₹${lpa} LPA on the expectation side. Let me reference that.`;
+      }
+      return variant === 0
+        ? `You called out ₹${lpa} LPA as your expectation — let me come back to that.`
+        : `Hey, you'd mentioned ₹${lpa} LPA as the target — staying with that?`;
+    }
+    /* currentRole */
+    const role = action.value;
+    if (formal) {
+      return variant === 0
+        ? `${lead} ${role} as important — let me come back to that.`
+        : `Returning to a point you raised earlier — ${role}. I want to touch on that.`;
+    }
+    return variant === 0
+      ? `You called out ${role} as important — let me come back to that.`
+      : `Hey, you mentioned ${role} earlier — let me circle to that.`;
+  },
+
+  /* Competing-offer warm acknowledgment (2026-05-29). Pure respectful
+   * acknowledgment of market value — DIFFERENT from competitor-match
+   * which negotiates. Single line, genuinely complimentary, then a
+   * soft signal that we'll try to land in the same neighborhood. Two
+   * variants rotated by turnIndex parity. Sector-flavored on the
+   * "neighborhood" framing. */
+  "competing-offer-warm-ack": (action, state, helpers) => {
+    const persona = helpers.sectorPersona;
+    const variant = state.turnIndex % 2;
+    const neighborhood = selectBySectorPersona(persona, {
+      "it-services": "in the same neighborhood on the fitment",
+      "gcc": "in the same range on the global band",
+      "indian-unicorn": "in the same neighborhood — with the equity stretch we have room for",
+      "early-startup": "in the same neighborhood, with equity doing the real heavy lifting",
+      "bfsi": "in the same range on the fitment, working the variable + deferred side",
+      "psu": "as close as the pay scale will allow",
+      "consulting-big4": "in the same range on the grade fitment",
+      "fmcg-management": "in the same range within the LDP cohort band",
+      "edtech": "in the same range within where the band sits post the sector reset",
+      "consulting-mbb": "in the same range on the cohort band",
+      "default": "in the same neighborhood",
+    });
+    if (variant === 0) {
+      return `${action.company} making you an offer says something about your market value — let me make sure we're ${neighborhood}.`;
+    }
+    return `Honestly, ${action.company} putting ₹${action.amountLpa} LPA on the table is a real signal of where you stand in the market — let me work to land us ${neighborhood}.`;
+  },
+
+  /* Bad-faith tactic — vague non-binding promise. Soft, non-specific,
+   * "let me check"-shaped. Three sub-variants gated on the topic
+   * payload (wfh / joining-bonus / title). All deliberately verb-light
+   * on commitment ("might be", "we'll see", "let me check"). */
+  "vague-promise": (action) => {
+    if (action.topic === "wfh") {
+      return "On the WFH side — we'll see what we can do about hybrid flexibility after probation. Nothing I can put in writing right now, but generally these things get sorted at the team level once you're settled in.";
+    }
+    if (action.topic === "joining-bonus") {
+      return "On the joining bonus — a little something might be possible, let me check internally and revert. No promises, but we usually find some room for the right candidate at the closing stage.";
+    }
+    /* title */
+    return "On the title side — let me see what we can do about positioning you a level up at the next cycle. Won't commit anything formally now, but these things tend to work themselves out for strong performers.";
+  },
+
+  /* Calibrated-surprise lowball (2026-05-29) — 10 sector variants.
+   * Each variant:
+   *   - echoes the candidate's stated rupee number verbatim,
+   *   - invokes the band floor without disclosing the exact band,
+   *   - ends with an OPEN question (no yes/no) so the candidate must
+   *     elaborate on what's anchoring them.
+   * Numbers are echo-only; the prose layer NEVER fabricates a band
+   * number — the floor is referenced as "band floor for this grade",
+   * "M&G band for this cohort", etc. */
+  "calibrated-surprise-lowball": (action, _state, helpers) => {
+    const ask = action.candidateAnchor;
+    const persona = helpers.sectorPersona;
+    return helpers.selectBySectorPersona(persona, {
+      "bfsi":
+        `Just to confirm — ₹${ask}L is the number you're anchoring to? ` +
+        `That's actually below band floor for this grade. Can I ask what's driving that?`,
+      "early-startup":
+        `Wait, ek minute — ₹${ask}L? That's below what we've offered ` +
+        `others at this level. What's anchoring you there?`,
+      "consulting-mbb":
+        `To clarify — ₹${ask}L total? That's below the M&G band for ` +
+        `this cohort. Could I understand the basis?`,
+      "indian-unicorn":
+        `Hold on — ₹${ask}L? You're undershooting your level here. ` +
+        `What's behind that number for you?`,
+      "it-services":
+        `Sorry, just to confirm — ₹${ask}L total? That's a bit below ` +
+        `market for this role and YOE. Anything specific driving that number?`,
+      "gcc":
+        `Just to be sure — ₹${ask}L? That sits below the global band ` +
+        `for this level. What's the reference point you're working from?`,
+      "psu":
+        `Kindly clarify — ₹${ask}L is the figure you have in mind? ` +
+        `That is below the grade-pay scale for this cadre. May I ask the basis?`,
+      "consulting-big4":
+        `Quick clarification — ₹${ask}L? That sits below internal-equity ` +
+        `for this level. What's the basis you're working from?`,
+      "fmcg-management":
+        `Just to confirm — ₹${ask}L? That's below the LDP cohort band ` +
+        `for this intake. What's anchoring you to that number?`,
+      "edtech":
+        `Hold on — ₹${ask}L? Even post the sector reset, that's below ` +
+        `where we'd land for this role. What's the thinking behind that?`,
+      "default":
+        `Just to confirm — ₹${ask}L is the number you're anchoring to? ` +
+        `That's below market for this role. Could I ask what's driving that?`,
+    });
+  },
+
+  /* Calibrated-surprise lowball Branch A — quiet accept after the
+   * candidate doubled down on the lowball anchor following the probe.
+   * Tone: matter-of-fact, packaging-oriented. The recruiter is NOT
+   * coaching — they're closing on the candidate's stated number.
+   * Sector-tinted on the closing idiom. */
+  "accept-lowball-quiet": (action, _state, helpers) => {
+    const ask = action.candidateAnchor;
+    const persona = helpers.sectorPersona;
+    return helpers.selectBySectorPersona(persona, {
+      "bfsi":
+        `Alright, ₹${ask}L it is. Let me get this packaged and revert ` +
+        `with the formal offer letter by EOD.`,
+      "early-startup":
+        `Cool, ₹${ask}L it is then. Let me get the offer letter rolling ` +
+        `— you'll have it by EOD.`,
+      "consulting-mbb":
+        `Understood — ₹${ask}L it is. I'll route this through the M&G ` +
+        `panel and revert with the formal offer.`,
+      "indian-unicorn":
+        `Okay, ₹${ask}L works. Let me get the paperwork moving — ` +
+        `offer letter by EOD.`,
+      "it-services":
+        `Got it, ₹${ask}L it is. Let me get this packaged as per band ` +
+        `and revert with the offer letter by EOD.`,
+      "gcc":
+        `Right, ₹${ask}L it is. Let me get this on the global-comp ` +
+        `template and revert with the offer letter by EOD.`,
+      "psu":
+        `Noted — ₹${ask}L as per your figure. Kindly allow me to process ` +
+        `the offer as per establishment norms; we shall revert with the ` +
+        `appointment letter in due course.`,
+      "consulting-big4":
+        `Understood — ₹${ask}L it is. Let me get this signed off by ` +
+        `the comp committee and revert with the formal offer.`,
+      "fmcg-management":
+        `Alright, ₹${ask}L it is. Let me get this through the talent ` +
+        `council and revert with the LDP offer letter by EOD.`,
+      "edtech":
+        `Okay, ₹${ask}L it is. Let me get the founders' office to sign ` +
+        `off and revert with the offer letter by EOD.`,
+      "default":
+        `Alright, ₹${ask}L it is. Let me get this packaged and send you ` +
+        `the formal offer by EOD.`,
+    });
+  },
+};
 
 /** Canonical kernel-authored prose for every NextAction kind. The
  *  returned string is the EXACT line the bot would ship if the LLM
@@ -768,7 +1638,120 @@ export function renderCanonicalProse(
       if (opener) body = `${opener} ${body}`;
     }
   }
-  return sentimentPrefix ? `${sentimentPrefix} ${body}` : body;
+  /* 2026-05-29 realism-pass P0-1 (cross-arm completion) — humanize at
+   * the single exit point so every NextAction.kind picks up the
+   * persona-tic / mid-sentence-hedge / checkback layers, not just
+   * reactive-followup. The humanizer respects null sessionId → identity
+   * (snapshot determinism), so the 34 canonical-string assertions across
+   * the test suite stay byte-identical at null sessionId.
+   *
+   * COMPOSITION ORDER (post-audit): humanize the BODY first, THEN
+   * prepend the sentiment prefix. Reverse order produces
+   * "Look, I hear you — and I want to be straight…" double-cushion
+   * where the persona-tic stacks onto the sentiment prefix. With this
+   * order, sentiment prefix stays clean and the tic fires inside the
+   * body where it reads as a natural opener.
+   *
+   * SUPPRESSED KINDS: `terminal-restate`, walk-aways, and formal
+   * close-recap carry their own tone register — humanizer dilutes
+   * intent on those arms. `answer-direct` is pre-humanized at the
+   * planner level (LLM-bypass), so re-humanizing would double-tic. */
+  const shouldSuppressHumanize =
+    HUMANIZER_SUPPRESSED_KINDS.has(action.kind) ||
+    (action.kind === "close" && action.mode === "walkaway") ||
+    (action.kind === "live-walk-away" && action.mode === "walk");
+  const humanizedBody = shouldSuppressHumanize
+    ? body
+    : chainProseOverlays(body, state);
+  /* 2026-05-30 time-context — opening-turn prefix. Applied AFTER the
+   * humanizer so the humanizer doesn't treat the prefix as candidate-
+   * facing prose. Fires once per session at turnIndex 0 (the first
+   * recruiter prose turn). Idempotent via `timeContextPrefix`. */
+  let prefixedBody = humanizedBody;
+  if (state.turnIndex === 0 && !shouldSuppressHumanize) {
+    const tCtx = state.timeContext ?? "midweek-standard";
+    const pfx = timeContextPrefix(tCtx, prefixedBody);
+    if (pfx) prefixedBody = `${pfx}${prefixedBody}`;
+  }
+  return sentimentPrefix ? `${sentimentPrefix} ${prefixedBody}` : prefixedBody;
+}
+
+/* 2026-05-30 conversational-realism chain. Composes the new prose
+ * overlays around the existing humanizer.
+ *
+ * Chain order (earlier wraps later — sequential composition):
+ *   1. applyContextRefOverlay — prepends sector news ref.
+ *   2. applyPersonaTicSignature — per-session signature tic.
+ *   3. humanizeRecruiterProse — existing sector-formal-tic-whitelist
+ *      lives inside; stays where it is.
+ *   4. applyFallibilityOverlay — last, so it can detect already-applied
+ *      text and skip if needed. Only fires when a rupee figure appears.
+ *
+ * Each overlay is byte-identical no-op when its gate misses, so the
+ * baseline path (snapshot tests at null sessionId, midweek default
+ * timeContext, baseline mood) stays unchanged. */
+export function chainProseOverlays(
+  body: string,
+  state: NegotiationState,
+): string {
+  let out = body;
+  const sessionId = state.sessionId ?? "";
+  const persona: RecruiterSectorPersona =
+    state.recruiterSectorPersona ?? "default";
+  /* Gate the new overlays on a non-default sector — keeps the legacy
+   * snapshot path (no recruiterSectorPersona set) byte-identical. The
+   * existing humanizer mood layer uses the same gate. */
+  const overlaysActive = sessionId.length > 0 && persona !== "default";
+  if (overlaysActive) {
+    out = applyContextRefOverlay(out, persona, sessionId);
+    out = applyPersonaTicSignature(out, sessionId, persona);
+  }
+  out = humanizeRecruiterProse(out, {
+    sector: state.recruiterSectorPersona ?? null,
+    phase: state.phase ?? null,
+    sessionId: state.sessionId,
+    turnIndex: state.turnIndex,
+    candidateRegister: state.candidateRegister ?? null,
+    candidateFirstName: getCandidateFirstName(state),
+    mood: state.recruiterMood ?? null,
+    moodDynamic: state.recruiterMoodDynamic ?? null,
+    coldLineAlreadyFired:
+      state.recruiterMoodColdLineFiredAtTurn != null,
+    rewarmLineAlreadyFired:
+      state.recruiterMoodRewarmLineFiredAtTurn != null,
+  });
+  if (overlaysActive) {
+    out = applyFallibilityOverlay(out, {
+      mood:
+        (state.recruiterMoodDynamic && state.recruiterMoodDynamic !== "baseline"
+          ? state.recruiterMoodDynamic
+          : state.recruiterMood) ?? null,
+      turnIndex: state.turnIndex,
+      packageComplexity: computePackageComplexity(state),
+      sessionId: state.sessionId,
+    });
+  }
+  return out;
+}
+
+/* Count distinct comp components present in the current offer surface.
+ * No dedicated `RecruiterOffer` shape exists — we infer from kernel
+ * state. Components considered: base, joining, esop, retention,
+ * variable, relocation. Returns 0 if no offer yet. */
+function computePackageComplexity(state: NegotiationState): number {
+  if ((state.highestOfferMade ?? 0) <= 0) return 0;
+  const levers = new Set(state.leversUsed ?? []);
+  let n = 0;
+  // base: an offer is on the table
+  n += 1;
+  if ((state.lastJoiningBonusOffered ?? null) != null || levers.has("joining-bonus")) n += 1;
+  if (levers.has("equity-grant")) n += 1;
+  // variable / retention / relocation — no dedicated lever; infer
+  // from band shape and inflation-anchor activation as best-effort.
+  if (levers.has("ctc-inflation-anchor")) n += 1;
+  if (levers.has("notice-buyout")) n += 1;
+  if (levers.has("benefits-summary")) n += 1;
+  return n;
 }
 
 /** Action-specific body, unprefixed. Split out from renderCanonicalProse
@@ -802,417 +1785,20 @@ function renderCanonicalProseBody(
     gradeLabel,
   };
 
-  // FIXME(carve-out): 32 arms remaining — only the 10 largest were
-  // extracted in the 2026-05-22 carve-out (band-disclosure-deflect,
-  // reactive-followup, discovery-probe, counter-offer, open-with-offer,
-  // anchor-with-offer, clarify-prior-question, round-transition,
-  // close-recap-formal, info-disclosure). Remaining short arms (1-15
-  // lines each) stay inline pending future extraction; the helpers
-  // bundle is already shaped to accept them.
-  switch (action.kind) {
-    case "terminal-restate":
-      return state.highestOfferMade > 0
-        ? `The fitment stands at ₹${state.highestOfferMade}L as per our band for this grade. Take your time and revert.`
-        : "We've broadly covered the relevant points here. Take your time and revert.";
-
-    case "close":
-      if (action.mode === "accept") {
-        const anchor = selectEscalationAnchor(action, state);
-        return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
-      }
-      if (action.mode === "walkaway") {
-        return "Looking at where your expectations are versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Thanks for taking the time to speak with us.";
-      }
-      return "Let's pause the discussion here. Take your time on it and revert when you're ready.";
-
-    case "auto-accept": {
-      const anchor = selectEscalationAnchor(action, state);
-      return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
-    }
-
-    case "reactive-followup":
-      return proseReactiveFollowup(action, state, helpers);
-
-    /* PDF#51 (2026-05-28) — deterministic answer-direct. The planner
-     * already resolved the response-bank prose via
-     * renderCandidateQuestionResponse and stashed it on the action;
-     * canonical-prose just hands it back. negotiate-turn.ts normally
-     * short-circuits this kind before reaching canonical-prose (the
-     * LLM bypass uses move.deterministicProse), but the case stays
-     * here so legacy callers that DO traverse canonical-prose for
-     * answer-direct (restyle fallback, tests) ship the same string. */
-    case "answer-direct":
-      return action.prose;
-
-    case "probe-mismatch":
-      return "Before we get to the fitment, can you walk me through how your current work maps to this role?";
-
-    case "credibility-probe":
-      /* ResumeFactPack track Step 4 (2026-05-16) — Indian-recruiter
-       * idiom. Surfaces the resume↔stated-affiliation gap without
-       * accusation. Tokens "resume" + both company names are required
-       * by the NextActionContract restyle gate. */
-      return `Quick check — your resume mentions ${action.resumeCompany}; you're currently with ${action.statedCompany}?`;
-
-    case "live-walk-away":
-      if (action.mode === "walk") {
-        return "Looks like this may not be the right fit at this stage — thanks for taking the time to speak with us.";
-      }
-      if (action.mode === "hold-firm") {
-        return state.highestOfferMade > 0
-          ? `We'll hold the fitment at ₹${state.highestOfferMade}L for now as per our band for this grade.`
-          : "We'll hold here for now as per our band for this grade.";
-      }
-      return "Let me probe a little further before we move ahead.";
-
-    case "band-disclosure-deflect":
-      return proseBandDisclosureDeflect(action, state, helpers);
-
-    case "discovery-probe":
-      return proseDiscoveryProbe(action, state, helpers);
-
-    case "open-with-offer":
-      return proseOpenWithOffer(action, state, helpers);
-
-    case "lever-loop-guard":
-      return "Take some time to think it through and revert with where you'd like to land.";
-
-    case "info-disclosure":
-      return proseInfoDisclosure(action, state, helpers);
-
-    case "probe-expectations":
-      return "What fitment were you expecting for this role?";
-
-    case "probe-justification":
-      return "Help me understand — how did you arrive at that number?";
-
-    case "counter-offer":
-      return proseCounterOffer(action, state, helpers);
-
-    case "lever-explore": {
-      /* PDF#48 B2 (2026-05-25) — number-aware lever-explore. When the
-       * candidate just gave a counter number (lastCandidateCounterLpa)
-       * but the planner picked lever-explore (counter above band /
-       * headroom exhausted / counter-round cap), engage with the
-       * stated number rather than emitting a generic structural
-       * filler. Real recruiters acknowledge what was just put on the
-       * table before pivoting to non-cash levers. */
-      const counter = state.lastCandidateCounterLpa;
-      if (typeof counter === "number" && counter > 0) {
-        return `On the ₹${counter}L ask — that's above the cash band I can structure on this grade. Let me see what else we can put together on the fitment.`;
-      }
-      return "Let me see what else we can structure on the fitment.";
-    }
-
-    case "hold-firm":
-      return state.highestOfferMade > 0
-        ? `We'll hold the fitment at ₹${state.highestOfferMade}L as per our band for this grade. Take some time on it and revert.`
-        : "We'll hold here as per our band for this grade. Take some time on it and revert.";
-
-    case "rescission":
-      return "Given how this discussion has gone, we won't be able to move ahead with this offer.";
-
-    case "lever-grade-upgrade": {
-      const anchor = selectEscalationAnchor(action, state);
-      return `On the structure side — let me check with ${anchor} if there's scope to position you a grade higher. That changes both the grade and the fitment together.`;
-    }
-
-    case "lever-retention-bonus": {
-      const anchor = selectEscalationAnchor(action, state);
-      return `On the structure — we can add a retention bonus paid out across the first 12-18 months, over and above the fitment. Let me run the exact split past ${anchor} and revert.`;
-    }
-
-    case "lever-rsu-refresh":
-      /* PDF#33 Move A (2026-05-18) — replaced teaser "Let me walk you
-       * through how the refresh cadence works for this grade" with
-       * the substantive content directly: cadence + sizing band. */
-      return "On the RSU side — there's a fresh grant every year at the appraisal cycle, on top of your joining grant. The yearly grant is usually 30 to 40% of the joining grant if your rating is on track, and higher if you're rated top performer.";
-
-    case "lever-relocation": {
-      const anchor = selectEscalationAnchor(action, state);
-      return `On the relocation side — we have a standard relocation allowance plus temporary accommodation support for the first few weeks. Let me confirm the exact amount with ${anchor} and revert.`;
-    }
-
-    case "lever-perf-bonus-cadence":
-      /* PDF#33 Move A (2026-05-18) — replaced teaser tail with the
-       * substantive payout shape directly. */
-      return "On the performance bonus — it's paid out at the March appraisal cycle, with a mid-year top-up for top performers. The standard payout is 100% if your rating is on track, going up to 150% for top performers and 0% if the rating is below the threshold.";
-
-    case "ctc-inflation-anchor": {
-      /* Audit fix 2026-05-21 — recruiter weaponises CTC-vs-in-hand
-       * confusion. Numbers are accurate; the framing is the lie.
-       * The simulator allows this once per session so the candidate
-       * learns to ALWAYS ask "what's the guaranteed in-hand?". The
-       * truth-on-followup is handled by the `ctc-inflation-truth`
-       * arm below — same underlying numbers, honest framing. */
-      return (
-        `We can do ₹${action.ctcLpa}L total package — that's ₹${action.fixedLpa}L fixed, ` +
-        `₹${action.variableLpa}L variable on annual rating, ESOPs worth ₹${action.esopPaperLpa}L ` +
-        `at last fair-market-value, ₹${action.joiningBonusLpa}L joining bonus, and our standard ` +
-        `benefits package (gratuity, PF employer, NPS, insurance) worth around ₹${action.benefitsLpa}L. ` +
-        `So overall ₹${action.ctcLpa}L on the table.`
-      );
-    }
-    case "ctc-inflation-truth": {
-      /* Audit fix 2026-05-21 — candidate asked for the in-hand
-       * breakdown after the inflated anchor. Truthful framing of the
-       * same numbers. Teaches defense, not deception-as-skill. */
-      return (
-        `Fair question — let me break it down honestly. The guaranteed cash is the ₹${action.fixedLpa}L fixed; ` +
-        `that's what hits your account month after month. The ₹${action.variableLpa}L variable is at-risk on the annual rating cycle — ` +
-        `most years it pays out 80-100%, but it's not contractual. The ₹${action.esopPaperLpa}L ESOPs are paper value at last FMV — ` +
-        `actual realisable value depends on buyback windows and vesting completion. The ₹${action.joiningBonusLpa}L joining bonus is ` +
-        `one-time, amortised over year one, and carries a clawback if you leave early. Benefits ₹${action.benefitsLpa}L is gratuity / ` +
-        `PF / NPS / insurance — real value, but non-cash. So the headline ₹${action.ctcLpa}L is the full envelope; ` +
-        `the guaranteed annual cash is ₹${action.fixedLpa}L fixed.`
-      );
-    }
-
-    case "lever-joining-bonus-explained": {
-      const jb = state.lastJoiningBonusOffered;
-      const jbPart = jb != null && jb > 0 ? `₹${jb}L ` : "";
-      /* Audit fix 2026-05-21: clawback window scales with amount and
-       * tier — not a flat 12mo. Resolver consults the JB amount + the
-       * company tier (IT-services → service bond; MNC India → 24mo;
-       * else ladder by amount). */
-      const clawback = clawbackForCompany(jb ?? 0, state.company);
-      return `On the joining bonus — the ${jbPart}is one-time, paid with the first month's payroll, and carries a ${clawback.description} Let me know if you want the exact wording before I revert internally.`;
-    }
-
-    case "internal-equity-defense": {
-      const median = action.peerBandMedianLpa;
-      const top = action.peerBandTopLpa;
-      return `Let me be upfront with you — others at ${gradeLabel(state)} level in our team are between ₹${median} and ₹${top} LPA fixed. Going above that means you'd be paid more than people at the same level who've been here longer, which I'd have to get specially cleared with the Comp team — and that only goes through for a clear niche-skill case. The number we're discussing is already at the top end of what I can close without that exception.`;
-    }
-
-    case "comparative-anchoring": {
-      const target = state.candidateTarget;
-      const targetStr = target != null && target > 0 ? `₹${target} LPA` : "where you're anchoring";
-      if (action.quartile === "top") {
-        return `Just to frame this — at ${targetStr}, you'd be at the top end of the ${gradeLabel(state)} band. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
-      }
-      return `At ${targetStr}, you'd be in the middle of the ${gradeLabel(state)} band — a good place to start, with room to grow at the next appraisal.`;
-    }
-
-    case "anchor-with-offer":
-      return proseAnchorWithOffer(action, state, helpers);
-
-    case "offer-recap": {
-      /* PDF#35 Move 1 (2026-05-18) — post-anchor offer-recap. The
-       * candidate has asked to be REMINDED of the standing offer
-       * ("what was the offer again?"); we recap highestOfferMade
-       * without re-anchoring or moving the band. When component
-       * metadata is available, surface the fixed/variable split so
-       * the candidate doesn't have to ask twice. */
-      const variableMax = state.band?.variableMax;
-      if (typeof variableMax === "number" && variableMax > 0) {
-        const fixedComponent = Math.max(0, action.offerLpa - variableMax);
-        return `Just to recap — the fitment on the table is ₹${action.offerLpa} LPA, with ₹${fixedComponent} LPA fixed and ₹${variableMax} LPA target variable on the performance cycle. Let me know what's on your mind.`;
-      }
-      return `Just to recap — the fitment on the table is ₹${action.offerLpa} LPA. Let me know what's on your mind.`;
-    }
-
-    case "acknowledge-and-recover": {
-      /* PDF#29 Bug 7 (2026-05-18) — frustration recovery. Number-free,
-       * carries the required "apolog" token so the contract entry
-       * pins the move's repair semantics. Partial line; the planner
-       * could chain a next non-redundant action behind this in a v2
-       * (acceptable to ship standalone for v1 — lastUserFrustrated is
-       * cleared in applyAiMove so the next turn resumes the normal
-       * cascade). */
-      return "You're right, my apologies — let me not loop on that. Moving on.";
-    }
-
-    case "clarify-prior-question":
-      return proseClarifyPriorQuestion(action, state, helpers);
-
-    case "manager-consult-stall": {
-      /* Realism-Audit Fix 3 (2026-05-22) — multi-turn stall move.
-       *
-       * Three modes:
-       *   - "open" — recruiter receives the over-band ask and defers to
-       *     their manager / HR head / comp committee. No outcome yet;
-       *     the next AI turn ships the deterministic return.
-       *   - "return-move" — recruiter returns from the consult with a
-       *     small concession (typically JB-shaped, ₹0.5–2L).
-       *   - "return-hold" — recruiter returns and confirms the band
-       *     stays. The stall has been TRUTHFUL in coaching terms: the
-       *     state genuinely advanced through stallTurnsRemaining.
-       *
-       * Persona-flavoured idiom comes from the persona's idiomBias
-       * bank via `recruiterSectorPersonaPromptFragment` upstream; the
-       * canonical line carries the core stall semantics. */
-      const persona = sectorPersona(state);
-      const ask = action.stalledAskLpa;
-      const askClause = ask != null ? ` on the ₹${ask}L ask` : "";
-      if (action.mode === "open") {
-        const opener = selectBySectorPersona(persona, {
-          "it-services": "Let me check with the HR head on this and revert by EOD",
-          "gcc": "Let me loop in the global TA partner on this and revert by tomorrow",
-          "indian-unicorn": "Let me run this past the founders and revert by tomorrow",
-          "early-startup": "Let me check with the founders on this and revert by tomorrow",
-          "bfsi": "Let me take this to the business head and revert by tomorrow",
-          "psu": "Kindly note this will need to go to the establishment section — we'll revert as per process",
-          "consulting-big4": "Let me discuss in the comp-committee meeting tomorrow and revert",
-          "fmcg-management": "Let me check with the talent council and revert by tomorrow",
-          "default": "Let me check with my manager on this and revert by tomorrow",
-        });
-        return `${opener}${askClause}. I want to come back with a clear answer rather than commit to something I can't hold.`;
-      }
-      if (action.mode === "return-move") {
-        const move = action.returnConcessionLpa ?? 0;
-        const lever = selectBySectorPersona(persona, {
-          "it-services": "on the joining bonus side",
-          "gcc": "on the stock refresh side",
-          "indian-unicorn": "on the ESOP grant side",
-          "early-startup": "on the equity % side",
-          "bfsi": "on the variable / joining bonus side",
-          "psu": "via the HRA classification",
-          "consulting-big4": "on the joining-bonus side",
-          "fmcg-management": "on the joining-bonus side",
-          "default": "on the joining bonus side",
-        });
-        return `Checked${askClause} — we can move ₹${move}L ${lever}. The overall number stays the same. How does this sound?`;
-      }
-      /* return-hold */
-      const holdTail = selectBySectorPersona(persona, {
-        "it-services": "as per band, the grade fitment is what we have",
-        "gcc": "the global band for this level holds",
-        "indian-unicorn": "cash side is held; equity is where we have room",
-        "early-startup": "cash runway is the constraint; equity is the only lever",
-        "bfsi": "the regulatory band holds; variable is the only flex",
-        "psu": "the pay scale is fixed as per government norms",
-        "consulting-big4": "internal equity at this level holds the fitment",
-        "fmcg-management": "the band for the LDP cohort is internal-policy driven",
-        "default": "the band stays as it is",
-      });
-      return `Checked${askClause} — ${holdTail}. I'd rather be straight with you than promise something I can't hold.`;
-    }
-
-    case "panel-approval-stall": {
-      /* Phase 3 missing-lever set (2026-05-17) — distinct stall move.
-       * Real Indian HR escalation: after two cash concessions, further
-       * movement requires panel sign-off. The recruiter explicitly says
-       * "let me check with leadership" and commits to a revert window. */
-      return "Honestly, anything further on this will need panel approval. Let me check with leadership and revert by EOD — how does this sound?";
-    }
-
-    case "polite-walkaway": {
-      /* Phase 3 missing-lever set (2026-05-17) — AI declines to continue
-       * holding the fitment open when the candidate stalls without
-       * leverage. Frames the exit politely but unambiguously — kindly
-       * revert by EOD tomorrow or we move on. */
-      return "Sure, take your time. To be honest — without a firm decision from your side or a competing offer to work against, I won't be able to keep this offer pending for long. Kindly revert with a clear answer by EOD tomorrow, otherwise we'll have to move ahead with other candidates.";
-    }
-
-    case "fake-leverage-challenge": {
-      /* fake-leverage-challenge (2026-05-17) — soft Indian-HR probe for
-       * proof of the competing offer. "would you mind" is the natural
-       * polite register; "make a stronger case to the panel" matches
-       * the existing band-disclosure-deflect / panel-approval-stall
-       * register. No LPA numbers — numberPolicy is "forbidden". */
-      const co = action.competingCompany;
-      if (co) {
-        return `You'd mentioned the competing offer from ${co} — would you mind sharing the offer letter, or even a redacted version? It helps me make a stronger case to the panel for matching it.`;
-      }
-      return `On the competing offer you'd mentioned — would you mind sharing the letter, or even a redacted version? It helps me make a stronger case to the panel for matching it.`;
-    }
-
-    case "competitor-match": {
-      /* PDF#42 BUG-A (2026-05-21) — recruiter-owned response to a
-       * substantiated, above-offer competing number. Indian-HR
-       * register: panel escalation + concrete revert window + soft
-       * close-readiness probe. No new numbers beyond echoing the
-       * candidate's competing total; numberPolicy is "echo-only". */
-      const co = action.competingCompany;
-      const competingOffer = action.competingOffer;
-      if (co) {
-        return `Got it — that's a real number from ${co}. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land close to that number, are we in the same range?`;
-      }
-      return `Got it — that's a real number. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land close to that number, are we in the same range?`;
-    }
-
-    case "anchor-defense-hike-strong": {
-      /* Phase 3 missing-lever set (2026-05-17) — rebuts "only X% hike"
-       * complaint with peer-context framing. Numbers come from the
-       * planner payload; prose echoes them verbatim. */
-      return `Honestly, ₹${action.offer} LPA on ₹${action.currentCtc} is a ${action.hikePct}% hike — for this grade, peers in the market typically get 8-12% when changing jobs at the same level. We're already well above that range.`;
-    }
-
-    case "post-acceptance-document-request": {
-      /* Fires once after verbal acceptance + formal close-recap. Trimmed to
-       * PAN + Aadhaar only — sufficient to generate the offer letter. The
-       * BGV team requests payslips / Form 16 / bank statements / relieving
-       * letters separately in a later workflow.
-       *
-       * Crack 6 (2026-05-17) — banned-idiom fix. The prior phrasing leaned
-       * on "reach out" which is on BANNED_RECRUITER_IDIOM (US-tech register;
-       * Indian recruiters say "revert"). Switched to "will revert
-       * separately" so the canonical passes the banned-idiom gate. */
-      return "Congratulations! To get started with the offer letter, can you please share scanned copies of your PAN card and Aadhaar card on this email itself. Our BGV team will revert separately for the remaining documents.";
-    }
-
-    case "component-probe": {
-      /* AP3-F2 (2026-05-17) — component-aware discovery prose. The bot
-       * has the candidate's total currentCtc but needs the per-component
-       * structure (base / variable / ESOP) before anchoring at senior
-       * grades. Templates use Indian-recruiter idiom; no numbers. */
-      if (action.component === "base") {
-        return "Got it on the total — what's the base split?";
-      }
-      if (action.component === "variable") {
-        /* PDF#33 Move B1 (2026-05-18) — when the variable was derived
-         * as the total−base complement (variableInferred=true), confirm
-         * the implied number with the candidate rather than silently
-         * binding it. If they explicitly meant base = total (no
-         * variable), this gives them a clean opportunity to correct.
-         * Otherwise we treat the inferred value as ratified. */
-        const bd = state.candidateComponentBreakdown;
-        const total = state.candidateCurrentCtc;
-        if (bd?.variableInferred === true && bd.variable != null && total != null) {
-          return `Quick check — that puts variable at around ₹${bd.variable} LPA on the ₹${total} LPA total, right? Or is the base the full number?`;
-        }
-        return "And on the variable side — is it a fixed bonus or perf-linked?";
-      }
-      /* esop — softened from "ESOPs in play?" (PDF#33 audit, 2026-05-18).
-       * PDF#45 second-pass audit (2026-05-22) — split from a compound
-       * "presence AND vesting" probe into a single-fact presence probe.
-       * Vesting structure is a follow-up that only makes sense once the
-       * candidate has confirmed presence; bundling both on one turn made
-       * the candidate drop one half. Reactive-followup carries the
-       * vesting-shape probe on the next turn. */
-      return "On the equity side — does your current package include any ESOPs or RSUs?";
-    }
-
-    case "band-anchor-with-rationale": {
-      const lo = state.band.initialOffer;
-      return `As per the band for this grade, the fitment comes to ₹${lo} LPA. That's based on what the role demands and what others in the team at this level are at — not just one market reference.`;
-    }
-
-    case "close-recap-formal":
-      return proseCloseRecapFormal(action, state, helpers);
-
-    case "round-transition":
-      return proseRoundTransition(action, state, helpers);
-
-    default: {
-      /* TypeScript exhaustiveness check. If a new NextAction.kind is
-       * added without canonical coverage, the type system flags this
-       * line. We still return a defensive default at runtime so the
-       * pipeline never crashes — tests should catch the gap first. */
-      const _exhaustive: never = action;
-      void _exhaustive;
-      /* Try to read action.ask if the new kind happens to carry one. */
-      const carried = action as { ask?: string };
-      if (carried && typeof carried.ask === "string" && carried.ask) {
-        return carried.ask;
-      }
-      return "Let me come back to you in a moment.";
-    }
-  }
-
   /* Reserved for future use — greet variable referenced above. */
   void greet;
+
+  /* Per-kind dispatch — every arm lives in PROSE_ARMS at module
+   * scope. The mapped-type shape of PROSE_ARMS guarantees compile-
+   * time exhaustiveness; this lookup is the only runtime branch. */
+  const arm = PROSE_ARMS[action.kind] as
+    | ((a: NextAction, s: NegotiationState, h: ProseHelpers) => string)
+    | undefined;
+  if (arm) return arm(action, state, helpers);
+  /* Defensive default — preserves the pre-carve-out fallback if a
+   * future NextAction.kind ships without an arm. */
+  const carried = action as { ask?: string };
+  return carried?.ask?.trim() ? carried.ask : "Let me come back to you in a moment.";
 }
 
 /* PDF#50 fix (2026-05-27) — translate the kernel's phase enum into a

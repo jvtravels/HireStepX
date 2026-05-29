@@ -260,3 +260,270 @@ describe("actionToLever — bit-identical round-trip vs pickAiMove", () => {
     });
   }
 });
+
+describe("planNextAction — frustration recovery (PDF#29 Bug 7 / PDF#30)", () => {
+  /* These tests cover the highest-priority calming/empathic branch:
+   * acknowledge-and-recover. It fires either explicitly when the
+   * candidate signals frustration (lastUserFrustrated=true) or
+   * implicitly via the stalled-discovery cap (4 consecutive probes
+   * with no salary disclosure). */
+  it("lastUserFrustrated=true → acknowledge-and-recover (calming response)", () => {
+    const s = init({
+      phase: "counter-offer",
+      turnIndex: 4,
+      highestOfferMade: 22,
+      lastUserFrustrated: true,
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("acknowledge-and-recover");
+  });
+
+  it("frustration recovery beats counter-offer math even mid-negotiation", () => {
+    const s = init({
+      phase: "counter-offer",
+      turnIndex: 5,
+      highestOfferMade: 22,
+      candidateTarget: 26,
+      candidateCurrentCtc: 18,
+      lastUserFrustrated: true,
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("acknowledge-and-recover");
+  });
+
+  it("frustration recovery fires from opening phase too (no phase gate)", () => {
+    const s = init({
+      phase: "opening",
+      turnIndex: 2,
+      lastUserFrustrated: true,
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("acknowledge-and-recover");
+  });
+
+  it("4 consecutive probes + no salary disclosure → stalled-discovery acknowledge-and-recover (implicit frustration)", () => {
+    const s = init({
+      phase: "opening",
+      turnIndex: 5,
+      leversUsed: ["probe", "probe", "probe", "probe"],
+      /* no candidateCurrentCtc / candidateTarget set → no disclosure */
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("acknowledge-and-recover");
+  });
+
+  it("3 probes (below cap) → does NOT fire stalled-discovery recovery", () => {
+    const s = init({
+      phase: "opening",
+      turnIndex: 4,
+      leversUsed: ["probe", "probe", "probe"],
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("acknowledge-and-recover");
+  });
+
+  it("4 consecutive probes but candidate disclosed CTC → no stalled-discovery cap (progress)", () => {
+    const s = init({
+      phase: "opening",
+      turnIndex: 5,
+      leversUsed: ["probe", "probe", "probe", "probe"],
+      candidateCurrentCtc: 18,
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("acknowledge-and-recover");
+  });
+});
+
+describe("planNextAction — stall-turn loop escalation (manager-consult-stall)", () => {
+  /* Real Indian recruiters' #1 leverage tactic is the multi-turn stall.
+   * The planner must (a) open a stall when the candidate over-asks,
+   * (b) ship a deterministic return turn while one is in flight,
+   * (c) cap stalls at STALL_SESSION_CAP=3 so it doesn't loop forever. */
+  it("PSU persona + over-band ask → opens manager-consult-stall", () => {
+    const s = init({
+      phase: "counter-offer",
+      turnIndex: 3,
+      counterRound: 1,
+      highestOfferMade: 24,
+      lastCandidateCounterLpa: 32, // > band.maxStretch (28)
+      recruiterSectorPersona: "psu",
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("manager-consult-stall");
+    if (action.kind === "manager-consult-stall") {
+      expect(action.mode).toBe("open");
+      expect(action.stalledAskLpa).toBe(32);
+    }
+  });
+
+  it("stall already in flight → planner ships return-turn (loop-break)", () => {
+    const s = init({
+      phase: "counter-offer",
+      turnIndex: 4,
+      counterRound: 1,
+      highestOfferMade: 24,
+      lastCandidateCounterLpa: 32,
+      recruiterSectorPersona: "psu",
+      stallTurnsRemaining: 1,
+      stallsFiredCount: 1,
+      lastStallContext: { stalledAskLpa: 32, openedAtTurn: 3 },
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("manager-consult-stall");
+    if (action.kind === "manager-consult-stall") {
+      expect(action.mode === "return-move" || action.mode === "return-hold").toBe(true);
+      expect(action.stalledAskLpa).toBe(32);
+    }
+  });
+
+  it("session-cap reached (stallsFiredCount=3) → planner escalates past stall, does not loop", () => {
+    const s = init({
+      phase: "counter-offer",
+      turnIndex: 6,
+      counterRound: 2,
+      highestOfferMade: 24,
+      lastCandidateCounterLpa: 32,
+      recruiterSectorPersona: "psu",
+      stallsFiredCount: 3, // at cap
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("manager-consult-stall");
+  });
+
+  it("candidate ask within band (no over-ask) → no stall opened even on high-stall persona", () => {
+    const s = init({
+      phase: "counter-offer",
+      turnIndex: 3,
+      counterRound: 1,
+      highestOfferMade: 24,
+      lastCandidateCounterLpa: 26, // within band.maxStretch (28)
+      recruiterSectorPersona: "psu",
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("manager-consult-stall");
+  });
+
+  it("stall cannot fire on first AI turn (turnIndex=0) even if persona is high-stall", () => {
+    const s = init({
+      phase: "counter-offer",
+      turnIndex: 0,
+      lastCandidateCounterLpa: 32,
+      recruiterSectorPersona: "psu",
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("manager-consult-stall");
+  });
+});
+
+describe("planNextAction — discovery topic skip / exhaustion", () => {
+  /* When discovery items are explicitly refused or exhausted, the
+   * planner must advance past them rather than re-grinding. The cascade
+   * routes through buildSkipRecord (refused-items + recently-asked) and
+   * isDiscoveryComplete (role-family-aware satisfaction). */
+  it("when discovery is fully satisfied → planner exits discovery cascade (no discovery-probe)", () => {
+    const s = init({
+      phase: "opening",
+      turnIndex: 3,
+      discoveryStage: "discovery",
+      discoveryChecklist: {
+        currentCtcAsked: true,
+        currentCtcAnswered: true,
+        fixedVariableSplitAsked: true,
+        fixedVariableSplitAnswered: true,
+        noticePeriodAsked: true,
+        noticePeriodAnswered: true,
+        competingOffersAsked: true,
+        competingOffersAnswered: true,
+        valueProofAsked: true,
+        valueProofAnswered: true,
+        targetAsked: true,
+        targetAnswered: true,
+        variableComfortTested: true,
+        commitmentValidationAsked: true,
+        currentCtcFixedVariableSplitDisclosed: true,
+        expectedCtcFixedVariableSplitDisclosed: true,
+      },
+      candidateCurrentCtc: 18,
+      candidateTarget: 26,
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("discovery-probe");
+  });
+
+  it("explicit discoveryRefusedItems are skipped — planner advances to next topic", () => {
+    /* Mark currentCtcAsked as refused; the cascade must pick another
+     * un-satisfied topic instead of re-asking currentCtc. */
+    const s = init({
+      phase: "opening",
+      turnIndex: 2,
+      discoveryStage: "discovery",
+      discoveryRefusedItems: { currentCtcAsked: true },
+    });
+    const action = planNextAction(s);
+    if (action.kind === "discovery-probe") {
+      expect(action.item).not.toBe("currentCtcAsked");
+    }
+  });
+
+  it("repetition-complaint forces skip of the last-asked topic", () => {
+    const s = init({
+      phase: "opening",
+      turnIndex: 3,
+      discoveryStage: "discovery",
+      askedTopics: [{ topic: "currentCtcAsked", atTurn: 2 }],
+      repetitionComplaintAtTurn: 2,
+    });
+    const action = planNextAction(s);
+    if (action.kind === "discovery-probe") {
+      expect(action.item).not.toBe("currentCtcAsked");
+    }
+  });
+
+  it("post-recovery (last lever was acknowledge-and-recover) force-advances past last-asked topic", () => {
+    const s = init({
+      phase: "opening",
+      turnIndex: 4,
+      discoveryStage: "discovery",
+      askedTopics: [{ topic: "currentCtcAsked", atTurn: 3 }],
+      leversUsed: ["probe", "probe", "probe", "acknowledge-and-recover"],
+    });
+    const action = planNextAction(s);
+    if (action.kind === "discovery-probe") {
+      expect(action.item).not.toBe("currentCtcAsked");
+    }
+  });
+
+  it("probe-expectations with discovery complete + no offer → band-anchor-with-rationale bridge", () => {
+    /* Bridge fix (Audit Pass 2 Fix B): once discovery is complete and
+     * no anchor on the table, planner anchors the band instead of
+     * looping on probes. */
+    const s = init({
+      phase: "probe-expectations",
+      turnIndex: 3,
+      highestOfferMade: 0,
+      discoveryStage: "discovery",
+      discoveryChecklist: {
+        currentCtcAsked: true,
+        currentCtcAnswered: true,
+        fixedVariableSplitAsked: true,
+        fixedVariableSplitAnswered: true,
+        noticePeriodAsked: true,
+        noticePeriodAnswered: true,
+        competingOffersAsked: true,
+        competingOffersAnswered: true,
+        valueProofAsked: true,
+        valueProofAnswered: true,
+        targetAsked: true,
+        targetAnswered: true,
+        variableComfortTested: true,
+        commitmentValidationAsked: true,
+        currentCtcFixedVariableSplitDisclosed: true,
+        expectedCtcFixedVariableSplitDisclosed: true,
+      },
+      candidateCurrentCtc: 18,
+      candidateTarget: 24,
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("band-anchor-with-rationale");
+  });
+});

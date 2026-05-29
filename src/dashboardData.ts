@@ -60,6 +60,27 @@ export interface RealSession {
     overBandViolation: boolean;
     totalTurns: number;
     score: number;
+    /* Calibrated-surprise lowball event — pre-computed upstream from
+       the kernel finalState via buildLowballEvent. */
+    lowballEvent?: {
+      candidateAnchor: number;
+      bandFloor: number;
+      gapPct: number;
+      recruiterProbed: boolean;
+      candidateHeld: boolean;
+    };
+    /* Recruiter-power-dynamics feature (2026-05-29). */
+    powerContext?: {
+      recruiterPower: number;
+      signals: {
+        openReqMonths?: number;
+        pipelineDepth?: number;
+        quarterTiming?: "fresh-quarter" | "mid-quarter" | "quarter-end" | "annual-sprint";
+        candidateHasCompetingProcess?: boolean;
+      };
+      posture: "strong" | "neutral" | "hungry";
+      candidateLeverage: "low" | "neutral" | "high";
+    };
   };
 }
 

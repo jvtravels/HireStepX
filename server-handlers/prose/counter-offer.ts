@@ -67,6 +67,8 @@ export function proseCounterOffer(
       "psu": `As per government norms the grade-fitment lands at ₹${total}L total — HRA and LTC are the only flex.`,
       "consulting-big4": `Fitment to the level lands at ₹${total}L total — internal equity at this band caps further movement.`,
       "fmcg-management": `For the leadership-development cohort the band lands at ₹${total}L total — the trajectory carries more long-term value.`,
+      "edtech": `Post the sector correction, the comp committee is holding the line — the most I can structure is ₹${total}L total this cycle.`,
+      "consulting-mbb": `Partners signed off on a ₹${total}L stretch within band — that's what M&G policy allows for this cohort.`,
       "default": `We can revise the fitment to ₹${total}L total.`,
     });
     return `${spiralLead} ${body} How does that look from your side?`;

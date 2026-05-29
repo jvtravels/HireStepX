@@ -80,6 +80,10 @@ export function proseBandDisclosureDeflect(
       "I won't be able to share internal numbers — fitment to the level is set by internal equity for this cohort. Happy to take your expectation back to the people-team partner." + chainedProbe,
     "fmcg-management":
       "I won't be able to share internal numbers. For the leadership-development cohort the band is internal-policy driven; the long-term trajectory is the real value here." + chainedProbe,
+    "edtech":
+      "I won't be able to share internal numbers. As per current policy — post the sector correction the comp committee has pulled bands in, so the fitment I shared is what's authorised this cycle." + chainedProbe,
+    "consulting-mbb":
+      "Process-wise, I won't share internal cohort numbers. From a policy standpoint the partner-band fitment I shared is what M&G governance allows for this batch — happy to take an exception ask to the panel." + chainedProbe,
     "default":
       "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap." + chainedProbe,
   });

@@ -44,6 +44,30 @@ export interface DashboardSession {
     walkAwayReturned?: boolean;
     hardBandCap?: boolean;
     marketMode?: "soft" | "neutral" | "hot";
+    /* Calibrated-surprise lowball event — pre-computed upstream from
+       the kernel's finalState via buildLowballEvent. Optional so old
+       rows persisted without it deserialize cleanly. */
+    lowballEvent?: {
+      candidateAnchor: number;
+      bandFloor: number;
+      gapPct: number;
+      recruiterProbed: boolean;
+      candidateHeld: boolean;
+    };
+    /* Recruiter-power-dynamics feature (2026-05-29) — caller-declared
+       external pressure context. Optional so old rows persisted without
+       it deserialize cleanly. */
+    powerContext?: {
+      recruiterPower: number;
+      signals: {
+        openReqMonths?: number;
+        pipelineDepth?: number;
+        quarterTiming?: "fresh-quarter" | "mid-quarter" | "quarter-end" | "annual-sprint";
+        candidateHasCompetingProcess?: boolean;
+      };
+      posture: "strong" | "neutral" | "hungry";
+      candidateLeverage: "low" | "neutral" | "high";
+    };
   };
 }
 

@@ -3274,6 +3274,24 @@ export function useInterviewEngine() {
       walkAwayReturned: boolean;
       hardBandCap: boolean;
       marketMode: "soft" | "neutral" | "hot";
+      lowballEvent?: {
+        candidateAnchor: number;
+        bandFloor: number;
+        gapPct: number;
+        recruiterProbed: boolean;
+        candidateHeld: boolean;
+      };
+      powerContext?: {
+        recruiterPower: number;
+        signals: {
+          openReqMonths?: number;
+          pipelineDepth?: number;
+          quarterTiming?: "fresh-quarter" | "mid-quarter" | "quarter-end" | "annual-sprint";
+          candidateHasCompetingProcess?: boolean;
+        };
+        posture: "strong" | "neutral" | "hungry";
+        candidateLeverage: "low" | "neutral" | "high";
+      };
     } | undefined = undefined;
     try {
       if (
@@ -3282,14 +3300,21 @@ export function useInterviewEngine() {
         negotiationKernelStateRef.current
       ) {
         const finalState = JSON.parse(negotiationKernelStateRef.current);
-        const { computeNegotiationMetrics, scoreNegotiationBehaviour } = await import(
+        const { computeNegotiationMetrics, scoreNegotiationBehaviour, buildLowballEvent, buildPowerContext } = await import(
           "../server-handlers/_negotiation-metrics"
         );
         const m = computeNegotiationMetrics({
           finalState,
           moves: kernelMovesRef.current as Parameters<typeof computeNegotiationMetrics>[0]["moves"],
         });
-        negotiationMetrics = { ...m, score: scoreNegotiationBehaviour(m) };
+        const lowballEvent = buildLowballEvent(finalState);
+        const powerContext = buildPowerContext(finalState);
+        negotiationMetrics = {
+          ...m,
+          score: scoreNegotiationBehaviour(m),
+          ...(lowballEvent ? { lowballEvent } : {}),
+          ...(powerContext ? { powerContext } : {}),
+        };
       }
     } catch (e) {
       console.warn("[interview] negotiation metrics derivation failed (non-fatal):", e);

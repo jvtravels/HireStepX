@@ -258,6 +258,8 @@ export interface AnalyzerMeta {
       | "psu"
       | "consulting-big4"
       | "fmcg-management"
+      | "edtech"
+      | "consulting-mbb"
       | "default";
     recruiterPersonaLabel?: string;
     /** Phase 5 Session B (2026-05-19) — multi-round signals. Inferred
