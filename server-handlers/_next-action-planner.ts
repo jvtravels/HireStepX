@@ -660,6 +660,32 @@ export type NextAction =
   | {
       kind: "accept-lowball-quiet";
       candidateAnchor: number;
+    }
+  /* Proactive-sweetener feature (2026-05-30) — real recruiters offer
+   * non-cash sweeteners (signing bonus, relocation, equity refresh,
+   * joining flexibility, notice-buyout help) UNPROMPTED when they
+   * sense the candidate cooling and they're capped on cash. The #1
+   * remaining salary-negotiation realism gap was that the simulator
+   * NEVER volunteered anything — recruiters were 100% reactive. This
+   * action is verbal-only: prose surfaces the sweetener as a question
+   * ("we can look at relocation support, would that help close
+   * this?"). No comp lever, no money math, no band mutation. Single-
+   * fire per session via state.proactiveSweetenerFired so the
+   * recruiter doesn't repeatedly dangle non-cash levers (real social
+   * permission is one-shot). `sweetenerKind` is picked off a sector-
+   * keyed map so the offer matches what that sector actually has
+   * headroom on (BFSI → signing bonus; PSU → joining flexibility;
+   * unicorn/edtech/early-startup → equity refresh; GCC / Big4 →
+   * relocation; IT-services → notice buyout help; MBB → signing
+   * bonus; FMCG → joining flexibility; default → signing bonus). */
+  | {
+      kind: "proactive-sweetener";
+      sweetenerKind:
+        | "signing-bonus"
+        | "relocation"
+        | "equity-refresh"
+        | "joining-flexibility"
+        | "notice-buyout-help";
     };
 
 /** Bad-faith tactic injection kinds (2026-05-29). These are flavor
@@ -1274,6 +1300,173 @@ function maybePlanParaphraseRecap(
   } as PlannedAction;
 }
 
+/** Proactive-sweetener feature (2026-05-30) — sector-keyed sweetener map.
+ *
+ *  Each sector picks the non-cash lever it genuinely has the most
+ *  flexibility on in the real market:
+ *   - it-services      → notice-buyout-help (notice-period buyout is
+ *                        the most common cash-adjacent ask at TCS /
+ *                        Infosys / Wipro)
+ *   - gcc              → relocation (global comp templates routinely
+ *                        carry relocation budget separate from band)
+ *   - indian-unicorn   → equity-refresh (refresh grants after the
+ *                        cliff are the dominant compounding lever)
+ *   - early-startup    → equity-refresh (ESOP stretch is the only
+ *                        real lever when cash is tight)
+ *   - bfsi             → signing-bonus (joining-bonus headroom even
+ *                        when grade-pay is rigid)
+ *   - psu              → joining-flexibility (cadre pay is fixed but
+ *                        joining date is genuinely flexible)
+ *   - consulting-big4  → relocation (relocation package is a real
+ *                        lever distinct from grade)
+ *   - consulting-mbb   → signing-bonus (sign-on is the standard MBB
+ *                        sweetener once base is anchored)
+ *   - fmcg-management  → joining-flexibility (intake / joining-cycle
+ *                        flex is the standard FMCG lever)
+ *   - edtech           → equity-refresh (post-correction cash is
+ *                        tight; equity is where the upside sits)
+ *   - default          → signing-bonus (safe verbal sweetener that
+ *                        works across sectors) */
+const SECTOR_SWEETENER_MAP: Record<
+  RecruiterSectorPersona,
+  | "signing-bonus"
+  | "relocation"
+  | "equity-refresh"
+  | "joining-flexibility"
+  | "notice-buyout-help"
+> = {
+  "it-services": "notice-buyout-help",
+  "gcc": "relocation",
+  "indian-unicorn": "equity-refresh",
+  "early-startup": "equity-refresh",
+  "bfsi": "signing-bonus",
+  "psu": "joining-flexibility",
+  "consulting-big4": "relocation",
+  "consulting-mbb": "signing-bonus",
+  "fmcg-management": "joining-flexibility",
+  "edtech": "equity-refresh",
+  "default": "signing-bonus",
+};
+
+/** Proactive-sweetener feature (2026-05-30) — planner gate.
+ *
+ *  Real recruiters offer non-cash sweeteners UNPROMPTED when they
+ *  sense the candidate cooling and they're capped on cash. Pre-2026-
+ *  05-30 the simulator never volunteered anything — recruiters were
+ *  100% reactive, which was the #1 remaining realism gap.
+ *
+ *  Gates (all must pass):
+ *   (1) Single-fire — proactiveSweetenerFired === true → null.
+ *   (2) Phase — only counter-offer OR closing-push. Opening / range-
+ *       disclosure / probe-expectations / manager-consult phases bail
+ *       early (a sweetener volunteered before an offer is even on the
+ *       table reads as desperate, not strategic).
+ *   (3) Offer-on-table — highestOfferMade > 0. The sweetener supplements
+ *       a cash offer; it never substitutes for one.
+ *   (4) Cash-capped — highestOfferMade >= band.maxStretch * 0.95. The
+ *       recruiter only reaches for non-cash levers when there's no
+ *       material cash headroom left. The 95% threshold gives a small
+ *       cash-residue buffer (real recruiters don't switch to non-cash
+ *       at exactly maxStretch — they switch when they're "basically
+ *       there").
+ *   (5) Cooling signal — fire when ANY of:
+ *         (a) last 2 affinity-ledger entries are net negative
+ *         (b) candidate is still asking more than highestOfferMade
+ *             (lastCandidateCounterLpa > highestOfferMade)
+ *         (c) 2+ turns have elapsed since the last offer with no close
+ *             action shipped
+ *
+ *  Verbal-only: no money math, no band mutation. The prose arm
+ *  surfaces the sweetener as a question ("would that help close
+ *  this?"); coaching downstream attributes it via
+ *  state.proactiveSweetenerKind. */
+function maybePlanProactiveSweetener(
+  state: NegotiationState,
+): PlannedAction | null {
+  /* (0) Byte-equivalence baseline — when sessionId is empty we short-
+   * circuit so legacy snapshot tests with no session identity see the
+   * unchanged baseline cascade. Live sessions always carry a sessionId.
+   * The persona may still be "default" — that path is exercised by the
+   * default-sector fallback test (signing-bonus). */
+  const sessionId = state.sessionId ?? "";
+  if (sessionId.length === 0) return null;
+  const persona: RecruiterSectorPersona =
+    state.recruiterSectorPersona ?? "default";
+  /* (1) Single-fire. */
+  if (state.proactiveSweetenerFired === true) return null;
+  /* (2) Phase gate — only counter-offer OR closing-push. */
+  if (state.phase !== "counter-offer" && state.phase !== "closing-push") {
+    return null;
+  }
+  /* (3) Recruiter has an offer on the table. */
+  const highest = state.highestOfferMade ?? 0;
+  if (highest <= 0) return null;
+  /* (4) Cash-capped. band.maxStretch is the recruiter's hard money
+   * ceiling; 95% of that is "basically there on cash". */
+  const maxStretch = state.band?.maxStretch ?? 0;
+  if (maxStretch <= 0) return null;
+  if (highest < maxStretch * 0.95) return null;
+  /* (5) Cooling signal — three independent triggers. The first match
+   * wins so the rationale can attribute correctly. */
+  let signal: string | null = null;
+  /* (5a) Last 2 affinity-ledger entries net negative. */
+  const ledger = state.affinityLedger ?? [];
+  if (ledger.length >= 2) {
+    const tail = ledger.slice(-2);
+    const sum = tail.reduce((acc, e) => acc + (e.delta ?? 0), 0);
+    if (sum < 0) signal = "affinity-drop";
+  }
+  /* (5b) Counter still pending above the recruiter's cap. */
+  if (
+    signal == null &&
+    state.lastCandidateCounterLpa != null &&
+    state.lastCandidateCounterLpa > highest
+  ) {
+    signal = "counter-still-pending";
+  }
+  /* (5c) 2+ turns since the last offer with no close action shipped.
+   * highestOfferMadeAtTurn carries the turn the cap was reached; when
+   * unavailable, fall through to the turn budget check on lastOfferTurn. */
+  if (signal == null) {
+    const lastOfferTurn =
+      (state as unknown as { lastOfferTurn?: number }).lastOfferTurn ??
+      (state as unknown as { highestOfferMadeAtTurn?: number })
+        .highestOfferMadeAtTurn ??
+      null;
+    if (
+      lastOfferTurn != null &&
+      state.turnIndex - lastOfferTurn >= 2 &&
+      !state.leversUsed.includes("close-acceptance")
+    ) {
+      signal = "stale-offer";
+    }
+  }
+  if (signal == null) return null;
+  /* Sector-keyed sweetener pick. "default" persona short-circuits the
+   * overlay layer downstream, but the planner still picks a sensible
+   * sweetener (signing-bonus) so the gate is testable. */
+  const sweetenerKind = SECTOR_SWEETENER_MAP[persona];
+  return {
+    kind: "proactive-sweetener",
+    sweetenerKind,
+    _move: {
+      /* No "soften" lever exists in the NegotiationLever union; the
+       * closest non-money lever is hold-firm, which the existing
+       * paraphrase-recap and manager-consult-stall arms already use
+       * to carry non-numeric prose without touching highestOfferMade. */
+      lever: "hold-firm",
+      newTotalLpa: null,
+      actionKind: "proactive-sweetener",
+      sweetenerKind,
+      rationale:
+        `Proactive sweetener offered — recruiter capped at ` +
+        `₹${highest}L vs max-stretch ₹${maxStretch}L. ` +
+        `Candidate cooling signal: ${signal}. Single-fire; ` +
+        `sweetener=${sweetenerKind} (persona=${persona}).`,
+    },
+  } as PlannedAction;
+}
+
 /** Realism-Audit Fix 3 (2026-05-22) — manager-consult stall gate.
  *
  *  Returns the stall PlannedAction (open OR return) when all gate
@@ -1431,6 +1624,19 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   {
     const paraphrase = maybePlanParaphraseRecap(state);
     if (paraphrase !== null) return paraphrase;
+  }
+  /* Proactive-sweetener feature (2026-05-30) — when the recruiter is
+   * cash-capped (highestOfferMade ≥ 95% of band.maxStretch) AND the
+   * candidate is cooling, the recruiter volunteers a non-cash
+   * sweetener INSTEAD of stalling for manager-consult. Slots BEFORE
+   * manager-consult-stall so the cooling-candidate / cash-capped
+   * pattern dangles relocation / signing-bonus / equity-refresh /
+   * joining-flex / notice-buyout-help rather than re-running the
+   * stall ritual. Single-fire so the cascade falls through to the
+   * stall on subsequent cooling turns. */
+  {
+    const sweetener = maybePlanProactiveSweetener(state);
+    if (sweetener !== null) return sweetener;
   }
   {
     const stallSelected = maybePlanManagerConsultStall(state);

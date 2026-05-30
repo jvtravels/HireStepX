@@ -434,3 +434,79 @@ describe("Scenario F — dead-input wiring activates power + time context", () =
     expect(s.recruiterPower).toBe(0);
   });
 });
+
+/* ─── Scenario G — Proactive-sweetener planner gate (2026-05-30) ──── *
+ *
+ * Real recruiters offer non-cash sweeteners UNPROMPTED when they sense
+ * the candidate cooling and they're capped on cash. Pre-2026-05-30 the
+ * simulator was 100% reactive. This scenario exercises the planner
+ * gate end-to-end: capped offer + cooling candidate → planner emits
+ * proactive-sweetener; applyAiMove stamps fire flag + sticky sweetener
+ * kind; subsequent planner calls fall through (single-fire). */
+
+describe("Scenario G — proactive-sweetener planner gate end-to-end (2026-05-30)", () => {
+  const BAND_G: NegotiationBand = {
+    initialOffer: 28,
+    maxStretch: 32,
+    walkAway: 25,
+    hasEquity: true,
+  };
+
+  it("fires for indian-unicorn at cash cap with affinity drop; sticky stamps + single-fire", async () => {
+    const planner = await import("../../../server-handlers/_next-action-planner");
+    const s0 = initState({
+      sessionId: "scen-g-sweetener",
+      role: "Senior Engineer",
+      company: "unicorn-co",
+      band: BAND_G,
+      recruiterSectorPersona: "indian-unicorn",
+    });
+    /* Synthesise a capped + cooling mid-session frame directly — this
+     * scenario tests the planner gate, not the discovery cascade. */
+    const sCapped: NegotiationState = {
+      ...s0,
+      turnIndex: 6,
+      phase: "counter-offer",
+      highestOfferMade: 32, /* at maxStretch */
+      candidateCurrentCtc: 22,
+      affinityLedger: [
+        { turn: 4, delta: -1, reason: "wasted-time" },
+        { turn: 5, delta: -1, reason: "abrasive-tone" },
+      ],
+    };
+    const action = planner.planNextAction(sCapped);
+    expect(action.kind).toBe("proactive-sweetener");
+    const move = planner.actionToLever(action, sCapped);
+    const sAfter = applyAiMove(sCapped, move, "sweetener prose");
+    expect(sAfter.proactiveSweetenerFired).toBe(true);
+    expect(sAfter.proactiveSweetenerKind).toBe("equity-refresh");
+    /* Single-fire: a second planner pass on the same cooling pattern
+     * MUST NOT re-emit the sweetener. */
+    const action2 = planner.planNextAction(sAfter);
+    expect(action2.kind).not.toBe("proactive-sweetener");
+  });
+
+  it("does NOT fire when sessionId is empty (byte-equivalence baseline)", async () => {
+    const planner = await import("../../../server-handlers/_next-action-planner");
+    const s0 = initState({
+      sessionId: "",
+      role: "Senior Engineer",
+      company: "unicorn-co",
+      band: BAND_G,
+      recruiterSectorPersona: "indian-unicorn",
+    });
+    const sCapped: NegotiationState = {
+      ...s0,
+      turnIndex: 6,
+      phase: "counter-offer",
+      highestOfferMade: 32,
+      candidateCurrentCtc: 22,
+      affinityLedger: [
+        { turn: 4, delta: -1, reason: "wasted-time" },
+        { turn: 5, delta: -1, reason: "abrasive-tone" },
+      ],
+    };
+    const action = planner.planNextAction(sCapped);
+    expect(action.kind).not.toBe("proactive-sweetener");
+  });
+});

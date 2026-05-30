@@ -1584,6 +1584,66 @@ const PROSE_ARMS: ProseArmRegistry = {
         `the formal offer by EOD.`,
     });
   },
+
+  /* Proactive-sweetener (2026-05-30) — 10 sector variants. Each
+   * arm picks the sector-appropriate non-cash sweetener and frames
+   * it as a verbal offer the candidate can accept or decline. The
+   * prose ALWAYS ends with a closing-ask ("would that help close?")
+   * so the candidate is invited to give a yes/no rather than re-
+   * anchor on cash. No money math, no band disclosure, no comp-lever
+   * mutation — the sweetener is verbal-only this commit. The
+   * `sweetenerKind` carried on the action is sector-fixed by the
+   * planner; the prose arm dispatches on `helpers.sectorPersona`
+   * directly to keep the same per-sector record-lookup pattern the
+   * other arms use. */
+  "proactive-sweetener": (_action, _state, helpers) => {
+    const persona = helpers.sectorPersona;
+    return helpers.selectBySectorPersona(persona, {
+      "it-services":
+        "Look, I know the 90-day notice is a real concern — we can " +
+        "structure a notice buyout component to help bridge that. " +
+        "Would that move things along?",
+      "gcc":
+        "We have relocation budget that hasn't been factored in yet — " +
+        "covering shifting + first-month accommodation. Does that " +
+        "change the equation?",
+      "indian-unicorn":
+        "We can add a one-year equity refresh on top of the joining " +
+        "grant — that's a lever we don't always offer. Would that " +
+        "help close?",
+      "bfsi":
+        "Policy-wise I can move on the joining bonus — we have " +
+        "headroom there even when the band is fixed. Would an " +
+        "enhanced JB help?",
+      "psu":
+        "As per cadre I can't move on grade, but we can flex the " +
+        "joining timeline by 60 days if that helps your transition. " +
+        "Would that work?",
+      "consulting-big4":
+        "Fundamentally we have a relocation package that wasn't on " +
+        "the table — covers moving and first 30 days. Would that " +
+        "close the gap for you?",
+      "consulting-mbb":
+        "We can structure a signing bonus that we don't typically " +
+        "lead with — that's a real lever. Would adding ₹X make this " +
+        "work?",
+      "fmcg-management":
+        "We have flexibility on joining date and a leadership-track " +
+        "sign-on bonus we haven't discussed. Would either of those " +
+        "help close?",
+      "edtech":
+        "We can add an equity refresh after the cliff — given the " +
+        "post-correction band on cash, that's where the upside sits. " +
+        "Would that help?",
+      "early-startup":
+        "Look, cash is tight but we can stretch the ESOP grant by " +
+        "25% — that's where our biggest lever is. Would that work " +
+        "for you?",
+      "default":
+        "We can structure a signing bonus to bridge this. Would that " +
+        "help close?",
+    });
+  },
 };
 
 /** Canonical kernel-authored prose for every NextAction kind. The

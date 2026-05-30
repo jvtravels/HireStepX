@@ -578,6 +578,19 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         hint:
           "The recruiter probed your lowball anchor and you held — they're now packaging at that number. You left money on the table; remember this for the next round.",
       };
+    /* Proactive-sweetener feature (2026-05-30). The recruiter is
+     * volunteering a non-cash sweetener UNPROMPTED because they've
+     * sensed the candidate cooling and they're capped on cash. The
+     * coaching hint frames this as a signal that real cash room is
+     * gone — the candidate should evaluate the sweetener on its own
+     * merits, not as a path back to a higher base. */
+    case "proactive-sweetener":
+      return {
+        label: "Proactive sweetener",
+        family: "counter",
+        hint:
+          "The recruiter has surfaced a non-cash sweetener unprompted — typically a signal cash is capped. Evaluate the sweetener on its own merits; the base isn't going to move further here.",
+      };
   }
   /* Exhaustiveness fallback — TS's stricter Vercel build flags this
    * function as "lacks ending return" without an explicit out-of-switch

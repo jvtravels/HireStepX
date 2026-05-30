@@ -1746,6 +1746,28 @@ export interface NegotiationState {
     correction: string;
   }>;
 
+  /** Proactive-sweetener feature (2026-05-30) — single-fire marker for
+   *  the `proactive-sweetener` action. Set to true by applyAiMove the
+   *  first turn the planner emits the sweetener. Never reset, so the
+   *  recruiter never volunteers a second non-cash sweetener in the same
+   *  session even if cooling signals recur. Real recruiters get ONE
+   *  chance to dangle relocation / signing bonus / equity refresh /
+   *  joining flex / notice-buyout-help before the conversation either
+   *  closes or breaks down — the single-fire models that finite social
+   *  permission. Optional for back-compat with sessions serialized
+   *  before the feature shipped. */
+  proactiveSweetenerFired?: boolean;
+  /** Proactive-sweetener feature (2026-05-30) — which sweetener kind
+   *  the planner picked based on `recruiterSectorPersona`. Read by the
+   *  prose layer to render the sector + sweetener-specific verbal
+   *  offer. Copied from the action payload on the firing turn. Sticky
+   *  once set so coaching / report layers can attribute it post-hoc. */
+  proactiveSweetenerKind?:
+    | "signing-bonus"
+    | "relocation"
+    | "equity-refresh"
+    | "joining-flexibility"
+    | "notice-buyout-help";
   /** Recruiter-power-dynamics feature (2026-05-29) — scalar derived from
    *  `powerSignals` at init via `computeRecruiterPower`. Clamped to
    *  [-3, +3]. Default 0. May be recomputed mid-session ONLY when a new
@@ -2815,6 +2837,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     calibratedSurpriseContext: null,
     acceptedLowball: false,
     acceptLowballQuietFiredAtTurn: null,
+    /* Proactive-sweetener feature (2026-05-30). */
+    proactiveSweetenerFired: false,
     /* Recruiter-power-dynamics feature (2026-05-29) — scalar derived
      * once at init from caller-declared signals. Undefined input →
      * {} signals and power 0 (identity behavior). */
@@ -5761,6 +5785,17 @@ export interface AiMove {
    *  (coverage / quality regressions per curated entry). Mirrors
    *  `route.topic` from `_question-router.ts`. */
   answerDirectTopic?: string;
+  /** Proactive-sweetener feature (2026-05-30) — which sweetener kind
+   *  the planner picked. Set ONLY when `actionKind ===
+   *  "proactive-sweetener"`. applyAiMove copies this onto
+   *  `state.proactiveSweetenerKind` so the prose + report layers can
+   *  attribute the sweetener post-hoc. */
+  sweetenerKind?:
+    | "signing-bonus"
+    | "relocation"
+    | "equity-refresh"
+    | "joining-flexibility"
+    | "notice-buyout-help";
 }
 
 /** Bug-report 12 (2026-05-14) — close-floor invariant. Every
@@ -6097,6 +6132,22 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       bandFloor: floor,
     };
   }
+  /* Proactive-sweetener feature (2026-05-30) — single-fire marker +
+   * sticky kind copy. The recruiter volunteers ONE non-cash sweetener
+   * (signing bonus / relocation / equity refresh / joining flex /
+   * notice-buyout help) UNPROMPTED when they sense the candidate
+   * cooling and cash is capped. Prose-only this commit: no band /
+   * highestOfferMade mutation. Both writes are sticky so a re-fire
+   * attempt is silently no-op. */
+  if (
+    move.actionKind === "proactive-sweetener" &&
+    state.proactiveSweetenerFired !== true
+  ) {
+    next.proactiveSweetenerFired = true;
+    if (move.sweetenerKind != null) {
+      next.proactiveSweetenerKind = move.sweetenerKind;
+    }
+  }
   /* Branch A follow-up (2026-05-29) — `accept-lowball-quiet` is the
    * recruiter's accept move after the candidate doubled down on the
    * lowball. Stamp the turn so the planner gate doesn't re-fire. */
@@ -6199,6 +6250,11 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
        * discovery item). */
       "calibrated-surprise-lowball",
       "accept-lowball-quiet",
+      /* Proactive-sweetener (2026-05-30) — verbal non-cash sweetener
+       * offered unprompted when the recruiter is cash-capped and the
+       * candidate is cooling. Not a probe; doesn't push onto the
+       * askedTopics ledger. */
+      "proactive-sweetener",
     ]);
     const fallbackRaw =
       (move.actionKind && move.actionKind !== "reactive-followup" ? move.actionKind : null) ??
@@ -7411,6 +7467,13 @@ export function deserializeState(json: string): NegotiationState {
     acceptedLowball: (s.acceptedLowball as boolean | undefined) ?? false,
     acceptLowballQuietFiredAtTurn:
       (s.acceptLowballQuietFiredAtTurn as number | null | undefined) ?? null,
+    /* Proactive-sweetener feature (2026-05-30) — back-compat defaults.
+     * Legacy sessions deserialise as never-fired with no sweetener
+     * kind. */
+    proactiveSweetenerFired:
+      (s.proactiveSweetenerFired as boolean | undefined) ?? false,
+    proactiveSweetenerKind:
+      (s.proactiveSweetenerKind as NegotiationState["proactiveSweetenerKind"]) ?? undefined,
     /* Recruiter-power-dynamics feature (2026-05-29) — back-compat
      * defaults preserve identity behaviour for legacy sessions. */
     recruiterPower: (s.recruiterPower as number | undefined) ?? 0,
