@@ -298,6 +298,12 @@ function PageShell({ children }: { children: ReactNode }) {
    page-shell-only rules so we don't double-emit. */
 const PagesResponsiveSheet = () => (
   <style>{`
+    /* Skip-to-content link: visually hidden until keyboard focus.
+       Without this the link rendered in raw browser styling (purple
+       underline at top-left of every secondary page). Mirrors the
+       rule defined inside HomepageV2's ResponsiveSheet. */
+    .mv2-skip { position: absolute; left: -9999px; top: 0; }
+    .mv2-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
     /* Focus-visible ring for form inputs + interactive links/buttons.
        Replaces the outline:none on inputStyle so keyboard users see focus. */
     .mv2p-input:focus-visible {
