@@ -4,7 +4,7 @@ import { PricingPageV2 } from "@/marketing-v2/MarketingPagesV2";
 export const metadata: Metadata = {
   title: "Pricing | HireStepX",
   description:
-    "Honest INR pricing for AI mock interviews. Free 3 sessions, ₹9 per session, ₹49 weekly (10 sessions), ₹149 monthly (40 sessions). UPI accepted. 30% student discount on .ac.in / .edu.in addresses.",
+    "Free 3 sessions, ₹9/session, ₹49/week (10 sessions), ₹149/month (40 sessions). UPI accepted. 30% student discount on .ac.in / .edu.in.",
   alternates: { canonical: "/pricing" },
 };
 

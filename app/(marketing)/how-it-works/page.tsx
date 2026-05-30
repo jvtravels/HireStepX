@@ -5,7 +5,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 export const metadata: Metadata = {
   title: "How it works | HireStepX",
   description:
-    "Upload resume, pick a role and company, practice a voice interview, get a scored STAR report, and track skill decay. Five steps from cold start to interview-ready.",
+    "Five steps from cold start to interview-ready: upload resume, pick role and company, practice voice interview, read a scored STAR report, repeat as skills decay.",
   alternates: { canonical: "/how-it-works" },
 };
 

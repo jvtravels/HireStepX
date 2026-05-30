@@ -660,10 +660,11 @@ export function PricingPageV2() {
             >
               <thead>
                 <tr style={{ borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
-                  <th style={{ padding: "16px 20px", textAlign: "left", fontWeight: 600, color: t.inkSoft }}>Feature</th>
+                  <th scope="col" style={{ padding: "16px 20px", textAlign: "left", fontWeight: 600, color: t.inkSoft }}>Feature</th>
                   {tiers.map((tier) => (
                     <th
                       key={tier.name}
+                      scope="col"
                       style={{
                         padding: "16px 20px",
                         textAlign: "left",
@@ -681,7 +682,7 @@ export function PricingPageV2() {
               <tbody>
                 {compareRows.map(([feature, free, session, weekly, monthly], i) => (
                   <tr key={feature} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
-                    <td style={{ padding: "14px 20px", color: t.coal, fontWeight: 500 }}>{feature}</td>
+                    <th scope="row" style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, textAlign: "left", fontFamily: fonts.sans, fontSize: 14 }}>{feature}</th>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{free}</td>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{session}</td>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{weekly}</td>
@@ -927,8 +928,9 @@ export function AboutV2() {
         </div>
       </section>
 
-      {/* Credibility band: who built this. No fabricated launch metrics
-          while we're still pre-launch behind the Coming Soon gate. */}
+      {/* Credibility band: who built this. We keep real metrics here as
+          they accrue post-launch; do not add a metric until the number
+          is defensible from data. */}
       <section
         className="mv2p-section"
         style={{

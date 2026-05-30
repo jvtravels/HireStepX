@@ -1117,7 +1117,7 @@ export function HeroV2() {
                 <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 16 }}>→</span>
               </a>
               <a
-                href="/product#preview"
+                href="/how-it-works"
                 className="mv2-tap-44 mv2-cta-secondary"
                 style={{
                   fontFamily: fonts.sans,
@@ -3160,6 +3160,7 @@ export function ComparisonV2() {
             <thead>
               <tr style={{ background: t.creamSoft }}>
                 <th
+                  scope="col"
                   style={{
                     textAlign: "left",
                     padding: "18px 24px",
@@ -3170,7 +3171,9 @@ export function ComparisonV2() {
                     color: t.inkSoft,
                     borderBottom: `1px solid ${t.line}`,
                   }}
-                />
+                >
+                  <span className="sr-only">Capability</span>
+                </th>
                 {[
                   { label: "HireStepX", accent: true },
                   { label: "ChatGPT mocks", accent: false },
@@ -3178,6 +3181,7 @@ export function ComparisonV2() {
                 ].map((h) => (
                   <th
                     key={h.label}
+                    scope="col"
                     style={{
                       textAlign: "left",
                       padding: "18px 24px",
@@ -3217,15 +3221,19 @@ export function ComparisonV2() {
             <tbody>
               {rows.map(([label, us, cgpt, bank], i) => (
                 <tr key={label} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
-                  <td
+                  <th
+                    scope="row"
                     style={{
                       padding: "16px 24px",
                       color: t.coal,
                       fontWeight: 500,
+                      textAlign: "left",
+                      fontFamily: fonts.sans,
+                      fontSize: 14,
                     }}
                   >
                     {label}
-                  </td>
+                  </th>
                   <td
                     style={{
                       padding: "16px 24px",
@@ -3568,43 +3576,38 @@ export function ChangelogTeaseV2() {
 /* ─────────────────────────── 7. FINAL CTA + FOOTER ─────────────────────────── */
 export function FinalCTAFooterV2() {
   const footerCols: Array<{ title: string; links: Array<[string, string]> }> = [
+    /* Footer columns are intentionally narrow: every link below points
+     * to a route that exists in app/(marketing). When adding a new
+     * column entry, confirm the page ships before merging — dead links
+     * tank the trust signal on the most-scrolled section of the site. */
     {
       title: "Product",
       links: [
-        ["Voice AI", "/product#voice"],
-        ["Scoring", "/product#scoring"],
-        ["Reports", "/product#reports"],
+        ["How it works", "/how-it-works"],
         ["Pricing", "/pricing"],
-        ["Changelog", "/changelog"],
+        ["HireStepX vs ChatGPT", "/compare/chatgpt"],
       ],
     },
     {
       title: "For you",
       links: [
-        ["Students", "/students"],
-        ["Switchers", "/switchers"],
-        ["Colleges", "/colleges"],
-        ["Recruiters", "/recruiters"],
+        ["Students & freshers", "/for-students"],
       ],
     },
     {
       title: "Resources",
       links: [
-        ["Guides", "/resources/guides"],
         ["Blog", "/blog"],
-        ["Glossary", "/resources/glossary"],
-        ["Templates", "/resources/templates"],
-        ["FAQ", "/faq"],
+        ["Contact", "/contact"],
       ],
     },
     {
       title: "Company",
       links: [
         ["About", "/about"],
-        ["Careers", "/careers"],
-        ["Contact", "/contact"],
-        ["Press", "/press"],
-        ["Security", "/security"],
+        ["Privacy", "/privacy"],
+        ["Terms", "/terms"],
+        ["Refund policy", "/refund"],
       ],
     },
   ];

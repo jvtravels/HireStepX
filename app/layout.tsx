@@ -50,7 +50,17 @@ export const metadata: Metadata = {
   authors: [{ name: "HireStepX" }],
   robots: "index, follow",
   metadataBase: new URL("https://hirestepx.com"),
-  alternates: { canonical: "/" },
+  /* hreflang alternates — we serve a single English bundle today but the
+   * brand is India-first. Declaring en-IN as the default and x-default
+   * as the fallback gives Google an explicit locale signal. When Hindi
+   * launches under /hi/*, add `"hi-IN": "/hi"` to the languages map. */
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-IN": "/",
+      "x-default": "/",
+    },
+  },
   manifest: "/manifest.json",
   icons: [{ url: "/favicon.svg", type: "image/svg+xml" }],
   openGraph: {
