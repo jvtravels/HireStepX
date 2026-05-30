@@ -1677,7 +1677,7 @@ export function TermsV2() {
       <p>Billed in INR via Razorpay. Weekly and Monthly plans are one-time top-ups; nothing auto-renews. Per-session purchases are charged immediately and non-refundable once the session is started.</p>
 
       <h2>Refunds</h2>
-      <p>See our <a href="/refund-policy">refund policy</a>. Short version: unused sessions within 7 days of purchase are refundable.</p>
+      <p>See our <a href="/refund">refund policy</a>. Short version: unused sessions within 7 days of purchase are refundable.</p>
 
       <h2>Acceptable use</h2>
       <p>Don't upload illegal content. Don't use the platform to harass, defame, or harm others. Don't attempt to break our security controls. We may suspend or terminate accounts for serious or repeated violations.</p>

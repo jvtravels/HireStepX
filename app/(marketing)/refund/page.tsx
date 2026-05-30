@@ -1,16 +1,29 @@
 import type { Metadata } from "next";
-import RefundPolicy from "@/RefundPolicy";
+import { RefundPolicyV2 } from "@/marketing-v2/MarketingPagesV2";
 
 export const metadata: Metadata = {
   title: "Refund Policy | HireStepX",
-  description:
-    "HireStepX refund policy. Learn about our refund and cancellation terms.",
+  description: "When refunds apply, how to request one, and what we don't refund.",
+  alternates: { canonical: "/refund" },
 };
 
-// Static page — CDN cached, revalidated daily in case of policy edits.
 export const dynamic = "force-static";
 export const revalidate = 86400;
 
+const BREADCRUMB_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://hirestepx.com/" },
+    { "@type": "ListItem", position: 2, name: "Refund policy", item: "https://hirestepx.com/refund" },
+  ],
+};
+
 export default function Page() {
-  return <RefundPolicy />;
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(BREADCRUMB_SCHEMA) }} />
+      <RefundPolicyV2 />
+    </>
+  );
 }

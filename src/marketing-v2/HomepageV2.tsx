@@ -260,7 +260,7 @@ const body: CSSProperties = {
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
     ["How it works", "/how-it-works"],
-    ["Pricing", "/pricing-v2"],
+    ["Pricing", "/pricing"],
     ["For students", "/for-students"],
     ["About", "/about"],
     ["Contact", "/contact"],
@@ -3784,9 +3784,9 @@ export function FinalCTAFooterV2() {
           <span>© 2026 HireStepX Labs Pvt Ltd · Bengaluru, India</span>
           <span style={{ display: "flex", gap: 20 }}>
             {[
-              ["Privacy", "/legal/privacy"],
-              ["Terms", "/legal/terms"],
-              ["Refund", "/legal/refund"],
+              ["Privacy", "/privacy"],
+              ["Terms", "/terms"],
+              ["Refund", "/refund"],
               ["Status", "https://status.hirestepx.com"],
             ].map(([label, href]) => (
               <a key={label} href={href} style={{ color: t.inkFaint, textDecoration: "none" }}>
