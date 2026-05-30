@@ -196,20 +196,21 @@ function buildNegotiationOutcome(report: SessionReport): InterviewResultData["ne
     : null;
 
   // % of the gap between the AI's initial offer and the candidate's
-  // stated ask that the final offer closed. Useful for "you closed
-  // 65% of the gap" framing in the report.
-  let percentileWithinBand: number | null = null;
+  // stated ask that the final offer closed. Surfaced honestly as
+  // "you closed 65% of the gap" — NOT as a cohort percentile (we have
+  // no cohort data). Renamed from `percentileWithinBand` 2026-05-30.
+  let gapClosurePct: number | null = null;
   if (offers.length > 0) {
     const initialOffer = offers[0].total;
     const latestOffer = offers[offers.length - 1].total;
     if (candidateAsk !== null && candidateAsk > initialOffer) {
-      percentileWithinBand = Math.max(0, Math.min(100, Math.round(
+      gapClosurePct = Math.max(0, Math.min(100, Math.round(
         ((latestOffer - initialOffer) / (candidateAsk - initialOffer)) * 100,
       )));
     }
   }
 
-  return { offers, finalTotal, outcome, candidateAsk, percentileWithinBand };
+  return { offers, finalTotal, outcome, candidateAsk, gapClosurePct };
 }
 
 /** Splice the kernel-derived calibrated-surprise lowball event onto the

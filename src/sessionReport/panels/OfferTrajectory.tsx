@@ -68,8 +68,8 @@ export function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
       {final !== null && (
         <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 10 }}>
           You moved the offer up by <strong style={{ color: t.coal }}>₹{final} LPA</strong> from the opening number.
-          {typeof outcome.percentileWithinBand === "number" && (
-            <> {" "}You closed <strong style={{ color: t.coal }}>{outcome.percentileWithinBand}%</strong> of the gap to your stated ask.</>
+          {typeof outcome.gapClosurePct === "number" && (
+            <> {" "}You closed <strong style={{ color: t.coal }}>{outcome.gapClosurePct}%</strong> of the gap to your stated ask.</>
           )}
         </div>
       )}

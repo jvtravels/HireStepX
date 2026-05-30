@@ -5,8 +5,9 @@
  * MetricBand (still consumed by sr-CoreMetricsSection).
  * Pure presentation. */
 
-import { t, f, shadows, radius } from "../tokens";
+import { t, f, radius } from "../tokens";
 import type { DeliveryMetric, InterviewResultData, Verdict } from "../types";
+import { ReportCardShell } from "./_primitives";
 import {
   CalibrationBanner,
   ReadinessHeadline,
@@ -54,17 +55,10 @@ export function MetricBand({ band }: { band: DeliveryMetric["band"] }) {
 export function HeroSection({ data }: { data: InterviewResultData }) {
   const verdict = VERDICT_META[data.verdict];
   return (
-    <section
+    <ReportCardShell
       id="ir-section-hero"
-      aria-labelledby="ir-hero-heading"
-      style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.shell,
-        padding: 28,
-        boxShadow: shadows.card,
-        scrollMarginTop: 72,
-      }}
+      ariaLabelledBy="ir-hero-heading"
+      padding={28}
     >
       <h1 id="ir-hero-heading" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
         Interview Report — {data.role} at {data.company}, scored {data.overallScore} out of 100
@@ -233,6 +227,6 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
           </div>
         </div>
       </div>
-    </section>
+    </ReportCardShell>
   );
 }

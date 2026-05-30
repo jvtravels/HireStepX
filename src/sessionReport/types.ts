@@ -197,21 +197,18 @@ export interface InterviewResultData {
     outcome: "accepted" | "walked_away" | "no_agreement";
     /** Highest number the candidate stated as their target. */
     candidateAsk: number | null;
-    /** Where the final / current offer falls within the band (0–100).
-     *  Useful for "your offer is the 32nd percentile of the role/tier
-     *  band" framing. Null if no offers were extracted. */
-    percentileWithinBand?: number | null;
-    /** Cohort context — how many offers backed the percentile + when fresh.
-     *  Drives the "n=12 · last 90d" attribution chip. Optional. */
-    cohortN?: number;
-    cohortFreshness?: string; // e.g. "as of last week"
-    cohortLabel?: string; // e.g. "Senior EM at Indian fintechs · last 90 days"
-    /** Link to a public methodology / source page explaining where the
-     *  cohort numbers come from (sample, time window, exclusions). When
-     *  set, the attribution chip becomes clickable so users can audit
-     *  the percentile claim instead of taking it on trust. Optional —
-     *  panel falls back to plain chip when absent. */
-    cohortMethodologyUrl?: string;
+    /** Percent of the gap the candidate closed between the AI's *first*
+     *  offer and their own stated ask. 0 = no movement off the opening
+     *  number; 100 = recruiter conceded the full ask. Null when no
+     *  offers or no stated ask was extracted from the transcript.
+     *
+     *  HONESTY NOTE (2026-05-30): this was previously named
+     *  `percentileWithinBand` and surfaced as a cohort percentile
+     *  ("Bottom X% of candidates", p25/p50/p75 viz). There is no cohort
+     *  dataset behind it — the number is purely intra-session gap
+     *  closure. Renamed + reframed across `OfferTrajectory` and
+     *  `TLDRHero`. The cohort panel was deleted. */
+    gapClosurePct?: number | null;
     /** Structured pushbacks the AI made during the call. Each entry pairs
      *  an AI line with how the candidate responded (held / deflected /
      *  conceded). Drives the "When they pushed back, did you fold?" panel.

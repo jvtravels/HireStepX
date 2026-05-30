@@ -32,7 +32,7 @@ export function TLDRHero({
     delta === 0 &&
     outcome.candidateAsk === null &&
     phaseCount <= 1 &&
-    typeof outcome.percentileWithinBand !== "number";
+    typeof outcome.gapClosurePct !== "number";
 
   if (isSparseFirstSession) {
     stats.push({
@@ -65,17 +65,18 @@ export function TLDRHero({
       });
     }
   }
-  if (typeof outcome.percentileWithinBand === "number") {
-    const p = outcome.percentileWithinBand;
-    let phrase: string;
-    if (p < 30) phrase = `Bottom ${p}%`;
-    else if (p > 70) phrase = `Top ${100 - p}%`;
-    else phrase = "Around the middle";
+  if (typeof outcome.gapClosurePct === "number") {
+    /* Honest framing (2026-05-30): this is intra-session gap closure
+     * between the first offer and the candidate's stated ask — NOT a
+     * cohort percentile. Previously surfaced as "How you ranked vs
+     * others who got offers in this band", which fabricated a cohort
+     * comparison we don't have data for. */
+    const p = outcome.gapClosurePct;
     stats.push({
-      label: "How you ranked",
-      value: phrase,
-      hint: "vs others who got offers in this band",
-      tone: p < 30 ? "bad" : p > 70 ? "good" : "warn",
+      label: "How much of the gap you closed",
+      value: `${p}%`,
+      hint: "from the first offer to your stated ask",
+      tone: p >= 70 ? "good" : p >= 30 ? "warn" : "bad",
     });
   }
   stats.push({

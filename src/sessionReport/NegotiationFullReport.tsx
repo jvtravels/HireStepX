@@ -27,10 +27,10 @@
  *   • Production tokens from `./tokens`. */
 
 import type { Question } from "./types";
-import { t, f, shadows, radius, space } from "./tokens";
+import { t, f, radius, space } from "./tokens";
 import { computeNpvRows, type NegotiationOutcome } from "./derivations";
 
-import { HeaderChip } from "./panels/_primitives";
+import { HeaderChip, ReportCardShell } from "./panels/_primitives";
 import { StartHereHint, ANCHOR_PART_2, ANCHOR_PART_3, ANCHOR_PART_4 } from "./panels/StartHereHint";
 import { SectionBand } from "./panels/_primitives";
 import { TLDRHero } from "./panels/TLDRHero";
@@ -43,7 +43,6 @@ import { VerbalHabitsPanel } from "./panels/VerbalHabitsPanel";
 import { SilenceMapPanel } from "./panels/SilenceMapPanel";
 import { UnaskedLeversPanel } from "./panels/UnaskedLeversPanel";
 import { CounterOfferLetterPanel } from "./panels/CounterOfferLetterPanel";
-import { CohortPlacementPanel } from "./panels/CohortPlacementPanel";
 import { NPVMathPanel } from "./panels/NPVMathPanel";
 import { CounterpartyPanel } from "./panels/CounterpartyPanel";
 import { ArchetypePanel } from "./panels/ArchetypePanel";
@@ -78,14 +77,7 @@ export function NegotiationFullReport({
   const finalTotal = outcome.finalTotal ?? offers[offers.length - 1]?.total ?? null;
 
   return (
-    <section
-      aria-labelledby="ir-section-negotiation"
-      style={{
-        background: t.white, border: `1px solid ${t.line}`, borderRadius: radius.shell,
-        padding: "28px clamp(16px, 4vw, 32px)", boxShadow: shadows.card,
-        scrollMarginTop: 72,
-      }}
-    >
+    <ReportCardShell ariaLabelledBy="ir-section-negotiation">
       <div style={{ marginBottom: space.panel }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <HeaderChip variant="accent">Salary Negotiation · Full Report</HeaderChip>
@@ -163,13 +155,18 @@ export function NegotiationFullReport({
         <CounterOfferLetterPanel outcome={outcome} role={role} company={company} />
       </div>
 
-      {/* PART 3 — COHORT & MATH. Render the band ONLY when at least
-          one child panel will render — prevents an empty band. */}
+      {/* PART 3 — MATH. The cohort placement panel was removed
+          2026-05-30 — it claimed "where your offer sits vs others like
+          you" but the underlying number was intra-session gap closure,
+          not a cohort percentile, and we have no cohort dataset. The
+          honest gap-closure framing now lives inline in
+          OfferTrajectory + TLDRHero. Render the band only when at
+          least one remaining child will render — prevents an empty
+          band. */}
       {(() => {
-        const willRenderCohort = typeof outcome.percentileWithinBand === "number";
         const willRenderNpv = computeNpvRows(outcome).length > 0;
         const willRenderCounterparty = !!(outcome.counterpartyFacts && outcome.counterpartyFacts.length > 0);
-        const showPart3 = willRenderCohort || willRenderNpv || willRenderCounterparty;
+        const showPart3 = willRenderNpv || willRenderCounterparty;
         if (!showPart3) return null;
         return (
           <>
@@ -177,18 +174,15 @@ export function NegotiationFullReport({
               anchorId={ANCHOR_PART_3}
               label="Part 3 of 4"
               title="What this offer is worth in rupees"
-              subtitle="Where your offer sits vs others, and what accepting really costs after tax."
+              subtitle="What accepting really costs after tax, and who you were negotiating against."
               accent={t.warning}
               bg={t.warning100}
             />
             <div className="nfr-vstack-xl">
-              {willRenderCohort && <CohortPlacementPanel outcome={outcome} />}
-              {(willRenderNpv || willRenderCounterparty) && (
-                <div className="nfr-grid-2up">
-                  {willRenderNpv && <NPVMathPanel outcome={outcome} />}
-                  {willRenderCounterparty && <CounterpartyPanel outcome={outcome} />}
-                </div>
-              )}
+              <div className="nfr-grid-2up">
+                {willRenderNpv && <NPVMathPanel outcome={outcome} />}
+                {willRenderCounterparty && <CounterpartyPanel outcome={outcome} />}
+              </div>
             </div>
           </>
         );
@@ -257,6 +251,6 @@ export function NegotiationFullReport({
 
       {/* Bottom CTA — literal last element on the page. */}
       <NextRoundCTA outcome={outcome} role={role} company={company} />
-    </section>
+    </ReportCardShell>
   );
 }

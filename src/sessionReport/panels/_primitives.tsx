@@ -21,7 +21,7 @@ export type Tone = "good" | "warn" | "bad" | "neutral";
 
 /* Tone → token color. Single switch so a palette shift touches one
  * file. Used by PhaseLadderPanel, AnchorBracketPanel, NPVMathPanel,
- * CohortPlacementPanel, ArchetypePanel. */
+ * ArchetypePanel. */
 export function toneToColor(tone: Tone): string {
   switch (tone) {
     case "good": return t.success;
@@ -335,6 +335,50 @@ export function SectionBand({
   );
 }
 
+/* ReportCardShell — the white card chrome every top-level Session
+ * Report section sits inside. Extracted 2026-05-30: the same 6-property
+ * style object (white background, 1px line border, radius.shell,
+ * shadows.card, scrollMarginTop: 72, padding) was open-coded in
+ * NegotiationFullReport, sr-HeroSection, and inside SrSectionShell.
+ * Padding is the only real variation; everything else is fixed.
+ *
+ * Use this whenever a top-level section needs the standard card. For
+ * the band-plus-eyebrow contract (most sr-*Section files), keep using
+ * SrSectionShell — it composes ReportCardShell internally. */
+export function ReportCardShell({
+  id,
+  ariaLabelledBy,
+  padding = "28px clamp(16px, 4vw, 32px)",
+  scrollMarginTop = 72,
+  children,
+  style,
+}: {
+  id?: string;
+  ariaLabelledBy?: string;
+  padding?: number | string;
+  scrollMarginTop?: number;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <section
+      id={id}
+      aria-labelledby={ariaLabelledBy}
+      style={{
+        background: t.white,
+        border: `1px solid ${t.line}`,
+        borderRadius: radius.shell,
+        padding,
+        boxShadow: shadows.card,
+        scrollMarginTop,
+        ...style,
+      }}
+    >
+      {children}
+    </section>
+  );
+}
+
 export function PanelShell({
   index,
   title,
@@ -389,8 +433,9 @@ export function PanelEmptyState({
  * Three consumer sites with genuinely different layouts:
  *   • "aside" — right-aligned, label below the value, faded "/ total"
  *     denominator (PhaseLadderPanel header aside).
- *   • "headline" — big mono value with a sibling phrase, label optional
- *     (CohortPlacementPanel p{n} + "Top X% of candidates").
+ *   • "headline" — big mono value with a sibling phrase, label optional.
+ *     (Was used by the removed CohortPlacementPanel for "p{n} + Top X%
+ *     of candidates"; no current consumer, kept for future panels.)
  *   • "monthly" — label above, big mono value with /mo suffix, tax
  *     footnote (RegimeTile inside InHandMonthlyCard).
  *
@@ -560,18 +605,7 @@ export function SrSectionShell({
     </>
   );
   return (
-    <section
-      id={anchorId}
-      aria-labelledby={headingId}
-      style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.shell,
-        padding: "28px clamp(16px, 4vw, 32px)",
-        boxShadow: shadows.card,
-        scrollMarginTop: 72,
-      }}
-    >
+    <ReportCardShell id={anchorId} ariaLabelledBy={headingId}>
       <SectionEyebrow num={num} label={label} />
       {aside ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
@@ -580,7 +614,7 @@ export function SrSectionShell({
         </div>
       ) : titleBlock}
       {children}
-    </section>
+    </ReportCardShell>
   );
 }
 
