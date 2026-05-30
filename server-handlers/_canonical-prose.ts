@@ -49,6 +49,7 @@ import {
   applyFallibilityOverlay,
   applyPersonaTicSignature,
   applyContextRefOverlay,
+  applyPowerPostureOverlay,
 } from "./_recruiter-prose-realism";
 import { timeContextPrefix } from "./_recruiter-time-context";
 /* Phase 5 Session B (2026-05-19) — keep `getNegotiationRoundPersona`
@@ -1705,6 +1706,12 @@ export function chainProseOverlays(
   if (overlaysActive) {
     out = applyContextRefOverlay(out, persona, sessionId);
     out = applyPersonaTicSignature(out, sessionId, persona);
+    /* Power-posture (2026-05-30). Fires only at |recruiterPower| ≥ 2,
+     * 20% gate, idempotent. Slots HERE so the posture phrase wraps the
+     * core utterance BEFORE the humanizer's tic layer — posture is a
+     * stance the recruiter takes about the *whole turn*, not a verbal
+     * tic, so it belongs outside the humanizer's lexical pass. */
+    out = applyPowerPostureOverlay(out, persona, sessionId, state.recruiterPower);
   }
   out = humanizeRecruiterProse(out, {
     sector: state.recruiterSectorPersona ?? null,

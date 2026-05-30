@@ -796,12 +796,217 @@ export function affinityWarmthOverlay(
   return `${pool[idx]}${text}`;
 }
 
+/* ───────────────────────────────────────────────────────────────────
+ * Power-posture overlay (2026-05-30).
+ *
+ * The kernel already computes a scalar `recruiterPower ∈ [-3,+3]` from
+ * `powerSignals` (open-req age, pipeline depth, quarter timing,
+ * candidate's competing process). Until now that scalar only nudged
+ * concession headroom — the recruiter SOUNDED identical whether they
+ * were hungry (req 6 months stale, no other pipeline) or leveraged
+ * (deep pipeline, fresh quarter).
+ *
+ * Real recruiters posture VISIBLY when leverage shifts: a hungry
+ * recruiter leans in ("we have flexibility", "leadership is keen", "we
+ * really want to close this"); a leveraged one composes themselves
+ * ("I'll be candid", "I'll save us both time", "we're seeing a lot of
+ * interest at this level"). The posture is sector-specific in register
+ * — BFSI hungry ≠ unicorn hungry — so the bank is keyed on
+ * (persona × strength).
+ *
+ * Gate semantics:
+ *   • Fires only when |recruiterPower| ≥ 2 (a "strong" posture). At
+ *     |power| ≤ 1 the recruiter is in equilibrium — neutral voice is
+ *     the right default and we'd rather under-fire than over-color.
+ *   • FNV-1a deterministic ~20% fire rate keyed on (sessionId, text)
+ *     so repeated turns don't all wear the same posture prefix.
+ *   • Idempotent: if any registered posture phrase already sits at the
+ *     head of `text`, the overlay is a byte-identical no-op.
+ *   • Default sector → empty bank → no-op (snapshot baseline safe). */
+
+interface PostureBank {
+  readonly hungry: readonly string[];
+  readonly leveraged: readonly string[];
+}
+
+const POWER_POSTURE_BANK: Record<RecruiterSectorPersona, PostureBank> = {
+  "it-services": {
+    hungry: [
+      "Look, we'd really like to close this without too much back-and-forth",
+      "Honestly, we have some flexibility on the structure side",
+      "Between you and me, the requisition has been open a while",
+    ],
+    leveraged: [
+      "As per process, I'd suggest we stay close to the band",
+      "I'll be straight — we have a healthy pipeline at this level",
+      "Process-wise, the cadre cap doesn't leave much room",
+    ],
+  },
+  "gcc": {
+    hungry: [
+      "Honestly, we've been struggling to fill this seat",
+      "Look, leadership is keen to close this before the next review",
+      "I'll be candid — we have flexibility on joining and relocation",
+    ],
+    leveraged: [
+      "From a stakeholder perspective, we're seeing solid interest at this level",
+      "Fundamentally, the parent-comp benchmark caps us here",
+      "I'll be candid — we're not in a rush on this requisition",
+    ],
+  },
+  "indian-unicorn": {
+    hungry: [
+      "Look, we really want to close this fast",
+      "Honestly, the band on this role has been hard to fill",
+      "Between us, leadership has signed off on stretching for the right profile",
+    ],
+    leveraged: [
+      "Look, we have a few strong candidates in late stages",
+      "Honestly, the profitability-first mandate keeps us tight on comp",
+      "I'll keep it real — we're not desperate on this one",
+    ],
+  },
+  "early-startup": {
+    hungry: [
+      "Look, we need someone in seat yesterday",
+      "Honestly, the runway conversation makes us flexible on equity",
+      "Between us, the founder is personally chasing this hire",
+    ],
+    leveraged: [
+      "Look, we're early — cash is tight and the equity has to do the work",
+      "I'll be straight — we have a few founders' network referrals in flight",
+      "Honestly, at our stage we can't bid against late-stage comp",
+    ],
+  },
+  "bfsi": {
+    hungry: [
+      "As per policy I have some headroom, and honestly we'd like to close this cycle",
+      "Look, the role has been open through two compliance reviews now",
+      "Policy-wise we have flexibility on joining bonus given the duration",
+    ],
+    leveraged: [
+      "As per policy the cap on this band is firm",
+      "Policy-wise we're seeing strong applicant flow at this level",
+      "I'll be direct — the RBI guideline doesn't leave room here",
+    ],
+  },
+  "psu": {
+    hungry: [
+      "As per cadre we have some scope to expedite, given the seat has been vacant",
+      "As per rules I can push for the upper end of the scale here",
+      "Frankly, the OM permits a relaxation for the right candidate",
+    ],
+    leveraged: [
+      "As per rules, the cadre cap is non-negotiable",
+      "As per cadre the pay-band is fixed by the latest CPC",
+      "Process-wise the panel has multiple shortlisted candidates",
+    ],
+  },
+  "consulting-big4": {
+    hungry: [
+      "Fundamentally, we have headroom this cycle that we don't always have",
+      "Look, the partner sponsor is keen and that helps with the band",
+      "Honestly, we'd rather close than restart the search",
+    ],
+    leveraged: [
+      "Fundamentally, the band is set against the global cadre framework",
+      "I'll be direct — we have other candidates in final-round panels",
+      "From a stakeholder perspective the partner promotion freeze caps us",
+    ],
+  },
+  "consulting-mbb": {
+    hungry: [
+      "Honestly, we've signed off on stretching for the right profile here",
+      "Look, the practice is short-staffed against the engagement pipeline",
+      "Between us, the partner sponsor is personally backing this hire",
+    ],
+    leveraged: [
+      "Fundamentally, the global comp framework anchors us here",
+      "Honestly, we have a few late-stage candidates we're considering",
+      "I'll be direct — the leaner partner-track year keeps the band tight",
+    ],
+  },
+  "fmcg-management": {
+    hungry: [
+      "Honestly, the role has been open across two appraisal cycles",
+      "Look, the modern-trade vertical can't wait for another round",
+      "Between us, we have stretched the band for this role specifically",
+    ],
+    leveraged: [
+      "Honestly, the grade-band sets a hard cap on what I can offer",
+      "I'll be direct — we have strong internal IJP candidates as well",
+      "Look, the input-cost squeeze keeps every grade tight this year",
+    ],
+  },
+  "edtech": {
+    hungry: [
+      "Look, we've struggled to find the right profile post the reset",
+      "Honestly, the founder is personally invested in closing this one",
+      "Between us, we have flexibility on joining timeline and equity refresh",
+    ],
+    leveraged: [
+      "Honestly, the post-correction band leaves us tight on cash comp",
+      "Look, we're seeing solid candidate flow now that hiring re-opened",
+      "I'll be direct — the runway math caps the offer here",
+    ],
+  },
+  "default": { hungry: [], leveraged: [] },
+};
+
+const ALL_POSTURE_PHRASES: readonly string[] = (() => {
+  const out: string[] = [];
+  for (const bank of Object.values(POWER_POSTURE_BANK)) {
+    out.push(...bank.hungry, ...bank.leveraged);
+  }
+  return out;
+})();
+
+const POWER_POSTURE_FIRE_RATE = 0.20;
+const POWER_POSTURE_THRESHOLD = 2;
+
+/** Fire-gate the posture overlay.
+ *
+ *   text   — recruiter prose to potentially prefix
+ *   persona — sector key into POWER_POSTURE_BANK
+ *   sessionId — FNV seed; empty string → no-op (snapshot baseline)
+ *   recruiterPower — kernel scalar; |power| < 2 → no-op
+ *
+ * Returns input unchanged when any gate misses. When firing, prefixes
+ * one posture phrase + ", " + lowercased original. Idempotent. */
+export function applyPowerPostureOverlay(
+  text: string,
+  persona: RecruiterSectorPersona,
+  sessionId: string | null | undefined,
+  recruiterPower: number | null | undefined,
+): string {
+  if (!text || !sessionId) return text;
+  if (typeof recruiterPower !== "number" || !Number.isFinite(recruiterPower)) return text;
+  if (Math.abs(recruiterPower) < POWER_POSTURE_THRESHOLD) return text;
+  const bank = POWER_POSTURE_BANK[persona];
+  if (!bank) return text;
+  const pool = recruiterPower <= -POWER_POSTURE_THRESHOLD ? bank.hungry : bank.leveraged;
+  if (pool.length === 0) return text;
+
+  /* Idempotency — already prefixed by some posture phrase from any
+   * sector (defensive against persona swap mid-session). */
+  for (const phrase of ALL_POSTURE_PHRASES) {
+    if (text.startsWith(phrase)) return text;
+  }
+
+  const fireU = fnv1a(`power-posture-fire|${sessionId}|${persona}|${text}`) / 0x100000000;
+  if (fireU >= POWER_POSTURE_FIRE_RATE) return text;
+
+  const idx = fnv1a(`power-posture-pick|${sessionId}|${persona}|${text}`) % pool.length;
+  return `${pool[idx]}, ${lowercaseFirst(text)}`;
+}
+
 /* Test-only access to internal sets for verifying tic register bias. */
 export const __TEST_ONLY__ = {
   FORMAL_ONLY_TICS,
   CASUAL_TICS,
   PERSONA_TIC_BANKS,
   SECTOR_CONTEXT_REFS,
+  POWER_POSTURE_BANK,
 };
 
 if (import.meta.vitest) {

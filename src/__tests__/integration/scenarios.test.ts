@@ -403,7 +403,7 @@ describe("Scenario E — PDF#18 reproduction (Senior Product Designer → QA Eng
  * fields actually land on state. */
 
 describe("Scenario F — dead-input wiring activates power + time context", () => {
-  const BAND: NegotiationBand = { initialOffer: 14, maxStretch: 18, walkAway: 11 };
+  const BAND: NegotiationBand = { initialOffer: 14, maxStretch: 18, walkAway: 11, hasEquity: false };
 
   it("callTimeIso → timeContext bucket; powerSignals.quarterTiming → recruiterPower", () => {
     /* Friday 17:30 IST in mid-quarter — should bucket as friday-rush, and
