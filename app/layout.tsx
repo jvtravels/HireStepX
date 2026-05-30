@@ -42,7 +42,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 /* ── SEO Metadata ── */
 export const metadata: Metadata = {
-  title: "HireStepX \u2014 AI-Powered Mock Interview Platform",
+  title: "HireStepX: AI-Powered Mock Interview Platform",
   description:
     "Practice mock interviews with AI interviewers. Get real-time feedback, STAR analysis, and personalized coaching. 3 free sessions, no credit card required.",
   keywords:
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "https://hirestepx.com/",
-    title: "HireStepX \u2014 AI Mock Interview Practice",
+    title: "HireStepX: AI Mock Interview Practice",
     description:
       "Practice mock interviews with AI. Get scored on STAR structure, communication, and technical depth. 3 free sessions.",
     images: ["https://hirestepx.com/og-preview.png"],
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "HireStepX \u2014 AI Mock Interview Practice",
+    title: "HireStepX: AI Mock Interview Practice",
     description:
       "Practice mock interviews with AI. Get scored on STAR structure, communication, and technical depth.",
     images: ["https://hirestepx.com/og-preview.png"],
@@ -119,11 +119,6 @@ const structuredData = [
       priceCurrency: "INR",
       description: "3 free sessions, no credit card required",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      ratingCount: "150",
-    },
   },
   {
     "@context": "https://schema.org",
@@ -136,9 +131,9 @@ const structuredData = [
     url: "https://hirestepx.com",
     offers: [
       { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "3 practice sessions" },
-      { "@type": "Offer", price: "49", priceCurrency: "INR", name: "Starter Weekly", description: "10 sessions per week" },
-      { "@type": "Offer", price: "149", priceCurrency: "INR", name: "Pro Monthly", description: "Unlimited sessions" },
-      { "@type": "Offer", price: "1430", priceCurrency: "INR", name: "Pro Annual", description: "Unlimited sessions \u2014 save 20%" },
+      { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
+      { "@type": "Offer", price: "49", priceCurrency: "INR", name: "Weekly", description: "10 sessions over 7 days" },
+      { "@type": "Offer", price: "149", priceCurrency: "INR", name: "Monthly", description: "40 sessions over 30 days" },
     ],
     applicationSubCategory: "Interview Preparation",
   },
@@ -149,7 +144,7 @@ const structuredData = [
       {
         "@type": "Question",
         name: "Is HireStepX free to use?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. Start with 3 full AI mock interviews \u2014 complete with real-time feedback, scores, and detailed performance reports. No credit card required." },
+        acceptedAnswer: { "@type": "Answer", text: "Yes. Start with 3 full AI mock interviews, complete with real-time feedback, scores, and detailed performance reports. No credit card required." },
       },
       {
         "@type": "Question",
@@ -164,7 +159,7 @@ const structuredData = [
       {
         "@type": "Question",
         name: "Can I practice for specific companies like TCS, Infosys, or Google?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. We support 50+ target companies including Google, Amazon, TCS, Infosys, Flipkart, Razorpay, McKinsey, Deloitte, and more \u2014 each with distinct interview patterns." },
+        acceptedAnswer: { "@type": "Answer", text: "Yes. We support 50+ target companies including Google, Amazon, TCS, Infosys, Flipkart, Razorpay, McKinsey, Deloitte, and more, each with distinct interview patterns." },
       },
       {
         "@type": "Question",
@@ -184,7 +179,7 @@ const structuredData = [
       {
         "@type": "Question",
         name: "How much does it cost compared to a career coach?",
-        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b910 per session, or \u20b9149/month for 30 sessions with full AI coaching and analytics \u2014 available 24/7." },
+        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b910 per session, or \u20b9149/month for 30 sessions with full AI coaching and analytics, available 24/7." },
       },
     ],
   },

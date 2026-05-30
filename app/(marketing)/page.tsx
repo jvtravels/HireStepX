@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
-import App from "@/App";
-import ComingSoon from "@/ComingSoon";
+import HomepageV2 from "@/marketing-v2/HomepageV2";
 
 export const metadata: Metadata = {
   title: "HireStepX — AI Mock Interview Practice for Job Seekers",
@@ -40,64 +38,26 @@ const APPLICATION_SCHEMA = {
   name: "HireStepX",
   applicationCategory: "EducationApplication",
   operatingSystem: "Any (web)",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "INR",
-    availability: "https://schema.org/InStock",
-    description: "3 free mock interview sessions, no credit card required.",
-  },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.7",
-    ratingCount: "8",
-    bestRating: "5",
-    worstRating: "1",
-  },
+  offers: [
+    { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "3 practice sessions" },
+    { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
+    { "@type": "Offer", price: "49", priceCurrency: "INR", name: "Weekly", description: "10 sessions over 7 days" },
+    { "@type": "Offer", price: "149", priceCurrency: "INR", name: "Monthly", description: "40 sessions over 30 days" },
+  ],
 };
 
-/**
- * Landing page gating — Coming Soon only renders on the public production
- * apex hosts. Everywhere else (staging, app.*, vercel previews, localhost)
- * shows the real app so the team can keep shipping while the public
- * site is still gated.
- *
- * We render dynamically here (read host header) instead of at build time
- * so a single deploy can serve both staging.hirestepx.com (full app) AND
- * www.hirestepx.com (Coming Soon) without env-var juggling per env.
- *
- * NEXT_PUBLIC_COMING_SOON kept as a manual override:
- *   - Set to "0" → never show Coming Soon (force open everywhere).
- *   - Set to "1" → always show Coming Soon (lock everything down).
- *   - Unset → host-based default below.
- */
-export const dynamic = "force-dynamic";
+/* Marketing homepage v2 is now live at apex. Static + revalidate so the
+   page ships from the edge cache and the JSON-LD payload renders in the
+   first byte for crawlers. The ComingSoon gate has been retired. */
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
-const PRODUCTION_HOSTS = new Set([
-  "www.hirestepx.com",
-  "hirestepx.com",
-]);
-
-export default async function Page() {
-  const override = process.env.NEXT_PUBLIC_COMING_SOON;
-  if (override === "0") return <App />;
-  if (override === "1") return <ComingSoon />;
-
-  // Host-based default. headers() needs await in the Next 15 app router.
-  let host = "";
-  try {
-    const h = await headers();
-    host = (h.get("host") || "").toLowerCase().split(":")[0]; // strip port
-  } catch { /* SSR-only API; on edge cases default to full app */ }
-
-  /* Inject brand schema on EVERY render path (App or ComingSoon).
-     Crawlers see the structured data either way — important because
-     pre-launch most crawls hit the ComingSoon variant. */
+export default function Page() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
-      {PRODUCTION_HOSTS.has(host) ? <ComingSoon /> : <App />}
+      <HomepageV2 />
     </>
   );
 }
