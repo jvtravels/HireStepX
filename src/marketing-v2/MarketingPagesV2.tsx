@@ -218,15 +218,17 @@ function MDXProse({ children }: { children: ReactNode }) {
   );
 }
 
-/* FAQ accordion — semantic <details>, copper accent on the marker.
-   Keyboard accessible by default; respects user motion prefs. */
-function FAQItem({ q, a }: { q: string; a: string }) {
+/* FAQ accordion — semantic <details>, copper "+" marker that rotates
+   to × on open. Matches the homepage FAQV2 design 1:1 so the accordion
+   reads the same on every marketing page. */
+export function FAQItem({ q, a, first }: { q: string; a: string; first?: boolean }) {
   return (
     <details
       className="mv2p-faq"
+      open={first}
       style={{
-        borderBottom: `1px solid ${t.line}`,
-        padding: "20px 0",
+        borderTop: first ? "none" : `1px solid ${t.line}`,
+        padding: "20px 24px",
       }}
     >
       <summary
@@ -237,10 +239,11 @@ function FAQItem({ q, a }: { q: string; a: string }) {
           justifyContent: "space-between",
           alignItems: "center",
           gap: 16,
-          fontFamily: fonts.sans,
-          fontSize: 17,
-          fontWeight: 600,
+          fontFamily: fonts.serif,
+          fontSize: 19,
+          fontWeight: 400,
           color: t.coal,
+          letterSpacing: "-0.01em",
         }}
       >
         {q}
@@ -250,6 +253,8 @@ function FAQItem({ q, a }: { q: string; a: string }) {
           style={{
             color: t.copper,
             fontSize: 22,
+            fontFamily: fonts.sans,
+            fontWeight: 300,
             lineHeight: 1,
             display: "inline-block",
           }}
@@ -259,9 +264,12 @@ function FAQItem({ q, a }: { q: string; a: string }) {
       </summary>
       <p
         style={{
-          ...body,
-          marginTop: 12,
-          maxWidth: "72ch",
+          margin: "12px 0 0",
+          fontFamily: fonts.sans,
+          fontSize: 15,
+          lineHeight: 1.65,
+          color: t.inkSoft,
+          maxWidth: 620,
         }}
       >
         {a}
@@ -730,9 +738,19 @@ export function PricingPageV2() {
               <span style={{ fontStyle: "italic", color: t.copper }}>questions.</span>
             </h2>
           </div>
-          <div>
-            {faqs.map(([q, a]) => (
-              <FAQItem key={q} q={q} a={a} />
+          <div
+            style={{
+              maxWidth: 760,
+              margin: "0 auto",
+              background: t.white,
+              border: `1px solid ${t.line}`,
+              borderRadius: 16,
+              boxShadow: shadows.card,
+              overflow: "hidden",
+            }}
+          >
+            {faqs.map(([q, a], i) => (
+              <FAQItem key={q} q={q} a={a} first={i === 0} />
             ))}
           </div>
         </div>

@@ -15,6 +15,14 @@ const ease = "cubic-bezier(0.16, 1, 0.3, 1)";
 /* Responsive rules — inline-style architecture + a single sheet for @media */
 const ResponsiveSheet = () => (
   <style>{`
+    /* FAQ marker: rotate the "+" into "×" when the details element opens.
+       Mirrors MarketingPagesV2's PagesResponsiveSheet so the homepage FAQ
+       and pricing-page FAQ animate identically. */
+    .mv2p-faq[open] .mv2p-faq-marker { transform: rotate(45deg); }
+    .mv2p-faq-marker { transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1); }
+    @media (prefers-reduced-motion: reduce) {
+      .mv2p-faq-marker { transition: none !important; }
+    }
     /* ── Phones (sm) ── */
     @media (max-width: 640px) {
       .mv2-section { padding-top: 64px !important; padding-bottom: 64px !important; }
@@ -3523,6 +3531,7 @@ export function FAQV2() {
           {visible.map(({ q, a }, i) => (
             <details
               key={q}
+              className="mv2p-faq"
               open={i === 0}
               style={{
                 borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
@@ -3547,12 +3556,14 @@ export function FAQV2() {
                 {q}
                 <span
                   aria-hidden
+                  className="mv2p-faq-marker"
                   style={{
                     color: t.copper,
                     fontSize: 22,
                     fontFamily: fonts.sans,
                     fontWeight: 300,
                     lineHeight: 1,
+                    display: "inline-block",
                   }}
                 >
                   +
