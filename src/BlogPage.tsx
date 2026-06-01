@@ -1,10 +1,64 @@
 "use client";
 import { useState } from "react";
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { c, font } from "./tokens";
+import { useParams } from "next/navigation";
+import { tokens as t, fonts } from "./auth/_tokens";
+import { NavV2, FinalCTAFooterV2, MobileStickyCTA } from "./marketing-v2/HomepageV2";
 import { useSEO, articleJsonLd, faqJsonLd } from "./useSEO";
+
+/* PageShell — mirrors marketing-v2 chrome so the blog inherits the
+   editorial brand (cream surface, Instrument Serif + Satoshi, copper
+   accents, shared Nav + Footer + mobile sticky CTA). */
+function BlogShell({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: t.cream,
+        color: t.coal,
+        fontFamily: fonts.sans,
+        colorScheme: "light",
+      }}
+    >
+      <style>{`
+        .blog-skip { position: absolute; left: -9999px; top: 0; }
+        .blog-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
+        .blog-card { position: relative; transition: border-color 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1); }
+        .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 18px 44px rgba(14,12,8,0.08); transform: translateY(-2px); }
+        /* Stretched-link pattern: title anchor's ::after covers the whole card so the
+           full surface is clickable, but only the anchor (not the article) is in the
+           tab order. Card focus state mirrors the anchor's focus-visible state. */
+        .blog-card-link { color: inherit; text-decoration: none; outline: none; }
+        .blog-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
+        .blog-card:has(.blog-card-link:focus-visible) { border-color: ${t.copper}; box-shadow: 0 0 0 3px ${t.copperSoft}; }
+        .blog-card .blog-card-meta { position: relative; z-index: 2; }
+        @media (prefers-reduced-motion: reduce) { .blog-card { transition: none; } .blog-card:hover { transform: none; } }
+        @media (max-width: 880px) {
+          .blog-featured { grid-template-columns: 1fr !important; }
+          .blog-featured-media { min-height: 220px !important; }
+          .blog-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .blog-related-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .blog-grid { grid-template-columns: 1fr !important; }
+          .blog-container { padding: 32px 20px 64px !important; }
+          .blog-article { padding: 0 20px 56px !important; }
+          .blog-hero { height: 280px !important; }
+          .blog-hero-inner { padding: 0 20px 28px !important; }
+          .blog-meta { padding: 16px 20px !important; }
+          main, footer { padding-bottom: 96px !important; }
+        }
+      `}</style>
+      <a href="#main" className="blog-skip">Skip to content</a>
+      <NavV2 />
+      <main id="main">{children}</main>
+      <FinalCTAFooterV2 />
+      <MobileStickyCTA />
+    </div>
+  );
+}
 
 /* ─── Blog post data (SEO-optimized interview prep articles) ─── */
 interface FAQ { question: string; answer: string }
@@ -486,7 +540,7 @@ function getRelatedPosts(slugs: string[]): BlogPost[] {
 const CATEGORIES = ["All", ...Array.from(new Set(posts.map(p => p.category)))];
 
 /* ─── Blog index (list of all posts) ─── */
-function BlogIndex({ router }: { router: { push: (path: string) => void } }) {
+function BlogIndex() {
   const [activeCategory, setActiveCategory] = useState("All");
 
   useSEO({
@@ -517,127 +571,117 @@ function BlogIndex({ router }: { router: { push: (path: string) => void } }) {
   const rest = filtered.slice(1);
 
   return (
-    <div style={{ minHeight: "100vh", background: c.obsidian }}>
-      {/* Nav */}
-      <nav className="blog-nav" style={{ padding: "20px 40px", borderBottom: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <span style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, letterSpacing: "0.02em" }}>HireStepX</span>
-        </Link>
-        <Link href="/signup" style={{
-          fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.obsidian,
-          background: c.ivory, padding: "8px 20px", borderRadius: 10, textDecoration: "none",
-        }}>Start Free Practice</Link>
-      </nav>
-
-      <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 40px 80px" }}>
+    <BlogShell>
+      <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "120px 40px 96px" }}>
         {/* Header */}
-        <div style={{ marginBottom: 40 }}>
-          <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: c.gilt, marginBottom: 12 }}>Blog</p>
-          <h1 style={{ fontFamily: font.display, fontSize: "clamp(32px, 4vw, 52px)", fontWeight: 400, color: c.ivory, letterSpacing: "-0.02em", lineHeight: 1.15, marginBottom: 12 }}>
-            Interview prep that actually helps
+        <div style={{ marginBottom: 48, maxWidth: 720 }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: t.copper, marginBottom: 18 }}>Blog</p>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(40px, 5.5vw, 72px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.04, marginBottom: 18, textWrap: "balance" }}>
+            Interview prep that actually{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>helps</span>
           </h1>
-          <p style={{ fontFamily: font.ui, fontSize: 16, color: c.stone, lineHeight: 1.6, maxWidth: 560 }}>
-            Company-specific guides, question banks, and strategies from real interview patterns.
+          <p style={{ fontFamily: fonts.sans, fontSize: 18, color: t.indigoGray, lineHeight: 1.55, maxWidth: "62ch" }}>
+            Company-specific guides, question banks, and strategies pulled from real Indian interview patterns.
           </p>
         </div>
 
         {/* Category filters */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 40, flexWrap: "wrap" }}>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              style={{
-                fontFamily: font.ui, fontSize: 12, fontWeight: 500, padding: "7px 16px",
-                borderRadius: 100, border: "none", cursor: "pointer", transition: "all 0.2s",
-                background: activeCategory === cat ? c.ivory : "rgba(245,242,237,0.05)",
-                color: activeCategory === cat ? c.obsidian : c.stone,
-              }}
-            >
-              {cat}
-            </button>
-          ))}
+        <div style={{ display: "flex", gap: 8, marginBottom: 44, flexWrap: "wrap" }}>
+          {CATEGORIES.map(cat => {
+            const active = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                style={{
+                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, padding: "8px 16px",
+                  borderRadius: 999, cursor: "pointer",
+                  transition: "background 160ms, color 160ms, border-color 160ms",
+                  background: active ? t.coal : "transparent",
+                  color: active ? t.cream : t.coal,
+                  border: `1px solid ${active ? t.coal : t.line}`,
+                }}
+              >
+                {cat}
+              </button>
+            );
+          })}
         </div>
 
         {/* Featured post */}
         {featured && (
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- article acts as navigable card
           <article
-            className="blog-featured"
-            onClick={() => router.push(`/blog/${featured.slug}`)}
+            className="blog-featured blog-card"
             style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0,
-              background: c.graphite, borderRadius: 16, border: `1px solid ${c.border}`,
-              overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s", marginBottom: 32,
+              display: "grid", gridTemplateColumns: "1.05fr 1fr", gap: 0,
+              background: t.white, borderRadius: 18, border: `1px solid ${t.line}`,
+              overflow: "hidden", marginBottom: 40,
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = c.borderHover; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = c.border; }}
           >
-            <div style={{ position: "relative", minHeight: 320 }}>
+            <div className="blog-featured-media" style={{ position: "relative", minHeight: 340, background: t.creamSoft }}>
               <Image
                 src={featured.heroImage} alt={featured.heroAlt} loading="eager"
-                fill sizes="50vw"
-                unoptimized
+                fill sizes="(max-width: 880px) 100vw, 50vw"
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                 style={{ objectFit: "cover" }}
               />
             </div>
-            <div style={{ padding: "40px 36px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.04em", padding: "3px 10px", background: "rgba(212,179,127,0.08)", borderRadius: 100 }}>{featured.company}</span>
-                <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, padding: "3px 10px", background: "rgba(245,242,237,0.04)", borderRadius: 100 }}>{featured.category}</span>
+            <div style={{ padding: "44px 40px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{featured.company}</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999 }}>{featured.category}</span>
               </div>
-              <h2 style={{ fontFamily: font.display, fontSize: "clamp(22px, 2.5vw, 30px)", fontWeight: 400, color: c.ivory, lineHeight: 1.25, letterSpacing: "-0.02em", marginBottom: 12 }}>
-                {featured.title}
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 2.6vw, 34px)", fontWeight: 400, color: t.coal, lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 14, textWrap: "balance" }}>
+                <Link href={`/blog/${featured.slug}`} className="blog-card-link">
+                  {featured.title}
+                </Link>
               </h2>
-              <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, marginBottom: 16 }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, lineHeight: 1.6, marginBottom: 18 }}>
                 {featured.metaDescription}
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>{featured.readTime} read</span>
-                <span style={{ color: c.stone }}>·</span>
-                <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{new Date(featured.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
+                <span>{featured.readTime} read</span>
+                <span aria-hidden style={{ color: t.inkFaint }}>·</span>
+                <span>{new Date(featured.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
               </div>
             </div>
           </article>
         )}
 
         {/* Post grid */}
-        <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
           {rest.map(post => (
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- article acts as navigable card
             <article
               key={post.slug}
-              onClick={() => router.push(`/blog/${post.slug}`)}
+              className="blog-card"
               style={{
-                background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`,
-                overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s",
+                background: t.white, borderRadius: 14, border: `1px solid ${t.line}`,
+                overflow: "hidden",
                 display: "flex", flexDirection: "column",
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = c.borderHover; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = c.border; }}
             >
-              <div style={{ position: "relative", height: 160 }}>
+              <div style={{ position: "relative", height: 168, background: t.creamSoft }}>
                 <Image
                   src={post.heroImage} alt={post.heroAlt}
-                  fill sizes="(max-width: 768px) 100vw, 33vw"
-                  unoptimized
+                  fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                   style={{ objectFit: "cover" }}
                 />
               </div>
-              <div style={{ padding: "20px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.gilt, letterSpacing: "0.04em", padding: "2px 8px", background: "rgba(212,179,127,0.08)", borderRadius: 100 }}>{post.company}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 500, color: c.stone, padding: "2px 8px", background: "rgba(245,242,237,0.04)", borderRadius: 100 }}>{post.category}</span>
+              <div style={{ padding: "20px 22px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 8px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{post.company}</span>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "3px 8px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999 }}>{post.category}</span>
                 </div>
-                <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, lineHeight: 1.35, marginBottom: 8, flex: 1 }}>
-                  {post.title}
+                <h3 style={{ fontFamily: fonts.serif, fontSize: 19, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.012em", marginBottom: 12, flex: 1, textWrap: "balance" }}>
+                  <Link href={`/blog/${post.slug}`} className="blog-card-link">
+                    {post.title}
+                  </Link>
                 </h3>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{post.readTime} read</span>
-                  <span style={{ color: c.stone, fontSize: 11 }}>·</span>
-                  <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft }}>
+                  <span>{post.readTime} read</span>
+                  <span aria-hidden style={{ color: t.inkFaint }}>·</span>
+                  <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}</span>
                 </div>
               </div>
             </article>
@@ -646,26 +690,28 @@ function BlogIndex({ router }: { router: { push: (path: string) => void } }) {
 
         {/* Bottom CTA */}
         <div style={{
-          marginTop: 56, textAlign: "center", padding: "40px 32px",
-          background: "rgba(212,179,127,0.04)", border: `1px solid rgba(212,179,127,0.1)`,
-          borderRadius: 16,
+          marginTop: 72, textAlign: "center", padding: "48px 32px",
+          background: t.creamSoft, border: `1px solid ${t.line}`,
+          borderRadius: 18,
         }}>
-          <p style={{ fontFamily: font.display, fontSize: "clamp(20px, 2.5vw, 28px)", fontWeight: 400, color: c.ivory, letterSpacing: "-0.02em", marginBottom: 12 }}>
-            Stop reading, start practicing
+          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 3vw, 34px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", marginBottom: 10, lineHeight: 1.1 }}>
+            Stop reading, start{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>practicing</span>.
           </p>
-          <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, marginBottom: 24 }}>
-            AI mock interviews with instant feedback — 3 sessions free.
+          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, marginBottom: 26, maxWidth: 460, margin: "0 auto 26px" }}>
+            AI mock interviews with instant feedback. Three sessions free, no card required.
           </p>
           <Link href="/signup" style={{
-            display: "inline-block", fontFamily: font.ui, fontSize: 14, fontWeight: 600,
-            padding: "12px 32px", borderRadius: 8, textDecoration: "none",
-            background: c.ivory, color: c.obsidian,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
+            padding: "13px 26px", borderRadius: 999, textDecoration: "none",
+            background: t.indigo, color: t.white,
           }}>
-            Get Started Free
+            Start free practice
           </Link>
         </div>
       </div>
-    </div>
+    </BlogShell>
   );
 }
 
@@ -699,109 +745,112 @@ function BlogPostPage({ post }: { post: BlogPost }) {
   });
 
   return (
-    <div className="blog-post-page" style={{ minHeight: "100vh", background: c.obsidian }}>
-      {/* Nav */}
-      <nav className="blog-nav" style={{ padding: "20px 40px", borderBottom: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <span style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, letterSpacing: "0.02em" }}>HireStepX</span>
-          </Link>
-          <span style={{ color: c.stone, fontSize: 14 }}>/</span>
-          <Link href="/blog" style={{ textDecoration: "none", fontFamily: font.ui, fontSize: 13, color: c.stone }}>Blog</Link>
-        </div>
-        <Link href="/signup" style={{
-          fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.obsidian,
-          background: c.ivory, padding: "8px 20px", borderRadius: 10, textDecoration: "none",
-        }}>Start Free Practice</Link>
-      </nav>
-
-      {/* Hero */}
-      <div className="blog-hero" style={{ position: "relative", height: 360, overflow: "hidden" }}>
-        <Image
-          src={post.heroImage} alt={post.heroAlt}
-          fill sizes="100vw"
-          unoptimized
-          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          style={{ objectFit: "cover", filter: "brightness(0.35)" }}
+    <BlogShell>
+      {/* Hero — editorial header on cream, not a dark image overlay. Title leads,
+          image follows as a supporting frame instead of fighting the typography. */}
+      <header style={{ position: "relative", padding: "120px 0 0", background: t.cream }}>
+        <div
+          aria-hidden
+          style={{
+            position: "absolute", inset: 0,
+            background: "radial-gradient(ellipse 65% 50% at 50% 0%, rgba(180, 83, 9, 0.07) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
         />
-        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${c.obsidian} 0%, ${c.obsidian}80 40%, transparent 100%)` }} />
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 720, margin: "0 auto", padding: "0 40px 40px" }}>
-          <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.04em", padding: "4px 12px", background: "rgba(212,179,127,0.12)", borderRadius: 100, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>{post.company}</span>
-            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.chalk, padding: "4px 12px", background: "rgba(245,242,237,0.08)", borderRadius: 100, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>{post.category}</span>
+        <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px 40px", position: "relative" }}>
+          <Link href="/blog" style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.indigoGray,
+            textDecoration: "none", marginBottom: 24,
+          }}>
+            <span aria-hidden>←</span> Blog
+          </Link>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{post.company}</span>
+            <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999 }}>{post.category}</span>
           </div>
-          <h1 style={{ fontFamily: font.display, fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 400, color: c.ivory, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 5vw, 60px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.05, textWrap: "balance", margin: 0 }}>
             {post.title}
           </h1>
+          <div className="blog-meta" style={{ marginTop: 28, display: "flex", alignItems: "center", gap: 12, fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, flexWrap: "wrap" }}>
+            <span style={{ color: t.coal, fontWeight: 600 }}>HireStepX Team</span>
+            <span aria-hidden style={{ color: t.inkFaint }}>·</span>
+            <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
+            <span aria-hidden style={{ color: t.inkFaint }}>·</span>
+            <span>{post.readTime} read</span>
+          </div>
         </div>
-      </div>
+        <div className="blog-hero" style={{ position: "relative", height: 380, overflow: "hidden", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
+          <Image
+            src={post.heroImage} alt={post.heroAlt}
+            fill sizes="100vw"
+            priority
+            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            style={{ objectFit: "cover" }}
+          />
+        </div>
+      </header>
 
-      {/* Article meta bar */}
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "20px 40px", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${c.border}`, marginBottom: 40 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{post.readTime} read</span>
-        <span style={{ color: c.stone, fontSize: 10 }}>·</span>
-        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
-        <span style={{ color: c.stone, fontSize: 10 }}>·</span>
-        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt }}>HireStepX Team</span>
-      </div>
-
-      <article className="blog-article" style={{ maxWidth: 720, margin: "0 auto", padding: "0 40px 80px" }}>
-        {/* Intro */}
-        <p style={{ fontFamily: font.ui, fontSize: 17, color: c.chalk, lineHeight: 1.75, marginBottom: 48, borderLeft: `3px solid ${c.gilt}`, paddingLeft: 20 }}>
+      <article className="blog-article" style={{ maxWidth: 720, margin: "0 auto", padding: "56px 40px 96px" }}>
+        {/* Intro / dek */}
+        <p style={{ fontFamily: fonts.serif, fontSize: "clamp(20px, 2.2vw, 24px)", fontStyle: "italic", color: t.coal, lineHeight: 1.5, marginBottom: 48, letterSpacing: "-0.005em", textWrap: "balance" }}>
           {post.intro}
         </p>
 
         {/* Sections */}
         {post.sections.map((section, i) => (
-          <section key={i} style={{ marginBottom: 40 }}>
-            <h2 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 600, color: c.ivory, marginBottom: 14, lineHeight: 1.3 }}>
+          <section key={i} style={{ marginBottom: 44 }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 2.6vw, 30px)", fontWeight: 400, color: t.coal, marginBottom: 16, lineHeight: 1.2, letterSpacing: "-0.015em", textWrap: "balance" }}>
               {section.heading}
             </h2>
-            <div style={{ fontFamily: font.ui, fontSize: 15, color: c.chalk, lineHeight: 1.8, whiteSpace: "pre-line" }}>
+            <div style={{ fontFamily: fonts.sans, fontSize: 16.5, color: t.coal, lineHeight: 1.75, whiteSpace: "pre-line", maxWidth: "68ch" }}>
               {section.content}
             </div>
             {i < post.sections.length - 1 && (
-              <div style={{ width: 40, height: 1, background: c.border, margin: "40px 0 0" }} />
+              <div style={{ width: 48, height: 1, background: t.lineStrong, margin: "44px 0 0" }} />
             )}
           </section>
         ))}
 
         {/* FAQ Section — accordion */}
         {post.faqs.length > 0 && (
-          <section style={{ marginTop: 56, marginBottom: 48 }}>
-            <h2 style={{ fontFamily: font.display, fontSize: "clamp(22px, 3vw, 28px)", fontWeight: 400, color: c.ivory, marginBottom: 24, letterSpacing: "-0.02em" }}>
-              Frequently Asked Questions
+          <section style={{ marginTop: 64, marginBottom: 56 }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3vw, 34px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.02em" }}>
+              Frequently asked questions
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
               {post.faqs.map((faq, i) => {
                 const isOpen = openFaq === i;
                 return (
-                  <div key={i} style={{ borderBottom: "1px solid #1a1a1b" }}>
+                  <div key={i} style={{ borderBottom: `1px solid ${t.line}` }}>
                     <button
                       onClick={() => setOpenFaq(isOpen ? null : i)}
                       aria-expanded={isOpen}
                       style={{
                         width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
-                        padding: "18px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left",
+                        padding: "22px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left",
                       }}
                     >
-                      <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 500, color: c.ivory, lineHeight: 1.4, paddingRight: 16 }}>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 17, fontWeight: 600, color: t.coal, lineHeight: 1.4, paddingRight: 16 }}>
                         {faq.question}
                       </span>
-                      <svg
-                        aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke={c.stone} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                        style={{ flexShrink: 0, transition: "transform 0.2s ease", transform: isOpen ? "rotate(180deg)" : "rotate(0)" }}
+                      <span
+                        aria-hidden
+                        style={{
+                          flexShrink: 0, color: t.copper, fontSize: 22, lineHeight: 1, display: "inline-block",
+                          transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1)",
+                          transform: isOpen ? "rotate(45deg)" : "rotate(0)",
+                        }}
                       >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                        +
+                      </span>
                     </button>
                     <div style={{
-                      maxHeight: isOpen ? 300 : 0, overflow: "hidden",
+                      maxHeight: isOpen ? 400 : 0, overflow: "hidden",
                       transition: "max-height 0.3s ease, padding 0.3s ease",
-                      paddingBottom: isOpen ? 18 : 0,
+                      paddingBottom: isOpen ? 22 : 0,
                     }}>
-                      <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, lineHeight: 1.7 }}>
+                      <p style={{ fontFamily: fonts.sans, fontSize: 15.5, color: t.indigoGray, lineHeight: 1.7, maxWidth: "68ch" }}>
                         {faq.answer}
                       </p>
                     </div>
@@ -814,47 +863,46 @@ function BlogPostPage({ post }: { post: BlogPost }) {
 
         {/* CTA */}
         <div style={{
-          background: `linear-gradient(135deg, rgba(212,179,127,0.08), rgba(212,179,127,0.03))`,
-          border: `1px solid rgba(212,179,127,0.15)`,
-          borderRadius: 16, padding: "36px 40px", textAlign: "center", marginTop: 48,
+          background: t.creamSoft,
+          border: `1px solid ${t.line}`,
+          borderRadius: 18, padding: "40px 40px", textAlign: "center", marginTop: 56,
         }}>
-          <p style={{ fontFamily: font.display, fontSize: "clamp(20px, 2.5vw, 26px)", fontWeight: 400, color: c.ivory, letterSpacing: "-0.02em", marginBottom: 8 }}>
-            Ready to practice?
+          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.6vw, 30px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", marginBottom: 10, lineHeight: 1.1 }}>
+            Ready to{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>practice</span>?
           </p>
-          <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, lineHeight: 1.6, marginBottom: 26, maxWidth: 460, margin: "0 auto 26px" }}>
             {post.cta}
           </p>
           <Link href="/signup" style={{
-            display: "inline-block", fontFamily: font.ui, fontSize: 14, fontWeight: 600,
-            padding: "12px 32px", borderRadius: 8, textDecoration: "none",
-            background: c.ivory, color: c.obsidian,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
+            padding: "13px 26px", borderRadius: 999, textDecoration: "none",
+            background: t.indigo, color: t.white,
           }}>
-            Start Free Practice
+            Start free practice
           </Link>
         </div>
 
         {/* Related Posts */}
         {related.length > 0 && (
-          <section style={{ marginTop: 56 }}>
-            <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 20, letterSpacing: "0.02em" }}>
-              Continue Reading
+          <section style={{ marginTop: 72 }}>
+            <h2 style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 20 }}>
+              Continue reading
             </h2>
-            <div className="blog-related-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(related.length, 3)}, 1fr)`, gap: 16 }}>
+            <div className="blog-related-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(related.length, 3)}, 1fr)`, gap: 18 }}>
               {related.map(r => (
-                <Link key={r.slug} href={`/blog/${r.slug}`} style={{
-                  background: c.graphite, borderRadius: 12, border: `1px solid ${c.border}`,
-                  textDecoration: "none", transition: "border-color 0.2s", overflow: "hidden",
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = c.borderHover; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = c.border; }}
-                >
-                  <div style={{ position: "relative", width: "100%", height: 100 }}>
-                    <Image src={r.heroImage} alt={r.heroAlt} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                <Link key={r.slug} href={`/blog/${r.slug}`} className="blog-card" style={{
+                  background: t.white, borderRadius: 12, border: `1px solid ${t.line}`,
+                  textDecoration: "none", overflow: "hidden",
+                }}>
+                  <div style={{ position: "relative", width: "100%", height: 110, background: t.creamSoft }}>
+                    <Image src={r.heroImage} alt={r.heroAlt} fill sizes="(max-width: 768px) 100vw, 33vw" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                       style={{ objectFit: "cover" }} />
                   </div>
-                  <div style={{ padding: "14px 16px" }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory, lineHeight: 1.35, display: "block", marginBottom: 6 }}>{r.title}</span>
-                    <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{r.readTime} read</span>
+                  <div style={{ padding: "14px 16px 16px" }}>
+                    <span style={{ fontFamily: fonts.serif, fontSize: 16, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.01em", display: "block", marginBottom: 8 }}>{r.title}</span>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft }}>{r.readTime} read</span>
                   </div>
                 </Link>
               ))}
@@ -862,27 +910,40 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           </section>
         )}
       </article>
-    </div>
+    </BlogShell>
   );
 }
 
 /* ─── Main export ─── */
 export default function BlogPage() {
   const { slug } = useParams() as { slug?: string };
-  const router = useRouter();
 
   if (!slug) {
-    return <BlogIndex router={router} />;
+    return <BlogIndex />;
   }
 
   const post = posts.find(p => p.slug === slug);
   if (!post) {
     return (
-      <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40 }}>
-        <h1 style={{ fontFamily: font.display, fontSize: 32, color: c.ivory, marginBottom: 12 }}>Post Not Found</h1>
-        <p style={{ fontFamily: font.ui, fontSize: 15, color: c.stone, marginBottom: 24 }}>This blog post doesn't exist.</p>
-        <Link href="/blog" style={{ fontFamily: font.ui, fontSize: 14, color: c.gilt, textDecoration: "none" }}>Back to Blog</Link>
-      </div>
+      <BlogShell>
+        <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "160px 40px 80px", textAlign: "center" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: t.copper, marginBottom: 14 }}>404</p>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 4.5vw, 56px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.05, marginBottom: 14 }}>
+            Post not found
+          </h1>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.indigoGray, marginBottom: 28, maxWidth: "52ch" }}>
+            That story might have moved or never existed. The blog index still has the rest of it.
+          </p>
+          <Link href="/blog" style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontFamily: fonts.sans, fontSize: 14, fontWeight: 600,
+            padding: "11px 22px", borderRadius: 999, textDecoration: "none",
+            background: t.indigo, color: t.white,
+          }}>
+            Back to blog
+          </Link>
+        </div>
+      </BlogShell>
     );
   }
 

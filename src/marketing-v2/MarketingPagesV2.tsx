@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
 import { NavV2, FinalCTAFooterV2, MobileStickyCTA } from "./HomepageV2";
@@ -472,7 +473,7 @@ export function PricingPageV2() {
       />
 
       {/* Tier cards */}
-      <section className="mv2p-section" style={{ ...sectionBase, paddingTop: 56 }}>
+      <section className="mv2p-section" aria-label="Pricing tiers" style={{ ...sectionBase, paddingTop: 56 }}>
         <div className="mv2-container" style={container}>
           <div
             className="mv2p-pricing-row"
@@ -720,7 +721,7 @@ export function PricingPageV2() {
       </section>
 
       {/* FAQ */}
-      <section className="mv2p-section" style={sectionBase}>
+      <section className="mv2p-section" aria-label="Pricing FAQ" style={sectionBase}>
         <div className="mv2-container" style={containerNarrow}>
           <div style={{ textAlign: "center", marginBottom: 40 }}>
             <p style={{ ...eyebrow, marginBottom: 12 }}>FAQ</p>
@@ -803,7 +804,7 @@ export function HowItWorksV2() {
       />
 
       {/* Phase blocks — alternating layout for rhythm */}
-      <section className="mv2p-section" style={{ paddingTop: 56, paddingBottom: 56 }}>
+      <section className="mv2p-section" aria-label="How it works steps" style={{ paddingTop: 56, paddingBottom: 56 }}>
         <div className="mv2-container" style={container}>
           {phases.map((p, i) => (
             <article
@@ -923,7 +924,7 @@ export function AboutV2() {
       />
 
       {/* Mission block */}
-      <section className="mv2p-section" style={{ ...sectionBase }}>
+      <section className="mv2p-section" aria-label="Mission" style={{ ...sectionBase }}>
         <div className="mv2-container" style={containerNarrow}>
           <MDXProse>
             <p style={{ fontSize: 19, lineHeight: 1.7 }}>
@@ -1003,7 +1004,7 @@ export function AboutV2() {
       </section>
 
       {/* Values */}
-      <section className="mv2p-section" style={{ ...sectionBase, background: t.creamSoft }}>
+      <section className="mv2p-section" aria-label="Values" style={{ ...sectionBase, background: t.creamSoft }}>
         <div className="mv2-container" style={container}>
           <div style={{ marginBottom: 56, maxWidth: 720 }}>
             <p style={{ ...eyebrow, marginBottom: 12 }}>What we believe</p>
@@ -1055,6 +1056,7 @@ export function AboutV2() {
    Form + alternate channels. Conversion intent: support / partnership.
    ════════════════════════════════════════════════════════════════════ */
 export function ContactV2() {
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const channels = [
     {
       name: "General support",
@@ -1085,7 +1087,7 @@ export function ContactV2() {
         lead="No ticket systems, no autoresponders that pretend to care. Pick the channel that fits your question and we'll get back."
       />
 
-      <section className="mv2p-section" style={{ ...sectionBase, paddingTop: 64 }}>
+      <section className="mv2p-section" aria-label="Contact form and channels" style={{ ...sectionBase, paddingTop: 64 }}>
         <div className="mv2-container" style={container}>
           <div
             className="mv2p-form"
@@ -1100,8 +1102,13 @@ export function ContactV2() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                // Stub: production handler posts to /api/contact
+                if (status === "sending" || status === "sent") return;
+                setStatus("sending");
+                /* Production handler posts to /api/contact. Stub resolves
+                   to "sent" after 600ms so the success UI is real. */
+                window.setTimeout(() => setStatus("sent"), 600);
               }}
+              aria-describedby="contact-form-status"
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
@@ -1159,9 +1166,37 @@ export function ContactV2() {
                   style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
                 />
               </FieldGroup>
-              <button type="submit" style={{ ...ctaPrimary("lg"), justifySelf: "start" }} className="mv2-tap-44">
-                Send message
+              <button
+                type="submit"
+                disabled={status === "sending" || status === "sent"}
+                style={{
+                  ...ctaPrimary("lg"),
+                  justifySelf: "start",
+                  opacity: status === "sending" || status === "sent" ? 0.6 : 1,
+                  cursor: status === "sending" || status === "sent" ? "default" : "pointer",
+                }}
+                className="mv2-tap-44"
+              >
+                {status === "sending" ? "Sending…" : status === "sent" ? "Sent ✓" : "Send message"}
               </button>
+              <p
+                id="contact-form-status"
+                role="status"
+                aria-live="polite"
+                style={{
+                  fontFamily: fonts.sans,
+                  fontSize: 13,
+                  margin: 0,
+                  minHeight: 18,
+                  color: status === "error" ? t.error : status === "sent" ? t.success : t.inkSoft,
+                }}
+              >
+                {status === "sent"
+                  ? "Got it. You'll hear from us within 4 working hours."
+                  : status === "error"
+                  ? "Couldn't send. Email support@hirestepx.com instead."
+                  : ""}
+              </p>
             </form>
 
             {/* Channels + alt */}
@@ -1307,7 +1342,7 @@ export function ForStudentsV2() {
       />
 
       {/* What's included for students */}
-      <section className="mv2p-section" style={{ paddingTop: 56, paddingBottom: 56 }}>
+      <section className="mv2p-section" aria-label="What's included for students" style={{ paddingTop: 56, paddingBottom: 56 }}>
         <div className="mv2-container" style={container}>
           <div
             className="mv2p-grid-3"
@@ -1369,7 +1404,7 @@ export function ForStudentsV2() {
       </section>
 
       {/* Real student outcome */}
-      <section className="mv2p-section" style={sectionBase}>
+      <section className="mv2p-section" aria-label="Student outcome" style={sectionBase}>
         <div className="mv2-container" style={containerNarrow}>
           <div
             style={{
@@ -1428,7 +1463,7 @@ export function CompareChatGPTV2() {
         lead="ChatGPT can roleplay an interviewer. It can't score one. Here's the honest breakdown of what each is actually built for, and why a purpose-built tool wins for prep."
       />
 
-      <section className="mv2p-section" style={{ ...sectionBase, paddingTop: 56 }}>
+      <section className="mv2p-section" aria-label="HireStepX vs ChatGPT comparison" style={{ ...sectionBase, paddingTop: 56 }}>
         <div className="mv2-container" style={container}>
           <div
             style={{
@@ -1451,10 +1486,11 @@ export function CompareChatGPTV2() {
             >
               <thead>
                 <tr style={{ background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
-                  <th style={{ padding: "16px 20px", textAlign: "left", fontWeight: 600, color: t.inkSoft }}>
+                  <th scope="col" style={{ padding: "16px 20px", textAlign: "left", fontWeight: 600, color: t.inkSoft }}>
                     Feature
                   </th>
                   <th
+                    scope="col"
                     style={{
                       padding: "16px 20px",
                       textAlign: "left",
@@ -1467,6 +1503,7 @@ export function CompareChatGPTV2() {
                     HireStepX
                   </th>
                   <th
+                    scope="col"
                     style={{
                       padding: "16px 20px",
                       textAlign: "left",
@@ -1482,7 +1519,7 @@ export function CompareChatGPTV2() {
               <tbody>
                 {rows.map(([feature, us, them], i) => (
                   <tr key={feature} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
-                    <td style={{ padding: "14px 20px", color: t.coal, fontWeight: 500 }}>{feature}</td>
+                    <th scope="row" style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, textAlign: "left", fontFamily: fonts.sans, fontSize: 14 }}>{feature}</th>
                     <td
                       style={{
                         padding: "14px 20px",
@@ -1531,7 +1568,7 @@ export function CompareChatGPTV2() {
 export function NotFoundV2() {
   return (
     <PageShell>
-      <section style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
+      <section aria-label="Error message" style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
         <div style={{ textAlign: "center", maxWidth: 560 }}>
           <p
             style={{
@@ -1574,7 +1611,7 @@ export function NotFoundV2() {
 export function ServerErrorV2() {
   return (
     <PageShell>
-      <section style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
+      <section aria-label="Error message" style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
         <div style={{ textAlign: "center", maxWidth: 560 }}>
           <p
             style={{
@@ -1636,7 +1673,7 @@ function LegalPage({
         accent={accent}
         lead={`Last updated: ${updated}. Written in plain English. If anything's unclear, email legal@hirestepx.com.`}
       />
-      <section className="mv2p-section" style={sectionBase}>
+      <section className="mv2p-section" aria-label="Document body" style={sectionBase}>
         <div className="mv2-container" style={containerNarrow}>
           <MDXProse>{children}</MDXProse>
         </div>

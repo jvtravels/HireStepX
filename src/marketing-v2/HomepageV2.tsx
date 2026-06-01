@@ -270,6 +270,7 @@ export function NavV2() {
     ["Pricing", "/pricing"],
     ["For students", "/for-students"],
     ["About", "/about"],
+    ["Help", "/#faq"],
     ["Contact", "/contact"],
   ];
   /* Auth-aware CTA pair. Supabase session restore is async, so
@@ -1102,18 +1103,18 @@ export function HeroV2() {
           />
         </div>
 
-        {/* Asymmetric editorial split — grows to fill remaining viewport
-            so the masthead stays anchored to the top while the headline
-            + mock sit centered in the available band below it. */}
+        {/* Asymmetric editorial split — masthead anchored top, headline
+            sits immediately under it. Any extra viewport falls below the
+            mock instead of as dead air between masthead and H1. */}
         <div
           className="mv2-hero-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1.2fr",
             gap: 56,
-            alignItems: "center",
+            alignItems: "start",
             flex: 1,
-            marginTop: 40,
+            marginTop: 28,
           }}
         >
           {/* Left — text column */}
@@ -1149,8 +1150,9 @@ export function HeroV2() {
                 margin: "28px 0 0",
               }}
             >
-              Voice-first mock rounds. Real interviewer questions. STAR rubric
-              back before your chai cools.
+              Voice-first mock rounds. Real interviewer questions.{" "}
+              <abbr title="Situation, Task, Action, Result — the answer framework used by Amazon, Google, and most India tech panels" style={{ textDecoration: "underline dotted", textUnderlineOffset: 3, cursor: "help" }}>STAR</abbr>{" "}
+              rubric back before your chai cools.
             </p>
 
             <div
@@ -3421,6 +3423,7 @@ export function FAQV2() {
   const visible = qs.filter((q) => q.cat === activeCat);
   return (
     <section
+      id="faq"
       className="mv2-section"
       aria-labelledby="hd-faq"
       style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}
