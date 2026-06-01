@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef, type CSSProperties } from "react";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
+import { useAuth } from "../AuthContext";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing Homepage v2 (brand-aligned)
@@ -21,6 +22,7 @@ const ResponsiveSheet = () => (
       .mv2-hero-cta-row a { width: 100% !important; justify-content: center !important; }
       main, footer { padding-bottom: 96px !important; }
       .mv2-tap-44 { min-height: 44px !important; }
+      .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
     }
     /* ── Tablets (md) ── */
     @media (max-width: 880px) {
@@ -265,6 +267,12 @@ export function NavV2() {
     ["About", "/about"],
     ["Contact", "/contact"],
   ];
+  /* Auth-aware CTA pair. While Supabase is still restoring the session
+     on first paint we render the signed-out variant (loading=true,
+     isLoggedIn=false) — same as SSR — to avoid a layout-shift flash
+     when an authed user hits a marketing page. The swap to "Dashboard"
+     happens after hydration if the session resolves to authenticated. */
+  const { isLoggedIn } = useAuth();
   return (
     <header role="banner">
       <nav
@@ -331,37 +339,61 @@ export function NavV2() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <a
-              href="/login"
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                fontWeight: 500,
-                color: t.inkSoft,
-                textDecoration: "none",
-              }}
-            >
-              Sign in
-            </a>
-            <a
-              href="/signup"
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                fontWeight: 600,
-                color: t.white,
-                background: t.indigo,
-                padding: "9px 18px",
-                borderRadius: 999,
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              Start free
-              <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
-            </a>
+            {isLoggedIn ? (
+              <a
+                href="/dashboard"
+                style={{
+                  fontFamily: fonts.sans,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: t.white,
+                  background: t.indigo,
+                  padding: "9px 18px",
+                  borderRadius: 999,
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                Dashboard
+                <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
+              </a>
+            ) : (
+              <>
+                <a
+                  href="/login"
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: t.inkSoft,
+                    textDecoration: "none",
+                  }}
+                >
+                  Sign in
+                </a>
+                <a
+                  href="/signup"
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: t.white,
+                    background: t.indigo,
+                    padding: "9px 18px",
+                    borderRadius: 999,
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  Start free
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
+                </a>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -2378,8 +2410,8 @@ export function FeatureGridV2() {
     <section aria-labelledby="hd-features" style={{ ...sectionBase, background: t.cream }}>
       <div style={container}>
         <SectionMasthead n="04" label="What you get" right="At launch" style={{ marginBottom: 24 }} />
-        <MotionReveal style={{ marginBottom: 56, maxWidth: 640 }}>
-          <h2 id="hd-features" style={h2}>
+        <MotionReveal style={{ marginBottom: 56 }}>
+          <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2, whiteSpace: "nowrap" }}>
             Not another{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>
               question bank.
