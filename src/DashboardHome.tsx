@@ -402,8 +402,17 @@ export default function DashboardHome() {
   useDocTitle("Dashboard");
 
   useEffect(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("upgrade") === "1") {
+    if (typeof window === "undefined") return;
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.get("upgrade") === "1") {
       setShowUpgradeModal(true);
+      /* Stash the intended plan so UpgradeModal can preselect that
+       * tier on its next read. The marketing pricing CTAs send paid
+       * users here via /signup?plan=X → computeAuthRedirect. */
+      const plan = qs.get("plan");
+      if (plan) {
+        try { sessionStorage.setItem("hirestepx_intended_plan", plan); } catch { /* private mode */ }
+      }
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [setShowUpgradeModal]);

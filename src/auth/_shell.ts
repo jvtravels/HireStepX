@@ -192,6 +192,13 @@ export interface ComputeRedirectArgs {
   hasCompletedOnboarding: boolean;
 }
 
+/* Paid tier identifiers passed via ?plan= on /signup and /login. "free"
+ * routes straight to the product; the rest mean the user already intends
+ * to buy, so we open the upgrade flow instead of dropping them on the
+ * dashboard with no follow-through. Keep in sync with marketing CTAs in
+ * src/marketing-v2/{HomepageV2,MarketingPagesV2}.tsx. */
+const PAID_PLANS = new Set(["session", "weekly", "monthly", "starter", "pro"]);
+
 export function computeAuthRedirect({
   next,
   plan,
@@ -199,7 +206,15 @@ export function computeAuthRedirect({
 }: ComputeRedirectArgs): string {
   if (next && next.startsWith("/")) return next;
   const base = hasCompletedOnboarding ? "/dashboard" : "/onboarding";
-  return plan ? `${base}?plan=${plan}` : base;
+  if (!plan) return base;
+  /* Paid plan + onboarded → open upgrade modal immediately (the
+   * dashboard reads ?upgrade=1 in a useEffect and shows the tier
+   * picker). Paid plan + first-time → onboarding first; ?plan= is
+   * preserved so we can resume into upgrade after onboarding. */
+  if (PAID_PLANS.has(plan) && hasCompletedOnboarding) {
+    return `${base}?upgrade=1&plan=${plan}`;
+  }
+  return `${base}?plan=${plan}`;
 }
 
 /* ─── Email typo detection (Levenshtein-1 against common domains) ─── */
