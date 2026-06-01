@@ -23,6 +23,7 @@ const ResponsiveSheet = () => (
       main, footer { padding-bottom: 96px !important; }
       .mv2-tap-44 { min-height: 44px !important; }
       .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
+      .mv2-hero-section { min-height: 0 !important; display: block !important; }
     }
     /* ── Tablets (md) ── */
     @media (max-width: 880px) {
@@ -31,6 +32,7 @@ const ResponsiveSheet = () => (
       .mv2-hero-mock-body { grid-template-columns: 1fr !important; }
       .mv2-hero-mock-side { border-left: none !important; border-top: 1px solid var(--mv2-line) !important; }
       .mv2-hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+      .mv2-hero-section { min-height: 0 !important; display: block !important; }
       .mv2-hero-mock-wrap { margin-top: 0 !important; }
       .mv2-hero-margin-note { display: none !important; }
       .mv2-hero-rule-label-end { display: none !important; }
@@ -1046,12 +1048,21 @@ export function HeroV2() {
   return (
     <section
       aria-labelledby="hd-hero"
+      className="mv2-hero-section"
       style={{
         ...sectionBase,
         paddingTop: 56,
-        paddingBottom: 96,
+        paddingBottom: 56,
         background: t.cream,
         overflow: "hidden",
+        /* Full-viewport hero on desktop. Nav is 68px sticky; subtract
+           so the hero fills exactly the remaining viewport without
+           causing a scrollbar. Mobile media query below relaxes this
+           — at small widths the stacked layout is taller than 100vh
+           and forcing it would clip the product mock. */
+        minHeight: "calc(100vh - 68px)",
+        display: "flex",
+        alignItems: "center",
       }}
     >
       {/* Editorial backdrop — copper wash anchored to the mock side */}
@@ -1066,7 +1077,7 @@ export function HeroV2() {
           contain: "paint",
         }}
       />
-      <div style={{ ...container, position: "relative" }}>
+      <div style={{ ...container, position: "relative", width: "100%" }}>
         <div className="mv2-cascade mv2-cascade-1">
           <SectionMasthead
             n="01"
