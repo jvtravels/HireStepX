@@ -1051,18 +1051,21 @@ export function HeroV2() {
       className="mv2-hero-section"
       style={{
         ...sectionBase,
-        paddingTop: 56,
-        paddingBottom: 56,
+        paddingTop: 48,
+        paddingBottom: 48,
         background: t.cream,
         overflow: "hidden",
         /* Full-viewport hero on desktop. Nav is 68px sticky; subtract
-           so the hero fills exactly the remaining viewport without
-           causing a scrollbar. Mobile media query below relaxes this
-           — at small widths the stacked layout is taller than 100vh
-           and forcing it would clip the product mock. */
+           so the hero fills exactly the remaining viewport. We use
+           column flex (not center flex) so the masthead anchors to
+           the top of the viewport and the asymmetric grid expands to
+           absorb whatever extra height the viewport offers — keeps
+           composition seated instead of floating mid-screen. Mobile
+           media query relaxes this — at small widths the stacked
+           layout is taller than 100vh and forcing it would clip. */
         minHeight: "calc(100vh - 68px)",
         display: "flex",
-        alignItems: "center",
+        flexDirection: "column",
       }}
     >
       {/* Editorial backdrop — copper wash anchored to the mock side */}
@@ -1077,7 +1080,16 @@ export function HeroV2() {
           contain: "paint",
         }}
       />
-      <div style={{ ...container, position: "relative", width: "100%" }}>
+      <div
+        style={{
+          ...container,
+          position: "relative",
+          width: "100%",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <div className="mv2-cascade mv2-cascade-1">
           <SectionMasthead
             n="01"
@@ -1087,7 +1099,9 @@ export function HeroV2() {
           />
         </div>
 
-        {/* Asymmetric editorial split */}
+        {/* Asymmetric editorial split — grows to fill remaining viewport
+            so the masthead stays anchored to the top while the headline
+            + mock sit centered in the available band below it. */}
         <div
           className="mv2-hero-grid"
           style={{
@@ -1095,7 +1109,8 @@ export function HeroV2() {
             gridTemplateColumns: "1fr 1.2fr",
             gap: 56,
             alignItems: "center",
-            marginTop: 56,
+            flex: 1,
+            marginTop: 40,
           }}
         >
           {/* Left — text column */}
