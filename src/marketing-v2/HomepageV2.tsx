@@ -1324,6 +1324,11 @@ export function HeroV2() {
 
 /* ─────────────────────────── 3. LOGO STRIP + STAT ─────────────────────────── */
 function LogoMark({ label, slug }: { label: string; slug: string }) {
+  /* simpleicons.org omits several brands for trademark reasons (Flipkart,
+     Deloitte, Microsoft, HDFC Bank, Accenture, …). When the glyph 404s
+     we swap the <img> for a serif wordmark so every brand still renders
+     and the strip never shows broken-image placeholders. */
+  const [failed, setFailed] = useState(false);
   return (
     <span
       title={label}
@@ -1336,18 +1341,34 @@ function LogoMark({ label, slug }: { label: string; slug: string }) {
         flexShrink: 0,
       }}
     >
-      <img
-        src={`https://cdn.simpleicons.org/${slug}/1a1a1a`}
-        alt={label}
-        loading="lazy"
-        style={{
-          height: 24,
-          width: "auto",
-          maxWidth: 140,
-          opacity: 0.72,
-          filter: "grayscale(100%)",
-        }}
-      />
+      {failed ? (
+        <span
+          style={{
+            fontFamily: fonts.serif,
+            fontSize: 22,
+            color: t.coal,
+            opacity: 0.72,
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {label}
+        </span>
+      ) : (
+        <img
+          src={`https://cdn.simpleicons.org/${slug}/1a1a1a`}
+          alt={label}
+          loading="lazy"
+          onError={() => setFailed(true)}
+          style={{
+            height: 24,
+            width: "auto",
+            maxWidth: 140,
+            opacity: 0.72,
+            filter: "grayscale(100%)",
+          }}
+        />
+      )}
     </span>
   );
 }
