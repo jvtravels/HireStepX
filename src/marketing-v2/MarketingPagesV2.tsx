@@ -305,14 +305,22 @@ const PagesResponsiveSheet = () => (
     .mv2-skip { position: absolute; left: -9999px; top: 0; }
     .mv2-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
     /* Focus-visible ring for form inputs + interactive links/buttons.
-       Replaces the outline:none on inputStyle so keyboard users see focus. */
-    .mv2p-input:focus-visible {
+       Targets bare elements too, so a missing .mv2p-input class never
+       silently strips the focus ring. */
+    .mv2p-input:focus-visible,
+    main input:focus-visible,
+    main select:focus-visible,
+    main textarea:focus-visible {
       border-color: ${t.copper} !important;
-      box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.22);
+      box-shadow: 0 0 0 3px ${t.copperSoft};
+      outline: none;
     }
     /* FAQ marker: rotate the "+" into "×" when the details element opens. */
     .mv2p-faq[open] .mv2p-faq-marker { transform: rotate(45deg); }
     .mv2p-faq-marker { transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1); }
+    @media (prefers-reduced-motion: reduce) {
+      .mv2p-faq-marker { transition: none !important; }
+    }
 
     @media (max-width: 640px) {
       .mv2p-page-hero { padding-top: 100px !important; padding-bottom: 56px !important; }
@@ -323,7 +331,12 @@ const PagesResponsiveSheet = () => (
       .mv2p-cta-row a, .mv2p-cta-row button { width: 100% !important; justify-content: center !important; }
       .mv2p-cta-row { flex-direction: column !important; align-items: stretch !important; }
       .mv2p-pricing-row { grid-template-columns: 1fr !important; }
-      .mv2p-compare-table { font-size: 12px !important; }
+      /* Compare table on small screens: drop the desktop min-width so columns
+         can compress instead of forcing horizontal scroll, tighten padding,
+         hide tier eyebrow chrome. Keeps all four columns readable on a phone. */
+      .mv2p-compare-table { font-size: 12px !important; min-width: 0 !important; }
+      .mv2p-compare-table th, .mv2p-compare-table td { padding: 10px 8px !important; }
+      .mv2p-compare-table th:first-child, .mv2p-compare-table td:first-child { padding-left: 12px !important; }
       .mv2p-form { grid-template-columns: 1fr !important; }
       .mv2p-stat-row { grid-template-columns: repeat(2, 1fr) !important; }
       main, footer { padding-bottom: 96px !important; }
@@ -416,10 +429,10 @@ export function PricingPageV2() {
     ["Voice in & out", "Yes", "Yes", "Yes", "Yes"],
     ["STAR scoring", "Yes", "Yes", "Yes", "Yes"],
     ["Company-specific rounds", "Limited", "Yes", "Yes", "Yes"],
-    ["Skill-decay tracking", "—", "—", "Yes", "Yes"],
-    ["Priority coach feedback", "—", "—", "—", "Yes"],
+    ["Skill-decay tracking", "No", "No", "Yes", "Yes"],
+    ["Priority coach feedback", "No", "No", "No", "Yes"],
     ["Report retention", "30 days", "90 days", "90 days", "1 year"],
-    [".ac.in / .edu.in discount", "—", "—", "30% off", "30% off"],
+    [".ac.in / .edu.in discount", "No", "No", "30% off", "30% off"],
   ];
 
   const faqs: Array<[string, string]> = [
@@ -455,7 +468,7 @@ export function PricingPageV2() {
         eyebrow="Pricing"
         title="Costs less than"
         accent="one chai a day."
-        lead="Free to start. Buy one session, a week, or a month, whichever matches your prep. UPI, cards, and netbanking accepted. Cancel anytime — 7-day refund if unused."
+        lead="Free to start. Buy one session, a week, or a month, whichever matches your prep. UPI, cards, and netbanking accepted. Cancel anytime, with a 7-day refund if unused."
       />
 
       {/* Tier cards */}
@@ -541,7 +554,7 @@ export function PricingPageV2() {
                         fontFamily: fonts.sans,
                         fontSize: 13,
                         fontWeight: 500,
-                        color: tier.featured ? "rgba(245,242,237,0.7)" : t.inkSoft,
+                        color: tier.featured ? t.creamFaded : t.inkSoft,
                       }}
                     >
                       {tier.unit}
@@ -552,7 +565,7 @@ export function PricingPageV2() {
                       margin: "8px 0 0",
                       fontFamily: fonts.sans,
                       fontSize: 13,
-                      color: tier.featured ? "rgba(245,242,237,0.7)" : t.inkSoft,
+                      color: tier.featured ? t.creamFaded : t.inkSoft,
                     }}
                   >
                     {tier.sub}
@@ -572,9 +585,9 @@ export function PricingPageV2() {
                         padding: "4px 8px",
                         borderRadius: 999,
                         color: tier.featured ? t.copper100 : t.copper,
-                        background: tier.featured ? "rgba(244, 229, 216, 0.12)" : t.copper100,
+                        background: tier.featured ? t.copper100Soft : t.copper100,
                         border: tier.featured
-                          ? "1px solid rgba(244, 229, 216, 0.18)"
+                          ? `1px solid ${t.copper100SoftLine}`
                           : `1px solid ${t.lineStrong}`,
                       }}
                     >
@@ -593,7 +606,7 @@ export function PricingPageV2() {
                         fontFamily: fonts.sans,
                         fontSize: 14,
                         lineHeight: 1.5,
-                        color: tier.featured ? "rgba(245,242,237,0.9)" : t.inkSoft,
+                        color: tier.featured ? t.creamMuted : t.inkSoft,
                       }}
                     >
                       <span
@@ -672,7 +685,7 @@ export function PricingPageV2() {
                         fontWeight: 700,
                         color: tier.featured ? t.indigo : t.coal,
                         borderLeft: `1px solid ${t.line}`,
-                        background: tier.featured ? "rgba(49, 46, 129, 0.04)" : "transparent",
+                        background: tier.featured ? t.indigoMist : "transparent",
                       }}
                     >
                       {tier.name}
@@ -693,7 +706,7 @@ export function PricingPageV2() {
                         color: t.coal,
                         fontWeight: 500,
                         borderLeft: `1px solid ${t.line}`,
-                        background: "rgba(49, 46, 129, 0.04)",
+                        background: t.indigoMist,
                       }}
                     >
                       {monthly}
@@ -819,7 +832,7 @@ export function HowItWorksV2() {
                 </p>
               </div>
               <div>
-                <h2
+                <h3
                   style={{
                     ...h3,
                     fontSize: "clamp(28px, 3.4vw, 40px)",
@@ -827,7 +840,7 @@ export function HowItWorksV2() {
                   }}
                 >
                   {p.title}
-                </h2>
+                </h3>
                 <p style={{ ...lead, marginBottom: 16 }}>{p.body}</p>
                 <p
                   style={{
@@ -879,13 +892,13 @@ export function HowItWorksV2() {
                 key={title}
                 style={{
                   padding: 28,
-                  background: "rgba(250, 247, 240, 0.04)",
-                  border: `1px solid rgba(244, 229, 216, 0.12)`,
+                  background: t.creamVeryFaint,
+                  border: `1px solid ${t.copper100Soft}`,
                   borderRadius: 16,
                 }}
               >
                 <h3 style={{ ...h3, color: t.cream, fontSize: 22, marginBottom: 12 }}>{title}</h3>
-                <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.6, color: "rgba(250, 247, 240, 0.7)", margin: 0 }}>{copy}</p>
+                <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.6, color: t.creamFaded, margin: 0 }}>{copy}</p>
               </div>
             ))}
           </div>
@@ -1448,7 +1461,7 @@ export function CompareChatGPTV2() {
                       fontWeight: 700,
                       color: t.indigo,
                       borderLeft: `1px solid ${t.line}`,
-                      background: "rgba(49, 46, 129, 0.04)",
+                      background: t.indigoMist,
                     }}
                   >
                     HireStepX
@@ -1476,7 +1489,7 @@ export function CompareChatGPTV2() {
                         color: t.coal,
                         fontWeight: 500,
                         borderLeft: `1px solid ${t.line}`,
-                        background: "rgba(49, 46, 129, 0.03)",
+                        background: t.indigoMist3,
                       }}
                     >
                       {us}

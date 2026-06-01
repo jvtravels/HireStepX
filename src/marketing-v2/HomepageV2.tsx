@@ -95,18 +95,21 @@ const ResponsiveSheet = () => (
     @keyframes mv2-bar-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
     @keyframes mv2-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .mv2-mock-card { transition: transform 0.4s ${ease}, box-shadow 0.4s ${ease}; }
-    .mv2-mock-card:hover { transform: translateY(-2px); box-shadow: 0 32px 80px rgba(14, 12, 8, 0.14); }
+    .mv2-mock-card:hover { transform: translateY(-2px); box-shadow: ${shadows.mockHover}; }
     @media (prefers-reduced-motion: reduce) {
       .mv2-bar-fill, .mv2-fade-up { animation: none !important; transform: none !important; opacity: 1 !important; }
       .mv2-mock-card { transition: none !important; }
     }
     /* Pricing card hover lift */
     .mv2-price-card { transition: transform 0.2s ${ease}, box-shadow 0.2s ${ease}; }
-    .mv2-price-card:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(14, 12, 8, 0.12); }
+    .mv2-price-card:hover { transform: translateY(-3px); box-shadow: ${shadows.priceHover}; }
     /* Logo marquee */
     @keyframes mv2-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
     .mv2-marquee-track { display: flex; gap: 12px; width: max-content; animation: mv2-marquee 38s linear infinite; }
-    .mv2-marquee-mask { mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); overflow: hidden; }
+    /* Pause CSS animation when the strip scrolls off-screen — content-visibility:auto
+       skips rendering the section, dropping paint cost on long pages + low-end mobiles. */
+    .mv2-marquee-mask { mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); overflow: hidden; content-visibility: auto; contain-intrinsic-size: 1px 96px; }
+    .mv2-marquee-mask:hover .mv2-marquee-track { animation-play-state: paused; }
     @media (prefers-reduced-motion: reduce) { .mv2-marquee-track { animation: none; } }
     /* Skip paint + pause CSS animations on off-screen sections (battery on low-end mobile) */
     .mv2-cv-auto { content-visibility: auto; contain-intrinsic-size: 1px 700px; }
@@ -124,7 +127,7 @@ const ResponsiveSheet = () => (
     }
     /* Primary CTA — arrow drifts on hover, signals forward motion */
     .mv2-cta-primary { transition: transform 0.25s ${ease}, box-shadow 0.25s ${ease}, filter 0.15s ease; }
-    .mv2-cta-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(49, 46, 129, 0.22); }
+    .mv2-cta-primary:hover { transform: translateY(-1px); box-shadow: ${shadows.ctaPrimaryHover}; }
     .mv2-cta-primary .mv2-cta-arrow { transition: transform 0.28s ${ease}; display: inline-block; }
     .mv2-cta-primary:hover .mv2-cta-arrow { transform: translateX(4px); }
     .mv2-cta-primary:active { transform: translateY(0) scale(0.98); transition-duration: 0.08s; }
@@ -136,7 +139,7 @@ const ResponsiveSheet = () => (
     }
     /* Feature card — surface lifts, icon glyph scales, tint deepens */
     .mv2-feature-card { transition: transform 0.32s ${ease}, box-shadow 0.32s ${ease}, border-color 0.2s ease; }
-    .mv2-feature-card:hover { transform: translateY(-4px); box-shadow: 0 24px 56px rgba(14, 12, 8, 0.10); border-color: ${t.lineStrong}; }
+    .mv2-feature-card:hover { transform: translateY(-4px); box-shadow: ${shadows.featureHover}; border-color: ${t.lineStrong}; }
     .mv2-feature-icon { transition: transform 0.32s ${ease}, background 0.25s ease; }
     .mv2-feature-card:hover .mv2-feature-icon { transform: scale(1.08) rotate(-3deg); background: ${t.copper}; color: ${t.cream} !important; }
     @media (prefers-reduced-motion: reduce) {
@@ -1782,7 +1785,7 @@ function StepMock({ step }: { step: number }) {
   };
   const kickerDark: CSSProperties = {
     ...kicker,
-    color: "rgba(245, 242, 237, 0.78)",
+    color: t.creamMuted,
   };
   if (step === 0) {
     return (
@@ -1955,10 +1958,10 @@ function StepMock({ step }: { step: number }) {
       style={{
         ...wrap,
         background: t.coal,
-        border: `1px solid rgba(245, 242, 237, 0.08)`,
+        border: `1px solid ${t.creamLineFaint}`,
         /* Quieter: shadow tinted toward coal (was pure black), lower alpha so
            the step-03 mock sits on the page instead of hovering off it. */
-        boxShadow: "0 20px 50px -22px rgba(14, 12, 8, 0.38)",
+        boxShadow: `0 20px 50px -22px ${t.coalShadow}`,
         minHeight: undefined,
       }}
     >
@@ -2000,7 +2003,7 @@ function StepMock({ step }: { step: number }) {
         style={{
           fontFamily: fonts.sans,
           fontSize: 11,
-          color: "rgba(245, 242, 237, 0.78)",
+          color: t.creamMuted,
           margin: 0,
           letterSpacing: "0.12em",
           textTransform: "uppercase",
@@ -2024,8 +2027,8 @@ function StepMock({ step }: { step: number }) {
       <div
         style={{
           padding: 16,
-          background: "rgba(245, 242, 237, 0.06)",
-          border: `1px solid rgba(245, 242, 237, 0.1)`,
+          background: t.creamSurfaceLow,
+          border: `1px solid ${t.creamLineSoft}`,
           borderRadius: 10,
           display: "flex",
           alignItems: "center",
@@ -2042,7 +2045,7 @@ function StepMock({ step }: { step: number }) {
             fontSize: 11,
             color: t.success,
             padding: "3px 8px",
-            background: "rgba(34, 197, 94, 0.14)",
+            background: t.successMist,
             borderRadius: 6,
             fontWeight: 600,
           }}
@@ -2572,7 +2575,7 @@ export function BuiltForIndiaV2() {
           <p
             style={{
               ...body,
-              color: "rgba(245, 242, 237, 0.75)",
+              color: t.creamMuted,
               marginTop: 16,
               maxWidth: 460,
             }}
@@ -2586,7 +2589,7 @@ export function BuiltForIndiaV2() {
             style={{
               marginTop: 32,
               paddingTop: 24,
-              borderTop: `1px solid rgba(245, 242, 237, 0.14)`,
+              borderTop: `1px solid ${t.creamLine}`,
               display: "flex",
               alignItems: "baseline",
               gap: 18,
@@ -2609,7 +2612,7 @@ export function BuiltForIndiaV2() {
               style={{
                 fontFamily: fonts.sans,
                 fontSize: 14,
-                color: "rgba(245, 242, 237, 0.7)",
+                color: t.creamFaded,
                 maxWidth: 220,
                 lineHeight: 1.4,
               }}
@@ -2638,8 +2641,8 @@ export function BuiltForIndiaV2() {
                   alignItems: "center",
                   gap: 8,
                   padding: "8px 14px",
-                  background: "rgba(255, 255, 255, 0.06)",
-                  border: `1px solid rgba(255, 255, 255, 0.12)`,
+                  background: t.creamLowAlpha,
+                  border: `1px solid ${t.creamLine}`,
                   borderRadius: 999,
                 }}
               >
@@ -2683,10 +2686,10 @@ export function BuiltForIndiaV2() {
               style={{
                 fontFamily: fonts.serif,
                 fontSize: 18,
-                color: i % 3 === 0 ? t.cream : "rgba(245, 242, 237, 0.7)",
+                color: i % 3 === 0 ? t.cream : t.creamFaded,
                 padding: "10px 18px",
-                background: "rgba(255, 255, 255, 0.04)",
-                border: `1px solid rgba(255, 255, 255, 0.1)`,
+                background: t.creamVeryFaint,
+                border: `1px solid ${t.creamLineSoft}`,
                 borderRadius: 999,
                 letterSpacing: "-0.01em",
               }}
@@ -2915,9 +2918,7 @@ export function PricingV2() {
                    shadow so it visually leads without breaking the grid.
                    Subtle on purpose — a real scale bump fights the
                    editorial restraint. */
-                boxShadow: tier.featured
-                  ? "0 24px 60px -28px rgba(20, 18, 28, 0.55)"
-                  : shadows.card,
+                boxShadow: tier.featured ? shadows.featured : shadows.card,
                 transform: tier.featured ? "translateY(-8px)" : "none",
                 display: "flex",
                 flexDirection: "column",
@@ -2979,7 +2980,7 @@ export function PricingV2() {
                       fontFamily: fonts.sans,
                       fontSize: 13,
                       fontWeight: 500,
-                      color: tier.featured ? "rgba(245,242,237,0.7)" : t.inkSoft,
+                      color: tier.featured ? t.creamFaded : t.inkSoft,
                     }}
                   >
                     {tier.unit}
@@ -2990,7 +2991,7 @@ export function PricingV2() {
                     margin: "8px 0 0",
                     fontFamily: fonts.sans,
                     fontSize: 13,
-                    color: tier.featured ? "rgba(245,242,237,0.7)" : t.inkSoft,
+                    color: tier.featured ? t.creamFaded : t.inkSoft,
                   }}
                 >
                   {tier.sub}
@@ -3014,10 +3015,10 @@ export function PricingV2() {
                       borderRadius: 999,
                       color: tier.featured ? t.copper100 : t.copper,
                       background: tier.featured
-                        ? "rgba(244, 229, 216, 0.12)"
+                        ? t.copper100Soft
                         : t.copper100,
                       border: tier.featured
-                        ? "1px solid rgba(244, 229, 216, 0.18)"
+                        ? `1px solid ${t.copper100SoftLine}`
                         : `1px solid ${t.lineStrong}`,
                     }}
                   >
@@ -3045,7 +3046,7 @@ export function PricingV2() {
                       fontFamily: fonts.sans,
                       fontSize: 14,
                       lineHeight: 1.5,
-                      color: tier.featured ? "rgba(245,242,237,0.9)" : t.inkSoft,
+                      color: tier.featured ? t.creamMuted : t.inkSoft,
                     }}
                   >
                     <span
@@ -3317,7 +3318,7 @@ export function ComparisonV2() {
                       padding: "16px 24px",
                       color: t.coal,
                       borderLeft: `1px solid ${t.line}`,
-                      background: "rgba(49, 46, 129, 0.025)",
+                      background: t.indigoFog,
                       fontWeight: 500,
                     }}
                   >
@@ -4002,9 +4003,9 @@ export function MobileStickyCTA() {
         // that this element is only ever rendered on. Saves a compositor layer
         // on every scroll frame on mid-range Android.
         background: "rgb(14, 12, 8)",
-        border: `1px solid rgba(245, 242, 237, 0.12)`,
+        border: `1px solid ${t.creamLine}`,
         borderRadius: 999,
-        boxShadow: "0 10px 40px rgba(14, 12, 8, 0.35)",
+        boxShadow: `0 10px 40px ${t.coalShadow}`,
       }}
     >
       <span

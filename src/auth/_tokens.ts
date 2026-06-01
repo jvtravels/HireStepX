@@ -36,6 +36,28 @@ export const tokens = {
   // Lines
   line: "#EBE5D2",
   lineStrong: "#D6CDB5",
+
+  // Overlays / faded surfaces (used in marketing-v2)
+  coalOverlay: "rgba(14, 12, 8, 0.55)",
+  coalShadow: "rgba(14, 12, 8, 0.38)",
+  creamMuted: "rgba(245, 242, 237, 0.78)",   // editorial body copy on dark
+  creamFaded: "rgba(245, 242, 237, 0.7)",
+  creamLine: "rgba(245, 242, 237, 0.14)",    // hairline on dark
+  creamLineSoft: "rgba(245, 242, 237, 0.1)",
+  creamLineFaint: "rgba(245, 242, 237, 0.08)",
+  creamSurfaceLow: "rgba(245, 242, 237, 0.06)",
+  creamVeryFaint: "rgba(250, 247, 240, 0.04)",
+  creamLowAlpha: "rgba(255, 255, 255, 0.06)",
+
+  // Brand tints — sub-surface fills used in tables / pricing chips
+  copper100Soft: "rgba(244, 229, 216, 0.12)",
+  copper100SoftLine: "rgba(244, 229, 216, 0.18)",
+  indigoMist: "rgba(49, 46, 129, 0.04)",
+  indigoMist3: "rgba(49, 46, 129, 0.03)",
+  indigoFog: "rgba(49, 46, 129, 0.025)",
+
+  // Status tints
+  successMist: "rgba(34, 197, 94, 0.14)",
 } as const;
 
 export const fonts = {
@@ -51,4 +73,11 @@ export const shadows = {
     "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
   modal:
     "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)",
+  featured:
+    "0 24px 60px -28px rgba(20, 18, 28, 0.55), 0 8px 18px -10px rgba(20, 18, 28, 0.20)",
+  // Hover lifts — used by .mv2-mock-card / .mv2-price-card / .mv2-feature-card / .mv2-cta-primary
+  mockHover: "0 32px 80px rgba(14, 12, 8, 0.14)",
+  priceHover: "0 16px 48px rgba(14, 12, 8, 0.12)",
+  featureHover: "0 24px 56px rgba(14, 12, 8, 0.10)",
+  ctaPrimaryHover: "0 12px 28px rgba(49, 46, 129, 0.22)",
 } as const;
