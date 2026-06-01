@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef, type CSSProperties } from "react";
+import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
 import { useAuth, hasStoredSession } from "../AuthContext";
 
@@ -286,6 +287,11 @@ export function NavV2() {
   const [hasSession, setHasSession] = useState(false);
   useEffect(() => { setHasSession(hasStoredSession()); }, [isLoggedIn]);
   const showDashboard = isLoggedIn || (loading && hasSession);
+  const pathname = usePathname();
+  const isActive = (href: string) => {
+    if (href.startsWith("/#")) return false;
+    return pathname === href || (href !== "/" && pathname?.startsWith(href));
+  };
   return (
     <header role="banner">
       <nav
@@ -335,20 +341,27 @@ export function NavV2() {
               fontSize: 14,
             }}
           >
-            {navLinks.map(([label, href]) => (
-              <a
-                key={label}
-                href={href}
-                style={{
-                  color: t.inkSoft,
-                  textDecoration: "none",
-                  fontWeight: 500,
-                  transition: `color 0.2s ${ease}`,
-                }}
-              >
-                {label}
-              </a>
-            ))}
+            {navLinks.map(([label, href]) => {
+              const active = isActive(href);
+              return (
+                <a
+                  key={label}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  style={{
+                    color: active ? t.coal : t.inkSoft,
+                    textDecoration: "none",
+                    fontWeight: active ? 600 : 500,
+                    transition: `color 0.2s ${ease}`,
+                    position: "relative",
+                    paddingBottom: 4,
+                    borderBottom: active ? `1.5px solid ${t.copper}` : "1.5px solid transparent",
+                  }}
+                >
+                  {label}
+                </a>
+              );
+            })}
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
