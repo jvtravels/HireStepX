@@ -50,16 +50,12 @@ export const metadata: Metadata = {
   authors: [{ name: "HireStepX" }],
   robots: "index, follow",
   metadataBase: new URL("https://hirestepx.com"),
-  /* hreflang alternates — we serve a single English bundle today but the
-   * brand is India-first. Declaring en-IN as the default and x-default
-   * as the fallback gives Google an explicit locale signal. When Hindi
-   * launches under /hi/*, add `"hi-IN": "/hi"` to the languages map. */
+  /* Canonical only. No hreflang languages map until /hi/* actually exists —
+   * pointing multiple locales at the same URL is a duplicate-content
+   * signal Google may penalise. Re-add `languages: { "en-IN": "/", "hi-IN":
+   * "/hi", "x-default": "/" }` the day Hindi routes ship. */
   alternates: {
     canonical: "/",
-    languages: {
-      "en-IN": "/",
-      "x-default": "/",
-    },
   },
   manifest: "/manifest.json",
   icons: [{ url: "/favicon.svg", type: "image/svg+xml" }],
@@ -69,7 +65,9 @@ export const metadata: Metadata = {
     title: "HireStepX: AI Mock Interview Practice",
     description:
       "Practice mock interviews with AI. Get scored on STAR structure, communication, and technical depth. 3 free sessions.",
-    images: ["https://hirestepx.com/og-preview.png"],
+    // Image is auto-picked up from app/opengraph-image.tsx (dynamic 1200x630).
+    // Sub-routes can still override by exporting openGraph.images from their
+    // own generateMetadata (or by dropping a sibling opengraph-image.tsx).
     siteName: "HireStepX",
     locale: "en_IN",
   },
@@ -78,7 +76,8 @@ export const metadata: Metadata = {
     title: "HireStepX: AI Mock Interview Practice",
     description:
       "Practice mock interviews with AI. Get scored on STAR structure, communication, and technical depth.",
-    images: ["https://hirestepx.com/og-preview.png"],
+    // Same as openGraph: auto-picked up from app/twitter-image.tsx if present,
+    // otherwise falls back to the opengraph-image.
   },
   appleWebApp: {
     capable: true,
