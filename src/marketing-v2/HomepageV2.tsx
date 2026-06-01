@@ -3863,7 +3863,7 @@ export function FinalCTAFooterV2() {
             color: t.inkFaint,
           }}
         >
-          <span>© 2026 HireStepX Labs Pvt Ltd · Bengaluru, India</span>
+          <span>© 2026 HireStepX Labs Pvt Ltd</span>
           <span style={{ display: "flex", gap: 20 }}>
             {[
               ["Privacy", "/privacy"],
