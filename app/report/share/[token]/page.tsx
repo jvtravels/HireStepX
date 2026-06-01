@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import SharedReportView from "@/SharedReportView";
 
 export const dynamic = "force-dynamic";
-export const runtime = "edge";
+/* Node.js runtime (default) — was "edge" but the bundle crossed Vercel's
+ * 1 MB edge-function limit after SharedReportView's transitive imports
+ * grew. The page is a thin shell that defers data fetching to the
+ * client-side call to /api/share-report, so edge latency wasn't load-
+ * bearing. Move back to edge once the bundle is trimmed. */
 
 export const metadata: Metadata = {
   title: "Interview Report | HireStepX",
