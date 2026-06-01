@@ -1404,7 +1404,7 @@ export function LogoStripV2() {
       }}
     >
       <div style={container}>
-        <SectionMasthead n="01" label="Candidates from" right="3,000+ companies" style={{ marginBottom: 32 }} />
+        <SectionMasthead n="02" label="Candidates from" right="3,000+ companies" style={{ marginBottom: 32 }} />
         <p
           style={{
             fontFamily: fonts.serif,
@@ -2088,7 +2088,7 @@ export function ProductStoryV2() {
   return (
     <section aria-labelledby="hd-story" style={{ ...sectionBase, background: t.cream }}>
       <div style={container}>
-        <SectionMasthead n="02" label="How it works" right="Three steps" style={{ marginBottom: 24 }} />
+        <SectionMasthead n="04" label="How it works" right="Three steps" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ textAlign: "center", marginBottom: 80 }}>
           <h2 id="hd-story" style={h2}>
             Three steps.{" "}
@@ -2454,7 +2454,7 @@ export function FeatureGridV2() {
   return (
     <section aria-labelledby="hd-features" style={{ ...sectionBase, background: t.cream }}>
       <div style={container}>
-        <SectionMasthead n="04" label="What you get" right="At launch" style={{ marginBottom: 24 }} />
+        <SectionMasthead n="05" label="What you get" right="At launch" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ marginBottom: 56 }}>
           <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2, whiteSpace: "nowrap" }}>
             Not another{" "}
@@ -2737,7 +2737,7 @@ export function TestimonialsV2() {
   return (
     <section className="mv2-section" aria-labelledby="hd-why" style={{ ...sectionBase, background: t.cream, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
-        <SectionMasthead n="05" label="Why" right="Three objections" style={{ marginBottom: 24 }} />
+        <SectionMasthead n="06" label="Why" right="Three objections" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ textAlign: "center", marginBottom: 64, maxWidth: 760, marginLeft: "auto", marginRight: "auto" }}>
           <h2 id="hd-why" style={{ ...h2, textWrap: "balance" as const }}>
             The interview help{" "}
@@ -2894,7 +2894,7 @@ export function PricingV2() {
     <section className="mv2-section" aria-labelledby="hd-pricing" style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
         <MotionReveal style={{ textAlign: "center", marginBottom: 56 }}>
-          <SectionMasthead n="06" label="Pricing" right="From ₹9 / session" style={{ marginBottom: 16 }} />
+          <SectionMasthead n="07" label="Pricing" right="From ₹9 / session" style={{ marginBottom: 16 }} />
           <h2 id="hd-pricing" style={h2}>
             Costs less than{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>one chai a day.</span>
@@ -3437,7 +3437,7 @@ export function FAQV2() {
     >
       <div className="mv2-container" style={container}>
         <MotionReveal style={{ textAlign: "center", marginBottom: 40 }}>
-          <SectionMasthead n="07" label="FAQ" right="Asked & answered" style={{ marginBottom: 16 }} />
+          <SectionMasthead n="09" label="FAQ" right="Asked & answered" style={{ marginBottom: 16 }} />
           <h2 id="hd-faq" style={h2}>
             Things you'd ask{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>before paying.</span>
