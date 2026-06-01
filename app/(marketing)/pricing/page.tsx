@@ -24,6 +24,17 @@ const BREADCRUMB_SCHEMA = {
   ],
 };
 
+/* Source of truth for the pricing schema. lowPrice / highPrice /
+ * offerCount are derived from this array so the schema can't drift
+ * out of sync with the on-page table when a tier is added or removed. */
+const PRICING_TIERS = [
+  { name: "Free",        price: "0",   description: "3 practice sessions, no card required", anchor: "free" },
+  { name: "Per session", price: "9",   description: "Single mock interview session",         anchor: "per-session" },
+  { name: "Weekly",      price: "49",  description: "10 sessions over 7 days",               anchor: "weekly" },
+  { name: "Monthly",     price: "149", description: "40 sessions over 30 days",              anchor: "monthly" },
+] as const;
+
+const tierPrices = PRICING_TIERS.map((t) => Number(t.price));
 const PRICING_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "Product",
@@ -34,15 +45,17 @@ const PRICING_SCHEMA = {
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "INR",
-    lowPrice: "0",
-    highPrice: "149",
-    offerCount: 4,
-    offers: [
-      { "@type": "Offer", name: "Free", price: "0", priceCurrency: "INR", description: "3 practice sessions, no card required", url: "https://hirestepx.com/pricing#free" },
-      { "@type": "Offer", name: "Per session", price: "9", priceCurrency: "INR", description: "Single mock interview session", url: "https://hirestepx.com/pricing#per-session" },
-      { "@type": "Offer", name: "Weekly", price: "49", priceCurrency: "INR", description: "10 sessions over 7 days", url: "https://hirestepx.com/pricing#weekly" },
-      { "@type": "Offer", name: "Monthly", price: "149", priceCurrency: "INR", description: "40 sessions over 30 days", url: "https://hirestepx.com/pricing#monthly" },
-    ],
+    lowPrice: String(Math.min(...tierPrices)),
+    highPrice: String(Math.max(...tierPrices)),
+    offerCount: PRICING_TIERS.length,
+    offers: PRICING_TIERS.map((tier) => ({
+      "@type": "Offer",
+      name: tier.name,
+      price: tier.price,
+      priceCurrency: "INR",
+      description: tier.description,
+      url: `https://hirestepx.com/pricing#${tier.anchor}`,
+    })),
   },
 };
 
