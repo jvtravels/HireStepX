@@ -1063,7 +1063,7 @@ export function HeroV2() {
            composition seated instead of floating mid-screen. Mobile
            media query relaxes this — at small widths the stacked
            layout is taller than 100vh and forcing it would clip. */
-        minHeight: "calc(100vh - 68px)",
+        minHeight: "calc(90vh - 68px)",
         display: "flex",
         flexDirection: "column",
       }}
