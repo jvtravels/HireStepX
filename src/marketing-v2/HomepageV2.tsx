@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef, type CSSProperties } from "react";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
-import { useAuth } from "../AuthContext";
+import { useAuth, hasStoredSession } from "../AuthContext";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing Homepage v2 (brand-aligned)
@@ -267,12 +267,19 @@ export function NavV2() {
     ["About", "/about"],
     ["Contact", "/contact"],
   ];
-  /* Auth-aware CTA pair. While Supabase is still restoring the session
-     on first paint we render the signed-out variant (loading=true,
-     isLoggedIn=false) — same as SSR — to avoid a layout-shift flash
-     when an authed user hits a marketing page. The swap to "Dashboard"
-     happens after hydration if the session resolves to authenticated. */
-  const { isLoggedIn } = useAuth();
+  /* Auth-aware CTA pair. Supabase session restore is async, so
+     useAuth().isLoggedIn starts `false` and flips after restore — which
+     leaves logged-in users staring at "Sign in / Start free" for the
+     ~1-2s of cold restore. We sidestep that by checking localStorage
+     synchronously after mount: if a Supabase auth token is present we
+     optimistically render the Dashboard CTA right away, then keep it
+     in sync with the real `isLoggedIn` once restore completes.
+     SSR + first paint still render the signed-out variant to avoid
+     hydration mismatch. */
+  const { isLoggedIn, loading } = useAuth();
+  const [hasSession, setHasSession] = useState(false);
+  useEffect(() => { setHasSession(hasStoredSession()); }, [isLoggedIn]);
+  const showDashboard = isLoggedIn || (loading && hasSession);
   return (
     <header role="banner">
       <nav
@@ -339,7 +346,7 @@ export function NavV2() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            {isLoggedIn ? (
+            {showDashboard ? (
               <a
                 href="/dashboard"
                 style={{
