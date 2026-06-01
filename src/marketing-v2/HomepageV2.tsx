@@ -1028,14 +1028,10 @@ export function HeroV2() {
         }}
       />
       <div style={{ ...container, position: "relative" }}>
-        <div className="mv2-cascade mv2-cascade-1">
-          <SectionMasthead
-            n="01"
-            label="Practice"
-            live
-            right="Live · Edition 2026"
-          />
-        </div>
+        {/* No SectionMasthead in the hero. The masthead system (01, 02, 03 …)
+         * indexes the body sections; putting one on the hero made it read as
+         * "chapter one of a long doc" and double-numbered with the logo strip
+         * below (also 01). The hero should be a front door, not a chapter. */}
 
         {/* Asymmetric editorial split */}
         <div
@@ -1045,7 +1041,7 @@ export function HeroV2() {
             gridTemplateColumns: "1fr 1.2fr",
             gap: 56,
             alignItems: "center",
-            marginTop: 56,
+            marginTop: 0,
           }}
         >
           {/* Left — text column */}
