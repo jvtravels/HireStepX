@@ -81,11 +81,11 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
   storyReuseFindings: [
     {
       storyLabel: "Q3 2024 design-system migration",
-      body: "Used in 3 of last 4 sessions (2× Behavioral, 1× Strategic). Pair with one more strong narrative — anchor candidates often default to one go-to story under pressure.",
+      body: "Used in 3 of last 4 sessions (2× Behavioral, 1× Strategic). Pair with one more strong narrative, since anchor candidates often default to one go-to story under pressure.",
     },
     {
       storyLabel: "Onboarding redesign",
-      body: "Mentioned in last Strategic round but not surfaced here when 'unpopular decision' was probed — re-tag this story for behavioral reuse.",
+      body: "Mentioned in last Strategic round but not surfaced here when 'unpopular decision' was probed. Re-tag this story for behavioral reuse.",
     },
   ],
   aiVerdict:
@@ -100,22 +100,29 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
     "Could add one self-reflection per story",
   ],
   /* Behavioral-specific axes — NOT generic Comm/Structure/etc. */
+  /* Canonical behavioural axes. Numbers reconciled with atAGlance:
+     Ownership 71 (was 78) and STAR coherence 88 (was 90) align with the
+     hero's at-a-glance tiles so the same dimension reads identically
+     wherever it appears on the screen. */
   skills: [
     { name: "Specificity", score: 85, roleAvg: 65 },
-    { name: "Ownership", score: 78, roleAvg: 60 },
+    { name: "Ownership", score: 71, roleAvg: 60 },
     { name: "Outcome", score: 88, roleAvg: 58 },
     { name: "Self-reflection", score: 70, roleAvg: 55 },
-    { name: "STAR coherence", score: 90, roleAvg: 62 },
-    { name: "Action depth", score: 80, roleAvg: 60 },
+    { name: "STAR coherence", score: 88, roleAvg: 62 },
+    { name: "Conflict balance", score: 42, roleAvg: 58 },
   ],
   /* Behavioral-native delivery metrics — swap the generic filler/min,
      pace, energy, latency tiles for first-person ratio, quantified-claims
      rate, ownership-pronoun density, STAR coverage, self-reflection
      hits, and rambling-answer count. Every tile maps to a behavioral
      analyzer signal, not a generic voice signal. */
+  /* First-person ratio reconciled with atAGlance Ownership voice (71%).
+     STAR coverage already aligned (88%). Counterparty-POV miss aligned
+     with Conflict balance 0/1. */
   metrics: [
-    { label: "First-person ratio", value: 63, unit: "%", targetLabel: "Target ≥60%", band: "good" },
-    { label: "Quantified claims", value: 19, unit: "/6", targetLabel: "Target ≥12", band: "good" },
+    { label: "First-person ratio", value: 71, unit: "%", targetLabel: "Target ≥60%", band: "good" },
+    { label: "Quantified claims", value: 3, unit: "/6", targetLabel: "Target ≥4", band: "needsWork" },
     { label: "STAR coverage", value: 88, unit: "%", targetLabel: "Target ≥85%", band: "good" },
     { label: "Self-reflection hits", value: 4, unit: "/6", targetLabel: "Target ≥4", band: "good" },
     { label: "Rambling answers", value: 2, unit: "/6", targetLabel: "Target 0", band: "needsWork" },
@@ -159,7 +166,7 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
         { label: "STAR coverage", value: "75%", tone: TONE_DEFAULT },
       ],
       whyScored:
-        "Solid setup but 'we' outnumbered 'I' in the Action section (12 vs 3). Hiring you, not your team — show what YOU specifically did to land the conversation.",
+        "Solid setup but 'we' outnumbered 'I' in the Action section (12 vs 3). Hiring you, not your team. Show what YOU specifically did to land the conversation.",
       redFlags: [
         {
           type: "we_without_i",
@@ -170,7 +177,7 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
         },
       ],
       restructured: plain(
-        "There was a push from leadership to ship a new dashboard within Q4. I owned the conversation with our VP because I'd worked closest to the data team. I prepared a one-pager with three trade-off scenarios — ship-now-with-debt, ship-half-scope, or push by 6 weeks — and walked the VP through it. I made the case for the 6-week push with a specific ask: protect 2 engineers from interrupts. The VP agreed because I'd anticipated the cost question and named the trade-off explicitly. We shipped on the new date with zero P0 bugs.",
+        "There was a push from leadership to ship a new dashboard within Q4. I owned the conversation with our VP because I'd worked closest to the data team. I prepared a one-pager with three trade-off scenarios (ship-now-with-debt, ship-half-scope, or push by 6 weeks) and walked the VP through it. I made the case for the 6-week push with a specific ask: protect 2 engineers from interrupts. The VP agreed because I'd anticipated the cost question and named the trade-off explicitly. We shipped on the new date with zero P0 bugs.",
       ),
       likelyFollowUp: "What was the specific moment that turned the conversation?",
       behavioralSignals: [
@@ -193,7 +200,7 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
         { label: "STAR coverage", value: "100%", tone: TONE_SUCCESS },
       ],
       whyScored:
-        "You named the failure and owned it — strong. But 'I missed an edge case' is hindsight theatre; the concrete miss (which path, what would've caught it) is what bar-raisers actually want to hear.",
+        "You named the failure and owned it; strong. But 'I missed an edge case' is hindsight theatre. The concrete miss (which path, what would've caught it) is what bar-raisers actually want to hear.",
       likelyFollowUp: "What specifically would you have done differently in the rollback design?",
       behavioralSignals: [
         { tone: "good", label: "ownership" },
@@ -205,7 +212,7 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
       text: "Describe a disagreement with a senior stakeholder. How did it end?",
       score: 62,
       band: "partial",
-      answer: plain("Our VP wanted to ship a checkout redesign in 4 weeks. I pushed back — we needed 7..."),
+      answer: plain("Our VP wanted to ship a checkout redesign in 4 weeks. I pushed back, we needed 7..."),
       star: { situation: true, task: false, action: true, result: true, learning: false },
       metrics: { wordCount: 240, responseSec: 198, firstPersonRatioPct: 78, quantificationCount: 4 },
       focusMetrics: [
@@ -221,8 +228,8 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
           type: "scope_drift",
           severity: "medium",
           title: "One-sided conflict narrative",
-          explanation: "You skipped the VP's reasoning — they wanted speed because Q4 board metric pressure. Show you understood that before pushing back.",
-          quote: "I pushed back — we needed 7 weeks...",
+          explanation: "You skipped the VP's reasoning. They wanted speed because of Q4 board metric pressure. Show you understood that before pushing back.",
+          quote: "I pushed back, we needed 7 weeks...",
         },
       ],
       likelyFollowUp: "Why did the VP push for 4 weeks specifically?",
@@ -246,7 +253,7 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
         { label: "STAR coverage", value: "100%", tone: TONE_SUCCESS },
       ],
       whyScored:
-        "Cleanest narrative of the session — situation, specific actions, measurable outcome (designer stayed, shipped 3 launches since), and an honest reflection about what you'd do differently.",
+        "Cleanest narrative of the session: situation, specific actions, measurable outcome (designer stayed, shipped 3 launches since), and an honest reflection about what you'd do differently.",
       likelyFollowUp: "What signal would have made you intervene earlier?",
       behavioralSignals: [
         { tone: "good", label: "STAR complete" },
@@ -268,7 +275,7 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
         { label: "STAR coverage", value: "60%", tone: TONE_ERROR },
       ],
       whyScored:
-        "You built the case well but never closed with what actually happened. 'It worked out' isn't a result — was the page late? Was marketing happy? Did the brand land on time? Bar-raiser hears no number, assumes no outcome.",
+        "You built the case well but never closed with what actually happened. 'It worked out' isn't a result. Was the page late? Was marketing happy? Did the brand land on time? Bar-raiser hears no number, assumes no outcome.",
       likelyFollowUp: "What specifically shipped, and when?",
       behavioralSignals: [
         { tone: "bad", label: "no result" },
@@ -291,59 +298,67 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
       questionCount: 6,
       durationMin: 32,
     },
-    verbalVerdict: "Strong baseline. Sharpen STAR — especially Result.",
+    /* Verdict aligned to the data: STAR coverage is strong (88%), failure
+       handling is strong (84). The actual weakness in the scoreBreakdown
+       and the conflict.oneSided count is conflict-counterparty balance.
+       Verdict names *that* gap, not a generic STAR one. */
+    verbalVerdict: "Strong storytelling. Sharpen conflict balance.",
+    /* Numbers below are the canonical source — every other region that
+       shows the same signal (CoreMetrics, SkillsSection, scoreBreakdown,
+       starMatrix) must agree. We picked the strongest analyzer reading
+       and worked back: ownership 71, STAR 88, conflict-balance 0/1. */
     atAGlance: [
-      { label: "Interviewer rating", value: "Lean Hire", tone: "good" },
-      { label: "STAR completeness", value: "82", suffix: "%", tone: "good" },
-      { label: "Ownership voice (I/we)", value: "71", suffix: "%", tone: "neutral" },
+      { label: "Interviewer rating", value: "Hire", tone: "good" },
+      { label: "STAR completeness", value: "88", suffix: "%", tone: "good" },
+      { label: "Ownership voice (I/we)", value: "71", suffix: "%", tone: "good" },
       { label: "Quantified results", value: "3", suffix: "/6", tone: "needsWork" },
-      { label: "Conflict balance", value: "0", suffix: "/2", tone: "needsWork" },
+      { label: "Conflict balance", value: "0", suffix: "/1", tone: "needsWork" },
       { label: "Failure ownership", value: "Owns", tone: "good" },
       { label: "Pace", value: "146", suffix: "wpm", tone: "neutral" },
       { label: "Filler rate", value: "3.4", suffix: "/min", tone: "neutral" },
     ],
     biggestGap: {
-      title: "Impact & Results",
-      body: "Four of six answers ended without a measurable outcome. The Bar-Raiser will probe here — name a ₹-figure, % or LPA delta in your first sentence of the Result.",
-      ctaLabel: "Practice the Result line",
+      title: "Conflict balance",
+      body: "On Q2 you framed the VP's position only through your lens; her priorities never surfaced. Open the next conflict story with what she wanted, in her words, then your view, then the resolution.",
+      ctaLabel: "Practice counterparty-POV",
     },
     topMoments: [
       {
         time: "02:14",
-        title: "Failure story — owned the miss",
+        title: "Failure story: owned the miss",
         body: "Named the rollback path you underestimated; no deflection.",
         band: "strong",
         isHighlight: true,
       },
       {
         time: "06:48",
-        title: "Conflict with VP — one-sided",
+        title: "Conflict with VP, one-sided",
         body: "Framed only your view; the VP's priorities never surfaced.",
         band: "needsWork",
       },
       {
         time: "11:32",
         title: "Quantified launch impact",
-        body: "₹4.2 Cr ARR uplift cited — clean number, clean attribution.",
+        body: "₹4.2 Cr ARR uplift cited. Clean number, clean attribution.",
         band: "strong",
       },
       {
         time: "17:05",
-        title: "Mentoring story — strongest moment",
+        title: "Mentoring story: strongest moment",
         body: "Specific actions, named the engineer, named the outcome.",
         band: "strong",
         isHighlight: true,
       },
       {
         time: "23:11",
-        title: "Ambiguity story — rambled",
+        title: "Ambiguity story: rambled",
         body: "Three minute answer; Action and Result blurred together.",
         band: "needsWork",
       },
       {
         time: "28:46",
         title: "Result missing on closing answer",
-        body: "Stamina dipped — no measurable outcome on the final story.",
+        body: "Stamina dipped; no measurable outcome on the final story.",
         band: "needsWork",
       },
     ],
@@ -354,24 +369,19 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
         "I thought the VP's plan would slip the quarter, so I pushed back and we ended up doing it my way. It worked out and we shipped on time.",
       yourScore: 58,
       stronger: {
-        S: "Q3 FY24 — VP wanted the payments rewrite shipped in 6 weeks to unblock Razorpay GTM.",
+        S: "Q3 FY24: VP wanted the payments rewrite shipped in 6 weeks to unblock Razorpay GTM.",
         T: "I owned delivery; she owned the Razorpay commit. Both real, both load-bearing.",
         A: "I named her constraint first, brought a phased plan with a Week-3 GTM checkpoint, and let her pick.",
         R: "Shipped in 7 weeks; Razorpay went live on the original date; she now routes peer reviews through me.",
       },
       strongerScore: 87,
       impactLine:
-        "Naming the counterparty's goal first turns 'I won the argument' into 'we navigated it' — that's what an Indian HM scores as senior.",
+        "Naming the counterparty's goal first turns 'I won the argument' into 'we navigated it'. That's what an Indian HM scores as senior.",
       starScores: { S: 8, T: 6, A: 7, R: 4 },
     },
-    scoreBreakdown: [
-      { label: "STAR storytelling", score: 78 },
-      { label: "Ownership voice", score: 71 },
-      { label: "Conflict balance", score: 42 },
-      { label: "Failure handling", score: 84 },
-      { label: "Quantified impact", score: 55 },
-      { label: "Delivery & pace", score: 73 },
-    ],
+    /* Dropped scoreBreakdown — SkillsSection below renders the same
+       horizontal-bar shape with the canonical behavioural axes. Showing
+       both was the duplicate-chart problem flagged in the audit. */
     riskyPhrases: [
       { weak: "we ended up doing it my way",      strong: "we landed on a phased plan she signed off on" },
       { weak: "it worked out",                     strong: "Razorpay went live on the original GTM date" },
@@ -395,19 +405,19 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
       ],
       impactPotential: "High",
       whatToImprove:
-        "Close with the second-order outcome — does she now mentor others? That's what an Amazon Bar-Raiser tags as Earn Trust.",
+        "Close with the second-order outcome: does she now mentor others? That's what an Amazon Bar-Raiser tags as Earn Trust.",
     },
     nextPracticeFocus: [
       {
-        title: "Conflict — counterparty's POV first",
+        title: "Conflict: counterparty's POV first",
         body: "Open every conflict story by naming what the other side wanted, in their words. Then your view. Then the resolution.",
       },
       {
-        title: "Result line — number in sentence one",
+        title: "Result line: number in sentence one",
         body: "Every Result starts with a ₹/%/LPA number. If you don't have one, say 'I don't have the exact number, but the order of magnitude was…'",
       },
       {
-        title: "Stamina — answers 5 & 6",
+        title: "Stamina: answers 5 & 6",
         body: "Your last two answers ran 30% longer than your first three. Practice 90-second STAR drills until the Action stays tight late in the session.",
       },
     ],
@@ -417,18 +427,15 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
       recommendedMock: "Conflict-narration mock · VP persona · 6 questions",
       ctaLabel: "Start next session",
     },
-    questionReview: [
-      { index: 1, text: "Walk me through your last 18 months.",                                   status: "good",      score: 78 },
-      { index: 2, text: "Tell me about a disagreement with a senior stakeholder.",                status: "needsWork", score: 58 },
-      { index: 3, text: "Describe a time you failed.",                                            status: "strong",    score: 84 },
-      { index: 4, text: "Tell me about a launch you led end-to-end.",                             status: "good",      score: 76 },
-      { index: 5, text: "When did you mentor someone who was struggling?",                         status: "strong",    score: 89 },
-      { index: 6, text: "How did you handle ambiguity on a project with shifting scope?",         status: "weak",      score: 51 },
-    ],
+    /* questionReview removed — PerQuestionSection below already renders
+       per-question status with behavioural signal pills. The questionReview
+       field was dead data (never read by any component). */
+    /* starMatrix: 21/24 ticks = 87.5% → rounds to 88% which is the
+       canonical "STAR completeness" number in atAGlance and CoreMetrics. */
     starMatrix: [
       { q: 1, S: true,  T: true,  A: true,  R: true  },
       { q: 2, S: true,  T: true,  A: true,  R: true  },
-      { q: 3, S: true,  T: true,  A: true,  R: true  },
+      { q: 3, S: true,  T: true,  A: true,  R: false },
       { q: 4, S: true,  T: false, A: true,  R: true  },
       { q: 5, S: true,  T: true,  A: true,  R: true  },
       { q: 6, S: true,  T: true,  A: true,  R: false },
@@ -480,20 +487,23 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
       rubricNote:
         "Indian HM expects ownership in the first sentence; Bar-Raiser would push harder on the failure miss.",
     },
+    /* Radar axes mirror the canonical `skills` array above (same names,
+       same `you` values). Showing different numbers for the same axis
+       across two regions of the same screen was a data-integrity bug. */
     competencyRadar: {
-      track: "Indian Product (PM/Design) — Razorpay rubric",
+      track: "Indian Product (PM/Design), Razorpay rubric",
       axes: [
-        { name: "Specificity",    you: 85, prior: 72 },
-        { name: "Ownership",      you: 78, prior: 80 },
-        { name: "Outcome",        you: 88, prior: 64 },
-        { name: "Self-reflection", you: 70, prior: 62 },
-        { name: "STAR coherence", you: 90, prior: 78 },
-        { name: "Action depth",   you: 80, prior: 70 },
+        { name: "Specificity",      you: 85, prior: 72 },
+        { name: "Ownership",        you: 71, prior: 80 },
+        { name: "Outcome",          you: 88, prior: 64 },
+        { name: "Self-reflection",  you: 70, prior: 62 },
+        { name: "STAR coherence",   you: 88, prior: 78 },
+        { name: "Conflict balance", you: 42, prior: 58 },
       ],
       anchor:
-        "Outcome and STAR coherence climbed double-digits since last session — the migration-story closing metric is doing the work.",
+        "Outcome and STAR coherence climbed double-digits since last session. The migration-story closing metric is doing the work.",
       gap:
-        "Ownership ticked down 2 points; the Q2 'we vs I' drag is now the load-bearing weakness.",
+        "Conflict balance dropped sharply; the Q4 one-sided VP story is now the load-bearing weakness.",
     },
   },
 });

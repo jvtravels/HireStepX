@@ -65,19 +65,19 @@ export const BEHAVIORAL_COACH: Record<BehavioralFlag, Template> = {
       prebiasDimension: "failure specificity",
     }),
     failureCoachQuote: () =>
-      `"I missed an edge case" is hindsight theatre. Try: "I underestimated the rollback path on the migration — that's how we ended up in a 40-minute outage."`,
+      `"I missed an edge case" is hindsight theatre. Try: "I underestimated the rollback path on the migration; that's how we ended up in a 40-minute outage."`,
   },
   we_without_i: {
     oneHabit: (ctx) => ({
       headline: "Use 'I' where you actually decided.",
-      rationale: `In ${qref(ctx)} the Action section read 'we' 3-to-1 over 'I'. You're being hired, not your team — name the specific decisions you owned.`,
+      rationale: `In ${qref(ctx)} the Action section read 'we' 3-to-1 over 'I'. You're being hired, not your team. Name the specific decisions you owned.`,
       prebiasDimension: "ownership first-person",
     }),
   },
   result_missing: {
     oneHabit: (ctx) => ({
       headline: "Close every story with a number.",
-      rationale: `${qref(ctx)} stopped before the result. ${persona(ctx)} hears 'no number, no outcome' — quantify the close even if it's a soft metric.`,
+      rationale: `${qref(ctx)} stopped before the result. ${persona(ctx)} hears 'no number, no outcome'. Quantify the close even if it's a soft metric.`,
       prebiasDimension: "outcome quantification",
     }),
   },
@@ -91,14 +91,14 @@ export const BEHAVIORAL_COACH: Record<BehavioralFlag, Template> = {
   rehearsed_answers: {
     oneHabit: (ctx) => ({
       headline: "Break the rehearsed opener.",
-      rationale: `Three turns opened with the same cadence — reads as memorized. ${persona(ctx)}s probe harder when the delivery is too clean.`,
+      rationale: `Three turns opened with the same cadence; reads as memorized. ${persona(ctx)}s probe harder when the delivery is too clean.`,
       prebiasDimension: "delivery authenticity",
     }),
   },
   low_conviction_delivery: {
     oneHabit: () => ({
       headline: "Drop hedging from claims you actually own.",
-      rationale: `'I think', 'kind of', and 'sort of' showed up in 4 answers — including ones where you'd already done the work. Either you owned it or you didn't; pick one.`,
+      rationale: `'I think', 'kind of', and 'sort of' showed up in 4 answers, including ones where you'd already done the work. Either you owned it or you didn't; pick one.`,
       prebiasDimension: "conviction language",
     }),
   },

@@ -370,10 +370,6 @@ export interface BehavioralMeta {
     /** Per-letter scores out of 10 for the candidate's answer. */
     starScores: { S: number; T: number; A: number; R: number };
   };
-  /** Behavioural score breakdown bars (Story structure · Ownership ·
-   *  Clarity of thinking · Impact/results · Confidence under pressure ·
-   *  Specificity). 0..100. */
-  scoreBreakdown?: Array<{ label: string; score: number }>;
   /** Risky phrases the candidate actually said + stronger alternatives. */
   riskyPhrases?: Array<{ weak: string; strong: string }>;
   /** Forward-looking readiness for likely follow-ups. */
@@ -395,13 +391,6 @@ export interface BehavioralMeta {
     recommendedMock: string;
     ctaLabel: string;
   };
-  /** Per-question status table — replaces the per-question signal pills. */
-  questionReview?: Array<{
-    index: number;
-    text: string;
-    status: "strong" | "good" | "needsWork" | "weak";
-    score: number;
-  }>;
 }
 
 /* ─── Defaults / mock ──────────────────────────────────────────────── */
@@ -780,22 +769,46 @@ function SectionEyebrow({ num, label }: { num: string; label: string }) {
  *  reviewing their 5th report skip directly to per-question without
  *  scrolling past every section card. Renders nothing on screens
  *  too narrow to fit the row (handled by overflow-x in CSS). */
-function JumpNav({ hasBehavioral = false }: { hasBehavioral?: boolean }) {
-  const baseItems = [
-    { num: "01", label: "Overview", href: "#ir-section-hero" },
-    { num: "02", label: hasBehavioral ? "Signals" : "Delivery", href: "#ir-section-metrics" },
-    { num: "03", label: "Skills", href: "#ir-section-skills" },
-  ];
-  const behavioralItem = hasBehavioral
-    ? [{ num: "04", label: "Behavioral", href: "#ir-section-behavioral" }]
-    : [];
-  const startIdx = 4 + behavioralItem.length;
-  const tail = [
-    { num: String(startIdx).padStart(2, "0"), label: "Questions", href: "#ir-section-questions" },
-    { num: String(startIdx + 1).padStart(2, "0"), label: "Coach Notes", href: "#ir-section-coach-notes" },
-    { num: String(startIdx + 2).padStart(2, "0"), label: "Next Steps", href: "#ir-section-next" },
-  ];
-  const items = [...baseItems, ...behavioralItem, ...tail];
+function JumpNav({
+  hasBehavioral = false,
+  behavioralFullLayout = false,
+}: {
+  hasBehavioral?: boolean;
+  /** When true, the hero IS the behavioural report, so labels mirror the
+   *  behavioural section eyebrows instead of the generic "Overview /
+   *  Delivery" copy. */
+  behavioralFullLayout?: boolean;
+}) {
+  /* Labels mirror the actual SectionEyebrow strings rendered below so the
+     nav reads as a table of contents, not a generic stepper. In the
+     behavioural fullLayout branch we drop the Signals + Skills tabs
+     because those sections aren't rendered (at-a-glance + competency radar
+     cover them inside the hero report). */
+  let items: { num: string; label: string; href: string }[];
+  if (behavioralFullLayout) {
+    items = [
+      { num: "01", label: "Behavioral report", href: "#ir-section-hero" },
+      { num: "02", label: "Questions", href: "#ir-section-questions" },
+      { num: "03", label: "Coach notes", href: "#ir-section-coach-notes" },
+      { num: "04", label: "Next steps", href: "#ir-section-next" },
+    ];
+  } else {
+    const baseItems = [
+      { num: "01", label: "Overview", href: "#ir-section-hero" },
+      { num: "02", label: hasBehavioral ? "Signals" : "Delivery", href: "#ir-section-metrics" },
+      { num: "03", label: "Skills", href: "#ir-section-skills" },
+    ];
+    const behavioralItem = hasBehavioral
+      ? [{ num: "04", label: "Behavioral", href: "#ir-section-behavioral" }]
+      : [];
+    const startIdx = 4 + behavioralItem.length;
+    const tail = [
+      { num: String(startIdx).padStart(2, "0"), label: "Questions", href: "#ir-section-questions" },
+      { num: String(startIdx + 1).padStart(2, "0"), label: "Coach notes", href: "#ir-section-coach-notes" },
+      { num: String(startIdx + 2).padStart(2, "0"), label: "Next steps", href: "#ir-section-next" },
+    ];
+    items = [...baseItems, ...behavioralItem, ...tail];
+  }
   return (
     <nav aria-label="Jump to section" className="ir-jump-nav">
       <div className="ir-jump-nav-inner">
@@ -2848,7 +2861,7 @@ function BehavioralFocusSection({ b, score }: { b: BehavioralMeta; score: number
   );
 }
 
-function BehavioralRadar({
+export function BehavioralRadar({
   radar,
 }: {
   radar: NonNullable<BehavioralMeta["competencyRadar"]>;
@@ -3094,7 +3107,7 @@ function BehavioralRadar({
   );
 }
 
-function BehavioralSignal({ ok, label }: { ok: boolean; label: string }) {
+export function BehavioralSignal({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div
       style={{
@@ -3111,7 +3124,7 @@ function BehavioralSignal({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-function BehavioralStat({ n, label, bad, good }: { n: number; label: string; bad?: boolean; good?: boolean }) {
+export function BehavioralStat({ n, label, bad, good }: { n: number; label: string; bad?: boolean; good?: boolean }) {
   const color = good ? t.success : bad ? t.copper : t.coal;
   return (
     <div style={{ background: t.cream, border: `1px solid ${t.creamSoft}`, borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
@@ -3121,7 +3134,7 @@ function BehavioralStat({ n, label, bad, good }: { n: number; label: string; bad
   );
 }
 
-function BehavioralLegend({ c, label }: { c: string; label: string }) {
+export function BehavioralLegend({ c, label }: { c: string; label: string }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span style={{ width: 8, height: 8, borderRadius: 2, background: c }} />
@@ -3142,6 +3155,11 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
   // the 4-region BehavioralReport. Leaves the other 10 focus types
   // (technical, system-design, negotiation, etc.) untouched.
   if (data.behavioral?.fullLayout) {
+    // Research-driven behavioural layout. BehavioralReport replaces the
+    // standard hero, but the canonical Skills / Core metrics / Per-question /
+    // Coach notes / Next steps sections still render below — the
+    // behavioural focus deserves *more* analysis, not less. JumpNav at top
+    // gives tab-style anchored navigation across the full report.
     return (
       <>
         <style>{INTERVIEW_RESULT_STYLES}</style>
@@ -3154,7 +3172,7 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
             paddingBottom: 48,
           }}
         >
-          <a href="#ir-main" className="ir-skip-link">
+          <a href="#ir-section-hero" className="ir-skip-link">
             Skip to report
           </a>
           <Header />
@@ -3165,9 +3183,34 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
               maxWidth: 1240,
               margin: "0 auto",
               padding: "0 32px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
             }}
           >
-            <BehavioralReport data={data} />
+            {/* hasBehavioral=false on purpose: the behavioural content
+                IS the hero in this layout, so we don't want a duplicate
+                "Behavioral" tab pointing at a section that doesn't exist
+                in this branch. */}
+            {/* CoreMetricsSection + SkillsSection intentionally dropped here:
+                atAGlance (in hero) covers metrics, and CompetencyRadar covers
+                Skills with the same axes. Showing both was the duplicate-data
+                problem the rating critique flagged. */}
+            <JumpNav behavioralFullLayout />
+            <section id="ir-section-hero" aria-label="Behavioural report">
+              <BehavioralReport data={data} />
+            </section>
+            <PerQuestionSection questions={data.questions} />
+            <CoachNotesSection
+              insights={data.crossSessionInsights}
+              storyReuse={data.storyReuseFindings}
+              blindSpots={data.blindSpots}
+            />
+            <NextStepsSection
+              daysUntilInterview={data.daysUntilInterview}
+              readinessSentence={data.readinessSentence}
+            />
+            <FooterSection />
           </main>
         </div>
       </>

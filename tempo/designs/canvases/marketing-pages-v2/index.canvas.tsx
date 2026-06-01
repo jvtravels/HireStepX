@@ -1,6 +1,5 @@
 import type { TempoPage, TempoStoryboard, TempoRouteStoryboard } from 'tempo-sdk';
 import { AboutV2 } from '../../../../src/marketing-v2/MarketingPagesV2';
-import { CompareChatGPTV2 } from '../../../../src/marketing-v2/MarketingPagesV2';
 import { ContactV2 } from '../../../../src/marketing-v2/MarketingPagesV2';
 import { ForStudentsV2 } from '../../../../src/marketing-v2/MarketingPagesV2';
 import { HowItWorksV2 } from '../../../../src/marketing-v2/MarketingPagesV2';
@@ -75,18 +74,6 @@ export const ForStudentsMobile: TempoStoryboard = {
   render: () => <ForStudentsV2 />,
   name: "For students — mobile",
   layout: { x: 0, y: 29100, width: 420, height: 5400 },
-};
-
-export const CompareChatGPTDesktop: TempoStoryboard = {
-  render: () => <CompareChatGPTV2 />,
-  name: "vs ChatGPT — desktop",
-  layout: { x: 0, y: 44450, width: 1440, height: 3800 },
-};
-
-export const CompareChatGPTMobile: TempoStoryboard = {
-  render: () => <CompareChatGPTV2 />,
-  name: "vs ChatGPT — mobile",
-  layout: { x: 0, y: 48300, width: 420, height: 5000 },
 };
 
 export const NotFoundDesktop: TempoStoryboard = {

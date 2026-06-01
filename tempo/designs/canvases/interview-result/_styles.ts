@@ -531,4 +531,14 @@ export const INTERVIEW_RESULT_STYLES = `
       grid-template-columns: 1fr !important;
     }
   }
+  /* BehavioralReport mobile breakpoints — hero 3-col → stacked,
+     compare block 2-col → stacked. */
+  @media (max-width: 880px) {
+    .ir-bh-hero-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .ir-bh-compare-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
 `;

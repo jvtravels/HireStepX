@@ -3687,7 +3687,6 @@ export function FinalCTAFooterV2() {
       links: [
         ["How it works", "/how-it-works"],
         ["Pricing", "/pricing"],
-        ["HireStepX vs ChatGPT", "/compare/chatgpt"],
       ],
     },
     {

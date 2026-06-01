@@ -144,14 +144,22 @@ function FocusReport({
   salaryPanels?: SalaryDesignPreset;
   hrPanels?: HrDesignPreset;
 }) {
+  // The behavioural full layout has a self-contained hero (gauge + verbal
+  // verdict + at-a-glance + biggest gap) and its own next-steps countdown
+  // downstream, so the FocusBanner would just duplicate those signals and
+  // compete with the hero for the eyebrow slot. Skip it for fullLayout;
+  // all 10 other focuses keep the banner.
+  const showFocusBanner = !data.behavioral?.fullLayout;
   return (
     <CanvasProviders>
-      <FocusBanner
-        chrome={chrome}
-        daysUntilInterview={data.daysUntilInterview}
-        company={data.company}
-        role={data.role}
-      />
+      {showFocusBanner && (
+        <FocusBanner
+          chrome={chrome}
+          daysUntilInterview={data.daysUntilInterview}
+          company={data.company}
+          role={data.role}
+        />
+      )}
       {/* HR opts out of the generic InterviewResult shell — its panels
           replace the report end-to-end, so the dual-vocabulary problem
           (generic skill bars + HR dim gate scoring the same person twice)

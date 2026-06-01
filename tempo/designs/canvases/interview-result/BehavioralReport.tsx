@@ -2,16 +2,29 @@
  * behavioural focus result. Opted into via `data.behavioral.fullLayout`.
  * Replaces the standard InterviewResult body when set.
  *
- * Four regions, top → bottom:
- *   1. Hero (gauge + verbal verdict + at-a-glance + biggest gap)
- *   2. Top Behavioural Moments timeline
- *   3. Compare block (your answer vs stronger + STAR donut + bars + radar)
- *   4. Coaching row (risky phrases + follow-up readiness + strongest story
- *      + next practice focus + footer trophy strip)
+ * Render order, top → bottom (matches the canvas brief):
+ *   1. Persona ribbon (b.persona)
+ *   2. Hero (gauge + verbal verdict + at-a-glance + biggest gap)
+ *   3. One habit to fix card (b.oneHabit)
+ *   4. STAR completeness matrix (b.starMatrix)
+ *   5. 3-col diagnostic cards: Failure / Conflict / Delivery timeline
+ *   6. Competency radar (b.competencyRadar)
+ *   7. Top behavioural moments timeline (b.topMoments)
+ *   8. Compare block (b.answerCompare)
+ *   9. Coaching row (b.strongestStory + b.riskyPhrases + b.followupReadiness
+ *      + b.nextPracticeFocus)
+ *  10. AI accountability strip (b.aiAccountability)
+ *  11. Footer trophy CTA (b.footerStrip)
  */
 
 import React from "react";
 import { tokens as t, fonts as f, shadows } from "../design-system/_tokens";
+import {
+  BehavioralSignal,
+  BehavioralStat,
+  BehavioralLegend,
+  BehavioralRadar,
+} from "./InterviewResult";
 import type { InterviewResultData, BehavioralMeta } from "./InterviewResult";
 
 interface Props {
@@ -45,13 +58,542 @@ const READINESS_FG: Record<"good" | "needsWork" | "weak", string> = {
 export default function BehavioralReport({ data }: Props) {
   const b = data.behavioral;
   if (!b) return null;
+  const score = data.overallScore;
+  const hasDiagnostic = b.failure || (b.conflict && b.conflict.asked > 0) || (b.delivery && b.delivery.length > 0);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {b.persona && <PersonaRibbon persona={b.persona} />}
       <BehavioralHero data={data} b={b} />
+      {b.oneHabit && <OneHabitCard habit={b.oneHabit} score={score} />}
+      {b.starMatrix && b.starMatrix.length > 0 && <StarMatrixSection rows={b.starMatrix} />}
+      {hasDiagnostic && <DiagnosticCards b={b} />}
+      {b.competencyRadar && b.competencyRadar.axes.length >= 3 && (
+        <CompetencyRadarSection radar={b.competencyRadar} />
+      )}
       {b.topMoments && b.topMoments.length > 0 && <TopMomentsTimeline moments={b.topMoments} />}
       <CompareBlock b={b} />
       <CoachingRow b={b} />
+      {b.aiAccountability && <AIAccountabilityStrip a={b.aiAccountability} />}
       {b.footerStrip && <FooterTrophy strip={b.footerStrip} />}
+    </div>
+  );
+}
+
+/* ─── 0. PERSONA RIBBON ───────────────────────────────────────────── */
+
+function PersonaRibbon({ persona }: { persona: NonNullable<BehavioralMeta["persona"]> }) {
+  /* Quiet cream band, not indigoDeep. OneHabit is the only dark band on
+     the page so the visual hierarchy reads as: warm context → score →
+     dark "do this next" → diagnostics → warm exit. */
+  return (
+    <div
+      style={{
+        background: t.creamSoft,
+        color: t.coal,
+        borderRadius: 12,
+        padding: "12px 18px",
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 14,
+        fontSize: 13,
+        fontFamily: f.sans,
+        border: `1px solid ${t.line}`,
+      }}
+    >
+      <span style={{ fontSize: 10, letterSpacing: 1.5, fontWeight: 700, color: t.indigo }}>
+        PERSONA
+      </span>
+      <span>
+        You interviewed with a <strong>{persona.voice}</strong> at a{" "}
+        <strong>{persona.companyTier}</strong>.
+      </span>
+      <span style={{ color: t.indigoGray, fontSize: 12 }}>{persona.rubricNote}</span>
+    </div>
+  );
+}
+
+/* ─── 1b. ONE HABIT TO FIX ────────────────────────────────────────── */
+
+function OneHabitCard({
+  habit,
+  score,
+}: {
+  habit: NonNullable<BehavioralMeta["oneHabit"]>;
+  score: number;
+}) {
+  const lowBand = score < 40;
+  const eyebrow = lowBand ? "ONE THING TO TRY NEXT" : "ONE HABIT TO FIX";
+  const ctaCopy = lowBand ? "Try this one habit next session →" : "Practice this pattern →";
+  return (
+    <div
+      style={{
+        background: t.indigoDeep,
+        color: "white",
+        borderRadius: 14,
+        padding: 22,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 24,
+        flexWrap: "wrap",
+      }}
+    >
+      <div style={{ flex: "1 1 320px" }}>
+        <div style={{ fontSize: 10, letterSpacing: 1.5, color: t.copper100, fontWeight: 700 }}>
+          {eyebrow}
+        </div>
+        <div style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 500, marginTop: 6, lineHeight: 1.25 }}>
+          {habit.headline}
+        </div>
+        <div style={{ fontSize: 13, opacity: 0.82, marginTop: 8, lineHeight: 1.55 }}>
+          {habit.rationale}
+        </div>
+        <div style={{ fontSize: 11, opacity: 0.7, marginTop: 10 }}>
+          Next session auto-prebias →{" "}
+          <strong style={{ color: t.copper100 }}>{habit.prebiasDimension}</strong>
+        </div>
+      </div>
+      <button
+        type="button"
+        style={{
+          background: "white",
+          color: t.indigoDeep,
+          border: 0,
+          borderRadius: 10,
+          padding: "12px 18px",
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          fontFamily: f.sans,
+        }}
+      >
+        {ctaCopy}
+      </button>
+    </div>
+  );
+}
+
+/* ─── 2. STAR MATRIX ──────────────────────────────────────────────── */
+
+function StarMatrixSection({ rows }: { rows: NonNullable<BehavioralMeta["starMatrix"]> }) {
+  if (rows.length < 3) {
+    return (
+      <div
+        style={{
+          background: "white",
+          border: `1px dashed ${t.creamSoft}`,
+          borderRadius: 12,
+          padding: "14px 18px",
+          fontSize: 13,
+          color: t.indigoGray,
+          lineHeight: 1.5,
+        }}
+      >
+        Only {rows.length} behavioural turn{rows.length === 1 ? "" : "s"} this session; too few to
+        chart STAR completeness. Ask 3+ stem questions next session to unlock the matrix.
+      </div>
+    );
+  }
+  return (
+    <section
+      style={{
+        background: "white",
+        border: `1px solid ${t.line}`,
+        borderRadius: 16,
+        padding: 22,
+      }}
+    >
+      <div style={{ marginBottom: 14 }}>
+        <h3 style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: 0.6 }}>
+          STAR COMPLETENESS · {rows.length} answers
+        </h3>
+      </div>
+      <div style={{ overflowX: "auto" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `120px repeat(${rows.length}, minmax(40px, 1fr)) minmax(180px, 240px)`,
+            gap: 6,
+            minWidth: 120 + rows.length * 46 + 180,
+          }}
+        >
+          <div />
+          {rows.map((row) => (
+            <div
+              key={`h-${row.q}`}
+              style={{ textAlign: "center", fontSize: 11, color: t.indigoGray, fontWeight: 600 }}
+            >
+              Q{row.q}
+            </div>
+          ))}
+          <div />
+          {(["S", "T", "A", "R"] as const).map((k) => {
+            const labelMap = { S: "Situation", T: "Task", A: "Action", R: "Result" };
+            const missing = rows.filter((r) => !r[k]).length;
+            const total = rows.length;
+            const coach =
+              missing === 0
+                ? "Solid across every turn."
+                : missing >= total / 2
+                ? `Missed in ${missing}/${total}; load-bearing gap.`
+                : `Missed in ${missing}/${total}.`;
+            return (
+              <React.Fragment key={k}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    fontFamily: f.sans,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: t.coal,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 6,
+                      background: t.indigo100,
+                      color: t.indigo,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      marginRight: 8,
+                    }}
+                  >
+                    {k}
+                  </span>
+                  {labelMap[k]}
+                </div>
+                {rows.map((row) => {
+                  const ok = row[k];
+                  return (
+                    <div
+                      key={`${k}-${row.q}`}
+                      style={{
+                        height: 40,
+                        borderRadius: 6,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: ok ? t.success100 : t.copper100,
+                        color: ok ? t.success : t.copper,
+                        fontSize: 18,
+                        fontWeight: 700,
+                        border: `1px solid ${ok ? "rgba(21,128,61,0.18)" : "rgba(180,83,9,0.22)"}`,
+                      }}
+                      aria-label={`Q${row.q} ${labelMap[k]} ${ok ? "present" : "missing"}`}
+                    >
+                      {ok ? "✓" : "✗"}
+                    </div>
+                  );
+                })}
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: t.indigoGray,
+                    display: "flex",
+                    alignItems: "center",
+                    paddingLeft: 8,
+                  }}
+                >
+                  {coach}
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 3. DIAGNOSTIC CARDS (Failure / Conflict / Delivery) ─────────── */
+
+const DELIVERY_SHAPE_COLOR: Record<"crisp" | "hedged" | "rambling", string> = {
+  crisp: t.success,
+  hedged: "#CA8A04",
+  rambling: t.copper,
+};
+
+function DiagnosticCards({ b }: { b: BehavioralMeta }) {
+  return (
+    <section
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+        gap: 16,
+      }}
+    >
+      {b.failure && <FailureCard f={b.failure} />}
+      {b.conflict && b.conflict.asked > 0 && <ConflictCard c={b.conflict} />}
+      {b.delivery && b.delivery.length > 0 && <DeliveryTimelineCard delivery={b.delivery} />}
+    </section>
+  );
+}
+
+function FailureCard({ f }: { f: NonNullable<BehavioralMeta["failure"]> }) {
+  return (
+    <div
+      style={{
+        background: "white",
+        border: `1px solid ${t.line}`,
+        borderRadius: 12,
+        padding: 18,
+        borderTop: `3px solid ${f.specific ? t.success : t.copper}`,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          color: t.indigoGray,
+          letterSpacing: 1.2,
+          fontWeight: 700,
+          marginBottom: 12,
+        }}
+      >
+        FAILURE STORY · Q{f.questionIndex}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+        <BehavioralSignal ok={f.ownership} label="Ownership" />
+        <BehavioralSignal ok={f.specific} label="Specific" />
+        <BehavioralSignal ok={f.learning} label="Learning" />
+      </div>
+      <div style={{ fontSize: 12, color: t.coal, lineHeight: 1.55 }}>{f.coachQuote}</div>
+    </div>
+  );
+}
+
+function ConflictCard({ c }: { c: NonNullable<BehavioralMeta["conflict"]> }) {
+  return (
+    <div
+      style={{
+        background: "white",
+        border: `1px solid ${t.line}`,
+        borderRadius: 12,
+        padding: 18,
+        borderTop: `3px solid ${c.balanced > 0 ? t.success : t.copper}`,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          color: t.indigoGray,
+          letterSpacing: 1.2,
+          fontWeight: 700,
+          marginBottom: 12,
+        }}
+      >
+        CONFLICT NARRATION
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+        <BehavioralStat n={c.asked} label="Asked" />
+        <BehavioralStat n={c.oneSided} label="One-sided" bad={c.oneSided > 0} />
+        <BehavioralStat n={c.balanced} label="Balanced" bad={c.balanced === 0} good={c.balanced > 0} />
+      </div>
+      <div style={{ fontSize: 12, color: t.coal, lineHeight: 1.55 }}>
+        {c.coachLine ?? (
+          <>
+            Name what <em>they</em> wanted before what you did. Bar-raiser expects the
+            counterparty frame inside the first 15 seconds.
+          </>
+        )}
+      </div>
+      {c.jumpQuestions.length > 0 && (
+        <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+          {c.jumpQuestions.map((q) => (
+            <a
+              key={q}
+              href={`#ir-question-${q}`}
+              style={{
+                background: t.indigo100,
+                color: t.indigo,
+                fontSize: 11,
+                fontWeight: 600,
+                padding: "3px 10px",
+                borderRadius: 999,
+                textDecoration: "none",
+              }}
+            >
+              Jump → Q{q}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DeliveryTimelineCard({
+  delivery,
+}: {
+  delivery: NonNullable<BehavioralMeta["delivery"]>;
+}) {
+  const hasRambling = delivery.some((d) => d.shape === "rambling");
+  return (
+    <div
+      style={{
+        background: "white",
+        border: `1px solid ${t.line}`,
+        borderRadius: 12,
+        padding: 18,
+        borderTop: `3px solid ${hasRambling ? t.copper : t.success}`,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          color: t.indigoGray,
+          letterSpacing: 1.2,
+          fontWeight: 700,
+          marginBottom: 12,
+        }}
+      >
+        DELIVERY TIMELINE
+      </div>
+      <div
+        style={{
+          display: "flex",
+          height: 36,
+          borderRadius: 6,
+          overflow: "hidden",
+          border: `1px solid ${t.creamSoft}`,
+          marginBottom: 10,
+        }}
+      >
+        {delivery.map((s, i) => (
+          <div
+            key={i}
+            style={{
+              flex: s.seconds,
+              background: DELIVERY_SHAPE_COLOR[s.shape],
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+            aria-label={`Q${s.q} ${s.shape}, ${s.seconds} seconds`}
+          >
+            Q{s.q}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 12, fontSize: 11, color: t.indigoGray }}>
+        <BehavioralLegend c={t.success} label="crisp" />
+        <BehavioralLegend c="#CA8A04" label="hedged" />
+        <BehavioralLegend c={t.copper} label="rambling" />
+      </div>
+    </div>
+  );
+}
+
+/* ─── 4. COMPETENCY RADAR ─────────────────────────────────────────── */
+
+function CompetencyRadarSection({
+  radar,
+}: {
+  radar: NonNullable<BehavioralMeta["competencyRadar"]>;
+}) {
+  return (
+    <section
+      style={{
+        background: "white",
+        border: `1px solid ${t.line}`,
+        borderRadius: 16,
+        padding: 22,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+        <h3
+          style={{
+            fontFamily: f.sans,
+            fontSize: 14,
+            fontWeight: 700,
+            color: t.coal,
+            margin: 0,
+            letterSpacing: 0.6,
+          }}
+        >
+          COMPETENCY RADAR
+        </h3>
+        <span
+          style={{
+            fontSize: 11,
+            color: t.indigo,
+            background: t.indigo100,
+            padding: "3px 10px",
+            borderRadius: 999,
+            fontWeight: 600,
+          }}
+        >
+          {radar.track}
+        </span>
+      </div>
+      <BehavioralRadar radar={radar} />
+      {(radar.anchor || radar.gap) && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, color: t.indigoGray, lineHeight: 1.55 }}>
+          {radar.anchor && (
+            <div>
+              <strong style={{ color: t.success }}>Anchor:</strong> {radar.anchor}
+            </div>
+          )}
+          {radar.gap && (
+            <div>
+              <strong style={{ color: t.copper }}>Gap:</strong> {radar.gap}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ─── 7. AI ACCOUNTABILITY ────────────────────────────────────────── */
+
+function AIAccountabilityStrip({
+  a,
+}: {
+  a: NonNullable<BehavioralMeta["aiAccountability"]>;
+}) {
+  return (
+    <div
+      style={{
+        background: t.creamSoft,
+        borderRadius: 10,
+        padding: "12px 18px",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 24,
+        fontSize: 12,
+        color: t.coal,
+        alignItems: "center",
+        fontFamily: f.sans,
+      }}
+    >
+      <span style={{ fontSize: 10, letterSpacing: 1.2, color: t.indigoGray, fontWeight: 700 }}>
+        AI ACCOUNTABILITY
+      </span>
+      <span>
+        Depth probes <strong>{a.depthProbes}</strong> · vague accepted <strong>{a.vagueAccepted}</strong>
+      </span>
+      <span>
+        Ownership probes <strong>{a.ownershipProbes}</strong> · deflected <strong>{a.deflected}</strong>
+      </span>
+      {typeof a.counterpartyProbes === "number" && (
+        <span>
+          Counterparty probes <strong>{a.counterpartyProbes}</strong> · skipped{" "}
+          <strong>{a.counterpartySkipped ?? 0}</strong>
+        </span>
+      )}
     </div>
   );
 }
@@ -96,39 +638,9 @@ function BehavioralHero({ data, b }: { data: InterviewResultData; b: BehavioralM
             {"  ·  "}
             {b.sessionMeta.durationMin} min mock
           </span>
-          <span style={{ display: "inline-flex", gap: 10 }}>
-            <button
-              type="button"
-              style={{
-                background: "transparent",
-                border: `1px solid ${t.line}`,
-                borderRadius: 8,
-                padding: "6px 12px",
-                fontSize: 12,
-                color: t.coal,
-                cursor: "pointer",
-                fontFamily: f.sans,
-              }}
-            >
-              ↓ Download Report
-            </button>
-            <button
-              type="button"
-              style={{
-                background: t.indigoDeep,
-                color: "white",
-                border: 0,
-                borderRadius: 8,
-                padding: "6px 14px",
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: f.sans,
-              }}
-            >
-              ↻ Practice Again
-            </button>
-          </span>
+          {/* Session-strip CTAs intentionally removed. The trophy footer
+              is the singular practice-again exit; download lives in the
+              page header. Audit flagged 6+ competing CTAs above the fold. */}
         </div>
       )}
 
@@ -142,22 +654,33 @@ function BehavioralHero({ data, b }: { data: InterviewResultData; b: BehavioralM
         }}
         className="ir-bh-hero-grid"
       >
-        {/* Gauge */}
-        <div style={{ position: "relative", paddingTop: 8 }}>
+        {/* Gauge. Ring is 180px / r=70 → inner diameter ~130px. Type must
+            stack inside that, so 44px serif + 12px mono + 10px caption fits
+            without the arc clipping the glyphs (was 56px → overflowed). */}
+        <div
+          style={{
+            position: "relative",
+            width: 180,
+            height: 180,
+            margin: "8px auto 0",
+          }}
+        >
           <ScoreRing score={score} color={bandAccent} />
           <div
             style={{
               position: "absolute",
-              top: 36,
-              left: 0,
-              right: 0,
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
               textAlign: "center",
               pointerEvents: "none",
             }}
           >
-            <div style={{ fontFamily: f.serif, fontSize: 56, color: t.coal, lineHeight: 1 }}>{score}</div>
-            <div style={{ fontFamily: f.mono, fontSize: 14, color: t.indigoGray, marginTop: 4 }}>/100</div>
-            <div style={{ fontSize: 11, color: t.indigoGray, marginTop: 6, letterSpacing: 1.1 }}>
+            <div style={{ fontFamily: f.serif, fontSize: 44, color: t.coal, lineHeight: 1 }}>{score}</div>
+            <div style={{ fontFamily: f.mono, fontSize: 12, color: t.indigoGray, marginTop: 2 }}>/100</div>
+            <div style={{ fontSize: 10, color: t.indigoGray, marginTop: 4, letterSpacing: 1.1 }}>
               OVERALL SCORE
             </div>
           </div>
@@ -522,11 +1045,6 @@ function CompareBlock({ b }: { b: BehavioralMeta }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {b.answerCompare && <StarBreakdownCard a={b.answerCompare} />}
       </div>
-      {b.scoreBreakdown && b.scoreBreakdown.length > 0 && (
-        <div style={{ gridColumn: "1 / -1" }}>
-          <ScoreBarsCard bars={b.scoreBreakdown} />
-        </div>
-      )}
     </section>
   );
 }
@@ -608,6 +1126,7 @@ function AnswerCompareCard({ a }: { a: NonNullable<BehavioralMeta["answerCompare
       </div>
       <button
         type="button"
+        aria-label={`Practice question ${a.questionIndex}: ${a.questionText}`}
         style={{
           marginTop: 12,
           background: "transparent",
@@ -750,79 +1269,34 @@ function Donut({ value, total }: { value: number; total: number }) {
   );
 }
 
-function ScoreBarsCard({ bars }: { bars: NonNullable<BehavioralMeta["scoreBreakdown"]> }) {
-  return (
-    <div
-      style={{
-        background: "white",
-        border: `1px solid ${t.line}`,
-        borderRadius: 16,
-        padding: 20,
-      }}
-    >
-      <h3
-        style={{
-          fontFamily: f.sans,
-          fontSize: 14,
-          fontWeight: 700,
-          color: t.coal,
-          margin: "0 0 14px",
-          letterSpacing: 0.6,
-        }}
-      >
-        BEHAVIOURAL SCORE BREAKDOWN
-      </h3>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(160px, 200px) 1fr 50px", rowGap: 12, columnGap: 12, alignItems: "center" }}>
-        {bars.map((b) => {
-          const fg = b.score >= 80 ? t.success : b.score >= 65 ? t.indigo : t.copper;
-          return (
-            <React.Fragment key={b.label}>
-              <span style={{ fontSize: 13, color: t.coal }}>{b.label}</span>
-              <div
-                style={{
-                  height: 8,
-                  background: t.creamSoft,
-                  borderRadius: 999,
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    width: `${b.score}%`,
-                    height: "100%",
-                    background: fg,
-                    borderRadius: 999,
-                  }}
-                />
-              </div>
-              <span style={{ fontFamily: f.mono, fontSize: 13, color: fg, fontWeight: 600, textAlign: "right" }}>
-                {b.score}
-              </span>
-            </React.Fragment>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /* ─── 4. COACHING ROW ────────────────────────────────────────────── */
 
 function CoachingRow({ b }: { b: BehavioralMeta }) {
+  /* Surface vocabulary rhythm:
+     1. StrongestStory: cream-soft callout band (warm, single-focus)
+     2. RiskyPhrases: full-width white card (two-column scan)
+     3. FollowupReadiness + NextPracticeFocus: 2-col grid below
+     Breaks the previous 4-same-shape card grid. */
   return (
-    <section
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-        gap: 16,
-      }}
-    >
-      {b.riskyPhrases && b.riskyPhrases.length > 0 && <RiskyPhrasesCard rows={b.riskyPhrases} />}
-      {b.followupReadiness && b.followupReadiness.length > 0 && <FollowupReadinessCard rows={b.followupReadiness} />}
+    <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {b.strongestStory && <StrongestStoryCard s={b.strongestStory} />}
-      {b.nextPracticeFocus && b.nextPracticeFocus.length > 0 && (
-        <NextPracticeFocusCard items={b.nextPracticeFocus} />
+      {b.riskyPhrases && b.riskyPhrases.length > 0 && <RiskyPhrasesCard rows={b.riskyPhrases} />}
+      {(b.followupReadiness || b.nextPracticeFocus) && (
+        <div
+          className="ir-bh-coach-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {b.followupReadiness && b.followupReadiness.length > 0 && (
+            <FollowupReadinessCard rows={b.followupReadiness} />
+          )}
+          {b.nextPracticeFocus && b.nextPracticeFocus.length > 0 && (
+            <NextPracticeFocusCard items={b.nextPracticeFocus} />
+          )}
+        </div>
       )}
     </section>
   );
@@ -947,9 +1421,8 @@ function StrongestStoryCard({ s }: { s: NonNullable<BehavioralMeta["strongestSto
   return (
     <div
       style={{
-        background: t.cream,
-        border: `1px solid ${t.creamSoft}`,
-        borderLeft: `4px solid ${t.indigo}`,
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
         borderRadius: 12,
         padding: 18,
       }}
@@ -984,22 +1457,6 @@ function StrongestStoryCard({ s }: { s: NonNullable<BehavioralMeta["strongestSto
           <strong style={{ color: t.coal }}>What to improve:</strong> {s.whatToImprove}
         </div>
       </div>
-      <button
-        type="button"
-        style={{
-          marginTop: 12,
-          background: "white",
-          border: `1px solid ${t.line}`,
-          borderRadius: 8,
-          padding: "6px 12px",
-          fontSize: 12,
-          fontWeight: 600,
-          color: t.coal,
-          cursor: "pointer",
-        }}
-      >
-        ☐ Save to Notebook
-      </button>
     </div>
   );
 }
@@ -1056,22 +1513,8 @@ function NextPracticeFocusCard({ items }: { items: NonNullable<BehavioralMeta["n
               <div style={{ fontSize: 13, fontWeight: 600, color: t.coal }}>{it.title}</div>
               <div style={{ fontSize: 12, color: t.indigoGray, marginTop: 2, lineHeight: 1.5 }}>{it.body}</div>
             </div>
-            <button
-              type="button"
-              style={{
-                background: "white",
-                border: `1px solid ${t.indigo}`,
-                color: t.indigo,
-                borderRadius: 8,
-                padding: "5px 12px",
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-            >
-              Practice
-            </button>
+            {/* Per-row Practice button removed; the trophy footer is the
+                singular exit. Inline CTAs here just diluted the call. */}
           </li>
         ))}
       </ol>
@@ -1080,33 +1523,41 @@ function NextPracticeFocusCard({ items }: { items: NonNullable<BehavioralMeta["n
 }
 
 function FooterTrophy({ strip }: { strip: NonNullable<BehavioralMeta["footerStrip"]> }) {
+  /* Warm cream-soft exit, not indigoDeep. OneHabit is the only dark band
+     on the page; the footer is the celebratory close, not a second
+     authoritative directive. */
   return (
     <section
       style={{
-        background: `linear-gradient(180deg, ${t.indigoDeep} 0%, ${t.indigo} 100%)`,
-        color: "white",
+        background: t.creamSoft,
+        color: t.coal,
         borderRadius: 16,
         padding: "20px 24px",
         display: "flex",
         alignItems: "center",
         gap: 20,
         flexWrap: "wrap",
+        border: `1px solid ${t.line}`,
       }}
     >
       <span style={{ fontSize: 38 }} aria-hidden="true">🏆</span>
       <div style={{ flex: 1, minWidth: 200 }}>
-        <div style={{ fontFamily: f.serif, fontSize: 20, fontWeight: 500 }}>{strip.headline}</div>
-        <div style={{ fontSize: 13, opacity: 0.82, marginTop: 4 }}>{strip.body}</div>
+        <div style={{ fontFamily: f.serif, fontSize: 20, fontWeight: 500, color: t.coal }}>
+          {strip.headline}
+        </div>
+        <div style={{ fontSize: 13, color: t.indigoGray, marginTop: 4 }}>{strip.body}</div>
       </div>
-      <div style={{ fontSize: 12, opacity: 0.78 }}>
-        <div style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: 700, color: "#FED7AA" }}>RECOMMENDED NEXT STEP</div>
-        <div style={{ fontSize: 14, color: "white", marginTop: 2 }}>{strip.recommendedMock}</div>
+      <div style={{ fontSize: 12, color: t.indigoGray }}>
+        <div style={{ fontSize: 11, letterSpacing: 1.2, fontWeight: 700, color: t.copper }}>
+          RECOMMENDED NEXT STEP
+        </div>
+        <div style={{ fontSize: 14, color: t.coal, marginTop: 2 }}>{strip.recommendedMock}</div>
       </div>
       <button
         type="button"
         style={{
-          background: "#F59E0B",
-          color: t.indigoDeep,
+          background: t.indigoDeep,
+          color: "white",
           border: 0,
           borderRadius: 10,
           padding: "12px 18px",
