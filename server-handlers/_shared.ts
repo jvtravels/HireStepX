@@ -6,8 +6,8 @@ declare const process: { env: Record<string, string | undefined> };
 
 /* ─── Plan Limits (single source of truth for backend) ─── */
 const FREE_SESSION_LIMIT = 3;
-const STARTER_WEEKLY_LIMIT = 7;
-const PRO_MONTHLY_LIMIT = 30;
+const STARTER_WEEKLY_LIMIT = 10;
+const PRO_MONTHLY_LIMIT = 40;
 
 /** Timeout for Supabase auth/profile verification requests (ms) */
 const SUPABASE_TIMEOUT_MS = 5000;
@@ -244,13 +244,13 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
       const credits = Array.isArray(creditData) && creditData.length > 0 ? (creditData[0].session_credits || 0) : 0;
 
       if (totalCount >= FREE_SESSION_LIMIT && credits <= 0) {
-        return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Buy a session for ₹10 or upgrade.` };
+        return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Buy a session for ₹9 or upgrade.` };
       }
       if (totalCount < FREE_SESSION_LIMIT) {
         // Atomic in-flight check: prevent race condition with concurrent sessions
         const inFlight = await incrementInFlightCounter(userId, "free", INFLIGHT_TTL_SEC);
         if (inFlight !== null && totalCount + inFlight > FREE_SESSION_LIMIT && credits <= 0) {
-          return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Buy a session for ₹10 or upgrade.` };
+          return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Buy a session for ₹9 or upgrade.` };
         }
       }
       // If using credits, decrement after session completes (handled in session save)

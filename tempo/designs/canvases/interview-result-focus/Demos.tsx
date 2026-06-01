@@ -29,6 +29,7 @@ import {
   GOVERNMENT_PARTIAL,
 } from "./_focus-data";
 import { SalaryDesignPanels, WEAK_PRESET, STRONG_PRESET, type SalaryDesignPreset } from "./_salary-design-panels";
+import { HrDesignPanels, HR_WEAK_PRESET, type HrDesignPreset } from "./_hr-design-panels";
 
 interface FocusChrome {
   icon: string;
@@ -133,12 +134,15 @@ function FocusReport({
   data,
   chrome,
   salaryPanels,
+  hrPanels,
 }: {
   data: InterviewResultData;
   chrome: FocusChrome;
   /* Optional design-only panels rendered below the standard report.
-     Currently only the two Salary Negotiation demos pass these. */
+     Salary Neg and HR Round each opt into their own panel stack — the
+     base report stays untouched. */
   salaryPanels?: SalaryDesignPreset;
+  hrPanels?: HrDesignPreset;
 }) {
   return (
     <CanvasProviders>
@@ -148,8 +152,18 @@ function FocusReport({
         company={data.company}
         role={data.role}
       />
-      <InterviewResult data={data} />
-      {salaryPanels && <SalaryDesignPanels preset={salaryPanels} />}
+      {/* HR opts out of the generic InterviewResult shell — its panels
+          replace the report end-to-end, so the dual-vocabulary problem
+          (generic skill bars + HR dim gate scoring the same person twice)
+          can't happen. All other focuses keep the generic shell. */}
+      {hrPanels ? (
+        <HrDesignPanels preset={hrPanels} />
+      ) : (
+        <>
+          <InterviewResult data={data} />
+          {salaryPanels && <SalaryDesignPanels preset={salaryPanels} />}
+        </>
+      )}
     </CanvasProviders>
   );
 }
@@ -239,8 +253,12 @@ const CAMPUS_PLACEMENT: FocusChrome = {
 const HR_ROUND: FocusChrome = {
   icon: "🤝",
   label: "HR Round",
-  tagline: "Did you say specifically why you want this company — and avoid badmouthing your last one?",
-  headlineMetric: { label: "Negative words said", value: "4", caption: "about your current employer — HR reads this as a flight risk" },
+  tagline: "HR grades you on 7 axes — comp, compliance, motivation, commitment, stability, logistics, benefits. One zero kills the offer.",
+  headlineMetric: {
+    label: "Dimensions failing (≥3/5)",
+    value: "3 / 7",
+    caption: "Compliance · Commitment · Motivation are below the floor — BGV docs + counter-offer script need to land before the real round",
+  },
   accent: "#B91C1C",
   accentSoft: "#FEE2E2",
 };
@@ -273,6 +291,6 @@ export function SalaryNegStrongDemo() { return <FocusReport data={SALARY_NEG_STR
 export function SystemDesignPartialDemo() { return <FocusReport data={SYSTEM_DESIGN_PARTIAL} chrome={SYSTEM_DESIGN} />; }
 export function StrategicStrongDemo() { return <FocusReport data={STRATEGIC_STRONG} chrome={STRATEGIC} />; }
 export function CampusPlacementPartialDemo() { return <FocusReport data={CAMPUS_PLACEMENT_PARTIAL} chrome={CAMPUS_PLACEMENT} />; }
-export function HRWeakDemo() { return <FocusReport data={HR_WEAK} chrome={HR_ROUND} />; }
+export function HRWeakDemo() { return <FocusReport data={HR_WEAK} chrome={HR_ROUND} hrPanels={HR_WEAK_PRESET} />; }
 export function PanelStrongDemo() { return <FocusReport data={PANEL_STRONG} chrome={PANEL} />; }
 export function GovernmentPartialDemo() { return <FocusReport data={GOVERNMENT_PARTIAL} chrome={GOVERNMENT} />; }

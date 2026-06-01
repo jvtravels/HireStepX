@@ -401,7 +401,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.min(10, q + 1)); }} disabled={sessionQty >= 10} aria-label="Increase session count"
                       style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: "rgba(255,255,255,0.03)", color: sessionQty >= 10 ? c.border : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
                   </div>
-                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, textAlign: "center" }}>₹10/session · No expiry</p>
+                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, textAlign: "center" }}>₹9/session · No expiry</p>
                 </div>
               ) : (
                 <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginBottom: 14 }}>{plan.desc}</p>

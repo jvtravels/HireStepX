@@ -30,9 +30,14 @@ function extractScore(raw: unknown): number {
 
 /* ─── Constants ─── */
 export const FREE_SESSION_LIMIT = 3;
-export const STARTER_WEEKLY_LIMIT = 7;
-export const PRO_MONTHLY_LIMIT = 30;
-export const SINGLE_SESSION_PRICE = 10; // ₹10 per session
+/* Marketing surfaces (HomepageV2 PricingV2 + MarketingPagesV2 pricing
+   table) promise 10 sessions/week, 40 sessions/month, ₹9/session.
+   Keep these constants aligned with the customer-facing promise —
+   server-handlers/_shared.ts mirrors the limits for quota
+   enforcement. */
+export const STARTER_WEEKLY_LIMIT = 10;
+export const PRO_MONTHLY_LIMIT = 40;
+export const SINGLE_SESSION_PRICE = 9; // ₹9 per session
 export const STORAGE_KEY = "hirestepx_dashboard";
 export const RESULTS_KEY = "hirestepx_sessions";
 

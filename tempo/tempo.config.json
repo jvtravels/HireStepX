@@ -4,7 +4,7 @@
     "prds": "./prds"
   },
   "scripts": {
-    "install": "npm install",
+    "install": "cd .. && npm ci && cd tempo && npm install",
     "start": "npm run dev"
   }
 }

@@ -23,6 +23,7 @@
 
 import type { InterviewResultData, Question, AnswerSpan } from "../interview-result/InterviewResult";
 import { DEFAULT_RESULT } from "../interview-result/InterviewResult";
+import { coachOneHabit, coachConflict, coachFailureQuote } from "./_behavioral-coach";
 
 const TONE_ERROR = "#B91C1C";
 const TONE_SUCCESS = "#15803D";
@@ -107,6 +108,19 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
     { name: "STAR coherence", score: 90, roleAvg: 62 },
     { name: "Action depth", score: 80, roleAvg: 60 },
   ],
+  /* Behavioral-native delivery metrics — swap the generic filler/min,
+     pace, energy, latency tiles for first-person ratio, quantified-claims
+     rate, ownership-pronoun density, STAR coverage, self-reflection
+     hits, and rambling-answer count. Every tile maps to a behavioral
+     analyzer signal, not a generic voice signal. */
+  metrics: [
+    { label: "First-person ratio", value: 63, unit: "%", targetLabel: "Target ≥60%", band: "good" },
+    { label: "Quantified claims", value: 19, unit: "/6", targetLabel: "Target ≥12", band: "good" },
+    { label: "STAR coverage", value: 88, unit: "%", targetLabel: "Target ≥85%", band: "good" },
+    { label: "Self-reflection hits", value: 4, unit: "/6", targetLabel: "Target ≥4", band: "good" },
+    { label: "Rambling answers", value: 2, unit: "/6", targetLabel: "Target 0", band: "needsWork" },
+    { label: "Counterparty-POV miss", value: 1, unit: "/1", targetLabel: "Target 0", band: "needsWork" },
+  ],
   questions: [
     {
       index: 1,
@@ -125,6 +139,10 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
       whyScored:
         "Concrete situation (Q3 2024, design-system migration), 'I' used 8 times in Action section, closed with 40% fewer review cycles. The reflection at the end was the cherry on top.",
       likelyFollowUp: "What would you do differently if you had to do it again?",
+      behavioralSignals: [
+        { tone: "good", label: "ownership" },
+        { tone: "good", label: "quantified close" },
+      ],
     },
     {
       index: 2,
@@ -155,8 +173,329 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
         "There was a push from leadership to ship a new dashboard within Q4. I owned the conversation with our VP because I'd worked closest to the data team. I prepared a one-pager with three trade-off scenarios — ship-now-with-debt, ship-half-scope, or push by 6 weeks — and walked the VP through it. I made the case for the 6-week push with a specific ask: protect 2 engineers from interrupts. The VP agreed because I'd anticipated the cost question and named the trade-off explicitly. We shipped on the new date with zero P0 bugs.",
       ),
       likelyFollowUp: "What was the specific moment that turned the conversation?",
+      behavioralSignals: [
+        { tone: "bad", label: "we without I" },
+        { tone: "warn", label: "hedged" },
+      ],
+    },
+    {
+      index: 3,
+      text: "Walk me through a failure you owned. What did you learn?",
+      score: 74,
+      band: "partial",
+      answer: plain("There was a migration last year where I missed an edge case in the rollback path..."),
+      star: { situation: true, task: true, action: true, result: true, learning: true },
+      metrics: { wordCount: 182, responseSec: 154, firstPersonRatioPct: 71, quantificationCount: 2 },
+      focusMetrics: [
+        { label: "Words", value: "182", tone: TONE_DEFAULT },
+        { label: "First-person %", value: "71%", tone: TONE_SUCCESS },
+        { label: "Specifics", value: "2", tone: TONE_DEFAULT },
+        { label: "STAR coverage", value: "100%", tone: TONE_SUCCESS },
+      ],
+      whyScored:
+        "You named the failure and owned it — strong. But 'I missed an edge case' is hindsight theatre; the concrete miss (which path, what would've caught it) is what bar-raisers actually want to hear.",
+      likelyFollowUp: "What specifically would you have done differently in the rollback design?",
+      behavioralSignals: [
+        { tone: "good", label: "ownership" },
+        { tone: "warn", label: "vague miss" },
+      ],
+    },
+    {
+      index: 4,
+      text: "Describe a disagreement with a senior stakeholder. How did it end?",
+      score: 62,
+      band: "partial",
+      answer: plain("Our VP wanted to ship a checkout redesign in 4 weeks. I pushed back — we needed 7..."),
+      star: { situation: true, task: false, action: true, result: true, learning: false },
+      metrics: { wordCount: 240, responseSec: 198, firstPersonRatioPct: 78, quantificationCount: 4 },
+      focusMetrics: [
+        { label: "Words", value: "240", tone: TONE_DEFAULT },
+        { label: "First-person %", value: "78%", tone: TONE_SUCCESS },
+        { label: "Counterparty POV", value: "✗", tone: TONE_ERROR },
+        { label: "STAR coverage", value: "75%", tone: TONE_DEFAULT },
+      ],
+      whyScored:
+        "You won the argument but never named what the VP wanted or why. Indian HMs read one-sided conflict as 'can't collaborate with someone they disagree with.' Lead with their frame, then yours.",
+      redFlags: [
+        {
+          type: "scope_drift",
+          severity: "medium",
+          title: "One-sided conflict narrative",
+          explanation: "You skipped the VP's reasoning — they wanted speed because Q4 board metric pressure. Show you understood that before pushing back.",
+          quote: "I pushed back — we needed 7 weeks...",
+        },
+      ],
+      likelyFollowUp: "Why did the VP push for 4 weeks specifically?",
+      behavioralSignals: [
+        { tone: "bad", label: "one-sided" },
+        { tone: "bad", label: "no counterparty POV" },
+      ],
+    },
+    {
+      index: 5,
+      text: "Tell me about a time you mentored someone through a hard moment.",
+      score: 88,
+      band: "strong",
+      answer: plain("Last quarter, a junior designer on my team was about to quit after their first big launch missed a metric..."),
+      star: { situation: true, task: true, action: true, result: true, learning: true },
+      metrics: { wordCount: 205, responseSec: 172, firstPersonRatioPct: 68, quantificationCount: 4 },
+      focusMetrics: [
+        { label: "Words", value: "205", tone: TONE_DEFAULT },
+        { label: "First-person %", value: "68%", tone: TONE_SUCCESS },
+        { label: "Specifics", value: "4", tone: TONE_SUCCESS },
+        { label: "STAR coverage", value: "100%", tone: TONE_SUCCESS },
+      ],
+      whyScored:
+        "Cleanest narrative of the session — situation, specific actions, measurable outcome (designer stayed, shipped 3 launches since), and an honest reflection about what you'd do differently.",
+      likelyFollowUp: "What signal would have made you intervene earlier?",
+      behavioralSignals: [
+        { tone: "good", label: "STAR complete" },
+        { tone: "good", label: "reflection" },
+      ],
+    },
+    {
+      index: 6,
+      text: "Tell me about a time you had to push back on a deadline. How did you frame it?",
+      score: 70,
+      band: "partial",
+      answer: plain("In Q2, marketing wanted the campaign page live before the brand refresh shipped..."),
+      star: { situation: true, task: true, action: true, result: false, learning: false },
+      metrics: { wordCount: 268, responseSec: 224, firstPersonRatioPct: 58, quantificationCount: 1 },
+      focusMetrics: [
+        { label: "Words", value: "268", tone: TONE_ERROR },
+        { label: "First-person %", value: "58%", tone: TONE_DEFAULT },
+        { label: "Result", value: "Missing", tone: TONE_ERROR },
+        { label: "STAR coverage", value: "60%", tone: TONE_ERROR },
+      ],
+      whyScored:
+        "You built the case well but never closed with what actually happened. 'It worked out' isn't a result — was the page late? Was marketing happy? Did the brand land on time? Bar-raiser hears no number, assumes no outcome.",
+      likelyFollowUp: "What specifically shipped, and when?",
+      behavioralSignals: [
+        { tone: "bad", label: "no result" },
+        { tone: "warn", label: "rambling" },
+      ],
     },
   ],
+  /* Behavioral-focus diagnostic sub-blocks — projects meta.behavioral
+     from the analyzer directly into the report. Renders the STAR
+     matrix, conflict card, failure card, delivery timeline, AI
+     accountability, and one-habit-to-fix prebias CTA. */
+  behavioral: {
+    /* Research-driven full layout — opts into BehavioralReport.tsx which
+       replaces the generic InterviewResult body with the 4-region behavioural
+       report (hero gauge → top moments → compare block → coaching row).
+       The fields below feed those regions. */
+    fullLayout: true,
+    sessionMeta: {
+      completedDate: "18 May 2025",
+      questionCount: 6,
+      durationMin: 32,
+    },
+    verbalVerdict: "Strong baseline. Sharpen STAR — especially Result.",
+    atAGlance: [
+      { label: "Interviewer rating", value: "Lean Hire", tone: "good" },
+      { label: "STAR completeness", value: "82", suffix: "%", tone: "good" },
+      { label: "Ownership voice (I/we)", value: "71", suffix: "%", tone: "neutral" },
+      { label: "Quantified results", value: "3", suffix: "/6", tone: "needsWork" },
+      { label: "Conflict balance", value: "0", suffix: "/2", tone: "needsWork" },
+      { label: "Failure ownership", value: "Owns", tone: "good" },
+      { label: "Pace", value: "146", suffix: "wpm", tone: "neutral" },
+      { label: "Filler rate", value: "3.4", suffix: "/min", tone: "neutral" },
+    ],
+    biggestGap: {
+      title: "Impact & Results",
+      body: "Four of six answers ended without a measurable outcome. The Bar-Raiser will probe here — name a ₹-figure, % or LPA delta in your first sentence of the Result.",
+      ctaLabel: "Practice the Result line",
+    },
+    topMoments: [
+      {
+        time: "02:14",
+        title: "Failure story — owned the miss",
+        body: "Named the rollback path you underestimated; no deflection.",
+        band: "strong",
+        isHighlight: true,
+      },
+      {
+        time: "06:48",
+        title: "Conflict with VP — one-sided",
+        body: "Framed only your view; the VP's priorities never surfaced.",
+        band: "needsWork",
+      },
+      {
+        time: "11:32",
+        title: "Quantified launch impact",
+        body: "₹4.2 Cr ARR uplift cited — clean number, clean attribution.",
+        band: "strong",
+      },
+      {
+        time: "17:05",
+        title: "Mentoring story — strongest moment",
+        body: "Specific actions, named the engineer, named the outcome.",
+        band: "strong",
+        isHighlight: true,
+      },
+      {
+        time: "23:11",
+        title: "Ambiguity story — rambled",
+        body: "Three minute answer; Action and Result blurred together.",
+        band: "needsWork",
+      },
+      {
+        time: "28:46",
+        title: "Result missing on closing answer",
+        body: "Stamina dipped — no measurable outcome on the final story.",
+        band: "needsWork",
+      },
+    ],
+    answerCompare: {
+      questionIndex: 2,
+      questionText: "Tell me about a time you disagreed with a senior stakeholder.",
+      yourAnswer:
+        "I thought the VP's plan would slip the quarter, so I pushed back and we ended up doing it my way. It worked out and we shipped on time.",
+      yourScore: 58,
+      stronger: {
+        S: "Q3 FY24 — VP wanted the payments rewrite shipped in 6 weeks to unblock Razorpay GTM.",
+        T: "I owned delivery; she owned the Razorpay commit. Both real, both load-bearing.",
+        A: "I named her constraint first, brought a phased plan with a Week-3 GTM checkpoint, and let her pick.",
+        R: "Shipped in 7 weeks; Razorpay went live on the original date; she now routes peer reviews through me.",
+      },
+      strongerScore: 87,
+      impactLine:
+        "Naming the counterparty's goal first turns 'I won the argument' into 'we navigated it' — that's what an Indian HM scores as senior.",
+      starScores: { S: 8, T: 6, A: 7, R: 4 },
+    },
+    scoreBreakdown: [
+      { label: "STAR storytelling", score: 78 },
+      { label: "Ownership voice", score: 71 },
+      { label: "Conflict balance", score: 42 },
+      { label: "Failure handling", score: 84 },
+      { label: "Quantified impact", score: 55 },
+      { label: "Delivery & pace", score: 73 },
+    ],
+    riskyPhrases: [
+      { weak: "we ended up doing it my way",      strong: "we landed on a phased plan she signed off on" },
+      { weak: "it worked out",                     strong: "Razorpay went live on the original GTM date" },
+      { weak: "I think it was around 20% better",  strong: "₹4.2 Cr ARR uplift in the first quarter" },
+      { weak: "my team did most of it",            strong: "I scoped, two engineers shipped, I unblocked QA" },
+    ],
+    followupReadiness: [
+      { dimension: "What did the VP say next?",         band: "weak" },
+      { dimension: "What was the measurable impact?",    band: "needsWork" },
+      { dimension: "What would you do differently?",     band: "good" },
+      { dimension: "Who else owned this outcome?",       band: "needsWork" },
+      { dimension: "How did you handle the rollback?",   band: "good" },
+    ],
+    strongestStory: {
+      questionIndex: 5,
+      questionText: "Tell me about a time you mentored someone who was struggling.",
+      strengths: [
+        "Named the engineer and the specific gap",
+        "Quantified the ramp (3 weeks → first prod ship)",
+        "Owned the coaching plan without taking credit for the work",
+      ],
+      impactPotential: "High",
+      whatToImprove:
+        "Close with the second-order outcome — does she now mentor others? That's what an Amazon Bar-Raiser tags as Earn Trust.",
+    },
+    nextPracticeFocus: [
+      {
+        title: "Conflict — counterparty's POV first",
+        body: "Open every conflict story by naming what the other side wanted, in their words. Then your view. Then the resolution.",
+      },
+      {
+        title: "Result line — number in sentence one",
+        body: "Every Result starts with a ₹/%/LPA number. If you don't have one, say 'I don't have the exact number, but the order of magnitude was…'",
+      },
+      {
+        title: "Stamina — answers 5 & 6",
+        body: "Your last two answers ran 30% longer than your first three. Practice 90-second STAR drills until the Action stays tight late in the session.",
+      },
+    ],
+    footerStrip: {
+      headline: "You're closer than you think.",
+      body: "Three sessions of conflict-counterparty drills typically lifts behavioural scores by 12–18 points.",
+      recommendedMock: "Conflict-narration mock · VP persona · 6 questions",
+      ctaLabel: "Start next session",
+    },
+    questionReview: [
+      { index: 1, text: "Walk me through your last 18 months.",                                   status: "good",      score: 78 },
+      { index: 2, text: "Tell me about a disagreement with a senior stakeholder.",                status: "needsWork", score: 58 },
+      { index: 3, text: "Describe a time you failed.",                                            status: "strong",    score: 84 },
+      { index: 4, text: "Tell me about a launch you led end-to-end.",                             status: "good",      score: 76 },
+      { index: 5, text: "When did you mentor someone who was struggling?",                         status: "strong",    score: 89 },
+      { index: 6, text: "How did you handle ambiguity on a project with shifting scope?",         status: "weak",      score: 51 },
+    ],
+    starMatrix: [
+      { q: 1, S: true,  T: true,  A: true,  R: true  },
+      { q: 2, S: true,  T: true,  A: true,  R: true  },
+      { q: 3, S: true,  T: true,  A: true,  R: true  },
+      { q: 4, S: true,  T: false, A: true,  R: true  },
+      { q: 5, S: true,  T: true,  A: true,  R: true  },
+      { q: 6, S: true,  T: true,  A: true,  R: false },
+    ],
+    conflict: {
+      asked: 1,
+      oneSided: 1,
+      balanced: 0,
+      jumpQuestions: [4],
+      /* Templated from the same flag that drives `oneHabit`. */
+      coachLine: coachConflict({ counterpartyRole: "VP" }),
+    },
+    failure: {
+      questionIndex: 3,
+      ownership: true,
+      specific: false,
+      learning: true,
+      /* Templated from `weak_specificity_in_failure_story` flag.
+         Production wires this from analyzer.behavioral.flags. */
+      coachQuote: coachFailureQuote({ questionIndex: 3 }),
+    },
+    delivery: [
+      { q: 1, shape: "crisp",    seconds: 168 },
+      { q: 2, shape: "hedged",   seconds: 162 },
+      { q: 3, shape: "crisp",    seconds: 154 },
+      { q: 4, shape: "rambling", seconds: 198 },
+      { q: 5, shape: "crisp",    seconds: 172 },
+      { q: 6, shape: "rambling", seconds: 224 },
+    ],
+    aiAccountability: {
+      depthProbes: 4,
+      vagueAccepted: 1,
+      ownershipProbes: 3,
+      deflected: 0,
+      counterpartyProbes: 1,
+      counterpartySkipped: 1,
+    },
+    /* Templated from `one_sided_conflict_narrative` — the dominant
+       behavioral flag this session. Swap the flag arg to see the CTA
+       rewrite itself for failure / we_without_i / rambling cases. */
+    oneHabit: coachOneHabit("one_sided_conflict_narrative", {
+      questionIndex: 4,
+      counterpartyRole: "VP",
+      personaVoice: "Indian HM",
+    }),
+    persona: {
+      voice: "Hiring Manager",
+      companyTier: "Razorpay-tier fintech",
+      rubricNote:
+        "Indian HM expects ownership in the first sentence; Bar-Raiser would push harder on the failure miss.",
+    },
+    competencyRadar: {
+      track: "Indian Product (PM/Design) — Razorpay rubric",
+      axes: [
+        { name: "Specificity",    you: 85, prior: 72 },
+        { name: "Ownership",      you: 78, prior: 80 },
+        { name: "Outcome",        you: 88, prior: 64 },
+        { name: "Self-reflection", you: 70, prior: 62 },
+        { name: "STAR coherence", you: 90, prior: 78 },
+        { name: "Action depth",   you: 80, prior: 70 },
+      ],
+      anchor:
+        "Outcome and STAR coherence climbed double-digits since last session — the migration-story closing metric is doing the work.",
+      gap:
+        "Ownership ticked down 2 points; the Q2 'we vs I' drag is now the load-bearing weakness.",
+    },
+  },
 });
 
 /* ─── 2. TECHNICAL — partial (64) ────────────────────────────── */

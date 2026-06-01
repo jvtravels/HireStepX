@@ -33,6 +33,7 @@
 import React, { useState } from "react";
 import { tokens as t, fonts as f, shadows } from "../design-system/_tokens";
 import { INTERVIEW_RESULT_STYLES } from "./_styles";
+import BehavioralReport from "./BehavioralReport";
 
 /* ─── Domain types ─────────────────────────────────────────────────── */
 
@@ -136,6 +137,14 @@ export interface Question {
    *  on weak/partial bands in the coach column. Pre-empts the
    *  question the user will get asked next. */
   likelyFollowUp?: string;
+  /** Behavioral signal pills shown on the trigger row — focus-specific
+   *  micro-tags ("⚠ rehearsed", "✓ ownership", "✗ result") that prep
+   *  the user for what they'll find when they expand. Only rendered
+   *  when present; other focuses ignore this. */
+  behavioralSignals?: Array<{
+    tone: "good" | "warn" | "bad";
+    label: string;
+  }>;
 }
 
 export interface CalibrationBand {
@@ -237,6 +246,162 @@ export interface InterviewResultData {
    *  with a one-line "X hours over Y sessions" estimate. Higher signal
    *  than the percentages it replaces. */
   readinessSentence?: string;
+  /** Behavioral-focus sub-blocks. Optional, rendered only when present
+   *  — keeps the other 10 focuses (technical/case/salary/etc.) untouched.
+   *  Mirrors the analyzer's `meta.behavioral` shape so the surface
+   *  becomes a direct projection of what `analyzers/behavioral.ts`
+   *  already computes per session. */
+  behavioral?: BehavioralMeta;
+}
+
+/* ─── Behavioral focus sub-blocks ──────────────────────────────────── */
+
+export interface StarMatrixRow {
+  q: number;
+  S: boolean;
+  T: boolean;
+  A: boolean;
+  R: boolean;
+}
+
+export interface BehavioralMeta {
+  /** STAR completeness matrix across all behavioral turns. Renders as
+   *  a 4×N grid (rows = S/T/A/R, cols = questions). The single most
+   *  legible behavioral signal — surfaces "Result missing in 4/6" at
+   *  a glance. */
+  starMatrix: StarMatrixRow[];
+  /** Per-question conflict-shaped stem stats. Renders when at least
+   *  one conflict question was asked. `coachLine` is the templated
+   *  coaching copy — when absent, the card falls back to a generic
+   *  default. */
+  conflict?: {
+    asked: number;
+    oneSided: number;
+    balanced: number;
+    jumpQuestions: number[];
+    coachLine?: string;
+  };
+  /** Failure-story diagnostic — only if a failure question was asked
+   *  AND the candidate owned it. The three signals mirror
+   *  `classifyFailureResponse` + `hasConcreteFailureMiss`. */
+  failure?: {
+    questionIndex: number;
+    ownership: boolean;
+    specific: boolean;
+    learning: boolean;
+    coachQuote: string;
+  };
+  /** Delivery shape per turn. Same crisp/hedged/rambling categorization
+   *  used by `_behavioral-probing.ts`. The bar chart renders one segment
+   *  per substantive answer, weighted by seconds. */
+  delivery?: Array<{ q: number; shape: "crisp" | "hedged" | "rambling"; seconds: number }>;
+  /** AI-accountability counters from `meta.behavioral.probing`. */
+  aiAccountability?: {
+    depthProbes: number;
+    vagueAccepted: number;
+    ownershipProbes: number;
+    deflected: number;
+    counterpartyProbes?: number;
+    counterpartySkipped?: number;
+  };
+  /** The single habit to fix — drives the prebias dimension for the
+   *  next session via BEHAVIORAL_PRIOR_FLAG_TO_DIMENSION. */
+  oneHabit?: { headline: string; rationale: string; prebiasDimension: string };
+  /** Persona the AI voice played this session. Names the rubric
+   *  ("Bar-Raiser pushes harder", "Indian HM expects ownership first")
+   *  so the coaching downstream is calibrated to the actual interviewer
+   *  archetype, not generic. */
+  persona?: {
+    voice: "Hiring Manager" | "HR Partner" | "Director" | "Bar Raiser" | "Founder";
+    companyTier: string;
+    rubricNote: string;
+  };
+  /** Track-calibrated competency radar (Amazon LP / Google / Indian-product /
+   *  Services-lateral / Startup). `you` = this session, `prior` = last
+   *  session's score for the same axis (drives the faded ghost polygon
+   *  used for skill-decay comparison). All axes 0..100. */
+  competencyRadar?: {
+    track: string;
+    axes: Array<{ name: string; you: number; prior?: number }>;
+    anchor?: string;
+    gap?: string;
+  };
+  /** Opt into the research-driven full BehavioralReport layout. When
+   *  true, the standard InterviewResult body is replaced by the
+   *  behavioral-native 4-region report (Hero / Top Moments / Compare
+   *  block / Coaching row). When false/undefined the legacy
+   *  BehavioralFocusSection injects into the standard layout. */
+  fullLayout?: boolean;
+  /** Session metadata for the report header. */
+  sessionMeta?: { completedDate: string; questionCount: number; durationMin: number };
+  /** One-line verbal verdict next to the score gauge ("Strong
+   *  potential. Sharpen your storytelling."). */
+  verbalVerdict?: string;
+  /** 6-8 top-of-hero summary stats (Communication / Story Structure /
+   *  Impact & Results / Confidence / Interviewer Rating / etc.). */
+  atAGlance?: Array<{
+    label: string;
+    value: string;
+    suffix?: string;
+    tone?: "good" | "neutral" | "needsWork";
+  }>;
+  /** Single named gap with one CTA — replaces the bulleted "improvements"
+   *  list in the hero. */
+  biggestGap?: { title: string; body: string; ctaLabel: string };
+  /** Top behavioural moments timeline — 5-6 timestamped chips with
+   *  band colour. `isHighlight` marks the strongest moment with a
+   *  star. Time in mm:ss. */
+  topMoments?: Array<{
+    time: string;
+    title: string;
+    body: string;
+    band: "strong" | "needsWork" | "neutral";
+    isHighlight?: boolean;
+  }>;
+  /** Single Q: your-answer-vs-stronger-answer compare block. */
+  answerCompare?: {
+    questionIndex: number;
+    questionText: string;
+    yourAnswer: string;
+    yourScore: number;
+    stronger: { S: string; T: string; A: string; R: string };
+    strongerScore: number;
+    impactLine: string;
+    /** Per-letter scores out of 10 for the candidate's answer. */
+    starScores: { S: number; T: number; A: number; R: number };
+  };
+  /** Behavioural score breakdown bars (Story structure · Ownership ·
+   *  Clarity of thinking · Impact/results · Confidence under pressure ·
+   *  Specificity). 0..100. */
+  scoreBreakdown?: Array<{ label: string; score: number }>;
+  /** Risky phrases the candidate actually said + stronger alternatives. */
+  riskyPhrases?: Array<{ weak: string; strong: string }>;
+  /** Forward-looking readiness for likely follow-ups. */
+  followupReadiness?: Array<{ dimension: string; band: "good" | "needsWork" | "weak" }>;
+  /** Highlight one question that landed best. */
+  strongestStory?: {
+    questionIndex: number;
+    questionText: string;
+    strengths: string[];
+    impactPotential: "Low" | "Medium" | "High";
+    whatToImprove: string;
+  };
+  /** 3-card "what to practise next" action list. */
+  nextPracticeFocus?: Array<{ title: string; body: string }>;
+  /** Footer trophy strip — persuasive line + recommended next mock. */
+  footerStrip?: {
+    headline: string;
+    body: string;
+    recommendedMock: string;
+    ctaLabel: string;
+  };
+  /** Per-question status table — replaces the per-question signal pills. */
+  questionReview?: Array<{
+    index: number;
+    text: string;
+    status: "strong" | "good" | "needsWork" | "weak";
+    score: number;
+  }>;
 }
 
 /* ─── Defaults / mock ──────────────────────────────────────────────── */
@@ -615,15 +780,22 @@ function SectionEyebrow({ num, label }: { num: string; label: string }) {
  *  reviewing their 5th report skip directly to per-question without
  *  scrolling past every section card. Renders nothing on screens
  *  too narrow to fit the row (handled by overflow-x in CSS). */
-function JumpNav() {
-  const items = [
+function JumpNav({ hasBehavioral = false }: { hasBehavioral?: boolean }) {
+  const baseItems = [
     { num: "01", label: "Overview", href: "#ir-section-hero" },
-    { num: "02", label: "Delivery", href: "#ir-section-metrics" },
+    { num: "02", label: hasBehavioral ? "Signals" : "Delivery", href: "#ir-section-metrics" },
     { num: "03", label: "Skills", href: "#ir-section-skills" },
-    { num: "04", label: "Questions", href: "#ir-section-questions" },
-    { num: "05", label: "Coach Notes", href: "#ir-section-coach-notes" },
-    { num: "06", label: "Next Steps", href: "#ir-section-next" },
   ];
+  const behavioralItem = hasBehavioral
+    ? [{ num: "04", label: "Behavioral", href: "#ir-section-behavioral" }]
+    : [];
+  const startIdx = 4 + behavioralItem.length;
+  const tail = [
+    { num: String(startIdx).padStart(2, "0"), label: "Questions", href: "#ir-section-questions" },
+    { num: String(startIdx + 1).padStart(2, "0"), label: "Coach Notes", href: "#ir-section-coach-notes" },
+    { num: String(startIdx + 2).padStart(2, "0"), label: "Next Steps", href: "#ir-section-next" },
+  ];
+  const items = [...baseItems, ...behavioralItem, ...tail];
   return (
     <nav aria-label="Jump to section" className="ir-jump-nav">
       <div className="ir-jump-nav-inner">
@@ -860,6 +1032,12 @@ function Header() {
 
 function HeroSection({ data }: { data: InterviewResultData }) {
   const verdict = VERDICT_META[data.verdict];
+  /* Score-band accent — explicit top stripe so the band reads at a
+     glance independent of the verdict pill. Copper at <40 (not red,
+     never red — softens the room), emerald at >85, otherwise the
+     verdict color. */
+  const bandAccent =
+    data.overallScore < 40 ? t.copper : data.overallScore > 85 ? t.success : verdict.color;
   return (
     <section
       id="ir-section-hero"
@@ -870,6 +1048,7 @@ function HeroSection({ data }: { data: InterviewResultData }) {
         borderRadius: 16,
         padding: 28,
         boxShadow: shadows.card,
+        borderTop: `4px solid ${bandAccent}`,
         scrollMarginTop: 72, // accommodate sticky jump-nav on anchor scroll
       }}
     >
@@ -935,7 +1114,7 @@ function HeroSection({ data }: { data: InterviewResultData }) {
             Overall Score
           </div>
           <div style={{ position: "relative", display: "inline-block" }}>
-            <ScoreGauge score={data.overallScore} color={verdict.color} />
+            <ScoreGauge score={data.overallScore} color={bandAccent} />
             <div
               style={{
                 position: "absolute",
@@ -1077,7 +1256,15 @@ function HeroSection({ data }: { data: InterviewResultData }) {
   );
 }
 
-function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
+function CoreMetricsSection({
+  metrics,
+  eyebrowLabel = "How you delivered",
+  heading = "Core Delivery Metrics",
+}: {
+  metrics: DeliveryMetric[];
+  eyebrowLabel?: string;
+  heading?: string;
+}) {
   return (
     <section
       id="ir-section-metrics"
@@ -1091,10 +1278,10 @@ function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
         scrollMarginTop: 72,
       }}
     >
-      <SectionEyebrow num="02" label="How you delivered" />
+      <SectionEyebrow num="02" label={eyebrowLabel} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
         <h2 id="ir-metrics-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
-          Core Delivery Metrics
+          {heading}
         </h2>
         <button
           type="button"
@@ -1764,6 +1951,35 @@ function PerQuestionSection({ questions }: { questions: Question[] }) {
                     {q.lengthVerdict === "tooShort" ? "Too short" : "Too long"}
                   </span>
                 )}
+                {q.behavioralSignals?.map((s, i) => {
+                  const palette =
+                    s.tone === "good"
+                      ? { bg: t.success100, fg: t.success, glyph: "✓" }
+                      : s.tone === "warn"
+                      ? { bg: "rgba(202,138,4,0.12)", fg: "#A16207", glyph: "⚠" }
+                      : { bg: t.copper100, fg: t.copper, glyph: "✗" };
+                  return (
+                    <span
+                      key={i}
+                      className="ir-q-trigger-band"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        background: palette.bg,
+                        color: palette.fg,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: "3px 8px",
+                        borderRadius: 999,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <span aria-hidden="true">{palette.glyph}</span>
+                      {s.label}
+                    </span>
+                  );
+                })}
                 {q.redFlags && q.redFlags.length > 0 && (
                   <span
                     className="ir-q-redflag-badge ir-q-trigger-band"
@@ -2252,6 +2468,668 @@ function FooterSection() {
   );
 }
 
+/* ─── Behavioral focus section ─────────────────────────────────────── */
+
+/* Behavioral-only diagnostic block. Renders five sub-sections that
+   project meta.behavioral directly into the report:
+     • STAR completeness matrix (4 × N grid)
+     • Conflict narration card  (when conflict.asked > 0)
+     • Failure-story card        (when failure present)
+     • Delivery timeline         (when delivery has entries)
+     • AI-accountability strip   (when aiAccountability present)
+     • One-habit prebias CTA card
+
+   All sub-sections degrade independently: if the analyzer didn't
+   produce conflict data, the conflict card is hidden — never an
+   empty shell. Same edge-state rule the spec calls out. */
+function BehavioralFocusSection({ b, score }: { b: BehavioralMeta; score: number }) {
+  const lowBand = score < 40;
+  const ctaCopy = lowBand
+    ? "Try this one habit next session →"
+    : "Practice this pattern →";
+  const ctaEyebrowAccent = lowBand ? "#FBD38D" : "#FED7AA";
+  const SHAPE_COLOR: Record<"crisp" | "hedged" | "rambling", string> = {
+    crisp: t.success,
+    hedged: "#CA8A04",
+    rambling: t.copper,
+  };
+  return (
+    <section
+      id="ir-section-behavioral"
+      aria-labelledby="ir-behavioral-eyebrow"
+      style={{
+        background: t.cream,
+        border: `1px solid ${t.creamSoft}`,
+        borderRadius: 16,
+        padding: 24,
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+      }}
+    >
+      <div id="ir-behavioral-eyebrow">
+        <SectionEyebrow num="4·" label="Behavioral diagnostic" />
+      </div>
+
+      {/* Persona ribbon — names the AI voice + tier so the coaching
+          downstream reads as calibrated to a real interviewer archetype,
+          not a generic rubric. */}
+      {b.persona && (
+        <div
+          style={{
+            background: t.indigoDeep,
+            color: "white",
+            borderRadius: 10,
+            padding: "10px 16px",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 14,
+            fontSize: 13,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              letterSpacing: 1.5,
+              fontWeight: 700,
+              color: "#FED7AA",
+            }}
+          >
+            PERSONA
+          </span>
+          <span>
+            You interviewed with a <strong>{b.persona.voice}</strong> at a{" "}
+            <strong>{b.persona.companyTier}</strong>.
+          </span>
+          <span style={{ opacity: 0.78, fontSize: 12 }}>{b.persona.rubricNote}</span>
+        </div>
+      )}
+
+      {/* STAR matrix — collapses to a one-line note for early sessions
+          with <3 substantive answers (charting STAR completeness with
+          1–2 data points just adds noise). */}
+      {b.starMatrix.length < 3 ? (
+        <div
+          style={{
+            background: "white",
+            border: `1px dashed ${t.creamSoft}`,
+            borderRadius: 10,
+            padding: "14px 18px",
+            fontSize: 13,
+            color: t.indigoGray,
+            lineHeight: 1.5,
+          }}
+        >
+          Only {b.starMatrix.length} behavioral turn
+          {b.starMatrix.length === 1 ? "" : "s"} this session — too few to chart STAR completeness.
+          Ask 3+ stem questions next session to unlock the matrix.
+        </div>
+      ) : (
+      <div style={{ overflowX: "auto" }}>
+        <div style={{ marginBottom: 12 }}>
+          <h3 style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: 0 }}>
+            STAR completeness across {b.starMatrix.length} answers
+          </h3>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `64px repeat(${b.starMatrix.length}, minmax(40px, 1fr)) minmax(170px, 220px)`,
+            gap: 6,
+            minWidth: 64 + b.starMatrix.length * 46 + 170,
+          }}
+        >
+          <div />
+          {b.starMatrix.map((row) => (
+            <div key={`h-${row.q}`} style={{ textAlign: "center", fontSize: 11, color: t.indigoGray, fontWeight: 600 }}>
+              Q{row.q}
+            </div>
+          ))}
+          <div />
+          {(["S", "T", "A", "R"] as const).map((k) => {
+            const labelMap = { S: "Situation", T: "Task", A: "Action", R: "Result" };
+            const missing = b.starMatrix.filter((r) => !r[k]).length;
+            const total = b.starMatrix.length;
+            const coach =
+              missing === 0
+                ? "Solid across every turn."
+                : missing >= total / 2
+                ? `Missed in ${missing}/${total} — load-bearing gap.`
+                : `Missed in ${missing}/${total}.`;
+            return (
+              <React.Fragment key={k}>
+                <div style={{ display: "flex", alignItems: "center", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
+                  <span
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 6,
+                      background: t.indigo100,
+                      color: t.indigo,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      marginRight: 8,
+                    }}
+                  >
+                    {k}
+                  </span>
+                  {labelMap[k]}
+                </div>
+                {b.starMatrix.map((row) => {
+                  const ok = row[k];
+                  return (
+                    <div
+                      key={`${k}-${row.q}`}
+                      style={{
+                        height: 40,
+                        borderRadius: 6,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: ok ? t.success100 : t.copper100,
+                        color: ok ? t.success : t.copper,
+                        fontSize: 18,
+                        fontWeight: 700,
+                        border: `1px solid ${ok ? "rgba(21,128,61,0.18)" : "rgba(180,83,9,0.22)"}`,
+                      }}
+                      aria-label={`Q${row.q} ${labelMap[k]} ${ok ? "present" : "missing"}`}
+                    >
+                      {ok ? "✓" : "✗"}
+                    </div>
+                  );
+                })}
+                <div style={{ fontSize: 12, color: t.indigoGray, display: "flex", alignItems: "center", paddingLeft: 8 }}>
+                  {coach}
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+      )}
+
+      {/* Track-calibrated competency radar — current session solid indigo,
+          prior session faded gray ghost for skill-decay comparison. */}
+      {b.competencyRadar && b.competencyRadar.axes.length >= 3 && (
+        <BehavioralRadar radar={b.competencyRadar} />
+      )}
+
+      {/* 3-col diagnostic cards */}
+      {(b.failure || b.conflict || (b.delivery && b.delivery.length > 0)) && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {b.failure && (
+            <div
+              style={{
+                background: "white",
+                border: `1px solid ${t.creamSoft}`,
+                borderRadius: 12,
+                padding: 18,
+                borderTop: `3px solid ${b.failure.specific ? t.success : t.copper}`,
+              }}
+            >
+              <div style={{ fontSize: 11, color: t.indigoGray, letterSpacing: 1.2, fontWeight: 700, marginBottom: 12 }}>
+                FAILURE STORY · Q{b.failure.questionIndex}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                <BehavioralSignal ok={b.failure.ownership} label="Ownership" />
+                <BehavioralSignal ok={b.failure.specific} label="Specific" />
+                <BehavioralSignal ok={b.failure.learning} label="Learning" />
+              </div>
+              <div style={{ fontSize: 12, color: t.coal, lineHeight: 1.55 }}>{b.failure.coachQuote}</div>
+            </div>
+          )}
+          {b.conflict && b.conflict.asked > 0 && (
+            <div
+              style={{
+                background: "white",
+                border: `1px solid ${t.creamSoft}`,
+                borderRadius: 12,
+                padding: 18,
+                borderTop: `3px solid ${b.conflict.balanced > 0 ? t.success : t.copper}`,
+              }}
+            >
+              <div style={{ fontSize: 11, color: t.indigoGray, letterSpacing: 1.2, fontWeight: 700, marginBottom: 12 }}>
+                CONFLICT NARRATION
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                <BehavioralStat n={b.conflict.asked} label="Asked" />
+                <BehavioralStat n={b.conflict.oneSided} label="One-sided" bad={b.conflict.oneSided > 0} />
+                <BehavioralStat n={b.conflict.balanced} label="Balanced" bad={b.conflict.balanced === 0} good={b.conflict.balanced > 0} />
+              </div>
+              <div style={{ fontSize: 12, color: t.coal, lineHeight: 1.55 }}>
+                {b.conflict.coachLine ?? (
+                  <>
+                    Name what <em>they</em> wanted before what you did. Bar-raiser expects the counterparty frame inside the first 15 seconds.
+                  </>
+                )}
+              </div>
+              {b.conflict.jumpQuestions.length > 0 && (
+                <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+                  {b.conflict.jumpQuestions.map((q) => (
+                    <span
+                      key={q}
+                      style={{
+                        background: t.indigo100,
+                        color: t.indigo,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: "3px 10px",
+                        borderRadius: 999,
+                      }}
+                    >
+                      Jump → Q{q}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {b.delivery && b.delivery.length > 0 && (
+            <div
+              style={{
+                background: "white",
+                border: `1px solid ${t.creamSoft}`,
+                borderRadius: 12,
+                padding: 18,
+                borderTop: `3px solid ${b.delivery.some((d) => d.shape === "rambling") ? t.copper : t.success}`,
+              }}
+            >
+              <div style={{ fontSize: 11, color: t.indigoGray, letterSpacing: 1.2, fontWeight: 700, marginBottom: 12 }}>
+                DELIVERY TIMELINE
+              </div>
+              <div style={{ display: "flex", height: 36, borderRadius: 6, overflow: "hidden", border: `1px solid ${t.creamSoft}`, marginBottom: 10 }}>
+                {b.delivery.map((s, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      flex: s.seconds,
+                      background: SHAPE_COLOR[s.shape],
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Q{s.q}
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 12, fontSize: 11, color: t.indigoGray }}>
+                <BehavioralLegend c={t.success} label="crisp" />
+                <BehavioralLegend c="#CA8A04" label="hedged" />
+                <BehavioralLegend c={t.copper} label="rambling" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AI accountability strip */}
+      {b.aiAccountability && (
+        <div
+          style={{
+            background: t.creamSoft,
+            borderRadius: 10,
+            padding: "12px 18px",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 24,
+            fontSize: 12,
+            color: t.coal,
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontSize: 10, letterSpacing: 1.2, color: t.indigoGray, fontWeight: 700 }}>AI ACCOUNTABILITY</span>
+          <span>Depth probes <strong>{b.aiAccountability.depthProbes}</strong> · vague accepted <strong>{b.aiAccountability.vagueAccepted}</strong></span>
+          <span>Ownership probes <strong>{b.aiAccountability.ownershipProbes}</strong> · deflected <strong>{b.aiAccountability.deflected}</strong></span>
+          {typeof b.aiAccountability.counterpartyProbes === "number" && (
+            <span>
+              Counterparty probes <strong>{b.aiAccountability.counterpartyProbes}</strong> · skipped <strong>{b.aiAccountability.counterpartySkipped ?? 0}</strong>
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* One-habit-to-fix prebias CTA — copy softens when overall band
+          is low (<40) so the report doesn't read as a scolding. */}
+      {b.oneHabit && (
+        <div
+          style={{
+            background: `linear-gradient(180deg, ${t.indigoDeep} 0%, ${t.indigo} 100%)`,
+            color: "white",
+            borderRadius: 14,
+            padding: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 20,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 10, letterSpacing: 1.5, color: ctaEyebrowAccent, fontWeight: 700 }}>
+              {lowBand ? "ONE THING TO TRY NEXT" : "ONE HABIT TO FIX"}
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 600, marginTop: 4 }}>{b.oneHabit.headline}</div>
+            <div style={{ fontSize: 13, opacity: 0.82, marginTop: 4, lineHeight: 1.55 }}>{b.oneHabit.rationale}</div>
+            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 8 }}>
+              Next session auto-prebias → <strong style={{ color: ctaEyebrowAccent }}>{b.oneHabit.prebiasDimension}</strong>
+            </div>
+          </div>
+          <button
+            style={{
+              background: "white",
+              color: t.indigoDeep,
+              border: 0,
+              borderRadius: 10,
+              padding: "12px 18px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              fontFamily: f.sans,
+            }}
+          >
+            {ctaCopy}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function BehavioralRadar({
+  radar,
+}: {
+  radar: NonNullable<BehavioralMeta["competencyRadar"]>;
+}) {
+  const size = 360;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 118;
+  /* Labels sit on a larger ring than the polygon so scores at 95+
+     don't collide with the axis text. Pulled out further at the
+     diagonals where the bounding box is most cramped. */
+  const labelR = 142;
+  const n = radar.axes.length;
+  const angle = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
+  const point = (i: number, v: number) => {
+    const rr = (Math.max(0, Math.min(100, v)) / 100) * r;
+    return [cx + rr * Math.cos(angle(i)), cy + rr * Math.sin(angle(i))];
+  };
+  const labelPoint = (i: number) => [
+    cx + labelR * Math.cos(angle(i)),
+    cy + labelR * Math.sin(angle(i)),
+  ];
+  const pathFor = (key: "you" | "prior") => {
+    const pts = radar.axes
+      .map((a, i) => {
+        const v = key === "you" ? a.you : a.prior;
+        if (typeof v !== "number") return null;
+        const [x, y] = point(i, v);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .filter((p): p is string => p !== null);
+    if (pts.length < 3) return "";
+    return `M ${pts.join(" L ")} Z`;
+  };
+  const hasPrior = radar.axes.some((a) => typeof a.prior === "number");
+
+  return (
+    <div
+      className="ir-radar-grid"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(280px, 360px) 1fr",
+        gap: 24,
+        background: "white",
+        border: `1px solid ${t.creamSoft}`,
+        borderRadius: 12,
+        padding: 20,
+        alignItems: "center",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        {/* Screen-reader mirror of the radar data — the SVG is a pure
+            visual; this list is what AT users actually read. */}
+        <ul
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: "hidden",
+            clip: "rect(0,0,0,0)",
+            whiteSpace: "nowrap",
+            border: 0,
+          }}
+        >
+          <li>Track: {radar.track}</li>
+          {radar.axes.map((a) => (
+            <li key={a.name}>
+              {a.name}: {a.you} out of 100
+              {typeof a.prior === "number" ? ` (prior session ${a.prior})` : ""}
+            </li>
+          ))}
+        </ul>
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          role="img"
+          aria-label={`Competency radar — ${radar.track}`}
+        >
+          {/* Concentric web rings */}
+          {[0.25, 0.5, 0.75, 1].map((ratio) => (
+            <polygon
+              key={ratio}
+              points={radar.axes
+                .map((_, i) => {
+                  const [x, y] = point(i, ratio * 100);
+                  return `${x.toFixed(1)},${y.toFixed(1)}`;
+                })
+                .join(" ")}
+              fill="none"
+              stroke={t.creamSoft}
+              strokeWidth={1}
+            />
+          ))}
+          {/* Spokes */}
+          {radar.axes.map((_, i) => {
+            const [x, y] = point(i, 100);
+            return (
+              <line
+                key={i}
+                x1={cx}
+                y1={cy}
+                x2={x}
+                y2={y}
+                stroke={t.creamSoft}
+                strokeWidth={1}
+              />
+            );
+          })}
+          {/* Prior session ghost (dashed) */}
+          {hasPrior && (
+            <path
+              className="ir-radar-ghost"
+              d={pathFor("prior")}
+              fill="rgba(71,85,105,0.10)"
+              stroke="rgba(71,85,105,0.55)"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+            />
+          )}
+          {/* Current session — solid indigo, draws axis-by-axis on mount */}
+          <path
+            className="ir-radar-you"
+            d={pathFor("you")}
+            fill={`${t.indigo}22`}
+            stroke={t.indigo}
+            strokeWidth={2}
+          />
+          {/* Vertices on current session */}
+          {radar.axes.map((a, i) => {
+            const [x, y] = point(i, a.you);
+            return <circle key={i} cx={x} cy={y} r={3} fill={t.indigo} />;
+          })}
+          {/* Axis labels — anchored on the outer label ring so high
+              vertex scores never clip the text. */}
+          {radar.axes.map((a, i) => {
+            const [x, y] = labelPoint(i);
+            const cos = Math.cos(angle(i));
+            const sin = Math.sin(angle(i));
+            const anchor = cos > 0.25 ? "start" : cos < -0.25 ? "end" : "middle";
+            const baseline = sin > 0.4 ? "hanging" : sin < -0.4 ? "auto" : "middle";
+            return (
+              <text
+                key={i}
+                x={x}
+                y={y}
+                textAnchor={anchor}
+                dominantBaseline={baseline}
+                fontSize={11}
+                fontWeight={600}
+                fill={t.indigoGray}
+              >
+                {a.name}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+      <div>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            background: t.indigo100,
+            color: t.indigo,
+            padding: "4px 10px",
+            borderRadius: 999,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: 0.4,
+            marginBottom: 10,
+          }}
+        >
+          TRACK · {radar.track}
+        </div>
+        <h3
+          style={{
+            fontFamily: f.sans,
+            fontSize: 16,
+            fontWeight: 600,
+            color: t.coal,
+            margin: "0 0 8px",
+          }}
+        >
+          Competency profile vs last session
+        </h3>
+        {radar.anchor && (
+          <div
+            style={{
+              fontSize: 13,
+              color: t.coal,
+              lineHeight: 1.55,
+              marginBottom: 6,
+            }}
+          >
+            <strong style={{ color: t.success }}>Anchor</strong> · {radar.anchor}
+          </div>
+        )}
+        {radar.gap && (
+          <div style={{ fontSize: 13, color: t.coal, lineHeight: 1.55 }}>
+            <strong style={{ color: t.copper }}>Gap</strong> · {radar.gap}
+          </div>
+        )}
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            marginTop: 14,
+            fontSize: 11,
+            color: t.indigoGray,
+          }}
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span
+              style={{
+                width: 12,
+                height: 4,
+                background: t.indigo,
+                borderRadius: 2,
+              }}
+            />
+            This session
+          </span>
+          {hasPrior && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span
+                style={{
+                  width: 12,
+                  height: 4,
+                  background:
+                    "repeating-linear-gradient(90deg, rgba(71,85,105,0.55) 0 3px, transparent 3px 6px)",
+                }}
+              />
+              Last session
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BehavioralSignal({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div
+      style={{
+        background: ok ? t.success100 : t.copper100,
+        border: `1px solid ${ok ? "rgba(21,128,61,0.18)" : "rgba(180,83,9,0.22)"}`,
+        borderRadius: 8,
+        padding: "8px 6px",
+        textAlign: "center",
+      }}
+    >
+      <div style={{ color: ok ? t.success : t.copper, fontSize: 18, fontWeight: 700, lineHeight: 1 }}>{ok ? "✓" : "✗"}</div>
+      <div style={{ fontSize: 11, color: t.coal, marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+function BehavioralStat({ n, label, bad, good }: { n: number; label: string; bad?: boolean; good?: boolean }) {
+  const color = good ? t.success : bad ? t.copper : t.coal;
+  return (
+    <div style={{ background: t.cream, border: `1px solid ${t.creamSoft}`, borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color }}>{n}</div>
+      <div style={{ fontSize: 11, color: t.indigoGray, marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+function BehavioralLegend({ c, label }: { c: string; label: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span style={{ width: 8, height: 8, borderRadius: 2, background: c }} />
+      {label}
+    </span>
+  );
+}
+
 /* ─── Main component ──────────────────────────────────────────────── */
 
 export interface InterviewResultProps {
@@ -2259,6 +3137,42 @@ export interface InterviewResultProps {
 }
 
 export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResultProps) {
+  // Research-driven full layout for behavioural focus — opted into via
+  // `data.behavioral.fullLayout`. Replaces the standard report body with
+  // the 4-region BehavioralReport. Leaves the other 10 focus types
+  // (technical, system-design, negotiation, etc.) untouched.
+  if (data.behavioral?.fullLayout) {
+    return (
+      <>
+        <style>{INTERVIEW_RESULT_STYLES}</style>
+        <div
+          style={{
+            background: t.cream,
+            minHeight: "100vh",
+            fontFamily: f.sans,
+            color: t.coal,
+            paddingBottom: 48,
+          }}
+        >
+          <a href="#ir-main" className="ir-skip-link">
+            Skip to report
+          </a>
+          <Header />
+          <main
+            id="ir-main"
+            aria-label="Behavioural interview report"
+            style={{
+              maxWidth: 1240,
+              margin: "0 auto",
+              padding: "0 32px",
+            }}
+          >
+            <BehavioralReport data={data} />
+          </main>
+        </div>
+      </>
+    );
+  }
   return (
     <>
       <style>{INTERVIEW_RESULT_STYLES}</style>
@@ -2290,7 +3204,7 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
             gap: 16,
           }}
         >
-          <JumpNav />
+          <JumpNav hasBehavioral={!!data.behavioral} />
           <HeroSection data={data} />
           {data.priorSessionCount !== undefined && data.priorSessionCount >= 3 && data.crossSessionInsights && (
             <TrendStrip
@@ -2298,8 +3212,15 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
               insights={data.crossSessionInsights}
             />
           )}
-          <CoreMetricsSection metrics={data.metrics} />
+          <CoreMetricsSection
+            metrics={data.metrics}
+            eyebrowLabel={data.behavioral ? "How you told the story" : "How you delivered"}
+            heading={data.behavioral ? "Behavioral signals" : "Core Delivery Metrics"}
+          />
           <SkillsSection skills={data.skills} weakest={data.weakestSkill} />
+          {data.behavioral && (
+            <BehavioralFocusSection b={data.behavioral} score={data.overallScore} />
+          )}
           {data.thoughtBubble && data.thoughtBubble.length > 0 && (
             <ThoughtBubbleSection segments={data.thoughtBubble} />
           )}

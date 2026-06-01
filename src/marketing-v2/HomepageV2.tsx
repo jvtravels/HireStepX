@@ -2816,7 +2816,12 @@ export function PricingV2() {
       price: "₹0",
       unit: "forever",
       sub: "Try before you pay a rupee",
-      features: ["3 mock sessions", "STAR scoring", "Email report", "No card required"],
+      features: [
+        "3 mock sessions",
+        "Behavioural rounds + basic STAR score",
+        "Email report",
+        "No card required",
+      ],
       cta: "Start free",
       href: "/signup?plan=free",
       featured: false,
@@ -2845,7 +2850,7 @@ export function PricingV2() {
       sub: "Sprint before placement week",
       features: [
         "10 sessions · 7 days",
-        "Voice in & out",
+        "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
       ],
@@ -2861,9 +2866,10 @@ export function PricingV2() {
       sub: "Most loved during placement season",
       features: [
         "40 sessions · 30 days",
-        "Voice in & out",
-        "Company-specific rounds",
-        "Skill-decay tracking",
+        "Everything in Weekly",
+        "Interview calendar + countdown",
+        "Performance analytics & trends",
+        "Export PDF, CSV, JSON",
         "Priority coach feedback",
       ],
       cta: "Go monthly",
@@ -2905,7 +2911,14 @@ export function PricingV2() {
                 color: tier.featured ? t.cream : t.coal,
                 border: `1px solid ${tier.featured ? t.coal : t.line}`,
                 borderRadius: 20,
-                boxShadow: tier.featured ? "none" : shadows.card,
+                /* Lift the "Most loved" card: tiny translateY + stronger
+                   shadow so it visually leads without breaking the grid.
+                   Subtle on purpose — a real scale bump fights the
+                   editorial restraint. */
+                boxShadow: tier.featured
+                  ? "0 24px 60px -28px rgba(20, 18, 28, 0.55)"
+                  : shadows.card,
+                transform: tier.featured ? "translateY(-8px)" : "none",
                 display: "flex",
                 flexDirection: "column",
                 gap: 18,
@@ -3088,9 +3101,9 @@ export function PricingV2() {
           }}
         >
           {[
-            ["✓", "Nothing auto-renews"],
-            ["✓", "Refund unused sessions"],
-            ["✓", "Receipt on every order"],
+            ["✓", "Cancel anytime · no lock-in"],
+            ["✓", "7-day refund if unused"],
+            ["✓", "GST-ready receipt on every order"],
             ["✓", "30% off for .ac.in / .edu.in"],
           ].map(([k, v]) => (
             <span key={v} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>

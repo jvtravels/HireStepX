@@ -496,4 +496,39 @@ export const INTERVIEW_RESULT_STYLES = `
 
   /* ─── Anchor scroll spacing for inline jumps from wins/fixes ─── */
   .ir-q-anchor { scroll-margin-top: 80px; }
+
+  /* ─── Behavioral competency radar draw-in ─────────────────────────
+     Polygon stroke draws around its perimeter (≈420ms), then the fill
+     fades in. The dashed prior-session ghost fades in last so the eye
+     lands on the current session first. Respects prefers-reduced-motion. */
+  @keyframes ir-radar-draw {
+    from { stroke-dashoffset: 1000; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes ir-radar-fill {
+    from { fill-opacity: 0; }
+    to   { fill-opacity: 1; }
+  }
+  @keyframes ir-radar-ghost {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .ir-radar-you {
+    stroke-dasharray: 1000;
+    animation: ir-radar-draw 420ms cubic-bezier(0.4, 0, 0.2, 1) both,
+               ir-radar-fill 320ms ease-out 380ms both;
+  }
+  .ir-radar-ghost {
+    animation: ir-radar-ghost 320ms ease-out 700ms both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ir-radar-you,
+    .ir-radar-ghost { animation: none; }
+  }
+  /* Radar 2-col → single-col stack on narrow viewports (mobile/360dp). */
+  @media (max-width: 720px) {
+    .ir-radar-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
 `;

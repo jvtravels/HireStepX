@@ -19,7 +19,7 @@ import { detectRegionFromCity, hasRegionalSignal } from "../src/_regional-regist
 import { getPanelPersona, panelPersonaPromptFragment } from "../src/_indian-panel-personas";
 import { cueFromEngineHints, pickBehavioralProbe, probePromptFragment, shouldSuppressCue } from "./_behavioral-followup-bank";
 import { detectEvidenceQuality } from "./_evidence-signals";
-import { detectRehearsedOpener, hasCounterpartyPov, isConflictQuestion, isLowConvictionDelivery } from "./analyzers/_behavioral-probing";
+import { classifyFailureResponse, detectRehearsedOpener, hasConcreteFailureMiss, hasCounterpartyPov, isConflictQuestion, isFailureQuestion, isLowConvictionDelivery } from "./analyzers/_behavioral-probing";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -1296,6 +1296,22 @@ ${safeStarGap === "action"
         ? `\nCOUNTERPARTY-POV PROBE. The question was conflict / disagreement-shaped and the candidate's answer walked through what THEY did without naming what the OTHER side wanted, believed, or feared. Your follow-up MUST press exactly there in ONE sentence: "What did *they* want, in their own words?" / "What was the other side's actual position — not your read of it, their case?" / "If I asked the PM / design lead / manager to tell me the same story, what would they say their concern was?" Do NOT pile on; one counterparty-POV probe.`
         : "";
 
+    /* Failure-specificity probe. Owning a failure without naming the
+     * concrete miss is hindsight theatre — interviewers push exactly
+     * there at senior level. Fires when the question was failure-
+     * shaped AND the answer owns the failure AND the answer doesn't
+     * carry a concrete miss-token. Independent of conflictGap /
+     * answerShape; a failure answer can be all four shapes layered. */
+    const failureSpecificityDirective =
+      type === "behavioral" &&
+      answer &&
+      answer.length >= 60 &&
+      isFailureQuestion(question || "") &&
+      classifyFailureResponse(answer) === "owns" &&
+      !hasConcreteFailureMiss(answer)
+        ? `\nFAILURE-SPECIFICITY PROBE. The question was failure-shaped, the candidate owned the failure ('my mistake', 'I underestimated it') BUT never named the concrete thing they missed — a system, an assumption, a stakeholder, a risk, a trade-off. Your follow-up MUST press exactly there in ONE sentence: "What specifically did you underestimate — the technical complexity, the stakeholder buy-in, the timeline, or something else?" / "Name the one thing you'd have spec'd differently if you ran this again." / "When you say 'I should have done better' — better at what, concretely?" Do NOT pile on; one specificity probe.`
+        : "";
+
     const tenureProbe = (type === "behavioral" && TENURE_SHORT_RE.test(answer))
       ? `\nTENURE-DEFENCE PROBE — the candidate mentioned a short tenure (<24 months) followed by a departure. Indian interviewers aggressively probe these. If a follow-up is warranted, your ONE follow-up MAY re-ask the "why did you leave" angle from a DIFFERENT cut than the original question already covered: the manager-fit angle ("how was the working relationship with your manager?"), the growth angle ("what was missing for you to stay another year?"), or the timing angle ("was there a specific incident, or was it building up?"). Do NOT escalate or shame. Do NOT call the tenure "short" or "concerning" — neutral curiosity only. Treat instability framing as a non-penalty narrative-coherence check, not a red flag.`
       : "";
@@ -1349,7 +1365,7 @@ If the candidate's most recent answer ENDS WITH or PRIMARILY CONTAINS a question
 
 ${tierPromptSuffix(classifyCompanyTier(company))}
 
-${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${regionalDirective}${starGapDirective}${answerShapeDirective}${conflictGapDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
+${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${regionalDirective}${starGapDirective}${answerShapeDirective}${conflictGapDirective}${failureSpecificityDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
 
 Question asked: "${sanitizeForLLM(question, 500)}"
 Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}

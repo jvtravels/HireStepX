@@ -350,7 +350,7 @@ export function PricingPageV2() {
       sub: "Try before you pay a rupee",
       features: [
         "3 mock sessions",
-        "STAR scoring on every answer",
+        "Behavioural rounds + basic STAR score",
         "Email report",
         "No credit card required",
       ],
@@ -382,7 +382,7 @@ export function PricingPageV2() {
       sub: "Sprint before placement week",
       features: [
         "10 sessions · 7 days",
-        "Voice in & out",
+        "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
       ],
@@ -398,9 +398,10 @@ export function PricingPageV2() {
       sub: "Most loved during placement season",
       features: [
         "40 sessions · 30 days",
-        "Voice in & out",
-        "Company-specific rounds",
-        "Skill-decay tracking",
+        "Everything in Weekly",
+        "Interview calendar + countdown",
+        "Performance analytics & trends",
+        "Export PDF, CSV, JSON",
         "Priority coach feedback",
       ],
       cta: "Go monthly",
@@ -454,7 +455,7 @@ export function PricingPageV2() {
         eyebrow="Pricing"
         title="Costs less than"
         accent="one chai a day."
-        lead="Free to start. Buy one session, a week, or a month, whichever matches your prep. UPI, cards, and netbanking accepted. Nothing auto-renews."
+        lead="Free to start. Buy one session, a week, or a month, whichever matches your prep. UPI, cards, and netbanking accepted. Cancel anytime — 7-day refund if unused."
       />
 
       {/* Tier cards */}
