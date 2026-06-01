@@ -1055,21 +1055,11 @@ export function HeroV2() {
       className="mv2-hero-section"
       style={{
         ...sectionBase,
-        paddingTop: 48,
-        paddingBottom: 48,
+        paddingTop: 56,
+        paddingBottom: 88,
         background: t.cream,
         overflow: "hidden",
-        /* Full-viewport hero on desktop. Nav is 68px sticky; subtract
-           so the hero fills exactly the remaining viewport. We use
-           column flex (not center flex) so the masthead anchors to
-           the top of the viewport and the asymmetric grid expands to
-           absorb whatever extra height the viewport offers — keeps
-           composition seated instead of floating mid-screen. Mobile
-           media query relaxes this — at small widths the stacked
-           layout is taller than 100vh and forcing it would clip. */
-        minHeight: "calc(90vh - 68px)",
-        display: "flex",
-        flexDirection: "column",
+        position: "relative",
       }}
     >
       {/* Editorial backdrop — copper wash anchored to the mock side */}
@@ -1089,9 +1079,6 @@ export function HeroV2() {
           ...container,
           position: "relative",
           width: "100%",
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
         }}
       >
         <div className="mv2-cascade mv2-cascade-1">
@@ -1103,18 +1090,17 @@ export function HeroV2() {
           />
         </div>
 
-        {/* Asymmetric editorial split — masthead anchored top, headline
-            sits immediately under it. Any extra viewport falls below the
-            mock instead of as dead air between masthead and H1. */}
+        {/* Asymmetric editorial split — text + mock in two columns, the
+            hero is content-sized (no forced viewport height) so there's
+            no dead-air band below. */}
         <div
           className="mv2-hero-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1.2fr",
             gap: 56,
-            alignItems: "start",
-            flex: 1,
-            marginTop: 28,
+            alignItems: "center",
+            marginTop: 32,
           }}
         >
           {/* Left — text column */}
