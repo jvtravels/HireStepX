@@ -3,14 +3,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth, getStoredDeviceToken } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, getSupabase, type PaymentRecord } from "./supabase";
-import type { PersistedState } from "./dashboardTypes";
 import { useDashboardCore, useDashboardUI } from "./DashboardContext";
 import { DataLoadingSkeleton } from "./dashboardComponents";
 import {
   icons,
   focusOutBase,
   AccountSection,
-  InterviewSection,
   PlanSection,
 } from "./settingsSections";
 
@@ -38,7 +36,6 @@ const font = {
 
 const ALL_SECTIONS = [
   { id: "account", label: "Account", icon: icons.account },
-  { id: "interview", label: "Interview", icon: icons.interview },
   { id: "plan", label: "Plan & Data", icon: icons.plan },
   { id: "referral", label: "Referral", icon: icons.referral },
 ] as const;
@@ -54,7 +51,7 @@ export default function SettingsPage() {
 
   // Profile
   const [editName, setEditName] = useState(persisted.userName);
-  const [editRole, setEditRole] = useState(persisted.targetRole);
+  const editRole = persisted.targetRole;
   const [editCompany, setEditCompany] = useState(authUser?.targetCompany || "");
   const [editIndustry, setEditIndustry] = useState(authUser?.industry || "");
   const [saved, setSaved] = useState(false);
@@ -182,8 +179,6 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const autoSave = (updates: Partial<PersistedState>) => onUpdate(updates);
-
   const handlePasswordReset = async () => {
     if (!authUser?.email) return;
     setResetLoading(true);
@@ -240,9 +235,6 @@ export default function SettingsPage() {
     }
   };
 
-  const difficultyVal = persisted.defaultDifficulty || "standard";
-  const learningVal = authUser?.learningStyle || "direct";
-  const experienceVal = authUser?.experienceLevel || "";
   const tierLabel = (authUser?.subscriptionTier || "free").charAt(0).toUpperCase() + (authUser?.subscriptionTier || "free").slice(1);
 
   return (
@@ -300,16 +292,6 @@ export default function SettingsPage() {
           handleSignOutOtherDevices={handleSignOutOtherDevices}
           recentDevices={recentDevices}
           focusOut={focusOut}
-        />
-      )}
-
-      {/* ═══════════════════ INTERVIEW ═══════════════════ */}
-      {activeSection === "interview" && (
-        <InterviewSection
-          editRole={editRole} setEditRole={setEditRole}
-          focusOut={focusOut}
-          difficultyVal={difficultyVal} learningVal={learningVal} experienceVal={experienceVal}
-          autoSave={autoSave} authUpdateUser={authUpdateUser} showToast={showToast}
         />
       )}
 

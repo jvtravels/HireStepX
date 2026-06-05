@@ -471,13 +471,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           })}
         </div>
 
-        <div style={{ textAlign: "center", marginTop: 16 }}>
-          <a href="/pricing#compare" target="_blank" rel="noopener noreferrer" style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, textDecoration: "none", borderBottom: `1px solid ${c.borderHover}`, paddingBottom: 1 }}>
-            Compare all plans <span aria-hidden>→</span>
-          </a>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 16, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ display: "flex" }}>
               {[c.gilt, c.sage, c.ember].map((col, i) => (
