@@ -1,24 +1,14 @@
 import type React from "react";
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import { c, font, shadow, gradient } from "./tokens";
 import type { PersistedState } from "./dashboardTypes";
-import type { InterviewEvent } from "./dashboardHelpers";
 import type { PaymentRecord } from "./supabase";
-import {
-  notificationsSupported,
-  getNotifPermission,
-  getNotifPreference,
-  requestNotifPermission,
-  setNotifPreference,
-  scheduleEventNotifications,
-} from "./interviewNotifications";
 
 /* ─── Section Icons (shared) ─── */
 export const icons = {
   account: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   interview: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>,
-  notifications: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
   plan: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
   referral: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>,
 };
@@ -500,9 +490,6 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
 export interface InterviewSectionProps {
   editRole: string;
   setEditRole: (v: string) => void;
-  isDirty: boolean;
-  saving: boolean;
-  handleSave: () => void;
   focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
   // Chip values
   difficultyVal: string;
@@ -516,7 +503,7 @@ export interface InterviewSectionProps {
 
 export const InterviewSection = memo(function InterviewSection(props: InterviewSectionProps) {
   const {
-    editRole, setEditRole, isDirty, saving, handleSave, focusOut,
+    editRole, setEditRole, focusOut,
     difficultyVal, learningVal, experienceVal,
     autoSave, authUpdateUser, showToast,
   } = props;
@@ -555,22 +542,6 @@ export const InterviewSection = memo(function InterviewSection(props: InterviewS
           </div>
         </div>
       </div>
-      {isDirty && (
-        <div style={{ display: "flex", gap: 12, marginBottom: 24, alignItems: "center" }}>
-          <button onClick={handleSave} disabled={saving}
-            style={{
-              fontFamily: font.ui, fontSize: 13, fontWeight: 600, padding: "11px 32px", borderRadius: 10,
-              border: "none", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-              color: c.obsidian, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1,
-            }}>
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.gilt }} />Unsaved changes
-          </span>
-        </div>
-      )}
-
       {/* Difficulty + Experience */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="settings-form-grid">
         <div>
@@ -613,90 +584,72 @@ export const InterviewSection = memo(function InterviewSection(props: InterviewS
   );
 });
 
-/* ═══════════════════════════════════════════════════════════════
-   NOTIFICATIONS SECTION
-   ═══════════════════════════════════════════════════════════════ */
-
-export interface NotificationsSectionProps {
-  persisted: PersistedState;
-  autoSave: (updates: Partial<PersistedState>) => void;
-  showToast: (msg: string) => void;
-  calendarEvents: InterviewEvent[];
+/* ─── Usage this month ─── */
+interface UsageRow { count: number; cap: number | null }
+interface UsageResponse {
+  ok: true;
+  tier: string;
+  period_start: string;
+  period_end: string;
+  mock: UsageRow;
+  resume_parses: UsageRow;
+  coach_insights: null;
 }
 
-export const NotificationsSection = memo(function NotificationsSection(props: NotificationsSectionProps) {
-  const { persisted: _persisted, autoSave: _autoSave, showToast, calendarEvents } = props;
-
+function UsageBar({ label, row }: { label: string; row: UsageRow }) {
+  const cap = row.cap;
+  const pct = cap && cap > 0 ? Math.min(100, Math.round((row.count / cap) * 100)) : 0;
+  const display = cap == null ? `${row.count}` : `${row.count} of ${cap}`;
   return (
-    <div style={cardStyle}>
-      <CardAccent />
-
-      <div style={sectionHeader}>
-        <IconBox>{icons.notifications}</IconBox>
-        <h3 style={sectionTitle}>Notifications</h3>
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{label}</span>
+        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.chalk }}>{display}</span>
       </div>
-      <p style={sectionDesc}>Control how and when HireStepX reaches out to you</p>
-
-      <div style={{
-        padding: "14px 18px", borderRadius: 10, marginBottom: 24,
-        background: "rgba(212,179,127,0.03)", border: `1px solid rgba(212,179,127,0.1)`,
-        display: "flex", alignItems: "center", gap: 12,
-      }}>
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, lineHeight: 1.5 }}>Email delivery coming soon. Your preferences will be saved for when notifications launch.</span>
+      <div style={{ height: 6, borderRadius: 999, background: "rgba(245,242,237,0.06)", overflow: "hidden" }}>
+        <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.sage, transition: "width 0.4s ease" }} />
       </div>
+    </div>
+  );
+}
 
-      {/* Push notifications */}
-      {notificationsSupported() && (() => {
-        const pushOn = getNotifPreference();
-        const perm = getNotifPermission();
-        return (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "18px 0", borderBottom: `1px solid ${c.border}`,
-          }}>
-            <div>
-              <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory, display: "block", marginBottom: 3 }}>Interview reminders</span>
-              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
-                {perm === "denied" ? "Browser notifications blocked — enable in browser settings" : "Push notification 30 min before scheduled interviews"}
-              </span>
-            </div>
-            <Toggle on={pushOn && perm === "granted"} onToggle={async () => {
-              if (pushOn) {
-                setNotifPreference(false);
-                showToast("Interview reminders off");
-              } else {
-                const granted = await requestNotifPermission();
-                if (granted) {
-                  setNotifPreference(true);
-                  scheduleEventNotifications(calendarEvents);
-                  showToast("Interview reminders on — you'll be notified 30 min before");
-                } else {
-                  showToast("Notification permission denied by browser");
-                }
-              }
-            }} />
-          </div>
-        );
-      })()}
+const UsageThisMonth = memo(function UsageThisMonth({
+  getAuthHeaders,
+}: { getAuthHeaders: () => Promise<Record<string, string>> }) {
+  const [data, setData] = useState<UsageResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-      {[
-        { label: "Email notifications", desc: "Session reminders and progress updates" },
-        { label: "Streak reminders", desc: "Get nudged before you lose your streak" },
-        { label: "Weekly digest", desc: "Summary of your weekly progress every Monday" },
-      ].map((item, i, arr) => (
-        <div key={i} style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "18px 0", opacity: 0.45, cursor: "not-allowed",
-          borderBottom: i < arr.length - 1 ? `1px solid ${c.border}` : "none",
-        }}>
-          <div>
-            <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory, display: "block", marginBottom: 3 }}>{item.label} <span style={{ fontSize: 11, color: c.gilt, fontWeight: 400 }}>(coming soon)</span></span>
-            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{item.desc}</span>
-          </div>
-          <Toggle on={false} onToggle={() => { showToast("Email notifications coming soon!"); }} />
-        </div>
-      ))}
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch("/api/usage-this-month", { headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as UsageResponse;
+        if (!cancelled) setData(json);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load usage");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [getAuthHeaders]);
+
+  if (error) return null; // Fail quiet — usage is decorative, not gating.
+  if (!data) {
+    return (
+      <div style={{ padding: "20px 24px", borderRadius: 14, marginBottom: 24, background: gradient.surfaceCard, border: `1px solid ${c.border}` }}>
+        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Loading usage…</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: "20px 24px", borderRadius: 14, marginBottom: 24, background: gradient.surfaceCard, border: `1px solid ${c.border}` }}>
+      <h4 style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 14px" }}>
+        Usage this month
+      </h4>
+      <UsageBar label="Mock interviews completed" row={data.mock} />
+      <UsageBar label="Resume parses" row={data.resume_parses} />
     </div>
   );
 });
@@ -768,6 +721,8 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <h3 style={sectionTitle}>Plan & Billing</h3>
       </div>
       <p style={sectionDesc}>Manage your subscription, export data, or delete your account</p>
+
+      <UsageThisMonth getAuthHeaders={getAuthHeaders} />
 
       {/* Subscription card */}
       <div style={{

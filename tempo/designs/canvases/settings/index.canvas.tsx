@@ -29,7 +29,7 @@ export const InterviewTab: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "2. Interview",
-  layout: { x: 1490, y: 0, width: 1440, height: 1024 },
+  layout: { x: 0, y: 1074, width: 1440, height: 1024 },
 };
 
 export const NotificationsTab: TempoStoryboard = {
@@ -38,8 +38,8 @@ export const NotificationsTab: TempoStoryboard = {
       <Settings tab="notifications" />
     </CanvasProviders>
   ),
-  name: "3. Notifications",
-  layout: { x: 0, y: 1074, width: 1440, height: 1024 },
+  name: "3. Notifications (future)",
+  layout: { x: 0, y: 2148, width: 1440, height: 1024 },
 };
 
 export const PlanTab: TempoStoryboard = {
@@ -49,7 +49,7 @@ export const PlanTab: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "4. Plan and data",
-  layout: { x: 0, y: 2148, width: 1440, height: 1024 },
+  layout: { x: 0, y: 3222, width: 1440, height: 1024 },
 };
 
 export const ReferralTab: TempoStoryboard = {
@@ -59,5 +59,5 @@ export const ReferralTab: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "5. Referral",
-  layout: { x: 0, y: 3222, width: 1440, height: 1024 },
+  layout: { x: 0, y: 4296, width: 1440, height: 1024 },
 };

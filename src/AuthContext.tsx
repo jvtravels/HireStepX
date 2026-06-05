@@ -123,7 +123,7 @@ function generateDeviceToken(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-function getStoredDeviceToken(): string | null {
+export function getStoredDeviceToken(): string | null {
   try { return localStorage.getItem(DEVICE_TOKEN_KEY); } catch { return null; }
 }
 

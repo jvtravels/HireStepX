@@ -1,26 +1,23 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { c, font } from "./tokens";
-import { useAuth } from "./AuthContext";
+import { useAuth, getStoredDeviceToken } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, getSupabase, type PaymentRecord } from "./supabase";
 import type { PersistedState } from "./dashboardTypes";
-import { useDashboardCore, useDashboardUI, useDashboardSessions } from "./DashboardContext";
+import { useDashboardCore, useDashboardUI } from "./DashboardContext";
 import { DataLoadingSkeleton } from "./dashboardComponents";
 import {
   icons,
   focusOutBase,
   AccountSection,
   InterviewSection,
-  NotificationsSection,
   PlanSection,
 } from "./settingsSections";
 
 const ALL_SECTIONS = [
   { id: "account", label: "Account", icon: icons.account },
   { id: "interview", label: "Interview", icon: icons.interview },
-  // Hidden until fully implemented:
-  // { id: "notifications", label: "Notifications", icon: icons.notifications },
   { id: "plan", label: "Plan & Data", icon: icons.plan },
   { id: "referral", label: "Referral", icon: icons.referral },
 ] as const;
@@ -32,7 +29,6 @@ export default function SettingsPage() {
   const { user: authUser, logout: authLogout, updateUser: authUpdateUser, resetPassword } = useAuth();
   const { persisted, updatePersisted: onUpdate, handleExportCSV: onExportCSV } = useDashboardCore();
   const { dataLoading, showToast, setShowUpgradeModal } = useDashboardUI();
-  const { calendarEvents } = useDashboardSessions();
   const onLogout = () => { authLogout(); };
 
   // Profile
@@ -181,16 +177,36 @@ export default function SettingsPage() {
     setSignOutOthersLoading(true);
     setSignOutOthersError(null);
     try {
-      const client = await getSupabase();
-      // Supabase v2: scope "others" invalidates every session except
-      // the one tied to the current refresh token, so this device
-      // stays signed in while every other browser/phone is kicked out.
-      const { error } = await client.auth.signOut({ scope: "others" });
-      if (error) {
-        setSignOutOthersError(error.message);
+      // Route through the server so user_metadata.active_device_token
+      // is rotated in the same transaction as the session revocation.
+      // The client-only path (supabase.auth.signOut({ scope: "others" }))
+      // revoked tokens but left this device's metadata snapshot stale,
+      // which let a refreshed Settings page show kicked-off devices as
+      // still active until the next sign-in rotated metadata.
+      const headers = await authHeaders();
+      const deviceToken = getStoredDeviceToken();
+      if (!deviceToken) {
+        setSignOutOthersError("Missing device token");
         showToast("Couldn't sign out other devices. Try again.");
         return;
       }
+      const res = await fetch("/api/signout-other-devices", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deviceToken,
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : "",
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setSignOutOthersError(data.error || `HTTP ${res.status}`);
+        showToast("Couldn't sign out other devices. Try again.");
+        return;
+      }
+      // Reflect the trimmed device list locally — the server pinned
+      // recent_devices to just this device.
+      setRecentDevices((prev) => prev.filter((d) => d.isCurrent));
       setSignOutOthersDone(true);
       showToast("All other devices signed out");
       setTimeout(() => setSignOutOthersDone(false), 5000);
@@ -270,18 +286,9 @@ export default function SettingsPage() {
       {activeSection === "interview" && (
         <InterviewSection
           editRole={editRole} setEditRole={setEditRole}
-          isDirty={isDirty} saving={saving}
-          handleSave={handleSave} focusOut={focusOut}
+          focusOut={focusOut}
           difficultyVal={difficultyVal} learningVal={learningVal} experienceVal={experienceVal}
           autoSave={autoSave} authUpdateUser={authUpdateUser} showToast={showToast}
-        />
-      )}
-
-      {/* ═══════════════════ NOTIFICATIONS ═══════════════════ */}
-      {activeSection === "notifications" && (
-        <NotificationsSection
-          persisted={persisted} autoSave={autoSave}
-          showToast={showToast} calendarEvents={calendarEvents}
         />
       )}
 
