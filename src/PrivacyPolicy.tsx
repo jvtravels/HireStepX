@@ -1,5 +1,5 @@
 "use client";
-import { c, font } from "./tokens";
+import { t, f } from "./sessionReport/tokens";
 import Link from "next/link";
 
 const sections = [
@@ -107,12 +107,12 @@ These rights apply to all users globally, not just Indian residents.`,
 
 export default function PrivacyPolicy() {
   return (
-    <div style={{ minHeight: "100vh", background: c.obsidian, padding: "60px 24px 80px" }}>
+    <div style={{ minHeight: "100vh", background: t.cream, padding: "60px 24px 80px" }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <Link
           href="/"
           style={{
-            fontFamily: font.ui, fontSize: 12, color: c.gilt, textDecoration: "none",
+            fontFamily: f.sans, fontSize: 12, color: t.copper, textDecoration: "none",
             display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 32,
           }}
         >
@@ -120,32 +120,32 @@ export default function PrivacyPolicy() {
           Back to home
         </Link>
 
-        <h1 style={{ fontFamily: font.display, fontSize: 36, color: c.ivory, marginBottom: 8, letterSpacing: "-0.02em" }}>
+        <h1 style={{ fontFamily: f.serif, fontSize: 36, color: t.coal, marginBottom: 8, letterSpacing: "-0.02em" }}>
           Privacy Policy
         </h1>
-        <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginBottom: 48 }}>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginBottom: 48 }}>
           Last updated: April 2026
         </p>
 
-        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, lineHeight: 1.7, marginBottom: 36 }}>
+        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.7, marginBottom: 36 }}>
           HireStepX ("we", "our", "the platform") is an AI-powered mock interview practice tool operated by Silva Vitalis LLC. This policy explains what data we collect, how we use it, and your rights.
         </p>
 
         {sections.map((section, i) => (
           <div key={i} style={{ marginBottom: 32 }}>
-            <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 10 }}>
+            <h2 style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, marginBottom: 10 }}>
               {section.title}
             </h2>
-            <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, lineHeight: 1.8, margin: 0, whiteSpace: "pre-line" }}>
+            <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.8, margin: 0, whiteSpace: "pre-line" }}>
               {section.body}
             </p>
           </div>
         ))}
 
-        <div style={{ marginTop: 48, paddingTop: 24, borderTop: `1px solid ${c.border}`, display: "flex", gap: 20 }}>
-          <Link href="/privacy" style={{ fontFamily: font.ui, fontSize: 12, color: c.ivory, textDecoration: "none" }}>Privacy Policy</Link>
-          <Link href="/terms" style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, textDecoration: "none" }}>Terms of Service</Link>
-          <Link href="/refund" style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, textDecoration: "none" }}>Refund Policy</Link>
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: `1px solid ${t.line}`, display: "flex", gap: 20 }}>
+          <Link href="/privacy" style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, textDecoration: "none" }}>Privacy Policy</Link>
+          <Link href="/terms" style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, textDecoration: "none" }}>Terms of Service</Link>
+          <Link href="/refund" style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, textDecoration: "none" }}>Refund Policy</Link>
         </div>
       </div>
     </div>

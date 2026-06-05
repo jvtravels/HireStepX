@@ -1,4 +1,4 @@
-import { c, font } from "./tokens";
+import { t, f } from "./sessionReport/tokens";
 import Link from "next/link";
 
 const TERMS_SECTIONS = [
@@ -33,26 +33,26 @@ export default function LegalPage({ type }: { type: "terms" | "privacy" }) {
   const title = isTerms ? "Terms of Service" : "Privacy Policy";
 
   return (
-    <div style={{ minHeight: "100vh", background: c.obsidian, padding: "60px 24px 80px" }}>
+    <div style={{ minHeight: "100vh", background: t.cream, padding: "60px 24px 80px" }}>
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        <Link href="/" style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 32 }}>
+        <Link href="/" style={{ fontFamily: f.sans, fontSize: 12, color: t.copper, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 32 }}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
           Back to home
         </Link>
 
-        <h1 style={{ fontFamily: font.display, fontSize: 36, color: c.ivory, marginBottom: 8, letterSpacing: "-0.02em" }}>{title}</h1>
-        <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginBottom: 40 }}>Last updated: April 2026</p>
+        <h1 style={{ fontFamily: f.serif, fontSize: 36, color: t.coal, marginBottom: 8, letterSpacing: "-0.02em" }}>{title}</h1>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginBottom: 40 }}>Last updated: April 2026</p>
 
         {sections.map((section, i) => (
           <div key={i} style={{ marginBottom: 28 }}>
-            <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>{section.title}</h2>
-            <p style={{ fontFamily: font.ui, fontSize: 13.5, color: c.chalk, lineHeight: 1.7, margin: 0 }}>{section.body}</p>
+            <h2 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, marginBottom: 8 }}>{section.title}</h2>
+            <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.7, margin: 0 }}>{section.body}</p>
           </div>
         ))}
 
-        <div style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${c.border}`, display: "flex", gap: 20 }}>
-          <Link href="/terms" style={{ fontFamily: font.ui, fontSize: 12, color: isTerms ? c.ivory : c.stone, textDecoration: "none" }}>Terms of Service</Link>
-          <Link href="/privacy" style={{ fontFamily: font.ui, fontSize: 12, color: !isTerms ? c.ivory : c.stone, textDecoration: "none" }}>Privacy Policy</Link>
+        <div style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${t.line}`, display: "flex", gap: 20 }}>
+          <Link href="/terms" style={{ fontFamily: f.sans, fontSize: 12, color: isTerms ? t.coal : t.inkSoft, textDecoration: "none" }}>Terms of Service</Link>
+          <Link href="/privacy" style={{ fontFamily: f.sans, fontSize: 12, color: !isTerms ? t.coal : t.inkSoft, textDecoration: "none" }}>Privacy Policy</Link>
         </div>
       </div>
     </div>
