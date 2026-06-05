@@ -988,7 +988,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <PlanCard
           tier="Starter"
           price="₹49 per week"
-          desc="3 sessions per week. All question types, skill breakdown, resume-tailored Qs, PDF reports."
+          desc="10 sessions over 7 days. All question types, skill breakdown, resume-tailored Qs, PDF reports."
           current={tier === "starter"}
           cta="Upgrade to Starter"
           onCtaClick={() => setShowUpgradeModal(true)}
@@ -996,7 +996,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <PlanCard
           tier="Pro"
           price="₹149 per month"
-          desc="20 sessions per month, AI coaching, analytics, interview calendar, full exports."
+          desc="40 sessions over 30 days. AI coaching, analytics, interview calendar, full exports."
           current={tier === "pro"}
           highlight
           cta={tier === "starter" ? "Upgrade to Pro" : "Go Pro"}
