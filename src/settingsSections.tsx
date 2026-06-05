@@ -776,28 +776,39 @@ function PlanCard({ tier, price, desc, current, highlight, cta, onCtaClick }: {
   const bg = current ? c.copper100 : highlight ? c.indigo100 : c.graphite;
   return (
     <div style={{
-      padding: "24px 22px", borderRadius: 14, background: bg, border,
-      display: "flex", flexDirection: "column", gap: 10, minWidth: 0,
+      padding: "22px 22px 20px", borderRadius: 14, background: bg, border,
+      display: "flex", flexDirection: "column", minWidth: 0, minHeight: 220,
     }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, letterSpacing: "0.01em" }}>{tier}</span>
+      {/* Header: tier name + Current chip — fixed height for alignment */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minHeight: 28 }}>
+        <span style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, letterSpacing: "0.01em", lineHeight: 1 }}>{tier}</span>
         {current && (
           <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.28)`, borderRadius: 6, padding: "3px 7px" }}>Current</span>
         )}
       </div>
-      <div style={{ fontFamily: font.mono, fontSize: 14, color: c.ivory, fontWeight: 600 }}>{price}</div>
-      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, flex: 1 }}>{desc}</div>
-      {cta && !current && (
-        <button type="button" onClick={onCtaClick}
-          style={{
-            marginTop: 4,
-            fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.cream,
-            background: c.indigo, border: `1px solid ${c.indigo}`,
-            borderRadius: 8, padding: "9px 14px", cursor: "pointer", transition: "all 0.15s",
-          }}>
-          {cta}
-        </button>
-      )}
+      {/* Price — fixed top margin keeps the row aligned across all 3 cards */}
+      <div style={{ fontFamily: font.mono, fontSize: 15, color: c.ivory, fontWeight: 600, marginTop: 10, lineHeight: 1.2 }}>{price}</div>
+      {/* Desc — flex 1 pushes the CTA row to the bottom */}
+      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.55, marginTop: 8, flex: 1 }}>{desc}</div>
+      {/* CTA row — always reserve space so card heights match even when no CTA */}
+      <div style={{ marginTop: 16, minHeight: 36, display: "flex" }}>
+        {cta && !current && (
+          <button type="button" onClick={onCtaClick}
+            style={{
+              fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.cream,
+              background: c.indigo, border: `1px solid ${c.indigo}`,
+              borderRadius: 8, padding: "9px 16px", cursor: "pointer", transition: "all 0.15s",
+              width: "100%",
+            }}>
+            {cta}
+          </button>
+        )}
+        {current && (
+          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, alignSelf: "center" }}>
+            You're on this plan
+          </span>
+        )}
+      </div>
     </div>
   );
 }
