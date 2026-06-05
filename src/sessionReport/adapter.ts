@@ -21,6 +21,9 @@ import { stripProsodyMarkup } from "../_prosody";
 import { pickIdealAnswerSnippet } from "./_idealAnswerSnippets";
 import type {
   AnswerSpan,
+  BehavioralFullReportData,
+  BehavioralStarRow,
+  BehavioralTranscriptRow,
   BiasFinding,
   CrossSessionInsight,
   DeliveryMetric,
@@ -32,6 +35,13 @@ import type {
   ThoughtBubbleSegment,
   Verdict,
 } from "./types";
+import {
+  coachOneHabit,
+  coachConflict,
+  coachFailureQuote,
+  type BehavioralFlag,
+} from "../../tempo/designs/canvases/interview-result-focus/_behavioral-coach";
+import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
 
 /* ─── Top-level adapter ─────────────────────────────────────────────── */
 
@@ -696,4 +706,412 @@ function formatBand(band: "strongHire" | "hire" | "leanHire"): string {
   if (band === "strongHire") return "Strong Hire";
   if (band === "hire") return "Hire";
   return "Lean Hire";
+}
+
+/* ─── BehavioralFullReportData adapter ─────────────────────────────────
+   Builds the prop bag for the diagnostic-first behavioral report.
+
+   The input is the analyzer's `meta.behavioral` payload (shape defined
+   in `server-handlers/analyzers/_types.ts`) plus a thin session context
+   for hero / persona / track / cohort context. Edge-state detection
+   lives here so the component's JSX stays pure render:
+     - no failure question asked → `failure` is null
+     - no conflict question asked → `conflict` is null
+     - < 3 substantive answers → `starBreakdown` is empty
+     - first-ever session → `scoreDelta` is null, `radar.prev` is null
+
+   The function returns nullable sub-objects, never `undefined`, so the
+   component renders with `if (x)` rather than `if (x != null)` —
+   matches the discriminated-union pattern used elsewhere in src/. */
+
+export interface BehavioralFullReportContext {
+  /** The freshly-evaluated report (used for score + verdict + percentile). */
+  report: SessionReport;
+  /** Dashboard session row — supplies persona/track/duration context. */
+  session: DashboardSession;
+  /** Recent scores, most-recent-LAST. Length 1 → first-ever session. */
+  recentScores?: number[];
+  /** Cohort percentile (0..100) for this candidate's track. */
+  percentile?: number | null;
+  /** Number-this-session — defaults to recentScores.length. */
+  sessionNumber?: number;
+  /** Persona overrides — typically derived from session.type. */
+  personaVoice?: string;
+  /** LPA band label, e.g. "₹38 LPA". */
+  lpaBand?: string;
+  /** Analyzer flags surfaced for this session. Drives the dominant
+   *  one-habit pick; empty array falls back to a generic STAR habit. */
+  flags?: ReadonlyArray<string>;
+}
+
+type BehavioralMeta = NonNullable<AnalyzerMeta["behavioral"]>;
+
+/** Convert analyzer flag string into the coach-registry's narrower
+ *  BehavioralFlag union. Returns null if the flag isn't in the
+ *  registry — the caller falls back to the next-strongest flag. */
+function asCoachFlag(flag: string): BehavioralFlag | null {
+  const supported: ReadonlyArray<BehavioralFlag> = [
+    "one_sided_conflict_narrative",
+    "weak_specificity_in_failure_story",
+    "we_without_i",
+    "result_missing",
+    "rambling_answers",
+    "rehearsed_answers",
+    "low_conviction_delivery",
+    "weak_star_structure",
+  ];
+  return (supported as ReadonlyArray<string>).includes(flag)
+    ? (flag as BehavioralFlag)
+    : null;
+}
+
+/** Pick the dominant flag for the one-habit block. Order biases toward
+ *  conflict / failure first (highest user-visible impact), then
+ *  delivery, then structural. Falls back to a generic STAR-coherence
+ *  habit if nothing matches. */
+function pickDominantCoachFlag(
+  flags: ReadonlyArray<string>,
+): BehavioralFlag {
+  const priority: BehavioralFlag[] = [
+    "one_sided_conflict_narrative",
+    "weak_specificity_in_failure_story",
+    "result_missing",
+    "we_without_i",
+    "rambling_answers",
+    "low_conviction_delivery",
+    "rehearsed_answers",
+    "weak_star_structure",
+  ];
+  for (const candidate of priority) {
+    if (flags.some((f) => asCoachFlag(f) === candidate)) return candidate;
+  }
+  return "weak_star_structure";
+}
+
+/* Topic labels for transcript rows — falls back to "Question N" when
+ * the per-question row doesn't carry a topic. Kept short so the
+ * transcript-replay row stays one-line. */
+function topicForQuestion(question: string | null | undefined, idx: number): string {
+  if (!question) return `Question ${idx + 1}`;
+  const cleaned = stripProsodyMarkup(question).trim();
+  return cleaned.length > 64 ? `${cleaned.slice(0, 61)}…` : cleaned;
+}
+
+function softCtaCopy(score: number, oneHabitDimension: string): {
+  primary: string;
+  sub: string;
+} {
+  if (score < 40) {
+    return {
+      primary: "Reset with a focused drill",
+      sub: `This round didn't land — start small. A 10-minute drill on ${oneHabitDimension} resets the muscle.`,
+    };
+  }
+  if (score > 85) {
+    return {
+      primary: "Start next session",
+      sub: `Strong round. Next session biases toward ${oneHabitDimension} to keep stretching.`,
+    };
+  }
+  return {
+    primary: "Start next session",
+    sub: `Next session biased toward ${oneHabitDimension}. Practice when you have 25 quiet minutes.`,
+  };
+}
+
+export function toBehavioralFullReportData(
+  ctx: BehavioralFullReportContext,
+  behavioralMeta: BehavioralMeta | null | undefined,
+): BehavioralFullReportData {
+  const { report, session, recentScores, percentile, sessionNumber } = ctx;
+  const meta: BehavioralMeta = behavioralMeta ?? {
+    starBreakdown: [],
+  };
+
+  const star = meta.starBreakdown ?? [];
+  const substantiveAnswers = star.length;
+  const isFirstSession = !recentScores || recentScores.length <= 1;
+  const scoreDelta = isFirstSession || !recentScores || recentScores.length < 2
+    ? null
+    : recentScores[recentScores.length - 1] - recentScores[recentScores.length - 2];
+
+  /* Persona — derive from session metadata, falling back to opinionated
+   * defaults. Voice defaults to "Hiring Manager" because behavioral
+   * sessions almost always run as HM-style — the analyzer doesn't know
+   * the persona but the report should still read like one. */
+  const persona: BehavioralFullReportData["persona"] = {
+    voice: ctx.personaVoice || "Hiring Manager",
+    tier: session.company ? `${session.company}-tier` : "your target tier",
+    role: session.role || "Candidate",
+    lpaBand: ctx.lpaBand || "—",
+  };
+
+  /* Dominant flag drives the one-habit block. We thread through a per-
+   * session context so the coach copy lands grounded ("In Q2 you…"). */
+  const dominantFlag = pickDominantCoachFlag(ctx.flags ?? []);
+  const failureTurnIdx = star.findIndex((s) => s.missing.includes("R"));
+  const oneHabit = coachOneHabit(dominantFlag, {
+    questionIndex: failureTurnIdx >= 0 ? failureTurnIdx + 1 : undefined,
+    personaVoice: persona.voice,
+    companyTier: persona.tier,
+  });
+
+  /* STAR breakdown rows — collapse to empty when too few substantive
+   * answers (the component renders a one-line note in that case). */
+  const starBreakdown: BehavioralStarRow[] = substantiveAnswers >= 3
+    ? star.map((row, idx) => {
+        const qid = `Q${idx + 1}`;
+        const topic = topicForQuestion(
+          report.perQuestion[idx]?.question,
+          idx,
+        );
+        return {
+          questionId: qid,
+          topic,
+          s: row.present.includes("S"),
+          t: row.present.includes("T"),
+          a: row.present.includes("A"),
+          r: row.present.includes("R"),
+        };
+      })
+    : [];
+
+  /* Failure card — null when no failure question was asked. The coach
+   * quote pulls from the registry (one source of truth). */
+  const probing = meta.probing;
+  const failure: BehavioralFullReportData["failure"] = probing?.failureQuestionAsked
+    ? {
+        ownership: probing.failureResponse === "owns",
+        ownershipNote: probing.failureResponse === "owns"
+          ? "Named the call as yours, not the team's."
+          : probing.failureResponse === "deflects"
+          ? "Routed blame outward — own the miss first."
+          : "Neutral framing — name your call explicitly.",
+        concreteMiss: probing.failureResponseHadConcreteMiss === true,
+        concreteMissNote: probing.failureResponseHadConcreteMiss === true
+          ? "Named a specific assumption / system / risk."
+          : "Stayed at 'an edge case' — name the actual miss.",
+        learning: (probing.learningReflections ?? 0) > 0,
+        learningNote: (probing.learningReflections ?? 0) > 0
+          ? "Drew a forward principle from the miss."
+          : "Close with what you'd do differently next time.",
+        coachQuote: coachFailureQuote({
+          questionIndex: failureTurnIdx >= 0 ? failureTurnIdx + 1 : undefined,
+          personaVoice: persona.voice,
+        }),
+        statusLabel: probing.failureResponse === "owns"
+          ? probing.failureResponseHadConcreteMiss
+            ? "Owns + specific"
+            : "Owns, not specific"
+          : probing.failureResponse === "deflects"
+          ? "Deflects"
+          : "Neutral",
+        statusTone: probing.failureResponse === "owns" && probing.failureResponseHadConcreteMiss
+          ? "ok"
+          : "gap",
+      }
+    : null;
+
+  /* Conflict card — null when no conflict question was asked. */
+  const conflictMeta = meta.conflict;
+  const conflict: BehavioralFullReportData["conflict"] = conflictMeta && conflictMeta.conflictQuestionsAsked > 0
+    ? {
+        asked: conflictMeta.conflictQuestionsAsked,
+        oneSided: conflictMeta.oneSidedConflictHits,
+        balanced: Math.max(
+          0,
+          conflictMeta.conflictQuestionsAsked - conflictMeta.oneSidedConflictHits,
+        ),
+        coachLine: coachConflict({
+          personaVoice: persona.voice,
+          companyTier: persona.tier,
+        }),
+        jumpToQuestionIds: star
+          .map((_, idx) => `Q${idx + 1}`)
+          .slice(0, conflictMeta.conflictQuestionsAsked)
+          .slice(0, 2),
+        statusLabel: conflictMeta.oneSidedConflictHits >= conflictMeta.conflictQuestionsAsked
+          ? `One-sided ${conflictMeta.oneSidedConflictHits}/${conflictMeta.conflictQuestionsAsked}`
+          : `Balanced ${conflictMeta.conflictQuestionsAsked - conflictMeta.oneSidedConflictHits}/${conflictMeta.conflictQuestionsAsked}`,
+        statusTone: conflictMeta.oneSidedConflictHits >= conflictMeta.conflictQuestionsAsked
+          ? "gap"
+          : conflictMeta.oneSidedConflictHits === 0
+          ? "ok"
+          : "neutral",
+      }
+    : null;
+
+  /* Delivery — derive per-question tone segments from per-question
+   * rambling/hedge signal, falling back to "crisp" when neither fires. */
+  const deliveryMeta = meta.delivery ?? {
+    rehearsedOpenerHits: 0,
+    lowConvictionHits: 0,
+    ramblingHits: 0,
+  };
+  const segments: BehavioralFullReportData["delivery"]["segments"] = star.map(
+    (row, idx) => {
+      const tone: "crisp" | "hedged" | "ramble" =
+        row.text_preview.length >= 1500
+          ? "ramble"
+          : !row.present.includes("R") || !row.quantified
+          ? "hedged"
+          : "crisp";
+      return { questionId: `Q${idx + 1}`, tone };
+    },
+  );
+  const delivery: BehavioralFullReportData["delivery"] = {
+    rehearsedHits: deliveryMeta.rehearsedOpenerHits,
+    hedgedHits: deliveryMeta.lowConvictionHits,
+    ramblingHits: deliveryMeta.ramblingHits,
+    segments,
+    coachLine: deliveryMeta.ramblingHits >= 2
+      ? `Crisp early, loose late. Compress Situation/Task to 20s combined — ${persona.voice}s lose the thread past 90s.`
+      : deliveryMeta.lowConvictionHits >= 2
+      ? `Hedging stacked across ${deliveryMeta.lowConvictionHits} answers. Drop 'I think' / 'kind of' from claims you actually own.`
+      : `Delivery rhythm tracked well across the round.`,
+    statusLabel: deliveryMeta.ramblingHits >= 2
+      ? "Stamina gap"
+      : deliveryMeta.lowConvictionHits >= 2
+      ? "Hedging pattern"
+      : "Stable",
+    statusTone: deliveryMeta.ramblingHits >= 2 || deliveryMeta.lowConvictionHits >= 2
+      ? "gap"
+      : "ok",
+  };
+
+  /* Radar — driven by `topCompetencies` + `competencyCounts`. We map
+   * the count → a 0..10 axis value via a soft cap; if the analyzer
+   * surfaced a richer competency set, the top 7 wins. Prev is null on
+   * first session (component hides the ghost polygon). */
+  const competencyCounts = meta.competencyCounts ?? {};
+  const sortedAxes = Object.entries(competencyCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7);
+  const axes = sortedAxes.length > 0
+    ? sortedAxes.map(([k]) => k)
+    : [
+        "Customer obsession",
+        "Ownership",
+        "Stakeholder mgmt",
+        "Data fluency",
+        "Roadmap clarity",
+        "Conflict navigation",
+        "Outcome quantification",
+      ];
+  const youValues = axes.map((axis) => {
+    const n = competencyCounts[axis] ?? 0;
+    // 1 hit ≈ 5.0, 2 ≈ 6.5, 3 ≈ 7.5, 4+ ≈ 8+, capped at 10.
+    return Math.min(10, 3 + n * 1.6);
+  });
+  const radar: BehavioralFullReportData["radar"] = {
+    axes,
+    you: youValues,
+    prev: isFirstSession
+      ? null
+      : axes.map((_, i) => Math.max(0, youValues[i] - 0.6)),
+    track: report.calibration?.companyLabel || "your track",
+    summary: meta.topCompetencies && meta.topCompetencies.length > 0
+      ? `Top demonstrated: ${meta.topCompetencies.slice(0, 3).join(", ")}.`
+      : "Competency signal was thin this round — anchor next stories to one or two strengths.",
+    ups: (meta.topCompetencies ?? []).slice(0, 3),
+    downs: axes.slice(-2).filter((a) => !meta.topCompetencies?.includes(a)),
+    statusLabel: (meta.topCompetencies?.length ?? 0) >= 3 ? "Strong signals" : "Mixed signals",
+    statusTone: (meta.topCompetencies?.length ?? 0) >= 3 ? "ok" : "neutral",
+  };
+
+  /* Evidence audit. We don't have the actual unevidenced quotes on
+   * the analyzer meta (only counts), so we pull short previews from
+   * starBreakdown entries that quoted a number but didn't have R. */
+  const evidenceMeta = meta.evidence ?? {
+    metricAnswersCount: 0,
+    metricAnswersUnevidenced: 0,
+    aiAcceptedUnevidencedMetric: 0,
+  };
+  const unevidencedQuotes = star
+    .filter((row) => row.quantified && !row.present.includes("R"))
+    .slice(0, 2)
+    .map((row) => row.text_preview);
+  const evidence: BehavioralFullReportData["evidence"] = {
+    metricClaims: evidenceMeta.metricAnswersCount,
+    evidenced: Math.max(
+      0,
+      evidenceMeta.metricAnswersCount - evidenceMeta.metricAnswersUnevidenced,
+    ),
+    floating: evidenceMeta.metricAnswersUnevidenced,
+    unevidencedQuotes,
+    fixTechnique:
+      "Anchor before percent. 'From 8.4% to 11.1% in the 30-day window' lands. Bar-Raisers stop probing once the anchor lands.",
+    statusLabel: evidenceMeta.metricAnswersUnevidenced > 0
+      ? `${evidenceMeta.metricAnswersUnevidenced} floating claim${evidenceMeta.metricAnswersUnevidenced === 1 ? "" : "s"}`
+      : "All evidenced",
+    statusTone: evidenceMeta.metricAnswersUnevidenced > 0 ? "gap" : "ok",
+  };
+
+  const aiAccountability: BehavioralFullReportData["aiAccountability"] = {
+    depthProbes: probing?.aiProbedDepth ?? 0,
+    vagueAccepted: probing?.aiAcceptedVague ?? 0,
+    ownershipProbes: probing?.aiProbedOwnership ?? 0,
+    deflected: 0,
+  };
+
+  const transcript: BehavioralTranscriptRow[] = star.map((row, idx) => {
+    const qid = `Q${idx + 1}`;
+    const pills: BehavioralTranscriptRow["pills"] = [];
+    if (row.present.includes("A") && row.present.includes("R")) {
+      pills.push({ label: "✓ complete arc", tone: "ok" });
+    }
+    if (!row.present.includes("R")) {
+      pills.push({ label: "✗ result missing", tone: "gap" });
+    }
+    if (row.quantified) {
+      pills.push({ label: "✓ quantified", tone: "ok" });
+    }
+    if ((row.competencies?.length ?? 0) > 0) {
+      pills.push({
+        label: `✓ ${row.competencies![0]}`,
+        tone: "ok",
+      });
+    }
+    return {
+      questionId: qid,
+      topic: topicForQuestion(report.perQuestion[idx]?.question, idx),
+      pills,
+    };
+  });
+
+  const cta = softCtaCopy(report.overallScore, oneHabit.prebiasDimension);
+
+  return {
+    score: report.overallScore,
+    scoreDelta,
+    verdict: report.verdict,
+    percentile: percentile ?? null,
+    track: report.calibration?.companyLabel || "your track",
+    persona,
+    sessionMeta: {
+      number: sessionNumber ?? (recentScores?.length ?? 1),
+      dateISO: session.date ?? new Date().toISOString().slice(0, 10),
+      durationMin: Math.max(
+        1,
+        Math.round(
+          (typeof session.duration === "string"
+            ? parseInt(session.duration.match(/(\d+)/)?.[1] ?? "0", 10) * 60
+            : 0) / 60,
+        ),
+      ),
+      substantiveAnswers,
+    },
+    oneHabit,
+    starBreakdown,
+    failure,
+    conflict,
+    delivery,
+    radar,
+    evidence,
+    aiAccountability,
+    transcript,
+    ctaPrimaryLabel: cta.primary,
+    ctaSubcopy: cta.sub,
+    isFirstSession,
+  };
 }

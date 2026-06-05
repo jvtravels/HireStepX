@@ -15,6 +15,7 @@
 
 import CanvasProviders from "../../../CanvasProviders";
 import InterviewResult, { type InterviewResultData } from "../interview-result/InterviewResult";
+import { VariantADiagnosticFirst } from "../behavioral-interview-result/VariantADiagnosticFirst";
 import {
   BEHAVIORAL_STRONG,
   TECHNICAL_PARTIAL,
@@ -291,7 +292,17 @@ const GOVERNMENT: FocusChrome = {
 
 /* ─── Demo exports ───────────────────────────────────────────── */
 
-export function BehavioralStrongDemo() { return <FocusReport data={BEHAVIORAL_STRONG} chrome={BEHAVIORAL} />; }
+export function BehavioralStrongDemo() {
+  // Behavioural focus now uses the new diagnostic-first result screen
+  // (canvases/behavioral-interview-result/VariantADiagnosticFirst). The
+  // FocusReport + FocusBanner chrome is intentionally dropped — the new
+  // hero owns the persona + verdict slots end-to-end.
+  return (
+    <CanvasProviders>
+      <VariantADiagnosticFirst />
+    </CanvasProviders>
+  );
+}
 export function TechnicalPartialDemo() { return <FocusReport data={TECHNICAL_PARTIAL} chrome={TECHNICAL} />; }
 export function CaseStudyStrongDemo() { return <FocusReport data={CASE_STUDY_STRONG} chrome={CASE_STUDY} />; }
 export function SalaryNegWeakDemo() { return <FocusReport data={SALARY_NEG_WEAK} chrome={SALARY_NEG} salaryPanels={WEAK_PRESET} />; }

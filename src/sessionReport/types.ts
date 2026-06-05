@@ -327,3 +327,145 @@ export interface InterviewResultData {
     marketMode?: "soft" | "neutral" | "hot";
   };
 }
+
+/* ─── BehavioralFullReport view-model ──────────────────────────────────
+   Strongly-typed prop bag for the new diagnostic-first behavioral
+   report (`src/sessionReport/BehavioralFullReport.tsx`). The adapter
+   `toBehavioralFullReportData()` is the only producer; every field is
+   shaped for direct render and edge-states are baked in as nullable
+   sub-objects so JSX can branch with `if (failure) … else hidden`.
+
+   Nullable cards: when the analyzer's `meta.behavioral` didn't yield
+   the data the design needs (no failure Q asked, no conflict Q asked,
+   too-short session, first-ever session), the corresponding sub-object
+   is `null` and the component hides that card entirely. */
+
+export interface BehavioralStarRow {
+  questionId: string;        // "Q1", "Q2"…
+  topic: string;             // short label, e.g. "Failure: scaled rollout"
+  s: boolean;
+  t: boolean;
+  a: boolean;
+  r: boolean;
+}
+
+export interface BehavioralFailureCard {
+  ownership: boolean;
+  ownershipNote: string;
+  concreteMiss: boolean;
+  concreteMissNote: string;
+  learning: boolean;
+  learningNote: string;
+  coachQuote: string;
+  statusLabel: string;
+  statusTone: "ok" | "gap" | "neutral";
+}
+
+export interface BehavioralConflictCard {
+  asked: number;
+  oneSided: number;
+  balanced: number;
+  coachLine: string;
+  jumpToQuestionIds: string[];
+  statusLabel: string;
+  statusTone: "ok" | "gap" | "neutral";
+}
+
+export interface BehavioralDeliveryCard {
+  rehearsedHits: number;
+  hedgedHits: number;
+  ramblingHits: number;
+  /** Per-question delivery tone segments for the timeline bar. */
+  segments: Array<{ questionId: string; tone: "crisp" | "hedged" | "ramble" }>;
+  coachLine: string;
+  statusLabel: string;
+  statusTone: "ok" | "gap" | "neutral";
+}
+
+export interface BehavioralRadarCard {
+  axes: string[];
+  you: number[];                // length === axes.length
+  prev: number[] | null;        // null on first-ever session
+  track: string;                // e.g. "Indian Product"
+  summary: string;              // one-line analysis
+  ups: string[];                // axis labels trending up
+  downs: string[];              // axis labels trending down
+  statusLabel: string;
+  statusTone: "ok" | "gap" | "neutral";
+}
+
+export interface BehavioralEvidenceCard {
+  metricClaims: number;
+  evidenced: number;
+  floating: number;
+  unevidencedQuotes: string[];
+  fixTechnique: string;
+  statusLabel: string;
+  statusTone: "ok" | "gap" | "neutral";
+}
+
+export interface BehavioralAccountability {
+  depthProbes: number;
+  vagueAccepted: number;
+  ownershipProbes: number;
+  deflected: number;
+}
+
+export interface BehavioralTranscriptRow {
+  questionId: string;
+  topic: string;
+  pills: Array<{ label: string; tone: "ok" | "gap" | "neutral" }>;
+}
+
+export interface BehavioralPersona {
+  voice: string;        // "Hiring Manager"
+  tier: string;         // "Razorpay-tier fintech"
+  role: string;         // "Senior PM"
+  lpaBand: string;      // "₹38 LPA"
+}
+
+export interface BehavioralSessionMeta {
+  number: number;       // session 04 → 4
+  dateISO: string;      // "2026-06-02"
+  durationMin: number;  // 28
+  substantiveAnswers: number;
+}
+
+export interface BehavioralOneHabit {
+  headline: string;
+  rationale: string;
+  prebiasDimension: string;
+}
+
+export interface BehavioralFullReportData {
+  score: number;
+  /** null for first-ever session — hides the delta chip in hero. */
+  scoreDelta: number | null;
+  verdict: string;
+  /** Percentile inside the candidate's track (0..100). Nullable when
+   *  we don't have a cohort yet. */
+  percentile: number | null;
+  track: string;
+  persona: BehavioralPersona;
+  sessionMeta: BehavioralSessionMeta;
+  oneHabit: BehavioralOneHabit;
+  /** STAR matrix rows. Empty array means too-few substantive answers —
+   *  the component renders a one-line note instead of the grid. */
+  starBreakdown: BehavioralStarRow[];
+  /** Null when no failure question was asked — entire card hidden. */
+  failure: BehavioralFailureCard | null;
+  /** Null when no conflict question was asked — entire card hidden. */
+  conflict: BehavioralConflictCard | null;
+  delivery: BehavioralDeliveryCard;
+  radar: BehavioralRadarCard;
+  evidence: BehavioralEvidenceCard;
+  aiAccountability: BehavioralAccountability;
+  transcript: BehavioralTranscriptRow[];
+  /** Sticky-footer CTA copy. Adapter softens for low scores. */
+  ctaPrimaryLabel: string;
+  ctaSubcopy: string;
+  /** True iff this is the candidate's first behavioral session — the
+   *  hero/radar render no delta chip and no ghost polygon. */
+  isFirstSession: boolean;
+}
+

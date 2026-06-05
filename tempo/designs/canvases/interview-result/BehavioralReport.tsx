@@ -269,11 +269,17 @@ function StarMatrixSection({ rows }: { rows: NonNullable<BehavioralMeta["starMat
                   </span>
                   {labelMap[k]}
                 </div>
-                {rows.map((row) => {
+                {rows.map((row, colIdx) => {
                   const ok = row[k];
+                  // Left-to-right stagger across the matrix. The whole
+                  // sweep lands in ~200ms total; per-cell fade is 160ms,
+                  // delays shift by col so the eye reads time-of-session
+                  // from left to right.
+                  const delay = Math.round((colIdx / Math.max(1, rows.length - 1)) * 160);
                   return (
                     <div
                       key={`${k}-${row.q}`}
+                      className="ir-star-cell"
                       style={{
                         height: 40,
                         borderRadius: 6,
@@ -285,6 +291,7 @@ function StarMatrixSection({ rows }: { rows: NonNullable<BehavioralMeta["starMat
                         fontSize: 18,
                         fontWeight: 700,
                         border: `1px solid ${ok ? "rgba(21,128,61,0.18)" : "rgba(180,83,9,0.22)"}`,
+                        animationDelay: `${delay}ms`,
                       }}
                       aria-label={`Q${row.q} ${labelMap[k]} ${ok ? "present" : "missing"}`}
                     >
@@ -600,21 +607,59 @@ function AIAccountabilityStrip({
 
 /* ─── 1. HERO ─────────────────────────────────────────────────────── */
 
+/** One-shot count-up on mount. Ease-out-quart matches the rest of the
+ *  report's motion language. Snaps to target if the user prefers reduced
+ *  motion OR if `animate` is false. Used to disable the theatrical
+ *  reveal on low-band scores (peak-end rule: dragging out a bad number
+ *  makes the end of a stressful session feel worse). */
+function useCountUp(target: number, animate: boolean, durationMs = 900): number {
+  const [value, setValue] = React.useState(() => {
+    if (typeof window === "undefined" || !animate) return target;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    return reduce ? target : 0;
+  });
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !animate) {
+      setValue(target);
+      return;
+    }
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setValue(target);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - p, 4); // ease-out-quart
+      setValue(Math.round(target * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, durationMs, animate]);
+  return value;
+}
+
 function BehavioralHero({ data, b }: { data: InterviewResultData; b: BehavioralMeta }) {
   const score = data.overallScore;
   const bandAccent = score < 40 ? t.copper : score > 85 ? t.success : t.indigo;
+  // Skip the theatrical count-up under the low band; bad scores shouldn't
+  // be drawn out (peak-end rule). The ring stroke arrives static; the
+  // stack-rise still plays so the page doesn't feel inert.
+  const displayedScore = useCountUp(score, score >= 50, 900);
   return (
     <section
       style={{
         background: "white",
         border: `1px solid ${t.line}`,
         borderRadius: 16,
-        padding: 28,
-        borderTop: `4px solid ${bandAccent}`,
+        padding: "28px 32px",
         boxShadow: shadows.card,
         display: "flex",
         flexDirection: "column",
-        gap: 24,
+        gap: 28,
       }}
     >
       {/* Session meta strip */}
@@ -638,34 +683,49 @@ function BehavioralHero({ data, b }: { data: InterviewResultData; b: BehavioralM
             {"  ·  "}
             {b.sessionMeta.durationMin} min mock
           </span>
-          {/* Session-strip CTAs intentionally removed. The trophy footer
-              is the singular practice-again exit; download lives in the
-              page header. Audit flagged 6+ competing CTAs above the fold. */}
+          <a
+            href="#ir-section-coach-notes"
+            style={{
+              color: t.indigo,
+              fontSize: 12,
+              fontWeight: 600,
+              textDecoration: "none",
+              borderBottom: `1px solid transparent`,
+              paddingBottom: 1,
+            }}
+            className="ir-bh-rubric-link"
+          >
+            How scoring works →
+          </a>
         </div>
       )}
 
-      {/* Score + verbal verdict + biggest gap (3 columns on desktop) */}
+      {/* Score (headline) + verbal verdict + biggest gap.
+          Asymmetric 3-track grid: gauge is hard-sized so it can dominate
+          without competing fluidly with the verdict; verdict column is
+          the widest fluid track; biggest-gap is bare typography divided
+          by a vertical rule (no nested card). */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(220px, 280px) minmax(280px, 1.4fr) minmax(240px, 1fr)",
-          gap: 24,
-          alignItems: "start",
+          gridTemplateColumns: "240px minmax(280px, 1.6fr) minmax(220px, 1fr)",
+          columnGap: 40,
+          rowGap: 28,
+          alignItems: "center",
         }}
         className="ir-bh-hero-grid"
       >
-        {/* Gauge. Ring is 180px / r=70 → inner diameter ~130px. Type must
-            stack inside that, so 44px serif + 12px mono + 10px caption fits
-            without the arc clipping the glyphs (was 56px → overflowed). */}
+        {/* Gauge — the headline. Ring 220 / r=86 → inner clear diameter
+            ~172px. 64px serif + mono /100 + caption fit cleanly. */}
         <div
           style={{
             position: "relative",
-            width: 180,
-            height: 180,
-            margin: "8px auto 0",
+            width: 220,
+            height: 220,
+            margin: "0 auto",
           }}
         >
-          <ScoreRing score={score} color={bandAccent} />
+          <ScoreRing score={displayedScore} color={bandAccent} />
           <div
             style={{
               position: "absolute",
@@ -678,18 +738,34 @@ function BehavioralHero({ data, b }: { data: InterviewResultData; b: BehavioralM
               pointerEvents: "none",
             }}
           >
-            <div style={{ fontFamily: f.serif, fontSize: 44, color: t.coal, lineHeight: 1 }}>{score}</div>
-            <div style={{ fontFamily: f.mono, fontSize: 12, color: t.indigoGray, marginTop: 2 }}>/100</div>
-            <div style={{ fontSize: 10, color: t.indigoGray, marginTop: 4, letterSpacing: 1.1 }}>
-              OVERALL SCORE
+            <div
+              style={{
+                fontFamily: f.serif,
+                fontSize: 64,
+                color: t.coal,
+                lineHeight: 1,
+                letterSpacing: "-0.02em",
+                // Optical centering: serif numerals sit slightly above the
+                // geometric center in their em-box; pull up so the visual
+                // mass lands on the ring's true centerline.
+                transform: "translateY(-2px)",
+                // The count-up makes the digit visually pulse as widths
+                // change; tabular-nums keeps each glyph in a fixed cell.
+                fontVariantNumeric: "tabular-nums",
+              }}
+              aria-label={`Score ${score} out of 100`}
+            >
+              {displayedScore}
             </div>
+            <div style={{ fontFamily: f.mono, fontSize: 13, color: t.indigoGray, marginTop: 4 }}>/100</div>
           </div>
         </div>
 
-        {/* Verbal verdict */}
-        <div>
+        {/* Verbal verdict — secondary line, demoted from competing-headline. */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }} className="ir-bh-rise-stack">
           <span
             style={{
+              alignSelf: "flex-start",
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
@@ -699,19 +775,19 @@ function BehavioralHero({ data, b }: { data: InterviewResultData; b: BehavioralM
               borderRadius: 999,
               fontSize: 12,
               fontWeight: 600,
-              marginBottom: 12,
             }}
           >
-            ★ {scoreLabel(score)}
+            {scoreLabel(score)}
           </span>
           <h1
             style={{
               fontFamily: f.serif,
-              fontSize: 26,
-              lineHeight: 1.25,
+              fontSize: 22,
+              lineHeight: 1.3,
               color: t.coal,
               margin: 0,
-              letterSpacing: "-0.01em",
+              letterSpacing: "-0.005em",
+              maxWidth: "32ch",
             }}
           >
             {b.verbalVerdict ?? "Strong potential. Sharpen your storytelling."}
@@ -719,78 +795,80 @@ function BehavioralHero({ data, b }: { data: InterviewResultData; b: BehavioralM
           {data.percentile !== undefined && (
             <div
               style={{
-                marginTop: 12,
+                marginTop: 4,
                 background: t.success100,
                 color: t.success,
                 padding: "8px 12px",
                 borderRadius: 8,
                 fontSize: 13,
                 fontWeight: 500,
-                display: "inline-block",
+                alignSelf: "flex-start",
               }}
             >
-              ★ You performed better than {data.percentile}% of candidates in behavioural interviews.
+              You performed better than {data.percentile}% of candidates in behavioural interviews.
             </div>
           )}
         </div>
 
-        {/* Biggest Gap card */}
+        {/* Biggest gap — bare typography in the column. Copper eyebrow
+            chip + spacing do the grouping; column gap separates it from
+            the verdict. No side-stripe (absolute ban). */}
         {b.biggestGap && (
           <div
             style={{
-              background: t.cream,
-              border: `1px solid ${t.creamSoft}`,
-              borderTop: `3px solid ${t.copper}`,
-              borderRadius: 12,
-              padding: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
             }}
+            className="ir-bh-rise-stack"
           >
-            <div
+            <span
               style={{
-                display: "flex",
+                alignSelf: "flex-start",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: 8,
+                gap: 6,
+                background: t.copper100,
+                color: t.copper,
+                padding: "4px 10px",
+                borderRadius: 999,
                 fontSize: 10,
                 letterSpacing: 1.4,
-                color: t.copper,
                 fontWeight: 700,
-                marginBottom: 10,
               }}
             >
-              <span
-                style={{
-                  display: "inline-flex",
-                  width: 22,
-                  height: 22,
-                  borderRadius: 6,
-                  background: t.copper100,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 12,
-                }}
-              >
-                ◎
-              </span>
-              THE BIGGEST GAP TO FIX
-            </div>
-            <div style={{ fontFamily: f.serif, fontSize: 18, color: t.coal, marginBottom: 6 }}>
+              BIGGEST GAP TO FIX
+            </span>
+            <div
+              style={{
+                fontFamily: f.serif,
+                fontSize: 18,
+                lineHeight: 1.3,
+                color: t.coal,
+                letterSpacing: "-0.005em",
+              }}
+            >
               {b.biggestGap.title}
             </div>
-            <div style={{ fontSize: 13, color: t.indigoGray, lineHeight: 1.55, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: t.indigoGray, lineHeight: 1.55, maxWidth: "54ch" }}>
               {b.biggestGap.body}
             </div>
             <button
               type="button"
+              className="ir-bh-gap-cta"
               style={{
-                background: t.indigo,
-                color: "white",
+                marginTop: 4,
+                alignSelf: "flex-start",
+                background: "transparent",
+                color: t.indigo,
                 border: 0,
-                borderRadius: 8,
-                padding: "8px 14px",
-                fontSize: 12,
+                padding: "2px 0",
+                fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
                 fontFamily: f.sans,
+                textAlign: "left",
+                borderBottom: `1px solid transparent`,
               }}
             >
               {b.biggestGap.ctaLabel} →
@@ -862,22 +940,22 @@ function BehavioralHero({ data, b }: { data: InterviewResultData; b: BehavioralM
 }
 
 function ScoreRing({ score, color }: { score: number; color: string }) {
-  const size = 180;
+  const size = 220;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 70;
+  const r = 86;
   const c = 2 * Math.PI * r;
   const dash = (score / 100) * c;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Score ${score}`}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={t.creamSoft} strokeWidth={10} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={t.creamSoft} strokeWidth={12} />
       <circle
         cx={cx}
         cy={cy}
         r={r}
         fill="none"
         stroke={color}
-        strokeWidth={10}
+        strokeWidth={12}
         strokeDasharray={`${dash} ${c}`}
         strokeDashoffset={c / 4}
         strokeLinecap="round"

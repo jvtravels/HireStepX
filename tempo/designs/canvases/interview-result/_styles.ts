@@ -541,4 +541,61 @@ export const INTERVIEW_RESULT_STYLES = `
       grid-template-columns: 1fr !important;
     }
   }
+  /* STAR matrix cell fade-in. Left-to-right stagger derived from the
+     column index inline (animation-delay set per-cell). Whole sweep is
+     ~200ms total per the brief. Reduced-motion = no animation. */
+  @keyframes ir-star-cell-fade {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: scale(1);    }
+  }
+  .ir-star-cell {
+    opacity: 0;
+    animation: ir-star-cell-fade 160ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ir-star-cell {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+  /* Hero rise-and-fade. One-shot mount animation that lifts the verdict
+     stack and the biggest-gap stack just after the score finishes
+     counting up. Staggered per child via nth-child; capped at 4 so we
+     never animate beyond what's in the column. Skipped under
+     prefers-reduced-motion. */
+  @keyframes ir-bh-rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0);  }
+  }
+  .ir-bh-rise-stack > * {
+    opacity: 0;
+    animation: ir-bh-rise 480ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    /* Score count-up finishes around 900ms; start the stack rise at
+       roughly that beat so the moment lands as one gesture, not two. */
+    animation-delay: 700ms;
+  }
+  .ir-bh-rise-stack > *:nth-child(2) { animation-delay: 800ms; }
+  .ir-bh-rise-stack > *:nth-child(3) { animation-delay: 880ms; }
+  .ir-bh-rise-stack > *:nth-child(4) { animation-delay: 960ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .ir-bh-rise-stack > * {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+  /* Biggest-gap CTA: bare link with hover-reveal underline and a
+     keyboard-visible focus ring. Replaces what would otherwise be the
+     browser default outline on a transparent button. */
+  .ir-bh-gap-cta:hover,
+  .ir-bh-rubric-link:hover {
+    border-bottom-color: currentColor !important;
+  }
+  .ir-bh-gap-cta:focus-visible,
+  .ir-bh-rubric-link:focus-visible {
+    outline: 2px solid var(--ir-indigo, #4F46E5);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
 `;
