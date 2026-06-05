@@ -105,8 +105,8 @@ export function DataLoadingSkeleton() {
 
 /* ─── Upgrade Modal ─── */
 const PLANS = [
-  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",    features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "No credit card required"], featured: false },
-  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One round before the real thing",    cta: "Buy a session", features: ["1 full mock session", "Full STAR breakdown", "Coach fixes after every answer", "Saved report for 90 days"], featured: false },
+  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",    features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"], featured: false },
+  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One round before the real thing",    cta: "Buy a session", features: ["1 full mock session", "Full STAR breakdown", "Coach fixes after every answer", "Voice in & out", "Saved report for 90 days"], featured: false },
   { id: "weekly",  tier: "starter", name: "Weekly",      price: "\u20B949",  unit: "/ 7 days",  sub: "Sprint before placement week",       cta: "Go weekly",     features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7 days`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"], featured: false },
   { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",    features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"], featured: true },
 ];
@@ -327,7 +327,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog backdrop dismissal
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops click propagation to backdrop */}
-      <div ref={modalRef} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 32px 32px", maxWidth: 960, width: "96%", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)" }}>
+      <div ref={modalRef} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 28px 28px", maxWidth: 1120, width: "96%", maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)" }}>
         <button onClick={onClose} aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -361,7 +361,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <input type="text" value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(""); setPromoResult(null); }}
               placeholder="Promo code" aria-label="Promo code" autoFocus
-              style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: c.obsidian, border: `1px solid ${promoResult?.valid ? c.sage : c.border}`, borderRadius: 8, padding: "8px 12px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
+              style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: "transparent", border: "none", borderBottom: `1px solid ${promoResult?.valid ? c.sage : c.borderHover}`, borderRadius: 0, padding: "6px 2px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
             />
             <button disabled={promoLoading || !promoCode.trim()} onClick={async () => {
               setPromoLoading(true); setPromoError("");
@@ -394,15 +394,15 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           {PLANS.map((plan) => {
             const isCurrent = plan.tier === currentTier && plan.id !== "single";
             const featured = plan.featured;
-            const ribbonText = isCurrent ? "Current plan" : featured ? "Most loved" : null;
+            const ribbonText = featured ? "Most loved" : null;
             return (
               <div key={plan.id} style={{
-                position: "relative", padding: 28, borderRadius: 20,
-                background: featured ? "#0E0C08" : c.graphite,
+                position: "relative", padding: 22, borderRadius: 20,
+                background: featured ? "#1E1B4B" : c.graphite,
                 color: featured ? "#FAF7F0" : c.ivory,
-                border: `1px solid ${featured ? "#0E0C08" : c.border}`,
-                boxShadow: featured ? "none" : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-                display: "flex", flexDirection: "column", gap: 18,
+                border: `1px solid ${featured ? "#1E1B4B" : isCurrent ? c.borderHover : c.border}`,
+                boxShadow: featured ? "0 1px 0 rgba(30,27,75,.04), 0 12px 32px -16px rgba(30,27,75,.40)" : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+                display: "flex", flexDirection: "column", gap: 16,
               }}>
                 {ribbonText && (
                   <span style={{
@@ -423,18 +423,6 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   <p style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(245,242,237,0.7)" : c.stone }}>{plan.sub}</p>
                 </div>
 
-                {plan.id === "single" && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.max(1, q - 1)); }} disabled={sessionQty <= 1} aria-label="Decrease session count"
-                      style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty <= 1 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>−</button>
-                    <input type="range" min={1} max={10} value={sessionQty} onChange={e => setSessionQty(Number(e.target.value))}
-                      aria-label="Number of sessions" className="upgrade-session-slider"
-                      style={{ flex: 1, height: 4, appearance: "none", WebkitAppearance: "none", background: `linear-gradient(to right, ${c.gilt} 0%, ${c.gilt} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} 100%)`, borderRadius: 2, outline: "none", cursor: "pointer" }} />
-                    <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.min(10, q + 1)); }} disabled={sessionQty >= 10} aria-label="Increase session count"
-                      style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty >= 10 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
-                  </div>
-                )}
-
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {plan.features.map((f) => (
                     <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(245,242,237,0.78)" : c.chalk }}>
@@ -442,6 +430,18 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     </li>
                   ))}
                 </ul>
+
+                {plan.id === "single" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto" }}>
+                    <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.max(1, q - 1)); }} disabled={sessionQty <= 1} aria-label="Decrease session count"
+                      style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty <= 1 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>−</button>
+                    <input type="range" min={1} max={10} value={sessionQty} onChange={e => setSessionQty(Number(e.target.value))}
+                      aria-label="Number of sessions" className="upgrade-session-slider"
+                      style={{ flex: 1, height: 4, appearance: "none", WebkitAppearance: "none", background: `linear-gradient(to right, ${c.gilt} 0%, ${c.gilt} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} 100%)`, borderRadius: 2, outline: "none", cursor: "pointer" }} />
+                    <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.min(10, q + 1)); }} disabled={sessionQty >= 10} aria-label="Increase session count"
+                      style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty >= 10 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
+                  </div>
+                )}
 
                 {isCurrent ? (
                   <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? "#F4E5D8" : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
@@ -456,14 +456,14 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                       color: featured ? "#0E0C08" : "#FFFFFF",
                       fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer",
                       opacity: loading && loading !== plan.id ? 0.5 : 1,
-                      boxShadow: featured ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                      boxShadow: featured ? "0 1px 0 rgba(244,229,216,.08), 0 8px 24px rgba(244,229,216,0.18)" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
                       transition: "transform 0.18s ease, box-shadow 0.18s ease",
                       display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
                     }}
                     onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
                   >
-                    {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
+                    {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{plan.id === "single" ? `Buy ${sessionQty} session${sessionQty > 1 ? "s" : ""}` : plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
                   </button>
                 )}
               </div>
@@ -471,11 +471,17 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           })}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <a href="/pricing#compare" target="_blank" rel="noopener noreferrer" style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, textDecoration: "none", borderBottom: `1px solid ${c.borderHover}`, paddingBottom: 1 }}>
+            Compare all plans <span aria-hidden>→</span>
+          </a>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 16, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ display: "flex" }}>
               {[c.gilt, c.sage, c.ember].map((col, i) => (
-                <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: col, border: `2px solid ${c.graphite}`, marginLeft: i > 0 ? -6 : 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: col, border: `2px solid ${c.carbon}`, marginLeft: i > 0 ? -6 : 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill={c.graphite} stroke="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
               ))}
