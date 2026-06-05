@@ -638,12 +638,12 @@ function UsageBar({ label, row }: { label: string; row: UsageRow }) {
   const display = cap == null ? `${row.count}` : `${row.count} of ${cap}`;
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{label}</span>
-        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.chalk }}>{display}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</span>
+        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{display}</span>
       </div>
-      <div style={{ height: 6, borderRadius: 999, background: "#EBE5D2", overflow: "hidden" }}>
-        <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.sage, transition: "width 0.4s ease" }} />
+      <div style={{ height: 6, borderRadius: 999, background: c.border, overflow: "hidden" }}>
+        <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.gilt, transition: "width 0.4s ease" }} />
       </div>
     </div>
   );
@@ -673,17 +673,10 @@ const UsageThisMonth = memo(function UsageThisMonth({
 
   if (error) return null; // Fail quiet — usage is decorative, not gating.
   if (!data) {
-    return (
-      <div style={{ padding: "20px 24px", borderRadius: 14, marginBottom: 24, background: c.graphite, border: `1px solid ${c.border}` }}>
-        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Loading usage…</span>
-      </div>
-    );
+    return <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Loading usage…</span>;
   }
   return (
-    <div style={{ padding: "20px 24px", borderRadius: 14, marginBottom: 24, background: c.graphite, border: `1px solid ${c.border}` }}>
-      <h4 style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 14px" }}>
-        Usage this month
-      </h4>
+    <div>
       <UsageBar label="Mock interviews completed" row={data.mock} />
       <UsageBar label="Resume parses" row={data.resume_parses} />
     </div>
@@ -767,48 +760,68 @@ const dangerSolidBtn: React.CSSProperties = {
   borderRadius: 8, padding: "8px 14px", cursor: "pointer", transition: "opacity 0.15s",
 };
 
-function PlanCard({ tier, price, desc, current, highlight, cta, onCtaClick }: {
+function PlanCard({ tier, price, desc, current, highlight, badge, cta, onCtaClick }: {
   tier: string; price: string; desc: string;
-  current?: boolean; highlight?: boolean;
-  cta?: string; onCtaClick?: () => void;
+  current?: boolean; highlight?: boolean; badge?: string;
+  cta: string; onCtaClick?: () => void;
 }) {
-  const border = current ? `2px solid ${c.gilt}` : highlight ? `1.5px solid ${c.indigo}` : `1px solid ${c.border}`;
-  const bg = current ? c.copper100 : highlight ? c.indigo100 : c.graphite;
+  const cardBg = current ? c.indigoDeep : c.graphite;
+  const cardBorder = current ? `1px solid ${c.indigoDeep}` : `1px solid ${c.border}`;
+  const tierColor = current ? c.cream : c.ivory;
+  const priceColor = c.gilt;
+  const descColor = current ? "rgba(250,247,240,0.72)" : c.stone;
+  const topLabel = current ? "Current" : highlight ? (badge || "Best for the offer") : null;
+  const topLabelColor = current ? c.gilt : highlight ? c.gilt : c.stone;
+
+  const btnStyle: React.CSSProperties = current
+    ? {
+        background: "rgba(250,247,240,0.10)", color: "rgba(250,247,240,0.72)",
+        border: "1px solid rgba(250,247,240,0.12)", cursor: "default",
+      }
+    : {
+        background: c.indigoDeep, color: c.cream,
+        border: `1px solid ${c.indigoDeep}`, cursor: "pointer",
+      };
+
   return (
     <div style={{
-      padding: "22px 22px 20px", borderRadius: 14, background: bg, border,
-      display: "flex", flexDirection: "column", minWidth: 0, minHeight: 220,
+      padding: "26px 26px 24px", borderRadius: 16,
+      background: cardBg, border: cardBorder,
+      boxShadow: current
+        ? "0 14px 36px -10px rgba(30,27,75,.35), 0 2px 6px rgba(30,27,75,.18)"
+        : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+      display: "flex", flexDirection: "column", minWidth: 0, minHeight: 264,
     }}>
-      {/* Header: tier name + Current chip — fixed height for alignment */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minHeight: 28 }}>
-        <span style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, letterSpacing: "0.01em", lineHeight: 1 }}>{tier}</span>
-        {current && (
-          <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.28)`, borderRadius: 6, padding: "3px 7px" }}>Current</span>
-        )}
-      </div>
-      {/* Price — fixed top margin keeps the row aligned across all 3 cards */}
-      <div style={{ fontFamily: font.mono, fontSize: 15, color: c.ivory, fontWeight: 600, marginTop: 10, lineHeight: 1.2 }}>{price}</div>
-      {/* Desc — flex 1 pushes the CTA row to the bottom */}
-      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.55, marginTop: 8, flex: 1 }}>{desc}</div>
-      {/* CTA row — always reserve space so card heights match even when no CTA */}
-      <div style={{ marginTop: 16, minHeight: 36, display: "flex" }}>
-        {cta && !current && (
-          <button type="button" onClick={onCtaClick}
-            style={{
-              fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.cream,
-              background: c.indigo, border: `1px solid ${c.indigo}`,
-              borderRadius: 8, padding: "9px 16px", cursor: "pointer", transition: "all 0.15s",
-              width: "100%",
-            }}>
-            {cta}
-          </button>
-        )}
-        {current && (
-          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, alignSelf: "center" }}>
-            You're on this plan
+      {/* Top label row — copper uppercase right, blank if neither */}
+      <div style={{ minHeight: 16, display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+        {topLabel && (
+          <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: topLabelColor }}>
+            {topLabel}
           </span>
         )}
       </div>
+      {/* Tier name — serif, large */}
+      <div style={{ fontFamily: font.display, fontSize: 30, fontWeight: 400, color: tierColor, letterSpacing: "-0.01em", lineHeight: 1.1, marginTop: 6 }}>
+        {tier}
+      </div>
+      {/* Price — copper, serif numerals */}
+      <div style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: priceColor, marginTop: 18, lineHeight: 1.2 }}>
+        {price}
+      </div>
+      {/* Desc */}
+      <div style={{ fontFamily: font.ui, fontSize: 13, color: descColor, lineHeight: 1.55, marginTop: 18, flex: 1 }}>
+        {desc}
+      </div>
+      {/* CTA — full width, bottom anchored */}
+      <button type="button" onClick={current ? undefined : onCtaClick} disabled={current}
+        style={{
+          marginTop: 22, width: "100%",
+          fontFamily: font.ui, fontSize: 13, fontWeight: 600,
+          borderRadius: 10, padding: "12px 18px", transition: "all 0.15s",
+          ...btnStyle,
+        }}>
+        {cta}
+      </button>
     </div>
   );
 }
@@ -995,13 +1008,15 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           price="₹0"
           desc="3 mock interviews total. Behavioural questions, basic score and feedback."
           current={tier === "free"}
+          cta={tier === "free" ? "You're on Free" : "Switch to Free"}
+          onCtaClick={() => setShowUpgradeModal(true)}
         />
         <PlanCard
           tier="Starter"
           price="₹49 per week"
           desc="10 sessions over 7 days. All question types, skill breakdown, resume-tailored Qs, PDF reports."
           current={tier === "starter"}
-          cta="Upgrade to Starter"
+          cta={tier === "starter" ? "You're on Starter" : "Upgrade to Starter"}
           onCtaClick={() => setShowUpgradeModal(true)}
         />
         <PlanCard
@@ -1009,8 +1024,9 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           price="₹149 per month"
           desc="40 sessions over 30 days. AI coaching, analytics, interview calendar, full exports."
           current={tier === "pro"}
-          highlight
-          cta={tier === "starter" ? "Upgrade to Pro" : "Go Pro"}
+          highlight={tier !== "pro"}
+          badge="Best value"
+          cta={tier === "pro" ? "You're on Pro" : tier === "starter" ? "Upgrade to Pro" : "Go Pro"}
           onCtaClick={() => setShowUpgradeModal(true)}
         />
       </div>
