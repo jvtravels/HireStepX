@@ -737,6 +737,97 @@ export interface PlanSectionProps {
   authHeaders: () => Promise<Record<string, string>>;
 }
 
+/* ─── Plan & Data — editorial layout (matches canvas) ─── */
+const planKicker: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.12em", textTransform: "uppercase" };
+const planHeadline: React.CSSProperties = { fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "8px 0 10px", letterSpacing: "-0.02em", lineHeight: 1.1 };
+const planDesc: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 };
+const planCardOuter: React.CSSProperties = {
+  background: c.graphite,
+  border: `1px solid ${c.border}`,
+  borderRadius: 16,
+  boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+};
+const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory };
+const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 };
+const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory };
+const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, marginTop: 2 };
+const subtleBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory,
+  background: c.creamSoft, border: `1px solid ${c.borderStrong}`,
+  borderRadius: 8, padding: "8px 14px", cursor: "pointer", transition: "all 0.15s",
+};
+const subtleBtnGhost: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ember,
+  background: "transparent", border: `1px solid rgba(185,28,28,0.3)`,
+  borderRadius: 8, padding: "8px 14px", cursor: "pointer", transition: "all 0.15s",
+};
+const dangerSolidBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.cream,
+  background: c.ember, border: "none",
+  borderRadius: 8, padding: "8px 14px", cursor: "pointer", transition: "opacity 0.15s",
+};
+
+function PlanCard({ tier, price, desc, current, highlight, cta, onCtaClick }: {
+  tier: string; price: string; desc: string;
+  current?: boolean; highlight?: boolean;
+  cta?: string; onCtaClick?: () => void;
+}) {
+  const border = current ? `2px solid ${c.gilt}` : highlight ? `1.5px solid ${c.indigo}` : `1px solid ${c.border}`;
+  const bg = current ? c.copper100 : highlight ? c.indigo100 : c.graphite;
+  return (
+    <div style={{
+      padding: "24px 22px", borderRadius: 14, background: bg, border,
+      display: "flex", flexDirection: "column", gap: 10, minWidth: 0,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, letterSpacing: "0.01em" }}>{tier}</span>
+        {current && (
+          <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.28)`, borderRadius: 6, padding: "3px 7px" }}>Current</span>
+        )}
+      </div>
+      <div style={{ fontFamily: font.mono, fontSize: 14, color: c.ivory, fontWeight: 600 }}>{price}</div>
+      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, flex: 1 }}>{desc}</div>
+      {cta && !current && (
+        <button type="button" onClick={onCtaClick}
+          style={{
+            marginTop: 4,
+            fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.cream,
+            background: c.indigo, border: `1px solid ${c.indigo}`,
+            borderRadius: 8, padding: "9px 14px", cursor: "pointer", transition: "all 0.15s",
+          }}>
+          {cta}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boolean }) {
+  const d = new Date(payment.created_at);
+  const dateLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const amount = `₹${Math.round(payment.amount / 100)}`;
+  const paid = payment.status === "completed";
+  const tone = paid
+    ? { label: "Paid", bg: c.success100, fg: c.sage, border: "rgba(21,128,61,0.28)" }
+    : { label: payment.status, bg: c.error100, fg: c.ember, border: "rgba(185,28,28,0.28)" };
+  const planLabel = payment.tier ? payment.tier.charAt(0).toUpperCase() + payment.tier.slice(1) : payment.plan;
+  return (
+    <div style={{
+      display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: 16, alignItems: "center",
+      padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
+    }}>
+      <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>{dateLabel}</div>
+      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{planLabel}</div>
+      <div style={{ fontFamily: font.mono, fontSize: 13, color: c.ivory }}>{amount}</div>
+      <div style={{
+        fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+        color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
+        borderRadius: 6, padding: "4px 8px",
+      }}>{tone.label}</div>
+    </div>
+  );
+}
+
 export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
   const {
     authUser, tierLabel,
@@ -748,405 +839,334 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
     authHeaders: getAuthHeaders,
   } = props;
 
+  const tier = authUser?.subscriptionTier || "free";
+  const isPaid = tier !== "free";
+  const headline = tier === "pro"
+    ? "Pro, invested in your offer"
+    : tier === "starter"
+      ? "Starter, building the habit"
+      : "Practice on the house";
+  const headlineDesc = isPaid
+    ? "Manage your subscription, see your invoices, and export your data."
+    : "Start free. Upgrade when you want unlimited reps and the negotiation coach.";
+
+  let endDateLabel = "";
+  let daysLeft = 0;
+  if (isPaid && authUser?.subscriptionStart && authUser?.subscriptionEnd) {
+    const end = new Date(authUser.subscriptionEnd).getTime();
+    daysLeft = Math.max(0, Math.ceil((end - Date.now()) / 86400000));
+    endDateLabel = new Date(authUser.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  async function handleReactivate() {
+    setCancelLoading(true); setCancelMsg("");
+    try {
+      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15000);
+      const res = await fetch("/api/reactivate-subscription", { method: "POST", headers: hdrs, signal: ctrl.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) { authUpdateUser({ cancelAtPeriodEnd: false }); showToast("Plan reactivated"); }
+        else showToast(data.error || "Failed");
+      } else {
+        const d = await res.json().catch(() => ({})); showToast(d.error || `Failed (${res.status})`);
+      }
+    } catch (err) {
+      const msg = err instanceof DOMException && err.name === "AbortError" ? "Request timed out." : (err instanceof Error ? err.message : "Network error.");
+      setCancelMsg(msg); showToast(msg);
+    } finally { setCancelLoading(false); }
+  }
+
+  async function handlePauseToggle() {
+    setCancelLoading(true);
+    try {
+      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
+      const isPaused = !!authUser?.subscriptionPaused;
+      const action = isPaused ? "resume" : "pause";
+      const res = await fetch("/api/pause-subscription", { method: "POST", headers: hdrs, body: JSON.stringify({ action }) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) { authUpdateUser({ subscriptionPaused: action === "pause" }); showToast(action === "pause" ? "Subscription paused" : "Subscription resumed"); }
+        else showToast(data.error || "Failed");
+      } else {
+        const d = await res.json().catch(() => ({})); showToast(d.error || "Failed");
+      }
+    } catch { showToast("Network error"); } finally { setCancelLoading(false); }
+  }
+
+  async function handleConfirmCancel() {
+    setCancelLoading(true); setCancelMsg("");
+    try {
+      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15000);
+      const res = await fetch("/api/cancel-subscription", { method: "POST", headers: hdrs, signal: ctrl.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          authUpdateUser({ cancelAtPeriodEnd: true });
+          setConfirmCancel(false);
+          showToast("Plan will cancel at end of period");
+          track("subscription_cancelled", { tier: authUser?.subscriptionTier || "unknown" });
+        } else { setCancelMsg(data.error || "Failed."); showToast(data.error || "Cancellation failed"); }
+      } else {
+        const d = await res.json().catch(() => ({})); setCancelMsg(d.error || `Error (${res.status}).`); showToast(d.error || "Cancellation failed");
+      }
+    } catch (err) {
+      const msg = err instanceof DOMException && err.name === "AbortError" ? "Request timed out." : "Network error.";
+      setCancelMsg(msg); showToast(msg);
+    } finally { setCancelLoading(false); }
+  }
+
+  async function handleFullJsonExport() {
+    setExporting(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/export-user-data", { method: "GET", headers });
+      if (!res.ok) { showToast("Export failed. Try again."); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hirestepx-export-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Full data export downloaded.");
+    } catch (err) {
+      console.error("[settings] GDPR export failed:", err);
+      showToast("Export failed. Try again.");
+    } finally { setExporting(false); }
+  }
+
+  async function handleConfirmDelete() {
+    setDeleteLoading(true); setDeleteMsg("");
+    try {
+      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 15000);
+      const res = await fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify({}), signal: ctrl.signal });
+      clearTimeout(t);
+      if (res.ok || res.status === 207) {
+        const data = await res.json().catch(() => ({}));
+        if (data.scheduled) showToast("Account scheduled for deletion. Log in within 7 days to cancel.");
+        localStorage.clear();
+        onLogout();
+      } else {
+        const d = await res.json().catch(() => ({})); setDeleteMsg(d.error || "Failed. Try again."); setDeleteLoading(false);
+      }
+    } catch (err) {
+      setDeleteMsg(err instanceof DOMException && err.name === "AbortError" ? "Timed out. Try again." : "Network error.");
+      setDeleteLoading(false);
+    }
+  }
+
   return (
-    <div style={cardStyle}>
-      <CardAccent />
-
-      <div style={sectionHeader}>
-        <IconBox>{icons.plan}</IconBox>
-        <h3 style={sectionTitle}>Plan & Billing</h3>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 880 }}>
+      <div>
+        <div style={planKicker}>Plan & Data</div>
+        <h2 style={planHeadline}>{headline}</h2>
+        <p style={planDesc}>{headlineDesc}</p>
       </div>
-      <p style={sectionDesc}>Manage your subscription, export data, or delete your account</p>
 
-      <UsageThisMonth getAuthHeaders={getAuthHeaders} />
+      {/* Plan tiers */}
+      <div
+        data-plan-row
+        style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}
+        className="settings-plan-row"
+      >
+        <PlanCard
+          tier="Free"
+          price="₹0"
+          desc="3 total mock interviews. Behavioural questions only."
+          current={tier === "free" || tier === "starter"}
+        />
+        <PlanCard
+          tier="Pro"
+          price="₹599 per month"
+          desc="Unlimited mocks, salary negotiation, skill radar, priority voice."
+          current={tier === "pro"}
+          cta={tier === "starter" ? "Upgrade to Pro" : "Upgrade plan"}
+          onCtaClick={() => setShowUpgradeModal(true)}
+        />
+        <PlanCard
+          tier="Placement"
+          price="₹4,999 one-time"
+          desc="Coach reviews, mock panel of three, custom company prep."
+          current={tier === "placement"}
+          highlight
+          cta="Get Placement"
+          onCtaClick={() => setShowUpgradeModal(true)}
+        />
+      </div>
 
-      {/* Subscription card */}
-      <div style={{
-        padding: "24px 28px", borderRadius: 14, marginBottom: 32,
-        background: c.graphite, border: `1px solid ${c.border}`,
-      }}>
-        {/* Plan name + badge row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-            background: authUser?.subscriptionTier === "pro" ? "#DCFCE7" : "#F4E5D8",
-            border: `1px solid ${authUser?.subscriptionTier === "pro" ? "rgba(21,128,61,0.25)" : "rgba(180,83,9,0.22)"}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontFamily: font.display, fontSize: 20, color: authUser?.subscriptionTier === "pro" ? c.sage : c.gilt }}>{tierLabel[0]}</span>
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={{
-              fontFamily: font.display, fontSize: 22, fontWeight: 400, letterSpacing: "0.01em",
-              color: authUser?.subscriptionTier === "pro" ? c.sage : authUser?.subscriptionTier === "starter" ? c.gilt : c.chalk,
-            }}>
+      {/* Status strip for paid plans */}
+      {isPaid && endDateLabel && (
+        <div style={{ ...planCardOuter, padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={subHeaderTitle}>
               {tierLabel}
-            </span>
-            {authUser?.cancelAtPeriodEnd && (
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "#FEE2E2", color: c.ember, letterSpacing: "0.02em", marginLeft: 10, verticalAlign: "middle" }}>Cancelling</span>
-            )}
-            {!authUser?.cancelAtPeriodEnd && authUser?.subscriptionPaused && (
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "#F4E5D8", color: c.gilt, letterSpacing: "0.02em", marginLeft: 10, verticalAlign: "middle" }}>Paused</span>
-            )}
-          </div>
-          {(!authUser?.subscriptionTier || authUser.subscriptionTier !== "pro") && !confirmCancel && (
-            <button onClick={() => setShowUpgradeModal(true)}
-              style={{
-                padding: "10px 22px", borderRadius: 10, border: "none", cursor: "pointer",
-                background: c.indigo,
-                color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
-                boxShadow: shadow.glow, transition: "all 0.2s ease", flexShrink: 0,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = shadow.glowStrong; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = shadow.glow; }}>
-              {authUser?.subscriptionTier === "starter" ? "Upgrade to Pro" : "Upgrade Plan"}
-            </button>
-          )}
-        </div>
-
-        {authUser?.subscriptionTier && authUser.subscriptionTier !== "free" && authUser.subscriptionStart && authUser.subscriptionEnd && (() => {
-          const start = new Date(authUser.subscriptionStart!).getTime();
-          const end = new Date(authUser.subscriptionEnd!).getTime();
-          const now = Date.now();
-          const progress = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
-          const daysLeft = Math.max(0, Math.ceil((end - now) / 86400000));
-          return (
-            <>
-              {/* Progress bar */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, fontWeight: 500 }}>
-                    {new Date(authUser.subscriptionStart!).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — {new Date(authUser.subscriptionEnd!).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                  </span>
-                  <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: authUser?.subscriptionPaused ? c.gilt : daysLeft <= 3 ? c.ember : c.gilt }}>
-                    {authUser?.subscriptionPaused ? "Paused" : daysLeft > 0 ? `${daysLeft} days left` : "Expired"}
-                  </span>
-                </div>
-                <div style={{ height: 4, borderRadius: 2, background: "#F4EFE3" }}>
-                  <div style={{ height: "100%", borderRadius: 2, background: authUser?.subscriptionPaused ? c.stone : daysLeft <= 3 ? c.ember : c.gilt, width: `${progress}%`, transition: "width 0.3s" }} />
-                </div>
-              </div>
-
-              {/* Cancel / Reactivate actions */}
-              {authUser.cancelAtPeriodEnd ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, padding: "12px 16px", borderRadius: 10, background: "#FEF1F1", border: `1px solid #FEE2E2` }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>
-                    Cancels {authUser.subscriptionEnd ? new Date(authUser.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "at period end"}
-                  </span>
-                  <button disabled={cancelLoading} onClick={async () => {
-                    setCancelLoading(true); setCancelMsg("");
-                    try {
-                      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-                      const ctrl = new AbortController();
-                      const timer = setTimeout(() => ctrl.abort(), 15000);
-                      const res = await fetch("/api/reactivate-subscription", { method: "POST", headers: hdrs, signal: ctrl.signal });
-                      clearTimeout(timer);
-                      if (res.ok) { const data = await res.json(); if (data.success) { authUpdateUser({ cancelAtPeriodEnd: false }); setCancelMsg(""); showToast("Plan reactivated"); } else { showToast(data.error || "Failed"); } }
-                      else { const d = await res.json().catch(() => ({})); showToast(d.error || `Failed (${res.status})`); }
-                    } catch (err) { const msg = err instanceof DOMException && err.name === "AbortError" ? "Request timed out." : (err instanceof Error ? err.message : "Network error."); setCancelMsg(msg); showToast(msg); } finally { setCancelLoading(false); }
-                  }}
-                    style={{ padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer", background: c.sage, color: c.cream, fontFamily: font.ui, fontSize: 12, fontWeight: 600, opacity: cancelLoading ? 0.6 : 1, transition: "opacity 0.2s", flexShrink: 0 }}>
-                    {cancelLoading ? "Reactivating..." : "Reactivate Plan"}
-                  </button>
-                </div>
-              ) : !confirmCancel ? (
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-                  <button onClick={async () => {
-                    setCancelLoading(true);
-                    try {
-                      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-                      const isPaused = !!authUser?.subscriptionPaused;
-                      const action = isPaused ? "resume" : "pause";
-                      const res = await fetch("/api/pause-subscription", { method: "POST", headers: hdrs, body: JSON.stringify({ action }) });
-                      if (res.ok) { const data = await res.json(); if (data.success) { authUpdateUser({ subscriptionPaused: action === "pause" }); showToast(action === "pause" ? "Subscription paused" : "Subscription resumed"); } else { showToast(data.error || "Failed"); } }
-                      else { const d = await res.json().catch(() => ({})); showToast(d.error || "Failed"); }
-                    } catch { showToast("Network error"); } finally { setCancelLoading(false); }
-                  }}
-                    style={{ padding: "8px 18px", borderRadius: 8, cursor: "pointer", background: "transparent", border: `1px solid ${c.border}`, color: c.stone, fontFamily: font.ui, fontSize: 11, fontWeight: 500, transition: "all 0.15s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#F4EFE3"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-                    {authUser?.subscriptionPaused ? "Resume Plan" : "Pause Plan"}
-                  </button>
-                  <button onClick={() => setConfirmCancel(true)}
-                    style={{ padding: "8px 18px", borderRadius: 8, cursor: "pointer", background: "transparent", border: `1px solid rgba(185,28,28,0.22)`, color: c.ember, fontFamily: font.ui, fontSize: 11, fontWeight: 500, transition: "all 0.15s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#FEE2E2"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-                    Cancel Plan
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, padding: "12px 16px", borderRadius: 10, background: "#FEF1F1", border: `1px solid #FEE2E2` }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, lineHeight: 1.4 }}>You'll keep benefits until your plan expires.</span>
-                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                    <button onClick={() => setConfirmCancel(false)}
-                      style={{ padding: "8px 16px", borderRadius: 8, cursor: "pointer", background: "transparent", border: `1px solid ${c.border}`, color: c.stone, fontFamily: font.ui, fontSize: 11, transition: "background 0.15s" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#F4EFE3"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-                      Keep Plan
-                    </button>
-                    <button disabled={cancelLoading} onClick={async () => {
-                      setCancelLoading(true); setCancelMsg("");
-                      try {
-                        const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-                        const ctrl = new AbortController();
-                        const timer = setTimeout(() => ctrl.abort(), 15000);
-                        const res = await fetch("/api/cancel-subscription", { method: "POST", headers: hdrs, signal: ctrl.signal });
-                        clearTimeout(timer);
-                        if (res.ok) { const data = await res.json(); if (data.success) { authUpdateUser({ cancelAtPeriodEnd: true }); setCancelMsg(""); setConfirmCancel(false); showToast("Plan will cancel at end of period"); track("subscription_cancelled", { tier: authUser?.subscriptionTier || "unknown" }); } else { setCancelMsg(data.error || "Failed."); showToast(data.error || "Cancellation failed"); } }
-                        else { const d = await res.json().catch(() => ({})); setCancelMsg(d.error || `Error (${res.status}).`); showToast(d.error || "Cancellation failed"); }
-                      } catch (err) { const msg = err instanceof DOMException && err.name === "AbortError" ? "Request timed out." : "Network error."; setCancelMsg(msg); showToast(msg); } finally { setCancelLoading(false); }
-                    }}
-                      style={{ padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer", background: c.ember, color: c.cream, fontFamily: font.ui, fontSize: 11, fontWeight: 600, opacity: cancelLoading ? 0.6 : 1 }}>
-                      {cancelLoading ? "Cancelling..." : "Yes, Cancel"}
-                    </button>
-                  </div>
-                </div>
+              {authUser?.cancelAtPeriodEnd && (
+                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.error100, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Cancelling</span>
               )}
-            </>
-          );
-        })()}
-
-        {/* Payment method management link */}
-        {authUser?.subscriptionTier && authUser.subscriptionTier !== "free" && (
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-            <a href="https://razorpay.com/support/#request/merchant" target="_blank" rel="noopener noreferrer"
-              style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, textDecoration: "none", display: "flex", alignItems: "center", gap: 6, transition: "color 0.15s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = c.gilt; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; }}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-              Manage Payment Method
-              <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
+              {!authUser?.cancelAtPeriodEnd && authUser?.subscriptionPaused && (
+                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.copper100, color: c.gilt, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Paused</span>
+              )}
+            </div>
+            <div style={subHeaderHint}>
+              {authUser?.cancelAtPeriodEnd
+                ? `Access remains until ${endDateLabel}.`
+                : `Renews ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle.`}
+            </div>
           </div>
-        )}
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {authUser?.cancelAtPeriodEnd ? (
+              <button disabled={cancelLoading} onClick={handleReactivate}
+                style={{ ...subtleBtn, color: c.cream, background: c.sage, border: `1px solid ${c.sage}`, opacity: cancelLoading ? 0.6 : 1 }}>
+                {cancelLoading ? "Reactivating..." : "Reactivate"}
+              </button>
+            ) : !confirmCancel ? (
+              <>
+                <button onClick={handlePauseToggle} style={subtleBtn} disabled={cancelLoading}>
+                  {authUser?.subscriptionPaused ? "Resume" : "Pause"}
+                </button>
+                <button onClick={() => setConfirmCancel(true)} style={subtleBtnGhost}>Cancel</button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setConfirmCancel(false)} style={subtleBtn}>Keep plan</button>
+                <button disabled={cancelLoading} onClick={handleConfirmCancel} style={{ ...dangerSolidBtn, opacity: cancelLoading ? 0.6 : 1 }}>
+                  {cancelLoading ? "Cancelling..." : "Yes, cancel"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: cancelMsg.includes("ancelled") ? c.sage : c.ember, margin: 0 }}>{cancelMsg}</p>}
 
-        {(!authUser?.subscriptionTier || authUser.subscriptionTier === "free") && (
-          <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, margin: 0, lineHeight: 1.5 }}>Free plan — 3 total sessions. Upgrade for unlimited practice.</p>
-        )}
+      {/* This month */}
+      <div style={{ ...planCardOuter, padding: "24px 28px" }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={subHeaderTitle}>This month</div>
+          <div style={subHeaderHint}>Counted from your sessions table. Resets on the first of every month.</div>
+        </div>
+        <UsageThisMonth getAuthHeaders={getAuthHeaders} />
       </div>
-      {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: cancelMsg.includes("ancelled") ? c.sage : c.ember, marginTop: -24, marginBottom: 24 }}>{cancelMsg}</p>}
 
-      {/* Billing History */}
-      <span style={{ ...labelStyle, marginBottom: 14 }}>Billing History</span>
-      <div style={{ borderRadius: 14, background: "c.creamSoft", border: `1px solid ${c.border}`, overflow: "hidden", marginBottom: 32 }}>
+      {/* Payment method — paid plans only */}
+      {isPaid && (
+        <div style={{ ...planCardOuter, padding: "20px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={keyValueLabel}>Payment method</div>
+            <div style={keyValueValue}>Razorpay handles every renewal. Update card or UPI from their dashboard.</div>
+          </div>
+          <a href="https://razorpay.com/support/#request/merchant" target="_blank" rel="noopener noreferrer"
+            style={{ ...subtleBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            Manage on Razorpay
+            <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      )}
+
+      {/* Payment history */}
+      <div style={{ ...planCardOuter, padding: "24px 28px" }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={subHeaderTitle}>Payment history</div>
+          <div style={subHeaderHint}>Every successful Razorpay charge on your account.</div>
+        </div>
         {paymentsLoading ? (
-          <div style={{ padding: "32px 24px", textAlign: "center" }}>
-            <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>Loading payment history...</span>
-          </div>
-        ) : payments.length > 0 ? (
-          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-            <div style={{ minWidth: 480 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px 100px 70px", gap: 8, padding: "12px 20px", borderBottom: `1px solid ${c.border}` }}>
-              {["Date", "Period", "Plan", "Amount", "Status"].map(h => (
-                <span key={h} style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.stone, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</span>
-              ))}
-            </div>
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>Loading payment history…</div>
+        ) : payments.length === 0 ? (
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>No payments yet. Upgrade to start a billing history.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {payments.map((p, i) => (
-              <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px 100px 70px", gap: 8, padding: "14px 20px", borderBottom: i < payments.length - 1 ? `1px solid ${c.border}` : "none", alignItems: "center" }}>
-                <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>
-                  {new Date(p.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                </span>
-                <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>
-                  {p.subscription_start ? new Date(p.subscription_start).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "\u2014"}
-                  {p.subscription_end ? ` \u2013 ${new Date(p.subscription_end).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
-                </span>
-                <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ivory, fontWeight: 500 }}>
-                  {p.tier ? p.tier.charAt(0).toUpperCase() + p.tier.slice(1) : p.plan}
-                </span>
-                <span style={{ fontFamily: font.mono, fontSize: 12, color: c.chalk }}>
-                  {"\u20B9"}{Math.round(p.amount / 100)}
-                </span>
-                <span style={{
-                  fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 6, display: "inline-block", textAlign: "center",
-                  color: p.status === "completed" ? c.sage : c.ember,
-                  background: p.status === "completed" ? "#DCFCE7" : "#FEE2E2",
-                }}>
-                  {p.status === "completed" ? "Paid" : p.status}
-                </span>
-              </div>
+              <InvoiceRow key={p.id} payment={p} divider={i < payments.length - 1} />
             ))}
-            </div>
-          </div>
-        ) : (
-          <div style={{ padding: "32px 24px", textAlign: "center" }}>
-            <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>No payment history yet</span>
           </div>
         )}
       </div>
 
-      {/* Data & Privacy */}
-      <span style={{ ...labelStyle, marginBottom: 14 }}>Data & Privacy</span>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }} className="settings-form-grid">
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "16px 20px", borderRadius: 12,
-          background: "c.creamSoft", border: `1px solid ${c.border}`,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#DCFCE7", border: `1px solid rgba(21,128,61,0.22)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-            <div>
-              <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 1 }}>Resume data</span>
-              <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Row-level security</span>
-            </div>
-          </div>
-          <span style={{ fontFamily: font.mono, fontSize: 10, color: c.sage, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>Protected</span>
+      {/* Data */}
+      <div style={{ ...planCardOuter, padding: "24px 28px" }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={subHeaderTitle}>Data</div>
+          <div style={subHeaderHint}>Export everything, or delete on demand.</div>
         </div>
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "16px 20px", borderRadius: 12,
-          background: "c.creamSoft", border: `1px solid ${c.border}`,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.18)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </div>
-            <div>
-              <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 1 }}>Export all data</span>
-              <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Sessions & transcripts</span>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button disabled={exporting} onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
-              style={{
-                fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.02em",
-                background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.22)`,
-                borderRadius: 8, padding: "7px 16px", cursor: exporting ? "default" : "pointer",
-                opacity: exporting ? 0.6 : 1, transition: "all 0.15s",
-              }}
-              onMouseEnter={(e) => { if (!exporting) e.currentTarget.style.background = "#EAD7BD"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#F4E5D8"; }}>
-              {exporting ? "Exporting..." : "CSV"}
-            </button>
-            <button disabled={exporting} onClick={async () => {
-              setExporting(true);
-              try {
-                const headers = await getAuthHeaders();
-                const res = await fetch("/api/export-user-data", { method: "GET", headers });
-                if (!res.ok) { showToast("Export failed. Try again."); return; }
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `hirestepx-export-${new Date().toISOString().slice(0,10)}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToast("Full data export downloaded.");
-              } catch (err) {
-                console.error("[settings] GDPR export failed:", err);
-                showToast("Export failed. Try again.");
-              } finally { setExporting(false); }
-            }}
-              title="Complete JSON export of all your data (GDPR portability)"
-              style={{
-                fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.02em",
-                background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.22)`,
-                borderRadius: 8, padding: "7px 16px", cursor: exporting ? "default" : "pointer",
-                opacity: exporting ? 0.6 : 1, transition: "all 0.15s",
-              }}
-              onMouseEnter={(e) => { if (!exporting) e.currentTarget.style.background = "#EAD7BD"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#F4E5D8"; }}>
-              {exporting ? "Exporting..." : "Full JSON"}
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <Divider />
-
-      {/* Log out */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <div>
-          <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 3 }}>Log out</span>
-          <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Sign out on this device</span>
-        </div>
-        <button onClick={onLogout} style={{
-          fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.chalk, letterSpacing: "0.02em",
-          background: "#F4EFE3", border: `1px solid ${c.border}`,
-          borderRadius: 10, padding: "10px 24px", cursor: "pointer", transition: "all 0.15s",
-        }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "#EBE5D2"; e.currentTarget.style.color = c.ivory; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "#F4EFE3"; e.currentTarget.style.color = c.chalk; }}>
-          Log out
-        </button>
-      </div>
-
-      {/* Delete account */}
-      <div style={{
-        padding: "20px 24px", borderRadius: 12, marginTop: 12,
-        background: "#FEF1F1", border: `1px solid #FEE2E2`,
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-      }}>
-        <div>
-          <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, display: "block", marginBottom: 3 }}>Delete account</span>
-          <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Scheduled for permanent deletion in 7 days. Log in within 7 days to cancel.</span>
-        </div>
-        {!confirmDelete ? (
-          <button onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeleteMsg(""); }}
-            style={{
-              fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ember, letterSpacing: "0.02em",
-              background: "transparent", border: `1px solid rgba(185,28,28,0.3)`,
-              borderRadius: 10, padding: "10px 24px", cursor: "pointer", transition: "all 0.15s", flexShrink: 0,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#FEE2E2"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-            Delete Account
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={keyValueLabel}>Export sessions</div>
+            <div style={keyValueValue}>CSV of every session, evaluation, and resume snapshot.</div>
+          </div>
+          <button type="button" disabled={exporting}
+            onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
+            style={{ ...subtleBtn, opacity: exporting ? 0.6 : 1 }}>
+            {exporting ? "Exporting…" : "Export CSV"}
           </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={keyValueLabel}>Full data export</div>
+            <div style={keyValueValue}>JSON portable copy of your account, sessions, payments, and preferences.</div>
+          </div>
+          <button type="button" disabled={exporting} onClick={handleFullJsonExport} style={{ ...subtleBtn, opacity: exporting ? 0.6 : 1 }}>
+            {exporting ? "Exporting…" : "Download JSON"}
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={keyValueLabel}>Log out</div>
+            <div style={keyValueValue}>Sign out on this device.</div>
+          </div>
+          <button type="button" onClick={onLogout} style={subtleBtn}>Log out</button>
+        </div>
+
+        {!confirmDelete ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ ...keyValueLabel, color: c.ember }}>Delete account</div>
+              <div style={keyValueValue}>Scheduled for permanent deletion in 7 days. Log in within 7 days to cancel.</div>
+            </div>
+            <button type="button"
+              onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeleteMsg(""); }}
+              style={subtleBtnGhost}>
+              Delete account
+            </button>
+          </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end", flexShrink: 0 }}>
-            <input type="email" value={deleteEmailInput} onChange={(e) => setDeleteEmailInput(e.target.value)}
-              placeholder="Type your email to confirm" aria-label="Confirm email for account deletion"
-              style={{
-                fontFamily: font.ui, fontSize: 12, color: c.chalk, background: c.graphite,
-                border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 10, padding: "10px 14px", outline: "none", minWidth: 220,
-                transition: "border-color 0.2s, box-shadow 0.2s",
-              }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = c.ember; e.currentTarget.style.boxShadow = "0 0 0 3px #FEE2E2"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(185,28,28,0.3)"; e.currentTarget.style.boxShadow = "none"; }} />
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); }}
-                style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 10, padding: "9px 18px", cursor: "pointer", transition: "background 0.15s" }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "#F4EFE3"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-                Cancel
-              </button>
-              <button disabled={deleteLoading || deleteEmailInput.toLowerCase() !== (authUser?.email || "").toLowerCase()} onClick={async () => {
-                setDeleteLoading(true); setDeleteMsg("");
-                try {
-                  const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-                  const ctrl = new AbortController();
-                  const t = setTimeout(() => ctrl.abort(), 15000);
-                  const res = await fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify({}), signal: ctrl.signal });
-                  clearTimeout(t);
-                  if (res.ok || res.status === 207) {
-                    const data = await res.json().catch(() => ({}));
-                    if (data.scheduled) {
-                      showToast("Account scheduled for deletion. Log in within 7 days to cancel.");
-                    }
-                    localStorage.clear();
-                    onLogout();
-                  } else { const d = await res.json().catch(() => ({})); setDeleteMsg(d.error || "Failed. Try again."); setDeleteLoading(false); }
-                } catch (err) {
-                  setDeleteMsg(err instanceof DOMException && err.name === "AbortError" ? "Timed out. Try again." : "Network error.");
-                  setDeleteLoading(false);
-                }
-              }}
+          <div style={{ padding: "16px 0" }}>
+            <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm delete</div>
+            <div style={keyValueValue}>Type your email ({authUser?.email}) to confirm. This is reversible for 7 days.</div>
+            <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+              <input type="email" value={deleteEmailInput}
+                onChange={(e) => setDeleteEmailInput(e.target.value)}
+                placeholder="Type your email to confirm" aria-label="Confirm email for account deletion"
                 style={{
-                  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.cream, background: c.ember,
-                  border: "none", borderRadius: 10, padding: "9px 24px", cursor: "pointer",
-                  opacity: (deleteLoading || deleteEmailInput.toLowerCase() !== (authUser?.email || "").toLowerCase()) ? 0.4 : 1,
-                  transition: "opacity 0.15s",
-                }}>
-                {deleteLoading ? "Deleting..." : "Confirm Delete"}
+                  fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
+                  border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 8, padding: "9px 12px",
+                  outline: "none", minWidth: 240, flex: 1,
+                }} />
+              <button type="button" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); }} style={subtleBtn}>Keep account</button>
+              <button type="button"
+                disabled={deleteLoading || deleteEmailInput.toLowerCase() !== (authUser?.email || "").toLowerCase()}
+                onClick={handleConfirmDelete}
+                style={{ ...dangerSolidBtn, opacity: (deleteLoading || deleteEmailInput.toLowerCase() !== (authUser?.email || "").toLowerCase()) ? 0.45 : 1 }}>
+                {deleteLoading ? "Deleting…" : "Confirm delete"}
               </button>
             </div>
+            {deleteMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, marginTop: 10, marginBottom: 0 }}>{deleteMsg}</p>}
           </div>
         )}
       </div>
-      {deleteMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, marginTop: 12 }}>{deleteMsg}</p>}
     </div>
   );
 });
+

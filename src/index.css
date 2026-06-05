@@ -835,7 +835,11 @@ input[type="range"]::-moz-range-thumb {
 .settings-pills::-webkit-scrollbar { display: none; }
 .settings-form-grid { grid-template-columns: 1fr 1fr; }
 .settings-chip-grid { grid-template-columns: 1fr 1fr 1fr; }
+.settings-plan-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
+@media (max-width: 860px) {
+  .settings-plan-row { grid-template-columns: 1fr !important; }
+}
 @media (max-width: 600px) {
   .settings-form-grid { grid-template-columns: 1fr !important; }
   .settings-chip-grid { grid-template-columns: 1fr !important; }
