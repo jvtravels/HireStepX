@@ -241,19 +241,25 @@ export default function SettingsPage() {
 
   return (
     <div style={{ width: "100%" }}>
-      {/* ── Page Header ── */}
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>
-        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 }}>
-          Tune HireStepX to match how you practice.
-        </p>
-      </div>
-
-      {/* ── Section Navigation ── */}
-      <div ref={pillsRef} role="tablist" aria-label="Settings sections" className="settings-pills" style={{
-        display: "flex", gap: 4, marginBottom: 32, overflowX: "auto", paddingBottom: 2,
-        borderBottom: `1px solid ${c.border}`, paddingRight: 2,
+      {/* ── Sticky Header + Tabs ── */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 5,
+        background: c.obsidian,
+        margin: "-12px 0 32px",
+        paddingTop: 12,
       }}>
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>
+          <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 }}>
+            Tune HireStepX to match how you practice.
+          </p>
+        </div>
+
+        {/* ── Section Navigation ── */}
+        <div ref={pillsRef} role="tablist" aria-label="Settings sections" className="settings-pills" style={{
+          display: "flex", gap: 4, overflowX: "auto", paddingBottom: 2,
+          borderBottom: `1px solid ${c.border}`, paddingRight: 2,
+        }}>
         {SECTIONS.map((s, i) => (
           <button key={s.id} role="tab" aria-selected={activeSection === s.id} tabIndex={activeSection === s.id ? 0 : -1}
             onClick={() => switchSection(s.id)} onKeyDown={(e) => handlePillKeyDown(e, i)}
@@ -273,6 +279,7 @@ export default function SettingsPage() {
             {s.label}
           </button>
         ))}
+        </div>
       </div>
 
       {/* ═══════════════════ ACCOUNT ═══════════════════ */}
