@@ -1,9 +1,45 @@
 import type React from "react";
 import { memo, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
-import { c, font, shadow, gradient } from "./tokens";
 import type { PersistedState } from "./dashboardTypes";
 import type { PaymentRecord } from "./supabase";
+
+/* Cream-mode local tokens — mirror tempo/designs/canvases/design-system/_tokens.ts
+   and DashboardLayout. Same keys as the old dark `c` so JSX style values
+   keep compiling; values are now cream / coal / copper / indigo. */
+const c = {
+  obsidian: "#FAF7F0",
+  graphite: "#FFFFFF",
+  border: "#EBE5D2",
+  borderStrong: "#D6CDB5",
+  gilt: "#B45309",
+  giltDark: "#923F07",
+  ivory: "#0E0C08",
+  chalk: "#0E0C08",
+  stone: "#6E6759",
+  sage: "#15803D",
+  ember: "#B91C1C",
+  slate: "#6E6759",
+  indigo: "#312E81",
+  indigoDeep: "#1E1B4B",
+  indigo100: "#E5E2F2",
+  copper100: "#F4E5D8",
+  success100: "#DCFCE7",
+  error100: "#FEE2E2",
+  warning100: "#FEF3C7",
+  cream: "#FAF7F0",
+  creamSoft: "#F4EFE3",
+};
+const font = {
+  display: "'Instrument Serif', Georgia, serif",
+  ui: "'Satoshi', -apple-system, system-ui, sans-serif",
+  mono: "'JetBrains Mono', monospace",
+};
+const shadow = {
+  sm: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+  glow: "0 1px 2px rgba(49,46,129,.18), 0 4px 12px -4px rgba(49,46,129,.24)",
+  glowStrong: "0 2px 4px rgba(49,46,129,.22), 0 10px 24px -6px rgba(49,46,129,.30)",
+};
 
 /* ─── Section Icons (shared) ─── */
 export const icons = {
@@ -15,7 +51,7 @@ export const icons = {
 
 /* ─── Shared Styles ─── */
 export const cardStyle: React.CSSProperties = {
-  background: `linear-gradient(180deg, ${c.graphite} 0%, rgba(14,14,16,0.98) 100%)`,
+  background: c.graphite,
   borderRadius: 16,
   border: `1px solid ${c.border}`,
   padding: "32px 36px",
@@ -44,14 +80,14 @@ export const labelStyle: React.CSSProperties = {
 
 export const inputStyle: React.CSSProperties = {
   width: "100%", padding: "12px 16px", borderRadius: 10,
-  background: c.obsidian, border: `1px solid ${c.border}`,
+  background: c.graphite, border: `1px solid ${c.borderStrong}`,
   color: c.ivory, fontFamily: font.ui, fontSize: 13, outline: "none", boxSizing: "border-box",
   transition: "border-color 0.2s ease, box-shadow 0.2s ease",
 };
 
 export const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.borderColor = "rgba(212,179,127,0.4)";
-  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,179,127,0.08)";
+  e.currentTarget.style.borderColor = "rgba(180,83,9,0.5)";
+  e.currentTarget.style.boxShadow = "0 0 0 3px #F4E5D8";
 };
 export const focusOutBase = (e: React.FocusEvent<HTMLInputElement>) => {
   e.currentTarget.style.borderColor = c.border;
@@ -60,10 +96,10 @@ export const focusOutBase = (e: React.FocusEvent<HTMLInputElement>) => {
 
 const chipBtn = (active: boolean): React.CSSProperties => ({
   padding: "14px 16px", borderRadius: 12, cursor: "pointer",
-  background: active ? "rgba(212,179,127,0.06)" : "rgba(6,6,7,0.6)",
-  border: `1.5px solid ${active ? "rgba(212,179,127,0.35)" : c.border}`,
+  background: active ? "#F4E5D8" : "c.creamSoft",
+  border: `1.5px solid ${active ? "rgba(180,83,9,0.45)" : c.border}`,
   textAlign: "left", transition: "all 0.2s ease",
-  boxShadow: active ? "0 0 0 1px rgba(212,179,127,0.08)" : "none",
+  boxShadow: active ? "0 0 0 1px #F4E5D8" : "none",
   position: "relative",
 });
 
@@ -79,7 +115,7 @@ function RadioDot({ active }: { active: boolean }) {
   return (
     <span style={{
       width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
-      border: `1.5px solid ${active ? c.gilt : "rgba(255,255,255,0.12)"}`,
+      border: `1.5px solid ${active ? c.gilt : "#D6CDB5"}`,
       display: "flex", alignItems: "center", justifyContent: "center",
       transition: "border-color 0.2s ease",
     }}>
@@ -130,7 +166,7 @@ export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) 
   return (
     <button onClick={onToggle} aria-pressed={on} style={{
       width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-      background: on ? `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})` : "rgba(255,255,255,0.06)",
+      background: on ? c.indigo : "#EBE5D2",
       padding: 3, transition: "background 0.25s ease", position: "relative",
     }}>
       <div style={{
@@ -146,12 +182,12 @@ export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) 
 
 /* ─── Decorative gradient accent (reused at top of every card) ─── */
 function CardAccent() {
-  return <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, rgba(212,179,127,0.2), transparent)` }} />;
+  return <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, rgba(180,83,9,0.28), transparent)` }} />;
 }
 
 /* ─── Section icon wrapper ─── */
 function IconBox({ children, color }: { children: React.ReactNode; color?: string }) {
-  const col = color || "rgba(212,179,127";
+  const col = color || "rgba(180,83,9";
   return (
     <div style={{ width: 36, height: 36, borderRadius: 10, background: `${col},0.06)`, border: `1px solid ${col},0.12)`, display: "flex", alignItems: "center", justifyContent: "center", color: color ? undefined : c.gilt }}>
       {children}
@@ -232,12 +268,12 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
       <div style={{
         display: "flex", alignItems: "center", gap: 20, marginBottom: 32,
         padding: "20px 24px", borderRadius: 14,
-        background: gradient.surfaceCard,
+        background: c.graphite,
         border: `1px solid ${c.border}`,
       }}>
         <div style={{
           width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-          background: "rgba(212,179,127,0.06)", border: `1px solid rgba(212,179,127,0.15)`,
+          background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.22)`,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <span style={{ fontFamily: font.display, fontSize: 24, color: c.gilt }}>{(userName || "?")[0].toUpperCase()}</span>
@@ -248,8 +284,8 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
         </div>
         <div style={{
           padding: "5px 12px", borderRadius: 8,
-          background: subscriptionTier === "pro" ? "rgba(122,158,126,0.08)" : "rgba(212,179,127,0.08)",
-          border: `1px solid ${subscriptionTier === "pro" ? "rgba(122,158,126,0.15)" : "rgba(212,179,127,0.15)"}`,
+          background: subscriptionTier === "pro" ? "#DCFCE7" : "#F4E5D8",
+          border: `1px solid ${subscriptionTier === "pro" ? "rgba(21,128,61,0.25)" : "rgba(180,83,9,0.22)"}`,
         }}>
           <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: subscriptionTier === "pro" ? c.sage : c.gilt, letterSpacing: "0.04em", textTransform: "uppercase" }}>{tierLabel}</span>
         </div>
@@ -285,7 +321,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           style={{
             fontFamily: font.ui, fontSize: 13, fontWeight: 600, padding: "11px 32px", borderRadius: 10,
             border: "none", cursor: (saving || !isDirty) ? "not-allowed" : "pointer",
-            background: (saving || !isDirty) ? "rgba(212,179,127,0.15)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+            background: (saving || !isDirty) ? "rgba(180,83,9,0.22)" : c.indigo,
             color: (saving || !isDirty) ? c.stone : c.obsidian,
             transition: "all 0.2s ease", letterSpacing: "0.02em",
           }}>
@@ -297,7 +333,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
         {saved && <span style={{ fontFamily: font.ui, fontSize: 11, color: c.sage, display: "flex", alignItems: "center", gap: 4 }}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </span>}
-        <kbd style={{ marginLeft: "auto", fontFamily: font.mono, fontSize: 10, color: c.stone, background: "rgba(245,242,237,0.03)", border: `1px solid ${c.border}`, borderRadius: 6, padding: "3px 8px" }}>&#8984;S</kbd>
+        <kbd style={{ marginLeft: "auto", fontFamily: font.mono, fontSize: 10, color: c.stone, background: "#F4EFE3", border: `1px solid ${c.border}`, borderRadius: 6, padding: "3px 8px" }}>&#8984;S</kbd>
       </div>
 
       <Divider />
@@ -318,13 +354,13 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           style={{
             fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
             color: resetSent ? c.sage : c.ivory,
-            background: resetSent ? "rgba(122,158,126,0.08)" : "rgba(245,242,237,0.04)",
-            border: `1px solid ${resetSent ? "rgba(122,158,126,0.2)" : c.border}`,
+            background: resetSent ? "#DCFCE7" : "#F4EFE3",
+            border: `1px solid ${resetSent ? "rgba(21,128,61,0.3)" : c.border}`,
             borderRadius: 10, padding: "9px 20px", cursor: (resetLoading || resetSent) ? "default" : "pointer",
             opacity: resetLoading ? 0.6 : 1, transition: "all 0.2s ease",
           }}
-          onMouseEnter={(e) => { if (!resetLoading && !resetSent) e.currentTarget.style.background = "rgba(245,242,237,0.06)"; }}
-          onMouseLeave={(e) => { if (!resetLoading && !resetSent) e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+          onMouseEnter={(e) => { if (!resetLoading && !resetSent) e.currentTarget.style.background = "#EBE5D2"; }}
+          onMouseLeave={(e) => { if (!resetLoading && !resetSent) e.currentTarget.style.background = "#F4EFE3"; }}
         >
           {resetLoading ? "Sending..." : resetSent ? "Email Sent" : "Reset Password"}
         </button>
@@ -385,9 +421,9 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
                     padding: "10px 14px",
                     borderRadius: 10,
                     background: d.isCurrent
-                      ? "rgba(122,158,126,0.06)"
-                      : "rgba(245,242,237,0.03)",
-                    border: `1px solid ${d.isCurrent ? "rgba(122,158,126,0.18)" : c.border}`,
+                      ? "#DCFCE7"
+                      : "#F4EFE3",
+                    border: `1px solid ${d.isCurrent ? "rgba(21,128,61,0.28)" : c.border}`,
                   }}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
@@ -419,7 +455,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
                         color: c.sage,
                         padding: "3px 8px",
                         borderRadius: 6,
-                        background: "rgba(122,158,126,0.08)",
+                        background: "#DCFCE7",
                       }}
                     >
                       Current
@@ -452,9 +488,9 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
             letterSpacing: "0.02em",
             color: signOutOthersDone ? c.sage : c.ivory,
             background: signOutOthersDone
-              ? "rgba(122,158,126,0.08)"
-              : "rgba(245,242,237,0.04)",
-            border: `1px solid ${signOutOthersDone ? "rgba(122,158,126,0.2)" : c.border}`,
+              ? "#DCFCE7"
+              : "#F4EFE3",
+            border: `1px solid ${signOutOthersDone ? "rgba(21,128,61,0.3)" : c.border}`,
             borderRadius: 10,
             padding: "9px 20px",
             cursor:
@@ -465,11 +501,11 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           }}
           onMouseEnter={(e) => {
             if (!signOutOthersLoading && !signOutOthersDone)
-              e.currentTarget.style.background = "rgba(245,242,237,0.06)";
+              e.currentTarget.style.background = "#EBE5D2";
           }}
           onMouseLeave={(e) => {
             if (!signOutOthersLoading && !signOutOthersDone)
-              e.currentTarget.style.background = "rgba(245,242,237,0.04)";
+              e.currentTarget.style.background = "#F4EFE3";
           }}
         >
           {signOutOthersLoading
@@ -534,7 +570,7 @@ export const InterviewSection = memo(function InterviewSection(props: InterviewS
             ]).map(s => (
               <button key={s.id} onClick={() => { authUpdateUser({ learningStyle: s.id }); showToast("Feedback style updated"); }}
                 style={{ ...chipBtn(learningVal === s.id), flex: 1, padding: "11px 14px" }}
-                onMouseEnter={(e) => { if (learningVal !== s.id) e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+                onMouseEnter={(e) => { if (learningVal !== s.id) e.currentTarget.style.borderColor = "#D6CDB5"; }}
                 onMouseLeave={(e) => { if (learningVal !== s.id) e.currentTarget.style.borderColor = c.border; }}>
                 <span style={{ ...chipLabel(learningVal === s.id), marginBottom: 0 }}><RadioDot active={learningVal === s.id} />{s.label}</span>
               </button>
@@ -553,7 +589,7 @@ export const InterviewSection = memo(function InterviewSection(props: InterviewS
               { id: "intense", label: "Intense", desc: "High pressure" },
             ].map(d => (
               <button key={d.id} onClick={() => { autoSave({ defaultDifficulty: d.id }); showToast("Difficulty updated"); }} style={chipBtn(difficultyVal === d.id)}
-                onMouseEnter={(e) => { if (difficultyVal !== d.id) e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+                onMouseEnter={(e) => { if (difficultyVal !== d.id) e.currentTarget.style.borderColor = "#D6CDB5"; }}
                 onMouseLeave={(e) => { if (difficultyVal !== d.id) e.currentTarget.style.borderColor = c.border; }}>
                 <span style={chipLabel(difficultyVal === d.id)}><RadioDot active={difficultyVal === d.id} />{d.label}</span>
                 <span style={chipDesc}>{d.desc}</span>
@@ -571,7 +607,7 @@ export const InterviewSection = memo(function InterviewSection(props: InterviewS
               { id: "lead", label: "Lead+", desc: "10+ years" },
             ].map(d => (
               <button key={d.id} onClick={() => { authUpdateUser({ experienceLevel: d.id }); showToast("Experience level updated"); }} style={chipBtn(experienceVal === d.id)}
-                onMouseEnter={(e) => { if (experienceVal !== d.id) e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+                onMouseEnter={(e) => { if (experienceVal !== d.id) e.currentTarget.style.borderColor = "#D6CDB5"; }}
                 onMouseLeave={(e) => { if (experienceVal !== d.id) e.currentTarget.style.borderColor = c.border; }}>
                 <span style={chipLabel(experienceVal === d.id)}><RadioDot active={experienceVal === d.id} />{d.label}</span>
                 <span style={chipDesc}>{d.desc}</span>
@@ -606,7 +642,7 @@ function UsageBar({ label, row }: { label: string; row: UsageRow }) {
         <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{label}</span>
         <span style={{ fontFamily: font.mono, fontSize: 12, color: c.chalk }}>{display}</span>
       </div>
-      <div style={{ height: 6, borderRadius: 999, background: "rgba(245,242,237,0.06)", overflow: "hidden" }}>
+      <div style={{ height: 6, borderRadius: 999, background: "#EBE5D2", overflow: "hidden" }}>
         <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.sage, transition: "width 0.4s ease" }} />
       </div>
     </div>
@@ -638,13 +674,13 @@ const UsageThisMonth = memo(function UsageThisMonth({
   if (error) return null; // Fail quiet — usage is decorative, not gating.
   if (!data) {
     return (
-      <div style={{ padding: "20px 24px", borderRadius: 14, marginBottom: 24, background: gradient.surfaceCard, border: `1px solid ${c.border}` }}>
+      <div style={{ padding: "20px 24px", borderRadius: 14, marginBottom: 24, background: c.graphite, border: `1px solid ${c.border}` }}>
         <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Loading usage…</span>
       </div>
     );
   }
   return (
-    <div style={{ padding: "20px 24px", borderRadius: 14, marginBottom: 24, background: gradient.surfaceCard, border: `1px solid ${c.border}` }}>
+    <div style={{ padding: "20px 24px", borderRadius: 14, marginBottom: 24, background: c.graphite, border: `1px solid ${c.border}` }}>
       <h4 style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 14px" }}>
         Usage this month
       </h4>
@@ -727,14 +763,14 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       {/* Subscription card */}
       <div style={{
         padding: "24px 28px", borderRadius: 14, marginBottom: 32,
-        background: gradient.surfaceCard, border: `1px solid ${c.border}`,
+        background: c.graphite, border: `1px solid ${c.border}`,
       }}>
         {/* Plan name + badge row */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-            background: authUser?.subscriptionTier === "pro" ? "rgba(122,158,126,0.06)" : "rgba(212,179,127,0.06)",
-            border: `1px solid ${authUser?.subscriptionTier === "pro" ? "rgba(122,158,126,0.15)" : "rgba(212,179,127,0.15)"}`,
+            background: authUser?.subscriptionTier === "pro" ? "#DCFCE7" : "#F4E5D8",
+            border: `1px solid ${authUser?.subscriptionTier === "pro" ? "rgba(21,128,61,0.25)" : "rgba(180,83,9,0.22)"}`,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <span style={{ fontFamily: font.display, fontSize: 20, color: authUser?.subscriptionTier === "pro" ? c.sage : c.gilt }}>{tierLabel[0]}</span>
@@ -747,17 +783,17 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
               {tierLabel}
             </span>
             {authUser?.cancelAtPeriodEnd && (
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "rgba(196,112,90,0.08)", color: c.ember, letterSpacing: "0.02em", marginLeft: 10, verticalAlign: "middle" }}>Cancelling</span>
+              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "#FEE2E2", color: c.ember, letterSpacing: "0.02em", marginLeft: 10, verticalAlign: "middle" }}>Cancelling</span>
             )}
             {!authUser?.cancelAtPeriodEnd && authUser?.subscriptionPaused && (
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "rgba(212,179,127,0.08)", color: c.gilt, letterSpacing: "0.02em", marginLeft: 10, verticalAlign: "middle" }}>Paused</span>
+              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "#F4E5D8", color: c.gilt, letterSpacing: "0.02em", marginLeft: 10, verticalAlign: "middle" }}>Paused</span>
             )}
           </div>
           {(!authUser?.subscriptionTier || authUser.subscriptionTier !== "pro") && !confirmCancel && (
             <button onClick={() => setShowUpgradeModal(true)}
               style={{
                 padding: "10px 22px", borderRadius: 10, border: "none", cursor: "pointer",
-                background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+                background: c.indigo,
                 color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
                 boxShadow: shadow.glow, transition: "all 0.2s ease", flexShrink: 0,
               }}
@@ -786,14 +822,14 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                     {authUser?.subscriptionPaused ? "Paused" : daysLeft > 0 ? `${daysLeft} days left` : "Expired"}
                   </span>
                 </div>
-                <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.04)" }}>
-                  <div style={{ height: "100%", borderRadius: 2, background: authUser?.subscriptionPaused ? c.stone : daysLeft <= 3 ? c.ember : `linear-gradient(90deg, ${c.gilt}, ${c.giltDark})`, width: `${progress}%`, transition: "width 0.3s" }} />
+                <div style={{ height: 4, borderRadius: 2, background: "#F4EFE3" }}>
+                  <div style={{ height: "100%", borderRadius: 2, background: authUser?.subscriptionPaused ? c.stone : daysLeft <= 3 ? c.ember : c.gilt, width: `${progress}%`, transition: "width 0.3s" }} />
                 </div>
               </div>
 
               {/* Cancel / Reactivate actions */}
               {authUser.cancelAtPeriodEnd ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, padding: "12px 16px", borderRadius: 10, background: "rgba(196,112,90,0.03)", border: `1px solid rgba(196,112,90,0.08)` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, padding: "12px 16px", borderRadius: 10, background: "#FEF1F1", border: `1px solid #FEE2E2` }}>
                   <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>
                     Cancels {authUser.subscriptionEnd ? new Date(authUser.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "at period end"}
                   </span>
@@ -809,7 +845,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                       else { const d = await res.json().catch(() => ({})); showToast(d.error || `Failed (${res.status})`); }
                     } catch (err) { const msg = err instanceof DOMException && err.name === "AbortError" ? "Request timed out." : (err instanceof Error ? err.message : "Network error."); setCancelMsg(msg); showToast(msg); } finally { setCancelLoading(false); }
                   }}
-                    style={{ padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer", background: c.sage, color: "#fff", fontFamily: font.ui, fontSize: 12, fontWeight: 600, opacity: cancelLoading ? 0.6 : 1, transition: "opacity 0.2s", flexShrink: 0 }}>
+                    style={{ padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer", background: c.sage, color: c.cream, fontFamily: font.ui, fontSize: 12, fontWeight: 600, opacity: cancelLoading ? 0.6 : 1, transition: "opacity 0.2s", flexShrink: 0 }}>
                     {cancelLoading ? "Reactivating..." : "Reactivate Plan"}
                   </button>
                 </div>
@@ -827,24 +863,24 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                     } catch { showToast("Network error"); } finally { setCancelLoading(false); }
                   }}
                     style={{ padding: "8px 18px", borderRadius: 8, cursor: "pointer", background: "transparent", border: `1px solid ${c.border}`, color: c.stone, fontFamily: font.ui, fontSize: 11, fontWeight: 500, transition: "all 0.15s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#F4EFE3"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
                     {authUser?.subscriptionPaused ? "Resume Plan" : "Pause Plan"}
                   </button>
                   <button onClick={() => setConfirmCancel(true)}
-                    style={{ padding: "8px 18px", borderRadius: 8, cursor: "pointer", background: "transparent", border: `1px solid rgba(196,112,90,0.12)`, color: c.ember, fontFamily: font.ui, fontSize: 11, fontWeight: 500, transition: "all 0.15s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(196,112,90,0.06)"; }}
+                    style={{ padding: "8px 18px", borderRadius: 8, cursor: "pointer", background: "transparent", border: `1px solid rgba(185,28,28,0.22)`, color: c.ember, fontFamily: font.ui, fontSize: 11, fontWeight: 500, transition: "all 0.15s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#FEE2E2"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
                     Cancel Plan
                   </button>
                 </div>
               ) : (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, padding: "12px 16px", borderRadius: 10, background: "rgba(196,112,90,0.03)", border: `1px solid rgba(196,112,90,0.08)` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, padding: "12px 16px", borderRadius: 10, background: "#FEF1F1", border: `1px solid #FEE2E2` }}>
                   <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, lineHeight: 1.4 }}>You'll keep benefits until your plan expires.</span>
                   <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                     <button onClick={() => setConfirmCancel(false)}
                       style={{ padding: "8px 16px", borderRadius: 8, cursor: "pointer", background: "transparent", border: `1px solid ${c.border}`, color: c.stone, fontFamily: font.ui, fontSize: 11, transition: "background 0.15s" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#F4EFE3"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
                       Keep Plan
                     </button>
@@ -860,7 +896,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                         else { const d = await res.json().catch(() => ({})); setCancelMsg(d.error || `Error (${res.status}).`); showToast(d.error || "Cancellation failed"); }
                       } catch (err) { const msg = err instanceof DOMException && err.name === "AbortError" ? "Request timed out." : "Network error."; setCancelMsg(msg); showToast(msg); } finally { setCancelLoading(false); }
                     }}
-                      style={{ padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer", background: c.ember, color: "#fff", fontFamily: font.ui, fontSize: 11, fontWeight: 600, opacity: cancelLoading ? 0.6 : 1 }}>
+                      style={{ padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer", background: c.ember, color: c.cream, fontFamily: font.ui, fontSize: 11, fontWeight: 600, opacity: cancelLoading ? 0.6 : 1 }}>
                       {cancelLoading ? "Cancelling..." : "Yes, Cancel"}
                     </button>
                   </div>
@@ -892,7 +928,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
 
       {/* Billing History */}
       <span style={{ ...labelStyle, marginBottom: 14 }}>Billing History</span>
-      <div style={{ borderRadius: 14, background: "rgba(6,6,7,0.5)", border: `1px solid ${c.border}`, overflow: "hidden", marginBottom: 32 }}>
+      <div style={{ borderRadius: 14, background: "c.creamSoft", border: `1px solid ${c.border}`, overflow: "hidden", marginBottom: 32 }}>
         {paymentsLoading ? (
           <div style={{ padding: "32px 24px", textAlign: "center" }}>
             <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>Loading payment history...</span>
@@ -923,7 +959,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                 <span style={{
                   fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 6, display: "inline-block", textAlign: "center",
                   color: p.status === "completed" ? c.sage : c.ember,
-                  background: p.status === "completed" ? "rgba(122,158,126,0.08)" : "rgba(196,112,90,0.08)",
+                  background: p.status === "completed" ? "#DCFCE7" : "#FEE2E2",
                 }}>
                   {p.status === "completed" ? "Paid" : p.status}
                 </span>
@@ -944,10 +980,10 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "16px 20px", borderRadius: 12,
-          background: "rgba(6,6,7,0.5)", border: `1px solid ${c.border}`,
+          background: "c.creamSoft", border: `1px solid ${c.border}`,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(122,158,126,0.06)", border: `1px solid rgba(122,158,126,0.12)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#DCFCE7", border: `1px solid rgba(21,128,61,0.22)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
             <div>
@@ -960,10 +996,10 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "16px 20px", borderRadius: 12,
-          background: "rgba(6,6,7,0.5)", border: `1px solid ${c.border}`,
+          background: "c.creamSoft", border: `1px solid ${c.border}`,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(212,179,127,0.06)", border: `1px solid rgba(212,179,127,0.12)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.18)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </div>
             <div>
@@ -975,12 +1011,12 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <button disabled={exporting} onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
               style={{
                 fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.02em",
-                background: "rgba(212,179,127,0.06)", border: `1px solid rgba(212,179,127,0.15)`,
+                background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.22)`,
                 borderRadius: 8, padding: "7px 16px", cursor: exporting ? "default" : "pointer",
                 opacity: exporting ? 0.6 : 1, transition: "all 0.15s",
               }}
-              onMouseEnter={(e) => { if (!exporting) e.currentTarget.style.background = "rgba(212,179,127,0.1)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.06)"; }}>
+              onMouseEnter={(e) => { if (!exporting) e.currentTarget.style.background = "#EAD7BD"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "#F4E5D8"; }}>
               {exporting ? "Exporting..." : "CSV"}
             </button>
             <button disabled={exporting} onClick={async () => {
@@ -1007,12 +1043,12 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
               title="Complete JSON export of all your data (GDPR portability)"
               style={{
                 fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.02em",
-                background: "rgba(212,179,127,0.06)", border: `1px solid rgba(212,179,127,0.15)`,
+                background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.22)`,
                 borderRadius: 8, padding: "7px 16px", cursor: exporting ? "default" : "pointer",
                 opacity: exporting ? 0.6 : 1, transition: "all 0.15s",
               }}
-              onMouseEnter={(e) => { if (!exporting) e.currentTarget.style.background = "rgba(212,179,127,0.1)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.06)"; }}>
+              onMouseEnter={(e) => { if (!exporting) e.currentTarget.style.background = "#EAD7BD"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "#F4E5D8"; }}>
               {exporting ? "Exporting..." : "Full JSON"}
             </button>
           </div>
@@ -1029,11 +1065,11 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         </div>
         <button onClick={onLogout} style={{
           fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.chalk, letterSpacing: "0.02em",
-          background: "rgba(245,242,237,0.04)", border: `1px solid ${c.border}`,
+          background: "#F4EFE3", border: `1px solid ${c.border}`,
           borderRadius: 10, padding: "10px 24px", cursor: "pointer", transition: "all 0.15s",
         }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.06)"; e.currentTarget.style.color = c.ivory; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.04)"; e.currentTarget.style.color = c.chalk; }}>
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#EBE5D2"; e.currentTarget.style.color = c.ivory; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "#F4EFE3"; e.currentTarget.style.color = c.chalk; }}>
           Log out
         </button>
       </div>
@@ -1041,7 +1077,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       {/* Delete account */}
       <div style={{
         padding: "20px 24px", borderRadius: 12, marginTop: 12,
-        background: "rgba(196,112,90,0.02)", border: `1px solid rgba(196,112,90,0.08)`,
+        background: "#FEF1F1", border: `1px solid #FEE2E2`,
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
         <div>
@@ -1052,10 +1088,10 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           <button onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeleteMsg(""); }}
             style={{
               fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ember, letterSpacing: "0.02em",
-              background: "transparent", border: `1px solid rgba(196,112,90,0.2)`,
+              background: "transparent", border: `1px solid rgba(185,28,28,0.3)`,
               borderRadius: 10, padding: "10px 24px", cursor: "pointer", transition: "all 0.15s", flexShrink: 0,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(196,112,90,0.06)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#FEE2E2"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
             Delete Account
           </button>
@@ -1064,16 +1100,16 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <input type="email" value={deleteEmailInput} onChange={(e) => setDeleteEmailInput(e.target.value)}
               placeholder="Type your email to confirm" aria-label="Confirm email for account deletion"
               style={{
-                fontFamily: font.ui, fontSize: 12, color: c.chalk, background: c.obsidian,
-                border: `1px solid rgba(196,112,90,0.2)`, borderRadius: 10, padding: "10px 14px", outline: "none", minWidth: 220,
+                fontFamily: font.ui, fontSize: 12, color: c.chalk, background: c.graphite,
+                border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 10, padding: "10px 14px", outline: "none", minWidth: 220,
                 transition: "border-color 0.2s, box-shadow 0.2s",
               }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = c.ember; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(196,112,90,0.08)"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(196,112,90,0.2)"; e.currentTarget.style.boxShadow = "none"; }} />
+              onFocus={(e) => { e.currentTarget.style.borderColor = c.ember; e.currentTarget.style.boxShadow = "0 0 0 3px #FEE2E2"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(185,28,28,0.3)"; e.currentTarget.style.boxShadow = "none"; }} />
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); }}
                 style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 10, padding: "9px 18px", cursor: "pointer", transition: "background 0.15s" }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "#F4EFE3"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
                 Cancel
               </button>
@@ -1099,7 +1135,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                 }
               }}
                 style={{
-                  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: "#fff", background: c.ember,
+                  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.cream, background: c.ember,
                   border: "none", borderRadius: 10, padding: "9px 24px", cursor: "pointer",
                   opacity: (deleteLoading || deleteEmailInput.toLowerCase() !== (authUser?.email || "").toLowerCase()) ? 0.4 : 1,
                   transition: "opacity 0.15s",

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { c, font } from "./tokens";
 import { useAuth, getStoredDeviceToken } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, getSupabase, type PaymentRecord } from "./supabase";
@@ -14,6 +13,28 @@ import {
   InterviewSection,
   PlanSection,
 } from "./settingsSections";
+
+/* Cream-mode local tokens — mirror canvases/design-system/_tokens.ts. */
+const c = {
+  obsidian: "#FAF7F0",
+  graphite: "#FFFFFF",
+  border: "#EBE5D2",
+  borderStrong: "#D6CDB5",
+  gilt: "#B45309",
+  ivory: "#0E0C08",
+  chalk: "#0E0C08",
+  stone: "#6E6759",
+  sage: "#15803D",
+  ember: "#B91C1C",
+  indigo: "#312E81",
+  cream: "#FAF7F0",
+  creamSoft: "#F4EFE3",
+};
+const font = {
+  display: "'Instrument Serif', Georgia, serif",
+  ui: "'Satoshi', -apple-system, system-ui, sans-serif",
+  mono: "'JetBrains Mono', monospace",
+};
 
 const ALL_SECTIONS = [
   { id: "account", label: "Account", icon: icons.account },
@@ -227,10 +248,10 @@ export default function SettingsPage() {
   return (
     <div style={{ maxWidth: 780, margin: "0 auto" }}>
       {/* ── Page Header ── */}
-      <div style={{ marginBottom: 36 }}>
-        <h2 style={{ fontFamily: font.display, fontSize: 32, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "0.01em" }}>Settings</h2>
-        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.5 }}>
-          Manage your account, interview preferences, and subscription
+      <div style={{ marginBottom: 28 }}>
+        <h2 style={{ fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>
+        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 }}>
+          Tune HireStepX to match how you practice.
         </p>
       </div>
 
@@ -363,8 +384,8 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
 
   const localCardStyle: React.CSSProperties = {
     position: "relative", borderRadius: 16, padding: "32px 28px",
-    background: "rgba(6,6,7,0.6)", border: `1px solid ${c.border}`,
-    boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+    background: c.graphite, border: `1px solid ${c.border}`,
+    boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
   };
   const localLabelStyle: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.06em", textTransform: "uppercase" as const, display: "block", marginBottom: 10 };
   const localSectionHeader: React.CSSProperties = { display: "flex", alignItems: "center", gap: 14, marginBottom: 28 };
@@ -375,10 +396,10 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
 
   return (
     <div style={localCardStyle}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, rgba(122,158,126,0.2), transparent)` }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, rgba(180,83,9,0.28), transparent)` }} />
 
       <div style={localSectionHeader}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(122,158,126,0.06)", border: `1px solid rgba(122,158,126,0.12)`, display: "flex", alignItems: "center", justifyContent: "center", color: c.sage }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#DCFCE7", border: `1px solid rgba(21,128,61,0.22)`, display: "flex", alignItems: "center", justifyContent: "center", color: c.sage }}>
           {icons.referral}
         </div>
         <div>
@@ -392,15 +413,15 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
       <div style={{
         display: "flex", alignItems: "center", gap: 12, marginBottom: 24,
         padding: "16px 20px", borderRadius: 12,
-        background: "rgba(122,158,126,0.04)", border: `1px solid rgba(122,158,126,0.12)`,
+        background: "#DCFCE7", border: `1px solid rgba(21,128,61,0.22)`,
       }}>
         <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 600, color: c.sage, letterSpacing: "0.08em", flex: 1 }}>
           {referralCode || "---"}
         </span>
         <button onClick={handleCopy} style={{
           fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: copied ? c.sage : c.gilt,
-          background: copied ? "rgba(122,158,126,0.1)" : "rgba(212,179,127,0.06)",
-          border: `1px solid ${copied ? "rgba(122,158,126,0.2)" : "rgba(212,179,127,0.15)"}`,
+          background: copied ? "#DCFCE7" : "#F4E5D8",
+          border: `1px solid ${copied ? "rgba(21,128,61,0.3)" : "rgba(180,83,9,0.22)"}`,
           borderRadius: 8, padding: "8px 16px", cursor: "pointer", transition: "all 0.15s",
         }}>
           {copied ? "Copied!" : "Copy Link"}
@@ -412,7 +433,7 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
       <div style={{ display: "flex", gap: 12, marginBottom: 28 }}>
         <button onClick={handleShareWhatsApp} style={{
           fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: "#25D366",
-          background: "rgba(37,211,102,0.06)", border: "1px solid rgba(37,211,102,0.15)",
+          background: "#DCFCE7", border: "1px solid rgba(37,211,102,0.3)",
           borderRadius: 10, padding: "12px 20px", cursor: "pointer", transition: "all 0.15s",
           display: "flex", alignItems: "center", gap: 8,
         }}>
@@ -425,7 +446,7 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
           window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
         }} style={{
           fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.chalk,
-          background: "rgba(245,242,237,0.04)", border: `1px solid ${c.border}`,
+          background: c.creamSoft, border: `1px solid ${c.border}`,
           borderRadius: 10, padding: "12px 20px", cursor: "pointer", transition: "all 0.15s",
           display: "flex", alignItems: "center", gap: 8,
         }}>
@@ -444,7 +465,7 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
         ].map(s => (
           <div key={s.label} style={{
             textAlign: "center", padding: "20px 12px", borderRadius: 12,
-            background: "rgba(6,6,7,0.5)", border: `1px solid ${c.border}`,
+            background: c.creamSoft, border: `1px solid ${c.border}`,
           }}>
             <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 600, color: s.color, display: "block", marginBottom: 4 }}>{s.value}</span>
             <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{s.label}</span>
