@@ -292,17 +292,6 @@ export interface User {
   cancelAtPeriodEnd?: boolean;
   subscriptionPaused?: boolean;
   referralCode?: string;
-  /**
-   * Bonus session credits. Granted by:
-   *   - Streak milestones (+1 at 7/14/30 day streaks)
-   *   - Successful referrals (+1 when a referee subscribes)
-   *   - One-time single-session purchases (₹10 per credit)
-   * Consumed when a free-tier user exceeds the 3-session free limit.
-   * Paid tiers ignore this value.
-   */
-  sessionCredits?: number;
-  /** Highest streak milestone (7/14/30) the user has already been rewarded for. Internal use only. */
-  lastStreakRewardDay?: number;
   emailVerified: boolean;
   deletedAt?: string | null;
 }
@@ -379,8 +368,6 @@ function profileToUser(profile: Profile, session: Session): User {
     cancelAtPeriodEnd: profile.cancel_at_period_end || false,
     subscriptionPaused: !!profile.subscription_paused,
     referralCode: profile.referral_code || undefined,
-    sessionCredits: typeof profile.session_credits === "number" ? profile.session_credits : 0,
-    lastStreakRewardDay: typeof profile.last_streak_reward_day === "number" ? profile.last_streak_reward_day : 0,
     emailVerified: session.user.user_metadata?.custom_email_verified === true || !!session.user.email_confirmed_at,
     deletedAt: profile.deleted_at,
     // OAuth provider — used by Settings to hide "Reset Password" for

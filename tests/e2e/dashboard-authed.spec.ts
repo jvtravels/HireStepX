@@ -53,8 +53,6 @@ const FAKE_PROFILE = {
     new Date(Date.now() - 1 * 86400000).toISOString(),
     new Date(Date.now() - 2 * 86400000).toISOString(),
   ],
-  session_credits: 2,
-  last_streak_reward_day: 0,
   referral_code: "HSX-E2E123",
   created_at: new Date().toISOString(),
 };
@@ -121,7 +119,7 @@ async function installMocks(page: Parameters<typeof test>[1]["page"]): Promise<v
   // 4. Supabase REST — other tables (calendar_events, feedback, etc.)
   //    Return empty arrays so the dashboard renders empty-state sections
   //    without errors.
-  await page.route(/\/rest\/v1\/(calendar_events|feedback|llm_usage|payments|referrals|story_notebook)/, async (route: Route) => {
+  await page.route(/\/rest\/v1\/(calendar_events|feedback|llm_usage|payments|referrals)/, async (route: Route) => {
     await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
   });
 
@@ -206,12 +204,4 @@ test.describe("Dashboard — authenticated surface (MSW-style mocked)", () => {
     expect(typeof hasNextMove).toBe("boolean");
   });
 
-  test("bonus-credits chip is shown when profile carries credits", async ({ page }) => {
-    await installMocks(page);
-    await page.goto("/dashboard");
-
-    // Sidebar Plan Status panel shows "+N bonus sessions" when credits > 0.
-    const bonusChip = page.getByText(/\+\d+ bonus session/i).first();
-    await expect(bonusChip).toBeVisible({ timeout: 10_000 });
-  });
 });

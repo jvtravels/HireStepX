@@ -2,11 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { saveSessionResult } from "../interviewAPI";
 import type { SessionResult } from "../interviewAPI";
 
-// Mock supabase decrementSessionCredit (saveSession is no longer used — the
-// client now routes through /api/sessions/save via apiFetch to avoid
-// extension-wrapped fetch hangs on large transcript payloads).
+// Mock supabase (saveSession is no longer used — the client now routes
+// through /api/sessions/save via apiFetch to avoid extension-wrapped fetch
+// hangs on large transcript payloads).
 vi.mock("../supabase", () => ({
-  decrementSessionCredit: vi.fn(() => Promise.resolve(false)),
   authHeaders: vi.fn(() => Promise.resolve({ "Content-Type": "application/json" })),
 }));
 

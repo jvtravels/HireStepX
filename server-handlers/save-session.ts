@@ -21,7 +21,6 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
-import { computeCurrentStreak, pickStreakMilestone } from "./_streak-reward";
 import { resolveActiveResumeVersionId } from "./_resume-versioning";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
@@ -206,16 +205,14 @@ export default async function handler(req: Request): Promise<Response> {
     }), { status: 500, headers });
   }
 
-  // 2. Atomically append a timestamp to practice_timestamps AND evaluate
-  //    streak milestones for a reward. Read-modify-write with the service
-  //    role — not ideal for high concurrency but a user only completes one
-  //    session at a time, so races aren't real here.
+  // 2. Atomically append a timestamp to practice_timestamps. Read-modify-write
+  //    with the service role — not ideal for high concurrency but a user only
+  //    completes one session at a time, so races aren't real here.
   const nowIso = new Date().toISOString();
   let practiceAppended = false;
-  let streakReward: { milestone: number; bonusCredits: number } | null = null;
   try {
     const getRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,session_credits,last_streak_reward_day,started_session_ids`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,started_session_ids`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_KEY,
@@ -228,29 +225,12 @@ export default async function handler(req: Request): Promise<Response> {
       const row = Array.isArray(arr) && arr[0] ? arr[0] : {};
       const existing: string[] = Array.isArray(row.practice_timestamps) ? row.practice_timestamps : [];
       const startedIds: string[] = Array.isArray(row.started_session_ids) ? row.started_session_ids : [];
-      const currentCredits: number = typeof row.session_credits === "number" ? row.session_credits : 0;
-      const lastRewardDay: number = typeof row.last_streak_reward_day === "number" ? row.last_streak_reward_day : 0;
 
       /* Sessions are now counted at START via /api/record-session-start.
          If the engine already recorded this sessionId there, skip the
-         append here so the user doesn't double-count. Streak math still
-         runs on the existing timestamps (which include the start). */
+         append here so the user doesn't double-count. */
       const alreadyCounted = startedIds.includes(sessionRow.id);
       const next = alreadyCounted ? existing : [...existing, nowIso].slice(-500);
-
-      // Streak math extracted to ./_streak-reward.ts and unit-tested.
-      const streakDays = computeCurrentStreak(next);
-      const awardedMilestone = pickStreakMilestone(streakDays, lastRewardDay);
-
-      const patch: Record<string, unknown> = {
-        practice_timestamps: next,
-        has_completed_onboarding: true,
-      };
-      if (awardedMilestone > 0) {
-        patch.session_credits = currentCredits + 1;
-        patch.last_streak_reward_day = awardedMilestone;
-        streakReward = { milestone: awardedMilestone, bonusCredits: 1 };
-      }
 
       const patchRes = await fetch(
         `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
@@ -262,34 +242,14 @@ export default async function handler(req: Request): Promise<Response> {
             Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
             Prefer: "return=minimal",
           },
-          body: JSON.stringify(patch),
+          body: JSON.stringify({ practice_timestamps: next, has_completed_onboarding: true }),
         },
       );
       if (patchRes.ok) {
         practiceAppended = true;
       } else {
         const t = await patchRes.text().catch(() => "");
-        // If the reward columns are missing in this environment, retry without
-        // them so we still persist the timestamp — reward is a bonus, not core.
-        if (awardedMilestone > 0 && /session_credits|last_streak_reward_day/.test(t)) {
-          console.warn(`[save-session] reward columns missing; retrying core patch only`);
-          const retry = await fetch(
-            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
-            {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: SUPABASE_SERVICE_KEY,
-                Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-                Prefer: "return=minimal",
-              },
-              body: JSON.stringify({ practice_timestamps: next, has_completed_onboarding: true }),
-            },
-          );
-          if (retry.ok) { practiceAppended = true; streakReward = null; }
-        } else {
-          console.warn(`[save-session] practice_timestamps patch failed HTTP ${patchRes.status}: ${t.slice(0, 200)}`);
-        }
+        console.warn(`[save-session] practice_timestamps patch failed HTTP ${patchRes.status}: ${t.slice(0, 200)}`);
       }
     } else {
       console.warn(`[save-session] profile read failed HTTP ${getRes.status}`);
@@ -298,7 +258,7 @@ export default async function handler(req: Request): Promise<Response> {
     console.warn(`[save-session] practice_timestamps update threw: ${(err as Error).message}`);
   }
 
-  console.log(`[save-session] OK user=${auth.userId.slice(0, 8)} session=${sessionRow.id.slice(0, 8)} practiceAppended=${practiceAppended} streakReward=${streakReward ? streakReward.milestone : "-"} stripped=${strippedSession.join(",") || "-"} latency=${Date.now() - t0}ms`);
+  console.log(`[save-session] OK user=${auth.userId.slice(0, 8)} session=${sessionRow.id.slice(0, 8)} practiceAppended=${practiceAppended} stripped=${strippedSession.join(",") || "-"} latency=${Date.now() - t0}ms`);
 
   // ─── Eager grading kickoff ───
   // The session row is durable in the DB at this point. Kick off the
@@ -338,7 +298,6 @@ export default async function handler(req: Request): Promise<Response> {
 
   await captureServerEvent("interview_completed", distinctIdFrom(req, auth.userId), {
     session_id: sessionRow.id,
-    streak_milestone: streakReward?.milestone ?? null,
     practice_appended: practiceAppended,
   }, req);
 
@@ -348,6 +307,5 @@ export default async function handler(req: Request): Promise<Response> {
     practiceAppended,
     timestamp: nowIso,
     strippedColumns: strippedSession,
-    streakReward, // { milestone, bonusCredits } or null — client can show a toast
   }), { status: 200, headers });
 }

@@ -757,7 +757,7 @@ export default function DashboardHome() {
 
       {/* ─── "Next step" unified CTA card ─────────────────────────────────
            Consolidates the signals we already compute — weakest skill,
-           current streak, bonus credits, smart-schedule hint — into a
+           current streak, smart-schedule hint — into a
            single "do this now" recommendation. Everything needed is
            already in context; this card just makes the habit loop
            legible instead of spreading across six panels. Suppressed
@@ -770,7 +770,6 @@ export default function DashboardHome() {
         const next = pickNextMove({
           skills: skills || [],
           currentStreak,
-          sessionCredits: user?.sessionCredits ?? 0,
           smartSchedule,
           // Severity-ordering is the caller's contract per nextMove docs.
           // The analyzer's flag-set order is roughly severity-meaningful
@@ -784,10 +783,9 @@ export default function DashboardHome() {
 
         const chipIcon = {
           streak: <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
-          credits: <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
           schedule: <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
         } as const;
-        const chipColor = { streak: c.ember, credits: c.sage, schedule: c.gilt } as const;
+        const chipColor = { streak: c.ember, schedule: c.gilt } as const;
         const chips = pureChips.map(cp => ({ icon: chipIcon[cp.kind], label: cp.label, color: chipColor[cp.kind] }));
 
         return (

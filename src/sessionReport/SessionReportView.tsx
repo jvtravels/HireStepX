@@ -18,6 +18,8 @@
 import { t, f } from "./tokens";
 import { SESSION_REPORT_STYLES } from "./styles";
 import { NegotiationFullReport } from "./NegotiationFullReport";
+import BehavioralFullReport from "./BehavioralFullReport";
+import type { BehavioralFullReportData } from "./types";
 import type { CredibilitySummary } from "../_credibilityCallout";
 import type {
   AnswerSpan,
@@ -94,10 +96,6 @@ export interface SessionReportViewProps {
   /** "Drill weakest skill" — invoked from the Next-Steps third card.
    *  Production routes to a focused 5-question drill. */
   onDrillSkill?: (skillName: string) => void;
-  /** "Save top story to Notebook" — invoked from the Next-Steps middle
-   *  card. Production calls saveStoryToNotebook on the highest-scoring
-   *  question. */
-  onSaveTopStory?: (questionIdx: number) => void;
   /** Trust + usefulness 2-question polls. Both fire to analytics. */
   onTrustAnswer?: (value: "yes" | "no") => void;
   onUsefulAnswer?: (value: "yes" | "no") => void;
@@ -158,6 +156,13 @@ export interface SessionReportViewProps {
    *  silently skips the panel (e.g. first-session render before the
    *  store is wired). */
   progressTrends?: SkillTrend[];
+  /** Behavioral v2 report payload. When provided AND the env flag
+   *  `NEXT_PUBLIC_BEHAVIORAL_REPORT_V2 === "true"` is set, the view
+   *  short-circuits the existing panel stack and renders the new
+   *  diagnostic-first BehavioralFullReport instead. Default (unset)
+   *  falls through to the existing behavior — safe rollback = unset
+   *  the env var. */
+  behavioralFullReportData?: BehavioralFullReportData;
 }
 
 export default function SessionReportView({
@@ -167,7 +172,6 @@ export default function SessionReportView({
   onShare,
   onTryQuestionAgain,
   onDrillSkill,
-  onSaveTopStory,
   onTrustAnswer,
   onUsefulAnswer,
   credibility,
@@ -176,16 +180,17 @@ export default function SessionReportView({
   salaryNegotiationMeta,
   offerNetValue,
   progressTrends,
+  behavioralFullReportData,
 }: SessionReportViewProps) {
-  // Pick the highest-scoring question so the "Save top story" CTA
-  // points at the right answer. Falls back to the first question.
-  const topStoryIdx =
-    data.questions.length > 0
-      ? data.questions.reduce(
-          (best, q) => (q.score > best.score ? q : best),
-          data.questions[0]
-        ).index
-      : 1;
+  // Behavioral v2 dispatch — env-gated, opt-in. Renders the new
+  // diagnostic-first report and skips the existing panel stack.
+  // Default (env unset) falls through unchanged.
+  const behavioralV2Enabled =
+    typeof process !== "undefined" &&
+    process.env.NEXT_PUBLIC_BEHAVIORAL_REPORT_V2 === "true";
+  if (behavioralV2Enabled && behavioralFullReportData) {
+    return <BehavioralFullReport data={behavioralFullReportData} />;
+  }
   return (
     <>
       <style>{SESSION_REPORT_STYLES}</style>
@@ -279,9 +284,6 @@ export default function SessionReportView({
               onDrillSkill && data.weakestSkill
                 ? () => onDrillSkill(data.weakestSkill.name)
                 : undefined
-            }
-            onSaveTopStory={
-              onSaveTopStory ? () => onSaveTopStory(topStoryIdx) : undefined
             }
           />
           <FooterSection

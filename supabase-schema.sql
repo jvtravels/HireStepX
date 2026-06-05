@@ -276,26 +276,9 @@ create policy "Anyone can read company guidance" on company_guidance for select 
 -- Writes only via service role (bypasses RLS). No INSERT/UPDATE/DELETE policy
 -- for authenticated users — this data is admin-controlled.
 
--- 10. Story Notebook — saved STAR stories from interview results reports
-create table if not exists story_notebook (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade not null,
-  session_id text references sessions(id) on delete set null,
-  question_idx integer,
-  title text,
-  question text,
-  answer_text text,
-  star jsonb,
-  tags text[] default '{}',
-  created_at timestamptz default now(),
-  last_used_at timestamptz
-);
-
-create index if not exists idx_story_notebook_user on story_notebook(user_id, created_at desc);
-alter table story_notebook enable row level security;
-drop policy if exists "Users manage own stories" on story_notebook;
-create policy "Users manage own stories" on story_notebook
-  for all using ((auth.uid())::text = user_id::text) with check ((auth.uid())::text = user_id::text);
+-- 10. Story Notebook — removed. The feature is gone; drop the table if it
+-- still exists from a previous deploy.
+drop table if exists story_notebook;
 
 -- 10. Report shares — tokenized public links to a session report
 -- Used by candidates to share their results with recruiters / mentors.
@@ -486,18 +469,12 @@ alter table used_verification_tokens enable row level security;
 -- Weekly-summary cron uses this to rate-limit emails per user.
 alter table profiles add column if not exists last_summary_email_at timestamptz;
 
--- Bonus-session economy. Credits are granted by:
---   (a) One-time single-session purchase (verify-payment.ts)
---   (b) Streak milestones (save-session.ts — 7/14/30-day)
---   (c) Successful referrals (verify-payment.ts, when referee pays)
--- They are consumed by decrementSessionCredit() after a free-tier user exceeds
--- the 3-session free limit. Paid tiers ignore this column.
-alter table profiles add column if not exists session_credits integer default 0;
-
--- Tracks the highest streak milestone the user has already been rewarded for
--- (7, 14, 30). Prevents double-grants when a user hovers around a milestone
--- after a missed day + resume. Value 0 means "no reward granted yet".
-alter table profiles add column if not exists last_streak_reward_day integer default 0;
+-- Bonus-session economy retired. Zero out any outstanding balances before
+-- dropping the columns so existing rows don't carry orphaned values into
+-- any downstream snapshot/backup tooling that still references them.
+update profiles set session_credits = 0 where session_credits is not null and session_credits <> 0;
+alter table profiles drop column if exists session_credits;
+alter table profiles drop column if exists last_streak_reward_day;
 
 -- Re-engagement cron uses this to rate-limit emails per user (see re-engage-users.ts).
 alter table profiles add column if not exists re_engage_sent timestamptz;

@@ -19,14 +19,12 @@ export function NextStepsSection({
   weakestSkill,
   onTryWeakestQuestion,
   onDrillSkill,
-  onSaveTopStory,
 }: {
   daysUntilInterview?: number;
   readinessSentence?: string;
   weakestSkill?: string;
   onTryWeakestQuestion?: () => void;
   onDrillSkill?: () => void;
-  onSaveTopStory?: () => void;
 }) {
   /* Drill weakest skill — bridges to drill mode. If the parent didn't
    * provide a handler we fall back to a console log + drill-start intent
@@ -81,19 +79,6 @@ export function NextStepsSection({
   const firstCardWithHandler = { ...firstCard, onClick: onTryWeakestQuestion };
   const cards = [
     firstCardWithHandler,
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-        </svg>
-      ),
-      iconBg: t.indigo100,
-      iconColor: t.indigo,
-      title: "Save top story to Notebook",
-      desc: "Save your strongest answer as a reusable narrative.",
-      cta: "Save story",
-      onClick: onSaveTopStory,
-    },
     {
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

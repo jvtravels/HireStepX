@@ -38,11 +38,6 @@ export async function deleteUserSessions(userId: string): Promise<void> {
   await c.from("sessions").delete().eq("user_id", userId);
 }
 
-export async function resetUserCredits(userId: string, credits = 3): Promise<void> {
-  const c = requireServiceClient();
-  await c.from("profiles").update({ session_credits: credits }).eq("id", userId);
-}
-
 export async function seedSession(
   userId: string,
   overrides: Record<string, unknown> = {},

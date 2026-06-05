@@ -753,7 +753,7 @@ async function getFeedback() {
   return { total: totalCount, byRating, recent: feedback.slice(0, LIMIT_RECENT) };
 }
 
-/* ─── New section handlers (referrals, promo codes, calendar, story notebook) ─── */
+/* ─── New section handlers (referrals, promo codes, calendar) ─── */
 
 interface ReferralRow {
   id: string;
@@ -945,49 +945,6 @@ async function getOutcomes() {
   return { total, applied, interviewed, offer, accepted, offerRate, shareableTestimonials, recent };
 }
 
-async function getStoryNotebookStats() {
-  const [stories, profiles] = await Promise.all([
-    fetchJSON<{ id: string; user_id: string; title: string; tags: string[] | null; created_at: string; last_used_at: string | null }>(
-      "story_notebook?select=id,user_id,title,tags,created_at,last_used_at&order=created_at.desc&limit=500",
-    ),
-    fetchJSON<{ id: string; name: string | null; email: string }>("profiles?select=id,name,email&limit=2000"),
-  ]);
-  const profileMap = new Map(profiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
-
-  const now = Date.now();
-  const sevenDaysMs = 7 * 86400000;
-  const dueForReview = stories.filter((s) => {
-    const ref = new Date(s.last_used_at || s.created_at).getTime();
-    return now - ref >= sevenDaysMs;
-  }).length;
-
-  // Top users by story count
-  const userCounts = new Map<string, number>();
-  for (const s of stories) userCounts.set(s.user_id, (userCounts.get(s.user_id) || 0) + 1);
-  const topUsers = Array.from(userCounts.entries())
-    .map(([id, count]) => ({
-      id, count,
-      name: profileMap.get(id)?.name || "(deleted)",
-      email: profileMap.get(id)?.email || "—",
-    }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 15);
-
-  return {
-    total: stories.length,
-    dueForReview,
-    topUsers,
-    recent: stories.slice(0, 30).map((s) => ({
-      id: s.id,
-      userEmail: profileMap.get(s.user_id)?.email || "—",
-      title: s.title || "(untitled)",
-      tags: s.tags || [],
-      createdAt: s.created_at,
-      lastUsedAt: s.last_used_at,
-    })),
-  };
-}
-
 /* ─── Handler ─── */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -1034,7 +991,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "referrals": return getReferrals();
         case "promo-codes": return getPromoCodes();
         case "calendar": return getCalendar();
-        case "story-notebook": return getStoryNotebookStats();
         case "outcomes": return getOutcomes();
         default: throw new Error(`Unknown section: ${section}`);
       }

@@ -1,7 +1,6 @@
 /* ─── Interview API Client: LLM calls, session persistence, offline retry ─── */
 
 import type { InterviewStep } from "./interviewScripts";
-import { decrementSessionCredit } from "./supabase";
 import { apiFetch } from "./apiClient";
 import { openIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import { checkRateLimit } from "./rateLimit";
@@ -212,21 +211,13 @@ export interface EvaluationResult {
   nextSteps?: string[];
 }
 
-/** Save session to localStorage + Supabase with fallback.
- *
- * Returns `streakReward` when the server recognised that this session bumped
- * the user to a new streak milestone (7/14/30 days) and granted them a bonus
- * session credit. The engine uses this to show a celebratory toast.
- */
-export interface StreakReward { milestone: number; bonusCredits: number }
+/** Save session to localStorage + Supabase with fallback. */
 export async function saveSessionResult(result: SessionResult, userId?: string): Promise<{
   localOk: boolean;
   cloudOk: boolean;
-  streakReward?: StreakReward | null;
 }> {
   let localOk = false;
   let cloudOk = false;
-  let streakReward: StreakReward | null = null;
   try {
     const raw = localStorage.getItem(RESULTS_KEY);
     let sessions: SessionResult[];
@@ -268,7 +259,7 @@ export async function saveSessionResult(result: SessionResult, userId?: string):
       // The /api/sessions/save handler also atomically appends to
       // practice_timestamps, so the dashboard's session counter updates in
       // the same round-trip.
-      const res = await apiFetch<{ ok: boolean; practiceAppended?: boolean; strippedColumns?: string[]; streakReward?: StreakReward | null }>("/api/sessions/save", {
+      const res = await apiFetch<{ ok: boolean; practiceAppended?: boolean; strippedColumns?: string[] }>("/api/sessions/save", {
         id: result.id,
         date: result.date,
         type: result.type,
@@ -298,19 +289,16 @@ export async function saveSessionResult(result: SessionResult, userId?: string):
         if (res.data.strippedColumns && res.data.strippedColumns.length > 0) {
           console.warn("[save] server stripped columns:", res.data.strippedColumns);
         }
-        if (res.data.streakReward) streakReward = res.data.streakReward;
       } else {
         console.warn(`[save] /api/sessions/save failed (${res.status}): ${res.error || "unknown"}`);
       }
-      // Decrement session credit for free-tier users who purchased credits
-      try { await decrementSessionCredit(userId); } catch { /* best-effort */ }
     } catch (err) {
       console.warn("Failed to save session to Supabase:", err);
     }
   } else {
     cloudOk = true;
   }
-  return { localOk, cloudOk, streakReward };
+  return { localOk, cloudOk };
 }
 
 /**

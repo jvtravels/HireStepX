@@ -19,7 +19,6 @@ import {
   evaluateSessionWithAI,
   fetchRecentSessionScores,
   fetchSessionCredibility,
-  saveStoryToNotebook,
   type SessionReport as SessionReportData,
   type SessionTrendPoint,
 } from "../dashboardData";
@@ -32,7 +31,8 @@ import {
 import type { DashboardSession } from "../dashboardTypes";
 import { useAuth } from "../AuthContext";
 import SessionReportView from "./SessionReportView";
-import { sessionReportToInterviewResult } from "./adapter";
+import { sessionReportToInterviewResult, toBehavioralFullReportData } from "./adapter";
+import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
 import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
 
@@ -263,6 +263,18 @@ export const SessionReport = memo(function SessionReport({
     recruiterPersona?: string;
     recruiterPersonaLabel?: string;
   } | undefined>(undefined);
+  /* Behavioral v2: analyzer's `meta.behavioral` blob (starBreakdown,
+   * competencyCounts, probing, evidence, delivery, conflict). Fed into
+   * `toBehavioralFullReportData()` along with the report + session
+   * context to build the diagnostic-first report prop bag. `undefined`
+   * until the insights row arrives OR when the analyzer hasn't shipped
+   * a behavioral block for this session (non-behavioral focus). */
+  const [behavioralMeta, setBehavioralMeta] = useState<
+    NonNullable<AnalyzerMeta["behavioral"]> | null | undefined
+  >(undefined);
+  /* Flags surface from the same insights row — drives the dominant
+   * coach-flag pick for the one-habit block. */
+  const [behavioralFlags, setBehavioralFlags] = useState<string[]>([]);
 
   const roleFamily: RoleFamily = useMemo(
     () => roleToFamily(session.role),
@@ -433,6 +445,12 @@ export const SessionReport = memo(function SessionReport({
         if (cancelled) return;
         const summary = summarizeCredibility(row);
         setCredibility(summary);
+        /* Behavioral v2 flags — for the dominant coach-flag pick. The
+         * row's `flags` is `string[]` (already narrowed by the data
+         * layer); copy as-is so the adapter can prioritise them. */
+        if (row && Array.isArray(row.flags)) {
+          setBehavioralFlags(row.flags);
+        }
         if (summary.hasIssues) {
           track("report_credibility_callout_shown", {
             sessionId: session.id,
@@ -446,6 +464,16 @@ export const SessionReport = memo(function SessionReport({
          * ship new fields ahead of frontend coercion). */
         const meta = (row as { meta?: unknown } | null)?.meta;
         if (meta && typeof meta === "object") {
+          /* Behavioral v2 — narrow `meta.behavioral` to the analyzer
+           * shape. Field-level coercion happens inside the adapter; we
+           * only need a shape check + starBreakdown sanity here so a
+           * malformed row doesn't poison the diagnostic-first render. */
+          const b = (meta as { behavioral?: unknown }).behavioral;
+          if (b && typeof b === "object" && Array.isArray((b as { starBreakdown?: unknown }).starBreakdown)) {
+            setBehavioralMeta(b as NonNullable<AnalyzerMeta["behavioral"]>);
+          } else {
+            setBehavioralMeta(null);
+          }
           const cp = (meta as { campusPlacement?: unknown }).campusPlacement;
           if (cp && typeof cp === "object") {
             const c = cp as Record<string, unknown>;
@@ -603,6 +631,40 @@ export const SessionReport = memo(function SessionReport({
     user,
   ]);
 
+  /* ── Behavioral v2 report prop bag ──
+     Computed only for behavioral focus + when both report and analyzer
+     meta are present. The View itself gates rendering behind the env
+     flag `NEXT_PUBLIC_BEHAVIORAL_REPORT_V2`; keeping computation
+     unconditional (within the focus gate) keeps the prop deterministic
+     so the flag flip is a pure render-path swap. Returns undefined for
+     non-behavioral focus so the existing panel stack remains untouched
+     for SWE / PM / data / negotiation rounds. */
+  const behavioralFullReportData = useMemo(() => {
+    if (roleFamily !== "behavioral") return undefined;
+    if (!report) return undefined;
+    // `behavioralMeta` may be null (insights row had no behavioral block)
+    // — adapter handles `null` with a stub starBreakdown so we still get
+    // a renderable shell rather than blocking the v2 flag entirely.
+    return toBehavioralFullReportData(
+      {
+        report,
+        session,
+        recentScores,
+        percentile,
+        flags: behavioralFlags,
+      },
+      behavioralMeta ?? null,
+    );
+  }, [
+    roleFamily,
+    report,
+    session,
+    recentScores,
+    percentile,
+    behavioralMeta,
+    behavioralFlags,
+  ]);
+
   /* ── Routing for action callbacks owned by the view ── */
   const onTryQuestionAgain = useCallback(
     (questionIdx: number) => {
@@ -636,40 +698,6 @@ export const SessionReport = memo(function SessionReport({
       router.push(`/session/new?type=behavioral&focus=${encodeURIComponent(slug)}`);
     },
     [router, session.id]
-  );
-
-  const onSaveTopStory = useCallback(
-    async (questionIdxOneBased: number) => {
-      // questionIdx in the view is 1-based; report perQuestion is 0-based.
-      const q = report?.perQuestion[questionIdxOneBased - 1];
-      if (!q) return;
-      track("report_action_clicked", {
-        action: "save_story",
-        sessionId: session.id,
-        questionIdx: q.idx,
-        view: "main",
-      });
-      try {
-        // Derive a short title — first 60 chars of the question, trimmed.
-        const title = q.question.length > 60 ? `${q.question.slice(0, 60)}…` : q.question;
-        await saveStoryToNotebook({
-          sessionId: session.id,
-          questionIdx: q.idx,
-          title,
-          question: q.question,
-          answerText: q.answerText,
-        });
-        if (typeof window !== "undefined") {
-          window.alert("Saved to your Notebook.");
-        }
-      } catch (err) {
-        console.error("[sessionReport] save story failed:", err instanceof Error ? err.message : err);
-        if (typeof window !== "undefined") {
-          window.alert("Could not save the story. Please try again.");
-        }
-      }
-    },
-    [report, session.id]
   );
 
   const onTrustAnswer = useCallback(
@@ -740,13 +768,13 @@ export const SessionReport = memo(function SessionReport({
       onShare={onShare}
       onTryQuestionAgain={onTryQuestionAgain}
       onDrillSkill={onDrillSkill}
-      onSaveTopStory={onSaveTopStory}
       onTrustAnswer={onTrustAnswer}
       onUsefulAnswer={onUsefulAnswer}
       credibility={credibility}
       onDisputeCredibility={onDisputeCredibility}
       campusPlacementMeta={campusPlacementMeta}
       salaryNegotiationMeta={salaryNegotiationMeta}
+      behavioralFullReportData={behavioralFullReportData}
     />
   );
 });

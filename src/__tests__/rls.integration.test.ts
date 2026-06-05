@@ -154,7 +154,7 @@ describe.skipIf(!RLS_ENABLED)("RLS: cross-user isolation (integration)", () => {
 
   it("Bob cannot SELECT Alice's profile", async () => {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(aliceId)}&select=email,name,session_credits`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(aliceId)}&select=email,name`,
       { headers: { apikey: ANON_KEY, Authorization: `Bearer ${bobToken}` } },
     );
     expect(res.ok).toBe(true);
@@ -162,14 +162,14 @@ describe.skipIf(!RLS_ENABLED)("RLS: cross-user isolation (integration)", () => {
     expect(rows).toEqual([]);
   });
 
-  it("Bob cannot UPDATE Alice's profile (e.g. grant himself session_credits by writing as Alice)", async () => {
-    // First: confirm Alice has zero credits via service role
+  it("Bob cannot UPDATE Alice's profile (e.g. flip her subscription_tier by writing as Alice)", async () => {
+    // First: snapshot Alice's tier via service role
     const before = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(aliceId)}&select=session_credits`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(aliceId)}&select=subscription_tier`,
       { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
     );
     const [beforeRow] = await before.json();
-    const startingCredits = beforeRow?.session_credits ?? 0;
+    const startingTier = beforeRow?.subscription_tier ?? "free";
 
     // Bob's attempt — PATCH with his token on Alice's row
     await fetch(
@@ -182,16 +182,16 @@ describe.skipIf(!RLS_ENABLED)("RLS: cross-user isolation (integration)", () => {
           "Content-Type": "application/json",
           Prefer: "return=minimal",
         },
-        body: JSON.stringify({ session_credits: 999 }),
+        body: JSON.stringify({ subscription_tier: "pro" }),
       },
     );
     // Regardless of status code — verify the underlying row didn't change.
     const after = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(aliceId)}&select=session_credits`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(aliceId)}&select=subscription_tier`,
       { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
     );
     const [afterRow] = await after.json();
-    expect(afterRow?.session_credits).toBe(startingCredits);
+    expect(afterRow?.subscription_tier).toBe(startingTier);
   });
 });
 

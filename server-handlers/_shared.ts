@@ -235,25 +235,16 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
       const range = sessionsRes.headers.get("content-range");
       const totalCount = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
 
-      // Check if user has purchased session credits
-      const creditRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=session_credits`,
-        { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` }, signal: ac.signal },
-      );
-      const creditData = creditRes.ok ? await creditRes.json() : [];
-      const credits = Array.isArray(creditData) && creditData.length > 0 ? (creditData[0].session_credits || 0) : 0;
-
-      if (totalCount >= FREE_SESSION_LIMIT && credits <= 0) {
-        return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Buy a session for ₹9 or upgrade.` };
+      if (totalCount >= FREE_SESSION_LIMIT) {
+        return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Upgrade to continue.` };
       }
       if (totalCount < FREE_SESSION_LIMIT) {
         // Atomic in-flight check: prevent race condition with concurrent sessions
         const inFlight = await incrementInFlightCounter(userId, "free", INFLIGHT_TTL_SEC);
-        if (inFlight !== null && totalCount + inFlight > FREE_SESSION_LIMIT && credits <= 0) {
-          return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Buy a session for ₹9 or upgrade.` };
+        if (inFlight !== null && totalCount + inFlight > FREE_SESSION_LIMIT) {
+          return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Upgrade to continue.` };
         }
       }
-      // If using credits, decrement after session completes (handled in session save)
     } else if (tier === "starter") {
       // Count sessions this week at DB level (UTC-based)
       const now2 = new Date();

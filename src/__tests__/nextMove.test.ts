@@ -19,7 +19,6 @@ describe("pickNextMove", () => {
           { name: "Technical",     score: 80 },
         ],
         currentStreak: 0,
-        sessionCredits: 0,
       });
       expect(out.weakestSkillName).toBe("Communication");
       expect(out.ctaLabel).toBe("Practice Communication");
@@ -33,7 +32,6 @@ describe("pickNextMove", () => {
           { name: "Structure",     score: 75 },
         ],
         currentStreak: 0,
-        sessionCredits: 0,
       });
       expect(out.weakestSkillName).toBe(null);
     });
@@ -42,7 +40,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [{ name: "Edge", score: 70 }],
         currentStreak: 0,
-        sessionCredits: 0,
       });
       expect(out.weakestSkillName).toBe(null);
     });
@@ -51,13 +48,12 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [{ name: "Edge", score: 69 }],
         currentStreak: 0,
-        sessionCredits: 0,
       });
       expect(out.weakestSkillName).toBe("Edge");
     });
 
     it("empty skills list → no weakness", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 0, sessionCredits: 0 });
+      const out = pickNextMove({ skills: [], currentStreak: 0 });
       expect(out.weakestSkillName).toBe(null);
     });
 
@@ -65,7 +61,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [{ name: "Problem Solving", score: 50 }],
         currentStreak: 0,
-        sessionCredits: 0,
       });
       expect(out.ctaHref).toBe("/session/new?focus=Problem%20Solving");
     });
@@ -73,13 +68,13 @@ describe("pickNextMove", () => {
 
   describe("CTA fallback when no weakness", () => {
     it("active streak → 'Keep the streak going'", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 5, sessionCredits: 0 });
+      const out = pickNextMove({ skills: [], currentStreak: 5 });
       expect(out.ctaLabel).toBe("Keep the streak going");
       expect(out.ctaHref).toBe("/session/new");
     });
 
     it("no streak, no weakness → 'Start a session'", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 0, sessionCredits: 0 });
+      const out = pickNextMove({ skills: [], currentStreak: 0 });
       expect(out.ctaLabel).toBe("Start a session");
     });
 
@@ -87,7 +82,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [{ name: "Communication", score: 40 }],
         currentStreak: 10,
-        sessionCredits: 0,
       });
       expect(out.ctaLabel).toBe("Practice Communication");
     });
@@ -95,62 +89,47 @@ describe("pickNextMove", () => {
 
   describe("streak milestones", () => {
     it("below 7 → next milestone is 7", () => {
-      expect(pickNextMove({ skills: [], currentStreak: 3, sessionCredits: 0 }).nextStreakMilestone).toBe(7);
+      expect(pickNextMove({ skills: [], currentStreak: 3 }).nextStreakMilestone).toBe(7);
     });
 
     it("7..13 → next milestone is 14", () => {
-      expect(pickNextMove({ skills: [], currentStreak: 7, sessionCredits: 0 }).nextStreakMilestone).toBe(14);
-      expect(pickNextMove({ skills: [], currentStreak: 13, sessionCredits: 0 }).nextStreakMilestone).toBe(14);
+      expect(pickNextMove({ skills: [], currentStreak: 7 }).nextStreakMilestone).toBe(14);
+      expect(pickNextMove({ skills: [], currentStreak: 13 }).nextStreakMilestone).toBe(14);
     });
 
     it("14..29 → next milestone is 30", () => {
-      expect(pickNextMove({ skills: [], currentStreak: 14, sessionCredits: 0 }).nextStreakMilestone).toBe(30);
-      expect(pickNextMove({ skills: [], currentStreak: 29, sessionCredits: 0 }).nextStreakMilestone).toBe(30);
+      expect(pickNextMove({ skills: [], currentStreak: 14 }).nextStreakMilestone).toBe(30);
+      expect(pickNextMove({ skills: [], currentStreak: 29 }).nextStreakMilestone).toBe(30);
     });
 
     it("≥30 → no next milestone (user is past top tier)", () => {
-      expect(pickNextMove({ skills: [], currentStreak: 30, sessionCredits: 0 }).nextStreakMilestone).toBe(null);
-      expect(pickNextMove({ skills: [], currentStreak: 100, sessionCredits: 0 }).nextStreakMilestone).toBe(null);
+      expect(pickNextMove({ skills: [], currentStreak: 30 }).nextStreakMilestone).toBe(null);
+      expect(pickNextMove({ skills: [], currentStreak: 100 }).nextStreakMilestone).toBe(null);
     });
   });
 
   describe("chips", () => {
-    it("no streak, no credits, no schedule → no chips", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 0, sessionCredits: 0 });
+    it("no streak, no schedule → no chips", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 0 });
       expect(out.chips).toEqual([]);
     });
 
-    it("active streak → chip includes days-to-next-milestone", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 3, sessionCredits: 0 });
+    it("active streak → chip shows day count", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 3 });
       const streakChip = out.chips.find(c => c.kind === "streak");
-      expect(streakChip?.label).toBe("3-day streak · 4 to +1 bonus");
+      expect(streakChip?.label).toBe("3-day streak");
     });
 
-    it("streak past all milestones → chip shows only days, no bonus hint", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 45, sessionCredits: 0 });
+    it("streak past all milestones → chip still shows day count", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 45 });
       const streakChip = out.chips.find(c => c.kind === "streak");
       expect(streakChip?.label).toBe("45-day streak");
-    });
-
-    it("credits chip pluralises correctly", () => {
-      expect(pickNextMove({ skills: [], currentStreak: 0, sessionCredits: 1 })
-        .chips.find(c => c.kind === "credits")?.label)
-        .toBe("1 bonus session");
-      expect(pickNextMove({ skills: [], currentStreak: 0, sessionCredits: 3 })
-        .chips.find(c => c.kind === "credits")?.label)
-        .toBe("3 bonus sessions");
-    });
-
-    it("zero credits → no credits chip (avoids '0 bonus sessions' clutter)", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 0, sessionCredits: 0 });
-      expect(out.chips.find(c => c.kind === "credits")).toBeUndefined();
     });
 
     it("schedule chip renders when smartSchedule is truthy", () => {
       const out = pickNextMove({
         skills: [],
         currentStreak: 0,
-        sessionCredits: 0,
         smartSchedule: "You practice best in the morning.",
       });
       expect(out.chips.find(c => c.kind === "schedule")?.label).toBe("You practice best in the morning.");
@@ -161,7 +140,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [],
         currentStreak: 0,
-        sessionCredits: 0,
         smartSchedule: long,
       });
       const chip = out.chips.find(c => c.kind === "schedule")!;
@@ -169,14 +147,13 @@ describe("pickNextMove", () => {
       expect(chip.label.endsWith("…")).toBe(true);
     });
 
-    it("chip order is streak → credits → schedule", () => {
+    it("chip order is streak → schedule", () => {
       const out = pickNextMove({
         skills: [],
         currentStreak: 5,
-        sessionCredits: 2,
         smartSchedule: "Mornings",
       });
-      expect(out.chips.map(c => c.kind)).toEqual(["streak", "credits", "schedule"]);
+      expect(out.chips.map(c => c.kind)).toEqual(["streak", "schedule"]);
     });
   });
 
@@ -185,19 +162,18 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [{ name: "Structure", score: 45 }],
         currentStreak: 0,
-        sessionCredits: 0,
       });
       expect(out.headline).toContain("Structure");
       expect(out.headline).toContain("highest-leverage");
     });
 
     it("no weakness, streak ≥ 3 → streak-specific headline", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 5, sessionCredits: 0 });
+      const out = pickNextMove({ skills: [], currentStreak: 5 });
       expect(out.headline).toContain("5-day streak");
     });
 
     it("no weakness, streak < 3 → generic welcome-back", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 1, sessionCredits: 0 });
+      const out = pickNextMove({ skills: [], currentStreak: 1 });
       expect(out.headline).toBe("Pick up where you left off.");
     });
   });
@@ -207,7 +183,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [{ name: "Communication", score: 30 }],
         currentStreak: 0,
-        sessionCredits: 0,
         topGaps: ["under_titled_candidate"],
       });
       expect(out.coachingFocus?.gapCode).toBe("under_titled_candidate");
@@ -221,7 +196,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [],
         currentStreak: 0,
-        sessionCredits: 0,
         topGaps: ["resume_transcript_mismatch", "floor_collapse", "under_titled_candidate"],
       });
       expect(out.coachingFocus?.gapCode).toBe("resume_transcript_mismatch");
@@ -231,7 +205,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [{ name: "Structure", score: 40 }],
         currentStreak: 0,
-        sessionCredits: 0,
         topGaps: ["some_future_gap_we_dont_handle_yet"],
       });
       expect(out.coachingFocus).toBe(null);
@@ -242,7 +215,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [],
         currentStreak: 0,
-        sessionCredits: 0,
         topGaps: ["unknown_a", "unknown_b", "floor_collapse"],
       });
       expect(out.coachingFocus?.gapCode).toBe("floor_collapse");
@@ -252,7 +224,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [{ name: "Structure", score: 40 }],
         currentStreak: 0,
-        sessionCredits: 0,
       });
       expect(out.coachingFocus).toBe(null);
       expect(out.ctaLabel).toBe("Practice Structure");
@@ -262,7 +233,6 @@ describe("pickNextMove", () => {
       const out = pickNextMove({
         skills: [],
         currentStreak: 5,
-        sessionCredits: 0,
         topGaps: [],
       });
       expect(out.coachingFocus).toBe(null);

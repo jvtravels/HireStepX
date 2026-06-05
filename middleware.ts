@@ -28,8 +28,6 @@ const APP_PREFIXES = [
   "/dashboard", "/sessions", "/calendar", "/analytics", "/resume", "/settings",
   "/session/", "/interview", "/onboarding", "/signup", "/login", "/reset-password",
   "/auth/callback",
-  "/notebook",
-
 ];
 
 /* Pre-launch gate constants removed 2026-05-30 when marketing v2 went live.

@@ -20,7 +20,6 @@ export interface SkillLike {
 export interface NextMoveInput {
   skills: SkillLike[];
   currentStreak: number;
-  sessionCredits: number;
   smartSchedule?: string | null;
   /**
    * Gap flag codes from the user's most recent session_insights row,
@@ -36,7 +35,7 @@ export interface NextMoveInput {
 }
 
 export interface NextMoveChip {
-  kind: "streak" | "credits" | "schedule";
+  kind: "streak" | "schedule";
   label: string;
 }
 
@@ -119,7 +118,7 @@ const PRACTICE_THRESHOLD = 70;
 const CHIP_MAX = 48;
 
 export function pickNextMove(input: NextMoveInput): NextMove {
-  const { skills, currentStreak, sessionCredits, smartSchedule, topGaps } = input;
+  const { skills, currentStreak, smartSchedule, topGaps } = input;
 
   // First-priority gap: the highest-severity gap from the user's last
   // insight, IF it's one we have coaching CTA copy for. Unknown gap
@@ -148,8 +147,6 @@ export function pickNextMove(input: NextMoveInput): NextMove {
     currentStreak < 14 ? 14 :
     currentStreak < 30 ? 30 :
     null;
-
-  const daysToNext = nextStreakMilestone ? nextStreakMilestone - currentStreak : 0;
 
   // CTA priority: matched gap > weakest skill > streak > cold start.
   // Gap CTAs win because they're concrete coaching directives, not
@@ -183,15 +180,7 @@ export function pickNextMove(input: NextMoveInput): NextMove {
   if (currentStreak > 0) {
     chips.push({
       kind: "streak",
-      label: nextStreakMilestone
-        ? `${currentStreak}-day streak · ${daysToNext} to +1 bonus`
-        : `${currentStreak}-day streak`,
-    });
-  }
-  if (sessionCredits > 0) {
-    chips.push({
-      kind: "credits",
-      label: `${sessionCredits} bonus session${sessionCredits !== 1 ? "s" : ""}`,
+      label: `${currentStreak}-day streak`,
     });
   }
   if (smartSchedule) {

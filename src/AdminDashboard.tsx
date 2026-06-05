@@ -68,7 +68,7 @@ interface FeedbackData {
  * Shape returned by /api/admin-data?userId=X. Declares the fields the
  * profile card actually reads so the render sites get real type
  * checking, plus an index signature for any extra columns we don't
- * explicitly touch (session_credits, referral stats, etc.). The
+ * explicitly touch (referral stats, etc.). The
  * row arrays remain `Record<string, unknown>[]` because each table
  * has a different row shape and the admin surface iterates them
  * generically — formatCell() narrows values at render time.
@@ -119,12 +119,6 @@ export interface CalendarData {
   recent: Array<{ id: string; userName: string; userEmail: string; type: string; company: string; date: string; time: string; reminded: boolean }>;
 }
 
-export interface StoryNotebookData {
-  total: number; dueForReview: number;
-  topUsers: Array<{ id: string; count: number; name: string; email: string }>;
-  recent: Array<{ id: string; userEmail: string; title: string; tags: string[]; createdAt: string; lastUsedAt: string | null }>;
-}
-
 export interface OutcomesData {
   total: number; applied: number; interviewed: number; offer: number; accepted: number; offerRate: number;
   shareableTestimonials: Array<{ firstName: string; company: string; roleLanded: string; testimonial: string; reportedAt: string }>;
@@ -150,7 +144,7 @@ export interface SessionDetailData {
   llmCalls: Array<{ endpoint: string; model: string; total_tokens: number; latency_ms: number; status: string; created_at: string }>;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "referrals" | "promo-codes" | "calendar" | "story-notebook" | "outcomes" | "quality";
+type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "quality";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
@@ -164,7 +158,6 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "referrals", label: "Referrals", icon: "🔗" },
   { key: "promo-codes", label: "Promo Codes", icon: "🎟️" },
   { key: "calendar", label: "Calendar", icon: "📅" },
-  { key: "story-notebook", label: "Story Bank", icon: "📖" },
 ];
 
 /* ─── Cache (per tab, 5 min TTL) ─── */
@@ -497,7 +490,6 @@ export default function AdminDashboard() {
   const [referrals, setReferrals] = useState<ReferralsData | null>(null);
   const [promoCodes, setPromoCodes] = useState<PromoCodesData | null>(null);
   const [calendar, setCalendar] = useState<CalendarData | null>(null);
-  const [storyNotebook, setStoryNotebook] = useState<StoryNotebookData | null>(null);
   const [outcomes, setOutcomes] = useState<OutcomesData | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [sessionDetail, setSessionDetail] = useState<SessionDetailData | null>(null);
@@ -611,11 +603,6 @@ export default function AdminDashboard() {
           if (d) setCalendar(d);
           break;
         }
-        case "story-notebook": {
-          const d = await fetchSection("story-notebook") as StoryNotebookData | null;
-          if (d) setStoryNotebook(d);
-          break;
-        }
         case "outcomes": {
           const d = await fetchSection("outcomes") as OutcomesData | null;
           if (d) setOutcomes(d);
@@ -703,11 +690,6 @@ export default function AdminDashboard() {
       case "calendar": {
         const d = await fetchSection("calendar", undefined, true) as CalendarData | null;
         if (d) setCalendar(d);
-        break;
-      }
-      case "story-notebook": {
-        const d = await fetchSection("story-notebook", undefined, true) as StoryNotebookData | null;
-        if (d) setStoryNotebook(d);
         break;
       }
       case "outcomes": {
@@ -1741,7 +1723,6 @@ export default function AdminDashboard() {
       case "referrals": return renderReferrals();
       case "promo-codes": return renderPromoCodes();
       case "calendar": return renderCalendar();
-      case "story-notebook": return renderStoryNotebook();
       case "outcomes": return renderOutcomes();
       case "quality": return <QualityContent />;
     }
@@ -2006,75 +1987,6 @@ export default function AdminDashboard() {
             </table>
           </div>
         ) : <EmptyState title="No upcoming or recent calendar events." />}
-      </div>
-    );
-  };
-
-  const renderStoryNotebook = () => {
-    if (!storyNotebook) return <EmptyState title="No story-notebook data available" />;
-    return (
-      <div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
-          <div style={statCard}><p style={labelStyle}>Total Stories</p><p style={bigNum}>{storyNotebook.total}</p></div>
-          <div style={statCard}><p style={labelStyle}>Due for review (≥7d)</p><p style={{ ...bigNum, color: c.gilt }}>{storyNotebook.dueForReview}</p></div>
-        </div>
-
-        {storyNotebook.topUsers.length > 0 && (
-          <div style={{ ...card, padding: 0, marginBottom: 24, overflow: "auto" }}>
-            <div style={{ padding: "16px 24px 8px" }}>
-              <p style={labelStyle}>Top users by story count</p>
-            </div>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Name</th>
-                  <th style={thStyle}>Email</th>
-                  <th style={thStyle}>Stories</th>
-                </tr>
-              </thead>
-              <tbody>
-                {storyNotebook.topUsers.map((u) => (
-                  <tr key={u.id}>
-                    <td style={tdStyle}>{u.name}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{u.email}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{u.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {storyNotebook.recent.length > 0 ? (
-          <div style={{ ...card, padding: 0, overflow: "auto" }}>
-            <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={labelStyle}>Recent Stories</p>
-              <button onClick={() => exportCsv("stories.csv", storyNotebook.recent)} style={exportBtn}>Export CSV</button>
-            </div>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>User</th>
-                  <th style={thStyle}>Title</th>
-                  <th style={thStyle}>Tags</th>
-                  <th style={thStyle}>Created</th>
-                  <th style={thStyle}>Last reviewed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {storyNotebook.recent.map((s) => (
-                  <tr key={s.id}>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{s.userEmail}</td>
-                    <td style={{ ...tdStyle, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{s.title}</td>
-                    <td style={{ ...tdStyle, fontSize: 12, color: c.stone }}>{(s.tags || []).join(", ") || "—"}</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.createdAt)}</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{s.lastUsedAt ? formatDateTime(s.lastUsedAt) : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : <EmptyState title="No saved stories yet." />}
       </div>
     );
   };

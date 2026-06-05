@@ -30,9 +30,6 @@ const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 
-// Extracted to ./_referral-reward so it's unit-testable in isolation. See
-// that module for the full docstring and compare-and-swap rationale.
-import { grantReferralReward } from "./_referral-reward";
 import { captureServerEvent } from "./_posthog";
 
 /** Clear the payment-abandonment intent key so the cron doesn't email a paying user. */
@@ -45,10 +42,10 @@ async function clearPaymentIntent(orderId: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
-// PLAN_DURATION used for reference: single=0, weekly=7, monthly=setMonth(), yearly=365
-const PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro", "yearly-starter": "starter", "yearly-pro": "pro" }; // single stays on free tier, just adds credits
-const PLAN_AMOUNT: Record<string, number> = { single: 1000, weekly: 4900, monthly: 14900, "yearly-starter": 203900, "yearly-pro": 143000 };
-const PLAN_LABEL: Record<string, string> = { single: "Single Session (₹10)", weekly: "Starter (₹49/week)", monthly: "Pro (₹149/month)", "yearly-starter": "Starter Annual (₹2,039/year)", "yearly-pro": "Pro Annual (₹1,430/year)" };
+// PLAN_DURATION used for reference: weekly=7, monthly=setMonth(), yearly=365
+const PLAN_TIER: Record<string, string> = { weekly: "starter", monthly: "pro", "yearly-starter": "starter", "yearly-pro": "pro" };
+const PLAN_AMOUNT: Record<string, number> = { weekly: 4900, monthly: 14900, "yearly-starter": 203900, "yearly-pro": 143000 };
+const PLAN_LABEL: Record<string, string> = { weekly: "Starter (₹49/week)", monthly: "Pro (₹149/month)", "yearly-starter": "Starter Annual (₹2,039/year)", "yearly-pro": "Pro Annual (₹1,430/year)" };
 const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2 };
 
 async function sendPaymentEmail(
@@ -401,7 +398,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 3b. Check profile for duplicate + subscription state
     const profileRes = await fetchWithTimeout(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end,razorpay_payment_id,session_credits`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end,razorpay_payment_id`,
       { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
     );
     const profiles = await profileRes.json();
@@ -418,47 +415,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // 4a. Handle single session credit purchase (no tier change)
+    // Single-session purchases removed alongside the bonus-session feature.
     if (plan === "single") {
-      const now = new Date();
-      const purchaseAmount = 1000 * sessionQuantity;
-      // Store payment record
-      const paymentRecordRes = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payments`, {
-        method: "POST",
-        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ id: crypto.randomUUID(), user_id: userId, razorpay_payment_id, razorpay_order_id, plan: "single", tier: "free", amount: purchaseAmount, currency: "INR", status: "completed", subscription_start: now.toISOString(), subscription_end: now.toISOString() }),
-      });
-      if (!paymentRecordRes.ok) {
-        console.error("Payment record save failed:", paymentRecordRes.status);
-        return res.status(500).json({ error: "Failed to save payment record" });
-      }
-      // Increment session_credits on profile
-      const currentCredits = current?.session_credits || 0;
-      const newCredits = currentCredits + sessionQuantity;
-      const updateRes = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
-        method: "PATCH",
-        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ session_credits: newCredits, razorpay_payment_id }),
-      });
-      if (!updateRes.ok) {
-        console.error("Credit update failed:", updateRes.status);
-        return res.status(500).json({ error: "Failed to add session credit" });
-      }
-      // Send confirmation email (7 args: email, name, plan, tier, paymentId, startDate, endDate)
-      try { await sendPaymentEmail(userEmail || "", userName || "Customer", "single", "free", razorpay_payment_id, now.toISOString(), now.toISOString()); } catch (e) { console.warn("Email send failed:", e); }
-      await clearPaymentIntent(razorpay_order_id);
-      await captureServerEvent("payment_completed", userId, {
-        plan: "single",
-        tier: current?.subscription_tier || "free",
-        amount: purchaseAmount,
-        currency: "INR",
-        payment_id: razorpay_payment_id,
-        quantity: sessionQuantity,
-      });
-      return res.status(200).json({ success: true, tier: current?.subscription_tier || "free", plan: "single", credits: newCredits, quantity: sessionQuantity, subscription_start: now.toISOString(), subscription_end: current?.subscription_end || now.toISOString() });
+      return res.status(400).json({ error: "Single-session purchases are no longer available.", code: "PLAN_DISCONTINUED" });
     }
 
-    // 4b. Calculate subscription dates with mid-cycle upgrade proration
+    // 4. Calculate subscription dates with mid-cycle upgrade proration
     const now = new Date();
     const currentEnd = current?.subscription_end ? new Date(current.subscription_end) : null;
     const tier = PLAN_TIER[plan];
@@ -466,7 +428,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       && (TIER_RANK[current.subscription_tier] || 0) < (TIER_RANK[tier] || 0);
 
     // Resolve plan duration in days (avoid setMonth which has month-end overflow bugs)
-    const planDaysMap: Record<string, number> = { single: 0, weekly: 7, monthly: 30, "yearly-starter": 365, "yearly-pro": 365 };
+    const planDaysMap: Record<string, number> = { weekly: 7, monthly: 30, "yearly-starter": 365, "yearly-pro": 365 };
     const planDays = planDaysMap[plan];
     if (planDays === undefined) {
       return res.status(400).json({ error: "Invalid plan duration", code: "INVALID_PLAN" });
@@ -550,24 +512,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "Failed to activate subscription" });
     }
 
-    // 6b. Grant referral reward if this user was referred. Only triggered on a
-    //     real paid subscription — single-session purchases can't grant
-    //     referral credits (too cheap to be exploit-proof). Fire-and-forget:
-    //     failure here doesn't affect the payment outcome for the payer.
-    let referralRewarded = false;
-    try {
-      const { rewarded, referrerId } = await grantReferralReward(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId);
-      referralRewarded = rewarded;
-      if (rewarded && referrerId) {
-        await captureServerEvent("referral_converted", referrerId, {
-          referee_user_id: userId,
-          plan,
-          tier,
-        });
-      }
-    } catch (e) { console.warn("[verify-payment] referral reward threw:", e); }
-
-    // 6c. Send confirmation email with retry (non-critical — don't fail payment if email fails)
+    // 6b. Send confirmation email with retry (non-critical — don't fail payment if email fails)
     let emailSent = false;
     if (userEmail) {
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -627,7 +572,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payment_id: razorpay_payment_id,
       subscription_end: end.toISOString(),
       prorated_days: proratedDays,
-      referral_rewarded: !!referralRewarded,
     });
     return res.status(200).json({
       success: true,
@@ -638,7 +582,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       emailSent,
       receiptUrl,
       ...(proratedDays > 0 ? { proratedBonusDays: proratedDays } : {}),
-      ...(referralRewarded ? { referralRewardGranted: true } : {}),
     });
   } catch (err) {
     console.error("Payment verification error:", err);

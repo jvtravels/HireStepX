@@ -377,16 +377,10 @@ export function QuestionDetail({ q }: { q: Question }) {
             </div>
           )}
           <button type="button" className="ir-cta-primary" style={{ alignSelf: "flex-start", marginTop: "auto" }}>
-            {isStrong ? "Save to Notebook" : "Try this question again"}
+            Try this question again
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              {isStrong ? (
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-              ) : (
-                <>
-                  <polyline points="23 4 23 10 17 10" />
-                  <path d="M20.49 15A9 9 0 1 1 5.64 5.64L1 10" />
-                </>
-              )}
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15A9 9 0 1 1 5.64 5.64L1 10" />
             </svg>
           </button>
         </div>
