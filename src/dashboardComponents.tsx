@@ -105,10 +105,10 @@ export function DataLoadingSkeleton() {
 
 /* ─── Upgrade Modal ─── */
 const PLANS = [
-  { id: "free", tier: "free", name: "Free", price: "\u20B90", period: "", desc: `${FREE_SESSION_LIMIT} sessions total`, features: [`${FREE_SESSION_LIMIT} mock interviews`, "Behavioral questions", "Basic score & feedback", "No credit card required"], featured: false },
-  { id: "single", tier: "free", name: "Per session", price: "\u20B99", period: "/session", desc: "Single mock interview session", features: ["All question types", "Detailed score & tips", "Ideal answer key", "Company-specific Qs", "Pay only for what you use"], featured: false },
-  { id: "weekly", tier: "starter", name: "Weekly", price: "\u20B949", period: "/week", desc: `${STARTER_WEEKLY_LIMIT} sessions over 7 days`, features: [`${STARTER_WEEKLY_LIMIT} sessions over 7 days`, "All types + role-specific", "Skill-level breakdown", "Resume-tailored Qs", "PDF reports", "Cancel anytime"], featured: false },
-  { id: "monthly", tier: "pro", name: "Monthly", price: "\u20B9149", period: "/mo", desc: `${PRO_MONTHLY_LIMIT} sessions over 30 days`, features: [`${PRO_MONTHLY_LIMIT} sessions over 30 days`, "Everything in Weekly", "AI coaching & improvement plan", "Analytics & trends", "Interview calendar", "Export PDF, CSV, JSON"], featured: true },
+  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",    features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "No credit card required"], featured: false },
+  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One round before the real thing",    cta: "Buy a session", features: ["1 full mock session", "Full STAR breakdown", "Coach fixes after every answer", "Saved report for 90 days"], featured: false },
+  { id: "weekly",  tier: "starter", name: "Weekly",      price: "\u20B949",  unit: "/ 7 days",  sub: "Sprint before placement week",       cta: "Go weekly",     features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7 days`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"], featured: false },
+  { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",    features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"], featured: true },
 ];
 
 export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void }) {
@@ -390,65 +390,83 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           </div>
         )}
 
-        <div className="upgrade-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        <div className="upgrade-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, alignItems: "stretch" }}>
           {PLANS.map((plan) => {
             const isCurrent = plan.tier === currentTier && plan.id !== "single";
+            const featured = plan.featured;
+            const ribbonText = isCurrent ? "Current plan" : featured ? "Most loved" : null;
             return (
-            <div key={plan.id} style={{
-              padding: "24px 20px", borderRadius: 14, position: "relative",
-              background: isCurrent ? "#1E1B4B" : plan.featured ? "#F4E5D8" : c.carbon,
-              border: `1px solid ${isCurrent ? "#1E1B4B" : plan.featured ? c.gilt : c.border}`,
-              display: "flex", flexDirection: "column", minHeight: 440,
-            }}>
-              <div style={{ minHeight: 22, marginBottom: 8 }}>
-                {isCurrent && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#F4E5D8" }}>Current</span>}
-                {!isCurrent && plan.featured && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: c.gilt }}>Best value</span>}
-              </div>
-              <h3 style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: isCurrent ? "#FAF7F0" : c.ivory, marginBottom: 4 }}>{plan.name}</h3>
-              <div style={{ marginBottom: 4 }}>
-                <span style={{ fontFamily: font.display, fontSize: plan.id === "free" ? 24 : 30, fontWeight: 400, color: isCurrent ? "#F4E5D8" : c.gilt }}>{plan.id === "single" ? `₹${sessionQty * 9}` : plan.price}</span>
-                {plan.id === "single" ? <span style={{ fontFamily: font.ui, fontSize: 12, color: isCurrent ? "#BFB6E0" : c.stone, marginLeft: 3 }}>/ {sessionQty} session{sessionQty > 1 ? "s" : ""}</span>
-                 : plan.period ? <span style={{ fontFamily: font.ui, fontSize: 12, color: isCurrent ? "#BFB6E0" : c.stone, marginLeft: 3 }}>{plan.period}</span> : null}
-              </div>
-              {plan.id === "single" ? (
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <div key={plan.id} style={{
+                position: "relative", padding: 28, borderRadius: 20,
+                background: featured ? "#0E0C08" : c.graphite,
+                color: featured ? "#FAF7F0" : c.ivory,
+                border: `1px solid ${featured ? "#0E0C08" : c.border}`,
+                boxShadow: featured ? "none" : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+                display: "flex", flexDirection: "column", gap: 18,
+              }}>
+                {ribbonText && (
+                  <span style={{
+                    position: "absolute", top: -12, left: 24,
+                    fontFamily: font.ui, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+                    color: "#0E0C08", background: "#F4E5D8",
+                    padding: "4px 10px", borderRadius: 999, border: `1px solid ${c.borderHover}`,
+                  }}>{ribbonText}</span>
+                )}
+                <div>
+                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? "#F4E5D8" : c.gilt }}>{plan.name}</p>
+                  <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? "#FAF7F0" : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                    {plan.id === "single" ? `₹${sessionQty * 9}` : plan.price}
+                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(245,242,237,0.7)" : c.stone }}>
+                      {plan.id === "single" ? `/ ${sessionQty} session${sessionQty > 1 ? "s" : ""}` : plan.unit}
+                    </span>
+                  </p>
+                  <p style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(245,242,237,0.7)" : c.stone }}>{plan.sub}</p>
+                </div>
+
+                {plan.id === "single" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.max(1, q - 1)); }} disabled={sessionQty <= 1} aria-label="Decrease session count"
-                      style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty <= 1 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>−</button>
+                      style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty <= 1 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>−</button>
                     <input type="range" min={1} max={10} value={sessionQty} onChange={e => setSessionQty(Number(e.target.value))}
                       aria-label="Number of sessions" className="upgrade-session-slider"
                       style={{ flex: 1, height: 4, appearance: "none", WebkitAppearance: "none", background: `linear-gradient(to right, ${c.gilt} 0%, ${c.gilt} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} 100%)`, borderRadius: 2, outline: "none", cursor: "pointer" }} />
                     <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.min(10, q + 1)); }} disabled={sessionQty >= 10} aria-label="Increase session count"
-                      style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty >= 10 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
+                      style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty >= 10 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
                   </div>
-                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, textAlign: "center" }}>No expiry · Save unused sessions</p>
-                </div>
-              ) : (
-                <p style={{ fontFamily: font.ui, fontSize: 11, color: isCurrent ? "#BFB6E0" : c.stone, marginBottom: 14 }}>{plan.desc}</p>
-              )}
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 18px", flex: 1 }}>
-                {plan.features.map((f) => (
-                  <li key={f} style={{ fontFamily: font.ui, fontSize: 11, color: isCurrent ? "#E5E2F2" : c.chalk, lineHeight: 1.4, padding: "3px 0", display: "flex", alignItems: "flex-start", gap: 7 }}>
-                    <span style={{ color: isCurrent ? "#F4E5D8" : c.gilt, flexShrink: 0, fontSize: 12, marginTop: 1 }}>&#10003;</span>{f}
-                  </li>
-                ))}
-              </ul>
-              {isCurrent ? (
-                <div style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "none", background: "#F4E5D8", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: "#1E1B4B", textAlign: "center" }}>Your current plan</div>
-              ) : plan.id === "free" ? (
-                <div style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone, textAlign: "center" }}>
-                  {currentTier === "free" ? "Your current plan" : "Free tier"}
-                </div>
-              ) : (
-                <button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
-                  style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "none", background: "#312E81", color: c.graphite, fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== plan.id ? 0.5 : 1, transition: "background 0.18s ease" }}
-                  onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.background = "#1E1B4B"; } }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#312E81"; }}
-                >
-                  {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : plan.id === "single" ? `Get started · ₹${sessionQty * 9}` : `Get started · ${plan.price}`}
-                </button>
-              )}
-            </div>
+                )}
+
+                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {plan.features.map((f) => (
+                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(245,242,237,0.78)" : c.chalk }}>
+                      <span aria-hidden style={{ color: featured ? "#F4E5D8" : c.gilt, marginTop: 2 }}>→</span>{f}
+                    </li>
+                  ))}
+                </ul>
+
+                {isCurrent ? (
+                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? "#F4E5D8" : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
+                ) : plan.id === "free" ? (
+                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.stone, textAlign: "center" }}>
+                    {currentTier === "free" ? "Your current plan" : plan.cta}
+                  </div>
+                ) : (
+                  <button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
+                    style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: "none",
+                      background: featured ? "#FAF7F0" : "#312E81",
+                      color: featured ? "#0E0C08" : "#FFFFFF",
+                      fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer",
+                      opacity: loading && loading !== plan.id ? 0.5 : 1,
+                      boxShadow: featured ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                      transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    }}
+                    onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+                  >
+                    {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
