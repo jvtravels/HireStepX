@@ -6,7 +6,7 @@ export default function Loading() {
       aria-busy="true"
       style={{
         minHeight: "100vh",
-        background: "#060607",
+        background: "#FAF7F0",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -17,8 +17,8 @@ export default function Loading() {
           style={{
             width: 36,
             height: 36,
-            border: "2px solid rgba(212,179,127,0.15)",
-            borderTopColor: "#D4B37F",
+            border: "2px solid rgba(180,83,9,0.18)",
+            borderTopColor: "#B45309",
             borderRadius: "50%",
             animation: "spin 0.8s linear infinite",
             margin: "0 auto 16px",
@@ -28,7 +28,7 @@ export default function Loading() {
           style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
             fontSize: 20,
-            color: "#F5F2ED",
+            color: "#0E0C08",
             letterSpacing: "0.02em",
           }}
         >
