@@ -203,10 +203,16 @@ export interface AccountSectionProps {
   // Profile state
   editName: string;
   setEditName: (v: string) => void;
+  editRole: string;
+  setEditRole: (v: string) => void;
   editCompany: string;
   setEditCompany: (v: string) => void;
   editIndustry: string;
   setEditIndustry: (v: string) => void;
+  editCity: string;
+  setEditCity: (v: string) => void;
+  editExperience: string;
+  setEditExperience: (v: string) => void;
   // Derived
   userName: string;
   email: string;
@@ -240,284 +246,313 @@ export interface AccountSectionProps {
   }>;
   // Blur handler (auto-save)
   focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
+  // Auto-save the experience select on change (no blur event)
+  authUpdateUser: (updates: { experienceLevel?: string }) => void | Promise<void>;
+}
+
+const EXPERIENCE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "", label: "Select range" },
+  { value: "fresher", label: "Fresher" },
+  { value: "entry", label: "0 to 2 years" },
+  { value: "mid", label: "3 to 5 years" },
+  { value: "senior", label: "6 to 8 years" },
+  { value: "lead", label: "9 to 12 years" },
+  { value: "executive", label: "12+ years" },
+];
+
+function ExperienceLabel(value: string): string {
+  return EXPERIENCE_OPTIONS.find((o) => o.value === value)?.label || "Select range";
+}
+
+function FieldShell({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label
+        htmlFor={htmlFor}
+        style={{
+          fontFamily: font.mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.12em",
+          color: c.stone, textTransform: "uppercase", display: "block", marginBottom: 8,
+        }}
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const editorialInput: React.CSSProperties = {
+  width: "100%", fontFamily: font.ui, fontSize: 14, color: c.ivory,
+  background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
+  padding: "12px 14px", outline: "none", boxSizing: "border-box", minHeight: 44,
+  transition: "border-color 0.18s ease, box-shadow 0.18s ease",
+};
+
+const accSubtleBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+  background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
+  padding: "10px 14px", cursor: "pointer", minHeight: 40,
+};
+
+const accSubtleBtnGhost: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.stone,
+  background: "transparent", border: "none", borderRadius: 9,
+  padding: "10px 14px", cursor: "pointer", minHeight: 40,
+};
+
+function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string; title: string; desc?: string; tone?: "danger" }) {
+  return (
+    <div style={{ marginTop: 8, marginBottom: 16 }}>
+      {k && (
+        <div style={{
+          fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em",
+          color: tone === "danger" ? c.ember : c.gilt, textTransform: "uppercase",
+        }}>{k}</div>
+      )}
+      <h2 style={{
+        fontFamily: font.display, fontSize: 28, letterSpacing: "-0.02em",
+        color: tone === "danger" ? c.ember : c.ivory, margin: "6px 0", lineHeight: 1.15, fontWeight: 400,
+      }}>{title}</h2>
+      {desc && (
+        <p style={{
+          fontFamily: font.ui, fontSize: 14, color: c.stone, margin: 0, lineHeight: 1.55, maxWidth: 620,
+        }}>{desc}</p>
+      )}
+    </div>
+  );
+}
+
+function EditorialCard({ children, density = "default" }: { children: React.ReactNode; density?: "default" | "tight" }) {
+  return (
+    <div style={{
+      background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14,
+      boxShadow: shadow.sm,
+      padding: density === "tight" ? "20px 24px" : "28px 32px",
+    }}>{children}</div>
+  );
+}
+
+function KeyValue({ label, value, right }: { label: string; value: string; right?: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", gap: 16 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>{value}</div>
+      </div>
+      <div>{right}</div>
+    </div>
+  );
+}
+
+function ThinDivider() {
+  return <div style={{ height: 1, background: c.border, margin: "12px 0" }} role="separator" />;
+}
+
+function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "success" | "warn" }) {
+  const palette =
+    tone === "success" ? { bg: c.success100, fg: c.sage } :
+    tone === "warn" ? { bg: c.warning100, fg: c.giltDark } :
+    { bg: c.indigo100, fg: c.indigo };
+  return (
+    <span style={{
+      fontFamily: font.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+      padding: "4px 8px", borderRadius: 4, background: palette.bg, color: palette.fg, fontWeight: 700,
+    }}>{children}</span>
+  );
 }
 
 export const AccountSection = memo(function AccountSection(props: AccountSectionProps) {
   const {
-    editName, setEditName, editCompany, setEditCompany, editIndustry, setEditIndustry,
-    userName, email, tierLabel, subscriptionTier, isDirty,
-    saving, saved, handleSave,
+    editName, setEditName,
+    editRole, setEditRole,
+    editCompany, setEditCompany,
+    editIndustry, setEditIndustry,
+    editCity, setEditCity,
+    editExperience, setEditExperience,
+    userName, email, tierLabel, subscriptionTier,
     resetLoading, resetSent, handlePasswordReset, isOAuthOnly,
     signOutOthersLoading, signOutOthersDone, signOutOthersError,
     handleSignOutOtherDevices,
     recentDevices,
     focusOut,
+    authUpdateUser,
   } = props;
+  void subscriptionTier; void tierLabel;
+
+  const initial = (userName || email || "?").trim().charAt(0).toUpperCase();
 
   return (
-    <div style={cardStyle}>
-      <CardAccent />
-
-      <div style={sectionHeader}>
-        <IconBox>{icons.account}</IconBox>
-        <h3 style={sectionTitle}>Account</h3>
-      </div>
-      <p style={sectionDesc}>Your personal details and login credentials</p>
-
-      {/* User identity card */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 20, marginBottom: 32,
-        padding: "20px 24px", borderRadius: 14,
-        background: c.graphite,
-        border: `1px solid ${c.border}`,
-      }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-          background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.22)`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <span style={{ fontFamily: font.display, fontSize: 24, color: c.gilt }}>{(userName || "?")[0].toUpperCase()}</span>
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName}</p>
-          <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email}</p>
-        </div>
-        <div style={{
-          padding: "5px 12px", borderRadius: 8,
-          background: subscriptionTier === "pro" ? "#DCFCE7" : "#F4E5D8",
-          border: `1px solid ${subscriptionTier === "pro" ? "rgba(21,128,61,0.25)" : "rgba(180,83,9,0.22)"}`,
-        }}>
-          <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: subscriptionTier === "pro" ? c.sage : c.gilt, letterSpacing: "0.04em", textTransform: "uppercase" }}>{tierLabel}</span>
-        </div>
-      </div>
-
-      {/* Form */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="settings-form-grid">
-        <div>
-          <label htmlFor="settings-name" style={labelStyle}>Full Name</label>
-          <input id="settings-name" type="text" value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={60}
-            style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
-        </div>
-        <div>
-          <label htmlFor="settings-email" style={labelStyle}>Email</label>
-          <input id="settings-email" type="email" value={email} readOnly
-            style={{ ...inputStyle, color: c.stone, cursor: "default", opacity: 0.7 }} />
-        </div>
-        <div>
-          <label htmlFor="settings-company" style={labelStyle}>Target Company</label>
-          <input id="settings-company" type="text" value={editCompany} onChange={(e) => setEditCompany(e.target.value)} maxLength={60} placeholder="e.g. Google"
-            style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
-        </div>
-        <div>
-          <label htmlFor="settings-industry" style={labelStyle}>Industry</label>
-          <input id="settings-industry" type="text" value={editIndustry} onChange={(e) => setEditIndustry(e.target.value)} maxLength={60} placeholder="e.g. FinTech"
-            style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
-        </div>
-      </div>
-
-      {/* Save bar */}
-      <div style={{ display: "flex", gap: 12, marginTop: 24, alignItems: "center" }}>
-        <button onClick={handleSave} disabled={saving || !isDirty} className="shimmer-btn"
-          style={{
-            fontFamily: font.ui, fontSize: 13, fontWeight: 600, padding: "11px 32px", borderRadius: 10,
-            border: "none", cursor: (saving || !isDirty) ? "not-allowed" : "pointer",
-            background: (saving || !isDirty) ? "rgba(180,83,9,0.22)" : c.indigo,
-            color: (saving || !isDirty) ? c.stone : c.obsidian,
-            transition: "all 0.2s ease", letterSpacing: "0.02em",
-          }}>
-          {saving ? "Saving..." : saved ? "Saved" : "Save Changes"}
-        </button>
-        {isDirty && <span style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.gilt }} />Unsaved changes
-        </span>}
-        {saved && <span style={{ fontFamily: font.ui, fontSize: 11, color: c.sage, display: "flex", alignItems: "center", gap: 4 }}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        </span>}
-        <kbd style={{ marginLeft: "auto", fontFamily: font.mono, fontSize: 10, color: c.stone, background: "#F4EFE3", border: `1px solid ${c.border}`, borderRadius: 6, padding: "3px 8px" }}>&#8984;S</kbd>
-      </div>
-
-      <Divider />
-
-      {/* Password — hidden for OAuth-only users (Google, etc.).
-          They sign in with their Google account; we don't store a
-          password they could reset. The previous flow let them
-          trigger a "reset" that changed an internal password they
-          never use, which confused users into thinking their Google
-          password was being reset. */}
-      {!isOAuthOnly && (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 3 }}>Password</span>
-          <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Reset via email link</span>
-        </div>
-        <button onClick={handlePasswordReset} disabled={resetLoading || resetSent}
-          style={{
-            fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
-            color: resetSent ? c.sage : c.ivory,
-            background: resetSent ? "#DCFCE7" : "#F4EFE3",
-            border: `1px solid ${resetSent ? "rgba(21,128,61,0.3)" : c.border}`,
-            borderRadius: 10, padding: "9px 20px", cursor: (resetLoading || resetSent) ? "default" : "pointer",
-            opacity: resetLoading ? 0.6 : 1, transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => { if (!resetLoading && !resetSent) e.currentTarget.style.background = "#EBE5D2"; }}
-          onMouseLeave={(e) => { if (!resetLoading && !resetSent) e.currentTarget.style.background = "#F4EFE3"; }}
-        >
-          {resetLoading ? "Sending..." : resetSent ? "Email Sent" : "Reset Password"}
-        </button>
-      </div>
-      )}
-      {isOAuthOnly && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 3 }}>Password</span>
-            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
-              You signed in with Google — manage your password in your Google Account.
-            </span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
+      {/* ── Profile ── */}
+      <SectionHead kicker="Account" title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
+      <EditorialCard>
+        <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24 }}>
+          <div aria-hidden="true" style={{
+            width: 64, height: 64, borderRadius: "50%",
+            background: c.indigoDeep, color: c.cream, fontFamily: font.display, fontSize: 26,
+            display: "flex", alignItems: "center", justifyContent: "center", letterSpacing: "0.02em", flexShrink: 0,
+          }}>{initial}</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName || "Your name"}</div>
+            <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginTop: 4 }}>
+              {email}{tierLabel ? ` · ${tierLabel} tier` : ""}
+            </div>
           </div>
         </div>
-      )}
 
-      <Divider />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="settings-form-grid">
+          <FieldShell label="Full name" htmlFor="acc-name">
+            <input id="acc-name" type="text" value={editName} maxLength={60}
+              onChange={(e) => setEditName(e.target.value)}
+              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
+          </FieldShell>
+          <FieldShell label="Target role" htmlFor="acc-role">
+            <input id="acc-role" type="text" value={editRole} maxLength={80}
+              placeholder="e.g. Senior Product Manager"
+              onChange={(e) => setEditRole(e.target.value)}
+              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
+          </FieldShell>
+          <FieldShell label="Target company" htmlFor="acc-company">
+            <input id="acc-company" type="text" value={editCompany} maxLength={60}
+              placeholder="e.g. Razorpay"
+              onChange={(e) => setEditCompany(e.target.value)}
+              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
+          </FieldShell>
+          <FieldShell label="Industry" htmlFor="acc-industry">
+            <input id="acc-industry" type="text" value={editIndustry} maxLength={60}
+              placeholder="e.g. Fintech"
+              onChange={(e) => setEditIndustry(e.target.value)}
+              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
+          </FieldShell>
+          <FieldShell label="City" htmlFor="acc-city">
+            <input id="acc-city" type="text" value={editCity} maxLength={60}
+              placeholder="e.g. Bengaluru"
+              onChange={(e) => setEditCity(e.target.value)}
+              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
+          </FieldShell>
+          <FieldShell label="Years of experience" htmlFor="acc-experience">
+            <div style={{ position: "relative" }}>
+              <select id="acc-experience" value={editExperience}
+                onChange={(e) => { setEditExperience(e.target.value); void authUpdateUser({ experienceLevel: e.target.value }); }}
+                style={{ ...editorialInput, appearance: "none", WebkitAppearance: "none", MozAppearance: "none", paddingRight: 36, cursor: "pointer" }}
+                aria-label={`Years of experience, currently ${ExperienceLabel(editExperience)}`}
+              >
+                {EXPERIENCE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <span aria-hidden style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: c.stone, fontFamily: font.mono, fontSize: 11, pointerEvents: "none" }}>▾</span>
+            </div>
+          </FieldShell>
+        </div>
 
-      {/* Recent device history — read-only audit list. Each entry is a
-          login event recorded in user_metadata.recent_devices. The
-          first entry (isCurrent) is the device this tab is on. */}
-      {recentDevices.length > 0 && (
-        <div style={{ marginBottom: 18 }}>
-          <span
-            style={{
-              fontFamily: font.ui,
-              fontSize: 12,
-              fontWeight: 600,
-              color: c.stone,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              display: "block",
-              marginBottom: 10,
-            }}
-          >
-            Recent devices
-          </span>
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            {recentDevices.map((d) => {
-              const seenAgo = d.at ? formatRelative(d.at) : "Unknown";
-              const label = parseUserAgent(d.ua || "");
-              return (
-                <li
-                  key={d.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 14px",
-                    borderRadius: 10,
-                    background: d.isCurrent
-                      ? "#DCFCE7"
-                      : "#F4EFE3",
-                    border: `1px solid ${d.isCurrent ? "rgba(21,128,61,0.28)" : c.border}`,
-                  }}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                    <span
-                      style={{
-                        fontFamily: font.ui,
-                        fontSize: 13,
-                        fontWeight: 500,
-                        color: c.ivory,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {label}
-                    </span>
-                    <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>
-                      {d.isCurrent ? "This device · " : ""}
-                      {seenAgo}
-                    </span>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 20, gap: 10, fontFamily: font.ui, fontSize: 12, color: c.stone }}>
+          <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: c.sage }} />
+          Saved automatically when you leave a field
+        </div>
+      </EditorialCard>
+
+      {/* ── Security ── */}
+      <SectionHead title="Security" desc="Sign-in and devices currently using your account." />
+      <EditorialCard density="tight">
+        <KeyValue label="Email" value={email} right={<TinyChip tone="success">Verified</TinyChip>} />
+        <ThinDivider />
+        {!isOAuthOnly ? (
+          <KeyValue
+            label="Password"
+            value="Send a reset link to your email when you need to change it."
+            right={
+              <button type="button" onClick={handlePasswordReset} disabled={resetLoading || resetSent}
+                style={{
+                  ...accSubtleBtn,
+                  color: resetSent ? c.sage : c.ivory,
+                  background: resetSent ? c.success100 : c.graphite,
+                  borderColor: resetSent ? "rgba(21,128,61,0.3)" : c.borderStrong,
+                  cursor: (resetLoading || resetSent) ? "default" : "pointer",
+                  opacity: resetLoading ? 0.6 : 1,
+                }}
+              >
+                {resetLoading ? "Sending..." : resetSent ? "Email sent" : "Send reset link"}
+              </button>
+            }
+          />
+        ) : (
+          <KeyValue
+            label="Password"
+            value="You signed in with Google — manage your password in your Google Account."
+            right={<TinyChip>Google</TinyChip>}
+          />
+        )}
+        <ThinDivider />
+        <KeyValue
+          label="Sign-in method"
+          value={isOAuthOnly ? "Google" : "Email and password"}
+          right={<TinyChip tone="success">Active</TinyChip>}
+        />
+      </EditorialCard>
+
+      <EditorialCard density="tight">
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory }}>Active devices</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 }}>
+            One device at a time. Signing in elsewhere automatically signs out this device.
+          </div>
+        </div>
+        {recentDevices.length === 0 ? (
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "12px 0" }}>
+            No recent sign-ins recorded yet.
+          </div>
+        ) : (
+          recentDevices.map((d, idx) => {
+            const seen = d.at ? formatRelative(d.at) : "Unknown";
+            const label = parseUserAgent(d.ua || "");
+            return (
+              <div key={d.id} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "12px 0", gap: 16,
+                borderBottom: idx < recentDevices.length - 1 ? `1px solid ${c.border}` : "none",
+              }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
+                  <span aria-hidden style={{
+                    width: 36, height: 36, borderRadius: 8,
+                    background: c.creamSoft, color: c.stone,
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
+                    <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>
+                      {d.isCurrent ? "Active now, this device" : seen}
+                    </div>
                   </div>
-                  {d.isCurrent && (
-                    <span
-                      style={{
-                        fontFamily: font.mono,
-                        fontSize: 9,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                        color: c.sage,
-                        padding: "3px 8px",
-                        borderRadius: 6,
-                        background: "#DCFCE7",
-                      }}
-                    >
-                      Current
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+                </div>
+                {d.isCurrent && <TinyChip tone="success">This device</TinyChip>}
+              </div>
+            );
+          })
+        )}
 
-      {/* Sessions — sign out every other device that's signed in */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 3 }}>Active sessions</span>
-          <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
-            {signOutOthersError
-              ? signOutOthersError
-              : "Sign out every device except this one"}
-          </span>
+        <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: signOutOthersError ? c.ember : c.stone }}>
+            {signOutOthersError || "Sign out every device except this one."}
+          </div>
+          <button onClick={handleSignOutOtherDevices} disabled={signOutOthersLoading || signOutOthersDone}
+            style={{
+              ...accSubtleBtnGhost,
+              color: signOutOthersDone ? c.sage : c.indigo,
+              cursor: (signOutOthersLoading || signOutOthersDone) ? "default" : "pointer",
+              opacity: signOutOthersLoading ? 0.6 : 1,
+            }}
+          >
+            {signOutOthersLoading ? "Signing out..." : signOutOthersDone ? "Signed out" : "Sign out everywhere else"}
+          </button>
         </div>
-        <button
-          onClick={handleSignOutOtherDevices}
-          disabled={signOutOthersLoading || signOutOthersDone}
-          style={{
-            fontFamily: font.ui,
-            fontSize: 12,
-            fontWeight: 600,
-            letterSpacing: "0.02em",
-            color: signOutOthersDone ? c.sage : c.ivory,
-            background: signOutOthersDone
-              ? "#DCFCE7"
-              : "#F4EFE3",
-            border: `1px solid ${signOutOthersDone ? "rgba(21,128,61,0.3)" : c.border}`,
-            borderRadius: 10,
-            padding: "9px 20px",
-            cursor:
-              signOutOthersLoading || signOutOthersDone ? "default" : "pointer",
-            opacity: signOutOthersLoading ? 0.6 : 1,
-            transition: "all 0.2s ease",
-            whiteSpace: "nowrap",
-          }}
-          onMouseEnter={(e) => {
-            if (!signOutOthersLoading && !signOutOthersDone)
-              e.currentTarget.style.background = "#EBE5D2";
-          }}
-          onMouseLeave={(e) => {
-            if (!signOutOthersLoading && !signOutOthersDone)
-              e.currentTarget.style.background = "#F4EFE3";
-          }}
-        >
-          {signOutOthersLoading
-            ? "Signing out..."
-            : signOutOthersDone
-              ? "Signed out"
-              : "Sign out everywhere else"}
-        </button>
-      </div>
+      </EditorialCard>
     </div>
   );
 });
+
 
 /* ═══════════════════════════════════════════════════════════════
    INTERVIEW PREFERENCES SECTION

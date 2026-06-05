@@ -51,9 +51,11 @@ export default function SettingsPage() {
 
   // Profile
   const [editName, setEditName] = useState(persisted.userName);
-  const editRole = persisted.targetRole;
+  const [editRole, setEditRole] = useState(persisted.targetRole);
   const [editCompany, setEditCompany] = useState(authUser?.targetCompany || "");
   const [editIndustry, setEditIndustry] = useState(authUser?.industry || "");
+  const [editCity, setEditCity] = useState(authUser?.city || "");
+  const [editExperience, setEditExperience] = useState(authUser?.experienceLevel || "");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -122,29 +124,29 @@ export default function SettingsPage() {
     getPaymentHistory(authUser.id).then(setPayments).finally(() => setPaymentsLoading(false));
   }, [activeSection, authUser?.id]);
 
-  const isDirty = editName !== persisted.userName || editRole !== persisted.targetRole || editCompany !== (authUser?.targetCompany || "") || editIndustry !== (authUser?.industry || "");
+  const isDirty = editName !== persisted.userName || editRole !== persisted.targetRole || editCompany !== (authUser?.targetCompany || "") || editIndustry !== (authUser?.industry || "") || editCity !== (authUser?.city || "") || editExperience !== (authUser?.experienceLevel || "");
 
   // Auto-save on blur for text fields
   const focusOut = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
     focusOutBase(e);
     setTimeout(() => {
-      if (editName !== persisted.userName || editRole !== persisted.targetRole || editCompany !== (authUser?.targetCompany || "") || editIndustry !== (authUser?.industry || "")) {
+      if (editName !== persisted.userName || editRole !== persisted.targetRole || editCompany !== (authUser?.targetCompany || "") || editIndustry !== (authUser?.industry || "") || editCity !== (authUser?.city || "")) {
         onUpdate({ userName: editName, targetRole: editRole });
-        authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry });
+        authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry, city: editCity });
         showToast("Saved");
       }
     }, 0);
-  }, [editName, editRole, editCompany, editIndustry, persisted.userName, persisted.targetRole, authUser?.targetCompany, authUser?.industry, onUpdate, authUpdateUser, showToast]);
+  }, [editName, editRole, editCompany, editIndustry, editCity, persisted.userName, persisted.targetRole, authUser?.targetCompany, authUser?.industry, authUser?.city, onUpdate, authUpdateUser, showToast]);
 
   // Auto-save dirty profile fields when switching tabs
   const switchSection = useCallback((id: string) => {
     if (isDirty) {
       onUpdate({ userName: editName, targetRole: editRole });
-      authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry });
+      authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry, city: editCity, experienceLevel: editExperience });
       showToast("Profile saved");
     }
     setActiveSection(id);
-  }, [isDirty, editName, editRole, editCompany, editIndustry, onUpdate, authUpdateUser, showToast]);
+  }, [isDirty, editName, editRole, editCompany, editIndustry, editCity, editExperience, onUpdate, authUpdateUser, showToast]);
 
   // Keyboard navigation for pills
   const handlePillKeyDown = (e: React.KeyboardEvent, idx: number) => {
@@ -173,7 +175,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true); setSaved(false);
     onUpdate({ userName: editName, targetRole: editRole });
-    await authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry });
+    await authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry, city: editCity, experienceLevel: editExperience });
     setSaving(false); setSaved(true);
     showToast("Profile saved");
     setTimeout(() => setSaved(false), 3000);
@@ -277,8 +279,11 @@ export default function SettingsPage() {
       {activeSection === "account" && (
         <AccountSection
           editName={editName} setEditName={setEditName}
+          editRole={editRole} setEditRole={setEditRole}
           editCompany={editCompany} setEditCompany={setEditCompany}
           editIndustry={editIndustry} setEditIndustry={setEditIndustry}
+          editCity={editCity} setEditCity={setEditCity}
+          editExperience={editExperience} setEditExperience={setEditExperience}
           userName={persisted.userName} email={authUser?.email || ""}
           tierLabel={tierLabel} subscriptionTier={authUser?.subscriptionTier}
           isDirty={isDirty} saving={saving} saved={saved}
@@ -292,6 +297,7 @@ export default function SettingsPage() {
           handleSignOutOtherDevices={handleSignOutOtherDevices}
           recentDevices={recentDevices}
           focusOut={focusOut}
+          authUpdateUser={authUpdateUser}
         />
       )}
 
