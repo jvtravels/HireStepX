@@ -341,10 +341,21 @@ export default function SettingsPage() {
 
 /* ─── Referral Section Component (self-contained with its own state) ─── */
 
+interface ReferralInviteRow {
+  id: string;
+  name: string;
+  email: string;
+  status: "pending" | "redeemed" | "rewarded";
+  createdAt: string;
+}
+
+const REFERRAL_CAP = 6;
+
 function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
   const { user } = useAuth();
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, redeemed: 0, rewarded: 0 });
+  const [invites, setInvites] = useState<ReferralInviteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -352,13 +363,19 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
     if (!user?.id) return;
     (async () => {
       try {
-        const { authHeaders: getHeaders } = await import("./supabase");
-        const headers = await getHeaders();
-        const res = await fetch("/api/referral", { headers });
-        if (res.ok) {
-          const data = await res.json();
+        const headers = await authHeaders();
+        const [codeRes, invitesRes] = await Promise.all([
+          fetch("/api/referral", { headers }),
+          fetch("/api/referral-invites", { headers }),
+        ]);
+        if (codeRes.ok) {
+          const data = await codeRes.json();
           setReferralCode(data.code);
           setStats(data.stats);
+        }
+        if (invitesRes.ok) {
+          const data = await invitesRes.json();
+          if (Array.isArray(data.invites)) setInvites(data.invites as ReferralInviteRow[]);
         }
       } catch {
         // silent
@@ -368,9 +385,13 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
     })();
   }, [user?.id]);
 
-  const referralLink = referralCode ? `${window.location.origin}/signup?ref=${referralCode}` : "";
+  const referralLink = referralCode && typeof window !== "undefined"
+    ? `${window.location.origin}/signup?ref=${referralCode}`
+    : "";
+  const shortLink = referralCode ? `hirestepx.com/r/${referralCode.toLowerCase()}` : "";
 
   const handleCopy = () => {
+    if (!referralLink) return;
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     showToast("Referral link copied!");
@@ -378,100 +399,179 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
   };
 
   const handleShareWhatsApp = () => {
+    if (!referralLink) return;
     const text = `Hey! I've been using HireStepX to practice for interviews with AI - it's really helped me improve. Try it out: ${referralLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const localCardStyle: React.CSSProperties = {
-    position: "relative", borderRadius: 16, padding: "32px 28px",
-    background: c.graphite, border: `1px solid ${c.border}`,
+  const handleShareEmail = () => {
+    if (!referralLink) return;
+    const subject = "Try HireStepX - AI Mock Interviews";
+    const body = `Hey!\n\nI've been using HireStepX to practice for interviews with AI interviewers. It gives detailed feedback on STAR method, speech analytics, and more.\n\nSign up with my referral link: ${referralLink}`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+
+  const earned = Math.min(stats.rewarded, REFERRAL_CAP);
+  const remaining = Math.max(REFERRAL_CAP - earned, 0);
+  const pct = (earned / REFERRAL_CAP) * 100;
+
+  const cardStyle: React.CSSProperties = {
+    background: c.graphite,
+    border: `1px solid ${c.border}`,
+    borderRadius: 16,
     boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
   };
-  const localLabelStyle: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.06em", textTransform: "uppercase" as const, display: "block", marginBottom: 10 };
-  const localSectionHeader: React.CSSProperties = { display: "flex", alignItems: "center", gap: 14, marginBottom: 28 };
+  const kickerStyle: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.12em", textTransform: "uppercase" };
+  const headlineStyle: React.CSSProperties = { fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "8px 0 10px", letterSpacing: "-0.02em", lineHeight: 1.1 };
+  const descStyle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 };
+  const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.08em", textTransform: "uppercase" };
+
+  const primaryBtn: React.CSSProperties = {
+    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
+    background: c.indigo, border: `1px solid ${c.indigo}`,
+    borderRadius: 10, padding: "10px 18px", cursor: "pointer", transition: "all 0.15s",
+  };
+  const ghostBtn: React.CSSProperties = {
+    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+    background: c.graphite, border: `1px solid ${c.borderStrong}`,
+    borderRadius: 10, padding: "10px 18px", cursor: "pointer", transition: "all 0.15s",
+  };
+  const linkBtn: React.CSSProperties = {
+    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+    background: "transparent", border: "none",
+    padding: "10px 8px", cursor: "pointer",
+  };
 
   if (loading) {
-    return <div style={localCardStyle}><span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>Loading referral info...</span></div>;
+    return (
+      <div style={{ ...cardStyle, padding: 28 }}>
+        <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>Loading referral info...</span>
+      </div>
+    );
   }
 
   return (
-    <div style={localCardStyle}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, rgba(180,83,9,0.28), transparent)` }} />
-
-      <div style={localSectionHeader}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#DCFCE7", border: `1px solid rgba(21,128,61,0.22)`, display: "flex", alignItems: "center", justifyContent: "center", color: c.sage }}>
-          {icons.referral}
-        </div>
-        <div>
-          <h3 style={{ fontFamily: font.display, fontSize: 20, color: c.ivory, margin: 0 }}>Invite Friends</h3>
-          <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, margin: "2px 0 0" }}>Share your referral link and earn rewards</p>
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 880 }}>
+      <div>
+        <div style={kickerStyle}>Referral</div>
+        <h2 style={headlineStyle}>Bring a friend, earn a month</h2>
+        <p style={descStyle}>
+          They get 20% off their first Pro month. You get a free month when they convert.
+          {" "}{earned} earned, {remaining} to go before the lifetime cap.
+        </p>
       </div>
 
-      {/* Referral Code Display */}
-      <span style={localLabelStyle}>Your Referral Code</span>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 12, marginBottom: 24,
-        padding: "16px 20px", borderRadius: 12,
-        background: "#DCFCE7", border: `1px solid rgba(21,128,61,0.22)`,
-      }}>
-        <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 600, color: c.sage, letterSpacing: "0.08em", flex: 1 }}>
-          {referralCode || "---"}
-        </span>
-        <button onClick={handleCopy} style={{
-          fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: copied ? c.sage : c.gilt,
-          background: copied ? "#DCFCE7" : "#F4E5D8",
-          border: `1px solid ${copied ? "rgba(21,128,61,0.3)" : "rgba(180,83,9,0.22)"}`,
-          borderRadius: 8, padding: "8px 16px", cursor: "pointer", transition: "all 0.15s",
-        }}>
-          {copied ? "Copied!" : "Copy Link"}
-        </button>
-      </div>
-
-      {/* Share Buttons */}
-      <span style={localLabelStyle}>Share via</span>
-      <div style={{ display: "flex", gap: 12, marginBottom: 28 }}>
-        <button onClick={handleShareWhatsApp} style={{
-          fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: "#25D366",
-          background: "#DCFCE7", border: "1px solid rgba(37,211,102,0.3)",
-          borderRadius: 10, padding: "12px 20px", cursor: "pointer", transition: "all 0.15s",
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 0 0 .611.611l4.458-1.495A11.948 11.948 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.316 0-4.473-.754-6.217-2.03l-.352-.264-3.652 1.224 1.224-3.652-.264-.352A9.954 9.954 0 0 1 2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
-          WhatsApp
-        </button>
-        <button onClick={() => {
-          const subject = "Try HireStepX - AI Mock Interviews";
-          const body = `Hey!\n\nI've been using HireStepX to practice for interviews with AI interviewers. It gives detailed feedback on STAR method, speech analytics, and more.\n\nSign up with my referral link: ${referralLink}`;
-          window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-        }} style={{
-          fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.chalk,
-          background: c.creamSoft, border: `1px solid ${c.border}`,
-          borderRadius: 10, padding: "12px 20px", cursor: "pointer", transition: "all 0.15s",
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Email
-        </button>
-      </div>
-
-      {/* Stats */}
-      <span style={localLabelStyle}>Referral Stats</span>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-        {[
-          { label: "Invited", value: stats.total, color: c.chalk },
-          { label: "Signed Up", value: stats.redeemed, color: c.sage },
-          { label: "Rewards", value: stats.rewarded, color: c.gilt },
-        ].map(s => (
-          <div key={s.label} style={{
-            textAlign: "center", padding: "20px 12px", borderRadius: 12,
-            background: c.creamSoft, border: `1px solid ${c.border}`,
-          }}>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 600, color: s.color, display: "block", marginBottom: 4 }}>{s.value}</span>
-            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{s.label}</span>
+      <div style={{ ...cardStyle, padding: "28px 28px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 280px", gap: 28, alignItems: "start" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={sectionLabel}>Your referral link</div>
+            <div style={{
+              marginTop: 12,
+              display: "inline-flex", alignItems: "center",
+              padding: "14px 18px", borderRadius: 12,
+              background: c.creamSoft, border: `1px solid ${c.border}`,
+              fontFamily: font.mono, fontSize: 15, color: c.ivory,
+              maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              {shortLink ? (
+                <>hirestepx.com/r/<span style={{ color: c.gilt }}>{referralCode?.toLowerCase()}</span></>
+              ) : "—"}
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
+              <button type="button" onClick={handleCopy} style={primaryBtn}>
+                {copied ? "Copied!" : "Copy link"}
+              </button>
+              <button type="button" onClick={handleShareWhatsApp} style={ghostBtn}>Share on WhatsApp</button>
+              <button type="button" onClick={handleShareEmail} style={linkBtn}>Email a friend</button>
+            </div>
           </div>
-        ))}
+
+          <div style={{ padding: "20px 22px", borderRadius: 12, background: c.creamSoft, border: `1px solid ${c.border}` }} aria-label="Lifetime referral progress">
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>Free months earned</span>
+              <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{earned} of {REFERRAL_CAP}</span>
+            </div>
+            <div role="progressbar" aria-label="Free months earned" aria-valuemin={0} aria-valuemax={REFERRAL_CAP} aria-valuenow={earned} style={{ position: "relative", height: 8, background: c.border, borderRadius: 100 }}>
+              <div style={{ position: "absolute", left: 0, top: 0, height: 8, width: `${pct}%`, background: c.gilt, borderRadius: 100, transition: "width 0.3s" }} />
+            </div>
+            <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 10, lineHeight: 1.5 }}>
+              Each converted invite adds one month, capped at six.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ ...cardStyle, padding: "24px 28px" }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory }}>Your invites</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 }}>
+            We tell you when they sign up, and again when they convert.
+          </div>
+        </div>
+        {invites.length === 0 ? (
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "20px 0" }}>
+            No invites yet. Share your link to see them here.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {invites.map((inv, i) => (
+              <ReferRow key={inv.id} invite={inv} divider={i < invites.length - 1} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boolean }) {
+  const initials = invite.name
+    .split(/\s+/)
+    .map(w => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "?";
+  const ts = invite.createdAt ? relativeTime(invite.createdAt) : "";
+  const tone = invite.status === "rewarded"
+    ? { label: "Converted", bg: "#DCFCE7", fg: c.sage, border: "rgba(21,128,61,0.28)" }
+    : invite.status === "redeemed"
+      ? { label: "Joined", bg: "#E5E2F2", fg: c.indigo, border: "rgba(49,46,129,0.28)" }
+      : { label: "Pending", bg: "#FEF3C7", fg: "#A16207", border: "rgba(161,98,7,0.28)" };
+  return (
+    <div style={{
+      display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: 16, alignItems: "center",
+      padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
+    }}>
+      <div style={{
+        width: 36, height: 36, borderRadius: "50%",
+        background: c.indigo, color: c.cream,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+      }}>{initials}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.name}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.email}</div>
+      </div>
+      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{ts}</div>
+      <div style={{
+        fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+        color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
+        borderRadius: 6, padding: "4px 8px",
+      }}>{tone.label}</div>
+    </div>
+  );
+}
+
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "";
+  const diff = Date.now() - then;
+  const day = 86_400_000;
+  const days = Math.floor(diff / day);
+  if (days < 1) return "today";
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
 }
