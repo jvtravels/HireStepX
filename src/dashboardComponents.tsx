@@ -105,9 +105,9 @@ export function DataLoadingSkeleton() {
 
 /* ─── Upgrade Modal ─── */
 const PLANS = [
-  { id: "free", tier: "free", name: "Free", price: "\u20B90", period: "", desc: `${FREE_SESSION_LIMIT} sessions total`, features: [`${FREE_SESSION_LIMIT} mock interviews`, "Behavioral questions", "Basic score & feedback"], featured: false },
-  { id: "single", tier: "free", name: "Per session", price: "\u20B99", period: "/session", desc: "Single mock interview session", features: ["All question types", "Detailed score & tips", "Ideal answer key", "Company-specific Qs"], featured: false },
-  { id: "weekly", tier: "starter", name: "Weekly", price: "\u20B949", period: "/week", desc: `${STARTER_WEEKLY_LIMIT} sessions over 7 days`, features: [`${STARTER_WEEKLY_LIMIT} sessions over 7 days`, "All types + role-specific", "Skill-level breakdown", "Resume-tailored Qs", "PDF reports"], featured: false },
+  { id: "free", tier: "free", name: "Free", price: "\u20B90", period: "", desc: `${FREE_SESSION_LIMIT} sessions total`, features: [`${FREE_SESSION_LIMIT} mock interviews`, "Behavioral questions", "Basic score & feedback", "No credit card required"], featured: false },
+  { id: "single", tier: "free", name: "Per session", price: "\u20B99", period: "/session", desc: "Single mock interview session", features: ["All question types", "Detailed score & tips", "Ideal answer key", "Company-specific Qs", "Pay only for what you use"], featured: false },
+  { id: "weekly", tier: "starter", name: "Weekly", price: "\u20B949", period: "/week", desc: `${STARTER_WEEKLY_LIMIT} sessions over 7 days`, features: [`${STARTER_WEEKLY_LIMIT} sessions over 7 days`, "All types + role-specific", "Skill-level breakdown", "Resume-tailored Qs", "PDF reports", "Cancel anytime"], featured: false },
   { id: "monthly", tier: "pro", name: "Monthly", price: "\u20B9149", period: "/mo", desc: `${PRO_MONTHLY_LIMIT} sessions over 30 days`, features: [`${PRO_MONTHLY_LIMIT} sessions over 30 days`, "Everything in Weekly", "AI coaching & improvement plan", "Analytics & trends", "Interview calendar", "Export PDF, CSV, JSON"], featured: true },
 ];
 
@@ -132,6 +132,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   const [promoResult, setPromoResult] = useState<{ valid: boolean; discount_percent?: number; discount_amount?: number; final_amount?: number; code?: string } | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState("");
+  const [showPromo, setShowPromo] = useState(false);
   // Store Razorpay response + plan in state so useEffect handles verification
   // (fetch inside Razorpay's handler callback doesn't work reliably)
   const [pendingVerification, setPendingVerification] = useState<{
@@ -331,9 +332,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
 
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 24, fontWeight: 400, color: c.ivory, marginBottom: 6 }}>Choose Your Plan</h2>
-          {currentTier !== "free" && <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>Manage your plan</p>}
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6 }}>Choose your plan</h2>
+          <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>{currentTier !== "free" ? "Manage your plan" : "Cancel anytime · UPI, cards, netbanking"}</p>
         </div>
 
         {error && (
@@ -348,31 +349,40 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           </div>
         )}
 
-        {/* Promo Code */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <input type="text" value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(""); setPromoResult(null); }}
-            placeholder="Promo code" aria-label="Promo code"
-            style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: c.obsidian, border: `1px solid ${promoResult?.valid ? c.sage : c.border}`, borderRadius: 8, padding: "8px 12px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
-          />
-          <button disabled={promoLoading || !promoCode.trim()} onClick={async () => {
-            setPromoLoading(true); setPromoError("");
-            try {
-              const hdrs = await import("./supabase").then(m => m.authHeaders());
-              const res = await fetch("/api/validate-promo", { method: "POST", headers: hdrs, body: JSON.stringify({ code: promoCode.trim(), plan: "monthly" }) });
-              const data = await res.json();
-              if (data.valid) { setPromoResult(data); } else { setPromoError(data.error || "Invalid code"); setPromoResult(null); }
-            } catch { setPromoError("Could not validate code"); }
-            finally { setPromoLoading(false); }
-          }} style={{
-            fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "#F4E5D8",
-            border: `1px solid ${c.borderHover}`, borderRadius: 8, padding: "8px 14px", cursor: promoLoading ? "wait" : "pointer", opacity: !promoCode.trim() ? 0.5 : 1,
-          }}>
-            {promoLoading ? "..." : "Apply"}
-          </button>
-        </div>
-        {promoError && <p style={{ fontFamily: font.ui, fontSize: 11, color: c.ember, marginBottom: 12, marginTop: -8 }}>{promoError}</p>}
+        {/* Promo Code — collapsed by default */}
+        {!showPromo && !promoResult?.valid && (
+          <div style={{ textAlign: "left", marginBottom: 12 }}>
+            <button onClick={() => setShowPromo(true)} style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+              Have a promo code?
+            </button>
+          </div>
+        )}
+        {(showPromo || promoResult?.valid) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <input type="text" value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(""); setPromoResult(null); }}
+              placeholder="Promo code" aria-label="Promo code" autoFocus
+              style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: c.obsidian, border: `1px solid ${promoResult?.valid ? c.sage : c.border}`, borderRadius: 8, padding: "8px 12px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
+            />
+            <button disabled={promoLoading || !promoCode.trim()} onClick={async () => {
+              setPromoLoading(true); setPromoError("");
+              try {
+                const hdrs = await import("./supabase").then(m => m.authHeaders());
+                const res = await fetch("/api/validate-promo", { method: "POST", headers: hdrs, body: JSON.stringify({ code: promoCode.trim(), plan: "monthly" }) });
+                const data = await res.json();
+                if (data.valid) { setPromoResult(data); } else { setPromoError(data.error || "Invalid code"); setPromoResult(null); }
+              } catch { setPromoError("Could not validate code"); }
+              finally { setPromoLoading(false); }
+            }} style={{
+              fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "#F4E5D8",
+              border: `1px solid ${c.borderHover}`, borderRadius: 8, padding: "8px 14px", cursor: promoLoading ? "wait" : "pointer", opacity: !promoCode.trim() ? 0.5 : 1,
+            }}>
+              {promoLoading ? "..." : "Apply"}
+            </button>
+          </div>
+        )}
+        {promoError && <p style={{ fontFamily: font.ui, fontSize: 11, color: c.ember, marginBottom: 12, marginTop: -4 }}>{promoError}</p>}
         {promoResult?.valid && (
-          <div style={{ background: "#E8F2EA", border: `1px solid #BFD9C3`, borderRadius: 8, padding: "8px 14px", marginBottom: 16, marginTop: -8, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ background: "#E8F2EA", border: `1px solid #BFD9C3`, borderRadius: 8, padding: "8px 14px", marginBottom: 12, marginTop: -4, display: "flex", alignItems: "center", gap: 8 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.sage, fontWeight: 500 }}>
               {promoResult.discount_percent ? `${promoResult.discount_percent}% off` : `₹${Math.round((promoResult.discount_amount || 0) / 100)} off`} applied!
@@ -387,17 +397,16 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             <div key={plan.id} style={{
               padding: "24px 20px", borderRadius: 14, position: "relative",
               background: isCurrent ? "#1E1B4B" : plan.featured ? "#F4E5D8" : c.carbon,
-              border: `1.5px solid ${isCurrent ? "#1E1B4B" : plan.featured ? c.gilt : c.border}`,
-              display: "flex", flexDirection: "column",
+              border: `1px solid ${isCurrent ? "#1E1B4B" : plan.featured ? c.gilt : c.border}`,
+              display: "flex", flexDirection: "column", minHeight: 440,
             }}>
-              {isCurrent && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#F4E5D8", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
-                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#F4E5D8" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Current
-              </span>}
-              {!isCurrent && plan.featured && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: c.gilt, marginBottom: 10 }}>Best value</span>}
+              <div style={{ minHeight: 22, marginBottom: 8 }}>
+                {isCurrent && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#F4E5D8" }}>Current</span>}
+                {!isCurrent && plan.featured && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: c.gilt }}>Best value</span>}
+              </div>
               <h3 style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: isCurrent ? "#FAF7F0" : c.ivory, marginBottom: 4 }}>{plan.name}</h3>
               <div style={{ marginBottom: 4 }}>
-                <span style={{ fontFamily: font.display, fontSize: 30, fontWeight: 400, color: isCurrent ? "#F4E5D8" : c.gilt }}>{plan.id === "single" ? `₹${sessionQty * 9}` : plan.price}</span>
+                <span style={{ fontFamily: font.display, fontSize: plan.id === "free" ? 24 : 30, fontWeight: 400, color: isCurrent ? "#F4E5D8" : c.gilt }}>{plan.id === "single" ? `₹${sessionQty * 9}` : plan.price}</span>
                 {plan.id === "single" ? <span style={{ fontFamily: font.ui, fontSize: 12, color: isCurrent ? "#BFB6E0" : c.stone, marginLeft: 3 }}>/ {sessionQty} session{sessionQty > 1 ? "s" : ""}</span>
                  : plan.period ? <span style={{ fontFamily: font.ui, fontSize: 12, color: isCurrent ? "#BFB6E0" : c.stone, marginLeft: 3 }}>{plan.period}</span> : null}
               </div>
@@ -407,12 +416,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.max(1, q - 1)); }} disabled={sessionQty <= 1} aria-label="Decrease session count"
                       style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty <= 1 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>−</button>
                     <input type="range" min={1} max={10} value={sessionQty} onChange={e => setSessionQty(Number(e.target.value))}
-                      aria-label="Number of sessions"
+                      aria-label="Number of sessions" className="upgrade-session-slider"
                       style={{ flex: 1, height: 4, appearance: "none", WebkitAppearance: "none", background: `linear-gradient(to right, ${c.gilt} 0%, ${c.gilt} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} 100%)`, borderRadius: 2, outline: "none", cursor: "pointer" }} />
                     <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.min(10, q + 1)); }} disabled={sessionQty >= 10} aria-label="Increase session count"
                       style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty >= 10 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
                   </div>
-                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, textAlign: "center" }}>₹9/session · No expiry</p>
+                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, textAlign: "center" }}>No expiry · Save unused sessions</p>
                 </div>
               ) : (
                 <p style={{ fontFamily: font.ui, fontSize: 11, color: isCurrent ? "#BFB6E0" : c.stone, marginBottom: 14 }}>{plan.desc}</p>
@@ -425,10 +434,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 ))}
               </ul>
               {isCurrent ? (
-                <div style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid rgba(244,229,216,0.25)`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: "#F4E5D8", textAlign: "center" }}>You&rsquo;re on this plan</div>
+                <div style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "none", background: "#F4E5D8", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: "#1E1B4B", textAlign: "center" }}>Your current plan</div>
               ) : plan.id === "free" ? (
                 <div style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone, textAlign: "center" }}>
-                  {currentTier === "free" ? "Current" : "Free tier"}
+                  {currentTier === "free" ? "Your current plan" : "Free tier"}
                 </div>
               ) : (
                 <button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
@@ -436,7 +445,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.background = "#1E1B4B"; } }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "#312E81"; }}
                 >
-                  {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : plan.featured ? "Go Pro" : plan.id === "single" ? `Buy ${sessionQty} session${sessionQty > 1 ? "s" : ""} · ₹${sessionQty * 9}` : "Get started"}
+                  {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : plan.id === "single" ? `Get started · ₹${sessionQty * 9}` : `Get started · ${plan.price}`}
                 </button>
               )}
             </div>

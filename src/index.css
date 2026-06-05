@@ -547,6 +547,28 @@ input[type="range"]::-moz-range-thumb {
   z-index: 9998;
 }
 
+/* ─── Upgrade modal session slider thumb ─── */
+.upgrade-session-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #B45309;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(20,17,10,0.25);
+  cursor: pointer;
+}
+.upgrade-session-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #B45309;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(20,17,10,0.25);
+  cursor: pointer;
+}
+
 /* ─── Tablet pricing grid ─── */
 @media (max-width: 1280px) and (min-width: 1025px) {
   .pricing-grid { grid-template-columns: repeat(3, 1fr) !important; }
