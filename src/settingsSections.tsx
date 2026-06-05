@@ -760,71 +760,6 @@ const dangerSolidBtn: React.CSSProperties = {
   borderRadius: 8, padding: "8px 14px", cursor: "pointer", transition: "opacity 0.15s",
 };
 
-function PlanCard({ tier, price, desc, current, highlight, badge, cta, onCtaClick }: {
-  tier: string; price: string; desc: string;
-  current?: boolean; highlight?: boolean; badge?: string;
-  cta: string; onCtaClick?: () => void;
-}) {
-  const cardBg = current ? c.indigoDeep : c.graphite;
-  const cardBorder = current ? `1px solid ${c.indigoDeep}` : `1px solid ${c.border}`;
-  const tierColor = current ? c.cream : c.ivory;
-  const priceColor = c.gilt;
-  const descColor = current ? "rgba(250,247,240,0.72)" : c.stone;
-  const topLabel = current ? "Current" : highlight ? (badge || "Best for the offer") : null;
-  const topLabelColor = current ? c.gilt : highlight ? c.gilt : c.stone;
-
-  const btnStyle: React.CSSProperties = current
-    ? {
-        background: "rgba(250,247,240,0.10)", color: "rgba(250,247,240,0.72)",
-        border: "1px solid rgba(250,247,240,0.12)", cursor: "default",
-      }
-    : {
-        background: c.indigoDeep, color: c.cream,
-        border: `1px solid ${c.indigoDeep}`, cursor: "pointer",
-      };
-
-  return (
-    <div style={{
-      padding: "26px 26px 24px", borderRadius: 16,
-      background: cardBg, border: cardBorder,
-      boxShadow: current
-        ? "0 14px 36px -10px rgba(30,27,75,.35), 0 2px 6px rgba(30,27,75,.18)"
-        : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-      display: "flex", flexDirection: "column", minWidth: 0, minHeight: 264,
-    }}>
-      {/* Top label row — copper uppercase right, blank if neither */}
-      <div style={{ minHeight: 16, display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-        {topLabel && (
-          <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: topLabelColor }}>
-            {topLabel}
-          </span>
-        )}
-      </div>
-      {/* Tier name — serif, large */}
-      <div style={{ fontFamily: font.display, fontSize: 30, fontWeight: 400, color: tierColor, letterSpacing: "-0.01em", lineHeight: 1.1, marginTop: 6 }}>
-        {tier}
-      </div>
-      {/* Price — copper, serif numerals */}
-      <div style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: priceColor, marginTop: 18, lineHeight: 1.2 }}>
-        {price}
-      </div>
-      {/* Desc */}
-      <div style={{ fontFamily: font.ui, fontSize: 13, color: descColor, lineHeight: 1.55, marginTop: 18, flex: 1 }}>
-        {desc}
-      </div>
-      {/* CTA — full width, bottom anchored */}
-      <button type="button" onClick={current ? undefined : onCtaClick} disabled={current}
-        style={{
-          marginTop: 22, width: "100%",
-          fontFamily: font.ui, fontSize: 13, fontWeight: 600,
-          borderRadius: 10, padding: "12px 18px", transition: "all 0.15s",
-          ...btnStyle,
-        }}>
-        {cta}
-      </button>
-    </div>
-  );
-}
 
 function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boolean }) {
   const d = new Date(payment.created_at);
@@ -859,7 +794,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
     confirmDelete, setConfirmDelete, deleteEmailInput, setDeleteEmailInput, deleteLoading, setDeleteLoading, deleteMsg, setDeleteMsg,
     exporting, setExporting, onExportCSV,
     payments, paymentsLoading,
-    authUpdateUser, showToast, setShowUpgradeModal, onLogout,
+    authUpdateUser, showToast, onLogout,
     authHeaders: getAuthHeaders,
   } = props;
 
@@ -995,40 +930,6 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <div style={planKicker}>Plan & Data</div>
         <h2 style={planHeadline}>{headline}</h2>
         <p style={planDesc}>{headlineDesc}</p>
-      </div>
-
-      {/* Plan tiers */}
-      <div
-        data-plan-row
-        style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}
-        className="settings-plan-row"
-      >
-        <PlanCard
-          tier="Free"
-          price="₹0"
-          desc="3 mock interviews total. Behavioural questions, basic score and feedback."
-          current={tier === "free"}
-          cta={tier === "free" ? "You're on Free" : "Switch to Free"}
-          onCtaClick={() => setShowUpgradeModal(true)}
-        />
-        <PlanCard
-          tier="Starter"
-          price="₹49 per week"
-          desc="10 sessions over 7 days. All question types, skill breakdown, resume-tailored Qs, PDF reports."
-          current={tier === "starter"}
-          cta={tier === "starter" ? "You're on Starter" : "Upgrade to Starter"}
-          onCtaClick={() => setShowUpgradeModal(true)}
-        />
-        <PlanCard
-          tier="Pro"
-          price="₹149 per month"
-          desc="40 sessions over 30 days. AI coaching, analytics, interview calendar, full exports."
-          current={tier === "pro"}
-          highlight={tier !== "pro"}
-          badge="Best value"
-          cta={tier === "pro" ? "You're on Pro" : tier === "starter" ? "Upgrade to Pro" : "Go Pro"}
-          onCtaClick={() => setShowUpgradeModal(true)}
-        />
       </div>
 
       {/* Status strip for paid plans */}
