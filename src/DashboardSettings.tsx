@@ -243,10 +243,10 @@ export default function SettingsPage() {
     <div style={{ width: "100%" }}>
       {/* ── Sticky Header + Tabs ── */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 5,
+        position: "sticky", top: 0, zIndex: 50,
         background: c.obsidian,
-        margin: "-12px 0 32px",
-        paddingTop: 12,
+        margin: "-12px 0 0",
+        padding: "12px 0 16px",
       }}>
         <div style={{ marginBottom: 20 }}>
           <h2 style={{ fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>
