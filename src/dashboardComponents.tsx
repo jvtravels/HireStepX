@@ -106,12 +106,25 @@ export function DataLoadingSkeleton() {
 /* ─── Upgrade Modal ─── */
 const PLANS = [
   { id: "free", tier: "free", name: "Free", price: "\u20B90", period: "", desc: `${FREE_SESSION_LIMIT} sessions total`, features: [`${FREE_SESSION_LIMIT} mock interviews`, "Behavioral questions", "Basic score & feedback"], featured: false },
-  { id: "single", tier: "free", name: "Sessions", price: "\u20B910", period: "/session", desc: "Pay per interview", features: ["All question types", "Detailed score & tips", "Ideal answer key", "Company-specific Qs"], featured: false },
-  { id: "weekly", tier: "starter", name: "Starter", price: "\u20B949", period: "/week", desc: `${STARTER_WEEKLY_LIMIT} sessions per week`, features: [`${STARTER_WEEKLY_LIMIT} sessions/week`, "All types + role-specific", "Skill-level breakdown", "Resume-tailored Qs", "PDF reports"], featured: false },
-  { id: "monthly", tier: "pro", name: "Pro", price: "\u20B9149", period: "/mo", desc: `Best value \u2014 ${PRO_MONTHLY_LIMIT} sessions/month`, features: [`${PRO_MONTHLY_LIMIT} sessions/month`, "Everything in Starter", "AI coaching & improvement plan", "Analytics & trends", "Interview calendar", "Export PDF, CSV, JSON"], featured: true },
+  { id: "single", tier: "free", name: "Per session", price: "\u20B99", period: "/session", desc: "Single mock interview session", features: ["All question types", "Detailed score & tips", "Ideal answer key", "Company-specific Qs"], featured: false },
+  { id: "weekly", tier: "starter", name: "Weekly", price: "\u20B949", period: "/week", desc: `${STARTER_WEEKLY_LIMIT} sessions over 7 days`, features: [`${STARTER_WEEKLY_LIMIT} sessions over 7 days`, "All types + role-specific", "Skill-level breakdown", "Resume-tailored Qs", "PDF reports"], featured: false },
+  { id: "monthly", tier: "pro", name: "Monthly", price: "\u20B9149", period: "/mo", desc: `${PRO_MONTHLY_LIMIT} sessions over 30 days`, features: [`${PRO_MONTHLY_LIMIT} sessions over 30 days`, "Everything in Weekly", "AI coaching & improvement plan", "Analytics & trends", "Interview calendar", "Export PDF, CSV, JSON"], featured: true },
 ];
 
 export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void }) {
+  // Cream palette shadow — matches the marketing /pricing page and settings repaint.
+  // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
+  const c = {
+    obsidian: "#FAF7F0", graphite: "#FFFFFF", carbon: "#F4EFE3",
+    ivory: "#0E0C08", chalk: "#3F3A33", stone: "#6B655C",
+    gilt: "#B45309", giltDark: "#92400E", sage: "#15803D", ember: "#B91C1C",
+    border: "#EBE5D2", borderHover: "#D6CDB5",
+  };
+  const font = {
+    display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
+    ui: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    mono: "'JetBrains Mono', 'SF Mono', monospace",
+  };
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [sessionQty, setSessionQty] = useState(1);
@@ -250,7 +263,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         description: data.description,
         order_id: data.orderId,
         prefill: { email: user?.email || "", name: user?.name || "" },
-        theme: { color: "#D4B37F" },
+        theme: { color: "#B45309" },
         handler: function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
           setPendingVerification({
             razorpay_order_id: response.razorpay_order_id,
@@ -311,9 +324,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog backdrop dismissal
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(5,5,6,0.88)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops click propagation to backdrop */}
-      <div ref={modalRef} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: "linear-gradient(180deg, rgba(30,30,32,0.85) 0%, rgba(17,17,19,0.9) 100%)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)", border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 20, padding: "36px 32px 32px", maxWidth: 960, width: "96%", position: "relative", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+      <div ref={modalRef} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 32px 32px", maxWidth: 960, width: "96%", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)" }}>
         <button onClick={onClose} aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -324,13 +337,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         </div>
 
         {error && (
-          <div style={{ background: "rgba(196,112,90,0.1)", border: `1px solid rgba(196,112,90,0.2)`, borderRadius: 8, padding: "10px 14px", marginBottom: 16, textAlign: "center" }}>
+          <div style={{ background: "#FBEAE7", border: `1px solid #F2C9C2`, borderRadius: 8, padding: "10px 14px", marginBottom: 16, textAlign: "center" }}>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, display: "block", marginBottom: 8 }}>{error}</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               {verifyRetries > 0 && (
-                <button onClick={retryVerification} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.ivory, background: c.ember, border: "none", borderRadius: 10, padding: "5px 14px", cursor: "pointer" }}>Retry Verification</button>
+                <button onClick={retryVerification} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.graphite, background: c.ember, border: "none", borderRadius: 10, padding: "5px 14px", cursor: "pointer" }}>Retry Verification</button>
               )}
-              <button onClick={() => { setError(""); setVerifyRetries(0); }} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "none", border: `1px solid rgba(212,179,127,0.3)`, borderRadius: 10, padding: "8px 14px", cursor: "pointer", minHeight: 36 }}>Dismiss</button>
+              <button onClick={() => { setError(""); setVerifyRetries(0); }} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "none", border: `1px solid ${c.borderHover}`, borderRadius: 10, padding: "8px 14px", cursor: "pointer", minHeight: 36 }}>Dismiss</button>
             </div>
           </div>
         )}
@@ -339,7 +352,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
           <input type="text" value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(""); setPromoResult(null); }}
             placeholder="Promo code" aria-label="Promo code"
-            style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: c.obsidian, border: `1px solid ${promoResult?.valid ? "rgba(122,158,126,0.4)" : c.border}`, borderRadius: 8, padding: "8px 12px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
+            style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: c.obsidian, border: `1px solid ${promoResult?.valid ? c.sage : c.border}`, borderRadius: 8, padding: "8px 12px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
           />
           <button disabled={promoLoading || !promoCode.trim()} onClick={async () => {
             setPromoLoading(true); setPromoError("");
@@ -351,15 +364,15 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             } catch { setPromoError("Could not validate code"); }
             finally { setPromoLoading(false); }
           }} style={{
-            fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "rgba(212,179,127,0.06)",
-            border: `1px solid rgba(212,179,127,0.15)`, borderRadius: 8, padding: "8px 14px", cursor: promoLoading ? "wait" : "pointer", opacity: !promoCode.trim() ? 0.5 : 1,
+            fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "#F4E5D8",
+            border: `1px solid ${c.borderHover}`, borderRadius: 8, padding: "8px 14px", cursor: promoLoading ? "wait" : "pointer", opacity: !promoCode.trim() ? 0.5 : 1,
           }}>
             {promoLoading ? "..." : "Apply"}
           </button>
         </div>
         {promoError && <p style={{ fontFamily: font.ui, fontSize: 11, color: c.ember, marginBottom: 12, marginTop: -8 }}>{promoError}</p>}
         {promoResult?.valid && (
-          <div style={{ background: "rgba(122,158,126,0.06)", border: `1px solid rgba(122,158,126,0.15)`, borderRadius: 8, padding: "8px 14px", marginBottom: 16, marginTop: -8, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ background: "#E8F2EA", border: `1px solid #BFD9C3`, borderRadius: 8, padding: "8px 14px", marginBottom: 16, marginTop: -8, display: "flex", alignItems: "center", gap: 8 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.sage, fontWeight: 500 }}>
               {promoResult.discount_percent ? `${promoResult.discount_percent}% off` : `₹${Math.round((promoResult.discount_amount || 0) / 100)} off`} applied!
@@ -373,59 +386,57 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             return (
             <div key={plan.id} style={{
               padding: "24px 20px", borderRadius: 14, position: "relative",
-              background: isCurrent ? "rgba(122,158,126,0.06)" : plan.featured ? "rgba(212,179,127,0.04)" : c.obsidian,
-              border: `1.5px solid ${isCurrent ? "rgba(122,158,126,0.35)" : plan.featured ? "rgba(212,179,127,0.25)" : c.border}`,
+              background: isCurrent ? "#1E1B4B" : plan.featured ? "#F4E5D8" : c.carbon,
+              border: `1.5px solid ${isCurrent ? "#1E1B4B" : plan.featured ? c.gilt : c.border}`,
               display: "flex", flexDirection: "column",
             }}>
-              {isCurrent && <div style={{ position: "absolute", top: -1, left: 0, right: 0, height: 2, borderRadius: "14px 14px 0 0", background: `linear-gradient(90deg, transparent, ${c.sage}, transparent)` }} />}
-              {!isCurrent && plan.featured && <div style={{ position: "absolute", top: -1, left: 0, right: 0, height: 2, borderRadius: "14px 14px 0 0", background: `linear-gradient(90deg, transparent, ${c.gilt}, transparent)` }} />}
-              {isCurrent && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: c.sage, marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
-                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Current Plan
+              {isCurrent && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#F4E5D8", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
+                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#F4E5D8" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Current
               </span>}
-              {!isCurrent && plan.featured && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: c.gilt, marginBottom: 10 }}>Most Popular</span>}
-              <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>{plan.id === "single" ? "Sessions" : plan.name}</h3>
+              {!isCurrent && plan.featured && <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: c.gilt, marginBottom: 10 }}>Best value</span>}
+              <h3 style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: isCurrent ? "#FAF7F0" : c.ivory, marginBottom: 4 }}>{plan.name}</h3>
               <div style={{ marginBottom: 4 }}>
-                <span style={{ fontFamily: font.mono, fontSize: 28, fontWeight: 700, color: c.ivory }}>{plan.id === "single" ? `₹${sessionQty * 10}` : plan.price}</span>
-                {plan.id === "single" ? <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginLeft: 3 }}>/ {sessionQty} session{sessionQty > 1 ? "s" : ""}</span>
-                 : plan.period ? <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginLeft: 3 }}>{plan.period}</span> : null}
+                <span style={{ fontFamily: font.display, fontSize: 30, fontWeight: 400, color: isCurrent ? "#F4E5D8" : c.gilt }}>{plan.id === "single" ? `₹${sessionQty * 9}` : plan.price}</span>
+                {plan.id === "single" ? <span style={{ fontFamily: font.ui, fontSize: 12, color: isCurrent ? "#BFB6E0" : c.stone, marginLeft: 3 }}>/ {sessionQty} session{sessionQty > 1 ? "s" : ""}</span>
+                 : plan.period ? <span style={{ fontFamily: font.ui, fontSize: 12, color: isCurrent ? "#BFB6E0" : c.stone, marginLeft: 3 }}>{plan.period}</span> : null}
               </div>
               {plan.id === "single" ? (
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.max(1, q - 1)); }} disabled={sessionQty <= 1} aria-label="Decrease session count"
-                      style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: "rgba(255,255,255,0.03)", color: sessionQty <= 1 ? c.border : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>−</button>
+                      style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty <= 1 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>−</button>
                     <input type="range" min={1} max={10} value={sessionQty} onChange={e => setSessionQty(Number(e.target.value))}
                       aria-label="Number of sessions"
-                      style={{ flex: 1, height: 4, appearance: "none", WebkitAppearance: "none", background: `linear-gradient(to right, ${c.gilt} 0%, ${c.gilt} ${(sessionQty - 1) / 9 * 100}%, rgba(255,255,255,0.08) ${(sessionQty - 1) / 9 * 100}%, rgba(255,255,255,0.08) 100%)`, borderRadius: 2, outline: "none", cursor: "pointer" }} />
+                      style={{ flex: 1, height: 4, appearance: "none", WebkitAppearance: "none", background: `linear-gradient(to right, ${c.gilt} 0%, ${c.gilt} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} 100%)`, borderRadius: 2, outline: "none", cursor: "pointer" }} />
                     <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.min(10, q + 1)); }} disabled={sessionQty >= 10} aria-label="Increase session count"
-                      style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: "rgba(255,255,255,0.03)", color: sessionQty >= 10 ? c.border : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
+                      style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty >= 10 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
                   </div>
                   <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, textAlign: "center" }}>₹9/session · No expiry</p>
                 </div>
               ) : (
-                <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginBottom: 14 }}>{plan.desc}</p>
+                <p style={{ fontFamily: font.ui, fontSize: 11, color: isCurrent ? "#BFB6E0" : c.stone, marginBottom: 14 }}>{plan.desc}</p>
               )}
               <ul style={{ listStyle: "none", padding: 0, margin: "0 0 18px", flex: 1 }}>
                 {plan.features.map((f) => (
-                  <li key={f} style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, lineHeight: 1.4, padding: "3px 0", display: "flex", alignItems: "flex-start", gap: 7 }}>
-                    <span style={{ color: isCurrent ? c.sage : plan.featured ? c.gilt : c.sage, flexShrink: 0, fontSize: 12, marginTop: 1 }}>&#10003;</span>{f}
+                  <li key={f} style={{ fontFamily: font.ui, fontSize: 11, color: isCurrent ? "#E5E2F2" : c.chalk, lineHeight: 1.4, padding: "3px 0", display: "flex", alignItems: "flex-start", gap: 7 }}>
+                    <span style={{ color: isCurrent ? "#F4E5D8" : c.gilt, flexShrink: 0, fontSize: 12, marginTop: 1 }}>&#10003;</span>{f}
                   </li>
                 ))}
               </ul>
               {isCurrent ? (
-                <div style={{ width: "100%", padding: "10px 16px", borderRadius: 8, border: `1px solid rgba(122,158,126,0.3)`, background: "rgba(122,158,126,0.08)", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.sage, textAlign: "center" }}>Active</div>
+                <div style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid rgba(244,229,216,0.25)`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: "#F4E5D8", textAlign: "center" }}>You&rsquo;re on this plan</div>
               ) : plan.id === "free" ? (
-                <div style={{ width: "100%", padding: "10px 16px", borderRadius: 8, border: `1px solid ${c.border}`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone, textAlign: "center" }}>
-                  {currentTier === "free" ? "Current" : "Free Tier"}
+                <div style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone, textAlign: "center" }}>
+                  {currentTier === "free" ? "Current" : "Free tier"}
                 </div>
               ) : (
                 <button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
-                  style={{ width: "100%", padding: "10px 16px", borderRadius: 8, border: plan.featured ? "none" : `1px solid ${c.borderHover}`, background: plan.featured ? `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})` : "transparent", color: plan.featured ? c.obsidian : c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== plan.id ? 0.5 : 1, transition: "all 0.2s" }}
-                  onMouseEnter={(e) => { if (!loading) { if (plan.featured) e.currentTarget.style.filter = "brightness(1.15)"; else { e.currentTarget.style.borderColor = c.chalk; e.currentTarget.style.background = "rgba(245,242,237,0.03)"; } } }}
-                  onMouseLeave={(e) => { if (plan.featured) e.currentTarget.style.filter = "brightness(1)"; else { e.currentTarget.style.borderColor = c.borderHover; e.currentTarget.style.background = "transparent"; } }}
+                  style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "none", background: "#312E81", color: c.graphite, fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== plan.id ? 0.5 : 1, transition: "background 0.18s ease" }}
+                  onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.background = "#1E1B4B"; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#312E81"; }}
                 >
-                  {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : plan.featured ? "Go Pro" : plan.id === "single" ? `Buy ${sessionQty} Session${sessionQty > 1 ? "s" : ""} — ₹${sessionQty * 10}` : "Get Started"}
+                  {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : plan.featured ? "Go Pro" : plan.id === "single" ? `Buy ${sessionQty} session${sessionQty > 1 ? "s" : ""} · ₹${sessionQty * 9}` : "Get started"}
                 </button>
               )}
             </div>
@@ -438,7 +449,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             <div style={{ display: "flex" }}>
               {[c.gilt, c.sage, c.ember].map((col, i) => (
                 <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: col, border: `2px solid ${c.graphite}`, marginLeft: i > 0 ? -6 : 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill={c.obsidian} stroke="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill={c.graphite} stroke="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
               ))}
             </div>
