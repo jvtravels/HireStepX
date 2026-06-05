@@ -982,24 +982,24 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <PlanCard
           tier="Free"
           price="₹0"
-          desc="3 total mock interviews. Behavioural questions only."
-          current={tier === "free" || tier === "starter"}
+          desc="3 mock interviews total. Behavioural questions, basic score and feedback."
+          current={tier === "free"}
         />
         <PlanCard
-          tier="Pro"
-          price="₹599 per month"
-          desc="Unlimited mocks, salary negotiation, skill radar, priority voice."
-          current={tier === "pro"}
-          cta={tier === "starter" ? "Upgrade to Pro" : "Upgrade plan"}
+          tier="Starter"
+          price="₹49 per week"
+          desc="3 sessions per week. All question types, skill breakdown, resume-tailored Qs, PDF reports."
+          current={tier === "starter"}
+          cta="Upgrade to Starter"
           onCtaClick={() => setShowUpgradeModal(true)}
         />
         <PlanCard
-          tier="Placement"
-          price="₹4,999 one-time"
-          desc="Coach reviews, mock panel of three, custom company prep."
-          current={tier === "placement"}
+          tier="Pro"
+          price="₹149 per month"
+          desc="20 sessions per month, AI coaching, analytics, interview calendar, full exports."
+          current={tier === "pro"}
           highlight
-          cta="Get Placement"
+          cta={tier === "starter" ? "Upgrade to Pro" : "Go Pro"}
           onCtaClick={() => setShowUpgradeModal(true)}
         />
       </div>
