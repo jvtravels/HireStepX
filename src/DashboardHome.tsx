@@ -161,7 +161,7 @@ function PrimaryCta({ children, onClick, icon, fullWidth, size = "md" }: {
   const pad = size === "sm" ? "10px 18px" : "14px 22px";
   const fs  = size === "sm" ? 13 : 14;
   return (
-    <button type="button" onClick={onClick} className="hsx-dh-btn" style={{
+    <button type="button" onClick={onClick} className="hsx-dh-btn hsx-dh-cta-primary" style={{
       display: "inline-flex", alignItems: "center", gap: 10,
       padding: pad, borderRadius: 12, border: "none", cursor: "pointer",
       background: t.indigo, color: t.white,
@@ -181,7 +181,7 @@ function OutlineCta({ children, onClick, size = "md" }: {
 }) {
   const pad = size === "sm" ? "9px 16px" : "13px 20px";
   return (
-    <button type="button" onClick={onClick} className="hsx-dh-btn" style={{
+    <button type="button" onClick={onClick} className="hsx-dh-btn hsx-dh-cta-outline" style={{
       display: "inline-flex", alignItems: "center", gap: 8,
       padding: pad, borderRadius: 12, cursor: "pointer", minHeight: 44,
       background: "transparent", color: t.coal,
@@ -419,7 +419,7 @@ export default function DashboardHome() {
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 {realSessions.length === 0 && demoMode && <SampleDataPill />}
-                <button onClick={goToSessions} className="hsx-dh-btn" style={{
+                <button onClick={goToSessions} className="hsx-dh-btn hsx-dh-textlink" style={{
                   fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo,
                   background: "transparent", border: "none", cursor: "pointer",
                   padding: "10px 14px", minHeight: 44, borderRadius: 8,
@@ -540,10 +540,82 @@ export default function DashboardHome() {
 
       {/* Global styles: focus-visible, reduced motion, responsive */}
       <style>{`
+        /* Hover + active feedback for dashboard CTAs. Each variant
+           gets the treatment that matches its visual weight:
+           primary lifts with indigo shadow, outline darkens border
+           and tints, text-link nudges + underlines, raillink tints
+           bg + advances arrow. All share 160ms cubic-bezier (.2,.7,.2,1)
+           snap timing — see src/_motion.ts. */
+        .hsx-dh-root .hsx-dh-btn {
+          transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1),
+                      box-shadow 160ms cubic-bezier(0.2, 0.7, 0.2, 1),
+                      background-color 160ms ease,
+                      border-color 160ms ease,
+                      color 160ms ease,
+                      filter 160ms ease;
+        }
+        /* Primary (indigo fill) — lift + deeper indigo shadow. */
+        .hsx-dh-root .hsx-dh-cta-primary:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.06);
+          box-shadow: 0 2px 4px rgba(20,17,10,.10),
+                      0 10px 22px -6px rgba(49,46,129,.32);
+        }
+        .hsx-dh-root .hsx-dh-cta-primary:active {
+          transform: translateY(0) scale(0.985);
+          filter: brightness(0.96);
+          box-shadow: 0 1px 2px rgba(20,17,10,.10);
+          transition-duration: 80ms;
+        }
+        /* Outline — tint bg copper-wash, darken border, gentle lift. */
+        .hsx-dh-root .hsx-dh-cta-outline:hover {
+          background: rgba(180, 83, 9, 0.06);
+          border-color: ${t.copper};
+          color: ${t.copper};
+          transform: translateY(-1px);
+        }
+        .hsx-dh-root .hsx-dh-cta-outline:active {
+          transform: translateY(0) scale(0.99);
+          background: rgba(180, 83, 9, 0.10);
+          transition-duration: 80ms;
+        }
+        /* Text-link "View all" — bg-tint + arrow shift. */
+        .hsx-dh-root .hsx-dh-textlink:hover {
+          background: ${t.indigo100};
+        }
+        .hsx-dh-root .hsx-dh-textlink:hover span[aria-hidden] {
+          transform: translateX(2px);
+        }
+        .hsx-dh-root .hsx-dh-textlink span[aria-hidden] {
+          display: inline-block;
+          transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
+        }
+        /* Rail link (list row) — bg tint, arrow advance, text darkens. */
+        .hsx-dh-root .hsx-dh-raillink {
+          padding-left: 4px !important;
+          padding-right: 4px !important;
+        }
+        .hsx-dh-root .hsx-dh-raillink:hover {
+          background: rgba(49, 46, 129, 0.04);
+          color: ${t.indigo};
+        }
+        .hsx-dh-root .hsx-dh-raillink:active {
+          background: rgba(49, 46, 129, 0.07);
+        }
         .hsx-dh-root .hsx-dh-btn:focus-visible {
           outline: 2px solid ${t.copper};
           outline-offset: 3px;
           border-radius: 12px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .hsx-dh-root .hsx-dh-btn,
+          .hsx-dh-root .hsx-dh-btn:hover,
+          .hsx-dh-root .hsx-dh-btn:active,
+          .hsx-dh-root .hsx-dh-textlink span[aria-hidden] {
+            transform: none !important;
+            filter: none !important;
+            transition: none !important;
+          }
         }
         .hsx-dh-stats .hsx-dh-stat-cell:last-child { border-right: none; }
         @media (max-width: 1080px) {
@@ -796,7 +868,7 @@ function DailyGoalStub() {
 function RailLink({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return (
     <li>
-      <button onClick={onClick} className="hsx-dh-btn" style={{
+      <button onClick={onClick} className="hsx-dh-btn hsx-dh-raillink" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         width: "100%", padding: "12px 0", minHeight: 44,
         background: "transparent", border: "none", borderBottom: `1px solid ${t.line}`,

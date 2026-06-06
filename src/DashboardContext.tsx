@@ -31,6 +31,16 @@ interface SessionsContextValue {
   readinessScore: number;
   calendarEvents: InterviewEvent[];
   /**
+   * Per-section initial-load flags. Replaces the all-or-nothing
+   * `dataLoading` for surfaces that can render the moment their own
+   * fetch resolves. `dataLoading` is still exposed (UIContext) as the
+   * union, for legacy gates that depend on both. New widgets should
+   * read the specific flag they need so a slow `getCalendarEvents`
+   * does not blank the streak/sessions cards.
+   */
+  sessionsLoading: boolean;
+  eventsLoading: boolean;
+  /**
    * Gap-flag codes from the user's most-recently analyzed session
    * (`session_insights.flags`), used by the "Your next move" CTA to
    * surface gap-specific coaching. Empty array when no insight row
@@ -162,7 +172,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // completes (degrades gracefully to skill-based CTA).
   const [topGaps, setTopGaps] = useState<string[]>([]);
   const [syncError, setSyncError] = useState("");
-  const [dataLoading, setDataLoading] = useState(true);
+  /* Per-section loading flags — split from a single `dataLoading`
+     boolean so one slow Supabase call (events) cannot blank the rest
+     of the dashboard (sessions, streak, readiness). The legacy
+     `dataLoading` derived below is true while EITHER initial fetch is
+     still in flight, preserving the old gate semantics for consumers
+     that need a both-loaded view (Resume, Settings, Analytics). */
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const dataLoading = sessionsLoading || eventsLoading;
   const [isMobile, setIsMobile] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [paymentBanner, setPaymentBanner] = useState<"success" | "cancelled" | null>(null);
@@ -234,24 +252,29 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // Load data from Supabase on mount, with localStorage cache fallback
   useEffect(() => {
-    if (!user?.id) { setDataLoading(false); return; }
+    if (!user?.id) { setSessionsLoading(false); setEventsLoading(false); return; }
 
     const sessionsCacheKey = `hirestepx_cache_sessions_${user.id}`;
     const eventsCacheKey = `hirestepx_cache_events_${user.id}`;
 
     let cancelled = false;
 
-    // Show cached data immediately for instant LCP, then refresh from network
+    // Show cached data immediately for instant LCP, then refresh from network.
+    // Cache hits flip per-section flags independently so a card whose
+    // cache is warm renders straight away while the other still streams.
     try {
       const cachedSessions = localStorage.getItem(sessionsCacheKey);
       const cachedEvents = localStorage.getItem(eventsCacheKey);
-      if (cachedSessions) setSupabaseSessions(JSON.parse(cachedSessions));
+      if (cachedSessions) {
+        setSupabaseSessions(JSON.parse(cachedSessions));
+        setSessionsLoading(false);
+      }
       if (cachedEvents) {
         const parsed = JSON.parse(cachedEvents);
         setCalendarEvents(parsed);
         scheduleEventNotifications(parsed);
+        setEventsLoading(false);
       }
-      if (cachedSessions || cachedEvents) setDataLoading(false);
     } catch { /* expected: localStorage may be unavailable */ }
 
     Promise.allSettled([
@@ -280,10 +303,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             setSyncError("Could not load session data.");
           }
         } catch { setSyncError("Could not load session data."); }
-      }),
+      }).finally(() => { if (!cancelled) setSessionsLoading(false); }),
       // Best-effort fetch of latest analyzed-session flags for the
       // gap-aware "Your next move" CTA. Failure → empty topGaps →
-      // dashboard falls back to skill-based CTA.
+      // dashboard falls back to skill-based CTA. Not flagged because
+      // the CTA degrades silently — no skeleton needed.
       getLatestSessionInsightFlags(user.id).then(flags => {
         if (cancelled) return;
         setTopGaps(flags);
@@ -306,12 +330,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             if (!syncError) setSyncError("Offline — showing cached data.");
           }
         } catch { /* expected: cache read may fail */ }
-      }),
-    ]).then(() => {
-      if (!cancelled) setDataLoading(false);
-    });
+      }).finally(() => { if (!cancelled) setEventsLoading(false); }),
+    ]);
 
-    const timeout = setTimeout(() => { if (!cancelled) setDataLoading(false); }, 10000);
+    // Safety net — if a fetch never settles (extension-stalled XHR, dropped
+    // tab), unblock both gates after 10s so the dashboard isn't pinned on a
+    // skeleton forever. Per-section flags so each clears independently.
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setSessionsLoading(false);
+      setEventsLoading(false);
+    }, 10000);
     return () => { cancelled = true; clearTimeout(timeout); };
     // syncError is read inside one of the inner .catch handlers as a "don't overwrite" guard. Adding it as a dep would refetch the whole dashboard whenever the error string toggles, which is exactly the loop we're trying to avoid.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -596,7 +625,8 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
     weekActivity, currentStreak, readinessScore,
     calendarEvents, topGaps, refreshSessions,
-  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, topGaps, refreshSessions]);
+    sessionsLoading, eventsLoading,
+  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, topGaps, refreshSessions, sessionsLoading, eventsLoading]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, isPro, atSessionLimit,

@@ -9,7 +9,7 @@ import {
   daysUntilEvent, formatEventDate, formatEventTime,
   generateICS, generateGoogleCalendarURL, interviewTypeOptions,
 } from "./dashboardHelpers";
-import { useDashboardCore, useDashboardUI, useDashboardSubscription } from "./DashboardContext";
+import { useDashboardCore, useDashboardUI, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
 import { DataLoadingSkeleton, ProGate } from "./dashboardComponents";
 
 /* ─── Mini Month Grid ─── */
@@ -93,7 +93,8 @@ function MonthGrid({ events, onDateClick }: { events: InterviewEvent[]; onDateCl
 export default function CalendarPage() {
   useDocTitle("Calendar");
   const { handleStartSession: onStartSession, syncGoogleCalendar: _syncGoogleCalendar, googleSyncStatus: _googleSyncStatus, hasGoogleToken: _hasGoogleToken } = useDashboardCore();
-  const { dataLoading, setShowUpgradeModal, showToast } = useDashboardUI();
+  const { eventsLoading } = useDashboardSessions();
+  const { setShowUpgradeModal, showToast } = useDashboardUI();
   const { isFree, isStarter } = useDashboardSubscription();
   const { user, loginWithGoogle: _loginWithGoogle } = useAuth();
   const [events, setEvents] = useState<InterviewEvent[]>(loadEvents);
@@ -140,7 +141,7 @@ export default function CalendarPage() {
     saveEvents(next);
   };
 
-  if (dataLoading) return <DataLoadingSkeleton />;
+  if (eventsLoading) return <DataLoadingSkeleton />;
   if (isFree || isStarter) return <ProGate feature="Interview Calendar" onUpgrade={() => setShowUpgradeModal(true)} />;
 
   const resetForm = () => {
