@@ -25,12 +25,10 @@ import {
 } from "../src/_indian-behavioral-personas";
 import { renderCanonicalProse } from "./_canonical-prose";
 import { initState as initNegotiationState } from "./_negotiation-kernel";
-import {
-  fetchLiveAggregate,
-  formatLiveAggregateBlock,
-  normalizeExperienceLevel,
-} from "./_salary-aggregator-helpers";
-import { tierFlexibility } from "../src/_negotiation-math";
+/* Salary-only helpers (_salary-aggregator-helpers, _negotiation-math) are
+ * lazy-loaded inside the salary-negotiation gate (see line ~617). On the
+ * hot paths (behavioural / panel / hr-round) the edge runtime never
+ * evaluates these modules, shaving cold-start parse cost. */
 import {
   retrieveReferenceQuestions,
   formatReferencesForPrompt,
@@ -615,6 +613,18 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
     let salaryNegGuidance = "";
     let negotiationBandData: ReturnType<typeof generateNegotiationBand> | null = null;
     if (interviewType === "salary-negotiation") {
+      // Lazy-load salary-only helpers once at the top of the gate. Parallel
+      // import() so the network/parse cost overlaps with the role-fit gate
+      // below — measured cost is dominated by the LLM call further down,
+      // not these tiny helpers, but every ms of cold-start counts.
+      const [
+        { fetchLiveAggregate, formatLiveAggregateBlock, normalizeExperienceLevel },
+        { tierFlexibility },
+      ] = await Promise.all([
+        import("./_salary-aggregator-helpers"),
+        import("../src/_negotiation-math"),
+      ]);
+
       /* Role × company sector-fit gate. Mirrors SessionSetup.tsx +
          useInterviewEngine.ts so a forged or deep-linked request can't
          coach the candidate against a synthetic band for a role the
