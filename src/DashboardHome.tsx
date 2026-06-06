@@ -573,14 +573,33 @@ function DailyGoalRibbonInline() {
   );
 }
 
-function RecentSessionsList({ real, fallback }: { real: DashboardSession[]; fallback: DemoSession[] }) {
+function RecentSessionsList({ real, fallback, demoMode, onStart }: {
+  real: DashboardSession[];
+  fallback: DemoSession[];
+  demoMode: boolean;
+  onStart: () => void;
+}) {
   if (real.length === 0) {
+    if (demoMode) {
+      return (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {fallback.map((row, i) => (
+            <SessionRow key={i} title={row.title} date={row.date} score={row.score} icon={row.icon} first={i === 0} />
+          ))}
+        </ul>
+      );
+    }
     return (
-      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        {fallback.map((row, i) => (
-          <SessionRow key={i} title={row.title} date={row.date} score={row.score} icon={row.icon} first={i === 0} />
-        ))}
-      </ul>
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12,
+        padding: "18px 4px",
+      }}>
+        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.5 }}>
+          No sessions yet. Start your first 25 minute practice and your history
+          shows up here.
+        </p>
+        <PrimaryCta size="sm" onClick={onStart}>Start your first session</PrimaryCta>
+      </div>
     );
   }
   return (
@@ -684,6 +703,42 @@ function MilestoneTimeline() {
             {next.progress} OF {next.target} DAYS
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ComingSoonStub({ label, detail }: { label: string; detail: string }) {
+  return (
+    <div style={{
+      padding: "18px 20px",
+      background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12,
+    }}>
+      <div style={{
+        fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.6,
+        textTransform: "uppercase", marginBottom: 6,
+      }}>
+        {label} · Coming soon
+      </div>
+      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.5, margin: 0 }}>
+        {detail}
+      </p>
+    </div>
+  );
+}
+
+function DailyGoalStub() {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+      padding: "14px 16px",
+      background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 10,
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <Eyebrow as="h2" tone="ink">Today</Eyebrow>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: "4px 0 0", lineHeight: 1.4 }}>
+          One 25 minute session is enough to keep your streak.
+        </p>
       </div>
     </div>
   );
