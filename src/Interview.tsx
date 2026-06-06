@@ -312,12 +312,9 @@ function InterviewInner() {
       fontFamily: ef.sans, color: e.coal,
     }}>
       <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes recordPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        /* Canonical motion keyframes (spin / blink / fadeUp /
+           recordPulse / slideUp / slideInRight / slideUpSheet) live
+           in src/index.css. Don't re-declare them here. */
         /* Compact desktop / 13-14" laptops (≤1280px). The default
            stage padding (40px 64px) and gap (28) are tuned for ≥1440px;
            on 1280-wide screens — and especially when the viewport is
@@ -378,7 +375,6 @@ function InterviewInner() {
           .iv-canvas-stage { padding: 12px 10px !important; }
           .iv-info-bar-row { padding: 8px 12px !important; }
         }
-        @keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @media (hover: none) and (pointer: coarse) {
           .iv-controls button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         }

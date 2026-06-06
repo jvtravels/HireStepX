@@ -285,10 +285,15 @@ function MicMeter({ level, active }: { level: number; active: boolean }) {
           key={i}
           style={{
             width: 3,
-            height: `${active ? h : 20}%`,
+            height: 16,
             background: active && level > 6 ? T.success : T.inkFaint,
             borderRadius: 2,
-            transition: "height 80ms linear, background 200ms ease",
+            // scaleY + transform-origin instead of `height` so we
+            // don't reflow on every frame of the mic-level animation.
+            // Composited transform stays on the GPU.
+            transform: `scaleY(${(active ? h : 20) / 100})`,
+            transformOrigin: "bottom",
+            transition: "transform 80ms linear, background 200ms ease",
           }}
         />
       ))}
@@ -1331,8 +1336,9 @@ export default function SessionSetup() {
       </a>
       <style>{AUTH_STYLES}</style>
       <style>{`
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Canonical fadeUp / spin / pulse live in src/index.css.
+           Setup-local keyframes (launchIn, launchPulse, countdown*,
+           hsxAccent*, hsxShimmer) stay here — they're not reused. */
         @keyframes launchIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes launchPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.85; } }
         @keyframes countdownPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -1350,8 +1356,8 @@ export default function SessionSetup() {
           animation: hsxShimmer 1.4s ease-in-out infinite;
         }
         .ob-card { background: ${T.white}; border: 1px solid ${T.line}; }
-        .ob-mic-pulse { animation: pulse 2s ease-in-out infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        /* Uses canonical 'pulse' from index.css (1.6s ease-in-out). */
+        .ob-mic-pulse { animation: pulse 1.6s ease-in-out infinite; }
 
         /* ─── Editorial accent entrance ─────────────────────────────────
            Hero "ready" italic-copper word slides in 100ms after the

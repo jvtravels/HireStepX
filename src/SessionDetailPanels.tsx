@@ -79,7 +79,7 @@ export const SectionTitle = memo(function SectionTitle({ children, icon, action 
 
 export function LoadingSkeleton() {
   const Bone = ({ w, h, r, mb }: { w: string; h: number; r?: number; mb?: number }) => (
-    <div style={{ width: w, height: h, borderRadius: r ?? 8, background: `linear-gradient(90deg, ${c.graphite} 25%, rgba(255,255,255,0.04) 50%, ${c.graphite} 75%)`, backgroundSize: "200% 100%", animation: "shimmer 1.5s ease-in-out infinite", marginBottom: mb ?? 0 }} />
+    <div style={{ width: w, height: h, borderRadius: r ?? 8, background: `linear-gradient(90deg, ${c.graphite} 25%, rgba(255,255,255,0.04) 50%, ${c.graphite} 75%)`, backgroundSize: "200% 100%", animation: "skeletonShimmer 1.8s ease-in-out infinite", marginBottom: mb ?? 0 }} />
   );
   return (
     <div style={{ minHeight: "100vh", background: c.obsidian, fontFamily: font.ui }}>
@@ -118,7 +118,7 @@ export function LoadingSkeleton() {
           <Bone w="100%" h={140} r={14} />
         </div>
       </div>
-      <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+      {/* skeletonShimmer keyframe lives in src/index.css (canonical). */}
     </div>
   );
 }

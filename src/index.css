@@ -773,6 +773,64 @@ input[type="range"]::-moz-range-thumb {
   to { transform: rotate(360deg); }
 }
 
+/* ─── Canonical motion primitives ─────────────────────────────────────
+   Single global home for the @keyframes that previously drifted across
+   component <style> blocks (Interview, SessionSetup, Toast, Onboarding,
+   SessionDetailPanels). Components reference these by name via
+   `animation: <name> <dur> <easing>` — never re-declare them locally.
+
+   Duration / easing tokens live in src/_motion.ts. See the
+   inconsistency table in the 2026-06 motion audit for the source of
+   each canonical choice. */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+/* Looping pulses. recordPulse = "live" indicator (1s, faster),
+   pulse = generic ambient hint (1.6s, calmer), blink = cursor /
+   typing caret (0.8s). */
+@keyframes recordPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* Spinner utility classes — replaces 8 inline `border-top-color`
+   spinners with drifting durations (0.6–1.4s). `.spinner-sm`
+   for inline buttons, `.spinner-md` for cards / setup flows. */
+.spinner-sm,
+.spinner-md {
+  display: inline-block;
+  border-style: solid;
+  border-color: currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  box-sizing: border-box;
+}
+.spinner-sm { width: 12px; height: 12px; border-width: 1.5px; animation-duration: 0.6s; }
+.spinner-md { width: 16px; height: 16px; border-width: 2px; }
+
+
 /* ─── Badge Earned Animation ─── */
 @keyframes badgeGlow {
   0%, 100% { box-shadow: 0 0 0 rgba(212,179,127,0); }
@@ -850,6 +908,13 @@ input[type="range"]::-moz-range-thumb {
   .mockup-window:hover { transform: none; }
   .shimmer-btn:hover { transform: none; }
   .hero-mesh-gradient { animation: none !important; }
+  /* Belt-and-suspenders on top of the universal `*` rule above —
+     the global rule only collapses durations, not transforms. These
+     keep transcript sheets, toasts, and coachmarks fully static
+     instead of snapping in at 0.01ms. */
+  .iv-coachmark-backdrop,
+  .iv-coachmark-card,
+  .iv-transcript-panel { animation: none !important; transform: none !important; }
 }
 
 /* ─── Settings ─── */
