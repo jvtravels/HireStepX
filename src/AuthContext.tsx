@@ -247,6 +247,23 @@ export function saveLastRoute(path: string) {
 export function getLastRoute(): string | null {
   try { return localStorage.getItem(LAST_ROUTE_KEY); } catch { /* expected: localStorage may be unavailable */ return null; }
 }
+/* ─── Interview-in-progress flag ───────────────────────────────────────
+ * Module-scoped boolean. The interview engine flips it true on session
+ * start and false on completion/abort. checkExpiry consults it before
+ * the destructive signout path so we don't nuke a user's 25-minute
+ * session mid-question on a transient refresh failure.
+ *
+ * Why a module global and not React state: AuthContext's interval is a
+ * closure over its own state; passing this through props/context would
+ * require refactoring every interview surface. The flag is read by
+ * exactly one consumer (checkExpiry) and written by exactly one writer
+ * (useInterviewEngine on mount/unmount), so a global is the simplest
+ * shape that actually works.
+ * ─────────────────────────────────────────────────────────────────── */
+let _interviewInProgress = false;
+export function setInterviewInProgress(v: boolean): void { _interviewInProgress = v; }
+export function isInterviewInProgress(): boolean { return _interviewInProgress; }
+
 export function clearLastRoute() {
   try { localStorage.removeItem(LAST_ROUTE_KEY); } catch { /* expected: localStorage may be unavailable */ }
 }
@@ -1517,6 +1534,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { data: refreshed } = await client.auth.refreshSession();
           if (refreshed?.session) {
             setSessionExpiryWarning(null);
+            return;
+          }
+          // Defer the destructive signout if an interview is in progress.
+          // The 25-minute session's save-session POST would race a 401
+          // and the user would lose the transcript to localStorage only.
+          // We retry the refresh in 60s; if the interview finishes first,
+          // the next tick signs them out cleanly.
+          if (_interviewInProgress) {
+            console.warn("[auth] Session expired during interview — deferring signout until session ends.");
+            setSessionExpiryWarning("Session needs to refresh after this interview ends.");
             return;
           }
           logAuditEvent("session_expired", { userId: user.id });

@@ -775,14 +775,38 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const result = await callLLM(
       { prompt, temperature: 0.25, maxTokens: 5500, jsonMode: true },
       45000,
-      { userId: auth.userId, endpoint: "evaluate-session" },
+      { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
     );
     const tLLM = Date.now() - tLLM0;
 
-    const parsed = extractJSON<Partial<SessionReport>>(result.text);
+    let parsed = extractJSON<Partial<SessionReport>>(result.text);
     if (!parsed) {
-      console.error(`[evaluate-session] JSON parse failed. Model: ${result.model}, len: ${result.text.length}, head: ${result.text.slice(0, 200)}`);
-      return new Response(JSON.stringify({ error: "Failed to parse evaluation", retryable: true }), { status: 500, headers });
+      // First parse failed — common causes are truncation past maxTokens
+      // or the model wrapping JSON in prose ("Here's the evaluation: ...").
+      // Retry once with a strict prefix at temperature 0 before giving
+      // up on a 25-minute interview the user can't easily replay.
+      console.warn(`[evaluate-session] JSON parse failed on first attempt. Model: ${result.model}, retrying strict.`);
+      try {
+        const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
+        const retry = await callLLM(
+          { prompt: strictPrompt, temperature: 0, maxTokens: 5500, jsonMode: true },
+          30000,
+          { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 15000 },
+        );
+        parsed = extractJSON<Partial<SessionReport>>(retry.text);
+      } catch (retryErr) {
+        console.error(`[evaluate-session] Retry call failed:`, retryErr);
+      }
+      if (!parsed) {
+        // Both attempts failed. Return 503 (not 500) with transcript_saved
+        // hint so the client can show "Your session is saved — retry
+        // evaluation" rather than implying data loss.
+        console.error(`[evaluate-session] Both attempts failed for user ${auth.userId}.`);
+        return new Response(
+          JSON.stringify({ error: "Couldn't generate your report right now. Your transcript is saved — please retry in a moment.", retryable: true, transcript_saved: true }),
+          { status: 503, headers },
+        );
+      }
     }
 
     // Build final report — merge deterministic metrics with LLM output.

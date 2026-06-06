@@ -1,3 +1,5 @@
+"use client";
+
 import React, { memo, useRef, useState, useEffect, useMemo } from "react";
 import { e, ef } from "./interviewTokens";
 import {
@@ -285,7 +287,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
   const activeIdx = panelMembers.findIndex(m => m.title === activePersona);
   const activeMember = activeIdx >= 0 ? panelMembers[activeIdx] : panelMembers[0];
 
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 600px)").matches);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 600px)").matches);
   useEffect(() => {
     const mql = window.matchMedia("(max-width: 600px)");
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
@@ -1270,7 +1272,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
   transcriptRef: React.RefObject<HTMLDivElement | null>;
   panelMembers?: PanelMember[];
 }) {
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 600px)").matches);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 600px)").matches);
   useEffect(() => {
     const mql = window.matchMedia("(max-width: 600px)");
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);

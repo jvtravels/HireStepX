@@ -12,7 +12,12 @@ export const tokens = {
   coal: "#0E0C08",
   indigoGray: "#3E3A6E",
   inkSoft: "#6E6759",
-  inkFaint: "#A39C8B",
+  // Was #A39C8B — failed WCAG AA at ~2.4:1 on cream #FAF7F0. Darkened
+  // to #7A7263 (~4.5:1) so body-text usages (spam-folder hint,
+  // password-meter labels, footer legal) read in sunlight on tier-2
+  // OLED phones. Decorative-only uses can drop back to inkFaintWeak.
+  inkFaint: "#7A7263",
+  inkFaintWeak: "#A39C8B",
 
   // Brand — interactive
   indigo: "#312E81",

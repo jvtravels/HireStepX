@@ -391,9 +391,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (Array.isArray(dupRows) && dupRows.length > 0) {
         return res.status(409).json({ error: "Payment already processed" });
       }
-      // Payment not found in legacy table either — we cannot safely determine if this is
-      // a new payment or a duplicate, so return 503 to tell the client to retry
-      return res.status(503).json({ error: "Payment deduplication temporarily unavailable. Please retry.", code: "DEDUP_UNAVAILABLE" });
+      // Payment not in legacy table either. The Razorpay signature is
+      // already verified at this point — the user HAS been charged. If we
+      // 503 here, they're billed-but-not-activated and have to email
+      // support. Worse-case for them.
+      //
+      // Trade-off: fall through to activation. The profile-level
+      // razorpay_payment_id check below (line ~407) is a backstop against
+      // double-activation if a second attempt squeezes through while
+      // dedup is recovering. PostHog event lets ops monitor frequency.
+      console.warn("[verify-payment] Dedup table unavailable but payment is signature-verified. Proceeding with activation to avoid leaving the user charged-but-unactivated.");
+      void captureServerEvent("verify_payment_dedup_degraded", userId, {
+        razorpay_payment_id: typeof razorpay_payment_id === "string" ? razorpay_payment_id : "",
+        dedup_status: dedupRes.status,
+      });
+      // Intentionally fall through — no return here.
     }
 
     // 3b. Check profile for duplicate + subscription state

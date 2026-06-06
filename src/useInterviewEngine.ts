@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "./posthogClient";
 
-import { useAuth } from "./AuthContext";
+import { useAuth, setInterviewInProgress } from "./AuthContext";
 import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS } from "./tts";
 import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-unlock";
 import { useOnlineOfflineRecovery } from "./_recovery";
@@ -77,6 +77,16 @@ interface InterviewDraft {
 export function useInterviewEngine() {
   const router = useRouter();
   const { user, updateUser } = useAuth();
+
+  // Flip the global interview-in-progress flag so AuthContext's 60s
+  // session-expiry check defers signout until the session ends.
+  // Without this, a transient refresh failure during a 25-min interview
+  // would race save-session into a 401 and the user would lose work.
+  useEffect(() => {
+    setInterviewInProgress(true);
+    return () => { setInterviewInProgress(false); };
+  }, []);
+
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const rawType = searchParams.get("type");

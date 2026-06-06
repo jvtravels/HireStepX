@@ -174,7 +174,7 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
   return { text: data.choices?.[0]?.message?.content || "", model: `cerebras-${model}`, fallback: false, tokensUsed, latencyMs };
 }
 
-export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string }): Promise<LLMResult> {
+export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number }): Promise<LLMResult> {
   const providers: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }[] = [];
   if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
   if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
@@ -188,8 +188,13 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // was sized for short responses and killed legitimate calls, sending
   // them to Gemini where Google-side "high demand" 503s would surface to
   // the user). Fast 8B-instant calls finish well under 10s.
+  // Per-call Groq cap override — evaluate-session's full-transcript
+  // prompts regularly take 6-9s; the global 10s cap kicks Groq out under
+  // p95 spike and the user pays the Gemini fallback latency. Callers can
+  // raise via meta.groqTimeoutMs (still bounded by timeoutMs).
+  const groqCap = Math.min(timeoutMs, meta?.groqTimeoutMs ?? 10000);
   const providerTimeout = (name: string) => {
-    if (name === "groq") return Math.min(timeoutMs, 10000);
+    if (name === "groq") return groqCap;
     return timeoutMs;
   };
 

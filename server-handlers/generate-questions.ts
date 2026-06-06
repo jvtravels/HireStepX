@@ -226,7 +226,27 @@ export default async function handler(req: Request): Promise<Response> {
      * client-side retries on transient failures, and identical session
      * starts within minutes. Deliberate regens after 5 min get a fresh set. */
     const CACHE_TTL_SEC = 300;
-    const cacheKey = `gq:${await hashStable(JSON.stringify(rawBody))}`;
+    // Cache key uses ONLY the inputs that determine question content, not
+    // the full body. pastTopics + priorFlags are per-session and change
+    // every call → hashing the full body gave a ~0% hit rate. By hashing
+    // a normalized subset we get genuine hits on repeat (role, company,
+    // focus, type) combos — the dominant pattern on Indian free-tier
+    // where users re-run the same Razorpay / PM / behavioral setup.
+    // Trade-off: two users with same role+company but different past
+    // questions will share questions. Acceptable for a 5-minute TTL.
+    const cacheKeyInput = {
+      type: typeof type === "string" ? type : "",
+      focus: typeof focus === "string" ? focus : "",
+      difficulty: typeof difficulty === "string" ? difficulty : "",
+      role: typeof role === "string" ? role : "",
+      company: typeof company === "string" ? company : "",
+      industry: typeof industry === "string" ? industry : "",
+      experienceLevel: typeof experienceLevel === "string" ? experienceLevel : "",
+      mini: mini === true,
+      drill: typeof drill === "string" ? drill : "",
+      negotiationStyle: typeof negotiationStyle === "string" ? negotiationStyle : "",
+    };
+    const cacheKey = `gq:${await hashStable(JSON.stringify(cacheKeyInput))}`;
     const cached = await redisGet(cacheKey);
     if (cached) {
       try {
