@@ -182,16 +182,55 @@ const CountUp = memo(function CountUp({ value, suffix = "" }: { value: string; s
   return <>{display}{suffix}</>;
 });
 
-/* ─── Focus-visible + reduced-motion styles ─── */
+/* ─── Focus-visible, motion, micro-interactions ───
+   Product register motion: 150–250ms, conveys state, no page-load
+   choreography. The arrival fade is a single 280ms wash, not a stagger.
+   Easing: cubic-bezier(0.22, 1, 0.36, 1) (ease-out-quint), used for
+   confident, decisive deceleration; matches the canvas storyboard. */
 const dashboardStyles = `
   .dash-focus:focus-visible {
     outline: 2px solid rgba(212,179,127,0.5) !important;
     outline-offset: 2px;
   }
-  @media (prefers-reduced-motion: reduce) {
-    .dash-card, .dash-card * { transition: none !important; animation: none !important; }
+
+  @keyframes dash-slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideDown      { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes dash-fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeIn         { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Page-level arrival: single 280ms wash so the dashboard doesn't pop in.
+     No stagger — users are in a task, not watching choreography. */
+  @keyframes dash-arrival { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .dash-arrival { animation: dash-arrival 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  /* Score ring bloom: stroke draws itself in on first paint.
+     Only runs once; subsequent score changes use the existing transition. */
+  @keyframes dash-ring-bloom { from { stroke-dashoffset: 999; opacity: 0.55; } to { opacity: 1; } }
+  .score-ring { animation: dash-ring-bloom 1100ms 180ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  /* Streak flame breath: 3 short cycles, then resting.
+     Mark of life on the streak, not a perpetual decoration. */
+  @keyframes dash-flame { 0%, 100% { transform: scale(1) rotate(-1deg); } 50% { transform: scale(1.06) rotate(1deg); } }
+  .streak-flame-breath { animation: dash-flame 2.2s ease-in-out 3 both; transform-origin: 50% 80%; display: inline-flex; }
+
+  /* New-badge pulse: gilt glow ~2 cycles when an achievement is freshly earned.
+     The .badge-new class is already applied in JSX; this defines the motion. */
+  @keyframes dash-badge-new {
+    0%   { box-shadow: 0 0 0 0 rgba(212,179,127,0.0); }
+    40%  { box-shadow: 0 0 0 6px rgba(212,179,127,0.18); }
+    100% { box-shadow: 0 0 0 0 rgba(212,179,127,0.0); }
   }
-  @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .badge-new { animation: dash-badge-new 1800ms cubic-bezier(0.22, 1, 0.36, 1) 2 both; }
+
+  /* Global reduced-motion guard. Earlier this was scoped to .dash-card,
+     which left the new keyframes uncovered. Now everything respects it. */
+  @media (prefers-reduced-motion: reduce) {
+    .dash-arrival, .score-ring, .streak-flame-breath, .badge-new,
+    .dash-card, .dash-card * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 `;
 
 /* ─── Curriculum View — guided 3-session onboarding ─── */
@@ -583,7 +622,7 @@ export default function DashboardHome() {
   const dismissDraft = () => { setHasDraft(null); try { localStorage.removeItem(draftKey); } catch { /* expected: localStorage may be unavailable */ } };
 
   return (
-    <div style={{ margin: "0 auto", lineHeight: 1.5 }} className="dash-card">
+    <div style={{ margin: "0 auto", lineHeight: 1.5 }} className="dash-card dash-arrival">
       <style>{dashboardStyles}</style>
 
       {/* Outcome self-report banner. Lazy-loaded; gates itself based on whether
@@ -955,7 +994,9 @@ export default function DashboardHome() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.xl, flexWrap: "wrap", gap: 12 }}>
         <div className="streak-widget" style={{ display: "flex", alignItems: "center", gap: 0 }}>
           <div className="streak-label" style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: `${radius.pill}px 0 0 ${radius.pill}px`, background: c.glow, border: "1px solid rgba(212,179,127,0.12)", borderRight: "none", whiteSpace: "nowrap" }}>
-            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+            <span className={currentStreak > 0 ? "streak-flame-breath" : undefined} aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+            </span>
             <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: c.gilt }}>{currentStreak > 0 ? `${currentStreak}-day streak` : "Start a streak"}</span>
           </div>
           <div className="streak-dots" style={{ display: "flex", alignItems: "center", gap: 2, padding: "0 4px", border: "1px solid rgba(245,242,237,0.08)", borderRadius: `0 ${radius.pill}px ${radius.pill}px 0`, height: 28 }}>
