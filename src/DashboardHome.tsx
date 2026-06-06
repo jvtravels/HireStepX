@@ -266,7 +266,10 @@ export default function DashboardHome() {
   const demoMode = typeof process !== "undefined" &&
     process.env.NEXT_PUBLIC_DASHBOARD_DEMO === "1";
 
-  const goToInterview = () => router.push("/interview/setup");
+  /* /session/new renders SessionSetup, which configures a session and
+   * hands off to /interview. The previous "/interview/setup" path did
+   * not exist — every Start CTA was a 404. */
+  const goToInterview = () => router.push("/session/new");
   const goToSessions  = () => router.push("/sessions");
   const goToAnalytics = () => router.push("/analytics");
   const goToResume    = () => router.push("/resume");
