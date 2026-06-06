@@ -212,7 +212,8 @@ function SectionPills({ active }: { active: SettingsTab }) {
 
 function AccountSection() {
   return (
-    <SectionStack>
+    <div style={{ display: "flex", flexDirection: "column", gap: 40, maxWidth: 880 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead kicker="Account" title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
       <Card>
         <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24 }}>
@@ -239,7 +240,9 @@ function AccountSection() {
           Saved automatically when you leave a field
         </div>
       </Card>
+      </div>
 
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead title="Security" desc="Sign-in and devices currently using your account." />
       <Card density="tight">
         <KeyValue label="Email" value="arjun.mehta@gmail.com" right={<TinyChip tone="success">Verified</TinyChip>} />
@@ -255,14 +258,17 @@ function AccountSection() {
         <DeviceRow name="Safari on iPhone, Mumbai" sub="2 hours ago" />
         <DeviceRow name="Chrome on Windows, Bengaluru" sub="3 days ago" />
       </Card>
+      </div>
 
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead title="Danger zone" desc="These actions cannot be undone." tone="danger" />
       <DangerCard
         title="Delete account"
         body="Permanently remove your profile, sessions, and resume data. We retain anonymised analytics for 30 days."
         cta="Delete account"
       />
-    </SectionStack>
+      </div>
+    </div>
   );
 }
 
@@ -387,6 +393,7 @@ function PlanSection() {
 function ReferralSection() {
   return (
     <SectionStack>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead kicker="Referral" title="Bring a friend, earn a month" desc="They get 20% off their first Pro month. You get a free month when they convert. Three earned, three to go before the lifetime cap." />
 
       <Card density="generous">
@@ -412,6 +419,7 @@ function ReferralSection() {
           </div>
         </div>
       </Card>
+      </div>
 
       <Card density="tight">
         <SubHeader title="Your invites" hint="We tell you when they sign up, and again when they convert." />

@@ -257,13 +257,14 @@ export default function SettingsPage() {
   const tierLabel = (authUser?.subscriptionTier || "free").charAt(0).toUpperCase() + (authUser?.subscriptionTier || "free").slice(1);
 
   return (
-    <div style={{ width: "100%", maxWidth: 880, margin: "0 auto" }}>
+    <div style={{ width: "100%", maxWidth: 880, margin: "0 auto", isolation: "isolate" }}>
       {/* ── Sticky Header + Tabs ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 50,
         background: c.obsidian,
-        margin: "-12px 0 0",
+        margin: "-12px 0 24px",
         padding: "12px 0 16px",
+        boxShadow: `0 8px 12px -10px rgba(0,0,0,0.06)`,
       }}>
         <div style={{ marginBottom: 20 }}>
           <h2 style={{ fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>

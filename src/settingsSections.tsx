@@ -332,9 +332,10 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
   const initial = (userName || email || "?").trim().charAt(0).toUpperCase();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
-      {/* ── Profile ── */}
-      <SectionHead title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
+    <div style={{ display: "flex", flexDirection: "column", gap: 40, maxWidth: 880 }}>
+      {/* ── Profile group ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <SectionHead kicker="Account" title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
       <EditorialCard>
         <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24 }}>
           <div aria-hidden="true" style={{
@@ -401,8 +402,10 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           Saved automatically when you leave a field
         </div>
       </EditorialCard>
+      </div>
 
-      {/* ── Security ── */}
+      {/* ── Security group ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead title="Security" desc="Sign-in and devices currently using your account." />
       <EditorialCard density="tight">
         <KeyValue label="Email" value={email} right={<TinyChip tone="success">Verified</TinyChip>} />
@@ -499,6 +502,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           </button>
         </div>
       </EditorialCard>
+      </div>
     </div>
   );
 });
@@ -1115,6 +1119,7 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead
         kicker="Referral"
         title="Bring a friend, earn a month"
@@ -1160,6 +1165,7 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
           </div>
         </div>
       </EditorialCard>
+      </div>
 
       <EditorialCard>
         <div style={{ marginBottom: 16 }}>
