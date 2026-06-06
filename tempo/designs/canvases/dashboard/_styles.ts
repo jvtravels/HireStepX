@@ -158,7 +158,7 @@ export function getDashboardStyles(t: typeof tokens) {
     .hsx-db-menu-trigger { display: inline-flex !important; }
     .hsx-db-topbar { padding: 18px 24px !important; }
     .hsx-db-stage  { padding: 18px 24px 32px !important; gap: 18px !important; }
-    .hsx-db-hero-h1 { font-size: 36px !important; }
+    .hsx-db-hero-h1 { font-size: 42px !important; }
     .hsx-db-kpi-row { grid-template-columns: 1fr !important; }
     .hsx-db-rail   { grid-template-columns: 1fr !important; padding: 0 24px 32px !important; }
   }

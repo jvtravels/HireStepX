@@ -117,6 +117,8 @@ export default function Dashboard({
             </div>
           )}
 
+          <ReferralBlock />
+
           <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingTop: 16, borderTop: `1px solid ${t.line}` }}>
             <NavRow item={{ key: "settings", label: "Settings",       icon: Icons.settings }} />
             <NavRow item={{ key: "help",     label: "Help & support", icon: Icons.help }} />
@@ -148,9 +150,9 @@ export default function Dashboard({
               </button>
               <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{dateStr}</div>
               <h1 className="hsx-db-hero-h1" style={{
-                fontFamily: f.serif, fontSize: 44, fontWeight: 400,
-                color: t.coal, letterSpacing: "-0.02em", lineHeight: 1.1,
-                margin: "6px 0 8px", maxWidth: "100%", overflowWrap: "break-word",
+                fontFamily: f.serif, fontSize: 56, fontWeight: 400,
+                color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.05,
+                margin: "8px 0 10px", maxWidth: "100%", overflowWrap: "break-word",
               }}>
                 {greet}, {userName}.{" "}
                 <em style={{ fontStyle: "italic", color: t.copper }}>{data.heroAccent}</em>
@@ -164,6 +166,7 @@ export default function Dashboard({
               {data.countdown && (
                 <CountdownPill days={data.countdown.days} role={data.countdown.role} company={data.countdown.company} />
               )}
+              {data.unreadPreview && <UnreadPreviewChip preview={data.unreadPreview} />}
               <button
                 aria-label={data.unreadCount > 0 ? `Notifications, ${data.unreadCount} unread` : "Notifications"}
                 className="hsx-db-icon-btn"
@@ -176,9 +179,13 @@ export default function Dashboard({
                 {Icons.bell}
                 {data.unreadCount > 0 && (
                   <span aria-hidden style={{
-                    position: "absolute", top: 9, right: 10,
-                    width: 8, height: 8, borderRadius: 999, background: t.copper,
-                  }} />
+                    position: "absolute", top: -4, right: -4,
+                    minWidth: 18, height: 18, padding: "0 5px", borderRadius: 999,
+                    background: t.copper, color: t.white,
+                    fontFamily: f.mono, fontSize: 10, fontWeight: 700,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    border: `2px solid ${t.cream}`,
+                  }}>{data.unreadCount > 9 ? "9+" : data.unreadCount}</span>
                 )}
               </button>
               <button
@@ -195,8 +202,11 @@ export default function Dashboard({
                   width: 32, height: 32, borderRadius: 999, background: t.indigo100, color: t.indigo,
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   fontFamily: f.serif, fontSize: 14, fontWeight: 400,
-                }}>{userName.split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase()).join("")}</span>
-                <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>{userName}</span>
+                }}>{userName.trim().split(/\s+/).slice(0, 2).map(p => Array.from(p)[0]?.toUpperCase()).filter(Boolean).join("") || "?"}</span>
+                <span style={{
+                  fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal,
+                  maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>{userName}</span>
               </button>
             </div>
           </header>
@@ -215,13 +225,25 @@ export default function Dashboard({
               />
             )}
 
+            {variant !== "empty" && data.peerCohort && (
+              <PeerCohortStrip cohort={data.peerCohort} score={data.kpis.overall} />
+            )}
+
+            {variant !== "empty" && variant !== "interview-imminent" && data.targetDate && (
+              <TargetDateArc target={data.targetDate} />
+            )}
+
+            {variant !== "empty" && data.resumeAgeDays !== undefined && data.resumeAgeDays >= 30 && (
+              <ResumeFreshnessStrip days={data.resumeAgeDays} />
+            )}
+
             {variant === "empty" ? (
               <Card pad={32} background={t.white} interactive={false}
-                style={{ background: `linear-gradient(135deg, ${t.cream} 0%, ${t.copper100} 100%)` }}>
+                style={{ background: t.creamSoft }}>
                 <Eyebrow>Welcome aboard</Eyebrow>
                 <h2 style={{
-                  fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal,
-                  letterSpacing: "-0.02em", lineHeight: 1.1, margin: "10px 0 8px",
+                  fontFamily: f.serif, fontSize: 44, fontWeight: 400, color: t.coal,
+                  letterSpacing: "-0.022em", lineHeight: 1.05, margin: "12px 0 10px",
                 }}>
                   Let's get you <em style={{ color: t.copper, fontStyle: "italic" }}>ready</em>.
                 </h2>
@@ -240,8 +262,8 @@ export default function Dashboard({
                   <div style={{ flex: 1 }}>
                     <Eyebrow>Active journey · Day 4 of 14</Eyebrow>
                     <h2 style={{
-                      fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal,
-                      letterSpacing: "-0.02em", lineHeight: 1.1, margin: "8px 0 6px",
+                      fontFamily: f.serif, fontSize: 44, fontWeight: 400, color: t.coal,
+                      letterSpacing: "-0.022em", lineHeight: 1.08, margin: "10px 0 8px",
                     }}>
                       Your Google FAANG loop
                     </h2>
@@ -283,8 +305,8 @@ export default function Dashboard({
                   <div style={{ flex: 1 }}>
                     <Eyebrow>Your next step</Eyebrow>
                     <h2 style={{
-                      fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal,
-                      letterSpacing: "-0.02em", lineHeight: 1.1, margin: "8px 0 18px",
+                      fontFamily: f.serif, fontSize: 44, fontWeight: 400, color: t.coal,
+                      letterSpacing: "-0.022em", lineHeight: 1.08, margin: "10px 0 20px",
                     }}>
                       Product Manager mock
                     </h2>
@@ -305,7 +327,7 @@ export default function Dashboard({
               </Card>
             )}
 
-            {variant !== "empty" && (
+            {variant !== "empty" && variant !== "interview-imminent" && data.kpis.overall < 90 && (
               <section>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "4px 4px 14px" }}>
                   <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
@@ -344,7 +366,11 @@ export default function Dashboard({
               </section>
             )}
 
-            {variant !== "empty" && (
+            {variant !== "empty" && data.speech && (
+              <SpeechDetailCard speech={data.speech} />
+            )}
+
+            {variant !== "empty" && variant !== "interview-imminent" && data.coverage < 10 && (
               <Card>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
                   <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
@@ -359,22 +385,35 @@ export default function Dashboard({
                   <SkillRadar points={data.coverageCells.map(c => ({ label: c.label, score: c.score, touched: c.touched }))} size={300} />
                   <div>
                     <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 14px" }}>
-                      Filled area is your last 5-session average across the dimensions your target panel scores. The dotted ring is the hire bar at that level — gaps below it are where your next session should go.
+                      Filled area is your last 5-session average across the dimensions your target panel scores. The dotted ring is the hire bar at that level. Gaps below it are where your next session should go.
                     </p>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {data.coverageCells.filter(c => !c.touched).slice(0, 4).map(c => (
                         <div key={c.label} style={{
-                          padding: "8px 10px", borderRadius: 8,
+                          padding: "8px 10px", borderRadius: 10,
                           background: t.cream, border: `1px dashed ${t.line}`,
+                          minWidth: 0,
                         }}>
-                          <div style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.inkSoft }}>{c.label}</div>
-                          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, marginTop: 2, letterSpacing: 0.4 }}>NOT YET — practice this</div>
+                          <div style={{
+                            fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.inkSoft,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}>{c.label}</div>
+                          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, marginTop: 2, letterSpacing: 0.4 }}>NOT YET · practice this</div>
                         </div>
                       ))}
+                      {data.coverageCells.filter(c => !c.touched).length > 4 && (
+                        <div style={{
+                          gridColumn: "span 2",
+                          padding: "6px 10px",
+                          fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.4,
+                        }}>
+                          +{data.coverageCells.filter(c => !c.touched).length - 4} MORE NOT YET TOUCHED
+                        </div>
+                      )}
                       {data.coverageCells.filter(c => !c.touched).length === 0 && (
                         <div style={{
                           gridColumn: "span 2",
-                          padding: "10px 12px", borderRadius: 8,
+                          padding: "10px 12px", borderRadius: 10,
                           background: t.success100, border: `1px solid rgba(21, 128, 61, 0.18)`,
                           fontFamily: f.sans, fontSize: 12.5, color: t.success, fontWeight: 500,
                         }}>
@@ -434,7 +473,7 @@ export default function Dashboard({
               </Card>
             )}
 
-            {variant !== "empty" && data.resumeBridge && (
+            {variant !== "empty" && data.resumeBridge && data.resumeBridge.rows.some(r => r.state !== "verified") && (
               <ResumeBridge rows={data.resumeBridge.rows} resumeScore={data.resumeBridge.resumeScore} />
             )}
 
@@ -455,14 +494,14 @@ export default function Dashboard({
             <Card pad={20} interactive>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
                 <h3 style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
-                  Recent sessions
+                  {variant === "interview-imminent" ? "Razorpay loop drills" : "Recent sessions"}
                 </h3>
-                <a href="#sessions" className="hsx-db-link" style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.indigo, textDecoration: "none" }}>
-                  View all
+                <a href={variant === "interview-imminent" ? "#journeys/razorpay" : "#sessions"} className="hsx-db-link" style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.indigo, textDecoration: "none" }}>
+                  {variant === "interview-imminent" ? "Open loop" : "View all"}
                 </a>
               </div>
               <div>
-                {data.recentSessions.map((row, i) => <SessionRowEl key={i} row={row} />)}
+                {(variant === "interview-imminent" ? data.recentSessions.slice(0, 3) : data.recentSessions).map((row, i) => <SessionRowEl key={i} row={row} />)}
               </div>
             </Card>
           ) : (
@@ -476,7 +515,7 @@ export default function Dashboard({
             </Card>
           )}
 
-          {variant !== "empty" && data.streak >= 3 && (
+          {variant !== "empty" && data.streak >= 3 && data.streak < data.streakNextMilestone && (
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "12px 14px", background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
@@ -488,11 +527,299 @@ export default function Dashboard({
               <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.4 }}>
                 {data.streakNextMilestone - data.streak}D TO {data.streakNextMilestone}
               </span>
+              <button
+                type="button"
+                aria-label={`Share your ${data.streak}-day streak`}
+                className="hsx-db-link"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  padding: "4px 10px", borderRadius: 999,
+                  background: t.copperSoft, border: "none", cursor: "pointer",
+                  fontFamily: f.sans, fontSize: 11, fontWeight: 600, color: t.copper, letterSpacing: 0.2,
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M4 12V8a4 4 0 0 1 8 0v4" /><path d="M8 2v8" /><path d="m5 5 3-3 3 3" />
+                </svg>
+                Share
+              </button>
             </div>
+          )}
+
+          {variant === "interview-imminent" && data.skippingItems && data.skippingItems.length > 0 && (
+            <SkippingCard items={data.skippingItems} />
           )}
         </aside>
       </div>
     </div>
+  );
+}
+
+/* Auxiliary surface types — shipped against the v1 competitor-audit
+   gaps. Kept here, not in _atoms, because they're dashboard-specific
+   data shapes and not reusable primitives. */
+type UnreadPreview = { title: string; ago: string; tone: "evaluation" | "coach" | "journey" | "milestone" | "system" };
+type TargetDate   = { label: string; daysAway: number; totalWeeks: number; weeksDone: number };
+type SpeechMetrics = { wpm: number; fillerPer100: number; pace: "slowing" | "steady" | "rushed"; trend: number };
+type PeerCohort   = { cohortLabel: string; percentile: number; sampleSize: number; peerMedianScore: number };
+
+/* SpeechDetailCard — addresses the Yoodli gap. Surfaces raw speech
+   numbers (WPM, fillers per 100 words) rather than the abstract
+   "Clarity %" the user can't interpret. */
+function SpeechDetailCard({ speech }: { speech: SpeechMetrics }) {
+  const fillerStrong = speech.fillerPer100 <= 2;
+  const fillerWeak   = speech.fillerPer100 >= 4;
+  const fillerTone   = fillerStrong ? { fg: t.success, bg: t.success100, note: "Clean delivery" }
+                     : fillerWeak   ? { fg: t.copper,  bg: t.copperSoft, note: "Above the bar" }
+                                    : { fg: t.coal,    bg: t.cream,      note: "Average" };
+  const paceCopy = speech.pace === "slowing" ? "Slows under pressure"
+                 : speech.pace === "rushed"  ? "Rushes when uncertain"
+                 :                             "Holds pace under pushback";
+  return (
+    <Card pad={20}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
+        <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+          How you sound
+        </h3>
+        <a href="#progress/speech" className="hsx-db-link" style={{
+          fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, textDecoration: "none",
+        }}>Full breakdown →</a>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
+        <div style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>WORDS PER MIN</div>
+          <div style={{ fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", lineHeight: 1, margin: "6px 0 4px" }}>
+            {speech.wpm}
+          </div>
+          <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft }}>
+            Hire-bar range 140–165
+          </div>
+        </div>
+        <div style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>FILLERS / 100 WORDS</div>
+          <div style={{ fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: fillerTone.fg, letterSpacing: "-0.02em", lineHeight: 1, margin: "6px 0 4px" }}>
+            {speech.fillerPer100.toFixed(1)}
+          </div>
+          <div style={{
+            display: "inline-block",
+            background: fillerTone.bg, color: fillerTone.fg,
+            fontFamily: f.sans, fontSize: 11, fontWeight: 500,
+            padding: "2px 8px", borderRadius: 999,
+          }}>
+            {fillerTone.note}
+          </div>
+        </div>
+        <div style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>PACE UNDER PUSHBACK</div>
+          <div style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", lineHeight: 1.15, margin: "8px 0 6px" }}>
+            {paceCopy}
+          </div>
+          <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft }}>
+            {speech.trend >= 0 ? "↑" : "↓"} {Math.abs(speech.trend).toFixed(1)} wpm Δ
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* TargetDateArc — non-imminent users (>1 week out) get a progress
+   visualisation so the dashboard answers "how am I tracking against
+   my interview date?" without waiting for the 3-day countdown. */
+function TargetDateArc({ target }: { target: TargetDate }) {
+  const progressPct = Math.round((target.weeksDone / target.totalWeeks) * 100);
+  const radius = 44;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ * (1 - progressPct / 100);
+  return (
+    <Card pad={20}>
+      <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", gap: 20, alignItems: "center" }}>
+        <div style={{ position: "relative", width: 108, height: 108 }}>
+          <svg width={108} height={108} viewBox="0 0 108 108" aria-hidden>
+            <circle cx={54} cy={54} r={radius} fill="none" stroke={t.line} strokeWidth={8} />
+            <circle
+              cx={54} cy={54} r={radius} fill="none"
+              stroke={t.copper} strokeWidth={8} strokeLinecap="round"
+              strokeDasharray={circ} strokeDashoffset={offset}
+              transform="rotate(-90 54 54)"
+            />
+          </svg>
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ fontFamily: f.serif, fontSize: 28, fontWeight: 400, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
+              {target.daysAway}
+            </span>
+            <span style={{ fontFamily: f.mono, fontSize: 9, color: t.inkSoft, letterSpacing: 0.6, marginTop: 2 }}>
+              DAYS OUT
+            </span>
+          </div>
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <Eyebrow>Target interview</Eyebrow>
+          <h3 style={{
+            fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal,
+            letterSpacing: "-0.01em", margin: "6px 0 4px",
+          }}>
+            {target.label}
+          </h3>
+          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+            Week {target.weeksDone} of {target.totalWeeks} in your prep sprint. You're <strong style={{ color: t.coal, fontWeight: 600 }}>on pace</strong> for the readiness bar at this date.
+          </p>
+        </div>
+        <OutlineCta size="sm">Adjust date</OutlineCta>
+      </div>
+    </Card>
+  );
+}
+
+/* ResumeFreshnessStrip — nudges returning users whose resume is
+   stale. Cap at 30 days; competitors prompt at 30. */
+function ResumeFreshnessStrip({ days }: { days: number }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 14,
+      padding: "12px 18px",
+      background: t.copperSoft, border: `1px solid rgba(180,83,9,0.18)`, borderRadius: 12,
+    }}>
+      <span style={{ color: t.copper, flexShrink: 0 }}>{Icons.resume}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>
+          Your resume is {days} days old.
+        </div>
+        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.45 }}>
+          Targets and panels drift. Refresh to keep practice ranking aligned with your latest work.
+        </div>
+      </div>
+      <OutlineCta size="sm">Refresh resume</OutlineCta>
+    </div>
+  );
+}
+
+/* PeerCohortStrip — surfaces the percentile the data already carries.
+   Indian-market expectation: cohort-comparative readout, not just a
+   personal score. */
+function PeerCohortStrip({ cohort, score }: { cohort: PeerCohort; score: number }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 18,
+      padding: "12px 18px",
+      background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
+    }}>
+      <div style={{ flexShrink: 0 }}>
+        <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>YOU RANK</div>
+        <div style={{ fontFamily: f.serif, fontSize: 32, fontWeight: 400, color: t.indigo, letterSpacing: "-0.02em", lineHeight: 1, marginTop: 4 }}>
+          top {cohort.percentile}%
+        </div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, lineHeight: 1.35 }}>
+          {cohort.cohortLabel}
+        </div>
+        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.45 }}>
+          You: <strong style={{ color: t.coal, fontWeight: 600 }}>{score}</strong> · cohort median {cohort.peerMedianScore} · n={cohort.sampleSize.toLocaleString("en-IN")}
+        </div>
+      </div>
+      <a href="#progress/cohort" className="hsx-db-link" style={{
+        fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.indigo, textDecoration: "none", flexShrink: 0,
+      }}>See cohort →</a>
+    </div>
+  );
+}
+
+/* UnreadPreviewChip — replaces the silent bell-dot pattern. Shown
+   inline next to the bell so the top unread is readable without
+   opening the panel. */
+function UnreadPreviewChip({ preview }: { preview: UnreadPreview }) {
+  const toneMeta = {
+    evaluation: { fg: t.success, bg: t.success100 },
+    coach:      { fg: t.indigo,  bg: t.indigo100 },
+    journey:    { fg: t.copper,  bg: t.copperSoft },
+    milestone:  { fg: t.copper,  bg: t.copperSoft },
+    system:     { fg: t.inkSoft, bg: t.creamSoft },
+  } as const;
+  const tone = toneMeta[preview.tone];
+  return (
+    <button
+      type="button"
+      className="hsx-db-link"
+      aria-label={`${preview.title}, ${preview.ago}`}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 8,
+        padding: "8px 12px", borderRadius: 999,
+        background: tone.bg, border: "none", cursor: "pointer",
+        fontFamily: f.sans, fontSize: 12.5, fontWeight: 500, color: tone.fg,
+        maxWidth: 280, minWidth: 0,
+      }}
+    >
+      <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: tone.fg, flexShrink: 0 }} />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+        {preview.title}
+      </span>
+      <span style={{ color: t.inkFaint, fontFamily: f.mono, fontSize: 10, letterSpacing: 0.4, flexShrink: 0 }}>
+        {preview.ago.toUpperCase()}
+      </span>
+    </button>
+  );
+}
+
+/* ReferralBlock — sidebar referral CTA. Indian SaaS expectation;
+   viral loop nobody else exposes from the dashboard. */
+function ReferralBlock() {
+  return (
+    <div style={{
+      background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
+      padding: 14, display: "flex", alignItems: "center", gap: 12,
+    }}>
+      <span aria-hidden style={{
+        width: 36, height: 36, borderRadius: 10, background: t.indigo100, color: t.indigo,
+        display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+      }}>{Icons.star}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>
+          Invite 3, get a month free.
+        </div>
+        <div style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, marginTop: 1 }}>
+          Your code: <span style={{ fontFamily: f.mono, color: t.copper }}>ARJUN26</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* SkippingCard — imminent-variant rail closer. Lists the surfaces
+   the user is deliberately deferring in the 72-hour focus window so
+   the dashboard's "skip everything else" copy promise is honored
+   visibly, not just implied. */
+type SkippingItem = { label: string; reason: string };
+
+function SkippingCard({ items }: { items: SkippingItem[] }) {
+  return (
+    <Card pad={20}>
+      <Eyebrow>Skipping for 72 hours</Eyebrow>
+      <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "8px 0 12px", lineHeight: 1.5 }}>
+        Deliberate cuts so your prep time goes to the Razorpay loop.
+      </p>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+        {items.map((it, idx) => (
+          <li key={`${it.label}-${idx}`} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <span aria-hidden style={{
+              fontFamily: f.mono, fontSize: 11, color: t.inkFaint, marginTop: 2, flexShrink: 0,
+              letterSpacing: 0.4,
+            }}>·</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.coal, lineHeight: 1.35 }}>
+                {it.label}
+              </div>
+              <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft, marginTop: 2, lineHeight: 1.45 }}>
+                {it.reason}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 
@@ -528,7 +855,7 @@ function ResumeBridge({ rows, resumeScore }: { rows: SkillBridgeRow[]; resumeSco
       </div>
       <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.55, maxWidth: 640 }}>
         <strong style={{ color: t.coal, fontWeight: 600 }}>{verifiedCount} of {rows.length}</strong> claimed skills have surfaced in your sessions.
-        Untested skills are real interview risk — the recruiter will ask.
+        Untested skills are real interview risk. The recruiter will ask.
         Resume score{" "}
         <span style={{
           fontFamily: f.mono, fontSize: 12, color: resumeScore >= 80 ? t.success : t.copper,
@@ -536,7 +863,7 @@ function ResumeBridge({ rows, resumeScore }: { rows: SkillBridgeRow[]; resumeSco
           padding: "2px 8px", borderRadius: 999, marginLeft: 4, letterSpacing: 0.3,
         }}>{resumeScore}/100</span>
       </p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
         {rows.map(r => {
           const m = stateMeta[r.state];
           return (
@@ -598,7 +925,7 @@ function ReadinessBand({
           <Eyebrow>Readiness · {role}</Eyebrow>
           <h2 style={{
             fontFamily: f.serif, fontSize: 28, fontWeight: 400, color: t.coal,
-            letterSpacing: "-0.01em", lineHeight: 1.15, margin: "8px 0 6px",
+            letterSpacing: "-0.01em", lineHeight: 1.25, margin: "8px 0 6px",
           }}>
             You'd clear the hire bar at{" "}
             <em style={{ fontStyle: "italic", color: t.copper }}>{clearedCount} of {total}</em>{" "}
@@ -637,11 +964,11 @@ function ReadinessBand({
             CLEARED
           </div>
           <div style={{
-            fontFamily: f.serif, fontSize: 48, fontWeight: 400,
-            color: ready ? t.success : t.coal, letterSpacing: "-0.02em", lineHeight: 1,
-            margin: "4px 0 6px",
+            fontFamily: f.serif, fontSize: 64, fontWeight: 400,
+            color: ready ? t.success : t.coal, letterSpacing: "-0.025em", lineHeight: 1,
+            margin: "6px 0 8px",
           }}>
-            {clearedCount}<span style={{ color: t.inkFaint, fontSize: 24 }}>/{total}</span>
+            {clearedCount}<span style={{ color: t.inkFaint, fontSize: 28 }}>/{total}</span>
           </div>
           <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft }}>
             {streak}-day rhythm
@@ -683,7 +1010,7 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
   if (variant === "empty") {
     return {
       heroAccent: "ready",
-      heroSub: "You haven't started yet — and that's fine. We'll meet you where you are.",
+      heroSub: "You haven't started yet, and that's fine. We'll meet you where you are.",
       streak: 0, unreadCount: 1, percentile: 0,
       streakNextMilestone: 7, coverage: 0,
       coverageCells: ALL_CATEGORIES.map(label => ({ label, touched: false, score: 0 })),
@@ -703,6 +1030,12 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
       achievements: [] as AchievementSpec[],
       readiness: undefined as undefined | { role: string; clearedCount: number; companies: CompanyReadiness[]; gapNote: string },
       resumeBridge: undefined as undefined | { resumeScore: number; rows: SkillBridgeRow[] },
+      skippingItems: undefined as undefined | SkippingItem[],
+      unreadPreview: undefined as undefined | UnreadPreview,
+      resumeAgeDays: undefined as undefined | number,
+      targetDate: undefined as undefined | TargetDate,
+      speech: undefined as undefined | SpeechMetrics,
+      peerCohort: undefined as undefined | PeerCohort,
     };
   }
   if (variant === "power-user") {
@@ -720,16 +1053,16 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
         speaking: [54, 56, 58, 59, 60, 61, 62, 62, 63, 64, 64],
       },
       insightHeading: "You've cleared the hire bar.",
-      insightBody: "Now the differentiator is bar-raiser-level depth — second-order trade-offs and willingness to disagree under pressure.",
+      insightBody: "Now the differentiator is bar-raiser-level depth: second-order trade-offs and willingness to disagree under pressure.",
       focusPct: 32, focusTitle: "Tighten bar-raiser pushback",
       focusBody: "You yield too quickly when the interviewer challenges your design. Stay anchored, ask why they're concerned, then update only if the new info actually changes the trade-off.",
       focusChips: ["Don't fold early", "Ask 'what info would change my mind?'", "Show your math"],
       coachHeadline: "Your first-order answers are crisp. Now invest in second-order.",
-      coachBody: "Strong PMs articulate consequences-of-consequences — what your decision means for adjacent teams 6 months out.",
+      coachBody: "Strong PMs articulate consequences-of-consequences: what your decision means for adjacent teams 6 months out.",
       coachCta: "Run a strategic-loop drill",
       insights: [
         { headline: "Your first-order answers are crisp. Now invest in second-order.",
-          body: "Strong PMs articulate consequences-of-consequences — what your decision means for adjacent teams 6 months out.",
+          body: "Strong PMs articulate consequences-of-consequences: what your decision means for adjacent teams 6 months out.",
           ctaLabel: "Run a strategic-loop drill", priority: "high",
           evidence: "12 sessions sampled · senior-PM rubric" },
         { headline: "Your bar-raiser pushback yields too quickly.",
@@ -740,8 +1073,8 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
           body: "Across 9 system design sessions, your numbers came within 20% of the calibrated answer 7 times. Use this as a confidence anchor.",
           ctaLabel: "See the breakdown", priority: "medium",
           evidence: "9 sessions · system-design rubric" },
-        { headline: "Salary-neg score is climbing — push toward closing.",
-          body: "You're now consistently getting better than initial offer. The next jump is in walk-away discipline — knowing when to stop.",
+        { headline: "Salary-neg score is climbing. Push toward closing.",
+          body: "You're now consistently getting better than initial offer. The next jump is in walk-away discipline: knowing when to stop.",
           ctaLabel: "Drill walk-away scenarios", priority: "medium",
           evidence: "5 negotiation sessions · last 3 weeks" },
       ] as CoachInsight[],
@@ -774,7 +1107,7 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
           { name: "Flipkart", state: "cleared" as const },
           { name: "Swiggy",   state: "cleared" as const },
         ] as CompanyReadiness[],
-        gapNote: "You're hire-bar at every Tier-1 target this week. The differentiator now is bar-raiser-level depth — second-order trade-offs under pushback.",
+        gapNote: "You're hire-bar at every Tier-1 target this week. The differentiator now is bar-raiser-level depth: second-order trade-offs under pushback.",
       },
       resumeBridge: {
         resumeScore: 92,
@@ -784,9 +1117,15 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
           { skill: "Data-driven prioritisation",  state: "verified" as const, detail: "Strong RICE/ICE recall." },
           { skill: "Stakeholder negotiation",     state: "verified" as const, detail: "Held position in 6 of 8 rounds." },
           { skill: "Pricing & monetisation",      state: "weak"     as const, detail: "Razorpay round caught a TAM gap." },
-          { skill: "ML product sense",            state: "untested" as const, detail: "Listed but no session yet — Google asks." },
+          { skill: "ML product sense",            state: "untested" as const, detail: "Listed but no session yet. Google asks." },
         ] as SkillBridgeRow[],
       },
+      skippingItems: undefined as undefined | SkippingItem[],
+      unreadPreview: { title: "Bar-raiser insight ready", ago: "4m ago", tone: "coach" as const },
+      resumeAgeDays: 12,
+      targetDate: undefined as undefined | TargetDate,
+      speech: { wpm: 152, fillerPer100: 1.8, pace: "steady" as const, trend: -0.4 },
+      peerCohort: { cohortLabel: "Senior PMs · 8-12y", percentile: 94, sampleSize: 1842, peerMedianScore: 74 },
     };
   }
   if (variant === "interview-imminent") {
@@ -820,11 +1159,11 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
           body: "Two 30-min focused sessions today and tomorrow targeting the exact dimension Razorpay weights heaviest. Skip everything else.",
           ctaLabel: "Start Razorpay drill", priority: "high",
           evidence: "Razorpay senior-PM rubric · 5 candidate post-mortems" },
-        { headline: "Don't fold on the first counter — they're testing conviction.",
+        { headline: "Don't fold on the first counter. They're testing conviction.",
           body: "Razorpay's hiring manager opens with a 'why not the simpler approach' challenge. Practiced response: name what would change your mind, then defend.",
           ctaLabel: "Practice the conviction drill", priority: "high",
           evidence: "Glassdoor · 8 verified Razorpay PM rounds 2025-26" },
-        { headline: "Your Salary-Neg score is enough — drop the prep weight.",
+        { headline: "Your Salary-Neg score is enough. Drop the prep weight.",
           body: "84/100 against the Razorpay band is offer-ready. Don't burn cycles here in the next 72 hours.",
           ctaLabel: "Reallocate practice time", priority: "low",
           evidence: "5 negotiation sessions May 5–11" },
@@ -857,17 +1196,27 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
           { name: "Razorpay · System design",    state: "close"   as const },
           { name: "Razorpay · Bar raiser",       state: "gap"     as const },
         ] as CompanyReadiness[],
-        gapNote: "Decision-making is the gap (6 pts below bar). Two 30-min focused sessions get you across — skip everything else for 72 hours.",
+        gapNote: "Decision-making is the gap (6 pts below bar). Two 30-min focused sessions get you across. Skip everything else for 72 hours.",
       },
       resumeBridge: {
         resumeScore: 78,
         rows: [
           { skill: "Payments infra · UPI",          state: "verified" as const, detail: "Strong on flow design, 84 avg." },
           { skill: "Razorpay-style trade-off framing", state: "weak"     as const, detail: "Last 3 rounds: 6 pts below bar." },
-          { skill: "Risk & fraud product",          state: "untested" as const, detail: "Razorpay loop will probe — drill before Friday." },
+          { skill: "Risk & fraud product",          state: "untested" as const, detail: "Razorpay loop will probe. Drill before Friday." },
           { skill: "PM-to-engineering communication", state: "verified" as const, detail: "Cited in 5 of 7 sessions." },
         ] as SkillBridgeRow[],
       },
+      skippingItems: [
+        { label: "Salary negotiation prep", reason: "You're already at 84/100 against the Razorpay band. Offer-ready." },
+        { label: "Behavioural breadth drills", reason: "Razorpay weights Decision-making heavier. Focus there." },
+        { label: "Streak chasing", reason: "Your 9-day streak is enough signal. Don't pad sessions for the milestone." },
+      ] as SkippingItem[],
+      unreadPreview: { title: "Razorpay loop · round 2 brief unlocked", ago: "just now", tone: "journey" as const },
+      resumeAgeDays: 4,
+      targetDate: undefined as undefined | TargetDate,
+      speech: { wpm: 138, fillerPer100: 3.2, pace: "slowing" as const, trend: -0.8 },
+      peerCohort: { cohortLabel: "PMs targeting Razorpay", percentile: 64, sampleSize: 412, peerMedianScore: 74 },
     };
   }
   // Default: returning user, mid-flow
@@ -889,7 +1238,7 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
       speaking: [48, 50, 52, 54, 55, 57, 58, 59, 60, 61, 62],
     },
     insightHeading: "Your structure is the next jump.",
-    insightBody: "You're answering the right things — but in a meandering order. Lead with the outcome, then the actions, then the situation.",
+    insightBody: "You're answering the right things, but in a meandering order. Lead with the outcome, then the actions, then the situation.",
     focusPct: 68, focusTitle: "Improve answer structure",
     focusBody: "Your answers are clear but unstructured. Three of your last five behavioural answers buried the result in the final sentence.",
     focusChips: ["Use STAR framework", "Start with outcome", "Avoid long pauses", "Summarize key points"],
@@ -906,7 +1255,7 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
         ctaLabel: "Reframe outcome stories", priority: "medium",
         evidence: "5 sessions Behavioural" },
       { headline: "Your speaking pace dropped 12% under pressure.",
-        body: "When the AI pushed back, you slowed down — interpretable as composure or as hesitation. Practice rapid-fire follow-ups.",
+        body: "When the AI pushed back, you slowed down. Interpretable as composure or as hesitation. Practice rapid-fire follow-ups.",
         ctaLabel: "Pressure-handling drill", priority: "medium",
         evidence: "3 follow-up moments" },
     ] as CoachInsight[],
@@ -917,7 +1266,7 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
       { title: "System Design · Senior",        date: "May 7, 2026",  score: 90 },
       { title: "Behavioural · Mock loop",       date: "May 5, 2026",  score: 85 },
     ] as SessionRow[],
-    dailyTip: "Answer the question in one sentence first. The story is the supporting evidence — not the headline.",
+    dailyTip: "Answer the question in one sentence first. The story is the supporting evidence, not the headline.",
     countdown: undefined as undefined | { days: number; role: string; company: string },
     dailyGoal: { sessionGoal: 1, sessionsDone: 0, minutesGoal: 30, minutesDone: 0, weakSpotsReviewed: 1, weakSpotsTarget: 3 },
     contribDays: makeContribDays("steady"),
@@ -939,17 +1288,23 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
         { name: "Flipkart", state: "close"   as const },
         { name: "Google",   state: "gap"     as const },
       ] as CompanyReadiness[],
-      gapNote: "Your structure is the bottleneck — answers carry the right ideas but bury the outcome. Lead with the result, then the path. Three more sessions locks the gain at Tier-1.",
+      gapNote: "Your structure is the bottleneck: answers carry the right ideas but bury the outcome. Lead with the result, then the path. Three more sessions locks the gain at Tier-1.",
     },
     resumeBridge: {
       resumeScore: 81,
       rows: [
         { skill: "B2B SaaS product sense",       state: "verified" as const, detail: "Demonstrated across 4 sessions." },
         { skill: "User research synthesis",      state: "verified" as const, detail: "Strong recall of methods, 82 avg." },
-        { skill: "SQL & analytics fluency",      state: "untested" as const, detail: "Listed but never probed — Tier-1 will ask." },
+        { skill: "SQL & analytics fluency",      state: "untested" as const, detail: "Listed but never probed. Tier-1 will ask." },
         { skill: "Cross-team conflict resolution", state: "weak"     as const, detail: "Answers default to consensus too fast." },
       ] as SkillBridgeRow[],
     },
+    skippingItems: undefined as undefined | SkippingItem[],
+    unreadPreview: { title: "Your last session is ready", ago: "2m ago", tone: "evaluation" as const },
+    resumeAgeDays: 47,
+    targetDate: { label: "Razorpay PM interview", daysAway: 42, totalWeeks: 8, weeksDone: 3 } as TargetDate,
+    speech: { wpm: 143, fillerPer100: 4.2, pace: "steady" as const, trend: 0.2 },
+    peerCohort: { cohortLabel: "PMs · 3-5y experience", percentile: 72, sampleSize: 2847, peerMedianScore: 71 },
   };
 }
 
@@ -1086,8 +1441,8 @@ function OverlayedDashboard({
   ];
 
   const notifications: NotificationItem[] = [
-    { id: "1", kind: "evaluation", title: "Your last session is ready", body: "Behavioural mock — scored 88. Top win: clear STAR structure on the ownership prompt.", ago: "2m ago", unread: true },
-    { id: "2", kind: "coach",      title: "New high-priority insight", body: "Your bar-raiser pushback yields too quickly — 4 of last 6 sessions.", ago: "12m ago", unread: true },
+    { id: "1", kind: "evaluation", title: "Your last session is ready", body: "Behavioural mock scored 88. Top win: clear STAR structure on the ownership prompt.", ago: "2m ago", unread: true },
+    { id: "2", kind: "coach",      title: "New high-priority insight", body: "Your bar-raiser pushback yields too quickly. 4 of last 6 sessions.", ago: "12m ago", unread: true },
     { id: "3", kind: "milestone",  title: "7-day streak unlocked!",   body: "You've earned the Consistency badge. ₹0.5 LPA bonus credits added.", ago: "1h ago", unread: false },
     { id: "4", kind: "journey",    title: "Round 2 of your Razorpay journey is ready", body: "The hiring manager round unlocks in 4 hours. Briefing available now.", ago: "3h ago", unread: false },
     { id: "5", kind: "system",     title: "Your salary band was refreshed", body: "Senior PM at Razorpay 2026 bands updated based on May market data.", ago: "yesterday", unread: false },
@@ -1143,7 +1498,7 @@ function MobileDashboard({ userName, greetingHour }: { userName: string; greetin
             width: 30, height: 30, borderRadius: 999, background: t.indigo100, color: t.indigo,
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             fontFamily: f.serif, fontSize: 13, fontWeight: 400,
-          }}>{userName[0]?.toUpperCase()}</span>
+          }}>{Array.from(userName.trim())[0]?.toUpperCase() ?? "?"}</span>
         </div>
       </div>
 
@@ -1151,8 +1506,8 @@ function MobileDashboard({ userName, greetingHour }: { userName: string; greetin
       <div style={{ padding: "20px 18px 0" }}>
         <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>Tuesday, 12 May</div>
         <h1 style={{
-          fontFamily: f.serif, fontSize: 30, fontWeight: 400, color: t.coal,
-          letterSpacing: "-0.02em", lineHeight: 1.1, margin: "4px 0 6px",
+          fontFamily: f.serif, fontSize: 38, fontWeight: 400, color: t.coal,
+          letterSpacing: "-0.025em", lineHeight: 1.05, margin: "6px 0 8px",
         }}>
           {greet}, {userName}.{" "}
           <em style={{ fontStyle: "italic", color: t.copper }}>{data.heroAccent}</em>
@@ -1171,15 +1526,17 @@ function MobileDashboard({ userName, greetingHour }: { userName: string; greetin
         }}>
           <span className="hsx-db-flame" style={{ color: t.copper }}>{Icons.flame}</span>
           <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.coal, flex: 1 }}>
-            {data.streak}-day streak — top {data.percentile}%
+            {data.streak}-day streak · top {data.percentile}%
           </span>
-          <span style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, letterSpacing: 0.4 }}>
-            {data.streakNextMilestone - data.streak}d to milestone
-          </span>
+          {data.streak < data.streakNextMilestone && (
+            <span style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, letterSpacing: 0.4 }}>
+              {data.streakNextMilestone - data.streak}D TO {data.streakNextMilestone}
+            </span>
+          )}
         </div>
 
         {/* Next step card — compact */}
-        <Card pad={20} style={{ background: `linear-gradient(135deg, ${t.copper100} 0%, ${t.cream} 70%)` }}>
+        <Card pad={20} style={{ background: t.copperSoft }}>
           <Eyebrow>Your next step</Eyebrow>
           <h2 style={{
             fontFamily: f.serif, fontSize: 24, fontWeight: 400, color: t.coal,
