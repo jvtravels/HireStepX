@@ -13,7 +13,22 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry } from "./_shared";
+
+/* TTS cost circuit breaker — Sarvam Bulbul is billed per character.
+ *
+ * Without a cap, a runaway client or a compromised key could rack up
+ * thousands of dollars overnight. We INCR a per-user daily counter on
+ * every accepted TTS request and reject with 429 once the user crosses
+ * the limit. The limit is generous (~10 minutes of speech/day) and
+ * applies uniformly while the product is in testing — once tiered
+ * pricing ships we'll lift the cap for paid users by reading the tier
+ * from the JWT app_metadata.
+ *
+ * Fails open on Redis outage so a Redis blip doesn't kill the voice
+ * pipeline for everyone. */
+const TTS_DAILY_CHAR_CAP = 30_000;
+const SECONDS_PER_DAY = 86_400;
 
 declare const process: { env: Record<string, string | undefined> };
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "";
@@ -103,6 +118,23 @@ export default async function handler(req: Request): Promise<Response> {
     const trimmedText = text.trim().slice(0, 1500); // 3 chunks × 500 chars max
     if (trimmedText.length === 0) {
       return new Response(JSON.stringify({ error: "Text is empty" }), { status: 400, headers });
+    }
+
+    // Cost circuit breaker — count chars before the upstream call so we don't
+    // pay for one final blowout request. INCRBY returns the post-increment
+    // value; if it would exceed the cap, refund (no, we already incremented)
+    // and reject. We over-count by the rejected request's chars, which is
+    // fine — the next day's window resets it and the cap is a soft ceiling.
+    const dayKey = `tts_chars_today:${auth.userId}:${new Date().toISOString().slice(0, 10)}`;
+    const used = await redisIncrByWithExpiry(dayKey, trimmedText.length, SECONDS_PER_DAY);
+    if (used !== null && used > TTS_DAILY_CHAR_CAP) {
+      logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: `Daily char cap exceeded (${used}/${TTS_DAILY_CHAR_CAP})` });
+      return new Response(JSON.stringify({
+        error: "Daily voice quota exceeded. Try again tomorrow or continue in text mode.",
+        code: "tts_daily_cap",
+        usedChars: used,
+        capChars: TTS_DAILY_CHAR_CAP,
+      }), { status: 429, headers });
     }
 
     const speaker = pickSpeaker(gender, voiceId);

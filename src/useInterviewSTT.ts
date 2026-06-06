@@ -202,6 +202,12 @@ export function useInterviewSTT(
               handleMicDenied();
             } else {
               console.warn("[Deepgram] error, falling back to Sarvam AI:", error);
+              // Emit a distinguishable PostHog signal so ops can tell
+              // "Deepgram 429" apart from "Deepgram WS dropped" — both
+              // surface as `error` here but the recovery and incidence
+              // patterns differ. The toast on Sarvam fallback already
+              // tells the user, so we don't re-toast.
+              captureClientEvent("stt_provider_error", { provider: "deepgram", reason: typeof error === "string" ? error.slice(0, 60) : "unknown", fellThroughTo: "sarvam" });
               refs.deepgramRef.current = null;
               trySarvam();
             }
@@ -220,6 +226,7 @@ export function useInterviewSTT(
               setTimeout(() => { if (!stopped) tryDeepgram(); }, backoffMs);
             } else {
               console.warn("[Deepgram] retries exhausted, falling back to Sarvam AI");
+              captureClientEvent("stt_provider_error", { provider: "deepgram", reason: "ws_ended_retries_exhausted", fellThroughTo: "sarvam" });
               trySarvam();
             }
           },

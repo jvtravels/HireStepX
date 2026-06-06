@@ -393,16 +393,35 @@ export function ResumeEmptyState({
         </ul>
 
         {onSkip && (
-          <div style={{ textAlign: "center" }}>
-            <button
-              type="button"
-              onClick={onSkip}
-              className="hsx-link-indigo"
-              style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, background: "transparent", border: "none", cursor: "pointer", textDecoration: "none", padding: 0 }}
-            >
-              Skip and set up later
-            </button>
-          </div>
+          // Promoted from a small ghost link to a visible secondary button.
+          // Mobile-first Indian users without a PDF resume on their phone
+          // were stuck on this screen — the previous skip was too subtle
+          // to compete with the big drop-zone above. This pairs with the
+          // "or" divider so users see two paths, not one path + an escape.
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }} aria-hidden="true">
+              <div style={{ flex: 1, height: 1, background: t.line }} />
+              <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, textTransform: "uppercase", letterSpacing: "0.08em" }}>or</span>
+              <div style={{ flex: 1, height: 1, background: t.line }} />
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <button
+                type="button"
+                onClick={onSkip}
+                style={{
+                  fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.indigo,
+                  background: "transparent", border: `1px solid ${t.lineStrong}`,
+                  borderRadius: 10, cursor: "pointer", padding: "12px 20px",
+                  minHeight: 44, // mobile tap target
+                }}
+              >
+                Continue without resume
+              </button>
+              <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 8 }}>
+                You can add one later from Settings.
+              </div>
+            </div>
+          </>
         )}
       </div>
     </>

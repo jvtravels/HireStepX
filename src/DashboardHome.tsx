@@ -712,8 +712,13 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* ─── Streak/momentum nudge for exhausted free users ─── */}
-      {isFree && atSessionLimit && hasData && (
+      {/* ─── Streak/momentum nudge for exhausted free users ───
+           Shows the moment a free user crosses their 3-session cap, with
+           or without prior data. Removing the hasData gate matters for
+           users who hit the cap on attempts that didn't persist a full
+           report (LLM 5xx, browser closed mid-eval, etc.) — they'd
+           otherwise see a dead "—" everywhere and no path forward. */}
+      {isFree && atSessionLimit && (
         <div style={{
           display: "flex", alignItems: "center", gap: 16, padding: "18px 24px", borderRadius: radius.lg,
           background: `linear-gradient(135deg, rgba(196,112,90,0.06) 0%, rgba(212,179,127,0.06) 100%)`,
@@ -722,12 +727,18 @@ export default function DashboardHome() {
           <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 200 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>
-                {currentStreak > 0 ? `${currentStreak}-day streak!` : "Your progress is fading"}
+                {currentStreak > 0
+                  ? `${currentStreak}-day streak — keep it going`
+                  : hasData
+                    ? "Your progress is fading"
+                    : "You've used all 3 free sessions"}
               </span>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
                 {currentStreak > 0
-                  ? "Don't lose your momentum — upgrade to keep practicing daily."
-                  : `You completed ${recentSessions.length} sessions and scored ${overallStats.avgScore ?? "—"} avg. Upgrade to continue improving.`}
+                  ? "Don't lose your momentum — upgrade for unlimited practice."
+                  : hasData
+                    ? `You completed ${recentSessions.length} sessions and scored ${overallStats.avgScore ?? "—"} avg. Upgrade to continue improving.`
+                    : "Upgrade to unlock unlimited sessions, full reports, and analytics."}
               </span>
             </div>
           </div>
@@ -750,7 +761,7 @@ export default function DashboardHome() {
             onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.1)"}
             onMouseLeave={(e) => e.currentTarget.style.filter = "brightness(1)"}
           >
-            Upgrade Now
+            Upgrade — from ₹149/mo · UPI
           </button>
         </div>
       )}

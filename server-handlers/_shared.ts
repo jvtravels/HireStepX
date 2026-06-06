@@ -397,6 +397,27 @@ export async function redisSetEx(key: string, ttlSec: number, value: string): Pr
   } catch { /* swallow — caching is best-effort */ }
 }
 
+/** Atomically INCRBY a counter and set TTL on first write. Returns the new
+ * counter value, or `null` when Redis is unavailable (caller should fail open).
+ * Used for per-user spend / cost circuit breakers — see sarvam-tts.ts. */
+export async function redisIncrByWithExpiry(key: string, by: number, ttlSec: number): Promise<number | null> {
+  if (!useRedis) return null;
+  try {
+    const res = await fetch(`${UPSTASH_URL}/pipeline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify([
+        ["INCRBY", key, String(by)],
+        ["EXPIRE", key, String(ttlSec), "NX"],
+      ]),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as Array<{ result?: unknown }>;
+    const incr = data?.[0]?.result;
+    return typeof incr === "number" ? incr : null;
+  } catch { return null; }
+}
+
 /** SHA-256 hex digest. Edge-runtime safe (Web Crypto). For cache keys, not security. */
 export async function hashStable(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
