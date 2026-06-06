@@ -178,14 +178,20 @@ export default function Dashboard({
               >
                 {Icons.bell}
                 {data.unreadCount > 0 && (
-                  <span aria-hidden style={{
-                    position: "absolute", top: -4, right: -4,
-                    minWidth: 18, height: 18, padding: "0 5px", borderRadius: 999,
-                    background: t.copper, color: t.white,
-                    fontFamily: f.mono, fontSize: 10, fontWeight: 700,
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    border: `2px solid ${t.cream}`,
-                  }}>{data.unreadCount > 9 ? "9+" : data.unreadCount}</span>
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    aria-label={`${data.unreadCount} unread`}
+                    style={{
+                      position: "absolute", top: -4, right: -4,
+                      minWidth: 18, height: 18, padding: "0 5px", borderRadius: 999,
+                      background: t.copper, color: t.white,
+                      fontFamily: f.mono, fontSize: 10, fontWeight: 700,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      border: `2px solid ${t.cream}`,
+                    }}
+                  >{data.unreadCount > 9 ? "9+" : data.unreadCount}</span>
                 )}
               </button>
               <button
@@ -229,7 +235,7 @@ export default function Dashboard({
               <PeerCohortStrip cohort={data.peerCohort} score={data.kpis.overall} />
             )}
 
-            {variant !== "empty" && variant !== "interview-imminent" && data.targetDate && (
+            {variant !== "empty" && data.targetDate && (
               <TargetDateArc target={data.targetDate} />
             )}
 
@@ -414,7 +420,7 @@ export default function Dashboard({
                         <div style={{
                           gridColumn: "span 2",
                           padding: "10px 12px", borderRadius: 10,
-                          background: t.success100, border: `1px solid rgba(21, 128, 61, 0.18)`,
+                          background: t.success100, border: `1px solid ${t.successLine}`,
                           fontFamily: f.sans, fontSize: 12.5, color: t.success, fontWeight: 500,
                         }}>
                           ✓ All 10 dimensions covered. Now optimise depth.
@@ -578,15 +584,16 @@ function SpeechDetailCard({ speech }: { speech: SpeechMetrics }) {
   return (
     <Card pad={20}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-        <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+        <h3 id="speech-section-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
           How you sound
         </h3>
         <a href="#progress/speech" className="hsx-db-link" style={{
           fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, textDecoration: "none",
         }}>Full breakdown →</a>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
-        <div style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
+      <div role="group" aria-labelledby="speech-section-heading" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
+        <div role="group" aria-label={`Words per minute: ${speech.wpm}. Hire-bar range 140 to 165.`}
+             style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
           <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>WORDS PER MIN</div>
           <div style={{ fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", lineHeight: 1, margin: "6px 0 4px" }}>
             {speech.wpm}
@@ -595,7 +602,8 @@ function SpeechDetailCard({ speech }: { speech: SpeechMetrics }) {
             Hire-bar range 140–165
           </div>
         </div>
-        <div style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
+        <div role="group" aria-label={`Fillers per 100 words: ${speech.fillerPer100.toFixed(1)}. ${fillerTone.note}.`}
+             style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
           <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>FILLERS / 100 WORDS</div>
           <div style={{ fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: fillerTone.fg, letterSpacing: "-0.02em", lineHeight: 1, margin: "6px 0 4px" }}>
             {speech.fillerPer100.toFixed(1)}
@@ -609,7 +617,8 @@ function SpeechDetailCard({ speech }: { speech: SpeechMetrics }) {
             {fillerTone.note}
           </div>
         </div>
-        <div style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
+        <div role="group" aria-label={`Pace under pushback: ${paceCopy}. ${speech.trend >= 0 ? "up" : "down"} ${Math.abs(speech.trend).toFixed(1)} wpm change.`}
+             style={{ background: t.cream, borderRadius: 12, padding: "14px 16px" }}>
           <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>PACE UNDER PUSHBACK</div>
           <div style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", lineHeight: 1.15, margin: "8px 0 6px" }}>
             {paceCopy}
@@ -681,14 +690,14 @@ function ResumeFreshnessStrip({ days }: { days: number }) {
     <div style={{
       display: "flex", alignItems: "center", gap: 14,
       padding: "12px 18px",
-      background: t.copperSoft, border: `1px solid rgba(180,83,9,0.18)`, borderRadius: 12,
+      background: t.copperSoft, border: `1px solid ${t.copperLine}`, borderRadius: 12,
     }}>
       <span style={{ color: t.copper, flexShrink: 0 }}>{Icons.resume}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>
           Your resume is {days} days old.
         </div>
-        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.45 }}>
+        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, marginTop: 2, lineHeight: 1.45, opacity: 0.78 }}>
           Targets and panels drift. Refresh to keep practice ranking aligned with your latest work.
         </div>
       </div>
@@ -701,16 +710,27 @@ function ResumeFreshnessStrip({ days }: { days: number }) {
    Indian-market expectation: cohort-comparative readout, not just a
    personal score. */
 function PeerCohortStrip({ cohort, score }: { cohort: PeerCohort; score: number }) {
+  // percentile is the share of the cohort you outrank, e.g. 94 means you're
+  // ahead of 94% of peers. Display the inverted "top X%" so smaller is
+  // better, matching how Indian candidates read placement copy.
+  const topPct = Math.max(1, 100 - cohort.percentile);
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 18,
-      padding: "12px 18px",
-      background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
-    }}>
+    <div
+      role="group"
+      aria-label={`Cohort placement: top ${topPct} percent of ${cohort.cohortLabel}`}
+      style={{
+        display: "flex", alignItems: "center", gap: 18,
+        padding: "12px 18px",
+        background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
+      }}
+    >
       <div style={{ flexShrink: 0 }}>
-        <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>YOU RANK</div>
+        <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>AHEAD OF</div>
         <div style={{ fontFamily: f.serif, fontSize: 32, fontWeight: 400, color: t.indigo, letterSpacing: "-0.02em", lineHeight: 1, marginTop: 4 }}>
-          top {cohort.percentile}%
+          {cohort.percentile}<span style={{ fontSize: 18, color: t.indigoGray }}>%</span>
+        </div>
+        <div style={{ fontFamily: f.mono, fontSize: 9.5, color: t.inkSoft, letterSpacing: 0.5, marginTop: 4 }}>
+          TOP {topPct}%
         </div>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -718,7 +738,7 @@ function PeerCohortStrip({ cohort, score }: { cohort: PeerCohort; score: number 
           {cohort.cohortLabel}
         </div>
         <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.45 }}>
-          You: <strong style={{ color: t.coal, fontWeight: 600 }}>{score}</strong> · cohort median {cohort.peerMedianScore} · n={cohort.sampleSize.toLocaleString("en-IN")}
+          You score <strong style={{ color: t.coal, fontWeight: 600 }}>{score}</strong> · cohort median {cohort.peerMedianScore} · sample n={cohort.sampleSize.toLocaleString("en-IN")}
         </div>
       </div>
       <a href="#progress/cohort" className="hsx-db-link" style={{
@@ -1123,7 +1143,7 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
       skippingItems: undefined as undefined | SkippingItem[],
       unreadPreview: { title: "Bar-raiser insight ready", ago: "4m ago", tone: "coach" as const },
       resumeAgeDays: 12,
-      targetDate: undefined as undefined | TargetDate,
+      targetDate: { label: "Stripe Staff PM loop", daysAway: 56, totalWeeks: 12, weeksDone: 8 } as TargetDate,
       speech: { wpm: 152, fillerPer100: 1.8, pace: "steady" as const, trend: -0.4 },
       peerCohort: { cohortLabel: "Senior PMs · 8-12y", percentile: 94, sampleSize: 1842, peerMedianScore: 74 },
     };
@@ -1214,7 +1234,7 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
       ] as SkippingItem[],
       unreadPreview: { title: "Razorpay loop · round 2 brief unlocked", ago: "just now", tone: "journey" as const },
       resumeAgeDays: 4,
-      targetDate: undefined as undefined | TargetDate,
+      targetDate: { label: "Razorpay PM loop", daysAway: 3, totalWeeks: 6, weeksDone: 6 } as TargetDate,
       speech: { wpm: 138, fillerPer100: 3.2, pace: "slowing" as const, trend: -0.8 },
       peerCohort: { cohortLabel: "PMs targeting Razorpay", percentile: 64, sampleSize: 412, peerMedianScore: 74 },
     };
@@ -1526,7 +1546,7 @@ function MobileDashboard({ userName, greetingHour }: { userName: string; greetin
         }}>
           <span className="hsx-db-flame" style={{ color: t.copper }}>{Icons.flame}</span>
           <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.coal, flex: 1 }}>
-            {data.streak}-day streak · top {data.percentile}%
+            {data.streak}-day streak · top {Math.max(1, 100 - data.percentile)}%
           </span>
           {data.streak < data.streakNextMilestone && (
             <span style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, letterSpacing: 0.4 }}>
@@ -1534,6 +1554,17 @@ function MobileDashboard({ userName, greetingHour }: { userName: string; greetin
             </span>
           )}
         </div>
+
+        {/* Peer cohort — mobile parity with desktop. SpeechDetailCard
+            and TargetDateArc are intentionally skipped on 390px; both
+            need a dedicated mobile layout, tracked separately. */}
+        {data.peerCohort && (
+          <PeerCohortStrip cohort={data.peerCohort} score={data.kpis.overall} />
+        )}
+
+        {data.resumeAgeDays !== undefined && data.resumeAgeDays >= 30 && (
+          <ResumeFreshnessStrip days={data.resumeAgeDays} />
+        )}
 
         {/* Next step card — compact */}
         <Card pad={20} style={{ background: t.copperSoft }}>

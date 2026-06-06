@@ -36,6 +36,13 @@ export const tokens = {
   // Lines
   line: "#EBE5D2",
   lineStrong: "#D6CDB5",
+
+  // Tinted borders — alpha siblings of the brand/status colors,
+  // for borders on tinted-background strips (e.g. copperSoft cards,
+  // success100 callouts). Promoted from hard-coded rgba values
+  // surfaced in the 2026-06 dashboard audit.
+  copperLine: "rgba(180, 83, 9, 0.20)",
+  successLine: "rgba(21, 128, 61, 0.20)",
 } as const;
 
 export const fonts = {
