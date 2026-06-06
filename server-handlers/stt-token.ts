@@ -3,10 +3,22 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry } from "./_shared";
 
 declare const process: { env: Record<string, string | undefined> };
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || "";
+
+/* TOKEN-ABUSE GUARDRAIL — until we migrate to Deepgram scoped/temp keys
+ * (which requires DEEPGRAM_PROJECT_ID config), the raw API key is handed
+ * to authenticated clients. A captured key can be reused direct-to-vendor
+ * indefinitely. We bound the blast radius two ways:
+ *  - per-user daily issuance cap (a single account can't farm tokens
+ *    across multiple browser sessions to share with others)
+ *  - shortened TTL hint (clients re-fetch more often, so the rate-limit
+ *    + cap stay in the hot path)
+ * TODO: migrate to Deepgram /v1/projects/<id>/keys with TTL + scopes. */
+const STT_TOKEN_DAILY_CAP = 30;
+const SECONDS_PER_DAY = 86_400;
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);
@@ -28,6 +40,16 @@ export default async function handler(req: Request): Promise<Response> {
   const ip = getClientIp(req);
   if (await isRateLimited(ip, "stt-token", 10, 60_000)) {
     return rateLimitResponse(headers);
+  }
+
+  // Daily issuance cap per user — bounds blast radius if a key is captured.
+  const dayKey = `stt_token_issued:${auth.userId}:${new Date().toISOString().slice(0, 10)}`;
+  const issued = await redisIncrByWithExpiry(dayKey, 1, SECONDS_PER_DAY);
+  if (issued !== null && issued > STT_TOKEN_DAILY_CAP) {
+    return new Response(JSON.stringify({
+      error: "Daily voice-input limit reached. Continue in text mode or try again tomorrow.",
+      code: "stt_token_daily_cap",
+    }), { status: 429, headers });
   }
 
   // Return the API key directly with short TTL — auth + rate limiting gate access

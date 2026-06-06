@@ -6,7 +6,7 @@ import { callLLM, extractJSON } from "./_llm";
 import {
   handleCorsPreflightOrMethod, corsHeaders, verifyAuth,
   unauthorizedResponse, isRateLimited, getClientIp, rateLimitResponse,
-  checkBodySize, validateOrigin, withRequestId, getSubscriptionTier,
+  checkBodySize, validateOrigin, withRequestId, getSubscriptionTier, checkLLMQuota,
 } from "./_shared";
 
 export default async function handler(req: Request) {
@@ -40,6 +40,13 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify({ error: "Upgrade to Pro for AI-powered insights", requiresUpgrade: true }), {
       status: 403, headers,
     });
+  }
+
+  // Daily LLM quota — paid users still have a per-day cap so a runaway
+  // client (or scripted reload) can't drain spend in a single afternoon.
+  const quota = await checkLLMQuota(auth.userId, "insights");
+  if (!quota.allowed) {
+    return new Response(JSON.stringify({ error: quota.reason || "Daily limit reached", quotaExceeded: true, count: quota.count, limit: quota.limit }), { status: 429, headers });
   }
 
   try {

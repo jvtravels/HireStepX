@@ -262,6 +262,9 @@ export default async function handler(
     ipLimit: 30,
     userLimit: 20,
     maxBytes: 32_000,
+    // Every turn invokes callLLM (line 157). Without checkQuota a free user
+    // could negotiate-loop indefinitely. Use the shared per-user daily cap.
+    checkQuota: true,
   });
   if (pre instanceof Response) return pre;
   const { headers, auth } = pre;

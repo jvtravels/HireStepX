@@ -260,9 +260,17 @@ export function getLastRoute(): string | null {
  * (useInterviewEngine on mount/unmount), so a global is the simplest
  * shape that actually works.
  * ─────────────────────────────────────────────────────────────────── */
-let _interviewInProgress = false;
-export function setInterviewInProgress(v: boolean): void { _interviewInProgress = v; }
-export function isInterviewInProgress(): boolean { return _interviewInProgress; }
+/* Refcounted so multiple interview surfaces (multi-tab, dev StrictMode
+ * double-mount, an embedded preview canvas) don't race each other into
+ * a stale `false`. The writer pairs setInterviewInProgress(true) on
+ * mount with setInterviewInProgress(false) on unmount; with a boolean
+ * the second unmount would re-enable destructive signout while the
+ * first interview is still active. */
+let _interviewRefcount = 0;
+export function setInterviewInProgress(v: boolean): void {
+  _interviewRefcount = Math.max(0, _interviewRefcount + (v ? 1 : -1));
+}
+export function isInterviewInProgress(): boolean { return _interviewRefcount > 0; }
 
 export function clearLastRoute() {
   try { localStorage.removeItem(LAST_ROUTE_KEY); } catch { /* expected: localStorage may be unavailable */ }
@@ -1541,7 +1549,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // and the user would lose the transcript to localStorage only.
           // We retry the refresh in 60s; if the interview finishes first,
           // the next tick signs them out cleanly.
-          if (_interviewInProgress) {
+          if (_interviewRefcount > 0) {
             console.warn("[auth] Session expired during interview — deferring signout until session ends.");
             setSessionExpiryWarning("Session needs to refresh after this interview ends.");
             return;

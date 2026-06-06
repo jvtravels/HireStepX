@@ -3,7 +3,13 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry } from "./_shared";
+
+// Shared TTS daily char budget — keyed identically in sarvam-tts.ts and
+// azure-tts.ts so a user can't dodge the cap by failing over between
+// providers. See server-handlers/sarvam-tts.ts for rationale.
+const TTS_DAILY_CHAR_CAP = 30_000;
+const SECONDS_PER_DAY = 86_400;
 
 declare const process: { env: Record<string, string | undefined> };
 const CARTESIA_API_KEY = process.env.CARTESIA_API_KEY || "";
@@ -48,6 +54,19 @@ export default async function handler(req: Request): Promise<Response> {
     const trimmedText = text.trim().slice(0, 2000);
     if (trimmedText.length === 0) {
       return new Response(JSON.stringify({ error: "Text is empty" }), { status: 400, headers });
+    }
+
+    // Shared daily TTS char budget across providers.
+    const dayKey = `tts_chars_today:${auth.userId}:${new Date().toISOString().slice(0, 10)}`;
+    const used = await redisIncrByWithExpiry(dayKey, trimmedText.length, SECONDS_PER_DAY);
+    if (used !== null && used > TTS_DAILY_CHAR_CAP) {
+      logServiceUsage({ service: "cartesia_tts", endpoint: "tts/bytes", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: `Daily char cap exceeded (${used}/${TTS_DAILY_CHAR_CAP})` });
+      return new Response(JSON.stringify({
+        error: "Daily voice quota exceeded. Try again tomorrow or continue in text mode.",
+        code: "tts_daily_cap",
+        usedChars: used,
+        capChars: TTS_DAILY_CHAR_CAP,
+      }), { status: 429, headers });
     }
 
     // Accept any valid UUID voice ID — Cartesia validates on their end

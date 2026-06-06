@@ -427,7 +427,11 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
   // domain reputation drops.
   const emailResetKey = `rl:reset:email:${normalizedEmail}`;
   const emailResetCount = await incrRedisKey(emailResetKey, 24 * 60 * 60);
-  if (emailResetCount > 5) {
+  // Lowered from 5 to 3 — paired with the courtesy "no account found"
+  // email below, the prior 5/day let an attacker pump 5 unsolicited
+  // emails/day at any inbox by typing the victim's address into our
+  // reset form. 3/day still covers the legit typo→correct→final loop.
+  if (emailResetCount > 3) {
     // Generic 200 (enumeration defense) — the user's UI shows the
     // same "check your email" confirmation regardless. Loud server
     // log so ops can spot abuse.

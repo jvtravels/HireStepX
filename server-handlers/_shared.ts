@@ -533,7 +533,13 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
     if (!res.ok) {
       // Fail open so a Redis blip doesn't lock everyone out, but log loudly
       // and flag the caller so ops alerts can fire on a sustained outage.
-      console.error(`[quota] CRITICAL: Redis quota check failed (HTTP ${res.status}) — failing open for user ${userId.slice(0, 8)}`);
+      // During a sustained incident, flip QUOTA_FAIL_CLOSED=1 in Vercel env
+      // to switch this to fail-closed and stop runaway LLM spend until
+      // Redis recovers. The default stays fail-open to protect UX.
+      console.error(`[quota] CRITICAL: Redis quota check failed (HTTP ${res.status}) — fail-${process.env.QUOTA_FAIL_CLOSED === "1" ? "closed" : "open"} for user ${userId.slice(0, 8)}`);
+      if (process.env.QUOTA_FAIL_CLOSED === "1") {
+        return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true };
+      }
       return { allowed: true, warning: true };
     }
     const results = await res.json();
@@ -546,7 +552,10 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
     return { allowed: true, count, limit: dailyLimit, warning };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[quota] CRITICAL: Redis quota check threw (${msg.slice(0, 80)}) — failing open for user ${userId.slice(0, 8)}`);
+    console.error(`[quota] CRITICAL: Redis quota check threw (${msg.slice(0, 80)}) — fail-${process.env.QUOTA_FAIL_CLOSED === "1" ? "closed" : "open"} for user ${userId.slice(0, 8)}`);
+    if (process.env.QUOTA_FAIL_CLOSED === "1") {
+      return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true };
+    }
     return { allowed: true, warning: true };
   }
 }
