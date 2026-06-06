@@ -9,7 +9,7 @@
    visible without the banner (for screenshots / canvas previews).
    In production, the banner makes it unmistakable. */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useDashboardSessions } from "./DashboardContext";
@@ -18,14 +18,12 @@ import type { DashboardSession } from "./dashboardTypes";
 import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
 
 /* ─── Tokens (derived from auth/_tokens — single source of truth).
- * Keeps the existing `t.`/`f.`/`shadows.` references untouched but
- * binds them to the canonical cream palette. inkMid was a one-off
- * darker shade used for AA body copy — promoted to the canonical
- * `inkFaint` (which was WCAG-fixed to #7A7263 in task #8). The
- * legacy decorative `inkFaint` here is now `inkFaintWeak`. */
+ * Every value here is a passthrough to a canonical token. Audit rule:
+ * no hex/rgba literals in this file. inkMid maps to the WCAG-fixed
+ * inkFaint (#7A7263); decorative inkFaint maps to inkFaintWeak. */
 const t = {
   cream:        T.cream,
-  white:        "#FCFAF4", // tinted toward cream; kept local — distinct from T.white
+  white:        T.white,
   creamSoft:    T.creamSoft,
   coal:         T.coal,
   inkSoft:      T.inkSoft,
@@ -35,10 +33,12 @@ const t = {
   indigo100:    T.indigo100,
   copper:       T.copper,
   copperSoft:   T.copperSoft,
+  copperBorder: T.copperBorder,
   success:      T.success,
-  success100:  T.success100,
-  warning100:  T.warning100,
-  warningInk:  "#7C4A03",         // dashboard-local — not in canonical palette
+  success100:   T.success100,
+  warning100:   T.warning100,
+  warningInk:   T.warningInk,
+  warningLine:  T.warningLine,
   line:         T.line,
   lineStrong:   T.lineStrong,
 } as const;
@@ -96,7 +96,7 @@ function SampleDataPill() {
       display: "inline-flex", alignItems: "center", gap: 4,
       padding: "3px 9px", borderRadius: 999,
       fontFamily: f.mono, fontSize: 10, fontWeight: 600, letterSpacing: 0.6,
-      color: t.warningInk, background: t.warning100, border: `1px solid rgba(124,74,3,0.18)`,
+      color: t.warningInk, background: t.warning100, border: `1px solid ${t.warningLine}`,
       textTransform: "uppercase",
     }}>Demo</span>
   );
@@ -115,17 +115,30 @@ function ScoreChip({ value }: { value: number }) {
   );
 }
 
-function Card({ children, pad = 24, radius = 16, background = t.white, border = `1px solid ${t.line}`, style }: {
-  children: React.ReactNode; pad?: number; radius?: number; background?: string; border?: string; style?: React.CSSProperties;
+function Card({
+  children, pad = 24, radius = 16, background = t.white,
+  border = `1px solid ${t.line}`, style, labelledBy,
+}: {
+  children: React.ReactNode;
+  pad?: number;
+  radius?: number;
+  background?: string;
+  border?: string;
+  style?: React.CSSProperties;
+  /* Pass an id of the heading inside the card to opt into a labelled
+   * <section> landmark. Without this, the card renders as a plain
+   * <div> so we don't pollute the SR landmark list with unnamed
+   * sections. */
+  labelledBy?: string;
 }) {
-  return (
-    <section style={{ background, border, borderRadius: radius, padding: pad, boxShadow: shadows.card, ...style }}>
-      {children}
-    </section>
-  );
+  const baseStyle = { background, border, borderRadius: radius, padding: pad, boxShadow: shadows.card, ...style };
+  if (labelledBy) {
+    return <section aria-labelledby={labelledBy} style={baseStyle}>{children}</section>;
+  }
+  return <div style={baseStyle}>{children}</div>;
 }
 
-function Ring({ value, size = 64, stroke = 6, color = t.indigo, track = "#EBE5D2", label }: {
+function Ring({ value, size = 64, stroke = 6, color = t.indigo, track = t.line, label }: {
   value: number; size?: number; stroke?: number; color?: string; track?: string; label?: string;
 }) {
   const r = (size - stroke) / 2;
@@ -230,6 +243,20 @@ export default function DashboardHome() {
   const realStreak = core.currentStreak;
   const realSessions = core.recentSessions.slice(0, 4);
   const readiness = core.readinessScore || 68;
+  /* Threshold below which any "based on your last N runs" copy is a
+   * lie. Above it, real patterns exist and the editorial framing reads
+   * true. Set conservatively. */
+  const hasPatternData = core.recentSessions.length >= 4;
+
+  /* Locale-formatted date is rendered client-only to avoid SSR/CSR
+   * hydration mismatches (server TZ vs. user TZ produces different
+   * weekday strings on the en-IN locale). */
+  const [todayLabel, setTodayLabel] = useState<string | null>(null);
+  useEffect(() => {
+    setTodayLabel(
+      new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })
+    );
+  }, []);
 
   /* Demo gating. Only when NEXT_PUBLIC_DASHBOARD_DEMO=1 do unbacked
      sections render with sample numbers. Otherwise they render as
@@ -265,7 +292,7 @@ export default function DashboardHome() {
               display: "flex", alignItems: "flex-start", gap: 12,
               padding: "12px 16px",
               background: t.warning100, color: t.warningInk,
-              border: `1px solid rgba(124,74,3,0.20)`, borderRadius: 10,
+              border: `1px solid ${t.warningLine}`, borderRadius: 10,
               fontFamily: f.sans, fontSize: 13, lineHeight: 1.5,
             }}>
               <span style={{ marginTop: 2, flexShrink: 0 }}>{Icons.info}</span>
@@ -278,18 +305,20 @@ export default function DashboardHome() {
           )}
 
           {/* Hero greeting + inline streak */}
-          <section>
+          <section aria-labelledby="dh-hero">
             <Eyebrow as="span" tone="ink">
-              {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+              <span suppressHydrationWarning>{todayLabel ?? " "}</span>
             </Eyebrow>
-            <h1 style={{
+            <h1 id="dh-hero" className="hsx-dh-hero" style={{
               fontFamily: f.serif, fontSize: 44, fontWeight: 400, lineHeight: 1.1,
               letterSpacing: "-0.02em", color: t.coal, margin: "8px 0 6px",
             }}>
               Welcome back, {displayName}.
             </h1>
             <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, maxWidth: 560 }}>
-              Three weak spots from your last session are queued. A focused 25 minute block clears two.
+              {hasPatternData
+                ? "Three weak spots from your last session are queued. A focused 25 minute block clears two."
+                : "One 25 minute practice session is enough to start tracking patterns. Begin when you're ready."}
             </p>
 
             {/* Inline streak strip, not a card. Mixes real streak with a one-line goal status. */}
@@ -312,19 +341,20 @@ export default function DashboardHome() {
           </section>
 
           {/* Next move, single emphasized card. No KPI grid above it; one focal point. */}
-          <Card pad={28}>
+          <Card pad={28} labelledBy="dh-next">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 240 }}>
-                <Eyebrow tone="copper" as="h2">Your next move</Eyebrow>
+                <Eyebrow tone="copper" as="h2"><span id="dh-next">Your next move</span></Eyebrow>
                 <p style={{
                   fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2,
                   letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px",
                 }}>
-                  Behavioral round, STAR sharpening
+                  {hasPatternData ? "Behavioral round, STAR sharpening" : "Your first 25 minute drill"}
                 </p>
                 <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
-                  Pattern from your last 8 runs: the Result section drifts to generic outcome language.
-                  Today's 25 minute drill targets the 3 weakest stories with a quantified-delta framework.
+                  {hasPatternData
+                    ? "Pattern from your last 8 runs: the Result section drifts to generic outcome language. Today's 25 minute drill targets the 3 weakest stories with a quantified-delta framework."
+                    : "Pick a role and start. After four sessions, your coach surfaces the specific patterns it's seeing across your STAR breakdowns."}
                 </p>
                 <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
                   <PrimaryCta onClick={goToInterview}>Start 25 min drill</PrimaryCta>
@@ -408,11 +438,11 @@ export default function DashboardHome() {
 
           {/* AI coach insight — demo-only until the insights queue ships */}
           {demoMode ? (
-            <Card>
+            <Card labelledBy="dh-insight">
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ color: t.indigo }}>{Icons.sparkle}</span>
-                  <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
+                  <h2 id="dh-insight" style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
                     AI coach insight
                   </h2>
                 </div>
@@ -434,15 +464,15 @@ export default function DashboardHome() {
               <PrimaryCta size="sm" fullWidth onClick={goToInterview}>Start sharpening drill</PrimaryCta>
             </Card>
           ) : (
-            <Card>
+            <Card labelledBy="dh-insight">
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <span style={{ color: t.indigo }}>{Icons.sparkle}</span>
-                <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
+                <h2 id="dh-insight" style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
                   AI coach insight
                 </h2>
               </div>
               <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 14px" }}>
-                After two more sessions, your coach surfaces a specific pattern from
+                After four sessions, your coach surfaces a specific pattern from
                 your STAR breakdowns. Keep going.
               </p>
               <PrimaryCta size="sm" fullWidth onClick={goToInterview}>Start a session</PrimaryCta>
@@ -500,13 +530,17 @@ export default function DashboardHome() {
           outline-offset: 3px;
           border-radius: 12px;
         }
+        .hsx-dh-stats .hsx-dh-stat-cell:last-child { border-right: none; }
         @media (max-width: 1080px) {
           .hsx-dh-grid { grid-template-columns: 1fr !important; }
           .hsx-dh-rail { order: 2; }
         }
         @media (max-width: 720px) {
           .hsx-dh-stats { grid-template-columns: 1fr !important; }
+          .hsx-dh-stats .hsx-dh-stat-cell { border-right: none !important; border-bottom: 1px solid ${t.line}; }
+          .hsx-dh-stats .hsx-dh-stat-cell:last-child { border-bottom: none; }
           .hsx-dh-root { padding: 20px 16px 48px !important; }
+          .hsx-dh-hero { font-size: 34px !important; }
         }
         @media (prefers-reduced-motion: reduce) {
           .hsx-dh-progress-fill { transition: none !important; }

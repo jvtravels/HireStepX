@@ -31,6 +31,15 @@ export const tokens = {
   copperSoft: "rgba(180, 83, 9, 0.12)",
   copper100: "#F4E5D8",
 
+  // Copper alpha scale — replaces 16 inline rgba(180,83,9,0.x) literals
+  // scattered across Interview, Dashboard, and Setup. Pick from coarsest
+  // to most opaque; never inline a copper rgba again.
+  copperWash:   "rgba(180, 83, 9, 0.06)",
+  copperTint:   "rgba(180, 83, 9, 0.10)",
+  copperMid:    "rgba(180, 83, 9, 0.18)",
+  copperBorder: "rgba(180, 83, 9, 0.25)",
+  copperRing:   "rgba(180, 83, 9, 0.40)",
+
   // Status
   success: "#15803D",
   success100: "#DCFCE7",
@@ -38,6 +47,11 @@ export const tokens = {
   error100: "#FEE2E2",
   warning: "#A16207",
   warning100: "#FEF3C7",
+  // Promoted from a dashboard-local literal during the 2026-06 audit.
+  // warningInk is the AA-passing text shade on warning100 (~6.7:1).
+  // warningLine is the alpha sibling for borders on warning surfaces.
+  warningInk: "#7C4A03",
+  warningLine: "rgba(124, 74, 3, 0.20)",
 
   // Lines
   line: "#EBE5D2",
@@ -66,9 +80,13 @@ export const tokens = {
   successMist: "rgba(34, 197, 94, 0.14)",
 } as const;
 
+/* Inter is loaded via next/font/google in app/layout.tsx as the --font-ui
+ * CSS variable. The fallback chain mirrors next/font's so first paint
+ * matches the loaded font's metrics. The previous "Satoshi" name silently
+ * fell through to system-ui because the file was never loaded. */
 export const fonts = {
   serif: "'Instrument Serif', Georgia, serif",
-  sans: "'Satoshi', -apple-system, system-ui, sans-serif",
+  sans: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
   mono: "'JetBrains Mono', monospace",
 } as const;
 
