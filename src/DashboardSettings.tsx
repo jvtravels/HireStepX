@@ -283,6 +283,7 @@ export default function SettingsPage() {
         {SECTIONS.map((s, i) => (
           <button key={s.id} role="tab" aria-selected={activeSection === s.id} tabIndex={activeSection === s.id ? 0 : -1}
             onClick={() => switchSection(s.id)} onKeyDown={(e) => handlePillKeyDown(e, i)}
+            title={`${s.label} (press ${i + 1})`}
             style={{
               fontFamily: font.ui, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap",
               padding: "10px 16px", cursor: "pointer", transition: "all 0.2s ease",
@@ -297,6 +298,14 @@ export default function SettingsPage() {
           >
             <span style={{ opacity: activeSection === s.id ? 1 : 0.5, transition: "opacity 0.2s", color: activeSection === s.id ? c.gilt : "currentColor" }}>{s.icon}</span>
             {s.label}
+            <kbd aria-hidden="true" style={{
+              fontFamily: font.mono, fontSize: 10, fontWeight: 600,
+              color: activeSection === s.id ? c.gilt : c.stone,
+              background: activeSection === s.id ? "rgba(180,83,9,0.08)" : "transparent",
+              border: `1px solid ${activeSection === s.id ? "rgba(180,83,9,0.28)" : c.border}`,
+              borderRadius: 4, padding: "1px 5px", marginLeft: 2,
+              lineHeight: 1.2, letterSpacing: 0,
+            }}>{i + 1}</kbd>
           </button>
         ))}
         </div>
