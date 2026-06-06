@@ -292,6 +292,29 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           )}
         </div>
 
+        {/* Referral CTA — Indian-market viral loop. Only shows once we
+            have a code; render nothing if the profile hasn't been hydrated
+            (avoids a flash of empty pill). */}
+        {user?.referralCode && (
+          <div style={{
+            margin: "0 8px 12px", padding: "10px 12px", borderRadius: 10,
+            background: c.creamSoft, border: `1px solid ${c.border}`,
+            display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
+          }}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: font.ui, fontSize: 11.5, fontWeight: 600, color: c.ivory, lineHeight: 1.3 }}>
+                Invite 3, get a month free
+              </div>
+              <div style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                Your code: <span style={{ fontFamily: font.mono, color: c.gilt }}>{user.referralCode}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* User info */}
         <div style={{ borderTop: `1px solid ${c.border}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>

@@ -978,12 +978,52 @@ export default function DashboardHome() {
             })}
           </div>
         </div>
-        {daysLeft > 0 && persisted.interviewDate && (
-          <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: c.sage, display: "flex", alignItems: "center", gap: 6 }}>
-            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {daysLeft} days until interview
-          </span>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {currentStreak >= 3 && (
+            <button
+              type="button"
+              aria-label={`Share your ${currentStreak}-day streak`}
+              onClick={async () => {
+                const text = `${currentStreak}-day interview prep streak on HireStepX. Building toward my next role, one mock at a time.`;
+                const url = "https://hirestepx.com";
+                type NavWithShare = Navigator & { share?: (d: { title?: string; text?: string; url?: string }) => Promise<void> };
+                const nav = navigator as NavWithShare;
+                try {
+                  if (typeof nav.share === "function") {
+                    await nav.share({ title: "My HireStepX streak", text, url });
+                  } else {
+                    await navigator.clipboard.writeText(`${text} ${url}`);
+                    setShareTooltip(true);
+                    window.setTimeout(() => setShareTooltip(false), 1800);
+                  }
+                } catch {
+                  /* user cancelled — no-op */
+                }
+              }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "5px 12px", borderRadius: radius.pill,
+                background: "rgba(212,179,127,0.08)", border: `1px solid rgba(212,179,127,0.2)`,
+                color: c.gilt, cursor: "pointer",
+                fontFamily: font.ui, fontSize: 11, fontWeight: 600,
+                transition: "background 0.2s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.15)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.08)"; }}
+            >
+              <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+              Share
+            </button>
+          )}
+          {daysLeft > 0 && persisted.interviewDate && (
+            <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: c.sage, display: "flex", alignItems: "center", gap: 6 }}>
+              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              {daysLeft} days until interview
+            </span>
+          )}
+        </div>
       </div>
 
       {/* ─── Stats Grid (all 5 in one row) ─── */}
