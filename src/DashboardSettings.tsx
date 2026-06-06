@@ -240,7 +240,7 @@ export default function SettingsPage() {
   const tierLabel = (authUser?.subscriptionTier || "free").charAt(0).toUpperCase() + (authUser?.subscriptionTier || "free").slice(1);
 
   return (
-    <div style={{ width: "100%" }}>
+    <div style={{ width: "100%", maxWidth: 880 }}>
       {/* ── Sticky Header + Tabs ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 50,
