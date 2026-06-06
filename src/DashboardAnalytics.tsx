@@ -199,7 +199,10 @@ export default function AnalyticsPage() {
                 background: rangeIdx === i ? c.gilt : "transparent",
                 color: rangeIdx === i ? c.obsidian : c.stone,
                 transition: "all 0.2s ease",
-              }}>
+              }}
+              onMouseEnter={(e) => { if (rangeIdx !== i) { e.currentTarget.style.color = c.ivory; e.currentTarget.style.background = "rgba(245,242,237,0.04)"; } }}
+              onMouseLeave={(e) => { if (rangeIdx !== i) { e.currentTarget.style.color = c.stone; e.currentTarget.style.background = "transparent"; } }}
+            >
               {r.label}
             </button>
           ))}

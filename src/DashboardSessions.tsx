@@ -170,14 +170,23 @@ export default function DashboardSessions() {
         <div style={{ display: "flex", gap: 6 }}>
           {sessionTypes.map(type => (
             <button key={type} onClick={() => { setFilter(type); setShowCount(20); }} aria-pressed={filter === type}
-              style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 14px", borderRadius: 100, cursor: "pointer", background: filter === type ? "rgba(212,179,127,0.1)" : "transparent", border: `1px solid ${filter === type ? c.gilt : c.border}`, color: filter === type ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none" }}>{type}</button>
+              style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 14px", borderRadius: 100, cursor: "pointer", background: filter === type ? "rgba(212,179,127,0.1)" : "transparent", border: `1px solid ${filter === type ? c.gilt : c.border}`, color: filter === type ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none" }}
+              onMouseEnter={(e) => { if (filter !== type) { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "rgba(212,179,127,0.35)"; } }}
+              onMouseLeave={(e) => { if (filter !== type) { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; } }}
+            >{type}</button>
           ))}
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           <button onClick={() => setSortBy("date")} aria-pressed={sortBy === "date"}
-            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 12px", borderRadius: 100, cursor: "pointer", background: sortBy === "date" ? "rgba(212,179,127,0.1)" : "transparent", border: `1px solid ${sortBy === "date" ? c.gilt : c.border}`, color: sortBy === "date" ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none" }}>Recent</button>
+            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 12px", borderRadius: 100, cursor: "pointer", background: sortBy === "date" ? "rgba(212,179,127,0.1)" : "transparent", border: `1px solid ${sortBy === "date" ? c.gilt : c.border}`, color: sortBy === "date" ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none" }}
+            onMouseEnter={(e) => { if (sortBy !== "date") { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "rgba(212,179,127,0.35)"; } }}
+            onMouseLeave={(e) => { if (sortBy !== "date") { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; } }}
+          >Recent</button>
           <button onClick={() => setSortBy("score")} aria-pressed={sortBy === "score"}
-            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 12px", borderRadius: 100, cursor: "pointer", background: sortBy === "score" ? "rgba(212,179,127,0.1)" : "transparent", border: `1px solid ${sortBy === "score" ? c.gilt : c.border}`, color: sortBy === "score" ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none" }}>Top Score</button>
+            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "7px 12px", borderRadius: 100, cursor: "pointer", background: sortBy === "score" ? "rgba(212,179,127,0.1)" : "transparent", border: `1px solid ${sortBy === "score" ? c.gilt : c.border}`, color: sortBy === "score" ? c.gilt : c.stone, transition: "all 0.2s ease", outline: "none" }}
+            onMouseEnter={(e) => { if (sortBy !== "score") { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = "rgba(212,179,127,0.35)"; } }}
+            onMouseLeave={(e) => { if (sortBy !== "score") { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; } }}
+          >Top Score</button>
         </div>
       </div>
 
@@ -192,12 +201,18 @@ export default function DashboardSessions() {
             </p>
             {(search || filter !== "All") && (
               <button onClick={() => { setSearch(""); setFilter("All"); }}
-                style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, background: "none", border: "none", cursor: "pointer", marginBottom: 12, textDecoration: "underline" }}>
+                style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, background: "none", border: "none", cursor: "pointer", marginBottom: 12, textDecoration: "underline", transition: "color 160ms ease" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = c.gilt; }}
+              >
                 Clear filters
               </button>
             )}
             <button onClick={handleStartSession}
-              style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.gilt, background: "rgba(212,179,127,0.06)", border: `1px solid rgba(212,179,127,0.15)`, borderRadius: 8, padding: "10px 24px", cursor: "pointer" }}>
+              style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.gilt, background: "rgba(212,179,127,0.06)", border: `1px solid rgba(212,179,127,0.15)`, borderRadius: 8, padding: "10px 24px", cursor: "pointer", transition: "all 160ms cubic-bezier(0.2, 0.7, 0.2, 1)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.12)"; e.currentTarget.style.borderColor = "rgba(212,179,127,0.32)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.06)"; e.currentTarget.style.borderColor = "rgba(212,179,127,0.15)"; e.currentTarget.style.transform = "translateY(0)"; }}
+            >
               Start a {filter !== "All" ? filter : ""} Session
             </button>
           </div>

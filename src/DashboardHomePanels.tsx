@@ -249,7 +249,10 @@ export function UpcomingInterviews({ events, isMobile, onNavigate }: { events: C
     <div style={{ ...card, padding: "24px 28px", marginBottom: sp["3xl"] }} className="gradient-border-card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         {sectionTitle("Upcoming Interviews", 18)}
-        <button onClick={() => onNavigate("/calendar")} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.gilt, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}>View all</button>
+        <button onClick={() => onNavigate("/calendar")}
+          onMouseEnter={(e) => { e.currentTarget.style.textUnderlineOffset = "4px"; e.currentTarget.style.filter = "brightness(1.15)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.textUnderlineOffset = "2px"; e.currentTarget.style.filter = "brightness(1)"; }}
+          style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.gilt, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2, transition: "text-underline-offset 160ms ease, filter 160ms ease" }}>View all</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : `repeat(${Math.min(upcomingEvents.length, 3)}, 1fr)`, gap: 12 }}>
         {upcomingEvents.map(ev => {
