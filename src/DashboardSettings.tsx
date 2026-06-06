@@ -12,6 +12,8 @@ import {
   PlanSection,
   SectionHead,
   EditorialCard,
+  indigoPrimaryBtn,
+  indigoGhostBtn,
 } from "./settingsSections";
 
 /* Cream-mode local tokens — mirror canvases/design-system/_tokens.ts. */
@@ -169,6 +171,22 @@ export default function SettingsPage() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
+
+  // Number hotkeys (1/2/3) for tab nav — skip when user is typing
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const tgt = e.target as HTMLElement | null;
+      const tag = tgt?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tgt?.isContentEditable) return;
+      const idx = "123".indexOf(e.key);
+      if (idx < 0 || idx >= SECTIONS.length) return;
+      e.preventDefault();
+      switchSection(SECTIONS[idx].id);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [switchSection]);
 
 
 
@@ -414,16 +432,6 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
 
   const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.08em", textTransform: "uppercase" };
 
-  const primaryBtn: React.CSSProperties = {
-    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
-    background: c.indigo, border: `1px solid ${c.indigo}`,
-    borderRadius: 10, padding: "10px 18px", cursor: "pointer", transition: "all 0.15s",
-  };
-  const ghostBtn: React.CSSProperties = {
-    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
-    background: c.graphite, border: `1px solid ${c.borderStrong}`,
-    borderRadius: 10, padding: "10px 18px", cursor: "pointer", transition: "all 0.15s",
-  };
   const linkBtn: React.CSSProperties = {
     fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
     background: "transparent", border: "none",
@@ -463,10 +471,10 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
               ) : "—"}
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
-              <button type="button" onClick={handleCopy} style={primaryBtn}>
+              <button type="button" onClick={handleCopy} style={indigoPrimaryBtn}>
                 {copied ? "Copied!" : "Copy link"}
               </button>
-              <button type="button" onClick={handleShareWhatsApp} style={ghostBtn}>Share on WhatsApp</button>
+              <button type="button" onClick={handleShareWhatsApp} style={indigoGhostBtn}>Share on WhatsApp</button>
               <button type="button" onClick={handleShareEmail} style={linkBtn}>Email a friend</button>
             </div>
           </div>

@@ -1,7 +1,6 @@
 import type React from "react";
 import { memo, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
-import type { PersistedState } from "./dashboardTypes";
 import type { PaymentRecord } from "./supabase";
 
 /* Cream-mode local tokens — mirror tempo/designs/canvases/design-system/_tokens.ts
@@ -49,80 +48,15 @@ export const icons = {
   referral: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>,
 };
 
-/* ─── Shared Styles ─── */
-export const cardStyle: React.CSSProperties = {
-  background: c.graphite,
-  borderRadius: 16,
-  border: `1px solid ${c.border}`,
-  padding: "32px 36px",
-  marginBottom: 24,
-  boxShadow: shadow.sm,
-  position: "relative",
-  overflow: "hidden",
-};
-
-export const sectionHeader: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 14, marginBottom: 8,
-};
-
-export const sectionTitle: React.CSSProperties = {
-  fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, letterSpacing: "0.01em",
-};
-
-export const sectionDesc: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 13, color: c.stone, marginBottom: 32, lineHeight: 1.6, paddingLeft: 50,
-};
-
-export const labelStyle: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, display: "block", marginBottom: 8,
-  letterSpacing: "0.04em", textTransform: "uppercase",
-};
-
-export const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "12px 16px", borderRadius: 10,
-  background: c.graphite, border: `1px solid ${c.borderStrong}`,
-  color: c.ivory, fontFamily: font.ui, fontSize: 13, outline: "none", boxSizing: "border-box",
-  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-};
-
-export const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.borderColor = "rgba(180,83,9,0.5)";
-  e.currentTarget.style.boxShadow = "0 0 0 3px #F4E5D8";
-};
 export const focusOutBase = (e: React.FocusEvent<HTMLInputElement>) => {
   e.currentTarget.style.borderColor = c.border;
   e.currentTarget.style.boxShadow = "none";
 };
 
-const chipBtn = (active: boolean): React.CSSProperties => ({
-  padding: "14px 16px", borderRadius: 12, cursor: "pointer",
-  background: active ? "#F4E5D8" : "c.creamSoft",
-  border: `1.5px solid ${active ? "rgba(180,83,9,0.45)" : c.border}`,
-  textAlign: "left", transition: "all 0.2s ease",
-  boxShadow: active ? "0 0 0 1px #F4E5D8" : "none",
-  position: "relative",
-});
-
-const chipLabel = (active: boolean): React.CSSProperties => ({
-  fontFamily: font.ui, fontSize: 12, fontWeight: 600,
-  color: active ? c.gilt : c.chalk, display: "flex", alignItems: "center", gap: 8, marginBottom: 3,
-});
-
-const chipDesc: React.CSSProperties = { fontFamily: font.ui, fontSize: 10, color: c.stone, paddingLeft: 22 };
-
-/* ─── Small shared components ─── */
-function RadioDot({ active }: { active: boolean }) {
-  return (
-    <span style={{
-      width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
-      border: `1.5px solid ${active ? c.gilt : "#D6CDB5"}`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      transition: "border-color 0.2s ease",
-    }}>
-      {active && <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.gilt }} />}
-    </span>
-  );
-}
+export const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.currentTarget.style.borderColor = "rgba(180,83,9,0.5)";
+  e.currentTarget.style.boxShadow = `0 0 0 3px ${c.copper100}`;
+};
 
 /** Render a Unix-ms timestamp as a relative phrase ("3h ago"). */
 function formatRelative(ts: number): string {
@@ -177,21 +111,6 @@ export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) 
         boxShadow: on ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
       }} />
     </button>
-  );
-}
-
-/* ─── Decorative gradient accent (reused at top of every card) ─── */
-function CardAccent() {
-  return <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, rgba(180,83,9,0.28), transparent)` }} />;
-}
-
-/* ─── Section icon wrapper ─── */
-function IconBox({ children, color }: { children: React.ReactNode; color?: string }) {
-  const col = color || "rgba(180,83,9";
-  return (
-    <div style={{ width: 36, height: 36, borderRadius: 10, background: `${col},0.06)`, border: `1px solid ${col},0.12)`, display: "flex", alignItems: "center", justifyContent: "center", color: color ? undefined : c.gilt }}>
-      {children}
-    </div>
   );
 }
 
@@ -310,6 +229,24 @@ export const dangerSolidBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.ember, border: "none",
   borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+};
+
+export const successSubtleBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
+  background: c.sage, border: `1px solid ${c.sage}`,
+  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+};
+
+export const indigoPrimaryBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
+  background: c.indigo, border: `1px solid ${c.indigo}`,
+  borderRadius: 9, padding: "10px 16px", cursor: "pointer", minHeight: 40,
+};
+
+export const indigoGhostBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+  background: c.graphite, border: `1px solid ${c.borderStrong}`,
+  borderRadius: 9, padding: "10px 16px", cursor: "pointer", minHeight: 40,
 };
 
 export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string; title: string; desc?: string; tone?: "danger" }) {
@@ -566,106 +503,6 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
 });
 
 
-/* ═══════════════════════════════════════════════════════════════
-   INTERVIEW PREFERENCES SECTION
-   ═══════════════════════════════════════════════════════════════ */
-
-export interface InterviewSectionProps {
-  editRole: string;
-  setEditRole: (v: string) => void;
-  focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
-  // Chip values
-  difficultyVal: string;
-  learningVal: string;
-  experienceVal: string;
-  // Callbacks
-  autoSave: (updates: Partial<PersistedState>) => void;
-  authUpdateUser: (updates: Record<string, string>) => void;
-  showToast: (msg: string) => void;
-}
-
-export const InterviewSection = memo(function InterviewSection(props: InterviewSectionProps) {
-  const {
-    editRole, setEditRole, focusOut,
-    difficultyVal, learningVal, experienceVal,
-    autoSave, authUpdateUser, showToast,
-  } = props;
-
-  return (
-    <div style={cardStyle}>
-      <CardAccent />
-
-      <div style={sectionHeader}>
-        <IconBox>{icons.interview}</IconBox>
-        <h3 style={sectionTitle}>Interview Preferences</h3>
-      </div>
-      <p style={sectionDesc}>Configure your target role and interview difficulty</p>
-
-      {/* Target role + Feedback style */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }} className="settings-form-grid">
-        <div>
-          <label htmlFor="settings-role" style={labelStyle}>Target Role</label>
-          <input id="settings-role" type="text" value={editRole} onChange={(e) => setEditRole(e.target.value)} maxLength={80}
-            style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
-        </div>
-        <div>
-          <span style={labelStyle}>Feedback Style</span>
-          <div role="group" aria-label="Feedback Style" style={{ display: "flex", gap: 10 }}>
-            {([
-              { id: "direct" as const, label: "Direct" },
-              { id: "encouraging" as const, label: "Encouraging" },
-            ]).map(s => (
-              <button key={s.id} onClick={() => { authUpdateUser({ learningStyle: s.id }); showToast("Feedback style updated"); }}
-                style={{ ...chipBtn(learningVal === s.id), flex: 1, padding: "11px 14px" }}
-                onMouseEnter={(e) => { if (learningVal !== s.id) e.currentTarget.style.borderColor = "#D6CDB5"; }}
-                onMouseLeave={(e) => { if (learningVal !== s.id) e.currentTarget.style.borderColor = c.border; }}>
-                <span style={{ ...chipLabel(learningVal === s.id), marginBottom: 0 }}><RadioDot active={learningVal === s.id} />{s.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-      {/* Difficulty + Experience */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="settings-form-grid">
-        <div>
-          <span style={labelStyle}>Difficulty</span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[
-              { id: "warmup", label: "Warm-up", desc: "Confidence-building" },
-              { id: "standard", label: "Standard", desc: "Realistic pacing" },
-              { id: "intense", label: "Intense", desc: "High pressure" },
-            ].map(d => (
-              <button key={d.id} onClick={() => { autoSave({ defaultDifficulty: d.id }); showToast("Difficulty updated"); }} style={chipBtn(difficultyVal === d.id)}
-                onMouseEnter={(e) => { if (difficultyVal !== d.id) e.currentTarget.style.borderColor = "#D6CDB5"; }}
-                onMouseLeave={(e) => { if (difficultyVal !== d.id) e.currentTarget.style.borderColor = c.border; }}>
-                <span style={chipLabel(difficultyVal === d.id)}><RadioDot active={difficultyVal === d.id} />{d.label}</span>
-                <span style={chipDesc}>{d.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <span style={labelStyle}>Experience Level</span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[
-              { id: "entry", label: "Entry", desc: "0-2 years" },
-              { id: "mid", label: "Mid", desc: "3-5 years" },
-              { id: "senior", label: "Senior", desc: "6-10 years" },
-              { id: "lead", label: "Lead+", desc: "10+ years" },
-            ].map(d => (
-              <button key={d.id} onClick={() => { authUpdateUser({ experienceLevel: d.id }); showToast("Experience level updated"); }} style={chipBtn(experienceVal === d.id)}
-                onMouseEnter={(e) => { if (experienceVal !== d.id) e.currentTarget.style.borderColor = "#D6CDB5"; }}
-                onMouseLeave={(e) => { if (experienceVal !== d.id) e.currentTarget.style.borderColor = c.border; }}>
-                <span style={chipLabel(experienceVal === d.id)}><RadioDot active={experienceVal === d.id} />{d.label}</span>
-                <span style={chipDesc}>{d.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-});
 
 /* ─── Usage this month ─── */
 interface UsageRow { count: number; cap: number | null }
@@ -958,9 +795,14 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
       <SectionHead kicker="Plan & Data" title={headline} desc={headlineDesc} />
 
-      {/* Status strip for paid plans */}
+      {/* Status band for paid plans (inline, not a card) */}
       {isPaid && endDateLabel && (
-        <div style={{ ...planCardOuter, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 16, flexWrap: "wrap",
+          padding: "4px 0 18px", borderBottom: `1px solid ${c.border}`,
+          marginTop: -8,
+        }}>
           <div style={{ minWidth: 0 }}>
             <div style={subHeaderTitle}>
               {tierLabel}
@@ -980,7 +822,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
             {authUser?.cancelAtPeriodEnd ? (
               <button disabled={cancelLoading} onClick={handleReactivate}
-                style={{ ...accSubtleBtn, color: c.cream, background: c.sage, border: `1px solid ${c.sage}`, opacity: cancelLoading ? 0.6 : 1 }}>
+                style={{ ...successSubtleBtn, opacity: cancelLoading ? 0.6 : 1 }}>
                 {cancelLoading ? "Reactivating..." : "Reactivate"}
               </button>
             ) : !confirmCancel ? (
@@ -1085,7 +927,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       </div>
 
       {/* Danger zone */}
-      <div style={{ ...planCardOuter, borderColor: "rgba(185,28,28,0.22)" }}>
+      <div style={{ ...planCardOuter, borderColor: "rgba(185,28,28,0.28)" }}>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: c.ember, textTransform: "uppercase" }}>Danger zone</div>
           <div style={{ ...subHeaderTitle, color: c.ember, marginTop: 6 }}>Delete account</div>
@@ -1107,7 +949,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
               <input type="email" value={deleteEmailInput}
                 onChange={(e) => setDeleteEmailInput(e.target.value)}
-                placeholder="Type your email to confirm" aria-label="Confirm email for account deletion"
+                aria-label="Confirm email for account deletion"
                 style={{
                   fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
                   border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
