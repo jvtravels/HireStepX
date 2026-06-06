@@ -13,7 +13,7 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, redisGet, redisSetEx, hashStable, getSubscriptionTier } from "./_shared";
 
 /* TTS cost circuit breaker — Sarvam Bulbul is billed per character.
  *
@@ -30,9 +30,30 @@ import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, r
 const TTS_DAILY_CHAR_CAP = 30_000;
 const SECONDS_PER_DAY = 86_400;
 
+/* Audio cache — repeated questions ("Tell me about a time…", canned greetings,
+ * panelist intros) dominate the prompt distribution. Caching the WAV body
+ * keyed by (model, speaker, text) collapses these to a single Sarvam call.
+ * 24h TTL keeps Redis tidy; cap the cacheable payload at 1500 chars so we
+ * don't blow Upstash memory on multi-paragraph monologues. */
+const TTS_CACHE_TTL_SEC = 86_400;
+const TTS_CACHE_MAX_BYTES = 256 * 1024; // 256 KB — covers ~10s of 22 kHz WAV
+const TTS_CACHE_VERSION = "v1";
+
+/** base64-encode a Uint8Array — Edge-safe (no Buffer). */
+function bytesToB64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
 declare const process: { env: Record<string, string | undefined> };
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "";
 const SARVAM_TTS_ENDPOINT = "https://api.sarvam.ai/text-to-speech";
+
+/* Free-tier kill switch — flip SARVAM_TTS_FREE_DISABLED=1 when Sarvam spend
+ * runs hot. Free users get a 503 (clients already fail over to Cartesia →
+ * Azure → browser TTS), paid tiers keep the premium voice. */
+const SARVAM_TTS_FREE_DISABLED = process.env.SARVAM_TTS_FREE_DISABLED === "1";
 
 /* COST GUARDRAIL — pin to bulbul:v2.
  *
@@ -120,6 +141,49 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Text is empty" }), { status: 400, headers });
     }
 
+    // Free-tier kill switch — when Sarvam spend is hot, push free users to
+    // the Cartesia → Azure → browser TTS fallback chain. We resolve the tier
+    // from the profiles table; the client already handles 503 by failing
+    // over, so we don't need to surface a special error code.
+    if (SARVAM_TTS_FREE_DISABLED) {
+      const tier = await getSubscriptionTier(auth.userId!);
+      if (tier === "free") {
+        logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: "free_tier_disabled" });
+        return new Response(JSON.stringify({ error: "Sarvam TTS unavailable for free tier", code: "tts_free_disabled" }), { status: 503, headers });
+      }
+    }
+
+    const speakerForCache = pickSpeaker(gender, voiceId);
+
+    // Audio cache — repeat prompts (panelist intros, canned questions) hit
+    // here without spending a single Sarvam character. Key is content-addressed
+    // so any (model, speaker, text) triple is shareable across users. We skip
+    // the cache for very short or empty payloads and re-check the daily char
+    // counter even on hits so a user can't bypass the budget via cache abuse.
+    const cacheKey = `tts_cache:${TTS_CACHE_VERSION}:${SARVAM_TTS_MODEL}:${speakerForCache}:${await hashStable(trimmedText)}`;
+    const cached = trimmedText.length >= 8 ? await redisGet(cacheKey) : null;
+    if (cached) {
+      const used = await redisIncrByWithExpiry(`tts_chars_today:${auth.userId}:${new Date().toISOString().slice(0, 10)}`, trimmedText.length, SECONDS_PER_DAY);
+      if (used !== null && used > TTS_DAILY_CHAR_CAP) {
+        logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: `Daily char cap exceeded (${used}/${TTS_DAILY_CHAR_CAP})` });
+        return new Response(JSON.stringify({ error: "Daily voice quota exceeded. Try again tomorrow or continue in text mode.", code: "tts_daily_cap", usedChars: used, capChars: TTS_DAILY_CHAR_CAP }), { status: 429, headers });
+      }
+      const audioBytes = b64ToBytes(cached);
+      logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "success", latencyMs: 0, requestChars: trimmedText.length, responseBytes: audioBytes.byteLength });
+      const audioHeaders: Record<string, string> = {
+        "Content-Type": "audio/wav",
+        "Content-Length": String(audioBytes.byteLength),
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-TTS-Provider": "sarvam",
+        "X-TTS-Cache": "hit",
+      };
+      const origin = headers["Access-Control-Allow-Origin"];
+      if (origin) { audioHeaders["Access-Control-Allow-Origin"] = origin; audioHeaders["Vary"] = "Origin"; }
+      const body = new Blob([new Uint8Array(audioBytes)], { type: "audio/wav" });
+      return new Response(body, { status: 200, headers: audioHeaders });
+    }
+
     // Cost circuit breaker — count chars before the upstream call so we don't
     // pay for one final blowout request. INCRBY returns the post-increment
     // value; if it would exceed the cap, refund (no, we already incremented)
@@ -137,7 +201,7 @@ export default async function handler(req: Request): Promise<Response> {
       }), { status: 429, headers });
     }
 
-    const speaker = pickSpeaker(gender, voiceId);
+    const speaker = speakerForCache;
 
     // Sarvam caps each input at 500 chars — split on sentence/word
     // boundaries so we don't cut mid-word. Max 3 inputs per request.
@@ -255,12 +319,19 @@ export default async function handler(req: Request): Promise<Response> {
 
     logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "success", latencyMs: latency, requestChars: trimmedText.length, responseBytes: audioBytes.byteLength });
 
+    // Populate audio cache for next time — best-effort, swallow failures.
+    // Skip oversized payloads so Redis stays lean.
+    if (trimmedText.length >= 8 && audioBytes.byteLength <= TTS_CACHE_MAX_BYTES) {
+      void redisSetEx(cacheKey, TTS_CACHE_TTL_SEC, bytesToB64(audioBytes));
+    }
+
     const audioHeaders: Record<string, string> = {
       "Content-Type": "audio/wav",
       "Content-Length": String(audioBytes.byteLength),
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
       "X-TTS-Provider": "sarvam",
+      "X-TTS-Cache": "miss",
     };
     const origin = headers["Access-Control-Allow-Origin"];
     if (origin) {
