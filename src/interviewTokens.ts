@@ -1,58 +1,63 @@
-/* HireStepX — Interview Editorial Tokens
+/* HireStepX — Interview Editorial Tokens (derived)
    Cream + coal + indigo + copper palette. Used by Interview.tsx and
    InterviewPanels.tsx (and the negotiation/components siblings) to
    present a unified editorial voice on the interview surface.
 
    Discipline rule: Indigo is interactive · Copper is editorial · Never mix.
 
-   Kept separate from src/tokens.ts so the dark/gold tokens that power
-   the marketing pages, dashboard, and other product surfaces stay
-   untouched. Import this file ONLY from interview-related modules. */
+   These tokens now DERIVE from src/auth/_tokens.ts — the single source
+   of truth for the cream editorial system. The `e`/`ef`/`eShadow`
+   export names are kept for zero-touch consumption from existing
+   Interview modules. Any token change (WCAG fix, new shade) propagates
+   here automatically. */
+
+import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
 
 export const e = {
   /* Surface */
-  cream: "#FAF7F0",
-  white: "#FFFFFF",
-  creamSoft: "#F4EFE3",
+  cream:        T.cream,
+  white:        T.white,
+  creamSoft:    T.creamSoft,
 
   /* Ink */
-  coal: "#0E0C08",
-  indigoGray: "#3E3A6E",
-  inkSoft: "#6E6759",
-  inkFaint: "#A39C8B",
+  coal:         T.coal,
+  indigoGray:   T.indigoGray,
+  inkSoft:      T.inkSoft,
+  inkFaint:     T.inkFaintWeak,  // legacy decorative shade — body uses inkSoft
 
   /* Brand — interactive */
-  indigo: "#312E81",
-  indigoDeep: "#1E1B4B",
-  indigo100: "#E5E2F2",
-  indigoRing: "rgba(49, 46, 129, 0.20)",
+  indigo:       T.indigo,
+  indigoDeep:   T.indigoDeep,
+  indigo100:    T.indigo100,
+  indigoRing:   T.indigoRing,
 
   /* Brand — editorial */
-  copper: "#B45309",
-  copperSoft: "rgba(180, 83, 9, 0.12)",
-  copper100: "#F4E5D8",
+  copper:       T.copper,
+  copperDark:   T.copperDark,
+  copperSoft:   T.copperSoft,
+  copper100:    T.copper100,
 
   /* Status */
-  success: "#15803D",
-  success100: "#DCFCE7",
-  error: "#B91C1C",
-  error100: "#FEE2E2",
-  warning: "#A16207",
-  warning100: "#FEF3C7",
+  success:      T.success,
+  success100:   T.success100,
+  error:        T.error,
+  error100:     T.error100,
+  warning:      T.warning,
+  warning100:   T.warning100,
 
   /* Lines */
-  line: "#EBE5D2",
-  lineStrong: "#D6CDB5",
+  line:         T.line,
+  lineStrong:   T.lineStrong,
 } as const;
 
 export const ef = {
-  serif: "'Instrument Serif', Georgia, serif",
-  sans: "'Satoshi', -apple-system, system-ui, sans-serif",
-  mono: "'JetBrains Mono', monospace",
+  serif: F.serif,
+  sans:  F.sans,
+  mono:  F.mono,
 } as const;
 
 export const eShadow = {
-  card: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-  cta: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
-  modal: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)",
+  card:  S.card,
+  cta:   S.cta,
+  modal: S.modal,
 } as const;

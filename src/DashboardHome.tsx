@@ -15,37 +15,43 @@ import { useAuth } from "./AuthContext";
 import { useDashboardSessions } from "./DashboardContext";
 import { useDocTitle } from "./useDocTitle";
 import type { DashboardSession } from "./dashboardTypes";
+import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
 
-/* ─── tokens (sRGB hex; SVG-compatible. Tinted-white avoids pure #fff) ─── */
+/* ─── Tokens (derived from auth/_tokens — single source of truth).
+ * Keeps the existing `t.`/`f.`/`shadows.` references untouched but
+ * binds them to the canonical cream palette. inkMid was a one-off
+ * darker shade used for AA body copy — promoted to the canonical
+ * `inkFaint` (which was WCAG-fixed to #7A7263 in task #8). The
+ * legacy decorative `inkFaint` here is now `inkFaintWeak`. */
 const t = {
-  cream:      "#FAF7F0",
-  white:      "#FCFAF4", // tinted toward cream; not pure #fff
-  creamSoft:  "#F4EFE3",
-  coal:       "#0E0C08",
-  inkSoft:    "#6E6759",
-  inkMid:     "#80796A", // darkened from prior inkFaint to pass AA on cream
-  inkFaint:   "#A39C8B", // decorative only (icon strokes), never body
-  indigo:     "#312E81",
-  indigo100:  "#E5E2F2",
-  copper:     "#B45309",
-  copperSoft: "rgba(180, 83, 9, 0.12)",
-  success:    "#15803D",
-  success100: "#DCFCE7",
-  warning100: "#FEF3C7",
-  warningInk: "#7C4A03",
-  line:       "#EBE5D2",
-  lineStrong: "#D6CDB5",
+  cream:        T.cream,
+  white:        "#FCFAF4", // tinted toward cream; kept local — distinct from T.white
+  creamSoft:    T.creamSoft,
+  coal:         T.coal,
+  inkSoft:      T.inkSoft,
+  inkMid:       T.inkFaint,      // WCAG-fixed AA-passing shade
+  inkFaint:     T.inkFaintWeak,  // decorative only (icon strokes)
+  indigo:       T.indigo,
+  indigo100:    T.indigo100,
+  copper:       T.copper,
+  copperSoft:   T.copperSoft,
+  success:      T.success,
+  success100:  T.success100,
+  warning100:  T.warning100,
+  warningInk:  "#7C4A03",         // dashboard-local — not in canonical palette
+  line:         T.line,
+  lineStrong:   T.lineStrong,
 } as const;
 
 const f = {
-  serif: "'Instrument Serif', Georgia, serif",
-  sans:  "'Satoshi', -apple-system, system-ui, sans-serif",
-  mono:  "'JetBrains Mono', monospace",
+  serif: F.serif,
+  sans:  F.sans,
+  mono:  F.mono,
 } as const;
 
 const shadows = {
-  card: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-  cta:  "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+  card: S.card,
+  cta:  S.cta,
 } as const;
 
 /* ─── icons ─── */
@@ -225,22 +231,18 @@ export default function DashboardHome() {
   const realSessions = core.recentSessions.slice(0, 4);
   const readiness = core.readinessScore || 68;
 
-  const isDev = process.env.NODE_ENV !== "production";
-  const explicitDemo = typeof process !== "undefined" &&
+  /* Demo gating. Only when NEXT_PUBLIC_DASHBOARD_DEMO=1 do unbacked
+     sections render with sample numbers. Otherwise they render as
+     honest "Coming soon" stubs so real users never see fake metrics.
+     The banner appears only in demo mode so the operator knows the
+     mode is active. */
+  const demoMode = typeof process !== "undefined" &&
     process.env.NEXT_PUBLIC_DASHBOARD_DEMO === "1";
-  /* The banner is suppressed only when an operator has explicitly
-     turned demo mode on. Otherwise users see the honest disclosure. */
-  const showDemoBanner = !explicitDemo;
 
   const goToInterview = () => router.push("/interview/setup");
   const goToSessions  = () => router.push("/sessions");
   const goToAnalytics = () => router.push("/analytics");
   const goToResume    = () => router.push("/resume");
-
-  if (isDev && !explicitDemo) {
-    /* Dev-only nudge so engineers see the demo content cost at a glance. */
-    console.warn("[DashboardHome] Demo sections active. Wire PRI-33/34 + 3 endpoints to remove.");
-  }
 
   return (
     <div className="hsx-dh-root" style={{
@@ -257,8 +259,8 @@ export default function DashboardHome() {
         {/* ─── Main stage ─── */}
         <main style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
 
-          {/* Demo banner (suppressed when NEXT_PUBLIC_DASHBOARD_DEMO=1) */}
-          {showDemoBanner && (
+          {/* Demo banner only when demo mode is on. Real users never see fake numbers. */}
+          {demoMode && (
             <div role="status" aria-live="polite" style={{
               display: "flex", alignItems: "flex-start", gap: 12,
               padding: "12px 16px",
@@ -268,9 +270,9 @@ export default function DashboardHome() {
             }}>
               <span style={{ marginTop: 2, flexShrink: 0 }}>{Icons.info}</span>
               <span>
-                Preview surface. Sections marked <strong>Demo</strong> below are
-                sample numbers, not your account. Your real streak and recent
-                sessions are wired live.
+                Demo mode. Sections marked <strong>Demo</strong> render sample
+                numbers so reviewers can see the full surface. Disable by
+                unsetting <code>NEXT_PUBLIC_DASHBOARD_DEMO</code>.
               </span>
             </div>
           )}
@@ -305,7 +307,7 @@ export default function DashboardHome() {
                   day streak
                 </span>
               </div>
-              <DailyGoalRibbonInline />
+              {demoMode ? <DailyGoalRibbonInline /> : <DailyGoalStub />}
             </div>
           </section>
 
@@ -339,20 +341,24 @@ export default function DashboardHome() {
             </div>
           </Card>
 
-          {/* Distilled stat strip, not a hero-metric grid. Inline numbers, no sparklines, no percentile pills. */}
+          {/* Distilled stat strip. Demo mode shows sample numbers; otherwise empty stub. */}
           <section aria-labelledby="dh-stats">
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
               <Eyebrow as="h2" tone="ink"><span id="dh-stats">Progress</span></Eyebrow>
-              <SampleDataPill />
+              {demoMode && <SampleDataPill />}
             </div>
-            <dl className="hsx-dh-stats" style={{
-              display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, margin: 0,
-              borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`,
-            }}>
-              <StatCell label="Practice this week" value={`${MOCK_KPI.practiceHours.value}`} unit="h" />
-              <StatCell label="Average score"      value={`${MOCK_KPI.averageScore.value}`}   unit="/100" />
-              <StatCell label="Total sessions"     value={`${MOCK_KPI.sessionsComplete.value}`} unit="" />
-            </dl>
+            {demoMode ? (
+              <dl className="hsx-dh-stats" style={{
+                display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, margin: 0,
+                borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`,
+              }}>
+                <StatCell label="Practice this week" value={`${MOCK_KPI.practiceHours.value}`} unit="h" />
+                <StatCell label="Average score"      value={`${MOCK_KPI.averageScore.value}`}   unit="/100" />
+                <StatCell label="Total sessions"     value={`${MOCK_KPI.sessionsComplete.value}`} unit="" />
+              </dl>
+            ) : (
+              <ComingSoonStub label="Progress metrics" detail="Practice hours, average score, and session totals roll in once the analytics pipeline ships." />
+            )}
           </section>
 
           {/* Recent sessions, real data when present, mock fallback with pill when empty */}
@@ -367,7 +373,7 @@ export default function DashboardHome() {
                 </p>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {realSessions.length === 0 && <SampleDataPill />}
+                {realSessions.length === 0 && demoMode && <SampleDataPill />}
                 <button onClick={goToSessions} className="hsx-dh-btn" style={{
                   fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo,
                   background: "transparent", border: "none", cursor: "pointer",
@@ -375,72 +381,92 @@ export default function DashboardHome() {
                 }}>View all <span aria-hidden>→</span></button>
               </div>
             </div>
-            <RecentSessionsList real={realSessions} fallback={MOCK_FALLBACK_SESSIONS} />
+            <RecentSessionsList real={realSessions} fallback={MOCK_FALLBACK_SESSIONS} demoMode={demoMode} onStart={goToInterview} />
           </section>
 
-          {/* Milestones, redesigned as earned list + 1 next-up teaser */}
-          <section aria-labelledby="dh-miles">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-              <div>
-                <h2 id="dh-miles" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
-                  Milestones
-                </h2>
-                <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "4px 0 0" }}>
-                  {MOCK_MILESTONES.earned.length} earned. Next up below.
-                </p>
+          {/* Milestones. Demo mode shows the timeline; real mode shows a stub until backend lands. */}
+          {demoMode && (
+            <section aria-labelledby="dh-miles">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
+                <div>
+                  <h2 id="dh-miles" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+                    Milestones
+                  </h2>
+                  <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "4px 0 0" }}>
+                    {MOCK_MILESTONES.earned.length} earned. Next up below.
+                  </p>
+                </div>
+                <SampleDataPill />
               </div>
-              <SampleDataPill />
-            </div>
-            <MilestoneTimeline />
-          </section>
+              <MilestoneTimeline />
+            </section>
+          )}
         </main>
 
         {/* ─── Rail (one card only, supporting strips below) ─── */}
         <aside className="hsx-dh-rail" style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
 
-          {/* AI coach insight, the only true card in the rail */}
-          <Card>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* AI coach insight — demo-only until the insights queue ships */}
+          {demoMode ? (
+            <Card>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: t.indigo }}>{Icons.sparkle}</span>
+                  <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
+                    AI coach insight
+                  </h2>
+                </div>
+                <SampleDataPill />
+              </div>
+              <p style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", lineHeight: 1.2, margin: "0 0 8px" }}>
+                {MOCK_INSIGHT.headline}
+              </p>
+              <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
+                {MOCK_INSIGHT.body}
+              </p>
+              <div style={{
+                fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.4,
+                padding: "8px 10px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 6,
+                marginBottom: 14,
+              }}>
+                BASED ON: {MOCK_INSIGHT.evidence}
+              </div>
+              <PrimaryCta size="sm" fullWidth onClick={goToInterview}>Start sharpening drill</PrimaryCta>
+            </Card>
+          ) : (
+            <Card>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <span style={{ color: t.indigo }}>{Icons.sparkle}</span>
                 <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
                   AI coach insight
                 </h2>
               </div>
-              <SampleDataPill />
-            </div>
-            <p style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", lineHeight: 1.2, margin: "0 0 8px" }}>
-              {MOCK_INSIGHT.headline}
-            </p>
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
-              {MOCK_INSIGHT.body}
-            </p>
-            <div style={{
-              fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.4,
-              padding: "8px 10px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 6,
-              marginBottom: 14,
-            }}>
-              BASED ON: {MOCK_INSIGHT.evidence}
-            </div>
-            <PrimaryCta size="sm" fullWidth onClick={goToInterview}>Start sharpening drill</PrimaryCta>
-          </Card>
+              <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 14px" }}>
+                After two more sessions, your coach surfaces a specific pattern from
+                your STAR breakdowns. Keep going.
+              </p>
+              <PrimaryCta size="sm" fullWidth onClick={goToInterview}>Start a session</PrimaryCta>
+            </Card>
+          )}
 
-          {/* Peer cohort, inline strip not a card */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <Eyebrow as="h2" tone="indigo">Ahead of</Eyebrow>
-              <SampleDataPill />
+          {/* Peer cohort — demo-only until backend ships */}
+          {demoMode && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <Eyebrow as="h2" tone="indigo">Ahead of</Eyebrow>
+                <SampleDataPill />
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span style={{ fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>72</span>
+                <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5 }}>percent of cohort</span>
+              </div>
+              <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.5 }}>
+                Top 28 percent of senior PM candidates. Two strong sessions clears top 20.
+              </p>
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <span style={{ fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>72</span>
-              <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5 }}>percent of cohort</span>
-            </div>
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.5 }}>
-              Top 28 percent of senior PM candidates. Two strong sessions clears top 20.
-            </p>
-          </div>
+          )}
 
-          {/* Resume, inline single line */}
+          {/* Resume, inline single line. Copy generic (no fake "4 days ago"). */}
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
             padding: "14px 16px",
@@ -449,7 +475,7 @@ export default function DashboardHome() {
             <div style={{ minWidth: 0 }}>
               <Eyebrow as="h2" tone="ink">Resume</Eyebrow>
               <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: "4px 0 0", lineHeight: 1.4 }}>
-                Fresh. Updated 4 days ago.
+                Refresh before each interview window.
               </p>
             </div>
             <OutlineCta size="sm" onClick={goToResume}>Open</OutlineCta>

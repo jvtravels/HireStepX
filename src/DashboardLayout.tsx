@@ -7,48 +7,37 @@ const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ 
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { daysUntilEvent } from "./dashboardHelpers";
 import dynamic from "next/dynamic";
+import { tokens as T, fonts as F } from "./auth/_tokens";
 
 
-/* ─── Cream-mode design tokens ─────────────────────────────────────────
- * Mirrors tempo/designs/canvases/design-system/_tokens.ts. The dark
- * `c`/`font` tokens used to come from src/tokens.ts; we now map them to
- * the cream editorial palette so this layout matches the redesigned
- * Resume tab. Per-tab content (DashboardHome / Sessions / etc.) still
- * uses the dark `c`/`font` from tokens.ts and will be re-skinned in
- * follow-up commits — expect a brief visual mismatch on those tabs
- * until each one is migrated.
- *
- * Naming: kept as `c` and `font` so the rest of the file's JSX needs
- * no per-property edits — only the values change. `c.obsidian` now
- * resolves to cream, `c.gilt` to copper, etc.
- */
+/* ─── Cream-mode design tokens (derived) ───────────────────────────────
+ * Source of truth lives in src/auth/_tokens.ts. We expose the cream
+ * editorial palette under the legacy `c`/`font` aliases so the rest of
+ * the file's JSX needs no per-property edits — only the binding changes.
+ * If a token like `inkFaint` ever shifts for WCAG, every alias on this
+ * page picks it up automatically (no more drift between local copies). */
 const c = {
-  // Surfaces
-  obsidian: "#FAF7F0",       // page bg → cream
-  graphite: "#FFFFFF",       // raised cards → white
-  border: "#EBE5D2",         // hairlines
-  // Editorial / brand
-  gilt: "#B45309",           // copper
-  giltDark: "#923F07",
-  // Text
-  ivory: "#0E0C08",          // primary ink
-  chalk: "#0E0C08",
-  stone: "#6E6759",          // secondary ink
-  // Status
-  sage: "#15803D",
-  ember: "#B91C1C",
-  slate: "#6E6759",
-  // Interactive (added — not in dark palette but needed for cream)
-  indigo: "#312E81",
-  indigo100: "#E5E2F2",
-  cream: "#FAF7F0",
-  creamSoft: "#F4EFE3",
-};
+  obsidian: T.cream,         // page bg → cream
+  graphite: T.white,         // raised cards
+  border: T.line,            // hairlines
+  gilt: T.copper,
+  giltDark: T.copperDark,
+  ivory: T.coal,             // primary ink
+  chalk: T.coal,
+  stone: T.inkSoft,          // secondary ink
+  sage: T.success,
+  ember: T.error,
+  slate: T.inkSoft,
+  indigo: T.indigo,
+  indigo100: T.indigo100,
+  cream: T.cream,
+  creamSoft: T.creamSoft,
+} as const;
 const font = {
-  display: "'Instrument Serif', Georgia, serif",
-  ui: "'Satoshi', -apple-system, system-ui, sans-serif",
-  mono: "'JetBrains Mono', monospace",
-};
+  display: F.serif,
+  ui: F.sans,
+  mono: F.mono,
+} as const;
 
 /* ─── Prefetch route chunks on nav hover ─── */
 const prefetchMap: Record<string, () => void> = {

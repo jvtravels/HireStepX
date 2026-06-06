@@ -27,6 +27,7 @@ export const tokens = {
 
   // Brand — editorial
   copper: "#B45309",
+  copperDark: "#923F07",
   copperSoft: "rgba(180, 83, 9, 0.12)",
   copper100: "#F4E5D8",
 

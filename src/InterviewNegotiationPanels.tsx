@@ -168,7 +168,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
         style={{
           fontFamily: ef.sans, fontSize: 13, fontWeight: 600,
           padding: "10px 20px", borderRadius: 10, marginTop: 4,
-          background: `linear-gradient(135deg, ${e.copper}, ${"#92400E"})`,
+          background: `linear-gradient(135deg, ${e.copper}, ${e.copperDark})`,
           border: "none", color: e.cream, cursor: "pointer",
           transition: "all 0.2s ease",
         }}

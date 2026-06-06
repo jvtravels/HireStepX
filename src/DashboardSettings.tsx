@@ -13,27 +13,29 @@ import {
   ReferralSection,
 } from "./settingsSections";
 
-/* Cream-mode local tokens — mirror canvases/design-system/_tokens.ts. */
+/* Cream-mode tokens — derive from the single source of truth so a WCAG
+ * fix in auth/_tokens.ts can never silently undo itself here. */
+import { tokens as T, fonts as F } from "./auth/_tokens";
 const c = {
-  obsidian: "#FAF7F0",
-  graphite: "#FDFCF7",
-  border: "#EBE5D2",
-  borderStrong: "#D6CDB5",
-  gilt: "#B45309",
-  ivory: "#0E0C08",
-  chalk: "#0E0C08",
-  stone: "#6E6759",
-  sage: "#15803D",
-  ember: "#B91C1C",
-  indigo: "#312E81",
-  cream: "#FAF7F0",
-  creamSoft: "#F4EFE3",
-};
+  obsidian: T.cream,
+  graphite: "#FDFCF7",         // settings uses a slightly warmer raised surface than dashboard
+  border: T.line,
+  borderStrong: T.lineStrong,
+  gilt: T.copper,
+  ivory: T.coal,
+  chalk: T.coal,
+  stone: T.inkSoft,
+  sage: T.success,
+  ember: T.error,
+  indigo: T.indigo,
+  cream: T.cream,
+  creamSoft: T.creamSoft,
+} as const;
 const font = {
-  display: "'Instrument Serif', Georgia, serif",
-  ui: "'Satoshi', -apple-system, system-ui, sans-serif",
-  mono: "'JetBrains Mono', monospace",
-};
+  display: F.serif,
+  ui: F.sans,
+  mono: F.mono,
+} as const;
 
 const ALL_SECTIONS = [
   { id: "account", label: "Account", icon: icons.account },
