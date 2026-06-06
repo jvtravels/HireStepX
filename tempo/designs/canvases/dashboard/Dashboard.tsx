@@ -7,15 +7,17 @@
    Props-driven: `variant` flips between Returning / Empty / PowerUser
    so a single component renders three storyboards. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "../design-system/_tokens";
-import { DASHBOARD_STYLES } from "./_styles";
+import { tokens as t, fonts as f } from "../design-system/_tokens";
+import { getDashboardStyles } from "./_styles";
+
+const DASHBOARD_STYLES = getDashboardStyles(t);
 import {
   Wordmark, NavRow, Icons, Eyebrow, Pill, Card, Ring,
-  KpiTile, InsightStrip, SessionRowEl, PrimaryCta, OutlineCta,
-  DailyGoalRibbon, CountdownPill, ContributionGraph, SkillRadar,
-  AchievementBadge, Skeleton, InsightFeed, CommandPalette,
-  NotificationPanel, QuickAction,
-  type NavItem, type SessionRow, type ContribDay, type RadarPoint,
+  KpiTile, SessionRowEl, PrimaryCta, OutlineCta,
+  CountdownPill, SkillRadar,
+  Skeleton, InsightFeed, CommandPalette,
+  NotificationPanel,
+  type NavItem, type SessionRow, type ContribDay,
   type AchievementSpec, type CoachInsight,
   type PaletteSection, type NotificationItem,
 } from "./_atoms";
@@ -50,11 +52,7 @@ export default function Dashboard({
     return <OverlayedDashboard variant={variant} userName={userName} greetingHour={greetingHour} />;
   }
 
-  // Defensive: buildVariantData should always return a populated shape for
-  // non-overlay variants, but in case of a stale Vite HMR module we merge
-  // against the returning-user defaults so a missing field never crashes
-  // the render. Cheap insurance against canvas-time hot-reload glitches.
-  const data = withDefaults(buildVariantData(variant, userName));
+  const data = buildVariantData(variant, userName);
   const greet =
     greetingHour < 12 ? "Good morning" :
     greetingHour < 17 ? "Good afternoon" :
@@ -76,12 +74,12 @@ export default function Dashboard({
   ];
 
   return (
-    <div style={{ background: t.cream, minHeight: 900, fontFamily: f.sans, color: t.coal }}>
+    <div style={{ background: t.cream, minHeight: 1060, fontFamily: f.sans, color: t.coal, width: "100%", overflowX: "hidden" }}>
       <style>{DASHBOARD_STYLES}</style>
 
       <div className="hsx-db-grid" style={{
-        display: "grid", gridTemplateColumns: "260px 1fr 360px",
-        minHeight: 900,
+        display: "grid", gridTemplateColumns: "260px minmax(0, 1fr) 360px",
+        minHeight: 1060, maxWidth: "100%",
       }}>
         {/* ───── SIDEBAR ───── */}
         <aside className="hsx-db-sidebar" style={{
@@ -98,7 +96,7 @@ export default function Dashboard({
           {variant !== "power-user" && (
             <div style={{
               marginTop: "auto",
-              background: `linear-gradient(180deg, ${t.creamSoft} 0%, #FAF7F0 100%)`,
+              background: t.creamSoft,
               border: `1px solid ${t.line}`, borderRadius: 14,
               padding: 18,
             }}>
@@ -108,7 +106,7 @@ export default function Dashboard({
                 color: t.coal, lineHeight: 1.15, margin: "12px 0 4px",
                 letterSpacing: -0.4,
               }}>
-                Unlock your <em style={{ color: t.copper, fontStyle: "italic" }}>full potential</em>
+                Unlock your full potential
               </h3>
               <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
                 Unlimited practice, multi-round journeys, and the deep AI coach.
@@ -127,17 +125,32 @@ export default function Dashboard({
         </aside>
 
         {/* ───── MAIN ───── */}
-        <main className="hsx-db-main" style={{ padding: "28px 32px 48px", overflow: "hidden" }}>
+        <main className="hsx-db-main" style={{ padding: "28px 32px 48px", overflow: "hidden", minWidth: 0 }}>
           <header className="hsx-db-topbar" style={{
             display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-            gap: 24, marginBottom: 28,
+            gap: 24, marginBottom: 28, minWidth: 0,
           }}>
             <div className="hsx-db-hero" style={{ flex: 1, minWidth: 0 }}>
+              <button
+                type="button"
+                aria-label="Open navigation menu"
+                className="hsx-db-menu-trigger hsx-db-icon-btn"
+                style={{
+                  display: "none", marginBottom: 12,
+                  width: 44, height: 44, borderRadius: 10,
+                  background: t.white, border: `1px solid ${t.line}`, color: t.coal, cursor: "pointer",
+                  alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              </button>
               <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{dateStr}</div>
               <h1 className="hsx-db-hero-h1" style={{
-                fontFamily: f.serif, fontSize: 56, fontWeight: 400,
-                color: t.coal, letterSpacing: "-0.02em", lineHeight: 1.05,
-                margin: "6px 0 8px",
+                fontFamily: f.serif, fontSize: 44, fontWeight: 400,
+                color: t.coal, letterSpacing: "-0.02em", lineHeight: 1.1,
+                margin: "6px 0 8px", maxWidth: "100%", overflowWrap: "break-word",
               }}>
                 {greet}, {userName}.{" "}
                 <em style={{ fontStyle: "italic", color: t.copper }}>{data.heroAccent}</em>
@@ -147,81 +160,77 @@ export default function Dashboard({
               </p>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
               {data.countdown && (
                 <CountdownPill days={data.countdown.days} role={data.countdown.role} company={data.countdown.company} />
               )}
-              {data.streak > 0 && (
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  background: t.white, border: `1px solid ${t.line}`, borderRadius: 14,
-                  padding: "10px 14px", boxShadow: shadows.card,
-                }}>
-                  <span className="hsx-db-flame" style={{ color: t.copper, fontSize: 22, lineHeight: 1 }}>{Icons.flame}</span>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, lineHeight: 1 }}>{data.streak}</span>
-                    <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, marginTop: 2 }}>day streak</span>
-                  </div>
-                </div>
-              )}
-              <button aria-label="Notifications" style={{
-                width: 42, height: 42, borderRadius: 12, border: `1px solid ${t.line}`, background: t.white,
-                color: t.inkSoft, cursor: "pointer", position: "relative",
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-              }}>
+              <button
+                aria-label={data.unreadCount > 0 ? `Notifications, ${data.unreadCount} unread` : "Notifications"}
+                className="hsx-db-icon-btn"
+                style={{
+                  width: 44, height: 44, borderRadius: 12, border: `1px solid ${t.line}`, background: t.white,
+                  color: t.inkSoft, cursor: "pointer", position: "relative",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
                 {Icons.bell}
                 {data.unreadCount > 0 && (
-                  <span style={{
-                    position: "absolute", top: 8, right: 9,
+                  <span aria-hidden style={{
+                    position: "absolute", top: 9, right: 10,
                     width: 8, height: 8, borderRadius: 999, background: t.copper,
                   }} />
                 )}
               </button>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "6px 14px 6px 6px", borderRadius: 999,
-                background: t.white, border: `1px solid ${t.line}`,
-              }}>
+              <button
+                type="button"
+                aria-label={`Account menu for ${userName}`}
+                className="hsx-db-cta-outline"
+                style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "6px 14px 6px 6px", borderRadius: 999, minHeight: 44,
+                  background: t.white, border: `1px solid ${t.line}`, cursor: "pointer",
+                }}
+              >
                 <span aria-hidden style={{
                   width: 32, height: 32, borderRadius: 999, background: t.indigo100, color: t.indigo,
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   fontFamily: f.serif, fontSize: 14, fontWeight: 400,
                 }}>{userName.split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase()).join("")}</span>
                 <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>{userName}</span>
-              </div>
+              </button>
             </div>
           </header>
 
           <div className="hsx-db-stage" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* Today's goal ribbon — Duolingo-style explicit daily commitment.
-                 Suppressed on empty state (no day-1 goal). */}
-            {variant !== "empty" && data.dailyGoal && (
-              <DailyGoalRibbon
-                sessionGoal={data.dailyGoal.sessionGoal}
-                sessionsDone={data.dailyGoal.sessionsDone}
-                minutesGoal={data.dailyGoal.minutesGoal}
-                minutesDone={data.dailyGoal.minutesDone}
-                weakSpotsReviewed={data.dailyGoal.weakSpotsReviewed}
-                weakSpotsTarget={data.dailyGoal.weakSpotsTarget}
+            {/* Readiness band — the one answer the user came here for:
+                 against your target role at your target companies, are
+                 you hire-ready? Replaces the SaaS-status-dashboard top. */}
+            {variant !== "empty" && data.readiness && (
+              <ReadinessBand
+                role={data.readiness.role}
+                clearedCount={data.readiness.clearedCount}
+                companies={data.readiness.companies}
+                gapNote={data.readiness.gapNote}
+                streak={data.streak}
               />
             )}
 
             {variant === "empty" ? (
               <Card pad={32} background={t.white} interactive={false}
-                style={{ background: `linear-gradient(135deg, #FAF7F0 0%, ${t.copper100} 100%)` }}>
+                style={{ background: `linear-gradient(135deg, ${t.cream} 0%, ${t.copper100} 100%)` }}>
                 <Eyebrow>Welcome aboard</Eyebrow>
                 <h2 style={{
-                  fontFamily: f.serif, fontSize: 40, fontWeight: 400, color: t.coal,
+                  fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal,
                   letterSpacing: "-0.02em", lineHeight: 1.1, margin: "10px 0 8px",
                 }}>
                   Let's get you <em style={{ color: t.copper, fontStyle: "italic" }}>ready</em>.
                 </h2>
                 <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
-                  Practice your first interview in 15 minutes. We'll tailor questions to your
-                  target role and company, and coach you through the answer in real time.
+                  Tell us the role and company you're targeting. We'll rank every drill, mock, and
+                  insight by how much it moves you toward that specific hire bar.
                 </p>
                 <div style={{ display: "flex", gap: 12, marginTop: 22 }}>
-                  <PrimaryCta>Start your first practice</PrimaryCta>
+                  <PrimaryCta>Set your target role</PrimaryCta>
                   <OutlineCta>Upload resume first</OutlineCta>
                 </div>
               </Card>
@@ -234,7 +243,7 @@ export default function Dashboard({
                       fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal,
                       letterSpacing: "-0.02em", lineHeight: 1.1, margin: "8px 0 6px",
                     }}>
-                      Your Google FAANG <em style={{ color: t.copper, fontStyle: "italic" }}>loop</em>
+                      Your Google FAANG loop
                     </h2>
                     <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.5 }}>
                       You've cleared the recruiter screen and phone-screen coding.
@@ -269,7 +278,7 @@ export default function Dashboard({
               </Card>
             ) : (
               <Card pad={28} background={t.white} interactive
-                style={{ background: `linear-gradient(135deg, ${t.copper100} 0%, #FAF7F0 70%)` }}>
+                style={{ background: t.white }}>
                 <div style={{ display: "flex", gap: 28, alignItems: "stretch" }}>
                   <div style={{ flex: 1 }}>
                     <Eyebrow>Your next step</Eyebrow>
@@ -277,7 +286,7 @@ export default function Dashboard({
                       fontFamily: f.serif, fontSize: 36, fontWeight: 400, color: t.coal,
                       letterSpacing: "-0.02em", lineHeight: 1.1, margin: "8px 0 18px",
                     }}>
-                      Product Manager <em style={{ color: t.copper, fontStyle: "italic" }}>mock</em>
+                      Product Manager mock
                     </h2>
                     <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 22, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{Icons.cal} Today, 5:00 PM</span>
@@ -297,8 +306,8 @@ export default function Dashboard({
             )}
 
             {variant !== "empty" && (
-              <Card>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
+              <section>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "4px 4px 14px" }}>
                   <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
                     Your improvement snapshot
                   </h3>
@@ -306,48 +315,41 @@ export default function Dashboard({
                     fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, textDecoration: "none",
                   }}>View full report →</a>
                 </div>
-                <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 18px" }}>
-                  Track what matters. Focus on what improves.
-                </p>
-                <div className="hsx-db-kpi-row" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+                <div className="hsx-db-kpi-row" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14 }}>
                   <KpiTile
                     label="Overall score"
                     value={String(data.kpis.overall)} suffix="/100"
                     sub={`${data.kpis.overallDelta >= 0 ? "↑" : "↓"} ${Math.abs(data.kpis.overallDelta)} pts vs last 7d`}
                     accent="indigo" icon={<>{Icons.target}</>}
                     spark={data.spark.overall}
-                    percentile={data.kpis.overallPercentile}
+                    emphasis
                   />
-                  <KpiTile
-                    label="Clarity"
-                    value={`${data.kpis.clarity >= 0 ? "+" : ""}${data.kpis.clarity}%`}
-                    sub={data.kpis.clarity > 8 ? "Great improvement" : data.kpis.clarity > 0 ? "Steady gains" : "Needs attention"}
-                    accent="success" icon={<>{Icons.trend}</>}
-                    spark={data.spark.clarity}
-                    percentile={data.kpis.clarityPercentile}
-                  />
-                  <KpiTile
-                    label="Speaking time"
-                    value={`${data.kpis.speaking}%`}
-                    sub={data.kpis.speaking >= 55 && data.kpis.speaking <= 70 ? "Good balance" : data.kpis.speaking < 55 ? "Speak more" : "Listen more"}
-                    accent="copper" icon={<>{Icons.clock}</>}
-                    spark={data.spark.speaking}
-                    percentile={data.kpis.speakingPercentile}
-                  />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <KpiTile
+                      label="Clarity"
+                      value={`${data.kpis.clarity >= 0 ? "+" : ""}${data.kpis.clarity}%`}
+                      sub={data.kpis.clarity > 8 ? "Great improvement" : data.kpis.clarity > 0 ? "Steady gains" : "Needs attention"}
+                      accent="success" icon={<>{Icons.trend}</>}
+                      spark={data.spark.clarity}
+                    />
+                    <KpiTile
+                      label="Speaking time"
+                      value={`${data.kpis.speaking}%`}
+                      sub={data.kpis.speaking >= 55 && data.kpis.speaking <= 70 ? "Good balance" : data.kpis.speaking < 55 ? "Speak more" : "Listen more"}
+                      accent="copper" icon={<>{Icons.clock}</>}
+                      spark={data.spark.speaking}
+                    />
+                  </div>
                 </div>
-                <InsightStrip>
-                  <strong style={{ fontWeight: 600 }}>{data.insightHeading}</strong>{" "}
-                  {data.insightBody}
-                </InsightStrip>
-              </Card>
+              </section>
             )}
 
             {variant !== "empty" && (
               <Card>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-                  <h3 style={{ fontFamily: f.serif, fontSize: 20, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
-                    Behavioral coverage{" "}
-                    <em style={{ fontStyle: "italic", color: t.copper, fontSize: 16 }}>{data.coverage}/10</em>
+                  <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+                    Readiness against the hire bar{" "}
+                    <span style={{ color: t.copper, fontSize: 16, fontWeight: 500 }}>{data.coverage}/10 dimensions</span>
                   </h3>
                   <a href="#practice" className="hsx-db-link" style={{
                     fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, textDecoration: "none",
@@ -357,7 +359,7 @@ export default function Dashboard({
                   <SkillRadar points={data.coverageCells.map(c => ({ label: c.label, score: c.score, touched: c.touched }))} size={300} />
                   <div>
                     <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 14px" }}>
-                      Each axis is one of the ten dimensions hiring panels actually score against. Filled area is your last 5-session average; the dotted outer ring is the hire bar at your target tier.
+                      Filled area is your last 5-session average across the dimensions your target panel scores. The dotted ring is the hire bar at that level — gaps below it are where your next session should go.
                     </p>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {data.coverageCells.filter(c => !c.touched).slice(0, 4).map(c => (
@@ -393,7 +395,7 @@ export default function Dashboard({
                     Focus area for maximum impact
                   </h3>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr 280px", gap: 24, alignItems: "center" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 28, alignItems: "center" }}>
                   <div style={{ position: "relative", width: 96, height: 96 }}>
                     <Ring value={data.focusPct} size={96} stroke={9} color={t.copper} />
                     <div style={{
@@ -409,7 +411,7 @@ export default function Dashboard({
                       <span style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em" }}>{data.focusTitle}</span>
                       <Pill tone="copper">High impact</Pill>
                     </div>
-                    <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 14px", lineHeight: 1.55 }}>
+                    <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 14px", lineHeight: 1.55, maxWidth: 560 }}>
                       {data.focusBody}
                     </p>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -422,34 +424,20 @@ export default function Dashboard({
                       ))}
                     </div>
                   </div>
-                  <div style={{
-                    background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12, padding: 18,
-                  }}>
-                    <h4 style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 400, color: t.coal, margin: "0 0 6px", letterSpacing: "-0.01em" }}>
-                      Ready to <em style={{ color: t.copper, fontStyle: "italic" }}>tighten</em> it?
-                    </h4>
-                    <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "0 0 14px", lineHeight: 1.5 }}>
-                      A 15-min focused session targeting just this gap.
-                    </p>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, minWidth: 200 }}>
+                    <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, textAlign: "right", lineHeight: 1.4 }}>
+                      A 15-min focused session<br/>targeting just this gap.
+                    </span>
                     <PrimaryCta size="sm">Start focus practice</PrimaryCta>
                   </div>
                 </div>
               </Card>
             )}
 
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "14px 18px", background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
-            }}>
-              <span style={{ color: t.copper }}>{Icons.sparkle}</span>
-              <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, flex: 1 }}>
-                <strong style={{ color: t.coal, fontWeight: 600 }}>Daily tip:</strong>{" "}
-                {data.dailyTip}
-              </span>
-              <a href="#tips" className="hsx-db-link" style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, textDecoration: "none" }}>
-                More tips →
-              </a>
-            </div>
+            {variant !== "empty" && data.resumeBridge && (
+              <ResumeBridge rows={data.resumeBridge.rows} resumeScore={data.resumeBridge.resumeScore} />
+            )}
+
           </div>
         </main>
 
@@ -480,8 +468,7 @@ export default function Dashboard({
           ) : (
             <Card pad={20}>
               <h3 style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: "0 0 6px" }}>
-                Your sessions{" "}
-                <em style={{ fontStyle: "italic", color: t.copper, fontSize: 14 }}>start here</em>
+                Your sessions start here
               </h3>
               <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
                 Once you complete your first practice, you'll see your scores, weak signals, and improvement arc here.
@@ -489,50 +476,179 @@ export default function Dashboard({
             </Card>
           )}
 
-          {/* Contribution graph — replaces flat streak bar with a 12-week
-                practice heatmap (GitHub-pattern). Visual proof of consistency
-                that the bare streak number can't convey. */}
-          {data.streak >= 3 && (
-            <Card pad={20} background={`linear-gradient(135deg, ${t.copper100} 0%, #FAF7F0 100%)`}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                <h3 style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
-                  Your <em style={{ fontStyle: "italic", color: t.copper }}>practice</em> rhythm
-                </h3>
-                <span className="hsx-db-flame" style={{ color: t.copper }}>{Icons.flame}</span>
-              </div>
-              <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "0 0 14px", lineHeight: 1.45 }}>
-                <strong style={{ color: t.coal, fontWeight: 600 }}>{data.streak} days streak</strong> · Top {data.percentile}% this week
-              </p>
-              <ContributionGraph days={data.contribDays} />
-              <div style={{
-                marginTop: 14, padding: "10px 12px", background: t.white, border: `1px solid ${t.line}`, borderRadius: 8,
-                fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft, lineHeight: 1.5,
-              }}>
-                <strong style={{ color: t.coal, fontWeight: 600 }}>{data.streakNextMilestone - data.streak} {data.streakNextMilestone - data.streak === 1 ? "day" : "days"}</strong> to your next milestone — keep the rhythm going.
-              </div>
-            </Card>
-          )}
-
-          {/* Achievements — earned + locked tiles. Surfaces gamified
-                progression beyond raw streak counts. */}
-          {variant !== "empty" && data.achievements.length > 0 && (
-            <Card pad={20}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-                <h3 style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
-                  Achievements
-                </h3>
-                <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.4 }}>
-                  {data.achievements.filter(a => a.earned).length}/{data.achievements.length}
-                </span>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                {data.achievements.map(a => <AchievementBadge key={a.key} a={a} />)}
-              </div>
-            </Card>
+          {variant !== "empty" && data.streak >= 3 && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "12px 14px", background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
+            }}>
+              <span className="hsx-db-flame" style={{ color: t.copper }}>{Icons.flame}</span>
+              <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.coal, flex: 1 }}>
+                {data.streak}-day streak
+              </span>
+              <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.4 }}>
+                {data.streakNextMilestone - data.streak}D TO {data.streakNextMilestone}
+              </span>
+            </div>
           )}
         </aside>
       </div>
     </div>
+  );
+}
+
+/* ResumeBridge — cross-checks claimed resume skills against actual
+   practice performance. Answers a question nothing else on the
+   dashboard answers: "is my resume backed by what I can demonstrate?"
+   Ported from production DashboardAnalytics.tsx — the most distinctive
+   credibility-loop signal the live app surfaces. */
+type SkillBridgeRow = {
+  skill: string;
+  state: "verified" | "untested" | "weak";
+  detail: string;
+};
+
+function ResumeBridge({ rows, resumeScore }: { rows: SkillBridgeRow[]; resumeScore: number }) {
+  const stateMeta = {
+    verified: { mark: "✓", bg: t.success100, fg: t.success, label: "Demonstrated" },
+    untested: { mark: "·", bg: t.creamSoft, fg: t.inkSoft, label: "Not yet tested" },
+    weak:     { mark: "!", bg: t.copperSoft, fg: t.copper, label: "Underperformed" },
+  } as const;
+
+  const verifiedCount = rows.filter(r => r.state === "verified").length;
+
+  return (
+    <Card>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+        <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+          Resume vs. what you've shown
+        </h3>
+        <a href="#resume" className="hsx-db-link" style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, textDecoration: "none" }}>
+          Open resume review →
+        </a>
+      </div>
+      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.55, maxWidth: 640 }}>
+        <strong style={{ color: t.coal, fontWeight: 600 }}>{verifiedCount} of {rows.length}</strong> claimed skills have surfaced in your sessions.
+        Untested skills are real interview risk — the recruiter will ask.
+        Resume score{" "}
+        <span style={{
+          fontFamily: f.mono, fontSize: 12, color: resumeScore >= 80 ? t.success : t.copper,
+          background: resumeScore >= 80 ? t.success100 : t.copperSoft,
+          padding: "2px 8px", borderRadius: 999, marginLeft: 4, letterSpacing: 0.3,
+        }}>{resumeScore}/100</span>
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+        {rows.map(r => {
+          const m = stateMeta[r.state];
+          return (
+            <div key={r.skill} style={{
+              display: "flex", alignItems: "flex-start", gap: 10,
+              padding: "10px 12px", borderRadius: 10,
+              background: t.cream,
+            }}>
+              <span aria-hidden style={{
+                width: 22, height: 22, borderRadius: 999, background: m.bg, color: m.fg,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                fontFamily: f.mono, fontSize: 12, fontWeight: 700, flexShrink: 0,
+              }}>{m.mark}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>
+                  {r.skill}
+                </div>
+                <div style={{ fontFamily: f.sans, fontSize: 11.5, color: m.fg, marginTop: 2, fontWeight: 500, letterSpacing: 0.2 }}>
+                  {m.label}
+                </div>
+                <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 4, lineHeight: 1.45 }}>
+                  {r.detail}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+/* ReadinessBand — the dashboard's load-bearing surface.
+   Job-relative answer to "am I ready?" against the user's actual target
+   role and chosen companies. Replaces the percentile-pill + status-card
+   pattern that answers a question the user didn't ask.
+
+   Each company resolves to one of three states:
+   - cleared:  your last 5-session average meets that company's hire bar
+   - close:    within 5 points of the bar
+   - gap:      more than 5 points below the bar */
+type CompanyReadiness = { name: string; state: "cleared" | "close" | "gap" };
+
+function ReadinessBand({
+  role, clearedCount, companies, gapNote, streak,
+}: {
+  role: string;
+  clearedCount: number;
+  companies: CompanyReadiness[];
+  gapNote: string;
+  streak: number;
+}) {
+  const total = companies.length;
+  const ready = clearedCount === total;
+  return (
+    <Card background={t.white} interactive={false}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 24, alignItems: "center" }}>
+        <div style={{ minWidth: 0 }}>
+          <Eyebrow>Readiness · {role}</Eyebrow>
+          <h2 style={{
+            fontFamily: f.serif, fontSize: 28, fontWeight: 400, color: t.coal,
+            letterSpacing: "-0.01em", lineHeight: 1.15, margin: "8px 0 6px",
+          }}>
+            You'd clear the hire bar at{" "}
+            <em style={{ fontStyle: "italic", color: t.copper }}>{clearedCount} of {total}</em>{" "}
+            target companies this week.
+          </h2>
+          <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: "0 0 14px", lineHeight: 1.55, maxWidth: 620 }}>
+            {gapNote}
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {companies.map(c => {
+              const palette = c.state === "cleared"
+                ? { bg: t.success100, fg: t.success, mark: "✓" }
+                : c.state === "close"
+                ? { bg: t.copperSoft, fg: t.copper, mark: "→" }
+                : { bg: t.creamSoft, fg: t.inkSoft, mark: "·" };
+              return (
+                <span key={c.name} style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "6px 12px", borderRadius: 999,
+                  background: palette.bg, color: palette.fg,
+                  fontFamily: f.sans, fontSize: 12.5, fontWeight: 500,
+                }}>
+                  <span aria-hidden style={{ fontWeight: 700 }}>{palette.mark}</span>
+                  {c.name}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{
+          textAlign: "right",
+          padding: "0 8px 0 24px",
+          borderLeft: `1px solid ${t.line}`,
+        }}>
+          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6 }}>
+            CLEARED
+          </div>
+          <div style={{
+            fontFamily: f.serif, fontSize: 48, fontWeight: 400,
+            color: ready ? t.success : t.coal, letterSpacing: "-0.02em", lineHeight: 1,
+            margin: "4px 0 6px",
+          }}>
+            {clearedCount}<span style={{ color: t.inkFaint, fontSize: 24 }}>/{total}</span>
+          </div>
+          <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft }}>
+            {streak}-day rhythm
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -563,44 +679,7 @@ const ALL_CATEGORIES = [
   "Self-awareness",
 ];
 
-/* Defaults fallback — ensures every render has the full shape even if a
-   variant branch returns a partially-undefined object (e.g., during a
-   Vite HMR transition where _atoms.tsx and Dashboard.tsx are temporarily
-   out of sync). Cheap to compute (small literal object) and only the
-   missing fields get populated. */
-type VData = ReturnType<typeof buildVariantDataInner>;
-function withDefaults(d: Partial<VData>): VData {
-  const fallbackKpis = { overall: 0, overallDelta: 0, clarity: 0, speaking: 0,
-                          overallPercentile: undefined, clarityPercentile: undefined, speakingPercentile: undefined };
-  const fallbackSpark = { overall: [0,0,0,0,0,0,0], clarity: [0,0,0,0,0,0,0], speaking: [0,0,0,0,0,0,0] };
-  return {
-    heroAccent: "ready",
-    heroSub: "",
-    streak: 0, unreadCount: 0, percentile: 0,
-    streakNextMilestone: 7, coverage: 0,
-    coverageCells: ALL_CATEGORIES.map(label => ({ label, touched: false, score: 0 })),
-    kpis: fallbackKpis, spark: fallbackSpark,
-    insightHeading: "", insightBody: "",
-    focusPct: 0, focusTitle: "", focusBody: "", focusChips: [] as string[],
-    coachHeadline: "", coachBody: "", coachCta: "",
-    insights: [] as CoachInsight[], currentInsight: 0,
-    recentSessions: [] as SessionRow[],
-    dailyTip: "",
-    countdown: undefined, dailyGoal: undefined,
-    contribDays: [] as ContribDay[],
-    achievements: [] as AchievementSpec[],
-    ...d,
-    // Re-merge nested objects in case the variant only specified part of them.
-    kpis: { ...fallbackKpis, ...(d.kpis ?? {}) },
-    spark: { ...fallbackSpark, ...(d.spark ?? {}) },
-  } as VData;
-}
-
-function buildVariantData(variant: DashboardVariant, userName: string) {
-  return buildVariantDataInner(variant, userName);
-}
-
-function buildVariantDataInner(variant: DashboardVariant, _userName: string) {
+function buildVariantData(variant: DashboardVariant, _userName: string) {
   if (variant === "empty") {
     return {
       heroAccent: "ready",
@@ -622,6 +701,8 @@ function buildVariantDataInner(variant: DashboardVariant, _userName: string) {
       dailyGoal: undefined as undefined | { sessionGoal: number; sessionsDone: number; minutesGoal: number; minutesDone: number; weakSpotsReviewed: number; weakSpotsTarget: number },
       contribDays: makeContribDays("sparse"),
       achievements: [] as AchievementSpec[],
+      readiness: undefined as undefined | { role: string; clearedCount: number; companies: CompanyReadiness[]; gapNote: string },
+      resumeBridge: undefined as undefined | { resumeScore: number; rows: SkillBridgeRow[] },
     };
   }
   if (variant === "power-user") {
@@ -683,6 +764,29 @@ function buildVariantDataInner(variant: DashboardVariant, _userName: string) {
         { key: "negotiator",   label: "Salary closer",      sub: "WALK-AWAY",   icon: Icons.trophy, earned: true },
         { key: "loop-cleared", label: "First loop",         sub: "FAANG",       icon: Icons.layers, earned: false },
       ] as AchievementSpec[],
+      readiness: {
+        role: "Senior PM",
+        clearedCount: 5,
+        companies: [
+          { name: "Google",   state: "cleared" as const },
+          { name: "Razorpay", state: "cleared" as const },
+          { name: "PhonePe",  state: "cleared" as const },
+          { name: "Flipkart", state: "cleared" as const },
+          { name: "Swiggy",   state: "cleared" as const },
+        ] as CompanyReadiness[],
+        gapNote: "You're hire-bar at every Tier-1 target this week. The differentiator now is bar-raiser-level depth — second-order trade-offs under pushback.",
+      },
+      resumeBridge: {
+        resumeScore: 92,
+        rows: [
+          { skill: "Platform PM · 0→1",       state: "verified" as const, detail: "Cited in 9 sessions, 87 avg." },
+          { skill: "Cross-functional leadership", state: "verified" as const, detail: "Demonstrated under pressure 4×." },
+          { skill: "Data-driven prioritisation",  state: "verified" as const, detail: "Strong RICE/ICE recall." },
+          { skill: "Stakeholder negotiation",     state: "verified" as const, detail: "Held position in 6 of 8 rounds." },
+          { skill: "Pricing & monetisation",      state: "weak"     as const, detail: "Razorpay round caught a TAM gap." },
+          { skill: "ML product sense",            state: "untested" as const, detail: "Listed but no session yet — Google asks." },
+        ] as SkillBridgeRow[],
+      },
     };
   }
   if (variant === "interview-imminent") {
@@ -744,6 +848,26 @@ function buildVariantDataInner(variant: DashboardVariant, _userName: string) {
         { key: "two-week",   label: "14-day streak",  sub: "CONSISTENCY",icon: Icons.flame,  earned: false },
         { key: "negotiator", label: "Salary closer",  sub: "WALK-AWAY",  icon: Icons.trophy, earned: false },
       ] as AchievementSpec[],
+      readiness: {
+        role: "Senior PM · Razorpay loop",
+        clearedCount: 1,
+        companies: [
+          { name: "Razorpay · Recruiter screen", state: "cleared" as const },
+          { name: "Razorpay · Hiring manager",   state: "close"   as const },
+          { name: "Razorpay · System design",    state: "close"   as const },
+          { name: "Razorpay · Bar raiser",       state: "gap"     as const },
+        ] as CompanyReadiness[],
+        gapNote: "Decision-making is the gap (6 pts below bar). Two 30-min focused sessions get you across — skip everything else for 72 hours.",
+      },
+      resumeBridge: {
+        resumeScore: 78,
+        rows: [
+          { skill: "Payments infra · UPI",          state: "verified" as const, detail: "Strong on flow design, 84 avg." },
+          { skill: "Razorpay-style trade-off framing", state: "weak"     as const, detail: "Last 3 rounds: 6 pts below bar." },
+          { skill: "Risk & fraud product",          state: "untested" as const, detail: "Razorpay loop will probe — drill before Friday." },
+          { skill: "PM-to-engineering communication", state: "verified" as const, detail: "Cited in 5 of 7 sessions." },
+        ] as SkillBridgeRow[],
+      },
     };
   }
   // Default: returning user, mid-flow
@@ -805,6 +929,27 @@ function buildVariantDataInner(variant: DashboardVariant, _userName: string) {
       { key: "two-week",     label: "14-day streak",  sub: "CONSISTENCY",icon: Icons.flame,  earned: false },
       { key: "negotiator",   label: "Salary closer",  sub: "WALK-AWAY",  icon: Icons.trophy, earned: false },
     ] as AchievementSpec[],
+    readiness: {
+      role: "Product Manager",
+      clearedCount: 2,
+      companies: [
+        { name: "Zomato",   state: "cleared" as const },
+        { name: "Razorpay", state: "cleared" as const },
+        { name: "PhonePe",  state: "close"   as const },
+        { name: "Flipkart", state: "close"   as const },
+        { name: "Google",   state: "gap"     as const },
+      ] as CompanyReadiness[],
+      gapNote: "Your structure is the bottleneck — answers carry the right ideas but bury the outcome. Lead with the result, then the path. Three more sessions locks the gain at Tier-1.",
+    },
+    resumeBridge: {
+      resumeScore: 81,
+      rows: [
+        { skill: "B2B SaaS product sense",       state: "verified" as const, detail: "Demonstrated across 4 sessions." },
+        { skill: "User research synthesis",      state: "verified" as const, detail: "Strong recall of methods, 82 avg." },
+        { skill: "SQL & analytics fluency",      state: "untested" as const, detail: "Listed but never probed — Tier-1 will ask." },
+        { skill: "Cross-team conflict resolution", state: "weak"     as const, detail: "Answers default to consensus too fast." },
+      ] as SkillBridgeRow[],
+    },
   };
 }
 
@@ -812,9 +957,9 @@ function buildVariantDataInner(variant: DashboardVariant, _userName: string) {
    so there's zero-CLS when real data arrives. */
 function DashboardSkeleton({ userName }: { userName: string }) {
   return (
-    <div style={{ background: t.cream, minHeight: 900, fontFamily: f.sans, color: t.coal }}>
+    <div style={{ background: t.cream, minHeight: 1060, fontFamily: f.sans, color: t.coal }}>
       <style>{DASHBOARD_STYLES}</style>
-      <div className="hsx-db-grid" style={{ display: "grid", gridTemplateColumns: "260px 1fr 360px", minHeight: 900 }}>
+      <div className="hsx-db-grid" style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr) 360px", minHeight: 1060, maxWidth: "100%" }}>
         {/* Sidebar skeleton */}
         <aside className="hsx-db-sidebar" style={{
           background: t.cream, borderRight: `1px solid ${t.line}`, padding: "28px 18px",
@@ -914,7 +1059,7 @@ function JourneyArt() {
 function OverlayedDashboard({
   variant, userName, greetingHour,
 }: { variant: "command-palette" | "notifications"; userName: string; greetingHour: number }) {
-  const data = withDefaults(buildVariantData("returning", userName));
+  const data = buildVariantData("returning", userName);
 
   const paletteSections: PaletteSection[] = [
     { label: "Quick actions",
@@ -969,7 +1114,7 @@ function OverlayedDashboard({
        data, single-column, larger CTAs, swipeable cards. Replaces
        the desktop sidebar with a top app bar + a bottom tab bar. */
 function MobileDashboard({ userName, greetingHour }: { userName: string; greetingHour: number }) {
-  const data = withDefaults(buildVariantData("returning", userName));
+  const data = buildVariantData("returning", userName);
   const greet = greetingHour < 12 ? "Good morning" : greetingHour < 17 ? "Good afternoon" : "Good evening";
 
   return (
@@ -1034,13 +1179,13 @@ function MobileDashboard({ userName, greetingHour }: { userName: string; greetin
         </div>
 
         {/* Next step card — compact */}
-        <Card pad={20} style={{ background: `linear-gradient(135deg, ${t.copper100} 0%, #FAF7F0 70%)` }}>
+        <Card pad={20} style={{ background: `linear-gradient(135deg, ${t.copper100} 0%, ${t.cream} 70%)` }}>
           <Eyebrow>Your next step</Eyebrow>
           <h2 style={{
             fontFamily: f.serif, fontSize: 24, fontWeight: 400, color: t.coal,
             letterSpacing: "-0.01em", lineHeight: 1.15, margin: "6px 0 12px",
           }}>
-            Product Manager <em style={{ fontStyle: "italic", color: t.copper }}>mock</em>
+            Product Manager mock
           </h2>
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, fontFamily: f.sans, fontSize: 12, color: t.inkSoft, flexWrap: "wrap" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>{Icons.cal} Today, 5:00 PM</span>
@@ -1092,12 +1237,17 @@ function MobileDashboard({ userName, greetingHour }: { userName: string; greetin
           { key: "progress",  label: "Progress", icon: Icons.progress },
           { key: "profile",   label: "Profile",  icon: Icons.settings },
         ] as const).map(tab => (
-          <button key={tab.key} style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-            padding: "6px 4px", border: "none", background: "transparent", cursor: "pointer",
-            color: tab.active ? t.copper : t.inkSoft,
-            fontFamily: f.sans, fontSize: 10, fontWeight: 500,
-          }}>
+          <button
+            key={tab.key}
+            aria-label={tab.label}
+            aria-current={tab.active ? "page" : undefined}
+            className="hsx-db-icon-btn"
+            style={{
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+              padding: "10px 4px", minHeight: 48, border: "none", background: "transparent", cursor: "pointer",
+              color: tab.active ? t.copper : t.inkSoft,
+              fontFamily: f.sans, fontSize: 10, fontWeight: 500,
+            }}>
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
           </button>

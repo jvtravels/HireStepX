@@ -1,12 +1,11 @@
 /* HireStepX — Dashboard canvas / styles
-   Animation + microinteractions + responsive tuning. Mirrors the
-   pattern used by interview/_styles.ts. Injected once at top of the
-   composition. */
+   Token-aware factory. Dashboard.tsx calls getDashboardStyles(tokens)
+   once at module init and injects the result. */
 
-export const DASHBOARD_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-  @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+import { tokens } from "../design-system/_tokens";
 
+export function getDashboardStyles(t: typeof tokens) {
+  return `
   @keyframes hsx-db-fade-up {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -20,16 +19,16 @@ export const DASHBOARD_STYLES = `
   .hsx-db-stage > *:nth-child(n+6) { animation-delay: 300ms; }
 
   @keyframes hsx-db-accent-in {
-    from { opacity: 0; transform: translateY(4px); letter-spacing: -0.01em; }
-    to   { opacity: 1; transform: translateY(0);   letter-spacing: -0.02em; }
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
   .hsx-db-hero em { animation: hsx-db-accent-in 600ms 120ms cubic-bezier(.2,.7,.2,1) both; }
 
   @keyframes hsx-db-flame {
-    0%, 100% { transform: scale(1)    rotate(-2deg); opacity: 0.96; }
-    50%      { transform: scale(1.06) rotate(2deg);  opacity: 1;    }
+    0%, 100% { transform: scale(1)    rotate(-2deg); }
+    50%      { transform: scale(1.06) rotate(2deg); }
   }
-  .hsx-db-flame { animation: hsx-db-flame 2.4s ease-in-out infinite; transform-origin: 50% 80%; }
+  .hsx-db-flame { animation: hsx-db-flame 2.4s ease-in-out 3; transform-origin: 50% 80%; }
 
   .hsx-db-card {
     transition: box-shadow 240ms cubic-bezier(.16,1,.3,1),
@@ -55,7 +54,22 @@ export const DASHBOARD_STYLES = `
   .hsx-db-nav:hover { background: rgba(180, 83, 9, 0.04); }
   .hsx-db-nav[data-active="true"] {
     background: rgba(180, 83, 9, 0.10);
-    color: #B45309;
+    color: ${t.copper};
+  }
+
+  /* Focus-visible rings — single rule covers all interactive primitives. */
+  .hsx-db-nav:focus-visible,
+  .hsx-db-cta:focus-visible,
+  .hsx-db-cta-outline:focus-visible,
+  .hsx-db-icon-btn:focus-visible,
+  .hsx-db-period-btn:focus-visible {
+    outline: 2px solid ${t.indigo};
+    outline-offset: 2px;
+  }
+  .hsx-db-link:focus-visible {
+    outline: 2px solid ${t.indigo};
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 
   @keyframes hsx-db-ring-bloom {
@@ -64,15 +78,15 @@ export const DASHBOARD_STYLES = `
   }
   .hsx-db-ring--bloom { animation: hsx-db-ring-bloom 1.4s 200ms cubic-bezier(.16,1,.3,1) both; }
 
-  .hsx-db-score-strong { background: #DCFCE7; color: #15803D; }
-  .hsx-db-score-mid    { background: rgba(180, 83, 9, 0.12); color: #B45309; }
-  .hsx-db-score-soft   { background: rgba(110, 103, 89, 0.08); color: #6E6759; }
+  .hsx-db-score-strong { background: ${t.success100}; color: ${t.success}; }
+  .hsx-db-score-mid    { background: ${t.copperSoft}; color: ${t.copper}; }
+  .hsx-db-score-soft   { background: rgba(110, 103, 89, 0.08); color: ${t.inkSoft}; }
 
   .hsx-db-cta {
     transition: background 180ms ease, transform 180ms cubic-bezier(.16,1,.3,1), box-shadow 180ms ease;
   }
   .hsx-db-cta:hover {
-    background: #1E1B4B;
+    background: ${t.indigoDeep};
     transform: translateY(-1px);
     box-shadow: 0 1px 2px rgba(20,17,10,.16), 0 6px 18px -4px rgba(49,46,129,.30);
   }
@@ -106,11 +120,11 @@ export const DASHBOARD_STYLES = `
     opacity: 0;
     transition: opacity 200ms ease;
   }
-  .hsx-db-session-row:hover .hsx-db-session-actions {
+  .hsx-db-session-row:hover .hsx-db-session-actions,
+  .hsx-db-session-row:focus-within .hsx-db-session-actions {
     opacity: 1;
   }
 
-  /* Number count-up — subtle fade-in for KPI values on first paint */
   @keyframes hsx-db-count-in {
     from { opacity: 0; transform: translateY(4px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -125,17 +139,28 @@ export const DASHBOARD_STYLES = `
     }
   }
 
+  /* Responsive collapse — right rail moves under main column at 1240,
+     rather than disappearing. At 920 the sidebar collapses to a
+     top-bar menu trigger handled by .hsx-db-menu-trigger. */
   @media (max-width: 1240px) {
-    .hsx-db-grid { grid-template-columns: 240px 1fr !important; }
-    .hsx-db-rail { display: none !important; }
-    .hsx-db-main { padding-right: 32px !important; }
+    .hsx-db-grid { grid-template-columns: 240px minmax(0, 1fr) !important; }
+    .hsx-db-rail {
+      grid-column: 1 / -1 !important;
+      padding: 0 32px 48px 32px !important;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 16px !important;
+    }
   }
   @media (max-width: 920px) {
     .hsx-db-grid { grid-template-columns: 1fr !important; }
     .hsx-db-sidebar { display: none !important; }
+    .hsx-db-menu-trigger { display: inline-flex !important; }
     .hsx-db-topbar { padding: 18px 24px !important; }
     .hsx-db-stage  { padding: 18px 24px 32px !important; gap: 18px !important; }
     .hsx-db-hero-h1 { font-size: 36px !important; }
     .hsx-db-kpi-row { grid-template-columns: 1fr !important; }
+    .hsx-db-rail   { grid-template-columns: 1fr !important; padding: 0 24px 32px !important; }
   }
 `;
+}

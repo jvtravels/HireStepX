@@ -28,7 +28,7 @@ export const DefaultReturningUser: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "1. Returning user — mid-flow",
-  layout: { x: 0, y: 0, width: 1440, height: 1024 },
+  layout: { x: 0, y: 0, width: 1728, height: 1060 },
 };
 
 /* Empty state — brand-new user, 0 sessions. Hero matches Setup
@@ -41,7 +41,7 @@ export const NewUserEmpty: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "2. New user — empty state",
-  layout: { x: 1490, y: 0, width: 1440, height: 1024 },
+  layout: { x: 1778, y: 0, width: 1728, height: 1060 },
 };
 
 /* Power user — active multi-round Google FAANG journey: 6 rounds, 2
@@ -57,7 +57,7 @@ export const PowerUserActiveJourney: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "3. Power user — active journey",
-  layout: { x: 0, y: 1074, width: 1440, height: 1024 },
+  layout: { x: 0, y: 1110, width: 1728, height: 1060 },
 };
 
 /* Interview-imminent — 3 days to a Razorpay senior PM round. The
@@ -72,7 +72,7 @@ export const InterviewImminent: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "4. Interview-imminent — 3-day countdown",
-  layout: { x: 0, y: 2148, width: 1440, height: 1024 },
+  layout: { x: 0, y: 2220, width: 1728, height: 1060 },
 };
 
 /* Loading skeleton — zero-CLS placeholder matching the final layout
@@ -86,7 +86,7 @@ export const LoadingSkeleton: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "5. Loading skeleton",
-  layout: { x: 0, y: 3222, width: 1440, height: 1024 },
+  layout: { x: 0, y: 3330, width: 1728, height: 1060 },
 };
 
 /* Mobile portrait — 390×844 phone composition. Top app bar, single-
@@ -100,7 +100,7 @@ export const MobilePortrait: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "6. Mobile portrait",
-  layout: { x: 0, y: 4296, width: 390, height: 844 },
+  layout: { x: 0, y: 4440, width: 390, height: 844 },
 };
 
 /* Command palette overlay — Linear-style ⌘K dialog over the dimmed
@@ -114,7 +114,7 @@ export const CommandPaletteOverlay: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "7. Command palette (⌘K)",
-  layout: { x: 0, y: 5190, width: 1440, height: 1024 },
+  layout: { x: 0, y: 5334, width: 1728, height: 1060 },
 };
 
 /* Notifications panel — slide-in drawer from the bell icon. 5 items
@@ -128,5 +128,5 @@ export const NotificationsOpen: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "8. Notifications panel",
-  layout: { x: 0, y: 6264, width: 1440, height: 1024 },
+  layout: { x: 0, y: 6444, width: 1728, height: 1060 },
 };

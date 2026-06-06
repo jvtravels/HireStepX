@@ -30,16 +30,18 @@ export interface NavItem {
 
 export function NavRow({ item }: { item: NavItem }) {
   return (
-    <a
-      href={`#${item.key}`}
+    <button
+      type="button"
       className="hsx-db-nav"
       data-active={item.active ? "true" : "false"}
+      aria-current={item.active ? "page" : undefined}
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "10px 14px", borderRadius: 10,
         fontFamily: f.sans, fontSize: 14, fontWeight: 500,
         color: item.active ? t.copper : t.inkSoft,
-        textDecoration: "none",
+        background: "transparent", border: "none", cursor: "pointer",
+        textAlign: "left", width: "100%",
       }}
     >
       <span style={{ display: "inline-flex", width: 18, height: 18, alignItems: "center", justifyContent: "center" }}>
@@ -53,7 +55,7 @@ export function NavRow({ item }: { item: NavItem }) {
           padding: "2px 7px", borderRadius: 999, letterSpacing: 0.3,
         }}>{item.badge}</span>
       )}
-    </a>
+    </button>
   );
 }
 
@@ -113,7 +115,7 @@ export function Pill({
       padding: "4px 10px", borderRadius: 999,
       fontFamily: f.sans, fontSize: 11, fontWeight: 600,
       background: filled ? p.fg : p.bg,
-      color: filled ? "#fff" : p.fg,
+      color: filled ? t.white : p.fg,
       letterSpacing: 0.2,
     }}>{children}</span>
   );
@@ -191,43 +193,46 @@ export interface KpiTileV2Props {
   percentile?: number;
   /** Period label currently active. Just visual on the canvas. */
   period?: "7d" | "30d" | "90d" | "All";
+  /** Primary tile in the row — takes more space, larger value, period toggle. */
+  emphasis?: boolean;
 }
 export function KpiTile({
   label, value, suffix, sub, accent, icon,
-  spark, percentile, period = "7d",
+  spark, percentile, period = "7d", emphasis = false,
 }: KpiTileV2Props) {
   const tint =
     accent === "indigo"  ? { iconBg: t.indigo100, iconFg: t.indigo, sparkColor: t.indigo } :
     accent === "copper"  ? { iconBg: t.copperSoft, iconFg: t.copper, sparkColor: t.copper } :
                            { iconBg: t.success100, iconFg: t.success, sparkColor: t.success };
+  const valueSize = emphasis ? 44 : 28;
   return (
     <div style={{
-      background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12,
-      padding: "16px 18px 14px", display: "flex", flexDirection: "column", gap: 10,
+      background: emphasis ? t.white : t.cream,
+      border: `1px solid ${emphasis ? t.lineStrong : t.line}`,
+      borderRadius: 12,
+      padding: emphasis ? "20px 22px 18px" : "14px 16px 12px",
+      display: "flex", flexDirection: "column", gap: emphasis ? 12 : 8,
     }}>
-      {/* Top row — icon + label + period toggle */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{
-          width: 36, height: 36, borderRadius: 10, background: tint.iconBg, color: tint.iconFg,
+          width: emphasis ? 36 : 28, height: emphasis ? 36 : 28,
+          borderRadius: emphasis ? 10 : 8, background: tint.iconBg, color: tint.iconFg,
           display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
         }}>{icon}</span>
-        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, fontWeight: 500, flex: 1 }}>{label}</div>
-        <PeriodToggle active={period} />
+        <div style={{ fontFamily: f.sans, fontSize: emphasis ? 13 : 12, color: t.inkSoft, fontWeight: 500, flex: 1 }}>{label}</div>
+        {/* Period toggle removed — most users don't switch periods, and it pushed the emphasis tile too wide at narrow viewports. */}
       </div>
 
-      {/* Value + sub */}
       <div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-          <span style={{ fontFamily: f.serif, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
-          {suffix && <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>{suffix}</span>}
+          <span style={{ fontFamily: f.serif, fontSize: valueSize, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
+          {suffix && <span style={{ fontFamily: f.sans, fontSize: emphasis ? 14 : 12, color: t.inkFaint }}>{suffix}</span>}
         </div>
         {sub && <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 4 }}>{sub}</div>}
       </div>
 
-      {/* Sparkline */}
-      <Sparkline data={spark} color={tint.sparkColor} />
+      <Sparkline data={spark} color={tint.sparkColor} height={emphasis ? 40 : 24} />
 
-      {/* Percentile pill (only if provided) */}
       {percentile !== undefined && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: -2 }}>
           <span style={{
@@ -236,31 +241,41 @@ export function KpiTile({
             background: percentile >= 70 ? t.success100 : percentile >= 40 ? t.copperSoft : t.creamSoft,
             padding: "2px 8px", borderRadius: 999, letterSpacing: 0.4,
           }}>P{percentile}</span>
-          <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
-            vs senior cohort
-          </span>
+          {emphasis && (
+            <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
+              vs senior cohort
+            </span>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-/* Period toggle — 7d / 30d / 90d / All. Visual only on the canvas. */
+/* Period toggle — 7d / 30d / 90d / All. */
 function PeriodToggle({ active }: { active: "7d" | "30d" | "90d" | "All" }) {
   const periods: Array<"7d" | "30d" | "90d" | "All"> = ["7d", "30d", "90d", "All"];
   return (
-    <div style={{
+    <div role="tablist" aria-label="Time period" style={{
       display: "inline-flex", padding: 2, borderRadius: 999,
       background: t.creamSoft, border: `1px solid ${t.line}`,
     }}>
       {periods.map(p => (
-        <span key={p} style={{
-          padding: "3px 8px", borderRadius: 999,
-          fontFamily: f.mono, fontSize: 10, fontWeight: 500, letterSpacing: 0.3,
-          color: p === active ? t.coal : t.inkFaint,
-          background: p === active ? t.white : "transparent",
-          boxShadow: p === active ? "0 1px 2px rgba(20,17,10,.08)" : "none",
-        }}>{p}</span>
+        <button
+          key={p}
+          type="button"
+          role="tab"
+          aria-selected={p === active}
+          className="hsx-db-period-btn"
+          style={{
+            padding: "5px 10px", borderRadius: 999,
+            fontFamily: f.mono, fontSize: 10, fontWeight: 500, letterSpacing: 0.3,
+            color: p === active ? t.coal : t.inkFaint,
+            background: p === active ? t.white : "transparent",
+            boxShadow: p === active ? "0 1px 2px rgba(20,17,10,.08)" : "none",
+            border: "none", cursor: "pointer",
+          }}
+        >{p}</button>
       ))}
     </div>
   );
@@ -343,8 +358,8 @@ export function SessionRowEl({ row }: { row: SessionRow }) {
 }
 function SessionAction({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <button aria-label={title} title={title} style={{
-      width: 28, height: 28, borderRadius: 6,
+    <button aria-label={title} title={title} className="hsx-db-icon-btn" style={{
+      width: 36, height: 36, borderRadius: 8,
       background: "transparent", border: "none", cursor: "pointer",
       color: t.inkSoft, display: "inline-flex", alignItems: "center", justifyContent: "center",
     }}>{children}</button>
@@ -403,8 +418,8 @@ export function InsightFeed({
           display: "flex", alignItems: "center", justifyContent: "space-between",
           marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}`,
         }}>
-          <button aria-label="Previous insight" disabled={current === 0} style={{
-            width: 28, height: 28, borderRadius: 999,
+          <button aria-label="Previous insight" disabled={current === 0} className="hsx-db-icon-btn" style={{
+            width: 36, height: 36, borderRadius: 999,
             background: t.cream, border: `1px solid ${t.line}`, cursor: current === 0 ? "default" : "pointer",
             color: current === 0 ? t.inkFaint : t.coal,
             display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -418,8 +433,8 @@ export function InsightFeed({
               }} />
             ))}
           </div>
-          <button aria-label="Next insight" disabled={current === insights.length - 1} style={{
-            width: 28, height: 28, borderRadius: 999,
+          <button aria-label="Next insight" disabled={current === insights.length - 1} className="hsx-db-icon-btn" style={{
+            width: 36, height: 36, borderRadius: 999,
             background: t.cream, border: `1px solid ${t.line}`,
             cursor: current === insights.length - 1 ? "default" : "pointer",
             color: current === insights.length - 1 ? t.inkFaint : t.coal,
@@ -497,7 +512,7 @@ export function CommandPalette({
                   <span style={{
                     width: 28, height: 28, borderRadius: 8,
                     background: item.key === focusKey ? t.copper : t.creamSoft,
-                    color: item.key === focusKey ? "#fff" : t.inkSoft,
+                    color: item.key === focusKey ? t.white : t.inkSoft,
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                   }}>{item.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -570,12 +585,12 @@ export function NotificationPanel({ items }: { items: NotificationItem[] }) {
           </p>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button aria-label="Mark all read" title="Mark all read" style={{
-            padding: "6px 10px", fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.inkSoft,
-            background: "transparent", border: `1px solid ${t.line}`, borderRadius: 6, cursor: "pointer",
+          <button aria-label="Mark all read" title="Mark all read" className="hsx-db-cta-outline" style={{
+            padding: "8px 12px", minHeight: 36, fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.inkSoft,
+            background: "transparent", border: `1px solid ${t.line}`, borderRadius: 8, cursor: "pointer",
           }}>Mark all read</button>
-          <button aria-label="Close" title="Close" style={{
-            width: 30, height: 30, borderRadius: 6, color: t.inkSoft,
+          <button aria-label="Close" title="Close" className="hsx-db-icon-btn" style={{
+            width: 36, height: 36, borderRadius: 8, color: t.inkSoft, fontSize: 18, lineHeight: 1,
             background: "transparent", border: `1px solid ${t.line}`, cursor: "pointer",
           }}>×</button>
         </div>
@@ -663,7 +678,7 @@ export function PrimaryCta({
       style={{
         display: "inline-flex", alignItems: "center", gap: 10,
         padding: pad, borderRadius: 12, border: "none", cursor: "pointer",
-        background: t.indigo, color: "#fff",
+        background: t.indigo, color: t.white,
         fontFamily: f.sans, fontSize: fs, fontWeight: 600, letterSpacing: 0.1,
         boxShadow: shadows.cta,
         width: fullWidth ? "100%" : undefined,
