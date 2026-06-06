@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
 import { useAuth, hasStoredSession } from "../AuthContext";
+import { captureClientEvent } from "../posthogClient";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing Homepage v2 (brand-aligned)
@@ -1054,10 +1055,14 @@ function SectionMasthead({
   );
 }
 
+/* Aspirational micro-copy, not testimonials. We don't have customers
+   yet (founded 2026) — fabricating named quotes would burn credibility
+   the second any prospect googles the names. Rotated through the hero
+   as a "what this product is for" line. */
 const heroQuotes = [
-  { text: "Cleared the Razorpay PM loop on round 3.", by: "Aanya · IIT-D" },
-  { text: "Got the Zomato offer two weeks after Diwali.", by: "Rohan · NIT-Trichy" },
-  { text: "Stopped freezing on the why-this-company question.", by: "Meera · BITS Pilani" },
+  { text: "Walk into the loop already knowing how you sound.", by: "Built for Indian candidates" },
+  { text: "Practice the why-this-company answer until it lands.", by: "Behavioral · campus · negotiation" },
+  { text: "Scored feedback on every answer, every session.", by: "Free first session — no card" },
 ];
 
 export function HeroV2() {
@@ -1415,7 +1420,7 @@ export function LogoStripV2() {
   ];
   return (
     <section
-      aria-label="Companies we cover"
+      aria-label="Companies our question bank covers"
       className="mv2-cv-auto"
       style={{
         ...sectionTight,
@@ -1425,7 +1430,7 @@ export function LogoStripV2() {
       }}
     >
       <div style={container}>
-        <SectionMasthead n="02" label="Candidates from" right="3,000+ companies" style={{ marginBottom: 32 }} />
+        <SectionMasthead n="02" label="Question bank covers" right="200+ Indian roles" style={{ marginBottom: 32 }} />
         <p
           style={{
             fontFamily: fonts.serif,
@@ -1872,8 +1877,8 @@ function StepMock({ step }: { step: number }) {
         </div>
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
           {[
-            ["Aanya Sharma", "BITS Pilani · 2026"],
-            ["Razorpay · Backend Intern", "6 months"],
+            ["Sample Candidate", "Tier-1 Engineering · 2026"],
+            ["Backend Intern", "6 months"],
             ["Python, Go, Postgres, k8s", "Skills"],
           ].map(([a, b], idx) => (
             <div
@@ -2636,7 +2641,7 @@ export function BuiltForIndiaV2() {
                 fontWeight: 400,
               }}
             >
-              3,000+
+              200+
             </span>
             <span
               style={{
@@ -2647,7 +2652,7 @@ export function BuiltForIndiaV2() {
                 lineHeight: 1.4,
               }}
             >
-              Indian company catalogues mapped. IT services, unicorns, PSUs, MNCs.
+              Indian roles in the question bank. IT services, unicorns, PSUs, MNCs.
             </span>
           </div>
 
@@ -2843,6 +2848,30 @@ export function TestimonialsV2() {
 
 /* ─────────────────────────── 6c. PRICING ─────────────────────────── */
 export function PricingV2() {
+  /* Funnel-top engagement signal. When the pricing section scrolls into
+     view we capture pricing_section_viewed once per session — feeds the
+     PostHog landing-page funnel (hero → pricing → CTA click → signup). */
+  const sectionRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    let fired = false;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !fired) {
+            fired = true;
+            captureClientEvent("pricing_section_viewed", { surface: "homepage" });
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.4 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const tiers = [
     {
       name: "Free",
@@ -2912,7 +2941,7 @@ export function PricingV2() {
     },
   ];
   return (
-    <section className="mv2-section" aria-labelledby="hd-pricing" style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}>
+    <section ref={sectionRef} className="mv2-section" aria-labelledby="hd-pricing" style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
         <MotionReveal style={{ textAlign: "center", marginBottom: 56 }}>
           <SectionMasthead n="07" label="Pricing" right="From ₹9 / session" style={{ marginBottom: 16 }} />
@@ -3418,7 +3447,7 @@ export function FAQV2() {
     {
       cat: "Product",
       q: "Which companies and roles do you cover?",
-      a: "3,000+ companies in our catalog (IT services, unicorns, PSUs, MNCs) across behavioural, campus placement, salary negotiation and HR rounds at launch. New focus types ship month by month after public beta.",
+      a: "200+ Indian roles in the question bank — IT services, unicorns, PSUs, MNCs — across behavioural, campus placement, salary negotiation and HR rounds at launch. New focus types ship month by month after public beta.",
     },
     {
       cat: "Product",
@@ -3922,7 +3951,7 @@ function StructuredData() {
     ["Do plans auto-renew?", "No. Weekly and Monthly are one-time top-ups. They expire on day 7 or 30. You buy again when you want more."],
     ["What if I just want one session?", "Pay ₹9 per session. No subscription, no commitment."],
     ["Do you have a student discount?", "Verified .ac.in / .edu.in email = 30% off Weekly and Monthly."],
-    ["Which companies and roles do you cover?", "3,000+ companies (IT services, unicorns, PSUs, MNCs) across behavioural, campus placement, salary negotiation and HR rounds at launch."],
+    ["Which companies and roles do you cover?", "200+ Indian roles in our question bank (IT services, unicorns, PSUs, MNCs) across behavioural, campus placement, salary negotiation and HR rounds at launch."],
     ["How accurate is the AI score?", "Benchmarked against real Indian hiring panels. Every score shows the rubric (STAR breakdown), not just a number."],
     ["Where does my voice data go?", "Encrypted in transit and at rest. Auto-deleted after 90 days. Designed against DPDP Act 2023 from day one."],
     ["Which languages do you support?", "English at launch. Hindi and other Indian languages are on the post-launch roadmap."],

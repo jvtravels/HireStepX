@@ -25,7 +25,7 @@ const HOWTO_SCHEMA = {
   estimatedCost: { "@type": "MonetaryAmount", currency: "INR", value: "0" },
   step: [
     { "@type": "HowToStep", position: 1, name: "Upload your resume", text: "Drop a PDF or DOCX. We parse skills, projects, and experience so the AI's questions match your background." },
-    { "@type": "HowToStep", position: 2, name: "Pick a role and company", text: "Choose from 3,000+ companies and 10 interview types: behavioral, technical, system design, PM case, salary negotiation, and more." },
+    { "@type": "HowToStep", position: 2, name: "Pick a role and company", text: "Choose from 200+ Indian roles and 10 interview types: behavioral, technical, system design, PM case, salary negotiation, and more." },
     { "@type": "HowToStep", position: 3, name: "Practice a voice interview", text: "The AI interviewer speaks the question, listens to your answer, asks follow-ups when you're shallow, and pushes back on weak structure." },
     { "@type": "HowToStep", position: 4, name: "Read your scored report", text: "STAR breakdown, communication score, technical depth score, and a coached model answer for every question." },
     { "@type": "HowToStep", position: 5, name: "Come back when skill decays", text: "We track which interview skills are slipping and queue spaced repetition. 30 minutes a week holds the gain." },

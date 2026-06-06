@@ -776,8 +776,8 @@ export function HowItWorksV2() {
       n: "02",
       label: "Pick target",
       title: "Choose the room you're walking into.",
-      body: "3,000+ companies in the catalog: TCS, Infosys, Wipro, Razorpay, Zomato, Flipkart, Cred, Deloitte, ISRO, RBI, Paytm, Google, Amazon, McKinsey, plus 2,950 more. Pair with a role and round type: HR screen, technical, campus placement, panel, salary negotiation.",
-      detail: "We refresh question patterns weekly based on real candidate reports. Don't see your target company? Tell us and we'll add it within 48 hours.",
+      body: "200+ Indian roles in the question bank: TCS, Infosys, Wipro, Razorpay, Zomato, Flipkart, Cred, Deloitte, ISRO, RBI, Paytm — across IT services, unicorns, PSUs, and MNCs. Pair with a role and round type: HR screen, technical, campus placement, panel, salary negotiation.",
+      detail: "We refresh question patterns regularly as new public interview reports surface. Don't see your target company? Tell us and we'll add it within 48 hours.",
     },
     {
       n: "03",

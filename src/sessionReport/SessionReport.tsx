@@ -15,6 +15,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
+import { captureClientEvent } from "../posthogClient";
 import {
   evaluateSessionWithAI,
   fetchRecentSessionScores,
@@ -420,8 +421,17 @@ export const SessionReport = memo(function SessionReport({
         band: report.band,
         view: "main",
       });
+      // Mirror to PostHog for the activation funnel — Vercel Analytics
+      // only fires aggregate counters, PostHog feeds the funnel dashboard
+      // (signup → first interview → first report viewed).
+      captureClientEvent("report_viewed", {
+        session_id: session.id,
+        score: report.overallScore,
+        band: report.band,
+        is_first_report: (user?.practiceTimestamps?.length ?? 0) <= 1,
+      });
     }
-  }, [report, session.id]);
+  }, [report, session.id, user?.practiceTimestamps?.length]);
 
   /* ── Fetch trend + live cohort (best-effort) ── */
   useEffect(() => {

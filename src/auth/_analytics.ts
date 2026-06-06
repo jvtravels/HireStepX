@@ -2,7 +2,10 @@
    Typed event helpers for auth funnel tracking.
    Wraps PostHog so the canvas doesn't have a hard dependency — calls
    are no-ops in environments where PostHog isn't loaded (Storybook,
-   Tempo canvas runtime). Production wires to the real client. */
+   Tempo canvas runtime). Production wires to the real client via
+   posthogClient.captureClientEvent. */
+
+import { captureClientEvent } from "../posthogClient";
 
 export type AuthMethod = "google" | "email" | "phone" | "passkey" | "magic-link";
 
@@ -21,26 +24,21 @@ export type AuthEvent =
   | { type: "login_signup_clicked" }
   | { type: "login_forgot_password_clicked" };
 
-declare global {
-  interface Window {
-    posthog?: {
-      capture: (event: string, props?: Record<string, unknown>) => void;
-    };
-  }
-}
-
-/** Fire an auth event. Safe to call before PostHog is initialized. */
+/** Fire an auth event. Safe to call before PostHog is initialized —
+ *  posthogClient internally no-ops until init() completes. */
 export function trackAuth(event: AuthEvent): void {
   if (typeof window === "undefined") return;
-  const ph = window.posthog;
-  if (!ph?.capture) return;
-
   const { type, ...props } = event;
-  try {
-    ph.capture(type, props);
-  } catch {
-    // Swallow — analytics must never break the auth flow.
+  // PostHog's typed Props only allows scalar values; AuthEvent props
+  // are already strings/numbers/booleans/undefined so this is safe.
+  const safe: Record<string, string | number | boolean | null | undefined> = {};
+  for (const [k, v] of Object.entries(props)) {
+    if (v === undefined || v === null) continue;
+    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+      safe[k] = v;
+    }
   }
+  captureClientEvent(type, safe);
 }
 
 /** Build a viewed-event payload from the current document. */

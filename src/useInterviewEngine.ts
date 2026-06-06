@@ -1298,6 +1298,10 @@ export function useInterviewEngine() {
         is_panel: isPanelInterview,
         role: user?.targetRole || null,
         company: user?.targetCompany || null,
+        // Activation funnel: the user's first-ever session is the
+        // single most important PostHog event for measuring whether
+        // signup → wow-moment conversion is working.
+        is_first_session: (user?.practiceTimestamps?.length ?? 0) === 0,
       });
     }
 
