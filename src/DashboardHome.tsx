@@ -477,7 +477,22 @@ export default function DashboardHome() {
                 }}>View all <span aria-hidden>→</span></button>
               </div>
             </div>
-            <RecentSessionsList real={realSessions} fallback={MOCK_FALLBACK_SESSIONS} demoMode={demoMode} onStart={goToInterview("recent-empty")} />
+            <RecentSessionsList
+              real={realSessions}
+              fallback={MOCK_FALLBACK_SESSIONS}
+              demoMode={demoMode}
+              onStart={goToInterview("recent-empty")}
+              onOpenSession={(id) => {
+                const s = realSessions.find((r) => r.id === id);
+                captureClientEvent("dashboard_session_clicked", {
+                  session_id: id,
+                  score: s?.score,
+                  type: s?.type,
+                  surface: "recent-sessions",
+                });
+                router.push(`/session/${id}`);
+              }}
+            />
           </section>
 
           {/* Milestones. Demo mode shows the timeline; real mode shows a stub until backend lands. */}
@@ -745,11 +760,15 @@ function DailyGoalRibbonInline() {
   );
 }
 
-function RecentSessionsList({ real, fallback, demoMode, onStart }: {
+function RecentSessionsList({ real, fallback, demoMode, onStart, onOpenSession }: {
   real: DashboardSession[];
   fallback: DemoSession[];
   demoMode: boolean;
   onStart: () => void;
+  /* Navigates to /session/[id] for the report view. Demo fallback rows
+     skip this — they have no real id and clicking sample data would
+     deceive the user. */
+  onOpenSession: (id: string) => void;
 }) {
   if (real.length === 0) {
     if (demoMode) {
@@ -784,20 +803,28 @@ function RecentSessionsList({ real, fallback, demoMode, onStart }: {
           score={s.score}
           icon={Icons.practice}
           first={i === 0}
+          onClick={() => onOpenSession(s.id)}
         />
       ))}
     </ul>
   );
 }
 
-function SessionRow({ title, date, score, icon, first }: {
+function SessionRow({ title, date, score, icon, first, onClick }: {
   title: string; date: string; score: number; icon: React.ReactNode; first: boolean;
+  /* Optional — demo fallback rows pass nothing and render inert. Real
+     rows pass a handler so the row becomes a button to /session/[id]. */
+  onClick?: () => void;
 }) {
-  return (
-    <li style={{
-      display: "flex", alignItems: "center", gap: 14,
-      padding: "14px 4px", borderTop: first ? "none" : `1px solid ${t.line}`,
-    }}>
+  const baseStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", gap: 14, width: "100%",
+    padding: "14px 8px", borderTop: first ? "none" : `1px solid ${t.line}`,
+    background: "transparent", border: "none", borderRadius: 8,
+    textAlign: "left" as const, font: "inherit", color: "inherit",
+    minHeight: 44, /* WCAG 2.5.5 touch target */
+  };
+  const inner = (
+    <>
       <span style={{
         width: 36, height: 36, borderRadius: 10, background: t.creamSoft, color: t.indigo,
         display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
@@ -810,6 +837,27 @@ function SessionRow({ title, date, score, icon, first }: {
         <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2 }}>{date}</div>
       </div>
       <ScoreChip value={score} />
+    </>
+  );
+  if (!onClick) {
+    return <li style={{ ...baseStyle, padding: "14px 4px", minHeight: undefined }}>{inner}</li>;
+  }
+  return (
+    <li style={{ borderTop: first ? "none" : `1px solid ${t.line}` }}>
+      <button
+        type="button"
+        onClick={onClick}
+        className="hsx-dh-btn hsx-dh-session-row"
+        aria-label={`Open ${title} report`}
+        style={{
+          ...baseStyle,
+          borderTop: "none",
+          cursor: "pointer",
+        }}
+      >
+        {inner}
+        <span aria-hidden style={{ color: t.inkFaint, marginLeft: 2 }}>{Icons.arrow}</span>
+      </button>
     </li>
   );
 }
