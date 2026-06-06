@@ -858,9 +858,13 @@ input[type="range"]::-moz-range-thumb {
 .settings-form-grid { grid-template-columns: 1fr 1fr; }
 .settings-chip-grid { grid-template-columns: 1fr 1fr 1fr; }
 .settings-plan-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.settings-referral-grid { grid-template-columns: minmax(0, 1fr) 280px; }
 
 @media (max-width: 860px) {
   .settings-plan-row { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 720px) {
+  .settings-referral-grid { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 600px) {
   .settings-form-grid { grid-template-columns: 1fr !important; }
