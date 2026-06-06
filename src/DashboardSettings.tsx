@@ -10,6 +10,8 @@ import {
   focusOutBase,
   AccountSection,
   PlanSection,
+  SectionHead,
+  EditorialCard,
 } from "./settingsSections";
 
 /* Cream-mode local tokens — mirror canvases/design-system/_tokens.ts. */
@@ -410,15 +412,6 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
   const remaining = Math.max(REFERRAL_CAP - earned, 0);
   const pct = (earned / REFERRAL_CAP) * 100;
 
-  const cardStyle: React.CSSProperties = {
-    background: c.graphite,
-    border: `1px solid ${c.border}`,
-    borderRadius: 16,
-    boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-  };
-  const kickerStyle: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.12em", textTransform: "uppercase" };
-  const headlineStyle: React.CSSProperties = { fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "6px 0", letterSpacing: "-0.02em", lineHeight: 1.15 };
-  const descStyle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 };
   const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.08em", textTransform: "uppercase" };
 
   const primaryBtn: React.CSSProperties = {
@@ -439,24 +432,21 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
 
   if (loading) {
     return (
-      <div style={{ ...cardStyle, padding: 28 }}>
+      <EditorialCard>
         <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>Loading referral info...</span>
-      </div>
+      </EditorialCard>
     );
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
-      <div style={{ marginTop: 8, marginBottom: 16 }}>
-        <div style={kickerStyle}>Referral</div>
-        <h2 style={headlineStyle}>Bring a friend, earn a month</h2>
-        <p style={descStyle}>
-          They get 20% off their first Pro month. You get a free month when they convert.
-          {" "}{earned} earned, {remaining} to go before the lifetime cap.
-        </p>
-      </div>
+      <SectionHead
+        kicker="Referral"
+        title="Bring a friend, earn a month"
+        desc={`They get 20% off their first Pro month. You get a free month when they convert. ${earned} earned, ${remaining} to go before the lifetime cap.`}
+      />
 
-      <div style={{ ...cardStyle, padding: "28px 28px" }}>
+      <EditorialCard>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 280px", gap: 28, alignItems: "start" }}>
           <div style={{ minWidth: 0 }}>
             <div style={sectionLabel}>Your referral link</div>
@@ -494,9 +484,9 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
             </div>
           </div>
         </div>
-      </div>
+      </EditorialCard>
 
-      <div style={{ ...cardStyle, padding: "24px 28px" }}>
+      <EditorialCard>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory }}>Your invites</div>
           <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 }}>
@@ -514,7 +504,7 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
             ))}
           </div>
         )}
-      </div>
+      </EditorialCard>
     </div>
   );
 }

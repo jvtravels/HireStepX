@@ -288,19 +288,31 @@ const editorialInput: React.CSSProperties = {
   transition: "border-color 0.18s ease, box-shadow 0.18s ease",
 };
 
-const accSubtleBtn: React.CSSProperties = {
+export const accSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
   background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
   padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
-const accSubtleBtnGhost: React.CSSProperties = {
+export const accSubtleBtnGhost: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.stone,
   background: "transparent", border: "none", borderRadius: 9,
   padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
-function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string; title: string; desc?: string; tone?: "danger" }) {
+export const dangerSubtleBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ember,
+  background: "transparent", border: `1px solid rgba(185,28,28,0.3)`,
+  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+};
+
+export const dangerSolidBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
+  background: c.ember, border: "none",
+  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+};
+
+export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string; title: string; desc?: string; tone?: "danger" }) {
   return (
     <div style={{ marginTop: 8, marginBottom: 16 }}>
       {k && (
@@ -322,7 +334,7 @@ function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string; title:
   );
 }
 
-function EditorialCard({ children, density = "default" }: { children: React.ReactNode; density?: "default" | "tight" }) {
+export function EditorialCard({ children, density = "default" }: { children: React.ReactNode; density?: "default" | "tight" }) {
   return (
     <div style={{
       background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14,
@@ -332,7 +344,7 @@ function EditorialCard({ children, density = "default" }: { children: React.Reac
   );
 }
 
-function KeyValue({ label, value, right }: { label: string; value: string; right?: React.ReactNode }) {
+export function KeyValue({ label, value, right }: { label: string; value: string; right?: React.ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", gap: 16 }}>
       <div style={{ minWidth: 0 }}>
@@ -772,28 +784,14 @@ const planDesc: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, color
 const planCardOuter: React.CSSProperties = {
   background: c.graphite,
   border: `1px solid ${c.border}`,
-  borderRadius: 16,
-  boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+  borderRadius: 14,
+  boxShadow: shadow.sm,
+  padding: "24px 28px",
 };
 const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory };
 const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 };
 const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory };
 const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, marginTop: 2 };
-const subtleBtn: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory,
-  background: c.creamSoft, border: `1px solid ${c.borderStrong}`,
-  borderRadius: 8, padding: "8px 14px", cursor: "pointer", transition: "all 0.15s",
-};
-const subtleBtnGhost: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ember,
-  background: "transparent", border: `1px solid rgba(185,28,28,0.3)`,
-  borderRadius: 8, padding: "8px 14px", cursor: "pointer", transition: "all 0.15s",
-};
-const dangerSolidBtn: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.cream,
-  background: c.ember, border: "none",
-  borderRadius: 8, padding: "8px 14px", cursor: "pointer", transition: "opacity 0.15s",
-};
 
 
 function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boolean }) {
@@ -969,7 +967,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
 
       {/* Status strip for paid plans */}
       {isPaid && endDateLabel && (
-        <div style={{ ...planCardOuter, padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ ...planCardOuter, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0 }}>
             <div style={subHeaderTitle}>
               {tierLabel}
@@ -989,19 +987,19 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
             {authUser?.cancelAtPeriodEnd ? (
               <button disabled={cancelLoading} onClick={handleReactivate}
-                style={{ ...subtleBtn, color: c.cream, background: c.sage, border: `1px solid ${c.sage}`, opacity: cancelLoading ? 0.6 : 1 }}>
+                style={{ ...accSubtleBtn, color: c.cream, background: c.sage, border: `1px solid ${c.sage}`, opacity: cancelLoading ? 0.6 : 1 }}>
                 {cancelLoading ? "Reactivating..." : "Reactivate"}
               </button>
             ) : !confirmCancel ? (
               <>
-                <button onClick={handlePauseToggle} style={subtleBtn} disabled={cancelLoading}>
+                <button onClick={handlePauseToggle} style={accSubtleBtn} disabled={cancelLoading}>
                   {authUser?.subscriptionPaused ? "Resume" : "Pause"}
                 </button>
-                <button onClick={() => setConfirmCancel(true)} style={subtleBtnGhost}>Cancel</button>
+                <button onClick={() => setConfirmCancel(true)} style={dangerSubtleBtn}>Cancel</button>
               </>
             ) : (
               <>
-                <button onClick={() => setConfirmCancel(false)} style={subtleBtn}>Keep plan</button>
+                <button onClick={() => setConfirmCancel(false)} style={accSubtleBtn}>Keep plan</button>
                 <button disabled={cancelLoading} onClick={handleConfirmCancel} style={{ ...dangerSolidBtn, opacity: cancelLoading ? 0.6 : 1 }}>
                   {cancelLoading ? "Cancelling..." : "Yes, cancel"}
                 </button>
@@ -1013,7 +1011,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: cancelMsg.includes("ancelled") ? c.sage : c.ember, margin: 0 }}>{cancelMsg}</p>}
 
       {/* This month */}
-      <div style={{ ...planCardOuter, padding: "24px 28px" }}>
+      <div style={{ ...planCardOuter }}>
         <div style={{ marginBottom: 16 }}>
           <div style={subHeaderTitle}>This month</div>
           <div style={subHeaderHint}>Counted from your sessions table. Resets on the first of every month.</div>
@@ -1023,13 +1021,13 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
 
       {/* Payment method — paid plans only */}
       {isPaid && (
-        <div style={{ ...planCardOuter, padding: "20px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ ...planCardOuter, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0 }}>
             <div style={keyValueLabel}>Payment method</div>
             <div style={keyValueValue}>Razorpay handles every renewal. Update card or UPI from their dashboard.</div>
           </div>
           <a href="https://razorpay.com/support/#request/merchant" target="_blank" rel="noopener noreferrer"
-            style={{ ...subtleBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            style={{ ...accSubtleBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
             Manage on Razorpay
             <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>
@@ -1037,7 +1035,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       )}
 
       {/* Payment history */}
-      <div style={{ ...planCardOuter, padding: "24px 28px" }}>
+      <div style={{ ...planCardOuter }}>
         <div style={{ marginBottom: 16 }}>
           <div style={subHeaderTitle}>Payment history</div>
           <div style={subHeaderHint}>Every successful Razorpay charge on your account.</div>
@@ -1056,7 +1054,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       </div>
 
       {/* Data */}
-      <div style={{ ...planCardOuter, padding: "24px 28px" }}>
+      <div style={{ ...planCardOuter }}>
         <div style={{ marginBottom: 16 }}>
           <div style={subHeaderTitle}>Data</div>
           <div style={subHeaderHint}>Export everything, or delete on demand.</div>
@@ -1069,7 +1067,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           </div>
           <button type="button" disabled={exporting}
             onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
-            style={{ ...subtleBtn, opacity: exporting ? 0.6 : 1 }}>
+            style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
             {exporting ? "Exporting…" : "Export CSV"}
           </button>
         </div>
@@ -1079,7 +1077,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <div style={keyValueLabel}>Full data export</div>
             <div style={keyValueValue}>JSON portable copy of your account, sessions, payments, and preferences.</div>
           </div>
-          <button type="button" disabled={exporting} onClick={handleFullJsonExport} style={{ ...subtleBtn, opacity: exporting ? 0.6 : 1 }}>
+          <button type="button" disabled={exporting} onClick={handleFullJsonExport} style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
             {exporting ? "Exporting…" : "Download JSON"}
           </button>
         </div>
@@ -1089,7 +1087,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <div style={keyValueLabel}>Log out</div>
             <div style={keyValueValue}>Sign out on this device.</div>
           </div>
-          <button type="button" onClick={onLogout} style={subtleBtn}>Log out</button>
+          <button type="button" onClick={onLogout} style={accSubtleBtn}>Log out</button>
         </div>
 
         {!confirmDelete ? (
@@ -1100,7 +1098,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             </div>
             <button type="button"
               onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeleteMsg(""); }}
-              style={subtleBtnGhost}>
+              style={dangerSubtleBtn}>
               Delete account
             </button>
           </div>
@@ -1117,7 +1115,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                   border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 8, padding: "9px 12px",
                   outline: "none", minWidth: 240, flex: 1,
                 }} />
-              <button type="button" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); }} style={subtleBtn}>Keep account</button>
+              <button type="button" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); }} style={accSubtleBtn}>Keep account</button>
               <button type="button"
                 disabled={deleteLoading || deleteEmailInput.toLowerCase() !== (authUser?.email || "").toLowerCase()}
                 onClick={handleConfirmDelete}
