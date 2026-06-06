@@ -15,40 +15,40 @@ import type { ReactNode, CSSProperties, RefObject } from "react";
 import type { ResumeProfile } from "../dashboardData";
 import type { FitnessBand, InterviewType, FitnessScore } from "../resumeFitness";
 
-/* ─── Cream palette — mirrors design-system/_tokens.ts ─────────────── */
+/* ─── Cream palette (derived from auth/_tokens — single source of truth) */
+import { tokens as T, fonts as F, shadows as S } from "../auth/_tokens";
 const t = {
-  cream: "#FAF7F0",
-  creamSoft: "#F4EFE3",
-  white: "#FFFFFF",
-  coal: "#0E0C08",
-  inkSoft: "#6E6759",
-  inkFaint: "#A39C8B",
-  indigo: "#312E81",
-  indigoDeep: "#1E1B4B",
-  indigo100: "#E5E2F2",
-  copper: "#B45309",
-  copper100: "#F4E5D8",
-  copperSoft: "rgba(180, 83, 9, 0.12)",
-  copperLight: "#E8D5AE",
+  cream: T.cream,
+  creamSoft: T.creamSoft,
+  white: T.white,
+  coal: T.coal,
+  inkSoft: T.inkSoft,
+  inkFaint: T.inkFaintWeak,         // legacy decorative shade
+  indigo: T.indigo,
+  indigoDeep: T.indigoDeep,
+  indigo100: T.indigo100,
+  copper: T.copper,
+  copper100: T.copper100,
+  copperSoft: T.copperSoft,
+  copperLight: "#E8D5AE",            // resume-local — not in canonical palette
   successBorder: "rgba(21,128,61,0.22)",
   warningBorder: "rgba(161,98,7,0.22)",
   errorBorder: "rgba(185,28,28,0.22)",
-  success: "#15803D",
-  success100: "#DCFCE7",
-  warning: "#A16207",
-  warning100: "#FEF3C7",
-  error: "#B91C1C",
-  error100: "#FEE2E2",
-  line: "#EBE5D2",
-  lineStrong: "#D6CDB5",
-};
+  success: T.success,
+  success100: T.success100,
+  warning: T.warning,
+  warning100: T.warning100,
+  error: T.error,
+  error100: T.error100,
+  line: T.line,
+  lineStrong: T.lineStrong,
+} as const;
 const f = {
-  serif: "'Instrument Serif', Georgia, serif",
-  sans: "'Satoshi', -apple-system, system-ui, sans-serif",
-  mono: "'JetBrains Mono', monospace",
-};
-const cardShadow =
-  "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)";
+  serif: F.serif,
+  sans: F.sans,
+  mono: F.mono,
+} as const;
+const cardShadow = S.card;
 
 /* ─── ATS shape (mirrors DashboardResume's local ATSResult) ────────── */
 export interface ATSResult {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { font } from "../tokens";
+import { tokens } from "../auth/_tokens";
 
 export function EmailVerificationBanner({ email }: { email?: string } = {}) {
   const [cooldown, setCooldown] = useState(0);
@@ -31,11 +32,12 @@ export function EmailVerificationBanner({ email }: { email?: string } = {}) {
     }
   };
 
-  const COPPER = "#B45309";
-  const COPPER_SOFT = "rgba(180, 83, 9, 0.08)";
-  const COAL = "#0E0C08";
-  const INK_FAINT = "#A39C8B";
-  const LINE = "#EBE5D2";
+  // Derived from the canonical cream palette so a token shift propagates.
+  const COPPER = tokens.copper;
+  const COPPER_SOFT = "rgba(180, 83, 9, 0.08)"; // banner-local lighter wash, between copperWash & copperSoft
+  const COAL = tokens.coal;
+  const INK_FAINT = tokens.inkFaintWeak;
+  const LINE = tokens.line;
   const disabled = cooldown > 0 || status === "sending";
   return (
     <div
