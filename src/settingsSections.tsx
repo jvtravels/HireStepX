@@ -778,9 +778,6 @@ export interface PlanSectionProps {
 }
 
 /* ─── Plan & Data — editorial layout (matches canvas) ─── */
-const planKicker: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.12em", textTransform: "uppercase" };
-const planHeadline: React.CSSProperties = { fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "6px 0", letterSpacing: "-0.02em", lineHeight: 1.15 };
-const planDesc: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 };
 const planCardOuter: React.CSSProperties = {
   background: c.graphite,
   border: `1px solid ${c.border}`,
@@ -959,11 +956,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
-      <div style={{ marginTop: 8, marginBottom: 16 }}>
-        <div style={planKicker}>Plan & Data</div>
-        <h2 style={planHeadline}>{headline}</h2>
-        <p style={planDesc}>{headlineDesc}</p>
-      </div>
+      <SectionHead kicker="Plan & Data" title={headline} desc={headlineDesc} />
 
       {/* Status strip for paid plans */}
       {isPaid && endDateLabel && (
@@ -1043,7 +1036,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         {paymentsLoading ? (
           <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>Loading payment history…</div>
         ) : payments.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>No payments yet. Upgrade to start a billing history.</div>
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>No payments yet.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {payments.map((p, i) => (
@@ -1057,13 +1050,13 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       <div style={{ ...planCardOuter }}>
         <div style={{ marginBottom: 16 }}>
           <div style={subHeaderTitle}>Data</div>
-          <div style={subHeaderHint}>Export everything, or delete on demand.</div>
+          <div style={subHeaderHint}>Export sessions, take a full copy, or sign out on this device.</div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={keyValueLabel}>Export sessions</div>
-            <div style={keyValueValue}>CSV of every session, evaluation, and resume snapshot.</div>
+            <div style={keyValueValue}>CSV of every completed session: questions, your answers, scores, and the resume snapshot used.</div>
           </div>
           <button type="button" disabled={exporting}
             onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
@@ -1075,45 +1068,50 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={keyValueLabel}>Full data export</div>
-            <div style={keyValueValue}>JSON portable copy of your account, sessions, payments, and preferences.</div>
+            <div style={keyValueValue}>Portable JSON of your account, sessions, payments, and preferences. Take it anywhere.</div>
           </div>
           <button type="button" disabled={exporting} onClick={handleFullJsonExport} style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
             {exporting ? "Exporting…" : "Download JSON"}
           </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", flexWrap: "wrap" }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={keyValueLabel}>Log out</div>
-            <div style={keyValueValue}>Sign out on this device.</div>
+            <div style={keyValueValue}>Sign out on this device. Other devices stay signed in.</div>
           </div>
           <button type="button" onClick={onLogout} style={accSubtleBtn}>Log out</button>
         </div>
+      </div>
+
+      {/* Danger zone */}
+      <div style={{ ...planCardOuter, borderColor: "rgba(185,28,28,0.22)" }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: c.ember, textTransform: "uppercase" }}>Danger zone</div>
+          <div style={{ ...subHeaderTitle, color: c.ember, marginTop: 6 }}>Delete account</div>
+          <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
+        </div>
 
         {!confirmDelete ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", flexWrap: "wrap" }}>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ ...keyValueLabel, color: c.ember }}>Delete account</div>
-              <div style={keyValueValue}>Scheduled for permanent deletion in 7 days. Log in within 7 days to cancel.</div>
-            </div>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button type="button"
               onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeleteMsg(""); }}
               style={dangerSubtleBtn}>
-              Delete account
+              Begin deletion
             </button>
           </div>
         ) : (
-          <div style={{ padding: "16px 0" }}>
-            <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm delete</div>
-            <div style={keyValueValue}>Type your email ({authUser?.email}) to confirm. This is reversible for 7 days.</div>
+          <div>
+            <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm deletion</div>
+            <div style={keyValueValue}>Type your email ({authUser?.email}) to confirm. Reversible for 7 days after submit.</div>
             <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
               <input type="email" value={deleteEmailInput}
                 onChange={(e) => setDeleteEmailInput(e.target.value)}
                 placeholder="Type your email to confirm" aria-label="Confirm email for account deletion"
                 style={{
                   fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
-                  border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 8, padding: "9px 12px",
-                  outline: "none", minWidth: 240, flex: 1,
+                  border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
+                  outline: "none", minWidth: 240, flex: 1, minHeight: 40,
                 }} />
               <button type="button" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); }} style={accSubtleBtn}>Keep account</button>
               <button type="button"
