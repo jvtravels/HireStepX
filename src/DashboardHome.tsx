@@ -9,13 +9,27 @@
    visible without the banner (for screenshots / canvas previews).
    In production, the banner makes it unmistakable. */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useDashboardSessions } from "./DashboardContext";
 import { useDocTitle } from "./useDocTitle";
+import { captureClientEvent } from "./posthogClient";
 import type { DashboardSession } from "./dashboardTypes";
 import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
+
+/* Funnel telemetry — these event names are the contract PostHog
+   dashboards query, so they're stable. The `surface` prop on
+   dashboard_start_clicked is the only attribute that needs to grow
+   when new Start CTAs are added; keep the values kebab-case so
+   PostHog auto-grouping behaves. */
+type StartSurface =
+  | "next-move-primary"     // hero card primary CTA
+  | "next-move-outline"     // hero card secondary "Pick a different focus"
+  | "ai-insight-demo"       // demo-mode AI insight bottom CTA
+  | "ai-insight-real"       // real-mode AI insight bottom CTA
+  | "recent-empty"          // first-time "Start your first session"
+  | "rail-resume";          // sidebar resume rail (future)
 
 /* ─── Tokens (derived from auth/_tokens — single source of truth).
  * Every value here is a passthrough to a canonical token. Audit rule:
@@ -269,10 +283,47 @@ export default function DashboardHome() {
   /* /session/new renders SessionSetup, which configures a session and
    * hands off to /interview. The previous "/interview/setup" path did
    * not exist — every Start CTA was a 404. */
-  const goToInterview = () => router.push("/session/new");
+  /* Tagged factory — each call site passes its `surface` so PostHog
+     can attribute Start clicks per CTA. The funnel
+     dashboard_loaded → dashboard_start_clicked → interview_session_started
+     → interview_session_completed answers "which surface converts?". */
+  const goToInterview = (surface: StartSurface) => () => {
+    captureClientEvent("dashboard_start_clicked", {
+      surface,
+      hasData: core.hasData,
+      sessions_count: core.recentSessions.length,
+      streak: core.currentStreak,
+      readiness: readiness,
+    });
+    router.push("/session/new");
+  };
   const goToSessions  = () => router.push("/sessions");
   const goToAnalytics = () => router.push("/analytics");
   const goToResume    = () => router.push("/resume");
+
+  /* Fire dashboard_loaded exactly once per mount, after the first
+     paint that has real data attached. Using a ref instead of effect
+     deps so we don't re-fire when streak/sessions update mid-session
+     (those are not "loads"). Strict-mode double-effect is guarded. */
+  const loadedFiredRef = useRef(false);
+  useEffect(() => {
+    if (loadedFiredRef.current) return;
+    if (core.sessionsLoading) return; // wait until at least sessions data resolved
+    loadedFiredRef.current = true;
+    captureClientEvent("dashboard_loaded", {
+      hasData: core.hasData,
+      sessions_count: core.recentSessions.length,
+      streak: core.currentStreak,
+      readiness: readiness,
+      pattern_data: hasPatternData,
+      tier: user?.subscriptionTier ?? "unknown",
+      demo_mode: demoMode,
+    });
+  }, [
+    core.sessionsLoading, core.hasData, core.recentSessions.length,
+    core.currentStreak, readiness, hasPatternData,
+    user?.subscriptionTier, demoMode,
+  ]);
 
   return (
     <div className="hsx-dh-root" style={{
@@ -372,8 +423,8 @@ export default function DashboardHome() {
                     : "Pick a role and start. After four sessions, your coach surfaces the specific patterns it's seeing across your STAR breakdowns."}
                 </p>
                 <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-                  <PrimaryCta onClick={goToInterview}>Start 25 min drill</PrimaryCta>
-                  <OutlineCta onClick={goToInterview}>Pick a different focus</OutlineCta>
+                  <PrimaryCta onClick={goToInterview("next-move-primary")}>Start 25 min drill</PrimaryCta>
+                  <OutlineCta onClick={goToInterview("next-move-outline")}>Pick a different focus</OutlineCta>
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
@@ -426,7 +477,7 @@ export default function DashboardHome() {
                 }}>View all <span aria-hidden>→</span></button>
               </div>
             </div>
-            <RecentSessionsList real={realSessions} fallback={MOCK_FALLBACK_SESSIONS} demoMode={demoMode} onStart={goToInterview} />
+            <RecentSessionsList real={realSessions} fallback={MOCK_FALLBACK_SESSIONS} demoMode={demoMode} onStart={goToInterview("recent-empty")} />
           </section>
 
           {/* Milestones. Demo mode shows the timeline; real mode shows a stub until backend lands. */}
@@ -476,7 +527,7 @@ export default function DashboardHome() {
               }}>
                 BASED ON: {MOCK_INSIGHT.evidence}
               </div>
-              <PrimaryCta size="sm" fullWidth onClick={goToInterview}>Start sharpening drill</PrimaryCta>
+              <PrimaryCta size="sm" fullWidth onClick={goToInterview("ai-insight-demo")}>Start sharpening drill</PrimaryCta>
             </Card>
           ) : (
             <Card labelledBy="dh-insight">
@@ -490,7 +541,7 @@ export default function DashboardHome() {
                 After four sessions, your coach surfaces a specific pattern from
                 your STAR breakdowns. Keep going.
               </p>
-              <PrimaryCta size="sm" fullWidth onClick={goToInterview}>Start a session</PrimaryCta>
+              <PrimaryCta size="sm" fullWidth onClick={goToInterview("ai-insight-real")}>Start a session</PrimaryCta>
             </Card>
           )}
 
