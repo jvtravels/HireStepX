@@ -273,9 +273,20 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             plan: planId,
           });
         },
-        modal: { ondismiss: function () { setLoading(null); } },
+        modal: {
+          // ondismiss fires only after the modal painted at least once,
+          // so set modalOpened here too in case the user dismisses
+          // before any payment.failed event.
+          ondismiss: function () { modalOpened.fired = true; setLoading(null); },
+        },
       });
+      // Track whether the modal actually painted so the safety timeout
+      // below can distinguish "Razorpay never opened" (clear spinner)
+      // from "user is mid-typing UPI" (leave spinner alone, so they
+      // can't double-fire createOrder by clicking again).
+      const modalOpened = { fired: false };
       (rzp as unknown as { on(event: string, cb: (r: unknown) => void): void }).on("payment.failed", function (response: unknown) {
+        modalOpened.fired = true;
         const errDetail = (response as { error?: { code?: string; description?: string; reason?: string } })?.error;
         const reason = errDetail?.description || errDetail?.reason || "Unknown error";
         const code = errDetail?.code || "";
@@ -287,8 +298,15 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         setLoading(null);
       });
       rzp.open();
-      // Safety timeout: if Razorpay doesn't open within 8s, reset state
-      setTimeout(() => { setLoading(prev => prev === planId ? null : prev); }, 8000);
+      // Safety net: clear spinner ONLY if Razorpay never opened. Without
+      // the guard, a modal that appears at 7.9s would re-enable the Pay
+      // button while the user types UPI — letting them double-fire
+      // createOrder and double-charge themselves.
+      setTimeout(() => {
+        if (!modalOpened.fired) {
+          setLoading(prev => prev === planId ? null : prev);
+        }
+      }, 8000);
     } catch (err) {
       console.error("Checkout error:", err);
       const msg = err instanceof Error ? err.message : "";

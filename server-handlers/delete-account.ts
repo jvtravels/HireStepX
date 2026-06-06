@@ -46,6 +46,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const SUPABASE_ANON_KEY = supabaseAnonKey();
   const token = authHeader.slice(7);
   let userId: string;
+  let userEmail: string | undefined;
+  // OAuth-only accounts (Google) have no app password to verify — we
+  // skip the re-auth gate for them. Bearer alone is what they had in
+  // the first place (Supabase Auth never stored a hash we could check).
+  let isOAuthOnly = false;
   try {
     const authAc = new AbortController();
     const authTimer = setTimeout(() => authAc.abort(), 5000);
@@ -57,6 +62,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!userRes.ok) return res.status(401).json({ error: "Invalid auth token" });
     const userData = await userRes.json();
     userId = userData.id;
+    userEmail = typeof userData.email === "string" ? userData.email : undefined;
+    const provider = userData?.app_metadata?.provider;
+    const providers: unknown = userData?.app_metadata?.providers;
+    isOAuthOnly =
+      (provider === "google" && (!Array.isArray(providers) || !providers.includes("email"))) ||
+      (Array.isArray(providers) && providers.includes("google") && !providers.includes("email"));
   } catch (authErr) {
     if (authErr instanceof Error && authErr.name === "AbortError") {
       return res.status(504).json({ error: "Auth verification timed out" });
@@ -67,6 +78,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Default: soft-delete with 7-day grace period. Pass { hard: true } to permanently delete immediately.
   const hardDelete = req.body && typeof req.body === "object" && "hard" in req.body ? !!(req.body as Record<string, unknown>).hard : false;
   const restore = req.body && typeof req.body === "object" && "restore" in req.body ? !!(req.body as Record<string, unknown>).restore : false;
+  const reauthPassword = req.body && typeof req.body === "object" && "password" in req.body && typeof (req.body as Record<string, unknown>).password === "string"
+    ? ((req.body as Record<string, unknown>).password as string)
+    : "";
+
+  // Re-auth gate: destructive paths (soft-delete + hard-delete) require
+  // the user to re-enter their password. Defends against session-token
+  // theft (extension malware, leaked localStorage, shared computer)
+  // where the attacker has the bearer but not the password. Restore is
+  // non-destructive (just clears deleted_at) and is exempt.
+  // OAuth-only users have no password to verify, so we let them through
+  // on bearer-only — they were authenticated via Google's flow anyway,
+  // not a password we could re-check.
+  if (!restore && !isOAuthOnly) {
+    if (!reauthPassword) {
+      return res.status(403).json({ error: "Password required to delete account.", code: "reauth_required" });
+    }
+    if (!userEmail) {
+      return res.status(403).json({ error: "Cannot verify password without account email.", code: "reauth_failed" });
+    }
+    try {
+      const ac = new AbortController();
+      const t = setTimeout(() => ac.abort(), 5000);
+      // Supabase password grant — succeeds (200) iff password matches.
+      // We don't keep the returned session; this is verification only.
+      const reauthRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: userEmail, password: reauthPassword }),
+        signal: ac.signal,
+      });
+      clearTimeout(t);
+      if (!reauthRes.ok) {
+        return res.status(403).json({ error: "Incorrect password.", code: "reauth_failed" });
+      }
+    } catch (reauthErr) {
+      if (reauthErr instanceof Error && reauthErr.name === "AbortError") {
+        return res.status(504).json({ error: "Password verification timed out." });
+      }
+      return res.status(503).json({ error: "Password verification unavailable." });
+    }
+  }
 
   try {
     const headers = {

@@ -580,6 +580,7 @@ export interface PlanSectionProps {
     cancelAtPeriodEnd?: boolean;
     subscriptionPaused?: boolean;
     id?: string;
+    signedInVia?: "google" | "email";
   } | null;
   tierLabel: string;
   // Cancel / reactivate
@@ -665,8 +666,18 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
     authHeaders: getAuthHeaders,
   } = props;
 
+  // Re-auth gate: password re-entry before destructive identity action.
+  // Local state — not hoisted into the parent because no other section
+  // reads it, and we want it cleared the moment confirmDelete flips off.
+  const [deletePasswordInput, setDeletePasswordInput] = useState("");
+
   const tier = authUser?.subscriptionTier || "free";
   const isPaid = tier !== "free";
+  // OAuth-only accounts have no password to verify against — server-side
+  // we'd be re-auth-gating against something that doesn't exist. Detect
+  // via the auth provider on the user; if it's google-only, skip the
+  // password field and rely on the email-confirm + bearer alone.
+  const isOAuthOnlyUser = authUser?.signedInVia === "google";
   const headline = tier === "pro"
     ? "Pro, invested in your offer"
     : tier === "starter"
@@ -775,7 +786,13 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 15000);
-      const res = await fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify({}), signal: ctrl.signal });
+      // Re-auth gate: send the user's password so the server can verify
+      // possession-of-credentials, not just possession-of-bearer.
+      // OAuth-only users have no app password — server skips the check
+      // for them; sending an empty string is fine (server only verifies
+      // when present and non-empty for non-OAuth users).
+      const body = isOAuthOnlyUser ? {} : { password: deletePasswordInput };
+      const res = await fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctrl.signal });
       clearTimeout(t);
       if (res.ok || res.status === 207) {
         const data = await res.json().catch(() => ({}));
@@ -783,7 +800,11 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         localStorage.clear();
         onLogout();
       } else {
-        const d = await res.json().catch(() => ({})); setDeleteMsg(d.error || "Failed. Try again."); setDeleteLoading(false);
+        const d = await res.json().catch(() => ({}));
+        // On failed re-auth, clear the password input so the user retypes
+        // rather than re-submitting the same wrong value.
+        if (d?.code === "reauth_required" || d?.code === "reauth_failed") setDeletePasswordInput("");
+        setDeleteMsg(d.error || "Failed. Try again."); setDeleteLoading(false);
       }
     } catch (err) {
       setDeleteMsg(err instanceof DOMException && err.name === "AbortError" ? "Timed out. Try again." : "Network error.");
@@ -937,35 +958,61 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         {!confirmDelete ? (
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button type="button"
-              onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeleteMsg(""); }}
+              onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
               style={dangerSubtleBtn}>
               Begin deletion
             </button>
           </div>
-        ) : (
+        ) : (() => {
+          const emailMatches = deleteEmailInput.toLowerCase() === (authUser?.email || "").toLowerCase();
+          // OAuth users skip the password gate (no app password exists).
+          // For everyone else, require a non-empty password before enabling submit.
+          const passwordOk = isOAuthOnlyUser || deletePasswordInput.length > 0;
+          const submitDisabled = deleteLoading || !emailMatches || !passwordOk;
+          return (
           <div>
             <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm deletion</div>
-            <div style={keyValueValue}>Type your email ({authUser?.email}) to confirm. Reversible for 7 days after submit.</div>
-            <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={keyValueValue}>
+              Type your email ({authUser?.email})
+              {isOAuthOnlyUser ? " to confirm" : " and re-enter your password to confirm"}.
+              Reversible for 7 days after submit.
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
               <input type="email" value={deleteEmailInput}
                 onChange={(e) => setDeleteEmailInput(e.target.value)}
                 aria-label="Confirm email for account deletion"
+                autoComplete="off"
                 style={{
                   fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
                   border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
-                  outline: "none", minWidth: 240, flex: 1, minHeight: 40,
+                  outline: "none", minWidth: 240, minHeight: 40,
                 }} />
-              <button type="button" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); }} style={accSubtleBtn}>Keep account</button>
-              <button type="button"
-                disabled={deleteLoading || deleteEmailInput.toLowerCase() !== (authUser?.email || "").toLowerCase()}
-                onClick={handleConfirmDelete}
-                style={{ ...dangerSolidBtn, opacity: (deleteLoading || deleteEmailInput.toLowerCase() !== (authUser?.email || "").toLowerCase()) ? 0.45 : 1 }}>
-                {deleteLoading ? "Deleting…" : "Confirm delete"}
-              </button>
+              {!isOAuthOnlyUser && (
+                <input type="password" value={deletePasswordInput}
+                  onChange={(e) => setDeletePasswordInput(e.target.value)}
+                  aria-label="Re-enter password to confirm account deletion"
+                  placeholder="Re-enter your password"
+                  autoComplete="current-password"
+                  style={{
+                    fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
+                    border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
+                    outline: "none", minWidth: 240, minHeight: 40,
+                  }} />
+              )}
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
+                <button type="button" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); setDeletePasswordInput(""); }} style={accSubtleBtn}>Keep account</button>
+                <button type="button"
+                  disabled={submitDisabled}
+                  onClick={handleConfirmDelete}
+                  style={{ ...dangerSolidBtn, opacity: submitDisabled ? 0.45 : 1 }}>
+                  {deleteLoading ? "Deleting…" : "Confirm delete"}
+                </button>
+              </div>
             </div>
             {deleteMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, marginTop: 10, marginBottom: 0 }}>{deleteMsg}</p>}
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

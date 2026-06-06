@@ -41,7 +41,15 @@ const TOKEN_LIFETIME_SEC = 30 * 60;
 
 type TokenStatus = "pending" | "valid" | "expired" | "used" | "invalid";
 
-/** Simple CSRF protection: random token per page load, stored in sessionStorage. */
+/** Simple CSRF protection: random token per page load.
+ *  Persisted to sessionStorage when available; falls back to a
+ *  module-scoped ref so private/strict-storage browsers (Safari
+ *  private mode, locked-down iOS) don't silently lose the token
+ *  and then reject submit with an opaque "Invalid request" error.
+ */
+let csrfMemoryToken: string | null = null;
+let csrfStorageBlocked = false;
+
 function generateCsrfToken(): string {
   const token =
     crypto.randomUUID
@@ -49,18 +57,37 @@ function generateCsrfToken(): string {
       : Math.random().toString(36).slice(2) + Date.now().toString(36);
   try {
     sessionStorage.setItem("hirestepx_csrf_reset", token);
+    csrfMemoryToken = token;
+    csrfStorageBlocked = false;
   } catch {
-    /* noop — restricted storage */
+    // sessionStorage blocked (private mode, ITP, third-party iframe).
+    // Keep the token in memory for the lifetime of this page — still
+    // protects against cross-origin/CSRF; just doesn't survive a
+    // refresh, which is the same as a fresh page load anyway.
+    csrfMemoryToken = token;
+    csrfStorageBlocked = true;
   }
   return token;
 }
+
 function validateCsrfToken(token: string): boolean {
+  // Try storage first; on any failure (blocked storage, cleared
+  // sessionStorage during the user's flow), fall back to memory.
   try {
     const stored = sessionStorage.getItem("hirestepx_csrf_reset");
-    return !!stored && stored === token;
+    if (stored && stored === token) return true;
   } catch {
-    return false;
+    /* fall through to memory */
   }
+  return csrfMemoryToken !== null && csrfMemoryToken === token;
+}
+
+/** True iff sessionStorage was blocked at token-generation time.
+ *  Components can surface a one-line warning so users in private
+ *  mode know they can complete the form but a refresh will require
+ *  starting over. */
+export function isCsrfStorageBlocked(): boolean {
+  return csrfStorageBlocked;
 }
 
 async function sha256Hex(input: string): Promise<string> {
