@@ -313,7 +313,9 @@ export default function DashboardHome() {
               fontFamily: f.serif, fontSize: 44, fontWeight: 400, lineHeight: 1.1,
               letterSpacing: "-0.02em", color: t.coal, margin: "8px 0 6px",
             }}>
-              Welcome back, {displayName}.
+              Welcome{" "}
+              <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>back</em>
+              , {displayName}.
             </h1>
             <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, maxWidth: 560 }}>
               {hasPatternData
@@ -349,7 +351,17 @@ export default function DashboardHome() {
                   fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2,
                   letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px",
                 }}>
-                  {hasPatternData ? "Behavioral round, STAR sharpening" : "Your first 25 minute drill"}
+                  {hasPatternData ? (
+                    <>
+                      Behavioral round, STAR{" "}
+                      <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>sharpening</em>
+                    </>
+                  ) : (
+                    <>
+                      Your first 25 minute{" "}
+                      <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>drill</em>
+                    </>
+                  )}
                 </p>
                 <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
                   {hasPatternData
