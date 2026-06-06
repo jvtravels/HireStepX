@@ -15,7 +15,7 @@ import {
 /* Cream-mode local tokens — mirror canvases/design-system/_tokens.ts. */
 const c = {
   obsidian: "#FAF7F0",
-  graphite: "#FFFFFF",
+  graphite: "#FDFCF7",
   border: "#EBE5D2",
   borderStrong: "#D6CDB5",
   gilt: "#B45309",
@@ -417,7 +417,7 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
     boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
   };
   const kickerStyle: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.12em", textTransform: "uppercase" };
-  const headlineStyle: React.CSSProperties = { fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "8px 0 10px", letterSpacing: "-0.02em", lineHeight: 1.1 };
+  const headlineStyle: React.CSSProperties = { fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "6px 0", letterSpacing: "-0.02em", lineHeight: 1.15 };
   const descStyle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 };
   const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.08em", textTransform: "uppercase" };
 
@@ -446,8 +446,8 @@ function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 880 }}>
-      <div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
+      <div style={{ marginTop: 8, marginBottom: 16 }}>
         <div style={kickerStyle}>Referral</div>
         <h2 style={headlineStyle}>Bring a friend, earn a month</h2>
         <p style={descStyle}>

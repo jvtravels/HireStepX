@@ -9,7 +9,7 @@ import type { PaymentRecord } from "./supabase";
    keep compiling; values are now cream / coal / copper / indigo. */
 const c = {
   obsidian: "#FAF7F0",
-  graphite: "#FFFFFF",
+  graphite: "#FDFCF7",
   border: "#EBE5D2",
   borderStrong: "#D6CDB5",
   gilt: "#B45309",
@@ -384,7 +384,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
       {/* ── Profile ── */}
-      <SectionHead kicker="Account" title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
+      <SectionHead title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
       <EditorialCard>
         <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24 }}>
           <div aria-hidden="true" style={{
@@ -479,7 +479,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
         ) : (
           <KeyValue
             label="Password"
-            value="You signed in with Google — manage your password in your Google Account."
+            value="You signed in with Google: manage your password in your Google Account."
             right={<TinyChip>Google</TinyChip>}
           />
         )}
@@ -767,7 +767,7 @@ export interface PlanSectionProps {
 
 /* ─── Plan & Data — editorial layout (matches canvas) ─── */
 const planKicker: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, letterSpacing: "0.12em", textTransform: "uppercase" };
-const planHeadline: React.CSSProperties = { fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "8px 0 10px", letterSpacing: "-0.02em", lineHeight: 1.1 };
+const planHeadline: React.CSSProperties = { fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "6px 0", letterSpacing: "-0.02em", lineHeight: 1.15 };
 const planDesc: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 };
 const planCardOuter: React.CSSProperties = {
   background: c.graphite,
@@ -960,8 +960,8 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 880 }}>
-      <div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
+      <div style={{ marginTop: 8, marginBottom: 16 }}>
         <div style={planKicker}>Plan & Data</div>
         <h2 style={planHeadline}>{headline}</h2>
         <p style={planDesc}>{headlineDesc}</p>
