@@ -132,3 +132,132 @@ describe("M2 PR-3 — family taxonomy alignment with the guardrail", () => {
     }
   });
 });
+
+/* ─── M2 PR-4 — additional no-repeat family rules ──────────────────── */
+
+describe("M2 PR-4 — stall-cascade flags consecutive stall-tactic moves", () => {
+  it("does NOT flag stall-cascade when prior family is a different family", () => {
+    const s = freshState();
+    s.decisionLog = [
+      {
+        turn: 0,
+        picker: "test-seed",
+        rationale: "seed prior discovery",
+        phase: s.phase,
+        actionKind: "discovery-probe",
+        family: "discovery-probe",
+      },
+    ];
+    pickAiMove(s);
+    const last = s.decisionLog![s.decisionLog!.length - 1];
+    expect(last.guardrailFlags ?? []).not.toContain("stall-cascade");
+  });
+
+  it("flags stall-cascade when prior + current are both stall-tactic", () => {
+    const s = freshState();
+    s.decisionLog = [
+      {
+        turn: 0,
+        picker: "test-seed",
+        rationale: "seed prior stall",
+        phase: s.phase,
+        actionKind: "manager-consult-stall",
+        family: "stall-tactic",
+      },
+    ];
+    pickAiMove(s);
+    const last = s.decisionLog![s.decisionLog!.length - 1];
+    if (last.family === "stall-tactic") {
+      expect(last.guardrailFlags ?? []).toContain("stall-cascade");
+    } else {
+      expect(last.guardrailFlags ?? []).not.toContain("stall-cascade");
+    }
+  });
+
+  it("all 3 stall-tactic kinds are taxonomy-aligned", () => {
+    for (const kind of ["manager-consult-stall", "panel-approval-stall", "vague-promise"]) {
+      expect(familyOf(kind)).toBe("stall-tactic");
+    }
+  });
+});
+
+describe("M2 PR-4 — anchor-double-set flags consecutive anchor-set moves", () => {
+  it("does NOT flag anchor-double-set when prior family is different", () => {
+    const s = freshState();
+    s.decisionLog = [
+      {
+        turn: 0,
+        picker: "test-seed",
+        rationale: "seed prior probe",
+        phase: s.phase,
+        actionKind: "discovery-probe",
+        family: "discovery-probe",
+      },
+    ];
+    pickAiMove(s);
+    const last = s.decisionLog![s.decisionLog!.length - 1];
+    expect(last.guardrailFlags ?? []).not.toContain("anchor-double-set");
+  });
+
+  it("flags anchor-double-set when prior + current are both anchor-set", () => {
+    const s = freshState();
+    s.decisionLog = [
+      {
+        turn: 0,
+        picker: "test-seed",
+        rationale: "seed prior anchor",
+        phase: s.phase,
+        actionKind: "anchor-with-offer",
+        family: "anchor-set",
+      },
+    ];
+    pickAiMove(s);
+    const last = s.decisionLog![s.decisionLog!.length - 1];
+    if (last.family === "anchor-set") {
+      expect(last.guardrailFlags ?? []).toContain("anchor-double-set");
+    } else {
+      expect(last.guardrailFlags ?? []).not.toContain("anchor-double-set");
+    }
+  });
+
+  it("all 4 anchor-set kinds are taxonomy-aligned", () => {
+    for (const kind of [
+      "anchor-with-offer",
+      "band-anchor-with-rationale",
+      "calibrated-surprise-lowball",
+      "comparative-anchoring",
+    ]) {
+      expect(familyOf(kind)).toBe("anchor-set");
+    }
+  });
+});
+
+describe("M2 PR-4 — multiple rules can coexist without interfering", () => {
+  it("families that are NOT in NO_REPEAT_RULES never flag a no-repeat violation", () => {
+    /* discovery-probe / recap-summary / answer-direct etc. are
+     * legitimately repeated turn-after-turn (e.g. multiple discovery
+     * probes in opening). The rule set must NOT flag those. */
+    const s = freshState();
+    s.decisionLog = [
+      {
+        turn: 0,
+        picker: "test-seed",
+        rationale: "seed prior probe",
+        phase: s.phase,
+        actionKind: "discovery-probe",
+        family: "discovery-probe",
+      },
+    ];
+    pickAiMove(s);
+    const last = s.decisionLog![s.decisionLog!.length - 1];
+    const flags = last.guardrailFlags ?? [];
+    /* Whatever the planner picked, no flag from the configured rules
+     * should appear unless its family is one of the no-repeat set AND
+     * the prior is the same. Discovery is not in the no-repeat set. */
+    if (last.family === "discovery-probe") {
+      expect(flags).not.toContain("pressure-repeat");
+      expect(flags).not.toContain("stall-cascade");
+      expect(flags).not.toContain("anchor-double-set");
+    }
+  });
+});

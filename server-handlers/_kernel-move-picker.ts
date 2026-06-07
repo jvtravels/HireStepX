@@ -106,17 +106,35 @@ export function pickAiMove(state: NegotiationState): AiMove {
   return move;
 }
 
-/** M2 PR-3 (2026-06-07) — family-level guardrail checks. Reads the
+/** M2 PR-3/PR-4 (2026-06-07) — family-level guardrail checks. Reads the
  *  most recent decisionLog entry and flags rule violations on the
  *  incoming move WITHOUT mutating it. Returns the list of flag strings
  *  (empty when no rules tripped).
  *
- *  Rules implemented:
- *    - "pressure-repeat" — two consecutive moves both classified as
- *      pressure-leverage family. Coercive moves back-to-back are the
- *      shape that produced the PDF#34 retention-into-exploding-offer
- *      finding; flagging here makes the pattern visible in the decision
- *      log even when the leaf actionKinds differ. */
+ *  Rules implemented (all observability-only this milestone):
+ *    - "pressure-repeat" — two consecutive moves both pressure-leverage.
+ *      Shape behind PDF#34 retention-into-exploding-offer finding.
+ *    - "stall-cascade" — two consecutive moves both stall-tactic. The
+ *      "let me check with my manager" / "I need panel approval" /
+ *      "I'll see what I can do" chain that produces the manipulative-
+ *      delay audit findings.
+ *    - "anchor-double-set" — two consecutive moves both anchor-set.
+ *      The AI re-anchored without giving the candidate a turn to
+ *      respond to the first anchor. The "throwing numbers without
+ *      listening" pattern.
+ *
+ *  All three share the "no two consecutive moves of family X" shape, so
+ *  they're config-driven. Adding a fourth no-repeat rule is one line
+ *  in NO_REPEAT_RULES below. */
+const NO_REPEAT_RULES: ReadonlyArray<{
+  family: import("./_action-families").ActionFamily;
+  flag: string;
+}> = [
+  { family: "pressure-leverage", flag: "pressure-repeat" },
+  { family: "stall-tactic", flag: "stall-cascade" },
+  { family: "anchor-set", flag: "anchor-double-set" },
+];
+
 function checkFamilyGuardrails(
   state: NegotiationState,
   move: AiMove,
@@ -124,11 +142,11 @@ function checkFamilyGuardrails(
   const flags: string[] = [];
   const log = state.decisionLog ?? [];
   const prev = log.length > 0 ? log[log.length - 1] : null;
-  if (
-    move.family === "pressure-leverage" &&
-    prev?.family === "pressure-leverage"
-  ) {
-    flags.push("pressure-repeat");
+  if (!prev || !move.family) return flags;
+  for (const rule of NO_REPEAT_RULES) {
+    if (move.family === rule.family && prev.family === rule.family) {
+      flags.push(rule.flag);
+    }
   }
   return flags;
 }
