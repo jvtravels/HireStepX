@@ -61,6 +61,51 @@ jobs:
       # producing one it's supposed to demonstrate (detector drift).
       - run: npm run replay:negotiation
 
+  negotiation-eval:
+    name: Negotiation Eval (structural)
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Runs the 20-scenario structural eval and writes the per-scenario
+      # scorecard to the GH job summary so PR reviewers see the numbers
+      # without opening logs. The vitest gate (EVAL-3) already fails the
+      # build on regression — this step exists for visibility, not
+      # gating. --json so we can render the summary deterministically.
+      - name: Run negotiation eval (--json, write to summary)
+        run: |
+          set -o pipefail
+          # --silent so npm doesn't prefix stdout with "> eval:negotiation\n> tsx..." and break JSON.parse.
+          npm run --silent eval:negotiation -- --json > eval.json
+          {
+            echo "## Negotiation eval — structural scorecard"
+            echo
+            node -e "
+              const r = JSON.parse(require('fs').readFileSync('eval.json','utf8'));
+              const s = r.summary;
+              console.log('**Suite:** ' + s.fullyPassed + '/' + s.totalScenarios + ' fully passed · average ' + s.averageScore + '/100');
+              if (s.worstScenario) console.log('**Worst:** \`' + s.worstScenario.scenario.id + '\` @ ' + s.worstScenario.scorecard.score + '/100');
+              console.log('');
+              console.log('| Scenario | Score | Status |');
+              console.log('| --- | ---: | :---: |');
+              for (const sc of r.scenarios) {
+                const status = sc.allPassed ? 'pass' : 'FAIL';
+                console.log('| \`' + sc.id + '\` | ' + sc.score + '/100 | ' + status + ' |');
+              }
+              const failed = r.scenarios.flatMap(sc => sc.verdicts.filter(v => v.verdict === 'fail').map(v => ({sc: sc.id, v})));
+              if (failed.length) {
+                console.log('');
+                console.log('### Failed criteria');
+                for (const f of failed) console.log('- \`' + f.sc + '\` → **' + f.v.criterionId + '** — ' + f.v.reason);
+              }
+            "
+          } >> "$GITHUB_STEP_SUMMARY"
+
   build:
     name: Build
     runs-on: ubuntu-latest

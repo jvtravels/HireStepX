@@ -54,8 +54,47 @@ describe("negotiation-eval — structural layer", () => {
       );
     }
     /* eslint-enable no-console */
-    // No assertion on a target score yet — the first green run
-    // establishes the baseline. EVAL-2 will gate on a minimum.
     expect(summary.totalScenarios).toBe(EVAL_SCENARIOS.length);
+  });
+
+  /* EVAL-3 gate.
+   *
+   * The baseline was established by the first green run after
+   * QUALITY-1: 20/20 scenarios fully passing, average 100/100. Any
+   * future PR that drops a scenario below fully-passing (or drags
+   * the suite average) fails CI here with the specific scenario id
+   * + the failing criteria — exactly the regression detector the
+   * deep research said we were missing.
+   *
+   * To intentionally LOWER the baseline (e.g. you added a tougher
+   * scenario you know we don't yet handle), update MIN_FULLY_PASSED /
+   * MIN_AVERAGE_SCORE in the same PR and explain in the commit why.
+   * Silent drops are the failure mode this guard exists to prevent. */
+  const MIN_FULLY_PASSED = 20;
+  const MIN_AVERAGE_SCORE = 100;
+
+  it("suite holds the EVAL-3 baseline (no regression)", () => {
+    const runs = EVAL_SCENARIOS.map(runScenarioStructural);
+    const summary = summarizeSuite(runs);
+
+    const failing = runs
+      .filter((r) => !r.scorecard.allPassed)
+      .map((r) => {
+        const failedIds = r.scorecard.verdicts
+          .filter((v) => v.verdict === "fail")
+          .map((v) => `${v.criterionId} (${v.reason})`)
+          .join("; ");
+        return `${r.scenario.id} @ ${r.scorecard.score}/100 — ${failedIds || "no failed verdicts but allPassed=false"}`;
+      });
+
+    expect(
+      summary.fullyPassed,
+      `Expected ≥ ${MIN_FULLY_PASSED} scenarios fully passing, got ${summary.fullyPassed}.\nFailing:\n  ${failing.join("\n  ")}`,
+    ).toBeGreaterThanOrEqual(MIN_FULLY_PASSED);
+
+    expect(
+      summary.averageScore,
+      `Suite average dropped to ${summary.averageScore}/100 (baseline: ${MIN_AVERAGE_SCORE}).`,
+    ).toBeGreaterThanOrEqual(MIN_AVERAGE_SCORE);
   });
 });
