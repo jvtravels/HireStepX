@@ -82,7 +82,7 @@ export async function runScenarioGenerated(
     generatedTurns.push({ candidate: turn.candidate, aiText });
   }
 
-  const scorecard = scoreScenarioStructural(state, scenario);
+  const scorecard = scoreScenarioStructural(state, scenario, generatedTurns);
   return { scenario, finalState: state, scorecard, generatedTurns };
 }
 

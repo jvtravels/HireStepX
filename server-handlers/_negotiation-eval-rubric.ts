@@ -89,6 +89,14 @@ export const NEGOTIATION_RUBRIC: readonly RubricCriterion[] = [
     weight: 3,
   },
   {
+    id: "prose-antipatterns-zero",
+    label: "Recruiter prose has zero deterministic antipatterns",
+    description:
+      "PROSE-LINT-1: scans every turn's bot text for meta-narration ('as your practice partner'), template filler ('I understand that this is an important decision'), and generic self-help advice. These have crisp regex signatures, so they're enforced deterministically — the LLM judge only sees the residual qualitative criteria. Passes when no detector fires across the transcript; fails listing turn + pattern id.",
+    layer: "structural",
+    weight: 2,
+  },
+  {
     id: "disclosed-facts-bound",
     label: "Facts the candidate DID disclose are bound to the right value",
     description:

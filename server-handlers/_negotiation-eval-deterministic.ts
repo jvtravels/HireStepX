@@ -15,7 +15,8 @@
  * layers but only the structural layer gates the PR. */
 
 import type { NegotiationState } from "./_negotiation-kernel";
-import type { EvalScenario } from "../data/negotiation-eval-scenarios";
+import type { EvalScenario, EvalScenarioTurn } from "../data/negotiation-eval-scenarios";
+import { detectTranscriptAntipatterns } from "./_prose-antipatterns";
 import {
   getFact,
   askedTopicCount,
@@ -335,13 +336,47 @@ function scoreDisclosedFactsBound(
   };
 }
 
+function scoreProseAntipatterns(
+  _state: NegotiationState,
+  scenario: EvalScenario,
+  transcriptTurns?: readonly EvalScenarioTurn[],
+): CriterionVerdict {
+  const turns = transcriptTurns ?? scenario.turns;
+  const hits = detectTranscriptAntipatterns(turns);
+  if (hits.length === 0) {
+    return {
+      criterionId: "prose-antipatterns-zero",
+      label: "Recruiter prose has zero deterministic antipatterns",
+      verdict: "pass",
+      reason: `scanned ${turns.length} turns; no antipatterns fired`,
+      weight: 2,
+    };
+  }
+  const reason = hits
+    .slice(0, 3)
+    .map((h) => `turn ${h.turnIndex}: ${h.pattern.id}`)
+    .join("; ") + (hits.length > 3 ? ` (+${hits.length - 3} more)` : "");
+  return {
+    criterionId: "prose-antipatterns-zero",
+    label: "Recruiter prose has zero deterministic antipatterns",
+    verdict: "fail",
+    reason,
+    weight: 2,
+  };
+}
+
 /* ----------------------------- entrypoint ----------------------------- */
 
 /** Score one scenario's final state against the structural rubric.
- *  Returns a scorecard with verdicts in rubric order. */
+ *  Returns a scorecard with verdicts in rubric order.
+ *
+ *  transcriptTurns is optional: when provided (by the generated harness),
+ *  prose-antipattern scoring runs against the LLM-produced bot text
+ *  instead of the fixture aiText. When omitted, fixture aiText is used. */
 export function scoreScenarioStructural(
   state: NegotiationState,
   scenario: EvalScenario,
+  transcriptTurns?: readonly EvalScenarioTurn[],
 ): ScenarioScorecard {
   const verdicts: CriterionVerdict[] = [
     scoreDiscoveryBeforeAnchor(state),
@@ -351,6 +386,7 @@ export function scoreScenarioStructural(
     scoreDecisionLogMapped(state),
     scoreNoFabricatedFacts(state, scenario),
     scoreDisclosedFactsBound(state, scenario),
+    scoreProseAntipatterns(state, scenario, transcriptTurns),
   ];
 
   // Sanity: every structural criterion in the rubric must be scored
