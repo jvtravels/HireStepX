@@ -121,6 +121,12 @@ import {
   detectCandidateDisclosures,
   pruneAcknowledged,
 } from "./_candidate-disclosure-tracker";
+/* PDF #28 Month 1 PR-1 — Conversation Ledger. Imported but not yet
+ * read or written by any kernel path. See state.ledger field comment. */
+import {
+  emptyLedger,
+  type ConversationLedger,
+} from "./_conversation-ledger";
 import {
   extractMiscSignals,
   mergeMiscSignals,
@@ -1458,6 +1464,29 @@ export interface NegotiationState {
    * Optional for back-compat with pre-F7 serialized sessions. */
   askedTopics?: { topic: DiscoveryTopic; atTurn: number }[];
 
+  /* PDF #28 follow-up (Month 1 PR-1, 2026-06-07) — Conversation Ledger.
+   *
+   * Append-only log of every fact captured, topic asked, action
+   * emitted, and candidate non-answer. Single source of truth that
+   * replaces (over PR-2..PR-6) the five fact-tracking surfaces:
+   *   1. state.candidateCurrentCtc / candidateCurrentCompany / etc.
+   *   2. state.pendingCandidateAcks[]
+   *   3. state.askedTopics[]
+   *   4. state.conversationLog[]
+   *   5. state.userClaims{}
+   *
+   * In PR-1 (this PR): field is added, initialized empty, but NO
+   * caller reads from or writes to it. The kernel state slots remain
+   * authoritative. This is pure infrastructure — zero behavior change.
+   *
+   * PR-2 dual-writes from existing fact writers. PR-3 migrates dedup
+   * readers. PR-4 migrates fact readers. PR-5 adds replay-the-PDF
+   * regression scenarios. PR-6 locks direct slot writes behind a
+   * syncFromLedger barrier with an ESLint enforcement rule.
+   *
+   * Optional for back-compat with pre-ledger serialized sessions. */
+  ledger?: ConversationLedger;
+
   /* ITEM 3 (2026-05-15) — Trial-close signaling.
    *
    * candidateSignaledClose: set true by applyCandidateAnswer when the
@@ -2588,6 +2617,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     firstAnchoredTarget: null,
     candidateCurrentCtc: null,
     candidateCurrentCompany: null,
+    /* PDF #28 PR-1 — empty Conversation Ledger. No writers yet. */
+    ledger: emptyLedger(),
     competingOffer: null,
     candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     candidateAskedAsRange: false,
@@ -6793,6 +6824,16 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (!isFiniteNumOrNull(s.candidateCurrentCtc)) throw new Error("state.candidateCurrentCtc");
   if (s.candidateCurrentCompany != null && (typeof s.candidateCurrentCompany !== "string" || s.candidateCurrentCompany.length === 0 || s.candidateCurrentCompany.length > 60)) {
     throw new Error("state.candidateCurrentCompany");
+  }
+  /* PDF #28 PR-1 — ledger shape check. Optional field (pre-PR-1
+   * serialized sessions have no ledger). When present, must be an
+   * object with an entries array. Entry-level shape is enforced by
+   * the discriminated union at every writer site. */
+  if (s.ledger !== undefined) {
+    const led = s.ledger as { entries?: unknown } | null;
+    if (led === null || typeof led !== "object" || !Array.isArray(led.entries)) {
+      throw new Error("state.ledger");
+    }
   }
   if (!isFiniteNumOrNull(s.competingOffer)) throw new Error("state.competingOffer");
   if (typeof s.highestOfferMade !== "number" || !Number.isFinite(s.highestOfferMade)) throw new Error("state.highestOfferMade");
