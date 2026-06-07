@@ -34,16 +34,37 @@ export interface CandidateDisclosureEntry {
   kind: CandidateDisclosureKind;
   /** Compact label surfaced in the brief, e.g. "notice period 90 days". */
   label: string;
+  /** PDF #28 (2026-06-07) — parsed numeric value (e.g. 44 for "44 LPA",
+   *  90 for "90 days notice"). Optional; only present when the detector
+   *  captured a number. Kernel writes this into the matching state slot
+   *  (candidateCurrentCtc / noticePeriodDays) when the slot is null,
+   *  closing the gap between disclosure-detection and fact-persistence
+   *  that caused the CTC re-ask bug. */
+  parsedValue?: number;
 }
 
 interface DisclosureRule {
   kind: CandidateDisclosureKind;
   /** Detects disclosure in a candidate utterance. May extract a number
-   *  (returned as the label suffix). Returns null when not present. */
-  detect: (candidateUtterance: string) => string | null;
+   *  (returned as the label suffix). Returns null when not present.
+   *  Second tuple slot is the parsedValue (optional). */
+  detect: (candidateUtterance: string) => { label: string; parsedValue?: number } | null;
   /** Detects whether a bot reply acknowledges this disclosure. */
   acknowledge: (botReply: string) => boolean;
 }
+
+/* PDF #28 (2026-06-07) — precision guard for current-CTC detection.
+ *
+ * The current-CTC regex below matches "my current ctc is 44 LPA". But
+ * candidates also say things like "I'm asking for 44 LPA", "expected
+ * CTC is 50", "I want a 60 LPA package" — those are TARGET asks, not
+ * CURRENT comp. If the disclosure tracker writes those into
+ * candidateCurrentCtc the kernel will think the candidate already
+ * earns their target ask, and the entire negotiation math collapses.
+ *
+ * This guard inspects the utterance for target-ask intent words near
+ * the regex match. If any are present, refuse to fire current-CTC. */
+const TARGET_ASK_INTENT_RE = /\b(?:asking|ask\s+for|want(?:ing)?|expected|expect|looking\s+for|targeting|aim(?:ing)?\s+for|hoping\s+for|need|require|seeking|aspiring|seeking|i'?d\s+like|i\s+would\s+like)\b/i;
 
 const NOTICE_RE = /\b(\d{1,3})\s*(?:day|days)\s+(?:notice|notice\s+period)\b|\bnotice\s+period\s+(?:is|of)\s+(\d{1,3})\s*(?:day|days)?\b|\b(\d{1,3})[-\s]?day\s+notice\b/i;
 const CURRENT_CTC_RE = /\b(?:current(?:ly)?(?:\s+at)?(?:\s+earning)?|present(?:ly)?(?:\s+at)?|my\s+current(?:\s+ctc|\s+package)?|currently\s+making)\s+(?:is\s+|at\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:l|lpa|lakh|lakhs)\b/i;
@@ -62,7 +83,12 @@ const CANDIDATE_DISCLOSURES: DisclosureRule[] = [
       const m = u.match(NOTICE_RE);
       if (!m) return null;
       const n = m[1] || m[2] || m[3];
-      return n ? `notice period ${n} days` : "notice period";
+      if (!n) return { label: "notice period" };
+      const parsed = parseInt(n, 10);
+      return {
+        label: `notice period ${n} days`,
+        parsedValue: Number.isFinite(parsed) ? parsed : undefined,
+      };
     },
     acknowledge: (b) => ACK_NOTICE_RE.test(b),
   },
@@ -71,18 +97,27 @@ const CANDIDATE_DISCLOSURES: DisclosureRule[] = [
     detect: (u) => {
       const m = u.match(CURRENT_CTC_RE);
       if (!m) return null;
-      return `current CTC ${m[1]} LPA`;
+      /* PDF #28 precision guard — refuse if utterance signals a target
+       * ask, not a current-comp disclosure. Without this guard,
+       * "I'm asking for 44 LPA" would set candidateCurrentCtc=44 and
+       * break hike-percent math and target/current logic downstream. */
+      if (TARGET_ASK_INTENT_RE.test(u)) return null;
+      const parsed = parseFloat(m[1]);
+      return {
+        label: `current CTC ${m[1]} LPA`,
+        parsedValue: Number.isFinite(parsed) ? parsed : undefined,
+      };
     },
     acknowledge: (b) => ACK_CURRENT_RE.test(b),
   },
   {
     kind: "competing-offer",
-    detect: (u) => (COMPETING_RE.test(u) ? "competing offer disclosed" : null),
+    detect: (u) => (COMPETING_RE.test(u) ? { label: "competing offer disclosed" } : null),
     acknowledge: (b) => ACK_COMPETING_RE.test(b),
   },
   {
     kind: "joining-date",
-    detect: (u) => (JOINING_RE.test(u) ? "joining date / availability" : null),
+    detect: (u) => (JOINING_RE.test(u) ? { label: "joining date / availability" } : null),
     acknowledge: (b) => ACK_JOINING_RE.test(b),
   },
 ];
@@ -97,9 +132,11 @@ export function detectCandidateDisclosures(
   const seen = new Set<CandidateDisclosureKind>();
   for (const rule of CANDIDATE_DISCLOSURES) {
     if (seen.has(rule.kind)) continue;
-    const label = rule.detect(candidateUtterance);
-    if (label) {
-      out.push({ kind: rule.kind, label });
+    const hit = rule.detect(candidateUtterance);
+    if (hit) {
+      const entry: CandidateDisclosureEntry = { kind: rule.kind, label: hit.label };
+      if (typeof hit.parsedValue === "number") entry.parsedValue = hit.parsedValue;
+      out.push(entry);
       seen.add(rule.kind);
     }
   }

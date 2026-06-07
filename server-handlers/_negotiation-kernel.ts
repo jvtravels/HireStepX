@@ -5178,6 +5178,37 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       if (merged.length !== existing.length) {
         next.pendingCandidateAcks = merged;
       }
+
+      /* PDF #28 (2026-06-07) — disclosure write-through to kernel slots.
+       *
+       * Previously the disclosure tracker only wrote per-turn ack
+       * labels. The kernel had a SEPARATE parser (parseCandidateAnswer
+       * → next.candidateCurrentCtc) whose regex was stricter. When the
+       * stricter parser missed but the disclosure tracker matched (e.g.
+       * "my current ctc is 44 LPA" with extra punctuation that
+       * confused the stricter parser), the slot stayed null and the
+       * planner re-emitted ctc-ask next turn — the user saw it as the
+       * bot forgetting what they just told it.
+       *
+       * Fix: when the disclosure tracker captures a parsedValue AND
+       * the slot is currently null after the main parser ran, write
+       * the value through. Never overwrite an existing value — that
+       * preserves the main parser's authority where it fired. */
+      for (const entry of fresh) {
+        if (typeof entry.parsedValue !== "number") continue;
+        if (entry.kind === "current-ctc" && next.candidateCurrentCtc == null) {
+          next.candidateCurrentCtc = entry.parsedValue;
+        } else if (
+          entry.kind === "notice-period"
+          && next.noticeJoining.noticePeriodDays == null
+        ) {
+          next.noticeJoining = {
+            ...next.noticeJoining,
+            noticePeriodDays: entry.parsedValue,
+            hasAny: true,
+          };
+        }
+      }
     }
   }
 

@@ -114,6 +114,13 @@ export function useInterviewEngine() {
      back here for backchannel coordination. */
   // "I don't know" count for evaluation context
   const dontKnowCountRef = useRef(0);
+  /* PDF #28 (2026-06-07) — empty-prose recovery counter. Each empty
+   * step.aiText at reveal increments this so the rotating fallback
+   * never picks the same string twice in a row. Surfaces in telemetry
+   * so the underlying kernel-empty-prose rate stays visible — this is
+   * defense-in-depth, not a Band-Aid. The real fix lives in the kernel
+   * non-empty-prose contract (separate change). */
+  const emptyProseRecoveryCountRef = useRef(0);
   // Live session ID — created early so turns can be saved in real-time
   const liveSessionIdRef = useRef<string>(safeUUID());
   // Turn counter for real-time persistence ordering
@@ -1386,11 +1393,52 @@ export function useInterviewEngine() {
          * a question to answer. Telemetry still fires so we can see
          * the underlying empty-text rate. */
         if (!step.aiText || step.aiText.trim() === "") {
-          console.warn("[interview] revealTranscript: empty step.aiText — recovering with safe prose");
-          track("empty_aitext_at_reveal", { step: currentStep });
-          const recovery = interviewType === "salary-negotiation"
-            ? "So tell me — where are you in the process right now, and what's driving this move?"
-            : "Let's pick up from where you are — share what's been on your mind.";
+          /* PDF #28 (2026-06-07) — empty-prose loop fix.
+           *
+           * The previous single-string fallback was the SAME line every
+           * empty-prose turn: "where are you in the process right now,
+           * and what's driving this move?". A transcript audit showed
+           * this firing 3x in one session because the kernel returns
+           * empty prose on terse/non-cooperative candidate inputs
+           * ("okay next", "I don't know", "I have already told you")
+           * and the planner has no `askedTopics` record of the fallback
+           * (it's client-side), so `canRefire` cannot dedup it.
+           *
+           * Short-term mitigation here: rotate through 4 distinct
+           * recovery prompts so the loop is impossible to reproduce
+           * even when the kernel keeps returning empty. Escalate
+           * telemetry to a critical signal so the underlying kernel
+           * bug stays visible. Track the recovery count in session
+           * scope (ref) so repeats survive across reveals.
+           *
+           * Long-term fix (separate change): kernel non-empty-prose
+           * contract — emit a typed recovery action with prose, push
+           * onto state.askedTopics, gate via canRefire. Then this
+           * client fallback becomes truly unreachable. */
+          const idx = emptyProseRecoveryCountRef.current % 4;
+          emptyProseRecoveryCountRef.current += 1;
+          console.warn(
+            `[interview] revealTranscript: empty step.aiText (#${emptyProseRecoveryCountRef.current}) — rotating recovery prose`,
+          );
+          track("empty_aitext_at_reveal_CRITICAL", {
+            step: currentStep,
+            occurrence: emptyProseRecoveryCountRef.current,
+            interviewType,
+          });
+          const SALARY_RECOVERY = [
+            "So tell me — where are you in the process right now, and what's driving this move?",
+            "Let me step back. What part of this conversation would be most useful to dig into next — comp, role scope, timeline, or something else?",
+            "I want to make sure I'm being useful here. What's the question you actually came to this conversation with?",
+            "Let's keep this focused. Walk me through the current shape of your decision — what's the deciding factor for you right now?",
+          ];
+          const GENERIC_RECOVERY = [
+            "Let's pick up from where you are — share what's been on your mind.",
+            "Take me back a step. What would be most useful to talk through right now?",
+            "Help me reset — what's the part of this you'd most like to dig into?",
+            "Let's keep this moving — what's on your mind that we haven't covered yet?",
+          ];
+          const pool = interviewType === "salary-negotiation" ? SALARY_RECOVERY : GENERIC_RECOVERY;
+          const recovery = pool[idx];
           step.aiText = recovery;
           if ("aiTextDisplay" in step) {
             (step as { aiTextDisplay?: string }).aiTextDisplay = recovery;
