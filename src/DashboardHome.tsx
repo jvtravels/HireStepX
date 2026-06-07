@@ -684,9 +684,15 @@ export default function DashboardHome() {
           }
         }
         .hsx-dh-stats .hsx-dh-stat-cell:last-child { border-right: none; }
-        @media (max-width: 1080px) {
+        /* Grid collapse threshold raised to 1180px: between 768px (where
+           DashboardLayout shows the 260px sidebar) and 1080px (old breakpoint)
+           the 260 sidebar + 360 rail + padding stole ~700px of chrome from
+           viewports that could not afford it. Tablets and small laptops now
+           render single-column with the rail below the main stage. */
+        @media (max-width: 1180px) {
           .hsx-dh-grid { grid-template-columns: 1fr !important; }
           .hsx-dh-rail { order: 2; }
+          .hsx-dh-root { padding: 28px 24px 56px !important; }
         }
         @media (max-width: 720px) {
           .hsx-dh-stats { grid-template-columns: 1fr !important; }
