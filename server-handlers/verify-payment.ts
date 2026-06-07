@@ -308,7 +308,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const lockData = await lockRes.json();
           if (lockData.result === null) {
             console.warn(`[verify-payment] duplicate call for payment ${razorpay_payment_id.slice(0, 12)} — already processed`);
-            return res.status(200).json({ success: true, idempotent: true });
+            // Return profile snapshot so the client can render the upgraded
+            // state instead of a bare idempotent flag.
+            try {
+              const snapRes = await fetchWithTimeout(
+                `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end`,
+                { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+              );
+              const rows = await snapRes.json();
+              const snap = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+              return res.status(200).json({
+                success: true,
+                idempotent: true,
+                subscriptionTier: snap?.subscription_tier ?? null,
+                subscriptionStart: snap?.subscription_start ?? null,
+                subscriptionEnd: snap?.subscription_end ?? null,
+              });
+            } catch {
+              return res.status(200).json({ success: true, idempotent: true });
+            }
           }
         }
       } catch (lockErr) {
@@ -359,6 +377,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw rzpErr;
     } finally { clearTimeout(rzpTimer); }
 
+    // Idempotent success helper — when this payment_id was already processed
+    // (typically by the Razorpay webhook racing the client callback), the
+    // user IS upgraded. Return their current subscription state so the
+    // client treats the response as success, not a 409 error. UPI in
+    // particular hits this path because the webhook fires while the
+    // browser is still redirecting back from the bank's auth page.
+    const respondIdempotent = async (source: string): Promise<void> => {
+      try {
+        const snapRes = await fetchWithTimeout(
+          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end`,
+          { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+        );
+        const rows = await snapRes.json();
+        const snap = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+        void captureServerEvent("verify_payment_idempotent", userId, {
+          razorpay_payment_id: typeof razorpay_payment_id === "string" ? razorpay_payment_id : "",
+          source,
+        });
+        res.status(200).json({
+          success: true,
+          idempotent: true,
+          subscriptionTier: snap?.subscription_tier ?? null,
+          subscriptionStart: snap?.subscription_start ?? null,
+          subscriptionEnd: snap?.subscription_end ?? null,
+        });
+      } catch (snapErr) {
+        console.warn("[verify-payment] idempotent profile fetch failed:", snapErr);
+        res.status(200).json({ success: true, idempotent: true });
+      }
+    };
+
     // 3. Atomic duplicate check — INSERT with ON CONFLICT to prevent race conditions
     // Try inserting a dedup record first; if it already exists, payment was already processed
     const dedupRes = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payment_dedup`, {
@@ -371,9 +420,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({ razorpay_payment_id }),
     });
-    // 409 = unique constraint violation = already processed
+    // 409 = unique constraint violation = already processed (typically webhook beat us)
     if (dedupRes.status === 409) {
-      return res.status(409).json({ error: "Payment already processed" });
+      await respondIdempotent("payment_dedup_409");
+      return;
     }
     // 201 = successfully inserted dedup record = new payment, proceed
     if (dedupRes.status === 201) {
@@ -389,7 +439,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
       const dupRows = await dupCheck.json();
       if (Array.isArray(dupRows) && dupRows.length > 0) {
-        return res.status(409).json({ error: "Payment already processed" });
+        await respondIdempotent("payments_legacy_dup");
+        return;
       }
       // Payment not in legacy table either. The Razorpay signature is
       // already verified at this point — the user HAS been charged. If we
@@ -417,7 +468,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const current = Array.isArray(profiles) && profiles.length > 0 ? profiles[0] : null;
     if (current) {
       if (current.razorpay_payment_id === razorpay_payment_id) {
-        return res.status(409).json({ error: "Payment already processed" });
+        await respondIdempotent("profile_payment_id_match");
+        return;
       }
       const currentEnd = current.subscription_end ? new Date(current.subscription_end) : null;
       const isActive = currentEnd && currentEnd > new Date();
