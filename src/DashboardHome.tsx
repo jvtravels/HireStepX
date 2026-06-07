@@ -330,11 +330,17 @@ export default function DashboardHome() {
       minHeight: "100%",
       background: t.cream,
       fontFamily: f.sans, color: t.coal,
-      padding: "32px 32px 64px",
+      /* Padding lives in CSS classes — the media queries below own all
+         three width tiers (≥1181, ≤1180, ≤720). An inline value here would
+         beat the tiered overrides at any width the queries don't touch. */
     }}>
       <div className="hsx-dh-grid" style={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 360px",
+        /* Rail clamps between 280-360px so 1200-1400px viewports breathe
+           instead of giving the rail a fixed 360 while the main column
+           bears all the shrink. Collapses to 1fr at ≤1180px via the
+           media query below. */
+        gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 360px)",
         gap: 32, maxWidth: 1280, margin: "0 auto",
       }}>
         {/* ─── Main stage ─── */}
@@ -684,6 +690,8 @@ export default function DashboardHome() {
           }
         }
         .hsx-dh-stats .hsx-dh-stat-cell:last-child { border-right: none; }
+        /* Padding tiers — class-based so no inline style wins. */
+        .hsx-dh-root { padding: 32px 32px 64px; }
         /* Grid collapse threshold raised to 1180px: between 768px (where
            DashboardLayout shows the 260px sidebar) and 1080px (old breakpoint)
            the 260 sidebar + 360 rail + padding stole ~700px of chrome from
@@ -692,15 +700,36 @@ export default function DashboardHome() {
         @media (max-width: 1180px) {
           .hsx-dh-grid { grid-template-columns: 1fr !important; }
           .hsx-dh-rail { order: 2; }
-          .hsx-dh-root { padding: 28px 24px 56px !important; }
+          .hsx-dh-root { padding: 28px 24px 56px; }
+        }
+        /* Stats grid: 3-up survives the rail collapse but labels truncate
+           below 900px. Drop to 2-up so each cell keeps a readable width;
+           the third cell wraps onto its own row, full width. */
+        @media (max-width: 900px) {
+          .hsx-dh-stats { grid-template-columns: repeat(2, 1fr) !important; }
+          .hsx-dh-stats .hsx-dh-stat-cell:nth-child(2) { border-right: none !important; }
+          .hsx-dh-stats .hsx-dh-stat-cell:nth-child(3) {
+            grid-column: 1 / -1;
+            border-top: 1px solid ${t.line};
+          }
         }
         @media (max-width: 720px) {
           .hsx-dh-stats { grid-template-columns: 1fr !important; }
           .hsx-dh-stats .hsx-dh-stat-cell { border-right: none !important; border-bottom: 1px solid ${t.line}; }
           .hsx-dh-stats .hsx-dh-stat-cell:last-child { border-bottom: none; }
-          .hsx-dh-root { padding: 20px 16px 48px !important; }
+          .hsx-dh-stats .hsx-dh-stat-cell:nth-child(3) {
+            grid-column: auto;
+            border-top: none;
+          }
+          .hsx-dh-root { padding: 20px 16px 48px; }
           .hsx-dh-hero { font-size: 34px !important; }
         }
+        /* Belt-and-suspenders overflow guard for cards whose children
+           pack fixed-width chips/SVGs (calendar date pills, AI insight
+           chart). Lets them scroll horizontally on 320-360px viewports
+           instead of pushing the whole card off-screen. */
+        .hsx-dh-rail > section, .hsx-dh-root main > section { min-width: 0; }
+        .hsx-dh-rail > section > *, .hsx-dh-root main > section > * { max-width: 100%; }
         @media (prefers-reduced-motion: reduce) {
           .hsx-dh-progress-fill { transition: none !important; }
         }

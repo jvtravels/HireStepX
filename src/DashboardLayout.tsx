@@ -173,7 +173,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   })();
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: c.obsidian, overflow: "hidden" }}>
+    // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
+    // 60-80px gap at the bottom when the bar collapses. The vh value
+    // is the fallback for pre-iOS 15.4 / Android <108.
+    <div style={{ display: "flex", height: "100vh", maxHeight: "100dvh", background: c.obsidian, overflow: "hidden" }}>
       <a href="#dashboard-main" style={{
         position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
         zIndex: 100, padding: "12px 24px", background: c.gilt, color: c.obsidian,
@@ -303,7 +306,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       </aside>
 
       {/* Main Content */}
-      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "20px 16px 60px" : "44px 52px 80px", overflowY: "auto", height: "100vh" }}>
+      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "20px 16px 60px" : "44px 52px 80px", overflowY: "auto", height: "100vh", maxHeight: "100dvh" }}>
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)} aria-label="Open navigation menu" aria-expanded={sidebarOpen}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.stone; e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
