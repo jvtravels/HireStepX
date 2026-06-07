@@ -23,7 +23,8 @@
     "audit:confidence": "tsx scripts/csv-confidence-audit.mts",
     "audit:drift": "tsx scripts/audit-imported-vs-curator.mts",
     "scrape:salaries": "tsx scripts/scrape-ambitionbox.mts",
-    "replay:negotiation": "tsx scripts/replay-negotiation.mts"
+    "replay:negotiation": "tsx scripts/replay-negotiation.mts",
+    "eval:negotiation": "tsx scripts/eval-negotiation.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",
