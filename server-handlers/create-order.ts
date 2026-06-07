@@ -84,25 +84,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const finalAmount = plan === "single" ? price.amount * quantity : price.amount;
     const finalDescription = plan === "single" && quantity > 1 ? `${quantity} Sessions — ₹${quantity * 10} · ${quantity} AI mock interviews` : price.description;
 
-    // Idempotency: atomic lock to prevent duplicate orders for same user+plan within 30s
+    // Idempotency: atomic lock to prevent duplicate orders for the same
+    // user+plan from racing simultaneous clicks (double-click, fast retry).
+    //
+    // TTL is intentionally short (8s) — long enough to dedup back-to-back
+    // requests in flight, short enough that a *human* retry after a failed
+    // checkout never reuses the stale order_id. Razorpay marks an order as
+    // non-attemptable once a payment fails or is captured; returning that
+    // stale order_id to a fresh checkout surfaces as "Invalid Token" on
+    // Razorpay's hosted retry page. See PostHog `checkout_cache_hit`.
+    const DEDUP_TTL = 8;
     const resolvedUserId = authenticatedUserId || (typeof userId === "string" ? userId : "");
     const idempotencyKey = `order:${resolvedUserId}:${plan}`;
     if (UPSTASH_URL && UPSTASH_TOKEN && resolvedUserId) {
       try {
         // Atomic: SET NX returns OK if key was set (we got the lock), null if it existed (duplicate)
-        const lockRes = await fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(idempotencyKey)}/pending/NX/EX/30`, {
+        const lockRes = await fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(idempotencyKey)}/pending/NX/EX/${DEDUP_TTL}`, {
           headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
         });
         if (lockRes.ok) {
           const lockData = await lockRes.json();
           if (lockData.result === null) {
-            // Key already existed — check if there's a cached order ID
+            // Key already existed — another request is in flight. Wait briefly
+            // for its order_id, then return it (this is a true race within
+            // the same checkout click, not a stale post-failure retry).
             const oidRes = await fetch(`${UPSTASH_URL}/GET/${encodeURIComponent(`${idempotencyKey}:oid`)}`, {
               headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
             });
             if (oidRes.ok) {
               const oidData = await oidRes.json();
               if (oidData.result) {
+                await captureServerEvent("checkout_cache_hit", resolvedUserId, { plan, order_id: oidData.result, branch: "fast" });
                 return res.status(200).json({
                   orderId: oidData.result,
                   amount: price.amount,
@@ -113,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
               }
             }
-            // Lock exists but no order yet — another request is in flight, wait briefly
+            // Lock exists but no order yet — peer is mid-flight. Wait briefly.
             await new Promise(r => setTimeout(r, 2000));
             const retryRes = await fetch(`${UPSTASH_URL}/GET/${encodeURIComponent(`${idempotencyKey}:oid`)}`, {
               headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
@@ -121,6 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (retryRes.ok) {
               const retryData = await retryRes.json();
               if (retryData.result) {
+                await captureServerEvent("checkout_cache_hit", resolvedUserId, { plan, order_id: retryData.result, branch: "waited" });
                 return res.status(200).json({
                   orderId: retryData.result,
                   amount: price.amount,
@@ -169,9 +182,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const order = await response.json();
 
-    // Cache order ID for idempotency dedup
+    // Cache order ID for idempotency dedup (matches DEDUP_TTL above)
     if (UPSTASH_URL && UPSTASH_TOKEN && resolvedUserId) {
-      fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(`${idempotencyKey}:oid`)}/${encodeURIComponent(order.id)}?EX=30`, {
+      fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(`${idempotencyKey}:oid`)}/${encodeURIComponent(order.id)}?EX=${DEDUP_TTL}`, {
         headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
       }).catch(() => {});
     }
