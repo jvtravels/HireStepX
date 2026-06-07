@@ -125,6 +125,8 @@ import {
  * read or written by any kernel path. See state.ledger field comment. */
 import {
   emptyLedger,
+  recordFact,
+  recordAskedTopic,
   type ConversationLedger,
 } from "./_conversation-ledger";
 import {
@@ -4577,6 +4579,25 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   if (parsed.competing != null) next.competingOffer = parsed.competing;
   if (parsed.targetAsRange) next.candidateAskedAsRange = true;
 
+  /* PR-2 (PDF #28) — dual-write parsed facts onto the conversation
+   * ledger. Existing slot writes above continue as the live source of
+   * truth; the ledger accumulates an append-only audit trail with
+   * first-wins semantics so PR-3/4 can migrate readers off the slots.
+   * Read paths still use the slots — zero behavior change this PR. */
+  if (next.ledger) {
+    let led = next.ledger;
+    if (parsed.target != null) {
+      led = recordFact(led, "target-ctc", parsed.target, "main-parser", next.turnIndex, answer);
+    }
+    if (parsed.currentCtc != null) {
+      led = recordFact(led, "current-ctc", parsed.currentCtc, "main-parser", next.turnIndex, answer);
+    }
+    if (parsed.competing != null) {
+      led = recordFact(led, "competing-offer", parsed.competing, "main-parser", next.turnIndex, answer);
+    }
+    next.ledger = led;
+  }
+
   /* Memory feature (2026-05-29) — record claims on first mention; on
    * subsequent mentions detect contradictions outside ±10%. The kernel
    * stamps `lastContradiction` once per turn; the planner reads it to
@@ -5264,6 +5285,20 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
            * the first valid mention so a later misparse can't overwrite
            * a correctly captured current employer. */
           next.candidateCurrentCompany = entry.parsedString;
+        }
+        /* PR-2 (PDF #28) — dual-write disclosure-tracker captures to
+         * the ledger. Records even when the slot was already set by the
+         * main parser, so the ledger preserves which surface caught the
+         * disclosure. Reads continue from slots — first-wins protection
+         * lives on the ledger but isn't consulted yet. */
+        if (next.ledger) {
+          if (entry.kind === "current-ctc" && typeof entry.parsedValue === "number") {
+            next.ledger = recordFact(next.ledger, "current-ctc", entry.parsedValue, "disclosure-tracker", next.turnIndex, answer);
+          } else if (entry.kind === "notice-period" && typeof entry.parsedValue === "number") {
+            next.ledger = recordFact(next.ledger, "notice-period-days", entry.parsedValue, "disclosure-tracker", next.turnIndex, answer);
+          } else if (entry.kind === "current-company" && typeof entry.parsedString === "string") {
+            next.ledger = recordFact(next.ledger, "current-company", entry.parsedString, "disclosure-tracker", next.turnIndex, answer);
+          }
         }
       }
     }
@@ -6364,6 +6399,15 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     if (topicKey) {
       const prior = state.askedTopics ?? [];
       next.askedTopics = [...prior, { topic: topicKey, atTurn: next.turnIndex }];
+      /* PR-2 (PDF #28) — dual-write the asked topic onto the ledger so
+       * PR-3 can migrate canRefire / isAskedTopicAnswered readers off
+       * the askedTopics array. Read paths unchanged this PR. */
+      if (next.ledger) {
+        next.ledger = recordAskedTopic(next.ledger, topicKey, next.turnIndex, {
+          kind: move.actionKind ?? "unknown",
+          satisfiesTopic: topicKey,
+        });
+      }
     }
   }
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
