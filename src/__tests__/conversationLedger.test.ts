@@ -13,6 +13,7 @@ import { describe, it, expect } from "vitest";
 import {
   emptyLedger,
   askedTopicEntries,
+  getFactOr,
   recordFact,
   recordAskedTopic,
   recordEmittedAction,
@@ -163,6 +164,37 @@ describe("askedTopic — dedup primitives", () => {
     expect(askedTopicCount(l, "currentCtcAsked")).toBe(2);
     expect(askedTopicCount(l, "noticePeriodAsked")).toBe(1);
     expect(askedTopicCount(l, "targetAsked")).toBe(0);
+  });
+});
+
+describe("getFactOr — ledger-first read with slot fallback (PR-4)", () => {
+  it("returns the slot value when ledger is undefined (pre-PR-1 sessions)", () => {
+    expect(getFactOr(undefined, "current-ctc", 44)).toBe(44);
+    expect(getFactOr(undefined, "current-company", "Razorpay")).toBe("Razorpay");
+  });
+
+  it("returns the slot value when ledger has no entry for the kind", () => {
+    const l = recordFact(emptyLedger(), "target-ctc", 60, "main-parser", 1, "x");
+    expect(getFactOr(l, "current-ctc", 44)).toBe(44);
+  });
+
+  it("returns ledger value when present, ignoring slot", () => {
+    const l = recordFact(emptyLedger(), "current-ctc", 44, "main-parser", 1, "x");
+    expect(getFactOr(l, "current-ctc", 99)).toBe(44); // ledger wins
+  });
+
+  it("first-wins protection: later slot overwrite cannot leak", () => {
+    // Ledger captures first value at turn 1; slot later mutates to 99
+    // (simulating a misparse). Consumer reads must still see 44.
+    const l = recordFact(emptyLedger(), "current-ctc", 44, "main-parser", 1, "first");
+    const slotAfterMisparse = 99;
+    expect(getFactOr(l, "current-ctc", slotAfterMisparse)).toBe(44);
+  });
+
+  it("returns null when neither ledger nor fallback have the value", () => {
+    expect(getFactOr(emptyLedger(), "current-ctc", null)).toBeNull();
+    expect(getFactOr(undefined, "current-ctc", undefined)).toBeNull();
+    expect(getFactOr(undefined, "current-ctc", null)).toBeNull();
   });
 });
 

@@ -28,6 +28,7 @@
  */
 
 import type { NegotiationState } from "./_negotiation-kernel";
+import { getFactOr } from "./_conversation-ledger";
 import type { NextAction } from "./_next-action-planner";
 import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 import type { NegotiationRoundPersona } from "./_negotiation-rounds";
@@ -1974,8 +1975,18 @@ export function buildRestylePrompt(
      * candidate's current employer is known, the LLM uses that name.
      * When it's unknown, the LLM omits any employer name from
      * current-role references ("your current role" — no company name). */
-    `CANDIDATE'S CURRENT EMPLOYER: ${state.candidateCurrentCompany ? `"${state.candidateCurrentCompany}" (this is where the candidate WORKS NOW — distinct from the target company "${state.company || "this company"}")` : "not known to you. NEVER guess or invent a current employer name."}\n` +
-    `CRITICAL EMPLOYER-NAME RULE: When referring to the candidate's CURRENT role / current comp / current side, NEVER use the target company name "${state.company || "this company"}" — that's where they're INTERVIEWING, not where they WORK. ${state.candidateCurrentCompany ? `Use "${state.candidateCurrentCompany}" or generic phrasing like "your current side".` : `Use generic phrasing only: "your current role", "your current side", "your current comp" — no employer name.`}\n` +
+    /* PR-4 (PDF #28) — read currentCompany ledger-first. First-wins
+     * means once an employer name is captured, a later misparse
+     * overwriting the slot can't change what the LLM sees. The slot
+     * remains the fallback for pre-PR-1 sessions and any path that
+     * bypassed the disclosure tracker. */
+    (() => {
+      const currentCompany = getFactOr(state.ledger, "current-company", state.candidateCurrentCompany ?? null);
+      return (
+        `CANDIDATE'S CURRENT EMPLOYER: ${currentCompany ? `"${currentCompany}" (this is where the candidate WORKS NOW — distinct from the target company "${state.company || "this company"}")` : "not known to you. NEVER guess or invent a current employer name."}\n` +
+        `CRITICAL EMPLOYER-NAME RULE: When referring to the candidate's CURRENT role / current comp / current side, NEVER use the target company name "${state.company || "this company"}" — that's where they're INTERVIEWING, not where they WORK. ${currentCompany ? `Use "${currentCompany}" or generic phrasing like "your current side".` : `Use generic phrasing only: "your current role", "your current side", "your current comp" — no employer name.`}\n`
+      );
+    })() +
     `CONVERSATION STAGE (internal — for your routing only, NEVER mention in your reply): ${describePhaseForLlm(state.phase)}\n\n` +
     `INSTRUCTIONS (strict):\n` +
     recentOpenersLine +

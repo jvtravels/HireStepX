@@ -337,6 +337,25 @@ export function wasTopicAsked(
   return null;
 }
 
+/** Ledger-first fact read with slot fallback. Returns the FIRST captured
+ *  value from the ledger when present, otherwise the supplied fallback
+ *  (typically the legacy state slot). First-wins protects the read path
+ *  from later misparses: even if the slot gets overwritten by a stale
+ *  re-read, the ledger's original capture is what consumers see.
+ *
+ *  PR-4 migration target — every fact consumer routes through this. */
+export function getFactOr<K extends FactKind>(
+  led: ConversationLedger | undefined,
+  kind: K,
+  fallback: FactValue<K> | null | undefined,
+): FactValue<K> | null {
+  if (led) {
+    const ledgerValue = getFact(led, kind);
+    if (ledgerValue != null) return ledgerValue;
+  }
+  return fallback ?? null;
+}
+
 /** Return every asked-topic entry in (topic, atTurn) form, in the order
  *  it was recorded. Equivalent shape to legacy state.askedTopics — this
  *  is the migration target readers route through during PR-3. */

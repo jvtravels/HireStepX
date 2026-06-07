@@ -49,7 +49,7 @@ import {
   type DiscoveryTopic,
   type ContradictionTopic,
 } from "./_negotiation-kernel";
-import { askedTopicEntries } from "./_conversation-ledger";
+import { askedTopicEntries, getFactOr } from "./_conversation-ledger";
 import type { NegotiationRoundPersona } from "./_negotiation-rounds";
 import { registerNextActionPlanner } from "./_planner-registry";
 import { classifyRoleFamily, getCompanyHikeCap } from "./_company-band-tiers";
@@ -3517,8 +3517,13 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * skipped entirely once proof is provided (or already shared via
      * letterShareOffered). */
     const coDetail = state.competingOfferDetail;
+    /* PR-4 (PDF #28) — ledger-first competing-offer read. Once a
+     * competing-offer amount is disclosed, first-wins locks the value
+     * the planner reasons about; a later misparse of a follow-up
+     * candidate utterance can no longer change the leverage math. */
+    const competingOfferValue = getFactOr(state.ledger, "competing-offer", state.competingOffer);
     const hasUnsubstantiatedOffer =
-      state.competingOffer != null &&
+      competingOfferValue != null &&
       coDetail != null &&
       hasConcreteTell(coDetail) &&
       coDetail.letterShareOffered !== true &&
@@ -3539,7 +3544,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           actionKind: "fake-leverage-challenge",
           rationale:
             `Fake-leverage challenge: candidate disclosed competing offer ` +
-            `(₹${state.competingOffer}L${competingCompany ? `, ${competingCompany}` : ""}) ` +
+            `(₹${competingOfferValue}L${competingCompany ? `, ${competingCompany}` : ""}) ` +
             `but provided no proof; counterRound=${state.counterRound}. ` +
             `Softly request offer letter / redacted version to corroborate ` +
             `before further concessions.`,
@@ -3562,8 +3567,8 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     if (
       state.competitorMatchFiredAtTurn == null &&
       competitorProven &&
-      state.competingOffer != null &&
-      state.competingOffer > state.highestOfferMade &&
+      competingOfferValue != null &&
+      competingOfferValue > state.highestOfferMade &&
       state.highestOfferMade > 0 &&
       /* Order discipline: only commit panel-match AFTER the proof-of-
        * leverage probe has fired. If the candidate volunteers a letter
@@ -3575,7 +3580,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       const competingCompany = coDetail?.company ?? null;
       return {
         kind: "competitor-match",
-        competingOffer: state.competingOffer,
+        competingOffer: competingOfferValue,
         competingCompany,
         _move: {
           lever: "hold-firm",
@@ -3583,7 +3588,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           actionKind: "competitor-match",
           rationale:
             `Competitor-match: candidate substantiated competing offer ` +
-            `(₹${state.competingOffer}L${competingCompany ? `, ${competingCompany}` : ""}) ` +
+            `(₹${competingOfferValue}L${competingCompany ? `, ${competingCompany}` : ""}) ` +
             `above standing offer ₹${state.highestOfferMade}L. Commit to ` +
             `panel re-check with revert window rather than routing through ` +
             `lever-explore (which historically prompted the candidate).`,
@@ -3611,20 +3616,24 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * candidateCurrentCtc; payload echoes both numbers so the canonical
      * prose has the exact rebuttal context. */
     const complained = state.candidateStance?.complainedAboutHikePercent ?? false;
+    /* PR-4 (PDF #28) — read currentCtc ledger-first so hike-percent math
+     * is computed against the candidate's FIRST disclosed value, even
+     * if a later misparse overwrote the slot. */
+    const currentCtcForHike = getFactOr(state.ledger, "current-ctc", state.candidateCurrentCtc);
     if (
       state.hikeStrongDefenseFiredAtTurn == null &&
       state.phase === "counter-offer" &&
       complained &&
-      state.candidateCurrentCtc != null &&
-      state.candidateCurrentCtc > 0
+      currentCtcForHike != null &&
+      currentCtcForHike > 0
     ) {
       const offer =
         state.highestOfferMade > 0 ? state.highestOfferMade : state.band.initialOffer;
-      const hikePct = Math.round(((offer - state.candidateCurrentCtc) / state.candidateCurrentCtc) * 100);
+      const hikePct = Math.round(((offer - currentCtcForHike) / currentCtcForHike) * 100);
       return {
         kind: "anchor-defense-hike-strong",
         hikePct,
-        currentCtc: state.candidateCurrentCtc,
+        currentCtc: currentCtcForHike,
         offer,
         _move: {
           lever: "hold-firm",
@@ -3632,7 +3641,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           actionKind: "anchor-defense-hike-strong",
           rationale:
             `Anchor-defense (hike-strong): candidate complained about hike %; ` +
-            `offer ₹${offer}L on ₹${state.candidateCurrentCtc}L = ${hikePct}% hike (peers see 8-12% on laterals).`,
+            `offer ₹${offer}L on ₹${currentCtcForHike}L = ${hikePct}% hike (peers see 8-12% on laterals).`,
         },
       };
     }
