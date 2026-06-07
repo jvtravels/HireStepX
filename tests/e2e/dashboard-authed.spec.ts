@@ -182,6 +182,12 @@ test.describe("Dashboard — authenticated surface (MSW-style mocked)", () => {
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
 
     // Hero greeting should use the mocked profile name.
+    // KNOWN GAP (2026-06-07): DashboardHome doesn't mount past the
+    // loading.tsx Suspense fallback under this mock surface, so a
+    // tighter `.hsx-dh-root` visibility assertion fails. The body-text
+    // match below covers the layout chrome but NOT DashboardHome
+    // itself — treat this spec as a smoke test, not a render contract.
+    // Real responsive verification runs against the Vercel deploy.
     const body = page.locator("body");
     await expect(body).toContainText(/E2E User|Hi|Welcome|Good (morning|afternoon|evening)/i, { timeout: 10_000 });
 
