@@ -40,6 +40,7 @@ import { PhaseLadderPanel } from "./panels/PhaseLadderPanel";
 import { ConcessionAnalysisPanel } from "./panels/ConcessionAnalysisPanel";
 import { AnchorBracketPanel } from "./panels/AnchorBracketPanel";
 import { VerbalHabitsPanel } from "./panels/VerbalHabitsPanel";
+import { CoachingSignalsPanel } from "./panels/CoachingSignalsPanel";
 import { SilenceMapPanel } from "./panels/SilenceMapPanel";
 import { UnaskedLeversPanel } from "./panels/UnaskedLeversPanel";
 import { CounterOfferLetterPanel } from "./panels/CounterOfferLetterPanel";
@@ -57,6 +58,10 @@ interface Props {
   daysUntilInterview?: number;
   priorSessionCount?: number;
   onLaunchDrill?: (slug: string) => void;
+  /** M2 PR-6 — family-level guardrail flag counts (e.g.
+   *  { "pressure-repeat": 2, "stall-cascade": 1 }). Optional: when
+   *  absent or empty, the CoachingSignalsPanel renders nothing. */
+  guardrailFlagSummary?: Record<string, number>;
   salaryMeta?: {
     tierBucket?: string;
     tierBucketLabel?: string;
@@ -71,7 +76,7 @@ interface Props {
 }
 
 export function NegotiationFullReport({
-  outcome, role, company, questions, daysUntilInterview, priorSessionCount, onLaunchDrill, salaryMeta,
+  outcome, role, company, questions, daysUntilInterview, priorSessionCount, onLaunchDrill, guardrailFlagSummary, salaryMeta,
 }: Props) {
   const offers = outcome.offers ?? [];
   const finalTotal = outcome.finalTotal ?? offers[offers.length - 1]?.total ?? null;
@@ -133,6 +138,11 @@ export function NegotiationFullReport({
           <ConcessionAnalysisPanel outcome={outcome} />
           <AnchorBracketPanel outcome={outcome} />
         </div>
+        {/* M2 PR-6 — Coaching Signals: family-level guardrail patterns
+            the planner flagged during the session. Renders null when
+            no flags fired (honest empty state — same as every other
+            panel in this report). */}
+        <CoachingSignalsPanel flagSummary={guardrailFlagSummary} />
         {(outcome.verbalHabits || outcome.silenceMoments) && (
           <div className="nfr-grid-2up">
             <VerbalHabitsPanel outcome={outcome} />

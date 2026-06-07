@@ -3354,6 +3354,10 @@ export function useInterviewEngine() {
         posture: "strong" | "neutral" | "hungry";
         candidateLeverage: "low" | "neutral" | "high";
       };
+      /* M2 PR-6 (2026-06-07) — family-level guardrail flag counts
+       * collected by the planner during the session. Populated from
+       * guardrailFlagSummary(finalState) below. */
+      guardrailFlagSummary?: Record<string, number>;
     } | undefined = undefined;
     try {
       if (
@@ -3371,11 +3375,23 @@ export function useInterviewEngine() {
         });
         const lowballEvent = buildLowballEvent(finalState);
         const powerContext = buildPowerContext(finalState);
+        /* M2 PR-6 — fold the family-level guardrail telemetry into
+         * negotiationMetrics so the report layer can render the
+         * Coaching Signals panel without re-deriving from raw state.
+         * Empty {} is omitted to preserve the "no flags → undefined"
+         * invariant the panel relies on. */
+        const { guardrailFlagSummary } = await import(
+          "../server-handlers/_decision-log-readers"
+        );
+        const flagSummary = guardrailFlagSummary(finalState);
         negotiationMetrics = {
           ...m,
           score: scoreNegotiationBehaviour(m),
           ...(lowballEvent ? { lowballEvent } : {}),
           ...(powerContext ? { powerContext } : {}),
+          ...(Object.keys(flagSummary).length > 0
+            ? { guardrailFlagSummary: flagSummary }
+            : {}),
         };
       }
     } catch (e) {

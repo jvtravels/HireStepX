@@ -239,6 +239,7 @@ export default function SessionReportView({
               questions={data.questions}
               daysUntilInterview={data.daysUntilInterview}
               priorSessionCount={data.priorSessionCount}
+              guardrailFlagSummary={data.kernelMetrics?.guardrailFlagSummary}
               salaryMeta={salaryNegotiationMeta}
             />
           )}

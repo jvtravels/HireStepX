@@ -325,6 +325,13 @@ export interface InterviewResultData {
     walkAwayReturned?: boolean;
     hardBandCap?: boolean;
     marketMode?: "soft" | "neutral" | "hot";
+    /** M2 PR-6 (2026-06-07) — family-level guardrail flag counts for
+     *  the session, keyed by flag name (e.g. "pressure-repeat",
+     *  "stall-cascade", "anchor-double-set"). Optional: absent when
+     *  no flags fired, or for sessions persisted before the M2 PR-3
+     *  taxonomy + guardrail layer landed. Drives CoachingSignalsPanel
+     *  in NegotiationFullReport. */
+    guardrailFlagSummary?: Record<string, number>;
   };
 }
 
