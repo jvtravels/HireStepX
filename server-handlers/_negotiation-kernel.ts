@@ -1337,6 +1337,20 @@ export interface NegotiationState {
     rationale: string;     // short human-readable reason
     phase: NegotiationPhase;
     briefTags?: string[];  // which bracketed tags were injected this turn
+    /* M2 PR-3 (2026-06-07) — capture the actionKind + family that the
+     * move-picker landed on this turn. Optional and additive (existing
+     * entries without these fields remain valid). Powers the
+     * family-level guardrails: lookback at decisionLog[n-1].family is
+     * how the pressure-leverage rate limit checks "was the previous
+     * move already a coercive move?" without a separate state field. */
+    actionKind?: string;
+    family?: import("./_action-families").ActionFamily | "unmapped";
+    /* M2 PR-3 — guardrail violations triggered on this turn. Each entry
+     * is a short string like "pressure-repeat" naming the rule that
+     * flagged. Observability-only this PR: the move is NOT substituted;
+     * future PRs can flip selected rules to enforce once the telemetry
+     * confirms the substitution path is safe. */
+    guardrailFlags?: string[];
   }>;
 
   /* Architectural bug-prevention (2026-05-15) — last-turn brief tags. Set

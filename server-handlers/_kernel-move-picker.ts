@@ -83,6 +83,13 @@ export function pickAiMove(state: NegotiationState): AiMove {
   }
   /* Architectural bug-prevention (2026-05-15) — append to decision log. */
   if (!state.decisionLog) state.decisionLog = [];
+  /* M2 PR-3 (2026-06-07) — family-level guardrail check, BEFORE pushing
+   * the new entry so the lookback at decisionLog[n-1] sees the prior
+   * turn (not this one). Observability-only: we flag the rule but do
+   * NOT substitute the move. Telemetry confirms how often the planner
+   * actually wants to fire consecutive pressure-leverage before we
+   * commit to a substitution path. */
+  const guardrailFlags = checkFamilyGuardrails(state, move);
   /* lastBriefTags is filled in by compactTurnBrief which runs AFTER
    * pickAiMove (in buildAiPrompt). applyAiMove backfills the just-pushed
    * entry's briefTags from state.lastBriefTags so the log captures the
@@ -92,8 +99,38 @@ export function pickAiMove(state: NegotiationState): AiMove {
     picker: classifyPicker(state, move),
     rationale: move.rationale || "",
     phase: state.phase,
+    actionKind: move.actionKind,
+    family: move.family,
+    guardrailFlags: guardrailFlags.length > 0 ? guardrailFlags : undefined,
   });
   return move;
+}
+
+/** M2 PR-3 (2026-06-07) — family-level guardrail checks. Reads the
+ *  most recent decisionLog entry and flags rule violations on the
+ *  incoming move WITHOUT mutating it. Returns the list of flag strings
+ *  (empty when no rules tripped).
+ *
+ *  Rules implemented:
+ *    - "pressure-repeat" — two consecutive moves both classified as
+ *      pressure-leverage family. Coercive moves back-to-back are the
+ *      shape that produced the PDF#34 retention-into-exploding-offer
+ *      finding; flagging here makes the pattern visible in the decision
+ *      log even when the leaf actionKinds differ. */
+function checkFamilyGuardrails(
+  state: NegotiationState,
+  move: AiMove,
+): string[] {
+  const flags: string[] = [];
+  const log = state.decisionLog ?? [];
+  const prev = log.length > 0 ? log[log.length - 1] : null;
+  if (
+    move.family === "pressure-leverage" &&
+    prev?.family === "pressure-leverage"
+  ) {
+    flags.push("pressure-repeat");
+  }
+  return flags;
 }
 
 /** Inner picker — thin shell over planNextAction + actionToLever. Pure. */
