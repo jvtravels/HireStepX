@@ -4609,6 +4609,21 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     if (parsed.competing != null) {
       led = recordFact(led, "competing-offer", parsed.competing, "main-parser", next.turnIndex, answer);
     }
+    /* QUALITY-3 (EVAL-6) — extend dual-write to component-* FactKinds.
+     * Previously the kernel updated slot mirrors (componentBase/Variable/
+     * Equity) but never wrote the components to the ledger, so getFact()
+     * returned null for any caller that consulted the read-layer
+     * contract. The `expectedDisclosures` rubric criterion surfaced this
+     * gap on `long-horizon-trajectory` and `variable-as-percentage`. */
+    if (parsed.componentBreakdown.base != null) {
+      led = recordFact(led, "component-base", parsed.componentBreakdown.base, "main-parser", next.turnIndex, answer);
+    }
+    if (parsed.componentBreakdown.variable != null) {
+      led = recordFact(led, "component-variable", parsed.componentBreakdown.variable, "main-parser", next.turnIndex, answer);
+    }
+    if (parsed.componentBreakdown.equity != null) {
+      led = recordFact(led, "component-equity", parsed.componentBreakdown.equity, "main-parser", next.turnIndex, answer);
+    }
     next.ledger = led;
   }
 

@@ -50,6 +50,13 @@ export interface EvalScenario {
   /** FactKinds the candidate did NOT disclose. The no-fabricated-facts
    *  rubric line asserts these stay null in the ledger. */
   undisclosed: readonly FactKind[];
+  /** OPTIONAL: facts the candidate DID disclose with their expected
+   *  bound values. The disclosed-facts-bound rubric line asserts
+   *  getFact(kind) matches each declared value. Scenarios that omit
+   *  this field get n/a on that criterion (backwards-compatible).
+   *  Use this when the binding correctness — not just "no crash, no
+   *  fabrication" — is the actual thing under test. */
+  expectedDisclosures?: Partial<Record<FactKind, number | string>>;
 }
 
 const DEFAULT_BAND: NegotiationBand = {
@@ -1024,6 +1031,215 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-variable",
       "component-equity",
     ],
+  },
+
+  /* ============================================================ *
+   * EVAL-6: the mean layer.                                      *
+   *                                                              *
+   * EVAL-5 stressed the parser; this stresses the kernel's       *
+   * trajectory and unit handling. Number-word edges (crore,      *
+   * lakh-as-rupees, percentage-variable), multi-fact contradic-  *
+   * tion in a single utterance, a 15-turn long-horizon, an       *
+   * implicit competing offer (existence without number), and     *
+   * range-stated CURRENT CTC (we covered range target in EVAL-4, *
+   * not current). One scenario per failure-mode class.           *
+   * ============================================================ */
+
+  /* ---------------- Scenario 33: salary in crore ---------------- */
+  {
+    id: "salary-stated-in-crore",
+    label: "Senior candidate states comp in crore, not LPA",
+    goal:
+      "Indian-tech recruiter context: senior IC candidates routinely state comp as '1 crore' or '1.2 cr', not 100 LPA. The salary-span finder must recognize crore/cr as a unit and convert to LPA correctly (1 cr = 100 LPA). If the parser misses, current-ctc stays null and the planner re-probes a fact the candidate already disclosed.",
+    init: {
+      sessionId: "eval-salary-stated-in-crore",
+      role: "Staff Software Engineer",
+      company: "JP Morgan",
+      band: HIGH_BAND,
+    },
+    turns: [
+      { candidate: "Currently at 60 lakh fixed.", aiText: "Got it." },
+      { candidate: "Target is 1.2 crore total package.", aiText: "Noted." },
+      { candidate: "Notice 90 days.", aiText: "OK." },
+      { candidate: "No competing offer.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-variable",
+      "component-equity",
+    ],
+    expectedDisclosures: {
+      "current-ctc": 60,    // 60 lakh = 60 LPA
+      "target-ctc": 120,    // 1.2 crore = 120 LPA
+    },
+  },
+
+  /* ---------------- Scenario 34: contradiction within one utterance ---------------- */
+  {
+    id: "intra-utterance-contradiction",
+    label: "Candidate self-contradicts within ONE utterance",
+    goal:
+      "Edge of first-wins: 'Current is 18 — actually 22 LPA' as one breath. The parser sees two spans; the FIRST should bind (audit + read both first-wins). Listed as undisclosed for the second value's drift — no-fabricated-facts gates the ledger landing 22 as current-ctc by mistake.",
+    init: {
+      sessionId: "eval-intra-utterance-contradiction",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      {
+        candidate: "Current is 18 LPA — actually 22 LPA with the variable, sorry.",
+        aiText: "Captured the headline.",
+      },
+      { candidate: "Target 28 LPA.", aiText: "Got it." },
+      { candidate: "Notice 60 days.", aiText: "OK." },
+      { candidate: "No competing offer.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+    expectedDisclosures: {
+      "current-ctc": 18,    // first-wins: keep the original, not the in-breath correction to 22
+      "target-ctc": 28,
+    },
+  },
+
+  /* ---------------- Scenario 35: 15-turn long horizon ---------------- */
+  {
+    id: "long-horizon-trajectory",
+    label: "15-turn session — frustration recovery + re-anchor + close",
+    goal:
+      "Long sessions stress every guardrail simultaneously: probe-once-per-topic, no-coercion (no pressure-repeat on a stretched conversation), first-wins (no late overwrite by drift). If any criterion silently breaks past turn 10, this surfaces it.",
+    init: {
+      sessionId: "eval-long-horizon-trajectory",
+      role: "Senior Software Engineer",
+      company: "JP Morgan",
+      band: HIGH_BAND,
+    },
+    turns: [
+      { candidate: "Currently at Razorpay.", aiText: "Got it." },
+      { candidate: "Total CTC is 28 LPA — 24 fixed, 4 variable.", aiText: "Noted." },
+      { candidate: "Target is 38 LPA for this move.", aiText: "OK." },
+      { candidate: "Notice is 60 days.", aiText: "Got it." },
+      { candidate: "No competing offers right now.", aiText: "Understood." },
+      { candidate: "Honestly the interview process felt rushed.", aiText: "Sorry to hear that — let me address that." },
+      { candidate: "I'm not sure this team is the right fit.", aiText: "What concern is strongest?" },
+      { candidate: "Mainly the on-call rotation — I'd want clarity there.", aiText: "1 week per 6 weeks, with comp." },
+      { candidate: "OK that's reasonable. Walk me through the package.", aiText: "Let me share the structure." },
+      { candidate: "What's the equity component?", aiText: "RSUs vest over 4 years, 25% per year." },
+      { candidate: "And growth into staff?", aiText: "Typically 24 months at strong perf." },
+      { candidate: "Alright — what's your number on fixed?", aiText: "Working that for you." },
+      { candidate: "I need at least 34 fixed to make this work.", aiText: "Captured." },
+      { candidate: "If you can land 34 fixed + the rest, I'm in.", aiText: "Let me confirm with comp." },
+      { candidate: "Sounds good — I'll wait for the formal.", aiText: "Sending today." },
+    ],
+    undisclosed: ["joining-date"],
+    expectedDisclosures: {
+      "current-ctc": 28,
+      "target-ctc": 38,
+      "component-base": 24,
+      "component-variable": 4,
+    },
+  },
+
+  /* ---------------- Scenario 36: implicit competing offer ---------------- */
+  {
+    id: "implicit-competing-offer-no-number",
+    label: "Candidate confirms a competing offer exists but won't share the number",
+    goal:
+      "Existence-without-amount is a real recruiter situation. The kernel should NOT fabricate a competing-offer number (no-fabricated-facts), AND should NOT keep re-probing the amount past the polite refusal (probe-once-per-topic). Listed undisclosed: competing-offer stays null.",
+    init: {
+      sessionId: "eval-implicit-competing-offer-no-number",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "Currently 22 LPA at Swiggy.", aiText: "Got it." },
+      { candidate: "Target 30 LPA.", aiText: "Noted." },
+      {
+        candidate: "I do have a competing offer but I'd rather not share the number at this stage.",
+        aiText: "Understood — won't push.",
+      },
+      { candidate: "Notice 45 days.", aiText: "OK." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 37: range-stated current CTC ---------------- */
+  {
+    id: "current-ctc-stated-as-range",
+    label: "Candidate states current as a range '18-22 LPA' (variable swing)",
+    goal:
+      "EVAL-4 covered target-as-range; this covers CURRENT-as-range. Candidate's variable-component swing makes total CTC a range. Parser should bind ONE value cleanly (upper or lower convention) without re-probing or fabricating. Probe-once + no-fabricated-facts gate this.",
+    init: {
+      sessionId: "eval-current-ctc-stated-as-range",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      {
+        candidate: "Current CTC ranges 18 to 22 LPA depending on variable hit.",
+        aiText: "Captured.",
+      },
+      { candidate: "Target 28 LPA flat.", aiText: "Got it." },
+      { candidate: "Notice 60 days.", aiText: "OK." },
+      { candidate: "No competing offer.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-equity",
+    ],
+    expectedDisclosures: {
+      // Current stated as a range 18-22 LPA; binding 22 (upper-of-range)
+      // is the architectural choice the parser already makes elsewhere
+      // for target ranges (EVAL-4 scenario 24). This pins it for current
+      // too — if the convention changes, the scorecard surfaces it.
+      "current-ctc": 22,
+      "target-ctc": 28,
+    },
+  },
+
+  /* ---------------- Scenario 38: variable as percentage ---------------- */
+  {
+    id: "variable-as-percentage",
+    label: "Candidate states variable as % of base, not LPA",
+    goal:
+      "'20 LPA base plus 20% variable' is a common Indian-tech disclosure shape. component-base should bind to 20; component-variable should EITHER bind to a derived number (4 LPA) OR stay null cleanly — both pass. The fabrication failure mode would be binding 20 as variable (the percentage value) or polluting current-ctc with the percentage.",
+    init: {
+      sessionId: "eval-variable-as-percentage",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "Base is 20 LPA, variable is 20% on top.", aiText: "Noted base + structure." },
+      { candidate: "Target 28 LPA total package.", aiText: "Got it." },
+      { candidate: "Notice 45 days.", aiText: "OK." },
+      { candidate: "No competing offer.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-equity",
+    ],
+    expectedDisclosures: {
+      "component-base": 20,
+      "target-ctc": 28,
+    },
   },
 ] as const;
 

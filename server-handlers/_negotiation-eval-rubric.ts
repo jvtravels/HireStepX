@@ -88,6 +88,14 @@ export const NEGOTIATION_RUBRIC: readonly RubricCriterion[] = [
     layer: "structural",
     weight: 3,
   },
+  {
+    id: "disclosed-facts-bound",
+    label: "Facts the candidate DID disclose are bound to the right value",
+    description:
+      "Symmetric to no-fabricated-facts. For every FactKind in the scenario's `expectedDisclosures` map, getFact(ledger, kind) must equal the declared value. Catches silent misses (parser dropped the disclosure, ledger has null) and silent mis-bindings (parser bound the wrong number). n/a when the scenario doesn't declare expectedDisclosures.",
+    layer: "structural",
+    weight: 3,
+  },
 
   /* ------------------------- subjective ------------------------- */
   {

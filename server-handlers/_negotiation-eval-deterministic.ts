@@ -296,6 +296,45 @@ function scoreNoFabricatedFacts(
   };
 }
 
+function scoreDisclosedFactsBound(
+  state: NegotiationState,
+  scenario: EvalScenario,
+): CriterionVerdict {
+  const expected = scenario.expectedDisclosures;
+  if (!expected || Object.keys(expected).length === 0) {
+    return {
+      criterionId: "disclosed-facts-bound",
+      label: "Facts the candidate DID disclose are bound to the right value",
+      verdict: "n/a",
+      reason: "scenario did not declare expectedDisclosures",
+      weight: 3,
+    };
+  }
+  const mismatches: string[] = [];
+  for (const [kind, expectedValue] of Object.entries(expected)) {
+    const bound = getFact(state.ledger!, kind as FactKind);
+    if (bound !== expectedValue) {
+      mismatches.push(`${kind}: expected ${String(expectedValue)}, got ${String(bound)}`);
+    }
+  }
+  if (mismatches.length === 0) {
+    return {
+      criterionId: "disclosed-facts-bound",
+      label: "Facts the candidate DID disclose are bound to the right value",
+      verdict: "pass",
+      reason: `all ${Object.keys(expected).length} declared disclosures bound correctly`,
+      weight: 3,
+    };
+  }
+  return {
+    criterionId: "disclosed-facts-bound",
+    label: "Facts the candidate DID disclose are bound to the right value",
+    verdict: "fail",
+    reason: mismatches.join("; "),
+    weight: 3,
+  };
+}
+
 /* ----------------------------- entrypoint ----------------------------- */
 
 /** Score one scenario's final state against the structural rubric.
@@ -311,6 +350,7 @@ export function scoreScenarioStructural(
     scoreProbeOnce(state),
     scoreDecisionLogMapped(state),
     scoreNoFabricatedFacts(state, scenario),
+    scoreDisclosedFactsBound(state, scenario),
   ];
 
   // Sanity: every structural criterion in the rubric must be scored
