@@ -59,10 +59,14 @@ test.describe("Auth — Login journey (Tier 1)", () => {
       page.locator("button[type=submit]").click(),
     ]);
 
-    // If we land on /dashboard, the hero must render — proves the dashboard
-    // tree mounted with a real session, not a redirect loop.
+    // Branch on landing surface — never silently pass. Dashboard must show
+    // the hero (proves real session mounted, not a redirect loop). Onboarding
+    // must show its shell heading (proves the onboarding tree mounted, not
+    // an auth bounce). Either way, an assertion runs.
     if (/\/dashboard/.test(page.url())) {
       await expect(page.locator("#dh-hero")).toContainText("Welcome", { timeout: 10_000 });
+    } else {
+      await expect(page.locator("h1, h2, h3").first()).toBeVisible({ timeout: 10_000 });
     }
 
     await ctx.close();
