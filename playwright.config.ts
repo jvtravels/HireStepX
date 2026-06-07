@@ -1,13 +1,22 @@
 import { defineConfig, devices } from "@playwright/test";
+import { STORAGE_STATE_PATH } from "./tests/global-setup";
 
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  // Default 3 retries in CI matches PostHog's pattern; set
+  // PLAYWRIGHT_RETRIES=0 in workflow_dispatch to surface the true
+  // per-test failure rate when auditing flake.
+  retries: process.env.PLAYWRIGHT_RETRIES
+    ? Number(process.env.PLAYWRIGHT_RETRIES)
+    : process.env.CI
+      ? 3
+      : 1,
+  workers: process.env.CI ? 4 : undefined,
   reporter: process.env.CI ? "github" : "html",
   timeout: 30_000,
+  globalSetup: "./tests/global-setup.ts",
 
   use: {
     baseURL: process.env.BASE_URL || "http://localhost:3000",
@@ -25,33 +34,30 @@ export default defineConfig({
       use: { ...devices["iPhone 13"] },
     },
     {
-      // Tablet coverage — iPad hits the 768px breakpoint bucket, distinct
-      // from phone-portrait (375–414) and desktop (1280+). Caught a
-      // dashboard grid regression during dogfooding that neither 'mobile'
-      // nor 'chromium' would have.
       name: "tablet",
       use: { ...devices["iPad Pro 11"] },
     },
     {
-      // Android mid-range — larger viewport than iPhone 13 and different
-      // default font metrics. Catches Android-specific layout bugs that
-      // iOS Safari absorbs silently.
       name: "android",
       use: { ...devices["Pixel 7"] },
     },
   ],
 
-  // webServer is omitted when PLAYWRIGHT_SKIP_WEBSERVER=1 — set by the
-  // e2e.yml workflow that runs against a live Vercel preview URL. Locally
-  // we boot `next dev`; nothing else needs to start a server.
+  // Local + CI both run a production-built app — matches PostHog/Supabase
+  // pattern of testing the same binary that ships. Skip when
+  // PLAYWRIGHT_SKIP_WEBSERVER=1 (e.g. running against an external preview).
   ...(process.env.PLAYWRIGHT_SKIP_WEBSERVER
     ? {}
     : {
         webServer: {
-          command: "npm run dev",
+          command: process.env.CI
+            ? "npm run build && npm run start"
+            : "npm run dev",
           url: "http://localhost:3000",
           reuseExistingServer: !process.env.CI,
-          timeout: 120_000,
+          timeout: 180_000,
         },
       }),
 });
+
+export { STORAGE_STATE_PATH };

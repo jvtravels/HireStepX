@@ -19,12 +19,24 @@ import { test, expect } from "@playwright/test";
  * device class has its own baseline.
  */
 
-/* Each test waits for "networkidle" before snapping so loaded fonts
-   and async hero animations don't race the screenshot. The 500ms
-   settle is belt-and-braces for any framer-motion fades. */
+/* Wait for fonts + images to load before snapshotting. Replaces
+   networkidle (flake-prone — long-poll/SSE/analytics never settle) and
+   the magic 500ms settle. */
 async function waitForStable(page: import("@playwright/test").Page) {
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(500);
+  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => {
+    await Promise.all(
+      Array.from(document.images)
+        .filter((img) => !img.complete)
+        .map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              img.addEventListener("load", () => resolve(), { once: true });
+              img.addEventListener("error", () => resolve(), { once: true });
+            }),
+        ),
+    );
+  });
 }
 
 test.describe("Public surfaces — visual regression", () => {

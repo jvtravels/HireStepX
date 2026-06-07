@@ -75,9 +75,8 @@ test.describe("Landing Page — Sections", () => {
 
   test("See How It Works button scrolls to section", async ({ page }) => {
     await page.getByRole("button", { name: "See How It Works" }).click();
-    await page.waitForTimeout(800);
     const section = page.locator("#how-it-works");
-    await expect(section).toBeInViewport();
+    await expect(section).toBeInViewport({ timeout: 3000 });
   });
 
   test("features section shows heading", async ({ page }) => {
@@ -87,13 +86,10 @@ test.describe("Landing Page — Sections", () => {
   });
 
   test("pricing section has Free, Starter, and Pro plans", async ({ page }) => {
-    // Trigger lazy loading by scrolling to bottom, then scroll again after lazy content mounts
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    // Wait for lazy-loaded pricing section to appear in DOM
     const pricing = page.locator("#pricing");
     await expect(pricing).toBeAttached({ timeout: 8000 });
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await pricing.scrollIntoViewIfNeeded();
     await expect(pricing.getByRole("heading", { name: "Free" })).toBeVisible({ timeout: 8000 });
     await expect(pricing.getByRole("heading", { name: "Starter" })).toBeVisible();
@@ -101,38 +97,27 @@ test.describe("Landing Page — Sections", () => {
   });
 
   test("pricing section shows Sessions and Annual plans", async ({ page }) => {
-    // Trigger lazy loading by scrolling to bottom, then scroll again after lazy content mounts
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const pricing = page.locator("#pricing");
     await expect(pricing).toBeAttached({ timeout: 8000 });
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await pricing.scrollIntoViewIfNeeded();
     await expect(pricing.getByRole("heading", { name: "Sessions" })).toBeVisible({ timeout: 8000 });
     await expect(pricing.getByRole("heading", { name: "Annual" })).toBeVisible();
   });
 
   test("testimonials section heading is visible", async ({ page }) => {
-    // Trigger lazy loading by scrolling to bottom, then scroll again after lazy content mounts
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect(page.getByText("They practiced here. Then got the offer.")).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText("They practiced here. Then got the offer.")).toBeVisible({ timeout: 10_000 });
   });
 });
 
 test.describe("Landing Page — FAQ", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    // Trigger lazy loading by scrolling to bottom of page
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    // Wait for lazy content to mount, then scroll again to reach newly-rendered sections
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    // Wait for FAQ heading to appear (lazy-loaded + reveal animation)
-    await expect(page.getByText("Frequently asked questions")).toBeVisible({ timeout: 10000 });
-    // Scroll the FAQ section into view so reveal fires on child elements
     const faqHeading = page.getByText("Frequently asked questions");
+    await expect(faqHeading).toBeVisible({ timeout: 10_000 });
     await faqHeading.scrollIntoViewIfNeeded();
   });
 
@@ -194,13 +179,9 @@ test.describe("Landing Page — FAQ", () => {
 test.describe("Landing Page — Footer", () => {
   test("footer renders with brand and legal links", async ({ page }) => {
     await page.goto("/");
-    // Trigger lazy loading — footer is lazy-loaded via React.lazy
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    // Wait for lazy content to mount, then scroll again to reach the footer
-    await page.waitForTimeout(500);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
-    await expect(footer).toBeAttached({ timeout: 10000 });
+    await expect(footer).toBeAttached({ timeout: 10_000 });
     await footer.scrollIntoViewIfNeeded();
     await expect(footer.getByText("HireStepX")).toBeVisible({ timeout: 5000 });
     await expect(footer.getByText("Privacy Policy")).toBeVisible();
@@ -210,10 +191,8 @@ test.describe("Landing Page — Footer", () => {
   test("privacy policy link navigates correctly", async ({ page }) => {
     await page.goto("/");
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
-    await expect(footer).toBeAttached({ timeout: 10000 });
+    await expect(footer).toBeAttached({ timeout: 10_000 });
     await footer.scrollIntoViewIfNeeded();
     await expect(footer.getByText("Privacy Policy")).toBeVisible({ timeout: 5000 });
     await footer.getByText("Privacy Policy").click();
@@ -223,10 +202,8 @@ test.describe("Landing Page — Footer", () => {
   test("terms of service link navigates correctly", async ({ page }) => {
     await page.goto("/");
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
-    await expect(footer).toBeAttached({ timeout: 10000 });
+    await expect(footer).toBeAttached({ timeout: 10_000 });
     await footer.scrollIntoViewIfNeeded();
     await expect(footer.getByText("Terms of Service")).toBeVisible({ timeout: 5000 });
     await footer.getByText("Terms of Service").click();

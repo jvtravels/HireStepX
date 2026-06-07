@@ -1,14 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-/**
- * Service-role Supabase client for seeding + cleanup in e2e tests.
- * Bypasses RLS. Never import from app code — tests only.
- *
- * Reads SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY from the env. Tests that
- * need seeding should call `requireServiceClient()`; if creds are missing
- * the test should `test.skip` with a clear message rather than silently
- * pretending to seed.
- */
 let client: SupabaseClient | null = null;
 
 export function getServiceClient(): SupabaseClient | null {
@@ -33,9 +24,24 @@ export function requireServiceClient(): SupabaseClient {
   return c;
 }
 
-export async function deleteUserSessions(userId: string): Promise<void> {
+// FK-dependency-ordered child tables. Add new user-scoped tables here so
+// cleanupUserData drops them before the parent profiles row would be touched.
+// Mirrors the Supawright pattern (cascade-aware service-role delete).
+const USER_SCOPED_TABLES = [
+  "sessions",
+  "calendar_events",
+  "story_notebook",
+  "salary_offer",
+  "payments",
+  "referrals",
+  "session_credits",
+] as const;
+
+export async function cleanupUserData(userId: string): Promise<void> {
   const c = requireServiceClient();
-  await c.from("sessions").delete().eq("user_id", userId);
+  for (const table of USER_SCOPED_TABLES) {
+    await c.from(table).delete().eq("user_id", userId);
+  }
 }
 
 export async function seedSession(
@@ -60,4 +66,17 @@ export async function seedSession(
   const { data, error } = await c.from("sessions").insert(row).select("id").single();
   if (error) throw error;
   return data.id as string;
+}
+
+// Resolve the seeded test user's id from the auth.users table so tests can
+// scope cleanup without hardcoding a uuid.
+export async function getTestUserId(): Promise<string> {
+  const c = requireServiceClient();
+  const email = process.env.TEST_USER_EMAIL;
+  if (!email) throw new Error("TEST_USER_EMAIL not set");
+  const { data, error } = await c.auth.admin.listUsers();
+  if (error) throw error;
+  const user = data.users.find((u) => u.email === email);
+  if (!user) throw new Error(`Test user ${email} not found in auth.users`);
+  return user.id;
 }

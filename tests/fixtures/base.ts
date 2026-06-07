@@ -1,26 +1,24 @@
 import { test as base, expect, type Page } from "@playwright/test";
-import { loginAsTestUser, hasTestCreds } from "../helpers/auth";
+import { existsSync } from "node:fs";
+import { STORAGE_STATE_PATH } from "../global-setup";
 
-/**
- * Project-wide fixtures. Import `test` and `expect` from here in new
- * specs so the `authenticatedPage` fixture is available without each
- * spec re-implementing login.
- */
 type Fixtures = {
   authenticatedPage: Page;
 };
 
 export const test = base.extend<Fixtures>({
-  authenticatedPage: async ({ page }, use) => {
-    if (!hasTestCreds()) {
-      test.skip(true, "TEST_USER_EMAIL + TEST_USER_PASSWORD not set");
+  authenticatedPage: async ({ browser }, use) => {
+    if (!existsSync(STORAGE_STATE_PATH)) {
+      test.skip(
+        true,
+        `${STORAGE_STATE_PATH} missing — globalSetup did not run or test creds are unset.`,
+      );
     }
-    const ok = await loginAsTestUser(page);
-    if (!ok) test.skip(true, "login failed — check test-user provisioning");
-    // `use` is Playwright's fixture-provide API, not a React Hook —
-    // the rule can't tell them apart inside test files.
+    const ctx = await browser.newContext({ storageState: STORAGE_STATE_PATH });
+    const page = await ctx.newPage();
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
+    await ctx.close();
   },
 });
 

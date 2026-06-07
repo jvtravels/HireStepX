@@ -3,12 +3,11 @@ import { test, expect, type Page } from "@playwright/test";
 /** Scroll to trigger lazy loading, wait for #pricing to mount, then scroll it into view */
 async function scrollToPricing(page: Page) {
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(800);
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   const pricing = page.locator("#pricing");
-  await expect(pricing).toBeAttached({ timeout: 15000 });
+  await expect(pricing).toBeAttached({ timeout: 15_000 });
   await pricing.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(800);
+  // Wait for the section's first heading to be visible — reveal animation done.
+  await expect(pricing.getByRole("heading").first()).toBeVisible({ timeout: 5_000 });
 }
 
 test.describe("Pricing Section — Plan Display", () => {
@@ -134,11 +133,10 @@ test.describe("Pricing Section — Risk Reversal", () => {
     await page.goto("/");
     await scrollToPricing(page);
 
-    // Trust signals are below the pricing cards — scroll past them
-    // The pricing section uses reveal animations, wait for them to complete
+    // Trust signals are below the pricing cards — toBeVisible polls until
+    // the reveal animation lands them.
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(1000);
-    await expect(page.getByText("Cancel anytime, no questions").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText("Cancel anytime, no questions").first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText("Delete your data anytime").first()).toBeVisible({ timeout: 5000 });
     await expect(page.getByText("Secure payments via Razorpay").first()).toBeVisible({ timeout: 5000 });
   });

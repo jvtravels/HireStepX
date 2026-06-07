@@ -84,11 +84,11 @@ export default tseslint.config(
   {
     files: ["tests/e2e/**/*.{ts,tsx}"],
     rules: {
-      // Starts as warn so the existing 16 violations don't block CI;
-      // ratchet to error once they're cleaned up (see .test-plan.md
-      // "Upgrades needed").
+      // Ratcheted to error after the foundation PR cleaned up the 16
+      // pre-existing violations. PostHog/Supabase playbook: these two
+      // calls are the #1 flake source — no waivers.
       "no-restricted-syntax": [
-        "warn",
+        "error",
         {
           selector: "CallExpression[callee.property.name='waitForTimeout']",
           message:

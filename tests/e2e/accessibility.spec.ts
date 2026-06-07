@@ -157,8 +157,6 @@ test.describe("Accessibility — Keyboard Navigation", () => {
     test.skip(!!viewport && viewport.width < 768, "Tab focus behavior varies on mobile");
     await page.goto("/");
     await expect(page.locator("h1")).toBeVisible({ timeout: 5000 });
-    await page.waitForTimeout(800);
-
     // Tab into the page — look for any interactive element receiving focus
     for (let i = 0; i < 10; i++) {
       await page.keyboard.press("Tab");
@@ -205,11 +203,8 @@ test.describe("Accessibility — Keyboard Navigation", () => {
 test.describe("Accessibility — FAQ Section", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    // Two-phase scroll to trigger lazy loading
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect(page.getByText("Frequently asked questions")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Frequently asked questions")).toBeVisible({ timeout: 10_000 });
     await page.getByText("Frequently asked questions").scrollIntoViewIfNeeded();
   });
 
