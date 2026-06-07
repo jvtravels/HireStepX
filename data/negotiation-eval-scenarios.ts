@@ -657,6 +657,183 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     ],
     undisclosed: ["joining-date", "component-equity"],
   },
+
+  /* ============================================================ *
+   * EVAL-4: adversarial layer.                                   *
+   *                                                              *
+   * The first 20 scenarios are recorded "realistic" transcripts. *
+   * The 6 below are DESIGNED to stress-test classes of bug the   *
+   * QUALITY-1 fix made visible — verb-form cues, compound parses,*
+   * first-wins under pressure, range disclosures, bare-number    *
+   * disambiguation, Hindi-mix compound. If any of these regress  *
+   * the suite, that IS the next QUALITY-N PR.                    *
+   * ============================================================ */
+
+  /* ---------------- Scenario 21: 'anchored at' verb form ---------------- */
+  {
+    id: "anchored-at-verb-form",
+    label: "Candidate uses 'anchored at' — past-participle of anchor cue",
+    goal:
+      "Same class as QUALITY-1: TARGET_CUES has /anchor(?:ing)?…/ but not /anchored/. The parser must bind 'anchored at 30 LPA' as target=30; if it silently drops, the planner re-probes and the discovery-before-anchor rubric line stays unfired (which still scores OK), but probe-once-per-topic will flip if target gets re-probed >2x.",
+    init: {
+      sessionId: "eval-anchored-at-verb-form",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "Current CTC is 22 LPA, all fixed.", aiText: "Noted." },
+      { candidate: "I'm anchored at 30 LPA for this move.", aiText: "Got it." },
+      { candidate: "Notice 45 days.", aiText: "OK." },
+      { candidate: "No competing offer.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 22: compound one-breath disclosure ---------------- */
+  {
+    id: "compound-one-breath-disclosure",
+    label: "Candidate discloses CTC + split + target + notice + competing in turn 1",
+    goal:
+      "Parser must fan out a single utterance into multiple ledger writes correctly — not collapse to one fact, not double-write any. Probe-once-per-topic shouldn't fire any discovery probes since everything is already disclosed by turn 2.",
+    init: {
+      sessionId: "eval-compound-one-breath-disclosure",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      {
+        candidate:
+          "Quick context: currently at Razorpay drawing 20 LPA (17 fixed, 3 variable), targeting 28 LPA, notice 60 days, no competing offers.",
+        aiText: "Captured all of that.",
+      },
+      { candidate: "What's the next step?", aiText: "Let me share what we're thinking." },
+    ],
+    undisclosed: ["joining-date", "component-equity"],
+  },
+
+  /* ---------------- Scenario 23: first-wins under pressure ---------------- */
+  {
+    id: "first-wins-self-corrected-ctc",
+    label: "Candidate states CTC then 'corrects' it upward two turns later",
+    goal:
+      "Read-layer first-wins must hold under audit-trail re-appends: the ledger correctly appends the 22 LPA disclosure as part of the audit trail (that's the contract), but getFact(\"current-ctc\") must still return 18 (the earliest). Planner reads from getFact, so the 'correction' is effectively ignored as far as anchoring decisions go — exactly the anti-gaming guarantee. The first-wins-honored rubric line tests the read layer directly.",
+    init: {
+      sessionId: "eval-first-wins-self-corrected-ctc",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "Current CTC is 18 LPA.", aiText: "Noted." },
+      { candidate: "Target 28 LPA.", aiText: "Got it." },
+      {
+        candidate: "Actually wait — current is 22 LPA, I forgot the variable.",
+        aiText: "Understood.",
+      },
+      { candidate: "Notice 45 days.", aiText: "OK." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 24: range disclosure ---------------- */
+  {
+    id: "target-stated-as-range",
+    label: "Candidate states target as a range '25-28 LPA' instead of a single number",
+    goal:
+      "Range cues exist in TARGET_CUES (/\\bbetween\\b/) — parser should bind ONE value (typically the upper of the range, or skip cleanly) and NOT cycle back to re-probe target. probe-once-per-topic is the gate.",
+    init: {
+      sessionId: "eval-target-stated-as-range",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "Current CTC is 19 LPA.", aiText: "Noted." },
+      { candidate: "Looking for something between 25 and 28 LPA.", aiText: "Got it." },
+      { candidate: "Notice is 60 days.", aiText: "OK." },
+      { candidate: "No competing offer.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 25: Hindi-mix compound disclosure ---------------- */
+  {
+    id: "hindi-mix-compound-disclosure",
+    label: "Candidate discloses current + target in Hindi-mix register",
+    goal:
+      "Hindi cues (/chahiye/, /mil jaye/, /expect karta hu/) must classify correctly when stacked with English. Real Indian-tech transcript pattern. No fabrication; probe-once enforced.",
+    init: {
+      sessionId: "eval-hindi-mix-compound-disclosure",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      {
+        candidate: "Sir, currently 18 LPA hai — Razorpay mein.",
+        aiText: "Got it.",
+      },
+      {
+        candidate: "Mujhe 28 LPA chahiye is move ke liye, minimum 26 LPA mil jaye to consider karenge.",
+        aiText: "Noted.",
+      },
+      { candidate: "Notice period 60 days hai.", aiText: "Understood." },
+      { candidate: "Koi competing offer nahi hai abhi.", aiText: "OK." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 26: bare-number reply in probe phase ---------------- */
+  {
+    id: "bare-number-reply-in-probe",
+    label: "Candidate answers each probe with bare numbers; planner must bind via phase context",
+    goal:
+      "Bare-reply context binding ('30 LPA' alone) must use lastAiText / phase to resolve role. The classifier table already encodes this; this scenario verifies it survives a 5-turn chain of bare replies without any role drift or re-probe.",
+    init: {
+      sessionId: "eval-bare-number-reply-in-probe",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "20 LPA.", aiText: "What's your target for this move?" },
+      { candidate: "28 LPA.", aiText: "And notice period?" },
+      { candidate: "45 days.", aiText: "Any competing offers?" },
+      { candidate: "None right now.", aiText: "Got it." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
 ] as const;
 
 /** Map id → scenario for quick lookup in CI runs. */

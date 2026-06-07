@@ -54,27 +54,40 @@ export interface ScenarioScorecard {
 
 /* ----------------------------- helpers ----------------------------- */
 
-/** Returns the set of FactKinds that appear in the ledger with MORE
- *  than one fact-* entry — i.e. the candidate restated the fact and
- *  the planner re-recorded it. First-wins is enforced at READ time
- *  (getFact), but the AUDIT trail of re-disclosures lives in the
- *  ledger. We check both: the read-value is stable AND no re-recorded
- *  fact disagrees with the first-recorded one for the same kind. */
+/** Verifies first-wins at the READ layer — the architectural contract.
+ *
+ *  The ledger is append-only by design (audit trail across multiple
+ *  candidate disclosures of the same fact). First-wins is enforced at
+ *  READ time via `getFact`, which short-circuits on the first matching
+ *  fact-* entry. So a "violation" is NOT the presence of contradicting
+ *  audit entries — that's data — it's a mismatch between what `getFact`
+ *  returns and the earliest recorded value.
+ *
+ *  Pre-EVAL-4 the scorer was over-strict: it flagged any divergent
+ *  audit entry as a failure, which would (correctly) catch a scenario
+ *  where the candidate self-corrects upward but (incorrectly) frame it
+ *  as a kernel bug. The architectural contract says the kernel SHOULD
+ *  append both (audit) and the read layer SHOULD return the first.
+ *  This implementation tests that contract directly.
+ *
+ *  If a future refactor breaks `getFact` to return the LATEST value,
+ *  every scenario with a re-disclosure trips immediately — exactly the
+ *  regression detector we want. */
 function findFirstWinsViolations(led: ConversationLedger): string[] {
-  const byKind = new Map<FactKind, { firstValue: unknown; firstTurn: number }>();
-  const violations: string[] = [];
+  const firstByKind = new Map<FactKind, { value: unknown; turn: number }>();
   for (const entry of led.entries) {
     if (!isFactEntry(entry)) continue;
-    // entry.kind is "fact-<factkind>"; strip the prefix.
     const k = entry.kind.replace(/^fact-/, "") as FactKind;
-    const seen = byKind.get(k);
-    if (!seen) {
-      byKind.set(k, { firstValue: entry.value, firstTurn: entry.atTurn });
-      continue;
+    if (!firstByKind.has(k)) {
+      firstByKind.set(k, { value: entry.value, turn: entry.atTurn });
     }
-    if (seen.firstValue !== entry.value) {
+  }
+  const violations: string[] = [];
+  for (const [kind, first] of firstByKind) {
+    const read = getFact(led, kind);
+    if (read !== first.value) {
       violations.push(
-        `${k} changed from ${String(seen.firstValue)} (turn ${seen.firstTurn}) to ${String(entry.value)} (turn ${entry.atTurn})`,
+        `getFact(${kind}) returned ${String(read)} but earliest-recorded was ${String(first.value)} at turn ${first.turn} — read layer broken`,
       );
     }
   }

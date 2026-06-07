@@ -70,7 +70,7 @@ describe("negotiation-eval — structural layer", () => {
    * scenario you know we don't yet handle), update MIN_FULLY_PASSED /
    * MIN_AVERAGE_SCORE in the same PR and explain in the commit why.
    * Silent drops are the failure mode this guard exists to prevent. */
-  const MIN_FULLY_PASSED = 20;
+  const MIN_FULLY_PASSED = 26;
   const MIN_AVERAGE_SCORE = 100;
 
   it("suite holds the EVAL-3 baseline (no regression)", () => {

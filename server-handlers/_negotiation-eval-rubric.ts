@@ -50,9 +50,9 @@ export const NEGOTIATION_RUBRIC: readonly RubricCriterion[] = [
   },
   {
     id: "first-wins-honored",
-    label: "Honored first-wins on every disclosed fact",
+    label: "Honored first-wins at the read layer",
     description:
-      "Every FactKind in the ledger has exactly one source — the first disclosure. A later contradicting candidate statement must not overwrite it. Passes if no fact's value changed mid-session; fails on any overwrite.",
+      "The ledger is append-only by design (audit trail of every disclosure); first-wins is the READ contract. For every FactKind in the ledger, getFact() must return the earliest-recorded value. Passes when the read layer is consistent with the first append; fails if a later append silently bumps the read result.",
     layer: "structural",
     weight: 3,
   },
