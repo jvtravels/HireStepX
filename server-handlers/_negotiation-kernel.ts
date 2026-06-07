@@ -5894,6 +5894,14 @@ export interface AiMove {
   /** Commit 4 (2026-05-15) — NextAction kind discriminator carried on
    *  the move for telemetry / decisionLog inspection. Optional. */
   actionKind?: string;
+  /** Month 2 PR-2 (2026-06-07) — coarse family classification derived
+   *  from actionKind via _action-families.familyOf(). Stamped at the
+   *  planner exit boundary (pickAiMove) so every emitted move carries
+   *  it; sites that build AiMove inline do NOT need to set it manually.
+   *  Used by decisionLog telemetry and (M2 PR-3+) family-level
+   *  guardrails. "unmapped" surfaces here when an actionKind has no
+   *  taxonomy entry — see _action-families.ts KIND_TO_FAMILY. */
+  family?: import("./_action-families").ActionFamily | "unmapped";
   /** PDF#51 (2026-05-28) — deterministic-prose payload for the new
    *  `answer-direct` NextAction kind. When set, negotiate-turn.ts
    *  short-circuits the LLM call and ships this string verbatim. Pre-

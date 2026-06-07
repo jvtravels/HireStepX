@@ -38,6 +38,7 @@ import {
   actionToLever,
   type NextAction,
 } from "./_next-action-planner";
+import { familyOf } from "./_action-families";
 
 /** Architectural bug-prevention (2026-05-15) — classify the picker branch
  *  from the move + state. Read off move.lever and rationale fragments the
@@ -70,6 +71,16 @@ function classifyPicker(state: NegotiationState, move: AiMove): string {
  *  bookkeeps. */
 export function pickAiMove(state: NegotiationState): AiMove {
   const move = pickAiMoveCore(state);
+  /* Month 2 PR-2 (2026-06-07) — stamp the family classification at the
+   * planner exit boundary. Single site so the 37 inline AiMove
+   * construction sites in _next-action-planner.ts don't each need to
+   * set move.family. familyOf returns "unmapped" for any actionKind
+   * not in KIND_TO_FAMILY — surface it on the move so telemetry can
+   * spot taxonomy drift. Does not overwrite an explicitly-set family
+   * (defensive for future call sites that pre-stamp). */
+  if (move.actionKind && move.family === undefined) {
+    move.family = familyOf(move.actionKind);
+  }
   /* Architectural bug-prevention (2026-05-15) — append to decision log. */
   if (!state.decisionLog) state.decisionLog = [];
   /* lastBriefTags is filled in by compactTurnBrief which runs AFTER
