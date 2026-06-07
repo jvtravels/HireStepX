@@ -45,6 +45,7 @@ import {
 } from "./_fact-pack";
 import type { QuestionIntent } from "./_question-intent";
 import { captureServerEvent } from "./_posthog";
+import { detectProseAntipatterns } from "./_prose-antipatterns";
 
 /* PDF#42 BUG-B (2026-05-21) — set of reactive-followup topics whose
  * canonical prose is authored in planWiredProfileFollowup (planner)
@@ -1500,6 +1501,21 @@ export function validateRestyle(
   }
   if (INTERNAL_TERMINOLOGY_LEAK_RE.test(restyled)) {
     return { valid: false, reason: "internal-terminology-leak" };
+  }
+  /* PROSE-LINT-1 (2026-06-08) — RUNTIME gate for the same regex
+   * detectors the eval rubric uses (meta-narration / template-filler /
+   * generic-advice). What's caught at eval-time on fixture aiText is
+   * now also caught at runtime on real bot output, before the user
+   * hears it. The detector is intentionally conservative (no false
+   * positives on natural recruiter speech — see proseAntipatterns.test
+   * negative rows), so a fire is a real problem worth rejecting.
+   * Single rejection reason `prose-antipattern-leak` covers all three
+   * patterns; the detector's pattern id is the diagnostic detail. */
+  {
+    const hits = detectProseAntipatterns(restyled);
+    if (hits.length > 0) {
+      return { valid: false, reason: "prose-antipattern-leak" };
+    }
   }
   /* PDF#48 (2026-05-25) — RECRUITER-VOICE INVARIANT.
    * Two structural gates: (a) no third-person possessive of
