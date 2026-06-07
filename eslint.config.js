@@ -63,10 +63,37 @@ export default tseslint.config(
       // a grep-able "give up on types here" signal and masked the resume-
       // data drift bug we just fixed. Test files are exempt via the
       // override below — mocks legitimately need it.
-      "no-restricted-syntax": ["warn", {
-        selector: "TSAsExpression[expression.type='TSAsExpression'][expression.typeAnnotation.type='TSUnknownKeyword']",
-        message: "Avoid `as unknown as X` in production code — define a discriminated union or type guard instead. (See resumeParser.ts StoredResume for the pattern.) This rule is off in src/__tests__/* where mocks need it.",
-      }],
+      "no-restricted-syntax": ["warn",
+        {
+          selector: "TSAsExpression[expression.type='TSAsExpression'][expression.typeAnnotation.type='TSUnknownKeyword']",
+          message: "Avoid `as unknown as X` in production code — define a discriminated union or type guard instead. (See resumeParser.ts StoredResume for the pattern.) This rule is off in src/__tests__/* where mocks need it.",
+        },
+        /* PR-6 (PDF #28 Month 1) — ledger-tracked slot writes are
+         * owned by _negotiation-kernel.ts. Every external write would
+         * silently bypass the dual-write to state.ledger that PR-2
+         * established, re-opening the class of bug the migration
+         * exists to close. Consumers READ via getFactOr(state.ledger,
+         * "...", state.X). This rule is turned off in the kernel
+         * itself (next config block) and in test fixtures (existing
+         * block at the bottom). */
+        {
+          selector: "AssignmentExpression[left.type='MemberExpression'][left.object.name='state'][left.property.name=/^(candidateCurrentCtc|candidateCurrentCompany|competingOffer)$/]",
+          message: "Direct write to a ledger-tracked NegotiationState slot is forbidden outside _negotiation-kernel.ts. The kernel owns these writes so the dual-write to state.ledger (PR-2) fires and first-wins (PR-4) is preserved. Read via getFactOr(state.ledger, ..., state.X); to add a new write path, route the parse through applyCandidateAnswer / applyAiMove.",
+        },
+      ],
+    },
+  },
+  // PR-6 — _negotiation-kernel.ts is the ONE file allowed to write
+  // ledger-tracked slots directly. The dual-write to state.ledger lives
+  // alongside every slot mutation; turning the ban off here keeps the
+  // legitimate kernel writes legal without re-opening the surface to
+  // the rest of the codebase. The as-unknown-as ban is also lifted as a
+  // pragmatic concession — the kernel has none of those today and the
+  // tooling forces an all-or-nothing choice on no-restricted-syntax.
+  {
+    files: ["server-handlers/_negotiation-kernel.ts"],
+    rules: {
+      "no-restricted-syntax": "off",
     },
   },
   // Test-file exemptions: mocks and fixtures legitimately need the escape
