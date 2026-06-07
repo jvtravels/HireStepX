@@ -797,6 +797,24 @@ export interface NegotiationState {
    *  you mentioned ₹18L; now you're at ₹24L"). */
   firstAnchoredTarget: number | null;
   candidateCurrentCtc: number | null;    // current package (NOT target)
+  /* PDF #28 (2026-06-07) — candidate's CURRENT employer name.
+   *
+   * Distinct from state.company (the TARGET company we're hiring for).
+   * Captured when the candidate discloses where they currently work
+   * ("I'm at Razorpay", "currently with Walmart", "my role at Swiggy").
+   *
+   * Used by the restyle prompt to prevent the LLM from pasting the
+   * TARGET company name into deflection prose about the candidate's
+   * CURRENT role. The PDF #28 transcript shipped "your current role at
+   * Flipkart" — Flipkart was the target, the candidate worked elsewhere.
+   *
+   * Stays null when not disclosed. Restyle prompt then instructs the
+   * LLM to omit any employer name when referring to the candidate's
+   * current role ("your current role" not "your current role at X").
+   *
+   * Optional (undefined treated as null) so pre-PDF#28 state literals
+   * in tests / persisted sessions remain valid. */
+  candidateCurrentCompany?: string | null;
   competingOffer: number | null;         // BATNA in hand (NOT target)
 
   /* Component-level breakdown the candidate has stated about their
@@ -2569,6 +2587,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     lastCandidateCounterLpa: null,
     firstAnchoredTarget: null,
     candidateCurrentCtc: null,
+    candidateCurrentCompany: null,
     competingOffer: null,
     candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     candidateAskedAsRange: false,
@@ -5195,18 +5214,25 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
        * the value through. Never overwrite an existing value — that
        * preserves the main parser's authority where it fired. */
       for (const entry of fresh) {
-        if (typeof entry.parsedValue !== "number") continue;
-        if (entry.kind === "current-ctc" && next.candidateCurrentCtc == null) {
+        if (entry.kind === "current-ctc"
+            && typeof entry.parsedValue === "number"
+            && next.candidateCurrentCtc == null) {
           next.candidateCurrentCtc = entry.parsedValue;
-        } else if (
-          entry.kind === "notice-period"
-          && next.noticeJoining.noticePeriodDays == null
-        ) {
+        } else if (entry.kind === "notice-period"
+            && typeof entry.parsedValue === "number"
+            && next.noticeJoining.noticePeriodDays == null) {
           next.noticeJoining = {
             ...next.noticeJoining,
             noticePeriodDays: entry.parsedValue,
             hasAny: true,
           };
+        } else if (entry.kind === "current-company"
+            && typeof entry.parsedString === "string"
+            && next.candidateCurrentCompany == null) {
+          /* PDF #28 (2026-06-07) — first-disclosure-wins. Locked from
+           * the first valid mention so a later misparse can't overwrite
+           * a correctly captured current employer. */
+          next.candidateCurrentCompany = entry.parsedString;
         }
       }
     }
@@ -6765,6 +6791,9 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.turnIndex > s.maxTurns + 1) throw new Error("state.turnIndex exceeds maxTurns");
   if (!isFiniteNumOrNull(s.candidateTarget)) throw new Error("state.candidateTarget");
   if (!isFiniteNumOrNull(s.candidateCurrentCtc)) throw new Error("state.candidateCurrentCtc");
+  if (s.candidateCurrentCompany != null && (typeof s.candidateCurrentCompany !== "string" || s.candidateCurrentCompany.length === 0 || s.candidateCurrentCompany.length > 60)) {
+    throw new Error("state.candidateCurrentCompany");
+  }
   if (!isFiniteNumOrNull(s.competingOffer)) throw new Error("state.competingOffer");
   if (typeof s.highestOfferMade !== "number" || !Number.isFinite(s.highestOfferMade)) throw new Error("state.highestOfferMade");
   if (!Array.isArray(s.leversUsed) || !s.leversUsed.every((l) => typeof l === "string" && VALID_LEVERS.has(l as NegotiationLever))) {
