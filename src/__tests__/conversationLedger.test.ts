@@ -12,6 +12,7 @@
 import { describe, it, expect } from "vitest";
 import {
   emptyLedger,
+  askedTopicEntries,
   recordFact,
   recordAskedTopic,
   recordEmittedAction,
@@ -162,6 +163,42 @@ describe("askedTopic — dedup primitives", () => {
     expect(askedTopicCount(l, "currentCtcAsked")).toBe(2);
     expect(askedTopicCount(l, "noticePeriodAsked")).toBe(1);
     expect(askedTopicCount(l, "targetAsked")).toBe(0);
+  });
+});
+
+describe("askedTopicEntries — read-migration target for planner dedup", () => {
+  it("returns empty when no asks have been recorded", () => {
+    expect(askedTopicEntries(emptyLedger())).toEqual([]);
+  });
+
+  it("returns asked topics in insertion order with their atTurn", () => {
+    const l = recordAskedTopic(
+      recordAskedTopic(emptyLedger(), "currentCtcAsked", 3, { kind: "ctc-ask" }),
+      "noticePeriodAsked", 5, { kind: "notice-ask" },
+    );
+    expect(askedTopicEntries(l)).toEqual([
+      { topic: "currentCtcAsked", atTurn: 3 },
+      { topic: "noticePeriodAsked", atTurn: 5 },
+    ]);
+  });
+
+  it("ignores non-asked-topic entries", () => {
+    const l = recordRefusal(
+      recordAskedTopic(
+        recordFact(emptyLedger(), "current-ctc", 44, "main-parser", 1, "x"),
+        "currentCtcAsked", 2, { kind: "ctc-ask" },
+      ),
+      "competingOffersAsked", 3, "no",
+    );
+    expect(askedTopicEntries(l)).toEqual([{ topic: "currentCtcAsked", atTurn: 2 }]);
+  });
+
+  it("preserves duplicates (refire chain proof)", () => {
+    const l = recordAskedTopic(
+      recordAskedTopic(emptyLedger(), "currentCtcAsked", 3, { kind: "ctc-ask" }),
+      "currentCtcAsked", 8, { kind: "ctc-ask" },
+    );
+    expect(askedTopicEntries(l).map((e) => e.atTurn)).toEqual([3, 8]);
   });
 });
 

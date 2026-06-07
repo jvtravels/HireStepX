@@ -49,6 +49,7 @@ import {
   type DiscoveryTopic,
   type ContradictionTopic,
 } from "./_negotiation-kernel";
+import { askedTopicEntries } from "./_conversation-ledger";
 import type { NegotiationRoundPersona } from "./_negotiation-rounds";
 import { registerNextActionPlanner } from "./_planner-registry";
 import { classifyRoleFamily, getCompanyHikeCap } from "./_company-band-tiers";
@@ -167,6 +168,38 @@ export const REFIREABLE_TOPICS: Partial<Record<DiscoveryTopic, { max: number; ga
   "equity-clarity": { max: 2, gap: 4 },
   "competing-credibility": { max: 2, gap: 5 },
 };
+
+/* PR-3 (PDF #28) — single read path for the askedTopics ledger.
+ *
+ * All planner dedup logic now flows through this helper. When the
+ * conversation ledger is present (new sessions post-PR-1), entries
+ * are sourced from it; PR-2's dual-write guarantees the ledger
+ * contains the same (topic, atTurn) pairs the legacy askedTopics
+ * array does, so behavior is identical. For pre-PR-1 serialized
+ * sessions still in flight, falls back to state.askedTopics. This
+ * is the chokepoint PR-6 will lock down once the array is retired.
+ *
+ * Pure read — no mutation of either source. */
+function readAskedTopics(
+  state: NegotiationState,
+): ReadonlyArray<{ topic: DiscoveryTopic; atTurn: number }> {
+  /* Prefer the ledger only when its asked-topic entries are a superset
+   * of state.askedTopics by count. Until PR-6 locks down direct array
+   * writes, both fixtures and serialized in-flight sessions can carry
+   * entries the ledger never saw (the dual-write only fires inside
+   * applyAiMove). Length comparison keeps every legacy code path safe:
+   *   - ledger.size ≥ array.size  → dual-write has caught up;
+   *     ledger contains every entry the array does. Read ledger.
+   *   - ledger.size  <  array.size → array carries entries the ledger
+   *     hasn't seen (fixture-injected, deserialized pre-PR-1 session,
+   *     etc.). Fall back to the array so behavior is preserved. */
+  const arr = state.askedTopics ?? [];
+  if (state.ledger) {
+    const fromLedger = askedTopicEntries(state.ledger);
+    if (fromLedger.length >= arr.length) return fromLedger;
+  }
+  return arr;
+}
 
 /** Polish 2 (2026-05-16) — decide whether a topic can fire (again) this
  *  turn given the per-topic policy. For refireable topics: checks both
@@ -846,7 +879,7 @@ function buildSkipRecord(
   withinTurns = 3,
 ): Partial<Record<DiscoveryTopic, boolean>> | null {
   const refused = state.discoveryRefusedItems ?? null;
-  const topics = state.askedTopics ?? [];
+  const topics = readAskedTopics(state);
   const cutoff = state.turnIndex - withinTurns;
   const recentlyAsked: Partial<Record<DiscoveryTopic, boolean>> = {};
   for (const t of topics) {
@@ -959,7 +992,7 @@ function nextComponentProbe(
   /* FL4 root precondition — currentCtc must be in hand. */
   if (state.candidateCurrentCtc == null) return null;
   const bd = state.candidateComponentBreakdown;
-  const asked = new Set((state.askedTopics ?? []).map((t) => t.topic));
+  const asked = new Set(readAskedTopics(state).map((t) => t.topic));
   /* PDF#31 BUG A (2026-05-18) — esop component is "populated" when the
    * candidate has explicitly stated NO equity (equityExists === false).
    * Otherwise the bot re-asks "ESOPs in play?" after the candidate
@@ -1030,7 +1063,7 @@ function applyUncertaintyEscapeHatch(
    * state.askedTopics tail tells us the topic the candidate was
    * hedging about — if the cascade has already moved on to a fresh
    * topic, no escape hatch is needed. */
-  const tail = (state.askedTopics ?? []).slice(-1)[0]?.topic ?? null;
+  const tail = readAskedTopics(state).slice(-1)[0]?.topic ?? null;
   if (tail == null) return NO_OP;
   /* Strip the *Answered/*Disclosed suffix so the comparison normalises
    * across the asked-topic ledger and the planner's checklist keys. */
@@ -2699,7 +2732,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    *     planner call from the candidate ask).
    *   - Band complete (lo < hi, both numeric).
    *   - Single-fire via askedTopics ledger inspection. */
-  const bandAnchorAlreadyFired = (state.askedTopics ?? []).some(
+  const bandAnchorAlreadyFired = readAskedTopics(state).some(
     (t) =>
       t.topic === "band-anchor-with-rationale" ||
       (t.topic as string) === "anchor-with-band" ||
@@ -2769,7 +2802,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * the negotiation gets unstuck. The probes-without-anchor count is
      * derived from the askedTopics ledger so we don't need a new state
      * field. */
-    const componentProbeAskCount = (state.askedTopics ?? []).filter(
+    const componentProbeAskCount = readAskedTopics(state).filter(
       (t) =>
         t.topic === "currentCtcBase" ||
         t.topic === "currentCtcVariable" ||
@@ -2824,7 +2857,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * and skip the lever. Test fixtures simulate this by injecting an
      * askedTopics entry (since the kernel mutation lives downstream of
      * planNextAction in the pipeline). */
-    const bandAnchorFired = (state.askedTopics ?? []).some(
+    const bandAnchorFired = readAskedTopics(state).some(
       (t) =>
         t.topic === "band-anchor-with-rationale" ||
         (t.topic as string) === "anchor-with-band" ||
@@ -3411,7 +3444,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const discoveryDone =
       state.discoveryChecklist != null
         ? isDiscoveryComplete(state.discoveryChecklist, roleFamily)
-        : (state.askedTopics ?? []).some(
+        : readAskedTopics(state).some(
             (t) => t.topic === "targetAsked" || t.topic === "targetAnswered",
           );
     if (discoveryDone) {

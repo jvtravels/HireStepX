@@ -337,6 +337,19 @@ export function wasTopicAsked(
   return null;
 }
 
+/** Return every asked-topic entry in (topic, atTurn) form, in the order
+ *  it was recorded. Equivalent shape to legacy state.askedTopics — this
+ *  is the migration target readers route through during PR-3. */
+export function askedTopicEntries(
+  led: ConversationLedger,
+): ReadonlyArray<{ topic: DiscoveryTopic; atTurn: number }> {
+  const out: Array<{ topic: DiscoveryTopic; atTurn: number }> = [];
+  for (const e of led.entries) {
+    if (e.kind === "asked-topic") out.push({ topic: e.topic, atTurn: e.atTurn });
+  }
+  return out;
+}
+
 /** How many times was this topic asked? Used by refire-cap logic. */
 export function askedTopicCount(led: ConversationLedger, topic: DiscoveryTopic): number {
   let n = 0;
