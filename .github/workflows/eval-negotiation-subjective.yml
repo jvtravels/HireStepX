@@ -1,0 +1,59 @@
+# SUBJECTIVE-1 (2026-06-08) — manually-triggered subjective eval run.
+#
+# The structural eval already runs in ci.yml on every PR (free,
+# deterministic). This workflow exists for the LLM-judged subjective
+# layer, which costs API tokens per turn. Trigger manually from the
+# Actions tab when you want a voice-quality / coaching-honesty signal,
+# or schedule it (see commented `schedule:` block) once cadence is
+# settled.
+#
+# Cost estimate: ~5 scenarios × ~6 turns × 2 LLM calls (generate +
+# judge) ≈ 60 calls ≈ $0.012 per run at Groq pricing.
+name: Negotiation eval — subjective layer
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenarios:
+        description: "Comma-separated scenario ids (blank → SUBJECTIVE_SAMPLE)"
+        required: false
+        default: ""
+  # Uncomment when ready to gate cadence (weekly Mondays 08:00 UTC):
+  # schedule:
+  #   - cron: "0 8 * * 1"
+
+jobs:
+  subjective:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Run subjective eval (generate + judge)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+        run: |
+          set -e
+          ARGS="--generate --judge"
+          if [ -n "${{ github.event.inputs.scenarios }}" ]; then
+            # Single-scenario mode when the input is one id; for multiple
+            # ids we'd need to loop. The default is the curated sample.
+            ARGS="$ARGS ${{ github.event.inputs.scenarios }}"
+          fi
+          npx tsx scripts/eval-negotiation.ts $ARGS | tee eval-output.txt
+      - name: Post scorecard to step summary
+        if: always()
+        run: |
+          {
+            echo "## Negotiation eval — subjective layer"
+            echo ""
+            echo '```'
+            tail -200 eval-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
