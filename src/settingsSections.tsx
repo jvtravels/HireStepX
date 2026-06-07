@@ -351,7 +351,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="settings-form-grid">
+        <div style={{ display: "grid", gap: 16 }} className="settings-form-grid">
           <FieldShell label="Full name" htmlFor="acc-name">
             <input id="acc-name" type="text" value={editName} maxLength={60}
               onChange={(e) => setEditName(e.target.value)}

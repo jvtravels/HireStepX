@@ -921,18 +921,12 @@ input[type="range"]::-moz-range-thumb {
 .settings-pills { scrollbar-width: none; }
 .settings-pills::-webkit-scrollbar { display: none; }
 .settings-form-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-.settings-chip-grid { grid-template-columns: 1fr 1fr 1fr; }
-.settings-plan-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .settings-referral-grid { grid-template-columns: minmax(0, 1fr) 280px; }
 .settings-payment-row { grid-template-columns: auto 1fr auto auto; }
 .settings-refer-row { grid-template-columns: auto minmax(0, 1fr) auto auto; }
 
 @media (max-width: 1200px) {
-  .settings-plan-row { grid-template-columns: 1fr !important; }
   .settings-referral-grid { grid-template-columns: 1fr !important; }
-}
-@media (max-width: 600px) {
-  .settings-chip-grid { grid-template-columns: 1fr !important; }
 }
 /* Payment + refer rows: 4-col is unreadable below tablet 2-col-grid zone. */
 @media (max-width: 720px) {
