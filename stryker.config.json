@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation testing for pure helpers with load-bearing invariants. Sentry uses this same pattern across 12 JS SDK packages (https://blog.sentry.io/mutation-testing-js-sdks/). Stryker does NOT instrument Playwright — that's why this targets the unit layer under E2E, not E2E itself. Coverage % only tells you a line ran; mutation score tells you the test would actually catch a regression. Run: npx stryker run",
+  "packageManager": "npm",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.config.ts"
+  },
+  "reporters": ["html", "clear-text", "progress"],
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "src/nextMove.ts",
+    "server-handlers/_subscription-actions.ts",
+    "server-handlers/_cancel-subscription-helpers.ts"
+  ],
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 50
+  },
+  "_thresholdsRationale": "Start permissive (break=50) so the first run doesn't blow up CI. Ratchet upward as weak assertions get fixed. Meta's research (https://engineering.fb.com/2025/09/30/security/llms-are-the-key-to-mutation-testing-and-better-compliance/) flags that rule-based mutants can be noise — review the HTML report and quarantine non-meaningful mutants via `ignorePatterns` before raising the threshold.",
+  "timeoutMS": 30000,
+  "concurrency": 4
+}

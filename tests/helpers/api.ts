@@ -68,6 +68,40 @@ export async function seedSession(
   return data.id as string;
 }
 
+/**
+ * RLS-respecting Supabase client for a logged-in test user.
+ *
+ * Service-role bypasses RLS — fine for seeding/teardown, dangerous for the
+ * assertion path. If a T1 test asserts "user can read their sessions" via
+ * `requireServiceClient()`, the test passes even if RLS is misconfigured
+ * (Supabase research: "tests run against the same schema, RLS policies,
+ * and API endpoints that your production app uses"
+ * — https://supabase.com/blog/testing-for-vibe-coders-from-zero-to-production-confidence).
+ *
+ * Use this helper for the post-mutation read-back. The signed-in client uses
+ * the anon key + a real access token, so RLS enforces row visibility exactly
+ * as it would for a browser session.
+ */
+export async function getAuthedClient(
+  email: string,
+  password: string,
+): Promise<SupabaseClient> {
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!url || !anonKey) {
+    throw new Error(
+      "SUPABASE_URL + SUPABASE_ANON_KEY required for RLS-respecting reads. " +
+        "Anon key is safe in CI secrets — it's already shipped to the browser.",
+    );
+  }
+  const c = createClient(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { error } = await c.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return c;
+}
+
 // Resolve the seeded test user's id from the auth.users table so tests can
 // scope cleanup without hardcoding a uuid.
 export async function getTestUserId(): Promise<string> {

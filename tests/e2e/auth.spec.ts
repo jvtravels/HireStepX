@@ -1,4 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { test as authedTest } from "../fixtures/base";
+
+const CREDS_PRESENT =
+  !!process.env.TEST_USER_EMAIL && !!process.env.TEST_USER_PASSWORD;
 
 test.describe("Signup Page", () => {
   test.beforeEach(async ({ page }) => {
@@ -150,37 +154,28 @@ test.describe("Auth — Navigation Between Pages", () => {
   });
 });
 
-test.describe("Auth — Authenticated Flow", () => {
-  const email = process.env.TEST_USER_EMAIL;
-  const password = process.env.TEST_USER_PASSWORD;
+/* ─── Auth — Authenticated Flow ───
+ * Gated at describe level: missing creds = visibly skipped (test.fixme), not
+ * silently passed. The login happy-path lives in auth-login.spec.ts; this
+ * block covers the logout side of the journey.
+ *
+ * Uses the authenticatedPage fixture so we don't re-log-in per test —
+ * globalSetup already established the session. GitHub's flake research
+ * (https://github.blog/engineering/.../reducing-flaky-builds-by-18x/) shows
+ * per-test UI login is one of the top three flake sources. */
+authedTest.describe("Auth — Authenticated Flow", () => {
+  authedTest.fixme(
+    !CREDS_PRESENT,
+    "Awaiting TEST_USER_EMAIL / TEST_USER_PASSWORD — see chore/e2e-foundation PR follow-up checklist.",
+  );
 
-  test("successful login redirects to dashboard or onboarding", async ({ page }) => {
-    test.skip(!email || !password, "Requires TEST_USER_EMAIL and TEST_USER_PASSWORD env vars");
-
-    await page.goto("/login");
-    await page.locator("#signup-email").fill(email!);
-    await page.locator("input[type=password]").fill(password!);
-    await page.locator("button[type=submit]").click();
-
-    // Should redirect to either dashboard or onboarding
-    await expect(page).toHaveURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
-  });
-
-  test("successful logout returns to landing page", async ({ page }) => {
-    test.skip(!email || !password, "Requires TEST_USER_EMAIL and TEST_USER_PASSWORD env vars");
-
-    // Login first
-    await page.goto("/login");
-    await page.locator("#signup-email").fill(email!);
-    await page.locator("input[type=password]").fill(password!);
-    await page.locator("button[type=submit]").click();
-    await expect(page).toHaveURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
-
-    // Find and click logout
+  authedTest("logout returns to landing or login page", async ({ authenticatedPage: page }) => {
+    await page.goto("/dashboard");
+    // Onboarding-only accounts land on /onboarding; either is fine — both
+    // surfaces must expose logout. If they don't, that's the bug to catch.
     const logoutButton = page.getByRole("button", { name: /log\s*out|sign\s*out/i });
-    if (await logoutButton.isVisible()) {
-      await logoutButton.click();
-      await expect(page).toHaveURL(/^\/$|\/login/, { timeout: 10000 });
-    }
+    await expect(logoutButton).toBeVisible({ timeout: 10_000 });
+    await logoutButton.click();
+    await expect(page).toHaveURL(/^\/$|\/login/, { timeout: 10_000 });
   });
 });
