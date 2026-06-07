@@ -269,8 +269,8 @@ export default function SettingsPage() {
         boxShadow: `0 8px 12px -10px rgba(0,0,0,0.06)`,
       }}>
         <div style={{ marginBottom: 20 }}>
-          <h2 style={{ fontFamily: font.display, fontSize: 36, fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>
-          <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 }}>
+          <h2 style={{ fontFamily: font.display, fontSize: "clamp(28px, 5.5vw, 36px)", fontWeight: 400, color: c.ivory, margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>Settings</h2>
+          <p className="settings-page-sub" style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.55, margin: 0, maxWidth: 640 }}>
             Tune HireStepX to match how you practice.
           </p>
         </div>

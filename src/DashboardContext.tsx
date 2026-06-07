@@ -188,7 +188,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
      we fall back to false (desktop default) so SSR markup matches the
      initial-paint assumption. */
   const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+    typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches
   );
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [paymentBanner, setPaymentBanner] = useState<"success" | "cancelled" | null>(null);
@@ -503,7 +503,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // Mobile detection — uses matchMedia with a change listener so we react
   // to actual breakpoint crossings (not every resize tick during a drag).
   useEffect(() => {
-    const mql = window.matchMedia("(max-width: 767px)");
+    const mql = window.matchMedia("(max-width: 1023px)");
     const apply = () => setIsMobile(mql.matches);
     apply();
     mql.addEventListener("change", apply);

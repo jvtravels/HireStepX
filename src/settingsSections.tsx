@@ -274,7 +274,7 @@ export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string;
 
 export function EditorialCard({ children, density = "default" }: { children: React.ReactNode; density?: "default" | "tight" }) {
   return (
-    <div style={{
+    <div className="editorial-card" data-density={density} style={{
       background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14,
       boxShadow: shadow.sm,
       padding: density === "tight" ? "20px 24px" : "28px 32px",
@@ -284,7 +284,7 @@ export function EditorialCard({ children, density = "default" }: { children: Rea
 
 export function KeyValue({ label, value, right }: { label: string; value: string; right?: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", gap: 16 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", gap: 16, flexWrap: "wrap" }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</div>
         <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>{value}</div>
@@ -337,7 +337,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead kicker="Account" title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
       <EditorialCard>
-        <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24 }}>
+        <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
           <div aria-hidden="true" style={{
             width: 64, height: 64, borderRadius: "50%",
             background: c.indigoDeep, color: c.cream, fontFamily: font.display, fontSize: 26,
@@ -462,7 +462,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
             return (
               <div key={d.id} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "12px 0", gap: 16,
+                padding: "12px 0", gap: 16, flexWrap: "wrap",
                 borderBottom: idx < recentDevices.length - 1 ? `1px solid ${c.border}` : "none",
               }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
@@ -486,7 +486,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           })
         )}
 
-        <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+        <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           <div style={{ fontFamily: font.ui, fontSize: 12, color: signOutOthersError ? c.ember : c.stone }}>
             {signOutOthersError || "Sign out every device except this one."}
           </div>
@@ -644,8 +644,8 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
     : { label: payment.status, bg: c.error100, fg: c.ember, border: "rgba(185,28,28,0.28)" };
   const planLabel = payment.tier ? payment.tier.charAt(0).toUpperCase() + payment.tier.slice(1) : payment.plan;
   return (
-    <div style={{
-      display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: 16, alignItems: "center",
+    <div className="settings-payment-row" style={{
+      display: "grid", gap: 16, alignItems: "center",
       padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
     }}>
       <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>{dateLabel}</div>
@@ -990,7 +990,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                 style={{
                   fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
                   border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
-                  outline: "none", minWidth: 240, minHeight: 40,
+                  outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                 }} />
               {!isOAuthOnlyUser && (
                 <input type="password" value={deletePasswordInput}
@@ -1001,7 +1001,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
                   style={{
                     fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
                     border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
-                    outline: "none", minWidth: 240, minHeight: 40,
+                    outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                   }} />
               )}
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
@@ -1205,8 +1205,8 @@ function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boo
       ? { label: "Joined", bg: "#E5E2F2", fg: c.indigo, border: "rgba(49,46,129,0.28)" }
       : { label: "Pending", bg: "#FEF3C7", fg: "#A16207", border: "rgba(161,98,7,0.28)" };
   return (
-    <div style={{
-      display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: 16, alignItems: "center",
+    <div className="settings-refer-row" style={{
+      display: "grid", gap: 16, alignItems: "center",
       padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
     }}>
       <div style={{

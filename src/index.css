@@ -920,20 +920,55 @@ input[type="range"]::-moz-range-thumb {
 /* ─── Settings ─── */
 .settings-pills { scrollbar-width: none; }
 .settings-pills::-webkit-scrollbar { display: none; }
-.settings-form-grid { grid-template-columns: 1fr 1fr; }
+.settings-form-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .settings-chip-grid { grid-template-columns: 1fr 1fr 1fr; }
 .settings-plan-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .settings-referral-grid { grid-template-columns: minmax(0, 1fr) 280px; }
+.settings-payment-row { grid-template-columns: auto 1fr auto auto; }
+.settings-refer-row { grid-template-columns: auto minmax(0, 1fr) auto auto; }
 
-@media (max-width: 860px) {
+@media (max-width: 1200px) {
   .settings-plan-row { grid-template-columns: 1fr !important; }
-}
-@media (max-width: 720px) {
   .settings-referral-grid { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 600px) {
-  .settings-form-grid { grid-template-columns: 1fr !important; }
   .settings-chip-grid { grid-template-columns: 1fr !important; }
+}
+/* Payment + refer rows: 4-col is unreadable below tablet 2-col-grid zone. */
+@media (max-width: 720px) {
+  .settings-payment-row {
+    grid-template-columns: 1fr auto !important;
+    grid-template-areas: "date amount" "plan status" !important;
+    row-gap: 6px !important;
+  }
+  .settings-payment-row > :nth-child(1) { grid-area: date; }
+  .settings-payment-row > :nth-child(2) { grid-area: plan; }
+  .settings-payment-row > :nth-child(3) { grid-area: amount; justify-self: end; }
+  .settings-payment-row > :nth-child(4) { grid-area: status; justify-self: end; }
+  .settings-refer-row {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    grid-template-areas: "avatar info status" "avatar date date" !important;
+    column-gap: 12px !important;
+    row-gap: 4px !important;
+  }
+  .settings-refer-row > :nth-child(1) { grid-area: avatar; align-self: start; }
+  .settings-refer-row > :nth-child(2) { grid-area: info; }
+  .settings-refer-row > :nth-child(3) { grid-area: date; justify-self: start; }
+  .settings-refer-row > :nth-child(4) { grid-area: status; justify-self: end; align-self: start; }
+}
+
+/* Touch target for tab pills on coarse pointers (iOS/Android) */
+@media (pointer: coarse) {
+  .settings-pills [role="tab"] { min-height: 44px; }
+  /* Numeric hotkey chips are keyboard cues — hide on touch devices. */
+  .settings-pills [role="tab"] kbd { display: none !important; }
+}
+
+/* Narrow phones — tighten card padding and trim non-essential chrome. */
+@media (max-width: 480px) {
+  .editorial-card { padding: 20px 18px !important; }
+  .editorial-card[data-density="tight"] { padding: 16px 18px !important; }
+  .settings-page-sub { display: none !important; }
 }
 
 /* ─── Custom Scrollbar ─── */
