@@ -33,6 +33,11 @@ const ROWS: Row[] = [
   { label: "told you N already",         text: "I told you, 24 LPA CTC overall",        expect: { currentCtc: 24 } },
   { label: "as I mentioned",             text: "as I mentioned, 17 LPA total CTC",      expect: { currentCtc: 17 } },
   { label: "take home N",                text: "I take home 14 LPA right now",          expect: { currentCtc: 14 } },
+  /* PARSER-1 regression — bare "Total CTC is N LPA" without a possessive
+   * pronoun was leaving current-ctc null. Surfaced by EVAL-6 long-
+   * horizon-trajectory T2. */
+  { label: "Total CTC is N LPA",         text: "Total CTC is 28 LPA — 24 fixed, 4 variable.", expect: { currentCtc: 28 } },
+  { label: "Total package N",            text: "Total package 22 LPA right now",        expect: { currentCtc: 22 } },
 
   /* ── Target cues — English ─────────────────────────────────────── */
   { label: "expecting N",                text: "I'm expecting 30 LPA",                  expect: { target: 30 } },

@@ -141,6 +141,12 @@ const CURRENT_CUES: CueTable = {
     /\b(?:as|like)\s+i\s+(?:said|mentioned|stated|told\s+you)\b/i,
     /\bpackage\s+progression\b/i,
     /\b(?:said|mentioned)\s+(?:already\s+)?/i,
+    /* PARSER-1 (2026-06-08): "Total CTC is N LPA" is a very common
+     * candidate phrasing in long sessions (EVAL-6 long-horizon-
+     * trajectory T2). The pre-existing `my ... ctc` cue requires a
+     * possessive pronoun; bare "Total CTC is..." was binding nothing,
+     * leaving current-ctc null past turn 2. */
+    /\btotal\s+(?:ctc|package|comp(?:ensation)?|pay)\b/i,
   ],
   right: [
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,

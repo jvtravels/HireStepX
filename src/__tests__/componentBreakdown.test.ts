@@ -77,6 +77,34 @@ describe("extractComponentBreakdown — equity", () => {
   });
 });
 
+/* PARSER-1 (2026-06-08) — regression tests for the bugs surfaced by
+ * EVAL-6 once the kernel started dual-writing component-* facts to the
+ * ledger. Each test names the scenario it traces back to. */
+describe("extractComponentBreakdown — PARSER-1 regressions", () => {
+  it("comma-list shorthand: '24 fixed, 4 variable' binds base=24 (long-horizon-trajectory T2)", () => {
+    const b = extractComponentBreakdown(
+      "Total CTC is 28 LPA — 24 fixed, 4 variable.",
+    );
+    expect(b.base).toBe(24);
+    expect(b.variable).toBe(4);
+  });
+
+  it("does NOT bind 'without the variable' across clause (first-wins-self-corrected-downward T3)", () => {
+    const b = extractComponentBreakdown(
+      "Actually wait — current is 20 LPA without the variable component.",
+    );
+    expect(b.variable).toBe(null);
+    expect(b.base).toBe(null);
+  });
+
+  it("does NOT bind 'with the variable' across clause (intra-utterance-contradiction T1)", () => {
+    const b = extractComponentBreakdown(
+      "Current is 18 LPA — actually 22 LPA with the variable, sorry.",
+    );
+    expect(b.variable).toBe(null);
+  });
+});
+
 describe("extractComponentBreakdown — combined", () => {
   it("extracts all three components from one sentence", () => {
     const b = extractComponentBreakdown(

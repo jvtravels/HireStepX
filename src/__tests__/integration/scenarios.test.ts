@@ -510,3 +510,68 @@ describe("Scenario G — proactive-sweetener planner gate end-to-end (2026-05-30
     expect(action.kind).not.toBe("proactive-sweetener");
   });
 });
+
+/* ─── Scenario H — QUALITY-3 component-* ledger dual-write ─────────── */
+
+describe("Scenario H — component-base / component-variable dual-write to ledger", () => {
+  /* QUALITY-3 (2026-06-08) — the kernel's dual-write block was missing
+   * component-base, component-variable, component-equity writes. Slot
+   * mirrors were updated but the ledger never held the values, so any
+   * getFact() consumer (planner, eval rubric, post-session coaching)
+   * silently saw null. This scenario locks in the contract by driving
+   * a "Total CTC is N LPA — X fixed, Y variable" disclosure end-to-
+   * end and asserting getFact returns the disclosed numbers. */
+  const BAND: NegotiationBand = {
+    initialOffer: 30,
+    maxStretch: 38,
+    walkAway: 26,
+    hasEquity: true,
+  };
+
+  it("'Total CTC is 28 LPA — 24 fixed, 4 variable' binds current-ctc + components on the ledger", async () => {
+    const { getFact } = await import("../../../server-handlers/_conversation-ledger");
+    const s0 = initState({
+      sessionId: "scenario-H-component-dualwrite",
+      role: "Senior Software Engineer",
+      company: "JP Morgan",
+      band: BAND,
+    });
+    const { state: s1 } = simulateTurn(
+      s0,
+      "Total CTC is 28 LPA — 24 fixed, 4 variable.",
+      "Noted.",
+    );
+    expect(s1.ledger).toBeTruthy();
+    expect(getFact(s1.ledger!, "current-ctc")).toBe(28);
+    expect(getFact(s1.ledger!, "component-base")).toBe(24);
+    expect(getFact(s1.ledger!, "component-variable")).toBe(4);
+  });
+
+  it("does NOT fabricate component-variable from cross-clause filler ('20 LPA without the variable')", async () => {
+    const { getFact } = await import("../../../server-handlers/_conversation-ledger");
+    const s0 = initState({
+      sessionId: "scenario-H-no-fabrication",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: BAND,
+    });
+    const { state: s1 } = simulateTurn(
+      s0,
+      "Current CTC is 25 LPA.",
+      "Noted.",
+    );
+    const { state: s2 } = simulateTurn(
+      s1,
+      "Actually wait — current is 20 LPA without the variable component.",
+      "OK.",
+    );
+    /* First-wins on current-ctc: read layer returns 25 (the earliest). */
+    expect(getFact(s2.ledger!, "current-ctc")).toBe(25);
+    /* Critical: no component disclosure happened — both slots must
+     * remain null. Before PARSER-1 the unit-required extractor was
+     * binding variable=20 across the "without the " filler, then
+     * PDF#29 inference derived base = 25 − 20 = 5. */
+    expect(getFact(s2.ledger!, "component-base")).toBe(null);
+    expect(getFact(s2.ledger!, "component-variable")).toBe(null);
+  });
+});

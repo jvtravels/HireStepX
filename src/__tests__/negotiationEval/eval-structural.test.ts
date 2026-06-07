@@ -70,18 +70,18 @@ describe("negotiation-eval — structural layer", () => {
    * scenario you know we don't yet handle), update MIN_FULLY_PASSED /
    * MIN_AVERAGE_SCORE in the same PR and explain in the commit why.
    * Silent drops are the failure mode this guard exists to prevent. */
-  /* QUALITY-3 ratchet (2026-06-08): wired component-base/variable/equity
-   * into the ledger dual-write. Fully-passing went 32 → 35 (the EVAL-6
-   * scenarios that depend on component reads now satisfy
-   * disclosed-facts-bound). Average dropped 100 → 98 because the dual-
-   * write surfaced 3 latent parser bugs that were previously hidden
-   * (ledger never held component values, so no-fabricated-facts trivially
-   * passed): comma-list misbinding ("24 fixed, 4 variable" → base=4),
-   * and 2 fabrications on first-wins-self-corrected-downward / intra-
-   * utterance-contradiction. Those bugs are tracked as PARSER-1 and
-   * fixing them ratchets us back to 100. */
-  const MIN_FULLY_PASSED = 35;
-  const MIN_AVERAGE_SCORE = 98;
+  /* PARSER-1 ratchet (2026-06-08): killed the 3 latent parser bugs
+   * surfaced by QUALITY-3's component-* dual-write:
+   *   (1) Comma-list shorthand "24 fixed, 4 variable" now binds
+   *       base=24 (was: 4) via a tight number-before-cue extractor.
+   *   (2) Cross-clause filler "20 LPA without the variable" no longer
+   *       binds variable=20 (tightened extractNumberBefore filler
+   *       window 15 → 3 chars).
+   *   (3) Bare "Total CTC is 28 LPA" now binds current-ctc (added the
+   *       missing left cue in the classifier).
+   * All 38 scenarios fully pass at average 100. */
+  const MIN_FULLY_PASSED = 38;
+  const MIN_AVERAGE_SCORE = 100;
 
   it("suite holds the EVAL-3 baseline (no regression)", () => {
     const runs = EVAL_SCENARIOS.map(runScenarioStructural);

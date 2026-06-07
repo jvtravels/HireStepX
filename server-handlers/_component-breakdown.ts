@@ -144,9 +144,19 @@ function extractNumberBefore(
    * The filler char class `[^.!?\n%,]` (note `%` and `,` excluded)
    * additionally blocks a *secondary* percent-split appearing between
    * the absolute number and the cue ("18 LPA, 80% fixed" must NOT bind
-   * base=18 just because "fixed" follows). */
+   * base=18 just because "fixed" follows).
+   *
+   * PARSER-1 (2026-06-08) — filler tightened {0,15} → {0,3}. The
+   * loose window let cross-clause matches sneak through: "20 LPA
+   * without the variable component" was binding variable=20
+   * (12-char filler "without the "), and PDF#29 inference then
+   * derived base = total − variable, fabricating a component slot
+   * the candidate never disclosed. Real candidate phrasings ("₹12
+   * LPA fixed", "₹8L variable", "10 LPA base") use 0–1 char gaps;
+   * anything beyond that is filler that signals a different
+   * referent. */
   const re = new RegExp(
-    String.raw`₹?\s*(\d{1,3}(?:,\d{2,3})*(?:\.\d+)?)\s*(lpa|lakhs?|l)\b(?!\s*%)[^.!?\n%,]{0,15}?\b${cuePattern}\b`,
+    String.raw`₹?\s*(\d{1,3}(?:,\d{2,3})*(?:\.\d+)?)\s*(lpa|lakhs?|l)\b(?!\s*%)[^.!?\n%,]{0,3}?\b${cuePattern}\b`,
     "i",
   );
   const m = re.exec(text);
@@ -159,6 +169,41 @@ function extractNumberBefore(
   const lpa = raw;
   if (lpa < 0.5 || lpa > 5000) return null;
   return Math.round(lpa * 10) / 10;
+}
+
+/* PARSER-1 (2026-06-08) — tight adjacency number-before-cue.
+ *
+ * extractNumberBefore requires a UNIT between number and cue ("12 LPA
+ * fixed"), which misses comma-list shorthand candidates use heavily:
+ *   "28 LPA total — 24 fixed, 4 variable"
+ *   "20 base, 6 variable, 4 ESOP"
+ * extractNumberAfter then greedily picks up the WRONG number — for the
+ * first example it binds `fixed` to the `4` that comes after, yielding
+ * base=4 (the EVAL-6 long-horizon-trajectory misbinding).
+ *
+ * This extractor is unit-OPTIONAL but strictly adjacent: at most one
+ * non-word char (a space) between the number and the cue. That
+ * adjacency rule is what keeps "I had 5 fixed deposits" from binding
+ * base=5 — there's "deposits" after "fixed", but more importantly the
+ * caller is the component-breakdown parser which only runs in salary
+ * contexts. The standard 0.5–5000 LPA clamp catches stray small
+ * integers. */
+function extractAdjacentNumberBefore(
+  text: string,
+  cuePattern: string,
+): number | null {
+  const re = new RegExp(
+    String.raw`(\d{1,3}(?:\.\d+)?)\s?(lpa|lakhs?|l\b)?\s+\b${cuePattern}\b`,
+    "i",
+  );
+  const m = re.exec(text);
+  if (!m) return null;
+  const raw = parseFloat(m[1]);
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+  /* Same clamp as extractNumberAfter — reject obvious non-salary
+   * integers (years-of-experience, days, etc.). */
+  if (raw < 0.5 || raw > 5000) return null;
+  return Math.round(raw * 10) / 10;
 }
 
 /** Extract component breakdown from candidate text. Returns an
@@ -289,7 +334,13 @@ export function extractComponentBreakdown(
    * vast majority of phrasings the corpus has historically covered).
    * When that misses, fall through to number-BEFORE for "₹12 LPA fixed"-
    * style leading-number constructions. PDF#29 Bug 1. */
+  /* PARSER-1: tight number-before-cue runs FIRST. "24 fixed, 4 variable"
+   * must bind base=24 (number immediately before the cue), not base=4
+   * (which extractNumberAfter would grab from past the comma). */
   const base =
+    extractAdjacentNumberBefore(a, "fixed") ??
+    extractAdjacentNumberBefore(a, "base(?:\\s+(?:salary|pay))?") ??
+    extractAdjacentNumberBefore(a, "basic") ??
     extractNumberAfter(a, "base\\s+salary") ??
     extractNumberAfter(a, "base\\s+pay") ??
     extractNumberAfter(a, "fixed\\s+pay") ??
@@ -302,6 +353,9 @@ export function extractComponentBreakdown(
     extractNumberBefore(a, "basic");
 
   let variable =
+    extractAdjacentNumberBefore(a, "variable") ??
+    extractAdjacentNumberBefore(a, "bonus") ??
+    extractAdjacentNumberBefore(a, "incentive") ??
     extractNumberAfter(a, "performance\\s+bonus") ??
     extractNumberAfter(a, "performance\\s+pay") ??
     extractNumberAfter(a, "target\\s+bonus") ??
