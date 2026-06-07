@@ -42,6 +42,12 @@ const ROWS: Row[] = [
   { label: "hoping for N",               text: "hoping for around 26 LPA",              expect: { target: 26 } },
   { label: "aiming for N",               text: "aiming for 40 LPA",                     expect: { target: 40 } },
   { label: "target is N",                text: "my target is 33 LPA",                   expect: { target: 33 } },
+  /* QUALITY-1 regression: `\btarget\b` matched the noun but missed verb
+   * forms — capstone PDF replay had "Targeting 28 LPA for this move."
+   * land as target=null, looping the planner on probe-expectations. */
+  { label: "targeting N",                text: "Targeting 28 LPA for this move.",       expect: { target: 28 } },
+  { label: "targeted N",                 text: "I targeted 30 LPA in my last switch",   expect: { target: 30 } },
+  { label: "targets N",                  text: "she targets 35 LPA roles",              expect: { target: 35 } },
   { label: "anchor around N",            text: "anchoring around 32 LPA",               expect: { target: 32 } },
   { label: "bare anchor (no unit)",      text: "the anchor I had in mind was around 28", expect: { target: 28 } },
   { label: "settle for N",               text: "I'd settle for 25 LPA",                 expect: { target: 25 } },

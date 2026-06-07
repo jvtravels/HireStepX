@@ -161,7 +161,7 @@ const TARGET_CUES: CueTable = {
     /\bexpect(?:ing|ed|ation|ations|s)?\b/i,
     /\bwant(?:ing)?\b/i,
     /\blooking\s+for\b/i,
-    /\btarget\b/i,
+    /\btarget(?:ing|ed|s)?\b/i,
     /\bhoping(?:\s+for)?\b/i,
     /\baim(?:ing)?\s+for\b/i,
     /\bwould\s+like\b/i,

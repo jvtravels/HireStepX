@@ -4,6 +4,7 @@ exports[`Phase 4.2 — negotiation-kernel canonical paths > candidate-counter-th
 {
   "finalShape": {
     "acceptedAtTurnSet": true,
+    "candidateTarget": 28,
     "leversUsed": [
       "close-acceptance",
       "counter-base",
@@ -17,10 +18,10 @@ exports[`Phase 4.2 — negotiation-kernel canonical paths > candidate-counter-th
   "phaseTrajectory": [
     "opening",
     "offer-presented",
-    "probe-expectations",
-    "probe-expectations",
-    "probe-expectations",
-    "probe-expectations",
+    "counter-offer",
+    "counter-offer",
+    "counter-offer",
+    "counter-offer",
     "accepted",
     "accepted",
   ],
@@ -59,6 +60,7 @@ exports[`Phase 4.2 — negotiation-kernel canonical paths > deflect-loop-recover
 {
   "finalShape": {
     "acceptedAtTurnSet": true,
+    "candidateTarget": 26,
     "leversUsed": [
       "acknowledge-and-recover",
       "close-acceptance",
@@ -73,11 +75,11 @@ exports[`Phase 4.2 — negotiation-kernel canonical paths > deflect-loop-recover
   "phaseTrajectory": [
     "opening",
     "offer-presented",
-    "probe-expectations",
-    "probe-expectations",
-    "probe-expectations",
-    "probe-expectations",
-    "probe-expectations",
+    "counter-offer",
+    "counter-offer",
+    "counter-offer",
+    "counter-offer",
+    "counter-offer",
     "accepted",
     "accepted",
   ],
