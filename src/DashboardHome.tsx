@@ -370,7 +370,7 @@ export default function DashboardHome() {
               <span suppressHydrationWarning>{todayLabel ?? " "}</span>
             </Eyebrow>
             <h1 id="dh-hero" className="hsx-dh-hero" style={{
-              fontFamily: f.serif, fontSize: 44, fontWeight: 400, lineHeight: 1.1,
+              fontFamily: f.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1,
               letterSpacing: "-0.02em", color: t.coal, margin: "8px 0 6px",
             }}>
               Welcome{" "}
@@ -690,8 +690,42 @@ export default function DashboardHome() {
           }
         }
         .hsx-dh-stats .hsx-dh-stat-cell:last-child { border-right: none; }
-        /* Padding tiers — class-based so no inline style wins. */
-        .hsx-dh-root { padding: 32px 32px 64px; }
+        /* Gate hover-only treatments behind capable pointers so iOS
+           doesn't get stuck-hover after first tap on Recent Sessions
+           rows and CTA cards. Coarse/no-hover devices skip the hover
+           rules entirely and fall through to :active feedback. */
+        @media (hover: none), (pointer: coarse) {
+          .hsx-dh-root .hsx-dh-cta-primary:hover,
+          .hsx-dh-root .hsx-dh-cta-outline:hover,
+          .hsx-dh-root .hsx-dh-textlink:hover,
+          .hsx-dh-root .hsx-dh-raillink:hover {
+            transform: none !important;
+            filter: none !important;
+            background: inherit;
+            border-color: inherit;
+            color: inherit;
+            box-shadow: inherit;
+          }
+          .hsx-dh-root .hsx-dh-textlink:hover span[aria-hidden] {
+            transform: none !important;
+          }
+        }
+        /* Padding tiers — class-based so no inline style wins.
+           safe-area-inset rolls the iOS home indicator + Android nav bar
+           into the bottom padding instead of letting them clip last-row
+           CTAs. */
+        .hsx-dh-root {
+          padding-top: 32px;
+          padding-right: max(32px, env(safe-area-inset-right));
+          padding-bottom: max(64px, env(safe-area-inset-bottom));
+          padding-left: max(32px, env(safe-area-inset-left));
+        }
+        /* 1180–1280px dead zone: keep the two-column grid but shrink the
+           rail clamp so the main column gets breathing room on 13" laptops
+           and 1280px external monitors. */
+        @media (max-width: 1280px) and (min-width: 1181px) {
+          .hsx-dh-grid { grid-template-columns: minmax(0, 1fr) minmax(240px, 300px) !important; gap: 24px !important; }
+        }
         /* Grid collapse threshold raised to 1180px: between 768px (where
            DashboardLayout shows the 260px sidebar) and 1080px (old breakpoint)
            the 260 sidebar + 360 rail + padding stole ~700px of chrome from
@@ -700,7 +734,12 @@ export default function DashboardHome() {
         @media (max-width: 1180px) {
           .hsx-dh-grid { grid-template-columns: 1fr !important; }
           .hsx-dh-rail { order: 2; }
-          .hsx-dh-root { padding: 28px 24px 56px; }
+          .hsx-dh-root {
+            padding-top: 28px;
+            padding-right: max(24px, env(safe-area-inset-right));
+            padding-bottom: max(56px, env(safe-area-inset-bottom));
+            padding-left: max(24px, env(safe-area-inset-left));
+          }
         }
         /* Stats grid: 3-up survives the rail collapse but labels truncate
            below 900px. Drop to 2-up so each cell keeps a readable width;
@@ -721,8 +760,27 @@ export default function DashboardHome() {
             grid-column: auto;
             border-top: none;
           }
-          .hsx-dh-root { padding: 20px 16px 48px; }
-          .hsx-dh-hero { font-size: 34px !important; }
+          .hsx-dh-root {
+            padding-top: 20px;
+            padding-right: max(16px, env(safe-area-inset-right));
+            padding-bottom: max(48px, env(safe-area-inset-bottom));
+            padding-left: max(16px, env(safe-area-inset-left));
+          }
+        }
+        /* Narrow viewport: drop the leading session icon so the title
+           gets back ~50px before ellipsis kicks in. */
+        @media (max-width: 480px) {
+          .hsx-dh-session-row > span:first-child { display: none; }
+        }
+        /* Landscape phones (iPhone 14 Pro, Galaxy S in landscape):
+           short height + wide screen. Shrink the hero, ring, and the
+           "Next move" card so the primary CTA stays above the fold. */
+        @media (max-height: 500px) and (orientation: landscape) {
+          .hsx-dh-hero { font-size: 26px !important; }
+          .hsx-dh-root {
+            padding-top: 16px;
+            padding-bottom: max(32px, env(safe-area-inset-bottom));
+          }
         }
         /* Belt-and-suspenders overflow guard for cards whose children
            pack fixed-width chips/SVGs (calendar date pills, AI insight
