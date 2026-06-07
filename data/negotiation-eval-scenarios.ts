@@ -834,6 +834,197 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-equity",
     ],
   },
+
+  /* ============================================================ *
+   * EVAL-5: meaner adversarial layer.                            *
+   *                                                              *
+   * EVAL-4 added "stress test the happy parser." This adds       *
+   * "stress test the messy real world": typos, mid-utterance     *
+   * language switches, downward corrections, negated cues,       *
+   * prose joining dates, recruiter-echo, and contradicting-      *
+   * fact ambiguity. Each scenario targets a class of mistake     *
+   * the deterministic scorer can verify without an LLM.          *
+   * ============================================================ */
+
+  /* ---------------- Scenario 27: typo'd disclosure ---------------- */
+  {
+    id: "typoed-disclosure",
+    label: "Candidate disclosure has plausible typos in cue words",
+    goal:
+      "Real candidates typo. 'currnt' / 'tarrget' / 'expecitng' are common autocomplete misfires; the parser should NOT silently drop a number because the cue word is one letter off. If it does, planner re-probes and probe-once-per-topic flips on a long-enough chain. Mostly informational for now — if this fails we want to know the typo-tolerance bound.",
+    init: {
+      sessionId: "eval-typoed-disclosure",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "currnt CTC is 18 LPA", aiText: "Noted." },
+      { candidate: "tarrget 28 LPA for this move", aiText: "Got it." },
+      { candidate: "notice 45 days", aiText: "OK." },
+      { candidate: "no competing offer", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 28: downward correction ---------------- */
+  {
+    id: "first-wins-self-corrected-downward",
+    label: "Candidate inflates CTC then 'corrects' downward — first-wins still holds",
+    goal:
+      "Symmetric to scenario 23 but downward. Candidate states 25 LPA, two turns later says 'actually 20 LPA' (still meeting band but stripped variable). getFact must return 25 (the earliest) — the read layer doesn't care about direction of the correction. Prevents post-hoc deflation gaming as much as inflation gaming.",
+    init: {
+      sessionId: "eval-first-wins-self-corrected-downward",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "Current CTC is 25 LPA.", aiText: "Noted." },
+      { candidate: "Target 32 LPA.", aiText: "Got it." },
+      {
+        candidate: "Actually wait — current is 20 LPA without the variable component.",
+        aiText: "OK.",
+      },
+      { candidate: "Notice 60 days.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 29: mid-utterance language switch ---------------- */
+  {
+    id: "mid-utterance-language-switch",
+    label: "Candidate code-switches English↔Hindi mid-sentence with numbers",
+    goal:
+      "Common in real Indian-tech transcripts: an English clause carrying current-CTC followed by a Hindi clause carrying target. Each number must bind to the right role despite the language flip inside the same utterance. Probes the cue tables don't silently anchor on the first language seen.",
+    init: {
+      sessionId: "eval-mid-utterance-language-switch",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      {
+        candidate: "I'm currently at Flipkart drawing 22 LPA, lekin mujhe 30 LPA chahiye is move ke liye.",
+        aiText: "Noted both numbers.",
+      },
+      { candidate: "Notice period 45 days hai.", aiText: "OK." },
+      { candidate: "Competing offers? Nahi, abhi nothing.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 30: negated cue ---------------- */
+  {
+    id: "negated-cue-bare-number",
+    label: "Candidate says 'not 30 LPA, that's too high' — negation must NOT bind 30 as target",
+    goal:
+      "If parser binds bare-numbered negation as a target, planner anchors high based on a number the candidate explicitly rejected. Test: after this utterance, getFact(\"target-ctc\") should be null (or the legitimately-stated target if one follows). no-fabricated-facts gates this — target-ctc is listed undisclosed for the all-negation case.",
+    init: {
+      sessionId: "eval-negated-cue-bare-number",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "Current CTC 22 LPA.", aiText: "Noted." },
+      {
+        candidate: "Not 30 LPA, that's too high. I wouldn't ask for that.",
+        aiText: "Understood — what were you thinking?",
+      },
+      {
+        candidate: "Honestly I'd like to hear your range before sharing a number.",
+        aiText: "Fair.",
+      },
+      { candidate: "Notice 60 days.", aiText: "OK." },
+    ],
+    undisclosed: [
+      "target-ctc",
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 31: joining-date as prose ---------------- */
+  {
+    id: "joining-date-as-prose",
+    label: "Candidate gives joining date in natural prose ('next month', 'by March')",
+    goal:
+      "Joining-date in real transcripts is rarely ISO — it's 'next month', 'after Holi', 'by March 15th'. Whether the parser binds it OR cleanly leaves it null both pass no-fabricated-facts; the failure mode is FABRICATING a date that wasn't said. Listed as undisclosed to gate the fabrication path.",
+    init: {
+      sessionId: "eval-joining-date-as-prose",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      { candidate: "Current 20 LPA, target 28 LPA.", aiText: "Got it." },
+      {
+        candidate: "Earliest I could join would be sometime in March, after notice ends.",
+        aiText: "Noted.",
+      },
+      { candidate: "Notice is 60 days.", aiText: "OK." },
+      { candidate: "No competing offers.", aiText: "Understood." },
+    ],
+    undisclosed: [
+      "joining-date",
+      "competing-offer",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
+
+  /* ---------------- Scenario 32: recruiter echo / parroting ---------------- */
+  {
+    id: "recruiter-question-echoed",
+    label: "Candidate echoes the recruiter's question back instead of answering",
+    goal:
+      "Test the planner doesn't treat its own question, parroted back by the candidate, as a candidate disclosure. If '\"What's your current CTC?\" — that's a good question' got parsed as currentCtc=null-but-numbered, we'd silently fabricate. Probe-once-per-topic catches the downstream loop if it happens.",
+    init: {
+      sessionId: "eval-recruiter-question-echoed",
+      role: "Software Engineer",
+      company: "JP Morgan",
+      band: DEFAULT_BAND,
+    },
+    turns: [
+      {
+        candidate: "\"What's your current CTC?\" — interesting question, let me think.",
+        aiText: "Take your time.",
+      },
+      { candidate: "OK, current is 21 LPA.", aiText: "Got it." },
+      { candidate: "Target 28 LPA.", aiText: "Noted." },
+      { candidate: "Notice 45 days.", aiText: "OK." },
+    ],
+    undisclosed: [
+      "competing-offer",
+      "joining-date",
+      "component-base",
+      "component-variable",
+      "component-equity",
+    ],
+  },
 ] as const;
 
 /** Map id → scenario for quick lookup in CI runs. */

@@ -442,6 +442,47 @@ function pickRole(
   return null;
 }
 
+/* ─── Negation guard ──────────────────────────────────────────────────
+ *
+ * QUALITY-2 (EVAL-5): "Not 30 LPA, that's too high" was binding 30
+ * as target via the bare-number-in-probe-expectations default. Real
+ * candidates use negation to REJECT a number a recruiter floated;
+ * binding it as their target is exactly the wrong inference.
+ *
+ * Tight 15-char left window so we don't false-trigger on distant
+ * negation in a long sentence. "less than" / "below" / "under"
+ * between the negation and the number invert intent ("not less than
+ * 30 LPA" = "at least 30 LPA") — those keep the number bindable. */
+const NEGATION_LEFT_PATTERNS = [
+  /\bnot\b[^.,;]{0,12}$/i,
+  /\bno\b[^.,;]{0,12}$/i,
+  /\bnever\b[^.,;]{0,12}$/i,
+  /\bwon['']?t\b[^.,;]{0,15}$/i,
+  /\bwouldn['']?t\b[^.,;]{0,15}$/i,
+  /\bshouldn['']?t\b[^.,;]{0,15}$/i,
+  /\bcouldn['']?t\b[^.,;]{0,15}$/i,
+  /\bnahi(?:n)?\b[^.,;]{0,12}$/i,
+];
+
+const NEGATION_INVERTERS = [
+  /\bless\s+than\b/i,
+  /\bbelow\b/i,
+  /\bunder\b/i,
+  /\blower\s+than\b/i,
+  /\bse\s+kam\b/i, // hindi: "se kam" = "less than"
+];
+
+function isNegatedSpan(text: string, span: SalarySpan): boolean {
+  const NEGATION_WINDOW = 25;
+  const leftWindow = text.slice(Math.max(0, span.start - NEGATION_WINDOW), span.start);
+  const hasNegation = NEGATION_LEFT_PATTERNS.some((re) => re.test(leftWindow));
+  if (!hasNegation) return false;
+  // Inverter between negation and number ("not LESS THAN 30") flips
+  // intent back to "at least 30" — bindable.
+  const hasInverter = NEGATION_INVERTERS.some((re) => re.test(leftWindow));
+  return !hasInverter;
+}
+
 /* ─── Aggregator ───────────────────────────────────────────────────── */
 
 /** Main entry point. Returns the role-bound numbers for the utterance.
@@ -481,6 +522,10 @@ export function classifyNumberRoles(
   let targetFromRange = false;
   let targetComponent: "total" | "fixed" | null = null;
   for (const span of spans) {
+    // Negation short-circuit: "Not 30 LPA, that's too high" must not
+    // bind 30 to any role. See NEGATION_LEFT_PATTERNS / INVERTERS for
+    // the precise contract.
+    if (isNegatedSpan(text, span)) continue;
     const scores = scoreRolesForSpan(text, span);
     const role = pickRole(scores, ctx, span, text);
     if (role == null) continue;

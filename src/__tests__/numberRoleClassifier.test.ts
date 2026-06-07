@@ -48,6 +48,16 @@ const ROWS: Row[] = [
   { label: "targeting N",                text: "Targeting 28 LPA for this move.",       expect: { target: 28 } },
   { label: "targeted N",                 text: "I targeted 30 LPA in my last switch",   expect: { target: 30 } },
   { label: "targets N",                  text: "she targets 35 LPA roles",              expect: { target: 35 } },
+  /* QUALITY-2 regression (EVAL-5): negated cue must not bind. Candidate
+   * rejected the number — the parser was binding it as target via the
+   * bare-number-in-probe default. */
+  { label: "Not N, too high",            text: "Not 30 LPA, that's too high",           ctx: { phase: "probe-expectations" }, expect: { target: null } },
+  { label: "wouldn't ask for N",         text: "I wouldn't ask for 32 LPA honestly",    ctx: { phase: "probe-expectations" }, expect: { target: null } },
+  { label: "no N expected",              text: "no 35 LPA expectations here",           ctx: { phase: "probe-expectations" }, expect: { target: null } },
+  /* Inverter case: 'not less than N' = 'at least N' → bindable. The
+   * negation guard must not strip these. */
+  { label: "not less than N",            text: "I'm targeting not less than 28 LPA",    expect: { target: 28 } },
+  { label: "not below N",                text: "would not go below 26 LPA",             ctx: { phase: "probe-expectations" }, expect: { target: 26 } },
   { label: "anchor around N",            text: "anchoring around 32 LPA",               expect: { target: 32 } },
   { label: "bare anchor (no unit)",      text: "the anchor I had in mind was around 28", expect: { target: 28 } },
   { label: "settle for N",               text: "I'd settle for 25 LPA",                 expect: { target: 25 } },
