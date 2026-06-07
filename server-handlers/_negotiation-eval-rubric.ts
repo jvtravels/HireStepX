@@ -42,9 +42,9 @@ export const NEGOTIATION_RUBRIC: readonly RubricCriterion[] = [
   /* ------------------------- structural ------------------------- */
   {
     id: "discovery-before-anchor",
-    label: "Asked current CTC before stating an offer",
+    label: "Knew current CTC before stating an offer",
     description:
-      "Recruiter must have at least asked for current CTC (askedTopics: currentCtcAsked) before any anchor-shaped action is emitted in the decisionLog. Passes if currentCtcAsked appears before the first anchor; fails if anchor lands first.",
+      "Before any anchor-shaped action lands in decisionLog, the planner must know the candidate's current CTC — EITHER because it asked (askedTopics: currentCtcAsked) OR because the candidate volunteered it (fact-current-ctc in the ledger). Passes if either signal precedes the first anchor; fails only on a true blind-anchor.",
     layer: "structural",
     weight: 3,
   },

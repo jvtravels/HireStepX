@@ -92,54 +92,68 @@ function firstAnchorTurn(state: NegotiationState): number | null {
   return null;
 }
 
-/** Returns the turn-index at which currentCtcAsked first appeared in
- *  the ledger (or null if it never did). */
-function firstCurrentCtcAskedTurn(led: ConversationLedger): number | null {
+/** Returns the turn-index at which the planner FIRST knew the
+ *  candidate's current CTC — either because it asked (askedTopic) OR
+ *  because the candidate volunteered the fact unsolicited.
+ *
+ *  Both paths satisfy the underlying intent of the
+ *  discovery-before-anchor rubric: "don't anchor without knowing
+ *  current CTC". The original implementation only checked the
+ *  askedTopic, which false-failed scenarios where a confident
+ *  candidate disclosed CTC on turn 1 without being prompted. */
+function firstCurrentCtcKnownTurn(led: ConversationLedger): number | null {
+  let earliest: number | null = null;
   for (const entry of led.entries) {
+    let candidate: number | null = null;
     if (entry.kind === "asked-topic" && entry.topic === "currentCtcAsked") {
-      return entry.atTurn;
+      candidate = entry.atTurn;
+    } else if (entry.kind === "fact-current-ctc") {
+      candidate = entry.atTurn;
+    }
+    if (candidate !== null && (earliest === null || candidate < earliest)) {
+      earliest = candidate;
     }
   }
-  return null;
+  return earliest;
 }
 
 /* ----------------------------- scorers ----------------------------- */
 
 function scoreDiscoveryBeforeAnchor(state: NegotiationState): CriterionVerdict {
-  const askedAt = firstCurrentCtcAskedTurn(state.ledger!);
+  const knownAt = firstCurrentCtcKnownTurn(state.ledger!);
   const anchoredAt = firstAnchorTurn(state);
   if (anchoredAt === null) {
     return {
       criterionId: "discovery-before-anchor",
-      label: "Asked current CTC before stating an offer",
+      label: "Knew current CTC before stating an offer",
       verdict: "n/a",
       reason: "no anchor action was emitted in this scenario",
       weight: 3,
     };
   }
-  if (askedAt === null) {
+  if (knownAt === null) {
     return {
       criterionId: "discovery-before-anchor",
-      label: "Asked current CTC before stating an offer",
+      label: "Knew current CTC before stating an offer",
       verdict: "fail",
-      reason: `anchor emitted at turn ${anchoredAt} but currentCtcAsked never recorded`,
+      reason: `anchor emitted at turn ${anchoredAt} but current CTC was never known (neither asked nor volunteered)`,
       weight: 3,
     };
   }
-  if (askedAt > anchoredAt) {
+  if (knownAt > anchoredAt) {
     return {
       criterionId: "discovery-before-anchor",
-      label: "Asked current CTC before stating an offer",
+      label: "Knew current CTC before stating an offer",
       verdict: "fail",
-      reason: `anchor at turn ${anchoredAt} preceded currentCtcAsked at turn ${askedAt}`,
+      reason: `anchor at turn ${anchoredAt} preceded current-CTC knowledge at turn ${knownAt}`,
       weight: 3,
     };
   }
   return {
     criterionId: "discovery-before-anchor",
-    label: "Asked current CTC before stating an offer",
+    label: "Knew current CTC before stating an offer",
     verdict: "pass",
-    reason: `currentCtcAsked at turn ${askedAt}, anchor at turn ${anchoredAt}`,
+    reason: `current CTC known by turn ${knownAt}, anchor at turn ${anchoredAt}`,
     weight: 3,
   };
 }
