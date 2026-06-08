@@ -1,0 +1,4 @@
+# Inbox holds real session transcripts with PII. Never commit raw drops.
+*
+!.gitignore
+!README.md

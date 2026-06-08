@@ -214,19 +214,43 @@ function normalizeRoleKey(role: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-const BAND_OVERRIDES: Record<string, BandOverride> = {
-  /* Seed: Flipkart Senior PD. v1 resolver returned ~[21, 42] for a
-   * 6 YoE Senior PD; Glassdoor Q1 2026 medians for Flipkart Senior PD
-   * sit at ₹30–50 LPA total with ₹26–34 fixed and meaningful RSU/ESOP.
-   * Source: Glassdoor + Levels.fyi cross-check, 2026-Q2 pull. */
-  "flipkart|senior-pd|senior": {
-    initialOffer: 38,
-    maxStretch: 50,
-    walkAway: 30,
-    hasEquity: true,
-    source: "Glassdoor + Levels.fyi Flipkart Senior PD median, 2026-Q2",
-  },
-};
+/* Loaded at module load from data/v2-band-overrides.json. Schema-
+ * validated; malformed entries are skipped (with a one-time warn) so
+ * a typo in the data file never crashes the v2 brain — it just falls
+ * back to v1 for affected cells. The data file is editable by ops
+ * without a code review; the schema is the contract. */
+import bandOverridesData from "../../data/v2-band-overrides.json";
+
+function isValidOverride(v: unknown): v is BandOverride {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.initialOffer === "number" &&
+    typeof o.maxStretch === "number" &&
+    typeof o.walkAway === "number" &&
+    typeof o.source === "string" &&
+    o.source.length >= 5 &&
+    o.walkAway <= o.initialOffer &&
+    o.initialOffer <= o.maxStretch
+  );
+}
+
+function loadBandOverrides(): Record<string, BandOverride> {
+  const out: Record<string, BandOverride> = {};
+  const raw = (bandOverridesData as { overrides?: Record<string, unknown> }).overrides ?? {};
+  for (const [key, val] of Object.entries(raw)) {
+    if (isValidOverride(val)) {
+      out[key] = val;
+    } else if (process.env.NODE_ENV !== "test") {
+      /* One-line warn — never throw, never spam. The brain stays up. */
+      // eslint-disable-next-line no-console
+      console.warn(`[v2-band-overrides] skipping malformed entry for key=${key}`);
+    }
+  }
+  return out;
+}
+
+const BAND_OVERRIDES: Record<string, BandOverride> = loadBandOverrides();
 
 /** Compute the band for (role, company, candidate-profile). Defers to
  *  v1's resolveServerBand by default for shadow-mode parity, but lets

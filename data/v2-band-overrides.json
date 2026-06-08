@@ -1,0 +1,13 @@
+{
+  "$comment": "v2 band calibration overrides. Loaded by server-handlers/v2/kernel.ts at module load. Keyed by '<company-lower>|<role-normalized>|<level-lower>'. role-normalized: 'senior product designer' → 'senior-pd', 'sr software engineer' → 'senior-swe'. Every entry MUST cite a `source`. Uncited entries are rejected by the loader.",
+  "$schema_version": 1,
+  "overrides": {
+    "flipkart|senior-pd|senior": {
+      "initialOffer": 38,
+      "maxStretch": 50,
+      "walkAway": 30,
+      "hasEquity": true,
+      "source": "Glassdoor + Levels.fyi Flipkart Senior PD median, 2026-Q2"
+    }
+  }
+}
