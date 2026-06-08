@@ -2920,7 +2920,32 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * (a specific number anchor). Real recruiters open with a discovery
    * question, not an anchor; F2 substitutes if the LLM tries to anchor
    * anyway. */
-  if (state.phase === "opening") {
+  /* AUDIT-3 Fix C (2026-06-08) — mid-session discovery for tier-1 slots.
+   *
+   * Production symptom: bot stops asking discovery questions after the
+   * phase advances past "opening", even when critical tier-1 slots
+   * (currentCtc, target) are still unanswered. Audit case: candidate
+   * gives a partial disclosure that flips highestOfferMade indirectly
+   * (e.g. via a target volunteer that auto-promotes phase), the
+   * discovery branch then never re-fires, and the bot never recovers
+   * the missing tier-1 fact.
+   *
+   * Gate widened from `phase === "opening"` to also include
+   * range-disclosure and probe-expectations IF either tier-1 slot is
+   * still empty. Tier-2 slots (notice, competing, value-proof) are
+   * deliberately NOT re-asked post-opening — switching back to those
+   * after an anchor is on the table reads as scripted/jarring. */
+  const tier1Missing =
+    state.discoveryChecklist != null &&
+    (state.discoveryChecklist.currentCtcAnswered !== true ||
+      state.discoveryChecklist.targetAnswered !== true);
+  if (
+    state.phase === "opening" ||
+    ((state.phase === "range-disclosure" ||
+      state.phase === "probe-expectations") &&
+      tier1Missing &&
+      state.highestOfferMade === 0)
+  ) {
     if (
       state.discoveryStage === "discovery" &&
       state.discoveryChecklist != null
