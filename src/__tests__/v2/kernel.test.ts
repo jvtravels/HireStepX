@@ -169,6 +169,56 @@ describe("v2 kernel — post-acceptance lockdown", () => {
     expect(state.verbalAcceptanceTurn).not.toBeNull();
   });
 
+  /* Hinglish / Indian-English-recruiter register. Real candidates
+   * mix Hindi commit-verbs into the negotiation cadence; the
+   * English-only set misses them. All four are post-anchor so the
+   * gate is safe. */
+  it("Hinglish accept: 'chalo done 44 LPA par' (post-anchor)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "anchor at 40", tool: "propose_anchor", lpa: 40 },
+      { role: "candidate", text: "chalo done 44 LPA par" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+    expect(legalTools(state)).toEqual(["close_recap"]);
+  });
+
+  it("Hinglish accept: '44 LPA chalega' (post-anchor)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "anchor at 40", tool: "propose_anchor", lpa: 40 },
+      { role: "candidate", text: "44 LPA chalega" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+  });
+
+  it("Hinglish accept: 'theek hai, ho jayega' (post-anchor)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "anchor at 40", tool: "propose_anchor", lpa: 40 },
+      { role: "candidate", text: "theek hai, ho jayega" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+  });
+
+  it("Hinglish accept: 'haan 44 LPA pe le lete hain' (post-anchor)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "anchor at 40", tool: "propose_anchor", lpa: 40 },
+      { role: "candidate", text: "haan 44 LPA pe le lete hain" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+  });
+
+  it("Hinglish guard: 'chalo' alone pre-anchor does NOT misfire (no commit phrasing yet)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current CTC?", tool: "ask_discovery" },
+      { role: "candidate", text: "chalo" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).toBeNull();
+  });
+
   it("conversational accept does NOT misfire on early-turn CTC disclosure ('yes my current CTC is 32 LPA' at T1 — no anchor yet)", () => {
     /* This is the false-positive guard. Pre-anchor, conversational
      * patterns are ignored — only STRICT 'I accept' fires. */

@@ -125,6 +125,7 @@ const STRICT_ACCEPTANCE_PATTERNS: RegExp[] = [
 ];
 
 const CONVERSATIONAL_ACCEPTANCE_PATTERNS: RegExp[] = [
+  /* English-register conversational accepts (PD #2 fixture). */
   /* "keep base as 44 LPA" / "keep the base at 44" / "keep 44 as base" */
   /\bkeep\s+(?:the\s+)?(?:base\s+)?(?:at\s+|as\s+)?\d+(?:\.\d+)?\s*(?:l|lpa)?\b(?:[^.]{0,30}\bas\s+base\b)?/i,
   /* "44 LPA as base" / "44 as base" */
@@ -134,6 +135,26 @@ const CONVERSATIONAL_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\bwould\s+work\s+for\s+me\b/i,
   /* "yes / sure / ok + LPA number" — only safe post-anchor */
   /^\s*(?:yes|yeah|yep|sure|ok(?:ay)?|great|done)\b[^.]{0,80}\b\d+(?:\.\d+)?\s*(?:l|lpa)\b/i,
+
+  /* Hinglish / Indian-English-recruiter register accepts. These are
+   * the phrasings real Indian candidates use in negotiation calls
+   * that the English-only set misses entirely. Post-anchor gating
+   * keeps these safe — "chalega" or "done" outside the negotiation
+   * cadence doesn't reach this branch. */
+  /* "chalo done" / "chalo theek hai" / "chalo karte hain" — let's go */
+  /\bchalo\s+(?:done|theek\s+hai|kar(?:o|te\s+hain?)|finalize)/i,
+  /* "le lete hain" / "le lo" — we'll take it / take it */
+  /\ble\s+(?:lete\s+hain?|lo|liya)\b/i,
+  /* "X chalega" / "44 LPA chalega" — X will work */
+  /\b(?:\d+(?:\.\d+)?\s*(?:l|lpa|lakhs?)\s+)?chalega\b/i,
+  /* "done hai" / "ok hai" / "theek hai" — done / ok / fine */
+  /\b(?:done|theek|sahi|pakka)\s+hai\b/i,
+  /* "ho jayega" / "X par ho jayega" — will be done / done at X */
+  /\bho\s+jaye?ga\b/i,
+  /* "X par done" / "X par karo" / "X par finalize" — close at X */
+  /\b\d+(?:\.\d+)?\s*(?:l|lpa|lakhs?)?\s+par\s+(?:done|karo|finalize|kar\s+lete)/i,
+  /* "haan / han + X LPA" — yes + number, Hindi affirmative */
+  /\bha(?:a)?n\b[^.]{0,40}\b\d+(?:\.\d+)?\s*(?:l|lpa|lakhs?)\b/i,
 ];
 
 const TARGET_PATTERNS: RegExp[] = [

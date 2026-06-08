@@ -312,6 +312,26 @@ export function executeTool(
           reason: "ask_discovery cannot contain an LPA number — use propose_anchor",
         };
       }
+      /* Single-sentence rule. The PD #2 T8 monologue ("...The clawback
+       * is typically 12 months pro-rata.") was a discovery question
+       * with an unsolicited policy assertion tacked on. Discovery is
+       * ONE question — no multi-clause declaratives. We allow a
+       * single trailing '?' and reject any mid-string '. ' or '! '
+       * that signals a second sentence. 200-char hard cap on top. */
+      if (q.length > 200) {
+        return {
+          ok: false,
+          reason: "ask_discovery must be a single short question (>200 chars suggests a monologue)",
+        };
+      }
+      /* Strip a trailing terminal punctuation before checking interior. */
+      const interior = q.replace(/[?.!]+\s*$/, "");
+      if (/[.!?]\s+\S/.test(interior)) {
+        return {
+          ok: false,
+          reason: "ask_discovery must be a single sentence — no embedded policy assertions or follow-on claims",
+        };
+      }
       return { ok: true, canonical: q.endsWith("?") ? q : `${q}?`, tool: "ask_discovery" };
     }
   }
