@@ -54,6 +54,12 @@ import {
 } from "./_move-spec";
 import { clawbackForCompany } from "./_joining-bonus-clawback";
 import { sessionJitter } from "./_session-jitter";
+import {
+  CompoundMoveSpec,
+  IncompatibleCompoundFrameError,
+  classifyPivotByAction,
+  type AnswerFrame,
+} from "./_compound-move-spec";
 
 /* ARCH-C2a (2026-06-08) — env-flag gated wiring of the typed MoveSpec
  * layer (Commit 1) into the live response path. When OFF (default),
@@ -926,11 +932,37 @@ async function generateAnswerToCandidate(
      * counter, etc.). Compose hedge + canonical-followup so the move
      * still ships AND the hallucinated facts stay out of the prose. */
     if (SEQUENCE_CRITICAL_KINDS.has(action.kind)) {
-      const composed = composeAnswerWithPivot(
-        FACT_GROUNDING_HEDGE,
-        canonicalFollowup,
-      );
-      return shipDefer(composed, "fact-grounding-failed+seqcrit-pivot");
+      /* ARCH-C2b (2026-06-08) — gate the compose through CompoundMoveSpec.
+       * If the planner's pivot is close-recap or commit-requiring, hedging
+       * IN THE SAME TURN telegraphs that the anchor / close isn't real.
+       * On refusal, ship the canonical pivot alone (planner's escalation
+       * wins, hallucinated facts still excluded). */
+      try {
+        const compound = new CompoundMoveSpec(
+          "hedge",
+          classifyPivotByAction(action),
+          FACT_GROUNDING_HEDGE,
+          canonicalFollowup,
+        );
+        return shipDefer(compound.render(), "fact-grounding-failed+seqcrit-pivot");
+      } catch (err) {
+        if (err instanceof IncompatibleCompoundFrameError) {
+          void captureServerEvent(
+            "negotiation_compound_movespec_refused",
+            state.sessionId ?? "unknown",
+            {
+              actionKind: action.kind,
+              answerFrame: err.answerFrame,
+              pivotFrame: err.pivotFrame,
+              phase: state.phase,
+              turnIndex: state.turnIndex,
+              site: "fact-grounding-hedge+seqcrit-pivot",
+            },
+          );
+          return shipDefer(canonicalFollowup, "compound-refused-hedge+commit");
+        }
+        throw err;
+      }
     }
     return shipDefer(
       FACT_GROUNDING_HEDGE,
@@ -995,7 +1027,39 @@ async function generateAnswerToCandidate(
    * discovery / anchor / counter drift. Reactive followups and pure-
    * info disclosures are not appended (the LLM answer IS the action). */
   if (SEQUENCE_CRITICAL_KINDS.has(action.kind)) {
-    const composed = composeAnswerWithPivot(answer, canonicalFollowup);
+    /* ARCH-C2b (2026-06-08) — frame-compatibility gate before compose.
+     * If the LLM's answer reads as a defer or hedge AND the planner's
+     * pivot is close-recap or commit-requiring, the two frames
+     * contradict — ship the pivot alone. Neutral answers compose as
+     * before (no behavior change for the common case). */
+    const answerFrame: AnswerFrame = classifyLlmAnswerFrame(answer);
+    const pivotFrame = classifyPivotByAction(action);
+    let composed: string;
+    try {
+      composed = new CompoundMoveSpec(
+        answerFrame,
+        pivotFrame,
+        answer,
+        canonicalFollowup,
+      ).render();
+    } catch (err) {
+      if (err instanceof IncompatibleCompoundFrameError) {
+        void captureServerEvent(
+          "negotiation_compound_movespec_refused",
+          state.sessionId ?? "unknown",
+          {
+            actionKind: action.kind,
+            answerFrame: err.answerFrame,
+            pivotFrame: err.pivotFrame,
+            phase: state.phase,
+            turnIndex: state.turnIndex,
+            site: "llm-answer+seqcrit-pivot",
+          },
+        );
+        return shipDefer(canonicalFollowup, "compound-refused-answer+pivot");
+      }
+      throw err;
+    }
     /* AUDIT-W02 D3 compose-answer-pivot-validation-gap (2026-06-08) —
      * the LLM answer and the canonical pivot each pass their own
      * validators, but COMBINED prose can blow the sentence-length cap
@@ -1030,14 +1094,32 @@ const SEQUENCE_CRITICAL_KINDS: ReadonlySet<NextAction["kind"]> = new Set<NextAct
   "calibrated-surprise-lowball",
 ]);
 
-/* AUDIT-3 Fix #1 helper — soft pivot connector. Keeps the answer
- * recruiter-grade rather than mashing two sentences together. */
-function composeAnswerWithPivot(answer: string, canonicalFollowup: string): string {
-  const trimmed = answer.trim().replace(/[.!?]*$/, ".");
-  const pivot = canonicalFollowup.trim();
-  if (!pivot) return trimmed;
-  return `${trimmed} ${pivot}`;
+/* ARCH-C2b (2026-06-08) — surface-level classifier for the LLM's
+ * answer text. Used to detect when the LLM has produced a defer- or
+ * hedge-shaped reply that would contradict a sequence-critical pivot.
+ *
+ * Cheap regex on the first ~80 chars; favors precision over recall —
+ * a missed hedge falls through to the existing compose path (which is
+ * the legacy behavior), so a false negative is no worse than today.
+ * A false POSITIVE would drop the LLM's answer text; the planner pivot
+ * still ships, so the candidate still gets a useful response. */
+const ANSWER_DEFER_RE =
+  /^\s*(?:i'?ll\s+(?:come\s+back|revert|get\s+back|circle\s+back)|let\s+me\s+(?:come\s+back|revert|get\s+back|circle\s+back)|coming\s+back\s+to\s+you)/i;
+const ANSWER_HEDGE_RE =
+  /^\s*(?:let\s+me\s+(?:confirm|check|verify)\s+(?:with|that))/i;
+
+function classifyLlmAnswerFrame(answer: string): AnswerFrame {
+  const head = (answer || "").slice(0, 120);
+  if (ANSWER_HEDGE_RE.test(head)) return "hedge";
+  if (ANSWER_DEFER_RE.test(head)) return "defer";
+  return "neutral";
 }
+
+/* AUDIT-3 Fix #1 helper (retired ARCH-C2b, 2026-06-08) — the soft
+ * pivot connector now lives in CompoundMoveSpec.render() so the join
+ * shape and the frame-compatibility gate are co-located. The two
+ * compose sites in this file go through CompoundMoveSpec; this stub
+ * remains only as a docstring marker for the historical site. */
 
 /** PDF#36 Fix A1 (2026-05-19) — leading-ack-rotation loop detector.
  *  Same normalize logic as the negotiate-turn boundary guard: strip an
