@@ -166,7 +166,15 @@ async function main() {
             label: r.scenario.label,
             score: r.scorecard.score,
             allPassed: r.scorecard.allPassed,
-            verdicts: r.scorecard.verdicts,
+            /* AUDIT-2 Gap 4 (2026-06-08) — flatten embedded newlines in
+             * verdict reason strings. Some verdicts (e.g. discovery-
+             * before-anchor, decisionlog-fully-mapped) build multi-line
+             * reasons that render as escaped `\n` in JSON but break
+             * grep/jq one-line filters downstream. Strip to spaces. */
+            verdicts: r.scorecard.verdicts.map((v) => ({
+              ...v,
+              reason: v.reason.replace(/\s*\n\s*/g, " ").trim(),
+            })),
           })),
         },
         null,

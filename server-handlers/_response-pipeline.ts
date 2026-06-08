@@ -509,6 +509,26 @@ async function generateRestyledCanonical(
 
   const validation = validateRestyle(canonical, restyled, state, action);
   if (!validation.valid) {
+    /* AUDIT-2 Gap 5 (2026-06-08) — telemetry for prose-antipattern
+     * rejections. Mirrors meta_directive_leak / prompt_artifact_leak
+     * capture so we can track how often the runtime guard fires and
+     * which pattern is leaking. Restricted to prose-antipattern-leak
+     * so existing reasons (fact-gap, internal-defer-leak, etc.) keep
+     * their existing surface; other reasons already have their own
+     * downstream emit sites. */
+    if (validation.reason === "prose-antipattern-leak") {
+      void captureServerEvent(
+        "negotiation_pipeline_prose_antipattern_leak",
+        state.sessionId ?? "unknown",
+        {
+          actionKind: action.kind,
+          phase: state.phase,
+          turnIndex: state.turnIndex,
+          textSample: restyled.slice(0, 200),
+          patternIds: detectProseAntipatterns(restyled).map((h) => h.id).join(","),
+        },
+      );
+    }
     return {
       text: canonical,
       source: "canonical-fallback",
