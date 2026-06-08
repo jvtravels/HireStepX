@@ -213,9 +213,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-base": 20,
       "component-variable": 4,
       "component-equity": 12,
-      /* AUDIT-2 deferred: turn-2 "Targeting 36 cash + meaningful equity"
-       * has no LPA unit on the 36 → salary-span finder skips it. Real
-       * parser gap; tracked but not blocked. */
+      "target-ctc": 36,
       "notice-period-days": 60,
     },
   },
@@ -553,10 +551,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-equity",
     ],
     expectedDisclosures: {
-      /* AUDIT-2 deferred: "I'm a SE3 at Myntra, 24 LPA." — the
-       * CURRENT_CUES.left `\bi.?m\s+at\b` requires "I'm at" adjacent;
-       * the role/company between ("a SE3 at Myntra") breaks it. The
-       * parser falls through with no current-cue. Real gap; deferred. */
+      "current-ctc": 24,
       "target-ctc": 32,
       "notice-period-days": 45,
     },

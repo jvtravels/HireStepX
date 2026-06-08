@@ -196,7 +196,12 @@ describe("PDF #18 replay — disclosure-tracker source recorded in ledger", () =
     const noticeVal = getFact(s.ledger!, "notice-period-days");
     if (noticeVal != null) {
       expect(noticeVal).toBe(90);
-      expect(getFactSource(s.ledger!, "notice-period-days")).toBe("disclosure-tracker");
+      /* AUDIT-2 (2026-06-08) — notice-period-days now dual-writes from
+       * the main parser as well as the disclosure-tracker fallback, so
+       * either source is acceptable. Pre-AUDIT-2 only disclosure-tracker
+       * wrote it. */
+      const source = getFactSource(s.ledger!, "notice-period-days");
+      expect(source === "main-parser" || source === "disclosure-tracker").toBe(true);
     }
   });
 });

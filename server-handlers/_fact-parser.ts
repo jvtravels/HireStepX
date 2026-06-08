@@ -60,7 +60,13 @@ export interface SalaryFact {
  * unambiguous (digits + space + "LP" + one letter), so accept any
  * `LP[A-Z]` token as LPA — there is no real word in the Indian-HR
  * register that this collides with. */
-const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|crores?|cr|lacs?|lacks|lax|L";
+/* AUDIT-2 follow-up (2026-06-08): "cash" added as a unit synonym for
+ * the equity-heavy disclosure pattern "Targeting 36 cash + meaningful
+ * equity". In the Indian-tech register, "N cash" inside a comp context
+ * means "N LPA in cash comp" (distinguishing from equity/ESOP). Bare
+ * numeric extraction maps it to LPA same as "lakhs". Surfaced by the
+ * esop-heavy-comp scenario. */
+const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|crores?|cr|lacs?|lacks|lax|cash|L";
 
 /* STT fragility audit (2026-05-22) — follow-up to LPE fix.
  *
@@ -156,6 +162,9 @@ function normaliseUnit(raw: string | undefined): SalaryUnit {
   if (u === "lpa") return "LPA";
   if (u.startsWith("crore") || u === "cr") return "crore";
   if (u.startsWith("lakh") || u.startsWith("lac") || u === "lacks" || u === "lax" || u === "l") return "lakh";
+  /* AUDIT-2 (2026-06-08): "cash" maps to lakh-equivalent. "36 cash"
+   * in an equity-heavy comp disclosure means "36 LPA cash component". */
+  if (u === "cash") return "lakh";
   /* STT typo tolerance — any 3-char `lp?` shape (lpe / lps / lpp / lpi /
    * lpo / lpu / lpm …) is treated as LPA. Constrained by the regex above
    * to `LP[A-Z]`, so this branch only ever sees the near-miss family. */

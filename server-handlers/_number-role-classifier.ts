@@ -136,6 +136,15 @@ const CURRENT_CUES: CueTable = {
     /\bmy\s+(?:current\s+)?(?:[a-z]+\s+){0,3}(?:package|salary|ctc|comp(?:ensation)?|pay|fitment|fixed|total)\b/i,
     /\bi\s+(?:make|earn|get|draw)\b/i,
     /\bi.?m\s+at\b/i,
+    /* AUDIT-2 follow-up (2026-06-08): role-token between "I'm" and "at"
+     * — "I'm a SE3 at Myntra, 24 LPA". The bare `\bi.?m\s+at\b` cue
+     * requires adjacency; the role token ("a SE3") breaks it. Surfaced
+     * by role-mismatch-needs-clarify scenario. REQUIRES the indefinite
+     * article (a/an) as the lead — without it "I'm anchored at 30 LPA"
+     * and "I'm targeting at least 30 LPA" would also match and steal
+     * the bind from target-cue. With "an?" the pattern only fires on
+     * noun-phrase role tokens. */
+    /\bi.?m\s+an?\s+(?:[a-z0-9]+\s+){0,3}at\s+\w/i,
     /\b(?:earning|drawing|making|getting|take\s+home)\b/i,
     /\btold\s+you(?:\s+(?:already|multiple\s+times|before|many\s+times))?\b/i,
     /\b(?:as|like)\s+i\s+(?:said|mentioned|stated|told\s+you)\b/i,
@@ -151,14 +160,15 @@ const CURRENT_CUES: CueTable = {
   right: [
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
-    /* AUDIT-2 (2026-06-08): "X LPA total" without "CTC" middle. Common
-     * compact disclosure: "Razorpay, 20 LPA total." The LPA unit is
-     * consumed by the salary-span match (span.end sits AFTER "LPA"),
-     * so the right-window the cue is tested against is " total." — the
-     * pattern must match that, not "LPA total". Surfaced by the
-     * fixed-variable-split-disclosure scenario's expectedDisclosures
-     * audit. */
-    /^\s*total\s*[.!?,]/i,
+    /* AUDIT-2 (2026-06-08): the "X LPA total." compact disclosure cue
+     * lives in the LAST_AI_ASKED_*-style fall-through layer in pickRole
+     * (see SENTENCE_FINAL_TOTAL_RE below), NOT here in CURRENT_CUES.
+     * Adding it as a right-cue tied with target-verb left-cues
+     * ("I'm looking for 60 LPA total.") and current incorrectly won the
+     * tiebreak. The fall-through layer only fires when nothing else
+     * scored, which preserves both: S3 "Razorpay, 20 LPA total." binds
+     * to current (no other cue fires) AND PDF30 "I'm looking for 60
+     * LPA total." binds to target (target left-cue wins outright). */
   ],
 };
 
@@ -270,7 +280,7 @@ interface SalarySpan {
  *  ("LPS", "LPP"). The unit shape `[Dd]igits + LP[A-Z]` is unambiguous
  *  in the Indian-HR register; accept the whole family as LPA so the
  *  role-classifier mirrors the fact-parser. */
-const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l|cr|crore)";
+const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l|cr|crore|cash)";
 
 /** LPA-shaped salary number: `[₹]? digits [LPA|lakhs|L|cr|crore]`.
  *  Allows zero whitespace between digit and unit ("24LPA"). */
@@ -474,6 +484,27 @@ function pickRole(
     const competingAnywhere = COMPETING_CUES.left.some((r) => r.test(text));
     if (!currentAnywhere && !competingAnywhere) return "target";
   }
+  /* AUDIT-2 (2026-06-08): "X LPA total." compact-disclosure fall-through.
+   * Runs ONLY when nothing else scored. Tests the right window post-LPA
+   * for sentence-final "total" with punctuation, e.g. "Razorpay, 20 LPA
+   * total." → current. Placed after all other fall-throughs so target-
+   * verb left-cues ("I'm looking for 60 LPA total.") win outright via
+   * the cue table before this fires. */
+  {
+    const right = text.slice(span.end, Math.min(text.length, span.end + 25));
+    if (/^\s*total\s*[.!?,]/i.test(right)) {
+      const targetAnywhere = TARGET_CUES.left.some((r) => r.test(text));
+      const competingAnywhere = COMPETING_CUES.left.some((r) => r.test(text));
+      if (!targetAnywhere && !competingAnywhere) return "current";
+    }
+  }
+  /* AUDIT-2 follow-up (2026-06-08): considered adding an opening-phase
+   * fall-through (bare-number → current) for "Razorpay, 18 LPA." style
+   * cold-opens, but it regressed salary-inflation-history which opens
+   * with parenthesized career history ("started at TCS (4 LPA), moved
+   * to Flipkart (12 LPA)…") — the fall-through bound 4 as current via
+   * first-wins, blocking the real 30 LPA later disclosure. Better-
+   * specific signal needed before re-enabling. Deferred. */
   /* Mark unused for lint quiet — `span` is part of the signature so
    * future scoring rules (e.g. position-aware) can extend without
    * touching call sites. */
