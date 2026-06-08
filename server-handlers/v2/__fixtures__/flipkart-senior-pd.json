@@ -1,0 +1,51 @@
+{
+  "_doc": "V2 regression fixture #1. Real production session from 2026-06-08. Senior Product Designer @ Flipkart, candidate at 32 LPA, target 44 LPA. v1 looped for 14 turns of discovery + a phantom 40 LPA anchor that was abandoned + a terminal defer with no callback. The invariant v2 must enforce: by the time the candidate has explicitly asked for an offer twice and we are past T6, the legal tool set excludes ask_discovery and includes propose_anchor.",
+  "scenario": {
+    "role": "Senior Product Designer",
+    "company": "flipkart",
+    "candidateProfile": {
+      "currentCtcLpa": 32,
+      "baseLpa": 28,
+      "targetLpa": 44,
+      "yoe": 6
+    }
+  },
+  "log": [
+    { "role": "ai", "text": "Thanks for making the time. Let's get straight into it — what's your current CTC — total annual?" },
+    { "role": "candidate", "text": "my current ctc is 32 LPA" },
+    { "role": "ai", "text": "basically, got it on the total — what's the base split?" },
+    { "role": "candidate", "text": "28 LPA or base" },
+    { "role": "ai", "text": "Thanks for that, and on the variable side — how does the performance-linked bonus work in your current side?" },
+    { "role": "candidate", "text": "28 LPA hike" },
+    { "role": "ai", "text": "So tell me — where are you in the process right now, and what's driving this move?" },
+    { "role": "candidate", "text": "" },
+    { "role": "ai", "text": "Let me step back. What part of this conversation would be most useful to dig into next — comp, role scope, timeline, or something else?" },
+    { "role": "candidate", "text": "" },
+    { "role": "ai", "text": "Got it. On the equity side — does your current package include any ESOPs or RSUs?" },
+    { "role": "candidate", "text": "this is salary negotiation so you should give your initial offer" },
+    { "role": "ai", "text": "Thanks for that - how does your current comp ₹32 LPA fit in the local market?" },
+    { "role": "candidate", "text": "no there is no equity" },
+    { "role": "ai", "text": "I want to make sure I'm being useful here. What's the question you actually came to this conversation with?" },
+    { "role": "candidate", "text": "" },
+    { "role": "ai", "text": "Let's keep this focused. Walk me through the current shape of your decision — what's the deciding factor for you right now?" },
+    { "role": "candidate", "text": "" },
+    { "role": "ai", "text": "Thanks for that - how does the ₹40 LPA fitment sound for this grade?" },
+    { "role": "candidate", "text": "you have not yet given initial offer" },
+    { "role": "ai", "text": "Yeah, got it. what justifies it — design system ownership, user-research depth, conversion / retention impact?" },
+    { "role": "candidate", "text": "my expectation is 44 LPA" },
+    { "role": "ai", "text": "Let me see what else we can structure on the fitment." },
+    { "role": "candidate", "text": "as per the current market standards" },
+    { "role": "ai", "text": "On the title side — let me see what we can do about positioning you a level up at the next cycle. Won't commit anything formally now, but these things tend to work themselves out for strong performers." },
+    { "role": "candidate", "text": "sure please let me know" },
+    { "role": "ai", "text": "Let me confirm the exact figure on our side and come back to you before the offer letter." },
+    { "role": "candidate", "text": "can you give me 44 LPA?" }
+  ],
+  "_v1_failures": [
+    "Looped through discovery for 7 turns before any anchor.",
+    "Ignored candidate's first explicit offer-ask at T12 (turn-12 candidate message: 'you should give your initial offer').",
+    "Anchored 40 LPA at T10 with no rationale, then never referenced it again.",
+    "Ignored second explicit offer-ask at T20 ('you have not yet given initial offer').",
+    "Closing turn shipped a vague defer with no callback time ('Let me confirm the exact figure and come back to you').",
+    "Title fluff at T25 (\"positioning you a level up at the next cycle. Won't commit anything formally\")."
+  ]
+}
