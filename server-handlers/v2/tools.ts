@@ -31,25 +31,6 @@ export type ToolCall =
         cost_to_company: string;
         benefit_to_candidate: string;
         asked_in_return: string;
-        /** Required only when lever === "esops". Indian-context equity-
-         *  disclosure trigger (deep-research #12). ESOP grants without
-         *  vest/cliff/strike disclosure are unverifiable promises — a
-         *  ₹10 LPA ESOP grant with a 4-year cliff and an unreachable
-         *  strike is worth zero. The kernel forces the recruiter to
-         *  state the terms that actually determine value. */
-        equity_terms?: {
-          /** Years over which the grant vests. Industry min 2, SEBI
-           *  guidance + market norm 4. */
-          vest_years: number;
-          /** Cliff in years. Companies Act 2013 §62 + SEBI ESOP
-           *  Guidelines mandate a minimum 1-year cliff for Indian
-           *  ESOPs. */
-          cliff_years: number;
-          /** Free-text note that MUST reference the strike basis —
-           *  one of: strike price, FMV, 409A (US RSUs), last round /
-           *  series valuation, or fair market valuation. */
-          strike_or_fmv_note: string;
-        };
       };
     }
   | {
@@ -336,68 +317,9 @@ export function executeTool(
         const premiseFail = validatePremiseChallenge(clause, premiseNumbers);
         if (premiseFail) return { ok: false, reason: premiseFail };
       }
-      /* Equity-disclosure trigger (deep-research #12). When the lever
-       * is `esops`, the LLM MUST provide equity_terms — vest schedule,
-       * cliff, strike/FMV basis. ESOP grants without these are
-       * structurally unverifiable: a "₹10 LPA grant" with a 10-year
-       * cliff at an unreachable strike is worth zero. Indian legal
-       * floor: Companies Act 2013 §62 + SEBI ESOP guidelines mandate
-       * cliff >= 1 year; industry vest min >= 2 years. */
-      let esopsLead = "";
-      if (lever === "esops") {
-        const terms = call.args.equity_terms;
-        if (!terms) {
-          return {
-            ok: false,
-            reason:
-              "concede with lever=esops REQUIRES equity_terms (vest_years, cliff_years, strike_or_fmv_note) — an ESOP grant without disclosed vest/cliff/strike is structurally unverifiable",
-          };
-        }
-        const { vest_years: vy, cliff_years: cy, strike_or_fmv_note: note } = terms;
-        if (!Number.isFinite(vy) || vy < 2 || vy > 10) {
-          return {
-            ok: false,
-            reason: `vest_years ${vy} outside Indian industry norm [2, 10] — typical senior grant is 4 years`,
-          };
-        }
-        if (!Number.isFinite(cy) || cy < 1) {
-          return {
-            ok: false,
-            reason: `cliff_years ${cy} below Indian legal floor of 1 year (Companies Act 2013 §62, SEBI ESOP guidelines)`,
-          };
-        }
-        if (cy >= vy) {
-          return {
-            ok: false,
-            reason: `cliff_years ${cy} must be strictly less than vest_years ${vy} — a cliff at or past vest end is structurally worthless`,
-          };
-        }
-        const noteTrim = (note ?? "").trim();
-        if (noteTrim.length < 10) {
-          return {
-            ok: false,
-            reason:
-              "strike_or_fmv_note must disclose the strike basis (>=10 chars) — strike price, FMV, 409A, last-round valuation, or fair-market basis",
-          };
-        }
-        if (!/(strike|fmv|409\s*a|fair\s+market|last\s+round|series\s+[a-z]|valuation)/i.test(noteTrim)) {
-          return {
-            ok: false,
-            reason:
-              "strike_or_fmv_note must reference one of: strike price, FMV, 409A, last-round valuation, series valuation, or fair-market basis — vague notes are rejected",
-          };
-        }
-        const noteFail = validateGrounding(noteTrim, ctx);
-        if (noteFail) return { ok: false, reason: noteFail };
-        const notePremiseFail = validatePremiseChallenge(noteTrim, premiseNumbers);
-        if (notePremiseFail) return { ok: false, reason: notePremiseFail };
-        esopsLead =
-          `Here's what I can do: layer in ${fmtLpa(amt)} of ESOPs ` +
-          `(${vy}-year vest, ${cy}-year cliff; ${noteTrim.replace(/[.!?,;:]+\s*$/, "")})`;
-      }
       const lead: Record<typeof lever, string> = {
         joining_bonus: `Here's what I can do: a ${fmtLpa(amt)} joining bonus`,
-        esops: esopsLead,
+        esops: `Here's what I can do: layer in ${fmtLpa(amt)} of ESOPs (4-year vest, 1-year cliff)`,
         variable_to_base: `Here's what I can do: shift ${fmtLpa(amt)} from variable into your fixed base`,
         role_uplift: `Here's what I can do: move you to the next band on title (worth about ${fmtLpa(amt)} on next cycle)`,
       };
