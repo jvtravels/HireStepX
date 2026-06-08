@@ -21,6 +21,7 @@ function freshState(extra: Partial<DerivedState> = {}): DerivedState {
     verbalAcceptanceTurn: null,
     mentionedNumbers: [],
     surfacedTopics: [],
+    closedTopics: [],
     ...extra,
   };
 }
@@ -135,5 +136,104 @@ describe("v2 tools — defer_with_callback surfacedTopics gate", () => {
     if (!result.ok) {
       expect(result.reason).toMatch(/surfaced: none/);
     }
+  });
+});
+
+describe("v2 tools — ask_discovery closed-topic gate (Bug #58 T3 fix)", () => {
+  /* Candidate said "24 LPA is base" (= no variable). AI must NOT ask
+   * about variable again. Same for "no rsu/esop" closing esop. */
+  it("rejects asking about variable after candidate closed it", () => {
+    const call: ToolCall = {
+      name: "ask_discovery",
+      args: {
+        topic: "variable",
+        question: "What's the variable component — performance-linked or fixed",
+      },
+    };
+    const result = executeTool(call, BAND, freshState({ closedTopics: ["variable"] }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toMatch(/already closed|redundant/);
+    }
+  });
+
+  it("rejects when the topic arg is generic but the question references the closed topic", () => {
+    /* Defense in depth — LLM passes topic:"package" but asks about ESOP. */
+    const call: ToolCall = {
+      name: "ask_discovery",
+      args: {
+        topic: "package",
+        question: "Do you have any RSUs vesting from your current company",
+      },
+    };
+    const result = executeTool(call, BAND, freshState({ closedTopics: ["esop"] }));
+    expect(result.ok).toBe(false);
+  });
+
+  it("accepts a discovery question on an unrelated topic", () => {
+    const call: ToolCall = {
+      name: "ask_discovery",
+      args: { topic: "timeline", question: "What's your earliest joining date" },
+    };
+    const result = executeTool(call, BAND, freshState({ closedTopics: ["variable", "esop"] }));
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("v2 tools — ask_discovery answer-options rule (Bug #58 T8 fix)", () => {
+  /* T8: AI as recruiter asks "what justifies it — design system
+   * ownership, user-research depth, conversion / retention impact?"
+   * The recruiter offered the candidate three hypothetical justifications
+   * — role-confused. */
+  it("rejects a question that offers 3 comma-separated answer options after an em-dash", () => {
+    const call: ToolCall = {
+      name: "ask_discovery",
+      args: {
+        topic: "justification",
+        question:
+          "what justifies it — design system ownership, user-research depth, conversion / retention impact?",
+      },
+    };
+    const result = executeTool(call, BAND, freshState());
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toMatch(/list of answer options|do not propose/);
+    }
+  });
+
+  it("rejects a colon-introduced option list", () => {
+    const call: ToolCall = {
+      name: "ask_discovery",
+      args: {
+        topic: "scope",
+        question: "what shapes your scope: team size, reporting line, charter",
+      },
+    };
+    const result = executeTool(call, BAND, freshState());
+    expect(result.ok).toBe(false);
+  });
+
+  it("accepts a question with a single comma after an em-dash (clarifier, not a list)", () => {
+    const call: ToolCall = {
+      name: "ask_discovery",
+      args: {
+        topic: "scope",
+        question: "tell me — what's the scope you own today",
+      },
+    };
+    const result = executeTool(call, BAND, freshState());
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts a normal multi-clause question with no list separator", () => {
+    const call: ToolCall = {
+      name: "ask_discovery",
+      args: {
+        topic: "ctc",
+        question: "what's your current CTC including base and any variable",
+      },
+    };
+    const result = executeTool(call, BAND, freshState());
+    expect(result.ok).toBe(true);
   });
 });

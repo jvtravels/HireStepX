@@ -110,6 +110,7 @@ export async function tryRunV2Live(
       verbalAcceptanceTurn: state.verbalAcceptanceTurn ?? null,
       mentionedNumbers: [],
       surfacedTopics: [],
+      closedTopics: [],
     };
     const verdict = assertHonestMove(result, railState);
 

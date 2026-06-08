@@ -280,6 +280,7 @@ describe("v2 rail — catches discovery shipped after offer-ask pressure", () =>
         verbalAcceptanceTurn: null,
         mentionedNumbers: [],
         surfacedTopics: [],
+        closedTopics: [],
       },
     );
     expect(verdict.pass).toBe(true);

@@ -341,3 +341,92 @@ describe("v2 kernel — surfacedTopics (defer-on-fabricated-topic fix)", () => {
     expect(state.surfacedTopics).toContain("base");
   });
 });
+
+describe("v2 kernel — closedTopics derivation (Bug #58 T3 fix)", () => {
+  it("closes 'variable' when candidate says 'no variable'", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current CTC?", tool: "ask_discovery" },
+      { role: "candidate", text: "24 LPA, no variable" },
+    ];
+    const state = deriveState(log);
+    expect(state.closedTopics).toContain("variable");
+  });
+
+  it("closes 'variable' when candidate says 'all base' / 'everything is base'", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "split?", tool: "ask_discovery" },
+      { role: "candidate", text: "Entire 24 LPA is base" },
+    ];
+    const state = deriveState(log);
+    expect(state.closedTopics).toContain("variable");
+  });
+
+  it("closes 'esop' when candidate says 'no rsu/esop'", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "any equity?", tool: "ask_discovery" },
+      { role: "candidate", text: "no rsu/esop on my current package" },
+    ];
+    const state = deriveState(log);
+    expect(state.closedTopics).toContain("esop");
+  });
+
+  it("closes 'esop' when candidate says 'no equity'", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "any equity?", tool: "ask_discovery" },
+      { role: "candidate", text: "no equity right now" },
+    ];
+    const state = deriveState(log);
+    expect(state.closedTopics).toContain("esop");
+  });
+
+  it("does NOT close a topic on a non-negative answer", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "what's your variable?", tool: "ask_discovery" },
+      { role: "candidate", text: "variable is around 4 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.closedTopics).not.toContain("variable");
+  });
+
+  it("accumulates closes across turns (Bug #58 sequence: 'is base' then 'no esop')", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "ctc?", tool: "ask_discovery" },
+      { role: "candidate", text: "my current ctc is 24 LPA" },
+      { role: "ai", text: "split?", tool: "ask_discovery" },
+      { role: "candidate", text: "24 LPA, base only" },
+      { role: "ai", text: "esops?", tool: "ask_discovery" },
+      { role: "candidate", text: "no rsu/esop" },
+    ];
+    const state = deriveState(log);
+    expect(state.closedTopics).toEqual(expect.arrayContaining(["variable", "esop"]));
+  });
+});
+
+describe("v2 kernel — acceptance pattern: 'liked the offer' (Bug #58 T10/T11 fix)", () => {
+  it("recognizes 'I liked the offer' as acceptance, post-anchor", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "we can come in at 32 LPA", tool: "propose_anchor", lpa: 32 },
+      { role: "candidate", text: "I liked the offer" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+  });
+
+  it("recognizes 'I liked your offer' as acceptance, post-anchor", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "we can come in at 32 LPA", tool: "propose_anchor", lpa: 32 },
+      { role: "candidate", text: "I liked your offer" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+  });
+
+  it("does NOT recognize 'liked' BEFORE an anchor (could be casual chatter)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "hello", tool: "ask_discovery" },
+      { role: "candidate", text: "I liked your previous offer at the other company" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).toBeNull();
+  });
+});

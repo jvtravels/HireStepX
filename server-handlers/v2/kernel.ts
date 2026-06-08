@@ -88,6 +88,13 @@ export interface DerivedState {
    *  never mentioned, turning defer into a fluff exit. Drawn from a fixed
    *  topic bank, keyword-matched against candidate turns. */
   surfacedTopics: string[];
+  /** Topics the candidate has DEFINITIVELY CLOSED — disclosed a "no" or
+   *  zero-value answer. ask_discovery on a closed topic is rejected: the
+   *  Bug #58 T3 failure mode where the AI asks "variable side — perf-linked
+   *  or fixed?" right after the candidate said "24 LPA is base" (= no
+   *  variable). Closing is conservative: only fires on unambiguous
+   *  negation patterns from the candidate. */
+  closedTopics: string[];
   /** All LPA-shaped numbers the candidate has mentioned across the
    *  log (current CTC, base split, variable, joining bonus floats,
    *  target, etc.). The grounding set: any LPA scalar a v2 tool
@@ -161,7 +168,44 @@ const CONVERSATIONAL_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\b\d+(?:\.\d+)?\s*(?:l|lpa|lakhs?)?\s+par\s+(?:done|karo|finalize|kar\s+lete)/i,
   /* "haan / han + X LPA" — yes + number, Hindi affirmative */
   /\bha(?:a)?n\b[^.]{0,40}\b\d+(?:\.\d+)?\s*(?:l|lpa|lakhs?)\b/i,
+
+  /* Bug #58 T10/T11: "I liked the offer", "I liked your offer",
+   * "love this number". Real candidate-side accept register the
+   * other patterns missed. Post-anchor gated. */
+  /\bi\s+(?:liked?|loved?|loving|liking)\s+(?:the|your|this|that)\s+(?:offer|number|figure|package|proposal|fitment)\b/i,
 ];
+
+/** Closed-topic detection bank. Each key is a topic-bank key (must
+ *  exist in TOPIC_BANK). Each value is a list of regex patterns that
+ *  count as the candidate having DEFINITIVELY CLOSED that topic with
+ *  a "no" or zero-value answer.
+ *
+ *  Closing is conservative — only patterns where the candidate's
+ *  negative answer is unambiguous. "I'm not sure about variable" is
+ *  NOT closing (still needs discovery). "no variable" IS closing.
+ *
+ *  Tested against Bug #58: candidate says "24 LPA is base" then "no
+ *  rsu/esop" — both `variable` and `esop` close. */
+const CLOSED_TOPIC_PATTERNS: Record<string, RegExp[]> = {
+  variable: [
+    /\bno\s+variable\b/i,
+    /\bzero\s+variable\b/i,
+    /\bwithout\s+(?:any\s+)?variable\b/i,
+    /\bno\s+(?:perf(?:ormance)?\s+)?bonus\b/i,
+    /\b(?:all|entire|fully?|whole|everything|completely)\s+(?:is\s+|in\s+)?(?:the\s+)?base\b/i,
+    /\b(?:entire|all|whole)\s+\d+(?:\.\d+)?\s*(?:l|lpa|lakhs?)?\s+(?:is\s+)?(?:the\s+)?base\b/i,
+    /\bbase\s+only\b/i,
+    /\bonly\s+(?:the\s+)?base\b/i,
+    /\bno\s+incentive\b/i,
+    /\bflat\s+(?:base|salary)\b/i,
+  ],
+  esop: [
+    /\bno\s+(?:esops?|stock\s+options?|rsus?|stock\s+grants?|stock|equity)\b/i,
+    /\bdon'?t\s+have\s+(?:any\s+)?(?:esops?|stock\s+options?|rsus?|stock|equity)\b/i,
+    /\b(?:zero|0)\s+(?:esops?|rsus?|equity|stock)\b/i,
+    /\bwithout\s+(?:any\s+)?(?:esops?|rsus?|equity|stock)\b/i,
+  ],
+};
 
 /** Topic bank for surfacedTopics. Keys are the canonical topic strings
  *  defer_with_callback must use; values are case-insensitive regex
@@ -312,6 +356,7 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
   let verbalAcceptanceTurn: number | null = null;
   const mentionedNumbers: number[] = [];
   const surfacedTopicsSet = new Set<string>();
+  const closedTopicsSet = new Set<string>();
 
   for (let i = 0; i < log.length; i++) {
     const turn = log[i];
@@ -347,6 +392,17 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
      * can't defer on a topic the candidate didn't raise. */
     for (const [topic, pat] of Object.entries(TOPIC_BANK)) {
       if (pat.test(turn.text)) surfacedTopicsSet.add(topic);
+    }
+    /* Topic CLOSING — the candidate gave a definitive "no" / zero
+     * answer on this topic. Once closed, stays closed. ask_discovery
+     * on a closed topic is illegal — Bug #58 T3 fix. */
+    for (const [topic, pats] of Object.entries(CLOSED_TOPIC_PATTERNS)) {
+      for (const pat of pats) {
+        if (pat.test(turn.text)) {
+          closedTopicsSet.add(topic);
+          break;
+        }
+      }
     }
 
     for (const pat of OFFER_ASK_PATTERNS) {
@@ -393,13 +449,32 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
     verbalAcceptanceTurn,
     mentionedNumbers,
     surfacedTopics: Array.from(surfacedTopicsSet),
+    closedTopics: Array.from(closedTopicsSet),
   };
+}
+
+/** Closed-topic keys — exposed so tools.ts and tests can validate against
+ *  the canonical list rather than duplicating the bank. */
+export function _v2ClosedTopicKeys(): string[] {
+  return Object.keys(CLOSED_TOPIC_PATTERNS);
 }
 
 /** Topic-bank keys — exposed so tools.ts and tests can validate against
  *  the canonical list rather than duplicating the bank. */
 export function _v2TopicBankKeys(): string[] {
   return Object.keys(TOPIC_BANK);
+}
+
+/** Does the given text reference the given topic, by the topic bank's
+ *  own regex? Used by tools.ts to catch the case where the LLM passes
+ *  a generic `topic:"package"` arg but writes a question about ESOPs —
+ *  the literal substring "esop" isn't in "RSUs vesting", but the topic
+ *  bank's `esop` regex matches "RSUs". Single source of truth: the
+ *  TOPIC_BANK regex defines what counts as referencing a topic. */
+export function topicReferencedIn(text: string, topic: string): boolean {
+  const pat = TOPIC_BANK[topic];
+  if (!pat) return false;
+  return pat.test(text);
 }
 
 /** The gate. Returns the set of tools the orchestrator may call on

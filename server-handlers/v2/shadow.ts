@@ -165,6 +165,7 @@ async function runShadowInner(
      * honest-move classification. */
     mentionedNumbers: [],
     surfacedTopics: [],
+    closedTopics: [],
   });
 
   /* "Diverged" heuristic: v1 shipped no number AND v2 shipped a

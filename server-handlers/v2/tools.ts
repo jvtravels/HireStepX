@@ -12,7 +12,7 @@
  * the LLM never produces prose. */
 
 import type { NegotiationBand } from "../_negotiation-kernel";
-import type { DerivedState, ToolName } from "./kernel";
+import { topicReferencedIn, type DerivedState, type ToolName } from "./kernel";
 
 export type ToolCall =
   | { name: "propose_anchor"; args: { number_lpa: number; rationale: string } }
@@ -320,8 +320,31 @@ export function executeTool(
 
     case "ask_discovery": {
       const q = (call.args.question ?? "").trim();
+      const topicArg = (call.args.topic ?? "").trim().toLowerCase();
       if (q.length < 5) {
         return { ok: false, reason: "discovery question is empty" };
+      }
+      /* Closed-topic gate (Bug #58 T3). If the candidate has definitively
+       * closed this topic ("24 LPA is base" closes `variable`; "no esop"
+       * closes `esop`), asking about it again is structurally redundant
+       * and credibility-eroding. Match the AI's topic arg against any
+       * closed-topic key by substring (case-insensitive). The QUESTION
+       * text is also scanned — the LLM may pass a generic `topic:"base"`
+       * arg while the question asks about variable. */
+      const closed = state.closedTopics ?? [];
+      for (const ct of closed) {
+        const ctLc = ct.toLowerCase();
+        if (
+          topicArg.includes(ctLc) ||
+          ctLc.includes(topicArg) ||
+          topicReferencedIn(q, ct) ||
+          topicReferencedIn(topicArg, ct)
+        ) {
+          return {
+            ok: false,
+            reason: `topic "${ct}" was already closed by the candidate (closed: ${closed.join(", ")}) — asking again is redundant`,
+          };
+        }
       }
       /* Strip any LPA number from the question — discovery is for
        * gathering info, not for sneaking anchors past the gate. */
@@ -330,6 +353,27 @@ export function executeTool(
           ok: false,
           reason: "ask_discovery cannot contain an LPA number — use propose_anchor",
         };
+      }
+      /* Answer-options rule (Bug #58 T8). The recruiter does not offer
+       * the candidate a list of hypothetical justifications. Pattern:
+       * the question contains a list separator (em-dash, en-dash, colon,
+       * or " - ") followed by 2+ comma-separated items before the
+       * terminal punctuation. The exact T8 shape:
+       *   "what justifies it — design system ownership, user-research
+       *    depth, conversion / retention impact?"
+       * A single comma after a separator is fine ("tell me — what's
+       * your base, and any variable on top?"). Two or more is the
+       * recruiter answering for the candidate. */
+      const sepMatch = q.match(/[—–:]|\s-\s/);
+      if (sepMatch && typeof sepMatch.index === "number") {
+        const after = q.slice(sepMatch.index);
+        const commaCount = (after.match(/,/g) ?? []).length;
+        if (commaCount >= 2) {
+          return {
+            ok: false,
+            reason: "ask_discovery cannot offer the candidate a list of answer options — ask one open question, do not propose the justifications for them",
+          };
+        }
       }
       /* Single-sentence rule. The PD #2 T8 monologue ("...The clawback
        * is typically 12 months pro-rata.") was a discovery question
