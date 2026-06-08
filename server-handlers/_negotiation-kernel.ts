@@ -6770,12 +6770,11 @@ export function findOutOfBandNumber(text: string, band: NegotiationBand): number
 
 /** Verbatim-repeat check. The LLM occasionally regenerates the
  *  identical question two turns in a row; this catches it without
- *  relying on Jaccard tuning. Returns true when both texts have a
- *  matching 8-content-word prefix AND both have at least that many
- *  content words. The min-length guard avoids false positives on very
- *  short closers like "Sounds good." which legitimately repeat across
- *  turns. */
-const FINGERPRINT_WORDS = 8;
+ *  relying on Jaccard tuning. AUDIT-W02 C1 (2026-06-08) unified this
+ *  with the pipeline's `normalizeForLoopCompare` full-text key —
+ *  both layers now agree on what counts as a repeat. The min-content-
+ *  words guard below avoids false positives on very short closers
+ *  like "Sounds good." which legitimately repeat across turns. */
 const MIN_CONTENT_WORDS = 4;
 
 /* PDF#38 BUG-C (2026-05-20) — widen the verbatim-repeat look-back from
