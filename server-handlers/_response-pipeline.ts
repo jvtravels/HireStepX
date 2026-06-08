@@ -47,6 +47,34 @@ import type { QuestionIntent } from "./_question-intent";
 import { captureServerEvent } from "./_posthog";
 import { detectProseAntipatterns } from "./_prose-antipatterns";
 import { enforceOfferAskInvariant } from "./_output-rail-offer-ask";
+import {
+  adaptAndRender,
+  SUPPORTED_MOVE_SPEC_KINDS,
+  type MoveSpecHelpers,
+} from "./_move-spec";
+import { clawbackForCompany } from "./_joining-bonus-clawback";
+import { sessionJitter } from "./_session-jitter";
+
+/* ARCH-C2a (2026-06-08) — env-flag gated wiring of the typed MoveSpec
+ * layer (Commit 1) into the live response path. When OFF (default),
+ * the pipeline behaves exactly as before. When ON, for the six
+ * SUPPORTED_MOVE_SPEC_KINDS the canonical string is rendered from the
+ * typed spec instead of the legacy prose dispatcher — output is
+ * byte-identical (parity tests gate this) so the LLM restyle stage
+ * downstream is unaffected. Flag flip can be reverted instantly. */
+const MOVE_SPEC_ENABLED = (): boolean =>
+  process.env.NEGOTIATION_MOVE_SPEC_ENABLED === "1";
+
+/* MoveSpec helpers bundle — same shape the parity tests use. Persona
+ * lookups read state fields directly (mirrors the un-exported helpers
+ * in _canonical-prose.ts). */
+const MOVE_SPEC_HELPERS: MoveSpecHelpers = {
+  roundPersona: (state) =>
+    state.multiRoundEnabled === true ? state.roundPersona ?? null : null,
+  sectorPersona: (state) => state.recruiterSectorPersona ?? "default",
+  clawbackForCompany,
+  sessionJitter,
+};
 
 /* PDF#42 BUG-B (2026-05-21) — set of reactive-followup topics whose
  * canonical prose is authored in planWiredProfileFollowup (planner)
@@ -91,7 +119,7 @@ export type GenerateAiTextFn = (
 
 export interface PipelineResult {
   text: string;
-  source: "restyle" | "canonical-fallback" | "answer-restyle" | "answer-canonical";
+  source: "restyle" | "canonical-fallback" | "answer-restyle" | "answer-canonical" | "movespec";
   action: NextAction;
   move: AiMove;
   /** Diagnostic reason when the restyle was rejected (telemetry). */
@@ -544,6 +572,53 @@ async function generateRestyledCanonical(
   generateAiText: GenerateAiTextFn,
 ): Promise<PipelineResult> {
   let canonical: string;
+  let movespecRouted = false;
+  /* ARCH-C2a (2026-06-08) — env-flag gated MoveSpec route. For the
+   * six SUPPORTED_MOVE_SPEC_KINDS, render canonical from the typed
+   * spec. Parity tests (src/__tests__/moveSpec.parity.test.ts) gate
+   * byte-identical output, so the LLM restyle stage below is
+   * indifferent to which path produced the string. On any throw (e.g.
+   * hard-gate constructor invariant), fall back silently to the
+   * legacy prose path so a malformed spec can never kill a turn. */
+  if (MOVE_SPEC_ENABLED() && SUPPORTED_MOVE_SPEC_KINDS.has(action.kind)) {
+    try {
+      const rendered = adaptAndRender(action, state, MOVE_SPEC_HELPERS);
+      if (rendered != null && rendered.length > 0) {
+        canonical = rendered;
+        movespecRouted = true;
+        void captureServerEvent(
+          "negotiation_movespec_routed",
+          state.sessionId ?? "unknown",
+          { actionKind: action.kind, phase: state.phase, turnIndex: state.turnIndex },
+        );
+      } else {
+        canonical = renderCanonicalProse(action, state);
+      }
+    } catch (specErr) {
+      void captureServerEvent(
+        "negotiation_movespec_fallback",
+        state.sessionId ?? "unknown",
+        {
+          actionKind: action.kind,
+          phase: state.phase,
+          turnIndex: state.turnIndex,
+          error: specErr instanceof Error ? specErr.message : String(specErr),
+        },
+      );
+      try {
+        canonical = renderCanonicalProse(action, state);
+      } catch (err) {
+        void err;
+        return {
+          text: "Let me come back to you in a moment.",
+          source: "canonical-fallback",
+          action,
+          move,
+          rejectReason: "canonical-render-threw",
+        };
+      }
+    }
+  } else {
   try {
     canonical = renderCanonicalProse(action, state);
   } catch (err) {
@@ -558,6 +633,7 @@ async function generateRestyledCanonical(
       move,
       rejectReason: "canonical-render-threw",
     };
+  }
   }
 
   const { system, user } = buildRestylePrompt(canonical, state);
@@ -645,7 +721,7 @@ async function generateRestyledCanonical(
       rejectReason: "leading-ack-repeat-restyle",
     };
   }
-  return { text: restyled, source: "restyle", action, move };
+  return { text: restyled, source: movespecRouted ? "movespec" : "restyle", action, move };
 }
 
 /** BUG-4 (PDF#24, 2026-05-16) — every defer path used to ship the
