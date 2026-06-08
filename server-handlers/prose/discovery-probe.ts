@@ -43,7 +43,13 @@ export function proseDiscoveryProbe(
   } else if (item === "expectedCtcFixedVariableSplit") {
     probe = "On the expected side — how would you want the split between fixed and variable to land?";
   } else if (item === "noticePeriod") {
-    probe = "What's the notice period at your current company? Any scope for buyout there?";
+    /* AUDIT-3 Fix #2 (2026-06-08): split the compound probe into a
+     * single question. The old prose asked "notice + buyout" in one
+     * breath; candidates answered one, the other was silently logged
+     * unsatisfied, and the planner thought notice was satisfied while
+     * buyout drifted. Now: ask notice cleanly; buyout becomes its own
+     * follow-up turn when state warrants. */
+    probe = "What's your notice period at the current company?";
   } else if (item === "competingOffers") {
     probe = "Are you actively in process with other companies right now?";
   } else if (item === "valueProof") {

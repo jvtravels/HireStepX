@@ -792,7 +792,56 @@ async function generateAnswerToCandidate(
     const defer = buildDeferText("validation", [], canonicalFollowup);
     return shipDefer(defer, "verbatim-repeat-answer");
   }
+  /* AUDIT-3 Fix #1 (2026-06-08) — answer + planner pivot.
+   *
+   * Production symptom: when the candidate sneaks a question into their
+   * reply, the bot answers it and silently DROPS the planner's chosen
+   * next move (a queued discovery probe, anchor, counter, etc.). Next
+   * turn the planner re-plans against an unchanged askedTopics ledger,
+   * so the discovery cascade stutters / repeats / drifts. Users
+   * perceive this as "asks random questions" and "off-script."
+   *
+   * Fix: when the planner picked a sequence-critical move for THIS turn,
+   * append the deterministic canonical-followup to the LLM's answer so
+   * the planner's move actually ships in the user-visible turn. The
+   * followup is the planner's canonical prose — already number-safe and
+   * contract-honoring; piping it through the LLM (restyle) would risk
+   * the same answer-path validator blindspots that motivate this fix.
+   *
+   * SEQUENCE_CRITICAL_KINDS = the action kinds whose loss causes
+   * discovery / anchor / counter drift. Reactive followups and pure-
+   * info disclosures are not appended (the LLM answer IS the action). */
+  if (SEQUENCE_CRITICAL_KINDS.has(action.kind)) {
+    const composed = composeAnswerWithPivot(answer, canonicalFollowup);
+    return { text: composed, source: "answer-restyle", action, move };
+  }
   return { text: answer, source: "answer-restyle", action, move };
+}
+
+/* AUDIT-3 Fix #1 (2026-06-08) — action kinds whose planner choice must
+ * ship even when the candidate asked a question this turn. Excludes
+ * reactive-followup (answer IS the action) and pure info-disclosure
+ * (compensation-summary etc., the LLM answer handles it). */
+const SEQUENCE_CRITICAL_KINDS: ReadonlySet<NextAction["kind"]> = new Set<NextAction["kind"]>([
+  "discovery-probe",
+  "anchor-with-offer",
+  "band-anchor-with-rationale",
+  "counter-offer",
+  "probe-justification",
+  "open-with-offer",
+  "comparative-anchoring",
+  "internal-equity-defense",
+  "panel-approval-stall",
+  "calibrated-surprise-lowball",
+]);
+
+/* AUDIT-3 Fix #1 helper — soft pivot connector. Keeps the answer
+ * recruiter-grade rather than mashing two sentences together. */
+function composeAnswerWithPivot(answer: string, canonicalFollowup: string): string {
+  const trimmed = answer.trim().replace(/[.!?]*$/, ".");
+  const pivot = canonicalFollowup.trim();
+  if (!pivot) return trimmed;
+  return `${trimmed} ${pivot}`;
 }
 
 /** PDF#36 Fix A1 (2026-05-19) — leading-ack-rotation loop detector.

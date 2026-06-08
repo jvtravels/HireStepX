@@ -237,7 +237,12 @@ describe("PDF#36 B4 — answer-path sentence-length cap", () => {
     };
     const shortAnswer = "PF is the standard 12% contribution. UAN portability is handled on joining.";
     const result = await generateBotReply(stateWithAsk, async () => shortAnswer, "What's the PF rule?");
-    expect(result.text).toBe(shortAnswer);
+    /* AUDIT-3 Fix #1 (2026-06-08): when the planner has a sequence-critical
+     * move queued for this turn (e.g. a discovery probe), the answer path
+     * now appends the canonical follow-up so the planner's move actually
+     * ships. The short-answer body is still preserved verbatim — that's
+     * the cap test invariant. Update the assertion to contains. */
+    expect(result.text).toContain(shortAnswer);
   });
 });
 
