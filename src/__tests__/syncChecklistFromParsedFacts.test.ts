@@ -19,7 +19,10 @@ import {
 const BAND: NegotiationBand = { initialOffer: 20, maxStretch: 28, walkAway: 16, hasEquity: true };
 
 describe("syncChecklistFromParsedFacts (unit)", () => {
-  it("volunteered notice period flips noticePeriodAnswered", () => {
+  it("volunteered notice period DAYS flips noticePeriodAnswered", () => {
+    /* AUDIT-2 follow-up (2026-06-08): notice umbrella flag (joining-bonus,
+     * buyout, LWD) no longer flips noticePeriodAnswered — only actual
+     * stated days do. Production fix for "bot never asks notice". */
     const next = syncChecklistFromParsedFacts(EMPTY_DISCOVERY_CHECKLIST, {
       target: null,
       currentCtc: null,
@@ -27,6 +30,7 @@ describe("syncChecklistFromParsedFacts (unit)", () => {
       signalsCompetingExistsWithoutNumber: false,
       competingOfferDetailHasAny: false,
       noticeJoiningHasAny: true,
+      noticePeriodDays: 90,
       fixedVariableSplitHasBoth: false,
       valueProofSignal: false,
     });
@@ -34,6 +38,23 @@ describe("syncChecklistFromParsedFacts (unit)", () => {
     /* Untouched flags remain false. */
     expect(next.currentCtcAnswered).toBe(false);
     expect(next.targetAnswered).toBe(false);
+  });
+
+  it("notice umbrella signals WITHOUT days do NOT flip noticePeriodAnswered", () => {
+    /* AUDIT-2 follow-up — the production bug. Joining-bonus ask alone
+     * was satisfying the notice slot. Now it shouldn't. */
+    const next = syncChecklistFromParsedFacts(EMPTY_DISCOVERY_CHECKLIST, {
+      target: null,
+      currentCtc: null,
+      competing: null,
+      signalsCompetingExistsWithoutNumber: false,
+      competingOfferDetailHasAny: false,
+      noticeJoiningHasAny: true,
+      noticePeriodDays: null,
+      fixedVariableSplitHasBoth: false,
+      valueProofSignal: false,
+    });
+    expect(next.noticePeriodAnswered).toBe(false);
   });
 
   it("volunteered fixed+variable split flips fixedVariableSplitAnswered (umbrella flag)", () => {
@@ -44,6 +65,7 @@ describe("syncChecklistFromParsedFacts (unit)", () => {
       signalsCompetingExistsWithoutNumber: false,
       competingOfferDetailHasAny: false,
       noticeJoiningHasAny: false,
+      noticePeriodDays: null,
       fixedVariableSplitHasBoth: true,
       valueProofSignal: false,
     });
@@ -60,6 +82,7 @@ describe("syncChecklistFromParsedFacts (unit)", () => {
       signalsCompetingExistsWithoutNumber: false,
       competingOfferDetailHasAny: false,
       noticeJoiningHasAny: false,
+      noticePeriodDays: null,
       fixedVariableSplitHasBoth: false,
       valueProofSignal: false,
     });

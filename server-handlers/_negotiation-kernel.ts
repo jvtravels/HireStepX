@@ -5423,6 +5423,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       signalsCompetingExistsWithoutNumber: parsed.signalsCompetingExistsWithoutNumber,
       competingOfferDetailHasAny: parsed.competingOfferDetail.hasAny,
       noticeJoiningHasAny: parsed.noticeJoining.hasAny,
+      noticePeriodDays: parsed.noticeJoining.noticePeriodDays,
       fixedVariableSplitHasBoth,
       valueProofSignal,
     });

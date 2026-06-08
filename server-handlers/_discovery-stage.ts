@@ -166,6 +166,12 @@ export interface SyncFactsInput {
   /** Parsed notice / joining signal — any of notice days, buyout,
    *  early-join, LWD text, joining-bonus-ask. */
   noticeJoiningHasAny: boolean;
+  /* AUDIT-2 follow-up (2026-06-08): actual notice-period days, not the
+   * coarse `hasAny` umbrella. The latter flipped TRUE on joining-bonus
+   * asks, buyout requests, or LWD text — none of which answer "what's
+   * your notice period in days?". Treating those as answers caused the
+   * planner to skip the notice probe entirely. */
+  noticePeriodDays: number | null;
   /** Parsed component breakdown carrying BOTH base and variable for
    *  the fixed/variable split flag. */
   fixedVariableSplitHasBoth: boolean;
@@ -195,8 +201,12 @@ export function syncChecklistFromParsedFacts(
     next.targetAnswered = true;
     changed = true;
   }
-  /* noticePeriodAnswered ← any notice / joining signal */
-  if (facts.noticeJoiningHasAny && !next.noticePeriodAnswered) {
+  /* noticePeriodAnswered ← actual notice DAYS were stated, OR a clear
+   * surrogate signal (buyout requested, early-join preferred, LWD text).
+   * Joining-bonus ask alone is NOT enough — that's a comp lever, not
+   * an answer to "what's your notice period?". AUDIT-2 follow-up fix
+   * for "bot never asks about notice" in production. */
+  if (facts.noticePeriodDays != null && !next.noticePeriodAnswered) {
     next.noticePeriodAnswered = true;
     changed = true;
   }
