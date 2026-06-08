@@ -267,11 +267,32 @@ async function generateBotReplyInner(
       typeof askedIntent === "string" && askedIntent.length > 0 && ledger
         ? ledger[askedIntent]
         : undefined;
+    /* AUDIT-W02 D4 audit-3-fix-1-reconfirm-outdated (2026-06-08) —
+     * skip reconfirm if the prior answer was given in a pre-anchor
+     * phase and we're now in a post-anchor phase. The answer's framing
+     * (rationale, context) is stale once the band is on the table. */
+    const PRE_ANCHOR_PHASES_D4 = new Set<NegotiationPhase>([
+      "opening" as NegotiationPhase,
+      "probe-expectations" as NegotiationPhase,
+      "discovery" as NegotiationPhase,
+      "gather-context" as NegotiationPhase,
+    ]);
+    const POST_ANCHOR_PHASES_D4 = new Set<NegotiationPhase>([
+      "anchoring" as NegotiationPhase,
+      "counter-offer" as NegotiationPhase,
+      "closing-push" as NegotiationPhase,
+    ]);
+    const priorPhase = (priorAnswer as { phase?: NegotiationPhase } | undefined)?.phase;
+    const reconfirmOutdated =
+      priorPhase != null &&
+      PRE_ANCHOR_PHASES_D4.has(priorPhase) &&
+      POST_ANCHOR_PHASES_D4.has(state.phase);
     if (
       priorAnswer &&
       typeof priorAnswer.answerText === "string" &&
       priorAnswer.answerText.length > 0 &&
-      priorAnswer.turn < state.turnIndex
+      priorAnswer.turn < state.turnIndex &&
+      !reconfirmOutdated
     ) {
       result = {
         text: `Just to reconfirm — ${priorAnswer.answerText}`,
@@ -646,19 +667,36 @@ async function generateRestyledCanonical(
  *
  *  In all branches we ship the canonical follow-up so the negotiation
  *  keeps moving — the difference is only the lead-in. */
-function buildDeferLead(reason: "fact-gap" | "llm-throw" | "empty-llm" | "validation", missing: string[]): string {
+/* AUDIT-W02 D2 (2026-06-08) — validation sub-reason for lead rotation.
+ * The validation branch was called from 3 sites (meta-leak, too-long,
+ * verbatim) with identical lead phrasing, producing duplicate defer
+ * prose when two of those tripped on consecutive turns. Sub-tag the
+ * branch and rotate the lead. Additive — default sub-tag preserves
+ * legacy phrasing. */
+type ValidationSubReason = "meta-leak" | "too-long" | "verbatim" | "other";
+function buildDeferLead(
+  reason: "fact-gap" | "llm-throw" | "empty-llm" | "validation",
+  missing: string[],
+  validationSubReason: ValidationSubReason = "other",
+): string {
   if (reason === "fact-gap") {
     const topic = missing[0] ?? "";
-    /* Indian-recruiter idiom — honest about what we don't know
-     * without committing to "circle back" / "get back to you". */
     if (topic === "workMode")     return "On the work mode, I'll keep that one open for now —";
     if (topic === "joiningWindow") return "On the joining side, that's something we firm up post-offer —";
     if (topic === "teamSize")     return "Team size is something the hiring manager will walk you through in the next round —";
     if (topic === "reportingTo")  return "Reporting line gets confirmed once your grade is finalised —";
     return "Let me check on that and come back to you —";
   }
-  /* llm-throw / empty-llm / validation — quietly fall through to the
-   * planned next move; no fake-callback theatre. */
+  if (reason === "validation") {
+    switch (validationSubReason) {
+      case "meta-leak": return "Coming back to the structure —";
+      case "too-long":  return "To keep this tight —";
+      case "verbatim":  return "Picking up from where we were —";
+      case "other":     return "Let me reframe —";
+    }
+  }
+  /* llm-throw / empty-llm — quietly fall through to the planned next
+   * move; no fake-callback theatre. */
   return "Coming back to the structure —";
 }
 
@@ -666,8 +704,18 @@ function buildDeferText(
   reason: "fact-gap" | "llm-throw" | "empty-llm" | "validation",
   missing: string[],
   canonicalFollowup: string,
+  validationSubReason: ValidationSubReason = "other",
 ): string {
-  const lead = buildDeferLead(reason, missing);
+  const lead = buildDeferLead(reason, missing, validationSubReason);
+  /* AUDIT-W02 D8 (2026-06-08) — if canonicalFollowup is the fallback
+   * stub ("Let me come back to that / you …"), prefixing it with a
+   * lead produces double-defer prose like "Coming back to the structure
+   * — let me come back to that …". Ship just the lead when the
+   * canonical is the empty stub. */
+  const STUB_RE = /^let me come back to (?:that|you)/i;
+  if (!canonicalFollowup || STUB_RE.test(canonicalFollowup.trim())) {
+    return lead.replace(/\s*—\s*$/, ".");
+  }
   return `${lead} ${lowercaseFirst(canonicalFollowup)}`;
 }
 
@@ -704,18 +752,14 @@ async function generateAnswerToCandidate(
    * negotiate it separately from the CTC" when the wired canonical
    * was "Understood that fixed weight matters to you — is that to
    * bank against EMIs or to anchor the next appraisal cycle?". */
-  if (
+  /* AUDIT-W02 D5 wired-profile-repeat-fence (2026-06-08) — defer this
+   * early-return until after shipDefer is defined so the canonical
+   * follow-up runs through the verbatim / leading-ack loop guards.
+   * Without this, two wired-profile turns in a row shipped byte-
+   * identical canonical text. See block below for the actual return. */
+  const wiredProfileEarlyReturn =
     action.kind === "reactive-followup" &&
-    WIRED_PROFILE_TOPICS.has(action.topic)
-  ) {
-    return {
-      text: canonicalFollowup,
-      source: "canonical-fallback",
-      action,
-      move,
-      rejectReason: `wired-profile-topic:${action.topic}`,
-    };
-  }
+    WIRED_PROFILE_TOPICS.has(action.topic);
 
   /* PDF#42 BUG-C (2026-05-21) — every defer early-return below used to
    * ship its built text without running the loop guards, which meant a
@@ -744,6 +788,12 @@ async function generateAnswerToCandidate(
     }
     return { text: defer, source: "answer-canonical", action, move, rejectReason };
   };
+
+  /* AUDIT-W02 D5 (2026-06-08) — route wired-profile canonical through
+   * shipDefer so loop guards fire. */
+  if (wiredProfileEarlyReturn) {
+    return shipDefer(canonicalFollowup, `wired-profile-topic:${(action as { topic?: string }).topic ?? "?"}`);
+  }
 
   /* When a fact is missing → graceful defer + resume planned line.
    * No LLM call needed — the deterministic answer is more reliable. */
@@ -793,6 +843,19 @@ async function generateAnswerToCandidate(
    * `validateAnswer`, not instead of it. */
   const grounding = validateAnswerGrounding(answer, factPack);
   if (!grounding.ok) {
+    /* AUDIT-W02 GROUNDING_HEDGE_DROPS_SEQUENCE_CRITICAL (2026-06-08) —
+     * if the planner picked a sequence-critical move this turn, we must
+     * still ship the canonical pivot or the planner's escalation is
+     * silently dropped (panel-approval-stall, discovery-probe, anchor,
+     * counter, etc.). Compose hedge + canonical-followup so the move
+     * still ships AND the hallucinated facts stay out of the prose. */
+    if (SEQUENCE_CRITICAL_KINDS.has(action.kind)) {
+      const composed = composeAnswerWithPivot(
+        FACT_GROUNDING_HEDGE,
+        canonicalFollowup,
+      );
+      return shipDefer(composed, "fact-grounding-failed+seqcrit-pivot");
+    }
     return shipDefer(
       FACT_GROUNDING_HEDGE,
       grounding.reason ?? "fact-grounding-failed",
@@ -804,7 +867,7 @@ async function generateAnswerToCandidate(
    * deterministic defer + canonical follow-up here so the candidate
    * gets a usable answer surface, not the boundary's generic line. */
   if (META_DIRECTIVE_TOKENS_RE.test(answer)) {
-    const defer = buildDeferText("validation", [], canonicalFollowup);
+    const defer = buildDeferText("validation", [], canonicalFollowup, "meta-leak");
     return shipDefer(defer, "meta-directive-leak-answer");
   }
   /* PDF#36 Fix B4 (2026-05-19) — answer-path sentence-length cap.
@@ -812,7 +875,7 @@ async function generateAnswerToCandidate(
    * path historically did not, so kitchen-sink 50+ word single-
    * sentence answers shipped unchecked. Same cap as restyle. */
   if (checkSentenceLength(answer) !== "ok") {
-    const defer = buildDeferText("validation", [], canonicalFollowup);
+    const defer = buildDeferText("validation", [], canonicalFollowup, "too-long");
     return shipDefer(defer, "answer-too-long");
   }
   /* PDF#36 Fix A1 (2026-05-19) — leading-ack-rotation loop guard on
@@ -833,7 +896,7 @@ async function generateAnswerToCandidate(
    * path. If the LLM's answer is identical to the prior AI turn, defer
    * to the deterministic canonical follow-up instead. */
   if (isVerbatimRepeat(answer, state)) {
-    const defer = buildDeferText("validation", [], canonicalFollowup);
+    const defer = buildDeferText("validation", [], canonicalFollowup, "verbatim");
     return shipDefer(defer, "verbatim-repeat-answer");
   }
   /* AUDIT-3 Fix #1 (2026-06-08) — answer + planner pivot.
@@ -857,6 +920,18 @@ async function generateAnswerToCandidate(
    * info disclosures are not appended (the LLM answer IS the action). */
   if (SEQUENCE_CRITICAL_KINDS.has(action.kind)) {
     const composed = composeAnswerWithPivot(answer, canonicalFollowup);
+    /* AUDIT-W02 D3 compose-answer-pivot-validation-gap (2026-06-08) —
+     * the LLM answer and the canonical pivot each pass their own
+     * validators, but COMBINED prose can blow the sentence-length cap
+     * or stack idioms past the per-utterance budget. Re-run the cheap
+     * post-checks; on failure, ship the canonical pivot alone so we
+     * lose the LLM's surface but still ship the planner's escalation. */
+    if (
+      checkSentenceLength(composed) !== "ok" ||
+      countPreferredIdioms(composed) > Math.max(countPreferredIdioms(answer), countPreferredIdioms(canonicalFollowup)) + 1
+    ) {
+      return shipDefer(canonicalFollowup, "composed-validation-fail");
+    }
     return { text: composed, source: "answer-restyle", action, move };
   }
   return { text: answer, source: "answer-restyle", action, move };
@@ -895,8 +970,10 @@ function composeAnswerWithPivot(answer: string, canonicalFollowup: string): stri
  *  leading ack token. */
 const LEADING_ACK_RE_PIPELINE =
   /^\s*(?:got it|okay|ok|right|sure|alright|noted|understood|fair enough|fine|i hear you)[\s,.\-—:;]+/i;
-function normalizeForLoopCompare(s: string): string {
-  return (s || "")
+/* AUDIT-W02 C1 (2026-06-08) — exported so the kernel's isVerbatimRepeat
+ * can share the same normalized-comparison logic. */
+export function normalizeForLoopCompare(s: string): string {
+  const base = (s || "")
     .trim()
     .toLowerCase()
     .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
@@ -907,8 +984,20 @@ function normalizeForLoopCompare(s: string): string {
     .replace(/[\u2014\u2013,;:]+/g, " ")
     .replace(/\s+-\s+/g, " ")
     .replace(LEADING_ACK_RE_PIPELINE, "")
-    .replace(/\s+/g, " ")
-    .replace(/[.!?]+$/, "");
+    .replace(/\s+/g, " ");
+  /* AUDIT-W02 C3 (2026-06-08) — also strip a leading ack from the
+   * FIRST SENTENCE so "Got it. <body>" vs "Okay. <body>" normalize the
+   * same. Split on the first [.!?] boundary, strip ack from sentence 0,
+   * rejoin. */
+  const sentMatch = /^([^.!?]*?)([.!?])\s+([\s\S]*)$/.exec(base);
+  let composed: string;
+  if (sentMatch) {
+    const firstSent = sentMatch[1].replace(LEADING_ACK_RE_PIPELINE, "").trim();
+    composed = (firstSent + sentMatch[2] + " " + sentMatch[3]).replace(/\s+/g, " ").trim();
+  } else {
+    composed = base;
+  }
+  return composed.replace(/[.!?]+$/, "");
 }
 export function isLeadingAckRotationRepeat(
   proposed: string,
@@ -1719,12 +1808,30 @@ export function validateRestyle(
    * Buckets are coarse — "thanks/appreciate", "fair/understood",
    * "got it/noted", "okay/alright/right", "sure/of course" — so
    * synonymous restylings within a bucket still trip the gate. */
+  /* AUDIT-W02 NP-005 C4 (2026-06-08) — opener-bucket overcollapse. Each
+   * bucket previously matched 2-4 distinct ack phrasings; "Fair enough",
+   * "Understood", "That's fair" all collapsed into one "fair" key, so
+   * three DIFFERENT acks shared a bucket and tripped same-opener-thrice
+   * even though no individual phrase actually repeated three times.
+   * Split each family into per-phrase keys so only an EXACT phrase
+   * repeating thrice fires the rule. */
   const OPENER_BUCKET_RE: Array<{ key: string; re: RegExp }> = [
-    { key: "thanks", re: /^\s*(?:thanks?(?:\s+(?:you|so much))?\s+(?:for|on)|appreciate(?:\s+(?:that|the|you))?)\b/i },
-    { key: "fair", re: /^\s*(?:fair\s+enough|understood|that[\s']?s\s+fair|makes\s+sense)\b/i },
-    { key: "gotit", re: /^\s*(?:got\s+it|noted)\b/i },
-    { key: "okay", re: /^\s*(?:okay|ok|alright|right)[\s,.\-—:;]/i },
-    { key: "sure", re: /^\s*(?:sure|of\s+course|absolutely)\b/i },
+    { key: "thanks-for",     re: /^\s*thanks?(?:\s+(?:you|so much))?\s+for\b/i },
+    { key: "thanks-on",      re: /^\s*thanks?(?:\s+(?:you|so much))?\s+on\b/i },
+    { key: "appreciate",     re: /^\s*appreciate(?:\s+(?:that|the|you))?\b/i },
+    { key: "fair-enough",    re: /^\s*fair\s+enough\b/i },
+    { key: "understood",     re: /^\s*understood\b/i },
+    { key: "thats-fair",     re: /^\s*that[\s']?s\s+fair\b/i },
+    { key: "makes-sense",    re: /^\s*makes\s+sense\b/i },
+    { key: "got-it",         re: /^\s*got\s+it\b/i },
+    { key: "noted",          re: /^\s*noted\b/i },
+    { key: "okay",           re: /^\s*okay[\s,.\-—:;]/i },
+    { key: "ok",             re: /^\s*ok[\s,.\-—:;]/i },
+    { key: "alright",        re: /^\s*alright[\s,.\-—:;]/i },
+    { key: "right",          re: /^\s*right[\s,.\-—:;]/i },
+    { key: "sure",           re: /^\s*sure\b/i },
+    { key: "of-course",      re: /^\s*of\s+course\b/i },
+    { key: "absolutely",     re: /^\s*absolutely\b/i },
   ];
   function classifyOpenerBucket(s: string): string | null {
     const t = (s || "").trim();

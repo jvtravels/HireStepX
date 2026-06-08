@@ -736,7 +736,11 @@ export function applyPersonaToBand(
       out.maxStretch = base.maxStretch - 1;
       break;
     case "founder":
-      out.hasEquity = true;
+      /* AUDIT-W02 EQUITY-LEAK-FOUNDER-TCS (2026-06-08) — persona must NOT
+       * invent comp components. Only carry equity through if the base band
+       * already grants it; founder bias = magnitude/lever choice WITHIN
+       * the band, never new components (e.g. TCS has hasEquity=false). */
+      if (base.hasEquity === true) out.hasEquity = true;
       out.maxStretch = base.maxStretch + 0.5;
       break;
     case "agency":
@@ -1192,7 +1196,10 @@ export interface NegotiationState {
    *
    * Optional for back-compat with in-flight sessions serialized before
    * this field shipped; deserializeState backfills to {}. */
-  answeredQuestionLedger?: Partial<Record<QuestionIntent, { answerText: string; turn: number }>>;
+  /* AUDIT-W02 D4 (2026-06-08) — `phase` is tagged on write so consumers
+   * can skip a reconfirm if the prior answer was given in a pre-anchor
+   * phase but the current phase is post-anchor (the answer is stale). */
+  answeredQuestionLedger?: Partial<Record<QuestionIntent, { answerText: string; turn: number; phase?: NegotiationPhase }>>;
 
   /* Fix 3 (2026-05-15) — Promise-keeping enforcement. Open promises the
    * bot has made but not yet delivered ("we can discuss X", "let me share
@@ -5434,9 +5441,13 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      request), record the turn so the move-picker can stiffen. We do
      NOT transition to terminal `accepted` in this case; the candidate
      re-opened. */
+  /* AUDIT-W02 BUG-5 (2026-06-08) — info-only post-accept asks (e.g.
+   * "what's the joining date again?") must NOT count as renegotiation.
+   * Renege requires a new target number or a new lever ask, not a
+   * clarifying info question. Removed parsed.infoAsked.length signal. */
   const reneging =
     next.verbalAcceptanceTurn != null &&
-    (parsed.target != null || parsed.vossTactics.includes("sign-today-bundle") || parsed.infoAsked.length > 0) &&
+    (parsed.target != null || parsed.vossTactics.includes("sign-today-bundle")) &&
     !parsed.signalsAcceptance;
   if (reneging) {
     /* Sticky — leave verbalAcceptanceTurn set so the move-picker keeps
@@ -5767,6 +5778,12 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
 
 function derivePhaseInner(state: NegotiationState): NegotiationPhase {
   if (isTerminalPhase(state.phase)) return state.phase;
+  /* AUDIT-W02 BUG-2 (2026-06-08) — walked-away precedence. If the
+   * session already walked away, that terminal state must stick even
+   * if turnIndex >= maxTurns; otherwise the stalemate branch below
+   * silently overwrites a walked-away terminal phase set on the same
+   * candidate turn (asymmetric vs accepted, which is sticky). */
+  if (state.walkedAwayAtTurn != null) return "walked-away";
   if (state.turnIndex >= state.maxTurns) return "stalemate";
 
   /* C2 — active phase gating (2026-05-15). Narrow trigger: when the
@@ -5999,7 +6016,14 @@ export { pickAiMove } from "./_kernel-move-picker";
  * costing both tokens and cache-hit rate without measurably improving
  * thread coherence (the kernel brief carries the derived facts; the log
  * is just for natural-language reference resolution). */
-export const CONVERSATION_LOG_CAP = 4;
+/* AUDIT-W02 C2 (2026-06-08) — bumped from 4 to 16 (8 AI + 8 candidate
+ * turns). The pipeline's dedup loop and the kernel's verbatim-repeat
+ * guard both scan recent AI utterances; a 4-cap means they only see the
+ * last 2 AI turns and miss real repeats from earlier in the same
+ * session. No other consumer relies on the prior cap of 4 — orphanExports
+ * and kernelChaos tests just assert the constant exists and that the log
+ * stays bounded. */
+export const CONVERSATION_LOG_CAP = 16;
 
 /** DEBT #2 (2026-05-21) — answeredQuestionLedger cardinality cap.
  *  Sized comfortably above the current QuestionIntent enum (~20
@@ -6106,9 +6130,10 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   const askedIntent = state.lastTurnDelta?.candidateAskedQuestion?.intent;
   if (typeof askedIntent === "string" && askedIntent.length > 0 && aiText && aiText.trim().length > 0) {
     const priorLedger = state.answeredQuestionLedger ?? {};
-    const merged: Partial<Record<QuestionIntent, { answerText: string; turn: number }>> = {
+    /* AUDIT-W02 D4 (2026-06-08) — stamp phase at write-time. */
+    const merged: Partial<Record<QuestionIntent, { answerText: string; turn: number; phase?: NegotiationPhase }>> = {
       ...priorLedger,
-      [askedIntent]: { answerText: aiText, turn: state.turnIndex },
+      [askedIntent]: { answerText: aiText, turn: state.turnIndex, phase: state.phase },
     };
     /* DEBT #2 (2026-05-21) — bounded cardinality. The QuestionIntent
      * enum has ~20 buckets so in practice the ledger should never grow
@@ -6616,6 +6641,19 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   if (move.lever === "joining-bonus" && typeof move.joiningBonusAmount === "number") {
     next.lastJoiningBonusOffered = move.joiningBonusAmount;
   }
+  /* AUDIT-W02 BUG-4 (2026-06-08) — when a hold-firm move ships final-
+   * language ("final offer", "best and final", "final number/position"),
+   * increment the assertion counter so downstream recruiter-critique +
+   * close-walkaway logic can detect the "asserted thrice, candidate
+   * still hasn't moved" pattern. The counter was previously left to
+   * drift, so escalation gates never tripped. */
+  if (move.lever === "hold-firm" && typeof aiText === "string") {
+    const FINAL_LANGUAGE_RE =
+      /\b(final\s+(?:offer|number|position)|best\s+(?:we\s+can\s+do|and\s+final))\b/i;
+    if (FINAL_LANGUAGE_RE.test(aiText)) {
+      next.finalOfferAssertedCount = state.finalOfferAssertedCount + 1;
+    }
+  }
   /* Re-derive phase only for non-terminal states (terminal phases set
      by candidate-turn don't get clobbered by an AI move that follows). */
   if (!isTerminalPhase(next.phase)) {
@@ -6748,25 +6786,30 @@ const MIN_CONTENT_WORDS = 4;
  * candidate text against EACH of the last 3 AI utterances. */
 const VERBATIM_LOOKBACK_AI_TURNS = 3;
 
+/* AUDIT-W02 C1 (2026-06-08) — unified repeat detection. Previously this
+ * function used a coarse 8-word stop-word-stripped fingerprint while the
+ * pipeline's `normalizeForLoopCompare` used a full-text normalized
+ * comparison, so each layer saw "repeats" the other missed. Now both
+ * use the pipeline's normalize, giving the kernel + pipeline a single
+ * canonical key. We require minimum normalized-token count to avoid
+ * matching short stubs ("Got it. Thanks.") as repeats. Signature
+ * preserved so existing callers don't change. */
+import { normalizeForLoopCompare as _normalizeForLoopCompare } from "./_response-pipeline";
 export function isVerbatimRepeat(text: string, state: NegotiationState): boolean {
   if (!text) return false;
-  const a = fingerprintWords(text);
-  if (a.length < MIN_CONTENT_WORDS) return false;
-  const aKey = a.slice(0, FINGERPRINT_WORDS).join(" ");
+  const aKey = _normalizeForLoopCompare(text);
+  if (aKey.split(/\s+/).filter(Boolean).length < MIN_CONTENT_WORDS) return false;
   const log = state.conversationLog ?? [];
   const aiTurns: string[] = [];
   for (let i = log.length - 1; i >= 0 && aiTurns.length < VERBATIM_LOOKBACK_AI_TURNS; i--) {
     const entry = log[i];
     if (entry && entry.speaker === "ai" && entry.text) aiTurns.push(entry.text);
   }
-  /* Back-compat: also consult state.lastAiText when conversationLog is
-   * empty (early-init sessions / unit-test fixtures that don't seed
-   * the log). */
   if (aiTurns.length === 0 && state.lastAiText) aiTurns.push(state.lastAiText);
   for (const prior of aiTurns) {
-    const b = fingerprintWords(prior);
-    if (b.length < MIN_CONTENT_WORDS) continue;
-    if (b.slice(0, FINGERPRINT_WORDS).join(" ") === aKey) return true;
+    const bKey = _normalizeForLoopCompare(prior);
+    if (bKey.split(/\s+/).filter(Boolean).length < MIN_CONTENT_WORDS) continue;
+    if (bKey === aKey) return true;
   }
   return false;
 }

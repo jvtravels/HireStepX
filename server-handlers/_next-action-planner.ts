@@ -2757,6 +2757,22 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       typeof lo === "number" && typeof hi === "number" && lo < hi;
     if (bandComplete) {
       const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+      /* AUDIT-W02 BUG-001 — null = band ceiling below disclosed; defer. */
+      if (anchored === null) {
+        return {
+          kind: "anchor-with-offer",
+          initialOffer: lo,
+          bandIncomplete: true,
+          satisfiesTopic: "band-anchor-with-rationale",
+          _move: {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale: `AUDIT-W02 BUG-001 — band ceiling (${hi}) below disclosed CTC (${state.candidateCurrentCtc}); honest-defer rather than pay-cut anchor.`,
+            askedTopic: "band-anchor-with-rationale",
+            actionKind: "anchor-with-offer",
+          },
+        };
+      }
       return {
         kind: "anchor-with-offer",
         initialOffer: anchored,
@@ -2764,13 +2780,6 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         satisfiesTopic: "band-anchor-with-rationale",
         _move: {
           lever: "probe",
-          /* PDF#39 BUG-A root-cause (2026-05-20): thread `anchored` into
-           * newTotalLpa so applyAiMove records highestOfferMade and
-           * derivePhase can promote out of range-disclosure. Without
-           * this, the band-disclosure-deflect gate (which fires
-           * only at phase === "range-disclosure") re-runs on every
-           * subsequent turn — including post-anchor breakdown asks —
-           * trapping the session in opening-phase deflection prose. */
           newTotalLpa: anchored,
           rationale:
             `PDF#27 Fix 5 — candidate asked for the offer at turn ${state.offerAskedAtTurn}; ` +
@@ -2873,6 +2882,22 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         typeof lo === "number" && typeof hi === "number" && lo < hi;
       if (bandComplete) {
         const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+        /* AUDIT-W02 BUG-001 — null = band ceiling below disclosed; defer. */
+        if (anchored === null) {
+          return {
+            kind: "anchor-with-offer",
+            initialOffer: lo,
+            bandIncomplete: true,
+            satisfiesTopic: "band-anchor-with-rationale",
+            _move: {
+              lever: "probe",
+              newTotalLpa: null,
+              rationale: `AUDIT-W02 BUG-001 — band ceiling (${hi}) below disclosed CTC (${state.candidateCurrentCtc}); honest-defer rather than pay-cut anchor.`,
+              askedTopic: "band-anchor-with-rationale",
+              actionKind: "anchor-with-offer",
+            },
+          };
+        }
         return {
           kind: "anchor-with-offer",
           initialOffer: anchored,
@@ -2880,7 +2905,6 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           satisfiesTopic: "band-anchor-with-rationale",
           _move: {
             lever: "probe",
-            /* PDF#39 BUG-A root-cause (see Fix-5 site above). */
             newTotalLpa: anchored,
             rationale:
               `AP3-F3 band-disclosure: currentCtc satisfied, senior-component probes ` +
@@ -3149,6 +3173,22 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       const lo = state.band.initialOffer;
       const hi = state.band.maxStretch;
       const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+      /* AUDIT-W02 BUG-001 — null = band ceiling below disclosed; defer. */
+      if (anchored === null) {
+        return {
+          kind: "anchor-with-offer",
+          initialOffer: lo,
+          bandIncomplete: true,
+          satisfiesTopic: "band-anchor-with-rationale",
+          _move: {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale: `AUDIT-W02 BUG-001 — band ceiling (${hi}) below disclosed CTC (${state.candidateCurrentCtc}); honest-defer rather than pay-cut anchor.`,
+            askedTopic: "band-anchor-with-rationale",
+            actionKind: "anchor-with-offer",
+          },
+        };
+      }
       return {
         kind: "anchor-with-offer",
         initialOffer: anchored,
@@ -4621,11 +4661,16 @@ function minHikePctForRole(state: NegotiationState): number {
  *  concessions. */
 export const MIN_COUNTER_ROUNDS_BEFORE_HOLD_FIRM = 2;
 
-function clampAnchorAboveDisclosed(
+/* AUDIT-W02 BUG-001 (2026-06-08) — Return `number | null`. Null signals
+ * "band-incomplete defer" so callers emit a defer rather than a pay-cut
+ * anchor when the band ceiling is below the disclosed current CTC.
+ * Picked null over { defer: true } because all three callers already
+ * have an existing bandIncomplete-defer branch to reuse — minimal churn. */
+export function clampAnchorAboveDisclosed(
   lo: number,
   hi: number,
   state: NegotiationState,
-): number {
+): number | null {
   const disclosed = state.candidateCurrentCtc;
   if (typeof disclosed !== "number" || disclosed <= 0) return lo;
   /* Floor = disclosed * (1 + hike) — anchor must beat current CTC by a
@@ -4634,15 +4679,14 @@ function clampAnchorAboveDisclosed(
    * 15% to match real Indian-market norms. */
   const hikePct = minHikePctForRole(state);
   const hikeFloor = disclosed * (1 + hikePct);
-  /* PDF#39 BUG-D (2026-05-20) — round to INTEGER, not 1 decimal. The
-   * previous policy ("messy fractions") still emitted ₹30.4 LPA-style
-   * numbers, which (i) read awkwardly in recruiter prose and (ii) caused
-   * the offer-extractor downstream to miss them, leaving highestOfferMade
-   * at 0 and trapping the session in range-disclosure phase forever.
-   * Integer rounding is consistent with how real Indian HR anchors land
-   * (₹30L, ₹32L — never ₹30.4L). */
+  /* PDF#39 BUG-D (2026-05-20) — round to INTEGER, not 1 decimal. */
   const hikeFloorRounded = Math.round(hikeFloor);
   const candidate = Math.max(lo, hikeFloorRounded);
+  /* AUDIT-W02 BUG-001 — If the hike-floored candidate exceeds the band
+   * ceiling AND the candidate's disclosed current already exceeds the
+   * band ceiling, clamping to `hi` would emit a pay-cut anchor. Signal
+   * defer instead. */
+  if (candidate > hi && disclosed > hi) return null;
   if (candidate <= lo) return lo;
   /* Cap by maxStretch — won't blow through the band ceiling even if the
    * candidate's current CTC is structurally above it. */

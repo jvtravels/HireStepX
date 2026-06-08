@@ -57,5 +57,8 @@ export function proseCloseRecapFormal(
     state.cumulativeUrgency === "firm"
       ? " Given your timeline, we'll fast-track the offer letter — expect it within 24 hours of BGV initiation."
       : "";
-  return `Let me recap the fitment before I revert internally — ${parts.join(", ")}. Sounds good?${urgencyTail}`;
+  /* AUDIT-W02 BUG-1 (2026-06-08) — terminal recap must not solicit further
+   * dialogue. Replaced trailing "Sounds good?" question with a statement
+   * closer so the close actually closes. */
+  return `Let me recap the fitment before I revert internally — ${parts.join(", ")}. I'll get the offer letter prepared and circulate by EOD.${urgencyTail}`;
 }
