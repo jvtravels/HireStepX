@@ -46,6 +46,9 @@ import {
 import type { QuestionIntent } from "./_question-intent";
 import { captureServerEvent } from "./_posthog";
 import { runShadow as runV2Shadow } from "./v2/shadow";
+import { tryRunV2Live } from "./v2/live";
+import { shouldRouteV2, describeDecision } from "./v2/ramp";
+import { captureServerEvent as captureV2RouteEvent } from "./_posthog";
 import { detectProseAntipatterns } from "./_prose-antipatterns";
 import { enforceOfferAskInvariant } from "./_output-rail-offer-ask";
 import {
@@ -130,7 +133,7 @@ export type GenerateAiTextFn = (
 
 export interface PipelineResult {
   text: string;
-  source: "restyle" | "canonical-fallback" | "answer-restyle" | "answer-canonical" | "movespec";
+  source: "restyle" | "canonical-fallback" | "answer-restyle" | "answer-canonical" | "movespec" | "v2-live";
   action: NextAction;
   move: AiMove;
   /** Diagnostic reason when the restyle was rejected (telemetry). */
@@ -155,11 +158,42 @@ export async function generateBotReply(
    * and end the session. Wrap the whole pipeline so the worst case
    * is a benign continuation prompt, never a session-killer. */
   try {
+    /* V2-LIVE RAMP (2026-06-09) — consult the ramp decision layer
+     * BEFORE invoking v1. If the session is in the cohort (or on the
+     * allowlist) and v2 succeeds + the rail signs off, serve v2's
+     * output directly. On any v2 failure (LLM throw, rail reject,
+     * orchestrator out-of-retries), fall through to v1 — the user
+     * never sees a v2 outage. */
+    const sessionId = distinctId ?? state.sessionId ?? "anonymous";
+    const decision = shouldRouteV2(sessionId);
+    void captureV2RouteEvent("negotiation_v2_route_decision", sessionId, {
+      session_id: state.sessionId ?? "unknown",
+      turn_index: state.turnIndex,
+      ...describeDecision(decision),
+    });
+    if (decision.routeV2) {
+      const v2Live = await tryRunV2Live(state, generateAiText, sessionId);
+      if (v2Live) {
+        const v2Action = { kind: "terminal-restate" } as NextAction;
+        return {
+          text: v2Live.text,
+          source: "v2-live",
+          action: v2Action,
+          move: actionToLever(v2Action, state),
+        };
+      }
+      /* v2 failed and tryRunV2Live already fired the error event —
+       * fall through to v1 silently. */
+    }
     const result = await generateBotReplyInner(state, generateAiText, candidateAnswer, distinctId);
     /* V2-SHADOW (2026-06-09) — fire-and-forget. Env-gated
      * (NEGOTIATION_V2_SHADOW_ENABLED=1), silent on error, never
-     * affects the response that just rendered above. */
-    runV2Shadow(state, generateAiText, result, distinctId ?? state.sessionId ?? "anonymous");
+     * affects the response that just rendered above. Skipped when
+     * the session was already routed to v2 live (we already have v2
+     * data for the turn). */
+    if (!decision.routeV2) {
+      runV2Shadow(state, generateAiText, result, sessionId);
+    }
     return result;
   } catch (err) {
     void err;
