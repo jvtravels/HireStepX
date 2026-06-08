@@ -248,15 +248,6 @@ const LAST_AI_ASKED_TARGET = new RegExp(
   "i",
 );
 
-/** AUDIT-2: did the bot's last turn ask for notice period? When yes, a
- *  bare numeric reply with "days" binds to notice. (Distinct from
- *  current/target because notice's unit is days, not LPA — so it
- *  rarely false-positives, but worth pinning the convention.) */
-const LAST_AI_ASKED_NOTICE = new RegExp(
-  String.raw`\b(?:notice|notice\s+period|how\s+long.*notice)\b`,
-  "i",
-);
-
 /* ─── Number-span finder ───────────────────────────────────────────── */
 
 /** A salary-shaped number found in the utterance. */
