@@ -1,0 +1,60 @@
+{
+  "_doc": "V2 regression fixture #2. Real production session from 2026-06-09. Senior Product Designer @ Flipkart, candidate at 32 LPA total / 30 LPA base / no ESOP / 5+ YoE. UNLIKE fixture #1, the bot DID anchor cleanly (₹40 LPA at T4, in-band). The failure mode here is downstream: every turn after the anchor breaks. T5 asks 'what justifies it' instead of countering the 48 LPA target. T6 invents a joining-bonus question the candidate never raised. T7 hallucinates '88% variable' (the candidate's split is 30/32 base/total → 6% variable, not 88%). T8 monologues unsolicited clawback policy. T9 ships a defer with no callback time. T10 loops back to discovery AFTER candidate's two casual acceptances ('yes work for me keep base as 44 LPA' twice). T11 walks away on a deal that was effectively closed at 44 base. v2 must enforce: (a) post-anchor with stated target ⇒ ask_discovery is illegal (T5/T6 fix), (b) defer requires concrete callback time (T9 fix), (c) conversational acceptances ('yes ... keep base as X LPA') flip verbalAcceptanceTurn ⇒ only close_recap is legal (T10/T11 fix), (d) any number inside an anchor/counter rationale must be grounded in candidate-mentioned numbers, band scalars, or derivable ratios (T7 fix).",
+  "scenario": {
+    "role": "Senior Product Designer",
+    "company": "flipkart",
+    "candidateProfile": {
+      "currentCtcLpa": 32,
+      "baseLpa": 30,
+      "variableLpa": 2,
+      "hasEsop": false,
+      "targetLpa": 48,
+      "yoe": 5
+    },
+    "marketBand": {
+      "source": "candidate's google search shown in PDF",
+      "lowLpa": 30,
+      "highLpa": 50
+    }
+  },
+  "log": [
+    { "role": "ai", "text": "Thanks for making the time. Let's get straight into it — what's your current CTC — total annual?" },
+    { "role": "candidate", "text": "my current ctc is 32 LPA" },
+    { "role": "ai", "text": "Thanks for that — how does the base split compare with your current comp?" },
+    { "role": "candidate", "text": "base is 30 LPA" },
+    { "role": "ai", "text": "Fair enough. Does your current side offer any ESOPs or RSUs?" },
+    { "role": "candidate", "text": "no there is no ESOP" },
+    { "role": "ai", "text": "Got it. So for this grade, the fitment we're able to offer is ₹40 LPA. The cash sits inside our band; ESOP grant follows the same level — I'll share the annual-value figure before the offer letter. Let me know your thoughts. Does that make sense?" },
+    { "role": "candidate", "text": "I am looking for 48 LPA" },
+    { "role": "ai", "text": "basically, right. what justifies it — design system ownership, user-research depth, conversion / retention impact?" },
+    { "role": "candidate", "text": "market research" },
+    { "role": "ai", "text": "Can you tell me more about what you were thinking of on the joining bonus, and I'll see how we can make it work?" },
+    { "role": "candidate", "text": "44 LPA as base 4 lakhs as joining bonus would work for me" },
+    { "role": "ai", "text": "Sure, got it. 88% variable is significant — what's your comfort with that share, to be fair, and have you been hitting payouts in full?" },
+    { "role": "candidate", "text": "yes like that" },
+    { "role": "ai", "text": "Right. On the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata." },
+    { "role": "candidate", "text": "yes work for me keep base as 44 LPA" },
+    { "role": "ai", "text": "Let me see what else we can structure on the fitment." },
+    { "role": "candidate", "text": "yes 44 LPA as base" },
+    { "role": "ai", "text": "Let me come at that from a different angle — what's been guiding the number you have in mind for this move?" },
+    { "role": "candidate", "text": "yes 44 LPA as base" },
+    { "role": "ai", "text": "I don't think we're making progress here — let me close this out for now. We'll come back if anything else opens up on your side." },
+    { "role": "candidate", "text": "i have done market research about the role" }
+  ],
+  "_v1_failures": [
+    "T5: asked 'what justifies it' instead of countering candidate's stated 48 LPA target — ask_discovery is illegal once anchored + target.",
+    "T6: invented a joining-bonus topic the candidate never raised — phantom planner state.",
+    "T7: fabricated '88% variable' — candidate's actual variable share is ~6% (2/32). Number-grounding violation.",
+    "T8: monologued unsolicited clawback policy — surface-area discipline failure.",
+    "T9: deferred without a concrete callback time ('Let me see what else we can structure') — exact pattern kernel rule #3 was built for.",
+    "T10: re-opened discovery AFTER candidate's casual acceptance ('yes work for me keep base as 44 LPA') — acceptance regex missed conversational form.",
+    "T11: walked away from a deal candidate had said yes to twice — same root cause as T10."
+  ],
+  "_v2_expected_picks": {
+    "T5": { "legal": ["propose_counter", "concede", "defer_with_callback", "decline_offer_ask"], "must_not_include": "ask_discovery" },
+    "T6": { "legal": ["propose_counter", "concede", "defer_with_callback", "decline_offer_ask"], "must_not_include": "ask_discovery" },
+    "T9": { "kernel_must_reject": "defer_with_callback without concrete time marker" },
+    "T10": { "verbal_acceptance_must_be_detected_at_turn": 8, "legal": ["close_recap"] },
+    "T11": { "verbal_acceptance_must_be_detected": true, "legal": ["close_recap"] }
+  }
+}

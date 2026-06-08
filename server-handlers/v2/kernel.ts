@@ -98,11 +98,35 @@ const OFFER_ASK_PATTERNS: RegExp[] = [
   /\byour\s+offer\s*[?.]?\s*$/i,
 ];
 
-const ACCEPTANCE_PATTERNS: RegExp[] = [
+/* Acceptance comes in two registers and the kernel must catch both.
+ *
+ * STRICT: explicit, unambiguous commit. Safe to fire any time —
+ * including before any anchor (rare, but e.g. candidate pre-accepts
+ * a verbal range mention).
+ *
+ * CONVERSATIONAL: looser, Indian-English-recruiter register. "yes
+ * keep base as 44 LPA" / "44 LPA works for me" / "yes 44 as base".
+ * These are dangerous BEFORE an anchor — "yes my CTC is 32 LPA" is
+ * a disclosure, not an accept — so they only fire when an anchor
+ * has already been put on the table. The deriveState walk gates
+ * this on `hasAnchored` at the cursor position. */
+const STRICT_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\b(i\s+)?accept\b/i,
   /\b(it'?s\s+a\s+)?deal\b/i,
   /\blet'?s\s+(do\s+it|go\s+(?:with|ahead))\b/i,
   /\bsounds?\s+good[,.]?\s*(let'?s|i'?ll\s+take)/i,
+];
+
+const CONVERSATIONAL_ACCEPTANCE_PATTERNS: RegExp[] = [
+  /* "keep base as 44 LPA" / "keep the base at 44" / "keep 44 as base" */
+  /\bkeep\s+(?:the\s+)?(?:base\s+)?(?:at\s+|as\s+)?\d+(?:\.\d+)?\s*(?:l|lpa)?\b(?:[^.]{0,30}\bas\s+base\b)?/i,
+  /* "44 LPA as base" / "44 as base" */
+  /\b\d+(?:\.\d+)?\s*(?:l|lpa)?\s+as\s+base\b/i,
+  /* "44 LPA works for me" / "would work for me" */
+  /\b\d+(?:\.\d+)?\s*(?:l|lpa)\b[^.]{0,40}\bwould?\s+works?\s+(?:for\s+me|out)\b/i,
+  /\bwould\s+work\s+for\s+me\b/i,
+  /* "yes / sure / ok + LPA number" — only safe post-anchor */
+  /^\s*(?:yes|yeah|yep|sure|ok(?:ay)?|great|done)\b[^.]{0,80}\b\d+(?:\.\d+)?\s*(?:l|lpa)\b/i,
 ];
 
 const TARGET_PATTERNS: RegExp[] = [
@@ -167,12 +191,25 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
         break;
       }
     }
-    for (const pat of ACCEPTANCE_PATTERNS) {
+    /* Strict acceptance fires any time. Conversational acceptance is
+     * gated on hasAnchored at this point in the walk — otherwise
+     * "yes my CTC is 32 LPA" at T1 would flip us into close territory. */
+    let accepted = false;
+    for (const pat of STRICT_ACCEPTANCE_PATTERNS) {
       if (pat.test(turn.text)) {
-        verbalAcceptanceTurn = turnIndex;
+        accepted = true;
         break;
       }
     }
+    if (!accepted && hasAnchored) {
+      for (const pat of CONVERSATIONAL_ACCEPTANCE_PATTERNS) {
+        if (pat.test(turn.text)) {
+          accepted = true;
+          break;
+        }
+      }
+    }
+    if (accepted) verbalAcceptanceTurn = turnIndex;
     for (const pat of TARGET_PATTERNS) {
       const m = turn.text.match(pat);
       if (m) {

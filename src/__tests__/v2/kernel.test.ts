@@ -23,8 +23,10 @@ import {
   type ConversationTurn,
 } from "../../../server-handlers/v2/kernel";
 import fixture from "../../../server-handlers/v2/__fixtures__/flipkart-senior-pd.json";
+import fixture2 from "../../../server-handlers/v2/__fixtures__/flipkart-senior-pd-2.json";
 
 const FLIPKART_LOG = fixture.log as ConversationTurn[];
+const FLIPKART_PD2_LOG = fixture2.log as ConversationTurn[];
 
 describe("v2 kernel — deriveState on the Flipkart fixture", () => {
   it("counts the three explicit offer-asks", () => {
@@ -133,6 +135,83 @@ describe("v2 kernel — post-acceptance lockdown", () => {
 
     const legal = legalTools(state);
     expect(legal).toEqual(["close_recap"]);
+  });
+
+  /* The Flipkart-PD-#2 session failed precisely because the v1
+   * acceptance regex didn't catch the conversational Indian-English
+   * forms. These four assertions encode the lesson: after an anchor,
+   * the gate must recognize casual commits. */
+  it("conversational accept: 'yes work for me keep base as 44 LPA' (PD #2 T8)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "we can come in at 40 LPA", tool: "propose_anchor", lpa: 40 },
+      { role: "candidate", text: "yes work for me keep base as 44 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+    expect(legalTools(state)).toEqual(["close_recap"]);
+  });
+
+  it("conversational accept: 'yes 44 LPA as base' (PD #2 T10)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "we can come in at 40 LPA", tool: "propose_anchor", lpa: 40 },
+      { role: "candidate", text: "yes 44 LPA as base" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+  });
+
+  it("conversational accept: '44 LPA as base 4 lakhs as joining bonus would work for me' (PD #2 T6)", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "we can come in at 40 LPA", tool: "propose_anchor", lpa: 40 },
+      { role: "candidate", text: "44 LPA as base 4 lakhs as joining bonus would work for me" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+  });
+
+  it("conversational accept does NOT misfire on early-turn CTC disclosure ('yes my current CTC is 32 LPA' at T1 — no anchor yet)", () => {
+    /* This is the false-positive guard. Pre-anchor, conversational
+     * patterns are ignored — only STRICT 'I accept' fires. */
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current CTC?", tool: "ask_discovery" },
+      { role: "candidate", text: "yes my current ctc is 32 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.verbalAcceptanceTurn).toBeNull();
+  });
+});
+
+describe("v2 kernel — Flipkart PD #2 fixture (post-anchor failure profile)", () => {
+  it("T5: after candidate states target 48 LPA (post-anchor), ask_discovery is illegal", () => {
+    /* Log slice through T4 candidate response ("I am looking for 48 LPA").
+     * Indices: AI@0/2/4/6, candidate@1/3/5/7. Slice 0..8 covers 4 AI + 4
+     * candidate turns. v1 anchored ₹40 at T4 (regex-detected since no
+     * tool field). */
+    const sliced = FLIPKART_PD2_LOG.slice(0, 8);
+    const state = deriveState(sliced);
+    expect(state.hasAnchored).toBe(true);
+    expect(state.candidateTarget).toBe(48);
+
+    const legal = legalTools(state);
+    expect(legal).not.toContain("ask_discovery");
+    expect(legal).toContain("propose_counter");
+  });
+
+  it("T8: candidate's 'yes work for me keep base as 44 LPA' (post-anchor) flips legal set to [close_recap]", () => {
+    /* Slice through index 15 (candidate T8 response). Anchor is at
+     * AI@6 ("₹40 LPA"). The candidate's conversational accept at
+     * candidate@15 must be detected. */
+    const sliced = FLIPKART_PD2_LOG.slice(0, 16);
+    const state = deriveState(sliced);
+    expect(state.hasAnchored).toBe(true);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+    expect(legalTools(state)).toEqual(["close_recap"]);
+  });
+
+  it("end of session: still locked to close_recap (catches the T11 walk-away bug)", () => {
+    const state = deriveState(FLIPKART_PD2_LOG);
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+    expect(legalTools(state)).toEqual(["close_recap"]);
   });
 });
 
