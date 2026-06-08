@@ -22,6 +22,7 @@ function freshState(extra: Partial<DerivedState> = {}): DerivedState {
     mentionedNumbers: [],
     surfacedTopics: [],
     closedTopics: [],
+    unverifiedPremiseNumbers: [],
     ...extra,
   };
 }
@@ -349,6 +350,145 @@ describe("v2 tools — ask_discovery answer-options rule (Bug #58 T8 fix)", () =
       },
     };
     const result = executeTool(call, BAND, freshState());
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("v2 tools — premise-challenge gate (deep-research #11, sycophancy fix)", () => {
+  it("rejects propose_anchor citing a peer-benchmark number the candidate never self-disclosed", () => {
+    /* Candidate claimed "peers at Razorpay make 60 LPA" — 60 entered
+     * the unverified-premise set. Bot tries to anchor citing the 60 as
+     * justification. Rejected — bot must challenge the premise first
+     * or anchor on band. */
+    const call: ToolCall = {
+      name: "propose_anchor",
+      args: {
+        number_lpa: BAND.initialOffer,
+        rationale: "your peer benchmark of 60 LPA at Razorpay puts us at the top of the band",
+      },
+    };
+    const result = executeTool(
+      call,
+      BAND,
+      freshState({ mentionedNumbers: [60], unverifiedPremiseNumbers: [60] }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/unverified peer\/market\/competing-offer claim/i);
+  });
+
+  it("rejects propose_anchor citing a competing-offer number the candidate hasn't verified", () => {
+    const call: ToolCall = {
+      name: "propose_anchor",
+      args: {
+        number_lpa: BAND.initialOffer,
+        rationale: "matching your competing offer of 45 LPA is where we land",
+      },
+    };
+    const result = executeTool(
+      call,
+      BAND,
+      freshState({ mentionedNumbers: [45], unverifiedPremiseNumbers: [45] }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/unverified/i);
+  });
+
+  it("ACCEPTS propose_anchor citing a number the candidate disclosed both as premise AND factually", () => {
+    /* If the candidate also said "my current CTC is 60 LPA", 60 leaves
+     * the premise set — factual self-disclosure is the verification.
+     * Bot may now anchor on it. */
+    const call: ToolCall = {
+      name: "propose_anchor",
+      args: {
+        number_lpa: BAND.initialOffer,
+        rationale: "your current 60 LPA puts you at the top of our band for this role",
+      },
+    };
+    const result = executeTool(
+      call,
+      BAND,
+      freshState({ mentionedNumbers: [60], unverifiedPremiseNumbers: [] }),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it("ACCEPTS propose_anchor that ignores the premise and anchors on band scalars", () => {
+    const call: ToolCall = {
+      name: "propose_anchor",
+      args: {
+        number_lpa: BAND.initialOffer,
+        rationale: `our calibrated opener for this role band lands at ${BAND.initialOffer} LPA`,
+      },
+    };
+    const result = executeTool(
+      call,
+      BAND,
+      freshState({ mentionedNumbers: [60], unverifiedPremiseNumbers: [60] }),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects propose_counter citing an unverified market-rate number", () => {
+    const call: ToolCall = {
+      name: "propose_counter",
+      args: {
+        number_lpa: BAND.maxStretch,
+        rationale: "moving toward the 55 LPA market rate you mentioned",
+      },
+    };
+    const result = executeTool(
+      call,
+      BAND,
+      freshState({
+        hasAnchored: true,
+        lastAnchorLpa: BAND.initialOffer,
+        candidateTarget: 55,
+        mentionedNumbers: [55],
+        unverifiedPremiseNumbers: [55],
+      }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/unverified/i);
+  });
+
+  it("rejects concede whose cost/benefit/ask clause smuggles an unverified premise number", () => {
+    const call: ToolCall = {
+      name: "concede",
+      args: {
+        lever: "joining_bonus",
+        amount_lpa: 3,
+        cost_to_company: "pulls from our pool",
+        benefit_to_candidate: "matches the 45 LPA competing offer you cited",
+        asked_in_return: "you close this today",
+      },
+    };
+    const result = executeTool(
+      call,
+      BAND,
+      freshState({
+        hasAnchored: true,
+        lastAnchorLpa: BAND.initialOffer,
+        mentionedNumbers: [45, 3],
+        unverifiedPremiseNumbers: [45],
+      }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/unverified/i);
+  });
+
+  it("backward-compat: empty unverifiedPremiseNumbers is a no-op", () => {
+    const call: ToolCall = {
+      name: "propose_anchor",
+      args: {
+        number_lpa: BAND.initialOffer,
+        rationale: "your current 32 LPA and 30 LPA base put you inside our band",
+      },
+    };
+    const result = executeTool(
+      call,
+      BAND,
+      freshState({ mentionedNumbers: [32, 30], unverifiedPremiseNumbers: [] }),
+    );
     expect(result.ok).toBe(true);
   });
 });

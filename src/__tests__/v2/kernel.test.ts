@@ -430,3 +430,82 @@ describe("v2 kernel — acceptance pattern: 'liked the offer' (Bug #58 T10/T11 f
     expect(state.verbalAcceptanceTurn).toBeNull();
   });
 });
+
+describe("v2 kernel — unverifiedPremiseNumbers derivation (deep-research #11 sycophancy gate)", () => {
+  it("classifies peer-benchmark number as unverified premise", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current ctc?", tool: "ask_discovery" },
+      { role: "candidate", text: "my peers at Razorpay make 60 LPA at this level" },
+    ];
+    const state = deriveState(log);
+    expect(state.unverifiedPremiseNumbers).toContain(60);
+  });
+
+  it("classifies market-rate number as unverified premise", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "what range?", tool: "ask_discovery" },
+      { role: "candidate", text: "the market rate for senior PD is 50 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.unverifiedPremiseNumbers).toContain(50);
+  });
+
+  it("classifies competing-offer number as unverified premise", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "are you in process?", tool: "ask_discovery" },
+      { role: "candidate", text: "I have a competing offer for 45 LPA from Flipkart" },
+    ];
+    const state = deriveState(log);
+    expect(state.unverifiedPremiseNumbers).toContain(45);
+  });
+
+  it("classifies named-competitor 'pays Y' as unverified premise", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "benchmark?", tool: "ask_discovery" },
+      { role: "candidate", text: "Google pays 70 LPA at this level for senior engineers" },
+    ];
+    const state = deriveState(log);
+    expect(state.unverifiedPremiseNumbers).toContain(70);
+  });
+
+  it("does NOT classify candidate's own current CTC as premise", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current?", tool: "ask_discovery" },
+      { role: "candidate", text: "my current ctc is 32 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.unverifiedPremiseNumbers).not.toContain(32);
+  });
+
+  it("does NOT classify candidate's stated expectation as premise", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "expectation?", tool: "ask_discovery" },
+      { role: "candidate", text: "my expectation is 44 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.unverifiedPremiseNumbers).not.toContain(44);
+  });
+
+  it("CLEARS premise number if same number is ALSO disclosed factually elsewhere", () => {
+    /* "my peers make 60 LPA" (premise) + "my current ctc is 60 LPA"
+     * (factual) — the factual disclosure verifies it, so the bot is
+     * free to anchor on 60. */
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current?", tool: "ask_discovery" },
+      { role: "candidate", text: "my peers at Razorpay make 60 LPA at this level" },
+      { role: "ai", text: "and you?", tool: "ask_discovery" },
+      { role: "candidate", text: "my current ctc is 60 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.unverifiedPremiseNumbers).not.toContain(60);
+  });
+
+  it("empty list when candidate makes no premise claims", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current?", tool: "ask_discovery" },
+      { role: "candidate", text: "my current ctc is 32 LPA, base is 30 LPA, variable is 2 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.unverifiedPremiseNumbers).toEqual([]);
+  });
+});

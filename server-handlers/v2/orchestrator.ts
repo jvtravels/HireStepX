@@ -78,6 +78,8 @@ Hard rules (enforced by the kernel — your output is rejected if you violate th
    - asked_in_return: the reciprocity ask — the deal you want for moving (e.g., "we close this today", "you stop the other process", "you commit to a 30-day join")
    Naked concessions ("I can add 3 LPA joining bonus") are rejected — they get downplayed by the candidate and forfeit reciprocity. All three clauses must also be grounded in numbers already on the table.
 
+7. Premise-challenge gate. If the candidate cited a number as a peer benchmark, market rate, competing offer, or "X company pays Y" claim WITHOUT also disclosing it as their own factual current/expectation — that number is an UNVERIFIED PREMISE. You CANNOT cite it as anchor / counter / concession rationale. Two legitimate moves: (a) anchor on the band and the candidate's own self-disclosed numbers instead, or (b) ask_discovery to challenge the premise first ("which company and level is that benchmark from?", "is that an in-hand offer or a verbal indication?"). Defaulting to the candidate's frame without verification is sycophancy, not negotiation.
+
 Pick ONE tool from the legal set the orchestrator gives you. Provide its arguments. The kernel renders the final prose — you never write the user-facing string yourself.`;
 }
 

@@ -111,6 +111,7 @@ export async function tryRunV2Live(
       mentionedNumbers: [],
       surfacedTopics: [],
       closedTopics: [],
+      unverifiedPremiseNumbers: [],
     };
     const verdict = assertHonestMove(result, railState);
 

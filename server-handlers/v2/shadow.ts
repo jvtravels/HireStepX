@@ -166,6 +166,7 @@ async function runShadowInner(
     mentionedNumbers: [],
     surfacedTopics: [],
     closedTopics: [],
+    unverifiedPremiseNumbers: [],
   });
 
   /* "Diverged" heuristic: v1 shipped no number AND v2 shipped a

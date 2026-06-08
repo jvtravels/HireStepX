@@ -281,6 +281,7 @@ describe("v2 rail — catches discovery shipped after offer-ask pressure", () =>
         mentionedNumbers: [],
         surfacedTopics: [],
         closedTopics: [],
+        unverifiedPremiseNumbers: [],
       },
     );
     expect(verdict.pass).toBe(true);

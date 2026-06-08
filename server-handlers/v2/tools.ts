@@ -126,6 +126,30 @@ function isGroundedPercent(p: number, ctx: GroundingContext): boolean {
   return Math.abs(p - 100) <= 2;
 }
 
+/** Premise-challenge gate (deep-research #11). Reject rationales that
+ *  cite an LPA number the candidate ONLY mentioned as a peer / market /
+ *  competing-offer / named-competitor benchmark — i.e. an unverified
+ *  premise the bot would otherwise sycophantically accept. The bot
+ *  must either anchor on band + own self-disclosed numbers, or call
+ *  ask_discovery to surface evidence first. */
+function validatePremiseChallenge(
+  rationale: string,
+  unverifiedPremiseNumbers: number[],
+): string | null {
+  if (unverifiedPremiseNumbers.length === 0) return null;
+  const { lpas } = extractRationaleNumbers(rationale);
+  for (const n of lpas) {
+    if (unverifiedPremiseNumbers.some((p) => Math.abs(p - n) <= 0.5)) {
+      return (
+        `rationale cites ${n} LPA which the candidate only mentioned as an unverified peer/market/competing-offer claim — ` +
+        `challenge it via ask_discovery first (e.g. "which company and level is that benchmark from?") or anchor on the band ` +
+        `and the candidate's own disclosed numbers, not on a premise you haven't validated`
+      );
+    }
+  }
+  return null;
+}
+
 function validateGrounding(
   rationale: string,
   ctx: GroundingContext,
@@ -193,6 +217,11 @@ export function executeTool(
         buildGroundingCtx(band, state, n),
       );
       if (groundingFail) return { ok: false, reason: groundingFail };
+      const premiseFail = validatePremiseChallenge(
+        rationale,
+        state.unverifiedPremiseNumbers ?? [],
+      );
+      if (premiseFail) return { ok: false, reason: premiseFail };
       const canonical = `Based on what you've shared, we can come in at ${fmtLpa(n)} for this role — ${rationale}.`;
       return { ok: true, canonical, lpa: n, tool: "propose_anchor" };
     }
@@ -229,6 +258,11 @@ export function executeTool(
         buildGroundingCtx(band, state, n),
       );
       if (groundingFail) return { ok: false, reason: groundingFail };
+      const premiseFail = validatePremiseChallenge(
+        rationale,
+        state.unverifiedPremiseNumbers ?? [],
+      );
+      if (premiseFail) return { ok: false, reason: premiseFail };
       const canonical = `We can move up to ${fmtLpa(n)} on the fixed — ${rationale}.`;
       return { ok: true, canonical, lpa: n, tool: "propose_counter" };
     }
@@ -276,9 +310,12 @@ export function executeTool(
        * Prevents the LLM from smuggling fabricated LPA/% into the
        * labeling fields to game the validator. */
       const ctx = buildGroundingCtx(band, state, amt);
+      const premiseNumbers = state.unverifiedPremiseNumbers ?? [];
       for (const clause of [cost, benefit, ask]) {
         const fail = validateGrounding(clause, ctx);
         if (fail) return { ok: false, reason: fail };
+        const premiseFail = validatePremiseChallenge(clause, premiseNumbers);
+        if (premiseFail) return { ok: false, reason: premiseFail };
       }
       const lead: Record<typeof lever, string> = {
         joining_bonus: `Here's what I can do: a ${fmtLpa(amt)} joining bonus`,
