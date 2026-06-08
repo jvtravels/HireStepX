@@ -59,6 +59,7 @@ import {
   IncompatibleCompoundFrameError,
   classifyPivotByAction,
   type AnswerFrame,
+  type PivotFrame,
 } from "./_compound-move-spec";
 
 /* ARCH-C2a (2026-06-08) — env-flag gated wiring of the typed MoveSpec
@@ -787,7 +788,40 @@ function buildDeferText(
   missing: string[],
   canonicalFollowup: string,
   validationSubReason: ValidationSubReason = "other",
+  /* ARCH-C2c (2026-06-08) — pivot-frame parameter. When the canonical
+   * followup is close-recap or commit-requiring, prefixing a defer lead
+   * ("Let me check and come back —") undermines the close / anchor in
+   * exactly the way CompoundMoveSpec refuses at the compose sites. Drop
+   * the defer lead and ship the canonical alone. Optional + default
+   * "neutral" so existing internal calls preserve legacy behavior until
+   * each call site opts in. */
+  pivotFrame: PivotFrame = "neutral",
+  ctx?: { sessionId: string | undefined; actionKind: string; phase: string; turnIndex: number },
 ): string {
+  /* ARCH-C2c — frame-compatibility short-circuit. Mirrors CompoundMoveSpec
+   * matrix: defer + close-recap and defer + commit-requiring are both
+   * forbidden. Ship the canonical pivot alone; emit telemetry so we can
+   * see refusal rate per pivot kind. */
+  if (
+    (pivotFrame === "close-recap" || pivotFrame === "commit-requiring") &&
+    canonicalFollowup
+  ) {
+    if (ctx) {
+      void captureServerEvent(
+        "negotiation_compound_movespec_refused",
+        ctx.sessionId ?? "unknown",
+        {
+          actionKind: ctx.actionKind,
+          answerFrame: "defer",
+          pivotFrame,
+          phase: ctx.phase,
+          turnIndex: ctx.turnIndex,
+          site: `buildDeferText:${reason}`,
+        },
+      );
+    }
+    return canonicalFollowup;
+  }
   const lead = buildDeferLead(reason, missing, validationSubReason);
   /* AUDIT-W02 D8 (2026-06-08) — if canonicalFollowup is the fallback
    * stub ("Let me come back to that / you …"), prefixing it with a
@@ -814,6 +848,17 @@ async function generateAnswerToCandidate(
     try { return renderCanonicalProse(action, state); }
     catch { return "Let me come back to that in a moment."; }
   })();
+  /* ARCH-C2c (2026-06-08) — captured once for every buildDeferText call
+   * below so we can short-circuit defer + close-recap / commit-requiring
+   * inside buildDeferText (same matrix CompoundMoveSpec enforces at the
+   * compose sites). */
+  const deferPivotFrame: PivotFrame = classifyPivotByAction(action);
+  const deferCtx = {
+    sessionId: state.sessionId,
+    actionKind: action.kind,
+    phase: state.phase,
+    turnIndex: state.turnIndex,
+  };
 
   /* PDF#42 BUG-B (2026-05-21) — wired-profile precedence.
    *
@@ -880,7 +925,7 @@ async function generateAnswerToCandidate(
   /* When a fact is missing → graceful defer + resume planned line.
    * No LLM call needed — the deterministic answer is more reliable. */
   if (!gap.canAnswer) {
-    const defer = buildDeferText("fact-gap", gap.missing, canonicalFollowup);
+    const defer = buildDeferText("fact-gap", gap.missing, canonicalFollowup, "other", deferPivotFrame, deferCtx);
     return shipDefer(defer, `fact-gap: ${gap.missing.join(",")}`);
   }
 
@@ -895,12 +940,12 @@ async function generateAnswerToCandidate(
   try {
     answer = await generateAiText(system, user, { temperature: 0.4 });
   } catch {
-    const defer = buildDeferText("llm-throw", [], canonicalFollowup);
+    const defer = buildDeferText("llm-throw", [], canonicalFollowup, "other", deferPivotFrame, deferCtx);
     return shipDefer(defer, "llm-throw");
   }
   answer = (answer || "").trim();
   if (!answer) {
-    const defer = buildDeferText("empty-llm", [], canonicalFollowup);
+    const defer = buildDeferText("empty-llm", [], canonicalFollowup, "other", deferPivotFrame, deferCtx);
     return shipDefer(defer, "empty-llm");
   }
   /* Answer-side validation: same number/fact discipline as restyle.
@@ -912,7 +957,7 @@ async function generateAnswerToCandidate(
     phase: state.phase,
   });
   if (!validation.valid) {
-    const defer = buildDeferText("validation", [], canonicalFollowup);
+    const defer = buildDeferText("validation", [], canonicalFollowup, "other", deferPivotFrame, deferCtx);
     return shipDefer(defer, validation.reason ?? "validation-failed");
   }
   /* Audit follow-up (2026-05-21) — fact-grounding validator. Catches
@@ -975,7 +1020,7 @@ async function generateAnswerToCandidate(
    * deterministic defer + canonical follow-up here so the candidate
    * gets a usable answer surface, not the boundary's generic line. */
   if (META_DIRECTIVE_TOKENS_RE.test(answer)) {
-    const defer = buildDeferText("validation", [], canonicalFollowup, "meta-leak");
+    const defer = buildDeferText("validation", [], canonicalFollowup, "meta-leak", deferPivotFrame, deferCtx);
     return shipDefer(defer, "meta-directive-leak-answer");
   }
   /* PDF#36 Fix B4 (2026-05-19) — answer-path sentence-length cap.
@@ -983,7 +1028,7 @@ async function generateAnswerToCandidate(
    * path historically did not, so kitchen-sink 50+ word single-
    * sentence answers shipped unchecked. Same cap as restyle. */
   if (checkSentenceLength(answer) !== "ok") {
-    const defer = buildDeferText("validation", [], canonicalFollowup, "too-long");
+    const defer = buildDeferText("validation", [], canonicalFollowup, "too-long", deferPivotFrame, deferCtx);
     return shipDefer(defer, "answer-too-long");
   }
   /* PDF#36 Fix A1 (2026-05-19) — leading-ack-rotation loop guard on
@@ -1004,7 +1049,7 @@ async function generateAnswerToCandidate(
    * path. If the LLM's answer is identical to the prior AI turn, defer
    * to the deterministic canonical follow-up instead. */
   if (isVerbatimRepeat(answer, state)) {
-    const defer = buildDeferText("validation", [], canonicalFollowup, "verbatim");
+    const defer = buildDeferText("validation", [], canonicalFollowup, "verbatim", deferPivotFrame, deferCtx);
     return shipDefer(defer, "verbatim-repeat-answer");
   }
   /* AUDIT-3 Fix #1 (2026-06-08) — answer + planner pivot.
