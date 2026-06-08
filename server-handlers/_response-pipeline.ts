@@ -46,6 +46,7 @@ import {
 import type { QuestionIntent } from "./_question-intent";
 import { captureServerEvent } from "./_posthog";
 import { detectProseAntipatterns } from "./_prose-antipatterns";
+import { enforceOfferAskInvariant } from "./_output-rail-offer-ask";
 
 /* PDF#42 BUG-B (2026-05-21) — set of reactive-followup topics whose
  * canonical prose is authored in planWiredProfileFollowup (planner)
@@ -467,6 +468,49 @@ async function generateBotReplyInner(
           rejectReason: `recent-prose-dedup:${result.rejectReason ?? result.source}`,
         };
       }
+    }
+  }
+  /* AUDIT-4 (2026-06-08) — output-rail: offer-ask invariant.
+   * If the candidate's most recent utterance explicitly asked for a
+   * number ("what's your offer?", "share the range", etc.), the
+   * drafted text MUST contain either a salary number or an honest
+   * ceiling sentence — never marketing fluff or an indefinite defer.
+   * The rail substitutes a deterministic Voss-style calibrated bounce
+   * built from state.band and emits telemetry so we can measure how
+   * often the planner's main paths fail this invariant in prod.
+   * Lives at the pipeline boundary so it covers EVERY upstream path
+   * (restyle, answer-restyle, canonical-fallback, all the boundary
+   * swaps above). */
+  {
+    const verdict = enforceOfferAskInvariant({
+      candidateAnswer,
+      draftedText: result.text,
+      state,
+    });
+    if (!verdict.allow && verdict.substitute) {
+      void captureServerEvent(
+        "negotiation_pipeline_offer_ask_rail_blocked",
+        state.sessionId ?? "unknown",
+        {
+          reason: verdict.reason,
+          actionKind: action.kind,
+          phase: state.phase,
+          turnIndex: state.turnIndex,
+          upstreamSource: result.source,
+          upstreamRejectReason: result.rejectReason ?? null,
+          draftedSample: (result.text || "").slice(0, 200),
+          candidateSample: (candidateAnswer || "").slice(0, 200),
+          haveBandStretch: typeof state.band?.maxStretch === "number",
+          haveCandidateCurrent: typeof state.candidateCurrentCtc === "number",
+        },
+      );
+      return {
+        text: verdict.substitute,
+        source: "canonical-fallback",
+        action,
+        move,
+        rejectReason: `offer-ask-rail:${verdict.reason}`,
+      };
     }
   }
   return result;
