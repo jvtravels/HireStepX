@@ -195,6 +195,6 @@ async function retryOrFallback(
     lpa: fallback.lpa,
     firstPickAccepted: false,
     llmCalls: 2,
-    firstPick: firstReject,
+    firstPick: { tool: firstReject.tool, rejectionReason: firstReject.reason },
   };
 }

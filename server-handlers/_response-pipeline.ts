@@ -45,6 +45,7 @@ import {
 } from "./_fact-pack";
 import type { QuestionIntent } from "./_question-intent";
 import { captureServerEvent } from "./_posthog";
+import { runShadow as runV2Shadow } from "./v2/shadow";
 import { detectProseAntipatterns } from "./_prose-antipatterns";
 import { enforceOfferAskInvariant } from "./_output-rail-offer-ask";
 import {
@@ -154,7 +155,12 @@ export async function generateBotReply(
    * and end the session. Wrap the whole pipeline so the worst case
    * is a benign continuation prompt, never a session-killer. */
   try {
-    return await generateBotReplyInner(state, generateAiText, candidateAnswer, distinctId);
+    const result = await generateBotReplyInner(state, generateAiText, candidateAnswer, distinctId);
+    /* V2-SHADOW (2026-06-09) — fire-and-forget. Env-gated
+     * (NEGOTIATION_V2_SHADOW_ENABLED=1), silent on error, never
+     * affects the response that just rendered above. */
+    runV2Shadow(state, generateAiText, result, distinctId ?? state.sessionId ?? "anonymous");
+    return result;
   } catch (err) {
     void err;
     return {
