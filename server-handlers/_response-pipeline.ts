@@ -48,10 +48,13 @@ import { captureServerEvent } from "./_posthog";
 import { detectProseAntipatterns } from "./_prose-antipatterns";
 import { enforceOfferAskInvariant } from "./_output-rail-offer-ask";
 import {
-  adaptAndRender,
+  adaptToSpec,
+  renderMoveSpec,
   SUPPORTED_MOVE_SPEC_KINDS,
+  type MoveSpec,
   type MoveSpecHelpers,
 } from "./_move-spec";
+import { validateMoveSpecRestyle } from "./_move-spec-validator";
 import { clawbackForCompany } from "./_joining-bonus-clawback";
 import { sessionJitter } from "./_session-jitter";
 import {
@@ -580,6 +583,10 @@ async function generateRestyledCanonical(
 ): Promise<PipelineResult> {
   let canonical: string;
   let movespecRouted = false;
+  /* ARCH-C3a — kept around when movespecRouted=true so the slot
+   * validator can inspect spec.derived against the LLM restyle. null
+   * on the legacy path. */
+  let routedSpec: MoveSpec | null = null;
   /* ARCH-C2a (2026-06-08) — env-flag gated MoveSpec route. For the
    * six SUPPORTED_MOVE_SPEC_KINDS, render canonical from the typed
    * spec. Parity tests (src/__tests__/moveSpec.parity.test.ts) gate
@@ -589,9 +596,11 @@ async function generateRestyledCanonical(
    * legacy prose path so a malformed spec can never kill a turn. */
   if (MOVE_SPEC_ENABLED() && SUPPORTED_MOVE_SPEC_KINDS.has(action.kind)) {
     try {
-      const rendered = adaptAndRender(action, state, MOVE_SPEC_HELPERS);
-      if (rendered != null && rendered.length > 0) {
+      const spec = adaptToSpec(action, state, MOVE_SPEC_HELPERS);
+      const rendered = spec != null ? renderMoveSpec(spec, MOVE_SPEC_HELPERS) : null;
+      if (spec != null && rendered != null && rendered.length > 0) {
         canonical = rendered;
+        routedSpec = spec;
         movespecRouted = true;
         void captureServerEvent(
           "negotiation_movespec_routed",
@@ -656,6 +665,52 @@ async function generateRestyledCanonical(
   restyled = stripWrappingQuotes(stripCurlyQuotes((restyled || "").trim()));
 
   const validation = validateRestyle(canonical, restyled, state, action);
+  /* ARCH-C3a (2026-06-08) — typed slot validator observer.
+   *
+   * When the canonical was MoveSpec-rendered, also run the structural
+   * slot validator and emit telemetry on disagreement with the legacy
+   * regex-based validateRestyle. Pure observation — no gating change.
+   * One week of telemetry tells us whether the slot validator is a
+   * sufficient replacement for the 32-check regex validator (the
+   * targeted bug class is percentage inversions like session #55
+   * BUG-W03-1, which validateRestyle misses).
+   *
+   * Four divergence modes worth logging:
+   *   - slot-rejects-legacy-accepts: slot validator caught something
+   *     legacy missed (THIS is the C3a win condition)
+   *   - legacy-rejects-slot-accepts: legacy caught something slot
+   *     missed (means the slot validator needs another check before
+   *     we can retire legacy)
+   *   - both-reject-different-reasons: useful for triangulating which
+   *     reason taxonomy to keep
+   *   - both-accept: silently absorbed (no event)
+   */
+  if (movespecRouted && routedSpec != null) {
+    const slot = validateMoveSpecRestyle(routedSpec, canonical, restyled);
+    if (slot.valid !== validation.valid || (slot.reason ?? null) !== (validation.reason ?? null)) {
+      const divergenceMode = slot.valid && !validation.valid
+        ? "legacy-rejects-slot-accepts"
+        : !slot.valid && validation.valid
+          ? "slot-rejects-legacy-accepts"
+          : "both-reject-different-reasons";
+      void captureServerEvent(
+        "negotiation_movespec_slot_validator_divergence",
+        state.sessionId ?? "unknown",
+        {
+          actionKind: action.kind,
+          phase: state.phase,
+          turnIndex: state.turnIndex,
+          mode: divergenceMode,
+          slotValid: slot.valid,
+          slotReason: slot.reason ?? null,
+          slotDetail: slot.detail ?? null,
+          legacyValid: validation.valid,
+          legacyReason: validation.reason ?? null,
+          textSample: restyled.slice(0, 200),
+        },
+      );
+    }
+  }
   if (!validation.valid) {
     /* AUDIT-2 Gap 5 (2026-06-08) — telemetry for prose-antipattern
      * rejections. Mirrors meta_directive_leak / prompt_artifact_leak

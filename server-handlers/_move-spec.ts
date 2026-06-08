@@ -1057,21 +1057,31 @@ export function adaptAndRender(
   state: NegotiationState,
   helpers: MoveSpecHelpers,
 ): string | null {
+  const spec = adaptToSpec(action, state, helpers);
+  if (spec == null) return null;
+  return renderMoveSpec(spec, helpers);
+}
+
+/* ARCH-C3a (2026-06-08) — adapter-only entry that returns the typed
+ * spec without rendering. Lets callers (e.g. the pipeline's slot
+ * validator path) keep the spec around for structural checks after
+ * the LLM restyle. `adaptAndRender` is the convenience shorthand. */
+export function adaptToSpec(
+  action: NextAction,
+  state: NegotiationState,
+  helpers: MoveSpecHelpers,
+): MoveSpec | null {
   switch (action.kind) {
     case "counter-offer":
-      return renderMoveSpec(counterOfferToMoveSpec(action, state, helpers), helpers);
+      return counterOfferToMoveSpec(action, state, helpers);
     case "info-disclosure":
-      return renderMoveSpec(infoDisclosureToMoveSpec(action, state, helpers), helpers);
+      return infoDisclosureToMoveSpec(action, state, helpers);
     case "close-recap-formal":
-      return renderMoveSpec(closeRecapFormalToMoveSpec(action, state, helpers), helpers);
+      return closeRecapFormalToMoveSpec(action, state, helpers);
     case "component-probe":
-      return renderMoveSpec(componentProbeToMoveSpec(action, state, helpers), helpers);
+      return componentProbeToMoveSpec(action, state, helpers);
     case "ctc-inflation-truth":
-      return renderMoveSpec(ctcInflationTruthToMoveSpec(action, state, helpers), helpers);
-    /* reactive-followup is intentionally not auto-routed here — its
-     * variable-share-high branch needs extra inputs (sessionId,
-     * hasFired) that the caller supplies via variableShareHighToMoveSpec
-     * directly. */
+      return ctcInflationTruthToMoveSpec(action, state, helpers);
     default:
       return null;
   }
