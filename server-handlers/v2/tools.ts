@@ -22,6 +22,15 @@ export type ToolCall =
       args: {
         lever: "joining_bonus" | "esops" | "variable_to_base" | "role_uplift";
         amount_lpa: number;
+        /* Concession-labeling triad (Malhotra/Bazerman "Negotiation
+         * Genius" canonical rule, PON 2024). Unlabeled concessions get
+         * "overlooked, minimized, or downplayed" by the counterpart and
+         * forfeit the reciprocity dynamic entirely. The kernel enforces
+         * the label-cost-ask shape on every concession; the LLM cannot
+         * emit a naked "I can add X" move. */
+        cost_to_company: string;
+        benefit_to_candidate: string;
+        asked_in_return: string;
       };
     }
   | {
@@ -236,13 +245,55 @@ export function executeTool(
           reason: `concession ${amt} exceeds 50% of anchor — structurally implausible`,
         };
       }
-      const tmpl: Record<typeof lever, string> = {
-        joining_bonus: `I can add a ${fmtLpa(amt)} joining bonus to bridge the gap — that's the structural lever I have here.`,
-        esops: `I can layer in ${fmtLpa(amt)} of ESOPs vesting over 4 years — that's where the upside sits.`,
-        variable_to_base: `I can shift ${fmtLpa(amt)} from variable into your fixed base — cleaner predictability.`,
-        role_uplift: `I can move you to the next band on title — that's worth about ${fmtLpa(amt)} on next cycle.`,
+      /* Concession-labeling triad. ALL THREE fields are mandatory and
+       * each must be >=8 chars — a meaningful clause, not a token. The
+       * kernel renders the canonical "we're moving X because (cost),
+       * which gives you (benefit), in return we'd like (ask)" template.
+       * This is the deep-research #2 invariant. */
+      const cost = (call.args.cost_to_company ?? "").trim();
+      const benefit = (call.args.benefit_to_candidate ?? "").trim();
+      const ask = (call.args.asked_in_return ?? "").trim();
+      if (cost.length < 8) {
+        return {
+          ok: false,
+          reason: "concede requires cost_to_company — name what this costs us (e.g., 'pulls from joining-bonus pool', 'one band above standard for this level')",
+        };
+      }
+      if (benefit.length < 8) {
+        return {
+          ok: false,
+          reason: "concede requires benefit_to_candidate — name what this gives them (e.g., 'cleaner predictability', 'covers the notice-period buyout')",
+        };
+      }
+      if (ask.length < 8) {
+        return {
+          ok: false,
+          reason: "concede requires asked_in_return — name the reciprocity ask (e.g., 'we close this today', 'you stop the other process', 'you commit to the joining date')",
+        };
+      }
+      /* Ground the cost/benefit/ask clauses against the candidate's
+       * disclosed numbers — same rail as anchor/counter rationale.
+       * Prevents the LLM from smuggling fabricated LPA/% into the
+       * labeling fields to game the validator. */
+      const ctx = buildGroundingCtx(band, state, amt);
+      for (const clause of [cost, benefit, ask]) {
+        const fail = validateGrounding(clause, ctx);
+        if (fail) return { ok: false, reason: fail };
+      }
+      const lead: Record<typeof lever, string> = {
+        joining_bonus: `Here's what I can do: a ${fmtLpa(amt)} joining bonus`,
+        esops: `Here's what I can do: layer in ${fmtLpa(amt)} of ESOPs (4-year vest, 1-year cliff)`,
+        variable_to_base: `Here's what I can do: shift ${fmtLpa(amt)} from variable into your fixed base`,
+        role_uplift: `Here's what I can do: move you to the next band on title (worth about ${fmtLpa(amt)} on next cycle)`,
       };
-      return { ok: true, canonical: tmpl[lever], lpa: amt, tool: "concede" };
+      /* Canonical render: lever + cost + benefit + reciprocity ask.
+       * Each fragment lower-cased and stripped of trailing punct so the
+       * concatenation reads as a single deliberate sentence. */
+      const clean = (s: string) => s.replace(/[.!?,;:]+\s*$/, "").trim();
+      const canonical =
+        `${lead[lever]} — costs us ${clean(cost)}, gives you ${clean(benefit)}. ` +
+        `In return, ${clean(ask)}.`;
+      return { ok: true, canonical, lpa: amt, tool: "concede" };
     }
 
     case "close_recap": {

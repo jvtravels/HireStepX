@@ -180,6 +180,121 @@ describe("v2 tools — ask_discovery closed-topic gate (Bug #58 T3 fix)", () => 
   });
 });
 
+describe("v2 tools — concede labeling triad (deep-research #2)", () => {
+  /* All concede calls must provide cost_to_company, benefit_to_candidate,
+   * and asked_in_return as labeled, grounded fields. Malhotra/Bazerman:
+   * unlabeled concessions get "overlooked, minimized, or downplayed". */
+  const baseState = (): DerivedState =>
+    freshState({
+      hasAnchored: true,
+      lastAnchorLpa: 32,
+      candidateTarget: 40,
+      mentionedNumbers: [24, 32, 40],
+    });
+
+  it("rejects a concede missing cost_to_company", () => {
+    const call: ToolCall = {
+      name: "concede",
+      args: {
+        lever: "joining_bonus",
+        amount_lpa: 3,
+        cost_to_company: "",
+        benefit_to_candidate: "covers your 24 LPA notice-period buyout cleanly",
+        asked_in_return: "we close this today at 32 LPA",
+      },
+    };
+    const result = executeTool(call, BAND, baseState());
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/cost_to_company/);
+  });
+
+  it("rejects a concede missing benefit_to_candidate", () => {
+    const call: ToolCall = {
+      name: "concede",
+      args: {
+        lever: "esops",
+        amount_lpa: 4,
+        cost_to_company: "one band above the standard ESOP grant for this level",
+        benefit_to_candidate: "",
+        asked_in_return: "you stop running the other process",
+      },
+    };
+    const result = executeTool(call, BAND, baseState());
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/benefit_to_candidate/);
+  });
+
+  it("rejects a concede missing asked_in_return", () => {
+    const call: ToolCall = {
+      name: "concede",
+      args: {
+        lever: "variable_to_base",
+        amount_lpa: 2,
+        cost_to_company: "redistributing from variable pool",
+        benefit_to_candidate: "cleaner predictability month-on-month",
+        asked_in_return: "",
+      },
+    };
+    const result = executeTool(call, BAND, baseState());
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/asked_in_return/);
+  });
+
+  it("rejects a concede whose clauses contain ungrounded LPA numbers", () => {
+    const call: ToolCall = {
+      name: "concede",
+      args: {
+        lever: "joining_bonus",
+        amount_lpa: 3,
+        cost_to_company: "pulls from joining-bonus pool",
+        /* 99 LPA is not anywhere in state — fabricated. */
+        benefit_to_candidate: "front-loads roughly 99 LPA across year one",
+        asked_in_return: "you commit to a 30-day joining date",
+      },
+    };
+    const result = executeTool(call, BAND, baseState());
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/not grounded/);
+  });
+
+  it("accepts a well-labeled concede and renders the canonical triad template", () => {
+    const call: ToolCall = {
+      name: "concede",
+      args: {
+        lever: "joining_bonus",
+        amount_lpa: 3,
+        cost_to_company: "pulls from joining-bonus pool reserved for senior hires",
+        benefit_to_candidate: "covers your notice-period buyout up front",
+        asked_in_return: "you stop the other process and commit to joining 32 LPA today",
+      },
+    };
+    const result = executeTool(call, BAND, baseState());
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.canonical).toMatch(/costs us/);
+      expect(result.canonical).toMatch(/gives you/);
+      expect(result.canonical).toMatch(/In return/);
+      expect(result.canonical).toMatch(/joining bonus/);
+    }
+  });
+
+  it("keeps the 50%-of-anchor structural cap on amount_lpa", () => {
+    const call: ToolCall = {
+      name: "concede",
+      args: {
+        lever: "esops",
+        amount_lpa: 24, /* > 32 * 0.5 = 16 */
+        cost_to_company: "one band above standard grant for this level",
+        benefit_to_candidate: "front-loads upside on the equity side",
+        asked_in_return: "you close at 32 LPA today and commit to joining",
+      },
+    };
+    const result = executeTool(call, BAND, baseState());
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/50%|structurally implausible/);
+  });
+});
+
 describe("v2 tools — ask_discovery answer-options rule (Bug #58 T8 fix)", () => {
   /* T8: AI as recruiter asks "what justifies it — design system
    * ownership, user-research depth, conversion / retention impact?"
