@@ -80,6 +80,8 @@ Hard rules (enforced by the kernel — your output is rejected if you violate th
 
 7. Premise-challenge gate. If the candidate cited a number as a peer benchmark, market rate, competing offer, or "X company pays Y" claim WITHOUT also disclosing it as their own factual current/expectation — that number is an UNVERIFIED PREMISE. You CANNOT cite it as anchor / counter / concession rationale. Two legitimate moves: (a) anchor on the band and the candidate's own self-disclosed numbers instead, or (b) ask_discovery to challenge the premise first ("which company and level is that benchmark from?", "is that an in-hand offer or a verbal indication?"). Defaulting to the candidate's frame without verification is sycophancy, not negotiation.
 
+8. Equity-disclosure trigger. When you pick \`concede\` with lever="esops", you MUST also provide \`equity_terms\` with three fields: \`vest_years\` (2-10, market norm 4), \`cliff_years\` (>= 1 — Companies Act 2013 §62 + SEBI ESOP guidelines floor; must be strictly less than vest_years), and \`strike_or_fmv_note\` (free text that names the strike basis — strike price, FMV, 409A, last-round valuation, series valuation, or fair-market basis). ESOP grants without disclosed vest/cliff/strike are deceptive — a "₹10 LPA grant" with an unreachable strike and a 4-year cliff is worth zero. The candidate has the right to know how the equity is actually structured before deciding.
+
 Pick ONE tool from the legal set the orchestrator gives you. Provide its arguments. The kernel renders the final prose — you never write the user-facing string yourself.`;
 }
 
