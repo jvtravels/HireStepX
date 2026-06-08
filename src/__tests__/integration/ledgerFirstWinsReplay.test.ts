@@ -142,6 +142,7 @@ describe("PDF #20 replay — askedTopics dual-write keeps ledger in lockstep", (
      * probe-producing actionKind should dual-write the askedTopic. */
     const move1: AiMove = {
       lever: "probe",
+      newTotalLpa: null,
       actionKind: "currentCtcAsked",
       rationale: "discovery probe — current CTC",
     };
@@ -152,6 +153,7 @@ describe("PDF #20 replay — askedTopics dual-write keeps ledger in lockstep", (
     /* Second probe — both surfaces grow by one. */
     const move2: AiMove = {
       lever: "probe",
+      newTotalLpa: null,
       actionKind: "noticePeriodAsked",
       rationale: "discovery probe — notice period",
     };
@@ -169,6 +171,7 @@ describe("PDF #20 replay — askedTopics dual-write keeps ledger in lockstep", (
     const s0 = freshState();
     const probe: AiMove = {
       lever: "probe",
+      newTotalLpa: null,
       actionKind: "currentCtcAsked",
       rationale: "ask",
     };
