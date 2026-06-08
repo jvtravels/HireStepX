@@ -58,6 +58,100 @@ function fmtLpa(n: number): string {
   return Number.isInteger(n) ? `₹${n} LPA` : `₹${n.toFixed(1)} LPA`;
 }
 
+/* ── Number grounding ──────────────────────────────────────────────
+ *
+ * The T7 bug in PD #2 ("88% variable is significant" — candidate's
+ * actual variable share is ~6%) is not a regex-able edge case; it's a
+ * structural failure where the LLM smuggled a fabricated claim about
+ * the candidate into freeform rationale prose.
+ *
+ * Rule: any number with an LPA/L/lakh suffix or a % suffix that
+ * appears in a rationale string must be GROUNDED — derivable from
+ * one of:
+ *   - the candidate's own mentioned numbers (state.mentionedNumbers)
+ *   - the band (walkAway, initialOffer, maxStretch)
+ *   - the anchor/target scalars (lastAnchorLpa, candidateTarget,
+ *     plus the number_lpa the tool itself is rendering)
+ *   - any percentage derivable as 100·a/b where a, b ∈ mentionedNumbers
+ *
+ * Bare integers (no suffix) are deliberately not validated — phrases
+ * like "3-year vesting" or "5 YoE" are not money claims. We only
+ * police numbers that look like monetary or share claims. */
+
+interface GroundingContext {
+  mentionedNumbers: number[];
+  bandScalars: number[];
+  anchorScalars: number[];
+}
+
+function extractRationaleNumbers(rationale: string): {
+  lpas: number[];
+  percents: number[];
+} {
+  const lpas: number[] = [];
+  const percents: number[] = [];
+  const lpaRe = /\b(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?)\b/gi;
+  const pctRe = /\b(\d+(?:\.\d+)?)\s*%/g;
+  let m: RegExpExecArray | null;
+  while ((m = lpaRe.exec(rationale)) !== null) lpas.push(Number(m[1]));
+  while ((m = pctRe.exec(rationale)) !== null) percents.push(Number(m[1]));
+  return { lpas, percents };
+}
+
+function isGroundedLpa(n: number, ctx: GroundingContext): boolean {
+  const all = [...ctx.mentionedNumbers, ...ctx.bandScalars, ...ctx.anchorScalars];
+  return all.some((x) => Math.abs(x - n) <= 0.5);
+}
+
+function isGroundedPercent(p: number, ctx: GroundingContext): boolean {
+  /* Any pairwise ratio of mentioned LPA scalars, tolerance ±2pp. */
+  const mn = ctx.mentionedNumbers;
+  for (let i = 0; i < mn.length; i++) {
+    for (let j = 0; j < mn.length; j++) {
+      if (i === j || mn[j] === 0) continue;
+      const ratio = (mn[i] / mn[j]) * 100;
+      if (Math.abs(ratio - p) <= 2) return true;
+    }
+  }
+  /* Also accept the trivial 100%, common in close recap phrasing. */
+  return Math.abs(p - 100) <= 2;
+}
+
+function validateGrounding(
+  rationale: string,
+  ctx: GroundingContext,
+): string | null {
+  const { lpas, percents } = extractRationaleNumbers(rationale);
+  for (const n of lpas) {
+    if (!isGroundedLpa(n, ctx)) {
+      return `rationale references ${n} LPA which is not grounded in the conversation (candidate-mentioned: [${ctx.mentionedNumbers.join(", ")}], band: [${ctx.bandScalars.join(", ")}])`;
+    }
+  }
+  for (const p of percents) {
+    if (!isGroundedPercent(p, ctx)) {
+      return `rationale references ${p}% which is not derivable from any pair of candidate-mentioned numbers [${ctx.mentionedNumbers.join(", ")}]`;
+    }
+  }
+  return null;
+}
+
+function buildGroundingCtx(
+  band: NegotiationBand,
+  state: DerivedState,
+  toolNumber?: number,
+): GroundingContext {
+  const bandScalars = [band.walkAway, band.initialOffer, band.maxStretch];
+  const anchorScalars: number[] = [];
+  if (state.lastAnchorLpa !== null) anchorScalars.push(state.lastAnchorLpa);
+  if (state.candidateTarget !== null) anchorScalars.push(state.candidateTarget);
+  if (typeof toolNumber === "number") anchorScalars.push(toolNumber);
+  return {
+    mentionedNumbers: state.mentionedNumbers,
+    bandScalars,
+    anchorScalars,
+  };
+}
+
 export function executeTool(
   call: ToolCall,
   band: NegotiationBand,
@@ -85,6 +179,11 @@ export function executeTool(
       if (rationale.length < 10) {
         return { ok: false, reason: "anchor requires a rationale (>= 10 chars)" };
       }
+      const groundingFail = validateGrounding(
+        rationale,
+        buildGroundingCtx(band, state, n),
+      );
+      if (groundingFail) return { ok: false, reason: groundingFail };
       const canonical = `Based on what you've shared, we can come in at ${fmtLpa(n)} for this role — ${rationale}.`;
       return { ok: true, canonical, lpa: n, tool: "propose_anchor" };
     }
@@ -116,6 +215,11 @@ export function executeTool(
       if (rationale.length < 10) {
         return { ok: false, reason: "counter requires a rationale (>= 10 chars)" };
       }
+      const groundingFail = validateGrounding(
+        rationale,
+        buildGroundingCtx(band, state, n),
+      );
+      if (groundingFail) return { ok: false, reason: groundingFail };
       const canonical = `We can move up to ${fmtLpa(n)} on the fixed — ${rationale}.`;
       return { ok: true, canonical, lpa: n, tool: "propose_counter" };
     }

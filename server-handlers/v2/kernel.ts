@@ -82,6 +82,13 @@ export interface DerivedState {
   /** Turn index at which the candidate verbally accepted. null when
    *  no acceptance. close_recap is illegal without this. */
   verbalAcceptanceTurn: number | null;
+  /** All LPA-shaped numbers the candidate has mentioned across the
+   *  log (current CTC, base split, variable, joining bonus floats,
+   *  target, etc.). The grounding set: any LPA scalar a v2 tool
+   *  embeds in a rationale must be within ±0.5 of one of these (or
+   *  of a band/anchor/target scalar). Prevents the T7-class
+   *  fabrication where v1 invented "88% variable" with no source. */
+  mentionedNumbers: number[];
 }
 
 /** Regex bank. The offer-ask family must catch the explicit asks the
@@ -154,6 +161,21 @@ export function computeBand(
  *  every turn (rather than mutating long-lived state) is the v2
  *  discipline that prevents the v1 "state drift" failure mode where
  *  flags got set and never cleared. */
+/** Pull every LPA-shaped scalar from a candidate text into a number
+ *  list. "32 LPA" → [32]. "30 lpa base 2 LPA variable" → [30, 2].
+ *  Bare integers without an L/LPA suffix are deliberately ignored —
+ *  the grounding set is about money, not arbitrary digits. */
+function extractLpaMentions(text: string): number[] {
+  const out: number[] = [];
+  const re = /\b(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?)\b/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const n = Number(m[1]);
+    if (Number.isFinite(n) && n > 0) out.push(n);
+  }
+  return out;
+}
+
 export function deriveState(log: ConversationTurn[]): DerivedState {
   let turnIndex = 0;
   let offerAskCount = 0;
@@ -161,6 +183,7 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
   let lastAnchorLpa: number | null = null;
   let candidateTarget: number | null = null;
   let verbalAcceptanceTurn: number | null = null;
+  const mentionedNumbers: number[] = [];
 
   for (let i = 0; i < log.length; i++) {
     const turn = log[i];
@@ -184,7 +207,13 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
       continue;
     }
 
-    /* candidate turn */
+    /* candidate turn — extract any LPA-shaped numbers into the
+     * grounding set BEFORE the regex banks (so a turn that both
+     * states a target and discloses a number contributes both). */
+    for (const n of extractLpaMentions(turn.text)) {
+      mentionedNumbers.push(n);
+    }
+
     for (const pat of OFFER_ASK_PATTERNS) {
       if (pat.test(turn.text)) {
         offerAskCount++;
@@ -227,6 +256,7 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
     lastAnchorLpa,
     candidateTarget,
     verbalAcceptanceTurn,
+    mentionedNumbers,
   };
 }
 

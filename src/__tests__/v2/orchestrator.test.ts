@@ -142,6 +142,68 @@ describe("v2 e2e — the Flipkart bug is structurally impossible", () => {
     expect(result.lpa).toBe(BAND.initialOffer);
   });
 
+  it("LLM tries to anchor with FABRICATED % in rationale (the PD #2 T7 bug) → kernel rejects, retry with grounded rationale", async () => {
+    /* Candidate states 32 total / 30 base. Variable share is ~6%.
+     * The LLM tries to invent "88% variable is significant" — exactly
+     * what v1 shipped. v2 must reject. */
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current CTC?", tool: "ask_discovery" },
+      { role: "candidate", text: "my current ctc is 32 LPA" },
+      { role: "ai", text: "base split?", tool: "ask_discovery" },
+      { role: "candidate", text: "base is 30 LPA" },
+    ];
+    const llm = stubLlm([
+      {
+        name: "propose_anchor",
+        args: {
+          number_lpa: BAND.initialOffer,
+          rationale: "your 88% variable share is significant so we want to bridge with fixed",
+        },
+      },
+      {
+        name: "propose_anchor",
+        args: {
+          number_lpa: BAND.initialOffer,
+          rationale: "your current 32 LPA total and 30 LPA base put us at this opener",
+        },
+      },
+    ]);
+
+    const result = await generateTurn(log, BAND, llm);
+    expect(result.firstPickAccepted).toBe(false);
+    expect(result.firstPick.rejectionReason).toMatch(/88% .* not derivable/);
+    expect(result.tool).toBe("propose_anchor");
+    expect(result.canonical).toMatch(/32 LPA total/);
+  });
+
+  it("LLM tries to anchor citing an INVENTED LPA number ('your 50 LPA peer benchmark') → kernel rejects", async () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current CTC?", tool: "ask_discovery" },
+      { role: "candidate", text: "my current ctc is 32 LPA" },
+    ];
+    const llm = stubLlm([
+      {
+        name: "propose_anchor",
+        args: {
+          number_lpa: BAND.initialOffer,
+          rationale: "your peer benchmark at 50 LPA gives us room to open here",
+        },
+      },
+      {
+        name: "propose_anchor",
+        args: {
+          number_lpa: BAND.initialOffer,
+          rationale: "your current 32 LPA puts you well inside the senior PD band",
+        },
+      },
+    ]);
+
+    const result = await generateTurn(log, BAND, llm);
+    expect(result.firstPickAccepted).toBe(false);
+    expect(result.firstPick.rejectionReason).toMatch(/not grounded/);
+    expect(result.tool).toBe("propose_anchor");
+  });
+
   it("post-acceptance: only close_recap is legal — anything else is rejected", async () => {
     const log: ConversationTurn[] = [
       {
@@ -216,6 +278,7 @@ describe("v2 rail — catches discovery shipped after offer-ask pressure", () =>
         lastAnchorLpa: null,
         candidateTarget: null,
         verbalAcceptanceTurn: null,
+        mentionedNumbers: [],
       },
     );
     expect(verdict.pass).toBe(true);
