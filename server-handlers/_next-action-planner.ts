@@ -3090,6 +3090,57 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         },
       };
     }
+    /* AUDIT-3 Fix A (2026-06-08) — discovery-complete anchor.
+     *
+     * Production symptom: when the candidate volunteers BOTH currentCtc
+     * AND target on turn 1, the original anchor-with-offer gate (~line
+     * 2786) closes (candidateTarget != null), the discovery-cascade
+     * finds nothing left to ask, the target-anchor gate (~line 3029)
+     * skips (targetAnswered === true), and the cascade lands on
+     * open-with-offer. open-with-offer has numberPolicy: "forbidden" in
+     * the response pipeline, so the prose layer strips the number —
+     * the candidate never sees an initial offer. Bot looks idle.
+     *
+     * Bridge: when (a) discovery is complete, (b) no offer is on the
+     * table yet, and (c) we already have both current+target, anchor
+     * the band initial NOW. Bypasses open-with-offer's number gag and
+     * mirrors the band-anchor-with-rationale bridge that handles the
+     * same case once phase has advanced to probe-expectations. */
+    if (
+      state.highestOfferMade === 0 &&
+      state.candidateCurrentCtc != null &&
+      state.candidateTarget != null &&
+      state.discoveryChecklist != null &&
+      isDiscoveryComplete(
+        state.discoveryChecklist,
+        classifyRoleFamily(state.role),
+      ) &&
+      readAskedTopics(state).every(
+        (t) =>
+          t.topic !== "band-anchor-with-rationale" &&
+          (t.topic as string) !== "anchor-with-offer",
+      )
+    ) {
+      const lo = state.band.initialOffer;
+      const hi = state.band.maxStretch;
+      const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+      return {
+        kind: "anchor-with-offer",
+        initialOffer: anchored,
+        bandIncomplete: false,
+        satisfiesTopic: "band-anchor-with-rationale",
+        _move: {
+          lever: "probe",
+          newTotalLpa: anchored,
+          rationale:
+            `AUDIT-3 discovery-complete anchor: candidate volunteered current ₹${state.candidateCurrentCtc}L + target ₹${state.candidateTarget}L; ` +
+            `discovery satisfied; no offer on the table — anchor point-offer at ₹${anchored}L (band floor=${lo}).`,
+          askedTopic: "band-anchor-with-rationale",
+          actionKind: "anchor-with-offer",
+        },
+      };
+    }
+
     const clampedOpener = clampAnchorAgainstCandidateAsk(
       state.band.initialOffer,
       state.candidateTarget,
