@@ -4624,6 +4624,15 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     if (parsed.componentBreakdown.equity != null) {
       led = recordFact(led, "component-equity", parsed.componentBreakdown.equity, "main-parser", next.turnIndex, answer);
     }
+    /* AUDIT-2 (2026-06-08) — extend dual-write to notice-period-days.
+     * Previously only the disclosure-tracker fallback wrote notice to
+     * the ledger; the main parser produced parsed.noticeJoining.
+     * noticePeriodDays but never recorded it. The expectedDisclosures
+     * audit on 10 high-confidence scenarios surfaced this on 8/10 —
+     * exact same shape as QUALITY-3 with components. */
+    if (parsed.noticeJoining.noticePeriodDays != null) {
+      led = recordFact(led, "notice-period-days", parsed.noticeJoining.noticePeriodDays, "main-parser", next.turnIndex, answer);
+    }
     next.ledger = led;
   }
 

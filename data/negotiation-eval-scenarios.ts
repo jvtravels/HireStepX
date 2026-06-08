@@ -100,6 +100,13 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       },
     ],
     undisclosed: ["joining-date", "component-equity", "notice-period-days"],
+    expectedDisclosures: {
+      "current-ctc": 18,
+      "component-base": 14,
+      "component-variable": 4,
+      "competing-offer": 28,
+      "target-ctc": 30,
+    },
   },
 
   /* ---------------- Scenario 2: retention counter ---------------- */
@@ -164,6 +171,11 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "joining-date",
       "competing-offer",
     ],
+    expectedDisclosures: {
+      "current-ctc": 20,
+      "target-ctc": 28,
+      "notice-period-days": 45,
+    },
   },
 
   /* ---------------- Scenario 4: ESOP-heavy compensation ---------------- */
@@ -250,6 +262,11 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-variable",
       "component-equity",
     ],
+    expectedDisclosures: {
+      "current-ctc": 22,
+      "target-ctc": 32,
+      "notice-period-days": 60,
+    },
   },
 
   /* ---------------- Scenario 7: notice-period buyback ---------------- */
@@ -451,6 +468,10 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-variable",
       "component-equity",
     ],
+    expectedDisclosures: {
+      "current-ctc": 18,
+      "target-ctc": 25,
+    },
   },
 
   /* ---------------- Scenario 14: role mismatch ---------------- */
@@ -512,6 +533,13 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "joining-date",
       "component-equity",
     ],
+    expectedDisclosures: {
+      "current-ctc": 19,
+      "component-base": 16,
+      "component-variable": 3,
+      "target-ctc": 27,
+      "notice-period-days": 60,
+    },
   },
 
   /* ---------------- Scenario 16: mid-session band shift ---------------- */
@@ -663,6 +691,14 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Sure, I'll wait for the email.", aiText: "Sending today." },
     ],
     undisclosed: ["joining-date", "component-equity"],
+    expectedDisclosures: {
+      "current-ctc": 20,
+      "component-base": 17,
+      "component-variable": 3,
+      "target-ctc": 28,
+      "notice-period-days": 45,
+      "competing-offer": 26,
+    },
   },
 
   /* ============================================================ *
@@ -700,6 +736,14 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-variable",
       "component-equity",
     ],
+    expectedDisclosures: {
+      "current-ctc": 22,
+      // "anchored at 30 LPA" — verb-form target cue. If parser
+      // misses, target-ctc lands null and this fails — exactly the
+      // class of bug PARSER-1 surfaced for component-* facts.
+      "target-ctc": 30,
+      "notice-period-days": 45,
+    },
   },
 
   /* ---------------- Scenario 22: compound one-breath disclosure ---------------- */
@@ -723,6 +767,13 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "What's the next step?", aiText: "Let me share what we're thinking." },
     ],
     undisclosed: ["joining-date", "component-equity"],
+    expectedDisclosures: {
+      "current-ctc": 20,
+      "component-base": 17,
+      "component-variable": 3,
+      "target-ctc": 28,
+      "notice-period-days": 60,
+    },
   },
 
   /* ---------------- Scenario 23: first-wins under pressure ---------------- */
@@ -753,6 +804,14 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-variable",
       "component-equity",
     ],
+    expectedDisclosures: {
+      // First-wins: read layer returns the EARLIEST disclosure (18),
+      // not the later "correction" to 22. The ledger audit-trails both;
+      // the read-layer contract is what matters here.
+      "current-ctc": 18,
+      "target-ctc": 28,
+      "notice-period-days": 45,
+    },
   },
 
   /* ---------------- Scenario 24: range disclosure ---------------- */
@@ -840,6 +899,18 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-variable",
       "component-equity",
     ],
+    expectedDisclosures: {
+      // Bare numbers context-bind via lastAiText. Turn 0's bare "20 LPA"
+      // has no prior bot text yet (replay starts candidate-first), so
+      // current-ctc binding requires either (a) a turn-0-opening-phase
+      // heuristic that doesn't exist or (b) the candidate self-cueing.
+      // The cleaner test is the SUBSEQUENT bare replies: turn 1's
+      // "28 LPA" with lastAiText="What's your target..." binds to
+      // target via LAST_AI_ASKED_TARGET (AUDIT-2), and turn 2's "45 days"
+      // unambiguously notice via unit alone.
+      "target-ctc": 28,
+      "notice-period-days": 45,
+    },
   },
 
   /* ============================================================ *

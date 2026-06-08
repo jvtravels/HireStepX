@@ -151,6 +151,14 @@ const CURRENT_CUES: CueTable = {
   right: [
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
+    /* AUDIT-2 (2026-06-08): "X LPA total" without "CTC" middle. Common
+     * compact disclosure: "Razorpay, 20 LPA total." The LPA unit is
+     * consumed by the salary-span match (span.end sits AFTER "LPA"),
+     * so the right-window the cue is tested against is " total." — the
+     * pattern must match that, not "LPA total". Surfaced by the
+     * fixed-variable-split-disclosure scenario's expectedDisclosures
+     * audit. */
+    /^\s*total\s*[.!?,]/i,
   ],
 };
 
@@ -220,6 +228,32 @@ const LAST_AI_ASKED_CURRENT_CTC = new RegExp(
     String.raw`\bpresent\s+ctc\b`,
     String.raw`\byour\s+(?:current\s+)?package\b`,
   ].join("|"),
+  "i",
+);
+
+/** AUDIT-2 (2026-06-08): symmetric companion. Did the bot's last turn
+ *  ask for the candidate's TARGET / expectation? Bare-number replies
+ *  to a target probe should bind to `target`, not fall through to
+ *  phase-default. Surfaced by bare-number-reply-in-probe scenario
+ *  whose target probe ("What's your target for this move?") wasn't
+ *  recognized because no symmetric pattern existed. */
+const LAST_AI_ASKED_TARGET = new RegExp(
+  [
+    String.raw`\bwhat.?s\s+your\s+(?:target|expectation|ask|expected|number)\b`,
+    String.raw`\b(?:target|expectation|expected\s+ctc)\s+for\s+this\s+(?:move|role)\b`,
+    String.raw`\byour\s+(?:target|expectation|expected\s+ctc)\b`,
+    String.raw`\bhow\s+much\s+(?:are\s+you\s+)?(?:looking|expecting|targeting|asking)\b`,
+    String.raw`\bwhat\s+(?:are\s+you|number\s+are\s+you)\s+(?:looking\s+for|targeting|expecting)\b`,
+  ].join("|"),
+  "i",
+);
+
+/** AUDIT-2: did the bot's last turn ask for notice period? When yes, a
+ *  bare numeric reply with "days" binds to notice. (Distinct from
+ *  current/target because notice's unit is days, not LPA — so it
+ *  rarely false-positives, but worth pinning the convention.) */
+const LAST_AI_ASKED_NOTICE = new RegExp(
+  String.raw`\b(?:notice|notice\s+period|how\s+long.*notice)\b`,
   "i",
 );
 
@@ -435,6 +469,14 @@ function pickRole(
     const targetAnywhere = TARGET_CUES.left.some((r) => r.test(text)) ||
       TARGET_CUES.right.some((r) => r.test(text));
     if (!competingAnywhere && !targetAnywhere) return "current";
+  }
+  /* AUDIT-2 (2026-06-08): symmetric — bot asked target → bare = target. */
+  const aiAskedTarget = !!ctx.lastAiText && LAST_AI_ASKED_TARGET.test(ctx.lastAiText);
+  if (aiAskedTarget) {
+    const competingAnywhere = COMPETING_CUES.left.some((r) => r.test(text)) ||
+      COMPETING_CUES.right.some((r) => r.test(text));
+    const currentAnywhere = CURRENT_CUES.left.some((r) => r.test(text));
+    if (!competingAnywhere && !currentAnywhere) return "target";
   }
   if (ctx.phase === "probe-expectations") {
     const currentAnywhere = CURRENT_CUES.left.some((r) => r.test(text));
