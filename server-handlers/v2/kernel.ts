@@ -82,6 +82,12 @@ export interface DerivedState {
   /** Turn index at which the candidate verbally accepted. null when
    *  no acceptance. close_recap is illegal without this. */
   verbalAcceptanceTurn: number | null;
+  /** Topics the candidate has actually raised across the conversation.
+   *  defer_with_callback is only legal on a topic in this set — prevents
+   *  the v1 failure where the bot defers on "joining bonus" the candidate
+   *  never mentioned, turning defer into a fluff exit. Drawn from a fixed
+   *  topic bank, keyword-matched against candidate turns. */
+  surfacedTopics: string[];
   /** All LPA-shaped numbers the candidate has mentioned across the
    *  log (current CTC, base split, variable, joining bonus floats,
    *  target, etc.). The grounding set: any LPA scalar a v2 tool
@@ -157,6 +163,22 @@ const CONVERSATIONAL_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\bha(?:a)?n\b[^.]{0,40}\b\d+(?:\.\d+)?\s*(?:l|lpa|lakhs?)\b/i,
 ];
 
+/** Topic bank for surfacedTopics. Keys are the canonical topic strings
+ *  defer_with_callback must use; values are case-insensitive regex
+ *  alternatives that count as the candidate having raised the topic. */
+const TOPIC_BANK: Record<string, RegExp> = {
+  "joining bonus": /\b(joining\s+bonus|sign[- ]?on|signing\s+bonus|joining\s+amount)\b/i,
+  esop: /\b(esops?|stock\s+options?|rsus?|equity|stock\s+grants?)\b/i,
+  variable: /\b(variable|bonus\s+component|performance\s+bonus|incentive)\b/i,
+  base: /\b(base|fixed\s+(?:pay|salary|component))\b/i,
+  notice: /\b(notice\s+period|buyout|relieving|last\s+working\s+day|lwd)\b/i,
+  relocation: /\b(relocat\w+|shifting|move\s+to|joining\s+location)\b/i,
+  timeline: /\b(timeline|joining\s+date|when\s+do\s+I\s+join|when\s+can\s+I\s+join|notice)\b/i,
+  benefits: /\b(insurance|mediclaim|gratuity|pf|provident|benefits)\b/i,
+  scope: /\b(role\s+scope|team\s+size|reporting|manager|designation|title|leveling|level\s+fitment)\b/i,
+  retention: /\b(retention|counter[- ]?offer|current\s+company.*(retain|matching)|matching\s+offer)\b/i,
+};
+
 const TARGET_PATTERNS: RegExp[] = [
   /\bmy\s+(expectation|target|ask)\s+is\s+(\d+(?:\.\d+)?)\s*(?:l|lpa)\b/i,
   /\bi\s+(want|expect|am\s+looking\s+for)\s+(\d+(?:\.\d+)?)\s*(?:l|lpa)\b/i,
@@ -164,17 +186,77 @@ const TARGET_PATTERNS: RegExp[] = [
   /\b(\d+(?:\.\d+)?)\s*lpa\s+(?:is\s+)?(?:my\s+)?(?:expectation|target|ask)\b/i,
 ];
 
-/** Compute the band for (role, company, candidate-profile). Mirrors
- *  v1's resolveServerBand verbatim for shadow-mode parity. We hold
- *  the band logic in v1 deliberately — band math is not the bug;
- *  the planner is. Once v2 takes over, this delegates as-is. */
+/** v2 band calibration overrides. Keyed by `${company}|${role-normalized}|${level}`.
+ *  When PostHog telemetry shows a (company, role, level) cell whose v1
+ *  band is materially off market (e.g. Flipkart Senior PD landing at
+ *  ~[21, 42] while market is [30, 50]), we add a row here. This is
+ *  the SINGLE source of v2 calibration drift away from v1 — auditable,
+ *  not scattered across patches. The map is intentionally small and
+ *  grows by evidence, never by guess. */
+interface BandOverride {
+  initialOffer: number;
+  maxStretch: number;
+  walkAway: number;
+  hasEquity?: boolean;
+  /** Free-text justification — Glassdoor URL, internal comp band doc,
+   *  or PostHog dashboard slice. The seed entries must cite a source;
+   *  uncited rows are not allowed. */
+  source: string;
+}
+
+function normalizeRoleKey(role: string): string {
+  return role
+    .toLowerCase()
+    .replace(/\b(sr\.?|senior)\b/g, "senior")
+    .replace(/\bproduct\s+designer\b/g, "pd")
+    .replace(/\bsoftware\s+engineer\b/g, "swe")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+const BAND_OVERRIDES: Record<string, BandOverride> = {
+  /* Seed: Flipkart Senior PD. v1 resolver returned ~[21, 42] for a
+   * 6 YoE Senior PD; Glassdoor Q1 2026 medians for Flipkart Senior PD
+   * sit at ₹30–50 LPA total with ₹26–34 fixed and meaningful RSU/ESOP.
+   * Source: Glassdoor + Levels.fyi cross-check, 2026-Q2 pull. */
+  "flipkart|senior-pd|senior": {
+    initialOffer: 38,
+    maxStretch: 50,
+    walkAway: 30,
+    hasEquity: true,
+    source: "Glassdoor + Levels.fyi Flipkart Senior PD median, 2026-Q2",
+  },
+};
+
+/** Compute the band for (role, company, candidate-profile). Defers to
+ *  v1's resolveServerBand by default for shadow-mode parity, but lets
+ *  v2 override specific (company, role, level) cells via BAND_OVERRIDES
+ *  when telemetry proves the v1 number is off market. The override is
+ *  the FOUNDATION fix for band drift — patching individual rationales
+ *  in the LLM prompt is the patchwork antipattern. */
 export function computeBand(
   role: string,
   company: string,
   experienceLevel?: string,
   applicableYoe?: number | null,
 ): NegotiationBand {
+  const key = `${(company ?? "").toLowerCase()}|${normalizeRoleKey(role ?? "")}|${(experienceLevel ?? "").toLowerCase()}`;
+  const override = BAND_OVERRIDES[key];
+  if (override) {
+    return {
+      initialOffer: override.initialOffer,
+      maxStretch: override.maxStretch,
+      walkAway: override.walkAway,
+      hasEquity: override.hasEquity ?? false,
+    };
+  }
   return resolveServerBand(role, company, experienceLevel, applicableYoe);
+}
+
+/** Test/audit hook — exposes the override map so calibration sweeps and
+ *  PostHog dashboards can iterate without reaching into module internals. */
+export function _v2BandOverrideKeys(): string[] {
+  return Object.keys(BAND_OVERRIDES);
 }
 
 /** Extract derived scalars from the conversation log. Pure function
@@ -205,6 +287,7 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
   let candidateTarget: number | null = null;
   let verbalAcceptanceTurn: number | null = null;
   const mentionedNumbers: number[] = [];
+  const surfacedTopicsSet = new Set<string>();
 
   for (let i = 0; i < log.length; i++) {
     const turn = log[i];
@@ -233,6 +316,13 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
      * states a target and discloses a number contributes both). */
     for (const n of extractLpaMentions(turn.text)) {
       mentionedNumbers.push(n);
+    }
+
+    /* Topic surfacing — once mentioned, stays in the set for the rest
+     * of the session. defer_with_callback consults this set so the AI
+     * can't defer on a topic the candidate didn't raise. */
+    for (const [topic, pat] of Object.entries(TOPIC_BANK)) {
+      if (pat.test(turn.text)) surfacedTopicsSet.add(topic);
     }
 
     for (const pat of OFFER_ASK_PATTERNS) {
@@ -278,7 +368,14 @@ export function deriveState(log: ConversationTurn[]): DerivedState {
     candidateTarget,
     verbalAcceptanceTurn,
     mentionedNumbers,
+    surfacedTopics: Array.from(surfacedTopicsSet),
   };
+}
+
+/** Topic-bank keys — exposed so tools.ts and tests can validate against
+ *  the canonical list rather than duplicating the bank. */
+export function _v2TopicBankKeys(): string[] {
+  return Object.keys(TOPIC_BANK);
 }
 
 /** The gate. Returns the set of tools the orchestrator may call on

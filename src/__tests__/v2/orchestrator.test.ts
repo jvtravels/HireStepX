@@ -186,7 +186,7 @@ describe("v2 e2e — the Flipkart bug is structurally impossible", () => {
         name: "propose_anchor",
         args: {
           number_lpa: BAND.initialOffer,
-          rationale: "your peer benchmark at 50 LPA gives us room to open here",
+          rationale: "your peer benchmark at 75 LPA gives us room to open here",
         },
       },
       {
@@ -279,6 +279,7 @@ describe("v2 rail — catches discovery shipped after offer-ask pressure", () =>
         candidateTarget: null,
         verbalAcceptanceTurn: null,
         mentionedNumbers: [],
+        surfacedTopics: [],
       },
     );
     expect(verdict.pass).toBe(true);

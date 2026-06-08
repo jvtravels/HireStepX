@@ -20,6 +20,7 @@ function freshState(extra: Partial<DerivedState> = {}): DerivedState {
     candidateTarget: null,
     verbalAcceptanceTurn: null,
     mentionedNumbers: [],
+    surfacedTopics: [],
     ...extra,
   };
 }
@@ -82,6 +83,57 @@ describe("v2 tools — ask_discovery single-sentence rule (PD #2 T8 monologue fi
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.canonical.endsWith("?")).toBe(true);
+    }
+  });
+});
+
+describe("v2 tools — defer_with_callback surfacedTopics gate", () => {
+  it("rejects a defer on a topic the candidate never raised", () => {
+    /* The v1 failure: AI says "let me check on the joining bonus"
+     * when the candidate never mentioned joining bonus. v2 must
+     * refuse — the LLM doesn't get to invent the topic. */
+    const call: ToolCall = {
+      name: "defer_with_callback",
+      args: { topic: "joining bonus", when: "by EOD tomorrow" },
+    };
+    const result = executeTool(call, BAND, freshState({ surfacedTopics: ["base", "variable"] }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toMatch(/not raised by the candidate/);
+    }
+  });
+
+  it("accepts a defer on a topic the candidate did raise", () => {
+    const call: ToolCall = {
+      name: "defer_with_callback",
+      args: { topic: "joining bonus", when: "by EOD tomorrow" },
+    };
+    const result = executeTool(call, BAND, freshState({ surfacedTopics: ["joining bonus", "base"] }));
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.canonical).toMatch(/joining bonus/i);
+      expect(result.canonical).toMatch(/EOD tomorrow/i);
+    }
+  });
+
+  it("matches by substring — AI's topic 'esop vesting schedule' grounds against surfaced 'esop'", () => {
+    const call: ToolCall = {
+      name: "defer_with_callback",
+      args: { topic: "esop vesting schedule", when: "by Friday" },
+    };
+    const result = executeTool(call, BAND, freshState({ surfacedTopics: ["esop"] }));
+    expect(result.ok).toBe(true);
+  });
+
+  it("still rejects when surfacedTopics is empty (no candidate disclosures yet)", () => {
+    const call: ToolCall = {
+      name: "defer_with_callback",
+      args: { topic: "variable", when: "by tomorrow EOD" },
+    };
+    const result = executeTool(call, BAND, freshState({ surfacedTopics: [] }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toMatch(/surfaced: none/);
     }
   });
 });

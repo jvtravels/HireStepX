@@ -164,6 +164,7 @@ async function runShadowInner(
      * this scalar set, and the shadow path uses the rail only for
      * honest-move classification. */
     mentionedNumbers: [],
+    surfacedTopics: [],
   });
 
   /* "Diverged" heuristic: v1 shipped no number AND v2 shipped a

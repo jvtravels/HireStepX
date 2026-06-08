@@ -273,3 +273,71 @@ describe("v2 kernel — computeBand parity with v1", () => {
     expect(band.walkAway).toBeLessThanOrEqual(band.initialOffer);
   });
 });
+
+describe("v2 kernel — band override table (Flipkart Senior PD calibration)", () => {
+  it("returns the override band for Flipkart Senior PD, not the v1 default", () => {
+    /* v1 returned ~[21, 42] for this cell, which lagged the market.
+     * The v2 override should now return the calibrated band. */
+    const band = computeBand("Senior Product Designer", "flipkart", "senior", 6);
+    expect(band.initialOffer).toBeGreaterThanOrEqual(30);
+    expect(band.maxStretch).toBeGreaterThanOrEqual(45);
+    expect(band.walkAway).toBeGreaterThanOrEqual(28);
+  });
+
+  it("normalizes role keys — 'Sr. Product Designer' resolves to the same override", () => {
+    const a = computeBand("Senior Product Designer", "flipkart", "senior", 6);
+    const b = computeBand("Sr. Product Designer", "flipkart", "senior", 6);
+    expect(b.initialOffer).toBe(a.initialOffer);
+    expect(b.maxStretch).toBe(a.maxStretch);
+  });
+
+  it("falls back to v1 for a company NOT in the override table", () => {
+    /* Unknown company → no override → whatever v1 returns. We only
+     * assert it didn't blow up and returned a valid band shape. */
+    const band = computeBand("Senior Product Designer", "some-tier-3-startup", "senior", 6);
+    expect(band.initialOffer).toBeGreaterThan(0);
+    expect(band.maxStretch).toBeGreaterThanOrEqual(band.initialOffer);
+  });
+});
+
+describe("v2 kernel — surfacedTopics (defer-on-fabricated-topic fix)", () => {
+  it("surfaces 'joining bonus' when the candidate mentions it", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current CTC?", tool: "ask_discovery" },
+      { role: "candidate", text: "32 LPA, and is there any joining bonus on offer?" },
+    ];
+    const state = deriveState(log);
+    expect(state.surfacedTopics).toContain("joining bonus");
+  });
+
+  it("surfaces 'esop' when the candidate says 'RSU' or 'stock options'", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "anything else important?", tool: "ask_discovery" },
+      { role: "candidate", text: "I care about RSUs and base split" },
+    ];
+    const state = deriveState(log);
+    expect(state.surfacedTopics).toContain("esop");
+    expect(state.surfacedTopics).toContain("base");
+  });
+
+  it("does NOT surface a topic the candidate never raised", () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "current CTC?", tool: "ask_discovery" },
+      { role: "candidate", text: "32 LPA" },
+    ];
+    const state = deriveState(log);
+    expect(state.surfacedTopics).not.toContain("joining bonus");
+    expect(state.surfacedTopics).not.toContain("relocation");
+  });
+
+  it("topic, once surfaced, stays surfaced for the rest of the session", () => {
+    const log: ConversationTurn[] = [
+      { role: "candidate", text: "what about ESOPs?" },
+      { role: "ai", text: "we'll get to that", tool: "ask_discovery" },
+      { role: "candidate", text: "ok, also tell me about base" },
+    ];
+    const state = deriveState(log);
+    expect(state.surfacedTopics).toContain("esop");
+    expect(state.surfacedTopics).toContain("base");
+  });
+});

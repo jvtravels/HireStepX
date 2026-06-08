@@ -295,6 +295,25 @@ export function executeTool(
           reason: "defer requires a CONCRETE callback time (today / tomorrow / by EOD / by <weekday> / by MM/DD)",
         };
       }
+      /* Surfaced-topic gate. The candidate must have raised this topic
+       * in their own words at some point — otherwise the AI is
+       * conjuring a topic to defer on (the v1 "let me check on the
+       * joining bonus" failure when the candidate never asked about
+       * joining bonus). Match the AI's topic string against any
+       * surfaced-topic key by substring (case-insensitive). */
+      const topicLc = topic.trim().toLowerCase();
+      const surfaced = state.surfacedTopics ?? [];
+      const grounded = surfaced.some(
+        (t) => topicLc.includes(t.toLowerCase()) || t.toLowerCase().includes(topicLc),
+      );
+      if (!grounded) {
+        return {
+          ok: false,
+          reason: `defer topic "${topic.trim()}" was not raised by the candidate (surfaced: ${
+            surfaced.length ? surfaced.join(", ") : "none"
+          }) — cannot defer on a fabricated topic`,
+        };
+      }
       const canonical = `Need to check with finance on ${topic.trim()}. I'll come back to you ${when.trim()} with a concrete number — not a maybe.`;
       return { ok: true, canonical, tool: "defer_with_callback" };
     }
