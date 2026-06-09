@@ -8,6 +8,7 @@
    "empty" variant (handled inside the component). Loading shows a
    minimal cream-on-coal placeholder rather than the prototype's
    embedded mock data, so users never see fake rows. */
+import { useRouter } from "next/navigation";
 import SessionHistoryDesign, { type SessionHistoryItem } from "./SessionHistoryDesign";
 import { useDashboardSessions } from "./DashboardContext";
 import type { DashboardSession } from "./dashboardTypes";
@@ -65,6 +66,7 @@ function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
 }
 
 export default function SessionHistoryRoute() {
+  const router = useRouter();
   const { recentSessions, sessionsLoading } = useDashboardSessions();
 
   if (sessionsLoading) {
@@ -106,6 +108,10 @@ export default function SessionHistoryRoute() {
       allowReport={false}
       embedded
       theme="hirestepx"
+      /* Hand "New session" + EmptyView CTAs off to the interview
+         route. /interview is the same target the dashboard's
+         primary CTA uses. */
+      onStartSession={() => router.push("/interview")}
     />
   );
 }

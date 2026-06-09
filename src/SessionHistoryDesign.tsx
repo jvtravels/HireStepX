@@ -697,7 +697,7 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
 const FILTER_TYPES_DEFAULT = ["All", "Behavioral", "System Design", "Tech Screen", "Hiring Mgr", "Salary Neg."] as const;
 type SortKey = "recent" | "score" | "score-asc" | "duration";
 
-function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true, allowDrafts = true }: {
+function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true, allowDrafts = true, onStartSession }: {
   sessions: Session[];
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
@@ -712,6 +712,9 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
      column today, so toggling it would only flip local React state
      that vanishes on refresh — worse than not offering it. */
   allowDrafts?: boolean;
+  /* Optional handoff to interview setup; when undefined the New
+     session button hides rather than dangle as a dead affordance. */
+  onStartSession?: () => void;
 }) {
   /* now is captured once per ListView mount so the date-bucket math
      stays deterministic within a render pass. We intentionally don't
@@ -850,15 +853,20 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
             Every mock interview, scored and stored. Open any row to revisit.
           </p>
         </div>
-        <button style={{
-          padding: "10px 16px", borderRadius: radii.btn,
-          background: tok.coal, color: tok.cream, border: "none",
-          fontFamily: fonts.ui, fontSize: 13, fontWeight: 600,
-          cursor: "pointer", minHeight: 40,
-          display: "inline-flex", alignItems: "center", gap: 8,
-        }}>
-          <span aria-hidden style={{ fontWeight: 400 }}>+</span> New session
-        </button>
+        {/* Hide the CTA when no handler is provided — a coal-filled
+           "New session" button that does nothing is the worst kind
+           of dead affordance. Canvas mode leaves it hidden too. */}
+        {onStartSession && (
+          <button onClick={onStartSession} style={{
+            padding: "10px 16px", borderRadius: radii.btn,
+            background: tok.coal, color: tok.cream, border: "none",
+            fontFamily: fonts.ui, fontSize: 13, fontWeight: 600,
+            cursor: "pointer", minHeight: 40,
+            display: "inline-flex", alignItems: "center", gap: 8,
+          }}>
+            <span aria-hidden style={{ fontWeight: 400 }}>+</span> New session
+          </button>
+        )}
       </header>
 
       {/* KPI strip — persona-aware. With fewer than 3 sessions the
@@ -1827,6 +1835,12 @@ export interface SessionHistoryDesignProps {
      wrapper sets "hirestepx" so /sessions matches the rest of the app
      chrome; canvas storyboards keep "editorial". */
   theme?: SessionHistoryTheme;
+  /* Wire the "New session" / Empty-state CTAs to whatever route hands
+     off to interview setup. The canvas leaves this undefined so the
+     buttons no-op (storyboards never navigate); the route wrapper
+     plumbs `router.push("/interview")`. When undefined, the New
+     session button hides rather than dangling as a dead affordance. */
+  onStartSession?: () => void;
 }
 
 /* Internal route state. The `variant` prop sets the entry point each
@@ -1844,7 +1858,7 @@ type Route =
   | { name: "report"; id: string }
   | { name: "empty" };
 
-export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false, theme = "editorial" }: SessionHistoryDesignProps) {
+export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false, theme = "editorial", onStartSession }: SessionHistoryDesignProps) {
   /* Seed: real sessions when wired (initialSessions present and
      non-empty), otherwise the embedded mock array. Empty real-data
      drops the user into the empty variant automatically. */
@@ -1922,7 +1936,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
       return (
         <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
           <div key="empty" className="hsx-anim-view">
-            <EmptyView onStart={() => { /* hand off to interview-setup */ }} />
+            <EmptyView onStart={onStartSession ?? (() => { /* canvas mode: no-op */ })} />
           </div>
           {helpPanel}
         </Shell>
@@ -1955,7 +1969,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
       return (
         <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
           <div key="empty" className="hsx-anim-view">
-            <EmptyView onStart={() => { /* hand off to interview-setup */ }} />
+            <EmptyView onStart={onStartSession ?? (() => { /* canvas mode: no-op */ })} />
           </div>
           {helpPanel}
         </Shell>
@@ -1996,6 +2010,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
              persist draft state yet, so the route boundary turns it
              off; the canvas keeps it on for design exploration. */
           allowDrafts={allowDelete}
+          onStartSession={onStartSession}
         />
       </div>
       {undoToast}
