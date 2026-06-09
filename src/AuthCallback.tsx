@@ -165,7 +165,7 @@ export default function AuthCallback() {
           <>
             <div style={{
               padding: "16px 24px", borderRadius: 12, marginBottom: 16,
-              background: "rgba(196,112,90,0.1)", border: "1px solid rgba(196,112,90,0.3)",
+              background: "rgba(185,28,28,0.1)", border: "1px solid rgba(185,28,28,0.3)",
               maxWidth: 360,
             }}>
               <p style={{ color: c.ember, fontSize: 14, margin: 0 }}>{error}</p>
@@ -202,7 +202,7 @@ export default function AuthCallback() {
         ) : (
           <>
             <div style={{
-              width: 36, height: 36, border: "2px solid rgba(212,179,127,0.15)",
+              width: 36, height: 36, border: "2px solid rgba(180,83,9,0.15)",
               borderTopColor: c.gilt, borderRadius: "50%",
               animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
             }} />

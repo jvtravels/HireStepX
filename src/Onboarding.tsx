@@ -816,7 +816,7 @@ export default function Onboarding() {
         <div
           style={{
             width: 36, height: 36,
-            border: "2px solid rgba(212,179,127,0.15)",
+            border: "2px solid rgba(180,83,9,0.15)",
             borderTopColor: "#312E81",
             borderRadius: "50%",
             animation: "ob-spin 800ms linear infinite",
