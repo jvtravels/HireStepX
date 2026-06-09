@@ -1578,90 +1578,155 @@ function DetailView({
         )}
       </div>
 
-      {/* Hero — restrained. The inverted dark-indigo "score card" was
-         the canonical AI-dashboard hero-metric trope (big mono numeral,
-         italic-serif verdict, copper accent). It's been removed.
+      {/* ── Hero band: chronicle entry, opened ──
+         Mirrors the timeline-row band shape (mono eyebrow → serif
+         role-at-company headline → right-aligned tabular score) at
+         larger altitude. The 72pt mono numeral hero (dashboard-metric
+         template) is replaced by a 56pt serif reading in the same
+         typographic family as the headline; the score sits as a margin
+         figure, not a hero pulse. Decay + trend are folded into one
+         quiet line. Cream surface throughout; the dark-indigo "score
+         card" lived here previously and has been removed. */}
+      <header style={{ marginBottom: 32 }}>
+        {/* Catalog eyebrow — same composition the row uses. */}
+        <div style={{
+          fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
+          color: tok.inkSoft, letterSpacing: "0.14em",
+          textTransform: "uppercase", marginBottom: 16,
+        }}>
+          {[s.type, s.difficulty, s.questions ? `${s.questions} questions` : null, s.duration]
+            .filter(Boolean).join("  ·  ")}
+        </div>
 
-         The score now lives directly on the cream surface with a band
-         label that reads honestly across the score range, the delta
-         beside it as neutral mono, and the four breakdown bars below
-         as one inline rhythm. Cream holds the whole surface; no second
-         color strategy fights it. */}
-      <div style={{ marginBottom: 28 }}>
-        {/* Metadata row committed to a single voice: inline ·-separated
-           text, no chip backgrounds. The hero typography below carries
-           the identity weight; this row only labels it. The earlier
-           half-state (two loud chips + one quiet inline) was the
-           audit's H8 drag. */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center", color: tok.inkSoft, fontSize: 12 }}>
-          <span style={{ color: tok.copper, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.role}</span>
+        {/* Headline + score reading. Grid mirrors the row's headline
+           layout: serif role-at-company on the left, tabular score on
+           the right, baseline-aligned. The score is sized to be the
+           detail-altitude figure (56pt) without slipping into mono
+           hero-metric register. */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto",
+          gap: 32, alignItems: "baseline",
+          marginBottom: 18,
+        }}>
+          <h1 style={{
+            margin: 0,
+            fontFamily: fonts.serif,
+            fontSize: "clamp(30px, 5vw, 44px)",
+            fontWeight: 400, lineHeight: 1.1,
+            letterSpacing: "-0.02em", color: tok.coal,
+          }}>
+            {s.role}
+            {s.company ? (
+              <>
+                <em style={{ fontStyle: "italic", color: tok.copper, fontWeight: 400 }}> at </em>
+                <span style={{ color: tok.coal }}>{s.company}</span>
+              </>
+            ) : null}
+          </h1>
+          <div style={{
+            display: "flex", flexDirection: "column",
+            alignItems: "flex-end", gap: 2, flexShrink: 0,
+          }}>
+            <span style={{
+              fontFamily: fonts.serif, fontSize: 56,
+              color: tok.coal, lineHeight: 1, fontWeight: 400,
+              fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
+            }}>{s.score}</span>
+            <span style={{
+              fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
+              color: tok.inkFaint, letterSpacing: "0.14em",
+            }}>OF 100</span>
+          </div>
+        </div>
+
+        {/* Narrative band-label, delta, date — one quiet meta line
+           replacing the four prior labels. Band carries a HelpDot for
+           the score-band reference so the legend is one click away. */}
+        <div style={{
+          display: "flex", alignItems: "center",
+          gap: 14, flexWrap: "wrap", marginBottom: 22,
+        }}>
+          <span style={{
+            fontFamily: fonts.serif, fontStyle: "italic",
+            fontSize: 18, color: tok.coal, fontWeight: 400,
+            display: "inline-flex", alignItems: "center",
+          }}>
+            {BAND_LABEL[bandOf(s.score)]}
+            <HelpDot>
+              <div style={{ fontFamily: fonts.mono, marginBottom: 4 }}>Strong  ≥ 85</div>
+              <div style={{ fontFamily: fonts.mono, marginBottom: 4 }}>Solid   75-84</div>
+              <div style={{ fontFamily: fonts.mono, marginBottom: 4 }}>Mixed   65-74</div>
+              <div style={{ fontFamily: fonts.mono }}>Below    &lt; 65</div>
+            </HelpDot>
+          </span>
           <span style={{ color: tok.inkFaint }}>·</span>
-          <span style={{ color: tok.indigo, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.company}</span>
+          <span
+            aria-label={
+              s.delta > 0 ? `up ${s.delta} from previous`
+              : s.delta < 0 ? `down ${Math.abs(s.delta)} from previous`
+              : "no change from previous"
+            }
+            style={{
+              fontFamily: fonts.mono, fontSize: 12, fontWeight: 600,
+              color: s.delta > 0 ? tok.indigo
+                   : s.delta < 0 ? tok.copper
+                   : tok.inkSoft,
+              letterSpacing: "0.04em",
+              fontVariantNumeric: "tabular-nums",
+            }}>
+            {s.delta > 0 ? `▲ ${s.delta} vs prev`
+             : s.delta < 0 ? `▼ ${Math.abs(s.delta)} vs prev`
+             : "= no change"}
+          </span>
           <span style={{ color: tok.inkFaint }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 5, height: 5, borderRadius: radii.pill, background: tok.indigo, display: "inline-block" }} />
-            AI panel, Indian Senior PM
+          <span style={{ fontFamily: fonts.mono, fontSize: 12, color: tok.inkSoft }}>
+            {s.dateLabel}
           </span>
         </div>
-        <h1 style={{ ...heading.canonical, marginBottom: 8 }}>
-          Behavioral, round one.
-        </h1>
-        <div style={{ display: "flex", gap: 14, color: tok.inkSoft, fontSize: 13, marginBottom: 24 }}>
-          <span>{s.dateLabel}</span>
-          <span>·</span>
-          <span>{s.duration}</span>
-          <span>·</span>
-          <span>{s.questions} questions</span>
-        </div>
 
-        {/* Score module — distilled. Critique flagged the prior
-           baseline as overloaded (9 elements). The baseline now holds
-           four things: numeral, band, delta, CTAs. Sparkline + decay
-           moved to a quiet secondary line below the divider. */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 16, paddingBottom: 14 }}>
-          <span style={{ fontFamily: fonts.mono, fontSize: 72, fontWeight: 700, lineHeight: 1, color: tok.coal }}>{s.score}</span>
-          <span style={{ fontFamily: fonts.mono, fontSize: 16, color: tok.inkFaint }}>/ 100</span>
-          <div style={{ display: "flex", flexDirection: "column", marginLeft: 12 }}>
-            {/* Band-only label. The "top X% for Behavioral" was a
-               fabricated percentile we never compute; removing it is
-               more honest than guessing it. */}
-            <span style={{ fontFamily: fonts.serif, fontSize: 18, color: tok.coal, fontWeight: 500, display: "inline-flex", alignItems: "center" }}>
-              {BAND_LABEL[bandOf(s.score)]}
-              <HelpDot>
-                <div style={{ fontFamily: fonts.mono, marginBottom: 4 }}>Strong  ≥ 85</div>
-                <div style={{ fontFamily: fonts.mono, marginBottom: 4 }}>Solid   75-84</div>
-                <div style={{ fontFamily: fonts.mono, marginBottom: 4 }}>Mixed   65-74</div>
-                <div style={{ fontFamily: fonts.mono }}>Below    &lt; 65</div>
-              </HelpDot>
-            </span>
-            <span style={{ fontSize: 13, color: tok.inkSoft, marginTop: 2, fontFamily: fonts.mono }}>
-              {s.delta >= 0 ? "+" : ""}{s.delta} vs last session
-            </span>
-          </div>
-          {/* CTAs follow the score band. Share now lives by the
-             breadcrumb; this row is two buttons only. */}
-          {(() => {
-            const band = bandOf(s.score);
-            const primary =
-              band === "strong" ? "Schedule next round" :
-              band === "solid"  ? "Practice gaps" :
-                                  "Drill weakest";
-            const secondary = band === "below" ? "Retry this round" : "Open transcript";
-            return (
-              <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-                <button style={{ padding: "10px 18px", borderRadius: radii.btn, background: tok.coal, color: tok.cream, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{primary}</button>
-                <button
-                  onClick={() => { if (secondary === "Open transcript") setTab("Transcript"); }}
-                  style={{ padding: "10px 18px", borderRadius: radii.btn, background: tok.white, color: tok.coal, border: `1px solid ${tok.lineStrong}`, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{secondary}</button>
-              </div>
-            );
-          })()}
-        </div>
+        {/* CTAs — band-driven; primary is the indigo brand button
+           (matching DashboardHome + EmptyView), secondary stays the
+           quiet ghost. The Share button lives by the breadcrumb. */}
+        {(() => {
+          const band = bandOf(s.score);
+          const primary =
+            band === "strong" ? "Schedule next round" :
+            band === "solid"  ? "Practice gaps" :
+                                "Drill weakest";
+          const secondary = band === "below" ? "Retry this round" : "Open transcript";
+          return (
+            <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
+              <button
+                className="hsx-cta-primary"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  padding: "12px 20px", borderRadius: 12, border: "none", cursor: "pointer",
+                  background: tok.indigo, color: tok.white,
+                  fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, letterSpacing: 0.1,
+                  boxShadow: "0 4px 16px rgba(49,46,129,0.18)", minHeight: 44,
+                }}>
+                <span>{primary}</span>
+                <svg aria-hidden width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M13 5l7 7-7 7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => { if (secondary === "Open transcript") setTab("Transcript"); }}
+                style={{
+                  padding: "12px 18px", borderRadius: radii.btn,
+                  background: "transparent", color: tok.coal,
+                  border: `1px solid ${tok.lineStrong}`,
+                  fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  minHeight: 44,
+                }}>{secondary}</button>
+            </div>
+          );
+        })()}
 
-        {/* Secondary line: sparkline + decay readout share one quiet
-           row under the score baseline. Same divider sits below this
-           line so the entire score module reads as one block, but the
-           hero altitude no longer fights with five things. */}
+        {/* Quiet trend + decay line, divided from the headline above by
+           a hairline so the meta reads as the second movement of the
+           hero, not a separate widget. */}
         {(() => {
           const window = bandOf(s.score) === "strong" ? 14
                        : bandOf(s.score) === "solid"  ? 10
@@ -1678,66 +1743,99 @@ function DetailView({
             ? `Stale, last ${elapsedDays}d ago`
             : `Decays in ${remaining}d`;
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: 24, paddingBottom: 16, borderBottom: `1px solid ${tok.line}` }}>
-              {trend.length > 1 && (
-                <div title={`${s.type} trend: ${trend.join(" → ")}`} style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap",
+              paddingTop: 18, paddingBottom: 22,
+              borderTop: `1px solid ${tok.line}`,
+              borderBottom: `1px solid ${tok.line}`,
+            }}>
+              {trend.length > 1 ? (
+                <div title={`${s.type} trend: ${trend.join(" → ")}`} style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
                   <Sparkline values={trend} />
-                  <span style={{ fontSize: 11, color: tok.inkFaint, fontFamily: fonts.mono, letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                    {s.type} trend
+                  <span style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkFaint, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+                    {s.type} trend · {trend.length} sessions
                   </span>
                 </div>
+              ) : (
+                <span style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkFaint, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+                  First {s.type} session
+                </span>
               )}
-              <span style={{ fontSize: 12, color: tok.inkSoft, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: radii.pill, background: dotColor, display: "inline-block" }} />
-                <span style={{ fontFamily: fonts.mono }}>{labelText}</span>
+              <span style={{ fontSize: 12, color: tok.inkSoft, display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: radii.pill, background: dotColor, display: "inline-block" }} />
+                <span style={{ fontFamily: fonts.mono, letterSpacing: "0.04em" }}>{labelText}</span>
                 <span style={{ color: tok.inkFaint }}>· {stale ? "revisit now" : "revisit to hold"}</span>
               </span>
             </div>
           );
         })()}
 
-        {/* Breakdown — inline row of axes, one bar each, mono
-           numerals. Lives directly under the score so the relationship
-           reads as "this is what the 86 is made of," not a separate
-           panel. */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, paddingTop: 16 }}>
+        {/* Axis breakdown — four pillars below the meta line. Kept as
+           inline bars because they answer "what is the 86 made of?"
+           which the headline alone can't. Track is a hairline; fill
+           is 2px coal so it reads as a typographic underline of the
+           numeral, not a chart bar. */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 28, paddingTop: 22,
+        }}>
           {breakdown.map(b => (
             <div key={b.label}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: tok.inkSoft, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{b.label}</span>
-                <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 600, color: tok.coal }}>{b.score}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                <span style={{
+                  fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
+                  color: tok.inkSoft, letterSpacing: "0.14em", textTransform: "uppercase",
+                }}>{b.label}</span>
+                <span style={{
+                  fontFamily: fonts.serif, fontSize: 22, fontWeight: 400,
+                  color: tok.coal, fontVariantNumeric: "tabular-nums", lineHeight: 1,
+                }}>{b.score}</span>
               </div>
-              {/* Bar height bumped from 3px to 6px so the relationship
-                 between axes is legible at a glance, without becoming
-                 a chart-style block. Bars enter with a transform-only
-                 scaleX, so we never animate a layout property; ease
-                 is quart-out, respects prefers-reduced-motion via
-                 useMounted. */}
-              <div style={{ height: 6, background: tok.line, borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ height: 2, background: tok.line, overflow: "hidden" }}>
                 <div style={{
                   width: `${b.score}%`, height: "100%", background: tok.coal,
                   transformOrigin: "left center",
                   transform: mounted ? "scaleX(1)" : "scaleX(0)",
-                  transition: "transform 500ms cubic-bezier(0.22,1,0.36,1)",
+                  transition: "transform 600ms cubic-bezier(0.22,1,0.36,1)",
                 }} />
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </header>
 
-      {/* Tabs — driven by state so the underline tracks the click,
-         not a hard-coded `i === 0`. */}
-      <div style={{ display: "flex", gap: 24, borderBottom: `1px solid ${tok.line}`, marginBottom: 22 }}>
+      {/* Tabs — copper italic underline on active, no hard coal bar.
+         The active state reads as an editor's mark on the page rather
+         than a dashboard tab pill. Inactive tabs stay in inkSoft mono
+         so they read as catalog labels. */}
+      <div style={{
+        display: "flex", gap: 32,
+        borderBottom: `1px solid ${tok.line}`,
+        marginBottom: 26, paddingLeft: 0,
+      }}>
         {DETAIL_TABS.map(t => {
           const isActive = t === tab;
           return (
-            <button key={t} onClick={() => setTab(t)} aria-current={isActive ? "page" : undefined} style={{
-              padding: "10px 0", border: "none", background: "transparent",
-              borderBottom: isActive ? `2px solid ${tok.coal}` : "2px solid transparent",
-              color: isActive ? tok.coal : tok.inkSoft,
-              fontWeight: isActive ? 700 : 500, fontSize: 13, cursor: "pointer",
-            }}>{t}</button>
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              aria-current={isActive ? "page" : undefined}
+              style={{
+                padding: "12px 0", border: "none", background: "transparent",
+                borderBottom: isActive
+                  ? `1px solid ${tok.copper}`
+                  : "1px solid transparent",
+                marginBottom: -1,
+                fontFamily: isActive ? fonts.serif : fonts.mono,
+                fontStyle: isActive ? "italic" : "normal",
+                color: isActive ? tok.coal : tok.inkSoft,
+                fontWeight: isActive ? 400 : 600,
+                fontSize: isActive ? 16 : 11,
+                letterSpacing: isActive ? "0" : "0.12em",
+                textTransform: isActive ? "none" : "uppercase",
+                cursor: "pointer",
+                transition: "color 120ms cubic-bezier(0.22,1,0.36,1)",
+              }}>{t}</button>
           );
         })}
       </div>
@@ -1746,71 +1844,129 @@ function DetailView({
          a quiet placeholder so the tabs feel honest rather than
          dead. */}
       {tab === "Question-by-question" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {questions.map(q => {
+        /* Q-by-Q as chronicle entries: each question is a hairline-
+           divided band, not a bordered card. Number + question + note
+           share the column rhythm of the timeline row, so the detail
+           reads as the row's content unfolded. Score on the right as
+           a serif tabular reading. */
+        <div role="list" style={{ display: "flex", flexDirection: "column" }}>
+          {questions.map((q, i) => {
             const color = bandColor(q.score);
             const label = BAND_LABEL[bandOf(q.score)];
             return (
-              <div key={q.idx} style={{
-                display: "grid", gridTemplateColumns: "44px 1fr 100px",
-                gap: 16, padding: 16, background: tok.white,
-                border: `1px solid ${tok.line}`, borderRadius: radii.card, alignItems: "start",
+              <div key={q.idx} role="listitem" style={{
+                display: "grid", gridTemplateColumns: "44px 1fr auto",
+                gap: 20, alignItems: "start",
+                padding: "20px 0",
+                borderTop: i === 0 ? "none" : `1px solid ${tok.line}`,
               }}>
-                <div style={{ width: 36, height: 36, borderRadius: radii.pill, background: tok.creamSoft, color: tok.coal, display: "grid", placeItems: "center", fontFamily: fonts.mono, fontWeight: 700, fontSize: 14, border: `1px solid ${tok.line}` }}>
+                <span style={{
+                  fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
+                  color: tok.inkFaint, letterSpacing: "0.14em",
+                  paddingTop: 6,
+                }}>
                   {String(q.idx).padStart(2, "0")}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{
+                    margin: 0,
+                    fontFamily: fonts.serif, fontSize: 18, fontWeight: 400,
+                    color: tok.coal, lineHeight: 1.35,
+                    letterSpacing: "-0.005em",
+                    marginBottom: 6,
+                  }}>{q.text}</p>
+                  <p style={{
+                    margin: 0,
+                    fontSize: 13, color: tok.inkSoft, lineHeight: 1.55,
+                    maxWidth: "62ch",
+                  }}>{q.note}</p>
                 </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: tok.coal, marginBottom: 6 }}>{q.text}</div>
-                  <div style={{ fontSize: 13, color: tok.inkSoft, lineHeight: 1.5 }}>{q.note}</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "end", gap: 4 }}>
-                  <span style={{ fontFamily: fonts.mono, fontSize: 22, fontWeight: 700, color }}>{q.score}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</span>
+                <div style={{
+                  display: "flex", flexDirection: "column",
+                  alignItems: "flex-end", gap: 2, minWidth: 60,
+                }}>
+                  <span style={{
+                    fontFamily: fonts.serif, fontSize: 26, fontWeight: 400,
+                    color, lineHeight: 1, fontVariantNumeric: "tabular-nums",
+                  }}>{q.score}</span>
+                  <span style={{
+                    fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
+                    color, letterSpacing: "0.14em", textTransform: "uppercase",
+                  }}>{label}</span>
                 </div>
               </div>
             );
           })}
         </div>
       ) : tab === "Transcript" && s.transcript && s.transcript.length > 0 ? (
-        /* Real transcript: speaker + utterance in a stacked column,
-           coach annotations in muted copper below each line that has
-           one. Mono speaker tag, serif body for the text itself so it
-           reads like a transcript, not a chat log. */
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        /* Transcript as chronicle turns: hairline between speakers,
+           mono uppercase speaker tag, serif body so the text reads
+           like a verbatim record. Coach annotation in copper italic
+           under the turn it belongs to. */
+        <div style={{ display: "flex", flexDirection: "column", maxWidth: "68ch" }}>
           {s.transcript.map((line, i) => (
-            <div key={i} style={{ padding: "14px 18px", background: tok.white, border: `1px solid ${tok.line}`, borderRadius: radii.card }}>
-              <div style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+            <div key={i} style={{
+              padding: "18px 0",
+              borderTop: i === 0 ? "none" : `1px solid ${tok.line}`,
+            }}>
+              <div style={{
+                fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
+                color: tok.inkSoft, letterSpacing: "0.14em",
+                textTransform: "uppercase", marginBottom: 8,
+              }}>
                 {line.speaker}
               </div>
-              <div style={{ fontSize: 14, color: tok.coal, lineHeight: 1.55 }}>{line.text}</div>
+              <p style={{
+                margin: 0,
+                fontFamily: fonts.serif, fontSize: 17, fontWeight: 400,
+                color: tok.coal, lineHeight: 1.55,
+              }}>{line.text}</p>
               {line.scoreNote && (
-                <div style={{ fontSize: 12, color: tok.copper, marginTop: 8, fontStyle: "italic" }}>
-                  {line.scoreNote}
-                </div>
+                <p style={{
+                  margin: "10px 0 0",
+                  fontFamily: fonts.serif, fontStyle: "italic",
+                  fontSize: 14, color: tok.copper, lineHeight: 1.5,
+                }}>
+                  — {line.scoreNote}
+                </p>
               )}
             </div>
           ))}
         </div>
       ) : tab === "Coach notes" && s.feedback ? (
-        /* Real coach feedback: a single block of prose pulled from the
-           session record. Wider line-height + 65ch cap so it reads
-           like a written note, not a UI string. */
-        <div style={{ padding: "24px 28px", background: tok.white, border: `1px solid ${tok.line}`, borderRadius: radii.card, maxWidth: "65ch" }}>
-          <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Coach notes</div>
-          <div style={{ fontSize: 14, color: tok.coal, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{s.feedback}</div>
+        /* Coach notes as a written column: copper eyebrow, serif body,
+           65ch cap. No card chrome — it's prose, not a UI module. */
+        <div style={{ maxWidth: "65ch" }}>
+          <div style={{
+            fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
+            color: tok.copper, letterSpacing: "0.14em",
+            textTransform: "uppercase", marginBottom: 14,
+          }}>Coach notes</div>
+          <div style={{
+            fontFamily: fonts.serif, fontSize: 17, fontWeight: 400,
+            color: tok.coal, lineHeight: 1.7, whiteSpace: "pre-wrap",
+          }}>{s.feedback}</div>
         </div>
       ) : (
-        /* Critique fix: solid border instead of dashed. Dashed is now
-           reserved for draft rows; tab placeholders read as "coming"
-           via copy in the brand voice, not via border style. */
-        <div style={{ padding: "48px 24px", textAlign: "center", background: tok.white, border: `1px solid ${tok.line}`, borderRadius: radii.card }}>
-          <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Coming next</div>
-          <div style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, color: tok.coal, marginBottom: 6 }}>{tab}</div>
-          <div style={{ fontSize: 13, color: tok.inkSoft }}>
+        /* Coming-next placeholder as inline copy, no card. The tab
+           switch itself is the gesture; we don't need a framed panel
+           to apologize for the empty state. */
+        <div style={{ padding: "32px 0 12px", maxWidth: "60ch" }}>
+          <div style={{
+            fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
+            color: tok.copper, letterSpacing: "0.14em",
+            textTransform: "uppercase", marginBottom: 10,
+          }}>Coming next</div>
+          <div style={{
+            fontFamily: fonts.serif, fontStyle: "italic",
+            fontSize: 22, color: tok.coal, marginBottom: 10,
+            lineHeight: 1.2, letterSpacing: "-0.01em",
+          }}>{tab}</div>
+          <p style={{ margin: 0, fontSize: 14, color: tok.inkSoft, lineHeight: 1.6 }}>
             {tab === "Transcript"   && "The full back-and-forth lands in the next round."}
             {tab === "Coach notes"  && "Hand-written coaching arrives in the next round."}
             {tab === "Skill impact" && "Where this session moved your skill graph, soon."}
-          </div>
+          </p>
         </div>
       )}
     </div>
