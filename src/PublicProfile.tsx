@@ -37,7 +37,7 @@ export default function PublicProfile() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#060607", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontFamily: font.ui, fontSize: 14, color: c.stone }}>Loading profile...</span>
       </div>
     );
@@ -45,7 +45,7 @@ export default function PublicProfile() {
 
   if (error || !profile) {
     return (
-      <div style={{ minHeight: "100vh", background: "#060607", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
         <span style={{ fontFamily: font.ui, fontSize: 16, color: c.stone }}>{error || "Profile not found"}</span>
         <Link href="/" style={{ fontFamily: font.ui, fontSize: 13, color: c.gilt, textDecoration: "none" }}>Go to HireStepX</Link>
       </div>
@@ -57,7 +57,7 @@ export default function PublicProfile() {
   const maxSkillScore = Math.max(...profile.stats.skills.map(s => s.score), 1);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#060607", padding: "40px 20px" }}>
+    <div style={{ minHeight: "100vh", background: c.obsidian, padding: "40px 20px" }}>
       <div style={{ maxWidth: 560, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
@@ -99,7 +99,7 @@ export default function PublicProfile() {
                   <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>{skill.name}</span>
                   <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{skill.score}</span>
                 </div>
-                <div style={{ height: 4, borderRadius: 2, background: "rgba(245,242,237,0.05)" }}>
+                <div style={{ height: 4, borderRadius: 2, background: "rgba(14,12,8,0.05)" }}>
                   <div style={{ height: "100%", borderRadius: 2, background: skill.score >= 70 ? c.sage : skill.score >= 40 ? c.gilt : c.ember, width: `${(skill.score / maxSkillScore) * 100}%`, transition: "width 0.5s" }} />
                 </div>
               </div>
@@ -115,7 +115,7 @@ export default function PublicProfile() {
               {Object.entries(profile.stats.sessionTypes).map(([type, count]) => (
                 <span key={type} style={{
                   fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.chalk,
-                  background: "rgba(245,242,237,0.04)", border: `1px solid ${c.border}`,
+                  background: "rgba(14,12,8,0.04)", border: `1px solid ${c.border}`,
                   borderRadius: 8, padding: "6px 12px",
                 }}>
                   {type} ({count})

@@ -351,7 +351,7 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
       </header>
 
       {runNowState !== "idle" && runNowResult && (
-        <div style={{ marginBottom: sp.lg, padding: sp.md, borderRadius: radius.md, background: runNowState === "error" ? "rgba(209,126,104,0.1)" : "rgba(122,158,126,0.1)", border: `1px solid ${runNowState === "error" ? c.ember : c.sage}`, fontSize: 13 }}>
+        <div style={{ marginBottom: sp.lg, padding: sp.md, borderRadius: radius.md, background: runNowState === "error" ? "rgba(209,126,104,0.1)" : "rgba(21,128,61,0.1)", border: `1px solid ${runNowState === "error" ? c.ember : c.sage}`, fontSize: 13 }}>
           {runNowState === "running" && <span style={{ color: c.gilt }}>Running quality check… this re-analyzes today's sessions and regenerates the digest.</span>}
           {runNowState === "done" && (
             <span style={{ color: c.sage }}>
@@ -721,7 +721,7 @@ function IssuesView({ issuesByCategory, recent, onSelectSession, onRefresh }: {
               </div>
             )}
             {plan.cautions.length > 0 && (
-              <div style={{ marginTop: sp.lg, padding: sp.md, background: "rgba(212,179,127,0.06)", borderRadius: radius.sm, border: `1px solid ${c.border}` }}>
+              <div style={{ marginTop: sp.lg, padding: sp.md, background: "rgba(180,83,9,0.06)", borderRadius: radius.sm, border: `1px solid ${c.border}` }}>
                 <div style={{ fontSize: 11, color: c.gilt, fontWeight: 600, marginBottom: sp.xs }}>⚠ Cautions</div>
                 <ul style={{ margin: 0, paddingLeft: sp.lg, color: c.chalk, fontSize: 12 }}>
                   {plan.cautions.map((cau, i) => <li key={i} style={{ marginBottom: 2 }}>{cau}</li>)}

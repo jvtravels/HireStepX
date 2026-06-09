@@ -279,7 +279,7 @@ const tdStyle = {
 const exportBtn = {
   fontFamily: font.ui, fontSize: 11, fontWeight: 600,
   color: c.gilt, background: "transparent",
-  border: `1px solid rgba(212,179,127,0.3)`,
+  border: `1px solid rgba(180,83,9,0.3)`,
   borderRadius: 6, padding: "5px 12px", cursor: "pointer",
 } as const;
 
@@ -911,7 +911,7 @@ export default function AdminDashboard() {
                       <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, textTransform: "capitalize" }}>{name}</span>
                       <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: scoreColor(score) }}>{score}</span>
                     </div>
-                    <div style={{ height: 5, borderRadius: 3, background: "rgba(245,242,237,0.05)", overflow: "hidden" }}>
+                    <div style={{ height: 5, borderRadius: 3, background: "rgba(14,12,8,0.05)", overflow: "hidden" }}>
                       <div style={{ width: `${Math.max(0, Math.min(100, score))}%`, height: "100%", background: scoreColor(score), borderRadius: 3 }} />
                     </div>
                   </div>
@@ -943,25 +943,25 @@ export default function AdminDashboard() {
               {sessionDetail.qaPairs.map((qa, i) => (
                 <div key={i} style={{
                   border: `1px solid ${c.borderSubtle}`, borderRadius: 10, overflow: "hidden",
-                  background: "rgba(245,242,237,0.02)",
+                  background: "rgba(14,12,8,0.02)",
                 }}>
                   {/* AI question */}
                   <div style={{ padding: "12px 16px", borderBottom: `1px solid ${c.borderSubtle}` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <span style={{
                         fontFamily: font.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                        color: c.gilt, background: "rgba(212,179,127,0.1)", padding: "2px 7px", borderRadius: 3,
+                        color: c.gilt, background: "rgba(180,83,9,0.1)", padding: "2px 7px", borderRadius: 3,
                       }}>Q{i + 1} · Interviewer</span>
                       {qa.questionTime && <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{qa.questionTime}</span>}
                     </div>
                     <p style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, lineHeight: 1.6, margin: 0 }}>{qa.question}</p>
                   </div>
                   {/* Candidate answer */}
-                  <div style={{ padding: "12px 16px", background: "rgba(122,158,126,0.04)" }}>
+                  <div style={{ padding: "12px 16px", background: "rgba(21,128,61,0.04)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <span style={{
                         fontFamily: font.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                        color: c.sage, background: "rgba(122,158,126,0.1)", padding: "2px 7px", borderRadius: 3,
+                        color: c.sage, background: "rgba(21,128,61,0.1)", padding: "2px 7px", borderRadius: 3,
                       }}>Candidate</span>
                       {qa.answerTime && <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{qa.answerTime}</span>}
                     </div>
@@ -1089,7 +1089,7 @@ export default function AdminDashboard() {
                     key={i}
                     onClick={() => { setSelectedSessionId(String(s.id)); setSessionDetail(null); }}
                     style={{ cursor: "pointer", transition: "background 120ms" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(14,12,8,0.04)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     title="Click to view full session transcript"
                   >
@@ -1749,7 +1749,7 @@ export default function AdminDashboard() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {outcomes.shareableTestimonials.map((t, i) => (
-                <div key={i} style={{ padding: "12px 14px", background: "rgba(122,158,126,0.04)", border: `1px solid rgba(122,158,126,0.18)`, borderRadius: 10 }}>
+                <div key={i} style={{ padding: "12px 14px", background: "rgba(21,128,61,0.04)", border: `1px solid rgba(21,128,61,0.18)`, borderRadius: 10 }}>
                   <p style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, lineHeight: 1.6, margin: "0 0 6px", fontStyle: "italic" }}>&ldquo;{t.testimonial}&rdquo;</p>
                   <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: 0 }}>
                     — <strong style={{ color: c.chalk }}>{t.firstName}</strong> · landed {t.roleLanded} at {t.company} · {formatDateTime(t.reportedAt)}
@@ -2146,12 +2146,12 @@ export default function AdminDashboard() {
             width: auto !important; padding: 8px 12px !important;
             display: flex; gap: 4px; overflow-x: auto !important;
             border-right: none !important;
-            border-bottom: 1px solid rgba(245,242,237,0.06);
+            border-bottom: 1px solid rgba(14,12,8,0.06);
             -webkit-overflow-scrolling: touch;
           }
           .admin-tabs button { white-space: nowrap; flex-shrink: 0; width: auto !important; }
           .admin-tabs::-webkit-scrollbar { height: 3px; }
-          .admin-tabs::-webkit-scrollbar-thumb { background: rgba(245,242,237,0.12); border-radius: 2px; }
+          .admin-tabs::-webkit-scrollbar-thumb { background: rgba(14,12,8,0.12); border-radius: 2px; }
         }
         /* Tables remain scrollable horizontally on narrow screens. */
         @media (max-width: 720px) {
