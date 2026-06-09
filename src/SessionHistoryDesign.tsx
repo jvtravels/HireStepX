@@ -1243,6 +1243,14 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
         return;
       }
       if (typing) return;
+      /* Skip when ANY modifier is held. Critical for `r`: without
+         this guard, Cmd+R / Ctrl+R (browser refresh) matched the
+         re-run shortcut and routed the user to /interview with the
+         selected row's params — looking like "a random session
+         started on refresh". The same guard protects j/k/d/Enter
+         from clashing with browser/OS combos (Cmd+J downloads,
+         Cmd+D bookmark, etc.). */
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "j") { e.preventDefault(); setSelectedIdx(i => Math.min(i + 1, filtered.length - 1)); }
       else if (e.key === "k") { e.preventDefault(); setSelectedIdx(i => Math.max(i - 1, 0)); }
       else if (e.key === "Enter") {
