@@ -67,11 +67,15 @@ export default function SessionHistoryRoute() {
       <div
         style={{
           minHeight: "100vh",
-          background: "#FAF7F0",
-          color: "#0E0C08",
+          /* HireStepX obsidian + ivory + Inter — matches DashboardLayout
+             so the swap into the design doesn't flash a different
+             surface color. */
+          background: "#060607",
+          color: "#9E988F",
           display: "grid",
           placeItems: "center",
-          fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif",
+          fontFamily:
+            "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
           fontSize: 13,
         }}
       >
@@ -94,6 +98,7 @@ export default function SessionHistoryRoute() {
       allowDelete={false}
       allowReport={false}
       embedded
+      theme="hirestepx"
     />
   );
 }

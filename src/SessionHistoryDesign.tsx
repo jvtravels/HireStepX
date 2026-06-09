@@ -11,32 +11,97 @@ import React from "react";
 
 type Variant = "list" | "detail" | "report" | "empty";
 
+/* Tokens reference CSS custom properties set at the root of every
+   rendered branch. This indirection is the entire theming system:
+   `theme="editorial"` paints the original cream-on-coal canvas surface,
+   `theme="hirestepx"` paints the production dark-luxury brand
+   (obsidian / graphite / ivory / gilt + Instrument Serif).
+   The hundreds of `tok.X` / `fonts.X` reads downstream never change. */
 const tok = {
-  cream: "#FAF7F0",
-  creamSoft: "#F4EFE3",
-  white: "#FFFFFF",
-  coal: "#0E0C08",
-  ink: "#3E3A6E",
-  inkSoft: "#6E6759",
-  inkFaint: "#8A8270",
-  indigo: "#312E81",
-  indigoDeep: "#1E1B4B",
-  indigo100: "#E5E2F2",
-  copper: "#B45309",
-  copperSoft: "rgba(180,83,9,0.10)",
-  copper100: "#F4E5D8",
-  success: "#15803D",
-  successSoft: "#DCFCE7",
-  error: "#B91C1C",
-  errorSoft: "#FEE2E2",
-  line: "#EBE5D2",
-  lineStrong: "#D6CDB5",
+  cream: "var(--hsx-cream)",
+  creamSoft: "var(--hsx-cream-soft)",
+  white: "var(--hsx-white)",
+  coal: "var(--hsx-coal)",
+  ink: "var(--hsx-ink)",
+  inkSoft: "var(--hsx-ink-soft)",
+  inkFaint: "var(--hsx-ink-faint)",
+  indigo: "var(--hsx-accent)",
+  indigoDeep: "var(--hsx-accent-deep)",
+  indigo100: "var(--hsx-accent-tint)",
+  copper: "var(--hsx-warm)",
+  copperSoft: "var(--hsx-warm-soft)",
+  copper100: "var(--hsx-warm-tint)",
+  success: "var(--hsx-success)",
+  successSoft: "var(--hsx-success-soft)",
+  error: "var(--hsx-error)",
+  errorSoft: "var(--hsx-error-soft)",
+  line: "var(--hsx-line)",
+  lineStrong: "var(--hsx-line-strong)",
 };
 
 const fonts = {
-  serif: "'Caslon', 'Source Serif Pro', Georgia, serif",
-  ui: "'Satoshi', -apple-system, system-ui, sans-serif",
-  mono: "'JetBrains Mono', 'SF Mono', monospace",
+  serif: "var(--hsx-font-serif)",
+  ui: "var(--hsx-font-ui)",
+  mono: "var(--hsx-font-mono)",
+};
+
+/* Theme palettes — concrete values resolved per `theme` prop. The
+   editorial palette is the canvas-only design register (cream + Caslon
+   + indigo). The HireStepX palette mirrors src/tokens.ts: obsidian
+   surface, ivory text, gilt brand accent, Instrument Serif + Inter. */
+export type SessionHistoryTheme = "editorial" | "hirestepx";
+
+const THEMES: Record<SessionHistoryTheme, React.CSSProperties> = {
+  editorial: {
+    "--hsx-cream": "#FAF7F0",
+    "--hsx-cream-soft": "#F4EFE3",
+    "--hsx-white": "#FFFFFF",
+    "--hsx-coal": "#0E0C08",
+    "--hsx-ink": "#3E3A6E",
+    "--hsx-ink-soft": "#6E6759",
+    "--hsx-ink-faint": "#8A8270",
+    "--hsx-accent": "#312E81",
+    "--hsx-accent-deep": "#1E1B4B",
+    "--hsx-accent-tint": "#E5E2F2",
+    "--hsx-warm": "#B45309",
+    "--hsx-warm-soft": "rgba(180,83,9,0.10)",
+    "--hsx-warm-tint": "#F4E5D8",
+    "--hsx-success": "#15803D",
+    "--hsx-success-soft": "#DCFCE7",
+    "--hsx-error": "#B91C1C",
+    "--hsx-error-soft": "#FEE2E2",
+    "--hsx-line": "#EBE5D2",
+    "--hsx-line-strong": "#D6CDB5",
+    "--hsx-font-serif": "'Caslon', 'Source Serif Pro', Georgia, serif",
+    "--hsx-font-ui": "'Satoshi', -apple-system, system-ui, sans-serif",
+    "--hsx-font-mono": "'JetBrains Mono', 'SF Mono', monospace",
+  } as React.CSSProperties,
+  hirestepx: {
+    /* Dark-luxury HireStepX brand. Mirrors src/tokens.ts so the
+       Sessions surface composes seamlessly with DashboardLayout. */
+    "--hsx-cream": "#060607",         // obsidian base
+    "--hsx-cream-soft": "#111113",    // graphite, raised panels
+    "--hsx-white": "#1E1E20",         // onyx, top-level cards
+    "--hsx-coal": "#F5F2ED",          // ivory, primary text
+    "--hsx-ink": "#CCC7C0",           // chalk, secondary text
+    "--hsx-ink-soft": "#9E988F",      // AA on obsidian, tertiary
+    "--hsx-ink-faint": "#8E8983",     // stone, quaternary
+    "--hsx-accent": "#D4B37F",        // gilt, brand
+    "--hsx-accent-deep": "#B8923E",   // giltDark, brand hover/active
+    "--hsx-accent-tint": "rgba(212,179,127,0.12)",
+    "--hsx-warm": "#E8D5AE",          // giltLight, secondary warm
+    "--hsx-warm-soft": "rgba(232,213,174,0.10)",
+    "--hsx-warm-tint": "rgba(232,213,174,0.06)",
+    "--hsx-success": "#A3C5A7",       // sageLight for AA on dark
+    "--hsx-success-soft": "rgba(122,158,126,0.16)",
+    "--hsx-error": "#E0917B",         // emberLight for AA on dark
+    "--hsx-error-soft": "rgba(209,126,104,0.16)",
+    "--hsx-line": "rgba(245,242,237,0.08)",
+    "--hsx-line-strong": "rgba(245,242,237,0.14)",
+    "--hsx-font-serif": "'Instrument Serif', Georgia, 'Times New Roman', serif",
+    "--hsx-font-ui": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    "--hsx-font-mono": "'JetBrains Mono', 'SF Mono', monospace",
+  } as React.CSSProperties,
 };
 
 /* View-heading scale. Four views previously wore four different h1
@@ -462,18 +527,18 @@ function ScoreRing({ score, size = 56, stroke = 4 }: { score: number; size?: num
 }
 
 /* ─── Shell ─── */
-function Shell({ active, onHelp, embedded, children }: { active: "Sessions" | "Detail" | "Report"; onHelp?: () => void; embedded?: boolean; children: React.ReactNode }) {
+function Shell({ active, onHelp, embedded, theme = "editorial", children }: { active: "Sessions" | "Detail" | "Report"; onHelp?: () => void; embedded?: boolean; theme?: SessionHistoryTheme; children: React.ReactNode }) {
+  const themeVars = THEMES[theme];
   /* Embedded mode: the route already lives inside DashboardLayout,
-     which provides the real app sidebar. Rendering the design's
-     internal rail on top produces two stacked left sidebars. In
-     embedded mode we strip the rail and return just the page body
-     so the design's grid composes with the surrounding chrome. */
+     which provides the real app sidebar AND the main landmark. We
+     strip the design's rail, skip-link, and <main> so we don't ship
+     duplicate landmarks; the outer layout owns those. The wrapper is
+     a plain <div> that just carries the theme vars and the page body. */
   if (embedded) {
     return (
-      <div className="hsx-root" style={{ background: tok.cream, color: tok.coal, fontFamily: fonts.ui, minHeight: "100vh", position: "relative" }}>
+      <div className="hsx-root" style={{ ...themeVars, background: tok.cream, color: tok.coal, fontFamily: fonts.ui, minHeight: "100vh", position: "relative" }}>
         <style>{FOCUS_STYLE}</style>
-        <a href="#main" className="hsx-skip">Skip to content</a>
-        <main id="main">{children}</main>
+        {children}
       </div>
     );
   }
@@ -490,7 +555,7 @@ function Shell({ active, onHelp, embedded, children }: { active: "Sessions" | "D
   const activeTab = PARENT_OF[active];
   const tabs = ["Dashboard", "Sessions", "Analytics", "Resume", "Calendar", "Settings"];
   return (
-    <div className="hsx-root" style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: tok.cream, color: tok.coal, fontFamily: fonts.ui, position: "relative" }}>
+    <div className="hsx-root" style={{ ...themeVars, display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: tok.cream, color: tok.coal, fontFamily: fonts.ui, position: "relative" }}>
       <style>{FOCUS_STYLE}</style>
       {/* Skip-link: invisible until focused via Tab. Keyboard users land
          on the first tab stop in the sidebar; one keystroke jumps them
@@ -1649,6 +1714,12 @@ export interface SessionHistoryDesignProps {
      chrome (e.g. /sessions inside DashboardLayout) that already
      provides a sidebar — otherwise the user sees two stacked rails. */
   embedded?: boolean;
+  /* Theme palette. "editorial" (default) renders the canvas cream-on-
+     coal register; "hirestepx" renders the production dark-luxury
+     brand (obsidian / ivory / gilt + Instrument Serif). The route
+     wrapper sets "hirestepx" so /sessions matches the rest of the app
+     chrome; canvas storyboards keep "editorial". */
+  theme?: SessionHistoryTheme;
 }
 
 /* Internal route state. The `variant` prop sets the entry point each
@@ -1666,7 +1737,7 @@ type Route =
   | { name: "report"; id: string }
   | { name: "empty" };
 
-export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false }: SessionHistoryDesignProps) {
+export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false, theme = "editorial" }: SessionHistoryDesignProps) {
   /* Seed: real sessions when wired (initialSessions present and
      non-empty), otherwise the embedded mock array. Empty real-data
      drops the user into the empty variant automatically. */
@@ -1735,7 +1806,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
   if (route.name === "detail") {
     const s = sessions.find(x => x.id === route.id) ?? sessions[0] ?? INITIAL_SESSIONS[0];
     return (
-      <Shell active="Detail" onHelp={() => setHelpOpen(true)} embedded={embedded}>
+      <Shell active="Detail" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
         <div key="detail" className="hsx-anim-view">
           <DetailView
             session={s}
@@ -1752,7 +1823,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
   if (route.name === "report") {
     const s = sessions.find(x => x.id === route.id) ?? sessions[0] ?? INITIAL_SESSIONS[0];
     return (
-      <Shell active="Report" onHelp={() => setHelpOpen(true)} embedded={embedded}>
+      <Shell active="Report" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
         <div key="report" className="hsx-anim-view">
           <ReportView
             onBack={() => setRoute({ name: "detail", id: s.id })}
@@ -1765,7 +1836,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
   }
   if (route.name === "empty") {
     return (
-      <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded}>
+      <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
         <div key="empty" className="hsx-anim-view">
           <EmptyView onStart={() => { /* hand off to interview-setup */ }} />
         </div>
@@ -1774,7 +1845,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
     );
   }
   return (
-    <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded}>
+    <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
       <div key="list" className="hsx-anim-view">
         <ListView
           sessions={sessions}
