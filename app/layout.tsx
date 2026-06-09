@@ -253,14 +253,6 @@ export default function RootLayout({
         ))}
       </head>
       <body className="bg-[#060607] text-[#F5F2ED]">
-        {/* Skip-to-content link for keyboard / screen reader users */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded focus:bg-[#D4B37F] focus:px-4 focus:py-2 focus:text-[#060607] focus:outline-none"
-        >
-          Skip to content
-        </a>
-
         {/* Route change announcer for screen readers */}
         <div
           id="route-announcer"
