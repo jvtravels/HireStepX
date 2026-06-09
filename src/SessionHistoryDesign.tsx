@@ -824,9 +824,18 @@ const bandBg = (score: number): string => {
    label stacked inside, trend delta (or FIRST) beneath. Self-contained so
    the card body can drop it into a fixed right rail. Draft renders an
    em-dash with no arc — the reading isn't in yet. */
+/* Compact band label for the in-ring stack. "Below target" is 12 chars
+   and clips at 8px inside a 64px ring; "Below" reads cleanly and keeps
+   parity with the other one-word band names. The full label is still
+   used in the aria-label and elsewhere on the page. */
+const RING_BAND_LABEL: Record<Band, string> = {
+  strong: "Strong", solid: "Solid", mixed: "Mixed", below: "Below",
+};
+
 function ScoreRing({ score, delta, isFirst, draft }: { score: number; delta: number; isFirst: boolean; draft?: boolean }) {
   const color = bandColor(score);
-  const label = BAND_LABEL[bandOf(score)];
+  const label = RING_BAND_LABEL[bandOf(score)];
+  const ariaLabel = BAND_LABEL[bandOf(score)];
   const r = 27;
   const circ = 2 * Math.PI * r;
   const fill = (Math.max(0, Math.min(100, score)) / 100) * circ;
@@ -843,7 +852,7 @@ function ScoreRing({ score, delta, isFirst, draft }: { score: number; delta: num
           width="64" height="64" viewBox="0 0 64 64"
           style={{ transform: "rotate(-90deg)", position: "absolute" }}
           role="img"
-          aria-label={draft ? "draft, no score yet" : `score ${score} out of 100, ${label}`}>
+          aria-label={draft ? "draft, no score yet" : `score ${score} out of 100, ${ariaLabel}`}>
           <circle cx="32" cy="32" r={r} fill="none" stroke={tok.line} strokeWidth="3" />
           {!draft ? (
             <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${fill} ${circ}`} />
