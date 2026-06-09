@@ -122,6 +122,12 @@ export default function SessionHistoryRoute() {
          route. /interview is the same target the dashboard's
          primary CTA uses. */
       onStartSession={() => router.push("/interview")}
+      /* Clicking a session card opens the canonical post-interview
+         report at /session/[id] (rendered by SessionDetail →
+         SessionReport). Mirrors the dashboard's row-click behavior
+         and the "View results" CTA users see right after an interview
+         ends — one report surface, not two divergent ones. */
+      onOpenReport={id => router.push(`/session/${id}`)}
       /* Row-level "Practice this again" carries the original session's
          setup forward so the user lands in a pre-populated interview
          setup. Query params mirror the dashboard's deep-link contract

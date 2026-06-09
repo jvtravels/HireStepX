@@ -2378,6 +2378,14 @@ export interface SessionHistoryDesignProps {
      (canvas mode). Industry-standard re-do pattern (Duolingo "Practice
      again", LeetCode "Solve again", Peloton "Take again"). */
   onRerun?: (session: SessionHistoryItem) => void;
+  /* Open the canonical post-interview report for a session. When
+     supplied (route mode), the card click handler routes here
+     instead of switching to the design's embedded Detail view —
+     so /sessions and the post-interview "View results" land on
+     the same SessionReport surface. Canvas mode leaves it
+     undefined and keeps the in-shell Detail → Report flow for
+     design exploration. */
+  onOpenReport?: (id: string) => void;
 }
 
 /* Internal route state. The `variant` prop sets the entry point each
@@ -2395,7 +2403,7 @@ type Route =
   | { name: "report"; id: string }
   | { name: "empty" };
 
-export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false, theme = "editorial", onStartSession, onRerun }: SessionHistoryDesignProps) {
+export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false, theme = "editorial", onStartSession, onRerun, onOpenReport }: SessionHistoryDesignProps) {
   /* Seed: real sessions when wired (initialSessions present and
      non-empty), otherwise the embedded mock array. Empty real-data
      drops the user into the empty variant automatically. */
@@ -2539,7 +2547,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
       <div key="list" className="hsx-anim-view">
         <ListView
           sessions={sessions}
-          onOpen={id => setRoute({ name: "detail", id })}
+          onOpen={id => (onOpenReport ? onOpenReport(id) : setRoute({ name: "detail", id }))}
           onDelete={handleDelete}
           onToggleDraft={handleToggleDraft}
           allowDelete={allowDelete}
