@@ -3,6 +3,7 @@ import { loadEvents, daysUntilEvent, formatEventTime } from "./dashboardHelpers"
 import { supabaseConfigured } from "./supabase";
 import type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState, SessionCoaching } from "./dashboardTypes";
 import { scoreLabel } from "./dashboardTypes";
+import { strengthCopy, gapCopy } from "./skillCopy";
 
 /** Retry a fetch-based async function on network errors (not on 4xx/5xx) */
 async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1000): Promise<T> {
@@ -184,13 +185,20 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
       score: rs.score,
       change: rs.score - prevScore,
       duration: `${durationMin} min`,
+      /* Picks the top-/bottom-scoring competency key out of skill_scores
+         and runs it through `strengthCopy`/`gapCopy` so the raw camelCase
+         machine token ("leverageUse", "composure") becomes a plain-English
+         phrase the card can show without the LLM coaching block — needed
+         for legacy pre-mvp-8 rows that have skill_scores but no coaching. */
       topStrength: rs.skill_scores
-        ? Object.entries(rs.skill_scores).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0]
-          || pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score)
+        ? strengthCopy(
+            Object.entries(rs.skill_scores).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0]
+          ) || pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score)
         : pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score),
       topWeakness: rs.skill_scores
-        ? Object.entries(rs.skill_scores).sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0]
-          || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
+        ? gapCopy(
+            Object.entries(rs.skill_scores).sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0]
+          ) || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
         : pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3),
       coaching: rs.coaching,
       feedback: generateFeedback(type, rs.score),

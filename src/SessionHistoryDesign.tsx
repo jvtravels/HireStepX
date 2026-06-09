@@ -8,6 +8,7 @@
    All data is mock — no API calls, no providers. */
 "use client";
 import React from "react";
+import { strengthCopy, gapCopy } from "./skillCopy";
 
 type Variant = "list" | "detail" | "report" | "empty";
 
@@ -940,9 +941,14 @@ function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onO
   ].filter(Boolean) as string[];
 
   /* Coaching headline takes precedence; the legacy one-liner is the
-     fallback. meaning + example exist only on mvp-8+ rows. */
-  const strengthHeadline = s.coaching?.strength.headline ?? s.topStrength;
-  const gapHeadline = s.coaching?.gap.headline ?? s.topGap;
+     fallback. meaning + example exist only on mvp-8+ rows.
+     `strengthCopy` / `gapCopy` are defensive — if the LLM ever returns
+     a raw competency key in `headline` (or a legacy row leaks through
+     the data adapter), the card still shows a readable phrase instead
+     of "composure" / "leverageUse". Phrases already containing spaces
+     pass through untouched. */
+  const strengthHeadline = strengthCopy(s.coaching?.strength.headline ?? s.topStrength);
+  const gapHeadline = gapCopy(s.coaching?.gap.headline ?? s.topGap);
   const gapMeaning = s.coaching?.gap.meaning;
   const gapExample = s.coaching?.gap.example;
 
