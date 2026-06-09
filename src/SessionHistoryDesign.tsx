@@ -527,12 +527,17 @@ const FOCUS_STYLE = `
     .hsx-pad-report { padding: 24px 16px !important; }
     .hsx-pad-empty { padding: 64px 24px !important; }
     .hsx-kpi { grid-template-columns: repeat(2, 1fr) !important; }
-    /* Mobile row: drop the right rail to a single 64px column (score
-       only, no badge), tighten the date rail to 72px, kill the hover
-       Re-run since touch can't reveal it. */
-    .hsx-row { grid-template-columns: 72px 1fr 64px !important; gap: 14px !important; padding: 16px 8px 14px !important; }
+    /* Mobile timeline: tighten the rail to 56px (date stack drops the
+       weekday, keeps "DD MMM"), shift the spine to x=13 to match the
+       collapsed dot column, and kill the hover Re-run since touch
+       can't reveal it. The eyebrow + headline + score wrap naturally
+       inside the band. */
+    .hsx-row { grid-template-columns: 56px 1fr !important; gap: 14px !important; padding: 18px 8px 18px 0 !important; }
+    .hsx-row::before { left: 13px !important; }
+    .hsx-row:first-of-type::before { top: 26px !important; }
+    .hsx-row:last-of-type::before { bottom: calc(100% - 26px) !important; }
     .hsx-row-rerun { display: none !important; }
-    .hsx-row-meta-delta { display: none !important; }
+    .hsx-row-mobile-hide { display: none !important; }
     .hsx-report-split { grid-template-columns: 1fr !important; }
     .hsx-report-pair { grid-template-columns: 1fr !important; }
   }
@@ -592,16 +597,40 @@ const FOCUS_STYLE = `
      of the paper. System dark-mode is intentionally ignored;
      darkening the cream would destroy the editorial register. */
 
-  /* ── Editorial index row ──
-     The /sessions row is rebuilt as a chronicle entry, not a card.
-     No fill, no rounded border, no kebab. A hairline divider sits
-     under each row. Hover paints a creamSoft wash; keyboard
-     selection paints a 2px indigo underline beneath the type title
-     only. Re-run slides in from the right edge on hover. */
+  /* ── Editorial timeline chronicle ──
+     The /sessions row is a band attached to a vertical timeline spine,
+     not a card. The first column is a 88px rail carrying a status dot
+     and a date stack; a 1px spine runs through the rail's dot column,
+     connecting every row in a group into a single continuous chronicle.
+     The second column is the band: mono eyebrow (type · difficulty ·
+     Qs · duration), serif headline (role at company), tabular score
+     and delta on the right, optional signal line, and a hover-revealed
+     Re-run absolutely positioned bottom-right (reserves zero layout
+     space). Selection paints a 2px indigo bar on the left edge of the
+     band; spine and dot stay calm so the whole timeline doesn't shout.
+     Anchors: Substack archive view, Read.cv timelines, NYT TOC. Not
+     a Strava activity card, not a Linear list row. */
   .hsx-row {
     position: relative;
+    cursor: pointer;
     transition: background 120ms cubic-bezier(0.22,1,0.36,1);
   }
+  /* Vertical spine: 1px line at x=19 (rail starts at row-left=0; the
+     dot sits at x=15..23, so 19 is the dot's center). Spans the row's
+     full height; first/last child in the group clip to the dot so the
+     spine doesn't dangle into the section header or below the group. */
+  .hsx-row::before {
+    content: "";
+    position: absolute;
+    left: 19px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--hsx-line);
+    pointer-events: none;
+  }
+  .hsx-row:first-of-type::before { top: 32px; }
+  .hsx-row:last-of-type::before { bottom: calc(100% - 32px); }
   @media (hover: hover) {
     .hsx-row:hover { background: var(--hsx-cream-soft); }
     .hsx-row:hover .hsx-row-rerun {
@@ -609,10 +638,38 @@ const FOCUS_STYLE = `
       transform: translateX(0);
     }
   }
-  .hsx-row[data-selected="true"] .hsx-row-title {
-    box-shadow: 0 2px 0 var(--hsx-accent);
+  .hsx-row[data-selected="true"] {
+    box-shadow: inset 2px 0 0 var(--hsx-accent);
   }
+  /* Dot sits above the spine. PR rows wear an indigo dot with a soft
+     halo; BEST rows stay coal; drafts swap the fill for a copper ring
+     so unfinished work reads as "open" at a glance. */
+  .hsx-row-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--hsx-coal);
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+  .hsx-row[data-draft="true"] .hsx-row-dot {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--hsx-warm);
+  }
+  .hsx-row[data-pr="true"] .hsx-row-dot {
+    background: var(--hsx-accent);
+    box-shadow: 0 0 0 3px var(--hsx-accent-tint);
+  }
+  /* Re-run lives in the band's bottom-right, absolutely positioned so
+     it reserves no vertical space when hidden. Slides in from +4px on
+     hover/focus; tabIndex=-1 on the button keeps j/k navigation on
+     row-granularity (use the r shortcut to fire it on the selected
+     row instead). */
   .hsx-row-rerun {
+    position: absolute;
+    right: 16px;
+    bottom: 20px;
     opacity: 0;
     transform: translateX(4px);
     transition: opacity 140ms cubic-bezier(0.22,1,0.36,1),
@@ -854,6 +911,26 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
     return due;
   }, [sessions]);
 
+  /* ── First-of-type delta suppression ──
+     A "+0 vs prev" delta on the very first session of a type reads as
+     "you stayed flat" when there's nothing to compare against. Compute
+     the chronologically-earliest session per type and suppress its
+     delta in the row's right rail. Upstream `change` may still be 0
+     for legitimate ties on subsequent sessions, so we can't rely on
+     it alone. */
+  const firstOfTypeIds = React.useMemo(() => {
+    const firsts = new Set<string>();
+    const byType: Record<string, Session[]> = {};
+    sessions.filter(s => !s.draft).forEach(s => {
+      (byType[s.type] ??= []).push(s);
+    });
+    Object.values(byType).forEach(arr => {
+      arr.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      if (arr[0]) firsts.add(arr[0].id);
+    });
+    return firsts;
+  }, [sessions]);
+
   /* Date-stack formatter for the row's left rail. "DD MMM" over
      "WEEKDAY" — industry-standard for chronicled lists (NYT TOC,
      Stripe Dashboard transactions). Locale-stable: en-US short month,
@@ -918,10 +995,18 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
         const s = filtered[selectedIdx];
         if (s) { e.preventDefault(); onDelete(s.id); }
       }
+      /* `r` re-runs the selected session. Pairs with the hover-revealed
+         Re-run button on the row so the affordance is accessible to
+         keyboard users without giving the button its own tab stop
+         (which would interrupt j/k row navigation). */
+      else if (e.key === "r" && onRerun) {
+        const s = filtered[selectedIdx];
+        if (s && !s.draft) { e.preventDefault(); onRerun(s); }
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [filtered, selectedIdx, onOpen, onDelete, onToggleDraft, allowDelete, allowDrafts]);
+  }, [filtered, selectedIdx, onOpen, onDelete, onToggleDraft, onRerun, allowDelete, allowDrafts]);
 
   const groups = groupSessions(filtered, now);
   const total = sessions.length;
@@ -1155,31 +1240,51 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
           </div>
           <div role="list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {g.items.map(s => {
-              /* ── Row composition ──
-                 Three columns: date stack (96px) · content (1fr) · score
-                 rail (auto). Hover reveals a Re-run affordance bottom-right
-                 (canvas mode hides it). No card chrome — a single hairline
-                 under the row carries the rhythm. */
+              /* ── Timeline band composition ──
+                 Two columns: rail (88px) · band (1fr). The rail carries
+                 a status dot + date stack; the spine pseudo on .hsx-row
+                 connects every dot in the group into a continuous line.
+                 The band carries a mono catalog eyebrow, a serif headline
+                 (role-at-company — the actual practice subject), a
+                 right-aligned score reading, and an optional signal
+                 line. Re-run is absolutely positioned bottom-right and
+                 reserves zero vertical space. */
               const idxInFiltered = filtered.findIndex(x => x.id === s.id);
               const isSelected = idxInFiltered === selectedIdx;
               const ds = formatDateStack(s.date);
               const badge = badgeById.get(s.id) ?? null;
               const isDue = dueIds.has(s.id);
-              const meta = [
-                s.company ? `${s.role} at ${s.company}` : s.role,
+              const isFirstOfType = firstOfTypeIds.has(s.id);
+              /* Catalog eyebrow. Type leads (it's the category), then
+                 the parameters that contextualize the score. All in mono
+                 caps so the eyebrow reads as metadata, not headline. */
+              const eyebrowParts = [
+                s.type,
                 s.difficulty,
                 s.questions ? `${s.questions} Qs` : null,
                 s.duration,
-              ].filter(Boolean).join(" · ");
-              /* One-signal line. Cap copy at 64 chars to keep rows
-                 scannable; truncate cleanly so the layout never wraps
-                 to a third line we don't budget for. */
-              const cap = (str: string, n = 64) => str.length <= n ? str : `${str.slice(0, n - 1).trimEnd()}…`;
+              ].filter(Boolean) as string[];
+              /* Signal copy. Score≥80 surfaces the strength; <80 the gap;
+                 due rows lead with a copper "Due for review ·" prefix.
+                 No .toLowerCase() — topStrength comes from coach output
+                 in title case ("Active Listening", "STAR Structure")
+                 and forcing lower mangles proper nouns. Cap at 72 chars
+                 so the band stays one line. */
+              const cap = (str: string, n = 72) => str.length <= n ? str : `${str.slice(0, n - 1).trimEnd()}…`;
               const signalText = !s.draft
                 ? (s.score >= 80
-                    ? (s.topStrength ? cap(`Strongest: ${s.topStrength.toLowerCase()}`) : "")
-                    : (s.topGap ? cap(s.topGap) : ""))
+                    ? (s.topStrength ? cap(`Strong on ${s.topStrength}`) : "")
+                    : (s.topGap ? cap(`Work on ${s.topGap}`) : ""))
                 : "";
+              /* Delta direction → semantic accent. Up wins indigo
+                 (interactive accent = forward momentum); down wins copper
+                 (editorial accent = caution); flat is inkSoft. */
+              const deltaSign: "up" | "down" | "flat" =
+                s.delta > 0 ? "up" : s.delta < 0 ? "down" : "flat";
+              const deltaAria =
+                deltaSign === "up" ? `up ${s.delta} from previous`
+                : deltaSign === "down" ? `down ${Math.abs(s.delta)} from previous`
+                : "no change from previous";
               return (
               <div
                 key={s.id}
@@ -1188,99 +1293,160 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
                 tabIndex={0}
                 aria-current={isSelected ? "true" : undefined}
                 data-selected={isSelected ? "true" : "false"}
+                data-draft={s.draft ? "true" : "false"}
+                data-pr={badge === "PR" ? "true" : "false"}
                 onClick={() => onOpen(s.id)}
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(s.id); } }}
                 onMouseEnter={() => setSelectedIdx(idxInFiltered)}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "96px 1fr auto",
-                  gap: 24, alignItems: "start",
-                  padding: "22px 8px 20px",
+                  gridTemplateColumns: "88px 1fr",
+                  gap: 28, alignItems: "start",
+                  padding: "24px 16px 24px 0",
                   background: "transparent",
-                  borderBottom: `1px solid ${tok.line}`,
-                  cursor: "pointer",
                   opacity: s.draft ? 0.78 : 1,
                 }}>
-                {/* ── Left rail: date stack with status dot ──
-                   Status dot leads the date so completed / draft state is
-                   one glance, before reading. Draft rows replace the date
-                   with a copper "DRAFT / in progress" eyebrow so the
-                   chronicle stays honest about what's finished. */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingTop: 4 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span aria-hidden="true" style={{
-                      width: 6, height: 6, borderRadius: 999,
-                      background: s.draft ? "transparent" : tok.coal,
-                      border: s.draft ? `1px solid ${tok.copper}` : "none",
-                      flexShrink: 0,
-                    }} />
-                    {s.draft ? (
+                {/* ── Rail: dot + date stack ──
+                   Dot sits at the top so it aligns with the band's eyebrow
+                   baseline (paddingTop on rail matches the eyebrow's
+                   vertical position). Date stack reads top-down: serif
+                   day-month, mono weekday, mono "N days ago". Draft swaps
+                   the date for an italic copper "Draft" eyebrow. */}
+                <div style={{
+                  display: "flex", flexDirection: "column",
+                  alignItems: "flex-start", gap: 10,
+                  paddingTop: 6, paddingLeft: 11,
+                  /* paddingLeft positions the dot column so its center
+                     lands on the spine at x=19 (11 + 4 + halfDot). */
+                }}>
+                  <span aria-hidden="true" className="hsx-row-dot" />
+                  {s.draft ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, marginLeft: -7 }}>
                       <span style={{
                         fontFamily: fonts.serif, fontStyle: "italic",
-                        fontSize: 13, color: tok.copper, fontWeight: 400,
-                        letterSpacing: "0.01em",
+                        fontSize: 16, color: tok.copper, fontWeight: 400,
+                        letterSpacing: "0.005em", lineHeight: 1.1,
                       }}>Draft</span>
-                    ) : (
                       <span style={{
-                        fontFamily: fonts.mono, fontSize: 12, fontWeight: 600,
-                        color: tok.coal, letterSpacing: "0.04em",
+                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 500,
+                        color: tok.inkSoft, letterSpacing: "0.14em",
+                      }}>IN PROGRESS</span>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, marginLeft: -7 }}>
+                      <span style={{
+                        fontFamily: fonts.serif, fontSize: 18, fontWeight: 400,
+                        color: tok.coal, letterSpacing: "-0.005em", lineHeight: 1.05,
                       }}>{ds.top}</span>
-                    )}
-                  </div>
-                  <span style={{
-                    fontFamily: fonts.mono, fontSize: 10, fontWeight: 500,
-                    color: tok.inkSoft, letterSpacing: "0.12em",
-                    paddingLeft: 14,
-                  }}>{s.draft ? "IN PROGRESS" : ds.bot}</span>
+                      <span className="hsx-row-mobile-hide" style={{
+                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 500,
+                        color: tok.inkSoft, letterSpacing: "0.14em",
+                      }}>{ds.bot.slice(0, 3)}</span>
+                      <span className="hsx-row-mobile-hide" style={{
+                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 400,
+                        color: tok.inkFaint, letterSpacing: "0.04em",
+                        marginTop: 1,
+                      }}>{s.dateLabel}</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* ── Middle column: editorial three-line stack ──
-                   Line 1: serif type title, optionally underlined indigo
-                   when the row is keyboard-selected.
-                   Line 2: role-and-company line, copper italic role.
-                   Line 3: one signal (gap < 80, strength ≥ 80, or
-                   recurring-gap due cue). Omitted entirely on draft. */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-                  <span
-                    className="hsx-row-title"
-                    style={{
-                      fontFamily: fonts.serif, fontSize: 22, fontWeight: 400,
-                      color: tok.coal, lineHeight: 1.15,
-                      letterSpacing: "-0.005em",
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      alignSelf: "flex-start",
-                      paddingBottom: 2,
-                    }}>{s.type}</span>
-                  <span style={{
-                    fontSize: 14, color: tok.inkSoft, lineHeight: 1.4,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {s.company ? (
-                      <>
-                        <em style={{ fontStyle: "italic", color: tok.copper, fontFamily: fonts.serif, fontSize: 15 }}>{s.role}</em>
-                        <span> at </span>
-                        <span style={{ color: tok.coal, fontWeight: 500 }}>{s.company}</span>
-                      </>
-                    ) : (
-                      <em style={{ fontStyle: "italic", color: tok.copper, fontFamily: fonts.serif, fontSize: 15 }}>{s.role}</em>
-                    )}
-                    {(s.difficulty || s.questions || s.duration) ? (
-                      <span style={{ color: tok.inkSoft }}>
-                        {s.difficulty ? <> · {s.difficulty}</> : null}
-                        {s.questions ? <> · {s.questions} Qs</> : null}
-                        {s.duration ? <> · {s.duration}</> : null}
-                      </span>
-                    ) : null}
-                    {/* Hidden a11y-only flat string for screen readers
-                       so the meta sentence reads cleanly without the
-                       interleaved styling spans. */}
-                    <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>{meta}</span>
-                  </span>
-                  {signalText ? (
+                {/* ── Band: eyebrow, headline+score row, signal ── */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0, paddingRight: 8 }}>
+                  {/* Eyebrow row: catalog metadata left, badge right. */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, minWidth: 0 }}>
                     <span style={{
+                      fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
+                      color: tok.inkSoft, letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>{eyebrowParts.join("  ·  ")}</span>
+                    {badge && !s.draft ? (
+                      <span style={{
+                        padding: "2px 8px",
+                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
+                        color: badge === "PR" ? tok.indigo : tok.coal,
+                        letterSpacing: "0.14em",
+                        border: `1px solid ${badge === "PR" ? tok.indigo : tok.lineStrong}`,
+                        borderRadius: 2,
+                        flexShrink: 0,
+                      }}>{badge}</span>
+                    ) : null}
+                  </div>
+
+                  {/* Headline row: role-at-company (the practice subject)
+                     paired with the score reading on the right. The two
+                     align on the headline baseline so the score sits as
+                     a margin note, not a hero numeral. */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto",
+                    gap: 24, alignItems: "baseline", minWidth: 0,
+                  }}>
+                    <h3 style={{
+                      margin: 0,
+                      fontFamily: fonts.serif, fontSize: 26, fontWeight: 400,
+                      color: tok.coal, lineHeight: 1.15,
+                      letterSpacing: "-0.01em",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {s.role}
+                      {s.company ? (
+                        <>
+                          <em style={{ fontStyle: "italic", color: tok.copper, fontWeight: 400 }}> at </em>
+                          <span style={{ color: tok.coal }}>{s.company}</span>
+                        </>
+                      ) : null}
+                    </h3>
+                    {/* Score reading. Same serif family as the headline
+                       so it lives in the editorial column, not the
+                       dashboard-metric column. Tabular nums so 87 and
+                       100 align vertically across rows. Em dash on draft
+                       — reading isn't in yet. */}
+                    <div style={{
+                      display: "flex", flexDirection: "column",
+                      alignItems: "flex-end", gap: 2,
+                      flexShrink: 0,
+                    }}>
+                      <span style={{
+                        fontFamily: fonts.serif, fontSize: 28,
+                        color: s.draft ? tok.inkFaint : tok.coal,
+                        lineHeight: 1, fontWeight: 400,
+                        fontVariantNumeric: "tabular-nums",
+                      }}>{s.draft ? "—" : s.score}</span>
+                      {!s.draft && !isFirstOfType ? (
+                        <span
+                          aria-label={deltaAria}
+                          style={{
+                            fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
+                            color: deltaSign === "up" ? tok.indigo
+                                 : deltaSign === "down" ? tok.copper
+                                 : tok.inkSoft,
+                            letterSpacing: "0.04em",
+                            fontVariantNumeric: "tabular-nums",
+                          }}>
+                          {deltaSign === "up" ? `▲ ${s.delta}`
+                           : deltaSign === "down" ? `▼ ${Math.abs(s.delta)}`
+                           : "= 0"}
+                        </span>
+                      ) : !s.draft && isFirstOfType ? (
+                        <span style={{
+                          fontFamily: fonts.mono, fontSize: 10, fontWeight: 500,
+                          color: tok.inkFaint, letterSpacing: "0.10em",
+                        }}>FIRST</span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Signal line OR draft note. One line only; truncated
+                     if it can't fit. Spaced from the headline so the
+                     hover-revealed Re-run doesn't collide visually. */}
+                  {signalText ? (
+                    <p style={{
+                      margin: 0,
                       fontSize: 13, color: tok.coal, lineHeight: 1.4,
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      marginTop: 2,
+                      paddingRight: 140, /* reserve room for the absolute Re-run on hover */
                     }}>
                       {isDue ? (
                         <em style={{
@@ -1289,83 +1455,44 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
                         }}>Due for review ·</em>
                       ) : null}
                       <span>{signalText}</span>
-                    </span>
+                    </p>
                   ) : s.draft ? (
-                    <span style={{ fontSize: 13, color: tok.inkSoft, fontStyle: "italic" }}>
+                    <p style={{ margin: 0, fontSize: 13, color: tok.inkSoft, fontStyle: "italic" }}>
                       Saved mid-round, ready to continue.
-                    </span>
-                  ) : null}
-                  {/* Re-run affordance, hover-revealed (focus-revealed
-                     for keyboard). Industry-standard "Practice again /
-                     Solve again" pattern; the row's one ghost button. */}
-                  {onRerun && !s.draft ? (
-                    <button
-                      className="hsx-row-rerun"
-                      type="button"
-                      onClick={e => { e.stopPropagation(); onRerun(s); }}
-                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
-                      aria-label={`Practice ${s.type} again`}
-                      style={{
-                        alignSelf: "flex-start",
-                        marginTop: 8,
-                        padding: "4px 0",
-                        border: "none", background: "transparent",
-                        color: tok.indigo, fontFamily: fonts.ui,
-                        fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
-                        cursor: "pointer",
-                        display: "inline-flex", alignItems: "center", gap: 6,
-                      }}>
-                      <span>Practice this again</span>
-                      <svg aria-hidden width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M13 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                    </p>
                   ) : null}
                 </div>
 
-                {/* ── Right rail: score numeral, delta, milestone badge ──
-                   The score is the reading; everything else explains it.
-                   Numeral in serif so it sits in the same typographic
-                   family as the title; mono delta for tabular alignment;
-                   badge in mono uppercase as a catalog tag. */}
-                <div style={{
-                  display: "flex", flexDirection: "column",
-                  alignItems: "flex-end", gap: 2, minWidth: 80,
-                  paddingTop: 2,
-                }}>
-                  {s.draft ? (
-                    <span style={{
-                      fontFamily: fonts.serif, fontSize: 32, color: tok.inkFaint,
-                      lineHeight: 1, fontWeight: 400,
-                    }}>—</span>
-                  ) : (
-                    <span style={{
-                      fontFamily: fonts.serif, fontSize: 32, color: tok.coal,
-                      lineHeight: 1, fontWeight: 400, fontVariantNumeric: "tabular-nums",
-                    }}>{s.score}</span>
-                  )}
-                  {!s.draft ? (
-                    <span
-                      className="hsx-row-meta-delta"
-                      style={{
-                        fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
-                        color: s.delta > 0 ? tok.indigo : s.delta < 0 ? tok.copper : tok.inkSoft,
-                        letterSpacing: "0.02em",
-                      }}>
-                      {s.delta > 0 ? `▲ ${s.delta}` : s.delta < 0 ? `▼ ${Math.abs(s.delta)}` : "="}
-                    </span>
-                  ) : null}
-                  {badge && !s.draft ? (
-                    <span style={{
-                      marginTop: 4,
-                      padding: "2px 6px",
-                      fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
-                      color: tok.coal, letterSpacing: "0.12em",
-                      border: `1px solid ${tok.lineStrong}`,
-                      borderRadius: 2,
-                    }}>{badge}</span>
-                  ) : null}
-                </div>
+                {/* Re-run lives at row scope so its absolute positioning
+                   anchors to the row's box, not the band column. Hover
+                   on the row reveals it (CSS); `r` on a selected row
+                   triggers it (keyboard handler). tabIndex=-1 keeps it
+                   out of the Tab order so j/k row navigation isn't
+                   interrupted by an interior focus stop. */}
+                {onRerun && !s.draft ? (
+                  <button
+                    className="hsx-row-rerun"
+                    type="button"
+                    tabIndex={-1}
+                    onClick={e => { e.stopPropagation(); onRerun(s); }}
+                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
+                    aria-label={`Practice ${s.type} again`}
+                    style={{
+                      padding: "6px 10px",
+                      border: `1px solid ${tok.line}`,
+                      borderRadius: radii.btn,
+                      background: tok.cream,
+                      color: tok.indigo, fontFamily: fonts.ui,
+                      fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
+                      cursor: "pointer",
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                    }}>
+                    <span>Practice again</span>
+                    <svg aria-hidden width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M13 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                ) : null}
               </div>
               );
             })}
