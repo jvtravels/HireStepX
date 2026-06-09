@@ -225,6 +225,16 @@ type Session = {
   delta: number;
   topStrength: string;
   topGap: string;
+  /* Plain-language coaching pair from the evaluator (mvp-8+), persisted in
+     report_json.coaching and threaded through DashboardSession. Optional:
+     pre-mvp-8 rows and canvas mock rows omit it, and the card degrades to
+     the topStrength / topGap one-liners. Structurally matches
+     SessionCoaching in dashboardTypes (kept inline so this file stays
+     decoupled from the dashboard type module). */
+  coaching?: {
+    strength: { headline: string; meaning: string };
+    gap: { headline: string; meaning: string; example: string };
+  };
   questions: number;
   /* Difficulty band passed through from DashboardSession. Surfaced inline
      in the row's metadata line so the score numeral has interpretive
@@ -801,6 +811,255 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
 const FILTER_TYPES_DEFAULT = ["All", "Behavioral", "System Design", "Tech Screen", "Hiring Mgr", "Salary Neg."] as const;
 type SortKey = "recent" | "score" | "score-asc" | "duration";
 
+/* Faint inner tint for the score ring. rgba literals (not CSS vars) so the
+   low-alpha fill composites correctly; thresholds mirror bandColor. */
+const bandBg = (score: number): string => {
+  const b = bandOf(score);
+  return b === "strong" || b === "solid" ? "rgba(21,128,61,0.07)"
+       : b === "mixed" ? "rgba(180,83,9,0.07)"
+       : "rgba(185,28,28,0.07)";
+};
+
+/* Score ring — 64px. Band-coloured arc over a cream track, score + band
+   label stacked inside, trend delta (or FIRST) beneath. Self-contained so
+   the card body can drop it into a fixed right rail. Draft renders an
+   em-dash with no arc — the reading isn't in yet. */
+function ScoreRing({ score, delta, isFirst, draft }: { score: number; delta: number; isFirst: boolean; draft?: boolean }) {
+  const color = bandColor(score);
+  const label = BAND_LABEL[bandOf(score)];
+  const r = 27;
+  const circ = 2 * Math.PI * r;
+  const fill = (Math.max(0, Math.min(100, score)) / 100) * circ;
+  const isUp = delta > 0;
+  const isFlat = delta === 0;
+  const deltaColor = isUp ? tok.success : isFlat ? tok.inkFaint : tok.error;
+  const deltaArrow = isUp ? "↑" : isFlat ? "→" : "↓";
+  const deltaAria = isFlat ? "no change from previous"
+    : isUp ? `up ${delta} from previous` : `down ${Math.abs(delta)} from previous`;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0 }}>
+      <div style={{ position: "relative", width: 64, height: 64 }}>
+        <svg
+          width="64" height="64" viewBox="0 0 64 64"
+          style={{ transform: "rotate(-90deg)", position: "absolute" }}
+          role="img"
+          aria-label={draft ? "draft, no score yet" : `score ${score} out of 100, ${label}`}>
+          <circle cx="32" cy="32" r={r} fill="none" stroke={tok.line} strokeWidth="3" />
+          {!draft ? (
+            <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${fill} ${circ}`} />
+          ) : null}
+        </svg>
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          borderRadius: "50%", background: draft ? "transparent" : bandBg(score),
+        }}>
+          <span style={{ fontFamily: fonts.mono, fontSize: 20, fontWeight: 700, color: draft ? tok.inkFaint : tok.coal, lineHeight: 1 }}>{draft ? "—" : score}</span>
+          {!draft ? (
+            <span style={{ fontFamily: fonts.ui, fontSize: 8, fontWeight: 700, color, letterSpacing: "0.04em", lineHeight: 1, marginTop: 1 }}>{label}</span>
+          ) : null}
+        </div>
+      </div>
+      {draft ? null : isFirst ? (
+        <span style={{ fontFamily: fonts.mono, fontSize: 10, fontWeight: 600, color: tok.inkFaint, letterSpacing: "0.08em" }}>FIRST</span>
+      ) : (
+        <span aria-label={deltaAria} style={{ fontFamily: fonts.mono, fontSize: 11, fontWeight: 600, color: deltaColor, display: "flex", alignItems: "center", gap: 2 }}>
+          {isFlat ? "" : isUp ? "+" : ""}{delta} {deltaArrow}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* Standalone session card. Three bands: eyebrow (catalog metadata +
+   timestamp/badge), body (identity + did-well + work-on, with the score
+   ring railed off right), and a persistent action bar. Replaces the
+   timeline-row band; the date moved into the eyebrow so the card stands
+   on its own without a spine. Coaching meaning + example render ONLY when
+   the evaluator supplied them (mvp-8+) — pre-mvp-8 rows show the gap
+   headline alone, never invented copy. Holds its own hover state so the
+   card can lift on hover the way the mock does. */
+function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onOpen, onRerun, onMouseEnter }: {
+  s: Session;
+  isSelected: boolean;
+  isDue: boolean;
+  badge: "PR" | "BEST" | null;
+  isFirstOfType: boolean;
+  dateText: string;
+  onOpen: (id: string) => void;
+  onRerun?: (session: Session) => void;
+  onMouseEnter: () => void;
+}) {
+  const [hovered, setHovered] = React.useState(false);
+  const hue = typeHue(s.type);
+  const eyebrowParts = [
+    s.type,
+    s.difficulty,
+    s.questions ? `${s.questions} Qs` : null,
+    s.duration,
+  ].filter(Boolean) as string[];
+
+  /* Coaching headline takes precedence; the legacy one-liner is the
+     fallback. meaning + example exist only on mvp-8+ rows. */
+  const strengthHeadline = s.coaching?.strength.headline ?? s.topStrength;
+  const gapHeadline = s.coaching?.gap.headline ?? s.topGap;
+  const gapMeaning = s.coaching?.gap.meaning;
+  const gapExample = s.coaching?.gap.example;
+
+  return (
+    <div
+      role="listitem"
+      tabIndex={0}
+      aria-current={isSelected ? "true" : undefined}
+      onMouseEnter={() => { setHovered(true); onMouseEnter(); }}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
+      onClick={() => onOpen(s.id)}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(s.id); } }}
+      style={{
+        position: "relative",
+        borderRadius: radii.card,
+        border: `1px solid ${isSelected ? tok.indigo : hovered ? tok.lineStrong : tok.line}`,
+        background: tok.white,
+        cursor: "pointer",
+        transition: "border-color 0.15s ease, box-shadow 0.15s ease",
+        boxShadow: isSelected ? `0 0 0 1px ${tok.indigo}` : hovered ? "0 2px 12px rgba(14,12,8,0.07)" : "none",
+        overflow: "hidden",
+        opacity: s.draft ? 0.82 : 1,
+      }}>
+      {/* Eyebrow */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+        padding: "10px 18px", borderBottom: `1px solid ${tok.line}`, background: tok.creamSoft,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden" }}>
+          <span aria-hidden style={{ width: 7, height: 7, borderRadius: "50%", background: hue.ink, flexShrink: 0 }} />
+          {eyebrowParts.map((p, i) => (
+            <React.Fragment key={p}>
+              {i > 0 && <span aria-hidden style={{ color: tok.inkFaint, fontSize: 10 }}>·</span>}
+              <span style={{
+                fontFamily: fonts.ui, fontSize: 10, fontWeight: 600,
+                letterSpacing: "0.08em", textTransform: "uppercase",
+                color: i === 0 ? tok.inkSoft : tok.inkFaint, whiteSpace: "nowrap",
+              }}>{p}</span>
+            </React.Fragment>
+          ))}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {badge && !s.draft ? (
+            <span style={{
+              fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+              color: badge === "PR" ? tok.indigo : tok.copper, background: tok.copper100,
+              padding: "2px 7px", borderRadius: radii.pill, textTransform: "uppercase",
+            }}>{badge}</span>
+          ) : null}
+          {s.draft ? (
+            <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 13, color: tok.copper }}>Draft</span>
+          ) : (
+            <span style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkFaint, whiteSpace: "nowrap" }}>{dateText}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ display: "flex", alignItems: "stretch", gap: 22, padding: "18px 20px" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Identity */}
+          <div style={{
+            fontFamily: fonts.ui, fontSize: 17, fontWeight: 600, color: tok.coal, lineHeight: 1.25,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontWeight: 400 }}>at</span> {s.company}</>) : null}
+          </div>
+
+          {s.draft ? (
+            <div style={{ fontFamily: fonts.ui, fontSize: 13, color: tok.inkSoft, fontStyle: "italic" }}>
+              Saved mid-round, ready to continue.
+            </div>
+          ) : (
+            <>
+              {/* Did well — one quiet line. */}
+              {strengthHeadline ? (
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+                  <span aria-hidden style={{ color: tok.success, fontSize: 12, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontFamily: fonts.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: tok.success, flexShrink: 0 }}>Did well</span>
+                  <span style={{
+                    fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, color: tok.coal, lineHeight: 1.35,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0,
+                  }}>{strengthHeadline}</span>
+                </div>
+              ) : null}
+
+              {/* Work on next — the dominant element. */}
+              {gapHeadline ? (
+                <div style={{ display: "flex", gap: 10, background: tok.copperSoft, borderRadius: radii.btn, padding: "13px 15px" }}>
+                  <span aria-hidden style={{
+                    width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                    background: "rgba(180,83,9,0.16)", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, color: tok.copper, marginTop: 1, fontWeight: 700,
+                  }}>↑</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontFamily: fonts.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: tok.copper, marginBottom: 3 }}>
+                      {isDue ? "Due for review" : "Work on next"}
+                    </div>
+                    <div style={{ fontFamily: fonts.ui, fontSize: 15, fontWeight: 700, color: tok.coal, lineHeight: 1.3 }}>{gapHeadline}</div>
+                    {gapMeaning ? (
+                      <div style={{ fontFamily: fonts.ui, fontSize: 12.5, color: tok.inkSoft, lineHeight: 1.45, marginTop: 3 }}>{gapMeaning}</div>
+                    ) : null}
+                    {gapExample ? (
+                      <div style={{
+                        display: "inline-block", marginTop: 8,
+                        fontFamily: fonts.ui, fontSize: 11.5, fontWeight: 500, color: tok.copper,
+                        background: tok.white, border: "1px solid rgba(180,83,9,0.25)",
+                        borderRadius: radii.chip, padding: "4px 9px", lineHeight: 1.35,
+                      }}>{gapExample}</div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
+
+        {/* Score rail */}
+        <div style={{
+          flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          paddingLeft: 22, borderLeft: `1px solid ${tok.line}`,
+        }}>
+          <ScoreRing score={s.score} delta={s.delta} isFirst={isFirstOfType} draft={s.draft} />
+        </div>
+      </div>
+
+      {/* Action bar — persistent, both actions discoverable. */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "12px 20px 14px", borderTop: `1px solid ${tok.line}`,
+      }}>
+        <span style={{ fontFamily: fonts.ui, fontSize: 13, fontWeight: 700, color: tok.indigo, display: "flex", alignItems: "center", gap: 5 }}>
+          {s.draft ? "Continue session" : "View full report"} <span aria-hidden style={{ fontSize: 12 }}>→</span>
+        </span>
+        {onRerun && !s.draft ? (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={e => { e.stopPropagation(); onRerun(s); }}
+            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
+            aria-label={`Practice ${s.type} again`}
+            style={{
+              fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.inkSoft,
+              background: "transparent", border: `1px solid ${hovered ? tok.lineStrong : tok.line}`,
+              borderRadius: radii.btn, padding: "5px 12px", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 5, transition: "border-color 0.15s ease",
+            }}>
+            <span aria-hidden style={{ fontSize: 11 }}>↻</span> Re-run
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true, allowDrafts = true, onStartSession, onRerun }: {
   sessions: Session[];
   onOpen: (id: string) => void;
@@ -1238,343 +1497,25 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
             <span style={{ height: 1, background: tok.line, flex: 1 }} />
             <span style={{ fontSize: 11, color: tok.inkFaint, fontFamily: fonts.mono }}>{g.items.length}</span>
           </div>
-          <div role="list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div role="list" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {g.items.map(s => {
-              /* ── Timeline band composition ──
-                 Two columns: rail (88px) · band (1fr). The rail carries
-                 a status dot + date stack; the spine pseudo on .hsx-row
-                 connects every dot in the group into a continuous line.
-                 The band carries a mono catalog eyebrow, a serif headline
-                 (role-at-company — the actual practice subject), a
-                 right-aligned score reading, and an optional signal
-                 line. Re-run is absolutely positioned bottom-right and
-                 reserves zero vertical space. */
+              /* idxInFiltered keys this card to the keyboard cursor: hovering
+                 sets selectedIdx so j/k navigation and hover share one
+                 highlight, and isSelected paints the ring. */
               const idxInFiltered = filtered.findIndex(x => x.id === s.id);
-              const isSelected = idxInFiltered === selectedIdx;
-              const ds = formatDateStack(s.date);
-              const badge = badgeById.get(s.id) ?? null;
-              const isDue = dueIds.has(s.id);
-              const isFirstOfType = firstOfTypeIds.has(s.id);
-              /* Catalog eyebrow. Type leads (it's the category), then
-                 the parameters that contextualize the score. All in mono
-                 caps so the eyebrow reads as metadata, not headline. */
-              const eyebrowParts = [
-                s.type,
-                s.difficulty,
-                s.questions ? `${s.questions} Qs` : null,
-                s.duration,
-              ].filter(Boolean) as string[];
-              /* Card-scoped truncation cap. Strength + gap headlines come
-                 from coach output in title case ("Active Listening", "STAR
-                 Structure"); no .toLowerCase() — it mangles proper nouns.
-                 60-64 chars keeps each line single-line inside the
-                 identity column at the prevailing breakpoint. */
-              const cap = (str: string, n = 72) => str.length <= n ? str : `${str.slice(0, n - 1).trimEnd()}…`;
-              /* Delta direction → semantic accent. Up wins indigo
-                 (interactive accent = forward momentum); down wins copper
-                 (editorial accent = caution); flat is inkSoft. */
-              const deltaSign: "up" | "down" | "flat" =
-                s.delta > 0 ? "up" : s.delta < 0 ? "down" : "flat";
-              const deltaAria =
-                deltaSign === "up" ? `up ${s.delta} from previous`
-                : deltaSign === "down" ? `down ${Math.abs(s.delta)} from previous`
-                : "no change from previous";
               return (
-              <div
-                key={s.id}
-                className="hsx-row"
-                role="listitem"
-                tabIndex={0}
-                aria-current={isSelected ? "true" : undefined}
-                data-selected={isSelected ? "true" : "false"}
-                data-draft={s.draft ? "true" : "false"}
-                data-pr={badge === "PR" ? "true" : "false"}
-                onClick={() => onOpen(s.id)}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(s.id); } }}
-                onMouseEnter={() => setSelectedIdx(idxInFiltered)}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "88px 1fr",
-                  gap: 28, alignItems: "start",
-                  padding: "24px 16px 24px 0",
-                  background: "transparent",
-                  opacity: s.draft ? 0.78 : 1,
-                }}>
-                {/* ── Rail: dot + date stack ──
-                   Dot sits at the top so it aligns with the band's eyebrow
-                   baseline (paddingTop on rail matches the eyebrow's
-                   vertical position). Date stack reads top-down: serif
-                   day-month, mono weekday, mono "N days ago". Draft swaps
-                   the date for an italic copper "Draft" eyebrow. */}
-                <div style={{
-                  display: "flex", flexDirection: "column",
-                  alignItems: "flex-start", gap: 10,
-                  paddingTop: 6, paddingLeft: 11,
-                  /* paddingLeft positions the dot column so its center
-                     lands on the spine at x=19 (11 + 4 + halfDot). */
-                }}>
-                  <span aria-hidden="true" className="hsx-row-dot" />
-                  {s.draft ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 2, marginLeft: -7 }}>
-                      <span style={{
-                        fontFamily: fonts.serif, fontStyle: "italic",
-                        fontSize: 16, color: tok.copper, fontWeight: 400,
-                        letterSpacing: "0.005em", lineHeight: 1.1,
-                      }}>Draft</span>
-                      <span style={{
-                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 500,
-                        color: tok.inkSoft, letterSpacing: "0.14em",
-                      }}>IN PROGRESS</span>
-                    </div>
-                  ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 2, marginLeft: -7 }}>
-                      <span style={{
-                        fontFamily: fonts.serif, fontSize: 18, fontWeight: 400,
-                        color: tok.coal, letterSpacing: "-0.005em", lineHeight: 1.05,
-                      }}>{ds.top}</span>
-                      <span className="hsx-row-mobile-hide" style={{
-                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 500,
-                        color: tok.inkSoft, letterSpacing: "0.14em",
-                      }}>{ds.bot.slice(0, 3)}</span>
-                      <span className="hsx-row-mobile-hide" style={{
-                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 400,
-                        color: tok.inkFaint, letterSpacing: "0.04em",
-                        marginTop: 1,
-                      }}>{s.dateLabel}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Band: two-rail card ──
-                   Left identity column (eyebrow, headline, did-well, work-on,
-                   footer action) + hairline + right ScoreRing rail.
-                   The hairline keeps the rail a margin-note rather than a
-                   second column shouting at the headline. */}
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "minmax(0,1fr) 1px 104px",
-                  columnGap: 20,
-                  alignItems: "stretch",
-                  paddingRight: 8,
-                }}>
-                  {/* Identity column. minWidth: 0 lets the headline ellipsis
-                     work inside a grid track. */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-                    {/* Eyebrow row: catalog metadata left, badge right. */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, minWidth: 0 }}>
-                      <span style={{
-                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
-                        color: tok.inkSoft, letterSpacing: "0.14em",
-                        textTransform: "uppercase",
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      }}>{eyebrowParts.join("  ·  ")}</span>
-                      {badge && !s.draft ? (
-                        <span style={{
-                          padding: "2px 8px",
-                          fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
-                          color: badge === "PR" ? tok.indigo : tok.coal,
-                          letterSpacing: "0.14em",
-                          border: `1px solid ${badge === "PR" ? tok.indigo : tok.lineStrong}`,
-                          borderRadius: 2,
-                          flexShrink: 0,
-                        }}>{badge}</span>
-                      ) : null}
-                    </div>
-
-                    {/* Headline: role-at-company. The score has moved to the
-                       right rail so the serif headline is unrivalled here. */}
-                    <h3 style={{
-                      margin: 0,
-                      fontFamily: fonts.serif, fontSize: 26, fontWeight: 400,
-                      color: tok.coal, lineHeight: 1.15,
-                      letterSpacing: "-0.01em",
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {s.role}
-                      {s.company ? (
-                        <>
-                          <em style={{ fontStyle: "italic", color: tok.copper, fontWeight: 400 }}> at </em>
-                          <span style={{ color: tok.coal }}>{s.company}</span>
-                        </>
-                      ) : null}
-                    </h3>
-
-                    {/* Did-well line. Shown when the session has a top
-                       strength; success-tinted check glyph + headline only.
-                       Hidden on drafts (no scored coaching yet). */}
-                    {!s.draft && s.topStrength ? (
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: 8,
-                        minWidth: 0,
-                      }}>
-                        <span aria-hidden style={{
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          width: 16, height: 16, borderRadius: 999,
-                          background: tok.successSoft, color: tok.success,
-                          fontSize: 10, fontWeight: 700, flexShrink: 0,
-                        }}>✓</span>
-                        <span style={{
-                          fontSize: 13, color: tok.coal, lineHeight: 1.4,
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                          minWidth: 0,
-                        }}>
-                          Strong on <span style={{ fontWeight: 600 }}>{cap(s.topStrength, 60)}</span>
-                        </span>
-                      </div>
-                    ) : null}
-
-                    {/* Work-on block. Copper-tinted surface so the gap reads
-                       as a coached next step, not a critique. Renders only
-                       when there's a real gap (no placeholder copy). */}
-                    {!s.draft && s.topGap ? (
-                      <div style={{
-                        display: "flex", flexDirection: "column", gap: 2,
-                        padding: "10px 12px",
-                        background: tok.copperSoft,
-                        border: `1px solid ${tok.copper100}`,
-                        borderRadius: radii.chip,
-                        minWidth: 0,
-                      }}>
-                        <span style={{
-                          fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
-                          color: tok.copper, letterSpacing: "0.14em",
-                          textTransform: "uppercase",
-                        }}>{isDue ? "Due for review" : "Work on next"}</span>
-                        <span style={{
-                          fontSize: 13, color: tok.coal, lineHeight: 1.4, fontWeight: 600,
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        }}>{cap(s.topGap, 64)}</span>
-                      </div>
-                    ) : s.draft ? (
-                      <p style={{ margin: 0, fontSize: 13, color: tok.inkSoft, fontStyle: "italic" }}>
-                        Saved mid-round, ready to continue.
-                      </p>
-                    ) : null}
-
-                    {/* Footer action. Anchors the card and gives the user
-                       an explicit affordance for the click that opens the
-                       full report (the whole row is already clickable;
-                       this is the discoverable version). paddingRight
-                       reserves room for the hover-revealed Re-run button. */}
-                    {!s.draft ? (
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: 8,
-                        marginTop: 2, paddingRight: 140,
-                        fontFamily: fonts.ui, fontSize: 12, fontWeight: 600,
-                        color: tok.indigo, letterSpacing: "0.01em",
-                      }}>
-                        <span>View full report</span>
-                        <span aria-hidden>→</span>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* Hairline separator. Stretches the full card height so
-                     the ring rail reads as a margin column, not a floating
-                     panel. */}
-                  <div aria-hidden style={{ background: tok.line, width: 1, alignSelf: "stretch" }} />
-
-                  {/* Score rail: ring + delta chip. Centered on the band's
-                     cross-axis so the numeral lands at the optical midline
-                     of the headline + work-on stack. */}
-                  <div style={{
-                    display: "flex", flexDirection: "column",
-                    alignItems: "center", justifyContent: "center",
-                    gap: 8, flexShrink: 0,
-                  }}>
-                    {(() => {
-                      /* Inline ScoreRing. Kept local because it's the only
-                         consumer in this file and the page-level design
-                         explicitly removed the shared one in an earlier
-                         pass; reintroducing it as a card-scoped detail
-                         doesn't reopen that decision. */
-                      const size = 76, stroke = 5;
-                      const r = (size - stroke) / 2;
-                      const circ = 2 * Math.PI * r;
-                      const pct = Math.max(0, Math.min(100, s.score)) / 100;
-                      const band = bandOf(s.score);
-                      const ringColor =
-                        band === "strong" ? tok.success
-                        : band === "below" ? tok.error
-                        : band === "mixed" ? tok.copper
-                        : tok.indigo;
-                      return (
-                        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
-                          role="img" aria-label={s.draft ? "draft, no score yet" : `score ${s.score} out of 100, ${BAND_LABEL[band]}`}>
-                          <circle cx={size / 2} cy={size / 2} r={r}
-                            fill="none" stroke={tok.line} strokeWidth={stroke} />
-                          {!s.draft ? (
-                            <circle cx={size / 2} cy={size / 2} r={r}
-                              fill="none" stroke={ringColor} strokeWidth={stroke}
-                              strokeDasharray={circ}
-                              strokeDashoffset={circ * (1 - pct)}
-                              strokeLinecap="round"
-                              transform={`rotate(-90 ${size / 2} ${size / 2})`} />
-                          ) : null}
-                          <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central"
-                            fontFamily={fonts.serif} fontSize={24}
-                            fill={s.draft ? tok.inkFaint : tok.coal}
-                            style={{ fontVariantNumeric: "tabular-nums" }}>
-                            {s.draft ? "—" : s.score}
-                          </text>
-                        </svg>
-                      );
-                    })()}
-                    {!s.draft && !isFirstOfType ? (
-                      <span
-                        aria-label={deltaAria}
-                        style={{
-                          fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
-                          color: deltaSign === "up" ? tok.indigo
-                               : deltaSign === "down" ? tok.copper
-                               : tok.inkSoft,
-                          letterSpacing: "0.04em",
-                          fontVariantNumeric: "tabular-nums",
-                        }}>
-                        {deltaSign === "up" ? `▲ ${s.delta}`
-                         : deltaSign === "down" ? `▼ ${Math.abs(s.delta)}`
-                         : "= 0"}
-                      </span>
-                    ) : !s.draft && isFirstOfType ? (
-                      <span style={{
-                        fontFamily: fonts.mono, fontSize: 10, fontWeight: 500,
-                        color: tok.inkFaint, letterSpacing: "0.10em",
-                      }}>FIRST</span>
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* Re-run lives at row scope so its absolute positioning
-                   anchors to the row's box, not the band column. Hover
-                   on the row reveals it (CSS); `r` on a selected row
-                   triggers it (keyboard handler). tabIndex=-1 keeps it
-                   out of the Tab order so j/k row navigation isn't
-                   interrupted by an interior focus stop. */}
-                {onRerun && !s.draft ? (
-                  <button
-                    className="hsx-row-rerun"
-                    type="button"
-                    tabIndex={-1}
-                    onClick={e => { e.stopPropagation(); onRerun(s); }}
-                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
-                    aria-label={`Practice ${s.type} again`}
-                    style={{
-                      padding: "6px 10px",
-                      border: `1px solid ${tok.line}`,
-                      borderRadius: radii.btn,
-                      background: tok.cream,
-                      color: tok.indigo, fontFamily: fonts.ui,
-                      fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
-                      cursor: "pointer",
-                      display: "inline-flex", alignItems: "center", gap: 6,
-                    }}>
-                    <span>Practice again</span>
-                    <svg aria-hidden width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14M13 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                ) : null}
-              </div>
+                <SessionCard
+                  key={s.id}
+                  s={s}
+                  isSelected={idxInFiltered === selectedIdx}
+                  isDue={dueIds.has(s.id)}
+                  badge={badgeById.get(s.id) ?? null}
+                  isFirstOfType={firstOfTypeIds.has(s.id)}
+                  dateText={s.dateLabel || formatDateStack(s.date).top}
+                  onOpen={onOpen}
+                  onRerun={onRerun}
+                  onMouseEnter={() => setSelectedIdx(idxInFiltered)}
+                />
               );
             })}
           </div>

@@ -53,6 +53,12 @@ function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
     duration: d.duration,
     score: d.score,
     delta: d.change,
+    /* Plain-language coaching pair (strength + gap, each with a meaning;
+       gap also carries a concrete rewrite example). Persisted in
+       report_json.coaching by evaluate-session (mvp-8+) and threaded
+       through DashboardSession. Undefined for pre-mvp-8 rows — the card
+       falls back to topStrength / topGap headlines, never invents copy. */
+    coaching: d.coaching,
     /* difficulty is surfaced inline in the row's metadata line so the
        score numeral has interpretive context (82 on Hard ≠ 82 on Easy).
        Optional upstream because some legacy rows predate the field. */

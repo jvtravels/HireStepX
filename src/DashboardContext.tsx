@@ -292,6 +292,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
           focus: s.focus, duration: s.duration, score: s.score, questions: s.questions,
           ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
+          /* Plain-language coaching pair, persisted inside report_json by
+             evaluate-session. Undefined for pre-mvp-8 rows → the card
+             falls back to the legacy strength/weakness one-liners. */
+          coaching: s.report_json?.coaching ?? undefined,
           /* Kernel-aware negotiation metrics. The Supabase column type
              is jsonb so we get an unknown-shaped object back; the
              RealSession field is strictly typed. Cast is intentional —
@@ -366,6 +370,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
         focus: s.focus, duration: s.duration, score: s.score, questions: s.questions,
         ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
+        coaching: s.report_json?.coaching ?? undefined,
       }));
       setSupabaseSessions(mapped);
       try { localStorage.setItem(`hirestepx_cache_sessions_${user.id}`, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }

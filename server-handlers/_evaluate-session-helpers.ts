@@ -46,6 +46,18 @@ export interface WinOrFix {
   quote: string;
 }
 
+/**
+ * Plain-language coaching pair surfaced on the dashboard session card.
+ * `strength` is what the candidate did well; `gap` is the single highest-
+ * leverage thing to fix next, with a concrete rewrite example. Every field
+ * is grounded in the transcript — `meaning`/`example` must reference what
+ * the candidate actually said, never generic advice.
+ */
+export interface Coaching {
+  strength: { headline: string; meaning: string };
+  gap: { headline: string; meaning: string; example: string };
+}
+
 export type RedFlagType =
   | "blame"
   | "missing_result"
@@ -438,6 +450,33 @@ export function normalizeReadiness(raw: unknown): ReadinessForecast | null {
     confidence: validConf.includes(r.confidence) ? r.confidence : "medium",
     rationale: typeof r.rationale === "string" ? r.rationale.slice(0, 220) : "",
   };
+}
+
+/**
+ * Plain-language coaching normalizer. Returns null when the LLM omitted the
+ * field or returned a malformed shape, so the dashboard card falls back to
+ * the legacy strength/weakness one-liners. Trims each string so a misbehaving
+ * model can't blow up the persisted payload. A coaching object survives only
+ * if BOTH strength and gap carry a non-empty headline — partial coaching is
+ * worse than the legacy fallback.
+ */
+export function normalizeCoaching(raw: unknown): Coaching | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as { strength?: unknown; gap?: unknown };
+  if (!r.strength || typeof r.strength !== "object") return null;
+  if (!r.gap || typeof r.gap !== "object") return null;
+  const s = r.strength as { headline?: unknown; meaning?: unknown };
+  const g = r.gap as { headline?: unknown; meaning?: unknown; example?: unknown };
+  const str = (v: unknown, max: number): string =>
+    typeof v === "string" ? v.trim().slice(0, max) : "";
+  const strength = { headline: str(s.headline, 60), meaning: str(s.meaning, 160) };
+  const gap = {
+    headline: str(g.headline, 60),
+    meaning: str(g.meaning, 160),
+    example: str(g.example, 160),
+  };
+  if (!strength.headline || !gap.headline) return null;
+  return { strength, gap };
 }
 
 /**
