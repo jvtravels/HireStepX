@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { safeUUID } from "./utils";
+import type { SessionCoaching } from "./dashboardTypes";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -152,6 +153,11 @@ export interface SessionRecord {
   job_description?: string | null;
   jd_analysis?: Record<string, unknown> | null;
   negotiation_metrics?: Record<string, unknown> | null;
+  /* Cached evaluator output (server-handlers/evaluate-session.ts). jsonb
+     column; shape is the SessionReport but we only read `coaching` here for
+     the dashboard card, so it's typed loosely. The report layer is the trust
+     boundary — this is just transport. */
+  report_json?: { coaching?: SessionCoaching | null } & Record<string, unknown> | null;
   created_at: string;
 }
 

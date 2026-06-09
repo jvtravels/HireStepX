@@ -24,45 +24,133 @@ function relativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-/* ─── Memoized session row to avoid re-rendering the full list ─── */
+/* ─── ScoreRing — 64px circular progress + band label ───
+ * Ported from the canvas demo. Larger than the legacy 52px ring so the
+ * score numeral reads at a glance. Band label (Strong/Good/Needs work)
+ * sits inside the ring; delta lives in the action bar to keep the rail
+ * visually balanced against the left content column. */
+function ScoreRing({ score }: { score: number }) {
+  const color = scoreLabelColor(score);
+  const r = 27;
+  const circ = 2 * Math.PI * r;
+  const fill = (score / 100) * circ;
+  return (
+    <div style={{ position: "relative", width: 64, height: 64, flexShrink: 0 }}>
+      <svg width="64" height="64" viewBox="0 0 64 64" style={{ transform: "rotate(-90deg)", position: "absolute" }}>
+        <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(14,12,8,0.06)" strokeWidth="3" />
+        <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round"
+          strokeDasharray={`${fill} ${circ}`} className="score-ring" />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontFamily: font.mono, fontSize: 20, fontWeight: 700, color: c.ivory, lineHeight: 1 }}>{score}</span>
+        <span style={{ fontFamily: font.ui, fontSize: 8, fontWeight: 700, color, letterSpacing: "0.04em", lineHeight: 1, marginTop: 2, textTransform: "uppercase" as const }}>{scoreLabel(score)}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Memoized session row — two-rail balanced card ───
+ *
+ * Structure (top → bottom):
+ *   1. Eyebrow strip — type · difficulty · Qs · duration · relative time
+ *   2. Body — left column (identity headline → quiet "Did well" line →
+ *      dominant "Work on next" block with example chip) + right rail
+ *      (ScoreRing). The rail is vertically centered against the full
+ *      column with a hairline borderLeft so neither side leaves a void.
+ *   3. Action bar — "View full report →" on the left, ±change chip on
+ *      the right.
+ *
+ * Data sourcing:
+ *   - `session.coaching` is structured plain-language output from the
+ *     evaluator (server-handlers/evaluate-session.ts, mvp-8+). When
+ *     present we render the full {headline, meaning, example} layout.
+ *   - Pre-mvp-8 sessions have no coaching → we degrade to the legacy
+ *     topStrength/topWeakness one-liners (a single short headline each,
+ *     no meaning/example). No dummy fields are invented. */
 const SessionRow = memo(function SessionRow({ session, onClick }: { session: DashboardSession; onClick: () => void }) {
+  const coaching = session.coaching;
+  const strengthHeadline = coaching?.strength.headline || session.topStrength;
+  const gapHeadline = coaching?.gap.headline || session.topWeakness;
+  const eyebrow = [session.type, session.difficulty, session.duration].filter(Boolean) as string[];
   return (
     <button
       onClick={onClick}
-      style={{ width: "100%", padding: "18px 20px", borderRadius: 14, textAlign: "left" as const, background: c.graphite, border: `1px solid ${c.border}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 18, transition: "all 0.2s ease", outline: "none" }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.borderHover; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; }}
+      style={{ width: "100%", padding: 0, borderRadius: 14, textAlign: "left" as const, background: c.carbon, border: `1px solid ${c.border}`, cursor: "pointer", display: "block", overflow: "hidden", transition: "border-color 0.15s ease, box-shadow 0.15s ease", outline: "none" }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.borderHover; e.currentTarget.style.boxShadow = "0 2px 12px rgba(14,12,8,0.07)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.boxShadow = "none"; }}
     >
-      <div style={{ width: 52, height: 52, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <svg width="52" height="52" viewBox="0 0 52 52" style={{ position: "absolute", transform: "rotate(-90deg)" }}>
-          <circle cx="26" cy="26" r="23" fill="none" stroke="rgba(14,12,8,0.06)" strokeWidth="2.5" />
-          <circle cx="26" cy="26" r="23" fill="none" stroke={scoreLabelColor(session.score)} strokeWidth="2.5"
-            strokeDasharray={`${(session.score / 100) * 2 * Math.PI * 23} ${2 * Math.PI * 23}`}
-            strokeLinecap="round" className="score-ring" />
-        </svg>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 700, color: c.ivory, lineHeight: 1 }}>{session.score}</span>
-          <span style={{ fontFamily: font.ui, fontSize: 8, color: scoreLabelColor(session.score), fontWeight: 600, marginTop: 1 }}>{scoreLabel(session.score)}</span>
+      {/* Eyebrow strip */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderBottom: `1px solid ${c.border}`, background: c.graphite }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {eyebrow.map((p, i) => (
+            <span key={p + i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {i > 0 && <span style={{ color: c.stone, fontSize: 10 }}>·</span>}
+              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: i === 0 ? c.chalk : c.stone }}>{p}</span>
+            </span>
+          ))}
+        </div>
+        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone }} title={session.dateLabel}>{relativeTime(session.date)}</span>
+      </div>
+
+      {/* Body — left content column + right score rail */}
+      <div style={{ display: "flex", alignItems: "stretch", gap: 22, padding: "18px 20px" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Identity headline */}
+          <div style={{ fontFamily: font.ui, fontSize: 17, fontWeight: 600, color: c.ivory, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+            {session.role}{session.company ? <> <span style={{ color: c.chalk, fontWeight: 400 }}>at</span> {session.company}</> : null}
+          </div>
+
+          {/* Strength — quiet one-line affirmation */}
+          {strengthHeadline && (
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span style={{ color: c.sage, fontSize: 12, flexShrink: 0 }}>✓</span>
+              <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: c.sage, flexShrink: 0 }}>Did well</span>
+              <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{strengthHeadline}</span>
+            </div>
+          )}
+
+          {/* Gap — dominant block. Meaning + example only render when the
+              evaluator produced structured coaching; pre-mvp-8 sessions
+              show just the legacy headline on the same copper tint so
+              the card hierarchy stays consistent. */}
+          {gapHeadline && (
+            <div style={{ display: "flex", gap: 10, background: "rgba(180,83,9,0.06)", borderRadius: 10, padding: "13px 15px" }}>
+              <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: "rgba(180,83,9,0.16)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: c.gilt, marginTop: 1, fontWeight: 700 }}>↑</span>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: c.gilt, marginBottom: 3 }}>Work on next</div>
+                <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, color: c.ivory, lineHeight: 1.3 }}>{gapHeadline}</div>
+                {coaching?.gap.meaning && (
+                  <div style={{ fontFamily: font.ui, fontSize: 12.5, color: c.chalk, lineHeight: 1.45, marginTop: 3 }}>{coaching.gap.meaning}</div>
+                )}
+                {coaching?.gap.example && (
+                  <div style={{ display: "inline-block", marginTop: 8, fontFamily: font.ui, fontSize: 11.5, fontWeight: 500, color: c.gilt, background: c.carbon, border: `1px solid rgba(180,83,9,0.2)`, borderRadius: 8, padding: "4px 9px", lineHeight: 1.35 }}>{coaching.gap.example}</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Score rail */}
+        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingLeft: 22, borderLeft: `1px solid ${c.border}` }}>
+          <ScoreRing score={session.score} />
         </div>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-          <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>{session.type}</span>
-          <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" as const, color: c.gilt, background: "rgba(180,83,9,0.08)", padding: "2px 8px", borderRadius: 4 }}>{session.role}</span>
-        </div>
-        <div style={{ display: "flex", gap: 16 }}>
-          <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}><span style={{ color: c.sage, fontWeight: 500 }}>{session.topStrength}</span></span>
-          <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Improve: <span style={{ color: c.ember, fontWeight: 500 }}>{session.topWeakness}</span></span>
-        </div>
+
+      {/* Action bar — primary nav cue + delta. The whole card is the
+          click target; "View full report" reads as the intent label
+          rather than a separate control, and the chevron carries the
+          affordance for keyboard/touch users. */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px 14px", borderTop: `1px solid ${c.border}` }}>
+        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: c.gilt, display: "flex", alignItems: "center", gap: 5 }}>
+          View full report
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+        </span>
+        {session.change !== 0 && (
+          <span style={{ padding: "4px 10px", borderRadius: 10, background: session.change > 0 ? "rgba(21,128,61,0.08)" : "rgba(185,28,28,0.08)", border: `1px solid ${session.change > 0 ? "rgba(21,128,61,0.15)" : "rgba(185,28,28,0.15)"}` }}>
+            <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: session.change > 0 ? c.sage : c.ember }}>{session.change > 0 ? "+" : ""}{session.change} vs prev</span>
+          </span>
+        )}
       </div>
-      <div style={{ textAlign: "right" as const, flexShrink: 0 }} title={session.dateLabel}>
-        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.chalk, display: "block", marginBottom: 2 }}>{relativeTime(session.date)}</span>
-        <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{session.duration}</span>
-      </div>
-      <div style={{ padding: "4px 10px", borderRadius: 10, flexShrink: 0, background: session.change > 0 ? "rgba(21,128,61,0.08)" : "rgba(185,28,28,0.08)", border: `1px solid ${session.change > 0 ? "rgba(21,128,61,0.15)" : "rgba(185,28,28,0.15)"}` }}>
-        <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: session.change > 0 ? c.sage : c.ember }}>{session.change > 0 ? "+" : ""}{session.change}</span>
-      </div>
-      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6" /></svg>
     </button>
   );
 });
@@ -83,7 +171,11 @@ export default function DashboardSessions() {
     .filter(s => {
       if (!search) return true;
       const q = search.toLowerCase();
-      return s.type.toLowerCase().includes(q) || (s.topStrength || "").toLowerCase().includes(q) || (s.topWeakness || "").toLowerCase().includes(q);
+      return s.type.toLowerCase().includes(q)
+        || (s.topStrength || "").toLowerCase().includes(q)
+        || (s.topWeakness || "").toLowerCase().includes(q)
+        || (s.coaching?.strength.headline || "").toLowerCase().includes(q)
+        || (s.coaching?.gap.headline || "").toLowerCase().includes(q);
     })
     .sort((a, b) => sortBy === "score" ? b.score - a.score : new Date(b.date).getTime() - new Date(a.date).getTime()), [sessions, filter, search, sortBy]);
 

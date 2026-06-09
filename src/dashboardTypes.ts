@@ -2,6 +2,16 @@ import { c } from "./tokens";
 
 export type UserContext = { targetRole?: string; targetCompany?: string; industry?: string; interviewDate?: string; practiceTimestamps?: string[]; subscriptionTier?: string; subscriptionEnd?: string } | null;
 
+/* Plain-language coaching pair surfaced on the dashboard session card.
+   Produced by the evaluate-session LLM (see _evaluate-session-helpers
+   `normalizeCoaching`) and persisted inside `sessions.report_json`. Optional
+   everywhere downstream: pre-mvp-8 rows have no coaching, so the card falls
+   back to the legacy topStrength/topWeakness one-liners. */
+export interface SessionCoaching {
+  strength: { headline: string; meaning: string };
+  gap: { headline: string; meaning: string; example: string };
+}
+
 export interface DashboardSession {
   id: string;
   date: string;
@@ -21,6 +31,10 @@ export interface DashboardSession {
   focus?: string;
   topStrength: string;
   topWeakness: string;
+  /** Structured plain-language coaching from the evaluator (mvp-8+).
+   *  Undefined for older sessions → card falls back to topStrength/
+   *  topWeakness one-liners. */
+  coaching?: SessionCoaching;
   feedback: string;
   transcript: { speaker: string; text: string; scoreNote?: string }[];
   questionScores: { question: string; score: number; notes: string }[];

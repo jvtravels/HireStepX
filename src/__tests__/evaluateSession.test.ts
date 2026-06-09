@@ -13,6 +13,7 @@ import {
   normalizeStoryReuse,
   normalizeBlindSpots,
   normalizeReadiness,
+  normalizeCoaching,
   normalizeCrossSessionInsights,
   DEFAULT_BANDS,
   type TranscriptTurn,
@@ -395,6 +396,64 @@ describe("normalizeReadiness", () => {
       rationale: "x",
     });
     expect(r?.confidence).toBe("medium");
+  });
+});
+
+describe("normalizeCoaching", () => {
+  it("returns null on non-object input", () => {
+    expect(normalizeCoaching(null)).toBeNull();
+    expect(normalizeCoaching("nope")).toBeNull();
+    expect(normalizeCoaching(undefined)).toBeNull();
+  });
+
+  it("returns null when strength or gap is missing", () => {
+    expect(normalizeCoaching({ strength: { headline: "x", meaning: "y" } })).toBeNull();
+    expect(normalizeCoaching({ gap: { headline: "x", meaning: "y", example: "z" } })).toBeNull();
+  });
+
+  it("returns null when either headline is empty (partial coaching is worse than fallback)", () => {
+    expect(normalizeCoaching({
+      strength: { headline: "", meaning: "y" },
+      gap: { headline: "x", meaning: "y", example: "z" },
+    })).toBeNull();
+    expect(normalizeCoaching({
+      strength: { headline: "x", meaning: "y" },
+      gap: { headline: "   ", meaning: "y", example: "z" },
+    })).toBeNull();
+  });
+
+  it("accepts a valid coaching object and trims strings", () => {
+    const r = normalizeCoaching({
+      strength: { headline: "Clear, structured answers", meaning: "STAR shape in every story" },
+      gap: { headline: "Add numbers to results", meaning: "You said improved performance", example: "Try: cut time 40%" },
+    });
+    expect(r).toEqual({
+      strength: { headline: "Clear, structured answers", meaning: "STAR shape in every story" },
+      gap: { headline: "Add numbers to results", meaning: "You said improved performance", example: "Try: cut time 40%" },
+    });
+  });
+
+  it("coerces non-strings to empty strings without crashing", () => {
+    const r = normalizeCoaching({
+      strength: { headline: "ok", meaning: 42 },
+      gap: { headline: "ok", meaning: null, example: undefined },
+    });
+    expect(r?.strength.meaning).toBe("");
+    expect(r?.gap.meaning).toBe("");
+    expect(r?.gap.example).toBe("");
+  });
+
+  it("caps long strings so malformed LLM output can't blow up the payload", () => {
+    const long = "x".repeat(500);
+    const r = normalizeCoaching({
+      strength: { headline: long, meaning: long },
+      gap: { headline: long, meaning: long, example: long },
+    });
+    expect(r?.strength.headline.length).toBeLessThanOrEqual(60);
+    expect(r?.strength.meaning.length).toBeLessThanOrEqual(160);
+    expect(r?.gap.headline.length).toBeLessThanOrEqual(60);
+    expect(r?.gap.meaning.length).toBeLessThanOrEqual(160);
+    expect(r?.gap.example.length).toBeLessThanOrEqual(160);
   });
 });
 
