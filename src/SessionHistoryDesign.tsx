@@ -77,30 +77,34 @@ const THEMES: Record<SessionHistoryTheme, React.CSSProperties> = {
     "--hsx-font-mono": "'JetBrains Mono', 'SF Mono', monospace",
   } as React.CSSProperties,
   hirestepx: {
-    /* Dark-luxury HireStepX brand. Mirrors src/tokens.ts so the
-       Sessions surface composes seamlessly with DashboardLayout. */
-    "--hsx-cream": "#060607",         // obsidian base
-    "--hsx-cream-soft": "#111113",    // graphite, raised panels
-    "--hsx-white": "#1E1E20",         // onyx, top-level cards
-    "--hsx-coal": "#F5F2ED",          // ivory, primary text
-    "--hsx-ink": "#CCC7C0",           // chalk, secondary text
-    "--hsx-ink-soft": "#9E988F",      // AA on obsidian, tertiary
-    "--hsx-ink-faint": "#8E8983",     // stone, quaternary
-    "--hsx-accent": "#D4B37F",        // gilt, brand
-    "--hsx-accent-deep": "#B8923E",   // giltDark, brand hover/active
-    "--hsx-accent-tint": "rgba(212,179,127,0.12)",
-    "--hsx-warm": "#E8D5AE",          // giltLight, secondary warm
-    "--hsx-warm-soft": "rgba(232,213,174,0.10)",
-    "--hsx-warm-tint": "rgba(232,213,174,0.06)",
-    "--hsx-success": "#A3C5A7",       // sageLight for AA on dark
-    "--hsx-success-soft": "rgba(122,158,126,0.16)",
-    "--hsx-error": "#E0917B",         // emberLight for AA on dark
-    "--hsx-error-soft": "rgba(209,126,104,0.16)",
-    "--hsx-line": "rgba(245,242,237,0.08)",
-    "--hsx-line-strong": "rgba(245,242,237,0.14)",
-    "--hsx-font-serif": "'Instrument Serif', Georgia, 'Times New Roman', serif",
-    "--hsx-font-ui": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    "--hsx-font-mono": "'JetBrains Mono', 'SF Mono', monospace",
+    /* Production HireStepX brand — mirrors src/auth/_tokens.ts, the
+       cream-mode editorial register that DashboardLayout and every
+       other authenticated surface uses. Cream surface, coal ink,
+       copper editorial accent, indigo interactive accent, Instrument
+       Serif + Inter type pairing. inkFaint hardened to #7A7263 for
+       WCAG AA on cream (the value that landed in the 2026-06 audit). */
+    "--hsx-cream": "#FAF7F0",
+    "--hsx-cream-soft": "#F4EFE3",
+    "--hsx-white": "#FFFFFF",
+    "--hsx-coal": "#0E0C08",
+    "--hsx-ink": "#3E3A6E",
+    "--hsx-ink-soft": "#6E6759",
+    "--hsx-ink-faint": "#7A7263",
+    "--hsx-accent": "#312E81",
+    "--hsx-accent-deep": "#1E1B4B",
+    "--hsx-accent-tint": "#E5E2F2",
+    "--hsx-warm": "#B45309",
+    "--hsx-warm-soft": "rgba(180,83,9,0.10)",
+    "--hsx-warm-tint": "#F4E5D8",
+    "--hsx-success": "#15803D",
+    "--hsx-success-soft": "#DCFCE7",
+    "--hsx-error": "#B91C1C",
+    "--hsx-error-soft": "#FEE2E2",
+    "--hsx-line": "#EBE5D2",
+    "--hsx-line-strong": "#D6CDB5",
+    "--hsx-font-serif": "'Instrument Serif', Georgia, serif",
+    "--hsx-font-ui": "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    "--hsx-font-mono": "'JetBrains Mono', monospace",
   } as React.CSSProperties,
 };
 

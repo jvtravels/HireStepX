@@ -67,15 +67,14 @@ export default function SessionHistoryRoute() {
       <div
         style={{
           minHeight: "100vh",
-          /* HireStepX obsidian + ivory + Inter — matches DashboardLayout
-             so the swap into the design doesn't flash a different
-             surface color. */
-          background: "#060607",
-          color: "#9E988F",
+          /* HireStepX cream + coal + Inter — matches DashboardLayout
+             so the swap into the design doesn't flash. */
+          background: "#FAF7F0",
+          color: "#6E6759",
           display: "grid",
           placeItems: "center",
           fontFamily:
-            "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
           fontSize: 13,
         }}
       >
