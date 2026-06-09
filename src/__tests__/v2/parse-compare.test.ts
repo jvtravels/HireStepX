@@ -14,7 +14,11 @@
  * that's the comparator's whole reason to exist.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { compareParsePerTurnAsync } from "../../../server-handlers/v2/parse-compare";
+import {
+  compareParsePerTurnAsync,
+  replayLogAsync,
+  summarizeRecords,
+} from "../../../server-handlers/v2/parse-compare";
 import type { ConversationTurn } from "../../../server-handlers/v2/kernel";
 
 vi.mock("../../../server-handlers/_posthog", () => ({
@@ -138,6 +142,102 @@ describe("parse-compare — error swallowing", () => {
     expect(props.llm_parsed).toBe(true);
     expect(JSON.parse(props.llm_numbers_json as string)).toEqual([]);
     expect(props.llm_acceptance).toBe("none");
+  });
+});
+
+describe("parse-compare — replayLogAsync (offline batch)", () => {
+  /* The replay path runs one LLM call per candidate turn over a full
+   * log. Unlike the live path, this is awaitable and returns records —
+   * it's how scripts/v2-parse-replay.ts produces a readout. */
+  it("returns one record per candidate turn, skipping AI turns", async () => {
+    const log: ConversationTurn[] = [
+      { role: "ai", text: "CTC?", tool: "ask_discovery" },
+      { role: "candidate", text: "32 LPA" },
+      { role: "ai", text: "target?", tool: "ask_discovery" },
+      { role: "candidate", text: "44 LPA" },
+    ];
+    const llm = vi.fn(async () =>
+      '{"numbers":[],"is_offer_ask":false,"topics_surfaced":[],"topics_closed":[],"acceptance":"none","conditions":[]}',
+    );
+    const records = await replayLogAsync(log, llm);
+    expect(records).toHaveLength(2);
+    expect(llm).toHaveBeenCalledTimes(2);
+    expect(records[0].turnIndex).toBeGreaterThanOrEqual(1);
+    expect(records[0].candidateText).toBe("32 LPA");
+    expect(records[1].candidateText).toBe("44 LPA");
+  });
+
+  it("handles individual LLM failures gracefully — record.llm is null, replay continues", async () => {
+    const log: ConversationTurn[] = [
+      { role: "candidate", text: "32 LPA" },
+      { role: "ai", text: "ok", tool: "ask_discovery" },
+      { role: "candidate", text: "44 LPA" },
+    ];
+    let calls = 0;
+    const llm = vi.fn(async () => {
+      calls++;
+      if (calls === 1) throw new Error("rate limited");
+      return '{"numbers":[{"value":44,"kind":"target"}],"is_offer_ask":false,"topics_surfaced":[],"topics_closed":[],"acceptance":"none","conditions":[]}';
+    });
+    const records = await replayLogAsync(log, llm);
+    expect(records).toHaveLength(2);
+    expect(records[0].llm).toBeNull();
+    expect(records[1].llm).not.toBeNull();
+  });
+});
+
+describe("parse-compare — summarizeRecords", () => {
+  it("computes coverage on the union of regex+llm numbers (when both agree)", async () => {
+    /* Single LPA-suffixed number — both layers see it cleanly. */
+    const log: ConversationTurn[] = [
+      { role: "candidate", text: "my current ctc is 32 LPA" },
+    ];
+    const llm = vi.fn(
+      async () =>
+        '{"numbers":[{"value":32,"kind":"current_ctc"}],"is_offer_ask":false,"topics_surfaced":[],"topics_closed":[],"acceptance":"none","conditions":[]}',
+    );
+    const records = await replayLogAsync(log, llm);
+    const s = summarizeRecords(records);
+    expect(s.totalCandidateTurns).toBe(1);
+    expect(s.regexCoverageOnUnion).toBe(1);
+    expect(s.llmCoverageOnUnion).toBe(1);
+    expect(s.disagreementCount).toBe(0);
+  });
+
+  it("exposes regex gap on multi-number candidate text without per-number LPA suffix", async () => {
+    /* "32 LPA, 28 base + 4 variable" — regex needs the literal "LPA"
+     * suffix per number, so it only catches 32. This is the real
+     * parse-coverage gap the comparator was built to surface.
+     * If this assertion ever changes, the kernel's number extractor
+     * got smarter (good) — bump it deliberately, don't paper over. */
+    const log: ConversationTurn[] = [
+      { role: "candidate", text: "my current ctc is 32 LPA, 28 base + 4 variable" },
+    ];
+    const llm = vi.fn(
+      async () =>
+        '{"numbers":[{"value":32,"kind":"current_ctc"},{"value":28,"kind":"current_base"},{"value":4,"kind":"current_variable"}],"is_offer_ask":false,"topics_surfaced":["base","variable"],"topics_closed":[],"acceptance":"none","conditions":[]}',
+    );
+    const records = await replayLogAsync(log, llm);
+    const s = summarizeRecords(records);
+    /* Regex caught 1/3; LLM caught 3/3. */
+    expect(s.regexCoverageOnUnion).toBeCloseTo(1 / 3, 2);
+    expect(s.llmCoverageOnUnion).toBe(1);
+    expect([...s.numbersOnlyLlmSaw].sort((a, b) => a - b)).toEqual([4, 28]);
+  });
+
+  it("flags low regex coverage when llm catches numbers regex misses", async () => {
+    /* Paraphrased: "four-five LPA" — regex won't catch the 45. */
+    const log: ConversationTurn[] = [
+      { role: "candidate", text: "I have an offer at four-five LPA" },
+    ];
+    const llm = vi.fn(
+      async () =>
+        '{"numbers":[{"value":45,"kind":"competing_offer_lpa"}],"is_offer_ask":false,"topics_surfaced":[],"topics_closed":[],"acceptance":"none","conditions":[]}',
+    );
+    const records = await replayLogAsync(log, llm);
+    const s = summarizeRecords(records);
+    expect(s.regexCoverageOnUnion).toBeLessThan(1);
+    expect(s.numbersOnlyLlmSaw).toContain(45);
   });
 });
 

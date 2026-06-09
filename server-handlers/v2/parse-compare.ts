@@ -170,6 +170,137 @@ function numberOverlap(
   };
 }
 
+/** One comparison record — what both layers extracted from one turn,
+ *  plus derived agreement flags. Used by both the live PostHog path and
+ *  the offline replay CLI. Stable shape so analysts can pivot on it. */
+export interface ComparisonRecord {
+  turnIndex: number;
+  candidateText: string;
+  regex: RegexPerTurnSignal;
+  llm: LlmExtraction | null;
+  numbersOverlap: { regex_only: number[]; llm_only: number[]; shared: number[] };
+  disagreeOfferAsk: boolean;
+  disagreeAcceptance: boolean;
+}
+
+/** Pure builder — no IO, no env reads, no exceptions. Lets the live
+ *  path and the offline replay share the same comparison logic. */
+function buildRecord(
+  before: DerivedState,
+  after: DerivedState,
+  candidateText: string,
+  llm: LlmExtraction | null,
+): ComparisonRecord {
+  const regex = diffStates(before, after);
+  const overlap = llm
+    ? numberOverlap(regex.numbers_added, llm.numbers)
+    : { regex_only: regex.numbers_added, llm_only: [], shared: [] };
+  return {
+    turnIndex: after.turnIndex,
+    candidateText,
+    regex,
+    llm,
+    numbersOverlap: overlap,
+    disagreeOfferAsk: llm !== null && llm.is_offer_ask !== regex.offer_ask_fired,
+    disagreeAcceptance:
+      llm !== null && (llm.acceptance !== "none") !== regex.acceptance_fired,
+  };
+}
+
+/** Offline batch replay — walk a full log, call the LLM on every
+ *  candidate turn, return one ComparisonRecord per candidate utterance.
+ *  Used by scripts/v2-parse-replay.ts to read out coverage on existing
+ *  fixtures BEFORE the self-sessions. Pure: no env reads, no PostHog,
+ *  no fire-and-forget. The caller controls concurrency and reporting.
+ *
+ *  Errors in individual LLM calls become `llm: null` records — the
+ *  replay never aborts mid-log because one turn's extraction blew up.
+ *  The caller sees the failure in the record and can decide. */
+export async function replayLogAsync(
+  log: ConversationTurn[],
+  generateAiText: GenerateAiTextFn,
+  opts: { userId?: string } = {},
+): Promise<ComparisonRecord[]> {
+  const records: ComparisonRecord[] = [];
+  for (let i = 0; i < log.length; i++) {
+    const turn = log[i];
+    if (turn.role !== "candidate") continue;
+    const before = deriveState(log.slice(0, i));
+    const after = deriveState(log.slice(0, i + 1));
+    const priorAi =
+      i >= 1 && log[i - 1].role === "ai" ? log[i - 1].text : null;
+    let llm: LlmExtraction | null = null;
+    try {
+      const raw = await generateAiText(
+        EXTRACTION_SYSTEM_PROMPT,
+        buildExtractionUserPrompt(turn.text, priorAi),
+        { temperature: 0, userId: opts.userId ?? "replay" },
+      );
+      llm = parseExtraction(raw);
+    } catch {
+      llm = null;
+    }
+    records.push(buildRecord(before, after, turn.text, llm));
+  }
+  return records;
+}
+
+/** Aggregate per-record signal into a single readout. Numeric coverage
+ *  is the headline I want from the self-sessions and the fixtures:
+ *  "of all numbers either layer saw, how many did regex catch?" */
+export interface ReplaySummary {
+  totalCandidateTurns: number;
+  llmParseFailures: number;
+  regexCoverageOnUnion: number; // 0–1
+  llmCoverageOnUnion: number; // 0–1
+  offerAskAgreement: number; // 0–1
+  acceptanceAgreement: number; // 0–1
+  numbersOnlyRegexSaw: number[];
+  numbersOnlyLlmSaw: number[];
+  disagreementCount: number;
+}
+
+export function summarizeRecords(records: ComparisonRecord[]): ReplaySummary {
+  let sharedNums = 0;
+  let regexOnlyNums = 0;
+  let llmOnlyNums = 0;
+  let offerAgree = 0;
+  let acceptAgree = 0;
+  let withLlm = 0;
+  let llmFails = 0;
+  let disagreements = 0;
+  const regexOnlyAll: number[] = [];
+  const llmOnlyAll: number[] = [];
+
+  for (const r of records) {
+    sharedNums += r.numbersOverlap.shared.length;
+    regexOnlyNums += r.numbersOverlap.regex_only.length;
+    llmOnlyNums += r.numbersOverlap.llm_only.length;
+    regexOnlyAll.push(...r.numbersOverlap.regex_only);
+    llmOnlyAll.push(...r.numbersOverlap.llm_only);
+    if (r.llm === null) {
+      llmFails++;
+      continue;
+    }
+    withLlm++;
+    if (!r.disagreeOfferAsk) offerAgree++;
+    if (!r.disagreeAcceptance) acceptAgree++;
+    if (r.disagreeOfferAsk || r.disagreeAcceptance) disagreements++;
+  }
+  const union = sharedNums + regexOnlyNums + llmOnlyNums;
+  return {
+    totalCandidateTurns: records.length,
+    llmParseFailures: llmFails,
+    regexCoverageOnUnion: union ? (sharedNums + regexOnlyNums) / union : 1,
+    llmCoverageOnUnion: union ? (sharedNums + llmOnlyNums) / union : 1,
+    offerAskAgreement: withLlm ? offerAgree / withLlm : 1,
+    acceptanceAgreement: withLlm ? acceptAgree / withLlm : 1,
+    numbersOnlyRegexSaw: regexOnlyAll,
+    numbersOnlyLlmSaw: llmOnlyAll,
+    disagreementCount: disagreements,
+  };
+}
+
 /** Entry point. Fire-and-forget — caller does NOT await this. Gated by
  *  NEGOTIATION_V2_PARSE_COMPARE=1 env var. Bounded to one LLM call. */
 export function compareParsePerTurnAsync(
@@ -191,8 +322,6 @@ export function compareParsePerTurnAsync(
     try {
       const before = deriveState(log.slice(0, -1));
       const after = deriveState(log);
-      const regex = diffStates(before, after);
-
       const priorAi =
         log.length >= 2 && log[log.length - 2].role === "ai"
           ? log[log.length - 2].text
@@ -204,43 +333,37 @@ export function compareParsePerTurnAsync(
         { temperature: 0, userId: distinctId },
       );
       const llm = parseExtraction(raw);
-
-      const overlap = llm
-        ? numberOverlap(regex.numbers_added, llm.numbers)
-        : { regex_only: regex.numbers_added, llm_only: [] as number[], shared: [] as number[] };
+      const record = buildRecord(before, after, last.text, llm);
 
       /* PostHog Props type disallows arrays — JSON-stringify all
        * list-shaped fields. Analyst parses them back at query time. */
       void captureServerEvent("negotiation_v2_parse_compare", distinctId, {
         session_id: sessionId,
-        turn_index: after.turnIndex,
+        turn_index: record.turnIndex,
         candidate_text_len: last.text.length,
         /* Regex side — what deriveState pulled from this single turn. */
-        regex_numbers_json: JSON.stringify(regex.numbers_added),
-        regex_offer_ask: regex.offer_ask_fired,
-        regex_topics_surfaced_json: JSON.stringify(regex.topics_surfaced_added),
-        regex_topics_closed_json: JSON.stringify(regex.topics_closed_added),
-        regex_target_set: regex.target_set,
-        regex_acceptance: regex.acceptance_fired,
-        regex_premise_numbers_json: JSON.stringify(regex.premise_numbers_added),
+        regex_numbers_json: JSON.stringify(record.regex.numbers_added),
+        regex_offer_ask: record.regex.offer_ask_fired,
+        regex_topics_surfaced_json: JSON.stringify(record.regex.topics_surfaced_added),
+        regex_topics_closed_json: JSON.stringify(record.regex.topics_closed_added),
+        regex_target_set: record.regex.target_set,
+        regex_acceptance: record.regex.acceptance_fired,
+        regex_premise_numbers_json: JSON.stringify(record.regex.premise_numbers_added),
         /* LLM side. */
-        llm_parsed: llm !== null,
-        llm_numbers_json: JSON.stringify(llm?.numbers ?? []),
-        llm_offer_ask: llm?.is_offer_ask ?? null,
-        llm_topics_surfaced_json: JSON.stringify(llm?.topics_surfaced ?? []),
-        llm_topics_closed_json: JSON.stringify(llm?.topics_closed ?? []),
-        llm_acceptance: llm?.acceptance ?? null,
-        llm_conditions_json: JSON.stringify(llm?.conditions ?? []),
+        llm_parsed: record.llm !== null,
+        llm_numbers_json: JSON.stringify(record.llm?.numbers ?? []),
+        llm_offer_ask: record.llm?.is_offer_ask ?? null,
+        llm_topics_surfaced_json: JSON.stringify(record.llm?.topics_surfaced ?? []),
+        llm_topics_closed_json: JSON.stringify(record.llm?.topics_closed ?? []),
+        llm_acceptance: record.llm?.acceptance ?? null,
+        llm_conditions_json: JSON.stringify(record.llm?.conditions ?? []),
         /* Headline numeric overlap. */
-        numbers_regex_only_json: JSON.stringify(overlap.regex_only),
-        numbers_llm_only_json: JSON.stringify(overlap.llm_only),
-        numbers_shared_json: JSON.stringify(overlap.shared),
+        numbers_regex_only_json: JSON.stringify(record.numbersOverlap.regex_only),
+        numbers_llm_only_json: JSON.stringify(record.numbersOverlap.llm_only),
+        numbers_shared_json: JSON.stringify(record.numbersOverlap.shared),
         /* Boolean disagreement flags — easy to filter on in dashboard. */
-        disagree_offer_ask:
-          llm !== null && llm.is_offer_ask !== regex.offer_ask_fired,
-        disagree_acceptance:
-          llm !== null &&
-          (llm.acceptance !== "none") !== regex.acceptance_fired,
+        disagree_offer_ask: record.disagreeOfferAsk,
+        disagree_acceptance: record.disagreeAcceptance,
       });
     } catch (err) {
       void captureServerEvent("negotiation_v2_parse_compare_error", distinctId, {
