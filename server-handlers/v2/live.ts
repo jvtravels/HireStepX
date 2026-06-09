@@ -16,6 +16,7 @@ import type { GenerateAiTextFn } from "../_response-pipeline";
 import type { NegotiationState } from "../_negotiation-kernel";
 import { computeBand, type ConversationTurn, type DerivedState } from "./kernel";
 import { generateTurn, type LlmAdapter, type LlmInput } from "./orchestrator";
+import { compareParsePerTurnAsync } from "./parse-compare";
 import { assertHonestMove } from "./rail";
 import type { ToolCall } from "./tools";
 
@@ -101,6 +102,11 @@ export async function tryRunV2Live(
     const log = adaptLog(state);
     const adapter = buildAdapter(generateAiText, distinctId);
     const result = await generateTurn(log, band, adapter);
+
+    /* Diagnostic-only — fire-and-forget side-by-side parse compare.
+     * Gated on NEGOTIATION_V2_PARSE_COMPARE=1 inside the helper.
+     * Does NOT affect the served response. See parse-compare.ts. */
+    compareParsePerTurnAsync(log, generateAiText, distinctId, state.sessionId ?? "unknown");
     const railState: DerivedState = {
       turnIndex: state.turnIndex,
       offerAskCount: countOfferAsks(state),
