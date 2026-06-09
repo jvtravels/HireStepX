@@ -70,8 +70,8 @@ export default class ErrorBoundary extends Component<Props, State> {
               width: 56,
               height: 56,
               borderRadius: 14,
-              background: "rgba(196,112,90,0.08)",
-              border: "1px solid rgba(196,112,90,0.2)",
+              background: "rgba(185,28,28,0.08)",
+              border: "1px solid rgba(185,28,28,0.2)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -95,8 +95,8 @@ export default class ErrorBoundary extends Component<Props, State> {
               style={{
                 fontSize: 11,
                 color: c.ember,
-                background: "rgba(196,112,90,0.06)",
-                border: `1px solid rgba(196,112,90,0.15)`,
+                background: "rgba(185,28,28,0.06)",
+                border: `1px solid rgba(185,28,28,0.15)`,
                 borderRadius: 8,
                 padding: "12px 16px",
                 maxWidth: 500,
@@ -191,7 +191,7 @@ export class RouteErrorBoundary extends Component<{ children: ReactNode }, Route
         <div role="alert" style={{ padding: "48px 24px", textAlign: "center", fontFamily: font.ui }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12,
-            background: "rgba(196,112,90,0.08)", border: "1px solid rgba(196,112,90,0.2)",
+            background: "rgba(185,28,28,0.08)", border: "1px solid rgba(185,28,28,0.2)",
             display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px",
           }}>
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round">
@@ -204,8 +204,8 @@ export class RouteErrorBoundary extends Component<{ children: ReactNode }, Route
           </p>
           {this.state.error && (
             <pre style={{
-              fontSize: 11, color: c.ember, background: "rgba(196,112,90,0.06)",
-              border: "1px solid rgba(196,112,90,0.15)", borderRadius: 8,
+              fontSize: 11, color: c.ember, background: "rgba(185,28,28,0.06)",
+              border: "1px solid rgba(185,28,28,0.15)", borderRadius: 8,
               padding: "8px 12px", maxWidth: 400, margin: "0 auto 16px",
               overflow: "auto", fontFamily: font.mono, textAlign: "left",
             }}>{this.state.error.message}</pre>
@@ -261,7 +261,7 @@ export class SectionErrorBoundary extends Component<{ children: ReactNode; label
   render() {
     if (this.state.hasError) {
       return (
-        <div role="alert" style={{ padding: "20px 16px", textAlign: "center", borderRadius: 12, background: "rgba(196,112,90,0.04)", border: "1px solid rgba(196,112,90,0.12)" }}>
+        <div role="alert" style={{ padding: "20px 16px", textAlign: "center", borderRadius: 12, background: "rgba(185,28,28,0.04)", border: "1px solid rgba(185,28,28,0.12)" }}>
           <p style={{ fontSize: 13, color: c.stone, margin: 0 }}>
             {this.props.label ? `Could not load ${this.props.label}.` : "This section could not load."}{" "}
             <button onClick={() => this.setState({ hasError: false })} style={{ fontSize: 13, color: c.gilt, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Retry</button>

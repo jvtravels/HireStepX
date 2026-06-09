@@ -66,14 +66,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         >
           {toasts.map((t) => {
             const color = t.type === "success" ? c.sage : t.type === "error" ? c.ember : c.gilt;
-            const borderColor = t.type === "success" ? "rgba(122,158,126,0.25)" : t.type === "error" ? "rgba(196,112,90,0.25)" : "rgba(212,179,127,0.25)";
+            const borderColor = t.type === "success" ? "rgba(21,128,61,0.25)" : t.type === "error" ? "rgba(185,28,28,0.25)" : "rgba(180,83,9,0.25)";
             return (
               <div
                 key={t.id}
                 style={{
                   padding: "10px 16px", borderRadius: 10,
                   background: c.graphite, border: `1px solid ${borderColor}`,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                  boxShadow: "0 4px 20px rgba(14,12,8,0.18)",
                   display: "flex", alignItems: "center", gap: 10,
                   pointerEvents: "auto", maxWidth: 360,
                   animation: t.exiting ? "toastOut 0.2s ease forwards" : "toastIn 0.25s ease",

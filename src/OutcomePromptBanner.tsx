@@ -107,7 +107,7 @@ export default function OutcomePromptBanner() {
   if (stage === "submitted") {
     return (
       <div style={{
-        background: "rgba(122,158,126,0.06)", border: `1px solid rgba(122,158,126,0.22)`,
+        background: "rgba(21,128,61,0.06)", border: `1px solid rgba(21,128,61,0.22)`,
         borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10,
       }}>
         <span style={{ fontSize: 18 }}>🎉</span>
@@ -121,7 +121,7 @@ export default function OutcomePromptBanner() {
   if (stage === "prompt") {
     return (
       <div style={{
-        background: "rgba(212,179,127,0.04)", border: `1px solid rgba(212,179,127,0.22)`,
+        background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.22)`,
         borderRadius: 12, padding: "14px 18px",
         display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12,
       }}>
@@ -207,7 +207,7 @@ export default function OutcomePromptBanner() {
         }}>Cancel</button>
         <button onClick={onSubmit} disabled={submitting} style={{
           fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
-          background: submitting ? "rgba(212,179,127,0.4)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+          background: submitting ? "rgba(180,83,9,0.4)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
           border: "none", borderRadius: 6, padding: "8px 18px",
           cursor: submitting ? "default" : "pointer",
         }}>
