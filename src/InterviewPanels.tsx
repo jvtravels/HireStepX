@@ -1563,7 +1563,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
                   borderRadius: 999, padding: "7px 16px", cursor: "pointer",
                   transition: "background 160ms ease, border-color 160ms ease",
                 }}
-                onMouseEnter={(ev) => { ev.currentTarget.style.background = "rgba(245,242,237,0.06)"; ev.currentTarget.style.borderColor = e.lineStrong; }}
+                onMouseEnter={(ev) => { ev.currentTarget.style.background = "rgba(14,12,8,0.06)"; ev.currentTarget.style.borderColor = e.lineStrong; }}
                 onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.borderColor = e.line; }}
               >
                 Skip and use estimated score
