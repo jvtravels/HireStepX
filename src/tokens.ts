@@ -1,45 +1,66 @@
-/* ─── HireStepX Design Tokens ─── */
-/* Premium dark luxury design system */
+/* ─── HireStepX Design Tokens (cream brand) ───────────────────────────
+ *
+ * This file is the LEGACY shim. The brand source of truth is
+ * `src/auth/_tokens.ts`. The `c`, `font`, `shadow`, `gradient` names
+ * here are kept so the ~28 surfaces that historically imported from
+ * `./tokens` continue to compile while we migrate them one phase at
+ * a time to the canonical `tokens` map.
+ *
+ * The mapping is ROLE-preserving, not VALUE-preserving:
+ *   c.obsidian (was deepest dark, page bg)   → cream    (page bg)
+ *   c.ivory    (was lightest, primary text)  → coal     (primary text)
+ *   c.gilt     (was warm brand accent)       → copper   (editorial accent)
+ *   c.sage     (was success on dark)         → success  (cream-safe green)
+ *   c.ember    (was error on dark)           → error    (cream-safe red)
+ *
+ * If a surface used a name as background AND text in different places,
+ * the inversion still holds visually: a coal chip on cream reads the
+ * same intent as a cream chip on coal.
+ *
+ * New code: import from `./auth/_tokens` directly. Don't extend this file.
+ */
+
+import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
 
 export const c = {
-  /* Surfaces */
-  obsidian: "#060607",
-  graphite: "#111113",
-  carbon: "#191919",       // Elevated surface
-  onyx: "#1E1E20",         // Card hover / raised elements
+  /* Surfaces — was deep-black ramp, now cream ramp */
+  obsidian: T.cream,         // page background
+  graphite: T.creamSoft,     // secondary surface
+  carbon: T.white,           // elevated surface (card)
+  onyx: T.white,             // card hover / raised — same as carbon on cream
 
-  /* Text */
-  ivory: "#F5F2ED",
-  chalk: "#CCC7C0",
-  stone: "#8E8983",        // 5.3:1 on obsidian — WCAG AA
+  /* Text — inverted: lightest-on-dark becomes darkest-on-cream */
+  ivory: T.coal,             // primary text
+  chalk: T.inkSoft,          // secondary text
+  stone: T.inkFaint,         // tertiary text (AA-hardened #7A7263)
 
-  /* Brand */
-  gilt: "#D4B37F",
-  giltDark: "#B8923E",
-  giltLight: "#E8D5AE",    // Soft gold for subtle accents
+  /* Brand — gilt becomes copper editorial */
+  gilt: T.copper,
+  giltDark: T.copperDark,
+  giltLight: T.copper100,
 
-  /* Semantic — colors verified WCAG AA (>= 4.5:1) on obsidian and tinted overlays */
-  sage: "#7A9E7E",         // 6.7:1 on obsidian
-  sageLight: "#A3C5A7",
-  ember: "#D17E68",        // 6.3:1 on obsidian (brightened from #C4705A for tinted bg contrast)
-  emberLight: "#E0917B",
-  slate: "#7E8D98",
-  slateLight: "#A0B0BC",
+  /* Semantic — cream-safe greens/reds */
+  sage: T.success,
+  sageLight: T.success100,
+  ember: T.error,
+  emberLight: T.error100,
+  slate: T.indigo,           // cool neutral → interactive indigo
+  slateLight: T.indigo100,
 
-  /* Borders & effects */
-  border: "rgba(255, 255, 255, 0.06)",
-  borderHover: "rgba(255, 255, 255, 0.10)",
-  borderSubtle: "rgba(255, 255, 255, 0.03)",
-  glass: "rgba(17, 17, 19, 0.7)",
-  glassBright: "rgba(30, 30, 32, 0.8)",
-  glow: "rgba(212, 179, 127, 0.06)",
-  glowStrong: "rgba(212, 179, 127, 0.12)",
+  /* Borders & effects — coal at low alpha on cream */
+  border: "rgba(14, 12, 8, 0.08)",         // ~T.line in alpha form
+  borderHover: "rgba(14, 12, 8, 0.14)",    // ~T.lineStrong
+  borderSubtle: "rgba(14, 12, 8, 0.04)",
+  glass: "rgba(250, 247, 240, 0.7)",       // cream glass
+  glassBright: "rgba(255, 255, 255, 0.85)",
+  glow: T.copperWash,                      // rgba(180,83,9,0.06)
+  glowStrong: T.copperTint,                // rgba(180,83,9,0.10)
 };
 
 export const font = {
-  display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-  ui: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  mono: "'JetBrains Mono', 'SF Mono', monospace",
+  display: F.serif,
+  ui: F.sans,
+  mono: F.mono,
 };
 
 /* ─── Spacing Scale (4px base) ─── */
@@ -76,26 +97,31 @@ export const z = {
   toast: 100,
 } as const;
 
-/* ─── Shadows ─── */
+/* ─── Shadows ─── Cream brand uses far lighter shadows than the dark
+ * ramp; values mirror auth/_tokens shadows.card / .cta / .modal with
+ * an `xl` extra for hero lifts and a glow alias for the copper wash. */
 export const shadow = {
-  sm: "0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.1)",
-  md: "0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15)",
-  lg: "0 12px 40px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.2)",
-  xl: "0 20px 60px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.25)",
-  glow: "0 0 30px rgba(212,179,127,0.08), 0 0 60px rgba(212,179,127,0.04)",
-  glowStrong: "0 0 40px rgba(212,179,127,0.15), 0 0 80px rgba(212,179,127,0.06)",
-  inner: "inset 0 1px 0 rgba(255,255,255,0.03)",
+  sm: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
+  md: S.card,
+  lg: S.modal,
+  xl: "0 32px 80px rgba(14, 12, 8, 0.14), 0 8px 18px -10px rgba(20, 18, 28, 0.18)",
+  glow: "0 0 30px rgba(180,83,9,0.06), 0 0 60px rgba(180,83,9,0.04)",
+  glowStrong: "0 0 40px rgba(180,83,9,0.12), 0 0 80px rgba(180,83,9,0.06)",
+  inner: "inset 0 1px 0 rgba(14,12,8,0.03)",
 } as const;
 
-/* ─── Gradients ─── */
+/* ─── Gradients ─── Cream brand has almost no gradients in production
+ * (it's editorial-flat). These exist only to satisfy legacy importers
+ * during migration. New code should use flat fills + tokens.copperWash
+ * scale instead. */
 export const gradient = {
-  giltShine: "linear-gradient(135deg, #D4B37F 0%, #E8D5AE 50%, #D4B37F 100%)",
-  giltSubtle: "linear-gradient(135deg, rgba(212,179,127,0.12) 0%, rgba(212,179,127,0.04) 100%)",
-  surface: "linear-gradient(180deg, #111113 0%, #0D0D0E 100%)",
-  surfaceCard: "linear-gradient(180deg, rgba(30,30,32,0.5) 0%, rgba(17,17,19,0.5) 100%)",
-  meshBg: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212,179,127,0.06) 0%, transparent 60%)",
-  sageBg: "radial-gradient(ellipse at center, rgba(122,158,126,0.06) 0%, transparent 70%)",
-  emberBg: "radial-gradient(ellipse at center, rgba(196,112,90,0.06) 0%, transparent 70%)",
+  giltShine: `linear-gradient(135deg, ${T.copper} 0%, ${T.copper100} 50%, ${T.copper} 100%)`,
+  giltSubtle: "linear-gradient(135deg, rgba(180,83,9,0.12) 0%, rgba(180,83,9,0.04) 100%)",
+  surface: `linear-gradient(180deg, ${T.cream} 0%, ${T.creamSoft} 100%)`,
+  surfaceCard: `linear-gradient(180deg, ${T.white} 0%, ${T.creamSoft} 100%)`,
+  meshBg: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(180,83,9,0.05) 0%, transparent 60%)",
+  sageBg: "radial-gradient(ellipse at center, rgba(34,197,94,0.06) 0%, transparent 70%)",
+  emberBg: "radial-gradient(ellipse at center, rgba(185,28,28,0.05) 0%, transparent 70%)",
 } as const;
 
 /* ─── Animation Durations ─── */
