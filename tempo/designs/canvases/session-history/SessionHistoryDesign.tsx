@@ -504,6 +504,28 @@ const FOCUS_STYLE = `
     .hsx-touch { min-width: 44px !important; min-height: 44px !important; }
   }
 
+  /* Embedded mode (route under DashboardLayout) — the outer <main>
+     already provides 44px 52px page padding and a 260px left rail
+     offset. The view's own padding is redundant and stacks into a
+     200px+ gutter that doesn't match DashboardHome / Analytics /
+     Calendar. Strip the inner padding and let content center at the
+     dashboard's canonical maxWidth so /sessions sits in the same
+     rhythm as the rest of the authenticated app. */
+  .hsx-root[data-embedded="true"] .hsx-pad,
+  .hsx-root[data-embedded="true"] .hsx-pad-detail,
+  .hsx-root[data-embedded="true"] .hsx-pad-report {
+    padding: 0 !important;
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+  }
+  .hsx-root[data-embedded="true"] .hsx-pad-empty {
+    /* Empty state keeps its vertical breathing room (the surface
+       is mostly air) but loses the horizontal pad so it can center
+       under DashboardLayout's gutter. */
+    padding: 56px 0 !important;
+    margin: 0 auto !important;
+  }
+
   /* Theme posture: this surface is committed to cream-on-coal in
      every theme. Single-theme by design — the brand IS the warmth
      of the paper. System dark-mode is intentionally ignored;
@@ -540,7 +562,7 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
      a plain <div> that just carries the theme vars and the page body. */
   if (embedded) {
     return (
-      <div className="hsx-root" style={{ ...themeVars, background: tok.cream, color: tok.coal, fontFamily: fonts.ui, minHeight: "100vh", position: "relative" }}>
+      <div className="hsx-root" data-embedded="true" style={{ ...themeVars, background: tok.cream, color: tok.coal, fontFamily: fonts.ui, minHeight: "auto", position: "relative" }}>
         <style>{FOCUS_STYLE}</style>
         {children}
       </div>
