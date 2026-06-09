@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import SessionHistoryDesign from "@/SessionHistoryDesign";
+import SessionHistoryRoute from "@/SessionHistoryRoute";
 
 export const metadata: Metadata = {
   title: "Sessions | HireStepX",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <SessionHistoryDesign />;
+  return <SessionHistoryRoute />;
 }

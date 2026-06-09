@@ -1547,7 +1547,14 @@ function UndoToast({ message, onUndo, onDismiss }: { message: string; onUndo: ()
 }
 
 /* ─── Public surface ─── */
-export interface SessionHistoryDesignProps { variant?: Variant; }
+export type SessionHistoryItem = Session;
+export interface SessionHistoryDesignProps {
+  variant?: Variant;
+  /* Optional real session list. When omitted the component renders the
+     embedded mock data (canvas / storyboard mode). When passed, those
+     sessions drive every view; the mock array is bypassed. */
+  initialSessions?: Session[];
+}
 
 /* Internal route state. The `variant` prop sets the entry point each
    storyboard renders, but once mounted the user can move between
@@ -1564,16 +1571,22 @@ type Route =
   | { name: "report"; id: string }
   | { name: "empty" };
 
-export default function SessionHistoryDesign({ variant = "list" }: SessionHistoryDesignProps) {
+export default function SessionHistoryDesign({ variant = "list", initialSessions }: SessionHistoryDesignProps) {
+  /* Seed: real sessions when wired (initialSessions present and
+     non-empty), otherwise the embedded mock array. Empty real-data
+     drops the user into the empty variant automatically. */
+  const seed: Session[] = (initialSessions && initialSessions.length > 0) ? initialSessions : INITIAL_SESSIONS;
+  const resolvedVariant: Variant =
+    initialSessions && initialSessions.length === 0 ? "empty" : variant;
   const initial: Route =
-    variant === "detail" ? { name: "detail", id: INITIAL_SESSIONS[0].id } :
-    variant === "report" ? { name: "report", id: INITIAL_SESSIONS[0].id } :
-    variant === "empty"  ? { name: "empty" } :
-                            { name: "list" };
+    resolvedVariant === "detail" ? { name: "detail", id: seed[0].id } :
+    resolvedVariant === "report" ? { name: "report", id: seed[0].id } :
+    resolvedVariant === "empty"  ? { name: "empty" } :
+                                   { name: "list" };
   const [route, setRoute] = React.useState<Route>(initial);
   /* Live sessions list — mutated by delete and draft-toggle. The
      initial array seeds it once; subsequent edits stay local. */
-  const [sessions, setSessions] = React.useState<Session[]>(INITIAL_SESSIONS);
+  const [sessions, setSessions] = React.useState<Session[]>(seed);
   /* Recovery stash: when we delete, we hold the row + its original
      index so Undo can splice it back into place, not append. */
   const [pendingUndo, setPendingUndo] = React.useState<{ session: Session; index: number; message: string } | null>(null);
