@@ -7,7 +7,6 @@
    summary. */
 import type { TempoPage, TempoStoryboard } from 'tempo-sdk';
 import SessionHistoryDesign, { ReportShellWrap } from './SessionHistoryDesign';
-import RedesignedCardDemo from './RedesignedCardDemo';
 import {
   BehavioralStrongDemo,
   SystemDesignPartialDemo,
@@ -78,14 +77,4 @@ export const EmptyState: TempoStoryboard = {
   render: () => <SessionHistoryDesign variant="empty" />,
   name: "6. Empty state",
   layout: { x: 1490, y: 4500, width: 1440, height: 900 },
-};
-
-/* Redesigned card proposal — new anatomy: eyebrow row, headline identity,
-   64px score ring, separated strength/gap rows with icon prefixes,
-   feedback teaser, hover Re-run, PR badge. Placed to the right of the
-   report columns so it can be compared alongside the existing list view. */
-export const RedesignedCard: TempoStoryboard = {
-  render: () => <RedesignedCardDemo />,
-  name: "7. Redesigned session card",
-  layout: { x: 2980, y: 0, width: 1200, height: 1600 },
 };

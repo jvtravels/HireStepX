@@ -41,8 +41,6 @@ import {
   normalizeReadiness,
   normalizeResumeGrounding,
   normalizeCrossSessionInsights,
-  normalizeCoaching,
-  type Coaching,
   type ResumeGroundingScore,
   type WinOrFix as WinOrFixH,
   type RedFlag as RedFlagH,
@@ -56,7 +54,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 // Bump on any schema change to perQuestion/redFlags/etc. Old cached reports
 // with a different version are auto-invalidated on next view.
-const REPORT_VERSION = "mvp-8";
+const REPORT_VERSION = "mvp-7";
 
 /**
  * Try to read a cached report for this session. Returns null on any failure
@@ -335,7 +333,7 @@ interface ReadinessForecast {
 }
 
 interface SessionReport {
-  version: "mvp-8";
+  version: "mvp-7";
   overallScore: number;
   /** LLM-self-reported 0-1 confidence in the overall score. Rendered as ±band. */
   scoreConfidence: number;
@@ -374,13 +372,6 @@ interface SessionReport {
    * reverse-interview turn is present in the transcript.
    */
   reverseInterview: ReverseInterviewSummary | null;
-  /**
-   * Plain-language coaching pair for the dashboard session card: one thing
-   * the candidate did well and the single highest-leverage gap to fix next,
-   * with a concrete rewrite example. Grounded in the transcript. `null` when
-   * the LLM omitted or malformed the field (card falls back to wins/fixes).
-   */
-  coaching: Coaching | null;
   model: string;
 }
 
@@ -771,32 +762,7 @@ Return a JSON object with EXACTLY this shape:
     //   { "kind": "improvement", "text": "Fillers dropped from 6.2/min to 2.8/min — your hardest-won gain.", "metric": "fillers", "delta": -3.4 }
     //   { "kind": "regression", "text": "Pace climbed back to 201 wpm — the rushed delivery cost you on Q3.", "metric": "pace", "delta": 18 }
     { "kind": "<enum>", "text": "<sentence>", "metric": "<optional short>", "delta": <optional number> }
-  ],
-  "coaching": {
-    // PLAIN-LANGUAGE coaching for the candidate's dashboard card. This is read
-    // by non-expert users at a glance — write like a friendly mentor, NOT an
-    // interview-jargon rubric. NO acronyms (no "STAR", "MECE", "TAM"), NO
-    // grading vocabulary. Every field below MUST be grounded in what THIS
-    // candidate actually said in the transcript — never generic advice.
-    "strength": {
-      // The single most encouraging true thing they did. headline ≤6 words,
-      // plain ("Clear, well-structured answers"). meaning: one sentence in
-      // second person saying WHY, referencing their actual answers (≤140 chars).
-      "headline": "<≤6 words, plain language>",
-      "meaning": "<one sentence, second person, grounded in their answers, ≤140 chars>"
-    },
-    "gap": {
-      // The ONE highest-leverage thing to fix next — the change that would
-      // most raise their score. headline ≤6 words, plain and actionable
-      // ("Add numbers to your results"). meaning: one sentence naming what
-      // they actually did, quoting/paraphrasing their words (≤140 chars).
-      // example: a concrete rewrite they could say instead — short, in their
-      // voice, starting with "Try:" (≤140 chars).
-      "headline": "<≤6 words, plain actionable language>",
-      "meaning": "<one sentence naming what they did, grounded in transcript, ≤140 chars>",
-      "example": "<concrete rewrite, starts with 'Try:', ≤140 chars>"
-    }
-  }
+  ]
 }
 
 Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no markdown wrapping, no prose.`;
@@ -856,7 +822,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const storyReuseFindings = normalizeStoryReuse((parsed as Record<string, unknown>).storyReuseFindings);
 
     const report: SessionReport = {
-      version: "mvp-8",
+      version: "mvp-7",
       overallScore,
       scoreConfidence,
       band: applyBands(overallScore, bands),
@@ -968,10 +934,6 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
         if (!turn) return null;
         return summarizeReverseInterview(turn.answerText || "");
       })(),
-      /* Plain-language coaching pair for the dashboard session card.
-         normalizeCoaching returns null on omission/malformation, so the
-         card degrades to the legacy wins/fixes one-liners. */
-      coaching: normalizeCoaching((parsed as Record<string, unknown>).coaching),
       model: result.model,
     };
 

@@ -1,7 +1,7 @@
 import { c } from "./tokens";
 import { loadEvents, daysUntilEvent, formatEventTime } from "./dashboardHelpers";
 import { supabaseConfigured } from "./supabase";
-import type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState, SessionCoaching } from "./dashboardTypes";
+import type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState } from "./dashboardTypes";
 import { scoreLabel } from "./dashboardTypes";
 
 /** Retry a fetch-based async function on network errors (not on 4xx/5xx) */
@@ -53,9 +53,6 @@ export interface RealSession {
   questions: number;
   ai_feedback?: string;
   skill_scores?: Record<string, number> | null;
-  /** Plain-language coaching pair from the evaluator (mvp-8+), read out of
-   *  the session's report_json. Undefined for older sessions. */
-  coaching?: SessionCoaching;
   /** Kernel-aware negotiation metrics (salary-neg sessions). Loaded
    *  from either localStorage or Supabase column `negotiation_metrics`. */
   negotiationMetrics?: {
@@ -192,7 +189,6 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
         ? Object.entries(rs.skill_scores).sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0]
           || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
         : pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3),
-      coaching: rs.coaching,
       feedback: generateFeedback(type, rs.score),
       transcript: [] as { speaker: string; text: string; scoreNote?: string }[],
       questionScores: Array.from({ length: rs.questions || 3 }, (_, qi) => ({
