@@ -41,6 +41,7 @@ declare const process: {
 
 const args = process.argv.slice(2);
 const jsonMode = args.includes("--json");
+const skipEmpty = args.includes("--skip-empty");
 const fixturePath = args.find((a) => !a.startsWith("--"));
 
 if (!fixturePath) {
@@ -77,10 +78,21 @@ async function main() {
   const abs = resolve(fixturePath!);
   const raw = readFileSync(abs, "utf8");
   const fixture = JSON.parse(raw) as Fixture;
-  const log = fixture.log ?? fixture.conversationLog;
-  if (!Array.isArray(log)) {
+  const rawLog = fixture.log ?? fixture.conversationLog;
+  if (!Array.isArray(rawLog)) {
     console.error(`fixture ${abs} has no .log or .conversationLog array`);
     process.exit(1);
+  }
+  /* --skip-empty filters empty-string candidate turns. Those are
+   * recording artifacts (screenshots/PDFs ingested as blanks), not
+   * legitimate utterances. Including them lets the LLM hallucinate
+   * from prior context — see the v0 replay readout. */
+  const log = skipEmpty
+    ? rawLog.filter((t) => t.role !== "candidate" || t.text.trim().length > 0)
+    : rawLog;
+  if (skipEmpty && !jsonMode) {
+    const dropped = rawLog.length - log.length;
+    console.log(`--skip-empty: dropped ${dropped} empty-text candidate turn(s)\n`);
   }
 
   if (!jsonMode) {
