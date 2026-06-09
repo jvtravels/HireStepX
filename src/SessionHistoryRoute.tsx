@@ -34,13 +34,21 @@ function humanDate(iso: string, now: number): string {
    Session shape. The two were designed independently; this is the
    one place the two vocabularies meet. */
 function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
+  /* humanDate is preferred over d.dateLabel because dateLabel is
+     persisted at write-time ("Today" stays "Today" forever); the
+     fresh computation always reflects "now". Fall back to the
+     persisted label only when the date itself fails to parse. */
+  const fresh = humanDate(d.date, now);
   return {
     id: d.id,
     type: d.type,
     role: d.role,
-    company: d.company ?? "–",
+    /* Empty string when company is missing; the row template
+       conditionally renders the company suffix, so we don't surface
+       a "–" glyph that reads as data corruption. */
+    company: d.company ?? "",
     date: d.date,
-    dateLabel: d.dateLabel || humanDate(d.date, now),
+    dateLabel: fresh || d.dateLabel || "",
     duration: d.duration,
     score: d.score,
     delta: d.change,

@@ -159,14 +159,49 @@ const BAND_LABEL: Record<Band, string> = {
    into Full-palette territory and break the Restrained register.
    `swatch` is the tint fill; `ink` is the matching dark for the active
    filter chip label. */
-type TypeName = "Behavioral" | "System Design" | "Salary Neg." | "Tech Screen" | "Hiring Mgr";
+/* Hue map covers BOTH the prototype's canvas types and the real
+   DashboardSession.type vocabulary from dashboardTypes.ts. Without
+   the second set every real session row fell through to the gray
+   default — visible color coding only worked for "Behavioral". */
+type TypeName =
+  | "Behavioral" | "System Design" | "Salary Neg." | "Tech Screen" | "Hiring Mgr"
+  | "Strategic" | "Technical Leadership" | "Case Study"
+  | "Campus Placement" | "HR Round" | "Management" | "Government & PSU";
 const TYPE_HUE: Record<TypeName, { swatch: string; ink: string }> = {
-  "Behavioral":    { swatch: "oklch(0.92 0.045 60)",  ink: "oklch(0.38 0.09 60)"  }, // warm amber
-  "System Design": { swatch: "oklch(0.92 0.045 265)", ink: "oklch(0.38 0.09 265)" }, // cool indigo
-  "Salary Neg.":   { swatch: "oklch(0.92 0.045 35)",  ink: "oklch(0.38 0.09 35)"  }, // copper
-  "Tech Screen":   { swatch: "oklch(0.92 0.045 175)", ink: "oklch(0.38 0.09 175)" }, // teal
-  "Hiring Mgr":    { swatch: "oklch(0.92 0.045 340)", ink: "oklch(0.38 0.09 340)" }, // rose
+  "Behavioral":           { swatch: "oklch(0.92 0.045 60)",  ink: "oklch(0.38 0.09 60)"  }, // warm amber
+  "System Design":        { swatch: "oklch(0.92 0.045 265)", ink: "oklch(0.38 0.09 265)" }, // cool indigo
+  "Salary Neg.":          { swatch: "oklch(0.92 0.045 35)",  ink: "oklch(0.38 0.09 35)"  }, // copper
+  "Tech Screen":          { swatch: "oklch(0.92 0.045 175)", ink: "oklch(0.38 0.09 175)" }, // teal
+  "Hiring Mgr":           { swatch: "oklch(0.92 0.045 340)", ink: "oklch(0.38 0.09 340)" }, // rose
+  "Strategic":            { swatch: "oklch(0.92 0.045 285)", ink: "oklch(0.38 0.09 285)" }, // violet
+  "Technical Leadership": { swatch: "oklch(0.92 0.045 200)", ink: "oklch(0.38 0.09 200)" }, // steel
+  "Case Study":           { swatch: "oklch(0.92 0.045 130)", ink: "oklch(0.38 0.09 130)" }, // sage
+  "Campus Placement":     { swatch: "oklch(0.92 0.045 90)",  ink: "oklch(0.38 0.09 90)"  }, // citron
+  "HR Round":             { swatch: "oklch(0.92 0.045 15)",  ink: "oklch(0.38 0.09 15)"  }, // brick
+  "Management":           { swatch: "oklch(0.92 0.045 245)", ink: "oklch(0.38 0.09 245)" }, // slate
+  "Government & PSU":     { swatch: "oklch(0.92 0.045 155)", ink: "oklch(0.38 0.09 155)" }, // moss
 };
+
+/* Duration parser used both by the sort key and the practice-hours
+   KPI. Accepts "42m", "1h 12m", "01:12:00", "1:12", "75 min", or any
+   string starting with a number. Returns minutes; 0 if unparseable. */
+function parseDurationMin(d: string | undefined | null): number {
+  if (!d) return 0;
+  const s = String(d).trim();
+  // "HH:MM:SS" or "MM:SS"
+  if (/^\d+:\d+(:\d+)?$/.test(s)) {
+    const parts = s.split(":").map(n => parseInt(n, 10));
+    if (parts.length === 3) return parts[0] * 60 + parts[1] + (parts[2] >= 30 ? 1 : 0);
+    return parts[0] + (parts[1] >= 30 ? 1 : 0); // "MM:SS" — round up if seconds ≥ 30
+  }
+  // "1h 12m" / "1h" / "12m"
+  const h = /(\d+)\s*h/i.exec(s);
+  const m = /(\d+)\s*m/i.exec(s);
+  if (h || m) return (h ? parseInt(h[1], 10) * 60 : 0) + (m ? parseInt(m[1], 10) : 0);
+  // Leading number — assume minutes ("75 min", "42")
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : 0;
+}
 const typeHue = (t: string) =>
   (TYPE_HUE as Record<string, { swatch: string; ink: string } | undefined>)[t]
     ?? { swatch: tok.creamSoft, ink: tok.inkSoft };
@@ -210,18 +245,14 @@ const INITIAL_SESSIONS: Session[] = [
   { id: "s7", type: "Behavioral",  role: "Senior PM",     company: "Cred",       date: "2026-05-24T14:00:00Z", dateLabel: "2 weeks ago",      duration: "41m", score: 68, delta: -4, topStrength: "Authentic tone",         topGap: "STAR S+T compression", questions: 8 },
 ];
 
-/* Date-based grouping. The previous version bucketed by array index
-   ("first row is Today, second is Yesterday") which is a fake that
-   would mis-group on day one with real data. NOW is pinned so the
-   prototype stays deterministic across renders. */
-/* NOW is pinned so the prototype groups deterministically across
-   renders. The real session list will pass real timestamps and the
-   bucket math is identical. When running this canvas against a
-   real clock, update or compute this constant. */
-const NOW = new Date("2026-06-06T18:00:00Z").getTime();
+/* Date-based grouping. NOW is passed in (pinned per render) so the
+   buckets shift with the real clock instead of a build-time constant.
+   The previous hardcoded NOW=2026-06-06 silently mis-bucketed every
+   session as the build aged; a row from yesterday landed in "Today"
+   because (pinned − actual) drifted negative. */
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const groupSessions = (items: Session[]) => {
+const groupSessions = (items: Session[], now: number) => {
   const groups: Array<{ label: string; items: Session[] }> = [
     { label: "Today",     items: [] },
     { label: "Yesterday", items: [] },
@@ -229,7 +260,7 @@ const groupSessions = (items: Session[]) => {
     { label: "Earlier",   items: [] },
   ];
   items.forEach(s => {
-    const ageDays = (NOW - new Date(s.date).getTime()) / DAY_MS;
+    const ageDays = (now - new Date(s.date).getTime()) / DAY_MS;
     if (ageDays < 1) groups[0].items.push(s);
     else if (ageDays < 2) groups[1].items.push(s);
     else if (ageDays < 7) groups[2].items.push(s);
@@ -666,7 +697,7 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
 const FILTER_TYPES_DEFAULT = ["All", "Behavioral", "System Design", "Tech Screen", "Hiring Mgr", "Salary Neg."] as const;
 type SortKey = "recent" | "score" | "score-asc" | "duration";
 
-function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true }: {
+function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true, allowDrafts = true }: {
   sessions: Session[];
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
@@ -676,7 +707,17 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
      yet — showing the affordance would let a user "delete" a
      session that reappears on next reload. */
   allowDelete?: boolean;
+  /* When false, the `d` keyboard shortcut, drafts toggle, and the
+     drafts row are all suppressed. DashboardSession has no `draft`
+     column today, so toggling it would only flip local React state
+     that vanishes on refresh — worse than not offering it. */
+  allowDrafts?: boolean;
 }) {
+  /* now is captured once per ListView mount so the date-bucket math
+     stays deterministic within a render pass. We intentionally don't
+     re-tick: a row shifting from "Today" → "Yesterday" mid-session
+     while the user is reading would be jarring. */
+  const now = React.useMemo(() => Date.now(), []);
   /* Filter pill set: derive unique types from the actual session
      list when more than one type is present, otherwise fall back to
      the canonical set. "All" always leads. Preserves the canonical
@@ -698,7 +739,12 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
   const [query, setQuery] = React.useState<string>("");
   const [sort, setSort] = React.useState<SortKey>("recent");
   const [showDrafts, setShowDrafts] = React.useState<boolean>(true);
-  const [selectedIdx, setSelectedIdx] = React.useState<number>(0);
+  /* Start at -1 so the j/k keyboard cursor is invisible on first
+     render. The previous default (0) painted a coal border around the
+     first row before the user had pressed anything, which read as a
+     stuck "selected" state. The cursor appears the moment the user
+     hits j/k or hovers a row. */
+  const [selectedIdx, setSelectedIdx] = React.useState<number>(-1);
   const [openMenu, setOpenMenu] = React.useState<string | null>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
 
@@ -713,7 +759,7 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
     .sort((a, b) => {
       if (sort === "score") return b.score - a.score;
       if (sort === "score-asc") return a.score - b.score;
-      if (sort === "duration") return parseInt(b.duration) - parseInt(a.duration);
+      if (sort === "duration") return parseDurationMin(b.duration) - parseDurationMin(a.duration);
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
@@ -737,40 +783,81 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
         const s = filtered[selectedIdx];
         if (s) { e.preventDefault(); onOpen(s.id); }
       }
-      /* `d` toggles draft; Backspace/Delete removes (with undo). Both
-         are destructive-ish but the undo toast catches mistakes. */
-      else if (e.key === "d") {
+      /* `d` toggles draft only when the capability is enabled.
+         DashboardSession has no `draft` column, so a flip would be
+         purely local React state — visible until the next refresh,
+         then gone. Worse than not offering the shortcut. */
+      else if (e.key === "d" && allowDrafts) {
         const s = filtered[selectedIdx];
         if (s) { e.preventDefault(); onToggleDraft(s.id); }
       }
-      else if (e.key === "Backspace" || e.key === "Delete") {
+      /* Backspace/Delete gated on allowDelete for the same reason:
+         no delete API → a "deleted" row would reappear on reload. */
+      else if ((e.key === "Backspace" || e.key === "Delete") && allowDelete) {
         const s = filtered[selectedIdx];
         if (s) { e.preventDefault(); onDelete(s.id); }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [filtered, selectedIdx, onOpen, onDelete, onToggleDraft]);
+  }, [filtered, selectedIdx, onOpen, onDelete, onToggleDraft, allowDelete, allowDrafts]);
 
-  const groups = groupSessions(filtered);
+  const groups = groupSessions(filtered, now);
   const total = sessions.length;
   const avg = total > 0 ? Math.round(sessions.reduce((s, x) => s + x.score, 0) / total) : 0;
   const best = total > 0 ? Math.max(...sessions.map(s => s.score)) : 0;
-  const hours = (total * 42 / 60).toFixed(1);
-  const draftCount = sessions.filter(s => s.draft).length;
+  /* Real practice hours from actual durations. The previous
+     `(total * 42 / 60)` was a literal-42-minutes-per-session
+     fabrication that drifted further from truth the more varied a
+     user's history got. Uses parseDurationMin so the math works for
+     any duration format the DashboardSession persists. */
+  const totalMinutes = sessions.reduce((sum, s) => sum + parseDurationMin(s.duration), 0);
+  const hours = (totalMinutes / 60).toFixed(1);
+  /* "Latest" must be the most recent by date, not the array head.
+     DashboardContext sorts recent-first today, but pinning to date
+     here means we can't be regressed by an upstream reorder. */
+  const latest = total > 0
+    ? sessions.reduce(
+        (top, s) => new Date(s.date).getTime() > new Date(top.date).getTime() ? s : top,
+        sessions[0],
+      )
+    : null;
+  /* Best (score) and its context — surfaced in the N≥3 KPI hint. */
+  const bestSession = total > 0
+    ? sessions.reduce((top, s) => s.score > top.score ? s : top, sessions[0])
+    : null;
+  const draftCount = allowDrafts ? sessions.filter(s => s.draft).length : 0;
   const showingFiltered = type !== "All" || query.trim() !== "";
   return (
     <div className="hsx-pad" style={{ padding: "40px 56px", maxWidth: 1200 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 28 }}>
-        <div>
-          <div style={{ fontSize: 12, color: tok.copper, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Sessions</div>
-          <h1 style={heading.canonical}>
-            Your <em style={{ color: tok.copper, fontStyle: "italic" }}>practice log</em>.
+      {/* Hero atoms aligned to DashboardHome: mono eyebrow (11px / 500 /
+         letterSpacing 0.8 / inkSoft), serif h1 with the clamp scale and
+         weight 400 the rest of the dashboard uses, copper-italic accent
+         inside the headline, and 15px body copy capped at 560 to match
+         "Welcome back" rhythm. Anything different from that here reads
+         as a foreign surface even when the palette matches. */}
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 28, gap: 24, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0 }}>
+          <span style={{ display: "inline-block", fontFamily: fonts.mono, fontSize: 11, fontWeight: 500, color: tok.inkSoft, letterSpacing: 0.8, textTransform: "uppercase" }}>Sessions</span>
+          <h1 style={{
+            fontFamily: fonts.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400,
+            lineHeight: 1.1, letterSpacing: "-0.02em", color: tok.coal,
+            margin: "8px 0 6px",
+          }}>
+            Your <em style={{ fontStyle: "italic", fontWeight: 400, color: tok.copper }}>practice log</em>.
           </h1>
-          <p style={{ color: tok.inkSoft, marginTop: 8, fontSize: 14 }}>Every mock interview, scored and stored. Open any row to revisit.</p>
+          <p style={{ fontFamily: fonts.ui, fontSize: 15, color: tok.inkSoft, margin: 0, maxWidth: 560, lineHeight: 1.55 }}>
+            Every mock interview, scored and stored. Open any row to revisit.
+          </p>
         </div>
-        <button style={{ padding: "12px 20px", borderRadius: radii.btn, background: tok.coal, color: tok.cream, border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-          <span>＋</span> New session
+        <button style={{
+          padding: "10px 16px", borderRadius: radii.btn,
+          background: tok.coal, color: tok.cream, border: "none",
+          fontFamily: fonts.ui, fontSize: 13, fontWeight: 600,
+          cursor: "pointer", minHeight: 40,
+          display: "inline-flex", alignItems: "center", gap: 8,
+        }}>
+          <span aria-hidden style={{ fontWeight: 400 }}>+</span> New session
         </button>
       </header>
 
@@ -782,56 +869,42 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
       <div className="hsx-kpi" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
         {(total < 3 ? [
           { label: "Sessions so far", value: String(total), hint: total === 0 ? "Start one to begin tracking." : "Three sessions unlocks trend metrics." },
-          { label: "Latest score",    value: total > 0 ? String(sessions[0].score) : "–", hint: total > 0 ? `${sessions[0].type} · ${sessions[0].company}` : "No sessions yet" },
-          { label: "Next step",       value: "Behavioral", hint: "Suggested round to balance practice." },
+          /* Latest score reads from `latest` (date-sorted) and falls
+             back to type-only when company is missing — "Behavioral ·"
+             with a dangling glyph reads as data corruption. */
+          { label: "Latest score",    value: latest ? String(latest.score) : "—", hint: latest ? (latest.company ? `${latest.type} · ${latest.company}` : latest.type) : "No sessions yet" },
+          { label: "Next step",       value: "Practice", hint: "Pick a round to start the streak." },
           { label: "Practice hours",  value: hours,         hint: "Goal: 8h / month" },
         ] : [
-          { label: "Total sessions",  value: String(total),  hint: "+3 this week" },
-          { label: "Average score",   value: String(avg),    hint: "↑ 4 vs last month" },
-          { label: "Best score",      value: String(best),   hint: "Behavioral · Razorpay" },
+          { label: "Total sessions",  value: String(total),  hint: `${draftCount > 0 ? `${draftCount} draft${draftCount === 1 ? "" : "s"}` : "All complete"}` },
+          { label: "Average score",   value: String(avg),    hint: "Across all sessions" },
+          /* Best-score hint comes from the real `bestSession`, not
+             a hardcoded "Behavioral · Razorpay" string left over
+             from the prototype. */
+          { label: "Best score",      value: String(best),   hint: bestSession ? (bestSession.company ? `${bestSession.type} · ${bestSession.company}` : bestSession.type) : "" },
           { label: "Practice hours",  value: hours,          hint: "Goal: 8h / month" },
         ]).map(k => (
-          <div key={k.label} style={{ padding: 16, background: tok.white, border: `1px solid ${tok.line}`, borderRadius: radii.card }}>
-            <div style={{ fontSize: 11, color: tok.inkSoft, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{k.label}</div>
-            <div style={{ fontFamily: fonts.mono, fontSize: 30, fontWeight: 700, marginTop: 6, color: tok.coal, lineHeight: 1 }}>{k.value}</div>
-            <div style={{ fontSize: 12, color: tok.inkSoft, marginTop: 6 }}>{k.hint}</div>
+          /* KPI cell aligned to DashboardHome's stat treatment:
+             mono Eyebrow (11/500/0.8) → serif numeral (editorial,
+             not heavy mono) → 13px hint. Lighter borders, softer
+             rhythm — matches the recent-sessions panel idiom rather
+             than the dark-luxury "metric tile" pattern. */
+          <div key={k.label} style={{
+            padding: "16px 18px", background: tok.white,
+            border: `1px solid ${tok.line}`, borderRadius: radii.card,
+          }}>
+            <div style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkSoft, fontWeight: 500, letterSpacing: 0.8, textTransform: "uppercase" }}>{k.label}</div>
+            <div style={{ fontFamily: fonts.serif, fontSize: 30, fontWeight: 400, marginTop: 6, color: tok.coal, lineHeight: 1.05, letterSpacing: "-0.01em" }}>{k.value}</div>
+            <div style={{ fontFamily: fonts.ui, fontSize: 13, color: tok.inkSoft, marginTop: 6, lineHeight: 1.4 }}>{k.hint}</div>
           </div>
         ))}
       </div>
 
-      {/* Saved views — one-tap presets ahead of the type pills.
-         Each preset re-applies a (type, query, sort) triple. Rohan's
-         persona issue ("I rebuild the same filter every day") is
-         what this is for. The presets sit *above* the type filter
-         because they're a different mental model — task ("show me
-         what to practise") vs. taxonomy ("show me behavioral"). */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        {/* Critique P0 fix: "Weak spots" now actually surfaces low
-           scores first (score ascending) instead of duplicating
-           "Highest scoring". The label finally matches behavior. */}
-        {[
-          { label: "Weak spots", apply: () => { setType("All");   setSort("score-asc"); setQuery(""); } },
-          { label: "Highest scoring", apply: () => { setType("All");   setSort("score");  setQuery(""); } },
-          { label: "Behavioral only", apply: () => { setType("Behavioral"); setSort("recent"); setQuery(""); } },
-          { label: "Razorpay round", apply: () => { setType("All");   setSort("recent"); setQuery("razorpay"); } },
-        ].map(v => (
-          /* Saved-view treatment: filled creamSoft pill with a copper
-             ⌁ marker. The earlier dashed border collided semantically
-             with the "no matches" dashed empty box — dashed reads as
-             "tentative / placeholder", which is wrong for a curated
-             preset. Solid background + colored marker says "this is a
-             named lens" cleanly. */
-          <button key={v.label} onClick={v.apply} style={{
-            padding: "6px 12px", borderRadius: radii.pill,
-            background: tok.creamSoft, border: `1px solid ${tok.line}`,
-            color: tok.coal, fontSize: 12, fontWeight: 600, cursor: "pointer",
-            fontFamily: fonts.ui, display: "inline-flex", alignItems: "center", gap: 6,
-          }}>
-            <span style={{ color: tok.copper, fontWeight: 700 }}>⌁</span>
-            {v.label}
-          </button>
-        ))}
-      </div>
+      {/* Saved-view preset chips removed per product call: they
+         duplicated affordances already covered by the type pills +
+         sort cycle below, and visually competed with the KPI strip
+         above. The same lenses are reachable in one or two clicks
+         from the existing filter row. */}
 
       {/* Drafts toggle — only surfaces when drafts exist. Lives above
          the filter row as a secondary lens so it never crowds the
@@ -991,7 +1064,11 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
                     }} />
                     <span style={{ fontSize: 15, fontWeight: 600, color: tok.coal }}>{s.type}</span>
                     <span style={{ padding: "3px 9px", background: tok.copperSoft, color: tok.copper, borderRadius: radii.chip, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.role}</span>
-                    <span style={{ fontSize: 12, color: tok.inkSoft }}>· {s.company}</span>
+                    {/* Only render the company prefix when one is on
+                       file. The previous "· {s.company}" rendered
+                       "· –" when the upstream row had no company,
+                       reading as data corruption. */}
+                    {s.company ? <span style={{ fontSize: 12, color: tok.inkSoft }}>· {s.company}</span> : null}
                     {s.draft && (
                       <span style={{ marginLeft: 4, padding: "2px 8px", borderRadius: radii.chip, background: tok.white, border: `1px solid ${tok.lineStrong}`, color: tok.inkSoft, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Draft</span>
                     )}
@@ -1266,7 +1343,7 @@ function DetailView({
                        : bandOf(s.score) === "solid"  ? 10
                        : bandOf(s.score) === "mixed"  ? 6
                        : 4;
-          const elapsedDays = Math.max(0, Math.floor((NOW - new Date(s.date).getTime()) / DAY_MS));
+          const elapsedDays = Math.max(0, Math.floor((Date.now() - new Date(s.date).getTime()) / DAY_MS));
           const remaining = window - elapsedDays;
           const stale = remaining <= 0;
           const warmth = stale ? "stale" : remaining >= window * 0.5 ? "warm" : "cooling";
@@ -1584,8 +1661,16 @@ function EmptyView({ onStart }: { onStart: () => void }) {
    action available in the Sessions tab. Toggled from the sidebar
    Help button or the `?` key. Escape closes. Keeps the H10 surface
    in one consistent place instead of scattered tooltips. */
-function HelpPanel({ onClose }: { onClose: () => void }) {
+function HelpPanel({ onClose, allowDelete = true, allowDrafts = true }: { onClose: () => void; allowDelete?: boolean; allowDrafts?: boolean }) {
   useEsc(onClose);
+  /* Action rows filtered by capability so the panel never advertises
+     a shortcut that won't fire. In route mode both flags are false,
+     so the Actions group collapses to just the row-menu hint. */
+  const actionRows: Array<[string, string]> = [
+    ...(allowDrafts ? [["d", "mark as draft (or unmark)"]] as Array<[string, string]> : []),
+    ...(allowDelete ? [["⌫  delete", "remove session (6s undo)"]] as Array<[string, string]> : []),
+    ["⋯", "open row menu"],
+  ];
   const keyGroups: Array<{ title: string; rows: Array<[string, string]> }> = [
     { title: "Navigate", rows: [
       ["/",            "focus search"],
@@ -1594,11 +1679,7 @@ function HelpPanel({ onClose }: { onClose: () => void }) {
       ["esc",          "back / close"],
       ["shift + /",    "open this panel"],
     ]},
-    { title: "Actions on a row", rows: [
-      ["d",            "mark as draft (or unmark)"],
-      ["⌫  delete",    "remove session (6s undo)"],
-      ["⋯",            "open row menu"],
-    ]},
+    { title: "Actions on a row", rows: actionRows },
   ];
   /* Critique fix: the "About scores" group used to reuse the
      keyboard-shortcut row idiom (mono left, prose right), which
@@ -1823,14 +1904,30 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
       onDismiss={() => setPendingUndo(null)}
     />
   ) : null;
-  const helpPanel = helpOpen ? <HelpPanel onClose={() => setHelpOpen(false)} /> : null;
+  const helpPanel = helpOpen ? <HelpPanel onClose={() => setHelpOpen(false)} allowDelete={allowDelete} allowDrafts={allowDelete} /> : null;
 
   /* View-change animation wrapper. Keyed on `route.name` so a route
      change forces a remount and replays the keyframe. Wraps just the
      view body, not the Shell, so the sidebar and chrome stay still
      while the content area transitions. */
   if (route.name === "detail") {
-    const s = sessions.find(x => x.id === route.id) ?? sessions[0] ?? INITIAL_SESSIONS[0];
+    /* In embedded (route) mode we DON'T fall back to the canvas
+       prototype's INITIAL_SESSIONS[0] — a stale deep-link would
+       otherwise show a hardcoded "Senior PM @ Razorpay" row as if
+       it were the user's. Bounce back to the list instead. The
+       canvas keeps the fallback so storyboards still render. */
+    const s = sessions.find(x => x.id === route.id)
+      ?? (embedded ? sessions[0] ?? null : sessions[0] ?? INITIAL_SESSIONS[0]);
+    if (!s) {
+      return (
+        <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
+          <div key="empty" className="hsx-anim-view">
+            <EmptyView onStart={() => { /* hand off to interview-setup */ }} />
+          </div>
+          {helpPanel}
+        </Shell>
+      );
+    }
     return (
       <Shell active="Detail" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
         <div key="detail" className="hsx-anim-view">
@@ -1847,7 +1944,23 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
     );
   }
   if (route.name === "report") {
-    const s = sessions.find(x => x.id === route.id) ?? sessions[0] ?? INITIAL_SESSIONS[0];
+    /* Same fallback policy as detail — no canvas-mock leak in
+       route mode. */
+    const s = sessions.find(x => x.id === route.id)
+      ?? (embedded ? sessions[0] ?? null : sessions[0] ?? INITIAL_SESSIONS[0]);
+    if (!s) {
+      /* Same empty bounce as detail. Can't call setRoute during
+         render — would set-state-during-render. The user can
+         navigate back via the rail / browser back. */
+      return (
+        <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
+          <div key="empty" className="hsx-anim-view">
+            <EmptyView onStart={() => { /* hand off to interview-setup */ }} />
+          </div>
+          {helpPanel}
+        </Shell>
+      );
+    }
     return (
       <Shell active="Report" onHelp={() => setHelpOpen(true)} embedded={embedded} theme={theme}>
         <div key="report" className="hsx-anim-view">
@@ -1879,6 +1992,10 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
           onDelete={handleDelete}
           onToggleDraft={handleToggleDraft}
           allowDelete={allowDelete}
+          /* allowDrafts mirrors the other capability gates: we can't
+             persist draft state yet, so the route boundary turns it
+             off; the canvas keeps it on for design exploration. */
+          allowDrafts={allowDelete}
         />
       </div>
       {undoToast}
