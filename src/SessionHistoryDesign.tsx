@@ -226,6 +226,11 @@ type Session = {
   topStrength: string;
   topGap: string;
   questions: number;
+  /* Difficulty band passed through from DashboardSession. Surfaced inline
+     in the row's metadata line so the score numeral has interpretive
+     context: 82 on Hard is not 82 on Easy. Optional because the canvas
+     mock predates the field and older persisted rows may lack it. */
+  difficulty?: string;
   draft?: boolean;    // marked when the user bailed mid-round
   /* Optional detail-view payloads. Populated when the component is
      driven by real data; absent in canvas / storyboard mode (the
@@ -522,7 +527,11 @@ const FOCUS_STYLE = `
     .hsx-pad-report { padding: 24px 16px !important; }
     .hsx-pad-empty { padding: 64px 24px !important; }
     .hsx-kpi { grid-template-columns: repeat(2, 1fr) !important; }
-    .hsx-row { grid-template-columns: 56px 1fr auto 44px !important; gap: 12px !important; padding: 14px 14px !important; }
+    /* Mobile row: drop the right rail to a single 64px column (score
+       only, no badge), tighten the date rail to 72px, kill the hover
+       Re-run since touch can't reveal it. */
+    .hsx-row { grid-template-columns: 72px 1fr 64px !important; gap: 14px !important; padding: 16px 8px 14px !important; }
+    .hsx-row-rerun { display: none !important; }
     .hsx-row-meta-delta { display: none !important; }
     .hsx-report-split { grid-template-columns: 1fr !important; }
     .hsx-report-pair { grid-template-columns: 1fr !important; }
@@ -582,27 +591,44 @@ const FOCUS_STYLE = `
      every theme. Single-theme by design — the brand IS the warmth
      of the paper. System dark-mode is intentionally ignored;
      darkening the cream would destroy the editorial register. */
+
+  /* ── Editorial index row ──
+     The /sessions row is rebuilt as a chronicle entry, not a card.
+     No fill, no rounded border, no kebab. A hairline divider sits
+     under each row. Hover paints a creamSoft wash; keyboard
+     selection paints a 2px indigo underline beneath the type title
+     only. Re-run slides in from the right edge on hover. */
+  .hsx-row {
+    position: relative;
+    transition: background 120ms cubic-bezier(0.22,1,0.36,1);
+  }
+  @media (hover: hover) {
+    .hsx-row:hover { background: var(--hsx-cream-soft); }
+    .hsx-row:hover .hsx-row-rerun {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  .hsx-row[data-selected="true"] .hsx-row-title {
+    box-shadow: 0 2px 0 var(--hsx-accent);
+  }
+  .hsx-row-rerun {
+    opacity: 0;
+    transform: translateX(4px);
+    transition: opacity 140ms cubic-bezier(0.22,1,0.36,1),
+                transform 140ms cubic-bezier(0.22,1,0.36,1);
+  }
+  .hsx-row-rerun:focus-visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
 `;
 
-/* ─── Score ring ─── */
-function ScoreRing({ score, size = 56, stroke = 4 }: { score: number; size?: number; stroke?: number }) {
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const filled = (score / 100) * circ;
-  const color = bandColor(score);
-  return (
-    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tok.line} strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-          strokeDasharray={`${filled} ${circ - filled}`} strokeLinecap="round" />
-      </svg>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-        <span style={{ fontFamily: fonts.mono, fontSize: size * 0.32, fontWeight: 700, color: tok.coal, lineHeight: 1 }}>{score}</span>
-      </div>
-    </div>
-  );
-}
+/* ScoreRing was removed when the row was rebuilt as an editorial index
+   entry. A ring implies "progress to 100", but a single mock score
+   isn't progress — it's a reading. The row now lets the score numeral
+   itself be the focal point in a right-aligned rail, with a mono
+   delta beneath it for trend context. */
 
 /* ─── Shell ─── */
 function Shell({ active, onHelp, embedded, theme = "editorial", children }: { active: "Sessions" | "Detail" | "Report"; onHelp?: () => void; embedded?: boolean; theme?: SessionHistoryTheme; children: React.ReactNode }) {
@@ -718,15 +744,17 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
 const FILTER_TYPES_DEFAULT = ["All", "Behavioral", "System Design", "Tech Screen", "Hiring Mgr", "Salary Neg."] as const;
 type SortKey = "recent" | "score" | "score-asc" | "duration";
 
-function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true, allowDrafts = true, onStartSession }: {
+function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true, allowDrafts = true, onStartSession, onRerun }: {
   sessions: Session[];
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleDraft: (id: string) => void;
-  /* When false, the row-actions menu hides the destructive Delete
-     item. Used by the route wrapper because there's no delete API
-     yet — showing the affordance would let a user "delete" a
-     session that reappears on next reload. */
+  /* When false, the destructive Delete affordance is suppressed (no
+     /api/sessions/delete endpoint exists yet, so a "deleted" row
+     would reappear on reload). The kebab menu was removed entirely
+     when the row was rebuilt — the prop is kept so the keyboard
+     Backspace handler can still gate on capability and a future
+     detail-view Delete can be wired without changing this signature. */
   allowDelete?: boolean;
   /* When false, the `d` keyboard shortcut, drafts toggle, and the
      drafts row are all suppressed. DashboardSession has no `draft`
@@ -736,6 +764,11 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
   /* Optional handoff to interview setup; when undefined the New
      session button hides rather than dangle as a dead affordance. */
   onStartSession?: () => void;
+  /* Optional handoff for the row's hover-revealed "Re-run" affordance.
+     Called with the source session so the consumer can carry type /
+     role / company / difficulty into the new interview's setup. When
+     undefined the Re-run button is suppressed (canvas mode). */
+  onRerun?: (session: Session) => void;
 }) {
   /* now is captured once per ListView mount so the date-bucket math
      stays deterministic within a render pass. We intentionally don't
@@ -769,8 +802,72 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
      stuck "selected" state. The cursor appears the moment the user
      hits j/k or hovers a row. */
   const [selectedIdx, setSelectedIdx] = React.useState<number>(-1);
-  const [openMenu, setOpenMenu] = React.useState<string | null>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
+
+  /* ── Milestone badges (PR / BEST) ──
+     Industry-standard scored-practice surfaces (Strava activities,
+     Peloton class history, LeetCode submissions) put a single
+     achievement badge next to the result. We compute two:
+       PR   — globally highest score across all completed sessions.
+       BEST — highest score in its type, when not also the PR.
+     Precedence: PR > BEST. Each session gets at most one badge so
+     the row stays calm. Ties on score resolve to the most recent
+     session, so improvement-with-a-recent-tie still earns the
+     badge (and matches user mental model of "your latest best"). */
+  const badgeById = React.useMemo(() => {
+    const map = new Map<string, "PR" | "BEST">();
+    const completed = sessions.filter(s => !s.draft);
+    if (completed.length === 0) return map;
+    const tieBreak = (a: Session, b: Session) =>
+      b.score - a.score || new Date(b.date).getTime() - new Date(a.date).getTime();
+    const pr = completed.slice().sort(tieBreak)[0];
+    if (pr) map.set(pr.id, "PR");
+    const bestByType = new Map<string, Session>();
+    for (const s of completed) {
+      const cur = bestByType.get(s.type);
+      if (!cur || tieBreak(s, cur) < 0) bestByType.set(s.type, s);
+    }
+    bestByType.forEach(s => { if (!map.has(s.id)) map.set(s.id, "BEST"); });
+    return map;
+  }, [sessions]);
+
+  /* ── Spaced-repetition "Due for review" cue ──
+     HireStepX's signature feature is skill-decay tracking. We surface
+     it on the row when a session's topGap matches the topGap of the
+     immediately-prior session of the same type — the user got the
+     same coach note twice in a row, so the gap is *recurring*, not
+     incidental. The most-recent occurrence is the one to act on;
+     older recurrences stay quiet so the list doesn't flood with
+     copper hints. */
+  const dueIds = React.useMemo(() => {
+    const due = new Set<string>();
+    const byType: Record<string, Session[]> = {};
+    sessions.filter(s => !s.draft && s.topGap).forEach(s => {
+      (byType[s.type] ??= []).push(s);
+    });
+    Object.values(byType).forEach(arr => {
+      arr.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      if (arr.length >= 2 && arr[0].topGap && arr[0].topGap === arr[1].topGap) {
+        due.add(arr[0].id);
+      }
+    });
+    return due;
+  }, [sessions]);
+
+  /* Date-stack formatter for the row's left rail. "DD MMM" over
+     "WEEKDAY" — industry-standard for chronicled lists (NYT TOC,
+     Stripe Dashboard transactions). Locale-stable: en-US short month,
+     short weekday, uppercase so the eyebrow reads as catalog metadata
+     rather than copy. Returns empty strings on unparseable dates so
+     the row still renders without throwing. */
+  const formatDateStack = React.useCallback((iso: string): { top: string; bot: string } => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return { top: "", bot: "" };
+    const day = String(d.getDate()).padStart(2, "0");
+    const mon = d.toLocaleString("en-US", { month: "short" }).toUpperCase();
+    const wkd = d.toLocaleString("en-US", { weekday: "long" }).toUpperCase();
+    return { top: `${day} ${mon}`, bot: wkd };
+  }, []);
 
   const filtered = sessions
     .filter(s => showDrafts || !s.draft)
@@ -1058,156 +1155,216 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
           </div>
           <div role="list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {g.items.map(s => {
+              /* ── Row composition ──
+                 Three columns: date stack (96px) · content (1fr) · score
+                 rail (auto). Hover reveals a Re-run affordance bottom-right
+                 (canvas mode hides it). No card chrome — a single hairline
+                 under the row carries the rhythm. */
               const idxInFiltered = filtered.findIndex(x => x.id === s.id);
               const isSelected = idxInFiltered === selectedIdx;
+              const ds = formatDateStack(s.date);
+              const badge = badgeById.get(s.id) ?? null;
+              const isDue = dueIds.has(s.id);
+              const meta = [
+                s.company ? `${s.role} at ${s.company}` : s.role,
+                s.difficulty,
+                s.questions ? `${s.questions} Qs` : null,
+                s.duration,
+              ].filter(Boolean).join(" · ");
+              /* One-signal line. Cap copy at 64 chars to keep rows
+                 scannable; truncate cleanly so the layout never wraps
+                 to a third line we don't budget for. */
+              const cap = (str: string, n = 64) => str.length <= n ? str : `${str.slice(0, n - 1).trimEnd()}…`;
+              const signalText = !s.draft
+                ? (s.score >= 80
+                    ? (s.topStrength ? cap(`Strongest: ${s.topStrength.toLowerCase()}`) : "")
+                    : (s.topGap ? cap(s.topGap) : ""))
+                : "";
               return (
               <div
                 key={s.id}
                 className="hsx-row"
                 role="listitem"
                 tabIndex={0}
+                aria-current={isSelected ? "true" : undefined}
+                data-selected={isSelected ? "true" : "false"}
                 onClick={() => onOpen(s.id)}
                 onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(s.id); } }}
                 onMouseEnter={() => setSelectedIdx(idxInFiltered)}
                 style={{
-                  /* Chevron dropped; the row IS the affordance. Selected
-                     state lifts the border to coal so j/k navigation has
-                     a visible cursor. Draft rows render at 65% opacity
-                     with a dashed left edge inside (not a side-stripe —
-                     the dashed treatment is a row-wide border) so the
-                     state is unmissable without going decorative. */
                   display: "grid",
-                  gridTemplateColumns: "64px 1fr auto auto 32px",
-                  gap: 16, alignItems: "center",
-                  padding: "18px 20px",
-                  background: s.draft ? tok.creamSoft : tok.white,
-                  border: s.draft
-                    ? `1px dashed ${isSelected ? tok.coal : tok.lineStrong}`
-                    : `1px solid ${isSelected ? tok.coal : tok.line}`,
-                  borderRadius: radii.card, cursor: "pointer",
-                  opacity: s.draft ? 0.72 : 1,
-                  position: "relative",
-                  transition: "border-color 120ms cubic-bezier(0.22,1,0.36,1)",
+                  gridTemplateColumns: "96px 1fr auto",
+                  gap: 24, alignItems: "start",
+                  padding: "22px 8px 20px",
+                  background: "transparent",
+                  borderBottom: `1px solid ${tok.line}`,
+                  cursor: "pointer",
+                  opacity: s.draft ? 0.78 : 1,
                 }}>
-                <ScoreRing score={s.score} />
-                <div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    {/* Leading swatch — the only color in this row
-                       besides the score ring. Square (6px) rather
-                       than a chip behind the label so we don't
-                       compete with the brand role pill next to it. */}
+                {/* ── Left rail: date stack with status dot ──
+                   Status dot leads the date so completed / draft state is
+                   one glance, before reading. Draft rows replace the date
+                   with a copper "DRAFT / in progress" eyebrow so the
+                   chronicle stays honest about what's finished. */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingTop: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span aria-hidden="true" style={{
-                      width: 6, height: 6, borderRadius: 1,
-                      background: typeHue(s.type).swatch,
-                      border: `1px solid ${typeHue(s.type).ink}`,
+                      width: 6, height: 6, borderRadius: 999,
+                      background: s.draft ? "transparent" : tok.coal,
+                      border: s.draft ? `1px solid ${tok.copper}` : "none",
                       flexShrink: 0,
                     }} />
-                    <span style={{ fontSize: 15, fontWeight: 600, color: tok.coal }}>{s.type}</span>
-                    <span style={{ padding: "3px 9px", background: tok.copperSoft, color: tok.copper, borderRadius: radii.chip, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.role}</span>
-                    {/* Only render the company prefix when one is on
-                       file. The previous "· {s.company}" rendered
-                       "· –" when the upstream row had no company,
-                       reading as data corruption. */}
-                    {s.company ? <span style={{ fontSize: 12, color: tok.inkSoft }}>· {s.company}</span> : null}
-                    {s.draft && (
-                      <span style={{ marginLeft: 4, padding: "2px 8px", borderRadius: radii.chip, background: tok.white, border: `1px solid ${tok.lineStrong}`, color: tok.inkSoft, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Draft</span>
-                    )}
-                  </div>
-                  {/* One signal per row, score-conditional. Strong
-                     sessions surface what worked; weaker sessions
-                     surface the gap. A list of mixed scores stops
-                     reading as a wall of red. */}
-                  <div style={{ fontSize: 12, color: tok.inkSoft }}>
-                    {s.score >= 80 ? (
-                      <span>
-                        <span style={{ color: tok.coal, fontWeight: 600 }}>{s.topStrength}</span>
-                        <span style={{ color: tok.inkFaint }}> · landed</span>
-                      </span>
+                    {s.draft ? (
+                      <span style={{
+                        fontFamily: fonts.serif, fontStyle: "italic",
+                        fontSize: 13, color: tok.copper, fontWeight: 400,
+                        letterSpacing: "0.01em",
+                      }}>Draft</span>
                     ) : (
-                      <span>
-                        <span style={{ color: tok.inkSoft }}>Sharpen </span>
-                        <span style={{ color: tok.coal, fontWeight: 600 }}>{s.topGap}</span>
-                      </span>
+                      <span style={{
+                        fontFamily: fonts.mono, fontSize: 12, fontWeight: 600,
+                        color: tok.coal, letterSpacing: "0.04em",
+                      }}>{ds.top}</span>
                     )}
                   </div>
+                  <span style={{
+                    fontFamily: fonts.mono, fontSize: 10, fontWeight: 500,
+                    color: tok.inkSoft, letterSpacing: "0.12em",
+                    paddingLeft: 14,
+                  }}>{s.draft ? "IN PROGRESS" : ds.bot}</span>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 12, color: tok.coal, fontWeight: 500 }}>{s.dateLabel}</div>
-                  <div style={{ fontSize: 11, color: tok.inkFaint, fontFamily: fonts.mono, marginTop: 2 }}>{s.duration} · {s.questions} Qs</div>
-                </div>
-                {/* Delta is now neutral mono — only the ring carries
-                   verdict color. A 76 with -1 no longer paints a copper
-                   ring beside a red chip, which used to read as
-                   contradictory. */}
-                <div style={{
-                  fontFamily: fonts.mono, fontSize: 13, fontWeight: 600,
-                  color: tok.inkSoft, minWidth: 38, textAlign: "right",
-                }}>{s.delta >= 0 ? "+" : ""}{s.delta}</div>
-                {/* Row actions — kebab opens a small popover with
-                   Mark/Unmark draft and Delete. Stops propagation so
-                   clicking the kebab doesn't open the row. Closes on
-                   blur via the outer click handler in the default
-                   export. The menu items use plain language about the
-                   consequence ("Delete · undoable for 6s") so the
-                   destructive action is preventably visible. */}
-                <div style={{ position: "relative", display: "flex", justifyContent: "center" }} onClick={e => e.stopPropagation()}>
-                  {/* Hit area widened to 32×32 on desktop, 44×44 on touch
-                     via .hsx-touch. The visual glyph stays the same; the
-                     button just absorbs more pointer area around it. */}
-                  <button
-                    className="hsx-touch"
-                    onClick={() => setOpenMenu(m => m === s.id ? null : s.id)}
-                    aria-label="Row actions"
-                    aria-haspopup="menu"
-                    aria-expanded={openMenu === s.id}
+
+                {/* ── Middle column: editorial three-line stack ──
+                   Line 1: serif type title, optionally underlined indigo
+                   when the row is keyboard-selected.
+                   Line 2: role-and-company line, copper italic role.
+                   Line 3: one signal (gap < 80, strength ≥ 80, or
+                   recurring-gap due cue). Omitted entirely on draft. */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+                  <span
+                    className="hsx-row-title"
                     style={{
-                      width: 32, height: 32, borderRadius: radii.btn,
-                      background: openMenu === s.id ? tok.creamSoft : "transparent",
-                      border: "none", color: tok.inkSoft, cursor: "pointer",
-                      fontSize: 16, lineHeight: 1, fontWeight: 700,
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    }}>⋯</button>
-                  {openMenu === s.id && (
-                    <div
-                      role="menu"
-                      onKeyDown={e => {
-                        if (e.key === "Escape") {
-                          e.preventDefault();
-                          setOpenMenu(null);
-                          /* Focus restoration: return focus to the
-                             trigger button so keyboard users don't end
-                             up dropped at document root. */
-                          const trigger = (e.currentTarget.parentElement?.querySelector('button[aria-haspopup="menu"]') as HTMLButtonElement | null);
-                          trigger?.focus();
-                        }
-                      }}
-                      style={{
-                      position: "absolute", top: "110%", right: 0, zIndex: 20,
-                      width: 220, padding: 6, background: tok.white,
-                      border: `1px solid ${tok.lineStrong}`, borderRadius: radii.btn,
-                      boxShadow: "0 12px 32px rgba(14,12,8,0.14)",
-                      display: "flex", flexDirection: "column", gap: 2,
+                      fontFamily: fonts.serif, fontSize: 22, fontWeight: 400,
+                      color: tok.coal, lineHeight: 1.15,
+                      letterSpacing: "-0.005em",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      alignSelf: "flex-start",
+                      paddingBottom: 2,
+                    }}>{s.type}</span>
+                  <span style={{
+                    fontSize: 14, color: tok.inkSoft, lineHeight: 1.4,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {s.company ? (
+                      <>
+                        <em style={{ fontStyle: "italic", color: tok.copper, fontFamily: fonts.serif, fontSize: 15 }}>{s.role}</em>
+                        <span> at </span>
+                        <span style={{ color: tok.coal, fontWeight: 500 }}>{s.company}</span>
+                      </>
+                    ) : (
+                      <em style={{ fontStyle: "italic", color: tok.copper, fontFamily: fonts.serif, fontSize: 15 }}>{s.role}</em>
+                    )}
+                    {(s.difficulty || s.questions || s.duration) ? (
+                      <span style={{ color: tok.inkSoft }}>
+                        {s.difficulty ? <> · {s.difficulty}</> : null}
+                        {s.questions ? <> · {s.questions} Qs</> : null}
+                        {s.duration ? <> · {s.duration}</> : null}
+                      </span>
+                    ) : null}
+                    {/* Hidden a11y-only flat string for screen readers
+                       so the meta sentence reads cleanly without the
+                       interleaved styling spans. */}
+                    <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>{meta}</span>
+                  </span>
+                  {signalText ? (
+                    <span style={{
+                      fontSize: 13, color: tok.coal, lineHeight: 1.4,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      marginTop: 2,
                     }}>
-                      <button
-                        role="menuitem"
-                        onClick={() => { onToggleDraft(s.id); setOpenMenu(null); }}
-                        style={{ textAlign: "left", padding: "8px 10px", border: "none", background: "transparent", color: tok.coal, fontSize: 13, fontWeight: 500, cursor: "pointer", borderRadius: radii.chip, fontFamily: fonts.ui }}>
-                        {s.draft ? "Mark as finished" : "Mark as draft"}
-                        <div style={{ fontSize: 11, color: tok.inkFaint, marginTop: 2 }}>
-                          {s.draft ? "Restore to the scored list." : "Hide from average; you didn't finish."}
-                        </div>
-                      </button>
-                      {allowDelete && (
-                        <button
-                          role="menuitem"
-                          onClick={() => { onDelete(s.id); setOpenMenu(null); }}
-                          style={{ textAlign: "left", padding: "8px 10px", border: "none", background: "transparent", color: tok.error, fontSize: 13, fontWeight: 600, cursor: "pointer", borderRadius: radii.chip, fontFamily: fonts.ui }}>
-                          Delete
-                          <div style={{ fontSize: 11, color: tok.inkFaint, marginTop: 2, fontWeight: 400 }}>Undoable for 6 seconds.</div>
-                        </button>
-                      )}
-                    </div>
+                      {isDue ? (
+                        <em style={{
+                          fontStyle: "italic", color: tok.copper,
+                          fontFamily: fonts.serif, fontSize: 14, marginRight: 6,
+                        }}>Due for review ·</em>
+                      ) : null}
+                      <span>{signalText}</span>
+                    </span>
+                  ) : s.draft ? (
+                    <span style={{ fontSize: 13, color: tok.inkSoft, fontStyle: "italic" }}>
+                      Saved mid-round, ready to continue.
+                    </span>
+                  ) : null}
+                  {/* Re-run affordance, hover-revealed (focus-revealed
+                     for keyboard). Industry-standard "Practice again /
+                     Solve again" pattern; the row's one ghost button. */}
+                  {onRerun && !s.draft ? (
+                    <button
+                      className="hsx-row-rerun"
+                      type="button"
+                      onClick={e => { e.stopPropagation(); onRerun(s); }}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
+                      aria-label={`Practice ${s.type} again`}
+                      style={{
+                        alignSelf: "flex-start",
+                        marginTop: 8,
+                        padding: "4px 0",
+                        border: "none", background: "transparent",
+                        color: tok.indigo, fontFamily: fonts.ui,
+                        fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
+                        cursor: "pointer",
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                      }}>
+                      <span>Practice this again</span>
+                      <svg aria-hidden width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M13 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  ) : null}
+                </div>
+
+                {/* ── Right rail: score numeral, delta, milestone badge ──
+                   The score is the reading; everything else explains it.
+                   Numeral in serif so it sits in the same typographic
+                   family as the title; mono delta for tabular alignment;
+                   badge in mono uppercase as a catalog tag. */}
+                <div style={{
+                  display: "flex", flexDirection: "column",
+                  alignItems: "flex-end", gap: 2, minWidth: 80,
+                  paddingTop: 2,
+                }}>
+                  {s.draft ? (
+                    <span style={{
+                      fontFamily: fonts.serif, fontSize: 32, color: tok.inkFaint,
+                      lineHeight: 1, fontWeight: 400,
+                    }}>—</span>
+                  ) : (
+                    <span style={{
+                      fontFamily: fonts.serif, fontSize: 32, color: tok.coal,
+                      lineHeight: 1, fontWeight: 400, fontVariantNumeric: "tabular-nums",
+                    }}>{s.score}</span>
                   )}
+                  {!s.draft ? (
+                    <span
+                      className="hsx-row-meta-delta"
+                      style={{
+                        fontFamily: fonts.mono, fontSize: 11, fontWeight: 600,
+                        color: s.delta > 0 ? tok.indigo : s.delta < 0 ? tok.copper : tok.inkSoft,
+                        letterSpacing: "0.02em",
+                      }}>
+                      {s.delta > 0 ? `▲ ${s.delta}` : s.delta < 0 ? `▼ ${Math.abs(s.delta)}` : "="}
+                    </span>
+                  ) : null}
+                  {badge && !s.draft ? (
+                    <span style={{
+                      marginTop: 4,
+                      padding: "2px 6px",
+                      fontFamily: fonts.mono, fontSize: 10, fontWeight: 600,
+                      color: tok.coal, letterSpacing: "0.12em",
+                      border: `1px solid ${tok.lineStrong}`,
+                      borderRadius: 2,
+                    }}>{badge}</span>
+                  ) : null}
                 </div>
               </div>
               );
@@ -1892,6 +2049,13 @@ export interface SessionHistoryDesignProps {
      plumbs `router.push("/interview")`. When undefined, the New
      session button hides rather than dangling as a dead affordance. */
   onStartSession?: () => void;
+  /* Wire the row's hover-revealed "Practice this again" affordance. The
+     route wrapper hands this off to /interview with the original
+     session's type / role / company / difficulty so the user lands in a
+     pre-populated setup. When undefined the affordance is suppressed
+     (canvas mode). Industry-standard re-do pattern (Duolingo "Practice
+     again", LeetCode "Solve again", Peloton "Take again"). */
+  onRerun?: (session: SessionHistoryItem) => void;
 }
 
 /* Internal route state. The `variant` prop sets the entry point each
@@ -1909,7 +2073,7 @@ type Route =
   | { name: "report"; id: string }
   | { name: "empty" };
 
-export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false, theme = "editorial", onStartSession }: SessionHistoryDesignProps) {
+export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false, theme = "editorial", onStartSession, onRerun }: SessionHistoryDesignProps) {
   /* Seed: real sessions when wired (initialSessions present and
      non-empty), otherwise the embedded mock array. Empty real-data
      drops the user into the empty variant automatically. */
@@ -2062,6 +2226,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
              off; the canvas keeps it on for design exploration. */
           allowDrafts={allowDelete}
           onStartSession={onStartSession}
+          onRerun={onRerun}
         />
       </div>
       {undoToast}

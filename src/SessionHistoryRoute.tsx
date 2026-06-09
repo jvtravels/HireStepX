@@ -53,6 +53,10 @@ function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
     duration: d.duration,
     score: d.score,
     delta: d.change,
+    /* difficulty is surfaced inline in the row's metadata line so the
+       score numeral has interpretive context (82 on Hard ≠ 82 on Easy).
+       Optional upstream because some legacy rows predate the field. */
+    difficulty: d.difficulty,
     topStrength: d.topStrength,
     topGap: d.topWeakness,
     questions: d.questionScores?.length ?? 0,
@@ -112,6 +116,19 @@ export default function SessionHistoryRoute() {
          route. /interview is the same target the dashboard's
          primary CTA uses. */
       onStartSession={() => router.push("/interview")}
+      /* Row-level "Practice this again" carries the original session's
+         setup forward so the user lands in a pre-populated interview
+         setup. Query params mirror the dashboard's deep-link contract
+         for /interview. Missing fields drop cleanly. */
+      onRerun={s => {
+        const params = new URLSearchParams();
+        if (s.type) params.set("type", s.type);
+        if (s.role) params.set("role", s.role);
+        if (s.company) params.set("company", s.company);
+        if (s.difficulty) params.set("difficulty", s.difficulty);
+        const qs = params.toString();
+        router.push(qs ? `/interview?${qs}` : "/interview");
+      }}
     />
   );
 }
