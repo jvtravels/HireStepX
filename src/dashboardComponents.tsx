@@ -434,16 +434,16 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? "#F4E5D8" : c.gilt }}>{plan.name}</p>
                   <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? "#FAF7F0" : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                     {plan.id === "single" ? `₹${sessionQty * 9}` : plan.price}
-                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(245,242,237,0.7)" : c.stone }}>
+                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(14,12,8,0.7)" : c.stone }}>
                       {plan.id === "single" ? `/ ${sessionQty} session${sessionQty > 1 ? "s" : ""}` : plan.unit}
                     </span>
                   </p>
-                  <p style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(245,242,237,0.7)" : c.stone }}>{plan.sub}</p>
+                  <p style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(14,12,8,0.7)" : c.stone }}>{plan.sub}</p>
                 </div>
 
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {plan.features.map((f) => (
-                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(245,242,237,0.78)" : c.chalk }}>
+                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(14,12,8,0.78)" : c.chalk }}>
                       <span aria-hidden style={{ color: featured ? "#F4E5D8" : c.gilt, marginTop: 2 }}>→</span>{f}
                     </li>
                   ))}
@@ -531,20 +531,20 @@ export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: 
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, opacity: 0.15, filter: "blur(6px)", pointerEvents: "none", padding: 40 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
           {[1, 2, 3].map(i => (
-            <div key={i} style={{ height: 80, borderRadius: 12, background: "linear-gradient(180deg, rgba(30,30,32,0.8) 0%, rgba(17,17,19,0.8) 100%)", border: `1px solid ${c.border}` }} />
+            <div key={i} style={{ height: 80, borderRadius: 12, background: c.graphite, border: `1px solid ${c.border}` }} />
           ))}
         </div>
-        <div style={{ height: 200, borderRadius: 14, background: "linear-gradient(180deg, rgba(30,30,32,0.6) 0%, rgba(17,17,19,0.6) 100%)", border: `1px solid ${c.border}`, marginBottom: 16 }} />
+        <div style={{ height: 200, borderRadius: 14, background: c.graphite, border: `1px solid ${c.border}`, marginBottom: 16 }} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {[1, 2].map(i => (
-            <div key={i} style={{ height: 120, borderRadius: 12, background: "linear-gradient(180deg, rgba(30,30,32,0.6) 0%, rgba(17,17,19,0.6) 100%)", border: `1px solid ${c.border}` }} />
+            <div key={i} style={{ height: 120, borderRadius: 12, background: c.graphite, border: `1px solid ${c.border}` }} />
           ))}
         </div>
       </div>
 
       {/* Lock overlay */}
       <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 400, textAlign: "center", padding: 40, zIndex: 1 }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(212,179,127,0.06)", border: `1.5px solid rgba(212,179,127,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(180,83,9,0.06)", border: `1.5px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
           <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
         <h3 style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, marginBottom: 8 }}>{feature}</h3>
@@ -643,8 +643,8 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
       {showConfetti && <ConfettiBurst />}
       <style>{`
-        @keyframes warmupPulse { 0%, 100% { box-shadow: 0 8px 32px rgba(212,179,127,0.15); } 50% { box-shadow: 0 8px 40px rgba(212,179,127,0.4); } }
-        @media (prefers-reduced-motion: reduce) { .warmup-pulse-btn { animation: none !important; box-shadow: 0 8px 32px rgba(212,179,127,0.15) !important; } }
+        @keyframes warmupPulse { 0%, 100% { box-shadow: 0 8px 32px rgba(180,83,9,0.15); } 50% { box-shadow: 0 8px 40px rgba(180,83,9,0.4); } }
+        @media (prefers-reduced-motion: reduce) { .warmup-pulse-btn { animation: none !important; box-shadow: 0 8px 32px rgba(180,83,9,0.15) !important; } }
       `}</style>
       <h1 style={{ fontFamily: font.ui, fontSize: isMobile ? 20 : 26, fontWeight: 600, color: c.ivory, marginBottom: 6 }}>
         {timeGreeting}, {firstName}
@@ -653,8 +653,8 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
         {targetRole ? `Let's get you ready for your ${targetRole} interview.` : "Let's get you interview-ready."}
       </p>
 
-      <div style={{ background: `linear-gradient(135deg, rgba(212,179,127,0.12) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid rgba(212,179,127,0.15)`, padding: isMobile ? "32px 24px" : "48px 40px", textAlign: "center", marginBottom: 28 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 20, background: "rgba(212,179,127,0.08)", border: "1px solid rgba(212,179,127,0.15)", marginBottom: 24 }}>
+      <div style={{ background: `linear-gradient(135deg, rgba(180,83,9,0.12) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid rgba(180,83,9,0.15)`, padding: isMobile ? "32px 24px" : "48px 40px", textAlign: "center", marginBottom: 28 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 20, background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.15)", marginBottom: 24 }}>
           <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: c.gilt, letterSpacing: "0.08em" }}>SESSION 1 OF 3</span>
           <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Guided Warmup</span>
         </div>
@@ -689,7 +689,7 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
           { step: "2", title: "Focus", desc: "Targeted practice on your weakest skill from the warmup.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, active: false },
           { step: "3", title: "Challenge", desc: "Full interview simulation tailored to your target role.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="1.5" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, active: false },
         ].map((item) => (
-          <div key={item.step} style={{ background: c.graphite, borderRadius: 12, border: `1px solid ${item.active ? "rgba(212,179,127,0.3)" : c.border}`, padding: "24px 20px", opacity: item.active ? 1 : 0.5 }}>
+          <div key={item.step} style={{ background: c.graphite, borderRadius: 12, border: `1px solid ${item.active ? "rgba(180,83,9,0.3)" : c.border}`, padding: "24px 20px", opacity: item.active ? 1 : 0.5 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
               {item.icon}
               <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: item.active ? c.gilt : c.stone, letterSpacing: "0.08em" }}>SESSION {item.step}</span>
@@ -748,7 +748,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
         <div className="session-detail-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 16 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, background: "rgba(212,179,127,0.08)", padding: "4px 10px", borderRadius: 4 }}>{session.type}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, background: "rgba(180,83,9,0.08)", padding: "4px 10px", borderRadius: 4 }}>{session.type}</span>
               <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>{session.dateLabel} · {session.duration}</span>
             </div>
             <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>{session.role}</h2>
@@ -756,7 +756,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 72, height: 72, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="72" height="72" viewBox="0 0 72 72" style={{ position: "absolute", transform: "rotate(-90deg)" }}>
-                <circle cx="36" cy="36" r="33" fill="none" stroke="rgba(245,242,237,0.06)" strokeWidth="3" />
+                <circle cx="36" cy="36" r="33" fill="none" stroke="rgba(14,12,8,0.06)" strokeWidth="3" />
                 <circle cx="36" cy="36" r="33" fill="none" stroke={scoreLabelColor(session.score)} strokeWidth="3"
                   strokeDasharray={`${(session.score / 100) * 2 * Math.PI * 33} ${2 * Math.PI * 33}`}
                   strokeLinecap="round" className="score-ring" />
@@ -773,11 +773,11 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
         </div>
 
         <div className="session-detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(122,158,126,0.04)", border: `1px solid rgba(122,158,126,0.12)` }}>
+          <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(21,128,61,0.04)", border: `1px solid rgba(21,128,61,0.12)` }}>
             <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.sage, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Top Strength</span>
             <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory }}>{session.topStrength}</span>
           </div>
-          <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(196,112,90,0.04)", border: `1px solid rgba(196,112,90,0.12)` }}>
+          <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(185,28,28,0.04)", border: `1px solid rgba(185,28,28,0.12)` }}>
             <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>To Improve</span>
             <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory }}>{session.topWeakness}</span>
           </div>
@@ -791,7 +791,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", borderRadius: 10, background: c.obsidian, border: `1px solid ${c.border}` }}>
               <div style={{ width: 40, height: 40, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="40" height="40" viewBox="0 0 40 40" style={{ position: "absolute", transform: "rotate(-90deg)" }}>
-                  <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(245,242,237,0.06)" strokeWidth="2" />
+                  <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(14,12,8,0.06)" strokeWidth="2" />
                   <circle cx="20" cy="20" r="17" fill="none" stroke={scoreLabelColor(q.score)} strokeWidth="2"
                     strokeDasharray={`${(q.score / 100) * 2 * Math.PI * 17} ${2 * Math.PI * 17}`}
                     strokeLinecap="round" className="score-ring" />
@@ -812,7 +812,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {session.transcript.map((msg, i) => (
             <div key={i} style={{ display: "flex", gap: 12, flexDirection: msg.speaker === "user" ? "row-reverse" : "row" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: msg.speaker === "ai" ? "rgba(212,179,127,0.1)" : "rgba(122,158,126,0.1)", border: `1px solid ${msg.speaker === "ai" ? "rgba(212,179,127,0.2)" : "rgba(122,158,126,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: msg.speaker === "ai" ? "rgba(180,83,9,0.1)" : "rgba(21,128,61,0.1)", border: `1px solid ${msg.speaker === "ai" ? "rgba(180,83,9,0.2)" : "rgba(21,128,61,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {msg.speaker === "ai" ? (
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2M5.6 5.6l1.4 1.4m9.9 9.9l1.4 1.4M5.6 18.4l1.4-1.4m9.9-9.9l1.4-1.4"/></svg>
                 ) : (
@@ -820,7 +820,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
                 )}
               </div>
               <div style={{ maxWidth: "75%", minWidth: 0 }}>
-                <div style={{ padding: "12px 16px", borderRadius: 12, fontFamily: font.ui, fontSize: 13, color: c.chalk, lineHeight: 1.6, background: msg.speaker === "ai" ? c.obsidian : "rgba(122,158,126,0.04)", border: `1px solid ${msg.speaker === "ai" ? c.border : "rgba(122,158,126,0.1)"}`, borderTopLeftRadius: msg.speaker === "ai" ? 4 : 12, borderTopRightRadius: msg.speaker === "user" ? 4 : 12 }}>
+                <div style={{ padding: "12px 16px", borderRadius: 12, fontFamily: font.ui, fontSize: 13, color: c.chalk, lineHeight: 1.6, background: msg.speaker === "ai" ? c.obsidian : "rgba(21,128,61,0.04)", border: `1px solid ${msg.speaker === "ai" ? c.border : "rgba(21,128,61,0.1)"}`, borderTopLeftRadius: msg.speaker === "ai" ? 4 : 12, borderTopRightRadius: msg.speaker === "user" ? 4 : 12 }}>
                   {msg.text}
                 </div>
                 {msg.scoreNote && (

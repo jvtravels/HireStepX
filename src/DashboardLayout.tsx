@@ -7,7 +7,7 @@ const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ 
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { daysUntilEvent } from "./dashboardHelpers";
 import dynamic from "next/dynamic";
-import { tokens as T, fonts as F } from "./auth/_tokens";
+import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
 
 
 /* ─── Cream-mode design tokens (derived) ───────────────────────────────
@@ -192,7 +192,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       `}</style>
 
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- sidebar backdrop dismissal */}
-      {isMobile && sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 19 }} />}
+      {isMobile && sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(14,12,8,0.45)", zIndex: 19 }} />}
 
       {/* Sidebar */}
       <aside aria-label="Navigation sidebar" style={{
@@ -272,7 +272,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           {!tierKnown ? (
             <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
           ) : isPro ? (
-            <button onClick={() => setShowUpgradeModal(true)} style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: `1px solid rgba(122,158,126,0.2)`, background: "#DCFCE7", color: c.sage, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "opacity 0.2s" }}
+            <button onClick={() => setShowUpgradeModal(true)} style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: `1px solid rgba(21,128,61,0.2)`, background: "#DCFCE7", color: c.sage, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "opacity 0.2s" }}
               onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
               onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
             >Manage Plan</button>
@@ -287,7 +287,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         {/* User info */}
         <div style={{ borderTop: `1px solid ${c.border}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#F4E5D8", border: `1px solid rgba(212,179,127,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.gilt }}>{(displayName || "?")[0].toUpperCase()}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -309,7 +309,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "20px 16px max(60px, env(safe-area-inset-bottom))" : "44px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(16px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(16px, env(safe-area-inset-right))" : undefined }}>
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)} aria-label="Open navigation menu" aria-expanded={sidebarOpen}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.stone; e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.stone; e.currentTarget.style.background = "rgba(14,12,8,0.04)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = c.graphite; }}
             style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8, padding: "12px 14px", minHeight: 44, cursor: "pointer", marginBottom: 20, color: c.ivory, display: "flex", alignItems: "center", gap: 8, transition: "background 160ms ease, border-color 160ms ease" }}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -341,7 +341,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* Sync error banner */}
         {syncError && (
-          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: "#FEE2E2", border: "1px solid rgba(196,112,90,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: "#FEE2E2", border: "1px solid rgba(185,28,28,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{syncError}</span>
@@ -389,7 +389,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
           background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 10,
           padding: "10px 20px", zIndex: 100, animation: "slideDown 0.2s ease",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+          boxShadow: shadow.cta,
         }}>
           <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ivory }}>{toast}</span>
         </div>
@@ -401,7 +401,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           <div style={{
             width: 320, maxHeight: 440, overflowY: "auto", marginBottom: 12,
             background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14,
-            padding: "20px 20px 16px", boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            padding: "20px 20px 16px", boxShadow: shadow.modal,
             animation: "slideDown 0.2s ease",
           }}>
             {/* Header */}
@@ -441,7 +441,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <p style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.chalk, marginBottom: 8 }}>Need help?</p>
               <a href="mailto:support@hirestepx.com" style={{
                 display: "block", textAlign: "center", padding: "8px 0", borderRadius: 8,
-                background: c.creamSoft, border: `1px solid rgba(212,179,127,0.2)`,
+                background: c.creamSoft, border: `1px solid rgba(180,83,9,0.2)`,
                 color: c.gilt, fontFamily: font.ui, fontSize: 12, fontWeight: 600, textDecoration: "none",
                 transition: "background 0.15s",
               }}
@@ -514,7 +514,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             width: 48, height: 48, borderRadius: "50%", border: `1px solid ${c.border}`,
             background: c.graphite, color: c.ivory, cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.4)", transition: "border-color 0.2s, transform 0.2s",
+            boxShadow: shadow.cta, transition: "border-color 0.2s, transform 0.2s",
             marginLeft: "auto",
           }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.gilt; e.currentTarget.style.transform = "scale(1.05)"; }}

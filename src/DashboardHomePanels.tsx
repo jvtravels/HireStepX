@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { c, font, sp, radius } from "./tokens";
+import { c, font, sp, radius, shadow } from "./tokens";
 import { daysUntilEvent, formatEventDate, formatEventTime } from "./dashboardHelpers";
 import { SectionErrorBoundary } from "./ErrorBoundary";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
@@ -10,12 +10,10 @@ import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
 
 /* ─── Shared card style (re-exported) ─── */
 export const card = {
-  background: "linear-gradient(180deg, rgba(30,30,32,0.5) 0%, rgba(17,17,19,0.5) 100%)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
+  background: c.carbon,
   borderRadius: 14,
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)",
+  border: `1px solid ${c.border}`,
+  boxShadow: shadow.md,
   position: "relative" as const,
 } as const;
 
@@ -88,8 +86,8 @@ export interface DraftBannerProps {
 
 export function DraftBanner({ type, savedAt, onResume, onDismiss }: DraftBannerProps) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderRadius: radius.md, background: "rgba(212,179,127,0.04)", border: `1px solid rgba(212,179,127,0.15)`, marginBottom: sp.xl, flexWrap: "wrap" }}>
-      <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(212,179,127,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderRadius: radius.md, background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.15)`, marginBottom: sp.xl, flexWrap: "wrap" }}>
+      <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(180,83,9,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -130,15 +128,15 @@ export function NotificationsList({ notifications, onAction, onDismiss }: Notifi
   return (
     <div role="region" aria-label="Notifications" style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: sp.xl }}>
       {notifications.map((notif) => (
-        <div key={notif.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: radius.md, background: notif.type === "streak" ? "rgba(196,112,90,0.04)" : "rgba(122,158,126,0.04)", borderLeft: `3px solid ${notif.type === "streak" ? c.ember : c.sage}`, boxShadow: "0 1px 3px rgba(0,0,0,0.12)", transition: "background 0.2s ease" }}>
+        <div key={notif.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: radius.md, background: notif.type === "streak" ? "rgba(185,28,28,0.04)" : "rgba(21,128,61,0.04)", borderLeft: `3px solid ${notif.type === "streak" ? c.ember : c.sage}`, boxShadow: "0 1px 3px rgba(0,0,0,0.12)", transition: "background 0.2s ease" }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={notif.type === "streak" ? c.ember : c.sage} strokeWidth="2" strokeLinecap="round">
             {notif.type === "streak" ? <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></> : <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>}
           </svg>
           <span style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, flex: 1, lineHeight: 1.5 }}>{notif.text}</span>
           {notif.action && (
-            <button onClick={() => onAction(notif.action!)} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.sage, background: "rgba(122,158,126,0.08)", border: `1px solid rgba(122,158,126,0.2)`, borderRadius: 10, padding: "6px 14px", cursor: "pointer", whiteSpace: "nowrap" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(122,158,126,0.15)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(122,158,126,0.08)"; }}
+            <button onClick={() => onAction(notif.action!)} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.sage, background: "rgba(21,128,61,0.08)", border: `1px solid rgba(21,128,61,0.2)`, borderRadius: 10, padding: "6px 14px", cursor: "pointer", whiteSpace: "nowrap" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(21,128,61,0.15)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(21,128,61,0.08)"; }}
             >{notif.action}</button>
           )}
           {notif.dismissible && (
@@ -156,12 +154,12 @@ export function NotificationsList({ notifications, onAction, onDismiss }: Notifi
 
 export function PracticeReminderBanner({ text, onStart }: { text: string; onStart: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: radius.md, background: "rgba(212,179,127,0.03)", borderLeft: `3px solid ${c.gilt}`, marginBottom: sp.xl }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: radius.md, background: "rgba(180,83,9,0.03)", borderLeft: `3px solid ${c.gilt}`, marginBottom: sp.xl }}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       <span style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, flex: 1, lineHeight: 1.5 }}>{text}</span>
-      <button onClick={onStart} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt, background: "rgba(212,179,127,0.08)", border: `1px solid rgba(212,179,127,0.2)`, borderRadius: 10, padding: "6px 14px", cursor: "pointer", whiteSpace: "nowrap" }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.15)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.08)"; }}
+      <button onClick={onStart} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt, background: "rgba(180,83,9,0.08)", border: `1px solid rgba(180,83,9,0.2)`, borderRadius: 10, padding: "6px 14px", cursor: "pointer", whiteSpace: "nowrap" }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.15)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.08)"; }}
       >Practice Now</button>
     </div>
   );
@@ -183,16 +181,16 @@ export function DailyChallengeBanner({ challenge, onNavigate }: { challenge: Dai
   return (
     <div role="button" tabIndex={0} aria-label={`Daily Challenge: ${challenge.label}`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNavigate(path); } }}
-      style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderRadius: radius.md, background: "rgba(212,179,127,0.03)", border: "1px solid rgba(212,179,127,0.08)", marginBottom: sp.xl, cursor: "pointer", transition: "all 0.2s ease" }}
+      style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderRadius: radius.md, background: "rgba(180,83,9,0.03)", border: "1px solid rgba(180,83,9,0.08)", marginBottom: sp.xl, cursor: "pointer", transition: "all 0.2s ease" }}
       onClick={() => onNavigate(path)}
-      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.06)"; e.currentTarget.style.borderColor = "rgba(212,179,127,0.15)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.03)"; e.currentTarget.style.borderColor = "rgba(212,179,127,0.08)"; }}>
+      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.06)"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.15)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.03)"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.08)"; }}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
       <div style={{ flex: 1 }}>
         <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Daily Challenge: {challenge.label}</span>
         <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginLeft: 8 }}>{challenge.description}</span>
       </div>
-      <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: radius.pill, background: challenge.difficulty === "hard" ? "rgba(196,112,90,0.08)" : "rgba(212,179,127,0.08)", color: challenge.difficulty === "hard" ? c.ember : c.gilt, textTransform: "uppercase" as const, flexShrink: 0 }}>{challenge.difficulty}</span>
+      <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: radius.pill, background: challenge.difficulty === "hard" ? "rgba(185,28,28,0.08)" : "rgba(180,83,9,0.08)", color: challenge.difficulty === "hard" ? c.ember : c.gilt, textTransform: "uppercase" as const, flexShrink: 0 }}>{challenge.difficulty}</span>
       <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
     </div>
   );
@@ -263,11 +261,11 @@ export function UpcomingInterviews({ events, isMobile, onNavigate }: { events: C
             <div key={ev.id} role="button" tabIndex={0} aria-label={`${ev.company} interview — ${isToday ? "Today" : `${days} days away`}`}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNavigate("/calendar"); } }}
               style={{ padding: "16px 20px", borderRadius: radius.md, background: c.obsidian, borderLeft: `3px solid ${isToday ? c.ember : urgent ? c.gilt : c.sage}`, cursor: "pointer", transition: "background 0.2s ease" }} onClick={() => onNavigate("/calendar")}
-              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(245,242,237,0.02)"}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(14,12,8,0.02)"}
               onMouseLeave={(e) => e.currentTarget.style.background = c.obsidian}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>{ev.company}</span>
-                <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: radius.pill, background: isToday ? "rgba(196,112,90,0.1)" : urgent ? "rgba(212,179,127,0.08)" : "rgba(122,158,126,0.06)", color: isToday ? c.ember : urgent ? c.gilt : c.sage }}>
+                <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: radius.pill, background: isToday ? "rgba(185,28,28,0.1)" : urgent ? "rgba(180,83,9,0.08)" : "rgba(21,128,61,0.06)", color: isToday ? c.ember : urgent ? c.gilt : c.sage }}>
                   {isToday ? "TODAY" : days === 1 ? "TOMORROW" : `${days}d`}
                 </span>
               </div>
@@ -299,15 +297,15 @@ export function AchievementsSection({ badges, isMobile }: { badges: Badge[]; isM
         {sectionTitle("Achievements")}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(${Math.min(badges.length, 4)}, 1fr)`, gap: 12, marginTop: 16 }}>
           {badges.map((badge) => (
-            <div key={badge.id} className={badge.earned ? "badge-earned" : ""} style={{ padding: "16px", borderRadius: radius.md, background: badge.earned ? "rgba(212,179,127,0.03)" : c.obsidian, textAlign: "center", opacity: badge.earned ? 1 : 0.45, transition: "all 0.3s ease", position: "relative", overflow: "hidden" }}
-              onMouseEnter={(e) => { if (!badge.earned) e.currentTarget.style.opacity = "0.7"; if (badge.earned) e.currentTarget.style.boxShadow = "0 0 20px rgba(212,179,127,0.12)"; }}
+            <div key={badge.id} className={badge.earned ? "badge-earned" : ""} style={{ padding: "16px", borderRadius: radius.md, background: badge.earned ? "rgba(180,83,9,0.03)" : c.obsidian, textAlign: "center", opacity: badge.earned ? 1 : 0.45, transition: "all 0.3s ease", position: "relative", overflow: "hidden" }}
+              onMouseEnter={(e) => { if (!badge.earned) e.currentTarget.style.opacity = "0.7"; if (badge.earned) e.currentTarget.style.boxShadow = "0 0 20px rgba(180,83,9,0.12)"; }}
               onMouseLeave={(e) => { if (!badge.earned) e.currentTarget.style.opacity = "0.45"; e.currentTarget.style.boxShadow = "none"; }}>
-              {badge.earned && <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 30%, rgba(212,179,127,0.08) 0%, transparent 60%)", pointerEvents: "none" }} />}
+              {badge.earned && <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 30%, rgba(180,83,9,0.08) 0%, transparent 60%)", pointerEvents: "none" }} />}
               <div style={{ marginBottom: 8, display: "flex", justifyContent: "center", position: "relative" }}>{(badgeIcons[badge.icon] || badgeIcons.star)(badge.earned ? c.gilt : c.stone)}</div>
               <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: badge.earned ? c.ivory : c.stone, marginBottom: 2 }}>{badge.label}</p>
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, lineHeight: 1.4, marginBottom: badge.earned ? 0 : 8 }}>{badge.description}</p>
               {!badge.earned && (
-                <div style={{ height: 3, background: "rgba(245,242,237,0.06)", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ height: 3, background: "rgba(14,12,8,0.06)", borderRadius: 2, overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${Math.min(100, badge.progress)}%`, background: c.gilt, borderRadius: 2, transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)" }} />
                 </div>
               )}
@@ -356,7 +354,7 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
                 <polygon points="0,120 0,100 60,85 120,90 180,70 240,55 300,40 360,35 400,20 400,120" fill="url(#sampleGrad)" opacity="0.3"/>
                 <defs><linearGradient id="sampleGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c.gilt}/><stop offset="100%" stopColor="transparent"/></linearGradient></defs>
               </svg>
-              <div style={{ position: "absolute", inset: 0, background: "rgba(17,17,19,0.75)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: radius.md }}>
+              <div style={{ position: "absolute", inset: 0, background: "rgba(250,247,240,0.85)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: radius.md }}>
                 <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, marginBottom: 12 }}>Complete your first session to see your trend</p>
                 <button onClick={onStartSession} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian, background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, border: "none", borderRadius: radius.sm, padding: "8px 20px", cursor: "pointer", transition: "all 0.2s ease" }}>Start a Session</button>
               </div>
@@ -380,10 +378,10 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
                     onClick={() => onNavigate(`/session/new?type=behavioral&focus=${sk.name.toLowerCase().replace(/\s+/g, "-")}`)}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNavigate(`/session/new?type=behavioral&focus=${sk.name.toLowerCase().replace(/\s+/g, "-")}`); } }}
                     style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "6px 8px", margin: "-6px -8px", borderRadius: radius.sm, transition: "background 0.15s ease" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.03)"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(14,12,8,0.03)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
                     <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, flex: 1 }}>{sk.name}</span>
-                    <div style={{ width: 60, height: 3, background: "rgba(245,242,237,0.06)", borderRadius: 2, overflow: "hidden" }}><div style={{ height: "100%", width: `${sk.score}%`, background: sk.color, borderRadius: 2, transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)" }} /></div>
+                    <div style={{ width: 60, height: 3, background: "rgba(14,12,8,0.06)", borderRadius: 2, overflow: "hidden" }}><div style={{ height: "100%", width: `${sk.score}%`, background: sk.color, borderRadius: 2, transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)" }} /></div>
                     <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: c.ivory, width: 24, textAlign: "right" }}>{sk.score}</span>
                     <span style={{ fontFamily: font.mono, fontSize: 11, color: c.sage, width: 30, textAlign: "right" }}>+{sk.score - sk.prev}</span>
                   </div>
@@ -396,14 +394,14 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
                 {["Communication", "Leadership", "Problem Solving", "Teamwork", "Adaptability"].map((skill, i) => (
                   <div key={skill} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, width: 100 }}>{skill}</span>
-                    <div style={{ flex: 1, height: 3, background: "rgba(245,242,237,0.06)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ flex: 1, height: 3, background: "rgba(14,12,8,0.06)", borderRadius: 2, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${75 - i * 8}%`, background: c.gilt, borderRadius: 2 }} />
                     </div>
                     <span style={{ fontFamily: font.mono, fontSize: 11, color: c.ivory, width: 22, textAlign: "right" }}>{75 - i * 8}</span>
                   </div>
                 ))}
               </div>
-              <div style={{ position: "absolute", inset: 0, background: "rgba(17,17,19,0.75)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: radius.md }}>
+              <div style={{ position: "absolute", inset: 0, background: "rgba(250,247,240,0.85)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: radius.md }}>
                 <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, lineHeight: 1.5, textAlign: "center", maxWidth: 220, marginBottom: 10 }}>Complete a session to unlock your skill breakdown</p>
                 <button onClick={onStartSession} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.obsidian, background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, border: "none", borderRadius: radius.sm, padding: "7px 16px", cursor: "pointer" }}>Get Started</button>
               </div>

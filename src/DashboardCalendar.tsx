@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { c, font } from "./tokens";
+import { c, font, shadow } from "./tokens";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { getCalendarEvents, saveCalendarEvent, deleteCalendarEvent } from "./supabase";
@@ -42,7 +42,7 @@ function MonthGrid({ events, onDateClick }: { events: InterviewEvent[]; onDateCl
   const monthLabel = viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   return (
-    <div style={{ background: "linear-gradient(180deg, rgba(30,30,32,0.5) 0%, rgba(17,17,19,0.5) 100%)", borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 24px", marginBottom: 24 }}>
+    <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 24px", marginBottom: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <button onClick={prevMonth} aria-label="Previous month"
           onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; }}
@@ -73,13 +73,13 @@ function MonthGrid({ events, onDateClick }: { events: InterviewEvent[]; onDateCl
             <button key={dateStr} onClick={() => hasEvent && onDateClick(dateStr)} title={hasEvent ? `${dayEvents.length} interview${dayEvents.length > 1 ? "s" : ""}: ${dayEvents.map(e => e.title).join(", ")}` : undefined}
               onMouseDown={(e) => { if (hasEvent) e.currentTarget.style.transform = "scale(0.96)"; }}
               onMouseUp={(e) => { if (hasEvent) e.currentTarget.style.transform = "scale(1)"; }}
-              onMouseEnter={(e) => { if (hasEvent && !isToday) e.currentTarget.style.background = "rgba(212,179,127,0.14)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; if (hasEvent && !isToday) e.currentTarget.style.background = "rgba(212,179,127,0.08)"; }}
+              onMouseEnter={(e) => { if (hasEvent && !isToday) e.currentTarget.style.background = "rgba(180,83,9,0.14)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; if (hasEvent && !isToday) e.currentTarget.style.background = "rgba(180,83,9,0.08)"; }}
               style={{
                 fontFamily: font.mono, fontSize: 12, fontWeight: isToday ? 700 : 400,
                 color: isToday ? c.obsidian : hasEvent ? c.gilt : isPast ? c.stone : c.chalk,
-                background: isToday ? c.gilt : hasEvent ? "rgba(212,179,127,0.08)" : "transparent",
-                border: hasEvent && !isToday ? `1px solid rgba(212,179,127,0.2)` : "1px solid transparent",
+                background: isToday ? c.gilt : hasEvent ? "rgba(180,83,9,0.08)" : "transparent",
+                border: hasEvent && !isToday ? `1px solid rgba(180,83,9,0.2)` : "1px solid transparent",
                 borderRadius: 8, padding: "6px 0", cursor: hasEvent ? "pointer" : "default",
                 position: "relative", opacity: isPast && !hasEvent ? 0.4 : 1,
                 transition: "transform 120ms cubic-bezier(0.2,0.7,0.2,1), background 160ms ease",
@@ -345,7 +345,7 @@ export default function CalendarPage() {
                   <button key={t} onClick={() => setFormType(t)} style={{
                     fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "5px 12px",
                     borderRadius: 100, cursor: "pointer",
-                    background: formType === t ? "rgba(212,179,127,0.1)" : "transparent",
+                    background: formType === t ? "rgba(180,83,9,0.1)" : "transparent",
                     border: `1px solid ${formType === t ? c.gilt : c.border}`,
                     color: formType === t ? c.gilt : c.stone,
                     transition: "all 0.2s ease",
@@ -414,18 +414,18 @@ export default function CalendarPage() {
         </h3>
 
         {upcoming.length === 0 ? (
-          <div style={{ background: "linear-gradient(180deg, rgba(30,30,32,0.5) 0%, rgba(17,17,19,0.5) 100%)", backdropFilter: "blur(16px)", borderRadius: 14, border: `1px solid ${c.border}`, padding: "40px 28px", textAlign: "center" }}>
+          <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "40px 28px", textAlign: "center" }}>
             <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round" style={{ marginBottom: 12, opacity: 0.4 }}>
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
             <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, marginBottom: 8 }}>No upcoming interviews</p>
             <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, opacity: 0.7, marginBottom: 16 }}>Add your interview schedule to get countdown reminders and prep suggestions.</p>
             <button onClick={openNewForm}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.12)"; e.currentTarget.style.borderColor = "rgba(212,179,127,0.3)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.06)"; e.currentTarget.style.borderColor = "rgba(212,179,127,0.15)"; e.currentTarget.style.transform = "translateY(0)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.12)"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.3)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.06)"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.15)"; e.currentTarget.style.transform = "translateY(0)"; }}
               style={{
               fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.gilt,
-              background: "rgba(212,179,127,0.06)", border: `1px solid rgba(212,179,127,0.15)`,
+              background: "rgba(180,83,9,0.06)", border: `1px solid rgba(180,83,9,0.15)`,
               borderRadius: 10, padding: "8px 20px", cursor: "pointer",
               transition: "background 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.2,0.7,0.2,1)",
             }}>Add Your First Interview</button>
@@ -438,13 +438,13 @@ export default function CalendarPage() {
               const isToday = days === 0;
               return (
                 <div key={ev.id} id={`cal-event-${ev.date}`} style={{
-                  background: "linear-gradient(180deg, rgba(30,30,32,0.5) 0%, rgba(17,17,19,0.5) 100%)", backdropFilter: "blur(16px)", borderRadius: 14,
-                  border: `1px solid ${urgent ? "rgba(196,112,90,0.2)" : c.border}`,
+                  background: c.carbon, boxShadow: shadow.md, borderRadius: 14,
+                  border: `1px solid ${urgent ? "rgba(185,28,28,0.2)" : c.border}`,
                   borderLeft: `4px solid ${isToday ? c.ember : urgent ? c.gilt : c.sage}`,
                   padding: "20px 24px", transition: "border-color 0.2s",
                 }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = urgent ? "rgba(196,112,90,0.35)" : c.borderHover}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = urgent ? "rgba(196,112,90,0.2)" : c.border}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = urgent ? "rgba(185,28,28,0.35)" : c.borderHover}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = urgent ? "rgba(185,28,28,0.2)" : c.border}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                     <div style={{ flex: 1 }}>
@@ -453,9 +453,9 @@ export default function CalendarPage() {
                         <span style={{
                           fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px",
                           borderRadius: 100,
-                          background: isToday ? "rgba(196,112,90,0.12)" : urgent ? "rgba(212,179,127,0.1)" : "rgba(122,158,126,0.08)",
+                          background: isToday ? "rgba(185,28,28,0.12)" : urgent ? "rgba(180,83,9,0.1)" : "rgba(21,128,61,0.08)",
                           color: isToday ? c.ember : urgent ? c.gilt : c.sage,
-                          border: `1px solid ${isToday ? "rgba(196,112,90,0.2)" : urgent ? "rgba(212,179,127,0.15)" : "rgba(122,158,126,0.15)"}`,
+                          border: `1px solid ${isToday ? "rgba(185,28,28,0.2)" : urgent ? "rgba(180,83,9,0.15)" : "rgba(21,128,61,0.15)"}`,
                         }}>
                           {isToday ? "TODAY" : days === 1 ? "TOMORROW" : `${days} days`}
                         </span>
@@ -473,7 +473,7 @@ export default function CalendarPage() {
                           <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                           {ev.company}
                         </span>
-                        <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "rgba(212,179,127,0.06)", color: c.gilt, border: `1px solid rgba(212,179,127,0.1)` }}>
+                        <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "rgba(180,83,9,0.06)", color: c.gilt, border: `1px solid rgba(180,83,9,0.1)` }}>
                           {ev.type}
                         </span>
                       </div>
@@ -505,11 +505,11 @@ export default function CalendarPage() {
                     </button>
                     <div style={{ position: "relative" }}>
                       <button onClick={() => handleExportICS(ev)}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; e.currentTarget.style.background = "rgba(245,242,237,0.07)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = c.chalk; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; e.currentTarget.style.background = "rgba(14,12,8,0.07)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = c.chalk; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = "rgba(14,12,8,0.04)"; }}
                         style={{
                         fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.chalk,
-                        background: "rgba(245,242,237,0.04)", border: `1px solid ${c.border}`, borderRadius: 10,
+                        background: "rgba(14,12,8,0.04)", border: `1px solid ${c.border}`, borderRadius: 10,
                         padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
                         transition: "color 160ms ease, border-color 160ms ease, background 160ms ease",
                       }}>
@@ -521,11 +521,11 @@ export default function CalendarPage() {
                       )}
                     </div>
                     <a href={generateGoogleCalendarURL(ev)} target="_blank" rel="noopener noreferrer"
-                      onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; e.currentTarget.style.background = "rgba(245,242,237,0.07)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = c.chalk; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; e.currentTarget.style.background = "rgba(14,12,8,0.07)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = c.chalk; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = "rgba(14,12,8,0.04)"; }}
                       style={{
                       fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.chalk,
-                      background: "rgba(245,242,237,0.04)", border: `1px solid ${c.border}`, borderRadius: 10,
+                      background: "rgba(14,12,8,0.04)", border: `1px solid ${c.border}`, borderRadius: 10,
                       padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
                       textDecoration: "none",
                       transition: "color 160ms ease, border-color 160ms ease, background 160ms ease",
@@ -543,11 +543,11 @@ export default function CalendarPage() {
                       transition: "color 160ms ease, border-color 160ms ease",
                     }}>Edit</button>
                     <button onClick={() => handleCancel(ev.id)}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(196,112,90,0.08)"; e.currentTarget.style.borderColor = "rgba(196,112,90,0.3)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(196,112,90,0.15)"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(185,28,28,0.08)"; e.currentTarget.style.borderColor = "rgba(185,28,28,0.3)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(185,28,28,0.15)"; }}
                       style={{
                       fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.ember,
-                      background: "transparent", border: `1px solid rgba(196,112,90,0.15)`, borderRadius: 10,
+                      background: "transparent", border: `1px solid rgba(185,28,28,0.15)`, borderRadius: 10,
                       padding: "7px 14px", cursor: "pointer",
                       transition: "background 160ms ease, border-color 160ms ease",
                     }}>Cancel</button>
