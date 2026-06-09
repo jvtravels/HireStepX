@@ -552,6 +552,21 @@ const FOCUS_STYLE = `
     .hsx-report-pair { grid-template-columns: 1fr !important; }
   }
 
+  /* Card body responsive — at narrow widths the 64px score rail
+     squeezes the coaching block into a 2-line headline + an
+     overflowing example. Stack the body vertically with the ring
+     beneath the coaching, swap the left rule for a top rule, and
+     centre the ring so it reads as a footer summary rather than a
+     truncated sidebar. */
+  @media (max-width: 640px) {
+    .hsx-card-body { flex-direction: column !important; gap: 14px !important; padding: 16px 16px !important; }
+    .hsx-card-rail {
+      padding-left: 0 !important; padding-top: 14px !important;
+      border-left: none !important; border-top: 1px solid ${tok.line} !important;
+      align-self: stretch !important; justify-content: center !important;
+    }
+  }
+
   /* Touch-pointer hit target normalisation. Triggers on coarse
      pointer (phones, tablets) at any width, plus the responsive
      breakpoint as a belt-and-braces. */
@@ -700,6 +715,16 @@ const FOCUS_STYLE = `
 /* ─── Shell ─── */
 function Shell({ active, onHelp, embedded, theme = "editorial", children }: { active: "Sessions" | "Detail" | "Report"; onHelp?: () => void; embedded?: boolean; theme?: SessionHistoryTheme; children: React.ReactNode }) {
   const themeVars = THEMES[theme];
+  /* Platform-correct modifier glyph for the help footer. The footer
+     copy used a literal `⌘` which reads wrong (and visually foreign)
+     to Linux/Windows users. SSR-safe: initial value defaults to `⌘`
+     so the markup matches on first paint; the effect rewrites it
+     post-mount on non-Mac platforms. */
+  const [modGlyph, setModGlyph] = React.useState("⌘");
+  React.useEffect(() => {
+    const ua = typeof navigator !== "undefined" ? `${navigator.platform} ${navigator.userAgent}` : "";
+    if (ua && !/Mac|iPhone|iPad|iPod/i.test(ua)) setModGlyph("Ctrl");
+  }, []);
   /* Embedded mode: the route already lives inside DashboardLayout,
      which provides the real app sidebar AND the main landmark. We
      strip the design's rail, skip-link, and <main> so we don't ship
@@ -788,7 +813,7 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
             color: tok.inkSoft, fontSize: 13, fontWeight: 500, cursor: "pointer",
             display: "flex", alignItems: "center", gap: 8,
           }}>
-            <span style={{ fontFamily: fonts.mono, color: tok.inkFaint, fontSize: 12 }}>⌘</span>
+            <span style={{ fontFamily: fonts.mono, color: tok.inkFaint, fontSize: 12 }}>{modGlyph}</span>
             Shortcuts and bands
           </button>
           <div style={{ padding: "0 12px", fontSize: 11, color: tok.inkFaint, fontFamily: fonts.mono, lineHeight: 1.6 }}>
@@ -824,18 +849,15 @@ const bandBg = (score: number): string => {
    label stacked inside, trend delta (or FIRST) beneath. Self-contained so
    the card body can drop it into a fixed right rail. Draft renders an
    em-dash with no arc — the reading isn't in yet. */
-/* Compact band label for the in-ring stack. "Below target" is 12 chars
-   and clips at 8px inside a 64px ring; "Below" reads cleanly and keeps
-   parity with the other one-word band names. The full label is still
-   used in the aria-label and elsewhere on the page. */
-const RING_BAND_LABEL: Record<Band, string> = {
-  strong: "Strong", solid: "Solid", mixed: "Mixed", below: "Below",
-};
-
+/* Score ring — 64px. The arc colour carries the band (it was redundant
+   with the in-ring word AND the score numeral). Score on top, delta
+   chip beneath it INSIDE the ring; the previous below-ring footnote
+   was the only signal-carrying pixel and was whisper-sized. First-of-
+   type sessions get a quiet "FIRST" label below the ring because
+   there's no delta to render. */
 function ScoreRing({ score, delta, isFirst, draft }: { score: number; delta: number; isFirst: boolean; draft?: boolean }) {
   const color = bandColor(score);
-  const label = RING_BAND_LABEL[bandOf(score)];
-  const ariaLabel = BAND_LABEL[bandOf(score)];
+  const ariaBand = BAND_LABEL[bandOf(score)];
   const r = 27;
   const circ = 2 * Math.PI * r;
   const fill = (Math.max(0, Math.min(100, score)) / 100) * circ;
@@ -843,16 +865,22 @@ function ScoreRing({ score, delta, isFirst, draft }: { score: number; delta: num
   const isFlat = delta === 0;
   const deltaColor = isUp ? tok.success : isFlat ? tok.inkFaint : tok.error;
   const deltaArrow = isUp ? "↑" : isFlat ? "→" : "↓";
-  const deltaAria = isFlat ? "no change from previous"
+  const deltaAria = isFirst
+    ? "first session of its type"
+    : isFlat
+    ? "no change from previous"
     : isUp ? `up ${delta} from previous` : `down ${Math.abs(delta)} from previous`;
+  const ariaLabel = draft
+    ? "draft, no score yet"
+    : `score ${score} out of 100, ${ariaBand}, ${deltaAria}`;
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
       <div style={{ position: "relative", width: 64, height: 64 }}>
         <svg
           width="64" height="64" viewBox="0 0 64 64"
           style={{ transform: "rotate(-90deg)", position: "absolute" }}
           role="img"
-          aria-label={draft ? "draft, no score yet" : `score ${score} out of 100, ${ariaLabel}`}>
+          aria-label={ariaLabel}>
           <circle cx="32" cy="32" r={r} fill="none" stroke={tok.line} strokeWidth="3" />
           {!draft ? (
             <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${fill} ${circ}`} />
@@ -863,19 +891,22 @@ function ScoreRing({ score, delta, isFirst, draft }: { score: number; delta: num
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           borderRadius: "50%", background: draft ? "transparent" : bandBg(score),
         }}>
-          <span style={{ fontFamily: fonts.mono, fontSize: 20, fontWeight: 700, color: draft ? tok.inkFaint : tok.coal, lineHeight: 1 }}>{draft ? "—" : score}</span>
-          {!draft ? (
-            <span style={{ fontFamily: fonts.ui, fontSize: 8, fontWeight: 700, color, letterSpacing: "0.04em", lineHeight: 1, marginTop: 1 }}>{label}</span>
+          <span style={{ fontFamily: fonts.mono, fontSize: 19, fontWeight: 700, color: draft ? tok.inkFaint : tok.coal, lineHeight: 1 }}>
+            {draft ? "—" : score}
+          </span>
+          {!draft && !isFirst && !isFlat ? (
+            <span aria-hidden style={{
+              fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, color: deltaColor,
+              lineHeight: 1, marginTop: 3, display: "flex", alignItems: "center", gap: 1,
+            }}>
+              {isUp ? "+" : ""}{delta}<span style={{ fontSize: 8 }}>{deltaArrow}</span>
+            </span>
           ) : null}
         </div>
       </div>
       {draft ? null : isFirst ? (
-        <span style={{ fontFamily: fonts.mono, fontSize: 10, fontWeight: 600, color: tok.inkFaint, letterSpacing: "0.08em" }}>FIRST</span>
-      ) : (
-        <span aria-label={deltaAria} style={{ fontFamily: fonts.mono, fontSize: 11, fontWeight: 600, color: deltaColor, display: "flex", alignItems: "center", gap: 2 }}>
-          {isFlat ? "" : isUp ? "+" : ""}{delta} {deltaArrow}
-        </span>
-      )}
+        <span style={{ fontFamily: fonts.mono, fontSize: 9, fontWeight: 600, color: tok.inkFaint, letterSpacing: "0.08em", marginTop: 6 }}>FIRST</span>
+      ) : null}
     </div>
   );
 }
@@ -937,42 +968,60 @@ function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onO
         overflow: "hidden",
         opacity: s.draft ? 0.82 : 1,
       }}>
-      {/* Eyebrow */}
+      {/* Eyebrow — all metadata at one weight (inkSoft). The type-hue
+          dot already carries the type emphasis; the previous inkSoft/
+          inkFaint split read as accidental. Thin vertical bars replace
+          middle dots so the rhythm is editorial, not list-y. */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
         padding: "10px 18px", borderBottom: `1px solid ${tok.line}`, background: tok.creamSoft,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, overflow: "hidden" }}>
           <span aria-hidden style={{ width: 7, height: 7, borderRadius: "50%", background: hue.ink, flexShrink: 0 }} />
           {eyebrowParts.map((p, i) => (
             <React.Fragment key={p}>
-              {i > 0 && <span aria-hidden style={{ color: tok.inkFaint, fontSize: 10 }}>·</span>}
+              {i > 0 && (
+                <span aria-hidden style={{
+                  width: 1, height: 9, background: tok.lineStrong, flexShrink: 0,
+                }} />
+              )}
               <span style={{
                 fontFamily: fonts.ui, fontSize: 10, fontWeight: 600,
                 letterSpacing: "0.08em", textTransform: "uppercase",
-                color: i === 0 ? tok.inkSoft : tok.inkFaint, whiteSpace: "nowrap",
+                color: tok.inkSoft, whiteSpace: "nowrap",
               }}>{p}</span>
             </React.Fragment>
           ))}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           {badge && !s.draft ? (
+            /* Copper is reserved for the gap/coaching surface (see Work-
+               on-next block). PR and BEST get indigo on indigo100 so
+               achievement state stops competing with the warning hue. */
             <span style={{
               fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
-              color: badge === "PR" ? tok.indigo : tok.copper, background: tok.copper100,
+              color: tok.indigo, background: "rgba(49,46,129,0.10)",
               padding: "2px 7px", borderRadius: radii.pill, textTransform: "uppercase",
             }}>{badge}</span>
           ) : null}
           {s.draft ? (
-            <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 13, color: tok.copper }}>Draft</span>
+            /* Drafts are a state, not a warning — render in inkSoft with
+               a leading dot so it's visually neutral, not copper-loud. */
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: fonts.ui, fontSize: 12, fontWeight: 500, color: tok.inkSoft }}>
+              <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: tok.inkFaint }} />
+              Draft
+            </span>
           ) : (
             <span style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkFaint, whiteSpace: "nowrap" }}>{dateText}</span>
           )}
         </div>
       </div>
 
-      {/* Body */}
-      <div style={{ display: "flex", alignItems: "stretch", gap: 22, padding: "18px 20px" }}>
+      {/* Body — flex row at ≥640px (coaching | rail | ring), column
+          at <640px so the score rail stops crushing the coaching
+          block on phones. The borderLeft → borderTop swap is handled
+          by .hsx-card-rail under the same media query. */}
+      <div className="hsx-card-body" style={{ display: "flex", alignItems: "stretch", gap: 22, padding: "18px 20px" }}>
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Identity */}
           <div style={{
@@ -1017,12 +1066,25 @@ function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onO
                       <div style={{ fontFamily: fonts.ui, fontSize: 12.5, color: tok.inkSoft, lineHeight: 1.45, marginTop: 3 }}>{gapMeaning}</div>
                     ) : null}
                     {gapExample ? (
+                      /* Editorial italic for the coached rewrite — the
+                         actual punchline of the card. Previously a
+                         small ui-font chip on a white pill that read as
+                         footnote; the rewrite now uses the HireStepX
+                         brand voice (serif italic, leading curly quote)
+                         and lives on the same copperSoft wash as the
+                         block, so it feels like quoted speech, not UI. */
                       <div style={{
-                        display: "inline-block", marginTop: 8,
-                        fontFamily: fonts.ui, fontSize: 11.5, fontWeight: 500, color: tok.copper,
-                        background: tok.white, border: "1px solid rgba(180,83,9,0.25)",
-                        borderRadius: radii.chip, padding: "4px 9px", lineHeight: 1.35,
-                      }}>{gapExample}</div>
+                        fontFamily: fonts.serif, fontStyle: "italic",
+                        fontSize: 15, color: tok.copper, lineHeight: 1.35,
+                        marginTop: 8, paddingLeft: 14, position: "relative",
+                      }}>
+                        <span aria-hidden style={{
+                          position: "absolute", left: 0, top: -2,
+                          fontFamily: fonts.serif, fontSize: 22, lineHeight: 1,
+                          color: "rgba(180,83,9,0.45)",
+                        }}>“</span>
+                        {gapExample}
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -1031,8 +1093,10 @@ function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onO
           )}
         </div>
 
-        {/* Score rail */}
-        <div style={{
+        {/* Score rail — borderLeft on wide; .hsx-card-rail swaps it
+            for borderTop under 640px and lets the ring sit beneath
+            the coaching block instead of squeezing it sideways. */}
+        <div className="hsx-card-rail" style={{
           flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
           paddingLeft: 22, borderLeft: `1px solid ${tok.line}`,
         }}>
@@ -1040,13 +1104,20 @@ function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onO
         </div>
       </div>
 
-      {/* Action bar — persistent, both actions discoverable. */}
+      {/* Action bar — the whole card is the link; the label is a quiet
+          caret marker, NOT a styled button (it was previously rendered
+          as indigo / weight 700 which read as the CTA even though it
+          had no click target of its own). Re-run is the only real
+          interactive element on the bar. */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "12px 20px 14px", borderTop: `1px solid ${tok.line}`,
       }}>
-        <span style={{ fontFamily: fonts.ui, fontSize: 13, fontWeight: 700, color: tok.indigo, display: "flex", alignItems: "center", gap: 5 }}>
-          {s.draft ? "Continue session" : "View full report"} <span aria-hidden style={{ fontSize: 12 }}>→</span>
+        <span aria-hidden style={{
+          fontFamily: fonts.ui, fontSize: 12, fontWeight: 500, color: tok.inkSoft,
+          display: "flex", alignItems: "center", gap: 5,
+        }}>
+          {s.draft ? "Continue session" : "View full report"} <span style={{ fontSize: 11 }}>→</span>
         </span>
         {onRerun && !s.draft ? (
           <button
@@ -1054,7 +1125,11 @@ function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onO
             tabIndex={-1}
             onClick={e => { e.stopPropagation(); onRerun(s); }}
             onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
-            aria-label={`Practice ${s.type} again`}
+            /* Include role + company so screen-reader users hear which
+               of multiple same-type rows they're acting on (a user
+               with 3 Behavioral rounds otherwise hears three identical
+               "Practice Behavioral again" buttons). */
+            aria-label={`Practice ${s.type}${s.role ? ` ${s.role}` : ""}${s.company ? ` at ${s.company}` : ""} again`}
             style={{
               fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.inkSoft,
               background: "transparent", border: `1px solid ${hovered ? tok.lineStrong : tok.line}`,
@@ -1514,7 +1589,7 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
             <span style={{ height: 1, background: tok.line, flex: 1 }} />
             <span style={{ fontSize: 11, color: tok.inkFaint, fontFamily: fonts.mono }}>{g.items.length}</span>
           </div>
-          <div role="list" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div role="list" aria-label={`${g.label} sessions`} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {g.items.map(s => {
               /* idxInFiltered keys this card to the keyboard cursor: hovering
                  sets selectedIdx so j/k navigation and hover share one

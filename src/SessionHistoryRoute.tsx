@@ -80,25 +80,112 @@ export default function SessionHistoryRoute() {
   const { recentSessions, sessionsLoading } = useDashboardSessions();
 
   if (sessionsLoading) {
-    /* Render a calm placeholder during fetch rather than fall through
-       to mock data. Matches the design's cream surface so the swap
-       doesn't flash. */
+    /* Skeleton cards that mirror the SessionCard geometry (eyebrow +
+       identity + coaching block + ring rail + action bar). Static, no
+       shimmer — the card's own borders carry the structural promise
+       so the swap into real data reads as continuity, not state-flip.
+       Three rows lands beneath the H1 + KPI strip without scrolling
+       on a 1366×768 viewport, which is the most common breakpoint. */
+    const ui =
+      "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+    const line = "#EBE5D2";
+    const lineFaint = "#F2EEDE";
+    const skeleton = (
+      <div
+        role="status"
+        aria-label="Loading sessions"
+        style={{
+          border: `1px solid ${line}`,
+          borderRadius: 14,
+          background: "#FFFFFF",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "10px 18px",
+            borderBottom: `1px solid ${line}`,
+            background: "#F5EFDC",
+            height: 36,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <span style={{ width: 7, height: 7, borderRadius: 999, background: lineFaint }} />
+          <span style={{ width: 90, height: 8, borderRadius: 4, background: lineFaint }} />
+          <span style={{ width: 60, height: 8, borderRadius: 4, background: lineFaint }} />
+        </div>
+        <div style={{ display: "flex", padding: "18px 20px", gap: 22, alignItems: "stretch" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+            <span style={{ width: "60%", height: 16, borderRadius: 4, background: lineFaint }} />
+            <span style={{ width: "40%", height: 10, borderRadius: 4, background: lineFaint }} />
+            <div
+              style={{
+                background: "rgba(180,83,9,0.06)",
+                borderRadius: 10,
+                padding: 14,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <span style={{ width: "70%", height: 12, borderRadius: 4, background: lineFaint }} />
+              <span style={{ width: "85%", height: 8, borderRadius: 4, background: lineFaint }} />
+            </div>
+          </div>
+          <div
+            style={{
+              flexShrink: 0,
+              borderLeft: `1px solid ${line}`,
+              paddingLeft: 22,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                border: `3px solid ${lineFaint}`,
+              }}
+            />
+          </div>
+        </div>
+        <div
+          style={{
+            borderTop: `1px solid ${line}`,
+            padding: "12px 20px 14px",
+            height: 38,
+          }}
+        />
+      </div>
+    );
     return (
       <div
         style={{
           minHeight: "100vh",
-          /* HireStepX cream + coal + Inter — matches DashboardLayout
-             so the swap into the design doesn't flash. */
           background: "#FAF7F0",
-          color: "#6E6759",
-          display: "grid",
-          placeItems: "center",
-          fontFamily:
-            "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-          fontSize: 13,
+          fontFamily: ui,
+          padding: "40px 56px",
         }}
       >
-        Loading sessions…
+        <div style={{ maxWidth: 1200, display: "flex", flexDirection: "column", gap: 10 }}>
+          <span
+            style={{
+              width: 240,
+              height: 36,
+              borderRadius: 6,
+              background: lineFaint,
+              marginBottom: 18,
+            }}
+            aria-hidden
+          />
+          {[0, 1, 2].map(i => (
+            <div key={i}>{skeleton}</div>
+          ))}
+        </div>
       </div>
     );
   }
