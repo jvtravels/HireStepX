@@ -837,120 +837,86 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
 const FILTER_TYPES_DEFAULT = ["All", "Behavioral", "System Design", "Tech Screen", "Hiring Mgr", "Salary Neg."] as const;
 type SortKey = "recent" | "score" | "score-asc" | "duration";
 
-/* Faint inner tint for the score ring. rgba literals (not CSS vars) so the
-   low-alpha fill composites correctly; thresholds mirror bandColor. */
-const bandBg = (score: number): string => {
-  const b = bandOf(score);
-  return b === "strong" || b === "solid" ? "rgba(21,128,61,0.07)"
-       : b === "mixed" ? "rgba(180,83,9,0.07)"
-       : "rgba(185,28,28,0.07)";
-};
+/* V2.1 session card — verdict-first, adaptive hero, quote-optional.
+ *
+ * Hierarchy:
+ *  1. Peek strip  — date · identity sub-line on the left; score + band +
+ *                   delta on the right. One line, quiet typography.
+ *  2. Identity    — role at company in serif, type/difficulty as a sub-line.
+ *  3. Adaptive hero:
+ *        strong  → ✓ win in big indigo serif; gap demoted to one line below
+ *        solid   → ✓ win first at body weight; gap second at body weight
+ *        mixed   → → gap first at body weight; win second
+ *        below   → → gap in big copper serif; win demoted
+ *     Matches the user's mood: celebrate strong sessions, fix weak ones,
+ *     don't make a list-of-failures wall.
+ *  4. Footer     — pattern badge (left) + "Open report →" (right).
+ *     "Open report" replaces "View full report" + "Drill this gap" — the
+ *     card body is already the click target, and drill mode doesn't exist
+ *     yet (no lying CTAs).
+ *
+ * Quote-optional: when the LLM later supplies `coaching.strength.quote`
+ * + `coaching.strength.lead` (mvp-9 schema bump, not landed yet), the
+ * strength block expands to a transcript pull-quote. Until then the
+ * humanized headline is enough and the block degrades cleanly. */
 
-/* Score ring — 64px. Band-coloured arc over a cream track, score + band
-   label stacked inside, trend delta (or FIRST) beneath. Self-contained so
-   the card body can drop it into a fixed right rail. Draft renders an
-   em-dash with no arc — the reading isn't in yet. */
-/* Score ring — 64px. The arc colour carries the band (it was redundant
-   with the in-ring word AND the score numeral). Score on top, delta
-   chip beneath it INSIDE the ring; the previous below-ring footnote
-   was the only signal-carrying pixel and was whisper-sized. First-of-
-   type sessions get a quiet "FIRST" label below the ring because
-   there's no delta to render. */
-function ScoreRing({ score, delta, isFirst, draft }: { score: number; delta: number; isFirst: boolean; draft?: boolean }) {
-  const color = bandColor(score);
-  const ariaBand = BAND_LABEL[bandOf(score)];
-  const r = 27;
-  const circ = 2 * Math.PI * r;
-  const fill = (Math.max(0, Math.min(100, score)) / 100) * circ;
-  const isUp = delta > 0;
-  const isFlat = delta === 0;
-  const deltaColor = isUp ? tok.success : isFlat ? tok.inkFaint : tok.error;
-  const deltaArrow = isUp ? "↑" : isFlat ? "→" : "↓";
-  const deltaAria = isFirst
-    ? "first session of its type"
-    : isFlat
-    ? "no change from previous"
-    : isUp ? `up ${delta} from previous` : `down ${Math.abs(delta)} from previous`;
-  const ariaLabel = draft
-    ? "draft, no score yet"
-    : `score ${score} out of 100, ${ariaBand}, ${deltaAria}`;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-      <div style={{ position: "relative", width: 64, height: 64 }}>
-        <svg
-          width="64" height="64" viewBox="0 0 64 64"
-          style={{ transform: "rotate(-90deg)", position: "absolute" }}
-          role="img"
-          aria-label={ariaLabel}>
-          <circle cx="32" cy="32" r={r} fill="none" stroke={tok.line} strokeWidth="3" />
-          {!draft ? (
-            <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${fill} ${circ}`} />
-          ) : null}
-        </svg>
-        <div style={{
-          position: "absolute", inset: 0,
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          borderRadius: "50%", background: draft ? "transparent" : bandBg(score),
-        }}>
-          <span style={{ fontFamily: fonts.mono, fontSize: 19, fontWeight: 700, color: draft ? tok.inkFaint : tok.coal, lineHeight: 1 }}>
-            {draft ? "—" : score}
-          </span>
-          {!draft && !isFirst && !isFlat ? (
-            <span aria-hidden style={{
-              fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, color: deltaColor,
-              lineHeight: 1, marginTop: 3, display: "flex", alignItems: "center", gap: 1,
-            }}>
-              {isUp ? "+" : ""}{delta}<span style={{ fontSize: 8 }}>{deltaArrow}</span>
-            </span>
-          ) : null}
-        </div>
-      </div>
-      {draft ? null : isFirst ? (
-        <span style={{ fontFamily: fonts.mono, fontSize: 9, fontWeight: 600, color: tok.inkFaint, letterSpacing: "0.08em", marginTop: 6 }}>FIRST</span>
-      ) : null}
-    </div>
-  );
+/* Map the 4-band system (strong/solid/mixed/below) to glyph + label.
+   Strong + solid carry up-arrows (win territory); mixed + below carry
+   down-arrows (fix territory). Color comes from existing tok.* vars so
+   the signal stays in lockstep with the rest of the app. */
+type BandMeta = { glyph: string; label: string; color: string };
+function bandMeta(b: Band): BandMeta {
+  if (b === "strong") return { glyph: "↑", label: BAND_LABEL[b], color: tok.success };
+  if (b === "solid")  return { glyph: "↗", label: BAND_LABEL[b], color: tok.success };
+  if (b === "mixed")  return { glyph: "→", label: BAND_LABEL[b], color: tok.copper };
+  return                     { glyph: "↓", label: BAND_LABEL[b], color: tok.copper };
 }
 
-/* Standalone session card. Three bands: eyebrow (catalog metadata +
-   timestamp/badge), body (identity + did-well + work-on, with the score
-   ring railed off right), and a persistent action bar. Replaces the
-   timeline-row band; the date moved into the eyebrow so the card stands
-   on its own without a spine. Coaching meaning + example render ONLY when
-   the evaluator supplied them (mvp-8+) — pre-mvp-8 rows show the gap
-   headline alone, never invented copy. Holds its own hover state so the
-   card can lift on hover the way the mock does. */
-function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onOpen, onRerun, onMouseEnter }: {
+function SessionCard({ s, isSelected, isDue, badge, dateText, patternCount, onOpen, onRerun, onMouseEnter }: {
   s: Session;
   isSelected: boolean;
   isDue: boolean;
   badge: "PR" | "BEST" | null;
-  isFirstOfType: boolean;
+  /* isFirstOfType used to feed the score ring's "FIRST" tag; the V2.1
+     card no longer renders a ring, so the prop is dropped from the
+     destructure but kept on the prop type for compat with the parent.
+     We pass through `_isFirstOfType` deliberately unused. */
+  isFirstOfType?: boolean;
   dateText: string;
+  /* Cross-session pattern signal — how many sessions in a row have
+     carried this same gap, including this one. Rendered as
+     "3rd session with this gap" in the footer when ≥2. Optional so
+     consumers that don't compute it (canvas mode) drop the badge cleanly. */
+  patternCount?: number;
   onOpen: (id: string) => void;
   onRerun?: (session: Session) => void;
   onMouseEnter: () => void;
 }) {
   const [hovered, setHovered] = React.useState(false);
-  const hue = typeHue(s.type);
-  const eyebrowParts = [
-    s.type,
-    s.difficulty,
-    s.questions ? `${s.questions} Qs` : null,
-    s.duration,
-  ].filter(Boolean) as string[];
+  const band = bandOf(s.score);
+  const meta = bandMeta(band);
 
-  /* Coaching headline takes precedence; the legacy one-liner is the
-     fallback. meaning + example exist only on mvp-8+ rows.
-     `strengthCopy` / `gapCopy` are defensive — if the LLM ever returns
-     a raw competency key in `headline` (or a legacy row leaks through
-     the data adapter), the card still shows a readable phrase instead
-     of "composure" / "leverageUse". Phrases already containing spaces
-     pass through untouched. */
-  const strengthHeadline = strengthCopy(s.coaching?.strength.headline ?? s.topStrength);
+  /* Win-first when the session is at least "solid" (≥75). Below + mixed
+     lead with the gap because the user needs direction more than
+     celebration at those scores. */
+  const winFirst = band === "strong" || band === "solid";
+  /* "hero" emphasis = big serif headline + supporting body copy.
+     "secondary" = one-line body weight, no example/quote. */
+  const winEmphasis: "hero" | "secondary" = band === "strong" ? "hero" : "secondary";
+  const gapEmphasis: "hero" | "secondary" = band === "below" || band === "mixed" ? "hero" : "secondary";
+
+  /* Coaching takes precedence; the legacy one-liner is the fallback.
+     strengthCopy/gapCopy are defensive — if a raw competency key ever
+     leaks through, it becomes a readable phrase instead of "composure". */
+  const winHeadline = strengthCopy(s.coaching?.strength.headline ?? s.topStrength);
   const gapHeadline = gapCopy(s.coaching?.gap.headline ?? s.topGap);
-  const gapMeaning = s.coaching?.gap.meaning;
   const gapExample = s.coaching?.gap.example;
+
+  /* Delta direction. Positive uses success green to reinforce the win;
+     negative uses copper. Zero is suppressed entirely (no signal). */
+  const delta = s.delta;
+  const hasDelta = typeof delta === "number" && delta !== 0;
+  const deltaUp = (delta ?? 0) >= 0;
 
   return (
     <div
@@ -974,36 +940,21 @@ function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onO
         overflow: "hidden",
         opacity: s.draft ? 0.82 : 1,
       }}>
-      {/* Eyebrow — all metadata at one weight (inkSoft). The type-hue
-          dot already carries the type emphasis; the previous inkSoft/
-          inkFaint split read as accidental. Thin vertical bars replace
-          middle dots so the rhythm is editorial, not list-y. */}
+
+      {/* Peek strip — date on the left, score+band+delta on the right.
+          Type / difficulty / Q count are no longer crammed here; they
+          live on the identity sub-line below. PR/BEST badge and Draft
+          state still ride here so achievement signals stay at the top. */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-        padding: "10px 18px", borderBottom: `1px solid ${tok.line}`, background: tok.creamSoft,
+        padding: "11px 20px", borderBottom: `1px solid ${tok.line}`, background: tok.creamSoft,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, overflow: "hidden" }}>
-          <span aria-hidden style={{ width: 7, height: 7, borderRadius: "50%", background: hue.ink, flexShrink: 0 }} />
-          {eyebrowParts.map((p, i) => (
-            <React.Fragment key={p}>
-              {i > 0 && (
-                <span aria-hidden style={{
-                  width: 1, height: 9, background: tok.lineStrong, flexShrink: 0,
-                }} />
-              )}
-              <span style={{
-                fontFamily: fonts.ui, fontSize: 10, fontWeight: 600,
-                letterSpacing: "0.08em", textTransform: "uppercase",
-                color: tok.inkSoft, whiteSpace: "nowrap",
-              }}>{p}</span>
-            </React.Fragment>
-          ))}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <span style={{
+            fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.inkSoft,
+            whiteSpace: "nowrap", letterSpacing: 0.2,
+          }}>{dateText}</span>
           {badge && !s.draft ? (
-            /* Copper is reserved for the gap/coaching surface (see Work-
-               on-next block). PR and BEST get indigo on indigo100 so
-               achievement state stops competing with the warning hue. */
             <span style={{
               fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
               color: tok.indigo, background: "rgba(49,46,129,0.10)",
@@ -1011,143 +962,233 @@ function SessionCard({ s, isSelected, isDue, badge, isFirstOfType, dateText, onO
             }}>{badge}</span>
           ) : null}
           {s.draft ? (
-            /* Drafts are a state, not a warning — render in inkSoft with
-               a leading dot so it's visually neutral, not copper-loud. */
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: fonts.ui, fontSize: 12, fontWeight: 500, color: tok.inkSoft }}>
               <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: tok.inkFaint }} />
               Draft
             </span>
-          ) : (
-            <span style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkFaint, whiteSpace: "nowrap" }}>{dateText}</span>
-          )}
+          ) : null}
+        </div>
+
+        {s.draft ? null : (
+          <div
+            role="status"
+            aria-label={`Score ${s.score}, ${meta.label}${hasDelta ? `, ${deltaUp ? "up" : "down"} ${Math.abs(delta!)}` : ""}`}
+            style={{ display: "inline-flex", alignItems: "baseline", gap: 12, fontVariantNumeric: "tabular-nums" }}
+          >
+            <span style={{ fontFamily: fonts.ui, fontSize: 18, fontWeight: 700, color: tok.coal }}>
+              {s.score}
+            </span>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              fontFamily: fonts.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+              color: meta.color, textTransform: "uppercase",
+            }}>
+              <span aria-hidden style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: meta.color, display: "inline-block",
+              }} />
+              <span aria-hidden style={{ marginRight: 1 }}>{meta.glyph}</span>
+              {meta.label}
+            </span>
+            {hasDelta ? (
+              <span style={{
+                fontFamily: fonts.mono, fontSize: 11, fontWeight: 700,
+                color: deltaUp ? tok.success : tok.copper,
+              }}>
+                {deltaUp ? "▲" : "▼"} {deltaUp ? "+" : ""}{delta}
+              </span>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      {/* Identity — role at company in serif, type/difficulty as a
+          quiet sub-line beneath. Replaces the eyebrow's bar-separated
+          metadata token strip; gathering type+difficulty here cuts noise. */}
+      <div style={{ padding: "20px 22px 8px" }}>
+        <div style={{
+          fontFamily: fonts.serif, fontSize: 22, color: tok.coal,
+          lineHeight: 1.2, letterSpacing: -0.2,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontStyle: "italic" }}>at</span> {s.company}</>) : null}
+        </div>
+        <div style={{
+          fontFamily: fonts.ui, fontSize: 11, color: tok.inkSoft,
+          letterSpacing: "0.08em", textTransform: "uppercase",
+          marginTop: 4, display: "flex", alignItems: "center", gap: 8,
+        }}>
+          {s.type}
+          {s.difficulty ? (<><span aria-hidden style={{ opacity: 0.5 }}>·</span>{s.difficulty}</>) : null}
+          {s.questions ? (<><span aria-hidden style={{ opacity: 0.5 }}>·</span>{s.questions} Qs</>) : null}
+          {s.duration ? (<><span aria-hidden style={{ opacity: 0.5 }}>·</span>{s.duration}</>) : null}
         </div>
       </div>
 
-      {/* Body — flex row at ≥640px (coaching | rail | ring), column
-          at <640px so the score rail stops crushing the coaching
-          block on phones. The borderLeft → borderTop swap is handled
-          by .hsx-card-rail under the same media query. */}
-      <div className="hsx-card-body" style={{ display: "flex", alignItems: "stretch", gap: 22, padding: "18px 20px" }}>
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Identity */}
-          <div style={{
-            fontFamily: fonts.ui, fontSize: 17, fontWeight: 600, color: tok.coal, lineHeight: 1.25,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontWeight: 400 }}>at</span> {s.company}</>) : null}
+      {/* Body — adaptive hero. Strong leads with win, below leads with
+          gap, mixed/solid balance. Draft skips the body entirely. */}
+      {s.draft ? (
+        <div style={{ padding: "8px 22px 18px" }}>
+          <div style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: tok.inkSoft }}>
+            Saved mid-round, ready to continue.
           </div>
-
-          {s.draft ? (
-            <div style={{ fontFamily: fonts.ui, fontSize: 13, color: tok.inkSoft, fontStyle: "italic" }}>
-              Saved mid-round, ready to continue.
-            </div>
+        </div>
+      ) : (
+        <div style={{ padding: "12px 22px 22px", display: "flex", flexDirection: "column", gap: 18 }}>
+          {winFirst ? (
+            <>
+              {winHeadline ? <StrengthBlock emphasis={winEmphasis} headline={winHeadline} /> : null}
+              {gapHeadline ? <GapBlock emphasis={gapEmphasis} headline={gapHeadline} example={gapExample} isDue={isDue} /> : null}
+            </>
           ) : (
             <>
-              {/* Did well — one quiet line. */}
-              {strengthHeadline ? (
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
-                  <span aria-hidden style={{ color: tok.success, fontSize: 12, flexShrink: 0 }}>✓</span>
-                  <span style={{ fontFamily: fonts.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: tok.success, flexShrink: 0 }}>Did well</span>
-                  <span style={{
-                    fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, color: tok.coal, lineHeight: 1.35,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0,
-                  }}>{strengthHeadline}</span>
-                </div>
-              ) : null}
-
-              {/* Work on next — the dominant element. */}
-              {gapHeadline ? (
-                <div style={{ display: "flex", gap: 10, background: tok.copperSoft, borderRadius: radii.btn, padding: "13px 15px" }}>
-                  <span aria-hidden style={{
-                    width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
-                    background: "rgba(180,83,9,0.16)", display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, color: tok.copper, marginTop: 1, fontWeight: 700,
-                  }}>↑</span>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontFamily: fonts.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: tok.copper, marginBottom: 3 }}>
-                      {isDue ? "Due for review" : "Work on next"}
-                    </div>
-                    <div style={{ fontFamily: fonts.ui, fontSize: 15, fontWeight: 700, color: tok.coal, lineHeight: 1.3 }}>{gapHeadline}</div>
-                    {gapMeaning ? (
-                      <div style={{ fontFamily: fonts.ui, fontSize: 12.5, color: tok.inkSoft, lineHeight: 1.45, marginTop: 3 }}>{gapMeaning}</div>
-                    ) : null}
-                    {gapExample ? (
-                      /* Editorial italic for the coached rewrite — the
-                         actual punchline of the card. Previously a
-                         small ui-font chip on a white pill that read as
-                         footnote; the rewrite now uses the HireStepX
-                         brand voice (serif italic, leading curly quote)
-                         and lives on the same copperSoft wash as the
-                         block, so it feels like quoted speech, not UI. */
-                      <div style={{
-                        fontFamily: fonts.serif, fontStyle: "italic",
-                        fontSize: 15, color: tok.copper, lineHeight: 1.35,
-                        marginTop: 8, paddingLeft: 14, position: "relative",
-                      }}>
-                        <span aria-hidden style={{
-                          position: "absolute", left: 0, top: -2,
-                          fontFamily: fonts.serif, fontSize: 22, lineHeight: 1,
-                          color: "rgba(180,83,9,0.45)",
-                        }}>“</span>
-                        {gapExample}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
+              {gapHeadline ? <GapBlock emphasis={gapEmphasis} headline={gapHeadline} example={gapExample} isDue={isDue} /> : null}
+              {winHeadline ? <StrengthBlock emphasis={winEmphasis} headline={winHeadline} /> : null}
             </>
           )}
         </div>
+      )}
 
-        {/* Score rail — borderLeft on wide; .hsx-card-rail swaps it
-            for borderTop under 640px and lets the ring sit beneath
-            the coaching block instead of squeezing it sideways. */}
-        <div className="hsx-card-rail" style={{
-          flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-          paddingLeft: 22, borderLeft: `1px solid ${tok.line}`,
-        }}>
-          <ScoreRing score={s.score} delta={s.delta} isFirst={isFirstOfType} draft={s.draft} />
-        </div>
-      </div>
-
-      {/* Action bar — the whole card is the link; the label is a quiet
-          caret marker, NOT a styled button (it was previously rendered
-          as indigo / weight 700 which read as the CTA even though it
-          had no click target of its own). Re-run is the only real
-          interactive element on the bar. */}
+      {/* Footer — pattern badge (left, conditional) + truthful CTA
+          (right). Re-run lives on the right when present; "Open report"
+          is implicit (card body is the click target) but the caret is
+          kept as a visual affordance. */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 20px 14px", borderTop: `1px solid ${tok.line}`,
+        padding: "13px 22px 15px", borderTop: `1px solid ${tok.line}`, gap: 12,
       }}>
-        <span aria-hidden style={{
-          fontFamily: fonts.ui, fontSize: 12, fontWeight: 500, color: tok.inkSoft,
-          display: "flex", alignItems: "center", gap: 5,
+        <span style={{
+          fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.copper,
+          letterSpacing: 0.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
-          {s.draft ? "Continue session" : "View full report"} <span style={{ fontSize: 11 }}>→</span>
+          {!s.draft && patternCount && patternCount >= 2
+            ? `${ordinal(patternCount)} session with this gap`
+            : ""}
         </span>
-        {onRerun && !s.draft ? (
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={e => { e.stopPropagation(); onRerun(s); }}
-            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
-            /* Include role + company so screen-reader users hear which
-               of multiple same-type rows they're acting on (a user
-               with 3 Behavioral rounds otherwise hears three identical
-               "Practice Behavioral again" buttons). */
-            aria-label={`Practice ${s.type}${s.role ? ` ${s.role}` : ""}${s.company ? ` at ${s.company}` : ""} again`}
-            style={{
-              fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.inkSoft,
-              background: "transparent", border: `1px solid ${hovered ? tok.lineStrong : tok.line}`,
-              borderRadius: radii.btn, padding: "5px 12px", cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 5, transition: "border-color 0.15s ease",
-            }}>
-            <span aria-hidden style={{ fontSize: 11 }}>↻</span> Re-run
-          </button>
-        ) : null}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          {onRerun && !s.draft ? (
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={e => { e.stopPropagation(); onRerun(s); }}
+              onKeyDown={e => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
+              aria-label={`Practice ${s.type}${s.role ? ` ${s.role}` : ""}${s.company ? ` at ${s.company}` : ""} again`}
+              style={{
+                fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.inkSoft,
+                background: "transparent", border: `1px solid ${hovered ? tok.lineStrong : tok.line}`,
+                borderRadius: radii.btn, padding: "5px 12px", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 5, transition: "border-color 0.15s ease",
+              }}>
+              <span aria-hidden style={{ fontSize: 11 }}>↻</span> Re-run
+            </button>
+          ) : null}
+          <span aria-hidden style={{
+            fontFamily: fonts.ui, fontSize: 13, fontWeight: 700, color: tok.indigo,
+            display: "inline-flex", alignItems: "center", gap: 5,
+          }}>
+            {s.draft ? "Continue session" : "Open report"} <span style={{ fontSize: 12 }}>→</span>
+          </span>
+        </div>
       </div>
     </div>
   );
+}
+
+/* Strength block. "hero" emphasis = big indigo serif; "secondary" =
+   one-line ui weight. Shape stays identical so the parent's adaptive
+   render doesn't have to switch components. */
+function StrengthBlock({ emphasis, headline }: { emphasis: "hero" | "secondary"; headline: string; }) {
+  const hero = emphasis === "hero";
+  return (
+    <section aria-label="Strength:" style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: 12 }}>
+      <span aria-hidden style={{
+        fontSize: hero ? 18 : 14, lineHeight: 1, color: tok.success, paddingTop: hero ? 5 : 3, fontWeight: 700,
+      }}>✓</span>
+      <div style={{ minWidth: 0 }}>
+        {hero ? (
+          <h3 style={{
+            margin: 0, fontFamily: fonts.serif, fontWeight: 400, fontSize: 24,
+            lineHeight: 1.22, color: tok.success, letterSpacing: -0.2,
+          }}>{headline}</h3>
+        ) : (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{
+              fontFamily: fonts.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+              textTransform: "uppercase", color: tok.success, flexShrink: 0,
+            }}>Did well</span>
+            <span style={{
+              fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, color: tok.coal, lineHeight: 1.35,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0,
+            }}>{headline}</span>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* Gap block. "hero" emphasis = big copper serif + serif-italic example;
+   "secondary" = one-line copper headline. */
+function GapBlock({ emphasis, headline, example, isDue }: {
+  emphasis: "hero" | "secondary"; headline: string; example?: string; isDue: boolean;
+}) {
+  const hero = emphasis === "hero";
+  return (
+    <section aria-label="Work on next:" style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: 12 }}>
+      <span aria-hidden style={{
+        fontSize: hero ? 18 : 14, lineHeight: 1, color: tok.copper, paddingTop: hero ? 5 : 3, fontWeight: 700,
+      }}>→</span>
+      <div style={{ minWidth: 0 }}>
+        {hero ? (
+          <>
+            <div style={{
+              fontFamily: fonts.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: tok.copper, marginBottom: 4,
+            }}>{isDue ? "Due for review" : "Work on next"}</div>
+            <h3 style={{
+              margin: 0, fontFamily: fonts.serif, fontWeight: 400, fontSize: 24,
+              lineHeight: 1.22, color: tok.copper, letterSpacing: -0.2,
+            }}>{headline}</h3>
+            {example ? (
+              <p style={{
+                margin: "10px 0 0", fontFamily: fonts.serif, fontStyle: "italic",
+                fontSize: 16, lineHeight: 1.45, color: tok.copper, paddingLeft: 14, position: "relative",
+                maxWidth: "62ch",
+              }}>
+                <span aria-hidden style={{
+                  position: "absolute", left: 0, top: -2,
+                  fontFamily: fonts.serif, fontSize: 22, lineHeight: 1,
+                  color: "rgba(180,83,9,0.5)",
+                }}>“</span>
+                {example}
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{
+              fontFamily: fonts.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+              textTransform: "uppercase", color: tok.copper, flexShrink: 0,
+            }}>{isDue ? "Due" : "Next"}</span>
+            <span style={{
+              fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, color: tok.coal, lineHeight: 1.35,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0,
+            }}>{headline}</span>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* 1 → "1st", 2 → "2nd", 3 → "3rd", etc. Pure helper for the pattern
+   badge so the parent computation can stay numeric. */
+function ordinal(n: number): string {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return `${n}st`;
+  if (m10 === 2 && m100 !== 12) return `${n}nd`;
+  if (m10 === 3 && m100 !== 13) return `${n}rd`;
+  return `${n}th`;
 }
 
 function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true, allowDrafts = true, onStartSession, onRerun }: {
@@ -1366,6 +1407,29 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
   }, [filtered, selectedIdx, onOpen, onDelete, onToggleDraft, onRerun, allowDelete, allowDrafts]);
 
   const groups = groupSessions(filtered, now);
+
+  /* Pattern count: how many consecutive recent sessions (including this
+     one) carry the same gap headline. Walks `sessions` in display order
+     (recent first), so for the session at index i, count = 1 + run of
+     successive indices sharing the same gap key. Powers the footer
+     badge "3rd session with this gap" — only fires at count ≥ 2 in the
+     card render. Computed off humanized phrases so the comparison is
+     stable across legacy topGap and mvp-8 coaching.gap.headline. */
+  const patternByIdRaw = React.useMemo(() => {
+    const m = new Map<string, number>();
+    const keys = sessions.map(x => gapCopy(x.coaching?.gap.headline ?? x.topGap) || "");
+    for (let i = 0; i < sessions.length; i++) {
+      let n = 1;
+      const k = keys[i];
+      if (k) {
+        for (let j = i + 1; j < sessions.length; j++) {
+          if (keys[j] === k) n++; else break;
+        }
+      }
+      m.set(sessions[i].id, n);
+    }
+    return m;
+  }, [sessions]);
   const total = sessions.length;
   const avg = total > 0 ? Math.round(sessions.reduce((s, x) => s + x.score, 0) / total) : 0;
   const best = total > 0 ? Math.max(...sessions.map(s => s.score)) : 0;
@@ -1610,6 +1674,7 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
                   badge={badgeById.get(s.id) ?? null}
                   isFirstOfType={firstOfTypeIds.has(s.id)}
                   dateText={s.dateLabel || formatDateStack(s.date).top}
+                  patternCount={patternByIdRaw.get(s.id)}
                   onOpen={onOpen}
                   onRerun={onRerun}
                   onMouseEnter={() => setSelectedIdx(idxInFiltered)}
