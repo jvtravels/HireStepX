@@ -38,10 +38,10 @@ export function normalizeType(type: string): string {
 
 function ratingBadge(rating: string | undefined): { label: string; color: string; bg: string } {
   switch (rating) {
-    case "strong": return { label: "Strong", color: c.sage, bg: "rgba(122,158,126,0.1)" };
-    case "good": return { label: "Good", color: c.gilt, bg: "rgba(212,179,127,0.1)" };
+    case "strong": return { label: "Strong", color: c.sage, bg: "rgba(21,128,61,0.1)" };
+    case "good": return { label: "Good", color: c.gilt, bg: "rgba(180,83,9,0.1)" };
     case "partial": return { label: "Partial", color: "#E89B5A", bg: "rgba(232,155,90,0.1)" };
-    case "weak": return { label: "Weak", color: c.ember, bg: "rgba(196,112,90,0.1)" };
+    case "weak": return { label: "Weak", color: c.ember, bg: "rgba(185,28,28,0.1)" };
     default: return { label: "Reviewed", color: c.stone, bg: "rgba(142,137,131,0.1)" };
   }
 }
@@ -202,8 +202,8 @@ export const ActionBar = memo(function ActionBar({ copied, onCopy, onDownload }:
     <div className="sd-anim" style={{ display: "flex", gap: 8, marginBottom: 24, animationDelay: "0.05s" }}>
       <button onClick={onCopy} aria-label="Copy report" style={{
         padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500,
-        background: copied ? "rgba(122,158,126,0.08)" : "transparent",
-        border: `1px solid ${copied ? "rgba(122,158,126,0.3)" : c.border}`,
+        background: copied ? "rgba(21,128,61,0.08)" : "transparent",
+        border: `1px solid ${copied ? "rgba(21,128,61,0.3)" : c.border}`,
         color: copied ? c.sage : c.stone, cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
       }}>
         {copied ? <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -260,7 +260,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
             <span style={{ fontSize: 10, color: c.stone }}>Total detected:</span>
-            <span style={{ fontSize: 10, fontWeight: 600, color: metrics.fillerCount > 0 ? c.ember : c.sage, background: metrics.fillerCount > 0 ? "rgba(196,112,90,0.1)" : "rgba(122,158,126,0.1)", padding: "1px 6px", borderRadius: 4 }}>{metrics.fillerCount}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: metrics.fillerCount > 0 ? c.ember : c.sage, background: metrics.fillerCount > 0 ? "rgba(185,28,28,0.1)" : "rgba(21,128,61,0.1)", padding: "1px 6px", borderRadius: 4 }}>{metrics.fillerCount}</span>
           </div>
           {metrics.fillerBreakdown.length > 0 && (
             <div>
@@ -370,8 +370,8 @@ export const ResponseAnalysis = memo(function ResponseAnalysis({ items }: { item
           const badge = ratingBadge(item.rating);
           return (
             <div key={i} style={{ borderRadius: 14, border: `1px solid ${c.border}`, overflow: "hidden" }}>
-              <div style={{ padding: "16px 20px", background: "rgba(212,179,127,0.03)", borderBottom: `1px solid ${c.border}`, display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, marginTop: 2, background: "rgba(212,179,127,0.08)", border: `1px solid rgba(212,179,127,0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ padding: "16px 20px", background: "rgba(180,83,9,0.03)", borderBottom: `1px solid ${c.border}`, display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, marginTop: 2, background: "rgba(180,83,9,0.08)", border: `1px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: c.gilt }}>Q{i + 1}</span>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -395,10 +395,10 @@ export const ResponseAnalysis = memo(function ResponseAnalysis({ items }: { item
                     </div>
                   )}
                 </div>
-                <div style={{ padding: "16px 20px", background: "rgba(122,158,126,0.02)" }}>
+                <div style={{ padding: "16px 20px", background: "rgba(21,128,61,0.02)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.sage }}>Restructured Answer</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: c.sage, background: "rgba(122,158,126,0.1)", padding: "2px 8px", borderRadius: 4 }}>STAR Format</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: c.sage, background: "rgba(21,128,61,0.1)", padding: "2px 8px", borderRadius: 4 }}>STAR Format</span>
                   </div>
                   <div style={{ borderLeft: `2px solid ${c.sage}40`, paddingLeft: 14 }}>
                     <p style={{ fontSize: 13, color: c.chalk, lineHeight: 1.7, margin: 0 }}>{item.ideal}</p>
@@ -451,7 +451,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {strengths.length > 0 && (
-            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(122,158,126,0.04)", border: `1px solid rgba(122,158,126,0.1)`, borderLeft: `3px solid ${c.sage}` }}>
+            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(21,128,61,0.04)", border: `1px solid rgba(21,128,61,0.1)`, borderLeft: `3px solid ${c.sage}` }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.sage, display: "block", marginBottom: 8 }}>Strengths</span>
               {strengths.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginTop: i > 0 ? 6 : 0 }}>
@@ -462,7 +462,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
             </div>
           )}
           {improvements.length > 0 && (
-            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(196,112,90,0.04)", border: `1px solid rgba(196,112,90,0.1)`, borderLeft: `3px solid ${c.ember}` }}>
+            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(185,28,28,0.04)", border: `1px solid rgba(185,28,28,0.1)`, borderLeft: `3px solid ${c.ember}` }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.ember, display: "block", marginBottom: 8 }}>Areas to Improve</span>
               {improvements.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginTop: i > 0 ? 6 : 0 }}>
@@ -473,7 +473,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
             </div>
           )}
           {nextSteps && nextSteps.length > 0 && (
-            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(212,179,127,0.04)", border: `1px solid rgba(212,179,127,0.1)`, borderLeft: `3px solid ${c.gilt}` }}>
+            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.1)`, borderLeft: `3px solid ${c.gilt}` }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, display: "block", marginBottom: 8 }}>Next Steps</span>
               {nextSteps.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginTop: i > 0 ? 6 : 0 }}>
@@ -484,7 +484,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
             </div>
           )}
           {tips.length > 0 && (
-            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(212,179,127,0.04)", border: `1px solid rgba(212,179,127,0.1)`, borderLeft: `3px solid ${c.gilt}` }}>
+            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.1)`, borderLeft: `3px solid ${c.gilt}` }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, display: "block", marginBottom: 8 }}>Tips</span>
               {tips.map((s, i) => <p key={i} style={{ fontSize: 13, color: c.chalk, lineHeight: 1.6, margin: i > 0 ? "4px 0 0" : 0 }}>{s}</p>)}
             </div>
@@ -528,8 +528,8 @@ export const TranscriptSection = memo(function TranscriptSection({ transcript, s
             <div key={i} style={{ display: "flex", gap: 12, flexDirection: msg.speaker === "user" ? "row-reverse" : "row" }}>
               <div style={{
                 width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                background: msg.speaker === "ai" ? "rgba(212,179,127,0.08)" : "rgba(122,158,126,0.08)",
-                border: `1px solid ${msg.speaker === "ai" ? "rgba(212,179,127,0.15)" : "rgba(122,158,126,0.15)"}`,
+                background: msg.speaker === "ai" ? "rgba(180,83,9,0.08)" : "rgba(21,128,61,0.08)",
+                border: `1px solid ${msg.speaker === "ai" ? "rgba(180,83,9,0.15)" : "rgba(21,128,61,0.15)"}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 {msg.speaker === "ai"
@@ -539,8 +539,8 @@ export const TranscriptSection = memo(function TranscriptSection({ transcript, s
               <div style={{ maxWidth: "75%", minWidth: 0 }}>
                 <div style={{
                   padding: "10px 14px", borderRadius: 12, fontSize: 13, color: c.chalk, lineHeight: 1.6,
-                  background: msg.speaker === "ai" ? c.obsidian : "rgba(122,158,126,0.03)",
-                  border: `1px solid ${msg.speaker === "ai" ? c.border : "rgba(122,158,126,0.08)"}`,
+                  background: msg.speaker === "ai" ? c.obsidian : "rgba(21,128,61,0.03)",
+                  border: `1px solid ${msg.speaker === "ai" ? c.border : "rgba(21,128,61,0.08)"}`,
                   borderTopLeftRadius: msg.speaker === "ai" ? 4 : 12,
                   borderTopRightRadius: msg.speaker === "user" ? 4 : 12,
                 }}>
@@ -584,8 +584,8 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
                 style={{
                   fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "6px 12px",
                   borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-                  border: `1px solid ${isSelected ? "rgba(212,179,127,0.3)" : c.border}`,
-                  background: isSelected ? "rgba(212,179,127,0.08)" : "transparent",
+                  border: `1px solid ${isSelected ? "rgba(180,83,9,0.3)" : c.border}`,
+                  background: isSelected ? "rgba(180,83,9,0.08)" : "transparent",
                   color: isSelected ? c.gilt : c.stone,
                 }}>
                 <span>{icons[rating]}</span>{labels[rating]}
@@ -599,7 +599,7 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
           <input type="text" value={feedbackComment} onChange={(e) => onCommentChange(e.target.value)}
             placeholder="Any details? (optional)" maxLength={500}
             style={{ flex: 1, fontFamily: font.ui, fontSize: 12, color: c.chalk, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px", outline: "none" }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(212,179,127,0.3)"; }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(180,83,9,0.3)"; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = c.border; }}
             onKeyDown={(e) => { if (e.key === "Enter") onSubmitComment(); }}
           />
@@ -629,7 +629,7 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
   const nextDifficulty = session.score >= 85 ? "intense" : session.score < 70 ? "warmup" : "standard";
 
   return (
-    <div className="sd-anim" style={{ background: `linear-gradient(135deg, rgba(212,179,127,0.05) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid rgba(212,179,127,0.1)`, padding: "28px 32px", marginBottom: 16, animationDelay: "0.5s" }}>
+    <div className="sd-anim" style={{ background: `linear-gradient(135deg, rgba(180,83,9,0.05) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid rgba(180,83,9,0.1)`, padding: "28px 32px", marginBottom: 16, animationDelay: "0.5s" }}>
       <h3 style={{ fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>What's Next?</h3>
       {weakest && (
         <p style={{ fontSize: 13, color: c.stone, lineHeight: 1.5, marginBottom: 16 }}>
@@ -654,10 +654,10 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
         </button>
       </div>
       {isFreeUser && (
-        <div style={{ marginTop: 16, padding: "14px 18px", borderRadius: 10, background: "rgba(212,179,127,0.04)", border: `1px solid rgba(212,179,127,0.1)`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ marginTop: 16, padding: "14px 18px", borderRadius: 10, background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.1)`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontSize: 12, color: c.stone }}>Unlock unlimited sessions & detailed analytics</span>
           <button onClick={() => { window.location.href = "/#pricing"; }}
-            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, padding: "6px 16px", borderRadius: 6, border: `1px solid rgba(212,179,127,0.2)`, background: "transparent", color: c.gilt, cursor: "pointer", whiteSpace: "nowrap" }}>
+            style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, padding: "6px 16px", borderRadius: 6, border: `1px solid rgba(180,83,9,0.2)`, background: "transparent", color: c.gilt, cursor: "pointer", whiteSpace: "nowrap" }}>
             Upgrade
           </button>
         </div>
@@ -708,7 +708,7 @@ export const JDCoverageSection = memo(function JDCoverageSection({
           <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.sage, marginBottom: 8 }}>Skills You Demonstrated</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {jdAnalysis.matchedSkills.map((skill, i) => (
-              <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "4px 10px", borderRadius: 6, background: "rgba(122,158,126,0.1)", color: c.sage, border: "1px solid rgba(122,158,126,0.2)" }}>{skill}</span>
+              <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "4px 10px", borderRadius: 6, background: "rgba(21,128,61,0.1)", color: c.sage, border: "1px solid rgba(21,128,61,0.2)" }}>{skill}</span>
             ))}
           </div>
         </div>
@@ -720,7 +720,7 @@ export const JDCoverageSection = memo(function JDCoverageSection({
           <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ember, marginBottom: 8 }}>Skills to Strengthen</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {jdAnalysis.missingSkills.map((skill, i) => (
-              <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "4px 10px", borderRadius: 6, background: "rgba(196,112,90,0.1)", color: c.ember, border: "1px solid rgba(196,112,90,0.2)" }}>{skill}</span>
+              <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "4px 10px", borderRadius: 6, background: "rgba(185,28,28,0.1)", color: c.ember, border: "1px solid rgba(185,28,28,0.2)" }}>{skill}</span>
             ))}
           </div>
         </div>
@@ -741,7 +741,7 @@ export const JDCoverageSection = memo(function JDCoverageSection({
 
       {/* Suggested Focus */}
       {jdAnalysis.suggestedFocus && (
-        <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(212,179,127,0.08)", border: "1px solid rgba(212,179,127,0.15)", marginTop: 8 }}>
+        <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.15)", marginTop: 8 }}>
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Recommended next session: </span>
           <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt }}>{jdAnalysis.suggestedFocus}</span>
         </div>

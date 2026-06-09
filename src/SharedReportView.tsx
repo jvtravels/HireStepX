@@ -30,11 +30,11 @@ interface SharedReportPayload {
 }
 
 const BAND_META: Record<string, { label: string; color: string; bg: string }> = {
-  strongHire:   { label: "Strong Hire",    color: c.sage,  bg: "rgba(122,158,126,0.10)" },
-  hire:         { label: "Hire",           color: c.sage,  bg: "rgba(122,158,126,0.06)" },
-  leanHire:     { label: "Lean Hire",      color: c.gilt,  bg: "rgba(212,179,127,0.08)" },
-  noHire:       { label: "No Hire",        color: c.ember, bg: "rgba(196,112,90,0.06)" },
-  strongNoHire: { label: "Strong No Hire", color: c.ember, bg: "rgba(196,112,90,0.10)" },
+  strongHire:   { label: "Strong Hire",    color: c.sage,  bg: "rgba(21,128,61,0.10)" },
+  hire:         { label: "Hire",           color: c.sage,  bg: "rgba(21,128,61,0.06)" },
+  leanHire:     { label: "Lean Hire",      color: c.gilt,  bg: "rgba(180,83,9,0.08)" },
+  noHire:       { label: "No Hire",        color: c.ember, bg: "rgba(185,28,28,0.06)" },
+  strongNoHire: { label: "Strong No Hire", color: c.ember, bg: "rgba(185,28,28,0.10)" },
 };
 
 export default function SharedReportView({ token }: { token: string }) {
@@ -81,14 +81,14 @@ export default function SharedReportView({ token }: { token: string }) {
 
         {loading && (
           <div role="status" aria-live="polite" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14, padding: "48px 32px", textAlign: "center" }}>
-            <div style={{ width: 40, height: 40, border: `3px solid rgba(212,179,127,0.18)`, borderTopColor: c.gilt, borderRadius: "50%", margin: "0 auto 16px", animation: "srspin 0.9s linear infinite" }} />
+            <div style={{ width: 40, height: 40, border: `3px solid rgba(180,83,9,0.18)`, borderTopColor: c.gilt, borderRadius: "50%", margin: "0 auto 16px", animation: "srspin 0.9s linear infinite" }} />
             <style>{`@keyframes srspin { to { transform: rotate(360deg); } }`}</style>
             <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, margin: 0 }}>Loading report…</p>
           </div>
         )}
 
         {error && (
-          <div role="alert" style={{ background: c.graphite, border: `1px solid rgba(196,112,90,0.25)`, borderRadius: 14, padding: "32px", textAlign: "center" }}>
+          <div role="alert" style={{ background: c.graphite, border: `1px solid rgba(185,28,28,0.25)`, borderRadius: 14, padding: "32px", textAlign: "center" }}>
             <p style={{ fontFamily: font.display, fontSize: 22, color: c.ivory, margin: "0 0 8px", fontWeight: 400, letterSpacing: "-0.01em" }}>This link isn&apos;t available</p>
             <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, margin: 0 }}>{error}</p>
             <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 16 }}>
@@ -190,7 +190,7 @@ function ReportBody({ data }: { data: SharedReportPayload }) {
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ivory }}>{s.name}</span>
                     <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: barColor }}>{pct}</span>
                   </div>
-                  <div style={{ height: 6, background: "rgba(245,242,237,0.05)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: 6, background: "rgba(14,12,8,0.05)", borderRadius: 3, overflow: "hidden" }}>
                     <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: 3 }} />
                   </div>
                 </div>
@@ -219,7 +219,7 @@ function ReportBody({ data }: { data: SharedReportPayload }) {
             background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
             border: "none", borderRadius: 10, padding: "10px 22px",
             textDecoration: "none",
-            boxShadow: "0 6px 18px rgba(212,179,127,0.18)",
+            boxShadow: "0 6px 18px rgba(180,83,9,0.18)",
           }}
         >Practice your own interview →</a>
       </div>
@@ -233,8 +233,8 @@ function WinFixList({ items, label, tone }: {
   tone: "win" | "fix";
 }) {
   const accent = tone === "win" ? c.sage : c.gilt;
-  const bg = tone === "win" ? "rgba(122,158,126,0.05)" : "rgba(212,179,127,0.05)";
-  const border = tone === "win" ? "rgba(122,158,126,0.18)" : "rgba(212,179,127,0.18)";
+  const bg = tone === "win" ? "rgba(21,128,61,0.05)" : "rgba(180,83,9,0.05)";
+  const border = tone === "win" ? "rgba(21,128,61,0.18)" : "rgba(180,83,9,0.18)";
   return (
     <div style={{
       background: bg, border: `1px solid ${border}`, borderRadius: 10,
