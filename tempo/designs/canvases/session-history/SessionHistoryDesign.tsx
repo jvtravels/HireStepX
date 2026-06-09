@@ -123,6 +123,12 @@ type Session = {
   topGap: string;
   questions: number;
   draft?: boolean;    // marked when the user bailed mid-round
+  /* Optional detail-view payloads. Populated when the component is
+     driven by real data; absent in canvas / storyboard mode (the
+     prototype's hardcoded sample arrays kick in instead). */
+  questionScores?: { question: string; score: number; notes: string }[];
+  transcript?: { speaker: string; text: string; scoreNote?: string }[];
+  feedback?: string;
 };
 
 const INITIAL_SESSIONS: Session[] = [
@@ -548,15 +554,38 @@ function Shell({ active, onHelp, children }: { active: "Sessions" | "Detail" | "
 }
 
 /* ─── List view ─── */
-const FILTER_TYPES = ["All", "Behavioral", "System Design", "Tech Screen", "Hiring Mgr", "Salary Neg."] as const;
+/* Canonical filter pill set used by the canvas storyboards (mock
+   data only covers these five types). When the component runs against
+   real data the visible filter set is derived from the session list
+   instead — see `filterTypes` below. */
+const FILTER_TYPES_DEFAULT = ["All", "Behavioral", "System Design", "Tech Screen", "Hiring Mgr", "Salary Neg."] as const;
 type SortKey = "recent" | "score" | "score-asc" | "duration";
 
-function ListView({ sessions, onOpen, onDelete, onToggleDraft }: {
+function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = true }: {
   sessions: Session[];
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleDraft: (id: string) => void;
+  /* When false, the row-actions menu hides the destructive Delete
+     item. Used by the route wrapper because there's no delete API
+     yet — showing the affordance would let a user "delete" a
+     session that reappears on next reload. */
+  allowDelete?: boolean;
 }) {
+  /* Filter pill set: derive unique types from the actual session
+     list when more than one type is present, otherwise fall back to
+     the canonical set. "All" always leads. Preserves the canonical
+     order for any type that matches, then appends novel types
+     alphabetically so the row stays predictable. */
+  const filterTypes = React.useMemo(() => {
+    const present = new Set(sessions.map(s => s.type));
+    if (present.size === 0) return [...FILTER_TYPES_DEFAULT];
+    const canonical = FILTER_TYPES_DEFAULT.filter(t => t === "All" || present.has(t));
+    const extras = Array.from(present)
+      .filter(t => !canonical.includes(t as typeof FILTER_TYPES_DEFAULT[number]))
+      .sort();
+    return [...canonical, ...extras];
+  }, [sessions]);
   /* Real filter + search + sort state. Pills toggle, search narrows,
      sort reorders. A filtered-empty state replaces the list when no
      session matches. */
@@ -724,7 +753,7 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft }: {
          type pills under ~960px instead of jamming. */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {FILTER_TYPES.map(p => {
+          {filterTypes.map(p => {
             const active = p === type;
             /* Active typed filter wears the type's hue; "All" stays
                coal because it spans every hue. Tying the pill to the
@@ -946,13 +975,15 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft }: {
                           {s.draft ? "Restore to the scored list." : "Hide from average; you didn't finish."}
                         </div>
                       </button>
-                      <button
-                        role="menuitem"
-                        onClick={() => { onDelete(s.id); setOpenMenu(null); }}
-                        style={{ textAlign: "left", padding: "8px 10px", border: "none", background: "transparent", color: tok.error, fontSize: 13, fontWeight: 600, cursor: "pointer", borderRadius: radii.chip, fontFamily: fonts.ui }}>
-                        Delete
-                        <div style={{ fontSize: 11, color: tok.inkFaint, marginTop: 2, fontWeight: 400 }}>Undoable for 6 seconds.</div>
-                      </button>
+                      {allowDelete && (
+                        <button
+                          role="menuitem"
+                          onClick={() => { onDelete(s.id); setOpenMenu(null); }}
+                          style={{ textAlign: "left", padding: "8px 10px", border: "none", background: "transparent", color: tok.error, fontSize: 13, fontWeight: 600, cursor: "pointer", borderRadius: radii.chip, fontFamily: fonts.ui }}>
+                          Delete
+                          <div style={{ fontSize: 11, color: tok.inkFaint, marginTop: 2, fontWeight: 400 }}>Undoable for 6 seconds.</div>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -976,7 +1007,9 @@ function DetailView({
   session: Session;
   sessions: Session[];
   onBack: () => void;
-  onShare: () => void;
+  /* Optional. When absent the Share button hides — used by the route
+     wrapper because the Report view has no real data source yet. */
+  onShare?: () => void;
 }) {
   const s = session;
   const [tab, setTab] = React.useState<DetailTab>("Question-by-question");
@@ -997,18 +1030,26 @@ function DetailView({
     { label: "Confidence",   score: 85 },
   ];
   /* Per-question rows derive label + color from the same `bandOf`
-     used by ring and hero label. The data carries score + note;
-     verdict styling is computed once. */
-  const questions = [
-    { idx: 1, text: "Tell me about a time you led through ambiguity.",                    score: 90, note: "STAR arc with crisp situation framing, measurable outcome." },
-    { idx: 2, text: "How do you decide what to deprioritize when a launch slips?",        score: 84, note: "Tradeoff thinking landed; could quantify cost saved." },
-    { idx: 3, text: "Describe conflict with an engineering leader.",                       score: 76, note: "Good emotional honesty; lacked a concrete resolution mechanism." },
-    { idx: 4, text: "Why this company, why now?",                                           score: 88, note: "Personalised; referenced their UPI rails specifically." },
-    { idx: 5, text: "Walk me through a metric you misread.",                                score: 72, note: "Story was clear; missed the systemic-fix follow-through." },
-    { idx: 6, text: "What feedback have you ignored, and why?",                             score: 68, note: "Defensive register. Reframe as growth, not justification." },
-    { idx: 7, text: "Tell me about your biggest professional mistake.",                     score: 81, note: "Specific and owned. Add what changed in your operating model since." },
-    { idx: 8, text: "How would you onboard in your first 90 days?",                          score: 92, note: "Sequenced beautifully: learn, align, ship a quick win." },
-  ];
+     used by ring and hero label. When real data is present
+     (questionScores on the session), it drives the rows. Otherwise
+     fall back to the canvas sample set so storyboards still render. */
+  const questions = (s.questionScores && s.questionScores.length > 0)
+    ? s.questionScores.map((q, i) => ({
+        idx: i + 1,
+        text: q.question,
+        score: q.score,
+        note: q.notes,
+      }))
+    : [
+        { idx: 1, text: "Tell me about a time you led through ambiguity.",                    score: 90, note: "STAR arc with crisp situation framing, measurable outcome." },
+        { idx: 2, text: "How do you decide what to deprioritize when a launch slips?",        score: 84, note: "Tradeoff thinking landed; could quantify cost saved." },
+        { idx: 3, text: "Describe conflict with an engineering leader.",                       score: 76, note: "Good emotional honesty; lacked a concrete resolution mechanism." },
+        { idx: 4, text: "Why this company, why now?",                                           score: 88, note: "Personalised; referenced their UPI rails specifically." },
+        { idx: 5, text: "Walk me through a metric you misread.",                                score: 72, note: "Story was clear; missed the systemic-fix follow-through." },
+        { idx: 6, text: "What feedback have you ignored, and why?",                             score: 68, note: "Defensive register. Reframe as growth, not justification." },
+        { idx: 7, text: "Tell me about your biggest professional mistake.",                     score: 81, note: "Specific and owned. Add what changed in your operating model since." },
+        { idx: 8, text: "How would you onboard in your first 90 days?",                          score: 92, note: "Sequenced beautifully: learn, align, ship a quick win." },
+      ];
   return (
     <div className="hsx-pad-detail" style={{ padding: "32px 56px", maxWidth: 1200 }}>
       {/* Critique fix: Share moved up here next to the breadcrumb so
@@ -1024,9 +1065,11 @@ function DetailView({
           <span style={{ color: tok.inkFaint }}>/</span>
           <span style={{ color: tok.coal, fontWeight: 600 }}>{s.type} · {s.company}</span>
         </div>
-        <button onClick={onShare} style={{ padding: "6px 12px", borderRadius: radii.btn, background: "transparent", color: tok.inkSoft, border: `1px solid ${tok.line}`, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span aria-hidden="true">↗</span> Share report
-        </button>
+        {onShare && (
+          <button onClick={onShare} style={{ padding: "6px 12px", borderRadius: radii.btn, background: "transparent", color: tok.inkSoft, border: `1px solid ${tok.line}`, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span aria-hidden="true">↗</span> Share report
+          </button>
+        )}
       </div>
 
       {/* Hero — restrained. The inverted dark-indigo "score card" was
@@ -1221,6 +1264,34 @@ function DetailView({
               </div>
             );
           })}
+        </div>
+      ) : tab === "Transcript" && s.transcript && s.transcript.length > 0 ? (
+        /* Real transcript: speaker + utterance in a stacked column,
+           coach annotations in muted copper below each line that has
+           one. Mono speaker tag, serif body for the text itself so it
+           reads like a transcript, not a chat log. */
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {s.transcript.map((line, i) => (
+            <div key={i} style={{ padding: "14px 18px", background: tok.white, border: `1px solid ${tok.line}`, borderRadius: radii.card }}>
+              <div style={{ fontFamily: fonts.mono, fontSize: 11, color: tok.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+                {line.speaker}
+              </div>
+              <div style={{ fontSize: 14, color: tok.coal, lineHeight: 1.55 }}>{line.text}</div>
+              {line.scoreNote && (
+                <div style={{ fontSize: 12, color: tok.copper, marginTop: 8, fontStyle: "italic" }}>
+                  {line.scoreNote}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : tab === "Coach notes" && s.feedback ? (
+        /* Real coach feedback: a single block of prose pulled from the
+           session record. Wider line-height + 65ch cap so it reads
+           like a written note, not a UI string. */
+        <div style={{ padding: "24px 28px", background: tok.white, border: `1px solid ${tok.line}`, borderRadius: radii.card, maxWidth: "65ch" }}>
+          <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Coach notes</div>
+          <div style={{ fontSize: 14, color: tok.coal, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{s.feedback}</div>
         </div>
       ) : (
         /* Critique fix: solid border instead of dashed. Dashed is now
@@ -1554,6 +1625,11 @@ export interface SessionHistoryDesignProps {
      embedded mock data (canvas / storyboard mode). When passed, those
      sessions drive every view; the mock array is bypassed. */
   initialSessions?: Session[];
+  /* Gate affordances whose backends don't exist yet. In canvas mode
+     both default true so storyboards stay full-featured. The
+     production route passes false for both. */
+  allowDelete?: boolean;
+  allowReport?: boolean;
 }
 
 /* Internal route state. The `variant` prop sets the entry point each
@@ -1571,7 +1647,7 @@ type Route =
   | { name: "report"; id: string }
   | { name: "empty" };
 
-export default function SessionHistoryDesign({ variant = "list", initialSessions }: SessionHistoryDesignProps) {
+export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true }: SessionHistoryDesignProps) {
   /* Seed: real sessions when wired (initialSessions present and
      non-empty), otherwise the embedded mock array. Empty real-data
      drops the user into the empty variant automatically. */
@@ -1646,7 +1722,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
             session={s}
             sessions={sessions}
             onBack={() => setRoute({ name: "list" })}
-            onShare={() => setRoute({ name: "report", id: s.id })}
+            onShare={allowReport ? () => setRoute({ name: "report", id: s.id }) : undefined}
           />
         </div>
         {undoToast}
@@ -1686,6 +1762,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
           onOpen={id => setRoute({ name: "detail", id })}
           onDelete={handleDelete}
           onToggleDraft={handleToggleDraft}
+          allowDelete={allowDelete}
         />
       </div>
       {undoToast}

@@ -38,7 +38,7 @@ function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
     id: d.id,
     type: d.type,
     role: d.role,
-    company: d.company ?? "—",
+    company: d.company ?? "–",
     date: d.date,
     dateLabel: d.dateLabel || humanDate(d.date, now),
     duration: d.duration,
@@ -47,6 +47,12 @@ function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
     topStrength: d.topStrength,
     topGap: d.topWeakness,
     questions: d.questionScores?.length ?? 0,
+    /* Detail-view payloads. The design's Detail view falls back to
+       sample arrays when these are absent (canvas mode); when present
+       it renders real Q-by-Q, transcript, and coach notes. */
+    questionScores: d.questionScores,
+    transcript: d.transcript,
+    feedback: d.feedback,
   };
 }
 
@@ -77,5 +83,16 @@ export default function SessionHistoryRoute() {
   const now = Date.now();
   const sessions = recentSessions.map(d => toHsx(d, now));
 
-  return <SessionHistoryDesign initialSessions={sessions} />;
+  /* allowDelete / allowReport gate two affordances that have no
+     real backend yet: there is no /api/sessions/delete endpoint, and
+     the Report view's radar / percentile / confidence band have no
+     source in DashboardSession. Hiding them in route mode keeps the
+     UI honest; the canvas keeps both ON for design exploration. */
+  return (
+    <SessionHistoryDesign
+      initialSessions={sessions}
+      allowDelete={false}
+      allowReport={false}
+    />
+  );
 }
