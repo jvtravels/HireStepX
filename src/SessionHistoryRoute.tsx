@@ -93,6 +93,7 @@ export default function SessionHistoryRoute() {
       initialSessions={sessions}
       allowDelete={false}
       allowReport={false}
+      embedded
     />
   );
 }

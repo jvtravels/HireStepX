@@ -462,7 +462,21 @@ function ScoreRing({ score, size = 56, stroke = 4 }: { score: number; size?: num
 }
 
 /* ─── Shell ─── */
-function Shell({ active, onHelp, children }: { active: "Sessions" | "Detail" | "Report"; onHelp?: () => void; children: React.ReactNode }) {
+function Shell({ active, onHelp, embedded, children }: { active: "Sessions" | "Detail" | "Report"; onHelp?: () => void; embedded?: boolean; children: React.ReactNode }) {
+  /* Embedded mode: the route already lives inside DashboardLayout,
+     which provides the real app sidebar. Rendering the design's
+     internal rail on top produces two stacked left sidebars. In
+     embedded mode we strip the rail and return just the page body
+     so the design's grid composes with the surrounding chrome. */
+  if (embedded) {
+    return (
+      <div className="hsx-root" style={{ background: tok.cream, color: tok.coal, fontFamily: fonts.ui, minHeight: "100vh", position: "relative" }}>
+        <style>{FOCUS_STYLE}</style>
+        <a href="#main" className="hsx-skip">Skip to content</a>
+        <main id="main">{children}</main>
+      </div>
+    );
+  }
   /* The sidebar tab to highlight. Detail and Report are sub-views of
      Sessions, so they all light the Sessions tab — but the prior
      implementation collapsed every branch to "Sessions" via a
@@ -1630,6 +1644,11 @@ export interface SessionHistoryDesignProps {
      production route passes false for both. */
   allowDelete?: boolean;
   allowReport?: boolean;
+  /* When true, the design's internal left rail is suppressed and only
+     the page body renders. Use this when mounting under an outer app
+     chrome (e.g. /sessions inside DashboardLayout) that already
+     provides a sidebar — otherwise the user sees two stacked rails. */
+  embedded?: boolean;
 }
 
 /* Internal route state. The `variant` prop sets the entry point each
@@ -1647,7 +1666,7 @@ type Route =
   | { name: "report"; id: string }
   | { name: "empty" };
 
-export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true }: SessionHistoryDesignProps) {
+export default function SessionHistoryDesign({ variant = "list", initialSessions, allowDelete = true, allowReport = true, embedded = false }: SessionHistoryDesignProps) {
   /* Seed: real sessions when wired (initialSessions present and
      non-empty), otherwise the embedded mock array. Empty real-data
      drops the user into the empty variant automatically. */
@@ -1716,7 +1735,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
   if (route.name === "detail") {
     const s = sessions.find(x => x.id === route.id) ?? sessions[0] ?? INITIAL_SESSIONS[0];
     return (
-      <Shell active="Detail" onHelp={() => setHelpOpen(true)}>
+      <Shell active="Detail" onHelp={() => setHelpOpen(true)} embedded={embedded}>
         <div key="detail" className="hsx-anim-view">
           <DetailView
             session={s}
@@ -1733,7 +1752,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
   if (route.name === "report") {
     const s = sessions.find(x => x.id === route.id) ?? sessions[0] ?? INITIAL_SESSIONS[0];
     return (
-      <Shell active="Report" onHelp={() => setHelpOpen(true)}>
+      <Shell active="Report" onHelp={() => setHelpOpen(true)} embedded={embedded}>
         <div key="report" className="hsx-anim-view">
           <ReportView
             onBack={() => setRoute({ name: "detail", id: s.id })}
@@ -1746,7 +1765,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
   }
   if (route.name === "empty") {
     return (
-      <Shell active="Sessions" onHelp={() => setHelpOpen(true)}>
+      <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded}>
         <div key="empty" className="hsx-anim-view">
           <EmptyView onStart={() => { /* hand off to interview-setup */ }} />
         </div>
@@ -1755,7 +1774,7 @@ export default function SessionHistoryDesign({ variant = "list", initialSessions
     );
   }
   return (
-    <Shell active="Sessions" onHelp={() => setHelpOpen(true)}>
+    <Shell active="Sessions" onHelp={() => setHelpOpen(true)} embedded={embedded}>
       <div key="list" className="hsx-anim-view">
         <ListView
           sessions={sessions}
