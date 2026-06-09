@@ -557,6 +557,27 @@ const FOCUS_STYLE = `
     margin: 0 auto !important;
   }
 
+  /* Primary CTA hover/active — mirrors DashboardHome's behaviour:
+     deeper indigo + slight lift on hover, no lift on press. Touch
+     devices skip the hover state so the deeper colour doesn't get
+     stuck after tap. */
+  .hsx-cta-primary {
+    transition: background 140ms cubic-bezier(0.22,1,0.36,1),
+                box-shadow 140ms cubic-bezier(0.22,1,0.36,1),
+                transform 140ms cubic-bezier(0.22,1,0.36,1);
+  }
+  @media (hover: hover) {
+    .hsx-cta-primary:hover {
+      background: var(--hsx-accent-deep) !important;
+      box-shadow: 0 6px 20px rgba(49,46,129,0.24) !important;
+      transform: translateY(-1px);
+    }
+  }
+  .hsx-cta-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(49,46,129,0.18) !important;
+  }
+
   /* Theme posture: this surface is committed to cream-on-coal in
      every theme. Single-theme by design — the brand IS the warmth
      of the paper. System dark-mode is intentionally ignored;
@@ -853,18 +874,29 @@ function ListView({ sessions, onOpen, onDelete, onToggleDraft, allowDelete = tru
             Every mock interview, scored and stored. Open any row to revisit.
           </p>
         </div>
-        {/* Hide the CTA when no handler is provided — a coal-filled
-           "New session" button that does nothing is the worst kind
-           of dead affordance. Canvas mode leaves it hidden too. */}
+        {/* Primary CTA mirrors DashboardHome's PrimaryCta atom
+           exactly — indigo fill (not coal — coal was the dark-luxury
+           idiom), white text, radius 12, weight 600, letterSpacing
+           0.1, minHeight 44, subtle shadow, arrow-right icon on the
+           right edge (not a leading "+"). This is the brand's CTA
+           shape, used everywhere from the dashboard hero down. */}
         {onStartSession && (
-          <button onClick={onStartSession} style={{
-            padding: "10px 16px", borderRadius: radii.btn,
-            background: tok.coal, color: tok.cream, border: "none",
-            fontFamily: fonts.ui, fontSize: 13, fontWeight: 600,
-            cursor: "pointer", minHeight: 40,
-            display: "inline-flex", alignItems: "center", gap: 8,
-          }}>
-            <span aria-hidden style={{ fontWeight: 400 }}>+</span> New session
+          <button
+            type="button"
+            onClick={onStartSession}
+            className="hsx-cta-primary"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 10,
+              padding: "14px 22px", borderRadius: 12, border: "none", cursor: "pointer",
+              background: tok.indigo, color: tok.white,
+              fontFamily: fonts.ui, fontSize: 14, fontWeight: 600, letterSpacing: 0.1,
+              boxShadow: "0 4px 16px rgba(49,46,129,0.18)", minHeight: 44,
+            }}
+          >
+            <span>New session</span>
+            <svg aria-hidden width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M13 5l7 7-7 7" />
+            </svg>
           </button>
         )}
       </header>
@@ -1638,26 +1670,45 @@ function ReportView({ onBack }: { onBack: () => void }) {
   );
 }
 
-/* ─── Empty state ─── */
+/* ─── Empty state ───
+   Aligned to DashboardHome's hero rhythm: mono Eyebrow → serif clamp
+   h1 weight 400 with copper italic accent → 15px body. Primary CTA
+   is the indigo brand button (radius 12, weight 600, arrow-right,
+   minHeight 44). Secondary lives as a quiet text affordance below. */
 function EmptyView({ onStart }: { onStart: () => void }) {
   return (
     <div className="hsx-pad-empty" style={{ padding: "120px 56px", maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
       <div style={{ width: 88, height: 88, borderRadius: radii.pill, background: tok.copperSoft, color: tok.copper, display: "grid", placeItems: "center", fontSize: 36, margin: "0 auto 28px" }}>◷</div>
-      <div style={{ fontSize: 12, color: tok.copper, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>No sessions yet</div>
-      <h1 style={heading.canonical}>
-        Your <em style={{ color: tok.copper, fontStyle: "italic" }}>practice log</em> starts here.
+      <span style={{ display: "inline-block", fontFamily: fonts.mono, fontSize: 11, fontWeight: 500, color: tok.inkSoft, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>No sessions yet</span>
+      <h1 style={{
+        fontFamily: fonts.serif, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400,
+        lineHeight: 1.1, letterSpacing: "-0.02em", color: tok.coal, margin: "8px 0 6px",
+      }}>
+        Your <em style={{ fontStyle: "italic", fontWeight: 400, color: tok.copper }}>practice log</em> starts here.
       </h1>
-      <p style={{ fontSize: 15, color: tok.inkSoft, marginTop: 14, lineHeight: 1.6 }}>
+      <p style={{ fontFamily: fonts.ui, fontSize: 15, color: tok.inkSoft, marginTop: 14, lineHeight: 1.6, maxWidth: 560, marginLeft: "auto", marginRight: "auto" }}>
         Every round you take with HireStepX gets recorded, scored, and turned into a shareable report.
         Start with a 15-minute behavioral; we'll tune the questions to your resume.
       </p>
-      {/* Critique fix: previously the "Browse interview types" button
-         also fired onStart, a dead affordance. Collapsed to a single
-         primary CTA; secondary lives as a quiet text link below so it
-         doesn't compete and isn't pretending to be wired. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14, alignItems: "center", marginTop: 28 }}>
-        <button onClick={onStart} style={{ padding: "12px 22px", borderRadius: radii.btn, background: tok.coal, color: tok.cream, border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Start your first session</button>
-        <span style={{ fontSize: 12, color: tok.inkFaint }}>
+        <button
+          type="button"
+          onClick={onStart}
+          className="hsx-cta-primary"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "14px 22px", borderRadius: 12, border: "none", cursor: "pointer",
+            background: tok.indigo, color: tok.white,
+            fontFamily: fonts.ui, fontSize: 14, fontWeight: 600, letterSpacing: 0.1,
+            boxShadow: "0 4px 16px rgba(49,46,129,0.18)", minHeight: 44,
+          }}
+        >
+          <span>Start your first session</span>
+          <svg aria-hidden width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M13 5l7 7-7 7" />
+          </svg>
+        </button>
+        <span style={{ fontSize: 12, color: tok.inkFaint, fontFamily: fonts.ui }}>
           Or <button onClick={onStart} style={{ background: "transparent", border: "none", padding: 0, color: tok.inkSoft, fontSize: 12, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer", fontFamily: fonts.ui }}>browse interview types</button>.
         </span>
       </div>
