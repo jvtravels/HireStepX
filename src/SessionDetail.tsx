@@ -172,6 +172,13 @@ function localSessionToDashboardSession(local: LocalSession): DashboardSession {
     // questionScores aren't surfaced here — the SessionReport's LLM
     // pipeline regenerates per-question scoring from the transcript.
     questionScores: [],
+    /* Pass the persisted evaluator output through so SessionReport
+       can hydrate from cache and skip /api/evaluate-session entirely
+       when the row is current. Falls through to a live evaluation
+       only when report_json is missing (first view after the
+       interview ended) or the version is stale. */
+    cachedReport: local.report_json ?? undefined,
+    cachedReportVersion: local.report_version ?? undefined,
   };
 }
 
@@ -216,6 +223,11 @@ export default function SessionDetail() {
               transcript: record.transcript,
               ai_feedback: record.ai_feedback,
               skill_scores: record.skill_scores,
+              /* Persisted evaluator output — hydrated by SessionReport
+                 instead of re-running /api/evaluate-session when the
+                 row is on the current schema version. */
+              report_json: record.report_json ?? null,
+              report_version: record.report_version ?? null,
             });
             track("session_result_viewed", { score: record.score || 0 });
           }

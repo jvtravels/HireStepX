@@ -7,6 +7,13 @@ export type UserContext = { targetRole?: string; targetCompany?: string; industr
    `normalizeCoaching`) and persisted inside `sessions.report_json`. Optional
    everywhere downstream: pre-mvp-8 rows have no coaching, so the card falls
    back to the legacy topStrength/topWeakness one-liners. */
+/* The evaluator schema version the client currently understands. Must
+   stay in lockstep with REPORT_VERSION in server-handlers/evaluate-session.ts
+   — when the server bumps it, bump this too in the same commit so cached
+   rows below the new version fall through to a re-evaluation instead of
+   hydrating a stale shape. */
+export const CLIENT_REPORT_VERSION = "mvp-8";
+
 export interface SessionCoaching {
   strength: { headline: string; meaning: string };
   gap: { headline: string; meaning: string; example: string };
@@ -35,6 +42,13 @@ export interface DashboardSession {
    *  Undefined for older sessions → card falls back to topStrength/
    *  topWeakness one-liners. */
   coaching?: SessionCoaching;
+  /** Persisted evaluator output (full report) + the version that wrote
+   *  it. Surfacing both lets `SessionReport` hydrate from cache without
+   *  calling /api/evaluate-session at all when the row is current. Typed
+   *  as unknown because the canonical SessionReport interface lives in
+   *  dashboardData.ts — the report layer casts on entry. */
+  cachedReport?: unknown;
+  cachedReportVersion?: string;
   feedback: string;
   transcript: { speaker: string; text: string; scoreNote?: string }[];
   questionScores: { question: string; score: number; notes: string }[];

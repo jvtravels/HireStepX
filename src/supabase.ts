@@ -158,6 +158,12 @@ export interface SessionRecord {
      the dashboard card, so it's typed loosely. The report layer is the trust
      boundary — this is just transport. */
   report_json?: { coaching?: SessionCoaching | null } & Record<string, unknown> | null;
+  /* Schema version the evaluator was on when the report was written.
+     Surfaced so the client can short-circuit /api/evaluate-session
+     when (report_json present, report_version === current). The
+     constant lives in server-handlers/evaluate-session.ts and is
+     re-exported via REPORT_VERSION below. */
+  report_version?: string | null;
   created_at: string;
 }
 

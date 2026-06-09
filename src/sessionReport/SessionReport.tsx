@@ -29,7 +29,7 @@ import {
   type LiveCohort,
   type RoleFamily,
 } from "../roleBenchmarks";
-import type { DashboardSession } from "../dashboardTypes";
+import { CLIENT_REPORT_VERSION, type DashboardSession } from "../dashboardTypes";
 import { useAuth } from "../AuthContext";
 import SessionReportView from "./SessionReportView";
 import { sessionReportToInterviewResult, toBehavioralFullReportData } from "./adapter";
@@ -282,8 +282,41 @@ export const SessionReport = memo(function SessionReport({
     [session.role]
   );
 
+  /* ── Hydrate from persisted report when cached ──
+     evaluate-session.ts writes report_json + report_version on the
+     first run after each interview. Subsequent views surface those
+     fields on the DashboardSession (see SessionDetail mapper); when
+     the version matches what this client understands we set the
+     report synchronously and skip the /api/evaluate-session network
+     call entirely — no LLM, no roundtrip, no retry waterfall.
+     A stale version (server has been bumped past this client, or
+     pre-mvp-8 rows) falls through to the live-evaluation effect
+     below so the user always sees a current-shape report. */
+  const cachedReport = session.cachedReport as SessionReportData | undefined;
+  const cachedVersion = session.cachedReportVersion;
+  const hasCachedReport = Boolean(
+    cachedReport && cachedVersion === CLIENT_REPORT_VERSION
+  );
+  useEffect(() => {
+    if (!hasCachedReport || !cachedReport) return;
+    setReport(cachedReport);
+    setLoading(false);
+    setErrorMsg("");
+    track("report_cache_hydrated", {
+      sessionId: session.id,
+      version: cachedVersion ?? "",
+    });
+    /* reloadTick lets the user force a re-evaluation from the error
+       UI; when it ticks past 0 we drop the cache path so the live
+       effect below runs. */
+  }, [hasCachedReport, cachedReport, session.id, cachedVersion]);
+
   /* ── Evaluate session via LLM ── */
   useEffect(() => {
+    /* Cache wins on first render. Skip the network call entirely
+       unless the user explicitly asked for a fresh evaluation
+       (reloadTick > 0) from the error UI. */
+    if (hasCachedReport && reloadTick === 0) return;
     let cancelled = false;
     const ac = new AbortController();
     const t0 = Date.now();
@@ -410,7 +443,7 @@ export const SessionReport = memo(function SessionReport({
       ac.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.id, reloadTick, user?.targetCompany]);
+  }, [session.id, reloadTick, user?.targetCompany, hasCachedReport]);
 
   /* ── Single fire on first successful view ── */
   useEffect(() => {

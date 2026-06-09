@@ -196,6 +196,12 @@ export interface LocalSession {
   duration: number;
   score: number;
   questions: number;
+  /* Persisted evaluator output. When present and report_version matches
+     CLIENT_REPORT_VERSION, SessionReport hydrates from this and skips
+     the /api/evaluate-session network roundtrip entirely — view-from-
+     cache, never re-run the LLM. */
+  report_json?: Record<string, unknown> | null;
+  report_version?: string | null;
   transcript?: { speaker: string; text: string; time?: string }[];
   ai_feedback?: string;
   skill_scores?: Record<string, number | { score: number; reason?: string }> | null;
