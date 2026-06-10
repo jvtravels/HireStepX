@@ -939,7 +939,7 @@ function SignatureStrip({ metrics }: { metrics: NonNullable<Session["focusMetric
   );
 }
 
-function SessionCard({ s, isSelected, isDue, badge, dateText, patternCount, onOpen, onRerun, onMouseEnter }: {
+function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCount, onOpen, onRerun, onMouseEnter }: {
   s: Session;
   isSelected: boolean;
   isDue: boolean;
@@ -962,15 +962,6 @@ function SessionCard({ s, isSelected, isDue, badge, dateText, patternCount, onOp
   const [hovered, setHovered] = React.useState(false);
   const band = bandOf(s.score);
   const meta = bandMeta(band);
-
-  /* Win-first when the session is at least "solid" (≥75). Below + mixed
-     lead with the gap because the user needs direction more than
-     celebration at those scores. */
-  const winFirst = band === "strong" || band === "solid";
-  /* "hero" emphasis = big serif headline + supporting body copy.
-     "secondary" = one-line body weight, no example/quote. */
-  const winEmphasis: "hero" | "secondary" = band === "strong" ? "hero" : "secondary";
-  const gapEmphasis: "hero" | "secondary" = band === "below" || band === "mixed" ? "hero" : "secondary";
 
   /* Coaching takes precedence; the legacy one-liner is the fallback.
      strengthCopy/gapCopy are defensive — if a raw competency key ever
@@ -1008,28 +999,38 @@ function SessionCard({ s, isSelected, isDue, badge, dateText, patternCount, onOp
         opacity: s.draft ? 0.82 : 1,
       }}>
 
-      {/* Peek strip — date on the left, score+band+delta on the right.
-          Type / difficulty / Q count are no longer crammed here; they
-          live on the identity sub-line below. PR/BEST badge and Draft
-          state still ride here so achievement signals stay at the top. */}
+      {/* Peek strip — TYPE · DIFFICULTY (left), date · Qs + score + band + delta
+          (right). Type & difficulty live up here as a quiet indigo+ink eyebrow
+          so the serif identity below carries no metadata noise. PR/BEST badge
+          and Draft state ride alongside type so achievement signals stay top. */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
         padding: "11px 20px", borderBottom: `1px solid ${tok.line}`, background: tok.creamSoft,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
           <span style={{
-            fontFamily: fonts.ui, fontSize: 12, fontWeight: 600, color: tok.inkSoft,
-            whiteSpace: "nowrap", letterSpacing: 0.2,
-          }}>{dateText}</span>
+            fontFamily: fonts.ui, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em",
+            textTransform: "uppercase", color: tok.indigo, whiteSpace: "nowrap",
+          }}>{s.type}</span>
+          {s.difficulty ? (
+            <>
+              <span aria-hidden style={{ width: 3, height: 3, borderRadius: "50%", background: tok.inkSoft, opacity: 0.5 }} />
+              <span style={{
+                fontFamily: fonts.ui, fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em",
+                textTransform: "uppercase", color: tok.inkSoft, whiteSpace: "nowrap",
+              }}>{s.difficulty}</span>
+            </>
+          ) : null}
           {badge && !s.draft ? (
             <span style={{
               fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
               color: tok.indigo, background: "rgba(49,46,129,0.10)",
               padding: "2px 7px", borderRadius: radii.pill, textTransform: "uppercase",
+              marginLeft: 4,
             }}>{badge}</span>
           ) : null}
           {s.draft ? (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: fonts.ui, fontSize: 12, fontWeight: 500, color: tok.inkSoft }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: fonts.ui, fontSize: 11, fontWeight: 500, color: tok.inkSoft, marginLeft: 4 }}>
               <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: tok.inkFaint }} />
               Draft
             </span>
@@ -1042,83 +1043,99 @@ function SessionCard({ s, isSelected, isDue, badge, dateText, patternCount, onOp
             aria-label={`Score ${s.score}, ${meta.label}${hasDelta ? `, ${deltaUp ? "up" : "down"} ${Math.abs(delta!)}` : ""}`}
             style={{ display: "inline-flex", alignItems: "baseline", gap: 12, fontVariantNumeric: "tabular-nums" }}
           >
+            <span style={{ fontFamily: fonts.ui, fontSize: 11, color: tok.inkSoft, whiteSpace: "nowrap" }}>
+              {dateText}{s.questions ? ` · ${s.questions} Qs` : ""}
+            </span>
             <span style={{ fontFamily: fonts.ui, fontSize: 18, fontWeight: 700, color: tok.coal }}>
               {s.score}
             </span>
             <span style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              fontFamily: fonts.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+              display: "inline-flex", alignItems: "center", gap: 5,
+              fontFamily: fonts.ui, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em",
               color: meta.color, textTransform: "uppercase",
             }}>
-              <span aria-hidden style={{
-                width: 8, height: 8, borderRadius: "50%",
-                background: meta.color, display: "inline-block",
-              }} />
-              <span aria-hidden style={{ marginRight: 1 }}>{meta.glyph}</span>
+              <span aria-hidden>{meta.glyph}</span>
               {meta.label}
             </span>
             {hasDelta ? (
               <span style={{
-                fontFamily: fonts.mono, fontSize: 11, fontWeight: 700,
-                color: deltaUp ? tok.success : tok.copper,
+                fontFamily: fonts.ui, fontSize: 11, fontWeight: 700,
+                color: deltaUp ? tok.success : tok.copper, fontVariantNumeric: "tabular-nums",
               }}>
-                {deltaUp ? "▲" : "▼"} {deltaUp ? "+" : ""}{delta}
+                {deltaUp ? "▲ +" : "▼ "}{delta}
               </span>
             ) : null}
           </div>
         )}
       </div>
 
-      {/* Identity — role at company in serif, type/difficulty as a
-          quiet sub-line beneath. Replaces the eyebrow's bar-separated
-          metadata token strip; gathering type+difficulty here cuts noise. */}
-      <div style={{ padding: "20px 22px 8px" }}>
-        <div style={{
-          fontFamily: fonts.serif, fontSize: 22, color: tok.coal,
-          lineHeight: 1.2, letterSpacing: -0.2,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontStyle: "italic" }}>at</span> {s.company}</>) : null}
-        </div>
-        <div style={{
-          fontFamily: fonts.ui, fontSize: 11, color: tok.inkSoft,
-          letterSpacing: "0.08em", textTransform: "uppercase",
-          marginTop: 4, display: "flex", alignItems: "center", gap: 8,
-        }}>
-          {s.type}
-          {s.difficulty ? (<><span aria-hidden style={{ opacity: 0.5 }}>·</span>{s.difficulty}</>) : null}
-          {s.questions ? (<><span aria-hidden style={{ opacity: 0.5 }}>·</span>{s.questions} Qs</>) : null}
-          {s.duration ? (<><span aria-hidden style={{ opacity: 0.5 }}>·</span>{s.duration}</>) : null}
-        </div>
-      </div>
-
-      {/* Body — adaptive hero. Strong leads with win, below leads with
-          gap, mixed/solid balance. Draft skips the body entirely. */}
+      {/* Body — identity, signature strip, compact win line, NEXT block. The
+          one-liner ✓ win + → NEXT (copper) treatment is uniform across bands
+          (no hero/secondary swap) so the strip stays the measured read and the
+          NEXT block stays the prescription. Draft skips the body entirely. */}
       {s.draft ? (
-        <div style={{ padding: "8px 22px 18px" }}>
+        <div style={{ padding: "16px 22px 18px" }}>
+          <div style={{
+            fontFamily: fonts.serif, fontSize: 22, color: tok.coal,
+            lineHeight: 1.2, letterSpacing: -0.2,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            marginBottom: 8,
+          }}>
+            {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontStyle: "italic" }}>at</span> {s.company}</>) : null}
+          </div>
           <div style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: tok.inkSoft }}>
             Saved mid-round, ready to continue.
           </div>
         </div>
       ) : (
-        <div style={{ padding: "12px 22px 22px", display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ padding: "15px 22px 16px", display: "flex", flexDirection: "column", gap: 13 }}>
+          {/* Identity — the one editorial note. Serif "Role at Company", italic
+              "at" connector. No sub-line; metadata lives in the header strip. */}
+          <div style={{
+            fontFamily: fonts.serif, fontSize: 20, color: tok.coal,
+            lineHeight: 1.15, letterSpacing: -0.2,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {s.role}{s.company ? (<> <span style={{ color: tok.inkSoft, fontStyle: "italic" }}>at</span> {s.company}</>) : null}
+          </div>
+
           {/* Signature strip — the focus's pinned instrument panel, when the
-              evaluator emitted it (mvp-9+). Sits above the coaching pair so the
-              measured read lands before the prose. Absent on older rows. */}
+              evaluator emitted it (mvp-9+). Sits between identity and prose so
+              the measured read lands first. Absent on older rows. */}
           {s.focusMetrics && s.focusMetrics.length > 0 ? (
             <SignatureStrip metrics={s.focusMetrics} />
           ) : null}
-          {winFirst ? (
-            <>
-              {winHeadline ? <StrengthBlock emphasis={winEmphasis} headline={winHeadline} /> : null}
-              {gapHeadline ? <GapBlock emphasis={gapEmphasis} headline={gapHeadline} example={gapExample} isDue={isDue} /> : null}
-            </>
-          ) : (
-            <>
-              {gapHeadline ? <GapBlock emphasis={gapEmphasis} headline={gapHeadline} example={gapExample} isDue={isDue} /> : null}
-              {winHeadline ? <StrengthBlock emphasis={winEmphasis} headline={winHeadline} /> : null}
-            </>
-          )}
+
+          {/* Win — one-liner with a green check. Compact across all bands. */}
+          {winHeadline ? (
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span aria-hidden style={{ color: tok.success, fontSize: 12, flexShrink: 0, fontWeight: 700 }}>✓</span>
+              <span style={{
+                fontFamily: fonts.ui, fontSize: 12.5, color: tok.inkSoft, lineHeight: 1.4,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0,
+              }}>{winHeadline}</span>
+            </div>
+          ) : null}
+
+          {/* Next — the single fix in copper. Bold headline + plain-prose
+              example below. The card's one actionable line. */}
+          {gapHeadline ? (
+            <div style={{ display: "grid", gridTemplateColumns: "16px 1fr", gap: 8 }}>
+              <span aria-hidden style={{ color: tok.copper, fontSize: 13, fontWeight: 700, paddingTop: 1 }}>→</span>
+              <div style={{ minWidth: 0 }}>
+                <span style={{
+                  fontFamily: fonts.ui, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em",
+                  textTransform: "uppercase", color: tok.copper, marginRight: 8,
+                }}>Next</span>
+                <span style={{ fontFamily: fonts.ui, fontSize: 13.5, fontWeight: 700, color: tok.coal }}>{gapHeadline}</span>
+                {gapExample ? (
+                  <div style={{ fontFamily: fonts.ui, fontSize: 12.5, color: tok.inkSoft, lineHeight: 1.45, marginTop: 3 }}>
+                    {gapExample}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
 
@@ -1164,93 +1181,6 @@ function SessionCard({ s, isSelected, isDue, badge, dateText, patternCount, onOp
         </div>
       </div>
     </div>
-  );
-}
-
-/* Strength block. "hero" emphasis = big indigo serif; "secondary" =
-   one-line ui weight. Shape stays identical so the parent's adaptive
-   render doesn't have to switch components. */
-function StrengthBlock({ emphasis, headline }: { emphasis: "hero" | "secondary"; headline: string; }) {
-  const hero = emphasis === "hero";
-  return (
-    <section aria-label="Strength:" style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: 12 }}>
-      <span aria-hidden style={{
-        fontSize: hero ? 18 : 14, lineHeight: 1, color: tok.success, paddingTop: hero ? 5 : 3, fontWeight: 700,
-      }}>✓</span>
-      <div style={{ minWidth: 0 }}>
-        {hero ? (
-          <h3 style={{
-            margin: 0, fontFamily: fonts.serif, fontWeight: 400, fontSize: 24,
-            lineHeight: 1.22, color: tok.success, letterSpacing: -0.2,
-          }}>{headline}</h3>
-        ) : (
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{
-              fontFamily: fonts.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
-              textTransform: "uppercase", color: tok.success, flexShrink: 0,
-            }}>Did well</span>
-            <span style={{
-              fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, color: tok.coal, lineHeight: 1.35,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0,
-            }}>{headline}</span>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* Gap block. "hero" emphasis = big copper serif + serif-italic example;
-   "secondary" = one-line copper headline. */
-function GapBlock({ emphasis, headline, example, isDue }: {
-  emphasis: "hero" | "secondary"; headline: string; example?: string; isDue: boolean;
-}) {
-  const hero = emphasis === "hero";
-  return (
-    <section aria-label="Work on next:" style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: 12 }}>
-      <span aria-hidden style={{
-        fontSize: hero ? 18 : 14, lineHeight: 1, color: tok.copper, paddingTop: hero ? 5 : 3, fontWeight: 700,
-      }}>→</span>
-      <div style={{ minWidth: 0 }}>
-        {hero ? (
-          <>
-            <div style={{
-              fontFamily: fonts.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", color: tok.copper, marginBottom: 4,
-            }}>{isDue ? "Due for review" : "Work on next"}</div>
-            <h3 style={{
-              margin: 0, fontFamily: fonts.serif, fontWeight: 400, fontSize: 24,
-              lineHeight: 1.22, color: tok.copper, letterSpacing: -0.2,
-            }}>{headline}</h3>
-            {example ? (
-              <p style={{
-                margin: "10px 0 0", fontFamily: fonts.serif, fontStyle: "italic",
-                fontSize: 16, lineHeight: 1.45, color: tok.copper, paddingLeft: 14, position: "relative",
-                maxWidth: "62ch",
-              }}>
-                <span aria-hidden style={{
-                  position: "absolute", left: 0, top: -2,
-                  fontFamily: fonts.serif, fontSize: 22, lineHeight: 1,
-                  color: "rgba(180,83,9,0.5)",
-                }}>“</span>
-                {example}
-              </p>
-            ) : null}
-          </>
-        ) : (
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{
-              fontFamily: fonts.ui, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
-              textTransform: "uppercase", color: tok.copper, flexShrink: 0,
-            }}>{isDue ? "Due" : "Next"}</span>
-            <span style={{
-              fontFamily: fonts.ui, fontSize: 13, fontWeight: 600, color: tok.coal, lineHeight: 1.35,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0,
-            }}>{headline}</span>
-          </div>
-        )}
-      </div>
-    </section>
   );
 }
 
