@@ -828,15 +828,17 @@ Return a JSON object with EXACTLY this shape:
 Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no markdown wrapping, no prose.`;
 
     const tLLM0 = Date.now();
-    // maxTokens 5500 (down from 7500): real reports rarely exceed 5k.
-    // Budget 35s overall (Groq 15s primary → Gemini 20s fallback) leaves
-    // ~25s under the 60s Edge wall for parse-retry + DB persistence.
-    // 15s Groq cap is critical: large mvp-9 responses legitimately take
-    // 6–9s on llama-3.3-70b; anything tighter kicks Groq out under p95
-    // spike and forces every call through Gemini (which can hit daily
-    // quota and surface 429 to the user).
+    // maxTokens 2500 (down from 5500). Audit of llm_usage shows real
+    // completions are 900–1,600 tokens; 5500 was wildly over-provisioned.
+    // The reason this matters: Groq's free-tier TPM cap on llama-3.3-70b
+    // is ~12,000 tokens/minute and Groq counts (prompt + max_tokens), not
+    // actual output. mvp-9's prompt growth pushed prompt+5500 over 12K,
+    // triggering HTTP 413 "Request too large" on EVERY call — which then
+    // fell through to Gemini and exhausted that quota too. 2500 keeps
+    // total request budget around 8.8K, well under the TPM ceiling, with
+    // 50% headroom over the historical p100 completion size.
     const result = await callLLM(
-      { prompt, temperature: 0.25, maxTokens: 5500, jsonMode: true },
+      { prompt, temperature: 0.25, maxTokens: 2500, jsonMode: true },
       35000,
       { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
     );
@@ -852,7 +854,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       try {
         const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
         const retry = await callLLM(
-          { prompt: strictPrompt, temperature: 0, maxTokens: 5500, jsonMode: true },
+          { prompt: strictPrompt, temperature: 0, maxTokens: 2500, jsonMode: true },
           18000,
           { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 12000 },
         );
