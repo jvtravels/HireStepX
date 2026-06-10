@@ -828,16 +828,17 @@ Return a JSON object with EXACTLY this shape:
 Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no markdown wrapping, no prose.`;
 
     const tLLM0 = Date.now();
-    // maxTokens 5500 (down from 7500): real reports rarely exceed 5k; the
-    // higher cap was pushing Groq past its 6s per-provider cap and forcing
-    // a guaranteed Gemini failover. Total LLM budget 30s leaves ~30s of the
-    // 60s function ceiling for parse-retry + DB persistence + response —
-    // mvp-9's larger prompt was eating the prior 45s budget and tripping
-    // FUNCTION_INVOCATION_TIMEOUT on Edge.
+    // maxTokens 5500 (down from 7500): real reports rarely exceed 5k.
+    // Budget 35s overall (Groq 15s primary → Gemini 20s fallback) leaves
+    // ~25s under the 60s Edge wall for parse-retry + DB persistence.
+    // 15s Groq cap is critical: large mvp-9 responses legitimately take
+    // 6–9s on llama-3.3-70b; anything tighter kicks Groq out under p95
+    // spike and forces every call through Gemini (which can hit daily
+    // quota and surface 429 to the user).
     const result = await callLLM(
       { prompt, temperature: 0.25, maxTokens: 5500, jsonMode: true },
-      30000,
-      { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 10000 },
+      35000,
+      { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
     );
     const tLLM = Date.now() - tLLM0;
 
@@ -852,8 +853,8 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
         const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
         const retry = await callLLM(
           { prompt: strictPrompt, temperature: 0, maxTokens: 5500, jsonMode: true },
-          15000,
-          { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 8000 },
+          18000,
+          { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 12000 },
         );
         parsed = extractJSON<Partial<SessionReport>>(retry.text);
       } catch (retryErr) {
