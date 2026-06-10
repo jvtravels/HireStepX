@@ -15,6 +15,7 @@ import {
   NavigationFooter,
 } from "./onboarding/Panels";
 import { tokens as ot } from "./auth/_tokens";
+import { detectResumeRoleMismatch } from "../server-handlers/_resume-role-match";
 
 const OB_STEP_KEY = "hirestepx_ob_step";
 const OB_FORM_KEY = "hirestepx_ob_form";
@@ -172,6 +173,7 @@ export default function Onboarding() {
   const [showUndo, setShowUndo] = useState(false);
   const undoTimerRef = useRef<number>(0);
   const [targetRole, setTargetRole] = useState(user?.targetRole || "");
+  const [roleMismatchBlurred, setRoleMismatchBlurred] = useState(false);
   const [starting, setStarting] = useState(false);
   // Transient UI messages — saved-draft toast (#13) and autosave feedback (#15)
   const [draftToast, setDraftToast] = useState<string | null>(null);
@@ -827,6 +829,20 @@ export default function Onboarding() {
     );
   }
 
+  // Inline warning when the entered target role doesn't match the resume's
+  // apparent domain. Hidden until the user blurs the input so we don't yell
+  // mid-typing. detectResumeRoleMismatch is pure — safe in client bundle.
+  const resumeTitleForMismatch =
+    aiProfile?.headline?.trim() || resumeParsed?.experience?.[0]?.title || resumeParsed?.name || null;
+  const mismatchResult =
+    roleMismatchBlurred && targetRole.trim() && resumeTitleForMismatch
+      ? detectResumeRoleMismatch({ resumeTitle: resumeTitleForMismatch, targetRole })
+      : null;
+  const roleMismatchWarning =
+    mismatchResult && mismatchResult.severity === "hard"
+      ? `Heads up — your resume reads "${resumeTitleForMismatch}" but you've entered "${targetRole}". You can continue; the interviewer will probe the pivot.`
+      : null;
+
   return (
     <div style={{ minHeight: "100vh", background: ot.cream, display: "flex", flexDirection: "column", position: "relative", color: ot.coal }}>
       {user && !user.emailVerified && <EmailVerificationBanner email={user.email} />}
@@ -897,6 +913,8 @@ export default function Onboarding() {
               onUserNameChange={setUserName}
               targetRole={targetRole}
               onTargetRoleChange={setTargetRole}
+              targetRoleMismatch={roleMismatchWarning}
+              onTargetRoleBlur={() => setRoleMismatchBlurred(true)}
             />
           )}
           {resumeParsed && !resumeParsing && aiPhase === "done" && (

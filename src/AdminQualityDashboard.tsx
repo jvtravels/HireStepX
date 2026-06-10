@@ -582,7 +582,7 @@ function HeadlinesView({ headlines, dailyByFocus }: { headlines: Headline[]; dai
         <div key={focus} style={{ marginBottom: sp.xl }}>
           <div style={{ color: c.gilt, fontSize: 13, fontWeight: 600, marginBottom: sp.sm }}>{friendlyFocus(focus)}</div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ borderCollapse: "collapse", fontSize: 12, fontFamily: font.mono, minWidth: 720 }}>
+            <table style={{ borderCollapse: "collapse", fontSize: 12, fontFamily: font.mono, width: "100%", minWidth: 0 }}>
               <thead>
                 <tr style={{ color: c.stone, textAlign: "left" }}>
                   <th style={{ padding: sp.sm, fontWeight: 400 }}>Day</th>
@@ -1225,6 +1225,7 @@ function SessionDetail({ row, onClose, onResolve }: {
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          aria-label="What did you do? (fix notes)"
           placeholder="What's the fix? (e.g. 'Updated AI prompt to push back harder on missing R')"
           rows={3}
           style={{ width: "100%", background: c.obsidian, border: `1px solid ${c.border}`, color: c.ivory, padding: sp.sm, borderRadius: radius.sm, fontFamily: font.ui, fontSize: 12, resize: "vertical" }}
@@ -1232,6 +1233,7 @@ function SessionDetail({ row, onClose, onResolve }: {
         <input
           value={by}
           onChange={(e) => setBy(e.target.value)}
+          aria-label="Reviewer name or email"
           placeholder="Your name / email"
           style={{ width: "100%", background: c.obsidian, border: `1px solid ${c.border}`, color: c.ivory, padding: sp.sm, borderRadius: radius.sm, fontFamily: font.ui, fontSize: 12, marginTop: sp.xs }}
         />

@@ -438,6 +438,11 @@ export interface ResumeLoadingStateProps {
   onUserNameChange?: (v: string) => void;
   targetRole?: string;
   onTargetRoleChange?: (v: string) => void;
+  /** Inline warning shown below the target role input when the entered
+   * role doesn't match the resume's apparent domain (e.g. resume reads
+   * "Product Designer" but role is "Java Developer"). Hidden when null. */
+  targetRoleMismatch?: string | null;
+  onTargetRoleBlur?: () => void;
 }
 
 const STATUS_BEATS = [
@@ -456,6 +461,8 @@ export function ResumeLoadingState({
   onUserNameChange,
   targetRole,
   onTargetRoleChange,
+  targetRoleMismatch,
+  onTargetRoleBlur,
 }: ResumeLoadingStateProps) {
   const [progress, setProgress] = useState(8);
   // Drive the bar from server-reported analysisStage when we have it.
@@ -577,16 +584,27 @@ export function ResumeLoadingState({
               />
             )}
             {onTargetRoleChange && (
-              <Field
-                label="Target role (optional)"
-                type="text"
-                name="target-role"
-                value={targetRole || ""}
-                onChange={(v) => onTargetRoleChange(v)}
-                placeholder="e.g. Senior Backend Engineer"
-                autoComplete="off"
-                maxLength={120}
-              />
+              <div onBlur={onTargetRoleBlur}>
+                <Field
+                  label="Target role (optional)"
+                  type="text"
+                  name="target-role"
+                  value={targetRole || ""}
+                  onChange={(v) => onTargetRoleChange(v)}
+                  placeholder="e.g. Senior Backend Engineer"
+                  autoComplete="off"
+                  maxLength={120}
+                />
+                {targetRoleMismatch && (
+                  <p
+                    role="status"
+                    aria-live="polite"
+                    style={{ marginTop: 6, fontFamily: f.sans, fontSize: 12, color: t.copper, lineHeight: 1.4 }}
+                  >
+                    {targetRoleMismatch}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}

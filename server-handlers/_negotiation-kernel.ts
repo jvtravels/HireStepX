@@ -3246,7 +3246,7 @@ export function canCloseSession(
    * gated — a candidate who literally says "I accept" to a same-turn
    * offer should be allowed to close. */
   if (reason === "soft-accept") {
-    if (state.firstOfferAtTurn != null && state.firstOfferAtTurn === state.turnIndex) {
+    if (state.firstOfferAtTurn != null && state.firstOfferAtTurn >= state.turnIndex) {
       const candidateCountered =
         state.lastCandidateCounterLpa != null || state.candidateTarget != null;
       if (!candidateCountered) return false;

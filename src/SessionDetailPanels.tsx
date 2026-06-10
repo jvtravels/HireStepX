@@ -597,6 +597,7 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
       {showFeedbackForm && feedbackRating && (
         <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
           <input type="text" value={feedbackComment} onChange={(e) => onCommentChange(e.target.value)}
+            aria-label="Feedback details (optional)"
             placeholder="Any details? (optional)" maxLength={500}
             style={{ flex: 1, fontFamily: font.ui, fontSize: 12, color: c.chalk, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px", outline: "none" }}
             onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(180,83,9,0.3)"; }}

@@ -220,6 +220,7 @@ import { ServiceWorkerRegistrar } from "./ServiceWorkerRegistrar";
 import { OfflineBanner } from "./OfflineBanner";
 import CookieConsent from "./CookieConsent";
 import ConsentGatedAnalytics from "./ConsentGatedAnalytics";
+import { RouteFocusManager } from "./RouteFocusManager";
 
 export default function RootLayout({
   children,
@@ -264,6 +265,7 @@ export default function RootLayout({
 
         <OfflineBanner />
 
+        <RouteFocusManager />
         <div id="main-content" tabIndex={-1} style={{ outline: "none" }}>
           {children}
         </div>

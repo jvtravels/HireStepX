@@ -36,6 +36,25 @@ const sections = [
 None of these providers receive more data than is necessary to perform their specific function.`,
   },
   {
+    title: "3a. Sub-processors and data location",
+    body: `For transparency, here is the complete list of sub-processors that may receive your data, what they receive, and where they process it. Each is bound by a contractual data processing agreement and is restricted to the scope listed.
+
+- Supabase (account + session data) — Singapore region (ap-southeast-1). Receives: profile, sessions, transcripts, payment metadata.
+- Vercel (application hosting + edge compute) — Mumbai (bom1) + global edge. Receives: HTTP request data, IP for rate-limiting.
+- Groq (primary LLM) — United States. Receives: resume text and interview transcript snippets, only for the duration of a single API request. Not retained.
+- Google Gemini (fallback LLM) — United States / Google global. Receives: same as Groq, only when Groq is unavailable.
+- Deepgram (primary speech-to-text) — United States. Receives: audio of your spoken answers, transcribed in real time. Not retained beyond the API request.
+- Sarvam AI (fallback speech-to-text + primary TTS) — India. Receives: audio for transcription, AI-generated text for voice synthesis.
+- Cartesia (secondary TTS) — United States. Receives: AI interviewer text for voice synthesis.
+- Microsoft Azure (tertiary TTS) — Central India. Receives: same as Cartesia.
+- Razorpay (payments) — India. Receives: name, email, plan, amount. Handles card / UPI credentials directly — those never reach our servers.
+- Resend (transactional email) — United States. Receives: your email address and the email body (e.g. payment receipt, password reset).
+- Upstash (rate-limit + caching) — Mumbai region. Receives: short-lived rate-limit counters and request-hash → response cache entries. No raw transcript text.
+- PostHog (product analytics) — European Union (eu.posthog.com). Receives: pseudonymous user ID, page views, feature events. We do not send raw transcript text or payment IDs (payment IDs are HMAC-hashed before send).
+
+If you withdraw consent (Settings → Privacy), the cross-border processors above stop receiving new data on your next request.`,
+  },
+  {
     title: "4. Data Retention",
     body: `- Account data (name, email, preferences) is retained for as long as your account is active.
 - Interview sessions (transcripts, scores, feedback) are kept to enable progress tracking and analytics. You can delete individual sessions from your dashboard.

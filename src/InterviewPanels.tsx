@@ -1459,11 +1459,21 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
         background: "rgba(14,12,8,0.70)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
         animation: "fadeUp 0.15s ease",
       }}>
-      <div data-modal-content style={{
+      <div data-modal-content className="hsx-end-modal" style={{
         background: e.cream, borderRadius: 20, border: `1px solid ${e.line}`,
         padding: "28px 28px 24px", maxWidth: 460, width: "92%",
         boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)",
       }}>
+        <style>{`
+          /* Narrow-viewport rescue: under 380px the two side-by-side modal
+             buttons overflow the cream card. Stack vertically and pull
+             padding in so the modal still breathes on a 320-360px phone. */
+          @media (max-width: 380px) {
+            .hsx-end-modal { padding: 16px !important; }
+            .hsx-end-modal .hsx-end-modal-actions { flex-direction: column-reverse !important; }
+            .hsx-end-modal .hsx-end-modal-actions button { width: 100% !important; }
+          }
+        `}</style>
         <h3 id="end-modal-title" style={{
           margin: 0, fontFamily: ef.serif, fontSize: 26, fontWeight: 400,
           lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
@@ -1482,7 +1492,7 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
             <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.error }}>You&rsquo;re offline — AI evaluation may fail. Your answers will be saved locally.</span>
           </div>
         )}
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <div className="hsx-end-modal-actions" style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button onClick={closeFocus}
             style={{
               fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.coal,

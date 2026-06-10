@@ -393,7 +393,14 @@ function profileToUser(profile: Profile, session: Session): User {
     cancelAtPeriodEnd: profile.cancel_at_period_end || false,
     subscriptionPaused: !!profile.subscription_paused,
     referralCode: profile.referral_code || undefined,
-    emailVerified: session.user.user_metadata?.custom_email_verified === true || !!session.user.email_confirmed_at,
+    emailVerified:
+      session.user.user_metadata?.custom_email_verified === true ||
+      !!session.user.email_confirmed_at ||
+      // Google verifies the email address as part of OAuth — treat the
+      // provider tag as a verified-email signal even if Supabase didn't
+      // backfill email_confirmed_at on the first session restore.
+      session.user.app_metadata?.provider === "google" ||
+      session.user.app_metadata?.providers?.includes?.("google") === true,
     deletedAt: profile.deleted_at,
     // OAuth provider — used by Settings to hide "Reset Password" for
     // Google-only users (they have no internal-app password to reset).
@@ -514,7 +521,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         targetRole: "",
         resumeFileName: null,
         hasCompletedOnboarding: false,
-        emailVerified: session.user.user_metadata?.custom_email_verified === true || !!session.user.email_confirmed_at,
+        emailVerified:
+      session.user.user_metadata?.custom_email_verified === true ||
+      !!session.user.email_confirmed_at ||
+      // Google verifies the email address as part of OAuth — treat the
+      // provider tag as a verified-email signal even if Supabase didn't
+      // backfill email_confirmed_at on the first session restore.
+      session.user.app_metadata?.provider === "google" ||
+      session.user.app_metadata?.providers?.includes?.("google") === true,
       };
       setUser(newUser);
     }

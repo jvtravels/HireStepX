@@ -17,6 +17,7 @@ import { useDocTitle } from "./useDocTitle";
 import { captureClientEvent } from "./posthogClient";
 import type { DashboardSession } from "./dashboardTypes";
 import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
+import { UpcomingInterviews } from "./DashboardHomePanels";
 
 /* Funnel telemetry — these event names are the contract PostHog
    dashboards query, so they're stable. The `surface` prop on
@@ -277,8 +278,14 @@ export default function DashboardHome() {
      honest "Coming soon" stubs so real users never see fake metrics.
      The banner appears only in demo mode so the operator knows the
      mode is active. */
-  const demoMode = typeof process !== "undefined" &&
-    process.env.NEXT_PUBLIC_DASHBOARD_DEMO === "1";
+  // Demo mode is unconditionally OFF in production builds — the env flag
+  // is only honoured in preview/dev so a stray Vercel env var can't ship
+  // sample numbers to paying users. VERCEL_ENV is "production" only on
+  // the production deployment; preview + development read the flag.
+  const demoMode =
+    typeof process !== "undefined" &&
+    process.env.NEXT_PUBLIC_DASHBOARD_DEMO === "1" &&
+    process.env.NEXT_PUBLIC_VERCEL_ENV !== "production";
 
   /* /session/new renders SessionSetup, which configures a session and
    * hands off to /interview. The previous "/interview/setup" path did
@@ -462,6 +469,14 @@ export default function DashboardHome() {
               <ComingSoonStub label="Progress metrics" detail="Practice hours, average score, and session totals roll in once the analytics pipeline ships." />
             )}
           </section>
+
+          {/* Upcoming interviews from the calendar — only renders when the user
+              has scheduled events ahead. Empty list returns null. */}
+          <UpcomingInterviews
+            events={core.calendarEvents}
+            isMobile={typeof window !== "undefined" && window.innerWidth < 720}
+            onNavigate={(path) => router.push(path)}
+          />
 
           {/* Recent sessions, real data when present, mock fallback with pill when empty */}
           <section aria-labelledby="dh-recent">

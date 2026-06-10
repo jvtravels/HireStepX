@@ -109,7 +109,11 @@ export function useInterviewSTT(
           onTranscript: (finalText, interim) => {
             if (!stopped) {
               if (finalText || interim) armSafetyTimer();
-              callbacks.setCurrentTranscript(finalText + interim);
+              // preservedFinalText carries any partial answer captured by
+              // Deepgram before it dropped — without prefixing it here, the
+              // candidate's earlier sentences disappear from the visible
+              // transcript the moment Sarvam takes over.
+              callbacks.setCurrentTranscript(preservedFinalText + finalText + interim);
             }
           },
           onError: (error) => {
