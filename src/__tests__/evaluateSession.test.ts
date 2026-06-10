@@ -15,6 +15,7 @@ import {
   normalizeReadiness,
   normalizeCoaching,
   normalizeCrossSessionInsights,
+  normalizeFocusMetrics,
   DEFAULT_BANDS,
   type TranscriptTurn,
   type WinOrFix,
@@ -477,5 +478,64 @@ describe("normalizeCrossSessionInsights", () => {
     const raw = [{ kind: "improvement", text: "ok", delta: -3.456 }];
     const out = normalizeCrossSessionInsights(raw, 1);
     expect(out[0].delta).toBe(-3.5);
+  });
+});
+
+describe("normalizeFocusMetrics", () => {
+  it("returns empty for a non-array, missing type, or unknown type", () => {
+    expect(normalizeFocusMetrics("nope", "behavioral")).toEqual([]);
+    expect(normalizeFocusMetrics([{ label: "STAR coverage", value: "88%" }], undefined)).toEqual([]);
+    expect(normalizeFocusMetrics([{ label: "STAR coverage", value: "88%" }], "no-such-focus")).toEqual([]);
+  });
+
+  it("keeps only metrics whose label matches a pinned spec, in canonical order", () => {
+    const raw = [
+      { label: "First-person", value: "71%", tone: "watch" },
+      { label: "STAR coverage", value: "88%", tone: "good" },
+      { label: "Conflict balance", value: "1 / 1", tone: "neutral" },
+    ];
+    const out = normalizeFocusMetrics(raw, "behavioral");
+    expect(out.map((m) => m.label)).toEqual(["STAR coverage", "First-person", "Conflict balance"]);
+  });
+
+  it("drops drift labels the card does not expect", () => {
+    const raw = [
+      { label: "STAR coverage", value: "88%", tone: "good" },
+      { label: "Vibe score", value: "100", tone: "good" },
+    ];
+    const out = normalizeFocusMetrics(raw, "behavioral");
+    expect(out).toHaveLength(1);
+    expect(out[0].label).toBe("STAR coverage");
+  });
+
+  it("uses the pinned label spelling, not the model's echoed casing", () => {
+    const out = normalizeFocusMetrics([{ label: "star COVERAGE", value: "90%", tone: "good" }], "behavioral");
+    expect(out[0].label).toBe("STAR coverage");
+  });
+
+  it("clamps an invalid tone to neutral and caps value length", () => {
+    const out = normalizeFocusMetrics(
+      [{ label: "STAR coverage", value: "x".repeat(40), tone: "amazing" }],
+      "behavioral",
+    );
+    expect(out[0].tone).toBe("neutral");
+    expect(out[0].value).toHaveLength(18);
+  });
+
+  it("skips entries missing a label or value, and dedups by label (first wins)", () => {
+    const raw = [
+      { label: "STAR coverage", value: "" },
+      { label: "STAR coverage", value: "88%", tone: "good" },
+      { label: "STAR coverage", value: "50%", tone: "miss" },
+    ];
+    const out = normalizeFocusMetrics(raw, "behavioral");
+    expect(out).toHaveLength(1);
+    expect(out[0].value).toBe("88%");
+  });
+
+  it("resolves the managerial alias to the management spec", () => {
+    const out = normalizeFocusMetrics([{ label: "People scope", value: "8", tone: "good" }], "managerial");
+    expect(out).toHaveLength(1);
+    expect(out[0].label).toBe("People scope");
   });
 });

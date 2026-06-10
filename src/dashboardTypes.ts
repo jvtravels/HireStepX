@@ -12,11 +12,22 @@ export type UserContext = { targetRole?: string; targetCompany?: string; industr
    — when the server bumps it, bump this too in the same commit so cached
    rows below the new version fall through to a re-evaluation instead of
    hydrating a stale shape. */
-export const CLIENT_REPORT_VERSION = "mvp-8";
+export const CLIENT_REPORT_VERSION = "mvp-9";
 
 export interface SessionCoaching {
   strength: { headline: string; meaning: string };
   gap: { headline: string; meaning: string; example: string };
+}
+
+/* One cell of the session card's focus-aware signature strip. The label set
+   is focus-specific and pinned server-side (data/focus-signature-metrics.ts);
+   the evaluator fills value + tone. `value` is a display string ("88%",
+   "0 / 1", "Not stated"). Persisted in report_json.focusMetrics (mvp-9+);
+   empty/absent for older rows → the card shows no strip. */
+export interface SessionFocusMetric {
+  label: string;
+  value: string;
+  tone: "good" | "watch" | "miss" | "neutral";
 }
 
 export interface DashboardSession {
@@ -42,6 +53,10 @@ export interface DashboardSession {
    *  Undefined for older sessions → card falls back to topStrength/
    *  topWeakness one-liners. */
   coaching?: SessionCoaching;
+  /** Per-focus signature strip from the evaluator (mvp-9+), read out of
+   *  report_json.focusMetrics. Empty/undefined for older sessions → the card
+   *  renders no instrument strip and falls back to the coaching pair. */
+  focusMetrics?: SessionFocusMetric[];
   /** Persisted evaluator output (full report) + the version that wrote
    *  it. Surfacing both lets `SessionReport` hydrate from cache without
    *  calling /api/evaluate-session at all when the row is current. Typed

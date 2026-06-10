@@ -296,6 +296,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
              evaluate-session. Undefined for pre-mvp-8 rows → the card
              falls back to the legacy strength/weakness one-liners. */
           coaching: s.report_json?.coaching ?? undefined,
+          /* Per-focus signature strip (mvp-9+), persisted in
+             report_json.focusMetrics. Empty/undefined for older rows → the
+             card renders no instrument strip. */
+          focusMetrics: s.report_json?.focusMetrics ?? undefined,
           /* Kernel-aware negotiation metrics. The Supabase column type
              is jsonb so we get an unknown-shaped object back; the
              RealSession field is strictly typed. Cast is intentional —
@@ -371,6 +375,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         focus: s.focus, duration: s.duration, score: s.score, questions: s.questions,
         ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
         coaching: s.report_json?.coaching ?? undefined,
+        focusMetrics: s.report_json?.focusMetrics ?? undefined,
       }));
       setSupabaseSessions(mapped);
       try { localStorage.setItem(`hirestepx_cache_sessions_${user.id}`, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }

@@ -2,6 +2,14 @@
    scoring/normalization pipeline without spinning up the edge handler. The
    handler imports these — behaviour must remain bit-identical. */
 
+import {
+  FOCUS_SIGNATURE_SPECS,
+  type FocusMetric,
+  type FocusMetricTone,
+} from "../data/focus-signature-metrics";
+
+export type { FocusMetric } from "../data/focus-signature-metrics";
+
 export type Band = "strongHire" | "hire" | "leanHire" | "noHire" | "strongNoHire";
 
 export interface BandThresholds {
@@ -477,6 +485,46 @@ export function normalizeCoaching(raw: unknown): Coaching | null {
   };
   if (!strength.headline || !gap.headline) return null;
   return { strength, gap };
+}
+
+/**
+ * Focus signature-metric normalizer — the trust boundary for the card's
+ * instrument strip. The LLM is asked to echo the pinned labels for this
+ * focus (see data/focus-signature-metrics.ts) and fill value + tone. We keep
+ * ONLY metrics whose label matches a spec for `type`, re-order them to the
+ * spec's canonical order, cap the value string, and clamp tone to the enum.
+ * A focus with no spec (or no valid metrics) returns [] — the card then
+ * renders no strip and falls back to the coaching pair. Labels are pinned in
+ * code, so the model can't invent an axis the UI doesn't expect.
+ */
+export function normalizeFocusMetrics(raw: unknown, type: string | undefined): FocusMetric[] {
+  if (!Array.isArray(raw) || !type) return [];
+  const specs = FOCUS_SIGNATURE_SPECS[type];
+  if (!specs || specs.length === 0) return [];
+  const validTones: FocusMetricTone[] = ["good", "watch", "miss", "neutral"];
+  const norm = (s: string) => s.trim().toLowerCase();
+  const byLabel = new Map<string, FocusMetric>();
+  for (const item of raw as Array<{ label?: unknown; value?: unknown; tone?: unknown }>) {
+    if (!item || typeof item !== "object") continue;
+    const label = typeof item.label === "string" ? item.label.trim() : "";
+    const value = typeof item.value === "string" ? item.value.trim().slice(0, 18) : "";
+    if (!label || !value) continue;
+    const spec = specs.find((sp) => norm(sp.label) === norm(label));
+    if (!spec) continue; // drift guard: drop labels the card doesn't expect
+    const tone: FocusMetricTone =
+      typeof item.tone === "string" && validTones.includes(item.tone as FocusMetricTone)
+        ? (item.tone as FocusMetricTone)
+        : "neutral";
+    // Use the pinned label spelling, not the model's echo, so casing/spacing
+    // stays identical across sessions. First valid wins (ignore duplicates).
+    if (!byLabel.has(norm(spec.label))) {
+      byLabel.set(norm(spec.label), { label: spec.label, value, tone });
+    }
+  }
+  // Return in canonical spec order, only the metrics the model actually filled.
+  return specs
+    .map((sp) => byLabel.get(norm(sp.label)))
+    .filter((m): m is FocusMetric => Boolean(m));
 }
 
 /**

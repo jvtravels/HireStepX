@@ -236,6 +236,15 @@ type Session = {
     strength: { headline: string; meaning: string };
     gap: { headline: string; meaning: string; example: string };
   };
+  /* Per-focus signature strip (mvp-9+) — the three numbers that define
+     quality in this interview focus (anchor delta for negotiation, STAR
+     coverage for behavioral, capacity math for system design). Labels are
+     pinned server-side; value is a display string, tone drives the colour.
+     Absent for pre-mvp-9 rows and canvas mock rows → the card omits the
+     strip and shows the coaching pair. Structurally matches
+     SessionFocusMetric in dashboardTypes (kept inline so this file stays
+     decoupled from the dashboard type module). */
+  focusMetrics?: { label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" }[];
   questions: number;
   /* Difficulty band passed through from DashboardSession. Surfaced inline
      in the row's metadata line so the score numeral has interpretive
@@ -837,28 +846,32 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
 const FILTER_TYPES_DEFAULT = ["All", "Behavioral", "System Design", "Tech Screen", "Hiring Mgr", "Salary Neg."] as const;
 type SortKey = "recent" | "score" | "score-asc" | "duration";
 
-/* V2.1 session card — verdict-first, adaptive hero, quote-optional.
+/* V2.2 session card — three-row, ~110px tall, editorial voice disciplined.
  *
- * Hierarchy:
- *  1. Peek strip  — date · identity sub-line on the left; score + band +
- *                   delta on the right. One line, quiet typography.
- *  2. Identity    — role at company in serif, type/difficulty as a sub-line.
- *  3. Adaptive hero:
- *        strong  → ✓ win in big indigo serif; gap demoted to one line below
- *        solid   → ✓ win first at body weight; gap second at body weight
- *        mixed   → → gap first at body weight; win second
- *        below   → → gap in big copper serif; win demoted
- *     Matches the user's mood: celebrate strong sessions, fix weak ones,
- *     don't make a list-of-failures wall.
- *  4. Footer     — pattern badge (left) + "Open report →" (right).
- *     "Open report" replaces "View full report" + "Drill this gap" — the
- *     card body is already the click target, and drill mode doesn't exist
- *     yet (no lying CTAs).
+ * V2.1 was a magazine page: 24px copper serif headlines, italic pull-quote,
+ * 280px tall, score isolated in a peek strip. Beautiful in isolation, wrong
+ * at scale — you couldn't see three sessions on screen at once and the
+ * hierarchy went verdict → role → score instead of role → verdict → score.
  *
- * Quote-optional: when the LLM later supplies `coaching.strength.quote`
- * + `coaching.strength.lead` (mvp-9 schema bump, not landed yet), the
- * strength block expands to a transcript pull-quote. Until then the
- * humanized headline is enough and the block degrades cleanly. */
+ * V2.2 keeps the editorial voice — serif role headline, copper for fix,
+ * green for win — but compresses to three rows that read in one glance:
+ *
+ *   Row 1  ROLE at Company · Type             ●▲86 STRONG · 2d
+ *   Row 2  ✓ Anchored to evidence with metrics
+ *            next: Build leverage before asking
+ *   Row 3  3rd session with this gap    [Re-run]  →   (hover only)
+ *
+ * The role moves left because that's how users scan ("did I do the Stripe
+ * round?"). The score cluster moves right because that's the verdict. The
+ * adaptive verdict line is now a single editorial sentence in coal at 15px,
+ * not a colored 24px serif — color stays as ink (the ✓/→ glyph + the small-
+ * caps eyebrow carry the green/copper signal). The transcript pull-quote
+ * is gone from the card entirely — that's report-detail territory; here
+ * it just inflated height for ~3 lines per card.
+ *
+ * Adaptive hero (same logic as V2.1, smaller surface):
+ *   strong/solid → ✓ win line primary, "next:" line subordinate
+ *   mixed/below  → → gap line primary, "did well:" line subordinate */
 
 /* Map the 4-band system (strong/solid/mixed/below) to glyph + label.
    Strong + solid carry up-arrows (win territory); mixed + below carry
@@ -870,6 +883,60 @@ function bandMeta(b: Band): BandMeta {
   if (b === "solid")  return { glyph: "↗", label: BAND_LABEL[b], color: tok.success };
   if (b === "mixed")  return { glyph: "→", label: BAND_LABEL[b], color: tok.copper };
   return                     { glyph: "↓", label: BAND_LABEL[b], color: tok.copper };
+}
+
+/* Tone → colour for a signature metric. The value IS the verdict, so it
+   carries green/amber/red on its own. "watch" maps to copper (the same warm
+   the card uses for "work on next"); "neutral" stays ink. */
+type MetricTone = "good" | "watch" | "miss" | "neutral";
+function metricToneColor(t: MetricTone): string {
+  if (t === "good") return tok.success;
+  if (t === "watch") return tok.copper;
+  if (t === "miss") return tok.error;
+  return tok.inkSoft;
+}
+
+/* Focus-aware signature strip — the instrument panel that makes the card
+   read as a measured tool, not a feelings summary. Each cell is the focus's
+   pinned label (e.g. STAR coverage, Anchor delta, Capacity stated) over a
+   tone-coloured value. Renders only when the evaluator emitted focusMetrics
+   (mvp-9+); older sessions skip it and fall back to the coaching pair. */
+function SignatureStrip({ metrics }: { metrics: NonNullable<Session["focusMetrics"]> }) {
+  return (
+    <div
+      role="group"
+      aria-label="Session metrics"
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${metrics.length}, 1fr)`,
+        border: `1px solid ${tok.line}`,
+        borderRadius: radii.btn,
+        overflow: "hidden",
+        background: tok.cream,
+      }}>
+      {metrics.map((m, i) => (
+        <div
+          key={m.label}
+          aria-label={`${m.label}: ${m.value}`}
+          style={{
+            padding: "9px 14px",
+            borderLeft: i === 0 ? "none" : `1px solid ${tok.line}`,
+            display: "flex", flexDirection: "column", gap: 3, minWidth: 0,
+          }}>
+          <span style={{
+            fontFamily: fonts.ui, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.07em",
+            textTransform: "uppercase", color: tok.inkSoft,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>{m.label}</span>
+          <span style={{
+            fontFamily: fonts.ui, fontSize: 15, fontWeight: 700, color: metricToneColor(m.tone),
+            fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap",
+            overflow: "hidden", textOverflow: "ellipsis",
+          }}>{m.value}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function SessionCard({ s, isSelected, isDue, badge, dateText, patternCount, onOpen, onRerun, onMouseEnter }: {
@@ -1035,6 +1102,12 @@ function SessionCard({ s, isSelected, isDue, badge, dateText, patternCount, onOp
         </div>
       ) : (
         <div style={{ padding: "12px 22px 22px", display: "flex", flexDirection: "column", gap: 18 }}>
+          {/* Signature strip — the focus's pinned instrument panel, when the
+              evaluator emitted it (mvp-9+). Sits above the coaching pair so the
+              measured read lands before the prose. Absent on older rows. */}
+          {s.focusMetrics && s.focusMetrics.length > 0 ? (
+            <SignatureStrip metrics={s.focusMetrics} />
+          ) : null}
           {winFirst ? (
             <>
               {winHeadline ? <StrengthBlock emphasis={winEmphasis} headline={winHeadline} /> : null}

@@ -59,6 +59,10 @@ function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
        through DashboardSession. Undefined for pre-mvp-8 rows — the card
        falls back to topStrength / topGap headlines, never invents copy. */
     coaching: d.coaching,
+    /* Per-focus signature strip (mvp-9+). Threaded through from
+       report_json.focusMetrics. Absent for older rows — the card renders
+       no instrument strip and shows the coaching pair instead. */
+    focusMetrics: d.focusMetrics,
     /* difficulty is surfaced inline in the row's metadata line so the
        score numeral has interpretive context (82 on Hard ≠ 82 on Easy).
        Optional upstream because some legacy rows predate the field. */

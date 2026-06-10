@@ -42,11 +42,14 @@ import {
   normalizeResumeGrounding,
   normalizeCrossSessionInsights,
   normalizeCoaching,
+  normalizeFocusMetrics,
   type Coaching,
+  type FocusMetric,
   type ResumeGroundingScore,
   type WinOrFix as WinOrFixH,
   type RedFlag as RedFlagH,
 } from "./_evaluate-session-helpers";
+import { formatSignatureMetricsPrompt } from "../data/focus-signature-metrics";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -56,7 +59,8 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 // Bump on any schema change to perQuestion/redFlags/etc. Old cached reports
 // with a different version are auto-invalidated on next view.
-const REPORT_VERSION = "mvp-8";
+// mvp-9: added focusMetrics (per-focus signature strip on the session card).
+const REPORT_VERSION = "mvp-9";
 
 /**
  * Try to read a cached report for this session. Returns null on any failure
@@ -335,7 +339,7 @@ interface ReadinessForecast {
 }
 
 interface SessionReport {
-  version: "mvp-8";
+  version: "mvp-9";
   overallScore: number;
   /** LLM-self-reported 0-1 confidence in the overall score. Rendered as ±band. */
   scoreConfidence: number;
@@ -381,6 +385,15 @@ interface SessionReport {
    * the LLM omitted or malformed the field (card falls back to wins/fixes).
    */
   coaching: Coaching | null;
+  /**
+   * Per-focus signature metrics — the three numbers that define quality in
+   * THIS interview focus (anchor delta for negotiation, STAR coverage for
+   * behavioral, capacity math for system design). Labels are pinned in
+   * data/focus-signature-metrics.ts; the LLM fills value + tone. Empty array
+   * when the focus has no spec or the model omitted them — the card then
+   * shows no instrument strip and falls back to the coaching pair.
+   */
+  focusMetrics: FocusMetric[];
   model: string;
 }
 
@@ -516,6 +529,11 @@ export default async function handler(req: Request): Promise<Response> {
         }
       }
     }
+    /* Per-focus signature-metric instructions — the three numbers that
+       define quality in this focus (see data/focus-signature-metrics.ts).
+       Labels are pinned in code; the model fills value + tone. Lands in the
+       dynamic section after the rubric so it doesn't break prompt caching. */
+    const signatureMetricsPrompt = formatSignatureMetricsPrompt(meta?.type);
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
     // lets Groq's automatic prompt caching (which keys on the longest shared
@@ -641,7 +659,7 @@ TRANSCRIPT (numbered turns):
 """
 ${transcriptBlock}
 """
-${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}
+${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}
 
 RUBRIC — score each skill 0-100:
 ${skillAxes.map((s) => `- ${s}`).join("\n")}
@@ -796,7 +814,15 @@ Return a JSON object with EXACTLY this shape:
       "meaning": "<one sentence naming what they did, grounded in transcript, ≤140 chars>",
       "example": "<concrete rewrite, starts with 'Try:', ≤140 chars>"
     }
-  }
+  }${signatureMetricsPrompt ? `,
+  "focusMetrics": [
+    // Per-focus signature strip — see FOCUS SIGNATURE METRICS above for the
+    // EXACT labels, value formats, and tone rules for this focus. Echo each
+    // label verbatim; "value" is a SHORT display string (e.g. "88%", "0 / 1",
+    // "Not stated"); "tone" is one of good|watch|miss|neutral. Omit a metric
+    // only if the round genuinely produced no signal for it.
+    { "label": "<pinned label>", "value": "<short string>", "tone": "<good|watch|miss|neutral>" }
+  ]` : ""}
 }
 
 Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no markdown wrapping, no prose.`;
@@ -856,7 +882,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const storyReuseFindings = normalizeStoryReuse((parsed as Record<string, unknown>).storyReuseFindings);
 
     const report: SessionReport = {
-      version: "mvp-8",
+      version: "mvp-9",
       overallScore,
       scoreConfidence,
       band: applyBands(overallScore, bands),
@@ -972,6 +998,11 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
          normalizeCoaching returns null on omission/malformation, so the
          card degrades to the legacy wins/fixes one-liners. */
       coaching: normalizeCoaching((parsed as Record<string, unknown>).coaching),
+      /* Per-focus signature strip — normalizer keeps only metrics whose
+         label matches the pinned spec for this focus, in canonical order.
+         Empty array for focuses without a spec or when the model omitted
+         them; the card degrades to the coaching pair. */
+      focusMetrics: normalizeFocusMetrics((parsed as Record<string, unknown>).focusMetrics, meta?.type),
       model: result.model,
     };
 
