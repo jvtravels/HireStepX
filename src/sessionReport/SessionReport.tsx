@@ -71,7 +71,7 @@ function parseDurationSec(s: string | undefined): number {
 
 /* ─── Loading + error UIs — cream surface to match the report ──────── */
 
-function LoadingShell({ onBack }: { onBack: () => void }) {
+function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: string }) {
   // Phase-walking copy mirrors the legacy ProgressiveLoadingState — gives
   // the user something to read while the LLM crunches. Plain rotation;
   // we don't need state-machine choreography here.
@@ -114,7 +114,7 @@ function LoadingShell({ onBack }: { onBack: () => void }) {
           marginBottom: 32,
         }}
       >
-        ← Back to Dashboard
+        ← {backLabel}
       </button>
       <div
         style={{
@@ -153,10 +153,12 @@ function ErrorShell({
   message,
   onRetry,
   onBack,
+  backLabel,
 }: {
   message: string;
   onRetry: () => void;
   onBack: () => void;
+  backLabel: string;
 }) {
   return (
     <div
@@ -185,7 +187,7 @@ function ErrorShell({
           marginBottom: 32,
         }}
       >
-        ← Back to Dashboard
+        ← {backLabel}
       </button>
       <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>
@@ -221,9 +223,11 @@ function ErrorShell({
 export const SessionReport = memo(function SessionReport({
   session,
   onBack,
+  backLabel = "Back to Dashboard",
 }: {
   session: DashboardSession;
   onBack: () => void;
+  backLabel?: string;
 }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -814,19 +818,20 @@ export const SessionReport = memo(function SessionReport({
 
 
   /* ── Render gates ── */
-  if (loading) return <LoadingShell onBack={onBack} />;
+  if (loading) return <LoadingShell onBack={onBack} backLabel={backLabel} />;
   if (errorMsg && !report) {
-    return <ErrorShell message={errorMsg} onRetry={onRetry} onBack={onBack} />;
+    return <ErrorShell message={errorMsg} onRetry={onRetry} onBack={onBack} backLabel={backLabel} />;
   }
   if (!viewData) {
     // Defensive — should be unreachable since loading covers null reports.
-    return <ErrorShell message="No report available." onRetry={onRetry} onBack={onBack} />;
+    return <ErrorShell message="No report available." onRetry={onRetry} onBack={onBack} backLabel={backLabel} />;
   }
 
   return (
     <SessionReportView
       data={viewData}
       onBack={onBack}
+      backLabel={backLabel}
       onDownloadPdf={onDownloadPdf}
       onShare={onShare}
       onTryQuestionAgain={onTryQuestionAgain}

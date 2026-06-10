@@ -84,6 +84,10 @@ export interface SessionReportViewProps {
    *  return to the dashboard. Optional so the canvas/storybook usage
    *  still works without a navigation stack. */
   onBack?: () => void;
+  /** Label for the back button. Defaults to "Back to Dashboard" inside
+   *  Header — overridden to "Back to Sessions" when the user arrived
+   *  from /sessions so the affordance matches where they came from. */
+  backLabel?: string;
   /** PDF download handler — typically `() => window.print()`. */
   onDownloadPdf?: () => void;
   /** Share-link handler — POSTs to /api/share-report and copies the
@@ -168,6 +172,7 @@ export interface SessionReportViewProps {
 export default function SessionReportView({
   data,
   onBack,
+  backLabel,
   onDownloadPdf,
   onShare,
   onTryQuestionAgain,
@@ -209,7 +214,7 @@ export default function SessionReportView({
         <a href="#ir-section-hero" className="ir-skip-link">
           Skip to report
         </a>
-        <Header onBack={onBack} onDownloadPdf={onDownloadPdf} onShare={onShare} />
+        <Header onBack={onBack} backLabel={backLabel} onDownloadPdf={onDownloadPdf} onShare={onShare} />
         <main
           id="ir-main"
           aria-label="Interview report"

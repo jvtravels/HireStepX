@@ -251,11 +251,25 @@ export default function SessionDetail() {
     [session]
   );
 
-  const onBack = () => router.push("/dashboard");
+  /* Referrer-aware back: if the user arrived from /sessions, send them
+     back there with a matching label; otherwise default to /dashboard.
+     document.referrer is read once at mount — clicking around inside the
+     report shouldn't change the meaning of "back". */
+  const [backTarget] = useState<{ href: string; label: string }>(() => {
+    if (typeof document === "undefined") return { href: "/dashboard", label: "Back to Dashboard" };
+    try {
+      const ref = new URL(document.referrer);
+      if (ref.origin === window.location.origin && ref.pathname.startsWith("/sessions")) {
+        return { href: "/sessions", label: "Back to Sessions" };
+      }
+    } catch { /* invalid or empty referrer — fall through to default */ }
+    return { href: "/dashboard", label: "Back to Dashboard" };
+  });
+  const onBack = () => router.push(backTarget.href);
 
   if (loading) return <LoadingScreen />;
   if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); /* trigger effect */ }} onBack={onBack} />;
   if (!dashboardSession) return <NotFoundScreen onBack={onBack} />;
 
-  return <SessionReport session={dashboardSession} onBack={onBack} />;
+  return <SessionReport session={dashboardSession} onBack={onBack} backLabel={backTarget.label} />;
 }

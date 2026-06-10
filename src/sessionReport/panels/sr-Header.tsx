@@ -6,10 +6,12 @@ import { t, f } from "../tokens";
 
 export function Header({
   onBack,
+  backLabel = "Back to Dashboard",
   onDownloadPdf,
   onShare,
 }: {
   onBack?: () => void;
+  backLabel?: string;
   onDownloadPdf?: () => void;
   onShare?: () => void;
 }) {
@@ -44,7 +46,7 @@ export function Header({
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
-        Back to Dashboard
+        {backLabel}
       </button>
       <div style={{ display: "flex", gap: 10 }}>
         <button type="button" className="ir-cta-ghost" onClick={onDownloadPdf}>
