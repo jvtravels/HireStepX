@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
 import { NavV2, FinalCTAFooterV2, MobileStickyCTA } from "./HomepageV2";
+import { captureClientEvent } from "../posthogClient";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing pages v2
@@ -364,6 +365,9 @@ const PagesResponsiveSheet = () => (
    Deeper than the homepage slot. 4 tiers + comparison table + FAQ.
    ════════════════════════════════════════════════════════════════════ */
 export function PricingPageV2() {
+  useEffect(() => {
+    captureClientEvent("pricing_page_viewed", { surface: "marketing_v2" });
+  }, []);
   const tiers = [
     {
       name: "Free",
@@ -378,22 +382,6 @@ export function PricingPageV2() {
       ],
       cta: "Start free",
       href: "/signup?plan=free",
-      featured: false,
-      studentDiscount: false,
-    },
-    {
-      name: "Per session",
-      price: "₹9",
-      unit: "/ session",
-      sub: "One round before the real thing",
-      features: [
-        "1 full mock session",
-        "Full STAR breakdown",
-        "Coach fixes after every answer",
-        "Saved report for 90 days",
-      ],
-      cta: "Buy a session",
-      href: "/signup?plan=session",
       featured: false,
       studentDiscount: false,
     },
@@ -433,15 +421,15 @@ export function PricingPageV2() {
     },
   ];
 
-  const compareRows: Array<[string, string, string, string, string]> = [
-    ["Mock sessions included", "3 (one-time)", "1", "10 / week", "40 / month"],
-    ["Voice in & out", "Yes", "Yes", "Yes", "Yes"],
-    ["STAR scoring", "Yes", "Yes", "Yes", "Yes"],
-    ["Company-specific rounds", "Limited", "Yes", "Yes", "Yes"],
-    ["Skill-decay tracking", "No", "No", "Yes", "Yes"],
-    ["Priority coach feedback", "No", "No", "No", "Yes"],
-    ["Report retention", "30 days", "90 days", "90 days", "1 year"],
-    [".ac.in / .edu.in discount", "No", "No", "30% off", "30% off"],
+  const compareRows: Array<[string, string, string, string]> = [
+    ["Mock sessions included", "3 (one-time)", "10 / week", "40 / month"],
+    ["Voice in & out", "Yes", "Yes", "Yes"],
+    ["STAR scoring", "Yes", "Yes", "Yes"],
+    ["Company-specific rounds", "Limited", "Yes", "Yes"],
+    ["Skill-decay tracking", "No", "Yes", "Yes"],
+    ["Priority coach feedback", "No", "No", "Yes"],
+    ["Report retention", "30 days", "90 days", "1 year"],
+    [".ac.in / .edu.in discount", "No", "30% off", "30% off"],
   ];
 
   const faqs: Array<[string, string]> = [
@@ -466,8 +454,8 @@ export function PricingPageV2() {
       "UPI (GPay / PhonePe / BHIM), all major Indian debit + credit cards, netbanking from 50+ banks, and Razorpay wallets. International cards work too if you're abroad.",
     ],
     [
-      "Will I get a GST invoice?",
-      "Auto-emailed and downloadable from your dashboard for every order. Tax invoicing rolls out post-launch once we've registered for GST.",
+      "Will I get a tax invoice?",
+      "Every order generates a downloadable payment receipt with the order ID, amount paid, and date. Formal GST invoices will be added once HireStepX crosses the GST registration threshold; until then, the receipt is what you'd attach to a B2B reimbursement.",
     ],
   ];
 
@@ -703,11 +691,10 @@ export function PricingPageV2() {
                 </tr>
               </thead>
               <tbody>
-                {compareRows.map(([feature, free, session, weekly, monthly], i) => (
+                {compareRows.map(([feature, free, weekly, monthly], i) => (
                   <tr key={feature} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
                     <th scope="row" style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, textAlign: "left", fontFamily: fonts.sans, fontSize: 14 }}>{feature}</th>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{free}</td>
-                    <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{session}</td>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{weekly}</td>
                     <td
                       style={{
@@ -791,7 +778,7 @@ export function HowItWorksV2() {
       label: "Get scored",
       title: "STAR breakdown on every answer.",
       body: "Every answer is scored on Situation, Task, Action, Result, plus communication clarity, technical depth, and authenticity. You get a 1–10 score, the rubric behind it, and a model answer to compare against.",
-      detail: "Benchmarked against real Indian hiring panels. Disagree with a score? Hit 'Dispute' and our coach team reviews within 24h. Refund the credit if we agree.",
+      detail: "Rubrics built from publicly aggregated interview reports across Glassdoor, Levels.fyi and AmbitionBox — each question cross-checked against two independent sources. Disagree with a score? Hit 'Dispute' and we review within 24h. Credit refunded if we agree.",
     },
     {
       n: "05",
@@ -1013,10 +1000,10 @@ export function AboutV2() {
               maxWidth: "60ch",
             }}
           >
-            Engineers who interviewed at Razorpay and Flipkart. A product lead who
-            ran panel rounds for a unicorn's 2024 hiring season. Coaches who walked
-            three placement cells through last year's TCS Digital cycle. We built
-            the prep we wanted when we were on the other side of the camera.
+            Built by someone who sat through enough Indian-tech interview cycles
+            — services, GCC, product — to know where the prep most students do
+            actually breaks. The product reflects that frustration, not a
+            placement-cell pitch deck.
           </p>
         </div>
       </section>
@@ -1421,8 +1408,8 @@ export function ForStudentsV2() {
         </div>
       </section>
 
-      {/* Real student outcome */}
-      <section className="mv2p-section" aria-label="Student outcome" style={sectionBase}>
+      {/* Honest pre-launch note */}
+      <section className="mv2p-section" aria-label="Pre-launch note" style={sectionBase}>
         <div className="mv2-container" style={containerNarrow}>
           <div
             style={{
@@ -1432,22 +1419,15 @@ export function ForStudentsV2() {
               borderRadius: 20,
             }}
           >
-            <p style={{ ...eyebrow, marginBottom: 16 }}>One real session</p>
-            <blockquote
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 26,
-                lineHeight: 1.35,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 24,
-                fontStyle: "italic",
-              }}
-            >
-              "Got rejected from Infosys after round 2. Did 6 mocks here over 9 days, got the same kind of follow-up questions, learned where my STAR was breaking. Cleared TCS Digital and Wipro Elite back-to-back. The honest scoring is the unlock."
-            </blockquote>
+            <p style={{ ...eyebrow, marginBottom: 16 }}>Before you pay</p>
+            <p style={{ fontFamily: fonts.serif, fontSize: 22, lineHeight: 1.45, color: t.coal, margin: 0, marginBottom: 16 }}>
+              HireStepX is in early access. Try three full mocks free first — see the
+              voice, the questions, and the scored report yourself before you decide.
+              If the free tier doesn't change how you're preparing, paid won't either.
+            </p>
             <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>
-              Priya R. · CSE final year · VIT Vellore
+              No testimonials shown yet — outcomes get published once early-access users
+              opt in to share theirs.
             </p>
           </div>
         </div>
@@ -1468,7 +1448,7 @@ export function CompareChatGPTV2() {
     ["Resume integration", "Parses your resume; asks about your projects", "You paste resume each time; forgets next session"],
     ["Skill-decay tracking", "Knows when you're slipping; queues spaced reps", "No memory between conversations"],
     ["Indian context", "TCS Digital, Razorpay, Infosys SP/PP, RBI Grade B", "Knows India exists; knows little about Indian hiring"],
-    ["Cost per scored mock", "₹9", "$20/mo for Plus, no scoring included"],
+    ["Cost per scored mock", "₹4.90 on Weekly · ₹3.73 on Monthly", "$20/mo for Plus, no scoring included"],
     ["Privacy", "Encrypted; auto-delete in 90 days; never shared", "Used to train OpenAI models unless you flip the toggle"],
   ];
 

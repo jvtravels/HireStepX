@@ -17,7 +17,6 @@ const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 
 const PRICE_MAP: Record<string, { amount: number; name: string; description: string }> = {
-  single:           { amount: 900,    name: "HireStepX Session",          description: "Single Session — ₹9 · 1 AI mock interview" },
   weekly:           { amount: 4900,   name: "HireStepX Weekly",           description: "Weekly Plan — ₹49 · 10 sessions over 7 days" },
   monthly:          { amount: 14900,  name: "HireStepX Monthly",          description: "Monthly Plan — ₹149 · 40 sessions over 30 days" },
   "yearly-starter": { amount: 203900, name: "HireStepX Weekly Annual",    description: "Annual Weekly — ₹2,039/year · 10 sessions/week" },
@@ -79,21 +78,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const price = PRICE_MAP[plan];
     if (!price) return res.status(400).json({ error: "Invalid plan" });
 
-    // Quantity support for single session purchases (1-10)
-    const quantity = plan === "single" && typeof rawQty === "number" && rawQty >= 1 && rawQty <= 10 ? Math.floor(rawQty) : 1;
-    const finalAmount = plan === "single" ? price.amount * quantity : price.amount;
-    const finalDescription = plan === "single" && quantity > 1 ? `${quantity} Sessions — ₹${quantity * 10} · ${quantity} AI mock interviews` : price.description;
+    // rawQty is accepted for forwards-compatibility but unused — every
+    // remaining plan is a fixed-price subscription.
+    void rawQty;
+    const finalAmount = price.amount;
+    const finalDescription = price.description;
 
     // Idempotency: atomic lock to prevent duplicate orders for the same
     // user+plan from racing simultaneous clicks (double-click, fast retry).
     //
-    // TTL is intentionally short (8s) — long enough to dedup back-to-back
-    // requests in flight, short enough that a *human* retry after a failed
-    // checkout never reuses the stale order_id. Razorpay marks an order as
-    // non-attemptable once a payment fails or is captured; returning that
-    // stale order_id to a fresh checkout surfaces as "Invalid Token" on
-    // Razorpay's hosted retry page. See PostHog `checkout_cache_hit`.
-    const DEDUP_TTL = 8;
+    // TTL covers slow-network round-trips on Indian 3G/4G (Razorpay's
+    // hosted checkout regularly takes 30-60s on poor signal). Too short
+    // and a double-tap during a stuck request bills the card twice; too
+    // long and a human retry after a failed checkout reuses a stale
+    // order_id that Razorpay marks non-attemptable. 90s threads that
+    // needle. See PostHog `checkout_cache_hit`.
+    const DEDUP_TTL = 90;
     const resolvedUserId = authenticatedUserId || (typeof userId === "string" ? userId : "");
     const idempotencyKey = `order:${resolvedUserId}:${plan}`;
     if (UPSTASH_URL && UPSTASH_TOKEN && resolvedUserId) {
@@ -154,7 +154,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const receipt = `${plan}_${Date.now()}`.slice(0, 40);
 
     const notes: Record<string, string> = { plan };
-    if (plan === "single" && quantity > 1) notes.quantity = String(quantity);
     if (resolvedUserId.length > 0 && resolvedUserId.length <= 200) notes.userId = resolvedUserId;
     if (typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) notes.email = email;
 
@@ -213,7 +212,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       amount: order.amount,
       currency: order.currency,
       order_id: order.id,
-      quantity,
     });
 
     return res.status(200).json({
@@ -223,7 +221,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       keyId: RAZORPAY_KEY_ID,
       name: price.name,
       description: finalDescription,
-      ...(plan === "single" && quantity > 1 ? { quantity } : {}),
     });
   } catch (err) {
     console.error("Order creation error:", err);

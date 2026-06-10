@@ -89,15 +89,12 @@ function verifyToken(token: string): boolean {
 
 function verifyPassword(input: string): boolean {
   if (!ADMIN_PASSWORD || !input) return false;
-  const a = Buffer.from(input);
-  const b = Buffer.from(ADMIN_PASSWORD);
-  if (a.length !== b.length) {
-    // Compare against padded buffer to prevent length-based timing leaks
-    const padded = Buffer.alloc(b.length);
-    a.copy(padded, 0, 0, Math.min(a.length, b.length));
-    timingSafeEqual(padded, b);
-    return false;
-  }
+  // HMAC both sides to a fixed-length 32-byte digest. This eliminates
+  // length-based timing leaks (the comparison itself sees only equal-
+  // length buffers) and we use the comparison result directly so static
+  // analyzers don't flag a discarded timingSafeEqual return.
+  const a = createHmac("sha256", "hsx-admin-pw-v1").update(input).digest();
+  const b = createHmac("sha256", "hsx-admin-pw-v1").update(ADMIN_PASSWORD).digest();
   return timingSafeEqual(a, b);
 }
 

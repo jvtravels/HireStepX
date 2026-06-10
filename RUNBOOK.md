@@ -111,14 +111,51 @@ PostHog dashboards:
 
 ## On-call escalation
 
-> **TODO**: fill in real contacts before launch.
+| Role | Contact | Channel |
+| ---- | ------- | ------- |
+| First responder (P0/P1) | Jay Vyas | `vyasjay85@gmail.com` · phone on file |
+| Escalation L1 — kernel  | Jay Vyas | same |
+| Escalation L2 — product | Jay Vyas | same |
+| Off-hours hard-stop      | n/a      | flip `NEGOTIATION_KERNEL_ENABLED=0` in Vercel prod env (returns 404 for negotiate-turn and routes the engine to the legacy script path) |
 
-1. First responder: on-call engineer (PagerDuty rotation).
-2. Escalation L1: kernel lead.
-3. Escalation L2: head of product.
-4. Off-hours hard-stop: flip `NEGOTIATION_KERNEL_ENABLED=0` in Vercel
-   prod env. This returns 404 for every negotiate-turn request and
-   routes the engine back to the legacy script path.
+Single-maintainer rotation for MVP. Replace this table with a PagerDuty
+schedule once headcount > 1 or 7-day DAU > 500. Until then, the
+off-hours hard-stop env flag is the actual safety net — flipping it
+takes &lt;1 minute via Vercel dashboard and needs no redeploy.
+
+### Paging path (pre-PagerDuty)
+
+The minimum bar before paid traffic is enabled is **one automated SMS to
+one phone number** when any of the following trips. Configure in Better
+Stack (or UptimeRobot) against the listed signal:
+
+| Signal | Threshold | Source |
+| ------ | --------- | ------ |
+| `/api/uptime-check` non-200 | 2 consecutive failures, 60s apart | Better Stack HTTP monitor |
+| `payment_completed` event rate | 0 events in 30 min during business hours after first paid traffic | PostHog alert |
+| `verify_payment_dedup_degraded` rate | > 5 events in 15 min | PostHog alert |
+| LLM 429 rate (`gq_groq_429` / `evaluate_groq_429`) | > 10 % of calls in 15 min | PostHog alert |
+| 5xx rate on `/api/negotiate-turn` | > 0.5 % in 10 min | Vercel log drain → Better Stack |
+
+Route every alert to: SMS + email to the contact in the table above.
+When a second maintainer joins, fan out to both numbers.
+
+### "Paged at 3am" playbook (half-page)
+
+1. **Acknowledge** within 5 min via SMS reply or Better Stack web.
+2. **Check `/api/uptime-check`** from a browser. If 200, the alert is a
+   downstream issue (payments, LLM, DB). If non-200, flip
+   `NEGOTIATION_KERNEL_ENABLED=0` in Vercel and proceed.
+3. **Open the PostHog dashboard "Live ops"** — look at the last 30 min
+   of `payment_completed`, `verify_payment_dedup_degraded`, and
+   `kernel_fallback`. Identify which signal is anomalous.
+4. **Match against Common Incidents** (Section "Common incidents" below)
+   for the matching shape. Apply the kill-switch named there.
+5. **Post in #ops** (or email yourself) with: incident shape, kill-switch
+   flipped, expected blast radius, ETA on full fix. Even solo, write it
+   down — you will not remember at 9am.
+6. **Schedule a Tomorrow-Me task** to either revert the kill-switch or
+   ship the real fix within 24h.
 
 ---
 

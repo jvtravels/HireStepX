@@ -106,7 +106,6 @@ export function DataLoadingSkeleton() {
 /* ─── Upgrade Modal ─── */
 const PLANS = [
   { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",    features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"], featured: false },
-  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One round before the real thing",    cta: "Buy a session", features: ["1 full mock session", "Full STAR breakdown", "Coach fixes after every answer", "Voice in & out", "Saved report for 90 days"], featured: false },
   { id: "weekly",  tier: "starter", name: "Weekly",      price: "\u20B949",  unit: "/ 7 days",  sub: "Sprint before placement week",       cta: "Go weekly",     features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7 days`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"], featured: false },
   { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",    features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"], featured: true },
 ];
@@ -127,7 +126,6 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   };
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [sessionQty, setSessionQty] = useState(1);
   const [promoCode, setPromoCode] = useState("");
   const [promoResult, setPromoResult] = useState<{ valid: boolean; discount_percent?: number; discount_amount?: number; final_amount?: number; code?: string } | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
@@ -202,7 +200,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       const res = await fetch("/api/create-order", {
         method: "POST",
         headers: hdrs,
-        body: JSON.stringify({ plan: planId, userId: user?.id, email: user?.email, ...(planId === "single" && sessionQty > 1 ? { quantity: sessionQty } : {}) }),
+        body: JSON.stringify({ plan: planId, userId: user?.id, email: user?.email }),
       });
       if (!res.ok) {
         let errMsg = "Could not start checkout. Please try again.";
@@ -408,9 +406,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           </div>
         )}
 
-        <div className="upgrade-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, alignItems: "stretch" }}>
+        <div className="upgrade-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, alignItems: "stretch" }}>
           {PLANS.map((plan) => {
-            const isCurrent = plan.tier === currentTier && plan.id !== "single";
+            const isCurrent = plan.tier === currentTier;
             const featured = plan.featured;
             const ribbonText = featured ? "Most loved" : null;
             return (
@@ -433,9 +431,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 <div>
                   <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? "#F4E5D8" : c.gilt }}>{plan.name}</p>
                   <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? "#FAF7F0" : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-                    {plan.id === "single" ? `₹${sessionQty * 9}` : plan.price}
+                    {plan.price}
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(14,12,8,0.7)" : c.stone }}>
-                      {plan.id === "single" ? `/ ${sessionQty} session${sessionQty > 1 ? "s" : ""}` : plan.unit}
+                      {plan.unit}
                     </span>
                   </p>
                   <p style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(14,12,8,0.7)" : c.stone }}>{plan.sub}</p>
@@ -448,18 +446,6 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     </li>
                   ))}
                 </ul>
-
-                {plan.id === "single" && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto" }}>
-                    <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.max(1, q - 1)); }} disabled={sessionQty <= 1} aria-label="Decrease session count"
-                      style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty <= 1 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>−</button>
-                    <input type="range" min={1} max={10} value={sessionQty} onChange={e => setSessionQty(Number(e.target.value))}
-                      aria-label="Number of sessions" className="upgrade-session-slider"
-                      style={{ flex: 1, height: 4, appearance: "none", WebkitAppearance: "none", background: `linear-gradient(to right, ${c.gilt} 0%, ${c.gilt} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} ${(sessionQty - 1) / 9 * 100}%, ${c.borderHover} 100%)`, borderRadius: 2, outline: "none", cursor: "pointer" }} />
-                    <button onClick={(e) => { e.stopPropagation(); setSessionQty(q => Math.min(10, q + 1)); }} disabled={sessionQty >= 10} aria-label="Increase session count"
-                      style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${c.borderHover}`, background: c.graphite, color: sessionQty >= 10 ? c.stone : c.ivory, fontSize: 16, fontWeight: 600, cursor: sessionQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.mono, padding: 0 }}>+</button>
-                  </div>
-                )}
 
                 {isCurrent ? (
                   <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? "#F4E5D8" : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
@@ -481,7 +467,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
                   >
-                    {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{plan.id === "single" ? `Buy ${sessionQty} session${sessionQty > 1 ? "s" : ""}` : plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
+                    {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
                   </button>
                 )}
               </div>

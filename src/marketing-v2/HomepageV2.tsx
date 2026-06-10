@@ -1162,9 +1162,9 @@ export function HeroV2() {
                 margin: "28px 0 0",
               }}
             >
-              Voice-first mock rounds. Real interviewer questions.{" "}
-              <abbr title="Situation, Task, Action, Result — the answer framework used by Amazon, Google, and most India tech panels" style={{ textDecoration: "underline dotted", textUnderlineOffset: 3, cursor: "help" }}>STAR</abbr>{" "}
-              rubric back before your chai cools.
+              AI mock interviews you actually speak to — scored against the
+              rubrics real Indian panels use. First three rounds free, no card
+              needed. STAR breakdown back before your chai cools.
             </p>
 
             <div
@@ -2890,22 +2890,6 @@ export function PricingV2() {
       studentDiscount: false,
     },
     {
-      name: "Per session",
-      price: "₹9",
-      unit: "/ session",
-      sub: "Just one round before the real thing",
-      features: [
-        "1 full mock session",
-        "Full STAR breakdown",
-        "Coach fixes after every answer",
-        "Saved report for 90 days",
-      ],
-      cta: "Buy a session",
-      href: "/signup?plan=session",
-      featured: false,
-      studentDiscount: false,
-    },
-    {
       name: "Weekly",
       price: "₹49",
       unit: "/ 7 days",
@@ -3162,7 +3146,7 @@ export function PricingV2() {
         >
           {[
             ["✓", "Cancel anytime · no lock-in"],
-            ["✓", "7-day refund if unused"],
+            ["✓", "7-day refund on Monthly · 24h on Weekly"],
             ["✓", "GST-ready receipt on every order"],
             ["✓", "30% off for .ac.in / .edu.in"],
           ].map(([k, v]) => (
@@ -3426,8 +3410,8 @@ export function FAQV2() {
     },
     {
       cat: "Pricing",
-      q: "What if I just want one session?",
-      a: "Pay ₹9 per session. No subscription, no commitment. Useful if you have one interview tomorrow.",
+      q: "What if I just want to try it?",
+      a: "Sign up free and get 3 full mock sessions — no card needed. If you have an interview tomorrow, that's enough to practice once and review the report.",
     },
     {
       cat: "Pricing",
@@ -3452,7 +3436,7 @@ export function FAQV2() {
     {
       cat: "Product",
       q: "How accurate is the AI score?",
-      a: "Benchmarked against real Indian hiring panels. Every score shows the rubric (STAR breakdown, what worked, what didn't), not just a number.",
+      a: "Rubrics are built from publicly aggregated interview reports (Glassdoor, Levels.fyi, AmbitionBox), cross-checked against two independent sources per question. Every score shows the rubric (STAR breakdown, what worked, what didn't), not just a number. Disagree? Hit Dispute.",
     },
     {
       cat: "Product",
@@ -3949,10 +3933,10 @@ function StructuredData() {
   const faqs = [
     ["Is the free tier actually free?", "Yes. 3 full mock sessions, full scoring, full report. No card, no auto-charge after."],
     ["Do plans auto-renew?", "No. Weekly and Monthly are one-time top-ups. They expire on day 7 or 30. You buy again when you want more."],
-    ["What if I just want one session?", "Pay ₹9 per session. No subscription, no commitment."],
+    ["What if I just want to try it?", "Sign up free — 3 full sessions, no card needed."],
     ["Do you have a student discount?", "Verified .ac.in / .edu.in email = 30% off Weekly and Monthly."],
     ["Which companies and roles do you cover?", "200+ Indian roles in our question bank (IT services, unicorns, PSUs, MNCs) across behavioural, campus placement, salary negotiation and HR rounds at launch."],
-    ["How accurate is the AI score?", "Benchmarked against real Indian hiring panels. Every score shows the rubric (STAR breakdown), not just a number."],
+    ["How accurate is the AI score?", "Rubrics built from publicly aggregated interview reports, cross-checked against two sources per question. Every score shows the rubric (STAR breakdown), not just a number."],
     ["Where does my voice data go?", "Encrypted in transit and at rest. Auto-deleted after 90 days. Designed against DPDP Act 2023 from day one."],
     ["Which languages do you support?", "English at launch. Hindi and other Indian languages are on the post-launch roadmap."],
   ];

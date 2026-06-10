@@ -32,6 +32,15 @@ const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 
 import { captureServerEvent } from "./_posthog";
 
+/** Hash a Razorpay payment id before sending it to analytics. The full id
+ * is a financial identifier (DPDP-sensitive) — we never want it to leave
+ * our infrastructure in plaintext. SHA-256 + first 12 chars is enough to
+ * correlate events without being reversible. */
+function hashPaymentId(id: unknown): string {
+  if (typeof id !== "string" || !id) return "";
+  return createHmac("sha256", "hsx-payment-id-v1").update(id).digest("hex").slice(0, 12);
+}
+
 /** Clear the payment-abandonment intent key so the cron doesn't email a paying user. */
 async function clearPaymentIntent(orderId: string): Promise<void> {
   if (!UPSTASH_URL || !UPSTASH_TOKEN || !orderId) return;
@@ -392,7 +401,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const rows = await snapRes.json();
         const snap = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
         void captureServerEvent("verify_payment_idempotent", userId, {
-          razorpay_payment_id: typeof razorpay_payment_id === "string" ? razorpay_payment_id : "",
+          payment_id_hash: hashPaymentId(razorpay_payment_id),
           source,
         });
         res.status(200).json({
@@ -453,7 +462,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // dedup is recovering. PostHog event lets ops monitor frequency.
       console.warn("[verify-payment] Dedup table unavailable but payment is signature-verified. Proceeding with activation to avoid leaving the user charged-but-unactivated.");
       void captureServerEvent("verify_payment_dedup_degraded", userId, {
-        razorpay_payment_id: typeof razorpay_payment_id === "string" ? razorpay_payment_id : "",
+        payment_id_hash: hashPaymentId(razorpay_payment_id),
         dedup_status: dedupRes.status,
       });
       // Intentionally fall through — no return here.
@@ -633,7 +642,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await captureServerEvent("payment_completed", userId, {
       plan,
       tier,
-      payment_id: razorpay_payment_id,
+      payment_id_hash: hashPaymentId(razorpay_payment_id),
       subscription_end: end.toISOString(),
       prorated_days: proratedDays,
     });

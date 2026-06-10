@@ -177,6 +177,18 @@ create table if not exists payments (
   status text default 'completed',
   subscription_start timestamptz,
   subscription_end timestamptz,
+  receipt_url text default '',
+  created_at timestamptz default now()
+);
+alter table payments add column if not exists receipt_url text default '';
+
+-- 5b. Payment dedup
+-- Atomic guard against duplicate verify-payment activations. A single
+-- UNIQUE row per Razorpay payment id; the verify handler INSERTs with
+-- on-conflict-do-nothing and treats the conflict as "already processed".
+create table if not exists payment_dedup (
+  razorpay_payment_id text primary key,
+  user_id uuid references profiles(id) on delete cascade,
   created_at timestamptz default now()
 );
 
@@ -484,6 +496,13 @@ alter table profiles add column if not exists re_engage_sent timestamptz;
 -- knows not to double-bump practice_timestamps on completion. Last 50 ids
 -- retained — older ones get pruned on each write.
 alter table profiles add column if not exists started_session_ids jsonb default '[]'::jsonb;
+
+-- Soft-delete marker. delete-account.ts (PATCH path) sets this on
+-- user-requested account deletion; cleanup-deleted-accounts.ts
+-- permanently removes profiles where deleted_at < now() - 7 days.
+-- Restore path (login within the window) clears the field.
+alter table profiles add column if not exists deleted_at timestamptz;
+create index if not exists profiles_deleted_at_idx on profiles (deleted_at) where deleted_at is not null;
 
 alter table profiles enable row level security;
 alter table sessions enable row level security;
