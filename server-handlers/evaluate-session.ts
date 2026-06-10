@@ -830,12 +830,14 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const tLLM0 = Date.now();
     // maxTokens 5500 (down from 7500): real reports rarely exceed 5k; the
     // higher cap was pushing Groq past its 6s per-provider cap and forcing
-    // a guaranteed Gemini failover. Total LLM budget 45s fits inside the
-    // function's maxDuration:60 with margin for response handling.
+    // a guaranteed Gemini failover. Total LLM budget 30s leaves ~30s of the
+    // 60s function ceiling for parse-retry + DB persistence + response —
+    // mvp-9's larger prompt was eating the prior 45s budget and tripping
+    // FUNCTION_INVOCATION_TIMEOUT on Edge.
     const result = await callLLM(
       { prompt, temperature: 0.25, maxTokens: 5500, jsonMode: true },
-      45000,
-      { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
+      30000,
+      { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 10000 },
     );
     const tLLM = Date.now() - tLLM0;
 
@@ -850,8 +852,8 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
         const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
         const retry = await callLLM(
           { prompt: strictPrompt, temperature: 0, maxTokens: 5500, jsonMode: true },
-          30000,
-          { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 15000 },
+          15000,
+          { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 8000 },
         );
         parsed = extractJSON<Partial<SessionReport>>(retry.text);
       } catch (retryErr) {

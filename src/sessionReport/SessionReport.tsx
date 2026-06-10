@@ -294,32 +294,47 @@ export const SessionReport = memo(function SessionReport({
      below so the user always sees a current-shape report. */
   const cachedReport = session.cachedReport as SessionReportData | undefined;
   const cachedVersion = session.cachedReportVersion;
-  const hasCachedReport = Boolean(
+  const hasAnyCachedReport = Boolean(cachedReport);
+  const hasCurrentCachedReport = Boolean(
     cachedReport && cachedVersion === CLIENT_REPORT_VERSION
   );
+  /* Stale-while-revalidate: if we have ANY cached report (even an older
+     version) hydrate it immediately so the user sees their report rather
+     than a timeout error. The background eval below will replace it with
+     the current-version report when it succeeds. This is what fixes the
+     FUNCTION_INVOCATION_TIMEOUT user-visible failure: even if /api/
+     evaluate-session times out, the user still has their last good
+     report on screen. */
   useEffect(() => {
-    if (!hasCachedReport || !cachedReport) return;
+    if (!hasAnyCachedReport || !cachedReport) return;
     setReport(cachedReport);
     setLoading(false);
     setErrorMsg("");
     track("report_cache_hydrated", {
       sessionId: session.id,
       version: cachedVersion ?? "",
+      current: hasCurrentCachedReport ? "yes" : "stale",
     });
     /* reloadTick lets the user force a re-evaluation from the error
        UI; when it ticks past 0 we drop the cache path so the live
        effect below runs. */
-  }, [hasCachedReport, cachedReport, session.id, cachedVersion]);
+  }, [hasAnyCachedReport, hasCurrentCachedReport, cachedReport, session.id, cachedVersion]);
 
   /* ── Evaluate session via LLM ── */
   useEffect(() => {
-    /* Cache wins on first render. Skip the network call entirely
-       unless the user explicitly asked for a fresh evaluation
-       (reloadTick > 0) from the error UI. */
-    if (hasCachedReport && reloadTick === 0) return;
+    /* Skip the network call only when the cached report is already on
+       the current schema. Stale cached reports still trigger a silent
+       background refresh — the user already sees the stale report from
+       the hydrate effect above, so a background failure is invisible. */
+    if (hasCurrentCachedReport && reloadTick === 0) return;
     let cancelled = false;
     const ac = new AbortController();
     const t0 = Date.now();
+    /* Silent-refresh mode: a stale cached report is already rendered.
+       Don't flip the page to a loading spinner and don't surface an
+       error if this background eval times out — the user keeps seeing
+       their last good report and we just swap it on success. */
+    const silentRefresh = hasAnyCachedReport && reloadTick === 0;
     /* Auto-retry transient 5xx / overload responses with exponential
        backoff before showing the user an error. The previous behavior
        surfaced the generic "service overloaded" message immediately on
@@ -327,8 +342,10 @@ export const SessionReport = memo(function SessionReport({
        in 2-6 seconds. Three attempts (immediate, +2s, +5s) recover
        silently in 80%+ of cases without ever showing an error UI. */
     async function load() {
-      setLoading(true);
-      setErrorMsg("");
+      if (!silentRefresh) {
+        setLoading(true);
+        setErrorMsg("");
+      }
       /* Voice continuity: re-derive the same interviewer name the engine
          used during the live session (deterministic from type-focus-
          company-userId). Threading this into the report prompt keeps
@@ -426,15 +443,18 @@ export const SessionReport = memo(function SessionReport({
         ? "Our scoring service is taking longer than usual. Please try again in a moment — your transcript is safe and nothing was lost."
         : raw;
       if (!cancelled) {
-        setErrorMsg(msg);
         track("report_llm_failed", {
           sessionId: session.id,
           latencyMs: Date.now() - t0,
           error: msg.slice(0, 120),
           view: "main",
           retries: delays.length,
+          silent: silentRefresh ? "yes" : "no",
         });
-        setLoading(false);
+        if (!silentRefresh) {
+          setErrorMsg(msg);
+          setLoading(false);
+        }
       }
     }
     load();
@@ -443,7 +463,7 @@ export const SessionReport = memo(function SessionReport({
       ac.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.id, reloadTick, user?.targetCompany, hasCachedReport]);
+  }, [session.id, reloadTick, user?.targetCompany, hasCurrentCachedReport]);
 
   /* ── Single fire on first successful view ── */
   useEffect(() => {
