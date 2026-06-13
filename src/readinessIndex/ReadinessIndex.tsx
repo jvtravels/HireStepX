@@ -62,10 +62,16 @@ function ExportButtons() {
 
 /* Pinned header — RI summary that stays put as the page scrolls, plus the
    range scrubber and export controls. The "always know your number" anchor. */
-function StickyHeader({ d, range, onRange, showControls }: { d: Fixture; range: RangeKey; onRange: (r: RangeKey) => void; showControls: boolean }) {
+/* `stickTop` cancels the dashboard <main> scroll container's top padding
+   (44px desktop / 20px mobile in DashboardLayout). A sticky child stuck at
+   top:0 would pin to main's content edge — below its padding — leaving a
+   strip above the header through which scrolling content shows. A negative
+   top equal to that padding pins the header flush to the real viewport top.
+   Keep these in sync with DashboardLayout's <main> padding. */
+function StickyHeader({ d, range, onRange, showControls, stickTop = 0 }: { d: Fixture; range: RangeKey; onRange: (r: RangeKey) => void; showControls: boolean; stickTop?: number }) {
   const band = BAND_META[d.band];
   return (
-    <header style={{ position: "sticky", top: 0, zIndex: 20, background: t.cream, borderBottom: `1px solid ${t.line}` }}>
+    <header style={{ position: "sticky", top: stickTop, zIndex: 20, background: t.cream, borderBottom: `1px solid ${t.line}` }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 22px", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
@@ -160,7 +166,7 @@ function DesktopShell({ d }: { d: Fixture }) {
   return (
     <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <StickyHeader d={d} range={range} onRange={setRange} showControls />
+      <StickyHeader d={d} range={range} onRange={setRange} showControls stickTop={-44} />
       <div style={{ maxWidth: 1360, margin: "0 auto", padding: "22px 28px 64px" }}>
         <AnalyticsBody d={d} narrow={false} range={range} activePillar={activePillar} onPillar={onPillar} />
       </div>
@@ -175,7 +181,7 @@ function MobileShell({ d }: { d: Fixture }) {
   return (
     <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <StickyHeader d={d} range={range} onRange={setRange} showControls={false} />
+      <StickyHeader d={d} range={range} onRange={setRange} showControls={false} stickTop={-20} />
       <div style={{ padding: "14px 14px 48px" }}>
         <div style={{ marginBottom: 16 }}><SegControl range={range} onChange={setRange} /></div>
         <AnalyticsBody d={d} narrow range={range} activePillar={activePillar} onPillar={onPillar} />
