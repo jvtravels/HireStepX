@@ -10,8 +10,10 @@ import {
   supabaseAnonKey,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { checkPromoValidity, computeDiscountAmount } from "./_promo";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
+const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -72,7 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { plan, userId, email, quantity: rawQty } = req.body;
+    const { plan, userId, email, quantity: rawQty, promoCode: rawPromo } = req.body;
     if (typeof plan !== "string" || !PRICE_MAP[plan]) {
       return res.status(400).json({ error: "Invalid plan" });
     }
@@ -86,7 +88,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const q = typeof rawQty === "number" ? rawQty : parseInt(String(rawQty ?? "1"), 10);
       quantity = Math.min(Math.max(Number.isFinite(q) ? Math.trunc(q) : 1, 1), 10);
     }
-    const finalAmount = price.amount * quantity;
+
+    // Apply a promo code to the charge — server-authoritative. We re-validate
+    // against the ACTUAL plan (so a code previewed for one plan can't underpay
+    // another) and apply the discount to the Razorpay order amount, which is
+    // what the user confirms in checkout. The code is CONSUMED later, exactly
+    // once, in verify-payment after a successful charge — never here, so
+    // abandoned checkouts don't burn a use. Promos don't apply to single.
+    let promoCode = "";
+    let promoDiscount = 0;
+    const promoInput = typeof rawPromo === "string" ? rawPromo.trim().toUpperCase().slice(0, 40) : "";
+    if (promoInput && plan !== "single" && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const promoRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/promo_codes?code=eq.${encodeURIComponent(promoInput)}&select=*`,
+          { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+        );
+        const promoRows = await promoRes.json().catch(() => []);
+        const promo = Array.isArray(promoRows) && promoRows[0] ? promoRows[0] : null;
+        if (promo && checkPromoValidity(promo, plan, Date.now()).valid) {
+          const d = computeDiscountAmount(promo, price.amount);
+          if (d > 0) { promoDiscount = d; promoCode = promoInput; }
+        }
+      } catch (promoErr) {
+        // Fail open: an unreachable promo table must not block checkout. The
+        // user is simply charged full price (which Razorpay shows them).
+        console.warn("[create-order] promo lookup failed:", promoErr);
+      }
+    }
+
+    const finalAmount = Math.max(0, price.amount * quantity - promoDiscount);
     const finalDescription = quantity > 1 ? `${price.description} × ${quantity}` : price.description;
 
     // Idempotency: atomic lock to prevent duplicate orders for the same
@@ -100,7 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // needle. See PostHog `checkout_cache_hit`.
     const DEDUP_TTL = 90;
     const resolvedUserId = authenticatedUserId || (typeof userId === "string" ? userId : "");
-    const idempotencyKey = `order:${resolvedUserId}:${plan}${plan === "single" ? `:${quantity}` : ""}`;
+    const idempotencyKey = `order:${resolvedUserId}:${plan}${plan === "single" ? `:${quantity}` : ""}${promoCode ? `:${promoCode}` : ""}`;
     if (UPSTASH_URL && UPSTASH_TOKEN && resolvedUserId) {
       try {
         // Atomic: SET NX returns OK if key was set (we got the lock), null if it existed (duplicate)
@@ -162,6 +193,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // verify-payment reads notes.quantity to recompute the expected amount and
     // to grant the right number of credits for single-session purchases.
     if (plan === "single") notes.quantity = String(quantity);
+    // verify-payment reads notes.promo + notes.discount to (a) recompute the
+    // expected discounted amount and (b) consume exactly one promo use after a
+    // successful charge. Both are server-set here, never client-trusted.
+    if (promoCode && promoDiscount > 0) {
+      notes.promo = promoCode;
+      notes.discount = String(promoDiscount);
+    }
     if (resolvedUserId.length > 0 && resolvedUserId.length <= 200) notes.userId = resolvedUserId;
     if (typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) notes.email = email;
 

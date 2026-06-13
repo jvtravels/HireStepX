@@ -210,7 +210,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       const res = await fetch("/api/create-order", {
         method: "POST",
         headers: hdrs,
-        body: JSON.stringify({ plan: planId, userId: user?.id, email: user?.email }),
+        // Pass the previewed promo code; the server re-validates it against the
+        // ACTUAL plan and applies the discount authoritatively (an invalid code
+        // is silently ignored and the user is charged full price).
+        body: JSON.stringify({ plan: planId, userId: user?.id, email: user?.email, promoCode: promoResult?.valid ? promoResult.code : undefined }),
       });
       if (!res.ok) {
         let errMsg = "Could not start checkout. Please try again.";

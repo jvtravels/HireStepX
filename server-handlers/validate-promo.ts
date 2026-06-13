@@ -4,6 +4,7 @@
 export const config = { runtime: "edge" };
 
 import { handleCorsPreflightOrMethod, corsHeaders, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId } from "./_shared";
+import { checkPromoValidity, computeDiscountAmount } from "./_promo";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -51,49 +52,17 @@ export default async function handler(req: Request): Promise<Response> {
 
   const promo = rows[0];
 
-  // Check validity
-  const now = new Date();
-  if (promo.valid_from && new Date(promo.valid_from) > now) {
-    return new Response(JSON.stringify({ valid: false, error: "Promo code not yet active" }), { status: 200, headers });
-  }
-  if (promo.valid_until && new Date(promo.valid_until) < now) {
-    return new Response(JSON.stringify({ valid: false, error: "Promo code has expired" }), { status: 200, headers });
-  }
-  if (promo.max_uses > 0 && promo.current_uses >= promo.max_uses) {
-    return new Response(JSON.stringify({ valid: false, error: "Promo code usage limit reached" }), { status: 200, headers });
-  }
-  if (promo.applicable_plans && promo.applicable_plans.length > 0 && !promo.applicable_plans.includes(plan)) {
-    return new Response(JSON.stringify({ valid: false, error: `Code not valid for ${plan} plan` }), { status: 200, headers });
+  // Validity is a READ-ONLY preview. The code's usage count is NOT touched
+  // here — it is consumed exactly once in verify-payment after a successful
+  // charge, so previews and abandoned checkouts never burn a use.
+  const validity = checkPromoValidity(promo, plan, Date.now());
+  if (!validity.valid) {
+    return new Response(JSON.stringify({ valid: false, error: validity.error }), { status: 200, headers });
   }
 
-  // Calculate discount
   const originalAmount = PLAN_AMOUNT[plan];
-  let discountAmount = 0;
-
-  if (promo.discount_percent > 0) {
-    discountAmount = Math.round(originalAmount * promo.discount_percent / 100);
-  } else if (promo.discount_amount > 0) {
-    discountAmount = promo.discount_amount;
-  }
-
+  const discountAmount = computeDiscountAmount(promo, originalAmount);
   const finalAmount = Math.max(0, originalAmount - discountAmount);
-
-  // Atomic increment with optimistic lock — only increment if current_uses
-  // still matches what we read AND is below max_uses (prevents race condition).
-  const maxFilter = promo.max_uses > 0 ? `&current_uses=lt.${promo.max_uses}` : "";
-  const incrRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/promo_codes?id=eq.${promo.id}&current_uses=eq.${promo.current_uses}${maxFilter}`,
-    {
-      method: "PATCH",
-      headers: { ...dbHeaders, Prefer: "return=representation" },
-      body: JSON.stringify({ current_uses: promo.current_uses + 1 }),
-    },
-  );
-  const incrRows = await incrRes.json();
-  if (!Array.isArray(incrRows) || incrRows.length === 0) {
-    // Either another request incremented concurrently, or max_uses was reached
-    return new Response(JSON.stringify({ valid: false, error: "Promo code is no longer available — please try again" }), { status: 409, headers });
-  }
 
   return new Response(JSON.stringify({
     valid: true,

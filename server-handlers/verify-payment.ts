@@ -13,6 +13,7 @@ import {
   supabaseAnonKey,
 } from "./_shared";
 import { grantSessionCredits } from "./_session-credits";
+import { computeProratedDays } from "./_proration-helpers";
 
 /** Fetch with AbortController timeout (default 8s) */
 function fetchWithTimeout(url: string, opts: RequestInit & { timeout?: number } = {}): Promise<Response> {
@@ -291,6 +292,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rzpAc = new AbortController();
     const rzpTimer = setTimeout(() => rzpAc.abort(), 8000);
     let sessionQuantity = 1; // For single session multi-buy
+    let promoCodeUsed = "";   // Set from the order's server-written notes.promo
+    let promoDiscount = 0;    // Paise discount the order was actually created with
     try {
     if (razorpay_order_id) {
       const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
@@ -304,7 +307,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (plan === "single" && orderData.notes?.quantity) {
         sessionQuantity = Math.min(Math.max(parseInt(orderData.notes.quantity, 10) || 1, 1), 10);
       }
-      const expectedAmount = plan === "single" ? PLAN_AMOUNT[plan] * sessionQuantity : PLAN_AMOUNT[plan];
+      // create-order writes notes.promo + notes.discount server-side when a
+      // valid code was applied. We recompute the expected amount FROM those
+      // notes (not from any client input) so the discounted charge verifies,
+      // and remember the code to consume exactly one use after activation.
+      if (orderData.notes?.promo && orderData.notes?.discount) {
+        const d = parseInt(orderData.notes.discount, 10);
+        if (Number.isFinite(d) && d > 0) {
+          promoDiscount = d;
+          promoCodeUsed = String(orderData.notes.promo);
+        }
+      }
+      const baseAmount = plan === "single" ? PLAN_AMOUNT[plan] * sessionQuantity : PLAN_AMOUNT[plan];
+      const expectedAmount = Math.max(0, baseAmount - promoDiscount);
       if (orderData.amount !== expectedAmount) {
         console.error("Plan/amount mismatch for order", razorpay_order_id.slice(0, 8) + "...");
         return res.status(400).json({ error: "Plan does not match payment amount", code: "AMOUNT_MISMATCH" });
@@ -413,7 +428,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 3b. Check profile for duplicate + subscription state
     const profileRes = await fetchWithTimeout(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end,razorpay_payment_id`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end,razorpay_payment_id`,
       { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
     );
     const profiles = await profileRes.json();
@@ -495,14 +510,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let end: Date;
     let proratedDays = 0;
     if (isUpgrade && currentEnd) {
-      // Credit remaining days from current plan proportionally
-      const remainingMs = currentEnd.getTime() - now.getTime();
-      const remainingDays = Math.max(0, Math.ceil(remainingMs / 86400000));
-      const currentPlanDuration = current.subscription_tier === "starter" ? 7 : 30;
-      const currentPlanAmount = current.subscription_tier === "starter" ? 4900 : 14900;
-      const newPlanAmount = PLAN_AMOUNT[plan];
-      // Convert remaining days to credit ratio and add proportional bonus days
-      proratedDays = Math.floor((remainingDays / currentPlanDuration) * (currentPlanAmount / newPlanAmount) * planDays);
+      // Credit the unused portion of the current plan as bonus days on the new
+      // one. The duration + price are derived from the current plan's REAL
+      // dates (not the tier alone), so yearly upgraders are no longer over-
+      // credited. See _proration-helpers.ts for the math + tests.
+      proratedDays = computeProratedDays({
+        nowMs: now.getTime(),
+        currentStartMs: current.subscription_start ? new Date(current.subscription_start).getTime() : NaN,
+        currentEndMs: currentEnd.getTime(),
+        currentTier: current.subscription_tier,
+        newPlan: plan,
+      });
       end = new Date(now);
       end.setDate(end.getDate() + planDays + proratedDays);
     } else {
@@ -568,6 +586,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const errText = await updateRes.text().catch(() => "");
       console.error("Supabase update error:", updateRes.status, errText);
       return res.status(500).json({ error: "Failed to activate subscription" });
+    }
+
+    // 6a. Consume exactly one promo use — only now, after the charge cleared and
+    // the subscription is live. Compare-and-swap on current_uses keeps it
+    // atomic-ish across concurrent callbacks (the filter only matches the row
+    // we read). Best-effort: a failed increment must not fail an activated
+    // payment — at worst a code is under-counted, never double-spent by THIS
+    // user since the order's idempotency key already includes the promo code.
+    if (promoCodeUsed) {
+      try {
+        const pRes = await fetchWithTimeout(
+          `${SUPABASE_URL}/rest/v1/promo_codes?code=eq.${encodeURIComponent(promoCodeUsed)}&select=id,current_uses,max_uses`,
+          { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+        );
+        const pRows = await pRes.json().catch(() => []);
+        const pr = Array.isArray(pRows) && pRows[0] ? pRows[0] : null;
+        if (pr && pr.id != null) {
+          const used = typeof pr.current_uses === "number" ? pr.current_uses : 0;
+          await fetchWithTimeout(
+            `${SUPABASE_URL}/rest/v1/promo_codes?id=eq.${encodeURIComponent(String(pr.id))}&current_uses=eq.${used}`,
+            {
+              method: "PATCH",
+              headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+              body: JSON.stringify({ current_uses: used + 1 }),
+            },
+          );
+        }
+      } catch (promoErr) {
+        console.warn("[verify-payment] promo consumption failed (non-fatal):", promoErr);
+      }
     }
 
     // 6b. Send confirmation email with retry (non-critical — don't fail payment if email fails)

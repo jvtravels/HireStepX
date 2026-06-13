@@ -52,6 +52,35 @@ async function checkDedup(dedupKey: string): Promise<"new" | "duplicate" | "redi
   }
 }
 
+/** Atomically CLAIM a payment for processing via the payment_dedup table's
+ *  primary-key constraint. This is the cross-instance backstop the in-memory
+ *  Set can't provide: when Redis is down, two serverless instances can both
+ *  pass the event-level dedup, but only ONE wins the INSERT here. Callers MUST
+ *  claim before mutating the subscription, so a lost race never double-extends.
+ *  Returns "new" (we own it), "duplicate" (someone else owns it), or "error"
+ *  (DB unreachable — caller falls back to the best-effort read check). */
+async function claimPayment(paymentId: string, userId: string): Promise<"new" | "duplicate" | "error"> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/payment_dedup`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ razorpay_payment_id: paymentId, user_id: userId }),
+    });
+    if (res.status === 201) return "new";
+    if (res.status === 409) return "duplicate"; // PK violation = already claimed
+    console.error("[webhook] payment_dedup claim unexpected status:", res.status);
+    return "error";
+  } catch (err) {
+    console.warn("[webhook] payment_dedup claim failed:", err);
+    return "error";
+  }
+}
+
 // Vercel config: disable body parsing so we can access raw body for signature verification
 export const config = { api: { bodyParser: false } };
 
@@ -215,14 +244,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const paymentId = payment?.id;
 
         if (paymentId) {
-          // Idempotency check
-          const dupCheck = await fetch(
-            `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
-            { headers: dbHeaders },
-          );
-          const dupRows = await dupCheck.json();
-          if (Array.isArray(dupRows) && dupRows.length > 0) {
+          // Atomic claim FIRST — wins the cross-instance race before we extend
+          // the subscription. "duplicate" means another instance already owns
+          // this payment; bail without re-extending. "error" falls back to the
+          // best-effort read check so a transient DB blip can't strand a renewal.
+          const claim = await claimPayment(paymentId, userId);
+          if (claim === "duplicate") {
             return res.status(200).json({ received: true, already_processed: true });
+          }
+          if (claim === "error") {
+            const dupCheck = await fetch(
+              `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
+              { headers: dbHeaders },
+            );
+            const dupRows = await dupCheck.json();
+            if (Array.isArray(dupRows) && dupRows.length > 0) {
+              return res.status(200).json({ received: true, already_processed: true });
+            }
           }
         }
 
@@ -457,14 +495,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ received: true, skipped: "amount_mismatch" });
     }
 
-    // Idempotency check
-    const dupCheck = await fetch(
-      `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
-      { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
-    );
-    const dupRows = await dupCheck.json();
-    if (Array.isArray(dupRows) && dupRows.length > 0) {
+    // Atomic claim FIRST — wins the cross-instance race before activation, so a
+    // Redis-down double-delivery can't double-activate. "error" falls back to
+    // the best-effort read check.
+    const claim = await claimPayment(paymentId, userId);
+    if (claim === "duplicate") {
       return res.status(200).json({ received: true, already_processed: true });
+    }
+    if (claim === "error") {
+      const dupCheck = await fetch(
+        `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
+        { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+      );
+      const dupRows = await dupCheck.json();
+      if (Array.isArray(dupRows) && dupRows.length > 0) {
+        return res.status(200).json({ received: true, already_processed: true });
+      }
     }
 
     const now = new Date();
