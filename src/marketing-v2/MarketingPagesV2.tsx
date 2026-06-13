@@ -386,6 +386,22 @@ export function PricingPageV2() {
       studentDiscount: false,
     },
     {
+      name: "Per session",
+      price: "₹9",
+      unit: "/ session",
+      sub: "One mock, zero commitment",
+      features: [
+        "1 mock session",
+        "Voice in & out, all round types",
+        "Full STAR score + report",
+        "Credit never expires",
+      ],
+      cta: "Buy one session",
+      href: "/signup?plan=single",
+      featured: false,
+      studentDiscount: false,
+    },
+    {
       name: "Weekly",
       price: "₹49",
       unit: "/ 7 days",
@@ -421,15 +437,15 @@ export function PricingPageV2() {
     },
   ];
 
-  const compareRows: Array<[string, string, string, string]> = [
-    ["Mock sessions included", "3 (one-time)", "10 / week", "40 / month"],
-    ["Voice in & out", "Yes", "Yes", "Yes"],
-    ["STAR scoring", "Yes", "Yes", "Yes"],
-    ["Company-specific rounds", "Limited", "Yes", "Yes"],
-    ["Skill-decay tracking", "No", "Yes", "Yes"],
-    ["Priority coach feedback", "No", "No", "Yes"],
-    ["Report retention", "30 days", "90 days", "1 year"],
-    [".ac.in / .edu.in discount", "No", "30% off", "30% off"],
+  const compareRows: Array<[string, string, string, string, string]> = [
+    ["Mock sessions included", "3 (one-time)", "1 (one-time)", "10 / week", "40 / month"],
+    ["Voice in & out", "Yes", "Yes", "Yes", "Yes"],
+    ["STAR scoring", "Yes", "Yes", "Yes", "Yes"],
+    ["Company-specific rounds", "Limited", "Yes", "Yes", "Yes"],
+    ["Skill-decay tracking", "No", "No", "Yes", "Yes"],
+    ["Priority coach feedback", "No", "No", "No", "Yes"],
+    ["Report retention", "30 days", "30 days", "90 days", "1 year"],
+    [".ac.in / .edu.in discount", "No", "No", "30% off", "30% off"],
   ];
 
   const faqs: Array<[string, string]> = [
@@ -691,10 +707,11 @@ export function PricingPageV2() {
                 </tr>
               </thead>
               <tbody>
-                {compareRows.map(([feature, free, weekly, monthly], i) => (
+                {compareRows.map(([feature, free, perSession, weekly, monthly], i) => (
                   <tr key={feature} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
                     <th scope="row" style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, textAlign: "left", fontFamily: fonts.sans, fontSize: 14 }}>{feature}</th>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{free}</td>
+                    <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{perSession}</td>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{weekly}</td>
                     <td
                       style={{
