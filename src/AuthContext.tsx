@@ -820,19 +820,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               await ensureProfile(session);
             }
           } catch {
-            // Profile fetch hung or failed — build a basic user from
-            // the session JWT so the app can boot. ensureProfile may
-            // also have created the row server-side; either way the
-            // next route nav re-fetches.
+            // Profile fetch hung or failed during TOKEN_REFRESHED.
+            // If the user already has a fully-loaded profile (subscriptionTier
+            // is set), preserve it — don't downgrade to a minimal JWT-only
+            // object that wipes subscriptionTier and causes the Plan Status
+            // widget to flash "Loading plan…" for 1-4s while retryProfileInBackground
+            // catches up. Only fall back to the minimal object when there is
+            // genuinely no user loaded yet (initial boot path).
             const meta = session.user.user_metadata || {};
-            setUser({
-              id: session.user.id,
-              name: meta.name || meta.full_name || "",
-              email: session.user.email || "",
-              targetRole: "",
-              resumeFileName: null,
-              hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
-              emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
+            setUser(current => {
+              if (current?.subscriptionTier !== undefined) return current;
+              return {
+                id: session.user.id,
+                name: meta.name || meta.full_name || "",
+                email: session.user.email || "",
+                targetRole: "",
+                resumeFileName: null,
+                hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
+                emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
+              };
             });
             // Best-effort row creation in the background.
             ensureProfile(session).catch(() => { /* expected on hang */ });
