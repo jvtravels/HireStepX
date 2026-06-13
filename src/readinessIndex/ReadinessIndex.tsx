@@ -65,7 +65,7 @@ function ExportButtons() {
 function StickyHeader({ d, range, onRange, showControls }: { d: Fixture; range: RangeKey; onRange: (r: RangeKey) => void; showControls: boolean }) {
   const band = BAND_META[d.band];
   return (
-    <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(250,247,240,0.86)", backdropFilter: "saturate(140%) blur(8px)", WebkitBackdropFilter: "saturate(140%) blur(8px)", borderBottom: `1px solid ${t.line}` }}>
+    <header style={{ position: "sticky", top: 0, zIndex: 20, background: t.cream, borderBottom: `1px solid ${t.line}` }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 22px", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
