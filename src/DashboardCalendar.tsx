@@ -36,6 +36,17 @@ const STYLE = `
   .cpr-header { flex-direction: column; align-items: flex-start; }
   .cpr-actions { align-items: stretch !important; width: 100%; }
 }
+@keyframes cpr-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cpr-sheet-in { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.cpr-scrim { animation: cpr-scrim-in 0.18s cubic-bezier(0.16,1,0.3,1); }
+.cpr-sheet { animation: cpr-sheet-in 0.24s cubic-bezier(0.16,1,0.3,1); }
+@media (max-width: 560px) {
+  .cpr-sheet { width: 100vw !important; }
+  .cpr-form-row { grid-template-columns: 1fr !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cpr-scrim, .cpr-sheet { animation: none; }
+}
 `;
 
 /* ─── primitives ─────────────────────────────────────────────────── */
@@ -90,6 +101,17 @@ function Pill({ children, bg, fg, bd, icon }: { children: React.ReactNode; bg: s
       {icon}
       {children}
     </span>
+  );
+}
+
+function Field({ label, htmlFor, required, children }: { label: string; htmlFor?: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label htmlFor={htmlFor} style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: c.stone, display: "block", marginBottom: 7 }}>
+        {label}{required && <span style={{ color: c.gilt }}> *</span>}
+      </label>
+      {children}
+    </div>
   );
 }
 
@@ -406,6 +428,20 @@ export default function CalendarPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Close the add/edit sheet on Escape, and lock body scroll while it's open
+  // so the page behind the scrim stays put.
+  useEffect(() => {
+    if (!showForm) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setShowForm(false); setEditingId(null); } };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [showForm]);
+
   const updateEvents = (next: InterviewEvent[]) => {
     setEvents(next);
     saveEvents(next);
@@ -633,90 +669,102 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Add/Edit Form */}
+      {/* Add/Edit sheet — a focused right-anchored drawer over a scrim, so the
+          page behind it never shifts. Closes on scrim click or Escape. */}
       {showForm && (
-        <div style={{ background: c.graphite, borderRadius: radius.lg, border: `1px solid ${c.border}`, padding: "28px 32px", paddingBottom: 36, marginBottom: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h3 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory }}>{editingId ? "Edit interview" : "Add new interview"}</h3>
-            <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} aria-label="Close" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4, display: "flex" }}>
-              <Icon size={18}>{I.x}</Icon>
-            </button>
-          </div>
+        <div className="cpr-scrim" onClick={() => { setShowForm(false); resetForm(); }}
+          style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(14,12,8,0.34)", display: "flex", justifyContent: "flex-end" }}>
+          <div className="cpr-sheet" role="dialog" aria-modal="true" aria-label={editingId ? "Edit interview" : "Add interview"} onClick={(e) => e.stopPropagation()}
+            style={{ width: "min(480px, 100vw)", height: "100dvh", background: c.carbon, borderLeft: `1px solid ${c.border}`, boxShadow: shadow.xl, display: "flex", flexDirection: "column" }}>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div>
-              <label htmlFor="cal-title" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Interview title *</label>
-              <input id="cal-title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Final round interview" style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+            {/* header */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, padding: "24px 28px 18px", borderBottom: `1px solid ${c.borderSubtle}` }}>
+              <div>
+                <Eyebrow>{editingId ? "Edit" : "New"}</Eyebrow>
+                <h3 style={{ fontFamily: font.display, fontSize: 23, fontWeight: 400, color: c.ivory, margin: "5px 0 0" }}>{editingId ? "Edit interview" : "Add an interview"}</h3>
+              </div>
+              <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} aria-label="Close" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 6, marginTop: 2, display: "flex", borderRadius: radius.sm }}>
+                <Icon size={20}>{I.x}</Icon>
+              </button>
             </div>
-            <div>
-              <label htmlFor="cal-company" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Company *</label>
-              <input id="cal-company" value={formCompany} onChange={(e) => setFormCompany(e.target.value)} placeholder="e.g. Google" style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
-            </div>
-          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div>
-              <label htmlFor="cal-date" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Date *</label>
-              <input id="cal-date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} />
-            </div>
-            <div>
-              <label htmlFor="cal-time" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Time *</label>
-              <input id="cal-time" type="time" value={formTime} onChange={(e) => setFormTime(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} />
-            </div>
-            <div>
-              <label htmlFor="cal-duration" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Duration</label>
-              <select id="cal-duration" value={formDuration} onChange={(e) => setFormDuration(Number(e.target.value))} style={{ ...inputStyle, colorScheme: "light" }}>
-                <option value={30}>30 min</option>
-                <option value={45}>45 min</option>
-                <option value={60}>1 hour</option>
-                <option value={90}>1.5 hours</option>
-                <option value={120}>2 hours</option>
-              </select>
-            </div>
-          </div>
+            {/* scrollable body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px", display: "flex", flexDirection: "column", gap: 18 }}>
+              <Field label="Interview title" htmlFor="cal-title" required>
+                <input id="cal-title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Final round interview" style={inputStyle}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+              </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div>
-              <label htmlFor="cal-type" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Interview type</label>
-              <div id="cal-type" role="group" aria-label="Interview type" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {interviewTypeOptions.map((t) => (
-                  <button key={t} className="cpr-tap" onClick={() => setFormType(t)} style={{
-                    fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "5px 12px", borderRadius: radius.pill, cursor: "pointer",
-                    background: formType === t ? T.copper100Soft : "transparent",
-                    border: `1px solid ${formType === t ? c.gilt : c.border}`,
-                    color: formType === t ? c.gilt : c.stone, transition: `all 0.2s ${ease.out}`,
-                  }}>{t}</button>
-                ))}
+              <Field label="Company" htmlFor="cal-company" required>
+                <input id="cal-company" value={formCompany} onChange={(e) => setFormCompany(e.target.value)} placeholder="e.g. Google" style={inputStyle}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+              </Field>
+
+              <div className="cpr-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <Field label="Date" htmlFor="cal-date" required>
+                  <input id="cal-date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} />
+                </Field>
+                <Field label="Time" htmlFor="cal-time" required>
+                  <input id="cal-time" type="time" value={formTime} onChange={(e) => setFormTime(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} />
+                </Field>
+              </div>
+
+              <Field label="Duration" htmlFor="cal-duration">
+                <select id="cal-duration" value={formDuration} onChange={(e) => setFormDuration(Number(e.target.value))} style={{ ...inputStyle, colorScheme: "light" }}>
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>1 hour</option>
+                  <option value={90}>1.5 hours</option>
+                  <option value={120}>2 hours</option>
+                </select>
+              </Field>
+
+              <Field label="Interview type">
+                <div role="group" aria-label="Interview type" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {interviewTypeOptions.map((t) => (
+                    <button key={t} className="cpr-tap" onClick={() => setFormType(t)} style={{
+                      fontFamily: font.ui, fontSize: 12, fontWeight: 500, padding: "6px 13px", borderRadius: radius.pill, cursor: "pointer",
+                      background: formType === t ? T.copper100Soft : "transparent",
+                      border: `1px solid ${formType === t ? c.gilt : c.border}`,
+                      color: formType === t ? c.gilt : c.stone, transition: `all 0.2s ${ease.out}`,
+                    }}>{t}</button>
+                  ))}
+                </div>
+              </Field>
+
+              <Field label="Location / link" htmlFor="cal-location">
+                <input id="cal-location" value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Zoom link, Google Meet, or address" style={inputStyle}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+              </Field>
+
+              <Field label="Notes" htmlFor="cal-notes">
+                <textarea id="cal-notes" value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Interviewer name, prep topics, things to remember..." rows={3}
+                  style={{ ...inputStyle, resize: "vertical" }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+              </Field>
+
+              {/* reminders */}
+              <div role="switch" aria-checked={formReminders} tabIndex={0} className="cpr-tap" onClick={() => setFormReminders(!formReminders)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFormReminders(!formReminders); } }}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: radius.md, border: `1px solid ${c.border}`, background: c.obsidian, cursor: "pointer" }}>
+                <span style={{ width: 38, height: 22, borderRadius: 11, padding: 2, flexShrink: 0, background: formReminders ? c.sage : c.borderHover, transition: "background 0.2s" }}>
+                  <span style={{ display: "block", width: 18, height: 18, borderRadius: "50%", background: c.carbon, transform: formReminders ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s", boxShadow: shadow.sm }} />
+                </span>
+                <span>
+                  <span style={{ display: "block", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Reminders</span>
+                  <span style={{ display: "block", fontFamily: font.ui, fontSize: 11.5, color: c.stone, marginTop: 1 }}>Email and push at 72h, 24h, and 2h before</span>
+                </span>
               </div>
             </div>
-            <div>
-              <label htmlFor="cal-location" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Location / link</label>
-              <input id="cal-location" value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Zoom link, Google Meet, or address" style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
-            </div>
-          </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label htmlFor="cal-notes" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Notes</label>
-            <textarea id="cal-notes" value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Interviewer name, prep topics, things to remember..." rows={3}
-              style={{ ...inputStyle, resize: "vertical" }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div role="switch" aria-checked={formReminders} tabIndex={0} className="cpr-tap" onClick={() => setFormReminders(!formReminders)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFormReminders(!formReminders); } }} style={{ width: 36, height: 20, borderRadius: 10, padding: 2, background: formReminders ? c.sage : c.border, transition: "background 0.2s", cursor: "pointer" }}>
-                <div style={{ width: 16, height: 16, borderRadius: "50%", background: c.carbon, transform: formReminders ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s" }} />
-              </div>
-              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>Email and push reminders (72h, 24h, 2h before)</span>
-            </span>
-
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* footer */}
+            <div style={{ borderTop: `1px solid ${c.borderSubtle}`, padding: "16px 28px", display: "flex", flexDirection: "column", gap: 10 }}>
               {formError && <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{formError}</span>}
-              <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.chalk, background: "transparent", border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "10px 20px", cursor: "pointer" }}>Cancel</button>
-              <button className="cpr-tap" onClick={handleSave} disabled={!formTitle || !formDate || !formTime || saving} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, background: formTitle && formDate && formTime && !saving ? c.slate : c.border, color: formTitle && formDate && formTime && !saving ? c.carbon : c.stone, border: "none", borderRadius: radius.md, padding: "10px 24px", cursor: formTitle && formDate && formTime && !saving ? "pointer" : "not-allowed" }}>{saving ? "Saving…" : editingId ? "Save changes" : "Add interview"}</button>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} style={{ fontFamily: font.ui, fontSize: 13.5, fontWeight: 500, color: c.chalk, background: "transparent", border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "12px 20px", cursor: "pointer" }}>Cancel</button>
+                <button className="cpr-tap" onClick={handleSave} disabled={!formTitle || !formDate || !formTime || saving} style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, background: formTitle && formDate && formTime && !saving ? c.slate : c.border, color: formTitle && formDate && formTime && !saving ? c.carbon : c.stone, border: "none", borderRadius: radius.md, padding: "12px 24px", cursor: formTitle && formDate && formTime && !saving ? "pointer" : "not-allowed", boxShadow: formTitle && formDate && formTime && !saving ? shadow.sm : "none" }}>
+                  {saving ? "Saving…" : editingId ? "Save changes" : (<><Icon size={15}>{I.plus}</Icon> Add interview</>)}
+                </button>
+              </div>
             </div>
           </div>
         </div>
