@@ -685,7 +685,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               //                        another device. Sign THIS device out. The
               //                        user's data is safe; they just get kicked to /login.
               //
-              // The 15s grace window (justAuthenticatedRef) protects the brand-new
+              // The 10s grace window (justAuthenticatedRef) protects the brand-new
               // login on Device B — its session snapshot may still contain Device A's
               // stale server token until the updateUser() call lands. Without grace,
               // the freshly-logged-in user would immediately sign themselves out.
