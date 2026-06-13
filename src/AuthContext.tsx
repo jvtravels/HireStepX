@@ -114,6 +114,27 @@ function isLoginLocked(): { locked: boolean; remainingSeconds: number } {
   return { locked: false, remainingSeconds: 0 };
 }
 
+/* ─── Subscription tier local cache ───
+ * Persists the user's last-known tier so the Plan Status widget can render
+ * the correct plan immediately on page load, even before getProfile() returns
+ * (which can take 1–5s on slow Indian mobile connections or when a browser
+ * extension wraps fetch). Keyed by userId so the cache is always scoped to
+ * the current account. Cleared via USER_SCOPED_KEYS wipe on user-change. */
+function tierCacheKey(userId: string): string {
+  return `hirestepx_tier_${userId}`;
+}
+function cacheTier(userId: string, tier: string | undefined, subscriptionEnd?: string): void {
+  if (!tier) return;
+  try { localStorage.setItem(tierCacheKey(userId), JSON.stringify({ tier, subscriptionEnd })); } catch { /* storage unavailable */ }
+}
+function getCachedTier(userId: string): { tier: "free" | "starter" | "pro" | "team"; subscriptionEnd?: string } | null {
+  try {
+    const raw = localStorage.getItem(tierCacheKey(userId));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
 /* ─── Single-Device Session Enforcement ─── */
 const INACTIVITY_TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 hours default (configurable: 4-8 hrs)
 const DEVICE_TOKEN_KEY = "hirestepx_device_token";
@@ -223,11 +244,15 @@ function reconcileUserScopedStorage(currentUserId: string | null) {
     if (!currentUserId) {
       // Fully logged out — wipe per-user caches. Keep LAST_USER_ID_KEY so
       // next login can still detect a user change.
+      if (previous) {
+        try { localStorage.removeItem(tierCacheKey(previous)); } catch { /* expected */ }
+      }
       wipeUserScopedStorage();
       return;
     }
     if (previous && previous !== currentUserId) {
       console.info(`[auth] user changed (${previous.slice(0, 8)} → ${currentUserId.slice(0, 8)}) — wiping per-user localStorage`);
+      try { localStorage.removeItem(tierCacheKey(previous)); } catch { /* expected */ }
       wipeUserScopedStorage();
     }
     if (previous !== currentUserId) localStorage.setItem(LAST_USER_ID_KEY, currentUserId);
@@ -554,7 +579,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ),
             ]);
             if (profile && !cancelled) {
-              setUser(profileToUser(profile, sess));
+              const retriedUser = profileToUser(profile, sess);
+              setUser(retriedUser);
+              cacheTier(sess.user.id, retriedUser.subscriptionTier, retriedUser.subscriptionEnd);
               return;
             }
           } catch { /* keep retrying */ }
@@ -676,7 +703,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ),
             ]);
             if (profile) {
-              setUser(profileToUser(profile, session));
+              const loadedUser = profileToUser(profile, session);
+              setUser(loadedUser);
+              cacheTier(session.user.id, loadedUser.subscriptionTier, loadedUser.subscriptionEnd);
               // ─── Single-device enforcement (restore path) ───
               // Semantics:
               //   • local == server  → this device is still the active one. Keep session.
@@ -712,8 +741,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } catch (profileErr) {
             console.error("[auth] getProfile threw:", profileErr);
-            // Network error loading profile — keep the session alive with basic user info
+            // Network error loading profile — keep the session alive with basic user info.
+            // Seed subscriptionTier from the local cache so the Plan Status widget shows
+            // the correct plan immediately rather than "Loading plan…" for 1–5s.
             const meta = session.user.user_metadata || {};
+            const cachedTierData = getCachedTier(session.user.id);
             setUser({
               id: session.user.id,
               name: meta.name || meta.full_name || "",
@@ -722,6 +754,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               resumeFileName: null,
               hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
               emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
+              ...(cachedTierData ? { subscriptionTier: cachedTierData.tier, subscriptionEnd: cachedTierData.subscriptionEnd } : {}),
             });
             retryProfileInBackground(session);
           }
@@ -815,7 +848,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ),
             ]);
             if (profile) {
-              setUser(profileToUser(profile, session));
+              const refreshedUser = profileToUser(profile, session);
+              setUser(refreshedUser);
+              cacheTier(session.user.id, refreshedUser.subscriptionTier, refreshedUser.subscriptionEnd);
             } else {
               await ensureProfile(session);
             }
