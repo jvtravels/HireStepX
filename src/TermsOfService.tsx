@@ -69,7 +69,7 @@ AI outputs may occasionally be inaccurate, incomplete, or inconsistent. You shou
   },
   {
     title: "9. Intellectual Property",
-    body: `- Platform: HireStepX, its design, code, branding, and AI systems are owned by Silva Vitalis LLC. You may not copy, modify, or distribute any part of the platform without written permission.
+    body: `- Platform: HireStepX, its design, code, branding, and AI systems are owned by HireStepX. You may not copy, modify, or distribute any part of the platform without written permission.
 - Your content: You retain full ownership of content you provide, including resume text, interview responses, and personal information. By using the service, you grant us a limited, non-exclusive license to process your content solely for the purpose of delivering the service.
 - We do not claim ownership of your interview responses or resume data.`,
   },
@@ -77,7 +77,7 @@ AI outputs may occasionally be inaccurate, incomplete, or inconsistent. You shou
     title: "10. Limitation of Liability",
     body: `HireStepX is provided "as is" and "as available" without warranties of any kind, either express or implied.
 
-To the maximum extent permitted by law, Silva Vitalis LLC shall not be liable for:
+To the maximum extent permitted by law, HireStepX shall not be liable for:
 
 - Any indirect, incidental, special, consequential, or punitive damages.
 - Loss of profits, data, or business opportunities arising from your use of the service.
@@ -106,7 +106,7 @@ You may delete your account at any time from the Settings page. Upon deletion, y
   },
   {
     title: "14. Contact",
-    body: "HireStepX is operated by Silva Vitalis LLC. For questions about these terms, contact us at support@hirestepx.com.",
+    body: "For questions about these terms, contact us at support@hirestepx.com.",
   },
 ];
 
@@ -133,7 +133,7 @@ export default function TermsOfService() {
         </p>
 
         <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, lineHeight: 1.7, marginBottom: 36 }}>
-          These Terms of Service ("Terms") govern your use of HireStepX, operated by Silva Vitalis LLC. By creating an account or using the platform, you agree to these terms.
+          These Terms of Service ("Terms") govern your use of HireStepX. By creating an account or using the platform, you agree to these terms.
         </p>
 
         {sections.map((section, i) => (

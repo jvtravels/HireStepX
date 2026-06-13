@@ -120,7 +120,7 @@ These rights apply to all users globally, not just Indian residents.`,
   },
   {
     title: "12. Contact Us",
-    body: "HireStepX is operated by Silva Vitalis LLC. For privacy concerns, data requests, or questions about this policy, contact us at privacy@hirestepx.com (data protection / grievances) or support@hirestepx.com (general).",
+    body: "For privacy concerns, data requests, or questions about this policy, contact us at privacy@hirestepx.com (data protection / grievances) or support@hirestepx.com (general).",
   },
 ];
 
@@ -147,7 +147,7 @@ export default function PrivacyPolicy() {
         </p>
 
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.7, marginBottom: 36 }}>
-          HireStepX ("we", "our", "the platform") is an AI-powered mock interview practice tool operated by Silva Vitalis LLC. This policy explains what data we collect, how we use it, and your rights.
+          HireStepX ("we", "our", "the platform") is an AI-powered mock interview practice tool built in India. This policy explains what data we collect, how we use it, and your rights.
         </p>
 
         {sections.map((section, i) => (

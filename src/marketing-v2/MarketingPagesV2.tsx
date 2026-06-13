@@ -1289,9 +1289,9 @@ export function ContactV2() {
                   Office
                 </p>
                 <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-                  Silva Vitalis LLC<br />
-                  San Francisco, CA · USA<br />
-                  Remote-first team across IN + US
+                  HireStepX<br />
+                  India<br />
+                  Remote-first team, built in India
                 </p>
               </div>
             </div>

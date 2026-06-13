@@ -196,7 +196,7 @@ const structuredData = [
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "HireStepX",
-    legalName: "Silva Vitalis LLC",
+    legalName: "HireStepX",
     url: "https://hirestepx.com",
     logo: "https://hirestepx.com/logo.png",
     description:
@@ -204,8 +204,7 @@ const structuredData = [
     foundingDate: "2026",
     address: {
       "@type": "PostalAddress",
-      addressLocality: "San Francisco",
-      addressCountry: "US",
+      addressCountry: "IN",
     },
     contactPoint: {
       "@type": "ContactPoint",
