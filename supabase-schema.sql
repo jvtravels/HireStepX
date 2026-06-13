@@ -115,6 +115,27 @@ alter table calendar_events add column if not exists google_event_id text;
 alter table calendar_events add column if not exists reminders jsonb default '[]'::jsonb;
 alter table calendar_events add column if not exists updated_at timestamptz default now();
 
+-- Idempotent send-log for calendar reminders (PRI-35). One row per
+-- (event, channel, lead-time) that has actually been delivered, so the daily
+-- reminder cron never double-sends. The unique constraint is the dedup key;
+-- the cron upserts on conflict do-nothing. Writes come from the service role
+-- (cron); RLS only governs the owner's read access.
+create table if not exists calendar_reminder_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade not null,
+  event_id text references calendar_events(id) on delete cascade not null,
+  channel text not null,
+  minutes_before int not null,
+  sent_at timestamptz not null default now(),
+  unique (event_id, channel, minutes_before)
+);
+create index if not exists idx_reminder_log_event on calendar_reminder_log(event_id);
+create index if not exists idx_reminder_log_user on calendar_reminder_log(user_id);
+alter table calendar_reminder_log enable row level security;
+drop policy if exists "Users read own reminder log" on calendar_reminder_log;
+create policy "Users read own reminder log" on calendar_reminder_log
+  for select using ((auth.uid())::text = user_id::text);
+
 -- 4. Feedback
 create table if not exists feedback (
   id uuid primary key default gen_random_uuid(),
