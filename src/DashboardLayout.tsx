@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
@@ -73,7 +73,17 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   // returned yet. profileToUser always sets subscriptionTier; the JWT-only
   // fallback path leaves it undefined. Avoid rendering "Free Plan" in this
   // window — it misleads Pro users until the background retry lands.
-  const tierKnown = !!user && user.subscriptionTier !== undefined;
+  //
+  // hasTierBeenSeenRef makes this STICKY: once we've determined the tier for
+  // this session, we never flash "Loading plan…" again — even if a background
+  // TOKEN_REFRESHED event temporarily causes user.subscriptionTier to be
+  // undefined while getProfile() is in-flight. The widget stays on the last
+  // known state rather than flickering between plan name and skeleton every
+  // few seconds.
+  const tierKnownRaw = !!user && user.subscriptionTier !== undefined;
+  const hasTierBeenSeenRef = useRef(false);
+  if (tierKnownRaw) hasTierBeenSeenRef.current = true;
+  const tierKnown = tierKnownRaw || hasTierBeenSeenRef.current;
   const {
     isMobile,
     showUpgradeModal, setShowUpgradeModal,
