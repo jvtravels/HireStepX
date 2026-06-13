@@ -599,7 +599,7 @@ export default function CalendarPage() {
   const awkward = focused ? focusedHour < 8 || focusedHour >= 21 : false;
 
   return (
-    <div style={{ fontFamily: font.ui, color: c.ivory }}>
+    <div style={{ fontFamily: font.ui, color: c.ivory, maxWidth: 1280, margin: "0 auto" }}>
       <style>{STYLE}</style>
 
       {/* header */}
