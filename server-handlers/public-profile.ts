@@ -60,8 +60,10 @@ export default async function handler(req: Request): Promise<Response> {
 
   const profile = profiles[0];
 
-  // Privacy check — only show profile if user has opted in (default: public for backward compat)
-  if (profile.is_profile_public === false) {
+  // Privacy check — private by default. Only serve the profile when the user
+  // has explicitly opted in (is_profile_public === true). A null/missing flag
+  // (column not yet backfilled, or never opted in) stays private.
+  if (profile.is_profile_public !== true) {
     return new Response(JSON.stringify({ error: "This profile is private" }), { status: 403, headers });
   }
 

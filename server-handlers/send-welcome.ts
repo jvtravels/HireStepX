@@ -629,7 +629,7 @@ async function handleVerify(req: VercelRequest, res: VercelResponse, email: stri
       const errBody = await emailRes.text();
       console.error("Resend API error:", emailRes.status, errBody);
       logResendUsage("verify", "error", undefined, `HTTP ${emailRes.status}`);
-      return res.status(200).json({ ok: true, emailSent: false, reason: "Resend API error" });
+      return res.status(502).json({ ok: false, emailSent: false, reason: "Resend API error" });
     }
 
     logResendUsage("verify", "success");
@@ -637,7 +637,7 @@ async function handleVerify(req: VercelRequest, res: VercelResponse, email: stri
   } catch (err) {
     console.error("Verification email error:", err);
     logResendUsage("verify", "error", undefined, err instanceof Error ? err.message : "Unknown");
-    return res.status(200).json({ ok: true, emailSent: false, reason: "Email send failed" });
+    return res.status(502).json({ ok: false, emailSent: false, reason: "Email send failed" });
   }
 }
 

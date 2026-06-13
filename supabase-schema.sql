@@ -136,6 +136,36 @@ drop policy if exists "Users read own reminder log" on calendar_reminder_log;
 create policy "Users read own reminder log" on calendar_reminder_log
   for select using ((auth.uid())::text = user_id::text);
 
+-- Google Calendar two-way sync state (PRI-35). One row per connected user.
+-- Holds the long-lived refresh token (the access token is short-lived and
+-- refreshed on demand), the incremental nextSyncToken, and the push-channel
+-- (watch) identifiers so the webhook can map an inbound notification back to a
+-- user and the poll cron can renew expiring channels. Service-role only for
+-- writes; the owner may read their own connection status. The refresh_token is
+-- a secret: never expose it through a client-readable view or column select.
+create table if not exists google_calendar_sync (
+  user_id uuid primary key references profiles(id) on delete cascade,
+  refresh_token text not null,
+  access_token text,
+  token_expiry timestamptz,
+  sync_token text,
+  calendar_id text not null default 'primary',
+  channel_id text,
+  resource_id text,
+  channel_expiry timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_gcal_sync_channel on google_calendar_sync(channel_id, resource_id);
+alter table google_calendar_sync enable row level security;
+-- Owner can see whether they're connected and when it expires, but NOT the
+-- token columns in practice (clients should select only status fields). The
+-- policy scopes by ownership; secret hygiene is enforced by never selecting
+-- refresh_token/access_token from the client.
+drop policy if exists "Users read own google sync" on google_calendar_sync;
+create policy "Users read own google sync" on google_calendar_sync
+  for select using ((auth.uid())::text = user_id::text);
+
 -- 4. Feedback
 create table if not exists feedback (
   id uuid primary key default gen_random_uuid(),
@@ -581,6 +611,12 @@ alter table profiles add column if not exists started_session_ids jsonb default 
 -- Restore path (login within the window) clears the field.
 alter table profiles add column if not exists deleted_at timestamptz;
 create index if not exists profiles_deleted_at_idx on profiles (deleted_at) where deleted_at is not null;
+
+-- Public-profile opt-in. The /api/public-profile endpoint only serves a
+-- profile when this is explicitly true — private by default so a new user
+-- is never publicly listed without opting in. Existing rows default to
+-- false on add, matching the private-by-default contract.
+alter table profiles add column if not exists is_profile_public boolean not null default false;
 
 alter table profiles enable row level security;
 alter table sessions enable row level security;

@@ -37,6 +37,14 @@
     {
       "path": "/api/aggregate-question-feedback",
       "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/analyze-sessions",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/calendar/google/poll",
+      "schedule": "30 2 * * *"
     }
   ]
 }

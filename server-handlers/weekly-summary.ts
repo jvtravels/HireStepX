@@ -104,24 +104,26 @@ function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: st
   return { subject, html };
 }
 
-async function sendEmail(_to: string, _subject: string, _html: string): Promise<boolean> {
+async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   if (!RESEND_API_KEY) return false;
-  // Uncomment when RESEND_API_KEY is configured in Vercel:
-  // const res = await fetch("https://api.resend.com/emails", {
-  //   method: "POST",
-  //   headers: {
-  //     Authorization: `Bearer ${RESEND_API_KEY}`,
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: JSON.stringify({
-  //     from: "HireStepX <reports@hirestepx.com>",
-  //     to: [to],
-  //     subject,
-  //     html,
-  //   }),
-  // });
-  // return res.ok;
-  return false;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "HireStepX <reports@hirestepx.com>",
+        to: [to],
+        subject,
+        html,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 async function markSent(userId: string): Promise<void> {

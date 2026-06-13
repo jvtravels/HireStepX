@@ -120,7 +120,7 @@ These rights apply to all users globally, not just Indian residents.`,
   },
   {
     title: "12. Contact Us",
-    body: "For privacy concerns, data requests, or questions about this policy, contact us at privacy@hirestepx.com (data protection / grievances) or support@hirestepx.com (general).",
+    body: "HireStepX is operated by Silva Vitalis LLC. For privacy concerns, data requests, or questions about this policy, contact us at privacy@hirestepx.com (data protection / grievances) or support@hirestepx.com (general).",
   },
 ];
 
