@@ -10,6 +10,13 @@ import { verifyAdminToken as verifyToken } from "./_admin-auth";
 
 const CRON_SECRET = process.env.CRON_SECRET || "";
 
+/* Cost guard: the analyze-sessions pipeline is expensive (LLM calls over a
+ * window of sessions). Auth alone isn't enough — a leaked admin token (4h
+ * TTL) or an over-eager click could fan out many runs. Enforce a short
+ * per-instance cooldown so back-to-back triggers are rejected cheaply. */
+const RUN_COOLDOWN_MS = 60_000;
+let lastRunAt = 0;
+
 /**
  * Resolve the absolute URL for /api/cron/analyze-sessions in the same
  * deployment. Vercel sets VERCEL_URL automatically; locally we fall
@@ -47,6 +54,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+
+  const sinceLast = Date.now() - lastRunAt;
+  if (sinceLast < RUN_COOLDOWN_MS) {
+    res.status(429).json({
+      error: "Cooling down — the analyzer was triggered moments ago",
+      retry_after_s: Math.ceil((RUN_COOLDOWN_MS - sinceLast) / 1000),
+    });
+    return;
+  }
+  lastRunAt = Date.now();
 
   // Optional body params: { force_reanalyze: bool, lookback_hours: number }.
   // force_reanalyze=true bypasses the "already has insight" filter and the
