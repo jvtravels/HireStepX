@@ -519,6 +519,32 @@ update profiles set session_credits = 0 where session_credits is not null and se
 alter table profiles drop column if exists session_credits;
 alter table profiles drop column if exists last_streak_reward_day;
 
+-- ═══════════════════════════════════════════════════════
+-- Session credits (single-session "₹9 per session" purchases)
+-- ═══════════════════════════════════════════════════════
+-- A credit lets a free-tier user run one mock interview beyond
+-- FREE_SESSION_LIMIT. Bought via the "single" Razorpay plan (1–10 per order).
+--
+-- SECURITY — why this is its own table, not a profiles column:
+-- the profiles UPDATE policy is row-scoped (auth.uid() = id) with NO column
+-- restriction, so an authenticated user can PATCH their own profile row. A
+-- balance column there would be self-grantable (free unlimited sessions). Here,
+-- the owner gets SELECT only; there is deliberately NO insert/update/delete
+-- policy for authenticated/anon, so ONLY the service role (which bypasses RLS)
+-- can mint or spend credits — from server-handlers/_session-credits.ts.
+create table if not exists session_credits (
+  user_id    uuid primary key references profiles(id) on delete cascade,
+  balance    integer not null default 0 check (balance >= 0),
+  updated_at timestamptz not null default now()
+);
+alter table session_credits enable row level security;
+
+-- Owner may read their own balance (for the dashboard credit pill). No write
+-- policy is intentional — writes happen only via the service-role key.
+drop policy if exists "Users read own session credits" on session_credits;
+create policy "Users read own session credits" on session_credits
+  for select using ((auth.uid())::text = user_id::text);
+
 -- Re-engagement cron uses this to rate-limit emails per user (see re-engage-users.ts).
 alter table profiles add column if not exists re_engage_sent timestamptz;
 

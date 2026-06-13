@@ -12,6 +12,7 @@ import {
   supabaseUrl,
   supabaseAnonKey,
 } from "./_shared";
+import { grantSessionCredits } from "./_session-credits";
 
 /** Fetch with AbortController timeout (default 8s) */
 function fetchWithTimeout(url: string, opts: RequestInit & { timeout?: number } = {}): Promise<Response> {
@@ -53,7 +54,8 @@ async function clearPaymentIntent(orderId: string): Promise<void> {
 }
 
 // PLAN_DURATION used for reference: weekly=7, monthly=setMonth(), yearly=365
-const PLAN_TIER: Record<string, string> = { weekly: "starter", monthly: "pro", "yearly-starter": "starter", "yearly-pro": "pro" };
+// "single" stays on the free tier — it grants session credits, not a tier change.
+const PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro", "yearly-starter": "starter", "yearly-pro": "pro" };
 const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 4900, monthly: 14900, "yearly-starter": 203900, "yearly-pro": 143000 };
 const PLAN_LABEL: Record<string, string> = { weekly: "Starter (₹49/week)", monthly: "Pro (₹149/month)", "yearly-starter": "Starter Annual (₹2,039/year)", "yearly-pro": "Pro Annual (₹1,430/year)" };
 const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2 };
@@ -424,14 +426,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const currentEnd = current.subscription_end ? new Date(current.subscription_end) : null;
       const isActive = currentEnd && currentEnd > new Date();
       const newTier = PLAN_TIER[plan];
-      if (isActive && (TIER_RANK[current.subscription_tier] || 0) > (TIER_RANK[newTier] || 0)) {
+      // Single-session credit top-ups are tier-neutral, so they're never a
+      // "downgrade" even when the buyer holds an active paid plan.
+      if (plan !== "single" && isActive && (TIER_RANK[current.subscription_tier] || 0) > (TIER_RANK[newTier] || 0)) {
         return res.status(400).json({ error: `You already have an active ${current.subscription_tier} plan. Downgrading is not supported — wait for it to expire or contact support.` });
       }
     }
 
-    // Single-session purchases removed alongside the bonus-session feature.
+    // 4a. Single-session purchase — grants session credits, no tier change.
+    // Credits go to the service-role-only session_credits ledger (NOT a
+    // profiles column), so the balance stays unforgeable. See _session-credits.ts.
     if (plan === "single") {
-      return res.status(400).json({ error: "Single-session purchases are no longer available.", code: "PLAN_DISCONTINUED" });
+      const nowSingle = new Date();
+      const purchaseAmount = PLAN_AMOUNT.single * sessionQuantity;
+      const paymentRecordRes = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payments`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ id: crypto.randomUUID(), user_id: userId, razorpay_payment_id, razorpay_order_id, plan: "single", tier: "free", amount: purchaseAmount, currency: "INR", status: "completed", subscription_start: nowSingle.toISOString(), subscription_end: nowSingle.toISOString() }),
+      });
+      if (!paymentRecordRes.ok) {
+        console.error("[verify-payment] single payment record save failed:", paymentRecordRes.status);
+        return res.status(500).json({ error: "Failed to save payment record" });
+      }
+      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, sessionQuantity, fetch);
+      if (newBalance === null) {
+        console.error("[verify-payment] credit grant failed for", userId.slice(0, 8));
+        return res.status(500).json({ error: "Failed to add session credit. Your payment was received — contact support@hirestepx.com." });
+      }
+      // Idempotency backstop: record this payment_id on the profile so a
+      // replayed callback short-circuits at the profile_payment_id_match check.
+      await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+        method: "PATCH",
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ razorpay_payment_id }),
+      }).catch(() => {});
+      if (userEmail) {
+        try { await sendPaymentEmail(userEmail, userName || "Customer", "single", "free", razorpay_payment_id, nowSingle.toISOString(), nowSingle.toISOString()); } catch (e) { console.warn("[verify-payment] single email failed:", e); }
+      }
+      if (razorpay_order_id) await clearPaymentIntent(razorpay_order_id);
+      await captureServerEvent("payment_completed", userId, {
+        plan: "single", tier: "free", amount: purchaseAmount, currency: "INR", payment_id: razorpay_payment_id, quantity: sessionQuantity,
+      });
+      return res.status(200).json({
+        success: true,
+        plan: "single",
+        credits: newBalance,
+        quantity: sessionQuantity,
+        subscriptionTier: current?.subscription_tier || "free",
+        subscriptionStart: null,
+        subscriptionEnd: current?.subscription_end ?? null,
+      });
     }
 
     // 4. Calculate subscription dates with mid-cycle upgrade proration

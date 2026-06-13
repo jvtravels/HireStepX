@@ -142,6 +142,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   const authHeadersRef = useRef<Record<string, string>>({});
 
   const [verifyRetries, setVerifyRetries] = useState(0);
+  // Single-session purchases add credits without changing tier, so they get a
+  // lightweight inline confirmation instead of the tier-change success path.
+  const [creditSuccess, setCreditSuccess] = useState<number | null>(null);
 
   // Verify payment in React lifecycle, not in Razorpay callback
   useEffect(() => {
@@ -160,6 +163,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         .then(verifyData => {
           if (cancelled) return;
           if (verifyData.success) {
+            if (verifyData.plan === "single" || pendingVerification.plan === "single") {
+              // Credit added — keep the modal open with a confirmation; the user
+              // can immediately start their interview (tier is unchanged).
+              setCreditSuccess(typeof verifyData.credits === "number" ? verifyData.credits : null);
+              setLoading(null);
+              return;
+            }
             onPaymentSuccess(verifyData.subscriptionTier, verifyData.subscriptionStart, verifyData.subscriptionEnd);
           } else {
             setError(verifyData.error || "Payment verification failed. Please try again or contact support@hirestepx.com");
@@ -474,6 +484,27 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             );
           })}
         </div>
+
+        {/* Single-session top-up — the moment-of-need option for a free user who
+            just needs one more interview without committing to a subscription. */}
+        {creditSuccess !== null ? (
+          <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: "#E8F2EA", border: `1px solid #BFD9C3`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.sage }}>
+              Session credit added{creditSuccess > 0 ? ` — you have ${creditSuccess} ${creditSuccess === 1 ? "credit" : "credits"}` : ""}. Close this to start your interview.
+            </span>
+          </div>
+        ) : (
+          <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: c.carbon, border: `1px solid ${c.border}`, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center" }}>
+            <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk }}>
+              Just need one more? Buy a <strong style={{ color: c.ivory }}>single session for ₹9</strong> — no subscription.
+            </span>
+            <button onClick={() => handleCheckout("single")} disabled={!!loading}
+              style={{ padding: "8px 16px", borderRadius: 9, border: `1px solid ${c.borderHover}`, background: c.graphite, color: c.ivory, fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== "single" ? 0.5 : 1 }}>
+              {loading === "single" ? "Opening Razorpay..." : loading === "verifying" ? "Verifying..." : "Buy single · ₹9"}
+            </button>
+          </div>
+        )}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>

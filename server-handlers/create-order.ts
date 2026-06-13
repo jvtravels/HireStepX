@@ -17,6 +17,7 @@ const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 
 const PRICE_MAP: Record<string, { amount: number; name: string; description: string }> = {
+  single:           { amount: 900,    name: "HireStepX Single Session",   description: "Single mock interview session — ₹9" },
   weekly:           { amount: 4900,   name: "HireStepX Weekly",           description: "Weekly Plan — ₹49 · 10 sessions over 7 days" },
   monthly:          { amount: 14900,  name: "HireStepX Monthly",          description: "Monthly Plan — ₹149 · 40 sessions over 30 days" },
   "yearly-starter": { amount: 203900, name: "HireStepX Weekly Annual",    description: "Annual Weekly — ₹2,039/year · 10 sessions/week" },
@@ -78,11 +79,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const price = PRICE_MAP[plan];
     if (!price) return res.status(400).json({ error: "Invalid plan" });
 
-    // rawQty is accepted for forwards-compatibility but unused — every
-    // remaining plan is a fixed-price subscription.
-    void rawQty;
-    const finalAmount = price.amount;
-    const finalDescription = price.description;
+    // Single-session is the only quantity-variable plan: a user can buy 1–10
+    // credits in one order. Every other plan is a fixed-price subscription.
+    let quantity = 1;
+    if (plan === "single") {
+      const q = typeof rawQty === "number" ? rawQty : parseInt(String(rawQty ?? "1"), 10);
+      quantity = Math.min(Math.max(Number.isFinite(q) ? Math.trunc(q) : 1, 1), 10);
+    }
+    const finalAmount = price.amount * quantity;
+    const finalDescription = quantity > 1 ? `${price.description} × ${quantity}` : price.description;
 
     // Idempotency: atomic lock to prevent duplicate orders for the same
     // user+plan from racing simultaneous clicks (double-click, fast retry).
@@ -95,7 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // needle. See PostHog `checkout_cache_hit`.
     const DEDUP_TTL = 90;
     const resolvedUserId = authenticatedUserId || (typeof userId === "string" ? userId : "");
-    const idempotencyKey = `order:${resolvedUserId}:${plan}`;
+    const idempotencyKey = `order:${resolvedUserId}:${plan}${plan === "single" ? `:${quantity}` : ""}`;
     if (UPSTASH_URL && UPSTASH_TOKEN && resolvedUserId) {
       try {
         // Atomic: SET NX returns OK if key was set (we got the lock), null if it existed (duplicate)
@@ -117,11 +122,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await captureServerEvent("checkout_cache_hit", resolvedUserId, { plan, order_id: oidData.result, branch: "fast" });
                 return res.status(200).json({
                   orderId: oidData.result,
-                  amount: price.amount,
+                  amount: finalAmount,
                   currency: "INR",
                   keyId: RAZORPAY_KEY_ID,
                   name: price.name,
-                  description: price.description,
+                  description: finalDescription,
                 });
               }
             }
@@ -136,11 +141,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await captureServerEvent("checkout_cache_hit", resolvedUserId, { plan, order_id: retryData.result, branch: "waited" });
                 return res.status(200).json({
                   orderId: retryData.result,
-                  amount: price.amount,
+                  amount: finalAmount,
                   currency: "INR",
                   keyId: RAZORPAY_KEY_ID,
                   name: price.name,
-                  description: price.description,
+                  description: finalDescription,
                 });
               }
             }
@@ -154,6 +159,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const receipt = `${plan}_${Date.now()}`.slice(0, 40);
 
     const notes: Record<string, string> = { plan };
+    // verify-payment reads notes.quantity to recompute the expected amount and
+    // to grant the right number of credits for single-session purchases.
+    if (plan === "single") notes.quantity = String(quantity);
     if (resolvedUserId.length > 0 && resolvedUserId.length <= 200) notes.userId = resolvedUserId;
     if (typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) notes.email = email;
 

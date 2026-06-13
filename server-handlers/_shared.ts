@@ -1,6 +1,7 @@
 /* Shared utilities for Vercel Edge Functions & Node.js API routes */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { consumeSessionCredit } from "./_session-credits";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -236,7 +237,14 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
       const totalCount = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
 
       if (totalCount >= FREE_SESSION_LIMIT) {
-        return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Upgrade to continue.` };
+        // Past the free allotment — allow only if the user holds a purchased
+        // session credit, and spend it now (one credit = one session start).
+        // Credits live in the service-role-only session_credits ledger.
+        const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
+        if (!consumed) {
+          return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Buy a session for ₹9 or upgrade.` };
+        }
+        return { allowed: true };
       }
       if (totalCount < FREE_SESSION_LIMIT) {
         // Atomic in-flight check: prevent race condition with concurrent sessions

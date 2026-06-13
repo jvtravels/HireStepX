@@ -27,18 +27,18 @@ describe("UpgradeModal", () => {
     render(<UpgradeModal {...defaultProps} />);
 
     expect(screen.getByText("Free")).toBeInTheDocument();
-    expect(screen.getByText("Starter")).toBeInTheDocument();
-    expect(screen.getByText("Pro")).toBeInTheDocument();
+    expect(screen.getByText("Weekly")).toBeInTheDocument();
+    expect(screen.getByText("Monthly")).toBeInTheDocument();
   });
 
   it("shows current plan indicator for free tier", () => {
     render(<UpgradeModal {...defaultProps} />);
-    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.getByText(/on this plan/)).toBeInTheDocument();
   });
 
   it("shows title in header", () => {
     render(<UpgradeModal {...defaultProps} />);
-    expect(screen.getByText("Choose Your Plan")).toBeInTheDocument();
+    expect(screen.getByText("Choose your plan")).toBeInTheDocument();
   });
 
   it("has role=dialog and aria-modal for accessibility", () => {
@@ -62,14 +62,20 @@ describe("UpgradeModal", () => {
 
   it("does not close when clicking modal content", () => {
     render(<UpgradeModal {...defaultProps} />);
-    fireEvent.click(screen.getByText("Choose Your Plan"));
+    fireEvent.click(screen.getByText("Choose your plan"));
     expect(defaultProps.onClose).not.toHaveBeenCalled();
   });
 
-  it("shows Get Started and Go Pro buttons for non-current plans", () => {
+  it("shows checkout buttons for non-current plans", () => {
     render(<UpgradeModal {...defaultProps} />);
-    expect(screen.getByText("Get Started")).toBeInTheDocument();
-    expect(screen.getByText("Go Pro")).toBeInTheDocument();
+    expect(screen.getByText(/Go weekly/)).toBeInTheDocument();
+    expect(screen.getByText(/Go monthly/)).toBeInTheDocument();
+  });
+
+  it("offers a single-session (₹9) purchase option", () => {
+    render(<UpgradeModal {...defaultProps} />);
+    // The moment-of-need top-up for a free user who hit their limit.
+    expect(screen.getByText(/Buy single/)).toBeInTheDocument();
   });
 
   it("marks starter as current when user is on starter plan", () => {
