@@ -12,8 +12,9 @@
  * derived); the rail renders those sessions grouped under their interview.
  */
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { c, font, shadow, sp, radius, ease } from "./tokens";
-import { tokens as T } from "./auth/_tokens";
+import { tokens as T, shadows as eShadow } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { listEvents, saveEvent, deleteEvent, generatePrepRunway, connectGoogleCalendar, currentTimezone, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
@@ -37,15 +38,14 @@ const STYLE = `
   .cpr-actions { align-items: stretch !important; width: 100%; }
 }
 @keyframes cpr-scrim-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes cpr-sheet-in { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-.cpr-scrim { animation: cpr-scrim-in 0.18s cubic-bezier(0.16,1,0.3,1); }
-.cpr-sheet { animation: cpr-sheet-in 0.24s cubic-bezier(0.16,1,0.3,1); }
+@keyframes cpr-modal-in { from { transform: translateY(10px) scale(0.985); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+.cpr-scrim { animation: cpr-scrim-in 0.16s cubic-bezier(0.16,1,0.3,1); }
+.cpr-modal { animation: cpr-modal-in 0.2s cubic-bezier(0.16,1,0.3,1); }
 @media (max-width: 560px) {
-  .cpr-sheet { width: 100vw !important; }
   .cpr-form-row { grid-template-columns: 1fr !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cpr-scrim, .cpr-sheet { animation: none; }
+  .cpr-scrim, .cpr-modal { animation: none; }
 }
 `;
 
@@ -165,6 +165,18 @@ function tsOf(ev: InterviewEvent): number {
   return Number.isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
+/* Split a server-authored runway title like "Amazon mock · T-2" into its label
+ * and the countdown marker, so the timeline tag never duplicates the title and
+ * the marker stays the server's (e.g. "T+2h"), not a re-derived one. */
+function splitRunwayTitle(raw: string): { title: string; suffix: string | null } {
+  const m = raw.match(/^(.*?)\s*·\s*(T[-+]?\S[^·]*)$/i);
+  return m ? { title: m[1].trim(), suffix: m[2].trim() } : { title: raw.trim(), suffix: null };
+}
+
+function capitalize(s: string): string {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
 function buildRunway(interview: InterviewEvent, all: InterviewEvent[]): RunwayNode[] {
   const children = all
     .filter((e) => e.kind === "prep-session" && e.parentInterviewId === interview.id && e.status !== "cancelled")
@@ -175,9 +187,10 @@ function buildRunway(interview: InterviewEvent, all: InterviewEvent[]): RunwayNo
 
   const nodes: RunwayNode[] = children.map((e, i) => {
     const dayDiff = Math.round((tsOf(e) - anchorTs) / 86_400_000);
-    const tag = tsOf(e) > anchorTs ? "after" : dayDiff === 0 ? "T-0" : `T${dayDiff}`;
+    const { title, suffix } = splitRunwayTitle(e.title);
+    const tag = suffix || (dayDiff === 0 ? "T-0" : `T${dayDiff}`);
     const state: RunwayState = tsOf(e) < now ? "done" : i === firstUpcoming ? "active" : "upcoming";
-    return { id: e.id, tag, title: e.title, detail: e.type || "Mock session", state };
+    return { id: e.id, tag, title, detail: capitalize(e.type) || "Mock session", state };
   });
   nodes.push({ id: interview.id, tag: "T-0", title: `${interview.company || interview.title}`, detail: "The real interview", state: "anchor" });
   return nodes;
@@ -624,15 +637,35 @@ export default function CalendarPage() {
   const focused = (focusedId ? upcoming.find((e) => e.id === focusedId) : undefined) || upcoming[0] || null;
 
   const inputStyle = {
-    width: "100%", padding: "10px 14px", fontFamily: font.ui, fontSize: 13,
-    color: c.ivory, background: c.obsidian, border: `1px solid ${c.border}`,
-    borderRadius: 8, outline: "none", boxSizing: "border-box" as const,
+    width: "100%", padding: "11px 14px", fontFamily: font.ui, fontSize: 13.5,
+    color: c.ivory, background: c.obsidian, border: `1px solid ${c.borderHover}`,
+    borderRadius: radius.md, outline: "none", boxSizing: "border-box" as const,
+    transition: "border-color 0.18s ease, box-shadow 0.18s ease",
+  };
+
+  // App-standard form focus: copper border + soft copper ring (mirrors the
+  // settingsSections focusIn/focusOut treatment used across the product).
+  const fieldFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    e.currentTarget.style.borderColor = T.copper;
+    e.currentTarget.style.boxShadow = `0 0 0 3px ${T.copper100}`;
+  };
+  const fieldBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    e.currentTarget.style.borderColor = c.borderHover;
+    e.currentTarget.style.boxShadow = "none";
   };
 
   // Awkward-hour heuristic for the focused interview (Indian candidates often
   // interview at US/EU hours). Calm/positive unless it's genuinely early/late.
   const focusedHour = focused ? Number((focused.time || "10:00").split(":")[0]) : 10;
   const awkward = focused ? focusedHour < 8 || focusedHour >= 21 : false;
+
+  // Hero labels: keep what we display aligned to what the user actually entered.
+  // A blank or "Other" round shouldn't leak into the UI as "· Other",
+  // "Practice Other", or a generic round chip.
+  const heroName = focused ? focused.company || focused.title : "";
+  const heroRound = focused && focused.type && focused.type !== "Other" ? focused.type : null;
+  const heroSub = focused && focused.title && focused.title !== heroName ? focused.title : null;
+  const practiceLabel = heroRound ? `Practice ${heroRound}` : "Start mock interview";
 
   return (
     <div style={{ fontFamily: font.ui, color: c.ivory, maxWidth: 1280, margin: "0 auto" }}>
@@ -669,19 +702,24 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Add/Edit sheet — a focused right-anchored drawer over a scrim, so the
-          page behind it never shifts. Closes on scrim click or Escape. */}
-      {showForm && (
+      {/* Add/Edit modal — centered dialog over a dimmed, blurred scrim, matching
+          the app's one dialog vocabulary (EndModal / UpgradeModal). Closes on
+          scrim click or Escape.
+          Portaled to <body>: the dashboard page wrapper (.dash-page-enter) keeps
+          a forwards-filled transform after its enter animation, which would
+          otherwise make this fixed overlay a containing block and trap it inside
+          the content column instead of covering the viewport. */}
+      {showForm && typeof document !== "undefined" && createPortal(
         <div className="cpr-scrim" onClick={() => { setShowForm(false); resetForm(); }}
-          style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(14,12,8,0.34)", display: "flex", justifyContent: "flex-end" }}>
-          <div className="cpr-sheet" role="dialog" aria-modal="true" aria-label={editingId ? "Edit interview" : "Add interview"} onClick={(e) => e.stopPropagation()}
-            style={{ width: "min(480px, 100vw)", height: "100dvh", background: c.carbon, borderLeft: `1px solid ${c.border}`, boxShadow: shadow.xl, display: "flex", flexDirection: "column" }}>
+          style={{ position: "fixed", inset: 0, zIndex: 120, background: T.coalOverlay, backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: sp.xl }}>
+          <div className="cpr-modal" role="dialog" aria-modal="true" aria-labelledby="cal-modal-title" onClick={(e) => e.stopPropagation()}
+            style={{ width: "min(520px, 100%)", maxHeight: "92vh", background: c.carbon, border: `1px solid ${c.border}`, borderRadius: 20, boxShadow: eShadow.modal, overflow: "hidden", display: "flex", flexDirection: "column" }}>
 
             {/* header */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, padding: "24px 28px 18px", borderBottom: `1px solid ${c.borderSubtle}` }}>
               <div>
                 <Eyebrow>{editingId ? "Edit" : "New"}</Eyebrow>
-                <h3 style={{ fontFamily: font.display, fontSize: 23, fontWeight: 400, color: c.ivory, margin: "5px 0 0" }}>{editingId ? "Edit interview" : "Add an interview"}</h3>
+                <h3 id="cal-modal-title" style={{ fontFamily: font.display, fontSize: 23, fontWeight: 400, color: c.ivory, margin: "5px 0 0" }}>{editingId ? "Edit interview" : "Add an interview"}</h3>
               </div>
               <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} aria-label="Close" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 6, marginTop: 2, display: "flex", borderRadius: radius.sm }}>
                 <Icon size={20}>{I.x}</Icon>
@@ -692,25 +730,25 @@ export default function CalendarPage() {
             <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px", display: "flex", flexDirection: "column", gap: 18 }}>
               <Field label="Interview title" htmlFor="cal-title" required>
                 <input id="cal-title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Final round interview" style={inputStyle}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+                  onFocus={fieldFocus} onBlur={fieldBlur} />
               </Field>
 
               <Field label="Company" htmlFor="cal-company" required>
                 <input id="cal-company" value={formCompany} onChange={(e) => setFormCompany(e.target.value)} placeholder="e.g. Google" style={inputStyle}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+                  onFocus={fieldFocus} onBlur={fieldBlur} />
               </Field>
 
               <div className="cpr-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <Field label="Date" htmlFor="cal-date" required>
-                  <input id="cal-date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} />
+                  <input id="cal-date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} onFocus={fieldFocus} onBlur={fieldBlur} />
                 </Field>
                 <Field label="Time" htmlFor="cal-time" required>
-                  <input id="cal-time" type="time" value={formTime} onChange={(e) => setFormTime(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} />
+                  <input id="cal-time" type="time" value={formTime} onChange={(e) => setFormTime(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} onFocus={fieldFocus} onBlur={fieldBlur} />
                 </Field>
               </div>
 
               <Field label="Duration" htmlFor="cal-duration">
-                <select id="cal-duration" value={formDuration} onChange={(e) => setFormDuration(Number(e.target.value))} style={{ ...inputStyle, colorScheme: "light" }}>
+                <select id="cal-duration" value={formDuration} onChange={(e) => setFormDuration(Number(e.target.value))} style={{ ...inputStyle, colorScheme: "light" }} onFocus={fieldFocus} onBlur={fieldBlur}>
                   <option value={30}>30 minutes</option>
                   <option value={45}>45 minutes</option>
                   <option value={60}>1 hour</option>
@@ -734,20 +772,20 @@ export default function CalendarPage() {
 
               <Field label="Location / link" htmlFor="cal-location">
                 <input id="cal-location" value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Zoom link, Google Meet, or address" style={inputStyle}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+                  onFocus={fieldFocus} onBlur={fieldBlur} />
               </Field>
 
               <Field label="Notes" htmlFor="cal-notes">
                 <textarea id="cal-notes" value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Interviewer name, prep topics, things to remember..." rows={3}
                   style={{ ...inputStyle, resize: "vertical" }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
+                  onFocus={fieldFocus} onBlur={fieldBlur} />
               </Field>
 
-              {/* reminders */}
+              {/* reminders — app-standard indigo toggle */}
               <div role="switch" aria-checked={formReminders} tabIndex={0} className="cpr-tap" onClick={() => setFormReminders(!formReminders)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFormReminders(!formReminders); } }}
                 style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: radius.md, border: `1px solid ${c.border}`, background: c.obsidian, cursor: "pointer" }}>
-                <span style={{ width: 38, height: 22, borderRadius: 11, padding: 2, flexShrink: 0, background: formReminders ? c.sage : c.borderHover, transition: "background 0.2s" }}>
-                  <span style={{ display: "block", width: 18, height: 18, borderRadius: "50%", background: c.carbon, transform: formReminders ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s", boxShadow: shadow.sm }} />
+                <span style={{ width: 44, height: 24, borderRadius: 12, padding: 3, flexShrink: 0, background: formReminders ? c.slate : c.borderHover, transition: "background 0.2s" }}>
+                  <span style={{ display: "block", width: 18, height: 18, borderRadius: "50%", background: c.carbon, transform: formReminders ? "translateX(20px)" : "translateX(0)", transition: "transform 0.2s", boxShadow: shadow.sm }} />
                 </span>
                 <span>
                   <span style={{ display: "block", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Reminders</span>
@@ -760,14 +798,19 @@ export default function CalendarPage() {
             <div style={{ borderTop: `1px solid ${c.borderSubtle}`, padding: "16px 28px", display: "flex", flexDirection: "column", gap: 10 }}>
               {formError && <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{formError}</span>}
               <div style={{ display: "flex", gap: 10 }}>
-                <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} style={{ fontFamily: font.ui, fontSize: 13.5, fontWeight: 500, color: c.chalk, background: "transparent", border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "12px 20px", cursor: "pointer" }}>Cancel</button>
-                <button className="cpr-tap" onClick={handleSave} disabled={!formTitle || !formDate || !formTime || saving} style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, background: formTitle && formDate && formTime && !saving ? c.slate : c.border, color: formTitle && formDate && formTime && !saving ? c.carbon : c.stone, border: "none", borderRadius: radius.md, padding: "12px 24px", cursor: formTitle && formDate && formTime && !saving ? "pointer" : "not-allowed", boxShadow: formTitle && formDate && formTime && !saving ? shadow.sm : "none" }}>
+                <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = c.graphite)} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  style={{ fontFamily: font.ui, fontSize: 13.5, fontWeight: 500, color: c.chalk, background: "transparent", border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "12px 20px", cursor: "pointer", transition: "background 0.15s ease" }}>Cancel</button>
+                <button className="cpr-tap" onClick={handleSave} disabled={!formTitle || !formDate || !formTime || saving}
+                  onMouseEnter={(e) => { if (formTitle && formDate && formTime && !saving) e.currentTarget.style.filter = "brightness(1.08)"; }} onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
+                  style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, background: formTitle && formDate && formTime && !saving ? c.slate : c.border, color: formTitle && formDate && formTime && !saving ? c.carbon : c.stone, border: "none", borderRadius: radius.md, padding: "12px 24px", cursor: formTitle && formDate && formTime && !saving ? "pointer" : "not-allowed", boxShadow: formTitle && formDate && formTime && !saving ? shadow.sm : "none", transition: "filter 0.15s ease" }}>
                   {saving ? "Saving…" : editingId ? "Save changes" : (<><Icon size={15}>{I.plus}</Icon> Add interview</>)}
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <div className="cpr-grid">
@@ -838,11 +881,11 @@ export default function CalendarPage() {
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: sp.sm, marginBottom: 3, flexWrap: "wrap" }}>
                         <h2 style={{ fontFamily: font.display, fontSize: 19, fontWeight: 400, color: c.ivory, margin: 0 }}>
-                          {focused.company ? `${focused.company} · ${focused.type}` : focused.title}
+                          {heroName}
                         </h2>
-                        <Pill bg={c.slateLight} fg={c.slate}>Interview</Pill>
+                        <Pill bg={c.slateLight} fg={c.slate}>{heroRound || "Interview"}</Pill>
                       </div>
-                      <div style={{ fontSize: 13, color: c.chalk, fontFamily: font.ui }}>{focused.title}</div>
+                      {heroSub && <div style={{ fontSize: 13, color: c.chalk, fontFamily: font.ui }}>{heroSub}</div>}
                     </div>
                   </div>
                   <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder} icon={<Icon size={11}>{I.clock}</Icon>}>{countdownLabel(focused)}</Pill>
@@ -866,7 +909,7 @@ export default function CalendarPage() {
                 {/* actions */}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${c.borderSubtle}`, marginTop: sp.lg, paddingTop: sp.md }}>
                   <button className="cpr-tap" onClick={() => onStartSession()} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.sm, padding: "8px 14px", fontFamily: font.ui, fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
-                    <Icon size={13}>{I.play}</Icon> Practice {focused.type}
+                    <Icon size={13}>{I.play}</Icon> {practiceLabel}
                   </button>
                   <div style={{ position: "relative" }}>
                     <button className="cpr-tap" onClick={() => handleExportICS(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>

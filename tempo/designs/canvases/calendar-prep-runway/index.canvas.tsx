@@ -22,5 +22,5 @@ export const RunwayRail: TempoStoryboard = {
 export const SuggestSheet: TempoStoryboard = {
   render: () => <SuggestRunwaySheet />,
   name: "Suggest-then-accept sheet",
-  layout: { x: 0, y: 1090, width: 620, height: 780 },
+  layout: { x: 0, y: 1090, width: 620, height: 540 },
 };
