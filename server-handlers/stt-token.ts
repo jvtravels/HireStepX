@@ -7,18 +7,19 @@ import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, r
 
 declare const process: { env: Record<string, string | undefined> };
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || "";
+const DEEPGRAM_PROJECT_ID = (process.env.DEEPGRAM_PROJECT_ID || "").trim();
 
-/* TOKEN-ABUSE GUARDRAIL — until we migrate to Deepgram scoped/temp keys
- * (which requires DEEPGRAM_PROJECT_ID config), the raw API key is handed
- * to authenticated clients. A captured key can be reused direct-to-vendor
- * indefinitely. We bound the blast radius two ways:
- *  - per-user daily issuance cap (a single account can't farm tokens
- *    across multiple browser sessions to share with others)
- *  - shortened TTL hint (clients re-fetch more often, so the rate-limit
- *    + cap stay in the hot path)
- * TODO: migrate to Deepgram /v1/projects/<id>/keys with TTL + scopes. */
+/* TOKEN-ABUSE GUARDRAIL.
+ * We mint a SCOPED, short-lived Deepgram key per request via the project keys
+ * API and hand THAT to the client — never the master key. A captured temp key
+ * expires in seconds and only carries usage:write, so the blast radius is tiny.
+ * This requires DEEPGRAM_PROJECT_ID to be configured; if it isn't, we refuse
+ * to issue anything rather than leaking the master key (the previous behavior).
+ * Voice is text-only for the MVP, so a 503 here is acceptable until the project
+ * ID is set. We still bound issuance with a per-user daily cap + IP rate limit. */
 const STT_TOKEN_DAILY_CAP = 30;
 const SECONDS_PER_DAY = 86_400;
+const STT_TOKEN_TTL_SECONDS = 60;
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);
@@ -26,7 +27,9 @@ export default async function handler(req: Request): Promise<Response> {
 
   const headers = withRequestId(corsHeaders(req));
 
-  if (!DEEPGRAM_API_KEY) {
+  if (!DEEPGRAM_API_KEY || !DEEPGRAM_PROJECT_ID) {
+    // No project ID means we can't mint a scoped key — refuse rather than leak
+    // the master key. (Set DEEPGRAM_PROJECT_ID to enable secure voice tokens.)
     return new Response(JSON.stringify({ error: "STT not configured" }), { status: 503, headers });
   }
 
@@ -52,16 +55,47 @@ export default async function handler(req: Request): Promise<Response> {
     }), { status: 429, headers });
   }
 
-  // Return the API key directly with short TTL — auth + rate limiting gate access
-  // Deepgram's scoped key API requires project ID which varies per account,
-  // so we return the key directly (already behind auth + rate limiting + origin check)
-  const expiresAt = Date.now() + 2 * 60 * 1000; // 2 minutes
+  // Mint a scoped, short-lived key via Deepgram's project keys API. The temp
+  // key is returned exactly once and carries only usage:write, expiring in
+  // STT_TOKEN_TTL_SECONDS — so a captured token is near-worthless.
+  let tempKey = "";
+  try {
+    const mintRes = await fetch(
+      `https://api.deepgram.com/v1/projects/${encodeURIComponent(DEEPGRAM_PROJECT_ID)}/keys`,
+      {
+        method: "POST",
+        headers: { Authorization: `Token ${DEEPGRAM_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          comment: `hsx-stt-${(auth.userId ?? "anon").slice(0, 8)}`,
+          scopes: ["usage:write"],
+          time_to_live_in_seconds: STT_TOKEN_TTL_SECONDS,
+        }),
+      },
+    );
+    if (!mintRes.ok) {
+      console.error("[stt-token] Deepgram key mint failed:", mintRes.status);
+      logServiceUsage({ service: "deepgram_stt", endpoint: "token", userId: auth.userId, status: "error" });
+      return new Response(JSON.stringify({ error: "Could not issue voice token" }), { status: 502, headers });
+    }
+    const mintData = await mintRes.json();
+    tempKey = typeof mintData?.key === "string" ? mintData.key : "";
+  } catch (err) {
+    console.error("[stt-token] Deepgram key mint threw:", err);
+    logServiceUsage({ service: "deepgram_stt", endpoint: "token", userId: auth.userId, status: "error" });
+    return new Response(JSON.stringify({ error: "Could not issue voice token" }), { status: 502, headers });
+  }
+
+  if (!tempKey) {
+    return new Response(JSON.stringify({ error: "Could not issue voice token" }), { status: 502, headers });
+  }
+
+  const expiresAt = Date.now() + STT_TOKEN_TTL_SECONDS * 1000;
 
   // Log each token request as a Deepgram STT session start
   logServiceUsage({ service: "deepgram_stt", endpoint: "token", userId: auth.userId, status: "success" });
 
   return new Response(JSON.stringify({
-    apiKey: DEEPGRAM_API_KEY,
+    apiKey: tempKey,
     expiresAt,
   }), {
     status: 200,

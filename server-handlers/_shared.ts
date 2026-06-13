@@ -526,8 +526,16 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
   const tier = await getSubscriptionTier(userId);
   const dailyLimit = DAILY_LLM_LIMITS[tier] || DAILY_LLM_LIMITS.free;
 
-  // Use Redis if available, otherwise allow (fail open to not block users)
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) return { allowed: true };
+  // No Redis configured → we can't count calls. Default to fail-open so a
+  // missing cache doesn't lock users out, but honor QUOTA_FAIL_CLOSED=1 so an
+  // operator who wants strict cost control isn't silently granting unlimited
+  // LLM spend when Redis is absent.
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) {
+    if (process.env.QUOTA_FAIL_CLOSED === "1") {
+      return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true };
+    }
+    return { allowed: true };
+  }
 
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const key = `llm_quota:${userId}:${today}:${endpoint}`;

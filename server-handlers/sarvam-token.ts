@@ -7,9 +7,13 @@ import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, r
 
 declare const process: { env: Record<string, string | undefined> };
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "";
-
-// See stt-token.ts for rationale. Sarvam doesn't offer public scoped-key
-// minting either, so we bound blast radius the same way.
+// Sarvam offers NO scoped/temporary-key API, so the only way to serve its STT
+// client-side is to hand out the master key — which a captured client can then
+// reuse direct-to-vendor indefinitely. We refuse to do that by default. Sarvam
+// STT is only a *fallback* (Deepgram is primary, and Deepgram now mints scoped
+// keys), and voice is text-only for the MVP, so leaving this disabled costs
+// nothing. An operator who accepts the risk can opt in explicitly.
+const SARVAM_ALLOW_CLIENT_KEY = (process.env.SARVAM_ALLOW_CLIENT_KEY || "").trim() === "true";
 const SARVAM_TOKEN_DAILY_CAP = 30;
 const SECONDS_PER_DAY = 86_400;
 
@@ -19,7 +23,9 @@ export default async function handler(req: Request): Promise<Response> {
 
   const headers = withRequestId(corsHeaders(req));
 
-  if (!SARVAM_API_KEY) {
+  if (!SARVAM_API_KEY || !SARVAM_ALLOW_CLIENT_KEY) {
+    // Refuse rather than leak the master key (Sarvam has no scoped-key API).
+    // Set SARVAM_ALLOW_CLIENT_KEY=true to opt into client-side Sarvam STT.
     return new Response(JSON.stringify({ error: "Sarvam STT not configured" }), { status: 503, headers });
   }
 

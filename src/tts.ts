@@ -195,8 +195,11 @@ async function getCartesiaApiKey(): Promise<string | null> {
       const res = await fetch("/api/tts-token", { method: "POST", headers });
       if (!res.ok) return null;
       const data = await res.json();
-      _cachedApiKey = data.apiKey || null;
-      _apiKeyExpiry = Date.now() + API_KEY_TTL;
+      // tts-token now returns a short-lived Cartesia access token (not the raw
+      // key). Track its real expiry so we refresh before the WS handshake would
+      // be rejected; fall back to API_KEY_TTL if the server omits expiresAt.
+      _cachedApiKey = data.token || data.apiKey || null;
+      _apiKeyExpiry = typeof data.expiresAt === "number" ? data.expiresAt : Date.now() + API_KEY_TTL;
       return _cachedApiKey;
     } catch {
       return null;
@@ -331,7 +334,9 @@ async function getOrCreateWs(apiKey: string): Promise<WebSocket | null> {
   }
 
   return new Promise((resolve) => {
-    const wsUrl = `${CARTESIA_WS_URL}?api_key=${apiKey}&cartesia_version=2026-03-01`;
+    // `apiKey` is now a short-lived Cartesia access token; the WS authenticates
+    // it via the access_token query param (not api_key).
+    const wsUrl = `${CARTESIA_WS_URL}?access_token=${encodeURIComponent(apiKey)}&cartesia_version=2026-03-01`;
     const ws = new WebSocket(wsUrl);
     const timeout = setTimeout(() => {
       if (ws.readyState !== WebSocket.OPEN) {

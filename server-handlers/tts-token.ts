@@ -8,11 +8,15 @@ import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, r
 declare const process: { env: Record<string, string | undefined> };
 const CARTESIA_API_KEY = process.env.CARTESIA_API_KEY || "";
 
-// See stt-token.ts for rationale. Cartesia's HMAC-signed payload below
-// proves issuance but does NOT bind the upstream call — a captured raw
-// key still works direct-to-vendor. Daily issuance cap bounds the abuse.
+// Cartesia supports server-minted Access Tokens: we exchange the master key
+// for a short-lived, tts-scoped token and hand THAT to the client for its
+// WebSocket. The master key never leaves the server. A captured token expires
+// in seconds and only grants TTS, so the blast radius is minimal. Daily
+// issuance cap + IP rate limit still bound abuse.
 const CARTESIA_TOKEN_DAILY_CAP = 30;
 const SECONDS_PER_DAY = 86_400;
+const CARTESIA_TOKEN_TTL_SECONDS = 120;
+const CARTESIA_VERSION = "2024-11-13";
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);
@@ -45,22 +49,42 @@ export default async function handler(req: Request): Promise<Response> {
     }), { status: 429, headers });
   }
 
-  // Generate a scoped, time-limited token via HMAC instead of returning the raw API key
-  // The token encodes user ID + expiry so it can be validated server-side
-  const expiry = Date.now() + 5 * 60 * 1000; // 5 minutes
-  const payload = `${auth.userId || "anon"}:${expiry}`;
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw", encoder.encode(CARTESIA_API_KEY), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-  const token = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/[+/=]/g, c => c === "+" ? "-" : c === "/" ? "_" : "");
+  // Exchange the master key for a short-lived, tts-scoped Access Token. Only
+  // the token is returned to the client — never the master key.
+  let accessToken = "";
+  try {
+    const mintRes = await fetch("https://api.cartesia.ai/access-token", {
+      method: "POST",
+      headers: {
+        "X-API-Key": CARTESIA_API_KEY,
+        "Cartesia-Version": CARTESIA_VERSION,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        grants: { tts: true },
+        expires_in: CARTESIA_TOKEN_TTL_SECONDS,
+      }),
+    });
+    if (!mintRes.ok) {
+      console.error("[tts-token] Cartesia access-token mint failed:", mintRes.status);
+      return new Response(JSON.stringify({ error: "Could not issue voice token" }), { status: 502, headers });
+    }
+    const mintData = await mintRes.json();
+    accessToken = typeof mintData?.token === "string" ? mintData.token : "";
+  } catch (err) {
+    console.error("[tts-token] Cartesia access-token mint threw:", err);
+    return new Response(JSON.stringify({ error: "Could not issue voice token" }), { status: 502, headers });
+  }
 
+  if (!accessToken) {
+    return new Response(JSON.stringify({ error: "Could not issue voice token" }), { status: 502, headers });
+  }
+
+  const expiry = Date.now() + CARTESIA_TOKEN_TTL_SECONDS * 1000;
   return new Response(JSON.stringify({
-    apiKey: CARTESIA_API_KEY,
-    token: `${payload}:${token}`,
+    token: accessToken,
     expiresAt: expiry,
-    ttl: 120,
+    ttl: CARTESIA_TOKEN_TTL_SECONDS,
   }), {
     status: 200,
     headers: { ...headers, "Cache-Control": "no-store, no-cache, max-age=0" },
