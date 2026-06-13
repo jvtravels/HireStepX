@@ -1,9 +1,22 @@
 "use client";
+/* Interview Calendar & Prep Runway (PRI-35)
+ *
+ * The live /calendar surface. Visual language is the cream-brand redesign
+ * (Prep Runway rail, interview hero, suggest-then-build sheet) wired to the
+ * real DB-authoritative data layer: listEvents / saveEvent / deleteEvent /
+ * generatePrepRunway / connectGoogleCalendar, with localStorage as a cache
+ * only and Pro gating enforced both here and at the API.
+ *
+ * Centerpiece: every logged interview becomes a prep plan. Logging a real
+ * interview auto-schedules an adaptive countdown of mock sessions (server
+ * derived); the rail renders those sessions grouped under their interview.
+ */
 import { useState, useEffect, useMemo } from "react";
-import { c, font, shadow } from "./tokens";
+import { c, font, shadow, sp, radius, ease } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
-import { listEvents, saveEvent, deleteEvent, generatePrepRunway, connectGoogleCalendar, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
+import { listEvents, saveEvent, deleteEvent, generatePrepRunway, connectGoogleCalendar, currentTimezone, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
 import {
   type InterviewEvent, loadEvents, saveEvents, generateEventId,
   daysUntilEvent, formatEventDate, formatEventTime,
@@ -12,98 +25,75 @@ import {
 import { useDashboardCore, useDashboardUI, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
 import { DataLoadingSkeleton, ProGate } from "./dashboardComponents";
 
-/* ─── Mini Month Grid ─── */
-function MonthGrid({ events, onDateClick }: { events: InterviewEvent[]; onDateClick: (date: string) => void }) {
-  const [viewDate, setViewDate] = useState(() => new Date());
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
+/* Scoped stylesheet — inline styles can't express :focus-visible, media
+ * queries, or :hover, so the responsive grid + keyboard focus rings live here. */
+const STYLE = `
+.cpr-tap { -webkit-tap-highlight-color: transparent; }
+.cpr-tap:focus-visible { outline: 2px solid ${c.slate}; outline-offset: 2px; border-radius: ${radius.sm}px; }
+.cpr-grid { display: grid; grid-template-columns: 320px 1fr; gap: ${sp.xl}px; align-items: start; }
+@media (max-width: 880px) {
+  .cpr-grid { grid-template-columns: 1fr; }
+  .cpr-header { flex-direction: column; align-items: flex-start; }
+  .cpr-actions { align-items: stretch !important; width: 100%; }
+}
+`;
 
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, InterviewEvent[]>();
-    events.forEach(ev => {
-      const existing = map.get(ev.date) || [];
-      existing.push(ev);
-      map.set(ev.date, existing);
-    });
-    return map;
-  }, [events]);
+/* ─── primitives ─────────────────────────────────────────────────── */
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+type IconProps = { children: React.ReactNode; size?: number; stroke?: string; sw?: number };
+const Icon = ({ children, size = 18, stroke = "currentColor", sw = 1.6 }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    {children}
+  </svg>
+);
 
-  const cells: (number | null)[] = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+const I = {
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" /></>,
+  bell: <><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></>,
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
+  push: <><path d="M12 3v2M5 10a7 7 0 0 1 14 0v4l2 3H3l2-3z" /><path d="M9.5 20a2.5 2.5 0 0 0 5 0" /></>,
+  target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" /></>,
+  check: <><path d="M20 6 9 17l-5-5" /></>,
+  play: <><path d="M6 4l14 8-14 8z" /></>,
+  sparkle: <><path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z" /></>,
+  arrow: <><path d="M5 12h14M13 6l6 6-6 6" /></>,
+  plus: <><path d="M12 5v14M5 12h14" /></>,
+  alert: <><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></>,
+  download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></>,
+  pencil: <><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>,
+  x: <><path d="M18 6 6 18M6 6l12 12" /></>,
+  cal: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+  trash: <><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></>,
+  google: <><path d="M21 12.2c0-.6-.1-1.2-.2-1.7H12v3.4h5a4.3 4.3 0 0 1-1.9 2.8v2.3h3a9 9 0 0 0 2.8-6.8z" /><path d="M12 21a9 9 0 0 0 6-2.2l-3-2.3a5.4 5.4 0 0 1-8-2.8H4v2.4A9 9 0 0 0 12 21z" /><path d="M7 13.7a5.4 5.4 0 0 1 0-3.4V7.9H4a9 9 0 0 0 0 8.2z" /><path d="M12 6.6c1.2 0 2.3.4 3.2 1.3l2.4-2.4A9 9 0 0 0 4 7.9l3 2.4A5.4 5.4 0 0 1 12 6.6z" /></>,
+};
 
-  const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
-  const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
-  const monthLabel = viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-
+function Card({ children, pad = 24, style }: { children: React.ReactNode; pad?: number; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 24px", marginBottom: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <button onClick={prevMonth} aria-label="Previous month"
-          onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; }}
-          style={{ background: "none", border: `1px solid ${c.border}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: c.stone, fontSize: 14, transition: "color 160ms ease, border-color 160ms ease" }}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{monthLabel}</span>
-        <button onClick={nextMonth} aria-label="Next month"
-          onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; }}
-          style={{ background: "none", border: `1px solid ${c.border}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: c.stone, fontSize: 14, transition: "color 160ms ease, border-color 160ms ease" }}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, textAlign: "center" }}>
-        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => (
-          <div key={d} style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: c.stone, padding: "4px 0", opacity: 0.6 }}>{d}</div>
-        ))}
-        {cells.map((day, i) => {
-          if (day === null) return <div key={`empty-${i}`} />;
-          const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          const dayEvents = eventsByDate.get(dateStr) || [];
-          const hasEvent = dayEvents.length > 0;
-          const isToday = dateStr === todayStr;
-          const isPast = new Date(dateStr) < new Date(todayStr);
-          return (
-            <button key={dateStr} onClick={() => hasEvent && onDateClick(dateStr)} title={hasEvent ? `${dayEvents.length} interview${dayEvents.length > 1 ? "s" : ""}: ${dayEvents.map(e => e.title).join(", ")}` : undefined}
-              onMouseDown={(e) => { if (hasEvent) e.currentTarget.style.transform = "scale(0.96)"; }}
-              onMouseUp={(e) => { if (hasEvent) e.currentTarget.style.transform = "scale(1)"; }}
-              onMouseEnter={(e) => { if (hasEvent && !isToday) e.currentTarget.style.background = "rgba(180,83,9,0.14)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; if (hasEvent && !isToday) e.currentTarget.style.background = "rgba(180,83,9,0.08)"; }}
-              style={{
-                fontFamily: font.mono, fontSize: 12, fontWeight: isToday ? 700 : 400,
-                color: isToday ? c.obsidian : hasEvent ? c.gilt : isPast ? c.stone : c.chalk,
-                background: isToday ? c.gilt : hasEvent ? "rgba(180,83,9,0.08)" : "transparent",
-                border: hasEvent && !isToday ? `1px solid rgba(180,83,9,0.2)` : "1px solid transparent",
-                borderRadius: 8, padding: "6px 0", cursor: hasEvent ? "pointer" : "default",
-                position: "relative", opacity: isPast && !hasEvent ? 0.4 : 1,
-                transition: "transform 120ms cubic-bezier(0.2,0.7,0.2,1), background 160ms ease",
-              }}>
-              {day}
-              {hasEvent && !isToday && (
-                <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 2 }}>
-                  {dayEvents.slice(0, 3).map((_, idx) => (
-                    <span key={idx} style={{ width: 4, height: 4, borderRadius: "50%", background: c.gilt }} />
-                  ))}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+    <div style={{ background: c.carbon, border: `1px solid ${c.border}`, borderRadius: radius.lg, padding: pad, boxShadow: shadow.md, ...style }}>
+      {children}
     </div>
   );
 }
 
-/* ─── DB row <-> UI event mapping ───
- * The API is the source of truth; these adapt its snake_case rows to the
- * InterviewEvent shape the UI renders, and back. reminders collapses to a
- * boolean for this UI (the per-channel ladder lives in the DB/jsonb). */
+function Eyebrow({ children, color = c.gilt }: { children: React.ReactNode; color?: string }) {
+  return (
+    <span style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 1.1, textTransform: "uppercase", color }}>
+      {children}
+    </span>
+  );
+}
+
+function Pill({ children, bg, fg, bd, icon }: { children: React.ReactNode; bg: string; fg: string; bd?: string; icon?: React.ReactNode }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: radius.pill, background: bg, color: fg, border: bd ? `1px solid ${bd}` : "none", fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", whiteSpace: "nowrap" }}>
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+/* ─── DB row <-> UI event mapping ─── */
 function rowToEvent(r: CalendarEventRow): InterviewEvent {
   return {
     id: r.id,
@@ -118,11 +108,11 @@ function rowToEvent(r: CalendarEventRow): InterviewEvent {
     status: (["upcoming", "completed", "cancelled"].includes(r.status) ? r.status : "upcoming") as InterviewEvent["status"],
     reminders: Array.isArray(r.reminders) ? r.reminders.length > 0 : true,
     google_event_id: r.google_event_id || undefined,
+    kind: r.kind === "prep-session" ? "prep-session" : "real",
+    parentInterviewId: r.parent_interview_id || undefined,
   };
 }
 
-/** Build the API payload from a UI event. The browser knows the real IANA
- *  zone, so we send start_utc (authoritative) alongside the legacy date/time. */
 function eventToInput(ev: InterviewEvent, opts: { withId: boolean }): CalendarEventInput {
   const local = new Date(`${ev.date}T${ev.time || "00:00"}`);
   const start_utc = Number.isNaN(local.getTime()) ? undefined : local.toISOString();
@@ -144,19 +134,219 @@ function eventToInput(ev: InterviewEvent, opts: { withId: boolean }): CalendarEv
   };
 }
 
+/* ─── runway derivation ─── prep-session children → timeline nodes ─── */
+type RunwayState = "done" | "active" | "upcoming" | "anchor";
+interface RunwayNode { id: string; tag: string; title: string; detail: string; state: RunwayState; }
+
+function tsOf(ev: InterviewEvent): number {
+  const d = new Date(`${ev.date}T${ev.time || "00:00"}`);
+  return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+function buildRunway(interview: InterviewEvent, all: InterviewEvent[]): RunwayNode[] {
+  const children = all
+    .filter((e) => e.kind === "prep-session" && e.parentInterviewId === interview.id && e.status !== "cancelled")
+    .sort((a, b) => tsOf(a) - tsOf(b));
+  const now = Date.now();
+  const anchorTs = tsOf(interview);
+  const firstUpcoming = children.findIndex((e) => tsOf(e) >= now);
+
+  const nodes: RunwayNode[] = children.map((e, i) => {
+    const dayDiff = Math.round((tsOf(e) - anchorTs) / 86_400_000);
+    const tag = tsOf(e) > anchorTs ? "after" : dayDiff === 0 ? "T-0" : `T${dayDiff}`;
+    const state: RunwayState = tsOf(e) < now ? "done" : i === firstUpcoming ? "active" : "upcoming";
+    return { id: e.id, tag, title: e.title, detail: e.type || "Mock session", state };
+  });
+  nodes.push({ id: interview.id, tag: "T-0", title: `${interview.company || interview.title}`, detail: "The real interview", state: "anchor" });
+  return nodes;
+}
+
+function nodeVisual(state: RunwayState) {
+  switch (state) {
+    case "done": return { ring: c.sage, fill: c.sageLight, fg: c.sage };
+    case "active": return { ring: c.gilt, fill: T.copper100, fg: c.gilt };
+    case "anchor": return { ring: c.slate, fill: c.slateLight, fg: c.slate };
+    default: return { ring: c.borderHover, fill: c.graphite, fg: c.stone };
+  }
+}
+
+function countdownLabel(ev: InterviewEvent): string {
+  const d = daysUntilEvent(ev.date, ev.time);
+  if (d <= 0) return "today";
+  if (d === 1) return "tomorrow";
+  if (d < 14) return `in ${d} days`;
+  return `in ${Math.round(d / 7)} weeks`;
+}
+
+/* ─── PrepRunwayRail — real prep sessions for one interview ─── */
+function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
+  interview: InterviewEvent;
+  all: InterviewEvent[];
+  onStart: () => void;
+  onBuild: () => void;
+  building: boolean;
+}) {
+  const nodes = buildRunway(interview, all);
+  const hasPrep = nodes.length > 1;
+
+  return (
+    <div style={{ background: c.carbon, border: `1px solid ${c.border}`, borderRadius: radius.lg, boxShadow: shadow.md, padding: sp["2xl"], fontFamily: font.ui }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.lg, gap: sp.md, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: sp.sm }}>
+          <span style={{ color: c.gilt, display: "flex" }}><Icon size={16}>{I.sparkle}</Icon></span>
+          <h2 style={{ fontFamily: font.display, fontSize: 17, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
+          {hasPrep && <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder}>{nodes.length - 1} sessions</Pill>}
+        </div>
+        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, letterSpacing: 0.3 }}>
+          Mock-session countdown
+        </span>
+      </div>
+
+      {hasPrep ? (
+        <div style={{ position: "relative", display: "flex", gap: sp.md, overflowX: "auto", paddingBottom: 4 }}>
+          <div style={{ position: "absolute", top: 17, left: 28, right: 28, height: 2, background: `linear-gradient(90deg, ${c.sage} 0%, ${c.gilt} 45%, ${c.border} 70%)`, borderRadius: 2 }} />
+          {nodes.map((n) => {
+            const v = nodeVisual(n.state);
+            return (
+              <div key={n.id} style={{ position: "relative", flex: "1 0 158px", minWidth: 158 }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: v.fill, border: `2px solid ${v.ring}`, display: "flex", alignItems: "center", justifyContent: "center", color: v.fg, position: "relative", zIndex: 1, boxShadow: n.state === "active" ? shadow.glow : "none" }}>
+                  <Icon size={16}>{n.state === "done" ? I.check : n.state === "anchor" ? I.target : n.state === "active" ? I.play : I.clock}</Icon>
+                </div>
+                <div style={{ marginTop: sp.md }}>
+                  <div style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, color: v.fg, marginBottom: 4 }}>{n.tag}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: c.ivory, lineHeight: 1.25 }}>{n.title}</div>
+                  <div style={{ fontSize: 11.5, color: c.chalk, marginTop: 3, lineHeight: 1.35 }}>{n.detail}</div>
+                  {n.state === "active" && (
+                    <button className="cpr-tap" onClick={onStart} style={{ marginTop: sp.sm, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, minHeight: 36, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 11.5, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+                      <Icon size={13}>{I.play}</Icon> Start practice
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: sp.md, padding: "8px 0" }}>
+          <p style={{ fontSize: 13, color: c.chalk, margin: 0, lineHeight: 1.5, maxWidth: 440 }}>
+            No prep sessions yet. Build a countdown of AI mock interviews mapped backward from this date, so you walk in ready.
+          </p>
+          <button className="cpr-tap" onClick={onBuild} disabled={building} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.md, padding: "11px 18px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: building ? "default" : "pointer", opacity: building ? 0.7 : 1, boxShadow: shadow.sm }}>
+            <Icon size={15}>{I.sparkle}</Icon> {building ? "Building…" : "Build Prep Runway"}
+          </button>
+        </div>
+      )}
+
+      <div style={{ marginTop: sp.lg, paddingTop: sp.md, borderTop: `1px solid ${c.borderSubtle}`, display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: c.stone, fontFamily: font.ui }}>
+        <span style={{ color: c.gilt, display: "flex" }}><Icon size={13}>{I.sparkle}</Icon></span>
+        Plan adapts to your scores and skill-decay. Sessions count against your Pro quota.
+      </div>
+    </div>
+  );
+}
+
+/* ─── Mini month grid (real events, real navigation) ─── */
+function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[]; focusedId: string | null; onDateClick: (date: string) => void }) {
+  const [viewDate, setViewDate] = useState(() => new Date());
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, InterviewEvent[]>();
+    events.forEach((ev) => {
+      const existing = map.get(ev.date) || [];
+      existing.push(ev);
+      map.set(ev.date, existing);
+    });
+    return map;
+  }, [events]);
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const monthLabel = viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const dow = ["S", "M", "T", "W", "T", "F", "S"];
+
+  const focused = focusedId ? events.find((e) => e.id === focusedId) : undefined;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.md }}>
+        <h2 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>{monthLabel}</h2>
+        <div style={{ display: "flex", gap: 2 }}>
+          {[
+            { label: "Previous month", d: "M15 6l-6 6 6 6", go: () => setViewDate(new Date(year, month - 1, 1)) },
+            { label: "Next month", d: "M9 6l6 6-6 6", go: () => setViewDate(new Date(year, month + 1, 1)) },
+          ].map((b) => (
+            <button key={b.label} className="cpr-tap" aria-label={b.label} onClick={b.go} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, background: "transparent", border: "none", color: c.stone, cursor: "pointer", borderRadius: radius.sm }}>
+              <Icon size={16}>{<path d={b.d} />}</Icon>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
+        {dow.map((d, i) => (
+          <div key={i} style={{ textAlign: "center", fontFamily: font.mono, fontSize: 10, color: c.stone, padding: "2px 0" }}>{d}</div>
+        ))}
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`lead-${i}`} />)}
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
+          const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const dayEvents = eventsByDate.get(dateStr) || [];
+          const hasEvent = dayEvents.length > 0;
+          const isToday = dateStr === todayStr;
+          const isFocused = focused?.date === dateStr;
+          const real = dayEvents.some((e) => e.kind !== "prep-session");
+          const dot = real ? c.slate : c.sage;
+          return (
+            <button key={dateStr} className="cpr-tap" disabled={!hasEvent} onClick={() => hasEvent && onDateClick(dateStr)}
+              title={hasEvent ? dayEvents.map((e) => e.title).join(", ") : undefined}
+              style={{
+                aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                borderRadius: radius.sm, fontFamily: font.mono, fontSize: 11.5, fontWeight: isToday ? 700 : 400,
+                color: isToday ? c.carbon : hasEvent ? c.ivory : c.chalk,
+                background: isToday ? c.gilt : isFocused ? T.copper100 : hasEvent ? T.copper100Soft : "transparent",
+                border: "none", cursor: hasEvent ? "pointer" : "default", position: "relative",
+              }}>
+              {d}
+              {hasEvent && !isToday && <span style={{ width: 4, height: 4, borderRadius: "50%", background: dot, marginTop: 2 }} />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ReminderRow({ label, on }: { label: string; on: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0" }}>
+      <span style={{ fontSize: 12.5, color: c.ivory, fontFamily: font.ui }}>{label}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon size={14} stroke={c.stone}>{I.mail}</Icon>
+        <Icon size={14} stroke={c.stone}>{I.push}</Icon>
+        {on ? <Pill bg={c.sageLight} fg={c.sage}>Set</Pill> : <Pill bg={c.graphite} fg={c.stone} bd={c.border}>Off</Pill>}
+      </span>
+    </div>
+  );
+}
+
 export default function CalendarPage() {
   useDocTitle("Calendar");
-  const { handleStartSession: onStartSession, syncGoogleCalendar: _syncGoogleCalendar, googleSyncStatus: _googleSyncStatus, hasGoogleToken: _hasGoogleToken } = useDashboardCore();
+  const { handleStartSession: onStartSession } = useDashboardCore();
   const { eventsLoading } = useDashboardSessions();
   const { setShowUpgradeModal, showToast } = useDashboardUI();
   const { isFree, isStarter } = useDashboardSubscription();
-  const { user, loginWithGoogle: _loginWithGoogle } = useAuth();
+  const { user } = useAuth();
   const [events, setEvents] = useState<InterviewEvent[]>(loadEvents);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   const [exportTooltip, setExportTooltip] = useState<string | null>(null);
   const [googleBusy, setGoogleBusy] = useState(false);
   const [googleUnavailable, setGoogleUnavailable] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [buildingRunway, setBuildingRunway] = useState(false);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -171,19 +361,15 @@ export default function CalendarPage() {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Load from the calendar API on mount. The DB is authoritative; we merge any
-  // local-only rows (events that failed to sync) so a transient outage never
-  // loses data. localStorage is a cache for instant first paint only.
-  // Must be before conditional returns to respect rules of hooks.
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
-    listEvents().then(res => {
+    listEvents().then((res) => {
       if (cancelled || !res.ok) return;
       const mapped = res.events.map(rowToEvent);
-      setEvents(prev => {
-        const dbIds = new Set(mapped.map(e => e.id));
-        const localOnly = prev.filter(e => !dbIds.has(e.id));
+      setEvents((prev) => {
+        const dbIds = new Set(mapped.map((e) => e.id));
+        const localOnly = prev.filter((e) => !dbIds.has(e.id));
         const merged = [...mapped, ...localOnly];
         saveEvents(merged);
         return merged;
@@ -192,14 +378,7 @@ export default function CalendarPage() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  const updateEvents = (next: InterviewEvent[]) => {
-    setEvents(next);
-    saveEvents(next);
-  };
-
-  // Surface the outcome of the Google OAuth round-trip. The callback redirects
-  // back to /calendar?google=<flag>; we toast, refresh (the initial sync may
-  // have imported events), then strip the param so a refresh doesn't re-toast.
+  // Surface the outcome of the Google OAuth round-trip.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const flag = new URLSearchParams(window.location.search).get("google");
@@ -213,9 +392,12 @@ export default function CalendarPage() {
     };
     showToast(messages[flag] || messages.error);
     if (flag === "connected") {
-      listEvents().then(res => {
+      setGoogleConnected(true);
+      listEvents().then((res) => {
         if (!res.ok) return;
-        updateEvents(res.events.map(rowToEvent));
+        const next = res.events.map(rowToEvent);
+        setEvents(next);
+        saveEvents(next);
       }).catch(() => {});
     }
     const url = new URL(window.location.href);
@@ -223,6 +405,11 @@ export default function CalendarPage() {
     window.history.replaceState({}, "", url.toString());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const updateEvents = (next: InterviewEvent[]) => {
+    setEvents(next);
+    saveEvents(next);
+  };
 
   const handleConnectGoogle = async () => {
     if (googleBusy) return;
@@ -284,16 +471,24 @@ export default function CalendarPage() {
     setShowForm(true);
   };
 
-  // Fire-and-forget: ask the server to build the prep-session countdown for a
-  // freshly logged interview, then merge the returned sessions into state.
   const schedulePrepRunway = async (parentId: string, base: InterviewEvent[]) => {
     const res = await generatePrepRunway(parentId);
     if (!res.ok || res.events.length === 0) return;
     const prep = res.events.map(rowToEvent);
-    const known = new Set(base.map(e => e.id));
-    const merged = [...base, ...prep.filter(p => !known.has(p.id))];
+    const known = new Set(base.map((e) => e.id));
+    const merged = [...base, ...prep.filter((p) => !known.has(p.id))];
     updateEvents(merged);
     if (!res.alreadyGenerated) showToast(`Prep Runway scheduled. ${prep.length} sessions added.`);
+  };
+
+  const handleBuildRunway = async (parentId: string) => {
+    if (buildingRunway) return;
+    setBuildingRunway(true);
+    try {
+      await schedulePrepRunway(parentId, events);
+    } finally {
+      setBuildingRunway(false);
+    }
   };
 
   const handleSave = async () => {
@@ -301,7 +496,6 @@ export default function CalendarPage() {
       setFormError(!formTitle ? "Event title is required." : !formDate ? "Date is required." : "Time is required.");
       return;
     }
-    // Prevent creating events in the past (allow editing past events for record-keeping)
     if (!editingId) {
       const eventDateTime = new Date(`${formDate}T${formTime}`);
       if (eventDateTime < new Date()) {
@@ -322,12 +516,11 @@ export default function CalendarPage() {
       notes: formNotes,
       status: "upcoming",
       reminders: formReminders,
+      kind: "real",
     };
 
     setSaving(true);
     let res = await saveEvent(eventToInput(draft, { withId: !!editingId }));
-    // A local-only row (previous sync failure) can be edited before it ever
-    // reached the DB. The update path 404s; promote it to an insert.
     if (!res.ok && editingId && res.status === 404) {
       res = await saveEvent(eventToInput(draft, { withId: false }));
     }
@@ -335,23 +528,18 @@ export default function CalendarPage() {
 
     if (res.ok && res.event) {
       const saved = rowToEvent(res.event);
-      // Reconcile by the id we edited (server may have minted a fresh UUID).
-      const base = editingId ? events.map(e => (e.id === editingId ? saved : e)) : [...events, saved];
+      const base = editingId ? events.map((e) => (e.id === editingId ? saved : e)) : [...events, saved];
       updateEvents(base);
-      // Logging a brand-new real interview auto-schedules its Prep Runway: an
-      // adaptive countdown of mock sessions the server derives and persists.
+      setFocusedId(saved.id);
       if (!editingId && saved.status === "upcoming") {
         void schedulePrepRunway(saved.id, base);
       }
     } else if (res.error && res.status === 403) {
-      // Pro gate at the data layer — surface the upgrade path.
       setFormError(res.error);
       setShowUpgradeModal(true);
       return;
     } else {
-      // Network/server failure: keep the event locally so the user doesn't lose
-      // their entry, and flag that it hasn't synced.
-      updateEvents(editingId ? events.map(e => (e.id === editingId ? draft : e)) : [...events, draft]);
+      updateEvents(editingId ? events.map((e) => (e.id === editingId ? draft : e)) : [...events, draft]);
       showToast(res.error || "Saved locally. Cloud sync failed.");
     }
     setShowForm(false);
@@ -359,19 +547,17 @@ export default function CalendarPage() {
   };
 
   const handleDelete = async (id: string) => {
-    updateEvents(events.filter(e => e.id !== id));
+    updateEvents(events.filter((e) => e.id !== id));
+    if (focusedId === id) setFocusedId(null);
     const res = await deleteEvent(id);
-    // 404 means it was never in the DB (local-only) — already removed locally.
     if (!res.ok && res.status !== 404) showToast(res.error || "Deleted locally. Cloud sync failed.");
   };
 
   const handleCancel = async (id: string) => {
-    const ev = events.find(e => e.id === id);
+    const ev = events.find((e) => e.id === id);
     if (!ev) return;
     const cancelled = { ...ev, status: "cancelled" as const };
-    updateEvents(events.map(e => (e.id === id ? cancelled : e)));
-    // Persist the status change (the old code deleted the row, so cancellations
-    // silently reverted on reload). 404 => local-only event; the local update stands.
+    updateEvents(events.map((e) => (e.id === id ? cancelled : e)));
     const res = await saveEvent(eventToInput(cancelled, { withId: true }));
     if (!res.ok && res.status !== 404) showToast(res.error || "Cancelled locally. Sync failed.");
   };
@@ -389,15 +575,17 @@ export default function CalendarPage() {
     setTimeout(() => setExportTooltip(null), 2000);
   };
 
-  const upcoming = events
-    .filter(e => e.status === "upcoming" && daysUntilEvent(e.date, e.time) >= 0)
-    .sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
+  // Real interviews only (prep sessions live inside the runway, not the lists).
+  const reals = events.filter((e) => e.kind !== "prep-session");
+  const upcoming = reals
+    .filter((e) => e.status === "upcoming" && daysUntilEvent(e.date, e.time) >= 0)
+    .sort((a, b) => tsOf(a) - tsOf(b));
+  const past = reals
+    .filter((e) => e.status === "completed" || (e.status === "upcoming" && daysUntilEvent(e.date, e.time) < 0))
+    .sort((a, b) => tsOf(b) - tsOf(a));
+  const cancelled = reals.filter((e) => e.status === "cancelled");
 
-  const past = events
-    .filter(e => e.status === "completed" || (e.status === "upcoming" && daysUntilEvent(e.date, e.time) < 0))
-    .sort((a, b) => new Date(`${b.date}T${b.time}`).getTime() - new Date(`${a.date}T${a.time}`).getTime());
-
-  const cancelled = events.filter(e => e.status === "cancelled");
+  const focused = (focusedId ? upcoming.find((e) => e.id === focusedId) : undefined) || upcoming[0] || null;
 
   const inputStyle = {
     width: "100%", padding: "10px 14px", fontFamily: font.ui, fontSize: 13,
@@ -405,79 +593,81 @@ export default function CalendarPage() {
     borderRadius: 8, outline: "none", boxSizing: "border-box" as const,
   };
 
+  // Awkward-hour heuristic for the focused interview (Indian candidates often
+  // interview at US/EU hours). Calm/positive unless it's genuinely early/late.
+  const focusedHour = focused ? Number((focused.time || "10:00").split(":")[0]) : 10;
+  const awkward = focused ? focusedHour < 8 || focusedHour >= 21 : false;
+
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+    <div style={{ fontFamily: font.ui, color: c.ivory }}>
+      <style>{STYLE}</style>
+
+      {/* header */}
+      <div className="cpr-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.xl, marginBottom: sp["2xl"] }}>
         <div>
-          <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>Interview Calendar</h2>
-          <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>
-            Track upcoming interviews and export to your calendar
+          <Eyebrow>Interview Readiness</Eyebrow>
+          <h1 style={{ fontFamily: font.display, fontSize: 30, fontWeight: 400, color: c.ivory, margin: "4px 0 6px" }}>Calendar</h1>
+          <p style={{ fontSize: 13.5, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
+            Every interview you log becomes a prep plan, not just a date.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {!googleUnavailable && (
-            <button onClick={handleConnectGoogle} disabled={googleBusy} style={{
-              fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 18px",
-              borderRadius: 8, border: `1px solid ${c.border}`, background: "transparent",
-              color: googleBusy ? c.stone : c.ivory, cursor: googleBusy ? "default" : "pointer",
-              display: "flex", alignItems: "center", gap: 8,
-            }}
-              onMouseEnter={(e) => { if (!googleBusy) e.currentTarget.style.borderColor = c.gilt; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; }}
-            >
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              {googleBusy ? "Connecting..." : "Connect Google Calendar"}
-            </button>
-          )}
-          <button onClick={openNewForm} style={{
-            fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 22px",
-            borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian,
-            cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
-          >
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add Interview
+        <div className="cpr-actions" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: sp.sm }}>
+          <button className="cpr-tap" onClick={openNewForm} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.md, padding: "12px 20px", fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: "pointer", boxShadow: shadow.lg }}>
+            <Icon size={16}>{I.plus}</Icon> Add interview
           </button>
         </div>
       </div>
 
+      {/* interview switcher */}
+      {upcoming.length > 0 && (
+        <div style={{ display: "flex", gap: sp.sm, marginBottom: sp.xl, flexWrap: "wrap" }}>
+          {upcoming.map((ev) => {
+            const on = focused?.id === ev.id;
+            return (
+              <button key={ev.id} className="cpr-tap" aria-pressed={on} onClick={() => setFocusedId(ev.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, background: on ? c.carbon : "transparent", border: `1px solid ${on ? T.copperBorder : c.border}`, borderRadius: radius.md, padding: "10px 16px", cursor: "pointer", boxShadow: on ? shadow.sm : "none", transition: `background-color 0.15s ${ease.out}, border-color 0.15s ${ease.out}` }}>
+                <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: on ? c.ivory : c.chalk }}>{ev.company || ev.title}</span>
+                <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? c.gilt : c.stone, letterSpacing: 0.3 }}>{formatEventDate(ev.date)} · {ev.type}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Add/Edit Form */}
       {showForm && (
-        <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px", paddingBottom: 36, marginBottom: 24, animation: "slideDown 0.2s ease" }}>
+        <div style={{ background: c.graphite, borderRadius: radius.lg, border: `1px solid ${c.border}`, padding: "28px 32px", paddingBottom: 36, marginBottom: 24 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory }}>{editingId ? "Edit Interview" : "Add New Interview"}</h3>
-            <button onClick={() => { setShowForm(false); resetForm(); }} style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
-              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <h3 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory }}>{editingId ? "Edit interview" : "Add new interview"}</h3>
+            <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} aria-label="Close" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4, display: "flex" }}>
+              <Icon size={18}>{I.x}</Icon>
             </button>
           </div>
 
-          <div className="cal-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
-              <label htmlFor="cal-title" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Interview Title *</label>
-              <input id="cal-title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Final Round Interview" style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = c.gilt} onBlur={(e) => e.currentTarget.style.borderColor = c.border} />
+              <label htmlFor="cal-title" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Interview title *</label>
+              <input id="cal-title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Final round interview" style={inputStyle}
+                onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
             </div>
             <div>
               <label htmlFor="cal-company" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Company *</label>
               <input id="cal-company" value={formCompany} onChange={(e) => setFormCompany(e.target.value)} placeholder="e.g. Google" style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = c.gilt} onBlur={(e) => e.currentTarget.style.borderColor = c.border} />
+                onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
             </div>
           </div>
 
-          <div className="cal-form-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
               <label htmlFor="cal-date" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Date *</label>
-              <input id="cal-date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} style={{ ...inputStyle, colorScheme: "dark" }} />
+              <input id="cal-date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} />
             </div>
             <div>
               <label htmlFor="cal-time" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Time *</label>
-              <input id="cal-time" type="time" value={formTime} onChange={(e) => setFormTime(e.target.value)} style={{ ...inputStyle, colorScheme: "dark" }} />
+              <input id="cal-time" type="time" value={formTime} onChange={(e) => setFormTime(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} />
             </div>
             <div>
               <label htmlFor="cal-duration" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Duration</label>
-              <select id="cal-duration" value={formDuration} onChange={(e) => setFormDuration(Number(e.target.value))} style={{ ...inputStyle, colorScheme: "dark" }}>
+              <select id="cal-duration" value={formDuration} onChange={(e) => setFormDuration(Number(e.target.value))} style={{ ...inputStyle, colorScheme: "light" }}>
                 <option value={30}>30 min</option>
                 <option value={45}>45 min</option>
                 <option value={60}>1 hour</option>
@@ -487,26 +677,24 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <div className="cal-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
-              <label htmlFor="cal-type" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Interview Type</label>
-              <div id="cal-type" role="group" aria-label="Interview Type" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {interviewTypeOptions.map(t => (
-                  <button key={t} onClick={() => setFormType(t)} style={{
-                    fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "5px 12px",
-                    borderRadius: 100, cursor: "pointer",
-                    background: formType === t ? "rgba(180,83,9,0.1)" : "transparent",
+              <label htmlFor="cal-type" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Interview type</label>
+              <div id="cal-type" role="group" aria-label="Interview type" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {interviewTypeOptions.map((t) => (
+                  <button key={t} className="cpr-tap" onClick={() => setFormType(t)} style={{
+                    fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "5px 12px", borderRadius: radius.pill, cursor: "pointer",
+                    background: formType === t ? T.copper100Soft : "transparent",
                     border: `1px solid ${formType === t ? c.gilt : c.border}`,
-                    color: formType === t ? c.gilt : c.stone,
-                    transition: "all 0.2s ease",
+                    color: formType === t ? c.gilt : c.stone, transition: `all 0.2s ${ease.out}`,
                   }}>{t}</button>
                 ))}
               </div>
             </div>
             <div>
-              <label htmlFor="cal-location" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Location / Link</label>
+              <label htmlFor="cal-location" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Location / link</label>
               <input id="cal-location" value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Zoom link, Google Meet, or address" style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = c.gilt} onBlur={(e) => e.currentTarget.style.borderColor = c.border} />
+                onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
             </div>
           </div>
 
@@ -514,236 +702,203 @@ export default function CalendarPage() {
             <label htmlFor="cal-notes" style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, display: "block", marginBottom: 6 }}>Notes</label>
             <textarea id="cal-notes" value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Interviewer name, prep topics, things to remember..." rows={3}
               style={{ ...inputStyle, resize: "vertical" }}
-              onFocus={(e) => e.currentTarget.style.borderColor = c.gilt} onBlur={(e) => e.currentTarget.style.borderColor = c.border} />
+              onFocus={(e) => (e.currentTarget.style.borderColor = c.gilt)} onBlur={(e) => (e.currentTarget.style.borderColor = c.border)} />
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-              <div role="switch" aria-checked={formReminders} tabIndex={0} onClick={() => setFormReminders(!formReminders)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFormReminders(!formReminders); } }} style={{
-                width: 36, height: 20, borderRadius: 10, padding: 2,
-                background: formReminders ? c.sage : c.border,
-                transition: "background 0.2s", cursor: "pointer",
-              }}>
-                <div style={{ width: 16, height: 16, borderRadius: "50%", background: c.ivory, transform: formReminders ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div role="switch" aria-checked={formReminders} tabIndex={0} className="cpr-tap" onClick={() => setFormReminders(!formReminders)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFormReminders(!formReminders); } }} style={{ width: 36, height: 20, borderRadius: 10, padding: 2, background: formReminders ? c.sage : c.border, transition: "background 0.2s", cursor: "pointer" }}>
+                <div style={{ width: 16, height: 16, borderRadius: "50%", background: c.carbon, transform: formReminders ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s" }} />
               </div>
-              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>Enable reminders (30 min & 1 day before)</span>
+              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>Email and push reminders (72h, 24h, 2h before)</span>
             </span>
 
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => { setShowForm(false); resetForm(); }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; }}
-                style={{
-                fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone,
-                background: "transparent", border: `1px solid ${c.border}`, borderRadius: 8,
-                padding: "10px 20px", cursor: "pointer", transition: "color 160ms ease, border-color 160ms ease",
-              }}>Cancel</button>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               {formError && <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{formError}</span>}
-              <button onClick={handleSave} disabled={!formTitle || !formDate || !formTime || saving} style={{
-                fontFamily: font.ui, fontSize: 13, fontWeight: 500,
-                background: formTitle && formDate && formTime && !saving ? c.gilt : c.border,
-                color: formTitle && formDate && formTime && !saving ? c.obsidian : c.stone,
-                border: "none", borderRadius: 8, padding: "10px 24px", cursor: formTitle && formDate && formTime && !saving ? "pointer" : "not-allowed",
-              }}>{saving ? "Saving…" : editingId ? "Save Changes" : "Add Interview"}</button>
+              <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.chalk, background: "transparent", border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "10px 20px", cursor: "pointer" }}>Cancel</button>
+              <button className="cpr-tap" onClick={handleSave} disabled={!formTitle || !formDate || !formTime || saving} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, background: formTitle && formDate && formTime && !saving ? c.slate : c.border, color: formTitle && formDate && formTime && !saving ? c.carbon : c.stone, border: "none", borderRadius: radius.md, padding: "10px 24px", cursor: formTitle && formDate && formTime && !saving ? "pointer" : "not-allowed" }}>{saving ? "Saving…" : editingId ? "Save changes" : "Add interview"}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Month Grid */}
-      <MonthGrid events={events} onDateClick={(date) => {
-        const el = document.getElementById(`cal-event-${date}`);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }} />
+      <div className="cpr-grid">
+        {/* left rail */}
+        <div style={{ display: "flex", flexDirection: "column", gap: sp.lg }}>
+          <Card pad={20}>
+            <MiniMonth events={events} focusedId={focused?.id || null} onDateClick={(date) => {
+              const hit = upcoming.find((e) => e.date === date) || reals.find((e) => e.date === date);
+              if (hit) setFocusedId(hit.id);
+            }} />
+          </Card>
 
-      {/* Upcoming Interviews */}
-      <div style={{ marginBottom: 24 }}>
-        <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Upcoming ({upcoming.length})
-        </h3>
+          <Card pad={20}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: sp.sm }}>
+              <Icon size={15} stroke={c.gilt}>{I.bell}</Icon>
+              <h2 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>Reminders</h2>
+            </div>
+            {focused ? (
+              <>
+                <ReminderRow label="72 hours before" on={focused.reminders} />
+                <ReminderRow label="24 hours before" on={focused.reminders} />
+                <ReminderRow label="2 hours before" on={focused.reminders} />
+                <p style={{ fontSize: 11, color: c.stone, margin: "8px 0 0", fontFamily: font.ui }}>
+                  Toggle reminders when editing an interview.
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize: 12, color: c.stone, margin: 0, fontFamily: font.ui, lineHeight: 1.45 }}>
+                Log an interview to set email and push reminders.
+              </p>
+            )}
+          </Card>
 
-        {upcoming.length === 0 ? (
-          <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "40px 28px", textAlign: "center" }}>
-            <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round" style={{ marginBottom: 12, opacity: 0.4 }}>
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, marginBottom: 8 }}>No upcoming interviews</p>
-            <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, opacity: 0.7, marginBottom: 16 }}>Add your interview schedule to get countdown reminders and prep suggestions.</p>
-            <button onClick={openNewForm}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.12)"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.3)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.06)"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.15)"; e.currentTarget.style.transform = "translateY(0)"; }}
-              style={{
-              fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.gilt,
-              background: "rgba(180,83,9,0.06)", border: `1px solid rgba(180,83,9,0.15)`,
-              borderRadius: 10, padding: "8px 20px", cursor: "pointer",
-              transition: "background 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.2,0.7,0.2,1)",
-            }}>Add Your First Interview</button>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {upcoming.map(ev => {
-              const days = daysUntilEvent(ev.date, ev.time);
-              const urgent = days <= 3;
-              const isToday = days === 0;
-              return (
-                <div key={ev.id} id={`cal-event-${ev.date}`} style={{
-                  background: c.carbon, boxShadow: shadow.md, borderRadius: 14,
-                  border: `1px solid ${urgent ? "rgba(185,28,28,0.2)" : c.border}`,
-                  borderLeft: `4px solid ${isToday ? c.ember : urgent ? c.gilt : c.sage}`,
-                  padding: "20px 24px", transition: "border-color 0.2s",
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = urgent ? "rgba(185,28,28,0.35)" : c.borderHover}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = urgent ? "rgba(185,28,28,0.2)" : c.border}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                        <h4 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{ev.title}</h4>
-                        <span style={{
-                          fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px",
-                          borderRadius: 100,
-                          background: isToday ? "rgba(185,28,28,0.12)" : urgent ? "rgba(180,83,9,0.1)" : "rgba(21,128,61,0.08)",
-                          color: isToday ? c.ember : urgent ? c.gilt : c.sage,
-                          border: `1px solid ${isToday ? "rgba(185,28,28,0.2)" : urgent ? "rgba(180,83,9,0.15)" : "rgba(21,128,61,0.15)"}`,
-                        }}>
-                          {isToday ? "TODAY" : days === 1 ? "TOMORROW" : `${days} days`}
-                        </span>
+          <Card pad={20}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon size={16} stroke={c.slate}>{I.google}</Icon>
+                <h2 style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, margin: 0 }}>Google Calendar</h2>
+              </div>
+              {googleConnected
+                ? <Pill bg={c.sageLight} fg={c.sage} icon={<Icon size={11}>{I.check}</Icon>}>2-way</Pill>
+                : <Pill bg={c.graphite} fg={c.stone} bd={c.border}>Off</Pill>}
+            </div>
+            <p style={{ fontSize: 12, color: c.stone, margin: "10px 0 0", lineHeight: 1.45, fontFamily: font.ui }}>
+              {googleConnected
+                ? "Synced. Interviews you log here appear on your Google Calendar, both ways."
+                : "Connect to sync your interviews both ways with Google Calendar."}
+            </p>
+            {!googleConnected && !googleUnavailable && (
+              <button className="cpr-tap" onClick={handleConnectGoogle} disabled={googleBusy} style={{ marginTop: sp.md, display: "inline-flex", alignItems: "center", gap: 7, background: "transparent", color: c.ivory, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "9px 14px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: googleBusy ? "default" : "pointer" }}>
+                <Icon size={14} stroke={c.slate}>{I.google}</Icon> {googleBusy ? "Connecting…" : "Connect"}
+              </button>
+            )}
+          </Card>
+        </div>
+
+        {/* main column */}
+        <div style={{ display: "flex", flexDirection: "column", gap: sp.xl }}>
+          {focused ? (
+            <>
+              {/* interview hero card */}
+              <Card pad={24} style={{ borderColor: T.copperBorder }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.lg, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: sp.md }}>
+                    <div style={{ width: 52, height: 52, borderRadius: radius.md, background: c.graphite, border: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.display, fontSize: 24, color: c.gilt, flexShrink: 0 }}>
+                      {(focused.company || focused.title || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: sp.sm, marginBottom: 3, flexWrap: "wrap" }}>
+                        <h2 style={{ fontFamily: font.display, fontSize: 19, fontWeight: 400, color: c.ivory, margin: 0 }}>
+                          {focused.company ? `${focused.company} · ${focused.type}` : focused.title}
+                        </h2>
+                        <Pill bg={c.slateLight} fg={c.slate}>Interview</Pill>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, display: "flex", alignItems: "center", gap: 5 }}>
-                          <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 2v4M8 2v4M2 10h20"/></svg>
-                          {formatEventDate(ev.date)}
-                        </span>
-                        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, display: "flex", alignItems: "center", gap: 5 }}>
-                          <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          {formatEventTime(ev.time)} · {ev.duration} min
-                        </span>
-                        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, display: "flex", alignItems: "center", gap: 5 }}>
-                          <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                          {ev.company}
-                        </span>
-                        <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "rgba(180,83,9,0.06)", color: c.gilt, border: `1px solid rgba(180,83,9,0.1)` }}>
-                          {ev.type}
-                        </span>
-                      </div>
-                      {ev.location && (
-                        <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
-                          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          {ev.location}
-                        </p>
-                      )}
-                      {ev.notes && (
-                        <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginTop: 4, fontStyle: "italic", wordBreak: "break-word", overflow: "hidden" }}>{ev.notes}</p>
-                      )}
+                      <div style={{ fontSize: 13, color: c.chalk, fontFamily: font.ui }}>{focused.title}</div>
                     </div>
                   </div>
+                  <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder} icon={<Icon size={11}>{I.clock}</Icon>}>{countdownLabel(focused)}</Pill>
+                </div>
 
-                  {/* Action buttons */}
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${c.border}`, paddingTop: 12 }}>
-                    <button onClick={() => onStartSession()}
-                      onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; e.currentTarget.style.transform = "translateY(0)"; }}
-                      style={{
-                      fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.obsidian,
-                      background: c.gilt, border: "none", borderRadius: 10, padding: "7px 16px",
-                      cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                      transition: "filter 160ms ease, transform 160ms cubic-bezier(0.2,0.7,0.2,1)",
-                    }}>
-                      <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21"/></svg>
-                      Practice {ev.type}
+                {/* time + zone */}
+                <div style={{ marginTop: sp.lg, display: "flex", alignItems: "center", gap: sp.lg, padding: "14px 16px", background: c.graphite, borderRadius: radius.md, border: `1px solid ${c.borderSubtle}` }}>
+                  <Icon size={18} stroke={c.gilt}>{I.globe}</Icon>
+                  <div>
+                    <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{formatEventDate(focused.date)} · {formatEventTime(focused.time)}</div>
+                    <div style={{ fontSize: 12, color: c.stone, fontFamily: font.ui, marginTop: 2 }}>{currentTimezone()} · {focused.duration} min{focused.location ? ` · ${focused.location}` : ""}</div>
+                  </div>
+                </div>
+
+                {/* timezone-comfort note */}
+                <div style={{ marginTop: sp.sm, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: awkward ? T.warningInk : c.sage, background: awkward ? T.warning100 : c.sageLight, border: `1px solid ${awkward ? T.warningLine : T.successMist}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui }}>
+                  <Icon size={14} stroke={awkward ? T.warningInk : c.sage}>{awkward ? I.alert : I.check}</Icon>
+                  {awkward ? "Early or late slot in your timezone. Confirm you will be sharp, and plan rest around it." : "Comfortable slot in your timezone. No awkward-hour conflict."}
+                </div>
+
+                {/* actions */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${c.borderSubtle}`, marginTop: sp.lg, paddingTop: sp.md }}>
+                  <button className="cpr-tap" onClick={() => onStartSession()} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.sm, padding: "8px 14px", fontFamily: font.ui, fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+                    <Icon size={13}>{I.play}</Icon> Practice {focused.type}
+                  </button>
+                  <div style={{ position: "relative" }}>
+                    <button className="cpr-tap" onClick={() => handleExportICS(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                      <Icon size={13}>{I.download}</Icon> Export .ics
                     </button>
-                    <div style={{ position: "relative" }}>
-                      <button onClick={() => handleExportICS(ev)}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; e.currentTarget.style.background = "rgba(14,12,8,0.07)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = c.chalk; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = "rgba(14,12,8,0.04)"; }}
-                        style={{
-                        fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.chalk,
-                        background: "rgba(14,12,8,0.04)", border: `1px solid ${c.border}`, borderRadius: 10,
-                        padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                        transition: "color 160ms ease, border-color 160ms ease, background 160ms ease",
-                      }}>
-                        <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Export .ics
-                      </button>
-                      {exportTooltip === ev.id && (
-                        <div style={{ position: "absolute", top: -28, left: "50%", transform: "translateX(-50%)", background: c.sage, color: c.obsidian, fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap" }}>Downloaded!</div>
-                      )}
-                    </div>
-                    <a href={generateGoogleCalendarURL(ev)} target="_blank" rel="noopener noreferrer"
-                      onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; e.currentTarget.style.background = "rgba(14,12,8,0.07)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = c.chalk; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = "rgba(14,12,8,0.04)"; }}
-                      style={{
-                      fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.chalk,
-                      background: "rgba(14,12,8,0.04)", border: `1px solid ${c.border}`, borderRadius: 10,
-                      padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                      textDecoration: "none",
-                      transition: "color 160ms ease, border-color 160ms ease, background 160ms ease",
-                    }}>
-                      <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                      Google Calendar
-                    </a>
-                    <button onClick={() => openEditForm(ev)}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; e.currentTarget.style.borderColor = c.borderHover; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; }}
-                      style={{
-                      fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone,
-                      background: "transparent", border: `1px solid ${c.border}`, borderRadius: 10,
-                      padding: "7px 14px", cursor: "pointer",
-                      transition: "color 160ms ease, border-color 160ms ease",
-                    }}>Edit</button>
-                    <button onClick={() => handleCancel(ev.id)}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(185,28,28,0.08)"; e.currentTarget.style.borderColor = "rgba(185,28,28,0.3)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(185,28,28,0.15)"; }}
-                      style={{
-                      fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.ember,
-                      background: "transparent", border: `1px solid rgba(185,28,28,0.15)`, borderRadius: 10,
-                      padding: "7px 14px", cursor: "pointer",
-                      transition: "background 160ms ease, border-color 160ms ease",
-                    }}>Cancel</button>
+                    {exportTooltip === focused.id && (
+                      <div style={{ position: "absolute", top: -28, left: "50%", transform: "translateX(-50%)", background: c.sage, color: c.carbon, fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap" }}>Downloaded</div>
+                    )}
                   </div>
+                  <a className="cpr-tap" href={generateGoogleCalendarURL(focused)} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer", textDecoration: "none" }}>
+                    <Icon size={13}>{I.cal}</Icon> Add to Google
+                  </a>
+                  <button className="cpr-tap" onClick={() => openEditForm(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.stone, border: `1px solid ${c.border}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                    <Icon size={13}>{I.pencil}</Icon> Edit
+                  </button>
+                  <button className="cpr-tap" onClick={() => handleCancel(focused.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.ember, border: `1px solid ${c.emberLight}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                    <Icon size={13}>{I.x}</Icon> Cancel
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </Card>
+
+              {/* the runway */}
+              <PrepRunwayRail interview={focused} all={events} onStart={() => onStartSession()} onBuild={() => handleBuildRunway(focused.id)} building={buildingRunway} />
+            </>
+          ) : (
+            <Card pad={40} style={{ textAlign: "center" }}>
+              <div style={{ color: c.stone, display: "flex", justifyContent: "center", marginBottom: 12, opacity: 0.5 }}>
+                <Icon size={40} sw={1.3}>{I.cal}</Icon>
+              </div>
+              <h2 style={{ fontFamily: font.display, fontSize: 19, fontWeight: 400, color: c.ivory, margin: "0 0 6px" }}>No upcoming interviews</h2>
+              <p style={{ fontSize: 13, color: c.chalk, margin: "0 auto 18px", maxWidth: 360, lineHeight: 1.5 }}>
+                Add your interview schedule to get countdown reminders and an adaptive Prep Runway of mock sessions.
+              </p>
+              <button className="cpr-tap" onClick={openNewForm} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.md, padding: "11px 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+                <Icon size={15}>{I.plus}</Icon> Add your first interview
+              </button>
+            </Card>
+          )}
+
+          {/* past + cancelled */}
+          {(past.length > 0 || cancelled.length > 0) && (
+            <Card pad={20}>
+              {past.length > 0 && (
+                <>
+                  <h3 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, margin: "0 0 12px" }}>Past ({past.length})</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: cancelled.length > 0 ? 20 : 0 }}>
+                    {past.map((ev) => (
+                      <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${c.borderSubtle}` }}>
+                        <span style={{ fontSize: 12.5, color: c.chalk, fontFamily: font.ui }}>
+                          <strong style={{ color: c.ivory, fontWeight: 600 }}>{ev.title}</strong> · {ev.company} · {formatEventDate(ev.date)}
+                        </span>
+                        <button className="cpr-tap" onClick={() => handleDelete(ev.id)} aria-label="Remove" style={{ display: "flex", color: c.stone, background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                          <Icon size={14}>{I.trash}</Icon>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              {cancelled.length > 0 && (
+                <>
+                  <h3 style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.stone, margin: "0 0 12px" }}>Cancelled ({cancelled.length})</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {cancelled.map((ev) => (
+                      <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${c.borderSubtle}`, opacity: 0.6 }}>
+                        <span style={{ fontSize: 12.5, color: c.chalk, fontFamily: font.ui, textDecoration: "line-through" }}>
+                          {ev.title} · {ev.company} · {formatEventDate(ev.date)}
+                        </span>
+                        <button className="cpr-tap" onClick={() => handleDelete(ev.id)} aria-label="Remove" style={{ display: "flex", color: c.stone, background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                          <Icon size={14}>{I.trash}</Icon>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </Card>
+          )}
+        </div>
       </div>
-
-      {/* Past Interviews */}
-      {past.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.stone, marginBottom: 12 }}>Past ({past.length})</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {past.map(ev => (
-              <div key={ev.id} style={{ background: c.graphite, borderRadius: 10, border: `1px solid ${c.border}`, padding: "14px 20px", opacity: 0.7, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.chalk }}>{ev.title}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginLeft: 12 }}>{ev.company} · {formatEventDate(ev.date)} · {ev.type}</span>
-                </div>
-                <button onClick={() => handleDelete(ev.id)} style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, background: "none", border: `1px solid ${c.border}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>Remove</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Cancelled */}
-      {cancelled.length > 0 && (
-        <div>
-          <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.stone, marginBottom: 12, opacity: 0.6 }}>Cancelled ({cancelled.length})</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {cancelled.map(ev => (
-              <div key={ev.id} style={{ background: c.graphite, borderRadius: 10, border: `1px solid ${c.border}`, padding: "14px 20px", opacity: 0.4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.chalk, textDecoration: "line-through" }}>{ev.title}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginLeft: 12 }}>{ev.company} · {formatEventDate(ev.date)}</span>
-                </div>
-                <button onClick={() => handleDelete(ev.id)} style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, background: "none", border: `1px solid ${c.border}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>Remove</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -12,6 +12,11 @@ export interface InterviewEvent {
   status: "upcoming" | "completed" | "cancelled";
   reminders: boolean;
   google_event_id?: string;
+  // PRI-35: carried through from the DB row so the Prep Runway rail can group
+  // mock-prep sessions under the real interview they prepare for. Optional so
+  // legacy localStorage rows and the create form (real interviews) still fit.
+  kind?: "real" | "prep-session";
+  parentInterviewId?: string;
 }
 
 export const EVENTS_KEY = "hirestepx_events";
