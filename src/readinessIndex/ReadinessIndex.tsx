@@ -20,19 +20,6 @@ import {
   Coaching, NegotiationCard, PracticeCadence,
 } from "./sections";
 
-const NAV: { id: string; label: string }[] = [
-  { id: "zone-readiness", label: "Readiness" },
-  { id: "zone-pillars", label: "Pillars" },
-  { id: "zone-competence", label: "Competence" },
-  { id: "zone-delivery", label: "Delivery" },
-  { id: "zone-craft", label: "Answer craft" },
-  { id: "zone-signature", label: "Signature" },
-  { id: "zone-patterns", label: "Patterns" },
-  { id: "zone-closing", label: "Closing" },
-  { id: "zone-negotiation", label: "Negotiation" },
-  { id: "zone-practice", label: "Practice" },
-];
-
 const RANGES: { key: RangeKey; label: string }[] = [
   { key: "4w", label: "4 wks" },
   { key: "12w", label: "12 wks" },
@@ -103,41 +90,6 @@ function StickyHeader({ d, range, onRange, showControls }: { d: Fixture; range: 
   );
 }
 
-function NavRail({ active }: { active: string }) {
-  return (
-    <nav aria-label="Analytics sections" style={{ position: "sticky", top: 76, alignSelf: "start", display: "flex", flexDirection: "column", gap: 2 }}>
-      <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6, textTransform: "uppercase", padding: "0 0 8px 12px" }}>On this page</span>
-      {NAV.map((n) => {
-        const on = n.id === active;
-        return (
-          <a key={n.id} href={`#${n.id}`} className="rix-nav-link rix-focus"
-            style={{ display: "block", padding: "6px 12px", borderLeft: `2px solid ${on ? t.indigo : t.line}`, fontFamily: f.sans, fontSize: 13, fontWeight: on ? 600 : 400, color: on ? t.coal : t.inkSoft, textDecoration: "none" }}>
-            {n.label}
-          </a>
-        );
-      })}
-    </nav>
-  );
-}
-
-/* Tracks which zone is in view, to light the matching nav entry. */
-function useActiveZone(enabled: boolean): string {
-  const [active, setActive] = React.useState(NAV[0].id);
-  React.useEffect(() => {
-    if (!enabled || typeof IntersectionObserver === "undefined") return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (vis[0]) setActive(vis[0].target.id);
-      },
-      { rootMargin: "-80px 0px -65% 0px", threshold: 0 },
-    );
-    NAV.forEach((n) => { const el = document.getElementById(n.id); if (el) obs.observe(el); });
-    return () => obs.disconnect();
-  }, [enabled]);
-  return active;
-}
-
 function Stack({ children, gap = 18 }: { children: React.ReactNode; gap?: number }) {
   return <div style={{ display: "flex", flexDirection: "column", gap }}>{children}</div>;
 }
@@ -190,14 +142,12 @@ function AnalyticsBody({ d, narrow, range, activePillar, onPillar }: {
 function DesktopShell({ d }: { d: Fixture }) {
   const [range, setRange] = React.useState<RangeKey>("12w");
   const [activePillar, setActivePillar] = React.useState<Pillar["key"] | null>(null);
-  const activeZone = useActiveZone(true);
   const onPillar = (k: Pillar["key"]) => setActivePillar((cur) => (cur === k ? null : k));
   return (
     <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
       <StickyHeader d={d} range={range} onRange={setRange} showControls />
-      <div style={{ maxWidth: 1240, margin: "0 auto", padding: "22px 22px 64px", display: "grid", gridTemplateColumns: "168px 1fr", gap: 28, alignItems: "start" }}>
-        <NavRail active={activeZone} />
+      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "22px 22px 64px" }}>
         <AnalyticsBody d={d} narrow={false} range={range} activePillar={activePillar} onPillar={onPillar} />
       </div>
     </div>
