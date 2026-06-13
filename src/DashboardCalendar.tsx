@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { c, font, shadow } from "./tokens";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
-import { getCalendarEvents, saveCalendarEvent, deleteCalendarEvent } from "./supabase";
+import { listEvents, saveEvent, deleteEvent, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
 import {
   type InterviewEvent, loadEvents, saveEvents, generateEventId,
   daysUntilEvent, formatEventDate, formatEventTime,
@@ -100,6 +100,50 @@ function MonthGrid({ events, onDateClick }: { events: InterviewEvent[]; onDateCl
   );
 }
 
+/* ─── DB row <-> UI event mapping ───
+ * The API is the source of truth; these adapt its snake_case rows to the
+ * InterviewEvent shape the UI renders, and back. reminders collapses to a
+ * boolean for this UI (the per-channel ladder lives in the DB/jsonb). */
+function rowToEvent(r: CalendarEventRow): InterviewEvent {
+  return {
+    id: r.id,
+    title: r.title,
+    company: r.company || "",
+    type: r.type || "interview",
+    date: r.date || (r.start_utc ? r.start_utc.slice(0, 10) : ""),
+    time: r.time || "",
+    duration: r.duration_minutes || 60,
+    location: r.location || "",
+    notes: r.notes || "",
+    status: (["upcoming", "completed", "cancelled"].includes(r.status) ? r.status : "upcoming") as InterviewEvent["status"],
+    reminders: Array.isArray(r.reminders) ? r.reminders.length > 0 : true,
+    google_event_id: r.google_event_id || undefined,
+  };
+}
+
+/** Build the API payload from a UI event. The browser knows the real IANA
+ *  zone, so we send start_utc (authoritative) alongside the legacy date/time. */
+function eventToInput(ev: InterviewEvent, opts: { withId: boolean }): CalendarEventInput {
+  const local = new Date(`${ev.date}T${ev.time || "00:00"}`);
+  const start_utc = Number.isNaN(local.getTime()) ? undefined : local.toISOString();
+  return {
+    ...(opts.withId ? { id: ev.id } : {}),
+    title: ev.title,
+    company: ev.company,
+    type: ev.type,
+    date: ev.date,
+    time: ev.time,
+    duration: ev.duration,
+    location: ev.location,
+    notes: ev.notes,
+    status: ev.status,
+    reminders: ev.reminders,
+    start_utc,
+    kind: "real",
+    source: "manual",
+  };
+}
+
 export default function CalendarPage() {
   useDocTitle("Calendar");
   const { handleStartSession: onStartSession, syncGoogleCalendar: _syncGoogleCalendar, googleSyncStatus: _googleSyncStatus, hasGoogleToken: _hasGoogleToken } = useDashboardCore();
@@ -123,19 +167,18 @@ export default function CalendarPage() {
   const [formNotes, setFormNotes] = useState("");
   const [formReminders, setFormReminders] = useState(true);
   const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // Load from Supabase on mount and merge with localStorage
-  // Must be before conditional returns to respect rules of hooks
+  // Load from the calendar API on mount. The DB is authoritative; we merge any
+  // local-only rows (events that failed to sync) so a transient outage never
+  // loses data. localStorage is a cache for instant first paint only.
+  // Must be before conditional returns to respect rules of hooks.
   useEffect(() => {
     if (!user?.id) return;
-    getCalendarEvents(user.id).then(dbEvents => {
-      if (dbEvents.length === 0) return;
-      const mapped = dbEvents.map(e => ({
-        id: e.id, title: e.title, company: e.company,
-        date: e.date, time: e.time, type: e.type,
-        duration: 60, location: "", notes: e.notes,
-        status: "upcoming" as const, reminders: true,
-      }));
+    let cancelled = false;
+    listEvents().then(res => {
+      if (cancelled || !res.ok) return;
+      const mapped = res.events.map(rowToEvent);
       setEvents(prev => {
         const dbIds = new Set(mapped.map(e => e.id));
         const localOnly = prev.filter(e => !dbIds.has(e.id));
@@ -143,7 +186,8 @@ export default function CalendarPage() {
         saveEvents(merged);
         return merged;
       });
-    }).catch(() => {});
+    }).catch(() => { /* keep localStorage cache on failure */ });
+    return () => { cancelled = true; };
   }, [user?.id]);
 
   const updateEvents = (next: InterviewEvent[]) => {
@@ -187,7 +231,7 @@ export default function CalendarPage() {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formTitle || !formDate || !formTime) {
       setFormError(!formTitle ? "Event title is required." : !formDate ? "Date is required." : "Time is required.");
       return;
@@ -201,7 +245,7 @@ export default function CalendarPage() {
       }
     }
     setFormError("");
-    const ev: InterviewEvent = {
+    const draft: InterviewEvent = {
       id: editingId || generateEventId(),
       title: formTitle,
       company: formCompany,
@@ -214,30 +258,51 @@ export default function CalendarPage() {
       status: "upcoming",
       reminders: formReminders,
     };
-    if (editingId) {
-      updateEvents(events.map(e => e.id === editingId ? ev : e));
-    } else {
-      updateEvents([...events, ev]);
+
+    setSaving(true);
+    let res = await saveEvent(eventToInput(draft, { withId: !!editingId }));
+    // A local-only row (previous sync failure) can be edited before it ever
+    // reached the DB. The update path 404s; promote it to an insert.
+    if (!res.ok && editingId && res.status === 404) {
+      res = await saveEvent(eventToInput(draft, { withId: false }));
     }
-    // Persist to Supabase
-    if (user?.id) {
-      saveCalendarEvent({
-        id: ev.id, user_id: user.id, title: ev.title, company: ev.company,
-        date: ev.date, time: ev.time, type: ev.type, notes: ev.notes,
-      }).catch(() => { showToast("Saved locally — cloud sync failed"); });
+    setSaving(false);
+
+    if (res.ok && res.event) {
+      const saved = rowToEvent(res.event);
+      // Reconcile by the id we edited (server may have minted a fresh UUID).
+      updateEvents(editingId ? events.map(e => (e.id === editingId ? saved : e)) : [...events, saved]);
+    } else if (res.error && res.status === 403) {
+      // Pro gate at the data layer — surface the upgrade path.
+      setFormError(res.error);
+      setShowUpgradeModal(true);
+      return;
+    } else {
+      // Network/server failure: keep the event locally so the user doesn't lose
+      // their entry, and flag that it hasn't synced.
+      updateEvents(editingId ? events.map(e => (e.id === editingId ? draft : e)) : [...events, draft]);
+      showToast(res.error || "Saved locally. Cloud sync failed.");
     }
     setShowForm(false);
     resetForm();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     updateEvents(events.filter(e => e.id !== id));
-    if (user?.id) deleteCalendarEvent(id, user.id).catch(() => { showToast("Deleted locally — cloud sync failed"); });
+    const res = await deleteEvent(id);
+    // 404 means it was never in the DB (local-only) — already removed locally.
+    if (!res.ok && res.status !== 404) showToast(res.error || "Deleted locally. Cloud sync failed.");
   };
 
-  const handleCancel = (id: string) => {
-    updateEvents(events.map(e => e.id === id ? { ...e, status: "cancelled" as const } : e));
-    if (user?.id) deleteCalendarEvent(id, user.id).catch(() => { showToast("Cancelled locally — cloud sync failed"); });
+  const handleCancel = async (id: string) => {
+    const ev = events.find(e => e.id === id);
+    if (!ev) return;
+    const cancelled = { ...ev, status: "cancelled" as const };
+    updateEvents(events.map(e => (e.id === id ? cancelled : e)));
+    // Persist the status change (the old code deleted the row, so cancellations
+    // silently reverted on reload). 404 => local-only event; the local update stands.
+    const res = await saveEvent(eventToInput(cancelled, { withId: true }));
+    if (!res.ok && res.status !== 404) showToast(res.error || "Cancelled locally. Sync failed.");
   };
 
   const handleExportICS = (ev: InterviewEvent) => {
@@ -389,12 +454,12 @@ export default function CalendarPage() {
                 padding: "10px 20px", cursor: "pointer", transition: "color 160ms ease, border-color 160ms ease",
               }}>Cancel</button>
               {formError && <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{formError}</span>}
-              <button onClick={handleSave} disabled={!formTitle || !formDate || !formTime} style={{
+              <button onClick={handleSave} disabled={!formTitle || !formDate || !formTime || saving} style={{
                 fontFamily: font.ui, fontSize: 13, fontWeight: 500,
-                background: formTitle && formDate && formTime ? c.gilt : c.border,
-                color: formTitle && formDate && formTime ? c.obsidian : c.stone,
-                border: "none", borderRadius: 8, padding: "10px 24px", cursor: formTitle && formDate && formTime ? "pointer" : "not-allowed",
-              }}>{editingId ? "Save Changes" : "Add Interview"}</button>
+                background: formTitle && formDate && formTime && !saving ? c.gilt : c.border,
+                color: formTitle && formDate && formTime && !saving ? c.obsidian : c.stone,
+                border: "none", borderRadius: 8, padding: "10px 24px", cursor: formTitle && formDate && formTime && !saving ? "pointer" : "not-allowed",
+              }}>{saving ? "Saving…" : editingId ? "Save Changes" : "Add Interview"}</button>
             </div>
           </div>
         </div>

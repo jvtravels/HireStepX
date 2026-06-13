@@ -18,7 +18,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, getSubscriptionTier } from "./_shared";
 import { normalizeCalendarEvent, type CalendarRow } from "./_calendar-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -64,6 +64,17 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
   if (!auth.userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+  }
+
+  // Calendar is a Pro feature, enforced at the data layer (not just the client
+  // ProGate). Reads/deletes of one's own rows stay open so a downgrade never
+  // strands existing data, but creating/editing requires an active paid tier.
+  const tier = await getSubscriptionTier(auth.userId);
+  if (tier !== "pro" && tier !== "team") {
+    return new Response(
+      JSON.stringify({ error: "The interview calendar is a Pro feature. Upgrade to schedule interviews.", upgradeRequired: true }),
+      { status: 403, headers },
+    );
   }
 
   let body: Record<string, unknown>;
