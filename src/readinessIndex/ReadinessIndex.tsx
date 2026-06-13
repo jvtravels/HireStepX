@@ -94,6 +94,14 @@ function Stack({ children, gap = 18 }: { children: React.ReactNode; gap?: number
   return <div style={{ display: "flex", flexDirection: "column", gap }}>{children}</div>;
 }
 
+/* Two-up row for the wide desktop layout — pairs adjacent full-width
+   sections side by side to cut vertical height. Collapses to a single
+   column on narrow (mobile) so nothing is squeezed. Top-aligned, so a
+   shorter card simply leaves space below rather than stretching. */
+function Row({ narrow, children, gap = 18 }: { narrow: boolean; children: React.ReactNode; gap?: number }) {
+  return <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap, alignItems: "start" }}>{children}</div>;
+}
+
 /* A soft, non-blocking note that some figures are modelled estimates while
    the session count is still low. Honest about what is measured vs inferred. */
 function SparseNote({ sessions }: { sessions: number }) {
@@ -124,8 +132,14 @@ function AnalyticsBody({ d, narrow, range, activePillar, onPillar }: {
       <CompetenceCoverage d={d} narrow={narrow} />
       <BlindSpots d={d} />
       <DeliveryPanel d={d} narrow={narrow} />
-      <AttentionTimeline d={d} />
-      <CulturalRegister d={d} />
+      {d.cultural.length ? (
+        <Row narrow={narrow}>
+          <AttentionTimeline d={d} />
+          <CulturalRegister d={d} />
+        </Row>
+      ) : (
+        <AttentionTimeline d={d} />
+      )}
       <AnswerCraft d={d} narrow={narrow} />
       <FocusMetrics d={d} narrow={narrow} />
       <PatternsOverTime d={d} narrow={narrow} />
@@ -147,7 +161,7 @@ function DesktopShell({ d }: { d: Fixture }) {
     <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
       <StickyHeader d={d} range={range} onRange={setRange} showControls />
-      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "22px 22px 64px" }}>
+      <div style={{ maxWidth: 1360, margin: "0 auto", padding: "22px 28px 64px" }}>
         <AnalyticsBody d={d} narrow={false} range={range} activePillar={activePillar} onPillar={onPillar} />
       </div>
     </div>
