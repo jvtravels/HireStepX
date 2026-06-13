@@ -90,6 +90,31 @@ create table if not exists calendar_events (
   created_at timestamptz default now()
 );
 
+-- Calendar rebuild (PRI-35): timezone-correct, prep-runway-aware model.
+-- Additive + idempotent so it applies cleanly to the deployed table that
+-- still has the naive date/time text columns. `date`/`time` are retained
+-- for backward compatibility and one-way display; `start_utc`/`end_utc`
+-- are the authoritative instants going forward.
+alter table calendar_events add column if not exists start_utc timestamptz;
+alter table calendar_events add column if not exists end_utc timestamptz;
+-- IANA zone the event was authored in (candidate-local). Default reflects
+-- the core Indian-candidate audience.
+alter table calendar_events add column if not exists timezone text default 'Asia/Kolkata';
+alter table calendar_events add column if not exists duration_minutes int default 60;
+alter table calendar_events add column if not exists location text default '';
+-- upcoming | completed | cancelled
+alter table calendar_events add column if not exists status text default 'upcoming';
+-- real | prep-session  (prep-session rows are the auto-scheduled mock runway)
+alter table calendar_events add column if not exists kind text default 'real';
+-- self-reference: a prep-session points at the real interview it prepares for
+alter table calendar_events add column if not exists parent_interview_id text;
+-- manual | nl | google | prep-runway
+alter table calendar_events add column if not exists source text default 'manual';
+alter table calendar_events add column if not exists google_event_id text;
+-- array of { channel: 'email' | 'push', minutesBefore: int }
+alter table calendar_events add column if not exists reminders jsonb default '[]'::jsonb;
+alter table calendar_events add column if not exists updated_at timestamptz default now();
+
 -- 4. Feedback
 create table if not exists feedback (
   id uuid primary key default gen_random_uuid(),
@@ -201,6 +226,12 @@ create index if not exists idx_sessions_user_created on sessions(user_id, create
 create index if not exists idx_sessions_user_date on sessions(user_id, date);
 create index if not exists idx_payments_razorpay_id on payments(razorpay_payment_id);
 create index if not exists idx_calendar_events_user on calendar_events(user_id, date);
+create index if not exists idx_calendar_events_user_start on calendar_events(user_id, start_utc);
+create index if not exists idx_calendar_events_parent on calendar_events(parent_interview_id);
+-- One linked Google event per user; ignores rows that aren't Google-sourced.
+create unique index if not exists idx_calendar_events_google
+  on calendar_events(user_id, google_event_id)
+  where google_event_id is not null;
 create index if not exists idx_feedback_session on feedback(session_id);
 
 -- ═══════════════════════════════════════════════════════
@@ -547,7 +578,8 @@ create policy "Users can delete own events" on calendar_events
   for delete using ((auth.uid())::text = user_id::text);
 drop policy if exists "Users can update own events" on calendar_events;
 create policy "Users can update own events" on calendar_events
-  for update using ((auth.uid())::text = user_id::text);
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);
 
 -- Feedback: users can CRUD their own feedback
 drop policy if exists "Users can view own feedback" on feedback;
