@@ -581,6 +581,43 @@ drop policy if exists "Users can insert own profile" on profiles;
 create policy "Users can insert own profile" on profiles
   for insert with check ((auth.uid())::text = id::text);
 
+-- SECURITY — billing-column guard (payment-bypass fix):
+-- RLS on profiles is ROW-level only. The "Users can update own profile" policy
+-- lets a user PATCH any column on their own row — including subscription_tier —
+-- so an authenticated user could self-promote to 'pro' for free via a raw
+-- PostgREST call. Postgres RLS cannot restrict columns, so we enforce it with a
+-- BEFORE UPDATE trigger: any update NOT made by the service role has the
+-- billing-sensitive columns silently reset to their existing values. The
+-- service role (used only by verify-payment.ts / razorpay-webhook.ts after a
+-- signature-verified charge) bypasses the guard and is the ONLY path that can
+-- change a tier. Idempotent: re-running drops and recreates cleanly.
+create or replace function guard_profile_billing_columns()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- auth.role() is 'service_role' for service-key requests, 'authenticated'
+  -- (or 'anon') for end-user requests. Only the service role may mutate billing.
+  if coalesce(auth.role(), '') <> 'service_role' then
+    new.subscription_tier        := old.subscription_tier;
+    new.subscription_start       := old.subscription_start;
+    new.subscription_end         := old.subscription_end;
+    new.razorpay_payment_id      := old.razorpay_payment_id;
+    new.razorpay_subscription_id := old.razorpay_subscription_id;
+    new.cancel_at_period_end     := old.cancel_at_period_end;
+    new.subscription_paused      := old.subscription_paused;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_profile_billing on profiles;
+create trigger trg_guard_profile_billing
+  before update on profiles
+  for each row execute function guard_profile_billing_columns();
+
 -- Sessions: users can CRUD their own sessions
 drop policy if exists "Users can view own sessions" on sessions;
 create policy "Users can view own sessions" on sessions
