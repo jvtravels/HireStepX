@@ -687,6 +687,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (session.provider_token) {
             try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
           }
+          // ── Fast render for returning users ──────────────────────────────────
+          // On slow Indian mobile connections getProfile consistently hits the 5s
+          // timeout, so every hard-refresh shows a full-page spinner for 5 seconds.
+          // If we already have a cached subscription tier from a previous visit,
+          // skip the wait: render the dashboard immediately from JWT + cache, then
+          // let the getProfile call below silently update with any changed data
+          // (name, role, tier) when it resolves. This makes the dashboard appear
+          // instantly for returning users regardless of network speed.
+          const cachedTierFastRender = getCachedTier(session.user.id);
+          let didFastRender = false;
+          if (cachedTierFastRender) {
+            const metaFast = session.user.user_metadata || {};
+            setUser({
+              id: session.user.id,
+              name: metaFast.name || metaFast.full_name || "",
+              email: session.user.email || "",
+              targetRole: "",
+              resumeFileName: null,
+              hasCompletedOnboarding: metaFast.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
+              emailVerified: metaFast.custom_email_verified === true || !!session.user.email_confirmed_at,
+              subscriptionTier: cachedTierFastRender.tier,
+              subscriptionEnd: cachedTierFastRender.subscriptionEnd,
+            });
+            clearTimeout(safetyTimer);
+            setLoading(false);
+            // Unlock TOKEN_REFRESHED/SIGNED_IN handling immediately — the
+            // dashboard is live, so event-driven profile updates should proceed.
+            initialSessionRestoredRef.current = true;
+            didFastRender = true;
+          }
           try {
             // 5s timeout on profile fetch. Without this, any extension-
             // wrapped fetch (Loom / Jam / Hotjar) that silently hangs
@@ -741,21 +771,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } catch (profileErr) {
             console.error("[auth] getProfile threw:", profileErr);
-            // Network error loading profile — keep the session alive with basic user info.
-            // Seed subscriptionTier from the local cache so the Plan Status widget shows
-            // the correct plan immediately rather than "Loading plan…" for 1–5s.
-            const meta = session.user.user_metadata || {};
-            const cachedTierData = getCachedTier(session.user.id);
-            setUser({
-              id: session.user.id,
-              name: meta.name || meta.full_name || "",
-              email: session.user.email || "",
-              targetRole: "",
-              resumeFileName: null,
-              hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
-              emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
-              ...(cachedTierData ? { subscriptionTier: cachedTierData.tier, subscriptionEnd: cachedTierData.subscriptionEnd } : {}),
-            });
+            if (!didFastRender) {
+              // No fast render (first visit with no cached tier): set a minimal
+              // user from the JWT so the session stays alive. Seed subscriptionTier
+              // from localStorage cache if available — covers the second visit when
+              // the cache was written by a previous retryProfileInBackground success.
+              const meta = session.user.user_metadata || {};
+              const cachedTierData = getCachedTier(session.user.id);
+              setUser({
+                id: session.user.id,
+                name: meta.name || meta.full_name || "",
+                email: session.user.email || "",
+                targetRole: "",
+                resumeFileName: null,
+                hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
+                emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
+                ...(cachedTierData ? { subscriptionTier: cachedTierData.tier, subscriptionEnd: cachedTierData.subscriptionEnd } : {}),
+              });
+            }
+            // Always retry — ensures full profile data (name, role, tier) eventually
+            // loads even when the initial attempt times out.
             retryProfileInBackground(session);
           }
         } else {
