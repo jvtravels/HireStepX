@@ -4,21 +4,15 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
+import { createAdminToken, verifyAdminToken } from "./_admin-auth";
 
 /* ─── Config ─── */
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
-/* Token signing key — derived from a dedicated env var if set, otherwise
- * from the admin password combined with a fixed salt so a misconfigured
- * deploy doesn't end up signing every session with the literal string
- * "fallback-secret". If neither env is set, signing is disabled (verifyToken
- * always rejects) so the app fails closed rather than accepting forged
- * tokens. */
-const TOKEN_SECRET = (process.env.ADMIN_SESSION_SECRET || "").trim()
-  || (ADMIN_PASSWORD ? createHmac("sha256", "hirestepx-admin-token-v1").update(ADMIN_PASSWORD).digest("hex") : "");
-const TOKEN_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+/* Session-token mint/verify live in ./_admin-auth so this issuer and the
+ * admin-quality-* verifiers share one signing key (see that module). */
 
 /* Query limits — reasonable caps to prevent huge payloads */
 const LIMIT_PROFILES = 2000;
@@ -60,31 +54,6 @@ function getClientIp(req: VercelRequest): string {
   return "unknown";
 }
 
-/* ─── Session Tokens ─── */
-
-function createToken(): string {
-  const payload = { iat: Date.now(), exp: Date.now() + TOKEN_TTL_MS };
-  const data = JSON.stringify(payload);
-  const sig = createHmac("sha256", TOKEN_SECRET).update(data).digest("hex");
-  return Buffer.from(data).toString("base64") + "." + sig;
-}
-
-function verifyToken(token: string): boolean {
-  // Fail closed if the signing key was never configured — better to reject
-  // every token than to accept tokens signed with an empty/predictable key.
-  if (!TOKEN_SECRET) return false;
-  try {
-    const [dataB64, sig] = token.split(".");
-    if (!dataB64 || !sig) return false;
-    const data = Buffer.from(dataB64, "base64").toString();
-    const expectedSig = createHmac("sha256", TOKEN_SECRET).update(data).digest("hex");
-    if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return false;
-    const payload = JSON.parse(data);
-    if (Date.now() > payload.exp) return false;
-    return true;
-  } catch { return false; }
-}
-
 /* ─── Auth ─── */
 
 function verifyPassword(input: string): boolean {
@@ -102,7 +71,7 @@ function verifyPassword(input: string): boolean {
 function verifyAuth(req: VercelRequest): { ok: boolean; isLogin?: boolean } {
   // Check for session token first
   const token = req.headers["x-admin-token"];
-  if (token && typeof token === "string" && verifyToken(token)) {
+  if (token && typeof token === "string" && verifyAdminToken(token)) {
     return { ok: true };
   }
   // Check for password (login attempt)
@@ -994,7 +963,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })();
 
     // Include a fresh token in every response so the client stays authenticated
-    return res.status(200).json({ ...data as object, _token: createToken() });
+    return res.status(200).json({ ...data as object, _token: createAdminToken() });
   } catch (err) {
     console.error("Admin data error:", err);
     const msg = err instanceof Error ? err.message : "Failed to fetch admin data";

@@ -6,28 +6,9 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createHmac, timingSafeEqual } from "crypto";
+import { verifyAdminToken as verifyToken } from "./_admin-auth";
 
 const CRON_SECRET = process.env.CRON_SECRET || "";
-const TOKEN_SECRET = process.env.ADMIN_PASSWORD || "fallback-secret";
-
-function verifyToken(token: string): boolean {
-  try {
-    const [dataB64, sig] = token.split(".");
-    if (!dataB64 || !sig) return false;
-    const data = Buffer.from(dataB64, "base64").toString();
-    const expectedSig = createHmac("sha256", TOKEN_SECRET).update(data).digest("hex");
-    const a = Buffer.from(sig);
-    const b = Buffer.from(expectedSig);
-    if (a.length !== b.length) return false;
-    if (!timingSafeEqual(a, b)) return false;
-    const payload = JSON.parse(data);
-    if (Date.now() > payload.exp) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Resolve the absolute URL for /api/cron/analyze-sessions in the same

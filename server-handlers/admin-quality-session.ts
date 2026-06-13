@@ -6,29 +6,10 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createHmac, timingSafeEqual } from "crypto";
+import { verifyAdminToken as verifyToken } from "./_admin-auth";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const TOKEN_SECRET = process.env.ADMIN_PASSWORD || "fallback-secret";
-
-function verifyToken(token: string): boolean {
-  try {
-    const [dataB64, sig] = token.split(".");
-    if (!dataB64 || !sig) return false;
-    const data = Buffer.from(dataB64, "base64").toString();
-    const expectedSig = createHmac("sha256", TOKEN_SECRET).update(data).digest("hex");
-    const a = Buffer.from(sig);
-    const b = Buffer.from(expectedSig);
-    if (a.length !== b.length) return false;
-    if (!timingSafeEqual(a, b)) return false;
-    const payload = JSON.parse(data);
-    if (Date.now() > payload.exp) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 async function supa<T>(path: string): Promise<T[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
