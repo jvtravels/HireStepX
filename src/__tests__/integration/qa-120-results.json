@@ -306,7 +306,7 @@
       "severity": "High",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: flexibility, become, tests, rude",
-      "prose": "Noted on the expected fitment — Before we go further, I mean, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "flexibility",
@@ -865,7 +865,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: maintains, state",
-      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "maintains",
@@ -1227,7 +1227,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: exploiting, interest",
-      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "exploiting",
@@ -1242,7 +1242,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: captures, floor, hard",
-      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "actually, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "captures",
@@ -1322,7 +1322,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: clarifies, floor",
-      "prose": "Umm, before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Umm, let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "clarifies",
@@ -1369,7 +1369,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: inconsistency, challenges",
-      "prose": "Umm, noted on the expected fitment — Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "prose": "Umm, noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
       "actionKind": "discovery-probe",
       "keywords": [
         "inconsistency",

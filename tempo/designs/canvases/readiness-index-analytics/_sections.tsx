@@ -1,20 +1,17 @@
-"use client";
-/* HireStepX — Readiness Index analytics / zone sections.
+/* HireStepX — Readiness Index analytics / zone sections
    Pure-view section components. State for local disclosure (evidence
    quotes, session-diff selectors) lives here via useState; cross-cutting
-   state (range, active pillar) is owned by ReadinessIndex and passed in.
-   Ported from the design canvas; retokened to src/auth/_tokens and made
-   null/empty-safe against the real (sometimes sparse) payload. */
+   state (range, active pillar) is owned by ReadinessIndex and passed in. */
 
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
-import type { Fixture, Pillar, CrossInsight, TypedFlag, RangeKeyLocal as RangeKey, Attention } from "./types";
-import { rangeSlice, RANGE_LABEL } from "./types";
+import { tokens as t, fonts as f, shadows } from "../design-system/_tokens";
+import type { Fixture, Pillar, CrossInsight, TypedFlag, RangeKey, Attention } from "./_data";
+import { rangeSlice, RANGE_LABEL } from "./_data";
 import {
   Card, Eyebrow, Title, DeltaTag, MetricStat, StackBar,
   RiGauge, Trajectory, Spark, SkillBar, StarChips, EvidenceQuote,
-  scoreColor, TONE_FG, HIRE_META, BAND_META, COPPER_LINE, SUCCESS_LINE,
-} from "./ui";
+  scoreColor, TONE_FG, HIRE_META, BAND_META,
+} from "./_ui";
 
 /* ── shared small bits ─────────────────────────────────────────── */
 
@@ -93,7 +90,7 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
             <div style={{ flex: 1, minWidth: 180, padding: "10px 14px", background: t.creamSoft, borderRadius: 10 }}>
               <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs your baseline</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-                <span style={{ fontFamily: f.serif, fontSize: 22, color: t.success }}>{vsBaseline >= 0 ? "+" : ""}{vsBaseline}</span>
+                <span style={{ fontFamily: f.serif, fontSize: 22, color: t.success }}>+{vsBaseline}</span>
                 <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>since {d.baseline.label}</span>
               </div>
             </div>
@@ -131,7 +128,7 @@ export function BandMix({ d }: { d: Fixture }) {
     <Card as="section">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div>
-          <Eyebrow as="h2">Verdict mix · session band</Eyebrow>
+          <Eyebrow as="h2">Verdict mix · report_json.band</Eyebrow>
           <Title as="h3" size={20}>How your sessions would be called</Title>
         </div>
         <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
@@ -146,7 +143,7 @@ export function BandMix({ d }: { d: Fixture }) {
 /* ── Zone 2 — pillars (with per-pillar sparkline + open evidence) ── */
 
 const PILLAR_HINT: Record<Pillar["key"], string> = {
-  competence: "skill scores", consistency: "variance", coverage: "breadth · STAR", currency: "skill-decay", composure: "fillers · pace",
+  competence: "skills[].score", consistency: "variance", coverage: "breadth · STAR", currency: "skill-decay", composure: "fillers · pace",
 };
 
 function PillarCard({ p, lever, active, onOpen, range }: { p: Pillar; lever: boolean; active: boolean; onOpen: () => void; range: RangeKey }) {
@@ -154,7 +151,7 @@ function PillarCard({ p, lever, active, onOpen, range }: { p: Pillar; lever: boo
     <Card as="article" className="rix-pillar" pad={18}
       style={{
         display: "flex", flexDirection: "column", gap: 8, minHeight: 196,
-        border: active ? `1px solid ${t.indigo}` : lever ? `1px solid ${COPPER_LINE}` : "none",
+        border: active ? `1px solid ${t.indigo}` : lever ? `1px solid ${t.copperLine}` : `1px solid ${t.line}`,
         boxShadow: active ? `0 0 0 3px ${t.indigo100}, ${shadows.card}` : lever ? `0 0 0 3px ${t.copperSoft}, ${shadows.card}` : shadows.card,
       }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -217,7 +214,7 @@ export function PillarEvidence({ p }: { p: Pillar }) {
           <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}> / 100</span>
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(3, Math.max(1, p.drivers.length))}, 1fr)`, gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(3, p.drivers.length)}, 1fr)`, gap: 14 }}>
         {p.drivers.map((dr) => (
           <MetricStat key={dr.label} label={dr.label} value={dr.value}
             tone={dr.tone === "good" ? "good" : dr.tone === "watch" ? "warn" : dr.tone === "miss" ? "bad" : "ink"}
@@ -240,10 +237,10 @@ export function PillarEvidence({ p }: { p: Pillar }) {
 
 /* Session-over-session diff — pick any two snapshots, see what moved. */
 export function SessionDiff({ d, narrow }: { d: Fixture; narrow: boolean }) {
-  const first = d.snapshots[0];
-  const lastSnap = d.snapshots[d.snapshots.length - 1];
-  const [aId, setA] = React.useState(first?.id ?? "");
-  const [bId, setB] = React.useState(lastSnap?.id ?? "");
+  const [aId, setA] = React.useState(d.snapshots[0].id);
+  const [bId, setB] = React.useState(d.snapshots[d.snapshots.length - 1].id);
+  const a = d.snapshots.find((s) => s.id === aId) ?? d.snapshots[0];
+  const b = d.snapshots.find((s) => s.id === bId) ?? d.snapshots[d.snapshots.length - 1];
   if (d.snapshots.length < 2) {
     return (
       <Card as="section">
@@ -252,8 +249,6 @@ export function SessionDiff({ d, narrow }: { d: Fixture; narrow: boolean }) {
       </Card>
     );
   }
-  const a = d.snapshots.find((s) => s.id === aId) ?? d.snapshots[0];
-  const b = d.snapshots.find((s) => s.id === bId) ?? d.snapshots[d.snapshots.length - 1];
   const selStyle: React.CSSProperties = { fontFamily: f.sans, fontSize: 12.5, color: t.coal, background: t.white, border: `1px solid ${t.line}`, borderRadius: 8, padding: "6px 10px", cursor: "pointer" };
   return (
     <Card as="section">
@@ -319,20 +314,12 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
           </div>
           <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>score · percentile · delta</span>
         </div>
-        {d.skills.length ? (
-          <>
-            <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-              {d.skills.map((s) => <SkillBar key={s.name} s={s} />)}
-            </div>
-            {weakest && (
-              <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: t.creamSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
-                Weakest lever: <strong style={{ color: t.coal }}>{weakest.name}</strong> (p{weakest.percentile}). The biggest single RI gain comes from closing this gap.
-              </p>
-            )}
-          </>
-        ) : (
-          <EmptyState title="No skill scores yet" need="Run one full evaluated session to populate your per-skill profile." />
-        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+          {d.skills.map((s) => <SkillBar key={s.name} s={s} />)}
+        </div>
+        <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: t.creamSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
+          Weakest lever: <strong style={{ color: t.coal }}>{weakest.name}</strong> (p{weakest.percentile}). The biggest single RI gain comes from closing this gap.
+        </p>
       </Card>
 
       <Card as="section">
@@ -378,25 +365,21 @@ export function BlindSpots({ d }: { d: Fixture }) {
         </div>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>% = frequency at {d.target.company}</span>
       </div>
-      {d.blindSpots.length ? (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
-          {d.blindSpots.map((b) => (
-            <li key={b.competency} style={{ display: "flex", gap: 14, alignItems: "center", padding: "12px 14px", background: t.creamSoft, borderRadius: 12 }}>
-              <span style={{ fontFamily: f.serif, fontSize: 24, color: t.copper, width: 52, flexShrink: 0 }}>{b.frequencyPct}%</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{b.competency}</div>
-                <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
-              </div>
-              <button type="button" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
-                style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                Practice
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EmptyState title="No blind spots flagged yet" need="As you practice more round types, commonly-tested competencies you have skipped surface here." />
-      )}
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+        {d.blindSpots.map((b) => (
+          <li key={b.competency} style={{ display: "flex", gap: 14, alignItems: "center", padding: "12px 14px", background: t.creamSoft, borderRadius: 12 }}>
+            <span style={{ fontFamily: f.serif, fontSize: 24, color: t.copper, width: 52, flexShrink: 0 }}>{b.frequencyPct}%</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{b.competency}</div>
+              <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
+            </div>
+            <button type="button" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
+              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${t.copperLine}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              Practice
+            </button>
+          </li>
+        ))}
+      </ul>
     </Card>
   );
 }
@@ -409,7 +392,7 @@ export function DeliveryPanel({ d, narrow }: { d: Fixture; narrow: boolean }) {
     <Card as="section" id="zone-delivery" style={{ scrollMarginTop: 88 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <div>
-          <Eyebrow as="h2">Delivery · voice and language</Eyebrow>
+          <Eyebrow as="h2">Delivery · coreMetrics + advancedDelivery</Eyebrow>
           <Title as="h3" size={20}>How you sound under pressure</Title>
         </div>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>the green band on each is the interviewer-comfort range</span>
@@ -419,8 +402,8 @@ export function DeliveryPanel({ d, narrow }: { d: Fixture; narrow: boolean }) {
         <MetricStat label="Pace" value={`${c.paceWpm}`} unit="wpm" tone={c.paceWpm <= 160 ? "good" : "warn"} meter={{ min: 90, max: 200, lo: 120, hi: 160, value: c.paceWpm }} hint="120–160 ideal" />
         <MetricStat label="Silence ratio" value={`${c.silenceRatio}`} unit="%" tone={c.silenceRatio <= 15 ? "good" : "warn"} meter={{ min: 0, max: 40, lo: 0, hi: 15, value: c.silenceRatio, lowerBetter: true }} hint="dead air" />
         <MetricStat label="Hedging / min" value={`${c.hedgingPerMin}`} tone={c.hedgingPerMin <= 3 ? "good" : "warn"} meter={{ min: 0, max: 8, lo: 0, hi: 3, value: c.hedgingPerMin, lowerBetter: true }} hint="“sort of”, “maybe”" />
-        <MetricStat label="Ownership (I vs we)" value={`${Math.round(c.firstPersonRatio * 100)}`} unit="%" tone={c.firstPersonRatio >= 0.6 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 60, hi: 100, value: c.firstPersonRatio * 100 }} hint="first-person ratio" />
-        <MetricStat label="Word variety" value={`${c.lexicalDiversity.toFixed(2)}`} tone={c.lexicalDiversity >= 0.5 ? "good" : "warn"} meter={{ min: 0, max: 1, lo: 0.5, hi: 1, value: c.lexicalDiversity }} hint="lexical diversity" />
+        <MetricStat label="Ownership (I vs we)" value={`${Math.round(c.firstPersonRatio * 100)}`} unit="%" tone={c.firstPersonRatio >= 0.6 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 60, hi: 100, value: c.firstPersonRatio * 100 }} hint="firstPersonRatio" />
+        <MetricStat label="Word variety" value={`${c.lexicalDiversity.toFixed(2)}`} tone={c.lexicalDiversity >= 0.5 ? "good" : "warn"} meter={{ min: 0, max: 1, lo: 0.5, hi: 1, value: c.lexicalDiversity }} hint="lexicalDiversity" />
         <MetricStat label="Median latency" value={`${(c.medianLatencyMs / 1000).toFixed(1)}`} unit="s" tone={c.medianLatencyMs <= 2200 ? "good" : "warn"} meter={{ min: 0, max: 5, lo: 0, hi: 2.2, value: c.medianLatencyMs / 1000, lowerBetter: true }} hint="think-time" />
         <MetricStat label="Self-corrections / min" value={`${c.selfCorrectionRate.toFixed(1)}`} tone={c.selfCorrectionRate <= 1.5 ? "good" : "warn"} meter={{ min: 0, max: 4, lo: 0, hi: 1.5, value: c.selfCorrectionRate, lowerBetter: true }} hint="“actually, scratch that”" />
         <MetricStat label="Energy" value={`${c.energy}`} unit="/100" tone={c.energy >= 70 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 70, hi: 100, value: c.energy }} hint="vocal dynamism" />
@@ -429,7 +412,7 @@ export function DeliveryPanel({ d, narrow }: { d: Fixture; narrow: boolean }) {
   );
 }
 
-/* Interviewer attention timeline — derived from per-answer thought states. */
+/* Interviewer attention timeline — report_json.thoughtBubble[]. */
 const ATTN_META: Record<Attention["state"], { color: string; label: string }> = {
   tracking: { color: t.success, label: "Tracking" },
   impressed: { color: t.success, label: "Impressed" },
@@ -443,7 +426,7 @@ export function AttentionTimeline({ d }: { d: Fixture }) {
   if (d.attention.length === 0) {
     return (
       <Card as="section">
-        <Eyebrow as="h2" tone="indigo">Interviewer attention</Eyebrow>
+        <Eyebrow as="h2" tone="indigo">Interviewer attention · thoughtBubble</Eyebrow>
         <div style={{ marginTop: 12 }}><EmptyState title="No attention read yet" need="The interviewer-attention model needs one full voice session to populate." /></div>
       </Card>
     );
@@ -452,7 +435,7 @@ export function AttentionTimeline({ d }: { d: Fixture }) {
     <Card as="section">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div>
-          <Eyebrow as="h2" tone="indigo">Interviewer attention</Eyebrow>
+          <Eyebrow as="h2" tone="indigo">Interviewer attention · thoughtBubble</Eyebrow>
           <Title as="h3" size={20}>Where you held the room, where you lost it</Title>
         </div>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>last session, by answer progress</span>
@@ -479,7 +462,6 @@ export function AttentionTimeline({ d }: { d: Fixture }) {
 }
 
 export function CulturalRegister({ d }: { d: Fixture }) {
-  if (!d.cultural.length) return null;
   return (
     <Card as="section">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
@@ -524,7 +506,7 @@ export function AnswerCraft({ d, narrow }: { d: Fixture; narrow: boolean }) {
   return (
     <div id="zone-craft" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.3fr 1fr", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
-        <Eyebrow as="h2">Answer craft · per-question verdicts</Eyebrow>
+        <Eyebrow as="h2">Answer craft · perQuestion verdicts</Eyebrow>
         <Title as="h3" size={20}>Quality across every answer</Title>
         <div style={{ marginTop: 16 }}><StackBar segments={vSeg} label="Answer verdict distribution" /></div>
         <div style={{ marginTop: 18 }}>
@@ -541,28 +523,26 @@ export function AnswerCraft({ d, narrow }: { d: Fixture; narrow: boolean }) {
             ))}
           </div>
         </div>
-        {ac.weakAnswers.length > 0 && (
-          <div style={{ marginTop: 18, borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-              <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>Your weakest answers, in your words</span>
-              <DisclosureBtn open={open} onClick={() => setOpen((v) => !v)} label="Show evidence" />
-            </div>
-            {open && (
-              <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-                {ac.weakAnswers.map((w, i) => (
-                  <li key={i} className="rix-evi" style={{ padding: "10px 12px", borderRadius: 10 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
-                      <span style={{ fontFamily: f.mono, fontSize: 9.5, fontWeight: 600, textTransform: "uppercase", color: t.error, background: t.error100, padding: "2px 6px", borderRadius: 5 }}>{w.verdict}</span>
-                      <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{w.question}</span>
-                    </div>
-                    {w.quote && <EvidenceQuote quote={w.quote} />}
-                    <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.copper, marginTop: 6 }}>Fix · {w.fix}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
+        <div style={{ marginTop: 18, borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+            <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>Your weakest answers, in your words</span>
+            <DisclosureBtn open={open} onClick={() => setOpen((v) => !v)} label="Show evidence" />
           </div>
-        )}
+          {open && (
+            <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+              {ac.weakAnswers.map((w, i) => (
+                <li key={i} className="rix-evi" style={{ padding: "10px 12px", borderRadius: 10 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+                    <span style={{ fontFamily: f.mono, fontSize: 9.5, fontWeight: 600, textTransform: "uppercase", color: t.error, background: t.error100, padding: "2px 6px", borderRadius: 5 }}>{w.verdict}</span>
+                    <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{w.question}</span>
+                  </div>
+                  <EvidenceQuote quote={w.quote} />
+                  <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.copper, marginTop: 6 }}>Fix · {w.fix}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </Card>
       <Card as="section" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div>
@@ -570,8 +550,8 @@ export function AnswerCraft({ d, narrow }: { d: Fixture; narrow: boolean }) {
           <Title as="h3" size={20}>Numbers and ownership</Title>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1 }}><MetricStat label="Quantified answers" value={`${ac.quantifiedPct}`} unit="%" tone={ac.quantifiedPct >= 60 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 60, hi: 100, value: ac.quantifiedPct }} hint="answers with a metric" /></div>
-          <div style={{ flex: 1 }}><MetricStat label="Clear ownership" value={`${ac.ownershipPct}`} unit="%" tone={ac.ownershipPct >= 65 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 65, hi: 100, value: ac.ownershipPct }} hint="“I” vs we-heavy" /></div>
+          <div style={{ flex: 1 }}><MetricStat label="Quantified answers" value={`${ac.quantifiedPct}`} unit="%" tone={ac.quantifiedPct >= 60 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 60, hi: 100, value: ac.quantifiedPct }} hint="starPresence.hasMetrics" /></div>
+          <div style={{ flex: 1 }}><MetricStat label="Clear ownership" value={`${ac.ownershipPct}`} unit="%" tone={ac.ownershipPct >= 65 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 65, hi: 100, value: ac.ownershipPct }} hint="“I” vs weHeavy" /></div>
         </div>
         <p style={{ margin: 0, padding: "10px 14px", background: t.indigo100, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, lineHeight: 1.5 }}>
           {ac.quantifiedPct < 60
@@ -593,7 +573,7 @@ export function FocusMetrics({ d, narrow }: { d: Fixture; narrow: boolean }) {
           <Eyebrow as="h2" tone="copper">Signature metrics · by interview type</Eyebrow>
           <Title as="h3" size={20}>The numbers that define quality in each round</Title>
         </div>
-        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>pinned per type</span>
+        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>focusMetrics[] · pinned per type</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(2, 1fr)", gap: 12 }}>
         {d.focusMetrics.map((fm) => (
@@ -615,7 +595,7 @@ export function FocusMetrics({ d, narrow }: { d: Fixture; narrow: boolean }) {
             </div>
           </div>
         ))}
-        {d.coverage.focusTotal - d.coverage.focusDone > 0 && (
+        {d.coverage.focusTotal - d.focusMetrics.length > 0 && (
           <div style={{ gridColumn: narrow ? "auto" : "1 / -1" }}>
             <EmptyState title={`${d.coverage.focusTotal - d.coverage.focusDone} round types not yet practiced`} need="Each unpracticed type unlocks its own signature metrics once you run one session." />
           </div>
@@ -637,49 +617,41 @@ export function PatternsOverTime({ d, narrow }: { d: Fixture; narrow: boolean })
   return (
     <div id="zone-patterns" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.4fr 1fr", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
-        <Eyebrow as="h2" tone="indigo">Patterns over time · across sessions</Eyebrow>
+        <Eyebrow as="h2" tone="indigo">Patterns over time · crossSessionInsights</Eyebrow>
         <Title as="h3" size={20}>What's moving, session to session</Title>
-        {d.crossSession.length ? (
-          <ul style={{ listStyle: "none", margin: "16px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-            {d.crossSession.map((ci, i) => {
-              const k = KIND_META[ci.kind];
-              return (
-                <li key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <span aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 12, color: k.color, marginTop: 2, width: 14, flexShrink: 0 }}>{k.glyph}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
-                      <span style={{ fontFamily: f.mono, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: k.color }}>{k.label}</span>
-                      <span style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.coal }}>{ci.metric}</span>
-                      {typeof ci.delta === "number" && <DeltaTag value={ci.delta} />}
-                    </div>
-                    <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2, lineHeight: 1.45 }}>{ci.text}</div>
+        <ul style={{ listStyle: "none", margin: "16px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+          {d.crossSession.map((ci, i) => {
+            const k = KIND_META[ci.kind];
+            return (
+              <li key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <span aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 12, color: k.color, marginTop: 2, width: 14, flexShrink: 0 }}>{k.glyph}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+                    <span style={{ fontFamily: f.mono, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: k.color }}>{k.label}</span>
+                    <span style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.coal }}>{ci.metric}</span>
+                    {typeof ci.delta === "number" && <DeltaTag value={ci.delta} />}
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <div style={{ marginTop: 16 }}><EmptyState title="No cross-session patterns yet" need="Complete a few more sessions and recurring trends in your delivery and craft appear here." /></div>
-        )}
+                  <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2, lineHeight: 1.45 }}>{ci.text}</div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </Card>
       <Card as="section">
-        <Eyebrow as="h2" tone="copper">Story reuse</Eyebrow>
+        <Eyebrow as="h2" tone="copper">Story reuse · storyReuseFindings</Eyebrow>
         <Title as="h3" size={20}>Is your portfolio thin?</Title>
-        {d.storyReuse.length ? (
-          <ul style={{ listStyle: "none", margin: "16px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-            {d.storyReuse.map((s) => (
-              <li key={s.label} style={{ padding: "12px 14px", background: t.creamSoft, borderRadius: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                  <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>“{s.label}”</span>
-                  <span style={{ fontFamily: f.mono, fontSize: 11, color: t.copper, background: t.copperSoft, padding: "2px 8px", borderRadius: 999 }}>{s.count}× reused</span>
-                </div>
-                <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 6, lineHeight: 1.45 }}>{s.concern}</div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div style={{ marginTop: 16 }}><EmptyState title="No over-used stories" need="You are drawing on a healthy spread of examples. Keep it varied." /></div>
-        )}
+        <ul style={{ listStyle: "none", margin: "16px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+          {d.storyReuse.map((s) => (
+            <li key={s.label} style={{ padding: "12px 14px", background: t.creamSoft, borderRadius: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>“{s.label}”</span>
+                <span style={{ fontFamily: f.mono, fontSize: 11, color: t.copper, background: t.copperSoft, padding: "2px 8px", borderRadius: 999 }}>{s.count}× reused</span>
+              </div>
+              <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 6, lineHeight: 1.45 }}>{s.concern}</div>
+            </li>
+          ))}
+        </ul>
       </Card>
     </div>
   );
@@ -702,13 +674,13 @@ function FlagRow({ flag }: { flag: TypedFlag }) {
         </span>
         <span style={{ display: "inline-flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
           <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{flag.hits}/{flag.of}</span>
-          {flag.quote && <DisclosureBtn open={open} onClick={() => setOpen((v) => !v)} label="Evidence" />}
+          <DisclosureBtn open={open} onClick={() => setOpen((v) => !v)} label="Evidence" />
         </span>
       </div>
       <div role="img" aria-label={`${flag.title}: ${flag.hits} of ${flag.of} sessions, ${sev.label} severity`} style={{ height: 6, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
         <div style={{ width: `${(flag.hits / flag.of) * 100}%`, height: "100%", background: sev.color, borderRadius: 999, opacity: 0.82 }} />
       </div>
-      {open && flag.quote && <EvidenceQuote quote={flag.quote} />}
+      {open && <EvidenceQuote quote={flag.quote} />}
     </div>
   );
 }
@@ -724,46 +696,35 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
           </div>
           <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>spaced-repetition</span>
         </div>
-        {d.refresh.length ? (
-          <ul style={{ marginTop: 16, marginBottom: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
-            {d.refresh.map((r) => (
-              <li key={r.skill} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: t.creamSoft, borderRadius: 10 }}>
-                <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: r.decay <= -5 ? t.error : t.copper, flexShrink: 0 }} />
-                <span style={{ flex: 1, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
-                <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{r.days}d idle</span>
-                <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
-                <button type="button" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
-                  style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Refresh</button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div style={{ marginTop: 16 }}><EmptyState title="Everything is fresh" need="No skill has gone past its decay window. Keep your cadence steady to hold it." /></div>
-        )}
+        <ul style={{ marginTop: 16, marginBottom: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+          {d.refresh.map((r) => (
+            <li key={r.skill} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: t.creamSoft, borderRadius: 10 }}>
+              <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: r.decay <= -5 ? t.error : t.copper, flexShrink: 0 }} />
+              <span style={{ flex: 1, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
+              <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{r.days}d idle</span>
+              <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
+              <button type="button" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
+                style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${t.copperLine}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Refresh</button>
+            </li>
+          ))}
+        </ul>
       </Card>
       <Card as="section">
-        <Eyebrow as="h2" tone="ink">Recurring red flags</Eyebrow>
+        <Eyebrow as="h2" tone="ink">Recurring red flags · typed</Eyebrow>
         <Title as="h3" size={20}>Rejection-grade patterns</Title>
-        {d.redFlags.length ? (
-          <>
-            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-              {d.redFlags.map((flag) => <FlagRow key={flag.title} flag={flag} />)}
-            </div>
-            <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: t.indigo100, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep }}>
-              Clearing the top flag is your fastest RI gain: it shows up in {d.redFlags[0].hits} of your last {d.redFlags[0].of} sessions.
-            </p>
-          </>
-        ) : (
-          <div style={{ marginTop: 16 }}><EmptyState title="No recurring red flags" need="Nothing rejection-grade is repeating across your sessions. Keep it that way." /></div>
-        )}
+        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+          {d.redFlags.map((flag) => <FlagRow key={flag.title} flag={flag} />)}
+        </div>
+        <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: t.indigo100, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep }}>
+          Clearing the top flag is worth an estimated <strong>+4 RI</strong>: it shows up in {d.redFlags[0].hits} of your last {d.redFlags[0].of} sessions.
+        </p>
       </Card>
     </div>
   );
 }
 
-/* Likely follow-ups — aggregated to a prep list. */
+/* Likely follow-ups — perQuestion[].likelyFollowUp aggregated to a prep list. */
 export function FollowUpPrep({ d }: { d: Fixture }) {
-  if (!d.followUps.length) return null;
   return (
     <Card as="section">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
@@ -782,7 +743,7 @@ export function FollowUpPrep({ d }: { d: Fixture }) {
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 3 }}>Why you · {q.why}</div>
             </div>
             <button type="button" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
-              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Drill</button>
+              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${t.copperLine}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Drill</button>
           </li>
         ))}
       </ol>
@@ -800,13 +761,13 @@ export function ClosingAndResume({ d, narrow }: { d: Fixture; narrow: boolean })
     { label: "Neutral", n: rv.yellow, color: t.warning },
     { label: "Risky", n: rv.red, color: t.error },
   ];
-  const vColor = rv.verdict === "strong" ? t.success : rv.verdict === "weak" || rv.verdict === "red flags" ? t.error : t.warning;
+  const vColor = rv.verdict === "strong" ? t.success : rv.verdict === "weak" || rv.verdict === "red_flag" ? t.error : t.warning;
   return (
     <div id="zone-closing" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, marginBottom: 14 }}>
           <div>
-            <Eyebrow as="h2" tone="indigo">Closing turn · your questions back</Eyebrow>
+            <Eyebrow as="h2" tone="indigo">Closing turn · reverseInterview</Eyebrow>
             <Title as="h3" size={20}>The questions you ask back</Title>
           </div>
           <span style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: vColor, textTransform: "capitalize" }}>{rv.verdict}</span>
@@ -827,52 +788,42 @@ export function ClosingAndResume({ d, narrow }: { d: Fixture; narrow: boolean })
             : "Your closing questions engage the role itself. Keep asking about success in 90 days and team structure."}
         </p>
       </Card>
-      {d.resume ? (
-        <Card as="section">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
-            <div>
-              <Eyebrow as="h2" tone="copper">Resume grounding</Eyebrow>
-              <Title as="h3" size={20}>Answers anchored in your resume</Title>
-            </div>
-            {d.resume.trend.length > 1 && <Spark points={d.resume.trend} color={t.copper} />}
+      <Card as="section">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div>
+            <Eyebrow as="h2" tone="copper">Resume grounding · resumeGrounding.score</Eyebrow>
+            <Title as="h3" size={20}>Answers anchored in your resume</Title>
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontFamily: f.serif, fontSize: 44, lineHeight: 1, color: scoreColor(d.resume.score) }}>{d.resume.score}</span>
-            <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>/ 100</span>
-          </div>
-          <div role="img" aria-label={`Resume grounding ${d.resume.score} of 100`} style={{ height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden", marginTop: 10 }}>
-            <div style={{ width: `${d.resume.score}%`, height: "100%", background: scoreColor(d.resume.score), borderRadius: 999 }} />
-          </div>
-          <p style={{ margin: "12px 0 0", fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>{d.resume.rationale}</p>
-        </Card>
-      ) : (
-        <Card as="section">
-          <Eyebrow as="h2" tone="copper">Resume grounding</Eyebrow>
-          <Title as="h3" size={20}>Answers anchored in your resume</Title>
-          <div style={{ marginTop: 14 }}><EmptyState title="No resume-grounding read yet" need="Add your resume and run a session so we can score how well your answers cite it." /></div>
-        </Card>
-      )}
+          <Spark points={d.resume.trend} color={t.copper} />
+        </div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <span style={{ fontFamily: f.serif, fontSize: 44, lineHeight: 1, color: scoreColor(d.resume.score) }}>{d.resume.score}</span>
+          <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>/ 100</span>
+        </div>
+        <div role="img" aria-label={`Resume grounding ${d.resume.score} of 100`} style={{ height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden", marginTop: 10 }}>
+          <div style={{ width: `${d.resume.score}%`, height: "100%", background: scoreColor(d.resume.score), borderRadius: 999 }} />
+        </div>
+        <p style={{ margin: "12px 0 0", fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>{d.resume.rationale}</p>
+      </Card>
     </div>
   );
 }
 
-/* Coaching strength + gap. */
+/* Coaching strength + gap — report_json.coaching. */
 export function Coaching({ d, narrow }: { d: Fixture; narrow: boolean }) {
-  if (!d.coaching) return null;
-  const co = d.coaching;
   return (
     <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: 16 }}>
-      <Card as="section" style={{ background: t.success100, border: `1px solid ${SUCCESS_LINE}` }}>
+      <Card as="section" style={{ background: t.success100, border: `1px solid ${t.successLine}` }}>
         <Eyebrow as="h2" tone="ink"><span style={{ color: t.success }}>Your edge</span></Eyebrow>
-        <Title as="h3" size={20}>{co.strength.headline}</Title>
-        <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.55 }}>{co.strength.meaning}</p>
+        <Title as="h3" size={20}>{d.coaching.strength.headline}</Title>
+        <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.55 }}>{d.coaching.strength.meaning}</p>
       </Card>
-      <Card as="section" style={{ background: t.copperSoft, border: `1px solid ${COPPER_LINE}` }}>
+      <Card as="section" style={{ background: t.copperSoft, border: `1px solid ${t.copperLine}` }}>
         <Eyebrow as="h2" tone="ink"><span style={{ color: t.copper }}>Your one gap</span></Eyebrow>
-        <Title as="h3" size={20}>{co.gap.headline}</Title>
-        <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.55 }}>{co.gap.meaning}</p>
+        <Title as="h3" size={20}>{d.coaching.gap.headline}</Title>
+        <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.55 }}>{d.coaching.gap.meaning}</p>
         <div style={{ marginTop: 10, padding: "10px 12px", background: t.white, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>
-          <span style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, textTransform: "uppercase", letterSpacing: 0.4 }}>Try this</span><br />{co.gap.example}
+          <span style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, textTransform: "uppercase", letterSpacing: 0.4 }}>Try this</span><br />{d.coaching.gap.example}
         </div>
       </Card>
     </div>
@@ -882,14 +833,13 @@ export function Coaching({ d, narrow }: { d: Fixture; narrow: boolean }) {
 /* ── Zone 9 — negotiation ──────────────────────────────────────── */
 
 export function NegotiationCard({ d, narrow }: { d: Fixture; narrow: boolean }) {
-  if (!d.negotiation) return null;
   const n = d.negotiation;
   const oColor = n.outcome === "accepted" ? t.success : n.outcome === "walked-away" || n.outcome === "stalemate" ? t.warning : t.inkSoft;
   return (
     <Card as="section" id="zone-negotiation" style={{ scrollMarginTop: 88 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <div>
-          <Eyebrow as="h2" tone="indigo">Salary negotiation</Eyebrow>
+          <Eyebrow as="h2" tone="indigo">Salary negotiation · kernel</Eyebrow>
           <Title as="h3" size={20}>Your negotiation behaviour</Title>
         </div>
         <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}>
@@ -898,7 +848,7 @@ export function NegotiationCard({ d, narrow }: { d: Fixture; narrow: boolean }) 
         </span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
-        <MetricStat label="Outcome" value={n.outcome === "walked-away" ? "Walked" : n.outcome.charAt(0).toUpperCase() + n.outcome.slice(1)} tone={n.outcome === "accepted" ? "good" : "warn"} />
+        <MetricStat label="Outcome" value={n.outcome === "walked-away" ? "Walked" : n.outcome[0].toUpperCase() + n.outcome.slice(1)} tone={n.outcome === "accepted" ? "good" : "warn"} />
         <MetricStat label="Anchored at turn" value={`${n.anchorTurn}`} tone={n.anchorTurn <= 1 ? "good" : "warn"} hint="earlier is stronger" />
         <MetricStat label="Band traversed" value={`${n.bandTraversalPct}`} unit="%" tone={n.bandTraversalPct >= 60 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 60, hi: 100, value: n.bandTraversalPct }} hint="of negotiable band" />
         <MetricStat label="Levers used" value={`${n.leverDiversity}`} unit="/ 8" tone={n.leverDiversity >= 4 ? "good" : "warn"} meter={{ min: 0, max: 8, lo: 4, hi: 8, value: n.leverDiversity }} />
@@ -945,7 +895,7 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
               <React.Fragment key={r}>
                 <span aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 8, color: t.inkFaint, lineHeight: "14px" }}>{dy}</span>
                 {Array.from({ length: d.cadence.weeks }).map((_, w) => {
-                  const v = Math.min(3, d.cadence.heat[w * 7 + r] ?? 0);
+                  const v = d.cadence.heat[w * 7 + r] ?? 0;
                   return <span key={w} style={{ width: 14, height: 14, borderRadius: 4, background: HEAT[v] }} />;
                 })}
               </React.Fragment>
@@ -975,14 +925,14 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
             {diff.hard > 0 && <div style={{ width: `${(diff.hard / diffTotal) * 100}%`, background: t.indigo }} />}
           </div>
           <ul style={{ listStyle: "none", margin: "10px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-            {([["Warmup", diff.warmup, "rgba(49,46,129,0.30)"], ["Standard", diff.standard, "rgba(49,46,129,0.58)"], ["Hard", diff.hard, t.indigo]] as [string, number, string][]).map(([label, n, col]) => (
-              <li key={label} style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, display: "flex", justifyContent: "space-between" }}>
-                <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 3, background: col }} />{label}</span>
-                <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 11.5 }}>{n}</strong>
+            {[["Warmup", diff.warmup, "rgba(49,46,129,0.30)"], ["Standard", diff.standard, "rgba(49,46,129,0.58)"], ["Hard", diff.hard, t.indigo]].map(([label, n, c]) => (
+              <li key={label as string} style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, display: "flex", justifyContent: "space-between" }}>
+                <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 3, background: c as string }} />{label}</span>
+                <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 11.5 }}>{n as number}</strong>
               </li>
             ))}
           </ul>
-          {diff.hard === 0 && d.cadence.totalSessions > 0 && <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 11.5, color: t.warning }}>No hard sessions yet. The loop will be hard; practice at that level.</p>}
+          {diff.hard === 0 && <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 11.5, color: t.warning }}>No hard sessions yet. The loop will be hard; practice at that level.</p>}
         </div>
       </div>
     </Card>

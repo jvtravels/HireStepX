@@ -1,24 +1,18 @@
-/* HireStepX — Readiness Index analytics / shared UI atoms + charts.
-   Pure-view primitives. No fixtures, no state. Imported by sections.tsx
-   and ReadinessIndex.tsx. Ported from the design canvas; retokened to the
-   canonical brand source (src/auth/_tokens). */
+/* HireStepX — Readiness Index analytics / shared UI atoms + charts
+   Pure-view primitives. No fixtures, no state. Imported by _sections
+   and by ReadinessIndex. */
 
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
-import type { Band, HireBand, Tone, Meter, Skill } from "./types";
+import { tokens as t, fonts as f, shadows } from "../design-system/_tokens";
+import type { Band, HireBand, Tone, Meter, Skill } from "./_data";
 
-/* Alpha-border siblings of the status/brand colors, for borders on tinted
-   strips. The canonical token map carries the solid colors; these low-alpha
-   line variants live here until they earn a place in the shared scale. */
-export const ERROR_LINE = "rgba(185, 28, 28, 0.22)";
-export const COPPER_LINE = "rgba(180, 83, 9, 0.20)";
-export const SUCCESS_LINE = "rgba(21, 128, 61, 0.20)";
+export const ERROR_LINE = "rgba(185, 28, 28, 0.22)"; // alpha sibling of t.error; promote to _tokens later
 
 export const SHEET = `
   .rix-btn { transition: background 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(.16,1,.3,1), color 160ms ease; }
   .rix-cta:hover  { background: ${t.indigoDeep}; transform: translateY(-1px); }
   .rix-cta:active { transform: translateY(0); }
-  .rix-ghost:hover { background: rgba(180,83,9,0.06); border-color: ${COPPER_LINE}; }
+  .rix-ghost:hover { background: rgba(180,83,9,0.06); border-color: ${t.copperLine}; }
   .rix-seg:hover  { background: ${t.creamSoft}; }
   .rix-pillar { transition: box-shadow 200ms cubic-bezier(.16,1,.3,1), transform 200ms cubic-bezier(.16,1,.3,1); }
   .rix-pillar:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(20,17,10,.04), 0 18px 40px -22px rgba(20,17,10,.22); }
@@ -86,7 +80,7 @@ export function Title({ children, as: As = "h3", size = 20 }: { children: React.
 
 export function Card({ children, pad = 22, style, className, as: As = "div", id }: { children: React.ReactNode; pad?: number; style?: React.CSSProperties; className?: string; as?: "div" | "section" | "article"; id?: string }) {
   return (
-    <As id={id} className={className} style={{ background: t.white, borderRadius: 16, padding: pad, boxShadow: shadows.card, ...style }}>
+    <As id={id} className={className} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: pad, boxShadow: shadows.card, ...style }}>
       {children}
     </As>
   );
@@ -254,7 +248,7 @@ export function StarChips({ star }: { star: { S: boolean; T: boolean; A: boolean
             position: "relative", width: 28, height: 28, borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center",
             fontFamily: f.mono, fontSize: 12, fontWeight: 600,
             background: ok ? t.success100 : t.error100, color: ok ? t.success : t.error,
-            border: `1px solid ${ok ? SUCCESS_LINE : ERROR_LINE}`, textDecoration: ok ? "none" : "line-through",
+            border: `1px solid ${ok ? t.successLine : ERROR_LINE}`, textDecoration: ok ? "none" : "line-through",
           }}>
           {k}
           <span aria-hidden="true" style={{ position: "absolute", right: -3, bottom: -3, fontSize: 11, lineHeight: 1 }}>{ok ? "✓" : "✗"}</span>
