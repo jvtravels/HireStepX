@@ -193,7 +193,7 @@ export function renderReportHtml(report: AggregateReport): string {
   const realRows = realMatchCandidates.length === 0
     ? `<p style="color:#7B756A;font-style:italic;">No questions reached the 2+ "matched my real interview" threshold this week.</p>`
     : realMatchCandidates.map(c => `
-        <div style="border-left:3px solid #B45309;padding:8px 12px;margin:8px 0;background:rgba(180,83,9,0.06);">
+        <div style="border:1px solid rgba(180,83,9,0.25);border-radius:8px;padding:10px 14px;margin:8px 0;background:rgba(180,83,9,0.06);">
           <div style="font-size:14px;color:#0E0C08;line-height:1.45;">${escapeHtml(c.questionText)}</div>
           <div style="margin-top:4px;${monoSpan}">${escapeHtml(c.company || "any")} · ${escapeHtml(c.role || "any")} · ${escapeHtml(c.focus || "any")} · ${c.realCount}× confirmed</div>
         </div>`).join("");
@@ -209,7 +209,7 @@ export function renderReportHtml(report: AggregateReport): string {
     ${worstRows}
 
     <h2 style="${sectionH}">"Matched my real interview" candidates</h2>
-    <p style="font-size:13px;color:#5A554C;margin:0 0 12px;">Questions ≥2 users said matched their actual recent interview. Highest-value additions for the curated bank — review and add to data/interview-question-bank.ts.</p>
+    <p style="font-size:13px;color:#5A554C;margin:0 0 12px;">Questions ≥2 users said matched their actual recent interview. Highest-value additions for the curated bank: review and add to data/interview-question-bank.ts.</p>
     ${realRows}
 
     <p style="margin-top:32px;font-size:11px;color:#9D9789;border-top:1px solid rgba(20,17,10,0.06);padding-top:16px;">
