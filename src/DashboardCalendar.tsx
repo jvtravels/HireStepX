@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { c, font, shadow } from "./tokens";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
-import { listEvents, saveEvent, deleteEvent, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
+import { listEvents, saveEvent, deleteEvent, generatePrepRunway, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
 import {
   type InterviewEvent, loadEvents, saveEvents, generateEventId,
   daysUntilEvent, formatEventDate, formatEventTime,
@@ -231,6 +231,18 @@ export default function CalendarPage() {
     setShowForm(true);
   };
 
+  // Fire-and-forget: ask the server to build the prep-session countdown for a
+  // freshly logged interview, then merge the returned sessions into state.
+  const schedulePrepRunway = async (parentId: string, base: InterviewEvent[]) => {
+    const res = await generatePrepRunway(parentId);
+    if (!res.ok || res.events.length === 0) return;
+    const prep = res.events.map(rowToEvent);
+    const known = new Set(base.map(e => e.id));
+    const merged = [...base, ...prep.filter(p => !known.has(p.id))];
+    updateEvents(merged);
+    if (!res.alreadyGenerated) showToast(`Prep Runway scheduled. ${prep.length} sessions added.`);
+  };
+
   const handleSave = async () => {
     if (!formTitle || !formDate || !formTime) {
       setFormError(!formTitle ? "Event title is required." : !formDate ? "Date is required." : "Time is required.");
@@ -271,7 +283,13 @@ export default function CalendarPage() {
     if (res.ok && res.event) {
       const saved = rowToEvent(res.event);
       // Reconcile by the id we edited (server may have minted a fresh UUID).
-      updateEvents(editingId ? events.map(e => (e.id === editingId ? saved : e)) : [...events, saved]);
+      const base = editingId ? events.map(e => (e.id === editingId ? saved : e)) : [...events, saved];
+      updateEvents(base);
+      // Logging a brand-new real interview auto-schedules its Prep Runway: an
+      // adaptive countdown of mock sessions the server derives and persists.
+      if (!editingId && saved.status === "upcoming") {
+        void schedulePrepRunway(saved.id, base);
+      }
     } else if (res.error && res.status === 403) {
       // Pro gate at the data layer — surface the upgrade path.
       setFormError(res.error);

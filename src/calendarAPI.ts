@@ -98,3 +98,26 @@ export async function deleteEvent(
   const res = await apiFetch<{ ok: boolean }>("/api/calendar/delete", { id }, { signal });
   return { ok: res.ok, status: res.status, error: res.error };
 }
+
+/**
+ * Auto-schedule the Prep Runway countdown for a logged interview. Idempotent:
+ * a second call returns the already-scheduled sessions (alreadyGenerated:true)
+ * instead of duplicating them. The server derives the ladder and persists it.
+ */
+export async function generatePrepRunway(
+  parentId: string,
+  signal?: AbortSignal,
+): Promise<{ ok: boolean; events: CalendarEventRow[]; alreadyGenerated: boolean; status: number; error: string | null }> {
+  const res = await apiFetch<{ ok: boolean; events: CalendarEventRow[]; alreadyGenerated?: boolean }>(
+    "/api/calendar/prep-runway",
+    { parentId },
+    { signal },
+  );
+  return {
+    ok: res.ok,
+    events: res.data?.events ?? [],
+    alreadyGenerated: !!res.data?.alreadyGenerated,
+    status: res.status,
+    error: res.error,
+  };
+}
