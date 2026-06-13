@@ -81,7 +81,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "HireStepX",
     // Absolute path — Next's Metadata API accepts string | string[] here.
     // We reuse the 192 SVG; iOS rasterises from the device's preferred size.
@@ -98,7 +98,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#050506",
+  themeColor: "#FAF7F0",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,   // Allow pinch-zoom up to 5x (WCAG 2.1 SC 1.4.4)
@@ -253,7 +253,7 @@ export default function RootLayout({
           />
         ))}
       </head>
-      <body className="bg-[#060607] text-[#F5F2ED]">
+      <body className="bg-[#FAF7F0] text-[#0E0C08]">
         {/* Route change announcer for screen readers */}
         <div
           id="route-announcer"

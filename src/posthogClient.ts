@@ -22,7 +22,20 @@ export async function initPostHog(): Promise<PostHog | null> {
   if (_initPromise) return _initPromise;
 
   const key = (process.env.NEXT_PUBLIC_POSTHOG_KEY || "").trim();
-  if (!key) return null;
+  if (!key) {
+    // Silent no-op in production by design (analytics must never break the
+    // UI), but a missing key means ZERO events reach PostHog — an entirely
+    // invisible failure unless surfaced. Warn on non-production builds so a
+    // misconfigured preview/local env is caught before it ships. If you see
+    // this in a deployed environment, NEXT_PUBLIC_POSTHOG_KEY is unset in
+    // that Vercel environment's variables.
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        "[posthog] NEXT_PUBLIC_POSTHOG_KEY is not set — analytics disabled, no events will be captured.",
+      );
+    }
+    return null;
+  }
 
   _initPromise = (async () => {
     try {

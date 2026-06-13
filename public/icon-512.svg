@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-    <rect width="512" height="512" rx="80" fill="#060607"/>
-    <rect x="16" y="16" width="480" height="480" rx="72" fill="#060607" stroke="#D4B37F" stroke-width="3" stroke-opacity="0.3"/>
-    <text x="256" y="300" text-anchor="middle" font-family="Georgia, serif" font-size="240" font-weight="400" fill="#D4B37F">H</text>
-    <text x="256" y="380" text-anchor="middle" font-family="system-ui, sans-serif" font-size="40" font-weight="600" letter-spacing="0.15em" fill="#8E8983">STEPX</text>
-  </svg>
+  <rect width="512" height="512" rx="80" fill="#FAF7F0"/>
+  <rect x="14" y="14" width="484" height="484" rx="70" fill="#FAF7F0" stroke="#D6CDB5" stroke-width="2"/>
+  <text x="256" y="300" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="248" font-weight="400" fill="#312E81">H</text>
+  <text x="256" y="382" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="40" font-weight="600" letter-spacing="0.16em" fill="#B45309">STEPX</text>
+</svg>

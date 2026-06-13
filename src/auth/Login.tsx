@@ -38,12 +38,13 @@ const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
 const EMAIL_MAX_LENGTH = 254; // RFC 5321 hard ceiling — no real mail server accepts longer
 const PASSWORD_MAX_LENGTH = 128;
 
-// Login lockout — share key with the existing SignUp.tsx so the two
-// surfaces don't diverge on lockout state.
+// Login lockout — AuthContext.login() is the single source of truth for
+// the failed-attempt counter, threshold, and lockout window. This screen
+// only READS the shared lockout timestamp to render the countdown, so the
+// two surfaces can never diverge or double-count attempts. (Previously a
+// second counter lived here and incremented in parallel, locking users out
+// in half the intended attempts.)
 const LOCKOUT_STORAGE_KEY = "hirestepx_login_lockout";
-const FAILED_ATTEMPTS_KEY = "hirestepx_login_failures";
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 5 * 60 * 1000;
 
 function readLockoutSeconds(): number {
   try {
@@ -58,32 +59,6 @@ function readLockoutSeconds(): number {
     /* localStorage may be blocked (incognito, ITP) */
   }
   return 0;
-}
-
-function recordFailedAttempt() {
-  try {
-    const n =
-      parseInt(localStorage.getItem(FAILED_ATTEMPTS_KEY) || "0", 10) + 1;
-    localStorage.setItem(FAILED_ATTEMPTS_KEY, String(n));
-    if (n >= MAX_FAILED_ATTEMPTS) {
-      localStorage.setItem(
-        LOCKOUT_STORAGE_KEY,
-        String(Date.now() + LOCKOUT_DURATION_MS),
-      );
-      localStorage.removeItem(FAILED_ATTEMPTS_KEY);
-    }
-  } catch {
-    /* ignore */
-  }
-}
-
-function clearFailedAttempts() {
-  try {
-    localStorage.removeItem(FAILED_ATTEMPTS_KEY);
-    localStorage.removeItem(LOCKOUT_STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
 }
 
 export default function Login() {
@@ -272,7 +247,9 @@ export default function Login() {
         const result = await login(cleanEmail, password);
         if (!isMounted.current) return;
         if (!result.success) {
-          recordFailedAttempt();
+          // AuthContext.login() has already recorded the failed attempt and
+          // armed the lockout if the threshold was crossed; just refresh the
+          // countdown from the shared key it owns.
           setLockoutSeconds(readLockoutSeconds());
           setError(mapAuthError(result.error));
           trackAuth({
@@ -283,7 +260,8 @@ export default function Login() {
               : "invalid_credentials",
           });
         } else {
-          clearFailedAttempts();
+          // AuthContext.login() clears the shared attempt counter + lockout
+          // on success; nothing to clear here.
           // Record the user's Stay-signed-in preference so AuthContext
           // can enforce the right TTL (30d if checked, 24h if not).
           markSessionStart(staySignedIn);

@@ -239,24 +239,27 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </nav>
 
         {/* Plan Status */}
-        <div style={{ margin: "0 8px 12px", padding: "14px 14px", borderRadius: 10, background: isPro ? "#DCFCE7" : "#F4E5D8", border: `1px solid ${isPro ? "rgba(21,128,61,0.18)" : "#F4E5D8"}`, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <div style={{ margin: "0 8px 12px", padding: "14px 14px 14px", borderRadius: 12, background: isPro ? "rgba(21,128,61,0.07)" : "rgba(180,83,9,0.07)", border: `1px solid ${isPro ? "rgba(21,128,61,0.2)" : "rgba(180,83,9,0.18)"}`, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
             {isPro ? (
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
             ) : isStarter ? (
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             ) : (
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             )}
-            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: isPro ? c.sage : c.gilt }}>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: isPro ? c.sage : c.gilt, letterSpacing: "0.01em" }}>
               {!tierKnown ? "Loading plan…" : isPro ? "Pro Plan" : isStarter ? "Starter Plan" : "Free Plan"}
             </span>
+            {isPro && tierKnown && (
+              <span style={{ marginLeft: "auto", padding: "2px 8px", borderRadius: 20, background: "rgba(21,128,61,0.12)", border: "1px solid rgba(21,128,61,0.22)", fontFamily: font.ui, fontSize: 9, fontWeight: 700, color: c.sage, letterSpacing: "0.07em", textTransform: "uppercase" as const }}>Active</span>
+            )}
           </div>
-          <p style={{ fontFamily: font.ui, fontSize: 11, color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0)) ? c.ember : c.stone, lineHeight: 1.5, marginBottom: user?.subscriptionEnd && !isFree ? 4 : 10, fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1) || (isStarter && starterRemaining <= 2)) ? 600 : 400 }}>
+          <p style={{ fontFamily: font.ui, fontSize: 11, color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0)) ? c.ember : c.stone, lineHeight: 1.4, marginBottom: user?.subscriptionEnd && !isFree ? 3 : 10, fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1) || (isStarter && starterRemaining <= 2)) ? 600 : 400 }}>
             {!tierKnown ? "\u00a0" : isPro ? "Unlimited sessions" : isStarter ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left this week${starterRemaining <= 2 && starterRemaining > 0 ? " — running low!" : ""}` : sessionsRemaining > 0 ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? " — last one!" : ""}` : "No sessions remaining — upgrade to continue"}
           </p>
           {user?.subscriptionEnd && !isFree && (
-            <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, opacity: 0.7, marginBottom: 10 }}>
+            <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, opacity: 0.5, marginBottom: 12 }}>
               Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
             </p>
           )}
@@ -272,7 +275,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           {!tierKnown ? (
             <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
           ) : isPro ? (
-            <button onClick={() => setShowUpgradeModal(true)} style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: `1px solid rgba(21,128,61,0.2)`, background: "#DCFCE7", color: c.sage, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "opacity 0.2s" }}
+            <button onClick={() => setShowUpgradeModal(true)} style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: "none", background: c.sage, color: "#fff", fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.01em", transition: "opacity 0.2s" }}
               onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
               onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
             >Manage Plan</button>
@@ -417,7 +420,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             {/* Quick links */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
               {/* Getting Started */}
-              <Link href="/page/help" style={{ textDecoration: "none" }} onClick={() => setHelpOpen(false)}>
+              <Link href="/how-it-works" style={{ textDecoration: "none" }} onClick={() => setHelpOpen(false)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: c.creamSoft, cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "#F4E5D8"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = c.creamSoft; e.currentTarget.style.borderColor = c.border; }}>

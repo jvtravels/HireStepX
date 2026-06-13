@@ -39,6 +39,7 @@ const ResponsiveSheet = () => (
     @media (max-width: 880px) {
       .mv2-nav-links { display: none !important; }
       .mv2-nav-cta-label { display: none !important; }
+      .mv2-nav-burger { display: inline-flex !important; }
       .mv2-hero-mock-body { grid-template-columns: 1fr !important; }
       .mv2-hero-mock-side { border-left: none !important; border-top: 1px solid var(--mv2-line) !important; }
       .mv2-hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
@@ -301,6 +302,19 @@ export function NavV2() {
     if (href.startsWith("/#")) return false;
     return pathname === href || (href !== "/" && pathname?.startsWith(href));
   };
+
+  // Mobile drawer (≤880px): the desktop link row is hidden by the
+  // responsive sheet, so without this the nav links are unreachable on
+  // phones/tablets. The hamburger only renders ≤880px (CSS); state lives
+  // here so we can close on navigation and on Escape.
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
   return (
     <header role="banner">
       <nav
@@ -429,8 +443,144 @@ export function NavV2() {
                 </a>
               </>
             )}
+
+            <button
+              type="button"
+              className="mv2-nav-burger mv2-tap-44"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              aria-controls="mv2-mobile-menu"
+              onClick={() => setMenuOpen((v) => !v)}
+              style={{
+                display: "none",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 44,
+                height: 44,
+                marginRight: -8,
+                padding: 0,
+                border: "none",
+                background: "transparent",
+                color: t.coal,
+                cursor: "pointer",
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {menuOpen ? (
+                  <>
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M3 6h18" />
+                    <path d="M3 12h18" />
+                    <path d="M3 18h18" />
+                  </>
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+
+        {menuOpen && (
+          <div
+            id="mv2-mobile-menu"
+            style={{
+              borderTop: `1px solid ${t.line}`,
+              background: t.cream,
+              padding: "12px 18px 20px",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {navLinks.map(([label, href]) => {
+                const active = isActive(href);
+                return (
+                  <a
+                    key={label}
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => setMenuOpen(false)}
+                    className="mv2-tap-44"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      fontFamily: fonts.sans,
+                      fontSize: 16,
+                      fontWeight: active ? 600 : 500,
+                      color: active ? t.coal : t.inkSoft,
+                      textDecoration: "none",
+                      padding: "12px 0",
+                      borderBottom: `1px solid ${t.line}`,
+                    }}
+                  >
+                    {label}
+                  </a>
+                );
+              })}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+              {showDashboard ? (
+                <a
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: t.white,
+                    background: t.indigo,
+                    padding: "13px 18px",
+                    borderRadius: 999,
+                    textDecoration: "none",
+                    textAlign: "center",
+                  }}
+                >
+                  Go to dashboard →
+                </a>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      fontFamily: fonts.sans,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: t.coal,
+                      background: t.white,
+                      border: `1px solid ${t.lineStrong}`,
+                      padding: "12px 18px",
+                      borderRadius: 999,
+                      textDecoration: "none",
+                      textAlign: "center",
+                    }}
+                  >
+                    Sign in
+                  </a>
+                  <a
+                    href="/signup"
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      fontFamily: fonts.sans,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: t.white,
+                      background: t.indigo,
+                      padding: "13px 18px",
+                      borderRadius: 999,
+                      textDecoration: "none",
+                      textAlign: "center",
+                    }}
+                  >
+                    Start free →
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
     </header>
   );
