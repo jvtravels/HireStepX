@@ -9,6 +9,7 @@ import {
   escapeHtml,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { emailShell, title, para, link, dataCard, graveEyebrow } from "./_email-theme";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
@@ -207,47 +208,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({
             from: FROM_EMAIL,
             to: [userEmail],
-            subject: "Your HireStepX account has been deleted",
-            html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#060607;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#060607;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F5F2ED;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F5F2ED;">Account Deleted</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Hi ${safeName}, your HireStepX account and all associated data have been permanently removed as requested.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;margin-bottom:24px;">
-            <tr><td style="padding:20px 24px;">
-              <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#D4B37F;">What was removed:</p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr><td style="padding:4px 0;font-size:13px;color:#F5F2ED;">Profile and account credentials</td></tr>
-                <tr><td style="padding:4px 0;font-size:13px;color:#F5F2ED;">Interview sessions and evaluations</td></tr>
-                <tr><td style="padding:4px 0;font-size:13px;color:#F5F2ED;">Payment history and subscription data</td></tr>
-              </table>
-            </td></tr>
-          </table>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Changed your mind? You can create a new account anytime at <a href="${APP_URL}" style="color:#D4B37F;text-decoration:none;">${APP_URL.replace(/^https?:\/\//, "")}</a>.
-          </p>
-          <p style="margin:0;font-size:12px;color:#6A6560;line-height:1.5;text-align:center;">
-            Questions? Contact us at <a href="mailto:support@hirestepx.com" style="color:#D4B37F;text-decoration:none;">support@hirestepx.com</a>
-          </p>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#6A6560;">HireStepX by Silva Vitalis LLC</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+            subject: "Your account has been deleted",
+            html: emailShell({
+              preview: "Your data is gone. Here's exactly what was removed.",
+              body:
+                graveEyebrow("Permanent &middot; Irreversible") +
+                title("Deleted, as requested.") +
+                para(`Hi ${safeName}, your HireStepX account and all associated data have been permanently deleted. This can't be undone, and we keep no backup of your sessions or reports.`) +
+                dataCard("Removed", [
+                  ["Profile & login", "Deleted"],
+                  ["Sessions & evaluations", "Deleted"],
+                  ["Payment & subscription", "Deleted"],
+                ]) +
+                para(`Thank you for giving HireStepX a try. If you ever want to come back, you can start fresh anytime at ${link(APP_URL.replace(/^https?:\/\//, ""), APP_URL)}.`, { muted: true }) +
+                para(`Didn't expect this? Contact us at ${link("support@hirestepx.com", "mailto:support@hirestepx.com")} immediately so we can investigate.`, { small: true, muted: true }),
+            }),
           }),
         });
       } catch (emailErr) {

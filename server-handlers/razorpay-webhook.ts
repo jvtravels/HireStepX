@@ -7,6 +7,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { escapeHtml } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
 
 
 const RAZORPAY_WEBHOOK_SECRET = (process.env.RAZORPAY_WEBHOOK_SECRET || "").trim();
@@ -288,8 +289,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               body: JSON.stringify({
                 from: FROM_EMAIL,
                 to: [profileEmail],
-                subject: `Subscription renewed — ${tier} plan extended`,
-                html: `<p>Hi ${safeName}, your HireStepX <strong>${tier}</strong> plan has been auto-renewed and is active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.</p><p><a href="${APP_URL}/dashboard">Continue Practicing</a></p><p style="margin-top:16px;font-size:11px;color:#6B6560;"><a href="${APP_URL}/dashboard?tab=settings" style="color:#9A9590;">Manage subscription</a> · <a href="${APP_URL}/dashboard?tab=settings" style="color:#9A9590;">Unsubscribe</a></p>`,
+                subject: `${tier} plan renewed`,
+                html: emailShell({
+                  preview: `Auto-renewed and active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
+                  body:
+                    title("Renewed,", { accentWord: "nothing to do." }) +
+                    para(`Hi ${safeName}, your HireStepX ${b(tier)} plan auto-renewed and is active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. Keep practising, your unlimited sessions roll right on.`) +
+                    button("Continue practising", `${APP_URL}/dashboard`),
+                }),
               }),
             });
           } catch (emailErr) { console.error("[webhook] Renewal email failed:", emailErr); }
@@ -334,15 +341,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Send payment-failed notification email (best-effort, non-blocking)
         if (RESEND_API_KEY && profileEmail) {
           const safeName = escapeHtml(profileName || "there");
-          const lostFeatures = previousTier === "pro"
-            ? `<tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">Unlimited sessions</td><td align="right" style="padding:6px 0;font-size:13px;color:#E5534B;">Removed</td></tr>
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">Full AI coaching feedback</td><td align="right" style="padding:6px 0;font-size:13px;color:#E5534B;">Removed</td></tr>
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">Performance analytics</td><td align="right" style="padding:6px 0;font-size:13px;color:#E5534B;">Removed</td></tr>
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">Priority support</td><td align="right" style="padding:6px 0;font-size:13px;color:#E5534B;">Removed</td></tr>`
-            : `<tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">10 sessions per week</td><td align="right" style="padding:6px 0;font-size:13px;color:#E5534B;">Removed</td></tr>
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">All question types</td><td align="right" style="padding:6px 0;font-size:13px;color:#E5534B;">Removed</td></tr>
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">Detailed feedback</td><td align="right" style="padding:6px 0;font-size:13px;color:#E5534B;">Removed</td></tr>
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">Resume analysis</td><td align="right" style="padding:6px 0;font-size:13px;color:#E5534B;">Removed</td></tr>`;
+          const lostRows: [string, string][] = previousTier === "pro"
+            ? [
+                ["Unlimited sessions", "Removed"],
+                ["Full AI coaching feedback", "Removed"],
+                ["Performance analytics", "Removed"],
+                ["Priority support", "Removed"],
+              ]
+            : [
+                ["10 sessions per week", "Removed"],
+                ["All question types", "Removed"],
+                ["Detailed feedback", "Removed"],
+                ["Resume analysis", "Removed"],
+              ];
 
           try {
             await fetch("https://api.resend.com/emails", {
@@ -351,69 +362,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               body: JSON.stringify({
                 from: FROM_EMAIL,
                 to: [profileEmail],
-                subject: "Payment failed — your HireStepX subscription has been paused",
-                html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-
-        <!-- Header -->
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-
-        <!-- Body -->
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#E5534B;">Payment Failed</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Hi ${safeName}, your recent payment attempt was unsuccessful and your subscription has been downgraded to the <strong style="color:#F0EDE8;">free tier</strong>. Your previous <strong style="color:#C9A96E;">${previousTier}</strong> plan benefits have been removed.
-          </p>
-
-          <!-- Lost features card -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;margin-bottom:24px;">
-            <tr><td style="padding:16px 24px 8px;">
-              <p style="margin:0;font-size:12px;font-weight:600;color:#9A9590;text-transform:uppercase;letter-spacing:0.08em;">Features you&rsquo;ve lost</p>
-            </td></tr>
-            <tr><td style="padding:4px 24px 20px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                ${lostFeatures}
-              </table>
-            </td></tr>
-          </table>
-
-          <!-- CTA -->
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 16px;">
-              <a href="${APP_URL}/dashboard?tab=settings" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#C9A96E,#B8923E);color:#0A0A0B;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                Update Payment Method
-              </a>
-            </td></tr>
-          </table>
-
-          <p style="margin:16px 0 0;font-size:13px;color:#9A9590;line-height:1.6;">
-            If you believe this is an error, contact us at <a href="mailto:support@hirestepx.com" style="color:#C9A96E;text-decoration:underline;">support@hirestepx.com</a>.
-          </p>
-        </td></tr>
-
-        <!-- Footer -->
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;">
-          <p style="margin:0;font-size:11px;color:#6B6560;line-height:1.5;">
-            This is an automated notification from HireStepX regarding a failed payment on your account.
-          </p>
-          <p style="margin:8px 0 0;font-size:11px;color:#6B6560;">
-            <a href="${APP_URL}/dashboard?tab=settings" style="color:#9A9590;text-decoration:underline;">Manage subscription</a> · <a href="${APP_URL}/dashboard?tab=settings" style="color:#9A9590;text-decoration:underline;">Update payment</a>
-          </p>
-        </td></tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+                subject: "Payment failed, your plan is paused",
+                html: emailShell({
+                  preview: "Update your payment method to restore your plan.",
+                  body:
+                    title("We couldn't", { accentWord: "renew." }) +
+                    para(`Hi ${safeName}, your recent payment attempt was unsuccessful, so your subscription has been moved to the ${b("free tier")} for now. Your previous ${b(previousTier)} plan benefits have been paused. Your data and history are safe.`) +
+                    dataCard("Features paused", lostRows, { tone: "error" }) +
+                    button("Update payment method", `${APP_URL}/dashboard?tab=settings`) +
+                    para(
+                      `We'll restore everything as soon as your payment goes through. If you believe this is an error, contact us at ${`<a href="mailto:support@hirestepx.com" style="color:#312E81;text-decoration:none;border-bottom:1px solid #312E81;">support@hirestepx.com</a>`}.`,
+                      { small: true, muted: true },
+                    ),
+                }),
               }),
             });
           } catch (emailErr) { console.error("[webhook] Payment-failed email failed:", emailErr); }
@@ -574,8 +535,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({
             from: FROM_EMAIL,
             to: [notes.email],
-            subject: `Payment confirmed — ${tier} plan activated`,
-            html: `<p>Hi ${safeName}, your HireStepX <strong>${tier}</strong> plan is now active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.</p><p><a href="${APP_URL}/dashboard">Start Practicing</a></p><p style="margin-top:16px;font-size:11px;color:#6B6560;"><a href="${APP_URL}/dashboard?tab=settings" style="color:#9A9590;">Manage subscription</a> · <a href="${APP_URL}/dashboard?tab=settings" style="color:#9A9590;">Unsubscribe</a></p>`,
+            subject: `${tier} plan activated`,
+            html: emailShell({
+              preview: `Your ${tier} plan is live until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
+              body:
+                title(`${tier} is`, { accentWord: "live." }) +
+                para(`Hi ${safeName}, your HireStepX ${b(tier)} plan is now active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. We'll renew it automatically so your practice never pauses.`) +
+                button("Start practising", `${APP_URL}/dashboard`),
+            }),
           }),
         });
       } catch (emailErr) { console.error("[webhook] Payment email failed:", emailErr); }

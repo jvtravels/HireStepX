@@ -6,6 +6,16 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, randomBytes } from "crypto";
 import { resolve } from "dns/promises";
 import { isDisposableEmailServer } from "./_disposable-emails";
+import {
+  emailShell,
+  title,
+  para,
+  b,
+  link,
+  button,
+  dataCard,
+  orderedList,
+} from "./_email-theme";
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
@@ -142,6 +152,7 @@ async function handlePasswordChanged(req: VercelRequest, res: VercelResponse, no
   if (!RESEND_API_KEY) return res.status(200).json({ ok: true });
 
   const safeEmail = escapeHtml(normalizedEmail);
+  const whenStr = `${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} at ${new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
   try {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 10_000);
@@ -152,38 +163,21 @@ async function handlePasswordChanged(req: VercelRequest, res: VercelResponse, no
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [normalizedEmail],
-        subject: "Your password was changed — HireStepX",
-        html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F0EDE8;">Password Changed</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            The password for <strong style="color:#F0EDE8;">${safeEmail}</strong> was successfully changed on ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} at ${new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}.
-          </p>
-          <div style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;padding:16px 20px;margin-bottom:24px;">
-            <p style="margin:0;font-size:13px;color:#C4705A;font-weight:600;">⚠️ Didn't make this change?</p>
-            <p style="margin:8px 0 0;font-size:13px;color:#9A9590;line-height:1.5;">
-              If you didn't reset your password, someone may have access to your account. Please <a href="${APP_URL}/login" style="color:#C9A96E;text-decoration:underline;">log in immediately</a> and change your password, or contact <a href="mailto:support@hirestepx.com" style="color:#C9A96E;text-decoration:underline;">support@hirestepx.com</a>.
-            </p>
-          </div>
-          <p style="margin:0;font-size:12px;color:#6A6560;line-height:1.5;text-align:center;">If you made this change, no action is needed.</p>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#6A6560;">HireStepX by Silva Vitalis LLC</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+        subject: "Your password was changed",
+        html: emailShell({
+          preview: "If this was you, no action needed.",
+          body:
+            title("Password", { accentWord: "updated." }) +
+            para(`Your HireStepX password was just changed. If that was you, you're done, nothing else to do.`) +
+            dataCard("Change details", [
+              ["When", whenStr],
+              ["Account", safeEmail],
+            ]) +
+            para(
+              `Didn't change it? ${link("Secure your account", `${APP_URL}/login`)} right away, then contact ${link("support@hirestepx.com", "mailto:support@hirestepx.com")}. We'll lock things down.`,
+              { small: true, muted: true },
+            ),
+        }),
       }),
     });
     clearTimeout(timer);
@@ -215,39 +209,25 @@ async function handleNewDeviceLogin(req: VercelRequest, res: VercelResponse, nor
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [normalizedEmail],
-        subject: "New device sign-in — HireStepX",
-        html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F0EDE8;">New device sign-in</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Your account <strong style="color:#F0EDE8;">${safeEmail}</strong> was signed in on a new device at ${when}.
-          </p>
-          <div style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;padding:16px 20px;margin-bottom:24px;">
-            <p style="margin:0;font-size:12px;color:#6A6560;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">Device</p>
-            <p style="margin:6px 0 0;font-size:13px;color:#F0EDE8;word-break:break-word;">${ua}</p>
-          </div>
-          <div style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;padding:16px 20px;margin-bottom:24px;">
-            <p style="margin:0;font-size:13px;color:#C4705A;font-weight:600;">⚠️ Didn't sign in?</p>
-            <p style="margin:8px 0 0;font-size:13px;color:#9A9590;line-height:1.5;">
-              If you didn't sign in from this device, someone may have access to your account. Please <a href="${APP_URL}/login" style="color:#C9A96E;text-decoration:underline;">reset your password immediately</a> or contact <a href="mailto:support@hirestepx.com" style="color:#C9A96E;text-decoration:underline;">support@hirestepx.com</a>.
-            </p>
-          </div>
-          <p style="margin:0;font-size:12px;color:#6A6560;line-height:1.5;text-align:center;">If this was you, no action is needed.</p>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#6A6560;">HireStepX by Silva Vitalis LLC</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`,
+        subject: "New device sign-in",
+        html: emailShell({
+          preview: "A new device signed in to your account.",
+          body:
+            title("A new", { accentWord: "sign-in." }) +
+            para(`Your account ${b(safeEmail)} was just signed in on a new device at ${when}. HireStepX allows one active device at a time, so any other session was signed out.`) +
+            dataCard(
+              "Sign-in details",
+              [
+                ["When", when],
+                ["Device", ua],
+              ],
+              { tone: "warning" },
+            ) +
+            para(
+              `If this was you, you can ignore this email. If not, ${link("reset your password", `${APP_URL}/login`)} immediately and contact ${link("support@hirestepx.com", "mailto:support@hirestepx.com")}. Someone else may have your credentials.`,
+              { small: true, muted: true },
+            ),
+        }),
       }),
     });
     clearTimeout(timer);
@@ -281,39 +261,18 @@ async function handleVerifyReminder(req: VercelRequest, res: VercelResponse, nor
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [normalizedEmail],
-        subject: "Reminder: Verify your email — HireStepX",
-        html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F0EDE8;">Hey ${safeName}, you're almost there!</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            You created your HireStepX account but haven't verified your email yet. Verify now to start your <strong style="color:#C9A96E;">3 free mock interviews</strong>.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 24px;">
-              <a href="${verifyUrl}" style="display:inline-block;padding:14px 32px;background:#C9A96E;color:#0A0A0B;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                Verify Email Address
-              </a>
-            </td></tr>
-          </table>
-          <p style="margin:0;font-size:12px;color:#6A6560;line-height:1.5;text-align:center;">This link expires in 24 hours. If you didn't create this account, ignore this email.</p>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#6A6560;">HireStepX by Silva Vitalis LLC</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+        subject: "Still need to verify your email",
+        html: emailShell({
+          preview: "Your free sessions are waiting behind one click.",
+          body:
+            title("One step", { accentWord: "left." }) +
+            para(`Hi ${safeName}, you signed up but haven't confirmed your email yet. Your ${b("3 free mock interviews")} are ready the moment you do.`) +
+            button("Verify and start", verifyUrl) +
+            para(
+              `A fresh link, valid for ${b("24 hours")}. If you've already verified, you're all set, just ignore this.`,
+              { small: true, muted: true },
+            ),
+        }),
       }),
     });
     clearTimeout(timer);
@@ -348,41 +307,19 @@ async function sendNoAccountFoundEmail(email: string): Promise<void> {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: "We couldn't find your HireStepX account",
-        html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#FAF7F0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF7F0;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;border:1px solid #EBE5D2;overflow:hidden;">
-        <tr><td style="padding:32px 40px 16px;">
-          <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#0E0C08;">No account found</h1>
-          <p style="margin:0 0 16px;font-size:14px;color:#6E6759;line-height:1.6;">
-            Someone just asked us to reset the password for <strong>${safeEmail}</strong>, but we don't have a HireStepX account at this address.
-          </p>
-          <p style="margin:0 0 24px;font-size:14px;color:#6E6759;line-height:1.6;">
-            If you meant to sign up, you can create an account in under a minute. If you have an account under a different email, try the reset there instead.
-          </p>
-          <table cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="padding-right:8px;">
-                <a href="${APP_URL}/signup" style="display:inline-block;padding:12px 22px;background:#312E81;color:#FAF7F0;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;">Create an account</a>
-              </td>
-              <td>
-                <a href="${APP_URL}/forgot-password" style="display:inline-block;padding:12px 22px;background:#FAF7F0;color:#312E81;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;border:1px solid #312E81;">Try a different email</a>
-              </td>
-            </tr>
-          </table>
-          <p style="margin:24px 0 0;font-size:12px;color:#A39C8B;line-height:1.5;">
-            If it wasn't you, you can safely ignore this email — nothing has changed and no password was reset.
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+        subject: "We couldn't find your account",
+        html: emailShell({
+          preview: "No account exists for this address. Here's what to do.",
+          body:
+            title("No account", { accentWord: "yet." }) +
+            para(`Someone just asked us to reset a HireStepX password for ${b(safeEmail)}, but we don't have an account on file for this address.`) +
+            para(`If that was you, you may have signed up with a different email, or you haven't created an account yet.`, { muted: true }) +
+            button("Create an account", `${APP_URL}/signup`) +
+            para(
+              `Have an account under a different address? ${link("Try the reset there", `${APP_URL}/forgot-password`)}. If you didn't request anything, you can safely ignore this email, nothing has changed.`,
+              { small: true, muted: true },
+            ),
+        }),
       }),
     });
     clearTimeout(t);
@@ -548,45 +485,22 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [normalizedEmail],
-        subject: "Reset your password — HireStepX",
-        html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F0EDE8;">Reset Your Password</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            We received a request to reset the password for <strong style="color:#F0EDE8;">${safeEmail}</strong>. Click the button below to choose a new password.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 24px;">
-              <a href="${resetUrl}" style="display:inline-block;padding:14px 32px;background:#C9A96E;color:#0A0A0B;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                Reset Password
-              </a>
-            </td></tr>
-          </table>
-          <p style="margin:0 0 16px;font-size:13px;color:#9A9590;line-height:1.5;">
-            This link expires in 1 hour and can only be used once. If you didn't request a password reset, you can safely ignore this email.
-          </p>
-          <p style="margin:0;font-size:11px;color:#4A4540;line-height:1.5;text-align:center;">
-            If the button doesn't work, copy this link:<br>
-            <a href="${resetUrl}" style="color:#C9A96E;word-break:break-all;font-size:10px;">${resetUrl}</a>
-          </p>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#6A6560;">HireStepX by Silva Vitalis LLC</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+        subject: "Reset link, as requested",
+        html: emailShell({
+          preview: "Valid for 60 minutes. Didn't ask? Nothing changes.",
+          body:
+            title("Reset your", { accentWord: "password." }) +
+            para(`You asked to reset the HireStepX password for ${b(safeEmail)}. Pick a new one, this is the only link you'll need.`) +
+            button("Choose a new password", resetUrl) +
+            para(
+              `The link works for ${b("60 minutes")}, then expires, and can only be used once. If you didn't request this, ignore it, your password stays exactly as it is.`,
+              { small: true, muted: true },
+            ) +
+            para(`Button not working? Copy this link:<br>${link(resetUrl, resetUrl)}`, {
+              small: true,
+              muted: true,
+            }),
+        }),
       }),
     });
     clearTimeout(timer);
@@ -685,53 +599,28 @@ async function handleVerify(req: VercelRequest, res: VercelResponse, email: stri
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: "Verify your email — HireStepX",
-        html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F0EDE8;">Welcome, ${safeName}!</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Click the button below to verify your email and activate your account. You have <strong style="color:#C9A96E;">3 free mock interviews</strong> waiting.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 24px;">
-              <a href="${verifyUrl}" style="display:inline-block;padding:14px 32px;background:#C9A96E;color:#0A0A0B;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                Verify Email Address
-              </a>
-            </td></tr>
-          </table>
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;margin-bottom:24px;">
-            <tr><td style="padding:20px 24px;">
-              <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#C9A96E;">After verifying, here's how to get started:</p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">1.</td><td style="padding:6px 0 6px 8px;font-size:13px;color:#F0EDE8;">Upload your resume for personalized questions</td></tr>
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">2.</td><td style="padding:6px 0 6px 8px;font-size:13px;color:#F0EDE8;">Pick your target company and role</td></tr>
-                <tr><td style="padding:6px 0;font-size:13px;color:#9A9590;">3.</td><td style="padding:6px 0 6px 8px;font-size:13px;color:#F0EDE8;">Start your first mock interview</td></tr>
-              </table>
-            </td></tr>
-          </table>
-          <p style="margin:0;font-size:12px;color:#6A6560;line-height:1.5;text-align:center;">If you didn't create this account, you can safely ignore this email.</p>
-          <p style="margin:8px 0 0;font-size:11px;color:#4A4540;line-height:1.5;text-align:center;">
-            If the button doesn't work, copy this link:<br>
-            <a href="${verifyUrl}" style="color:#C9A96E;word-break:break-all;font-size:10px;">${verifyUrl}</a>
-          </p>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#6A6560;">HireStepX by Silva Vitalis LLC</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+        subject: "Verify your email to get started",
+        html: emailShell({
+          preview: "One click to confirm it's you and unlock your free sessions.",
+          body:
+            title("Welcome,", { accentWord: `${safeName}.` }) +
+            para(`Glad you're here. One quick step before you start: confirm this is your email. Your ${b("3 free mock interviews")} are waiting on the other side.`) +
+            button("Verify my email", verifyUrl) +
+            para(`Once you're verified, here's how to get going:`) +
+            orderedList([
+              "Upload your resume so the questions match your real experience.",
+              "Pick your target company and role.",
+              "Start your first mock interview, about 15 minutes.",
+            ]) +
+            para(
+              `This link expires in ${b("24 hours")}. If you didn't create this account, you can safely ignore this email.`,
+              { small: true, muted: true },
+            ) +
+            para(`Button not working? Copy this link:<br>${link(verifyUrl, verifyUrl)}`, {
+              small: true,
+              muted: true,
+            }),
+        }),
       }),
     });
     clearTimeout(timer);
@@ -1130,41 +1019,18 @@ async function handleSignupAttemptedExisting(
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: "You already have a HireStepX account",
-        html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#FAF7F0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF7F0;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;border:1px solid #EBE5D2;overflow:hidden;">
-        <tr><td style="padding:32px 40px 16px;">
-          <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#0E0C08;">Hi ${safeName},</h1>
-          <p style="margin:0 0 16px;font-size:14px;color:#6E6759;line-height:1.6;">
-            Someone (probably you) just tried to sign up at HireStepX with this email — but you already have an account here.
-          </p>
-          <p style="margin:0 0 24px;font-size:14px;color:#6E6759;line-height:1.6;">
-            If it was you, head to login. If you don't remember your password, reset it.
-          </p>
-          <table cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="padding-right:8px;">
-                <a href="${APP_URL}/login" style="display:inline-block;padding:12px 22px;background:#312E81;color:#FAF7F0;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;">Log in</a>
-              </td>
-              <td>
-                <a href="${APP_URL}/forgot-password" style="display:inline-block;padding:12px 22px;background:#FAF7F0;color:#312E81;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;border:1px solid #312E81;">Reset password</a>
-              </td>
-            </tr>
-          </table>
-          <p style="margin:24px 0 0;font-size:12px;color:#A39C8B;line-height:1.5;">
-            If it wasn't you who tried to sign up, you can safely ignore this email — your account hasn't changed.
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+        subject: "You already have an account",
+        html: emailShell({
+          preview: "Sign in instead, or reset your password if you're stuck.",
+          body:
+            title("Welcome", { accentWord: "back." }) +
+            para(`Hi ${safeName}, someone (probably you) just tried to sign up at HireStepX with this email, but you already have an account here. No need to create another, just sign in.`) +
+            button("Sign in", `${APP_URL}/login`) +
+            para(
+              `Forgot your password? ${link("Reset it here", `${APP_URL}/forgot-password`)}. If this wasn't you, no account was created and nothing changed.`,
+              { small: true, muted: true },
+            ),
+        }),
       }),
     });
     clearTimeout(t);

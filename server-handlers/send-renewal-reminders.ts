@@ -3,6 +3,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
+import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -64,44 +65,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const emailBody = JSON.stringify({
         from: FROM_EMAIL,
         to: [profile.email],
-        subject: `Your HireStepX ${tier} plan expires in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`,
-        html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;color:#F0EDE8;">Your subscription expires soon</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Hi ${escapeHtml(profile.name || "there")}, your <strong style="color:#C9A96E;">${tier}</strong> plan expires in <strong>${daysLeft} day${daysLeft !== 1 ? "s" : ""}</strong> (${endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}).
-          </p>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Renew now to keep your unlimited sessions, AI coaching, and performance analytics.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 16px;">
-              <a href="${renewUrl}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#C9A96E,#B8923E);color:#0A0A0B;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                Renew Now
-              </a>
-            </td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;">
-          <p style="margin:0;font-size:11px;color:#6B6560;line-height:1.5;">
-            If you don't renew, your account will revert to the free plan. You won't lose any data.
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+        subject: `Your ${tier} plan expires in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`,
+        html: emailShell({
+          preview: "Renew to keep unlimited practice without a gap.",
+          body:
+            title(`${daysLeft} day${daysLeft !== 1 ? "s" : ""}`, { accentWord: "left." }) +
+            para(`Hi ${escapeHtml(profile.name || "there")}, your HireStepX ${b(tier)} plan expires on ${b(endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. Renew before then to keep unlimited sessions, AI coaching and analytics running without a break.`) +
+            dataCard("Current plan", [
+              ["Plan", tier],
+              ["Expires", endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })],
+              ["Days left", String(daysLeft)],
+            ]) +
+            button("Renew now", renewUrl) +
+            para(`Not renewing? You'll move to the free plan automatically, your history and reports stay exactly where they are.`, { small: true, muted: true }),
+        }),
       });
 
       const sendEmail = async (): Promise<boolean> => {

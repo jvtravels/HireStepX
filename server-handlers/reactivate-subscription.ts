@@ -9,6 +9,7 @@ import {
   escapeHtml,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { emailShell, title, para, button, dataCard } from "./_email-theme";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -124,47 +125,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({
             from: FROM_EMAIL,
             to: [profile.email],
-            subject: "Welcome back! Your HireStepX subscription is active",
-            html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#060607;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#060607;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F5F2ED;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F5F2ED;">Subscription Reactivated</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Hi ${safeName}, great to have you back! Your <strong style="color:#D4B37F;">${tier}</strong> plan is now active again.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;margin-bottom:24px;">
-            <tr><td style="padding:20px 24px;">
-              <p style="margin:0 0 8px;font-size:13px;color:#9A9590;">Plan</p>
-              <p style="margin:0 0 16px;font-size:15px;font-weight:600;color:#F5F2ED;">${tier.charAt(0).toUpperCase() + tier.slice(1)}</p>
-              <p style="margin:0 0 8px;font-size:13px;color:#9A9590;">Next billing date</p>
-              <p style="margin:0;font-size:15px;font-weight:600;color:#F5F2ED;">${nextBilling}</p>
-            </td></tr>
-          </table>
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 24px;">
-              <a href="${APP_URL}/dashboard" style="display:inline-block;padding:14px 32px;background:#D4B37F;color:#060607;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                Continue Practicing
-              </a>
-            </td></tr>
-          </table>
-          <p style="margin:0;font-size:12px;color:#6A6560;line-height:1.5;text-align:center;">Your subscription will renew automatically. Manage it anytime from your dashboard settings.</p>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#6A6560;">HireStepX by Silva Vitalis LLC</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+            subject: "Your subscription is reactivated",
+            html: emailShell({
+              preview: "Everything's restored and running again.",
+              body:
+                title("Good to have you", { accentWord: "back." }) +
+                para(`Hi ${safeName}, your HireStepX ${tier} plan is active again. Everything you had is right where you left it, and your sessions are open again.`) +
+                dataCard(
+                  "You're all set",
+                  [
+                    ["Plan", tier.charAt(0).toUpperCase() + tier.slice(1)],
+                    ["Next billing date", nextBilling],
+                  ],
+                  { tone: "success" },
+                ) +
+                button("Pick up where you left off", `${APP_URL}/dashboard`) +
+                para(`Your subscription renews automatically. Manage it anytime from your dashboard settings.`, { small: true, muted: true }),
+            }),
           }),
         });
       } catch (emailErr) {

@@ -8,6 +8,7 @@ import {
   supabaseAnonKey,
   escapeHtml,
 } from "./_shared";
+import { emailShell, title, para, b, button } from "./_email-theme";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -119,17 +120,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Send pause/resume confirmation email (best-effort)
     if (RESEND_API_KEY && profile?.email) {
       const safeName = escapeHtml(profile.name || "there");
+      const safeTier = escapeHtml(profile.subscription_tier || "Pro");
       const subject = action === "pause"
-        ? "Subscription paused"
-        : "Subscription resumed";
-      const body = action === "pause"
-        ? `<p>Hi ${safeName}, your HireStepX <strong>${profile.subscription_tier}</strong> plan has been paused. Auto-renewal is on hold until you resume.</p><p>Ready to continue? <a href="${APP_URL}/dashboard/settings">Resume your plan</a> anytime.</p>`
-        : `<p>Hi ${safeName}, your HireStepX <strong>${profile.subscription_tier}</strong> plan has been resumed. Auto-renewal is active again.</p><p><a href="${APP_URL}/dashboard">Continue Practicing</a></p>`;
+        ? "Your subscription is paused"
+        : "Welcome back to your plan";
+      const html = action === "pause"
+        ? emailShell({
+            preview: "Billing is on hold. Resume whenever you're ready.",
+            body:
+              title("Paused,", { accentWord: "not gone." }) +
+              para(`Hi ${safeName}, we've paused your HireStepX ${b(safeTier)} plan. You won't be billed while it's paused, and everything (sessions, reports, streaks) stays exactly as you left it.`) +
+              button("Resume anytime", `${APP_URL}/dashboard/settings`, { tone: "ghost" }) +
+              para(`Your features switch back on the moment you resume.`, { small: true, muted: true }),
+          })
+        : emailShell({
+            preview: "Your subscription is active again.",
+            body:
+              title("Back", { accentWord: "on." }) +
+              para(`Hi ${safeName}, your HireStepX ${b(safeTier)} plan is active again. Auto-renewal is back on and your full features are switched on.`) +
+              button("Continue practising", `${APP_URL}/dashboard`),
+          });
       try {
         await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ from: FROM_EMAIL, to: [profile.email], subject, html: body + `<p style="color:#9A9590;font-size:12px;">— The HireStepX Team</p>` }),
+          body: JSON.stringify({ from: FROM_EMAIL, to: [profile.email], subject, html }),
         });
       } catch (emailErr) {
         console.warn(`[pause-subscription] ${action} email failed (non-critical):`, emailErr);

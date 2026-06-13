@@ -31,6 +31,7 @@ const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 
 import { captureServerEvent } from "./_posthog";
+import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
 
 /** Hash a Razorpay payment id before sending it to analytics. The full id
  * is a financial identifier (DPDP-sensitive) — we never want it to leave
@@ -91,85 +92,25 @@ async function sendPaymentEmail(
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: `Payment confirmed — ${planLabel} activated`,
-        html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-
-        <!-- Header -->
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-
-        <!-- Body -->
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F0EDE8;">Payment Successful</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Hi ${escapeHtml(name || "there")}, your subscription has been activated. Here are your details:
-          </p>
-
-          <!-- Details card -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;margin-bottom:24px;">
-            <tr><td style="padding:20px 24px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:6px 0;font-size:13px;color:#9A9590;">Plan</td>
-                  <td align="right" style="padding:6px 0;font-size:13px;font-weight:600;color:#C9A96E;">${planLabel}</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:13px;color:#9A9590;">Amount Paid</td>
-                  <td align="right" style="padding:6px 0;font-size:13px;font-weight:600;color:#F0EDE8;">${amount}</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:13px;color:#9A9590;">Valid From</td>
-                  <td align="right" style="padding:6px 0;font-size:13px;color:#F0EDE8;">${start}</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:13px;color:#9A9590;">Valid Until</td>
-                  <td align="right" style="padding:6px 0;font-size:13px;color:#F0EDE8;">${end}</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:13px;color:#9A9590;">Payment ID</td>
-                  <td align="right" style="padding:6px 0;font-size:11px;color:#9A9590;font-family:monospace;">${paymentId}</td>
-                </tr>
-              </table>
-            </td></tr>
-          </table>
-
-          <!-- CTA -->
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 16px;">
-              <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#C9A96E,#B8923E);color:#0A0A0B;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                Start Practicing
-              </a>
-            </td></tr>
-          </table>
-
-          <p style="margin:16px 0 0;font-size:13px;color:#9A9590;line-height:1.6;">
-            ${tier === "pro" ? "You now have unlimited interview sessions, full AI coaching feedback, performance analytics, and more." : "You now have 10 interview sessions per week, all question types, detailed feedback, and resume analysis."}
-          </p>
-        </td></tr>
-
-        <!-- Footer -->
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;">
-          <p style="margin:0;font-size:11px;color:#6B6560;line-height:1.5;">
-            This is a payment confirmation from HireStepX. If you did not make this purchase, please contact us immediately by replying to this email.
-          </p>
-          <p style="margin:8px 0 0;font-size:11px;color:#6B6560;">
-            <a href="${APP_URL}/dashboard?tab=settings" style="color:#9A9590;text-decoration:underline;">Manage subscription</a> · <a href="${APP_URL}/dashboard?tab=settings" style="color:#9A9590;text-decoration:underline;">Unsubscribe</a>
-          </p>
-        </td></tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+        subject: `${amount} received, ${planLabel} is live`,
+        html: emailShell({
+          preview: `${planLabel} starts now. Valid until ${end}.`,
+          body:
+            title("You're", { accentWord: "in." }) +
+            para(`Hi ${escapeHtml(name || "there")}, your payment went through and ${b(planLabel)} is active. ${tier === "pro" ? "Unlimited interview sessions, full AI coaching feedback, salary negotiation mode and performance analytics, all unlocked." : "10 interview sessions per week, all question types, detailed feedback, and resume analysis, all unlocked."}`) +
+            dataCard("Receipt", [
+              ["Plan", planLabel],
+              ["Amount paid", mono(amount)],
+              ["Valid from", start],
+              ["Valid until", end],
+              ["Payment ID", mono(paymentId)],
+            ]) +
+            button("Start practising", `${APP_URL}/dashboard`) +
+            para(
+              `This is your payment confirmation. Need a GST invoice for your company? Reply to this email and we'll send a tax-compliant version. If you didn't make this purchase, contact us immediately.`,
+              { small: true, muted: true },
+            ),
+        }),
       }),
     });
     clearTimeout(emailTimer);

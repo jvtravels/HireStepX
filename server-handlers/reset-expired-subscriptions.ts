@@ -4,6 +4,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
+import { emailShell, title, para, b, button, dataCard, orderedList } from "./_email-theme";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -74,50 +75,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (RESEND_API_KEY && profile.email) {
           const renewUrl = `${APP_URL}/dashboard?tab=settings`;
           const safeName = escapeHtml(profile.name || "there");
-          const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;color:#F0EDE8;">Subscription Expired</h1>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Hi ${safeName}, your <strong style="color:#C9A96E;">${escapeHtml(profile.subscription_tier)}</strong> subscription has ended and your account has been moved to the free tier.
-          </p>
-          <p style="margin:0 0 16px;font-size:14px;color:#9A9590;line-height:1.6;">
-            With the free plan you still get:
-          </p>
-          <ul style="margin:0 0 24px;padding-left:20px;font-size:14px;color:#9A9590;line-height:1.8;">
-            <li>3 AI mock interviews</li>
-            <li>Behavioral questions only</li>
-          </ul>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.6;">
-            Your session history and all saved data are fully preserved — nothing has been deleted.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 16px;">
-              <a href="${renewUrl}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#C9A96E,#B8923E);color:#0A0A0B;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                Renew Subscription
-              </a>
-            </td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;">
-          <p style="margin:0;font-size:11px;color:#6B6560;line-height:1.5;">
-            Upgrade anytime to unlock unlimited sessions, all question types, and AI coaching.
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+          const safeTier = escapeHtml(profile.subscription_tier);
+          const emailHtml = emailShell({
+            preview: "You're on the free plan now. Your history is safe.",
+            body:
+              title("Your plan", { accentWord: "has ended." }) +
+              para(`Hi ${safeName}, your HireStepX ${b(safeTier)} subscription has ended and your account has moved to the free plan. Nothing is lost, your session history and saved data are exactly where you left them.`) +
+              dataCard("Still on the free plan", [
+                ["AI mock interviews", "3 included"],
+                ["Question types", "Behavioural"],
+                ["Your data", "Fully preserved"],
+              ]) +
+              para(`Renew anytime to unlock unlimited sessions, every question type and full AI coaching:`) +
+              orderedList([
+                "Open your dashboard settings",
+                "Pick the plan that fits",
+                "Pick up right where you left off",
+              ]) +
+              button("Renew subscription", renewUrl) +
+              para(`Questions about your billing? Just reply to this email and we'll help.`, { small: true, muted: true }),
+          });
 
           try {
             const emailAc = new AbortController();

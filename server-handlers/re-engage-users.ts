@@ -7,6 +7,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
+import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -73,99 +74,74 @@ function buildEmail(
   const dashUrl = `${APP_URL}/dashboard`;
   const sessionUrl = `${APP_URL}/session/new`;
 
+  const safeWeakest = weakest ? escapeHtml(weakest) : null;
+
   const subjects: Record<EmailTier, string> = {
     day1: `${user.name?.split(" ")[0] || "Hey"}, your next practice session is ready`,
     day3: `Your ${weakest || "interview"} skills need a refresh`,
-    day7: `Don't lose your progress — practice before your interview`,
-    paid14: `${user.name?.split(" ")[0] || "Hey"}, 2 weeks since your last session — make today count`,
-    paid30: `Your subscription is still active — let's get the most out of it`,
+    day7: "Your practice sessions are still here",
+    paid14: "Two weeks since your last Pro session",
+    paid30: "Your Pro plan is active and ready when you are",
+  };
+
+  const titles: Record<EmailTier, string> = {
+    day1: "Pick up",
+    day3: "Worth a",
+    day7: "Still",
+    paid14: "Two weeks,",
+    paid30: "Right here,",
+  };
+  const accents: Record<EmailTier, string> = {
+    day1: "where you left off.",
+    day3: "ten minutes.",
+    day7: "right here.",
+    paid14: "still unlimited.",
+    paid30: "whenever you are.",
   };
 
   const heroText: Record<EmailTier, string> = {
-    day1: `Your personalized ${role} session is ready. Pick up right where you left off.`,
-    day3: weakest
-      ? `Your <strong style="color:#C9A96E;">${escapeHtml(weakest)}</strong> score needs work. A focused 10-minute session can improve it by 15+ points.`
-      : `Most users see 15+ point improvement with just one more session. Don't let your momentum fade.`,
+    day1: `Hi ${name}, your personalised ${role} session is ready and waiting. Pick up exactly where you left off, your resume-tailored questions are already lined up.`,
+    day3: safeWeakest
+      ? `Hi ${name}, your ${b(safeWeakest)} score has room to grow. A focused 10-minute session can lift it by 15 points or more, and that is often the difference in a real interview.`
+      : `Hi ${name}, most candidates see a 15-point lift with just one more session. Ten focused minutes keeps your momentum from fading.`,
     day7: score
-      ? `You scored <strong style="color:#C9A96E;">${score}/100</strong> in your last session. That's a solid start — but skills fade without practice. One more session keeps you sharp.`
-      : `Interview skills fade fast without practice. A quick 10-minute session keeps your edge sharp.`,
-    paid14: `You're paying for unlimited practice — and haven't used it in 14 days. A 10-minute session today rebuilds the muscle memory that got you this far.`,
-    paid30: `It's been a month since your last session. Your ${role} skills are still in there — let's brush them off with a focused 15-minute drill.`,
+      ? `Hi ${name}, you scored ${b(`${score}/100`)} last time. That is a solid start, and skills stay sharp with practice. One short session is all it takes to keep your edge.`
+      : `Hi ${name}, interview skills fade quietly without practice. A quick 10-minute session keeps your edge sharp and your answers ready.`,
+    paid14: `Hi ${name}, it has been two weeks since your last Pro session. Your plan includes unlimited practice, and a 10-minute drill today rebuilds the muscle memory that got you this far.`,
+    paid30: `Hi ${name}, it has been about a month. Your ${role} skills are still in there, and your Pro plan is ready when you are. A focused 15-minute drill brings it all back.`,
   };
 
   const ctaText: Record<EmailTier, string> = {
-    day1: "Continue Practicing",
-    day3: weakest ? `Practice ${weakest}` : "Start a Session",
-    day7: "Practice Now — It's Free",
-    paid14: "Start a Quick Session",
-    paid30: "Start a Focused Drill",
+    day1: "Continue practising",
+    day3: weakest ? `Practise ${weakest}` : "Start a session",
+    day7: "Practise now",
+    paid14: "Start a quick session",
+    paid30: "Start a focused drill",
+  };
+
+  const footerText: Record<EmailTier, string> = {
+    day1: "You still have free sessions remaining, no card needed.",
+    day3: "Ten minutes is all it takes. Your resume-personalised questions are waiting.",
+    day7: "This is our last reminder. We will stop emailing, and your practice sessions will always be here when you are ready.",
+    paid14: "You are on the Pro plan, unlimited sessions every day.",
+    paid30: "Pause or cancel anytime from your settings. We want you practising only when it helps.",
   };
 
   const ctaUrl = tier === "day1" || tier === "paid14" || tier === "paid30" ? sessionUrl : dashUrl;
 
-  const footerText: Record<EmailTier, string> = {
-    day1: "You have free sessions remaining. No card needed.",
-    day3: "10 minutes is all it takes. Your resume-personalized questions are waiting.",
-    day7: "This is your last reminder. We'll stop emailing — but your practice sessions will always be here when you're ready.",
-    paid14: "You're on the Pro plan. Unlimited sessions, every day.",
-    paid30: "Pause or cancel anytime from Settings → Plan. We want you practicing only when it's useful.",
-  };
+  const showCard = score && tier !== "day7";
+  const cardRows: [string, string][] = [["Last score", `${score}/100`]];
+  if (showCard && weakest) cardRows.push(["Focus area", escapeHtml(weakest)]);
 
-  const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <p style="margin:0 0 20px;font-size:15px;color:#F0EDE8;line-height:1.6;">
-            Hi ${name},
-          </p>
-          <p style="margin:0 0 24px;font-size:14px;color:#9A9590;line-height:1.7;">
-            ${heroText[tier]}
-          </p>
-          ${score && tier !== "day7" ? `
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-            <tr>
-              <td style="padding:16px 20px;background:#0A0A0B;border-radius:10px;border:1px solid #2A2A2C;">
-                <table width="100%" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td style="font-size:12px;color:#6B6560;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Last Score</td>
-                    <td align="right" style="font-size:22px;font-weight:700;color:#C9A96E;">${score}/100</td>
-                  </tr>
-                  ${weakest ? `<tr>
-                    <td style="font-size:12px;color:#6B6560;padding-top:8px;">Focus area</td>
-                    <td align="right" style="font-size:13px;color:#9A9590;padding-top:8px;">${escapeHtml(weakest)}</td>
-                  </tr>` : ""}
-                </table>
-              </td>
-            </tr>
-          </table>` : ""}
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 16px;">
-              <a href="${ctaUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#C9A96E,#B8923E);color:#0A0A0B;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                ${ctaText[tier]}
-              </a>
-            </td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;">
-          <p style="margin:0;font-size:11px;color:#6B6560;line-height:1.5;">
-            ${footerText[tier]}
-          </p>
-          <p style="margin:8px 0 0;font-size:10px;color:#4A4540;">
-            <a href="${APP_URL}/settings" style="color:#4A4540;text-decoration:underline;">Unsubscribe from practice reminders</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+  const html = emailShell({
+    preview: footerText[tier],
+    body:
+      title(titles[tier], { accentWord: accents[tier] }) +
+      para(heroText[tier]) +
+      (showCard ? dataCard("Where you stand", cardRows) : "") +
+      button(ctaText[tier], ctaUrl) +
+      para(footerText[tier], { small: true, muted: true }),
+  });
 
   return { subject: subjects[tier], html };
 }

@@ -17,6 +17,8 @@
 
 export const config = { runtime: "edge" };
 
+import { emailShell, title, para, b, button, dataCard, escapeHtml } from "./_email-theme";
+
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -79,17 +81,26 @@ function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: st
 
   const prev = sessions[1];
   const delta = prev ? score - prev.score : 0;
-  const deltaStr = delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "—";
+  const deltaStr = delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "No change";
 
-  const subject = `Your HireStepX week: ${sessions.length} session${sessions.length === 1 ? "" : "s"}, score ${score}`;
-  const html = `<!doctype html>
-<html><body style="font-family:system-ui;background:#0b0b0c;color:#f5f2ed;padding:24px;max-width:560px;margin:0 auto">
-  <h1 style="color:#d4b37f;font-family:Georgia,serif;font-weight:400;letter-spacing:-0.02em">Hi ${firstName},</h1>
-  <p>You ran <strong>${sessions.length} mock interview${sessions.length === 1 ? "" : "s"}</strong> this week. Latest score: <strong>${score}</strong> (${band || "uncalibrated"}), delta from prior <strong>${deltaStr}</strong>.</p>
-  <p style="color:#9a9590">Open your latest report → <a href="https://app.hirestepx.com/sessions" style="color:#d4b37f">view on HireStepX</a></p>
-  <hr style="border:none;border-top:1px solid rgba(245,242,237,0.1);margin:24px 0"/>
-  <p style="font-size:12px;color:#9a9590">Not useful? <a href="https://app.hirestepx.com/settings" style="color:#9a9590">Unsubscribe</a>.</p>
-</body></html>`;
+  const safeName = escapeHtml(firstName);
+  const sessionCount = `${sessions.length} session${sessions.length === 1 ? "" : "s"}`;
+
+  const subject = `Your HireStepX week: ${sessionCount}, score ${score}`;
+  const html = emailShell({
+    preview: `${sessionCount} this week, latest score ${score}.`,
+    body:
+      title("Your week,", { accentWord: "in review." }) +
+      para(`Hi ${safeName}, here's how your practice went this week. You ran ${b(`${sessions.length} mock interview${sessions.length === 1 ? "" : "s"}`)} and kept the momentum going.`) +
+      dataCard("This week", [
+        ["Sessions", String(sessions.length)],
+        ["Latest score", String(score)],
+        ["Band", band || "Uncalibrated"],
+        ["Change from prior", deltaStr],
+      ]) +
+      button("View your latest report", "https://app.hirestepx.com/sessions") +
+      para(`Not useful? You can turn these off anytime from your settings.`, { small: true, muted: true }),
+  });
   return { subject, html };
 }
 

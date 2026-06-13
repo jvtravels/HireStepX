@@ -7,6 +7,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
+import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -61,45 +62,19 @@ function buildEmail(intent: PaymentIntent): { subject: string; html: string } {
   const amount = (intent.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
   const pricingUrl = `${APP_URL}/pricing`;
   return {
-    subject: `You're one step away from ${safePlan}`,
-    html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0A0A0B;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0B;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #2A2A2C;overflow:hidden;">
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2A2A2C;">
-          <span style="font-size:18px;font-weight:600;color:#F0EDE8;letter-spacing:0.06em;">HireStepX</span>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#F0EDE8;">Forgot something?</h1>
-          <p style="margin:0 0 20px;font-size:14px;color:#9A9590;line-height:1.7;">
-            You started checkout for <strong style="color:#F0EDE8;">${safePlan}</strong> (${amount}) but didn't finish. Come back when you're ready — your session is waiting.
-          </p>
-          <div style="background:#1A1A1C;border-radius:12px;border:1px solid #2A2A2C;padding:18px 22px;margin-bottom:22px;">
-            <p style="margin:0;font-size:12px;color:#6A6560;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Your plan</p>
-            <p style="margin:6px 0 0;font-size:15px;color:#F0EDE8;">${safePlan} — ${amount}</p>
-          </div>
-          <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
-            <tr><td style="background:#D4B37F;border-radius:10px;">
-              <a href="${pricingUrl}" style="display:inline-block;padding:13px 32px;font-size:14px;font-weight:600;color:#060607;text-decoration:none;">
-                Complete your purchase →
-              </a>
-            </td></tr>
-          </table>
-          <p style="margin:22px 0 0;font-size:12px;color:#6A6560;line-height:1.5;text-align:center;">
-            No pressure — you can also keep using the free tier. We won't email you again about this.
-          </p>
-        </td></tr>
-        <tr><td style="padding:20px 40px;border-top:1px solid #2A2A2C;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#6A6560;">HireStepX by Silva Vitalis LLC · <a href="mailto:support@hirestepx.com" style="color:#9A9590;">support@hirestepx.com</a></p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+    subject: "You're one step away from Pro",
+    html: emailShell({
+      preview: "Your checkout is still open. Finish whenever you're ready.",
+      body:
+        title("One step", { accentWord: "away." }) +
+        para(`You started checkout for ${b(safePlan)} and didn't quite finish. No rush, your plan is still waiting and you can pick it back up whenever it suits you.`) +
+        dataCard("Your plan", [
+          ["Plan", safePlan],
+          ["Amount", mono(amount)],
+        ]) +
+        button("Complete your purchase", pricingUrl) +
+        para(`No pressure at all, the free tier stays open too. This is the only reminder we'll send about this.`, { small: true, muted: true }),
+    }),
   };
 }
 

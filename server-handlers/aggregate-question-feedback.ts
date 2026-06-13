@@ -106,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     body: JSON.stringify({
       from: FROM_EMAIL,
       to: MODERATOR_EMAIL,
-      subject: `HireStepX question-feedback digest — ${report.worstPatterns.length} alerts, ${report.realMatchCandidates.length} candidates`,
+      subject: `HireStepX question-feedback digest: ${report.worstPatterns.length} alerts, ${report.realMatchCandidates.length} candidates`,
       html: renderReportHtml(report),
     }),
   });
