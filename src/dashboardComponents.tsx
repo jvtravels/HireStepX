@@ -540,6 +540,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 /* ─── Pro Feature Gate ─── */
 const featureHighlights: Record<string, { icon: string; items: string[] }> = {
   "Performance Analytics": { icon: "chart", items: ["Readiness score tracking", "Skill radar & velocity charts", "Score trends over time", "AI-generated insights", "Date range comparisons"] },
+  "The Readiness Index": { icon: "chart", items: ["Target-specific 0-100 readiness score", "Five weighted pillars with evidence", "Skill-decay refresh queue", "Blind spots & likely follow-ups", "RI trajectory and projection"] },
   "Interview Calendar": { icon: "calendar", items: ["Month grid view", "Interview countdown timers", "Google Calendar sync", ".ics file export", "Prep reminders before interviews"] },
 };
 
