@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { c, font, shadow } from "./tokens";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
-import { listEvents, saveEvent, deleteEvent, generatePrepRunway, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
+import { listEvents, saveEvent, deleteEvent, generatePrepRunway, connectGoogleCalendar, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
 import {
   type InterviewEvent, loadEvents, saveEvents, generateEventId,
   daysUntilEvent, formatEventDate, formatEventTime,
@@ -155,6 +155,8 @@ export default function CalendarPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [exportTooltip, setExportTooltip] = useState<string | null>(null);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleUnavailable, setGoogleUnavailable] = useState(false);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -193,6 +195,57 @@ export default function CalendarPage() {
   const updateEvents = (next: InterviewEvent[]) => {
     setEvents(next);
     saveEvents(next);
+  };
+
+  // Surface the outcome of the Google OAuth round-trip. The callback redirects
+  // back to /calendar?google=<flag>; we toast, refresh (the initial sync may
+  // have imported events), then strip the param so a refresh doesn't re-toast.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const flag = new URLSearchParams(window.location.search).get("google");
+    if (!flag) return;
+    const messages: Record<string, string> = {
+      connected: "Google Calendar connected. Your interviews now sync both ways.",
+      denied: "Google Calendar connection cancelled.",
+      retry: "Google did not return access. Please try connecting again.",
+      error: "Could not connect Google Calendar. Please try again.",
+      unavailable: "Google Calendar sync is not available yet.",
+    };
+    showToast(messages[flag] || messages.error);
+    if (flag === "connected") {
+      listEvents().then(res => {
+        if (!res.ok) return;
+        updateEvents(res.events.map(rowToEvent));
+      }).catch(() => {});
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.delete("google");
+    window.history.replaceState({}, "", url.toString());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleConnectGoogle = async () => {
+    if (googleBusy) return;
+    setGoogleBusy(true);
+    try {
+      const res = await connectGoogleCalendar();
+      if (res.unavailable) {
+        setGoogleUnavailable(true);
+        showToast("Google Calendar sync is not available yet.");
+        return;
+      }
+      if (res.upgradeRequired) {
+        setShowUpgradeModal(true);
+        return;
+      }
+      if (res.ok && res.url) {
+        window.location.href = res.url;
+        return;
+      }
+      showToast(res.error || "Could not start Google Calendar connection.");
+    } finally {
+      setGoogleBusy(false);
+    }
   };
 
   if (eventsLoading) return <DataLoadingSkeleton />;
@@ -362,6 +415,20 @@ export default function CalendarPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          {!googleUnavailable && (
+            <button onClick={handleConnectGoogle} disabled={googleBusy} style={{
+              fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 18px",
+              borderRadius: 8, border: `1px solid ${c.border}`, background: "transparent",
+              color: googleBusy ? c.stone : c.ivory, cursor: googleBusy ? "default" : "pointer",
+              display: "flex", alignItems: "center", gap: 8,
+            }}
+              onMouseEnter={(e) => { if (!googleBusy) e.currentTarget.style.borderColor = c.gilt; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; }}
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {googleBusy ? "Connecting..." : "Connect Google Calendar"}
+            </button>
+          )}
           <button onClick={openNewForm} style={{
             fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 22px",
             borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian,

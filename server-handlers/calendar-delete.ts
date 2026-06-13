@@ -12,6 +12,8 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
+import { googleConfigured } from "./_google-calendar";
+import { getSyncRow, deleteEventFromGoogle } from "./_google-sync-runner";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -84,5 +86,19 @@ export default async function handler(req: Request): Promise<Response> {
   if (deleted === 0) {
     return new Response(JSON.stringify({ error: "Event not found" }), { status: 404, headers });
   }
+
+  // Best-effort: remove the mirrored event from Google too, so a delete here
+  // doesn't leave a ghost on the connected calendar. Guarded by
+  // googleConfigured() so it's a no-op until the OAuth client env is set.
+  const googleEventId = Array.isArray(rows) ? (rows[0]?.google_event_id as string | undefined) : undefined;
+  if (googleEventId && googleConfigured(process.env)) {
+    try {
+      const sync = await getSyncRow(auth.userId);
+      if (sync) await deleteEventFromGoogle(googleEventId, sync);
+    } catch (e) {
+      console.error("[calendar-delete] google delete error:", e);
+    }
+  }
+
   return new Response(JSON.stringify({ ok: true, id, deleted }), { status: 200, headers });
 }

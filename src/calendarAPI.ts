@@ -121,3 +121,35 @@ export async function generatePrepRunway(
     error: res.error,
   };
 }
+
+/**
+ * Begin the Google Calendar two-way sync connection. Returns the Google consent
+ * URL (with an HMAC-signed state binding the flow to this user); the caller
+ * navigates the browser to it. `unavailable: true` means the server has no
+ * Google OAuth client configured yet, so the UI should hide the affordance
+ * rather than show an error.
+ */
+export async function connectGoogleCalendar(
+  signal?: AbortSignal,
+): Promise<{ ok: boolean; url: string | null; unavailable: boolean; upgradeRequired: boolean; error: string | null }> {
+  const res = await apiFetch<{ ok: boolean; url: string; unavailable?: boolean; upgradeRequired?: boolean }>(
+    "/api/calendar/google/connect",
+    {},
+    { signal },
+  );
+  return {
+    ok: res.ok,
+    url: res.data?.url ?? null,
+    unavailable: res.status === 501 || !!res.data?.unavailable,
+    upgradeRequired: res.status === 403 || !!res.data?.upgradeRequired,
+    error: res.error,
+  };
+}
+
+/** Tear down the Google Calendar connection (revoke + stop watch + drop row). */
+export async function disconnectGoogleCalendar(
+  signal?: AbortSignal,
+): Promise<{ ok: boolean; error: string | null }> {
+  const res = await apiFetch<{ ok: boolean }>("/api/calendar/google/disconnect", {}, { signal });
+  return { ok: res.ok, error: res.error };
+}

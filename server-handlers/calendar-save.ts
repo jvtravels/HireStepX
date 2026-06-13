@@ -20,6 +20,8 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, getSubscriptionTier } from "./_shared";
 import { normalizeCalendarEvent, type CalendarRow } from "./_calendar-helpers";
+import { googleConfigured, shouldExportToGoogle } from "./_google-calendar";
+import { getSyncRow, exportEventToGoogle } from "./_google-sync-runner";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -34,6 +36,37 @@ function svcHeaders(extra?: Record<string, string>): Record<string, string> {
     Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
     ...extra,
   };
+}
+
+/* Best-effort mirror of a saved event into the user's Google Calendar. Guarded
+ * by googleConfigured() first so it costs nothing (no DB read, no Google call)
+ * until the OAuth client env is provisioned. shouldExportToGoogle() then skips
+ * google-origin echoes and non-real kinds (prep sessions stay app-only). Never
+ * throws: a failed push must not fail the save. */
+async function pushToGoogle(saved: Record<string, unknown> | null, userId: string): Promise<void> {
+  if (!saved || !googleConfigured(process.env)) return;
+  if (!shouldExportToGoogle({ source: saved.source as string | undefined, kind: saved.kind as string | undefined })) return;
+  try {
+    const sync = await getSyncRow(userId);
+    if (!sync) return;
+    await exportEventToGoogle(
+      {
+        id: String(saved.id),
+        user_id: userId,
+        title: String(saved.title || "Interview"),
+        notes: (saved.notes as string) || "",
+        location: (saved.location as string) || "",
+        start_utc: (saved.start_utc as string) || null,
+        end_utc: (saved.end_utc as string) || null,
+        duration_minutes: (saved.duration_minutes as number) || 60,
+        timezone: (saved.timezone as string) || "Asia/Kolkata",
+        google_event_id: (saved.google_event_id as string) || null,
+      },
+      sync,
+    );
+  } catch (e) {
+    console.error("[calendar-save] google export error:", e);
+  }
 }
 
 /** Detect a missing-column PostgREST error and return the column name. */
@@ -111,7 +144,9 @@ async function insertEvent(row: CalendarRow, headers: Record<string, string>): P
     });
     if (res.ok) {
       const rows = await res.json().catch(() => []);
-      return new Response(JSON.stringify({ ok: true, event: Array.isArray(rows) ? rows[0] : null, strippedColumns: stripped }), {
+      const event = Array.isArray(rows) ? rows[0] : null;
+      await pushToGoogle(event, row.user_id);
+      return new Response(JSON.stringify({ ok: true, event, strippedColumns: stripped }), {
         status: 200,
         headers,
       });
@@ -151,6 +186,7 @@ async function updateEvent(row: CalendarRow, userId: string, headers: Record<str
         // Filter matched nothing: either the id doesn't exist or it isn't ours.
         return new Response(JSON.stringify({ error: "Event not found" }), { status: 404, headers });
       }
+      await pushToGoogle(rows[0], userId);
       return new Response(JSON.stringify({ ok: true, event: rows[0], strippedColumns: stripped }), { status: 200, headers });
     }
     const errText = await res.text().catch(() => "");
