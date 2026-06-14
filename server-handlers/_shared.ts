@@ -569,7 +569,11 @@ export function sanitizeForLLM(s: unknown, maxLen = 200): string {
 
 /* ─── Per-User Daily LLM Quota ─── */
 
-const DAILY_LLM_LIMITS: Record<string, number> = { free: 25, starter: 60, pro: 200, team: 500 };
+// Free tier is capped tight: the lifetime free-session cap is already 3, so a
+// generous daily LLM-call budget only widens the abuse window without helping a
+// genuine free user. 15 covers ~2 full sessions of retries comfortably. Paid
+// tiers stay generous.
+const DAILY_LLM_LIMITS: Record<string, number> = { free: 15, starter: 60, pro: 200, team: 500 };
 
 /** Check if a user has exceeded their daily LLM API call quota for a specific endpoint. */
 export async function checkLLMQuota(userId: string, endpoint: string): Promise<{ allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean }> {

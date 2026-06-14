@@ -3,7 +3,7 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
 
 declare const process: { env: Record<string, string | undefined> };
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || "";
@@ -20,6 +20,11 @@ const DEEPGRAM_PROJECT_ID = (process.env.DEEPGRAM_PROJECT_ID || "").trim();
 const STT_TOKEN_DAILY_CAP = 30;
 const SECONDS_PER_DAY = 86_400;
 const STT_TOKEN_TTL_SECONDS = 60;
+
+/* Paid STT (Deepgram, billed per request) is a paying-tier benefit by default.
+ * Free users fall back to the browser Web Speech API (zero cost) on a 503.
+ * Open it to free users with VOICE_FREE_TIER=1. */
+const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);
@@ -39,6 +44,12 @@ export default async function handler(req: Request): Promise<Response> {
 
   const auth = await verifyAuth(req);
   if (!auth.authenticated) return unauthorizedResponse(headers);
+
+  // Paid STT is a paying-tier benefit by default — free users get a 503 and the
+  // client falls back to the browser Web Speech API (zero cost).
+  if (!VOICE_FREE_TIER && (await getSubscriptionTier(auth.userId!)) === "free") {
+    return new Response(JSON.stringify({ error: "Premium voice input is a paid feature", code: "stt_paid_only" }), { status: 503, headers });
+  }
 
   const ip = getClientIp(req);
   if (await isRateLimited(ip, "stt-token", 10, 60_000)) {

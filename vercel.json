@@ -45,6 +45,10 @@
     {
       "path": "/api/calendar/google/poll",
       "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/prune-llm-usage",
+      "schedule": "45 3 * * *"
     }
   ]
 }

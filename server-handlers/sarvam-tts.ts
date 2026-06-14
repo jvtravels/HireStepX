@@ -50,9 +50,14 @@ declare const process: { env: Record<string, string | undefined> };
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "";
 const SARVAM_TTS_ENDPOINT = "https://api.sarvam.ai/text-to-speech";
 
-/* Free-tier kill switch — flip SARVAM_TTS_FREE_DISABLED=1 when Sarvam spend
- * runs hot. Free users get a 503 (clients already fail over to Cartesia →
- * Azure → browser TTS), paid tiers keep the premium voice. */
+/* Voice cost policy — paid TTS (Sarvam) is a paying-tier benefit by DEFAULT.
+ * Free users fail over to the zero-cost browser TTS chain (Cartesia → Azure →
+ * Web Speech). This makes the expensive path opt-in instead of opt-out, so a
+ * traffic spike on free users can never run up a Sarvam bill.
+ *   - VOICE_FREE_TIER=1        → let free users use paid Sarvam TTS too.
+ *   - SARVAM_TTS_FREE_DISABLED=1 → legacy hard kill switch (still honoured).
+ * Either guard active ⇒ free tier is pushed to the browser fallback. */
+const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
 const SARVAM_TTS_FREE_DISABLED = process.env.SARVAM_TTS_FREE_DISABLED === "1";
 
 /* COST GUARDRAIL — pin to bulbul:v2.
@@ -141,11 +146,12 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Text is empty" }), { status: 400, headers });
     }
 
-    // Free-tier kill switch — when Sarvam spend is hot, push free users to
-    // the Cartesia → Azure → browser TTS fallback chain. We resolve the tier
-    // from the profiles table; the client already handles 503 by failing
-    // over, so we don't need to surface a special error code.
-    if (SARVAM_TTS_FREE_DISABLED) {
+    // Paid voice is a paying-tier benefit by default — push free users to the
+    // Cartesia → Azure → browser TTS fallback chain (zero cost). We resolve the
+    // tier from the profiles table; the client already handles 503 by failing
+    // over, so we don't need to surface a special error code. Operators can
+    // open paid voice to free users with VOICE_FREE_TIER=1.
+    if (!VOICE_FREE_TIER || SARVAM_TTS_FREE_DISABLED) {
       const tier = await getSubscriptionTier(auth.userId!);
       if (tier === "free") {
         logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: "free_tier_disabled" });
