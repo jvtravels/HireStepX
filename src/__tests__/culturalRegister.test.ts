@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   detectCulturalRegister,
   hasAnyIndianRegister,
+  summarizeIndianRegister,
 } from "../_cultural-register";
 
 describe("detectCulturalRegister — hedgedDisagreement", () => {
@@ -367,5 +368,51 @@ describe("hasAnyIndianRegister", () => {
 
   it("handles empty input safely", () => {
     expect(hasAnyIndianRegister(detectCulturalRegister(""))).toBe(false);
+  });
+});
+
+describe("summarizeIndianRegister", () => {
+  const empty = () => detectCulturalRegister("");
+
+  it("returns empty markers/notes when nothing fired", () => {
+    const out = summarizeIndianRegister([empty(), empty()]);
+    expect(out.markers).toEqual([]);
+    expect(out.notes).toEqual([]);
+  });
+
+  it("includes a marker if it fired on ANY answer, in stable surfacing order", () => {
+    // answer 1: deferential gratitude; answer 2: festival/calendar anchor.
+    const a1 = detectCulturalRegister("Thank you so much for this opportunity, sir.");
+    const a2 = detectCulturalRegister(
+      "During Diwali our checkout traffic tripled and I led the on-call rotation.",
+    );
+    const out = summarizeIndianRegister([a1, a2]);
+    expect(out.markers).toContain("deferentialGratitude");
+    expect(out.markers).toContain("calendarAnchored");
+    // Stable order: calendarAnchored precedes deferentialGratitude in MARKER_ORDER.
+    expect(out.markers.indexOf("calendarAnchored")).toBeLessThan(
+      out.markers.indexOf("deferentialGratitude"),
+    );
+  });
+
+  it("notes are parallel to markers (one human-readable line each)", () => {
+    const a = detectCulturalRegister("I scored 92% in 12th and CGPA 8.4.");
+    const out = summarizeIndianRegister([a]);
+    expect(out.markers).toEqual(["pedigreeRecital"]);
+    expect(out.notes).toHaveLength(1);
+    expect(out.notes[0].toLowerCase()).toContain("neutral");
+  });
+
+  it("de-duplicates: a marker firing on multiple answers appears once", () => {
+    const a1 = detectCulturalRegister("Thank you so much for having me, ma'am.");
+    const a2 = detectCulturalRegister("Thank you very much for taking the time, sir.");
+    const out = summarizeIndianRegister([a1, a2]);
+    expect(out.markers.filter((m) => m === "deferentialGratitude")).toHaveLength(1);
+  });
+
+  it("handles an empty answer list", () => {
+    const out = summarizeIndianRegister([]);
+    expect(out.markers).toEqual([]);
+    expect(out.notes).toEqual([]);
   });
 });

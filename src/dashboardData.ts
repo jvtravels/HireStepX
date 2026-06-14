@@ -1116,6 +1116,13 @@ export interface SessionReport {
     note: string;
     bands: { strongHire: number; hire: number; leanHire: number; noHire: number };
   };
+  /**
+   * India-context fairness applied during scoring — deterministically detected
+   * from the candidate's words (see `_cultural-register.ts`). Optional: older
+   * persisted reports won't have it, and the UI hides the surface when
+   * `markers` is empty or the field is absent.
+   */
+  fairnessSignals?: { markers: string[]; notes: string[] };
   crossSessionInsights: SessionReportCrossSessionInsight[];
   priorSessionCount: number;
   storyReuseFindings: SessionReportStoryReuse[];

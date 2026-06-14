@@ -147,3 +147,47 @@ export function hasAnyIndianRegister(reg: CulturalRegister): boolean {
     || reg.pedigreeRecital
     || reg.careerLadderNarrative;
 }
+
+export type CulturalRegisterMarker = keyof CulturalRegister;
+
+/* Stable surfacing order + the candidate-facing "what we did" line for each
+   marker. These describe the FAIRNESS the scorer applied — the non-penalty
+   treatment of Indian-context behaviour that a generic (Western-tuned) AI
+   interviewer would silently mark down. Surfaced in the report only when a
+   marker actually fired on the candidate's own words, so the claim is always
+   truthful (no "we adjusted for X" when X wasn't present). */
+const REGISTER_FAIRNESS_NOTES: Record<CulturalRegisterMarker, string> = {
+  hedgedDisagreement: "Read your respectful pushback as conviction, not timidity",
+  indirectFailureFraming: "Counted your indirect framing of setbacks as ownership, not deflection",
+  relationalFraming: "Credited trust- and alignment-preserving outcomes as real results",
+  calendarAnchored: "Recognised festival / quarter-end context as genuine operational pressure",
+  deferentialGratitude: "Treated your courtesy and gratitude as professionalism, not low confidence",
+  pedigreeRecital: "Scored academic recital (board %, CGPA) neutrally — it's expected, not padding",
+  careerLadderNarrative: "Read your multi-role path as deliberate skill-building, not job-hopping",
+};
+
+const MARKER_ORDER: readonly CulturalRegisterMarker[] = [
+  "hedgedDisagreement",
+  "indirectFailureFraming",
+  "relationalFraming",
+  "calendarAnchored",
+  "deferentialGratitude",
+  "pedigreeRecital",
+  "careerLadderNarrative",
+];
+
+export interface IndianRegisterSummary {
+  /** Markers that fired on at least one answer, in stable surfacing order. */
+  markers: CulturalRegisterMarker[];
+  /** Candidate-facing fairness note per fired marker, parallel to `markers`. */
+  notes: string[];
+}
+
+/** Aggregate per-answer cultural-register detections into a single
+ *  report-level fairness summary. A marker is included if it fired on ANY
+ *  answer. Returns empty arrays when nothing fired — callers should hide the
+ *  surface entirely rather than render an empty "fairness applied" claim. */
+export function summarizeIndianRegister(regs: readonly CulturalRegister[]): IndianRegisterSummary {
+  const markers = MARKER_ORDER.filter((key) => regs.some((r) => r[key]));
+  return { markers, notes: markers.map((m) => REGISTER_FAIRNESS_NOTES[m]) };
+}

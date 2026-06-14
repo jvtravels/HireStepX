@@ -9,7 +9,7 @@ import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { formatScoringRubric, RECIPES } from "../data/focus-question-recipes";
 import { resolveHrRoundRecipe } from "./_hr-round-overlays";
 import { detectStarPresence } from "../src/_star-detection";
-import { detectCulturalRegister } from "../src/_cultural-register";
+import { detectCulturalRegister, summarizeIndianRegister } from "../src/_cultural-register";
 import {
   summarizeReverseInterview,
   type ReverseInterviewSummary,
@@ -359,6 +359,15 @@ interface SessionReport {
     note: string;
     bands: { strongHire: number; hire: number; leanHire: number; noHire: number };
   };
+  /**
+   * India-context fairness applied during scoring. Deterministically detected
+   * from the candidate's own words (src/_cultural-register.ts), this surfaces
+   * the non-penalty treatment a Western-tuned scorer would silently mark down
+   * (deferential gratitude, indirect failure framing, festival anchoring,
+   * pedigree recital, etc.). Empty `markers` → the UI hides the surface, so
+   * the "we adjusted for X" claim is only ever shown when X actually occurred.
+   */
+  fairnessSignals: { markers: string[]; notes: string[] };
   crossSessionInsights: CrossSessionInsight[];
   priorSessionCount: number;
   storyReuseFindings: StoryReuseFinding[];
@@ -890,6 +899,14 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       structuralAnchor,
     );
     const candidateCorpus = transcript.filter((t) => t.role === "candidate").map((t) => t.text).join("\n");
+    // India-context fairness — aggregate the deterministic cultural-register
+    // detections across every candidate answer into one report-level summary
+    // we can surface (makes the non-penalty scoring visible to the candidate).
+    const fairnessSignals = summarizeIndianRegister(
+      transcript
+        .filter((t) => t.role === "candidate")
+        .map((t) => detectCulturalRegister(t.text || "")),
+    );
 
     const thoughtBubble = normalizeThoughtBubble((parsed as Record<string, unknown>).thoughtBubble);
     const scoreConfidence = normalizeScoreConfidence((parsed as Record<string, unknown>).scoreConfidence);
@@ -978,6 +995,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
         : [],
       thoughtBubble,
       calibration: { companyLabel, note: companyNote, bands },
+      fairnessSignals,
       crossSessionInsights: normalizeCrossSessionInsights(
         (parsed as Record<string, unknown>).crossSessionInsights,
         priorReports.length,

@@ -189,6 +189,29 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
                 )}
               </div>
             )}
+            {data.fairnessSignals && data.fairnessSignals.notes.length > 0 && (
+              <div
+                style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: t.successWash, border: `1px solid ${t.successAccent}` }}
+                role="note"
+                aria-label="India-context fairness applied during scoring"
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.mono, fontSize: 10.5, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9 12l2 2 4-4" />
+                    <circle cx="12" cy="12" r="9" />
+                  </svg>
+                  India-context fairness applied
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 5 }}>
+                  {data.fairnessSignals.notes.map((n) => (
+                    <li key={n} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: 12.5, color: t.coal, lineHeight: 1.4 }}>
+                      <span aria-hidden="true" style={{ color: t.success, flexShrink: 0 }}>✓</span>
+                      {n}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="ir-strengths-improvements" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>

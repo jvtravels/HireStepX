@@ -131,6 +131,10 @@ export function sessionReportToInterviewResult(
           ],
         }
       : undefined,
+    fairnessSignals:
+      report.fairnessSignals && report.fairnessSignals.notes.length > 0
+        ? { notes: report.fairnessSignals.notes }
+        : undefined,
     priorSessionCount: report.priorSessionCount,
     crossSessionInsights: adaptInsights(report.crossSessionInsights),
     storyReuseFindings: report.storyReuseFindings.map((s) => ({

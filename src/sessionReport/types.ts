@@ -165,6 +165,11 @@ export interface InterviewResultData {
   scoreConfidence?: "high" | "medium" | "low";
   scoreConfidenceNote?: string;
   calibration?: Calibration;
+  /** India-context fairness applied during scoring — the non-penalty
+   *  treatment of Indian-register behaviour, deterministically detected from
+   *  the candidate's words. Renders under the calibration banner. Undefined /
+   *  empty `notes` = the surface is hidden. */
+  fairnessSignals?: { notes: string[] };
   priorSessionCount?: number;
   crossSessionInsights?: CrossSessionInsight[];
   storyReuseFindings?: StoryReuseFinding[];
