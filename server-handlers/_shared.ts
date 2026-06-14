@@ -286,24 +286,35 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
 /** Get the user's current subscription tier, accounting for expiry. Returns "pro" in dev mode. */
 export async function getSubscriptionTier(userId: string): Promise<"free" | "starter" | "pro" | "team"> {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return "pro"; // dev mode — unrestricted
-  try {
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end`,
-      { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` }, signal: ac.signal },
-    );
-    clearTimeout(timer);
-    if (!res.ok) return "free";
-    const profiles = await res.json();
-    if (!Array.isArray(profiles) || profiles.length === 0) return "free";
-    let tier = (profiles[0].subscription_tier || "free") as "free" | "starter" | "pro" | "team";
-    const subEnd = profiles[0].subscription_end;
-    if (tier !== "free" && subEnd && new Date(subEnd) < new Date()) tier = "free";
-    return tier;
-  } catch {
-    return "free";
-  }
+
+  // One profile lookup attempt. Distinguishes transient (5xx / network / timeout
+  // -> retry once) from definitive (2xx, or 4xx like a real not-found -> trust
+  // the answer). Mirrors the transient-vs-permanent handling in verifyAuth so a
+  // Supabase blip never silently downgrades a paying user and 403s their save.
+  const attempt = async (): Promise<{ tier: "free" | "starter" | "pro" | "team"; transient: boolean }> => {
+    try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end`,
+        { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` }, signal: ac.signal },
+      );
+      clearTimeout(timer);
+      if (!res.ok) return { tier: "free", transient: res.status >= 500 };
+      const profiles = await res.json();
+      if (!Array.isArray(profiles) || profiles.length === 0) return { tier: "free", transient: false };
+      let tier = (profiles[0].subscription_tier || "free") as "free" | "starter" | "pro" | "team";
+      const subEnd = profiles[0].subscription_end;
+      if (tier !== "free" && subEnd && new Date(subEnd) < new Date()) tier = "free";
+      return { tier, transient: false };
+    } catch {
+      return { tier: "free", transient: true }; // network error / abort
+    }
+  };
+
+  const first = await attempt();
+  if (!first.transient) return first.tier;
+  return (await attempt()).tier;
 }
 
 /* ─── CSRF Origin Validation ─── */

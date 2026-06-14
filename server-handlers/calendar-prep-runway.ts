@@ -24,6 +24,9 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABAS
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 const PROTECTED_COLUMNS = new Set(["id", "user_id", "created_at"]);
+// Base-table NOT NULL columns present in every deployment: never strip these
+// (a "missing" one is a real error, not an un-run migration). See calendar-save.
+const REQUIRED_COLUMNS = new Set(["title", "date"]);
 
 function svcHeaders(extra?: Record<string, string>): Record<string, string> {
   return {
@@ -34,7 +37,16 @@ function svcHeaders(extra?: Record<string, string>): Record<string, string> {
   };
 }
 
+/** Return a missing column name only when the error is a genuine undefined-column
+ *  code (PostgREST PGRST204 schema-cache miss / Postgres 42703), so an unrelated
+ *  failure mentioning a column can't trick the loop into stripping live data. */
 function missingColumn(errText: string): string | null {
+  let code: string | undefined;
+  try {
+    const parsed = JSON.parse(errText) as { code?: unknown };
+    if (typeof parsed.code === "string") code = parsed.code;
+  } catch { /* non-JSON error body: treat as non-strippable */ }
+  if (code !== "PGRST204" && code !== "42703") return null;
   return (
     errText.match(/Could not find the '(\w+)' column/)?.[1] ||
     errText.match(/column "(\w+)" of .* does not exist/i)?.[1] ||
@@ -137,9 +149,14 @@ export default async function handler(req: Request): Promise<Response> {
   // the whole batch rather than scheduling a partial runway.
   const rows: CalendarRow[] = [];
   for (const plan of plans) {
+    // Deterministic id per (parent, ladder stage). Because this id is the table
+    // PK, two runway-generation calls that race past the "already generated"
+    // check above produce identical ids, so the second insert collides on the
+    // PK instead of creating a duplicate ladder. Paired with the
+    // ignore-duplicates insert below, the loser becomes a clean no-op.
     const norm = normalizeCalendarEvent(planToEventBody(plan, parent), {
       userId: auth.userId,
-      id: crypto.randomUUID(),
+      id: `${parent.id}:prep:${plan.offsetLabel}`,
       updatedAt: now,
     });
     if (!norm.ok) {
@@ -161,7 +178,9 @@ async function insertRows(rows: CalendarRow[], headers: Record<string, string>):
   for (let attempt = 0; attempt < 12; attempt++) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/calendar_events`, {
       method: "POST",
-      headers: svcHeaders({ Prefer: "return=representation" }),
+      // ignore-duplicates: a deterministic-PK collision (the race loser, see the
+      // id derivation above) is silently skipped rather than 409-ing the batch.
+      headers: svcHeaders({ Prefer: "return=representation, resolution=ignore-duplicates" }),
       body: JSON.stringify(payload),
     });
     if (res.ok) {
@@ -174,7 +193,7 @@ async function insertRows(rows: CalendarRow[], headers: Record<string, string>):
     }
     const errText = await res.text().catch(() => "");
     const col = missingColumn(errText);
-    if (col && !PROTECTED_COLUMNS.has(col)) {
+    if (col && !PROTECTED_COLUMNS.has(col) && !REQUIRED_COLUMNS.has(col)) {
       stripped.push(col);
       payload = payload.map((p) => {
         const { [col]: _drop, ...rest } = p;
