@@ -466,7 +466,15 @@ export default function DashboardHome() {
                 <StatCell label="Total sessions"     value={`${MOCK_KPI.sessionsComplete.value}`} unit="" />
               </dl>
             ) : (
-              <ComingSoonStub label="Progress metrics" detail="Practice hours, average score, and session totals roll in once the analytics pipeline ships." />
+              /* Real stats — computed from actual user data, no pipeline needed */
+              <dl className="hsx-dh-stats" style={{
+                display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, margin: 0,
+                borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`,
+              }}>
+                <StatCell label="Total sessions"  value={String(user?.practiceTimestamps?.length ?? core.recentSessions.length ?? 0)} unit="" />
+                <StatCell label="Last score"      value={core.recentSessions[0]?.score != null ? String(core.recentSessions[0].score) : "—"} unit={core.recentSessions[0]?.score != null ? "/100" : ""} />
+                <StatCell label="Day streak"      value={String(core.currentStreak ?? 0)} unit="🔥" />
+              </dl>
             )}
           </section>
 
@@ -1036,24 +1044,6 @@ function MilestoneTimeline() {
   );
 }
 
-function ComingSoonStub({ label, detail }: { label: string; detail: string }) {
-  return (
-    <div style={{
-      padding: "18px 20px",
-      background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12,
-    }}>
-      <div style={{
-        fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.6,
-        textTransform: "uppercase", marginBottom: 6,
-      }}>
-        {label} · Coming soon
-      </div>
-      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.5, margin: 0 }}>
-        {detail}
-      </p>
-    </div>
-  );
-}
 
 function DailyGoalStub() {
   return (
