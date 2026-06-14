@@ -67,10 +67,15 @@ export function formatEventDate(date: string): string {
 }
 
 export function formatEventTime(time: string): string {
-  const [h, m] = time.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 || 12;
-  return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
+  // Guard a missing or malformed time the same way daysUntilEvent does: an
+  // event saved with an empty/colon-less time ("" or "9") otherwise yields an
+  // undefined minute and crashes the whole dashboard on `m.toString()`.
+  const [h, m] = (time || "00:00").split(":").map(Number);
+  const hh = Number.isFinite(h) ? h : 0;
+  const mm = Number.isFinite(m) ? m : 0;
+  const ampm = hh >= 12 ? "PM" : "AM";
+  const hour = hh % 12 || 12;
+  return `${hour}:${mm.toString().padStart(2, "0")} ${ampm}`;
 }
 
 /* ── RFC 5545 (iCalendar) helpers ── */
