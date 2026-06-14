@@ -65,6 +65,21 @@ describe("signState / verifyState", () => {
     expect(await verifyState("other", state)).toBeNull();
     expect(await verifyState("secret", "no-dot")).toBeNull();
   });
+  it("enforces a max age when iat is present", async () => {
+    const iat = 1_000_000; // unix seconds
+    const state = await signState("secret", { userId: "u1", nonce: "n1", iat });
+    // within window
+    const fresh = await verifyState("secret", state, { now: (iat + 60) * 1000, maxAgeSec: 600 });
+    expect(fresh?.userId).toBe("u1");
+    // expired
+    expect(await verifyState("secret", state, { now: (iat + 700) * 1000, maxAgeSec: 600 })).toBeNull();
+    // future-dated beyond skew
+    expect(await verifyState("secret", state, { now: (iat - 120) * 1000, maxAgeSec: 600 })).toBeNull();
+  });
+  it("skips the age check when no maxAgeSec is given (legacy states)", async () => {
+    const state = await signState("secret", { userId: "u1", nonce: "n1", iat: 1 });
+    expect((await verifyState("secret", state))?.userId).toBe("u1");
+  });
 });
 
 describe("googleEventToAction", () => {
@@ -101,6 +116,25 @@ describe("googleEventToAction", () => {
   it("skips events with no id or unparseable start", () => {
     expect(googleEventToAction({ status: "confirmed" }, ctx).action).toBe("skip");
     expect(googleEventToAction({ id: "g4", start: {} }, ctx).action).toBe("skip");
+  });
+  it("skips our own echo (event carrying the hirestepx extended property)", () => {
+    const g: GoogleEvent = {
+      id: "g5",
+      status: "confirmed",
+      summary: "Mock",
+      start: { dateTime: "2026-07-01T09:00:00Z" },
+      extendedProperties: { private: { [HSX_PROP]: "row-99" } },
+    };
+    const a = googleEventToAction(g, ctx);
+    expect(a.action).toBe("skip");
+  });
+  it("still propagates a Google-side delete even for our own event", () => {
+    const g: GoogleEvent = {
+      id: "g6",
+      status: "cancelled",
+      extendedProperties: { private: { [HSX_PROP]: "row-99" } },
+    };
+    expect(googleEventToAction(g, ctx)).toEqual({ action: "delete", googleEventId: "g6" });
   });
 });
 

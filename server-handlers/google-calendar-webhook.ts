@@ -32,9 +32,11 @@ export default async function handler(req: Request): Promise<Response> {
   if (resourceState === "sync") return new Response(null, { status: 200 }); // initial ack
 
   const row = await getSyncRowByChannel(channelId, resourceId);
-  // Token we set on watch() is the user id; reject a notification whose token
-  // doesn't match the row it claims to address.
-  if (!row || (channelToken && channelToken !== row.user_id)) {
+  // We always set a channel token on watch() (the user id), and Google echoes it
+  // on every notification for that channel. Require it to be present AND match:
+  // a missing or mismatched token means a spoofed notification naming a channel
+  // that isn't theirs, so we ack-and-ignore rather than running a sync for it.
+  if (!row || !channelToken || channelToken !== row.user_id) {
     return new Response(null, { status: 200 });
   }
 

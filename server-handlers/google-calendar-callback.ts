@@ -39,7 +39,9 @@ export default async function handler(req: Request): Promise<Response> {
   const state = url.searchParams.get("state");
   if (!code || !state) return redirect("error");
 
-  const parsed = await verifyState(STATE_SECRET, state);
+  // OAuth round-trips complete in seconds; a 10-minute ceiling bounds replay of
+  // a leaked state without tripping legitimately slow consent flows.
+  const parsed = await verifyState(STATE_SECRET, state, { now: Date.now(), maxAgeSec: 600 });
   if (!parsed) return redirect("error");
   const userId = parsed.userId;
 

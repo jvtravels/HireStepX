@@ -50,7 +50,7 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 
-  const state = await signState(STATE_SECRET, { userId: auth.userId, nonce: crypto.randomUUID() });
+  const state = await signState(STATE_SECRET, { userId: auth.userId, nonce: crypto.randomUUID(), iat: Math.floor(Date.now() / 1000) });
   const url = buildAuthUrl({
     clientId: process.env.GOOGLE_CLIENT_ID || "",
     redirectUri: `${APP_URL}/api/calendar/google/callback`,

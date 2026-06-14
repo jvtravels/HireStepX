@@ -73,13 +73,29 @@ function b64url(bytes: Uint8Array): string {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export async function signState(secret: string, payload: { userId: string; nonce: string }): Promise<string> {
+export interface StatePayload {
+  userId: string;
+  nonce: string;
+  /** Unix seconds the state was issued. Optional for backward compatibility;
+   *  when present, verifyState can enforce a max age to bound replay. */
+  iat?: number;
+}
+
+export async function signState(secret: string, payload: StatePayload): Promise<string> {
   const body = b64url(new TextEncoder().encode(JSON.stringify(payload)));
   const sig = await hmac(secret, body);
   return `${body}.${sig}`;
 }
 
-export async function verifyState(secret: string, state: string): Promise<{ userId: string; nonce: string } | null> {
+/** Verify the HMAC and shape of an OAuth state. When `opts.maxAgeSec` is given
+ *  and the payload carries an `iat`, also reject states older than that window
+ *  (and any future-dated ones), which bounds how long a leaked state can be
+ *  replayed. Without those, the time check is skipped (legacy-compatible). */
+export async function verifyState(
+  secret: string,
+  state: string,
+  opts?: { now?: number; maxAgeSec?: number },
+): Promise<StatePayload | null> {
   const parts = state.split(".");
   if (parts.length !== 2) return null;
   const [body, sig] = parts;
@@ -91,8 +107,13 @@ export async function verifyState(secret: string, state: string): Promise<{ user
   if (diff !== 0) return null;
   try {
     const json = JSON.parse(new TextDecoder().decode(fromB64url(body)));
-    if (json && typeof json.userId === "string" && typeof json.nonce === "string") return json;
-    return null;
+    if (!json || typeof json.userId !== "string" || typeof json.nonce !== "string") return null;
+    if (opts?.maxAgeSec != null && typeof json.iat === "number") {
+      const nowSec = Math.floor((opts.now ?? 0) / 1000);
+      const age = nowSec - json.iat;
+      if (age < -60 || age > opts.maxAgeSec) return null; // expired or future-dated
+    }
+    return json;
   } catch {
     return null;
   }
@@ -129,6 +150,14 @@ export type GoogleSyncAction =
  *  malformed entries are skipped. */
 export function googleEventToAction(g: GoogleEvent, ctx: { timezone: string }): GoogleSyncAction {
   if (!g.id) return { action: "skip", reason: "no id" };
+  // Echo guard: events we exported to Google carry our id in a private
+  // extended property. Re-importing them would round-trip our own writes back
+  // into the store and re-stamp updated_at on every poll. A user deleting such
+  // an event on the Google side still propagates (cancellation -> delete); we
+  // only skip the no-op upsert echo.
+  if (g.extendedProperties?.private?.[HSX_PROP] && g.status !== "cancelled") {
+    return { action: "skip", reason: "own echo" };
+  }
   if (g.status === "cancelled") return { action: "delete", googleEventId: g.id };
 
   const startUtc = extractInstant(g.start);
