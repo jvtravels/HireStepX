@@ -443,11 +443,14 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
   const ri = trajectory[n - 1];
   const baselineRi = trajectory[0];
 
-  // delta14d — RI now minus RI at the latest snapshot >= 14 days old.
+  // delta14d — RI now minus RI at the latest snapshot >= 14 days old. When
+  // no session is genuinely that old (young account), there is no 14-day
+  // baseline to compare against, so the change is 0 rather than the whole
+  // lifetime gain mislabelled as "last 14 days".
   const cutoff = nowMs - 14 * DAY_MS;
-  let priorIdx = 0;
+  let priorIdx = -1;
   for (let i = n - 1; i >= 0; i--) { if (Date.parse(sessions[i].createdAt) <= cutoff) { priorIdx = i; break; } }
-  const delta14d = ri - trajectory[priorIdx];
+  const delta14d = priorIdx >= 0 ? ri - trajectory[priorIdx] : 0;
 
   const pillars = buildPillars(sessions, vectors, nowMs);
 
@@ -563,7 +566,7 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
   return {
     ri, band: bandFromRi(ri, threshold), confidence, threshold, delta14d, sessions: n,
     percentile, hireBand, bandMix,
-    cohort: { label: `typical ${[profile.targetCompany, profile.targetRole].filter(Boolean).join(" ") || "target"} hire`, ri: cohortRi },
+    cohort: { label: `${[profile.targetCompany, profile.targetRole].filter(Boolean).join(" ") || "target"} hire bar`, ri: cohortRi },
     baseline: { ri: baselineRi, label: `your first session, ${weeksAgoLabel(Date.parse(sessions[0].createdAt), nowMs)}` },
     target: {
       role: profile.targetRole || "Your role",
@@ -591,7 +594,7 @@ const PILLAR_BLURBS: Record<PillarKey, (p: number) => string> = {
 function buildPillars(sessions: RawSession[], vectors: PillarScores[], nowMs: number): Pillar[] {
   const n = sessions.length;
   const cutoff = nowMs - 14 * DAY_MS;
-  let priorIdx = 0;
+  let priorIdx = -1;
   for (let i = n - 1; i >= 0; i--) { if (Date.parse(sessions[i].createdAt) <= cutoff) { priorIdx = i; break; } }
   const keys: PillarKey[] = ["competence", "consistency", "coverage", "currency", "composure"];
   const skillAgg = aggregateSkills(sessions);
@@ -608,7 +611,7 @@ function buildPillars(sessions: RawSession[], vectors: PillarScores[], nowMs: nu
   return keys.map((key) => {
     const score = vectors[n - 1][key];
     const trend = vectors.map((v) => v[key]);
-    const delta = score - vectors[priorIdx][key];
+    const delta = priorIdx >= 0 ? score - vectors[priorIdx][key] : 0;
     let drivers: PillarDriver[] = [];
     let hold = "", fix = "";
 
@@ -868,7 +871,10 @@ function buildNegotiation(sessions: RawSession[]): ReadinessPayload["negotiation
       outcome: str("outcome", "completed"),
       anchorTurn: num("anchorTurn", 0),
       lpaGained: num("lpaGained", 0),
-      bandTraversalPct: round(num("bandTraversalPct", 0)),
+      // Producer (save-session.ts) writes `bandTraversal` on a 0-1 scale;
+      // the UI wants a percentage. Reading the non-existent `bandTraversalPct`
+      // pinned this to 0 for every negotiation session.
+      bandTraversalPct: clamp(round(num("bandTraversal", 0) * 100), 0, 100),
       leverDiversity: num("leverDiversity", 0),
       archetype: str("archetype", "Negotiation practiced. Review the round for anchor timing."),
     };

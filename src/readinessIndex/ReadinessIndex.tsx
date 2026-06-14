@@ -11,6 +11,7 @@ import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
 import { useDashboardSubscription, useDashboardUI } from "../DashboardContext";
 import { ProGate } from "../dashboardComponents";
 import { authHeaders } from "../supabase";
+import { captureClientEvent } from "../posthogClient";
 import type { Fixture, RangeKeyLocal as RangeKey, Pillar } from "./types";
 import { SHEET, BAND_META } from "./ui";
 import {
@@ -50,7 +51,7 @@ function ExportButtons() {
     <div style={{ display: "inline-flex", gap: 8 }}>
       <button type="button" onClick={print} className="rix-btn rix-ghost rix-focus rix-tap"
         style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 9, border: `1px solid ${t.line}`, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
-        <span aria-hidden="true">↓</span> Download PDF
+        <span aria-hidden="true">↓</span> Print / Save as PDF
       </button>
       <button type="button" onClick={copyLink} className="rix-btn rix-ghost rix-focus rix-tap"
         style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 9, border: `1px solid ${t.line}`, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
@@ -266,17 +267,19 @@ function useReadinessPayload(): { state: FetchState; reload: () => void } {
         const headers = await authHeaders();
         const res = await fetch("/api/readiness-index", { method: "GET", headers, signal: ctrl.signal });
         if (!alive) return;
-        if (!res.ok) { setState({ status: "error" }); return; }
+        if (!res.ok) { captureClientEvent("ri_fetch_error", { status: res.status }); setState({ status: "error" }); return; }
         const json: unknown = await res.json().catch(() => null);
         if (!alive) return;
         const payload = json && typeof json === "object" && "payload" in json
           ? (json as { payload: Fixture | null }).payload
           : null;
-        if (!payload) { setState({ status: "empty" }); return; }
+        if (!payload) { captureClientEvent("analytics_empty"); setState({ status: "empty" }); return; }
+        captureClientEvent("analytics_viewed", { sessions: payload.sessions, sparse: payload.meta?.sparse ?? false, ri: payload.ri });
         setState({ status: "ready", payload });
       } catch (err) {
         if (!alive || (err instanceof DOMException && err.name === "AbortError")) return;
         console.error(`[readiness-index] fetch failed: ${err instanceof Error ? err.message : String(err)}`);
+        captureClientEvent("ri_fetch_error", { reason: err instanceof Error ? err.message : String(err) });
         setState({ status: "error" });
       }
     })();
@@ -292,6 +295,8 @@ export function ReadinessIndex() {
   const { isFree } = useDashboardSubscription();
   const { setShowUpgradeModal, isMobile } = useDashboardUI();
   const { state, reload } = useReadinessPayload();
+
+  React.useEffect(() => { if (isFree) captureClientEvent("analytics_progate"); }, [isFree]);
 
   if (isFree) return <ProGate feature="The Readiness Index" onUpgrade={() => setShowUpgradeModal(true)} />;
   if (state.status === "loading") return <LoadingState />;

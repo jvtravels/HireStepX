@@ -74,7 +74,7 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
               <DeltaTag value={d.delta14d} /> <span style={{ color: t.inkSoft }}>last 14 days</span>
             </span>
             <span style={{ padding: "7px 14px", borderRadius: 999, background: t.indigo100, fontFamily: f.sans, fontSize: 13, color: t.indigoDeep, fontWeight: 600 }}>
-              p{d.percentile} vs {d.cohort.label.replace("typical ", "")}
+              {vsCohort >= 0 ? "+" : ""}{vsCohort} vs the {d.cohort.label}
             </span>
             <span style={{ padding: "7px 14px", borderRadius: 999, background: t.creamSoft, fontFamily: f.sans, fontSize: 13, color: t.coal }}>
               {Math.round(d.confidence * 100)}% confidence
@@ -84,10 +84,10 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
           {/* Comparison frames — cohort + own baseline give the number a reference */}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 180, padding: "10px 14px", background: t.creamSoft, borderRadius: 10 }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs {d.cohort.label}</div>
+              <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs the {d.cohort.label}</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
                 <span style={{ fontFamily: f.serif, fontSize: 22, color: vsCohort >= 0 ? t.success : t.copper }}>{vsCohort >= 0 ? "+" : ""}{vsCohort}</span>
-                <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>RI ({d.cohort.ri} typical)</span>
+                <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>RI (bar at {d.cohort.ri})</span>
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 180, padding: "10px 14px", background: t.creamSoft, borderRadius: 10 }}>
@@ -109,7 +109,7 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
             <div style={{ flex: 1, minWidth: 220 }}>
               <p style={{ margin: 0, fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.5 }}>
                 {d.band === "ready" ? (
-                  <>You're <strong style={{ color: t.success }}>above {d.target.company}'s bar</strong> and ahead of the typical hire. About{" "}
+                  <>You're <strong style={{ color: t.success }}>above {d.target.company}'s bar</strong> with margin to spare. About{" "}
                     <strong>{d.projection.sessions} more sessions</strong> lifts you to RI {d.projection.targetRi} and a comfortable margin.</>
                 ) : (
                   <>About <strong>{d.projection.sessions} focused sessions</strong> (~{d.projection.hours} hrs) puts you over{" "}
@@ -127,6 +127,7 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
 /* Real hiring-band distribution across sessions. */
 export function BandMix({ d }: { d: Fixture }) {
   const segs = d.bandMix.map((b) => ({ label: HIRE_META[b.band].label, n: b.n, color: HIRE_META[b.band].color }));
+  const hasBands = segs.some((s) => s.n > 0);
   return (
     <Card as="section">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
@@ -138,7 +139,11 @@ export function BandMix({ d }: { d: Fixture }) {
           Latest: <strong style={{ color: HIRE_META[d.hireBand].color }}>{HIRE_META[d.hireBand].label}</strong> · {d.sessions} sessions
         </span>
       </div>
-      <StackBar segments={segs} label="Hiring verdict across sessions" />
+      {hasBands ? (
+        <StackBar segments={segs} label="Hiring verdict across sessions" />
+      ) : (
+        <EmptyState title="No graded sessions yet" need="Complete one evaluated session to see how your answers would be called." />
+      )}
     </Card>
   );
 }
@@ -387,10 +392,10 @@ export function BlindSpots({ d }: { d: Fixture }) {
                 <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{b.competency}</div>
                 <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
               </div>
-              <button type="button" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
-                style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              <a href="/interview" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
+                style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>
                 Practice
-              </button>
+              </a>
             </li>
           ))}
         </ul>
@@ -405,6 +410,12 @@ export function BlindSpots({ d }: { d: Fixture }) {
 
 export function DeliveryPanel({ d, narrow }: { d: Fixture; narrow: boolean }) {
   const c = d.composure;
+  // Voice metrics only exist for sessions run in voice mode. A text-only
+  // history leaves every field at 0, which would otherwise render as a wall
+  // of green "perfect" cards. Treat an all-zero composure as "no data".
+  const hasVoice = c.fillerPerMin > 0 || c.paceWpm > 0 || c.silenceRatio > 0 ||
+    c.hedgingPerMin > 0 || c.firstPersonRatio > 0 || c.lexicalDiversity > 0 ||
+    c.medianLatencyMs > 0 || c.selfCorrectionRate > 0 || c.energy > 0;
   return (
     <Card as="section" id="zone-delivery" style={{ scrollMarginTop: 88 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
@@ -414,6 +425,9 @@ export function DeliveryPanel({ d, narrow }: { d: Fixture; narrow: boolean }) {
         </div>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>the green band on each is the interviewer-comfort range</span>
       </div>
+      {!hasVoice ? (
+        <EmptyState title="No voice delivery read yet" need="Run a session in voice mode so we can measure pace, fillers, latency and energy." />
+      ) : (
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(3, 1fr)", gap: 14 }}>
         <MetricStat label="Filler / min" value={`${c.fillerPerMin}`} tone={c.fillerPerMin <= 5 ? "good" : "warn"} meter={{ min: 0, max: 12, lo: 0, hi: 5, value: c.fillerPerMin, lowerBetter: true }} hint="comfortable ≤ 5" />
         <MetricStat label="Pace" value={`${c.paceWpm}`} unit="wpm" tone={c.paceWpm <= 160 ? "good" : "warn"} meter={{ min: 90, max: 200, lo: 120, hi: 160, value: c.paceWpm }} hint="120–160 ideal" />
@@ -425,6 +439,7 @@ export function DeliveryPanel({ d, narrow }: { d: Fixture; narrow: boolean }) {
         <MetricStat label="Self-corrections / min" value={`${c.selfCorrectionRate.toFixed(1)}`} tone={c.selfCorrectionRate <= 1.5 ? "good" : "warn"} meter={{ min: 0, max: 4, lo: 0, hi: 1.5, value: c.selfCorrectionRate, lowerBetter: true }} hint="“actually, scratch that”" />
         <MetricStat label="Energy" value={`${c.energy}`} unit="/100" tone={c.energy >= 70 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 70, hi: 100, value: c.energy }} hint="vocal dynamism" />
       </div>
+      )}
     </Card>
   );
 }
@@ -732,8 +747,8 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
                 <span style={{ flex: 1, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{r.days}d idle</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
-                <button type="button" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
-                  style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Refresh</button>
+                <a href="/interview" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
+                  style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>Refresh</a>
               </li>
             ))}
           </ul>
@@ -781,8 +796,8 @@ export function FollowUpPrep({ d }: { d: Fixture }) {
               <div style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.45 }}>{q.question}</div>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 3 }}>Why you · {q.why}</div>
             </div>
-            <button type="button" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
-              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Drill</button>
+            <a href="/interview" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
+              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0, textDecoration: "none", display: "inline-block" }}>Drill</a>
           </li>
         ))}
       </ol>

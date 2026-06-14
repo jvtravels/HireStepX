@@ -67,10 +67,13 @@ export default async function handler(req: Request): Promise<Response> {
   const sbHeaders = { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, Accept: "application/json" };
   const uid = encodeURIComponent(auth.userId);
 
+  // Order DESC so the cap keeps the MOST RECENT sessions; an ASC cap would
+  // silently drop a heavy user's latest sessions and freeze their RI on stale
+  // history. The core re-sorts ascending, and we reverse below to match.
   const sessionsQuery =
     `sessions?user_id=eq.${uid}` +
     `&select=id,created_at,focus,type,difficulty,duration,score,questions,negotiation_metrics,report_json` +
-    `&order=created_at.asc&limit=${MAX_SESSIONS}`;
+    `&order=created_at.desc&limit=${MAX_SESSIONS}`;
   const profileQuery =
     `profiles?id=eq.${uid}&select=target_role,target_company,experience_level,interview_date,practice_timestamps`;
 
@@ -87,7 +90,8 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Could not load sessions" }), { status: 502, headers });
     }
     const sJson: unknown = await sRes.json().catch(() => []);
-    sessionRows = Array.isArray(sJson) ? (sJson as SessionRow[]) : [];
+    // Fetched newest-first; reverse to oldest-first for the core.
+    sessionRows = Array.isArray(sJson) ? (sJson as SessionRow[]).reverse() : [];
     if (pRes.ok) {
       const pJson: unknown = await pRes.json().catch(() => []);
       profileRow = Array.isArray(pJson) && pJson.length ? (pJson[0] as ProfileRow) : null;
