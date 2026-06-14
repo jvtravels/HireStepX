@@ -445,16 +445,16 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? "#F4E5D8" : c.gilt }}>{plan.name}</p>
                   <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? "#FAF7F0" : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                     {plan.price}
-                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(14,12,8,0.7)" : c.stone }}>
+                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(250,247,240,0.7)" : c.stone }}>
                       {plan.unit}
                     </span>
                   </p>
-                  <p style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(14,12,8,0.7)" : c.stone }}>{plan.sub}</p>
+                  <p style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(250,247,240,0.72)" : c.stone }}>{plan.sub}</p>
                 </div>
 
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {plan.features.map((f) => (
-                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(14,12,8,0.78)" : c.chalk }}>
+                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(250,247,240,0.86)" : c.chalk }}>
                       <span aria-hidden style={{ color: featured ? "#F4E5D8" : c.gilt, marginTop: 2 }}>→</span>{f}
                     </li>
                   ))}
