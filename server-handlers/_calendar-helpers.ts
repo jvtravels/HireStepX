@@ -53,10 +53,14 @@ const DEFAULT_DURATION = 60;
 const MAX_REMINDERS = 6;
 const MAX_REMINDER_MINUTES = 10080; // 1 week
 
-/** Default reminder ladder when a client sends `reminders: true` (legacy boolean). */
+/** Default reminder ladder when a client sends `reminders: true` (legacy boolean).
+ *  Both offsets clear the daily-cron MIN_EMAIL_LEAD floor (120m), so each one
+ *  actually dispatches an email. A sub-2h "30 minutes before" reminder can't be
+ *  served by a once-a-day job, so it's deliberately not in the default ladder
+ *  (it would set an expectation we silently never meet). See _reminder-dispatch.ts. */
 export const DEFAULT_REMINDERS: Reminder[] = [
-  { channel: "email", minutesBefore: 1440 }, // 1 day
-  { channel: "email", minutesBefore: 30 },
+  { channel: "email", minutesBefore: 4320 }, // 72h / 3 days
+  { channel: "email", minutesBefore: 1440 }, // 24h / 1 day
 ];
 
 export function asString(v: unknown, max = 500): string {
