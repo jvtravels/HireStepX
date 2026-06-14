@@ -8,6 +8,7 @@ import {
   filterGroundedRedFlags,
   validateReportShape,
   computeBlendedOverall,
+  computeStructuralAnchor,
   normalizeThoughtBubble,
   normalizeScoreConfidence,
   normalizeStoryReuse,
@@ -290,6 +291,70 @@ describe("computeBlendedOverall", () => {
     // composite=90, llm=50 → 0.6*90 + 0.4*50 = 74
     const out = computeBlendedOverall([{ name: "X", score: 90 }], {}, 50);
     expect(out.overallScore).toBe(74);
+  });
+
+  it("anchor param is backward-compatible — omitting it leaves the pure blend unchanged", () => {
+    const noAnchor = computeBlendedOverall([{ name: "X", score: 90 }], {}, 50);
+    expect(noAnchor.overallScore).toBe(74); // identical to the 60/40 case above
+  });
+
+  it("clamps the final score to within ±18 of the structural anchor (kills outliers)", () => {
+    // Skills + LLM blend to 90, but the transcript only supports an anchor of 50.
+    const out = computeBlendedOverall([{ name: "X", score: 90 }], {}, 90, 50);
+    expect(out.overallScore).toBeLessThanOrEqual(50 + 18);
+    expect(out.overallScore).toBeGreaterThanOrEqual(50 - 18);
+  });
+
+  it("compresses run-to-run variance — identical anchor halves an LLM swing", () => {
+    // Same transcript (same anchor=60), two LLM runs that disagree by 30 pts.
+    const anchor = 60;
+    const lowRun = computeBlendedOverall([{ name: "X", score: 45 }], {}, 45, anchor);
+    const highRun = computeBlendedOverall([{ name: "X", score: 75 }], {}, 75, anchor);
+    const rawSpread = 75 - 45; // 30
+    const anchoredSpread = highRun.overallScore - lowRun.overallScore;
+    // The 0.35 anchor pull must shrink the spread, not preserve it.
+    expect(anchoredSpread).toBeLessThan(rawSpread);
+    expect(anchoredSpread).toBeLessThanOrEqual(Math.round(rawSpread * (1 - 0.35)) + 1);
+  });
+});
+
+describe("computeStructuralAnchor", () => {
+  const turn = (role: TranscriptTurn["role"], text: string): TranscriptTurn => ({ role, text });
+
+  it("returns a neutral 50 when there are no substantive candidate answers", () => {
+    expect(computeStructuralAnchor([])).toBe(50);
+    expect(computeStructuralAnchor([turn("candidate", "too short")])).toBe(50);
+    expect(computeStructuralAnchor([turn("candidate", "[SKIPPED] " + "word ".repeat(40))])).toBe(50);
+  });
+
+  it("is deterministic — identical transcript yields the identical anchor every call", () => {
+    const t = [
+      turn("interviewer", "Tell me about a hard project."),
+      turn(
+        "candidate",
+        "At my last company we were migrating a legacy payments system. The goal was to cut latency. I designed a new caching layer and I led the rollout, which led to a 40% drop in p99. I learned to de-risk migrations in stages.",
+      ),
+    ];
+    const a = computeStructuralAnchor(t);
+    const b = computeStructuralAnchor(t);
+    expect(a).toBe(b);
+  });
+
+  it("scores a full STAR+metrics+learning answer well above a one-pillar fragment", () => {
+    const strong = [
+      turn(
+        "candidate",
+        "At my last company the goal was to reduce churn. I built a re-engagement flow and I shipped it, which led to a 25% lift in retention. I learned that onboarding is the highest-leverage surface to invest in going forward.",
+      ),
+    ];
+    const weak = [
+      turn(
+        "candidate",
+        "I think it was a good project and we did some stuff and it turned out fine overall and people seemed pretty happy with what we ended up building together as a team.",
+      ),
+    ];
+    expect(computeStructuralAnchor(strong)).toBeGreaterThan(computeStructuralAnchor(weak));
+    expect(computeStructuralAnchor(strong)).toBeGreaterThanOrEqual(70);
   });
 });
 

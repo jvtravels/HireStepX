@@ -7,6 +7,7 @@ import {
   type FocusMetric,
   type FocusMetricTone,
 } from "../data/focus-signature-metrics";
+import { detectStarPresence } from "../src/_star-detection";
 
 export type { FocusMetric } from "../data/focus-signature-metrics";
 
@@ -360,10 +361,64 @@ export function validateReportShape(
  * 60/40 split — composite keeps company calibration honest, LLM captures
  * cross-cutting signal weights don't model. Result is clamped 0-100.
  */
+/* ── Score-stability anchor ──
+ *
+ * WHY: both the LLM `overallScore` and its per-skill scores are regenerated
+ * each run and drift run-to-run on identical input — the single biggest
+ * credibility bug in the report (a 72 one run, 58 the next on the same
+ * transcript). `computeStructuralAnchor` derives a deterministic 0-100
+ * estimate from the transcript using the SAME STAR detector the live coach
+ * uses, so identical input always yields the identical anchor.
+ * `computeBlendedOverall` then (a) pulls the LLM blend toward that anchor by
+ * ANCHOR_WEIGHT — compressing a Δ run-to-run swing to (1-ANCHOR_WEIGHT)·Δ —
+ * and (b) hard-clamps the result to ±ANCHOR_MAX_DEVIATION of it, killing
+ * egregious outliers. Conservative defaults: the LLM still owns the majority
+ * of the content judgment; the anchor only brakes variance and outliers. */
+const ANCHOR_WEIGHT = 0.35;
+const ANCHOR_MAX_DEVIATION = 18;
+
+/**
+ * Deterministic structural anchor (0-100) for the overall score, computed
+ * purely from the transcript (no LLM). Only substantive candidate answers
+ * (≥25 words, not skipped) count. Scale is calibrated to the known
+ * mock-interview distribution (average 45-65, per the scorer prompt): a
+ * full STAR answer with metrics lands ~75-80; a one-pillar fragment ~35-45;
+ * with no substantive answer to ground on it returns a neutral 50 so the
+ * blend/clamp become a no-op on the LLM score.
+ */
+export function computeStructuralAnchor(transcript: TranscriptTurn[]): number {
+  const answers = transcript
+    .filter((t) => t.role === "candidate")
+    .map((t) => (t.text || "").trim())
+    .filter(
+      (text) =>
+        !text.startsWith("[SKIPPED") &&
+        text.split(/\s+/).filter(Boolean).length >= 25,
+    );
+  if (answers.length === 0) return 50;
+
+  let sum = 0;
+  for (const text of answers) {
+    const star = detectStarPresence(text);
+    // Base 30 keeps a structurally-thin-but-present answer off the floor;
+    // 4 STAR pillars carry the bulk (0..55); metrics + STAR+L learning are
+    // bonuses for concrete, reflective answers.
+    const pillarScore = (star.count / 4) * 55;
+    const metricBonus = star.hasMetrics ? 10 : 0;
+    const learningBonus = star.learning ? 5 : 0;
+    sum += 30 + pillarScore + metricBonus + learningBonus;
+  }
+  return Math.round(Math.max(0, Math.min(100, sum / answers.length)));
+}
+
 export function computeBlendedOverall(
   rawSkills: Array<{ name: string; score: number }>,
   skillWeights: Record<string, number>,
   llmOverall: number,
+  /** Deterministic structural anchor from computeStructuralAnchor(). When
+   *  omitted the function behaves exactly as before (pure LLM blend) so
+   *  existing callers/tests are unaffected. */
+  structuralAnchor?: number,
 ): { weightedSkills: Array<{ name: string; score: number; weight: number }>; overallScore: number } {
   const weightedSkills = rawSkills.map((s) => ({
     name: s.name,
@@ -375,7 +430,18 @@ export function computeBlendedOverall(
     weightedSkills.length > 0
       ? weightedSkills.reduce((sum, w) => sum + w.score * w.weight, 0) / totalWeight
       : llmOverall;
-  const overallScore = Math.max(0, Math.min(100, Math.round(composite * 0.6 + llmOverall * 0.4)));
+  const blended = composite * 0.6 + llmOverall * 0.4;
+
+  let anchored = blended;
+  if (typeof structuralAnchor === "number" && isFinite(structuralAnchor)) {
+    const pulled = blended * (1 - ANCHOR_WEIGHT) + structuralAnchor * ANCHOR_WEIGHT;
+    anchored = Math.max(
+      structuralAnchor - ANCHOR_MAX_DEVIATION,
+      Math.min(structuralAnchor + ANCHOR_MAX_DEVIATION, pulled),
+    );
+  }
+
+  const overallScore = Math.max(0, Math.min(100, Math.round(anchored)));
   return { weightedSkills, overallScore };
 }
 

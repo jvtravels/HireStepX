@@ -34,6 +34,7 @@ import {
   filterGroundedRedFlags,
   validateReportShape,
   computeBlendedOverall,
+  computeStructuralAnchor,
   normalizeThoughtBubble,
   normalizeScoreConfidence,
   normalizeStoryReuse,
@@ -879,7 +880,15 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const rawSkills = Array.isArray(parsed.skills) ? parsed.skills.slice(0, 8) : [];
     const skillWeights = companyProfile?.skillWeights ?? {};
     const llmOverall = typeof parsed.overallScore === "number" ? parsed.overallScore : 50;
-    const { weightedSkills, overallScore } = computeBlendedOverall(rawSkills, skillWeights, llmOverall);
+    // Deterministic structural anchor stabilizes the score run-to-run on
+    // identical transcripts (see computeStructuralAnchor / computeBlendedOverall).
+    const structuralAnchor = computeStructuralAnchor(transcript);
+    const { weightedSkills, overallScore } = computeBlendedOverall(
+      rawSkills,
+      skillWeights,
+      llmOverall,
+      structuralAnchor,
+    );
     const candidateCorpus = transcript.filter((t) => t.role === "candidate").map((t) => t.text).join("\n");
 
     const thoughtBubble = normalizeThoughtBubble((parsed as Record<string, unknown>).thoughtBubble);
