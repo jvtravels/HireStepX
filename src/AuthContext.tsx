@@ -123,11 +123,26 @@ function isLoginLocked(): { locked: boolean; remainingSeconds: number } {
 function tierCacheKey(userId: string): string {
   return `hirestepx_tier_${userId}`;
 }
-function cacheTier(userId: string, tier: string | undefined, subscriptionEnd?: string): void {
+function cacheTier(
+  userId: string,
+  tier: string | undefined,
+  subscriptionEnd?: string,
+  practiceTimestamps?: string[],
+  targetRole?: string,
+): void {
   if (!tier) return;
-  try { localStorage.setItem(tierCacheKey(userId), JSON.stringify({ tier, subscriptionEnd })); } catch { /* storage unavailable */ }
+  try {
+    localStorage.setItem(tierCacheKey(userId), JSON.stringify({
+      tier, subscriptionEnd, practiceTimestamps, targetRole,
+    }));
+  } catch { /* storage unavailable */ }
 }
-function getCachedTier(userId: string): { tier: "free" | "starter" | "pro" | "team"; subscriptionEnd?: string } | null {
+function getCachedTier(userId: string): {
+  tier: "free" | "starter" | "pro" | "team";
+  subscriptionEnd?: string;
+  practiceTimestamps?: string[];
+  targetRole?: string;
+} | null {
   try {
     const raw = localStorage.getItem(tierCacheKey(userId));
     if (!raw) return null;
@@ -581,7 +596,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (profile && !cancelled) {
               const retriedUser = profileToUser(profile, sess);
               setUser(retriedUser);
-              cacheTier(sess.user.id, retriedUser.subscriptionTier, retriedUser.subscriptionEnd);
+              cacheTier(sess.user.id, retriedUser.subscriptionTier, retriedUser.subscriptionEnd, retriedUser.practiceTimestamps, retriedUser.targetRole);
               return;
             }
           } catch { /* keep retrying */ }
@@ -637,6 +652,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // a spinner).
       try {
         let session = readSessionFromLocalStorage();
+        // Hoisted so the background refreshSession guard below (outside if(session))
+        // can read it. Set to true inside if(session) when fast render ran.
+        let didFastRender = false;
         if (!session) {
           session = await Promise.race([
             client.auth.getSession().then(r => r.data.session ?? null),
@@ -696,19 +714,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // (name, role, tier) when it resolves. This makes the dashboard appear
           // instantly for returning users regardless of network speed.
           const cachedTierFastRender = getCachedTier(session.user.id);
-          let didFastRender = false;
           if (cachedTierFastRender) {
             const metaFast = session.user.user_metadata || {};
             setUser({
               id: session.user.id,
               name: metaFast.name || metaFast.full_name || "",
               email: session.user.email || "",
-              targetRole: "",
+              // Seed targetRole and practiceTimestamps from cache so the sidebar
+              // and Plan Status widget show correct data immediately — prevents
+              // visible content changes when the full profile loads in background.
+              targetRole: cachedTierFastRender.targetRole || "",
               resumeFileName: null,
               hasCompletedOnboarding: metaFast.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
               emailVerified: metaFast.custom_email_verified === true || !!session.user.email_confirmed_at,
               subscriptionTier: cachedTierFastRender.tier,
               subscriptionEnd: cachedTierFastRender.subscriptionEnd,
+              practiceTimestamps: cachedTierFastRender.practiceTimestamps || [],
             });
             clearTimeout(safetyTimer);
             setLoading(false);
@@ -735,7 +756,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (profile) {
               const loadedUser = profileToUser(profile, session);
               setUser(loadedUser);
-              cacheTier(session.user.id, loadedUser.subscriptionTier, loadedUser.subscriptionEnd);
+              cacheTier(session.user.id, loadedUser.subscriptionTier, loadedUser.subscriptionEnd, loadedUser.practiceTimestamps, loadedUser.targetRole);
               // ─── Single-device enforcement (restore path) ───
               // Semantics:
               //   • local == server  → this device is still the active one. Keep session.
@@ -799,9 +820,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearTimeout(safetyTimer);
         setLoading(false);
 
-        // Background validation (deferred — don't block session restore or fight for auth lock)
-        // Skip on /auth/callback — signInWithIdToken is still holding the lock there
-        if (session && !window.location.pathname.startsWith("/auth/callback")) {
+        // Background refresh-token validation (deferred). Skip when the fast render
+        // path already ran — retryProfileInBackground covers any auth errors, and
+        // this extra refreshSession would fire TOKEN_REFRESHED ~10s after page load,
+        // triggering a redundant getProfile → setUser cycle that looks like a second
+        // "page refresh" to the user. Supabase fires TOKEN_REFRESHED automatically
+        // when the JWT actually expires (~1 hour), so no coverage gap.
+        // Skip on /auth/callback — signInWithIdToken is still holding the lock there.
+        if (!didFastRender && session && !window.location.pathname.startsWith("/auth/callback")) {
           // Wait for onAuthStateChange listener to be fully registered and any pending
           // auth operations (e.g. token refresh) to complete before we touch the lock
           setTimeout(() => {
@@ -885,7 +911,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (profile) {
               const refreshedUser = profileToUser(profile, session);
               setUser(refreshedUser);
-              cacheTier(session.user.id, refreshedUser.subscriptionTier, refreshedUser.subscriptionEnd);
+              cacheTier(session.user.id, refreshedUser.subscriptionTier, refreshedUser.subscriptionEnd, refreshedUser.practiceTimestamps, refreshedUser.targetRole);
             } else {
               await ensureProfile(session);
             }
