@@ -20,6 +20,7 @@ vi.mock("../AuthContext", () => ({
     logout: mockLogout,
   }),
   AuthProvider: ({ children }: any) => children,
+  setInterviewInProgress: vi.fn(),
 }));
 
 vi.mock("../supabase", () => ({
@@ -55,6 +56,7 @@ vi.mock("../tts", () => ({
 
 vi.mock("../dashboardHelpers", () => ({
   loadEvents: () => [],
+  saveEvents: vi.fn(),
   daysUntilEvent: () => null,
   formatEventTime: (s: string) => s,
 }));
@@ -356,7 +358,9 @@ describe("Flow 5: Settings", () => {
       );
     });
     await act(async () => { fireEvent.click(screen.getByText("Plan & Data")); });
-    expect(screen.getByText("Delete Account")).toBeInTheDocument();
+    // Danger-zone heading "Delete account" + a "Begin deletion" control.
+    expect(screen.getByText("Delete account")).toBeInTheDocument();
+    expect(screen.getByText("Begin deletion")).toBeInTheDocument();
   });
 
   it("shows delete confirmation on click", async () => {
@@ -372,10 +376,11 @@ describe("Flow 5: Settings", () => {
       );
     });
     await act(async () => { fireEvent.click(screen.getByText("Plan & Data")); });
-    const deleteBtn = screen.getByText("Delete Account");
+    const deleteBtn = screen.getByText("Begin deletion");
     await act(async () => { fireEvent.click(deleteBtn); });
-    expect(screen.getByText("Confirm Delete")).toBeInTheDocument();
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    // Confirmation step exposes a "Confirm delete" submit and a "Keep account" abort.
+    expect(screen.getByText("Confirm delete")).toBeInTheDocument();
+    expect(screen.getByText("Keep account")).toBeInTheDocument();
   });
 });
 
@@ -403,8 +408,11 @@ describe("Flow 6: Upgrade Modal", () => {
         ,
       );
     });
-    expect(screen.getByText("Starter")).toBeInTheDocument();
-    expect(screen.getByText("Pro")).toBeInTheDocument();
+    // Monthly billing cycle renders Free / Weekly / Monthly plan cards.
+    // "Monthly" also names the billing-period toggle button, so assert the
+    // plan-card name (non-button element).
+    expect(screen.getByText("Weekly")).toBeInTheDocument();
+    expect(screen.getAllByText("Monthly").some((el) => el.tagName !== "BUTTON")).toBe(true);
     expect(screen.getByText(/₹49/)).toBeInTheDocument();
     expect(screen.getByText(/₹149/)).toBeInTheDocument();
   });
@@ -424,7 +432,7 @@ describe("Flow 6: Upgrade Modal", () => {
         ,
       );
     });
-    expect(screen.getByText("Choose Your Plan")).toBeInTheDocument();
+    expect(screen.getByText("Choose your plan")).toBeInTheDocument();
   });
 });
 
@@ -452,7 +460,7 @@ describe("Flow 7: Resume Page", () => {
     // Cream redesign — "Resume Intelligence" + "Drop your resume here"
     // were replaced by an editorial serif "Add your resume" hero with a
     // "Drag a file here, or browse" drop zone label.
-    expect(screen.getByRole("heading", { name: /add your resume/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /your resume/i })).toBeInTheDocument();
     expect(screen.getByText(/drag a file here/i)).toBeInTheDocument();
   });
 

@@ -184,7 +184,11 @@ describe("WIRED_PROFILE_TOPICS never calls the LLM", () => {
     const llm = vi.fn(async () => "LLM SHOULD NOT BE CALLED ON WIRED TOPICS");
     const result = await generateBotReply(s, llm, "How big is the team I'd be joining?");
     expect(llm).not.toHaveBeenCalled();
-    expect(result.source).toBe("canonical-fallback");
+    /* AUDIT-W02 D5 (2026-06-08) — wired-profile canonical now routes
+     * through shipDefer (so verbatim / leading-ack loop guards fire),
+     * which tags the result source "answer-canonical". The LLM is still
+     * never called and the rejectReason still carries the wired topic. */
+    expect(result.source).toBe("answer-canonical");
     expect(result.rejectReason).toMatch(/wired-profile-topic:team-size/);
   });
 });

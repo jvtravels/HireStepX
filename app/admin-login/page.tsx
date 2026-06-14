@@ -77,6 +77,7 @@ export default function AdminLoginPage() {
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
+            /* eslint-disable-next-line jsx-a11y/no-autofocus -- dedicated single-field login page; focusing the only input on mount is expected. */
             autoFocus
             required
             style={{

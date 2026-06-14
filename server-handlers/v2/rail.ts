@@ -21,7 +21,7 @@ export interface RailVerdict {
 const LPA_RE = /\b\d+(?:\.\d+)?\s*(?:l|lpa)\b/i;
 const RUPEE_RE = /₹\s*\d+/;
 const TIME_MARKER_RE =
-  /\b(today|tomorrow|by\s+eod|by\s+end\s+of|within\s+\d+\s+(hours?|days?)|by\s+\w+day|by\s+\d{1,2}[\/\-]\d{1,2})\b/i;
+  /\b(today|tomorrow|by\s+eod|by\s+end\s+of|within\s+\d+\s+(hours?|days?)|by\s+\w+day|by\s+\d{1,2}[/-]\d{1,2})\b/i;
 const CEILING_RE = /\b(ceiling|cannot\s+authorize|won't\s+go\s+above|dealbreaker)\b/i;
 const DISCOVERY_OK_TOOLS = new Set(["ask_discovery"]);
 

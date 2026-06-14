@@ -1075,12 +1075,25 @@ describe("deserializeState backfills new optional fields", () => {
 /* ─── isVerbatimRepeat ─────────────────────────────────────────── */
 
 describe("isVerbatimRepeat", () => {
-  it("flags exact prefix match", () => {
+  it("flags a full-text normalized repeat (AUDIT-W02 C1)", () => {
+    /* AUDIT-W02 C1 unified isVerbatimRepeat onto the pipeline's
+       full-text normalized compare. Only texts that normalize to the
+       same key flag — punctuation/leading-ack differences collapse, but
+       a divergent tail does NOT. A prefix-only overlap is no longer a
+       repeat (that was the old 8-word fingerprint behavior). */
+    const s = init({
+      lastAiText: "What's most important to you in this package — is it the base number, the overall CTC, or are there specific benefits?",
+    });
+    const repeat = "What's most important to you in this package, is it the base number, the overall CTC, or are there specific benefits?";
+    expect(isVerbatimRepeat(repeat, s)).toBe(true);
+  });
+
+  it("does NOT flag a prefix-only overlap with a divergent tail (AUDIT-W02 C1)", () => {
     const s = init({
       lastAiText: "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or are there specific benefits?",
     });
-    const repeat = "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or specific benefits that would move the needle?";
-    expect(isVerbatimRepeat(repeat, s)).toBe(true);
+    const divergentTail = "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or specific benefits that would move the needle?";
+    expect(isVerbatimRepeat(divergentTail, s)).toBe(false);
   });
 
   it("doesn't flag genuinely different texts", () => {

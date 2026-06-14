@@ -24,9 +24,20 @@ describe("applyPersonaToBand — hardline tightens both ends", () => {
   });
 });
 
-describe("applyPersonaToBand — founder forces equity + flex", () => {
-  it("hasEquity becomes true, maxStretch +0.5", () => {
+describe("applyPersonaToBand — founder flexes TC but never invents equity", () => {
+  /* AUDIT-W02 EQUITY-LEAK-FOUNDER-TCS (2026-06-08) — persona modulation
+     must NOT invent comp components. Founder bias is a magnitude/lever
+     choice WITHIN the band, never a new component. A base band that
+     grants no equity (e.g. TCS, hasEquity=false) stays equity-free; the
+     founder persona only widens close-side flex (+0.5L maxStretch). */
+  it("does NOT invent equity when base has none, but still flexes maxStretch +0.5", () => {
     const out = applyPersonaToBand({ ...BASE, hasEquity: false }, "founder");
+    expect(out.hasEquity).toBe(false);
+    expect(out.maxStretch).toBe(30.5);
+  });
+
+  it("carries equity through when the base band already grants it", () => {
+    const out = applyPersonaToBand({ ...BASE, hasEquity: true }, "founder");
     expect(out.hasEquity).toBe(true);
     expect(out.maxStretch).toBe(30.5);
   });
@@ -79,12 +90,23 @@ describe("initState — applies persona band economics at construction", () => {
     expect(state.band.maxStretch).toBe(30);
   });
 
-  it("founder init forces hasEquity true even when input was false", () => {
+  it("founder init does NOT invent equity when input band has none (AUDIT-W02 EQUITY-LEAK-FOUNDER-TCS)", () => {
     const state = initState({
       sessionId: "s1",
       role: "swe",
       company: "Acme",
       band: { ...BASE, hasEquity: false },
+      recruiterPersona: "founder",
+    });
+    expect(state.band.hasEquity).toBe(false);
+  });
+
+  it("founder init carries equity through when the input band grants it", () => {
+    const state = initState({
+      sessionId: "s1",
+      role: "swe",
+      company: "Acme",
+      band: { ...BASE, hasEquity: true },
       recruiterPersona: "founder",
     });
     expect(state.band.hasEquity).toBe(true);

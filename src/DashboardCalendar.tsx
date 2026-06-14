@@ -810,8 +810,12 @@ export default function CalendarPage() {
           otherwise make this fixed overlay a containing block and trap it inside
           the content column instead of covering the viewport. */}
       {showForm && typeof document !== "undefined" && createPortal(
+        /* Backdrop click-to-dismiss is a convenience; keyboard users dismiss with Escape. */
+        /* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
         <div className="cpr-scrim" onClick={() => { setShowForm(false); resetForm(); }}
           style={{ position: "fixed", inset: 0, zIndex: 120, background: T.coalOverlay, backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: sp.xl }}>
+          {/* Panel stops backdrop-close propagation only; the dialog itself is labelled and focus-managed. */}
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
           <div className="cpr-modal" role="dialog" aria-modal="true" aria-labelledby="cal-modal-title" onClick={(e) => e.stopPropagation()}
             style={{ width: "min(520px, 100%)", maxHeight: "92vh", background: c.carbon, border: `1px solid ${c.border}`, borderRadius: 20, boxShadow: eShadow.modal, overflow: "hidden", display: "flex", flexDirection: "column" }}>
 

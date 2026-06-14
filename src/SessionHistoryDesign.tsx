@@ -978,7 +978,7 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
 
   return (
     <div
-      role="listitem"
+      role="button"
       tabIndex={0}
       aria-current={isSelected ? "true" : undefined}
       onMouseEnter={() => { setHovered(true); onMouseEnter(); }}
@@ -2380,6 +2380,8 @@ function HelpPanel({ onClose, allowDelete = true, allowDrafts = true }: { onClos
     { name: "below",  range: "< 65",  verdict: "retry the round" },
   ];
   return (
+    /* Backdrop: click-to-dismiss is a convenience; keyboard users dismiss with Escape. */
+    /* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */
     <div
       role="dialog"
       aria-modal="true"
@@ -2391,6 +2393,8 @@ function HelpPanel({ onClose, allowDelete = true, allowDrafts = true }: { onClos
         display: "grid", placeItems: "center",
         animation: "hsx-fade 160ms cubic-bezier(0.22,1,0.36,1) both",
       }}>
+      {/* Panel stops backdrop-close propagation only; it is not itself interactive. */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div onClick={e => e.stopPropagation()} className="hsx-anim-panel" style={{
         width: 480, maxWidth: "calc(100vw - 48px)",
         background: tok.cream, border: `1px solid ${tok.lineStrong}`,

@@ -63,7 +63,7 @@ export function detectSttGarbling(text: string): SttGarblingResult {
    * into ["m", "uh", "k"] — that shape is the signature STT-
    * garble cluster we're targeting. */
   const tokens = trimmed
-    .split(/[\s,.;:!?\-—()\[\]"'/]+/)
+    .split(/[\s,.;:!?\-—()[\]"'/]+/)
     .filter(Boolean);
   if (tokens.length === 0) return { garbled: true, reason: "no-tokens" };
 

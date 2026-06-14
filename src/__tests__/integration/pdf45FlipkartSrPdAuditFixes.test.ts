@@ -241,7 +241,32 @@ describe("PDF #45 — Flipkart Sr PD audit fixes", () => {
       expect(result.reason).toBe("same-opener-thrice");
     });
 
-    it("REJECTS 'Appreciate the colour —' when last 2 turns opened with 'Thanks for that' (same bucket)", async () => {
+    it("REJECTS a third 'Appreciate —' when the last 2 turns also opened with 'Appreciate' (same per-phrase bucket)", async () => {
+      /* AUDIT-W02 NP-005 C4 (2026-06-08) — opener buckets were split into
+       * per-phrase keys so only an EXACT phrase repeating thrice fires
+       * the gate. "Appreciate" and "Thanks for that" are now DISTINCT
+       * buckets (see the cross-bucket ALLOW case below), so three of the
+       * SAME family is required. Three "Appreciate" openers trip it. */
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedStateWithRecentOpeners(
+        "Appreciate the detail on current CTC?",
+        "Appreciate the context on your target?",
+      );
+      const result = validateRestyle(
+        "Got it — notice period?",
+        "Appreciate the colour — what's your notice period?",
+        s,
+      );
+      expect(result.valid).toBe(false);
+      expect(result.reason).toBe("same-opener-thrice");
+    });
+
+    it("ALLOWS 'Appreciate —' after two 'Thanks for that' openers (different bucket post-C4)", async () => {
+      /* AUDIT-W02 NP-005 C4 — "Appreciate" is no longer collapsed into
+       * the "thanks" bucket, so two "Thanks for that" + one "Appreciate"
+       * is NOT three-of-the-same and must NOT trip same-opener-thrice. */
       const { validateRestyle } = await import(
         "../../../server-handlers/_response-pipeline"
       );
@@ -251,11 +276,12 @@ describe("PDF #45 — Flipkart Sr PD audit fixes", () => {
       );
       const result = validateRestyle(
         "Got it — notice period?",
-        "Appreciate the colour — what's your notice period?",
+        "Appreciate the context — what's your notice period?",
         s,
       );
-      expect(result.valid).toBe(false);
-      expect(result.reason).toBe("same-opener-thrice");
+      if (!result.valid) {
+        expect(result.reason).not.toBe("same-opener-thrice");
+      }
     });
 
     it("ALLOWS 'Fair enough —' (different bucket) after two 'Thanks for that' openers", async () => {

@@ -9,6 +9,7 @@ vi.mock("../AuthContext", () => ({
     user: { id: "u1", name: "Test User", targetRole: "Engineering Manager", practiceTimestamps: [] },
     updateUser: vi.fn(),
   }),
+  setInterviewInProgress: vi.fn(),
 }));
 
 // Mock supabase

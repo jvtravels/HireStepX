@@ -419,7 +419,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         {(showPromo || promoResult?.valid) && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <input type="text" value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(""); setPromoResult(null); }}
-              placeholder="Promo code" aria-label="Promo code" autoFocus
+              placeholder="Promo code" aria-label="Promo code"
+              /* eslint-disable-next-line jsx-a11y/no-autofocus -- input is revealed on demand; focusing it on appear is the expected affordance. */
+              autoFocus
               style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: "transparent", border: "none", borderBottom: `1px solid ${promoResult?.valid ? c.sage : c.borderHover}`, borderRadius: 0, padding: "6px 2px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
             />
             <button disabled={promoLoading || !promoCode.trim()} onClick={async () => {

@@ -28,7 +28,16 @@ describe("UpgradeModal", () => {
 
     expect(screen.getByText("Free")).toBeInTheDocument();
     expect(screen.getByText("Weekly")).toBeInTheDocument();
-    expect(screen.getByText("Monthly")).toBeInTheDocument();
+    // "Monthly" appears both as the billing-period toggle button and as the
+    // pro plan-card name — assert the plan-card name (the non-button element).
+    const monthlyEls = screen.getAllByText("Monthly");
+    expect(monthlyEls.some((el) => el.tagName !== "BUTTON")).toBe(true);
+  });
+
+  it("has a monthly/yearly billing-period toggle", () => {
+    render(<UpgradeModal {...defaultProps} />);
+    expect(screen.getByRole("button", { name: "Monthly" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Yearly/ })).toBeInTheDocument();
   });
 
   it("shows current plan indicator for free tier", () => {

@@ -353,11 +353,16 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
          * Notice / BGV / OL ETA render only when the candidate
          * actually raised those topics; this smoke run may close early
          * (counter cascade converges before notice/BGV probes fire),
-         * in which case the recap correctly omits them. The recap's
-         * structural anchor is the closing prefix + "sounds good?". */
+         * in which case the recap correctly omits them. AUDIT-W02 BUG-1
+         * (2026-06-08) replaced the trailing "Sounds good?" question with
+         * a terminal statement closer ("Let me recap the fitment before I
+         * revert internally — ... circulate by EOD.") so the close
+         * actually closes. The structural anchor is now that recap
+         * prefix, and the prose must NOT end in a question. */
         expect(lc).toContain("fixed");
         expect(lc).toContain("variable");
-        expect(lc).toMatch(/sounds good/);
+        expect(lc).toContain("recap the fitment");
+        expect(lc).not.toMatch(/\?\s*$/);
         sawRecap = true;
         break;
       }

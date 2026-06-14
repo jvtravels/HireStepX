@@ -1902,12 +1902,12 @@ export function InterviewFocusV2() {
           }}
         >
           Don't see your target?{" "}
-          <a
-            href="#"
-            style={{ color: t.indigo, fontWeight: 600, textDecoration: "none" }}
+          <button
+            type="button"
+            style={{ color: t.indigo, fontWeight: 600, textDecoration: "none", background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer" }}
           >
             Vote on the next type →
-          </a>
+          </button>
         </p>
       </div>
     </section>
@@ -3847,8 +3847,8 @@ export function ChangelogTeaseV2() {
             ))}
           </div>
         </div>
-        <a
-          href="#"
+        <button
+          type="button"
           style={{
             fontFamily: fonts.sans,
             fontSize: 13,
@@ -3856,10 +3856,14 @@ export function ChangelogTeaseV2() {
             color: t.indigo,
             textDecoration: "none",
             whiteSpace: "nowrap",
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
           }}
         >
           Full roadmap →
-        </a>
+        </button>
       </div>
     </section>
   );

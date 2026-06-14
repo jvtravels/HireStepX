@@ -3,15 +3,15 @@ import { c, font } from "../tokens";
 
 describe("design tokens", () => {
   it("exports all required colors", () => {
-    expect(c.obsidian).toBe("#060607");
-    expect(c.graphite).toBe("#111113");
-    expect(c.ivory).toBe("#F5F2ED");
-    expect(c.gilt).toBe("#D4B37F");
-    expect(c.sage).toBe("#7A9E7E");
-    // Brightened from #C4705A to #D17E68 in commit a6d9b5d for better
-    // 6.3:1 contrast on obsidian; test was stale until noUnusedLocals
-    // surfaced the drift during a coverage cleanup.
-    expect(c.ember).toBe("#D17E68");
+    // tokens.ts is now a ROLE-preserving cream-brand shim over auth/_tokens:
+    // the legacy dark ramp was remapped (obsidian→cream page bg, ivory→coal
+    // primary text, gilt→copper accent, sage→success, ember→error).
+    expect(c.obsidian).toBe("#FAF7F0");
+    expect(c.graphite).toBe("#F4EFE3");
+    expect(c.ivory).toBe("#0E0C08");
+    expect(c.gilt).toBe("#B45309");
+    expect(c.sage).toBe("#15803D");
+    expect(c.ember).toBe("#B91C1C");
   });
 
   it("exports font families", () => {

@@ -56,7 +56,7 @@ const TIME_MARKERS = [
   /\bby\s+end\s+of\s+(day|week)\b/i,
   /\bwithin\s+\d+\s+(hours?|days?)\b/i,
   /\bby\s+\w+day\b/i,
-  /\bby\s+\d{1,2}[\/\-]\d{1,2}\b/i,
+  /\bby\s+\d{1,2}[/-]\d{1,2}\b/i,
 ];
 
 function hasConcreteTime(s: string): boolean {

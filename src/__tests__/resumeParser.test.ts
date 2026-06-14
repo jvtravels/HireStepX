@@ -19,11 +19,11 @@ describe("extractResumeText", () => {
     expect(text).toBe("Hello World\n\nNext line");
   });
 
-  it("caps text at 5000 characters", async () => {
-    const longText = "A".repeat(6000);
+  it("caps text at 12000 characters", async () => {
+    const longText = "A".repeat(15000);
     const file = makeFile(longText, "resume.txt");
     const text = await extractResumeText(file);
-    expect(text.length).toBe(5000);
+    expect(text.length).toBe(12000);
   });
 
   it("rejects unsupported file types", async () => {

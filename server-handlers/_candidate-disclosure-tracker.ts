@@ -89,7 +89,7 @@ const JOINING_RE = /\b(?:can\s+join|able\s+to\s+join|joining\s+(?:on|by|after|in
  * Refuses to fire on past-tense ("worked at", "was at", "previously at")
  * and on neutral mentions ("I admire Razorpay's culture") via the
  * intro-phrase anchor. */
-const CURRENT_COMPANY_RE = /\b(?:i(?:'m| am)(?:\s+(?:currently|presently))?\s+(?:at|with|working\s+at|working\s+with)|currently\s+(?:at|with|working\s+at|working\s+with)|my\s+current\s+(?:company|employer|org(?:anisation|anization)?)\s+(?:is|are)|i\s+work\s+(?:at|with))\s+([A-Z][A-Za-z0-9&.\-]+(?:\s+[A-Z][A-Za-z0-9&.\-]+){0,2})(?=\s*(?:[,.\s]|as\b|in\b|for\b|since\b|where\b|$))/;
+const CURRENT_COMPANY_RE = /\b(?:i(?:'m| am)(?:\s+(?:currently|presently))?\s+(?:at|with|working\s+at|working\s+with)|currently\s+(?:at|with|working\s+at|working\s+with)|my\s+current\s+(?:company|employer|org(?:anisation|anization)?)\s+(?:is|are)|i\s+work\s+(?:at|with))\s+([A-Z][A-Za-z0-9&.-]+(?:\s+[A-Z][A-Za-z0-9&.-]+){0,2})(?=\s*(?:[,.\s]|as\b|in\b|for\b|since\b|where\b|$))/;
 
 const ACK_NOTICE_RE = /\bnotice\s+(?:period|days)|\b\d{1,3}\s*(?:day|days)\s+notice\b|\bbuyout\b|\bearly\s+(?:join|release)\b/i;
 const ACK_CURRENT_RE = /\bcurrent\s+(?:ctc|package|salary|comp)|\bhike\s+(?:of|on)\b|\b\d+(?:\.\d+)?\s*l(?:pa)?\s+to\s+\d+(?:\.\d+)?\s*l(?:pa)?\b/i;

@@ -34,8 +34,18 @@ describe("validateOrigin", () => {
     expect(validateOrigin(makeReq({ origin: "https://www.hirestepx.com" }))).toBe(true);
   });
 
-  it("accepts Vercel preview deployments (*.vercel.app)", () => {
-    expect(validateOrigin(makeReq({ origin: "https://hirestepx-abc123.vercel.app" }))).toBe(true);
+  it("rejects arbitrary *.vercel.app tenants, accepts only this deployment's VERCEL_URL", () => {
+    // Hardened: trusting all *.vercel.app would let any Vercel tenant call our API.
+    const prev = process.env.VERCEL_URL;
+    delete process.env.VERCEL_URL;
+    expect(validateOrigin(makeReq({ origin: "https://hirestepx-abc123.vercel.app" }))).toBe(false);
+
+    process.env.VERCEL_URL = "hirestepx-git-main-xyz.vercel.app";
+    expect(validateOrigin(makeReq({ origin: "https://hirestepx-git-main-xyz.vercel.app" }))).toBe(true);
+    expect(validateOrigin(makeReq({ origin: "https://someone-else.vercel.app" }))).toBe(false);
+
+    if (prev === undefined) delete process.env.VERCEL_URL;
+    else process.env.VERCEL_URL = prev;
   });
 
   it("accepts localhost dev origins", () => {

@@ -86,10 +86,18 @@ describe("close-recap-formal planner state (Fix 4)", () => {
     const prose = renderCanonicalProse(action, s);
     expect(prose).not.toMatch(/notice/i);
     expect(prose).not.toMatch(/BGV|background verif/i);
-    expect(prose).not.toMatch(/offer letter/i);
+    /* AUDIT-W02 BUG-1 (2026-06-08) — the terminal closer now ends with a
+     * generic "I'll get the offer letter prepared and circulate by EOD"
+     * statement (replacing the old "Sounds good?" question). The PDF#45
+     * B2 guard is about NOT fabricating discovery CONTENT — a specific OL
+     * ETA timing (e.g. "in 2-3 business days") — when never discussed.
+     * The generic process-close mention of the offer letter is fine; what
+     * must stay absent is a hallucinated ETA duration. */
+    expect(prose).not.toMatch(/offer letter in /i);
+    expect(prose).not.toMatch(/\d+\s*(business day|hours|weeks?)/i);
   });
 
-  it("canonical prose enumerates fitment + variable + JB + notice + BGV + OL + 'sounds good?' when discussed", () => {
+  it("canonical prose enumerates fitment + variable + JB + notice + BGV + OL and ends as a terminal statement (AUDIT-W02 BUG-1)", () => {
     const s = init({
       phase: "closing-push",
       highestOfferMade: 24,
@@ -116,7 +124,12 @@ describe("close-recap-formal planner state (Fix 4)", () => {
     expect(prose).toMatch(/notice/i);
     expect(prose).toMatch(/BGV|background verif/i);
     expect(prose).toMatch(/offer letter/i);
-    expect(prose).toMatch(/sounds good\??/i);
+    /* AUDIT-W02 BUG-1 (2026-06-08) — terminal recap no longer solicits
+     * further dialogue. The old "Sounds good?" question was replaced with
+     * a statement closer so the close actually closes. Assert the prose
+     * does NOT end in a question. */
+    expect(prose).not.toMatch(/\?\s*$/);
+    expect(prose.toLowerCase()).not.toContain("sounds good");
   });
 
   it("no verbal accept → no close-recap-formal", () => {

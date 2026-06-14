@@ -83,10 +83,14 @@ describe("answeredQuestionLedger — applyAiMove writes the entry", () => {
       actionKind: "round-transition",
     };
     s = applyAiMove(s, move, "Standard RSU schedule: 1-year cliff then quarterly over 4 yrs.");
-    expect(s.answeredQuestionLedger?.equity).toEqual({
+    /* AUDIT-W02 D4 (2026-06-08) — ledger entries now also stamp the
+     * phase at write-time (declared optional on the schema). Assert the
+     * stable answerText + turn, plus that a phase string was recorded. */
+    expect(s.answeredQuestionLedger?.equity).toMatchObject({
       answerText: "Standard RSU schedule: 1-year cliff then quarterly over 4 yrs.",
       turn: 0,
     });
+    expect(typeof s.answeredQuestionLedger?.equity?.phase).toBe("string");
   });
 
   it("does NOT write when the prior candidate turn carried no question", () => {

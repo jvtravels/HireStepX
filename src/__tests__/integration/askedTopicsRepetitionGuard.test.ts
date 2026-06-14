@@ -131,7 +131,21 @@ describe("F7 — askedTopics repetition guard", () => {
     if (action.kind === "discovery-probe") {
       // Either currentCtcAnswered is allowed again, or the planner picked a later item.
       // Both are valid; this test just documents the expected window.
-      expect(["currentCtcAnswered", "fixedVariableSplitAnswered", "noticePeriodAnswered", "targetAnswered", "valueProofAnswered"]).toContain(action.item);
+      /* The DISCOVERY_SEQUENCE keys were refactored (the context-free
+       * `fixedVariableSplitAnswered` slot split into
+       * `currentCtcFixedVariableSplitDisclosed` /
+       * `expectedCtcFixedVariableSplitDisclosed`). Accept any current
+       * ordered-sequence item — this test only documents the re-ask
+       * window, not a specific item. */
+      expect([
+        "currentCtcAnswered",
+        "currentCtcFixedVariableSplitDisclosed",
+        "targetAnswered",
+        "expectedCtcFixedVariableSplitDisclosed",
+        "noticePeriodAnswered",
+        "competingOffersAnswered",
+        "valueProofAnswered",
+      ]).toContain(action.item);
     } else {
       // Non-discovery-probe is also fine at turn 4 if there are no checklist items left.
       expect(["open-with-offer", "reactive-followup", "probe-mismatch"]).toContain(action.kind);

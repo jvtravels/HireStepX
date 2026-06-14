@@ -135,7 +135,7 @@ describe("PDF #28 replay — current-company ledger first-wins", () => {
 
 describe("PDF #20 replay — askedTopics dual-write keeps ledger in lockstep", () => {
   it("every bot probe pushed to state.askedTopics also lands in the ledger", () => {
-    let s = freshState();
+    const s = freshState();
     expect(askedTopicEntries(s.ledger!)).toEqual([]);
 
     /* Drive 3 turns of discovery. Each turn's applyAiMove with a
