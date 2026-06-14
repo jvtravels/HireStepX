@@ -245,3 +245,64 @@ export function buildGroundingContext(
 
   return lines.join("\n");
 }
+
+/* ── 5. Prompt assembly (Groq prefix-cache friendly) ──────────── */
+
+/* Byte-identical across every call — no per-session interpolation — so it
+   extends Groq's longest shared prefix (see CLAUDE.md → LLM prompt
+   caching). Anything dynamic (the report facts, the candidate's
+   question) is appended AFTER this block by buildCoachPrompt. */
+export const COACH_STATIC_RULES = `
+You are the candidate's interview coach reviewing THEIR OWN mock-interview report with them. They can ask why they were scored a certain way, or push back on the verdict. Rules:
+
+GROUNDING: Answer ONLY from the REPORT FACTS provided below. Never invent a score, a quote, or a rubric the facts don't contain. If the facts don't cover their question, say so plainly and point them to what the report does show.
+
+HONESTY OVER FLATTERY: This is coaching, not customer service. If their answer genuinely lacked a metric or structure, say so kindly but clearly — don't cave just because they pushed back. If the CHALLENGE ADJUDICATION block says the transcript SUPPORTS their point, concede it openly and thank them for the catch. If it says it does NOT, explain what was actually missing, quoting their own words.
+
+NO SCORE CHANGES: You cannot change the score — you explain it. If they've genuinely identified something the rubric missed, acknowledge it and suggest they flag it, but don't promise a new number.
+
+VOICE: Indian English, warm and direct. Use ₹ / LPA / CTC. No Americanisms ("awesome", "reach out", "circle back"). Keep replies tight — 2-4 short paragraphs, no preamble. English only.`.trim();
+
+const INTENT_DIRECTIVE: Record<FollowupIntent, string> = {
+  challenge:
+    "The candidate is DISPUTING the verdict. Weigh the CHALLENGE ADJUDICATION block above all else — concede if it supports them, hold the line (kindly) if it doesn't.",
+  clarify:
+    "The candidate wants to understand WHY they were scored this way. Cite the specific strength/improvement/weakest-skill and their own quoted words.",
+  improve:
+    "The candidate wants to do better. Give one concrete, specific rewrite or technique anchored to what they actually said — not generic advice.",
+  offtopic:
+    "The question is outside this report. Politely say it's beyond what this report covers and redirect to what the report does show.",
+};
+
+/**
+ * Assemble the full prompt: static rules → grounding facts → intent
+ * directive → the candidate's question. Deterministic; no timestamps.
+ */
+export function buildCoachPrompt(
+  context: FollowupQuestionContext,
+  validated: ValidatedFollowup,
+): string {
+  return [
+    COACH_STATIC_RULES,
+    "",
+    buildGroundingContext(context, validated),
+    "",
+    `DIRECTIVE: ${INTENT_DIRECTIVE[validated.intent]}`,
+    "",
+    `CANDIDATE'S QUESTION: ${validated.question}`,
+    "",
+    "Your reply:",
+  ].join("\n");
+}
+
+/**
+ * Deterministic non-LLM reply. Used for offtopic questions (no need to
+ * spend a token on them) and as the graceful degrade when every LLM
+ * provider fails — the dialogue stays honest and never hard-errors.
+ */
+export function fallbackAnswer(intent: FollowupIntent): string {
+  if (intent === "offtopic") {
+    return "That's a bit outside what this report covers — I can only speak to your scores, strengths, improvements and the answers in this session. Ask me why a particular score landed where it did, or how to strengthen a specific answer.";
+  }
+  return "I couldn't generate a full reply just now — please try again in a moment. In the meantime, the report's Top Improvements and Weakest Skill are the fastest things to act on.";
+}

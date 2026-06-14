@@ -4,6 +4,9 @@ import {
   validateFollowupRequest,
   checkChallengeEvidence,
   buildGroundingContext,
+  buildCoachPrompt,
+  fallbackAnswer,
+  COACH_STATIC_RULES,
   type FollowupQuestionContext,
   type ValidatedFollowup,
 } from "../../server-handlers/_coach-followup-helpers";
@@ -163,5 +166,44 @@ describe("buildGroundingContext", () => {
     const a = buildGroundingContext(baseContext, validated("Why?", "clarify"));
     const b = buildGroundingContext(baseContext, validated("Why?", "clarify"));
     expect(a).toBe(b);
+  });
+});
+
+describe("buildCoachPrompt", () => {
+  const v = (question: string, intent: ValidatedFollowup["intent"]): ValidatedFollowup => ({
+    sessionId: "s1",
+    question,
+    intent,
+  });
+
+  it("leads with the static rules (Groq prefix-cache discipline)", () => {
+    const prompt = buildCoachPrompt(baseContext, v("Why?", "clarify"));
+    expect(prompt.startsWith(COACH_STATIC_RULES)).toBe(true);
+  });
+
+  it("embeds the grounding facts, an intent directive, and the question", () => {
+    const prompt = buildCoachPrompt(baseContext, v("How should I improve?", "improve"));
+    expect(prompt).toContain("Overall score: 64/100");
+    expect(prompt).toContain("DIRECTIVE:");
+    expect(prompt).toContain("CANDIDATE'S QUESTION: How should I improve?");
+  });
+
+  it("carries the challenge adjudication into the prompt for disputes", () => {
+    const prompt = buildCoachPrompt(baseContext, v("I disagree, I did give numbers", "challenge"));
+    expect(prompt).toContain("CHALLENGE ADJUDICATION");
+    expect(prompt).toContain("SUPPORTS");
+  });
+});
+
+describe("fallbackAnswer", () => {
+  it("gives an offtopic redirect that names the report's real scope", () => {
+    const a = fallbackAnswer("offtopic");
+    expect(a).toMatch(/outside what this report covers/i);
+  });
+
+  it("gives a graceful degrade for the other intents", () => {
+    for (const intent of ["challenge", "clarify", "improve"] as const) {
+      expect(fallbackAnswer(intent)).toMatch(/couldn.t generate a full reply/i);
+    }
   });
 });
