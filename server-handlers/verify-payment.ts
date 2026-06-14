@@ -90,6 +90,9 @@ async function sendPaymentEmail(
       headers: {
         Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
+        // Resend dedupes identical sends within 24h by this key, so a retry
+        // or a webhook race can never bill us for two confirmation emails.
+        "Idempotency-Key": `payment-confirmation-${paymentId}`,
       },
       signal: emailAc.signal,
       body: JSON.stringify({

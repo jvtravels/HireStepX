@@ -23,13 +23,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Find users whose subscription expires in 1-3 days
+    // Fire exactly ONE reminder per expiry. The daily cron previously used a
+    // 3-day-wide window (gte now, lte now+3d), so a subscription expiring in 3
+    // days matched on day-3, day-2 AND day-1 — three emails (and three Resend
+    // charges) for one renewal. A half-open 24h band [now+2d, now+3d) is
+    // exactly one cron-interval wide, so each expiry lands in it on a single
+    // run. The Idempotency-Key below is belt-and-suspenders for cron retries.
     const now = new Date();
+    const twoDaysLater = new Date(now);
+    twoDaysLater.setDate(twoDaysLater.getDate() + 2);
     const threeDaysLater = new Date(now);
     threeDaysLater.setDate(threeDaysLater.getDate() + 3);
 
     const profilesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?subscription_tier=neq.free&subscription_end=gte.${now.toISOString()}&subscription_end=lte.${threeDaysLater.toISOString()}&select=id,name,email,subscription_tier,subscription_end&limit=200`,
+      `${SUPABASE_URL}/rest/v1/profiles?subscription_tier=neq.free&subscription_end=gte.${twoDaysLater.toISOString()}&subscription_end=lt.${threeDaysLater.toISOString()}&select=id,name,email,subscription_tier,subscription_end&limit=200`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -89,6 +96,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           headers: {
             Authorization: `Bearer ${RESEND_API_KEY}`,
             "Content-Type": "application/json",
+            // Stable per (user, expiry-date): the in-handler retry below and any
+            // cron re-run within 24h dedupe to a single Resend charge.
+            "Idempotency-Key": `renewal-reminder-${profile.id}-${endDate.toISOString().slice(0, 10)}`,
           },
           signal: emailAc.signal,
           body: emailBody,

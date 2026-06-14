@@ -122,13 +122,16 @@ async function sendSessionReportEmail(
       headers: {
         Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
+        // One report email per session: a save retry (slow network, double
+        // submit) dedupes to a single Resend send within 24h.
+        "Idempotency-Key": `session-report-${sessionId}`,
       },
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [userEmail],
         subject: "Your HireStepX interview report is ready 🎯",
         html: emailShell({
-          preview: `Your ${typeLabel} report is ready — tap to see your score and feedback.`,
+          preview: `Your ${typeLabel} report is ready. Tap to see your score and feedback.`,
           body:
             title("Your report is", { accentWord: "ready." }) +
             para(`Hi ${greeting}, your ${typeLabel} session has been graded. Your AI feedback, STAR breakdown, and skill scores are waiting for you.`) +

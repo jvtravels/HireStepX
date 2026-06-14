@@ -323,7 +323,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           try {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
-              headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+              headers: {
+                Authorization: `Bearer ${RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+                "Idempotency-Key": `renewal-${paymentId}`,
+              },
               body: JSON.stringify({
                 from: FROM_EMAIL,
                 to: [profileEmail],
@@ -396,7 +400,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           try {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
-              headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+              headers: {
+                Authorization: `Bearer ${RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+                "Idempotency-Key": `payment-failed-${eventId}`,
+              },
               body: JSON.stringify({
                 from: FROM_EMAIL,
                 to: [profileEmail],
@@ -577,7 +585,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         await fetch("https://api.resend.com/emails", {
           method: "POST",
-          headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+            "Idempotency-Key": `activation-${paymentId}`,
+          },
           body: JSON.stringify({
             from: FROM_EMAIL,
             to: [notes.email],
