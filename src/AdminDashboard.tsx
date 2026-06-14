@@ -64,6 +64,11 @@ interface FeedbackData {
   recent: Array<{ id: string; user_id: string; rating: string; comment: string; session_score: number; session_type: string; created_at: string }>;
 }
 
+interface SupportMessagesData {
+  total: number; byStatus: Record<string, number>;
+  recent: Array<{ id: string; user_id: string | null; email: string | null; message: string; page: string | null; user_agent: string | null; status: string; created_at: string }>;
+}
+
 /**
  * Shape returned by /api/admin-data?userId=X. Declares the fields the
  * profile card actually reads so the render sites get real type
@@ -144,7 +149,7 @@ export interface SessionDetailData {
   llmCalls: Array<{ endpoint: string; model: string; total_tokens: number; latency_ms: number; status: string; created_at: string }>;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "quality";
+type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "quality";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
@@ -154,6 +159,7 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "financials", label: "Financials", icon: "💰" },
   { key: "llm", label: "AI / Services", icon: "🤖" },
   { key: "feedback", label: "Feedback", icon: "💬" },
+  { key: "support-messages", label: "Support", icon: "🛟" },
   { key: "outcomes", label: "Outcomes", icon: "🏆" },
   { key: "referrals", label: "Referrals", icon: "🔗" },
   { key: "promo-codes", label: "Promo Codes", icon: "🎟️" },
@@ -487,6 +493,7 @@ export default function AdminDashboard() {
   const [llm, setLlm] = useState<LLMData | null>(null);
   const [sessions, setSessions] = useState<SessionsData | null>(null);
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
+  const [supportMessages, setSupportMessages] = useState<SupportMessagesData | null>(null);
   const [referrals, setReferrals] = useState<ReferralsData | null>(null);
   const [promoCodes, setPromoCodes] = useState<PromoCodesData | null>(null);
   const [calendar, setCalendar] = useState<CalendarData | null>(null);
@@ -588,6 +595,11 @@ export default function AdminDashboard() {
           if (d) setFeedback(d);
           break;
         }
+        case "support-messages": {
+          const d = await fetchSection("support-messages") as SupportMessagesData | null;
+          if (d) setSupportMessages(d);
+          break;
+        }
         case "referrals": {
           const d = await fetchSection("referrals") as ReferralsData | null;
           if (d) setReferrals(d);
@@ -675,6 +687,11 @@ export default function AdminDashboard() {
       case "feedback": {
         const d = await fetchSection("feedback", undefined, true) as FeedbackData | null;
         if (d) setFeedback(d);
+        break;
+      }
+      case "support-messages": {
+        const d = await fetchSection("support-messages", undefined, true) as SupportMessagesData | null;
+        if (d) setSupportMessages(d);
         break;
       }
       case "referrals": {
@@ -1681,6 +1698,62 @@ export default function AdminDashboard() {
     );
   };
 
+  const renderSupportMessages = () => {
+    if (!supportMessages) return <EmptyState title="No support messages available" />;
+
+    const statusColors: Record<string, string> = {
+      new: c.gilt, seen: c.sage, resolved: c.stone,
+    };
+
+    return (
+      <div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
+          <div style={statCard}>
+            <p style={labelStyle}>Total Messages</p>
+            <p style={bigNum}>{supportMessages.total}</p>
+          </div>
+          {Object.entries(supportMessages.byStatus).map(([status, count]) => (
+            <div key={status} style={statCard}>
+              <p style={labelStyle}>{status}</p>
+              <p style={{ ...bigNum, color: statusColors[status] || c.ivory }}>{count}</p>
+            </div>
+          ))}
+        </div>
+
+        {supportMessages.recent.length > 0 ? (
+          <div style={{ ...card, padding: 0, overflow: "auto" }}>
+            <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={labelStyle}>Recent Messages — Help &amp; Support widget</p>
+              <button onClick={() => exportCsv("support-messages.csv", supportMessages.recent)} style={exportBtn}>Export CSV</button>
+            </div>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Email</th>
+                  <th style={thStyle}>Message</th>
+                  <th style={thStyle}>Page</th>
+                </tr>
+              </thead>
+              <tbody>
+                {supportMessages.recent.map((m) => (
+                  <tr key={m.id}>
+                    <td style={{ ...tdStyle, fontSize: 12, whiteSpace: "nowrap" as const }}>{formatDateTime(m.created_at)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{m.email || "—"}</td>
+                    <td style={{ ...tdStyle, maxWidth: 460, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const }}>{m.message || "—"}</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{m.page || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState title="No support messages yet" />
+        )}
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (error) {
       return (
@@ -1720,6 +1793,7 @@ export default function AdminDashboard() {
       case "llm": return renderLLM();
       case "sessions": return renderSessions();
       case "feedback": return renderFeedback();
+      case "support-messages": return renderSupportMessages();
       case "referrals": return renderReferrals();
       case "promo-codes": return renderPromoCodes();
       case "calendar": return renderCalendar();

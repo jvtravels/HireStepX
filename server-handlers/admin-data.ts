@@ -719,6 +719,21 @@ async function getFeedback() {
   return { total: totalCount, byRating, recent: feedback.slice(0, LIMIT_RECENT) };
 }
 
+async function getSupportMessages() {
+  const [messages, totalCount] = await Promise.all([
+    fetchJSON<{
+      id: string; user_id: string | null; email: string | null; message: string;
+      page: string | null; user_agent: string | null; status: string; created_at: string;
+    }>("support_messages?select=id,user_id,email,message,page,user_agent,status,created_at&order=created_at.desc&limit=200"),
+    fetchCount("support_messages"),
+  ]);
+
+  const byStatus: Record<string, number> = {};
+  for (const m of messages) { byStatus[m.status || "new"] = (byStatus[m.status || "new"] || 0) + 1; }
+
+  return { total: totalCount, byStatus, recent: messages.slice(0, 100) };
+}
+
 /* ─── New section handlers (referrals, promo codes, calendar) ─── */
 
 interface ReferralRow {
@@ -954,6 +969,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "llm": return getLLMUsage();
         case "sessions": return getSessions();
         case "feedback": return getFeedback();
+        case "support-messages": return getSupportMessages();
         case "referrals": return getReferrals();
         case "promo-codes": return getPromoCodes();
         case "calendar": return getCalendar();
