@@ -26,6 +26,7 @@ export default async function handler(req: Request): Promise<Response> {
   const pre = await withAuthAndRateLimit(req, {
     endpoint: "evaluate",
     ipLimit: 10,
+    userLimit: 5,
     checkQuota: true,
   });
   if (pre instanceof Response) return pre;

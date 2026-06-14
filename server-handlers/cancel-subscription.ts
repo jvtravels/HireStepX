@@ -6,6 +6,8 @@ import {
   handlePreflightAndMethod,
   supabaseUrl,
   supabaseAnonKey,
+  isRateLimited,
+  getVercelClientIp,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import {
@@ -36,6 +38,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CSRF: validate Origin header on state-changing requests
   if (!origin) {
     return res.status(403).json({ error: "Forbidden" });
+  }
+
+  // Rate limiting
+  const ip = getVercelClientIp(req);
+  if (await isRateLimited(ip, "cancel-subscription", 5, 60_000)) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
   }
 
   const SUPABASE_URL = supabaseUrl();

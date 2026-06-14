@@ -7,6 +7,8 @@ import {
   supabaseUrl,
   supabaseAnonKey,
   escapeHtml,
+  isRateLimited,
+  getVercelClientIp,
 } from "./_shared";
 import { emailShell, title, para, b, button } from "./_email-theme";
 
@@ -24,6 +26,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const bodyLen = parseInt((req.headers["content-length"] as string) || "0", 10);
   if (bodyLen > 1048576) return res.status(413).json({ error: "Request too large" });
   if (!origin) return res.status(403).json({ error: "Forbidden" });
+
+  // Rate limiting
+  const ip = getVercelClientIp(req);
+  if (await isRateLimited(ip, "pause-subscription", 5, 60_000)) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
+  }
 
   const SUPABASE_URL = supabaseUrl();
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {

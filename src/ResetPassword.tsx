@@ -487,7 +487,7 @@ export default function ResetPassword() {
           "This is taking longer than expected. Check your connection and try again.",
         );
       } else {
-        setError("Something went wrong. Please try again.");
+        setError("Password update failed. If this keeps happening, contact support@hirestepx.com.");
       }
     } finally {
       setLoading(false);

@@ -955,7 +955,6 @@ export default function DashboardResume() {
     setReanalyzeDone(false);
     setErrorMsg("");
     const tStart = Date.now();
-    console.log("[resume] Re-analyze triggered — text length:", textForAnalysis.length, "targetRole:", user?.targetRole || "(none)");
     // AbortController lets us actually cancel the underlying fetch when the
     // race timeout wins — without it the request stays in flight and never
     // surfaces in the Network tab as "canceled", which is exactly what made
@@ -970,7 +969,6 @@ export default function DashboardResume() {
       clearTimeout(timeoutId);
       const elapsed = Date.now() - tStart;
       if (result?.profile) {
-        console.log(`[resume] Re-analyze SUCCESS in ${elapsed}ms — score=${result.profile.resumeScore} headline="${result.profile.headline}"`);
         setProfile(result.profile);
         setAnalysisSource("ai");
         setTruncated(!!result.truncated);

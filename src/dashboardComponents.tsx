@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, memo } from "react";
+import { captureClientEvent } from "./posthogClient";
 import dynamic from "next/dynamic";
 import { c, font } from "./tokens";
 import { scoreLabel, scoreLabelColor } from "./dashboardTypes";
@@ -180,6 +181,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               setLoading(null);
               return;
             }
+            captureClientEvent("plan_upgraded", {
+              tier: verifyData?.subscriptionTier,
+              plan: pendingVerification?.plan,
+            });
             onPaymentSuccess(verifyData.subscriptionTier, verifyData.subscriptionStart, verifyData.subscriptionEnd);
           } else {
             setError(verifyData.error || "Payment verification failed. Please try again or contact support@hirestepx.com");
@@ -321,6 +326,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         // dedicated recovery page so the user gets reassurance + retry path.
         window.location.href = "/payment-failed";
       });
+      captureClientEvent("checkout_opened", { plan: planId });
       rzp.open();
       // Safety net: clear spinner ONLY if Razorpay never opened. Without
       // the guard, a modal that appears at 7.9s would re-enable the Pay

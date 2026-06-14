@@ -18,6 +18,9 @@ const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 
+/** 24-hour TTL for payment-intent dedup keys (distinct from DEDUP_TTL which is 90s idempotency) */
+const INTENT_KEY_TTL_SEC = 86_400;
+
 const PRICE_MAP: Record<string, { amount: number; name: string; description: string }> = {
   single:           { amount: 900,    name: "HireStepX Single Session",   description: "Single mock interview session — ₹9" },
   weekly:           { amount: 4900,   name: "HireStepX Weekly",           description: "Weekly Plan — ₹49 · 10 sessions over 7 days" },
@@ -248,7 +251,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         planName: price.name,
         createdAt: Date.now(),
       });
-      fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(intentKey)}/${encodeURIComponent(intentValue)}?EX=90000`, {
+      fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(intentKey)}/${encodeURIComponent(intentValue)}?EX=${INTENT_KEY_TTL_SEC}`, {
         headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
       }).catch(() => {});
     }

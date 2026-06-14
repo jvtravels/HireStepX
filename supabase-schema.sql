@@ -287,6 +287,7 @@ create unique index if not exists idx_calendar_events_google
   on calendar_events(user_id, google_event_id)
   where google_event_id is not null;
 create index if not exists idx_feedback_session on feedback(session_id);
+create index if not exists idx_feedback_user on feedback(user_id, created_at);
 
 -- ═══════════════════════════════════════════════════════
 -- 6. Referral codes

@@ -22,7 +22,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, redisGet, redisSetEx } from "./_shared";
 import {
   capsForTier,
   countFromContentRange,
@@ -32,6 +32,12 @@ import {
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
+const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
+
+/** 60-second TTL for per-user usage cache — short enough to feel live, long
+ *  enough to absorb rapid Settings tab refreshes and mobile back-navigation. */
+const USAGE_CACHE_TTL_SEC = 60;
 
 function svcHeaders(): Record<string, string> {
   return {
@@ -99,6 +105,23 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
   }
 
+  // Redis cache: return a short-lived cached response on cache hit to avoid
+  // repeated Supabase roundtrips on rapid Settings tab refreshes. Only active
+  // when UPSTASH credentials are present (same guard used across all handlers).
+  const cacheKey = `utm:${auth.userId}`;
+  if (UPSTASH_URL && UPSTASH_TOKEN) {
+    try {
+      const cached = await redisGet(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached) as Record<string, unknown>;
+        return new Response(JSON.stringify({ ...parsed, _cached: true }), {
+          status: 200,
+          headers: { ...headers, "Cache-Control": "private, max-age=60" },
+        });
+      }
+    } catch { /* malformed cache entry — fall through to live path */ }
+  }
+
   const { periodStart, periodEnd } = monthWindow(new Date());
   const tier = await readTier(auth.userId);
   const caps = capsForTier(tier);
@@ -114,16 +137,24 @@ export default async function handler(req: Request): Promise<Response> {
   // UI can branch on "no cap" cleanly.
   const capValue = (n: number) => (Number.isFinite(n) ? n : null);
 
+  const responseBody = {
+    ok: true,
+    tier,
+    period_start: periodStart,
+    period_end: periodEnd,
+    mock: { count: mock, cap: capValue(caps.mock) },
+    resume_parses: { count: parses, cap: capValue(caps.resumeParses) },
+    coach_insights: null,
+  };
+
+  // Best-effort cache store — fire-and-forget so a Redis write failure
+  // never blocks the response.
+  if (UPSTASH_URL && UPSTASH_TOKEN) {
+    void redisSetEx(cacheKey, USAGE_CACHE_TTL_SEC, JSON.stringify(responseBody));
+  }
+
   return new Response(
-    JSON.stringify({
-      ok: true,
-      tier,
-      period_start: periodStart,
-      period_end: periodEnd,
-      mock: { count: mock, cap: capValue(caps.mock) },
-      resume_parses: { count: parses, cap: capValue(caps.resumeParses) },
-      coach_insights: null,
-    }),
+    JSON.stringify(responseBody),
     { status: 200, headers: { ...headers, "Cache-Control": "private, max-age=60" } },
   );
 }

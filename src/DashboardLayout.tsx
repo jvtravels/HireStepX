@@ -207,8 +207,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
 
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- sidebar backdrop dismissal */}
-      {isMobile && sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(14,12,8,0.45)", zIndex: 19 }} />}
+      {isMobile && sidebarOpen && <div role="button" aria-label="Close navigation menu" tabIndex={0} onClick={() => setSidebarOpen(false)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSidebarOpen(false); }} style={{ position: "fixed", inset: 0, background: "rgba(14,12,8,0.45)", zIndex: 19 }} />}
 
       {/* Sidebar */}
       <aside aria-label="Navigation sidebar" style={{

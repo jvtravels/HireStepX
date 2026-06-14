@@ -27,18 +27,12 @@ export function NextStepsSection({
   onDrillSkill?: () => void;
 }) {
   /* Drill weakest skill — bridges to drill mode. If the parent didn't
-   * provide a handler we fall back to a console log + drill-start intent
-   * event so the CTA is never a dead button. Matches the no-op-default
-   * pattern used elsewhere in the report (e.g. onTryWeakestQuestion is
-   * left undefined and disabled; the drill CTA is the entry point for a
-   * new flow so we keep it live by default). */
-  const handleDrillSkill =
-    onDrillSkill ??
-    (() => {
-      if (typeof console !== "undefined") {
-        console.log("[drill] start intent", { skill: weakestSkill ?? null });
-      }
-    });
+   * provide a handler we fall back to a no-op so the CTA is never a
+   * dead button. Matches the no-op-default pattern used elsewhere in the
+   * report (e.g. onTryWeakestQuestion is left undefined and disabled;
+   * the drill CTA is the entry point for a new flow so we keep it live
+   * by default). */
+  const handleDrillSkill = onDrillSkill ?? (() => {});
 
   const hasScheduledInterview = typeof daysUntilInterview === "number" && daysUntilInterview > 0;
   const sessionsToFit = hasScheduledInterview

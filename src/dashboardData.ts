@@ -951,7 +951,6 @@ export async function analyzeResumeWithAI(
   opts?: { domain?: string; fileName?: string; fileHash?: string },
 ): Promise<{ profile: ResumeProfile; truncated?: boolean; resumeVersionId?: string | null; cached?: boolean } | null> {
   return withRetry(async () => {
-    const tFetchStart = Date.now();
     // Route through the shared apiFetch helper — same transport (XHR,
     // extension-resistant) and auth plumbing that every other mutation
     // in the app uses. Failures are surfaced via ok/status/error on the
@@ -975,8 +974,6 @@ export async function analyzeResumeWithAI(
       },
       { signal },
     );
-    console.log(`[analyzeResume] response status=${res.status} cache=${res.headers["x-cache"] || "?"} version=${res.headers["x-resume-version-id"]?.slice(0, 8) || "?"} timing=${res.headers["x-timing"] || "?"} elapsed=${Date.now() - tFetchStart}ms`);
-
     if (res.status === 401) throw new Error("Session expired — please refresh and sign in again.");
     if (res.status === 429) {
       const retryAfter = (res.data as { retryAfter?: number } | null)?.retryAfter;

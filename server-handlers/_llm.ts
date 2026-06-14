@@ -80,7 +80,6 @@ interface LLMResult {
 async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
   const model = opts.fast ? "llama-3.1-8b-instant" : "llama-3.3-70b-versatile";
   const start = Date.now();
-  console.log(`[LLM] Groq ${model} — starting request`);
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
@@ -102,7 +101,6 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
   const data = await res.json();
   const usage = data.usage;
   const tokensUsed = usage ? { prompt: usage.prompt_tokens, completion: usage.completion_tokens, total: usage.total_tokens } : undefined;
-  console.log(`[LLM] Groq ${model} — ${tokensUsed?.total ?? "?"} tokens, ${latencyMs}ms`);
   return { text: data.choices?.[0]?.message?.content || "", model, fallback: false, tokensUsed, latencyMs };
 }
 
@@ -115,7 +113,6 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMRe
   // on the fallback path is naturally low.
   const model = "gemini-2.5-flash";
   const start = Date.now();
-  console.log(`[LLM] Gemini ${model} — starting request`);
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
@@ -139,7 +136,6 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMRe
   const data = await res.json();
   const usage = data.usageMetadata;
   const tokensUsed = usage ? { prompt: usage.promptTokenCount, completion: usage.candidatesTokenCount, total: usage.totalTokenCount } : undefined;
-  console.log(`[LLM] Gemini ${model} — ${tokensUsed?.total ?? "?"} tokens, ${latencyMs}ms`);
   return { text: data.candidates?.[0]?.content?.parts?.[0]?.text || "", model, fallback: false, tokensUsed, latencyMs };
 }
 
@@ -148,7 +144,6 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
   // Used as a third fallback so a Groq+Gemini outage doesn't kill the interview.
   const model = opts.fast ? "llama3.1-8b" : "llama-3.3-70b";
   const start = Date.now();
-  console.log(`[LLM] Cerebras ${model} — starting request`);
   const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${CEREBRAS_API_KEY}` },
@@ -170,7 +165,6 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
   const data = await res.json();
   const usage = data.usage;
   const tokensUsed = usage ? { prompt: usage.prompt_tokens, completion: usage.completion_tokens, total: usage.total_tokens } : undefined;
-  console.log(`[LLM] Cerebras ${model} — ${tokensUsed?.total ?? "?"} tokens, ${latencyMs}ms`);
   return { text: data.choices?.[0]?.message?.content || "", model: `cerebras-${model}`, fallback: false, tokensUsed, latencyMs };
 }
 
