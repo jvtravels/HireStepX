@@ -466,10 +466,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error("[verify-payment] single payment record save failed:", paymentRecordRes.status);
         return res.status(500).json({ error: "Failed to save payment record" });
       }
-      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, sessionQuantity, fetch);
+      // Money-critical: the payment is already captured, so retry the grant
+      // through transient Supabase failures before giving up.
+      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, sessionQuantity, fetch, 3);
       if (newBalance === null) {
-        console.error("[verify-payment] credit grant failed for", userId.slice(0, 8));
-        return res.status(500).json({ error: "Failed to add session credit. Your payment was received — contact support@hirestepx.com." });
+        console.error("[verify-payment] credit grant failed after retries for", userId.slice(0, 8));
+        // The dedup row was inserted BEFORE this grant, so leaving it in place
+        // would make a client retry short-circuit at the 409/idempotent path and
+        // return "success" without ever granting the credit — a permanent loss.
+        // Roll it back (best-effort) so a genuine retry can re-process cleanly.
+        await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payment_dedup?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}`, {
+          method: "DELETE",
+          headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
+        }).catch(() => {});
+        void captureServerEvent("verify_payment_credit_grant_failed", userId, {
+          payment_id_hash: hashPaymentId(razorpay_payment_id), quantity: sessionQuantity,
+        });
+        return res.status(500).json({ error: "Could not add your session credit. Your payment was received — please retry in a moment or contact support@hirestepx.com." });
       }
       // Idempotency backstop: record this payment_id on the profile so a
       // replayed callback short-circuits at the profile_payment_id_match check.

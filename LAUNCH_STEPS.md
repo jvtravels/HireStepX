@@ -28,6 +28,9 @@ create policy "Users read own session credits" on session_credits
 -- ── 2. Public-profile opt-in (private by default) ───────────────────────
 alter table profiles add column if not exists is_profile_public boolean not null default false;
 
+-- ── 2b. Lock down the payment-dedup table (defense-in-depth) ────────────
+alter table payment_dedup enable row level security;
+
 -- ── 3. Billing-column guard (blocks self-promotion to a paid tier) ──────
 create or replace function guard_profile_billing_columns()
 returns trigger
@@ -91,7 +94,12 @@ All of these fail safe if left unset — set only the ones you want. **Vercel Da
 | --- | --- | --- |
 | `DEEPGRAM_PROJECT_ID` | your Deepgram project id | Enables secure scoped STT voice tokens (else STT returns 503) |
 | `SARVAM_ALLOW_CLIENT_KEY` | `true` | Re-enables Sarvam client-side STT fallback |
-| `QUOTA_FAIL_CLOSED` | `1` | Strict LLM-cost mode: deny when Redis is unavailable |
+| `QUOTA_FAIL_CLOSED` | `1` | **Recommended on.** Strict LLM-cost mode: deny LLM calls when Redis is unavailable (else a Redis blip lets a user run up unbounded LLM cost) |
+| `SESSION_LIMIT_FAIL_CLOSED` | `1` | **Recommended on.** Deny new sessions when Supabase is unreachable (else a transient blip lets users exceed plan limits) |
+
+> Trade-off for the two `*_FAIL_CLOSED` flags: with them **on**, a backing-store
+> outage briefly blocks interviews instead of leaking cost/limits. For a paid
+> launch that's the safer default — turn them on.
 
 > Voice is shipping text-only for MVP, so skipping the two voice vars is fine.
 

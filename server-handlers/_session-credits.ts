@@ -44,27 +44,41 @@ export async function getSessionCredits(
 }
 
 /** Add `qty` (clamped 1–10) credits to a user's balance, creating the ledger
- *  row if absent. Returns the new balance, or null if the write failed. */
+ *  row if absent. Returns the new balance, or null if the write failed.
+ *
+ *  `retries` re-attempts the read+upsert on transient failure with linear
+ *  backoff. This is money-critical: the caller has already taken the user's
+ *  payment, so a Supabase blip here must not silently drop the credit. Each
+ *  attempt re-reads the balance, so a partial prior write is self-correcting
+ *  (the merge-duplicates upsert is idempotent on the computed total).
+ *  Default 0 keeps the call shape unchanged for existing unit tests. */
 export async function grantSessionCredits(
   baseUrl: string,
   serviceKey: string,
   userId: string,
   qty: number,
   fetchImpl: FetchImpl = fetch,
+  retries = 0,
 ): Promise<number | null> {
   const safeQty = Math.min(Math.max(Math.trunc(Number(qty)) || 0, 1), 10);
-  const current = await getSessionCredits(baseUrl, serviceKey, userId, fetchImpl);
-  const next = current + safeQty;
-  const res = await fetchImpl(`${baseUrl}/rest/v1/session_credits`, {
-    method: "POST",
-    headers: authHeaders(serviceKey, {
-      "Content-Type": "application/json",
-      // Upsert: insert the row, or overwrite balance with the computed total.
-      Prefer: "resolution=merge-duplicates,return=minimal",
-    }),
-    body: JSON.stringify({ user_id: userId, balance: next, updated_at: new Date().toISOString() }),
-  });
-  return res.ok ? next : null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const current = await getSessionCredits(baseUrl, serviceKey, userId, fetchImpl);
+      const next = current + safeQty;
+      const res = await fetchImpl(`${baseUrl}/rest/v1/session_credits`, {
+        method: "POST",
+        headers: authHeaders(serviceKey, {
+          "Content-Type": "application/json",
+          // Upsert: insert the row, or overwrite balance with the computed total.
+          Prefer: "resolution=merge-duplicates,return=minimal",
+        }),
+        body: JSON.stringify({ user_id: userId, balance: next, updated_at: new Date().toISOString() }),
+      });
+      if (res.ok) return next;
+    } catch { /* transient — fall through to retry */ }
+    if (attempt < retries) await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+  }
+  return null;
 }
 
 /** Spend one credit. Returns true if a credit was decremented, false if the

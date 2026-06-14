@@ -270,6 +270,11 @@ create table if not exists payment_dedup (
   user_id uuid references profiles(id) on delete cascade,
   created_at timestamptz default now()
 );
+-- Service-role-only: written exclusively by verify-payment / webhook via the
+-- service key (which bypasses RLS). Enabling RLS with NO authenticated/anon
+-- policy denies all client access — defense-in-depth so payment ids never leak
+-- through PostgREST even if an anon/auth key is misused.
+alter table payment_dedup enable row level security;
 
 -- ═══════════════════════════════════════════════════════
 -- Performance Indexes

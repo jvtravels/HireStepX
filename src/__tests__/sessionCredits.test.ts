@@ -61,6 +61,28 @@ describe("_session-credits", () => {
     expect(await grantSessionCredits(BASE, KEY, USER, 1, fn)).toBeNull();
   });
 
+  it("retries the grant on transient write failure and succeeds (money-critical path)", async () => {
+    const calls: Call[] = [];
+    let writeAttempts = 0;
+    const fn = vi.fn(async (url: string, init?: RequestInit) => {
+      const method = (init?.method || "GET").toUpperCase();
+      const body = init?.body ? JSON.parse(init.body as string) : undefined;
+      calls.push({ url, method, body });
+      if (method === "GET") return { ok: true, json: async () => [{ balance: 2 }] } as Response;
+      writeAttempts++;
+      // Fail the first two write attempts, succeed on the third.
+      return { ok: writeAttempts >= 3, json: async () => ({}) } as Response;
+    }) as unknown as typeof fetch;
+    const newBalance = await grantSessionCredits(BASE, KEY, USER, 1, fn, 3);
+    expect(newBalance).toBe(3);
+    expect(writeAttempts).toBe(3);
+  });
+
+  it("returns null after exhausting all retries", async () => {
+    const { fn } = mockFetch({ rows: [{ balance: 1 }], writeOk: false });
+    expect(await grantSessionCredits(BASE, KEY, USER, 1, fn, 2)).toBeNull();
+  });
+
   it("consumes one credit when the balance is positive", async () => {
     const { fn, calls } = mockFetch({ rows: [{ balance: 2 }], writeOk: true });
     expect(await consumeSessionCredit(BASE, KEY, USER, fn)).toBe(true);
