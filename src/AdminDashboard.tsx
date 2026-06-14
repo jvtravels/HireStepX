@@ -448,24 +448,45 @@ export default function AdminDashboard() {
     setLoginError("");
     setLoginBusy(true);
     try {
-      const res = await fetch("/api/admin-data", {
+      // POST to /api/admin-login so the server sets an HttpOnly admin_token cookie
+      // (middleware gate) in addition to returning the session token for subsequent
+      // x-admin-token API calls.
+      const loginRes = await fetch("/api/admin-login", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-key": loginPassword },
-        body: JSON.stringify({ section: "overview" }),
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ password: loginPassword }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data._token) setToken(data._token);
-        setAuthed(true);
-        // Cache overview
-        const { _token, ...rest } = data;
-        cache.current.set("overview", { data: rest, ts: Date.now() });
-        setLoginPassword(""); // Clear password from memory
-      } else if (res.status === 429) {
-        setLoginError("Too many attempts. Try again in 15 minutes.");
-      } else {
-        setLoginError("Wrong password");
+      if (!loginRes.ok) {
+        if (loginRes.status === 429) {
+          setLoginError("Too many attempts. Try again in 15 minutes.");
+        } else {
+          setLoginError("Wrong password");
+        }
+        setLoginBusy(false);
+        return;
       }
+      const loginData = await loginRes.json() as { ok: boolean; token?: string };
+      const token = loginData.token;
+      if (token) setToken(token);
+
+      // Fetch overview data using the new token so we can pre-populate the cache.
+      if (token) {
+        const overviewRes = await fetch("/api/admin-data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-token": token },
+          body: JSON.stringify({ section: "overview" }),
+        });
+        if (overviewRes.ok) {
+          const data = await overviewRes.json();
+          if (data._token) setToken(data._token);
+          const { _token, ...rest } = data;
+          cache.current.set("overview", { data: rest, ts: Date.now() });
+        }
+      }
+
+      setAuthed(true);
+      setLoginPassword(""); // Clear password from memory
     } catch {
       setLoginError("Connection failed. Check your network.");
     }
@@ -476,6 +497,8 @@ export default function AdminDashboard() {
     setAuthed(false);
     clearToken();
     cache.current.clear();
+    // Clear the HttpOnly admin_token cookie via the logout endpoint.
+    fetch("/api/admin-login", { method: "DELETE", credentials: "include" }).catch(() => { /* best-effort */ });
   }, []);
 
   /* ── Dashboard state ── */

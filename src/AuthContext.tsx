@@ -468,6 +468,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // previous device's token while our localStorage already has the new
   // one. Login/signup set this to true; it clears after a few seconds.
   const justAuthenticatedRef = useRef(false);
+  // Stable ref so checkExpiry can read user.id without depending on the full user object.
+  // The full user dep caused the effect to restart on every setUser() call (fast-render,
+  // profile load, TOKEN_REFRESHED → 3+ restarts on page load), stacking 10s timers and
+  // causing spurious getSession() calls.
+  const userRef = useRef<User | null>(null);
+
+  // Keep userRef in sync with user state so the checkExpiry effect can read
+  // user.id without depending on the full user object (which would restart
+  // the effect on every setUser() call).
+  userRef.current = user;
 
   // Clean up legacy localStorage cache from previous versions
   useEffect(() => {
@@ -917,23 +927,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } catch {
             // Profile fetch hung or failed during TOKEN_REFRESHED.
-            // If the user already has a fully-loaded profile (subscriptionTier
-            // is set), preserve it — don't downgrade to a minimal JWT-only
-            // object that wipes subscriptionTier and causes the Plan Status
-            // widget to flash "Loading plan…" for 1-4s while retryProfileInBackground
-            // catches up. Only fall back to the minimal object when there is
-            // genuinely no user loaded yet (initial boot path).
+            // Priority order:
+            //   1. Preserve current user if subscriptionTier is already set — avoids the
+            //      "Loading plan…" flash while retryProfileInBackground catches up.
+            //   2. If subscriptionTier is missing, seed it from the localStorage tier cache
+            //      (same cache the fast-render path uses on page load) so the Plan Status
+            //      widget shows the correct plan even when getProfile is temporarily unavailable.
+            //   3. Fall back to a minimal object only when there is genuinely nothing cached.
             const meta = session.user.user_metadata || {};
+            const cachedTierForRefresh = getCachedTier(session.user.id);
             setUser(current => {
               if (current?.subscriptionTier !== undefined) return current;
               return {
                 id: session.user.id,
                 name: meta.name || meta.full_name || "",
                 email: session.user.email || "",
-                targetRole: "",
+                targetRole: cachedTierForRefresh?.targetRole || "",
                 resumeFileName: null,
                 hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
                 emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
+                ...(cachedTierForRefresh ? {
+                  subscriptionTier: cachedTierForRefresh.tier,
+                  subscriptionEnd: cachedTierForRefresh.subscriptionEnd,
+                  practiceTimestamps: cachedTierForRefresh.practiceTimestamps || [],
+                } : {}),
               };
             });
             // Best-effort row creation in the background.
@@ -1621,7 +1638,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Session expiry warning — check JWT exp every 60s, warn 5min before expiry
   const [sessionExpiryWarning, setSessionExpiryWarning] = useState<string | null>(null);
   useEffect(() => {
-    if (!user || !supabaseConfigured) return;
+    if (!user?.id || !supabaseConfigured) return;
     const SESSION_WARN_MS = 5 * 60 * 1000; // Warn 5 min before expiry
 
     const checkExpiry = async () => {
@@ -1639,7 +1656,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const localDeviceToken = getStoredDeviceToken();
         const serverDeviceToken = session.user.user_metadata?.active_device_token;
         if (localDeviceToken && serverDeviceToken && localDeviceToken !== serverDeviceToken) {
-          logAuditEvent("single_device_kicked", { userId: user.id });
+          logAuditEvent("single_device_kicked", { userId: userRef.current?.id });
           setSessionExpiryWarning("Signed in on another device — signing out here.");
           setUser(null);
           await client.auth.signOut().catch(() => {});
@@ -1670,7 +1687,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSessionExpiryWarning("Session needs to refresh after this interview ends.");
             return;
           }
-          logAuditEvent("session_expired", { userId: user.id });
+          logAuditEvent("session_expired", { userId: userRef.current?.id });
           setSessionExpiryWarning(null);
           setUser(null);
           await client.auth.signOut().catch(() => {});
@@ -1696,7 +1713,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initialTimer = setTimeout(checkExpiry, 10_000);
     const interval = setInterval(checkExpiry, 60_000);
     return () => { clearTimeout(initialTimer); clearInterval(interval); };
-  }, [user, broadcastLogout, broadcastSessionRefreshed]);
+  // Dep is user?.id, not the full user object. The full user object changes reference
+  // on every setUser() call (fast-render → profile load → TOKEN_REFRESHED = 3+ calls
+  // on page load), which would restart this effect each time and stack multiple 10s
+  // timers — causing spurious getSession() calls and redundant refreshSession() calls
+  // that can delay the plan widget from settling. userRef provides the current user.id
+  // inside the effect without adding it as a dep.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, broadcastLogout, broadcastSessionRefreshed]);
 
   const resetPassword = useCallback(async (email: string): Promise<{ success: boolean; error?: string }> => {
     // Email enumeration defense: server returns 200 regardless of

@@ -25,6 +25,7 @@ export interface CalendarEventRow {
   user_id: string;
   title: string;
   company: string;
+  role: string;
   date: string;
   time: string;
   type: string;
@@ -49,6 +50,7 @@ export interface CalendarEventInput {
   id?: string;
   title: string;
   company?: string;
+  role?: string;
   date?: string;
   time?: string;
   type?: string;

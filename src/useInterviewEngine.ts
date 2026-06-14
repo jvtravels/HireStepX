@@ -296,7 +296,9 @@ export function useInterviewEngine() {
      The endpoint is idempotent on sessionId (handles React StrictMode
      double-mount and any client retry); save-session.ts checks the
      same started_session_ids list to avoid double-bumping on completion.
-     Fire-and-forget — the engine never blocks on this. */
+     Fire-and-forget with one retry — a transient network blip on the
+     first attempt must not silently drop the session-start record, which
+     would cause quota counting to undercount active sessions. */
   useEffect(() => {
     if (!user?.id) return; // anon sessions don't count
     const sessionId = liveSessionIdRef.current;
@@ -304,8 +306,15 @@ export function useInterviewEngine() {
       try {
         const { apiFetch } = await import("./apiClient");
         await apiFetch("/api/record-session-start", { sessionId, type: interviewType });
-      } catch (err) {
-        console.warn("[interview] record-session-start failed:", err instanceof Error ? err.message : err);
+      } catch (e1) {
+        console.warn("[interview] record-session-start failed, retrying in 2s:", e1 instanceof Error ? e1.message : e1);
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+          const { apiFetch } = await import("./apiClient");
+          await apiFetch("/api/record-session-start", { sessionId, type: interviewType });
+        } catch (e2) {
+          console.error("[interview] record-session-start permanently failed:", e2 instanceof Error ? e2.message : e2);
+        }
       }
     })();
     // Mount-only: liveSessionIdRef is stable for this engine instance.
@@ -671,6 +680,13 @@ export function useInterviewEngine() {
     if (ttsErrorTimerRef.current) clearTimeout(ttsErrorTimerRef.current);
     ttsErrorTimerRef.current = setTimeout(() => setTtsError(""), 6000);
   }, []);
+  /* ttsFailed — latched true permanently when the entire TTS cascade
+   * (Sarvam → Cartesia → Azure → Web Speech API) is exhausted. Unlike
+   * ttsError which auto-clears after 6s (suitable for transient blips),
+   * this is a durable indicator that audio won't recover without a
+   * page reload. The UI renders a persistent non-dismissable banner so
+   * the candidate knows to read questions on screen. */
+  const [ttsFailed, setTtsFailed] = useState(false);
   const [usedFallbackScore, setUsedFallbackScore] = useState(false);
   const [evalTimedOut, setEvalTimedOut] = useState(false);
   const [lastSessionId, setLastSessionId] = useState<string | null>(null);
@@ -1536,9 +1552,19 @@ export function useInterviewEngine() {
           /* onAudioStarted reveals the AI bubble at audio onset so text
            * doesn't lead the voice. Falls back to the 1.2s timer if the
            * provider doesn't fire it. */
+          /* onAllTtsProvidersFailed: called by speak()/speakAs() when the
+           * entire provider cascade (Sarvam → Cartesia → Azure → Web Speech)
+           * is exhausted. Sets the persistent ttsFailed latch so the UI can
+           * show a durable "audio unavailable" banner, then advances the
+           * engine state via onSpeechEnd so the interview keeps moving. */
+          const onAllTtsProvidersFailed = () => {
+            flagTtsError("Audio unavailable — please read questions on screen and type your answers.");
+            setTtsFailed(true);
+            onSpeechEnd();
+          };
           return panelVoiceId
-            ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onSpeechEnd, panelGender, onDurationKnown, revealTranscript)
-            : speak(step.aiText, onSpeechEnd, onSpeechEnd, fallbackGender, onDurationKnown, revealTranscript);
+            ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onAllTtsProvidersFailed, panelGender, onDurationKnown, revealTranscript)
+            : speak(step.aiText, onSpeechEnd, onAllTtsProvidersFailed, fallbackGender, onDurationKnown, revealTranscript);
         };
         speakPanel().then(handle => {
           if (ttsInstanceIdRef.current === instanceId) {
@@ -3740,6 +3766,7 @@ export function useInterviewEngine() {
     questionFallbackSource,
     micError,
     ttsError,
+    ttsFailed,
     micQuiet,
     reconnecting,
     reconnectAttempt: reconnectAttemptRef.current,

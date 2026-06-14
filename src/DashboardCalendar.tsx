@@ -23,7 +23,11 @@ import {
   type InterviewEvent, loadEvents, saveEvents, generateEventId,
   daysUntilEvent, formatEventDate, formatEventTime,
   generateICS, generateGoogleCalendarURL, interviewTypeOptions,
+  focusForType, COMMON_TIMEZONES, zonedWallTimeToUtc, formatTimeInZone,
+  hourInZone, isAwkwardHour, describeReminders, parseNaturalEvent,
 } from "./dashboardHelpers";
+import { ROLE_SUGGESTIONS } from "./onboardingData";
+import { COMPANY_SUGGESTIONS } from "../data/company-suggestions";
 import { useDashboardUI, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
 import { DataLoadingSkeleton, ProGate } from "./dashboardComponents";
 
@@ -122,6 +126,7 @@ function rowToEvent(r: CalendarEventRow): InterviewEvent {
     id: r.id,
     title: r.title,
     company: r.company || "",
+    role: r.role || undefined,
     type: r.type || "interview",
     date: r.date || (r.start_utc ? r.start_utc.slice(0, 10) : ""),
     time: r.time || "",
@@ -140,15 +145,20 @@ function rowToEvent(r: CalendarEventRow): InterviewEvent {
 }
 
 function eventToInput(ev: InterviewEvent, opts: { withId: boolean }): CalendarEventInput {
-  const local = new Date(`${ev.date}T${ev.time || "00:00"}`);
-  const start_utc = Number.isNaN(local.getTime()) ? undefined : local.toISOString();
+  // Resolve the wall-clock entry in the event's own zone to an absolute instant,
+  // so an interview entered in US Pacific lands at the right UTC moment instead
+  // of the candidate's browser zone. Falls back to the candidate zone if unset.
+  const tz = ev.timezone || currentTimezone();
+  const start_utc = zonedWallTimeToUtc(ev.date, ev.time, tz) ?? undefined;
   return {
     ...(opts.withId ? { id: ev.id } : {}),
     title: ev.title,
     company: ev.company,
+    role: ev.role || "",
     type: ev.type,
     date: ev.date,
     time: ev.time,
+    timezone: tz,
     duration: ev.duration,
     location: ev.location,
     notes: ev.notes,
@@ -369,29 +379,18 @@ function ReminderRow({ label, on }: { label: string; on: boolean }) {
   );
 }
 
-/* Map a logged interview's round label onto the mock-session focus vocabulary
- * the setup screen (SessionSetup) understands, so launching a practice run from
- * a calendar event lands pre-configured for that round. Anything unmapped (e.g.
- * "Other") falls through to the setup screen's role-based default. */
-const CAL_TYPE_TO_FOCUS: Record<string, string> = {
-  "Technical": "technical",
-  "System Design": "technical",
-  "Behavioral": "behavioral",
-  "Phone Screen": "behavioral",
-  "Culture Fit": "hr-round",
-  "Final Round": "behavioral",
-};
-
 export default function CalendarPage() {
   useDocTitle("Calendar");
   const router = useRouter();
   // Launch a mock pre-configured for the interview being prepped: deep-link the
-  // setup screen with the company + round focus so the candidate isn't retyping
-  // what they already logged. Role is left to the setup screen's profile default.
+  // setup screen with the company + round focus + role so the candidate isn't
+  // retyping what they already logged. focusForType maps the calendar round
+  // label onto the mock-session focus vocabulary SessionSetup understands.
   const startMock = (ev: InterviewEvent | null) => {
     const params = new URLSearchParams();
     if (ev?.company) params.set("company", ev.company);
-    const focus = ev?.type ? CAL_TYPE_TO_FOCUS[ev.type] : undefined;
+    if (ev?.role) params.set("role", ev.role);
+    const focus = focusForType(ev?.type);
     if (focus) params.set("type", focus);
     const qs = params.toString();
     router.push(qs ? `/session/new?${qs}` : "/session/new");
@@ -413,13 +412,16 @@ export default function CalendarPage() {
   // Form state
   const [formTitle, setFormTitle] = useState("");
   const [formCompany, setFormCompany] = useState("");
-  const [formType, setFormType] = useState("Behavioral");
+  const [formRole, setFormRole] = useState("");
+  const [formType, setFormType] = useState("");
   const [formDate, setFormDate] = useState("");
   const [formTime, setFormTime] = useState("10:00");
+  const [formTimezone, setFormTimezone] = useState(() => currentTimezone());
   const [formDuration, setFormDuration] = useState(60);
   const [formLocation, setFormLocation] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [formReminders, setFormReminders] = useState(true);
+  const [formQuickAdd, setFormQuickAdd] = useState("");
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -520,34 +522,53 @@ export default function CalendarPage() {
   const resetForm = () => {
     setFormTitle("");
     setFormCompany(user?.targetCompany || "");
-    setFormType("Behavioral");
+    setFormRole(user?.targetRole || "");
+    setFormType("");
     setFormDate("");
     setFormTime("10:00");
+    setFormTimezone(currentTimezone());
     setFormDuration(60);
     setFormLocation("");
     setFormNotes("");
     setFormReminders(true);
+    setFormQuickAdd("");
+    setFormError("");
     setEditingId(null);
   };
 
   const openNewForm = () => {
     resetForm();
     setFormCompany(user?.targetCompany || "");
+    setFormRole(user?.targetRole || "");
     setShowForm(true);
   };
 
   const openEditForm = (ev: InterviewEvent) => {
     setFormTitle(ev.title);
     setFormCompany(ev.company);
-    setFormType(ev.type);
+    setFormRole(ev.role || "");
+    setFormType(ev.type === "interview" ? "" : ev.type);
     setFormDate(ev.date);
     setFormTime(ev.time);
+    setFormTimezone(ev.timezone || currentTimezone());
     setFormDuration(ev.duration);
     setFormLocation(ev.location);
     setFormNotes(ev.notes);
     setFormReminders(ev.reminders);
+    setFormQuickAdd("");
+    setFormError("");
     setEditingId(ev.id);
     setShowForm(true);
+  };
+
+  // Apply a natural-language phrase ("Amazon SDE phone screen tuesday 3pm") to
+  // the form fields the parser is confident about, leaving the rest for review.
+  const applyQuickAdd = () => {
+    const parsed = parseNaturalEvent(formQuickAdd, new Date());
+    if (parsed.company) setFormCompany(parsed.company);
+    if (parsed.type) setFormType(parsed.type);
+    if (parsed.date) setFormDate(parsed.date);
+    if (parsed.time) setFormTime(parsed.time);
   };
 
   const schedulePrepRunway = async (parentId: string, base: InterviewEvent[]) => {
@@ -570,14 +591,28 @@ export default function CalendarPage() {
     }
   };
 
+  // Title is optional in the UI: a company + round is enough to identify an
+  // interview, so derive a sensible one when the field is left blank rather than
+  // forcing the candidate to restate what they already picked.
+  const derivedTitle = (): string => {
+    const t = formTitle.trim();
+    if (t) return t;
+    const round = formType && formType !== "Other" ? formType : "Interview";
+    if (formCompany.trim()) return `${formCompany.trim()} ${round}`;
+    if (formRole.trim()) return `${formRole.trim()} ${round}`;
+    return round;
+  };
+
   const handleSave = async () => {
-    if (!formTitle || !formDate || !formTime) {
-      setFormError(!formTitle ? "Event title is required." : !formDate ? "Date is required." : "Time is required.");
+    if (!formDate || !formTime) {
+      setFormError(!formDate ? "Date is required." : "Time is required.");
       return;
     }
     if (!editingId) {
-      const eventDateTime = new Date(`${formDate}T${formTime}`);
-      if (eventDateTime < new Date()) {
+      // Compare against the absolute instant in the event's own zone, so a US
+      // morning slot entered from India isn't wrongly rejected as "in the past".
+      const startUtc = zonedWallTimeToUtc(formDate, formTime, formTimezone);
+      if (startUtc && Date.parse(startUtc) < Date.now()) {
         setFormError("Interview date and time cannot be in the past.");
         return;
       }
@@ -585,11 +620,13 @@ export default function CalendarPage() {
     setFormError("");
     const draft: InterviewEvent = {
       id: editingId || generateEventId(),
-      title: formTitle,
+      title: derivedTitle(),
       company: formCompany,
-      type: formType,
+      role: formRole.trim() || undefined,
+      type: formType || "interview",
       date: formDate,
       time: formTime,
+      timezone: formTimezone,
       duration: formDuration,
       location: formLocation,
       notes: formNotes,
@@ -701,9 +738,15 @@ export default function CalendarPage() {
   };
 
   // Awkward-hour heuristic for the focused interview (Indian candidates often
-  // interview at US/EU hours). Calm/positive unless it's genuinely early/late.
-  const focusedHour = focused ? Number((focused.time || "10:00").split(":")[0]) : 10;
-  const awkward = focused ? focusedHour < 8 || focusedHour >= 21 : false;
+  // interview at US/EU hours). Evaluated against the candidate's own zone using
+  // the authoritative UTC instant, so a US-evening slot reads correctly here.
+  const heroTz = currentTimezone();
+  const heroStartUtc = focused ? (focused.start_utc || zonedWallTimeToUtc(focused.date, focused.time, focused.timezone || heroTz)) : null;
+  const awkward = heroStartUtc ? isAwkwardHour(hourInZone(heroStartUtc, heroTz)) : false;
+  // Show the candidate-local equivalent when the interview was authored in a
+  // different zone (cross-zone interview).
+  const heroForeignZone = !!focused && !!focused.timezone && focused.timezone !== heroTz;
+  const heroLocalLabel = heroStartUtc && heroForeignZone ? formatTimeInZone(heroStartUtc, heroTz) : "";
 
   // Hero labels: keep what we display aligned to what the user actually entered.
   // A blank or "Other" round shouldn't leak into the UI as "· Other",
@@ -712,6 +755,17 @@ export default function CalendarPage() {
   const heroRound = focused && focused.type && focused.type !== "Other" ? focused.type : null;
   const heroSub = focused && focused.title && focused.title !== heroName ? focused.title : null;
   const practiceLabel = heroRound ? `Practice ${heroRound}` : "Start mock interview";
+
+  // Live preview for the add/edit sheet. The entered time is in formTimezone;
+  // show the candidate-local equivalent when those differ (cross-zone interview),
+  // warn on awkward home-zone hours, and state which reminders will actually fire.
+  const candidateTz = currentTimezone();
+  const previewStartUtc = zonedWallTimeToUtc(formDate, formTime, formTimezone);
+  const showDualTime = !!previewStartUtc && formTimezone !== candidateTz;
+  const candidateLocalLabel = previewStartUtc ? formatTimeInZone(previewStartUtc, candidateTz) : "";
+  const formAwkward = previewStartUtc ? isAwkwardHour(hourInZone(previewStartUtc, candidateTz)) : false;
+  const reminderCopy = describeReminders(previewStartUtc, Date.now());
+  const canSave = !!formDate && !!formTime && !saving;
 
   return (
     <div style={{ fontFamily: font.ui, color: c.ivory, maxWidth: 1280, margin: "0 auto" }}>
@@ -774,14 +828,55 @@ export default function CalendarPage() {
 
             {/* scrollable body */}
             <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px", display: "flex", flexDirection: "column", gap: 18 }}>
-              <Field label="Interview title" htmlFor="cal-title" required>
-                <input id="cal-title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Final round interview" style={inputStyle}
+              {/* natural-language quick add — type a phrase, we fill the form */}
+              {!editingId && (
+                <div>
+                  <label htmlFor="cal-quick" style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: c.stone, display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }}>
+                    <span style={{ color: c.gilt, display: "flex" }}><Icon size={12}>{I.sparkle}</Icon></span> Quick add
+                  </label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input id="cal-quick" value={formQuickAdd} onChange={(e) => setFormQuickAdd(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyQuickAdd(); } }}
+                      placeholder="Amazon SDE phone screen tuesday 3pm" style={inputStyle} onFocus={fieldFocus} onBlur={fieldBlur} />
+                    <button className="cpr-tap" onClick={applyQuickAdd} disabled={!formQuickAdd.trim()}
+                      style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6, background: formQuickAdd.trim() ? c.graphite : "transparent", color: formQuickAdd.trim() ? c.ivory : c.stone, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "0 16px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: formQuickAdd.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>
+                      Fill
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 11, color: c.stone, margin: "6px 0 0", fontFamily: font.ui }}>We fill what we can. Review the fields below before saving.</p>
+                </div>
+              )}
+
+              <Field label="Company" htmlFor="cal-company">
+                <input id="cal-company" list="cal-company-list" value={formCompany} onChange={(e) => setFormCompany(e.target.value)} placeholder="e.g. Google" style={inputStyle}
                   onFocus={fieldFocus} onBlur={fieldBlur} />
+                <datalist id="cal-company-list">
+                  {COMPANY_SUGGESTIONS.slice(0, 200).map((co) => <option key={co} value={co} />)}
+                </datalist>
               </Field>
 
-              <Field label="Company" htmlFor="cal-company" required>
-                <input id="cal-company" value={formCompany} onChange={(e) => setFormCompany(e.target.value)} placeholder="e.g. Google" style={inputStyle}
+              <Field label="Role / position" htmlFor="cal-role">
+                <input id="cal-role" list="cal-role-list" value={formRole} onChange={(e) => setFormRole(e.target.value)} placeholder="e.g. Software Engineer" style={inputStyle}
                   onFocus={fieldFocus} onBlur={fieldBlur} />
+                <datalist id="cal-role-list">
+                  {ROLE_SUGGESTIONS.slice(0, 200).map((r) => <option key={r} value={r} />)}
+                </datalist>
+              </Field>
+
+              <Field label="Interview round">
+                <div role="group" aria-label="Interview round" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {interviewTypeOptions.map((t) => {
+                    const on = formType === t;
+                    return (
+                      <button key={t} className="cpr-tap" aria-pressed={on} onClick={() => setFormType(on ? "" : t)} style={{
+                        fontFamily: font.ui, fontSize: 12, fontWeight: 500, padding: "6px 13px", borderRadius: radius.pill, cursor: "pointer",
+                        background: on ? T.copper100Soft : "transparent",
+                        border: `1px solid ${on ? c.gilt : c.border}`,
+                        color: on ? c.gilt : c.stone, transition: `all 0.2s ${ease.out}`,
+                      }}>{t}</button>
+                    );
+                  })}
+                </div>
               </Field>
 
               <div className="cpr-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -793,27 +888,43 @@ export default function CalendarPage() {
                 </Field>
               </div>
 
-              <Field label="Duration" htmlFor="cal-duration">
-                <select id="cal-duration" value={formDuration} onChange={(e) => setFormDuration(Number(e.target.value))} style={{ ...inputStyle, colorScheme: "light" }} onFocus={fieldFocus} onBlur={fieldBlur}>
-                  <option value={30}>30 minutes</option>
-                  <option value={45}>45 minutes</option>
-                  <option value={60}>1 hour</option>
-                  <option value={90}>1.5 hours</option>
-                  <option value={120}>2 hours</option>
-                </select>
-              </Field>
+              <div className="cpr-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <Field label="Timezone" htmlFor="cal-tz">
+                  <select id="cal-tz" value={formTimezone} onChange={(e) => setFormTimezone(e.target.value)} style={{ ...inputStyle, colorScheme: "light" }} onFocus={fieldFocus} onBlur={fieldBlur}>
+                    {/* the entered time is read in this zone; default is the candidate's own */}
+                    {!COMMON_TIMEZONES.some((z) => z.id === formTimezone) && <option value={formTimezone}>{formTimezone}</option>}
+                    {COMMON_TIMEZONES.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+                  </select>
+                </Field>
+                <Field label="Duration" htmlFor="cal-duration">
+                  <select id="cal-duration" value={formDuration} onChange={(e) => setFormDuration(Number(e.target.value))} style={{ ...inputStyle, colorScheme: "light" }} onFocus={fieldFocus} onBlur={fieldBlur}>
+                    <option value={30}>30 minutes</option>
+                    <option value={45}>45 minutes</option>
+                    <option value={60}>1 hour</option>
+                    <option value={90}>1.5 hours</option>
+                    <option value={120}>2 hours</option>
+                  </select>
+                </Field>
+              </div>
 
-              <Field label="Interview type">
-                <div role="group" aria-label="Interview type" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {interviewTypeOptions.map((t) => (
-                    <button key={t} className="cpr-tap" onClick={() => setFormType(t)} style={{
-                      fontFamily: font.ui, fontSize: 12, fontWeight: 500, padding: "6px 13px", borderRadius: radius.pill, cursor: "pointer",
-                      background: formType === t ? T.copper100Soft : "transparent",
-                      border: `1px solid ${formType === t ? c.gilt : c.border}`,
-                      color: formType === t ? c.gilt : c.stone, transition: `all 0.2s ${ease.out}`,
-                    }}>{t}</button>
-                  ))}
+              {/* cross-zone clarity: the entered time is in the chosen zone; show
+                  the candidate-local equivalent, and warn on awkward home hours */}
+              {showDualTime && candidateLocalLabel && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: c.chalk, background: c.graphite, border: `1px solid ${c.borderSubtle}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui }}>
+                  <Icon size={14} stroke={c.gilt}>{I.globe}</Icon>
+                  That is <strong style={{ color: c.ivory, fontWeight: 600 }}>{candidateLocalLabel}</strong> your time ({candidateTz}).
                 </div>
+              )}
+              {formAwkward && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: T.warningInk, background: T.warning100, border: `1px solid ${T.warningLine}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui }}>
+                  <Icon size={14} stroke={T.warningInk}>{I.alert}</Icon>
+                  Early or late slot in your timezone. Plan rest so you are sharp.
+                </div>
+              )}
+
+              <Field label="Title (optional)" htmlFor="cal-title">
+                <input id="cal-title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder={formCompany.trim() ? `${formCompany.trim()} ${formType && formType !== "Other" ? formType : "Interview"}` : "Auto-named from company and round"} style={inputStyle}
+                  onFocus={fieldFocus} onBlur={fieldBlur} />
               </Field>
 
               <Field label="Location / link" htmlFor="cal-location">
@@ -835,9 +946,18 @@ export default function CalendarPage() {
                 </span>
                 <span>
                   <span style={{ display: "block", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Reminders</span>
-                  <span style={{ display: "block", fontFamily: font.ui, fontSize: 11.5, color: c.stone, marginTop: 1 }}>Email at 3 days and 1 day before</span>
+                  <span style={{ display: "block", fontFamily: font.ui, fontSize: 11.5, color: c.stone, marginTop: 1 }}>{formReminders ? reminderCopy : "Off. No email reminders for this interview."}</span>
                 </span>
               </div>
+
+              {/* prep-runway disclosure — set expectation that saving a real
+                  interview auto-schedules the mock countdown */}
+              {!editingId && (
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11.5, color: c.stone, fontFamily: font.ui, lineHeight: 1.45 }}>
+                  <span style={{ color: c.gilt, display: "flex", marginTop: 1 }}><Icon size={13}>{I.sparkle}</Icon></span>
+                  Saving schedules a Prep Runway: an adaptive countdown of mock sessions mapped back from this date. Sessions count against your Pro quota.
+                </div>
+              )}
             </div>
 
             {/* footer */}
@@ -847,9 +967,9 @@ export default function CalendarPage() {
                 <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = c.graphite)} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   style={{ fontFamily: font.ui, fontSize: 13.5, fontWeight: 500, color: c.chalk, background: "transparent", border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "12px 20px", cursor: "pointer", transition: "background 0.15s ease" }}>Cancel</button>
-                <button className="cpr-tap" onClick={handleSave} disabled={!formTitle || !formDate || !formTime || saving}
-                  onMouseEnter={(e) => { if (formTitle && formDate && formTime && !saving) e.currentTarget.style.filter = "brightness(1.08)"; }} onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
-                  style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, background: formTitle && formDate && formTime && !saving ? c.slate : c.border, color: formTitle && formDate && formTime && !saving ? c.carbon : c.stone, border: "none", borderRadius: radius.md, padding: "12px 24px", cursor: formTitle && formDate && formTime && !saving ? "pointer" : "not-allowed", boxShadow: formTitle && formDate && formTime && !saving ? shadow.sm : "none", transition: "filter 0.15s ease" }}>
+                <button className="cpr-tap" onClick={handleSave} disabled={!canSave}
+                  onMouseEnter={(e) => { if (canSave) e.currentTarget.style.filter = "brightness(1.08)"; }} onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
+                  style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, background: canSave ? c.slate : c.border, color: canSave ? c.carbon : c.stone, border: "none", borderRadius: radius.md, padding: "12px 24px", cursor: canSave ? "pointer" : "not-allowed", boxShadow: canSave ? shadow.sm : "none", transition: "filter 0.15s ease" }}>
                   {saving ? "Saving…" : editingId ? "Save changes" : (<><Icon size={15}>{I.plus}</Icon> Add interview</>)}
                 </button>
               </div>
@@ -876,10 +996,10 @@ export default function CalendarPage() {
             </div>
             {focused ? (
               <>
-                <ReminderRow label="3 days before" on={focused.reminders} />
-                <ReminderRow label="1 day before" on={focused.reminders} />
+                <ReminderRow label="3 days before" on={focused.reminders && (!heroStartUtc || Date.parse(heroStartUtc) - Date.now() > 4320 * 60000)} />
+                <ReminderRow label="1 day before" on={focused.reminders && (!heroStartUtc || Date.parse(heroStartUtc) - Date.now() > 1440 * 60000)} />
                 <p style={{ fontSize: 11, color: c.stone, margin: "8px 0 0", fontFamily: font.ui }}>
-                  Email reminders. Toggle them when editing an interview.
+                  {focused.reminders ? `${describeReminders(heroStartUtc, Date.now())}. Toggle them when editing.` : "Reminders off for this interview. Toggle them when editing."}
                 </p>
               </>
             ) : (
@@ -940,8 +1060,11 @@ export default function CalendarPage() {
                 <div style={{ marginTop: sp.lg, display: "flex", alignItems: "center", gap: sp.lg, padding: "14px 16px", background: c.graphite, borderRadius: radius.md, border: `1px solid ${c.borderSubtle}` }}>
                   <Icon size={18} stroke={c.gilt}>{I.globe}</Icon>
                   <div>
-                    <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{formatEventDate(focused.date)} · {formatEventTime(focused.time)}</div>
-                    <div style={{ fontSize: 12, color: c.stone, fontFamily: font.ui, marginTop: 2 }}>{currentTimezone()} · {focused.duration} min{focused.location ? ` · ${focused.location}` : ""}</div>
+                    <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>
+                      {formatEventDate(focused.date)} · {formatEventTime(focused.time)}
+                      {heroLocalLabel && <span style={{ color: c.gilt, fontWeight: 500 }}> ({heroLocalLabel} your time)</span>}
+                    </div>
+                    <div style={{ fontSize: 12, color: c.stone, fontFamily: font.ui, marginTop: 2 }}>{focused.timezone || heroTz} · {focused.duration} min{focused.location ? ` · ${focused.location}` : ""}</div>
                   </div>
                 </div>
 

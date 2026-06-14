@@ -365,10 +365,12 @@ const PagesResponsiveSheet = () => (
    Deeper than the homepage slot. 4 tiers + comparison table + FAQ.
    ════════════════════════════════════════════════════════════════════ */
 export function PricingPageV2() {
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   useEffect(() => {
     captureClientEvent("pricing_page_viewed", { surface: "marketing_v2" });
   }, []);
-  const tiers = [
+
+  const tiersMonthly = [
     {
       name: "Free",
       price: "₹0",
@@ -437,6 +439,81 @@ export function PricingPageV2() {
     },
   ];
 
+  // Yearly plans — billed once per year, ~30% cheaper than monthly equivalent.
+  // Backend SKUs: "yearly-starter" (₹2,039/yr) and "yearly-pro" (₹1,430/yr).
+  const tiersYearly = [
+    {
+      name: "Free",
+      price: "₹0",
+      unit: "forever",
+      sub: "Try before you pay a rupee",
+      features: [
+        "3 mock sessions",
+        "Behavioural rounds + basic STAR score",
+        "Email report",
+        "No credit card required",
+      ],
+      cta: "Start free",
+      href: "/signup?plan=free",
+      featured: false,
+      studentDiscount: false,
+    },
+    {
+      name: "Per session",
+      price: "₹9",
+      unit: "/ session",
+      sub: "One mock, zero commitment",
+      features: [
+        "1 mock session",
+        "Voice in & out, all round types",
+        "Full STAR score + report",
+        "Credit never expires",
+      ],
+      cta: "Buy one session",
+      href: "/signup?plan=single",
+      featured: false,
+      studentDiscount: false,
+    },
+    {
+      name: "Starter Annual",
+      price: "₹2,039",
+      unit: "/ year",
+      sub: "₹170/week eq. · save ~30%",
+      features: [
+        "10 sessions · 7 days",
+        "Voice in & out, all round types",
+        "Company-specific rounds",
+        "Skill-decay tracking",
+        "₹170/week equivalent",
+      ],
+      cta: "Go annual (Starter)",
+      href: "/signup?plan=yearly-starter",
+      featured: false,
+      studentDiscount: true,
+    },
+    {
+      name: "Pro Annual",
+      price: "₹1,430",
+      unit: "/ year",
+      sub: "₹119/month eq. · save ~30%",
+      features: [
+        "40 sessions · 30 days",
+        "Everything in Starter Annual",
+        "Interview calendar + countdown",
+        "Performance analytics & trends",
+        "Export PDF, CSV, JSON",
+        "Priority coach feedback",
+        "₹119/month equivalent",
+      ],
+      cta: "Go annual (Pro)",
+      href: "/signup?plan=yearly-pro",
+      featured: true,
+      studentDiscount: true,
+    },
+  ];
+
+  const tiers = billingCycle === "yearly" ? tiersYearly : tiersMonthly;
+
   const compareRows: Array<[string, string, string, string, string]> = [
     ["Mock sessions included", "3 (one-time)", "1 (one-time)", "10 / week", "40 / month"],
     ["Voice in & out", "Yes", "Yes", "Yes", "Yes"],
@@ -487,6 +564,25 @@ export function PricingPageV2() {
       {/* Tier cards */}
       <section className="mv2p-section" aria-label="Pricing tiers" style={{ ...sectionBase, paddingTop: 56 }}>
         <div className="mv2-container" style={container}>
+          {/* Billing cycle toggle */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 40 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999, padding: 4, gap: 2 }}>
+              <button
+                onClick={() => setBillingCycle("monthly")}
+                style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, padding: "8px 20px", borderRadius: 999, border: "none", cursor: "pointer", background: billingCycle === "monthly" ? t.white : "transparent", color: billingCycle === "monthly" ? t.coal : t.inkSoft, boxShadow: billingCycle === "monthly" ? shadows.card : "none", transition: "all 0.15s" }}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingCycle("yearly")}
+                style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, padding: "8px 20px", borderRadius: 999, border: "none", cursor: "pointer", background: billingCycle === "yearly" ? t.white : "transparent", color: billingCycle === "yearly" ? t.coal : t.inkSoft, boxShadow: billingCycle === "yearly" ? shadows.card : "none", transition: "all 0.15s", display: "inline-flex", alignItems: "center", gap: 8 }}
+              >
+                Yearly
+                <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const, background: "#15803D", color: "#fff", padding: "2px 7px", borderRadius: 999 }}>save 30%</span>
+              </button>
+            </div>
+          </div>
+
           <div
             className="mv2p-pricing-row"
             style={{
@@ -1786,6 +1882,163 @@ export function RefundPolicyV2() {
       <h2>Disputes</h2>
       <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours.</p>
     </LegalPage>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PAYMENT FAILED PAGE
+   UPI payments fail ~18% of the time in India. This page reassures
+   the user that no money was debited and offers a direct retry path.
+   ════════════════════════════════════════════════════════════════════ */
+export function PaymentFailedPage() {
+  return (
+    <PageShell>
+      <PageHero
+        eyebrow="Payment"
+        title="Payment didn't"
+        accent="go through."
+        lead="This happens sometimes with UPI — your money has NOT been debited. You can try again safely."
+      />
+
+      <section style={{ ...sectionBase, paddingTop: 64, paddingBottom: 96 }}>
+        <div style={{ ...containerNarrow, maxWidth: 680 }}>
+
+          {/* Main action card */}
+          <div
+            style={{
+              background: t.white,
+              border: `1px solid ${t.line}`,
+              borderRadius: 20,
+              padding: "40px 40px 32px",
+              boxShadow: shadows.card,
+              marginBottom: 24,
+            }}
+          >
+            {/* Warning icon */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#FEF3C7", border: "1px solid #FCD34D", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+            </div>
+
+            <h2
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: 24,
+                fontWeight: 400,
+                color: t.coal,
+                textAlign: "center",
+                marginBottom: 12,
+                letterSpacing: "-0.015em",
+              }}
+            >
+              No money was debited
+            </h2>
+            <p
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 15,
+                lineHeight: 1.65,
+                color: t.inkSoft,
+                textAlign: "center",
+                marginBottom: 32,
+                maxWidth: 480,
+                margin: "0 auto 32px",
+              }}
+            >
+              UPI payments can fail due to bank timeouts, network issues, or daily limits — it{"'"}s common and completely safe to retry. Your bank will not charge you for a failed transaction.
+            </p>
+
+            {/* Primary CTA */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+              <a
+                href="/pricing"
+                style={{
+                  ...ctaPrimary("lg"),
+                  minWidth: 240,
+                  justifyContent: "center",
+                }}
+                className="mv2-tap-44"
+              >
+                Try again <span style={{ fontSize: 16 }}>→</span>
+              </a>
+              <a
+                href="mailto:support@hirestepx.com"
+                style={{
+                  ...ctaGhost("md"),
+                  minWidth: 240,
+                  justifyContent: "center",
+                  fontSize: 14,
+                }}
+                className="mv2-tap-44"
+              >
+                Contact support
+              </a>
+            </div>
+          </div>
+
+          {/* Reassurance note */}
+          <div
+            style={{
+              background: t.creamSoft,
+              border: `1px solid ${t.line}`,
+              borderRadius: 12,
+              padding: "20px 24px",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 13,
+                lineHeight: 1.65,
+                color: t.inkSoft,
+                margin: 0,
+              }}
+            >
+              <strong style={{ color: t.coal }}>If your account was debited,</strong> email us at{" "}
+              <a href="mailto:support@hirestepx.com" style={{ color: t.indigo, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                support@hirestepx.com
+              </a>{" "}
+              with your UPI transaction ID and we{"'"}ll credit your account within 2 hours.
+            </p>
+          </div>
+
+          {/* Tips to improve success */}
+          <div style={{ marginTop: 32 }}>
+            <p
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: "0.10em",
+                textTransform: "uppercase",
+                color: t.inkSoft,
+                marginBottom: 16,
+              }}
+            >
+              Tips for a successful retry
+            </p>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                "Switch from UPI to debit/credit card or netbanking if UPI keeps failing",
+                "Check that your UPI daily transaction limit hasn't been reached",
+                "Try on a stable WiFi or 4G connection — poor signal causes timeouts",
+                "Wait 5 minutes before retrying — your bank may need a moment to release the hold",
+              ].map((tip) => (
+                <li key={tip} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.5, color: t.inkSoft }}>
+                  <span aria-hidden style={{ color: t.copper, marginTop: 2, flexShrink: 0 }}>→</span>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    </PageShell>
   );
 }
 

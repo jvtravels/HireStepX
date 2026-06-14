@@ -4,7 +4,7 @@
  * www.hirestepx.com     → marketing pages (currently pre-launch gated)
  * app.hirestepx.com     → product pages (currently pre-launch gated — same as www)
  * staging.hirestepx.com → full app (team / pre-prod, never gated)
- * admin.hirestepx.com   → admin panel
+ * admin.hirestepx.com   → admin panel (server-side token-cookie gate)
  *
  * Pre-launch behavior: PRE_LAUNCH_HOSTS get every non-allowed path rewritten
  * to / (Coming Soon). API routes, static assets, and a small allowlist of
@@ -12,6 +12,11 @@
  *
  * To launch publicly: clear PRE_LAUNCH_HOSTS (or set NEXT_PUBLIC_COMING_SOON=0
  * which the marketing page handler also respects).
+ *
+ * Admin gate: admin.hirestepx.com checks for a valid `admin_token` cookie
+ * (HMAC-signed via _admin-auth.ts). Unauthenticated requests are redirected
+ * to /admin-login. API routes under /api/ are exempt (they carry their own
+ * x-admin-token header auth).
  */
 
 import { NextResponse } from "next/server";
@@ -20,6 +25,75 @@ import type { NextRequest } from "next/server";
 const APP_HOST = "app.hirestepx.com";
 const MARKETING_HOST = "hirestepx.com";
 const ADMIN_HOST = "admin.hirestepx.com";
+
+/* ── Admin token verification (Edge-compatible Web Crypto) ──────────────────
+ *
+ * Mirrors the Node crypto logic in server-handlers/_admin-auth.ts but using
+ * SubtleCrypto so it runs in the V8 Edge runtime. Must stay in sync with the
+ * signing scheme there: HMAC-SHA256, base64(JSON).sig format.
+ *
+ * The signing key is derived the same way: prefer ADMIN_SESSION_SECRET; fall
+ * back to HMAC("hirestepx-admin-token-v1", ADMIN_PASSWORD). Empty key → reject
+ * everything (fail-closed when env vars are missing).
+ */
+
+const ADMIN_TOKEN_DERIVATION_LABEL = "hirestepx-admin-token-v1";
+
+async function deriveAdminSigningKey(): Promise<CryptoKey | null> {
+  const secret = (process.env.ADMIN_SESSION_SECRET || "").trim();
+  const password = (process.env.ADMIN_PASSWORD || "").trim();
+  if (!secret && !password) return null;
+
+  let rawKeyMaterial: string;
+  if (secret) {
+    rawKeyMaterial = secret;
+  } else {
+    // Replicate: createHmac("sha256", label).update(password).digest("hex")
+    const labelBytes = new TextEncoder().encode(ADMIN_TOKEN_DERIVATION_LABEL);
+    const pwBytes = new TextEncoder().encode(password);
+    const baseKey = await crypto.subtle.importKey("raw", labelBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const derived = await crypto.subtle.sign("HMAC", baseKey, pwBytes);
+    rawKeyMaterial = Array.from(new Uint8Array(derived)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(rawKeyMaterial),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"],
+  );
+}
+
+async function verifyAdminTokenCookie(token: string): Promise<boolean> {
+  try {
+    const dotIdx = token.indexOf(".");
+    if (dotIdx === -1) return false;
+    const dataB64 = token.slice(0, dotIdx);
+    const sigHex = token.slice(dotIdx + 1);
+    if (!dataB64 || !sigHex) return false;
+
+    const key = await deriveAdminSigningKey();
+    if (!key) return false;
+
+    const dataStr = atob(dataB64);
+    const expectedSigBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(dataStr));
+    const expectedSigHex = Array.from(new Uint8Array(expectedSigBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+    // Constant-time hex comparison
+    if (sigHex.length !== expectedSigHex.length) return false;
+    let diff = 0;
+    for (let i = 0; i < sigHex.length; i++) diff |= sigHex.charCodeAt(i) ^ expectedSigHex.charCodeAt(i);
+    if (diff !== 0) return false;
+
+    const payload = JSON.parse(dataStr) as { exp?: unknown };
+    if (typeof payload.exp !== "number" || Date.now() > payload.exp) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const MARKETING_PATHS = new Set(["/", "/blog", "/terms", "/privacy", "/refund"]);
 const MARKETING_PREFIXES = ["/blog/", "/page/", "/profile/"];
@@ -45,7 +119,7 @@ function isAppPath(pathname: string): boolean {
   return APP_PREFIXES.some(p => pathname.startsWith(p));
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.nextUrl.hostname;
 
@@ -54,13 +128,31 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Admin subdomain — rewrite all requests to /admin path
+  // Admin subdomain — gate page routes behind admin_token cookie, then rewrite
   if (hostname === ADMIN_HOST) {
-    // Allow API routes and auth callback through (admin needs auth + admin-data API)
+    // API routes and auth callback carry their own auth (x-admin-token header);
+    // don't add a cookie gate here — that would break the existing API flow.
     if (pathname.startsWith("/api/") || pathname.startsWith("/auth/")) {
       return NextResponse.next();
     }
-    // Rewrite root and all paths to /admin
+
+    // /admin-login is the unauthenticated entry point — let it through always.
+    if (pathname === "/admin-login") {
+      return NextResponse.next();
+    }
+
+    // Verify the admin_token cookie.
+    const tokenCookie = request.cookies.get("admin_token")?.value;
+    const authed = tokenCookie ? await verifyAdminTokenCookie(tokenCookie) : false;
+
+    if (!authed) {
+      // Redirect to the login page (on the same subdomain).
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin-login";
+      return NextResponse.redirect(url);
+    }
+
+    // Authenticated — rewrite root and non-/admin paths to /admin.
     if (pathname === "/" || !pathname.startsWith("/admin")) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin";

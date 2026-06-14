@@ -24,10 +24,14 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
 import { resolveActiveResumeVersionId } from "./_resume-versioning";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
+import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "https://hirestepx.com";
 
 interface SessionBody {
   id?: unknown;
@@ -88,6 +92,62 @@ function asString(v: unknown, max = 500): string {
 
 function asNumber(v: unknown): number {
   return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
+/* ── Session-report email ── */
+
+/** Fire-and-forget: notify the user that their interview report is ready.
+ *  Uses the same Resend + _email-theme pattern as verify-payment.ts.
+ *  Never throws — any failure is swallowed so the save-session response
+ *  is never delayed or blocked. */
+async function sendSessionReportEmail(
+  userEmail: string,
+  userName: string,
+  sessionId: string,
+  interviewType: string,
+): Promise<void> {
+  if (!RESEND_API_KEY || !userEmail) return; // skip if not configured
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(userEmail)) return;
+
+  const reportUrl = `${APP_URL}/session/${sessionId}`;
+  const greeting = escapeHtml(userName || "there");
+  const typeLabel = escapeHtml(interviewType || "interview");
+
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10_000);
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [userEmail],
+        subject: "Your HireStepX interview report is ready 🎯",
+        html: emailShell({
+          preview: `Your ${typeLabel} report is ready — tap to see your score and feedback.`,
+          body:
+            title("Your report is", { accentWord: "ready." }) +
+            para(`Hi ${greeting}, your ${typeLabel} session has been graded. Your AI feedback, STAR breakdown, and skill scores are waiting for you.`) +
+            button("View my report", reportUrl) +
+            para(
+              "If you didn't take this interview or have questions, reply to this email and we'll help.",
+              { small: true, muted: true },
+            ),
+        }),
+      }),
+    });
+    clearTimeout(timer);
+    if (!emailRes.ok) {
+      const errBody = await emailRes.text().catch(() => "");
+      console.warn(`[save-session] session report email failed HTTP ${emailRes.status}: ${errBody.slice(0, 200)}`);
+    }
+  } catch (err) {
+    console.warn(`[save-session] session report email threw: ${(err as Error).message}`);
+  }
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -295,6 +355,35 @@ export default async function handler(req: Request): Promise<Response> {
       },
     });
   }
+
+  // ─── Session-report email ───
+  // Fire-and-forget: fetch the user's email + display name from Supabase auth
+  // (service-role admin endpoint) and send a "report ready" notification via
+  // Resend. Mobile users who close the tab right after finishing the interview
+  // would otherwise never know their report is ready. Never blocks the response.
+  void (async () => {
+    try {
+      const userRes = await fetch(
+        `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(auth.userId!)}`,
+        {
+          headers: {
+            apikey: SUPABASE_SERVICE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          },
+        },
+      );
+      if (userRes.ok) {
+        const userData = await userRes.json() as { email?: string; user_metadata?: { name?: string; full_name?: string } };
+        const userEmail = userData.email || "";
+        const userName = userData.user_metadata?.name || userData.user_metadata?.full_name || "";
+        await sendSessionReportEmail(userEmail, userName, sessionRow.id, sessionRow.type || "interview");
+      } else {
+        console.warn(`[save-session] auth user fetch failed HTTP ${userRes.status} — skipping report email`);
+      }
+    } catch (err) {
+      console.warn(`[save-session] report email dispatch threw: ${(err as Error).message}`);
+    }
+  })();
 
   await captureServerEvent("interview_completed", distinctIdFrom(req, auth.userId), {
     session_id: sessionRow.id,

@@ -6,6 +6,14 @@ import {
   generateEventId,
   generateICS,
   generateGoogleCalendarURL,
+  focusForType,
+  zonedWallTimeToUtc,
+  formatTimeInZone,
+  hourInZone,
+  isAwkwardHour,
+  describeReminders,
+  parseNaturalEvent,
+  interviewTypeOptions,
   type InterviewEvent,
 } from "../dashboardHelpers";
 
@@ -208,5 +216,124 @@ describe("Event data serialization", () => {
       result = [];
     }
     expect(result).toEqual([]);
+  });
+});
+
+describe("focusForType", () => {
+  it("maps known round labels to the mock focus vocabulary", () => {
+    expect(focusForType("Technical")).toBe("technical");
+    expect(focusForType("System Design")).toBe("technical");
+    expect(focusForType("HR Round")).toBe("hr-round");
+    expect(focusForType("Salary Negotiation")).toBe("salary-negotiation");
+    expect(focusForType("Final Round")).toBe("strategic");
+  });
+  it("returns undefined for the focus-less 'Other', unknowns, and blanks", () => {
+    expect(focusForType("Other")).toBeUndefined();
+    expect(focusForType("Nonsense")).toBeUndefined();
+    expect(focusForType(undefined)).toBeUndefined();
+    expect(focusForType("")).toBeUndefined();
+  });
+  it("covers every shipped round label", () => {
+    for (const label of interviewTypeOptions) {
+      if (label === "Other") continue;
+      expect(focusForType(label)).toBeTruthy();
+    }
+  });
+});
+
+describe("zonedWallTimeToUtc", () => {
+  it("treats the wall time as IST and yields the right UTC instant", () => {
+    // 09:00 IST = 03:30 UTC (UTC+5:30, no DST)
+    expect(zonedWallTimeToUtc("2026-07-01", "09:00", "Asia/Kolkata")).toBe("2026-07-01T03:30:00.000Z");
+  });
+  it("handles US Pacific daylight time", () => {
+    // 09:00 PDT (July) = 16:00 UTC (UTC-7)
+    expect(zonedWallTimeToUtc("2026-07-01", "09:00", "America/Los_Angeles")).toBe("2026-07-01T16:00:00.000Z");
+  });
+  it("handles UTC directly", () => {
+    expect(zonedWallTimeToUtc("2026-07-01", "15:30", "UTC")).toBe("2026-07-01T15:30:00.000Z");
+  });
+  it("returns null on an unparseable date", () => {
+    expect(zonedWallTimeToUtc("not-a-date", "09:00", "UTC")).toBeNull();
+    expect(zonedWallTimeToUtc("", "09:00", "UTC")).toBeNull();
+  });
+  it("defaults a missing time to midnight", () => {
+    expect(zonedWallTimeToUtc("2026-07-01", "", "UTC")).toBe("2026-07-01T00:00:00.000Z");
+  });
+});
+
+describe("formatTimeInZone / hourInZone", () => {
+  it("renders a UTC instant in the candidate's zone", () => {
+    // 03:30 UTC = 09:00 IST
+    expect(formatTimeInZone("2026-07-01T03:30:00.000Z", "Asia/Kolkata")).toContain("9:00");
+    expect(hourInZone("2026-07-01T03:30:00.000Z", "Asia/Kolkata")).toBe(9);
+  });
+  it("returns safe fallbacks on bad input", () => {
+    expect(formatTimeInZone("garbage", "UTC")).toBe("");
+    expect(hourInZone("garbage", "UTC")).toBe(12);
+  });
+});
+
+describe("isAwkwardHour", () => {
+  it("flags pre-8am and 9pm-or-later", () => {
+    expect(isAwkwardHour(7)).toBe(true);
+    expect(isAwkwardHour(21)).toBe(true);
+    expect(isAwkwardHour(23)).toBe(true);
+    expect(isAwkwardHour(0)).toBe(true);
+  });
+  it("treats normal daytime hours as comfortable", () => {
+    expect(isAwkwardHour(8)).toBe(false);
+    expect(isAwkwardHour(14)).toBe(false);
+    expect(isAwkwardHour(20)).toBe(false);
+  });
+});
+
+describe("describeReminders", () => {
+  const now = Date.parse("2026-06-14T00:00:00.000Z");
+  it("promises both reminders when the interview is far out", () => {
+    const start = new Date(now + 10 * 86400000).toISOString();
+    expect(describeReminders(start, now)).toBe("Email reminders 3 days and 1 day before");
+  });
+  it("drops the 3-day reminder inside the 3-day window", () => {
+    const start = new Date(now + 2 * 86400000).toISOString();
+    expect(describeReminders(start, now)).toBe("Email reminder 1 day before");
+  });
+  it("admits when it is too soon for any reminder", () => {
+    const start = new Date(now + 60 * 60000).toISOString();
+    expect(describeReminders(start, now)).toBe("Too soon for an email reminder before this interview");
+  });
+  it("falls back gracefully on missing/garbage start", () => {
+    expect(describeReminders(null, now)).toContain("3 days and 1 day");
+    expect(describeReminders("nonsense", now)).toContain("3 days and 1 day");
+  });
+});
+
+describe("parseNaturalEvent", () => {
+  // A fixed Sunday so weekday math is deterministic.
+  const now = new Date("2026-06-14T08:00:00");
+  it("extracts company, round, weekday, and time", () => {
+    const p = parseNaturalEvent("Amazon SDE phone screen tuesday 3pm", now);
+    expect(p.company).toBe("Amazon");
+    expect(p.type).toBe("Phone Screen");
+    expect(p.time).toBe("15:00");
+    expect(p.date).toBe("2026-06-16"); // next Tuesday after Sun Jun 14
+  });
+  it("prefers the longest matching round label", () => {
+    expect(parseNaturalEvent("Google system design tomorrow", now).type).toBe("System Design");
+  });
+  it("resolves 'today' and 'tomorrow'", () => {
+    expect(parseNaturalEvent("today", now).date).toBe("2026-06-14");
+    expect(parseNaturalEvent("tomorrow", now).date).toBe("2026-06-15");
+  });
+  it("parses 24-hour and am times", () => {
+    expect(parseNaturalEvent("call at 09:30", now).time).toBe("09:30");
+    expect(parseNaturalEvent("meet 11am", now).time).toBe("11:00");
+  });
+  it("returns an empty object for blank input", () => {
+    expect(parseNaturalEvent("", now)).toEqual({});
+    expect(parseNaturalEvent("   ", now)).toEqual({});
+  });
+  it("falls back to keyword heuristics when no label is present", () => {
+    expect(parseNaturalEvent("quick hr chat", now).type).toBe("HR Round");
   });
 });

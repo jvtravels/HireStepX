@@ -104,10 +104,18 @@ export function DataLoadingSkeleton() {
 }
 
 /* ─── Upgrade Modal ─── */
-const PLANS = [
+const PLANS_MONTHLY = [
   { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",    features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"], featured: false },
   { id: "weekly",  tier: "starter", name: "Weekly",      price: "\u20B949",  unit: "/ 7 days",  sub: "Sprint before placement week",       cta: "Go weekly",     features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7 days`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"], featured: false },
   { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",    features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"], featured: true },
+];
+
+// Yearly plans — same features as monthly equivalents, billed once per year (~30% savings).
+// Backend plan IDs: "yearly-starter" (\u20B92,039/yr) and "yearly-pro" (\u20B91,430/yr).
+const PLANS_YEARLY = [
+  { id: "free",           tier: "free",    name: "Free",           price: "\u20B90",      unit: "forever",  sub: "Try before you pay a rupee",        cta: "Start free",          features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"], featured: false },
+  { id: "yearly-starter", tier: "starter", name: "Starter Annual", price: "\u20B92,039",  unit: "/ year",   sub: "\u20B9170/week eq. \u00B7 save ~30%",    cta: "Go annual (Starter)", features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7 days`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking", "\u20B9170/week equivalent"], featured: false },
+  { id: "yearly-pro",     tier: "pro",     name: "Pro Annual",     price: "\u20B91,430",  unit: "/ year",   sub: "\u20B9119/month eq. \u00B7 save ~30%",   cta: "Go annual (Pro)",     features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Starter Annual", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback", "\u20B9119/month equivalent"], featured: true },
 ];
 
 export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void }) {
@@ -124,6 +132,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     ui: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     mono: "'JetBrains Mono', 'SF Mono', monospace",
   };
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const PLANS = billingCycle === "yearly" ? PLANS_YEARLY : PLANS_MONTHLY;
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [promoCode, setPromoCode] = useState("");
@@ -307,6 +317,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           : `Payment failed: ${reason}. Please try again or contact support@hirestepx.com`;
         setError(msg);
         setLoading(null);
+        // Razorpay closes the modal after payment.failed — redirect to the
+        // dedicated recovery page so the user gets reassurance + retry path.
+        window.location.href = "/payment-failed";
       });
       rzp.open();
       // Safety net: clear spinner ONLY if Razorpay never opened. Without
@@ -364,6 +377,17 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6 }}>Choose your plan</h2>
           <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>{currentTier !== "free" ? "Manage your plan" : "Cancel anytime · UPI, cards, netbanking"}</p>
+
+          {/* Billing cycle toggle — yearly saves ~30% */}
+          <div style={{ display: "inline-flex", alignItems: "center", marginTop: 16, background: c.carbon, border: `1px solid ${c.border}`, borderRadius: 999, padding: 3, gap: 2 }}>
+            <button onClick={() => setBillingCycle("monthly")} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, padding: "6px 16px", borderRadius: 999, border: "none", cursor: "pointer", background: billingCycle === "monthly" ? c.graphite : "transparent", color: billingCycle === "monthly" ? c.ivory : c.stone, boxShadow: billingCycle === "monthly" ? "0 1px 3px rgba(20,17,10,.10)" : "none", transition: "all 0.15s" }}>
+              Monthly
+            </button>
+            <button onClick={() => setBillingCycle("yearly")} style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, padding: "6px 16px", borderRadius: 999, border: "none", cursor: "pointer", background: billingCycle === "yearly" ? c.graphite : "transparent", color: billingCycle === "yearly" ? c.ivory : c.stone, boxShadow: billingCycle === "yearly" ? "0 1px 3px rgba(20,17,10,.10)" : "none", transition: "all 0.15s", display: "flex", alignItems: "center", gap: 6 }}>
+              Yearly
+              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", background: "#15803D", color: "#fff", padding: "2px 6px", borderRadius: 999 }}>save 30%</span>
+            </button>
+          </div>
         </div>
 
         {error && (

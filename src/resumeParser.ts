@@ -228,7 +228,8 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
   const emailMatch = text.match(/[\w.+-]+@[\w-]+\.[\w.]+/);
-  const phoneMatch = text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+  // Phone: matches Indian 10-digit mobiles (+91 prefix or raw), plus common US/international formats
+  const phoneMatch = text.match(/(?:\+91[-.\s]?)?(?:\+?\d{1,3}[-.\s]?)?\(?\d{3,5}\)?[-.\s]?\d{3,5}[-.\s]?\d{4,5}/);
   const linkedinMatch = text.match(/linkedin\.com\/in\/[\w-]+/i);
 
   // Location: look for City, ST or City, State patterns
@@ -586,9 +587,12 @@ export async function extractResumeText(file: File): Promise<string> {
   // Clean up whitespace
   text = text.replace(/\r\n/g, "\n").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 
-  // Cap at 5000 chars for LLM context efficiency
-  if (text.length > 5000) {
-    text = text.slice(0, 5000);
+  // Cap at 12,000 chars — long enough for a 3-page resume, cheap enough for LLM context.
+  // Trim to the last newline so we don't cut in the middle of a sentence.
+  if (text.length > 12000) {
+    const truncated = text.slice(0, 12000);
+    const lastNl = truncated.lastIndexOf("\n");
+    text = lastNl > 8000 ? truncated.slice(0, lastNl) : truncated;
   }
 
   return text;

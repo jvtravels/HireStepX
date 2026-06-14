@@ -28,6 +28,7 @@ export interface CalendarRow {
   user_id: string;
   title: string;
   company: string;
+  role: string;
   date: string;
   time: string;
   type: string;
@@ -188,6 +189,7 @@ export function normalizeCalendarEvent(
       user_id: ctx.userId,
       title,
       company: asString(b.company, 200),
+      role: asString(b.role, 200),
       date: date || (start_utc ? start_utc.slice(0, 10) : ""),
       time: asString(b.time, 16),
       type: asString(b.type, 64) || "interview",

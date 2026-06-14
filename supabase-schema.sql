@@ -101,6 +101,9 @@ alter table calendar_events add column if not exists end_utc timestamptz;
 -- the core Indian-candidate audience.
 alter table calendar_events add column if not exists timezone text default 'Asia/Kolkata';
 alter table calendar_events add column if not exists duration_minutes int default 60;
+-- target role/position for the interview; feeds the mock deep-link prefill and
+-- round-aware prep. Additive so it applies cleanly to the deployed table.
+alter table calendar_events add column if not exists role text default '';
 alter table calendar_events add column if not exists location text default '';
 -- upcoming | completed | cancelled
 alter table calendar_events add column if not exists status text default 'upcoming';

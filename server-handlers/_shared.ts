@@ -191,7 +191,44 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end`,
       { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` }, signal: ac.signal },
     );
-    if (!profileRes.ok) { clearTimeout(timer); console.error("Session limit check: profile fetch failed", profileRes.status); return { allowed: false, reason: "Could not verify session limit. Please try again." }; }
+    if (!profileRes.ok) {
+      clearTimeout(timer);
+      // Retry once on transient Supabase 5xx errors so paid users aren't locked out during incidents.
+      // On persistent failure, fail-open (same behaviour as checkLLMQuota) unless SESSION_LIMIT_FAIL_CLOSED=1.
+      if (profileRes.status >= 500) {
+        console.warn("Session limit check: profile fetch 5xx, retrying once", profileRes.status);
+        try {
+          const ac2 = new AbortController();
+          const timer2 = setTimeout(() => ac2.abort(), SUPABASE_TIMEOUT_MS);
+          const retryRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end`,
+            { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` }, signal: ac2.signal },
+          );
+          clearTimeout(timer2);
+          if (!retryRes.ok) {
+            const failClosed = process.env.SESSION_LIMIT_FAIL_CLOSED === "1";
+            console.error("Session limit check: retry also failed", retryRes.status, failClosed ? "(fail-closed)" : "(fail-open)");
+            return failClosed ? { allowed: false, reason: "Could not verify session limit. Please try again." } : { allowed: true };
+          }
+          const retryProfiles = await retryRes.json();
+          if (!Array.isArray(retryProfiles) || retryProfiles.length === 0) {
+            const failClosed = process.env.SESSION_LIMIT_FAIL_CLOSED === "1";
+            return failClosed ? { allowed: false, reason: "Could not verify session limit. Please try again." } : { allowed: true };
+          }
+          // Continue with retry response — replace profileRes context
+          let tier = retryProfiles[0].subscription_tier || "free";
+          const subEnd = retryProfiles[0].subscription_end;
+          if (tier !== "free" && subEnd && new Date(subEnd) < new Date()) tier = "free";
+          if (tier === "team" || tier === "pro" || tier === "starter") return { allowed: true };
+          return { allowed: true }; // fail-open for free on transient error
+        } catch {
+          const failClosed = process.env.SESSION_LIMIT_FAIL_CLOSED === "1";
+          return failClosed ? { allowed: false, reason: "Could not verify session limit. Please try again." } : { allowed: true };
+        }
+      }
+      console.error("Session limit check: profile fetch failed", profileRes.status);
+      return { allowed: false, reason: "Could not verify session limit. Please try again." };
+    }
     const profiles = await profileRes.json();
     if (!Array.isArray(profiles) || profiles.length === 0) { clearTimeout(timer); return { allowed: false, reason: "Could not verify session limit. Please try again." }; }
 
@@ -338,9 +375,12 @@ function isAllowedDomain(urlOrOrigin: string): boolean {
   if (urlOrOrigin.startsWith("http://localhost:")) return true;
   try {
     const hostname = urlOrOrigin.includes("://") ? new URL(urlOrOrigin).hostname : urlOrOrigin;
-    // Allow *.hirestepx.com and Vercel preview deployments
+    // Allow *.hirestepx.com subdomains
     if (hostname === "hirestepx.com" || hostname.endsWith(".hirestepx.com")) return true;
-    if (hostname.endsWith(".vercel.app")) return true;
+    // Allow this project's specific Vercel deployment (VERCEL_URL is set automatically per-deployment).
+    // We intentionally do NOT allow all *.vercel.app — that would let any Vercel tenant call our API.
+    const vercelUrl = process.env.VERCEL_URL; // e.g. "hirestepx-git-main-xyz.vercel.app"
+    if (vercelUrl && hostname === vercelUrl) return true;
   } catch { /* invalid URL */ }
   return false;
 }

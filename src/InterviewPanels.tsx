@@ -38,6 +38,9 @@ const stTabToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10,
 const stOfflineToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(185,28,28,0.18)", border: "1px solid rgba(185,28,28,0.30)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
 const stGiltText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, color: e.copper };
 const stEmberText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, color: e.error };
+/* Persistent TTS-failed banner — distinct from the auto-clearing ttsError
+   toast. Non-dismissable because the failure is permanent until page reload. */
+const stTtsFailedBanner: React.CSSProperties = { padding: "10px 16px", borderRadius: 10, background: "rgba(185,28,28,0.22)", border: "1px solid rgba(185,28,28,0.40)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
 
 /* StatusToasts now only shows tab-conflict (rare, must be visible) and
    genuine offline state. The mic-error path used to flash a top-fixed
@@ -46,15 +49,15 @@ const stEmberText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, co
    action zone handles user-facing mic guidance now — calmer, contextual,
    not jarring. micError is preserved as a debug breadcrumb in the
    browser console rather than splashed across the topbar. */
-export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline, micError, ttsError }: {
-  tabConflict: boolean; isOffline: boolean; micError: string; ttsError?: string;
+export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline, micError, ttsError, ttsFailed }: {
+  tabConflict: boolean; isOffline: boolean; micError: string; ttsError?: string; ttsFailed?: boolean;
 }) {
   // Mirror micError to the console for debugging while suppressing the toast.
   useEffect(() => {
     if (micError) console.warn("[interview] mic notice:", micError);
   }, [micError]);
   const showTts = !!(ttsError && ttsError.length > 0);
-  if (!tabConflict && !isOffline && !showTts) return null;
+  if (!tabConflict && !isOffline && !showTts && !ttsFailed) return null;
   return (
     <div style={stStackStyle}>
       {tabConflict && (
@@ -73,6 +76,12 @@ export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline,
         <div role="status" style={stTabToast}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
           <span style={stGiltText}>{ttsError}</span>
+        </div>
+      )}
+      {ttsFailed && (
+        <div role="alert" aria-live="assertive" style={stTtsFailedBanner}>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          <span style={stEmberText}>Audio unavailable — please read questions on screen and type your answers.</span>
         </div>
       )}
     </div>
