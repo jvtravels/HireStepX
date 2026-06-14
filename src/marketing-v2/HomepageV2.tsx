@@ -3040,6 +3040,22 @@ export function PricingV2() {
       studentDiscount: false,
     },
     {
+      name: "Per session",
+      price: "₹9",
+      unit: "/ session",
+      sub: "One mock, zero commitment",
+      features: [
+        "1 mock session",
+        "Voice in & out, all round types",
+        "Full STAR score + report",
+        "Credit never expires",
+      ],
+      cta: "Buy one session",
+      href: "/signup?plan=single",
+      featured: false,
+      studentDiscount: false,
+    },
+    {
       name: "Weekly",
       price: "₹49",
       unit: "/ 7 days",
