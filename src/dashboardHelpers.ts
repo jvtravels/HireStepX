@@ -12,11 +12,22 @@ export interface InterviewEvent {
   status: "upcoming" | "completed" | "cancelled";
   reminders: boolean;
   google_event_id?: string;
+  // PRI-35: authoritative UTC instants + IANA zone carried from the DB row so
+  // the ICS export reflects the real scheduled moment (the naive date/time
+  // strings lose zone information). Optional for legacy localStorage rows.
+  start_utc?: string;
+  end_utc?: string;
+  timezone?: string;
   // PRI-35: carried through from the DB row so the Prep Runway rail can group
   // mock-prep sessions under the real interview they prepare for. Optional so
   // legacy localStorage rows and the create form (real interviews) still fit.
   kind?: "real" | "prep-session";
   parentInterviewId?: string;
+  // PRI-35: set on a row that was saved to localStorage because its cloud write
+  // failed, so the next DB refresh keeps it (a pending local edit) instead of a
+  // stale row the server already deleted. Rows without it that are absent from
+  // the DB are treated as server-deleted and dropped on merge.
+  _pendingSync?: boolean;
 }
 
 export const EVENTS_KEY = "hirestepx_events";
@@ -37,9 +48,18 @@ export function generateEventId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+/* Whole calendar days from today to the event (0 = today, 1 = tomorrow, negative
+ * = past). Measured midnight-to-midnight in local time, not as raw 24h chunks,
+ * so an event tomorrow morning reads as 1 day out regardless of the current hour
+ * (the old ms/86400000 ceil drifted to 2). Drives the upcoming/past split and
+ * the T-countdown labels. */
 export function daysUntilEvent(date: string, time: string): number {
-  const eventDate = new Date(`${date}T${time}`);
-  return Math.ceil((eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const event = new Date(`${date}T${time || "00:00"}`);
+  if (Number.isNaN(event.getTime())) return 0;
+  const eventMidnight = new Date(event.getFullYear(), event.getMonth(), event.getDate());
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((eventMidnight.getTime() - todayMidnight.getTime()) / 86400000);
 }
 
 export function formatEventDate(date: string): string {
@@ -53,46 +73,106 @@ export function formatEventTime(time: string): string {
   return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
-/* Generate .ics file content */
-export function generateICS(event: InterviewEvent): string {
-  const start = new Date(`${event.date}T${event.time}`);
-  const end = new Date(start.getTime() + event.duration * 60000);
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  return [
+/* ── RFC 5545 (iCalendar) helpers ── */
+
+/** Escape a TEXT value per RFC 5545 §3.3.11: backslash, semicolon, comma, and
+ *  newline are the reserved characters. Carriage returns are dropped (a bare CR
+ *  isn't meaningful inside an escaped value). */
+function icsEscape(v: string): string {
+  return v
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r\n|\r|\n/g, "\\n");
+}
+
+/** Fold a content line to <=75 octets per RFC 5545 §3.1, continuation lines
+ *  begin with a single space. We fold on UTF-16 code units, which is safe for
+ *  the ASCII-dominant content here and never splits below the octet limit. */
+function icsFold(line: string): string {
+  if (line.length <= 75) return line;
+  const parts: string[] = [];
+  let rest = line;
+  parts.push(rest.slice(0, 75));
+  rest = rest.slice(75);
+  while (rest.length > 74) {
+    parts.push(" " + rest.slice(0, 74));
+    rest = rest.slice(74);
+  }
+  if (rest.length) parts.push(" " + rest);
+  return parts.join("\r\n");
+}
+
+/** Format a Date as an RFC 5545 UTC timestamp (YYYYMMDDTHHMMSSZ). */
+function icsUtc(d: Date): string {
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+/** Resolve a calendar event's authoritative start/end Date pair. Prefers the
+ *  stored UTC instants; falls back to composing the naive date/time strings. */
+function eventInstants(event: InterviewEvent): { start: Date; end: Date } | null {
+  const start = event.start_utc ? new Date(event.start_utc) : new Date(`${event.date}T${event.time || "00:00"}`);
+  if (Number.isNaN(start.getTime())) return null;
+  let end = event.end_utc ? new Date(event.end_utc) : new Date(start.getTime() + (event.duration || 60) * 60000);
+  if (Number.isNaN(end.getTime()) || end.getTime() <= start.getTime()) {
+    end = new Date(start.getTime() + (event.duration || 60) * 60000);
+  }
+  return { start, end };
+}
+
+/* Generate RFC 5545-correct .ics content. All times are emitted as UTC instants
+ * (DTSTART/DTEND with a trailing Z), so no VTIMEZONE block is needed and the
+ * event lands at the right wall-clock moment in any importing client. */
+export function generateICS(event: InterviewEvent, opts?: { now?: Date }): string {
+  const inst = eventInstants(event);
+  if (!inst) return "";
+  const { start, end } = inst;
+  const dtstamp = icsUtc(opts?.now ?? new Date());
+  const uid = `${event.id || icsUtc(start)}@hirestepx.com`;
+  const summary = event.company ? `${event.title} (${event.company})` : event.title;
+  const descParts = [`Interview Type: ${event.type}`];
+  if (event.notes) descParts.push(`Notes: ${event.notes}`);
+
+  const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//HireStepX//EN",
+    "PRODID:-//HireStepX//Interview Calendar//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `DTSTART:${fmt(start)}`,
-    `DTEND:${fmt(end)}`,
-    `SUMMARY:${event.title} — ${event.company}`,
-    `DESCRIPTION:Interview Type: ${event.type}\\n${event.notes ? "Notes: " + event.notes.replace(/\n/g, "\\n") : ""}`,
-    `LOCATION:${event.location}`,
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART:${icsUtc(start)}`,
+    `DTEND:${icsUtc(end)}`,
+    "SEQUENCE:0",
+    `SUMMARY:${icsEscape(summary)}`,
+    `DESCRIPTION:${icsEscape(descParts.join("\n"))}`,
+    `LOCATION:${icsEscape(event.location || "")}`,
     `STATUS:${event.status === "cancelled" ? "CANCELLED" : "CONFIRMED"}`,
-    "BEGIN:VALARM",
-    "TRIGGER:-PT30M",
-    "ACTION:DISPLAY",
-    `DESCRIPTION:Interview in 30 minutes: ${event.title}`,
-    "END:VALARM",
     "BEGIN:VALARM",
     "TRIGGER:-P1D",
     "ACTION:DISPLAY",
-    `DESCRIPTION:Interview tomorrow: ${event.title} at ${event.company}`,
+    `DESCRIPTION:${icsEscape(`Interview tomorrow: ${event.title}${event.company ? " at " + event.company : ""}`)}`,
+    "END:VALARM",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT30M",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${icsEscape(`Interview in 30 minutes: ${event.title}`)}`,
     "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
-  ].join("\r\n");
+  ];
+  return lines.map(icsFold).join("\r\n");
 }
 
-/* Generate Google Calendar URL */
+/* Generate a Google Calendar "add event" template URL. */
 export function generateGoogleCalendarURL(event: InterviewEvent): string {
-  const start = new Date(`${event.date}T${event.time}`);
-  const end = new Date(start.getTime() + event.duration * 60000);
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const inst = eventInstants(event);
+  if (!inst) return "https://calendar.google.com/calendar";
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: `${event.title} — ${event.company}`,
-    dates: `${fmt(start)}/${fmt(end)}`,
+    text: event.company ? `${event.title} (${event.company})` : event.title,
+    dates: `${icsUtc(inst.start)}/${icsUtc(inst.end)}`,
     details: `Interview Type: ${event.type}\n${event.notes || ""}`,
     location: event.location,
   });

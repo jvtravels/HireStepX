@@ -100,7 +100,21 @@ describe("generateICS", () => {
 
   it("includes event summary with title and company", () => {
     const ics = generateICS(event);
-    expect(ics).toContain("SUMMARY:Engineering Interview — Google");
+    expect(ics).toContain("SUMMARY:Engineering Interview (Google)");
+  });
+
+  it("emits a UID and DTSTAMP (RFC 5545 required properties)", () => {
+    const ics = generateICS(event);
+    expect(ics).toMatch(/UID:.+@hirestepx\.com/);
+    expect(ics).toMatch(/DTSTAMP:\d{8}T\d{6}Z/);
+    expect(ics).toContain("SEQUENCE:0");
+  });
+
+  it("escapes reserved characters in text values", () => {
+    const tricky = { ...event, notes: "Line one;\npart two, end" };
+    const ics = generateICS(tricky);
+    expect(ics).toContain("part two\\, end");
+    expect(ics).toContain("Line one\\;\\npart two");
   });
 
   it("includes location", () => {

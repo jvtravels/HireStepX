@@ -12,6 +12,7 @@
  * derived); the rail renders those sessions grouped under their interview.
  */
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { c, font, shadow, sp, radius, ease } from "./tokens";
 import { tokens as T, shadows as eShadow } from "./auth/_tokens";
@@ -23,7 +24,7 @@ import {
   daysUntilEvent, formatEventDate, formatEventTime,
   generateICS, generateGoogleCalendarURL, interviewTypeOptions,
 } from "./dashboardHelpers";
-import { useDashboardCore, useDashboardUI, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
+import { useDashboardUI, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
 import { DataLoadingSkeleton, ProGate } from "./dashboardComponents";
 
 /* Scoped stylesheet — inline styles can't express :focus-visible, media
@@ -132,6 +133,9 @@ function rowToEvent(r: CalendarEventRow): InterviewEvent {
     google_event_id: r.google_event_id || undefined,
     kind: r.kind === "prep-session" ? "prep-session" : "real",
     parentInterviewId: r.parent_interview_id || undefined,
+    start_utc: r.start_utc || undefined,
+    end_utc: r.end_utc || undefined,
+    timezone: r.timezone || undefined,
   };
 }
 
@@ -359,16 +363,39 @@ function ReminderRow({ label, on }: { label: string; on: boolean }) {
       <span style={{ fontSize: 12.5, color: c.ivory, fontFamily: font.ui }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Icon size={14} stroke={c.stone}>{I.mail}</Icon>
-        <Icon size={14} stroke={c.stone}>{I.push}</Icon>
         {on ? <Pill bg={c.sageLight} fg={c.sage}>Set</Pill> : <Pill bg={c.graphite} fg={c.stone} bd={c.border}>Off</Pill>}
       </span>
     </div>
   );
 }
 
+/* Map a logged interview's round label onto the mock-session focus vocabulary
+ * the setup screen (SessionSetup) understands, so launching a practice run from
+ * a calendar event lands pre-configured for that round. Anything unmapped (e.g.
+ * "Other") falls through to the setup screen's role-based default. */
+const CAL_TYPE_TO_FOCUS: Record<string, string> = {
+  "Technical": "technical",
+  "System Design": "technical",
+  "Behavioral": "behavioral",
+  "Phone Screen": "behavioral",
+  "Culture Fit": "hr-round",
+  "Final Round": "behavioral",
+};
+
 export default function CalendarPage() {
   useDocTitle("Calendar");
-  const { handleStartSession: onStartSession } = useDashboardCore();
+  const router = useRouter();
+  // Launch a mock pre-configured for the interview being prepped: deep-link the
+  // setup screen with the company + round focus so the candidate isn't retyping
+  // what they already logged. Role is left to the setup screen's profile default.
+  const startMock = (ev: InterviewEvent | null) => {
+    const params = new URLSearchParams();
+    if (ev?.company) params.set("company", ev.company);
+    const focus = ev?.type ? CAL_TYPE_TO_FOCUS[ev.type] : undefined;
+    if (focus) params.set("type", focus);
+    const qs = params.toString();
+    router.push(qs ? `/session/new?${qs}` : "/session/new");
+  };
   const { eventsLoading } = useDashboardSessions();
   const { setShowUpgradeModal, showToast } = useDashboardUI();
   const { isFree, isStarter } = useDashboardSubscription();
@@ -404,7 +431,10 @@ export default function CalendarPage() {
       const mapped = res.events.map(rowToEvent);
       setEvents((prev) => {
         const dbIds = new Set(mapped.map((e) => e.id));
-        const localOnly = prev.filter((e) => !dbIds.has(e.id));
+        // Keep a local-only row only if it's an unsynced pending edit. A row
+        // that's absent from the DB and not pending was deleted server-side, so
+        // dropping it here is what prevents deleted interviews from resurrecting.
+        const localOnly = prev.filter((e) => !dbIds.has(e.id) && e._pendingSync);
         const merged = [...mapped, ...localOnly];
         saveEvents(merged);
         return merged;
@@ -588,7 +618,10 @@ export default function CalendarPage() {
       setShowUpgradeModal(true);
       return;
     } else {
-      updateEvents(editingId ? events.map((e) => (e.id === editingId ? draft : e)) : [...events, draft]);
+      // Cloud write failed (non-403): keep the edit locally and flag it pending
+      // so the next DB refresh preserves it rather than treating it as deleted.
+      const pending: InterviewEvent = { ...draft, _pendingSync: true };
+      updateEvents(editingId ? events.map((e) => (e.id === editingId ? pending : e)) : [...events, pending]);
       showToast(res.error || "Saved locally. Cloud sync failed.");
     }
     setShowForm(false);
@@ -596,19 +629,32 @@ export default function CalendarPage() {
   };
 
   const handleDelete = async (id: string) => {
+    // Optimistic remove, but roll back if the server rejects it (anything but a
+    // 404, which means it's already gone). Without the rollback the row would
+    // vanish from the UI yet reappear on the next refresh, which reads as a bug.
+    const prevEvents = events;
+    const prevFocused = focusedId;
     updateEvents(events.filter((e) => e.id !== id));
     if (focusedId === id) setFocusedId(null);
     const res = await deleteEvent(id);
-    if (!res.ok && res.status !== 404) showToast(res.error || "Deleted locally. Cloud sync failed.");
+    if (!res.ok && res.status !== 404) {
+      updateEvents(prevEvents);
+      if (prevFocused === id) setFocusedId(id);
+      showToast(res.error || "Could not delete interview. Please try again.");
+    }
   };
 
   const handleCancel = async (id: string) => {
     const ev = events.find((e) => e.id === id);
     if (!ev) return;
+    const prevEvents = events;
     const cancelled = { ...ev, status: "cancelled" as const };
     updateEvents(events.map((e) => (e.id === id ? cancelled : e)));
     const res = await saveEvent(eventToInput(cancelled, { withId: true }));
-    if (!res.ok && res.status !== 404) showToast(res.error || "Cancelled locally. Sync failed.");
+    if (!res.ok && res.status !== 404) {
+      updateEvents(prevEvents);
+      showToast(res.error || "Could not cancel interview. Please try again.");
+    }
   };
 
   const handleExportICS = (ev: InterviewEvent) => {
@@ -789,7 +835,7 @@ export default function CalendarPage() {
                 </span>
                 <span>
                   <span style={{ display: "block", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Reminders</span>
-                  <span style={{ display: "block", fontFamily: font.ui, fontSize: 11.5, color: c.stone, marginTop: 1 }}>Email and push at 72h, 24h, and 2h before</span>
+                  <span style={{ display: "block", fontFamily: font.ui, fontSize: 11.5, color: c.stone, marginTop: 1 }}>Email at 3 days and 1 day before</span>
                 </span>
               </div>
             </div>
@@ -830,16 +876,15 @@ export default function CalendarPage() {
             </div>
             {focused ? (
               <>
-                <ReminderRow label="72 hours before" on={focused.reminders} />
-                <ReminderRow label="24 hours before" on={focused.reminders} />
-                <ReminderRow label="2 hours before" on={focused.reminders} />
+                <ReminderRow label="3 days before" on={focused.reminders} />
+                <ReminderRow label="1 day before" on={focused.reminders} />
                 <p style={{ fontSize: 11, color: c.stone, margin: "8px 0 0", fontFamily: font.ui }}>
-                  Toggle reminders when editing an interview.
+                  Email reminders. Toggle them when editing an interview.
                 </p>
               </>
             ) : (
               <p style={{ fontSize: 12, color: c.stone, margin: 0, fontFamily: font.ui, lineHeight: 1.45 }}>
-                Log an interview to set email and push reminders.
+                Log an interview to set email reminders.
               </p>
             )}
           </Card>
@@ -908,7 +953,7 @@ export default function CalendarPage() {
 
                 {/* actions */}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${c.borderSubtle}`, marginTop: sp.lg, paddingTop: sp.md }}>
-                  <button className="cpr-tap" onClick={() => onStartSession()} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.sm, padding: "8px 14px", fontFamily: font.ui, fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+                  <button className="cpr-tap" onClick={() => startMock(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.sm, padding: "8px 14px", fontFamily: font.ui, fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
                     <Icon size={13}>{I.play}</Icon> {practiceLabel}
                   </button>
                   <div style={{ position: "relative" }}>
@@ -932,7 +977,7 @@ export default function CalendarPage() {
               </Card>
 
               {/* the runway */}
-              <PrepRunwayRail interview={focused} all={events} onStart={() => onStartSession()} onBuild={() => handleBuildRunway(focused.id)} building={buildingRunway} />
+              <PrepRunwayRail interview={focused} all={events} onStart={() => startMock(focused)} onBuild={() => handleBuildRunway(focused.id)} building={buildingRunway} />
             </>
           ) : (
             <Card pad={40} style={{ textAlign: "center" }}>
