@@ -513,17 +513,24 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 <button
                   disabled={helpSending || !helpFeedback.trim()}
                   onClick={async () => {
-                    if (!helpFeedback.trim()) return;
+                    const msg = helpFeedback.trim();
+                    if (!msg) return;
                     setHelpSending(true);
                     try {
-                      const { getSupabase } = await import("./supabase");
-                      const sb = await getSupabase();
-                      const { error } = await sb.from("feedback").insert({ message: helpFeedback.trim(), email: user?.email || null });
-                      if (error) throw error;
+                      const { apiFetch } = await import("./apiClient");
+                      const res = await apiFetch("/api/support-feedback", {
+                        message: msg,
+                        email: user?.email || null,
+                        page: typeof window !== "undefined" ? window.location.pathname : null,
+                        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+                      });
+                      if (!res.ok) throw new Error(res.error || "send failed");
                       setHelpFeedback("");
                       setHelpSent(true);
                     } catch {
-                      window.location.href = `mailto:support@hirestepx.com?body=${encodeURIComponent(helpFeedback.trim())}`;
+                      // Persisted path failed — fall back to the user's email client
+                      // so the feedback isn't lost.
+                      window.location.href = `mailto:support@hirestepx.com?body=${encodeURIComponent(msg)}`;
                     } finally {
                       setHelpSending(false);
                     }

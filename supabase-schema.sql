@@ -618,6 +618,35 @@ create index if not exists profiles_deleted_at_idx on profiles (deleted_at) wher
 -- false on add, matching the private-by-default contract.
 alter table profiles add column if not exists is_profile_public boolean not null default false;
 
+-- ═══════════════════════════════════════════════════════
+-- Support messages (Help & Support widget "Send Feedback")
+-- ═══════════════════════════════════════════════════════
+-- Free-text feedback/issue reports from the floating "?" widget. Distinct
+-- from `feedback` (per-session rating) and `question_feedback` (per-question
+-- thumbs). Written ONLY by the service role via /api/support-feedback after an
+-- authenticated request — there is deliberately no insert/update/delete policy
+-- for end users, so a client can't forge or tamper with the queue. The author
+-- may read their own submissions; you (the operator) read the whole queue in
+-- the Supabase dashboard, ordered by created_at. user_id is set null (not
+-- cascade-deleted) so a support thread survives the author deleting their
+-- account.
+create table if not exists support_messages (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid references profiles(id) on delete set null,
+  email      text,
+  message    text not null,
+  page       text,
+  user_agent text,
+  status     text not null default 'new' check (status in ('new', 'seen', 'resolved')),
+  created_at timestamptz not null default now()
+);
+alter table support_messages enable row level security;
+create index if not exists idx_support_messages_created on support_messages (created_at desc);
+
+drop policy if exists "Users read own support messages" on support_messages;
+create policy "Users read own support messages" on support_messages
+  for select using ((auth.uid())::text = user_id::text);
+
 alter table profiles enable row level security;
 alter table sessions enable row level security;
 alter table calendar_events enable row level security;
