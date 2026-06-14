@@ -49,6 +49,10 @@ vi.mock("../tts", () => ({
   unlockAudio: vi.fn(),
   retryUnlockAudio: vi.fn(),
   isAutoplayBlocked: vi.fn(() => false),
+  hardMuteTTS: vi.fn(),
+  // Interview-lifecycle flows assert the voice chrome, so keep voice output
+  // "enabled" — otherwise the engine defaults to text mode.
+  VOICE_OUTPUT_DISABLED: false,
   GOOGLE_VOICES: [
     { id: "en-US-Neural2-D", name: "James", desc: "Clear, neutral male", gender: "male" },
   ],

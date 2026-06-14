@@ -32,6 +32,10 @@ vi.mock("../tts", () => ({
   unlockAudio: vi.fn(),
   retryUnlockAudio: vi.fn(),
   isAutoplayBlocked: vi.fn(() => false),
+  hardMuteTTS: vi.fn(),
+  // These tests exercise the voice interview chrome (mute, mic), so keep
+  // voice output "enabled" — otherwise the engine defaults to text mode.
+  VOICE_OUTPUT_DISABLED: false,
 }));
 
 // Mock fetch (for LLM endpoints)

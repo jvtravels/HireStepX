@@ -4,7 +4,7 @@ import { track } from "@vercel/analytics";
 import { captureClientEvent } from "./posthogClient";
 
 import { useAuth, setInterviewInProgress } from "./AuthContext";
-import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS } from "./tts";
+import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS, VOICE_OUTPUT_DISABLED } from "./tts";
 import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-unlock";
 import { useOnlineOfflineRecovery } from "./_recovery";
 import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
@@ -606,7 +606,11 @@ export function useInterviewEngine() {
   // TTS-caption sync: actual audio duration (from TTS provider) and speech-ended flag
   const [ttsDurationMs, setTtsDurationMs] = useState<number | undefined>(undefined);
   const [speechEnded, setSpeechEnded] = useState(false);
-  const [speechUnavailable, setSpeechUnavailable] = useState(searchParams.get("nomic") === "1");
+  // Default to text mode when AI voice output is off: a live "Listening" mic
+  // UI alongside a silent interviewer reads as broken. Users can opt into
+  // speech via the in-composer "Switch to speaking" control. `?nomic=1` still
+  // forces text mode regardless.
+  const [speechUnavailable, setSpeechUnavailable] = useState(searchParams.get("nomic") === "1" || VOICE_OUTPUT_DISABLED);
 
   // Controls
   const [isMuted, setIsMuted] = useState(false);

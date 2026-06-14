@@ -20,6 +20,12 @@
  * ───────────────────────────────────────────────────────────────────── */
 const TTS_DISABLED = true;
 
+/* Whether spoken AI output is currently off. The interview engine reads this
+ * to default the answer composer to text mode — otherwise the UI shows a live
+ * "Listening" mic/waveform while the AI never speaks, which reads as broken.
+ * Mirrors TTS_DISABLED; flip the kill-switch above and this follows. */
+export const VOICE_OUTPUT_DISABLED: boolean = TTS_DISABLED;
+
 /* Estimate how long the question would have taken to speak so the
  * caption typewriter has a duration to pace against while the kill-
  * switch is on. ~160 wpm matches our Sarvam/Cartesia delivery pace;

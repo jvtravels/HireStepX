@@ -58,6 +58,7 @@ vi.mock("../tts", () => ({
   fetchCartesiaVoices: vi.fn(() => Promise.resolve([])),
   loadTTSSettings: () => ({ provider: "browser", voiceId: "", voiceName: "" }),
   saveTTSSettings: vi.fn(),
+  VOICE_OUTPUT_DISABLED: false,
   GOOGLE_VOICES: [],
 }));
 
