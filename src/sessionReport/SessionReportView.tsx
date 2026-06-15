@@ -55,6 +55,7 @@ import { BiasSection } from "./panels/sr-BiasSection";
 import { ReverseInterviewSection } from "./panels/sr-ReverseInterviewSection";
 import { NextStepsSection } from "./panels/sr-NextStepsSection";
 import { FooterSection } from "./panels/sr-FooterSection";
+import { ReferralInviteSection } from "./panels/sr-ReferralInviteSection";
 import { CampusCgpaCalibrationNote } from "./panels/sr-CampusCgpaCalibrationNote";
 import { CredibilitySection } from "./panels/sr-CredibilitySection";
 import { OfferEconomicsPanel } from "./panels/sr-OfferEconomicsPanel";
@@ -408,6 +409,7 @@ export default function SessionReportView({
               company={data.company}
               onDrillSkill={onDrillSkill}
             />
+            <ReferralInviteSection score={data.overallScore} />
             <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
           </main>
         </div>
@@ -511,6 +513,7 @@ export default function SessionReportView({
                 : undefined
             }
           />
+          <ReferralInviteSection score={data.overallScore} />
           <FooterSection
             onTrustAnswer={onTrustAnswer}
             onUsefulAnswer={onUsefulAnswer}

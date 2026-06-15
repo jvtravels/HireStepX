@@ -192,6 +192,18 @@ function clearPendingReferralCode(): void {
   try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch { /* expected */ }
 }
 
+/** Build the canonical referral signup URL for a code. Falls back to the app
+ *  origin (or the prod app URL during SSR) when no code is available, so every
+ *  share surface always emits a working — and, when possible, attributed —
+ *  link. The single source of truth for "what link do we share". */
+export function referralSignupUrl(code?: string | null): string {
+  const origin =
+    typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
+      : "https://app.hirestepx.com";
+  return code ? `${origin}/signup?ref=${encodeURIComponent(code)}` : origin;
+}
+
 /** Apply a captured referral code now that we have an authenticated session.
  *  Fire-and-forget: a referral failure must NEVER block login. Clears the
  *  pending code on a definitive outcome (applied/already-used/invalid) but
@@ -205,6 +217,14 @@ async function applyPendingReferral(accessToken: string): Promise<void> {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({ code }),
     });
+    // K-factor instrumentation: a fresh attribution = a referred signup; a
+    // server-granted reward = the loop actually paid out. Both fire on the
+    // referred user's client. alreadyReferred re-applies are not new signups.
+    if (res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { rewarded?: boolean; alreadyReferred?: boolean };
+      if (!body.alreadyReferred) captureClientEvent("referral_signup", { code });
+      if (body.rewarded) captureClientEvent("referral_reward_granted", { code, side: "referred" });
+    }
     if (res.ok || (res.status >= 400 && res.status < 500)) clearPendingReferralCode();
   } catch {
     /* transient — keep the pending code for the next SIGNED_IN */

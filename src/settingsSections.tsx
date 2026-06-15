@@ -2,7 +2,8 @@ import type React from "react";
 import { memo, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import { authHeaders, type PaymentRecord } from "./supabase";
-import { useAuth } from "./AuthContext";
+import { useAuth, referralSignupUrl } from "./AuthContext";
+import { captureClientEvent } from "./posthogClient";
 
 /* Cream-mode local tokens — mirror tempo/designs/canvases/design-system/_tokens.ts
    and DashboardLayout. Same keys as the old dark `c` so JSX style values
@@ -1070,10 +1071,11 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
     })();
   }, [user?.id]);
 
-  const referralLink = referralCode && typeof window !== "undefined"
-    ? `${window.location.origin}/signup?ref=${referralCode}`
-    : "";
-  const shortLink = referralCode ? `hirestepx.com/r/${referralCode.toLowerCase()}` : "";
+  const referralLink = referralCode ? referralSignupUrl(referralCode) : "";
+  // Display the real, working link (sans protocol) rather than a prettier
+  // hirestepx.com/r/<code> short link that has no redirect behind it — a link
+  // we show must be a link that actually resolves.
+  const displayLink = referralLink.replace(/^https?:\/\//, "");
 
   const handleCopy = () => {
     if (!referralLink) return;
@@ -1081,19 +1083,22 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
     setCopied(true);
     showToast("Referral link copied!");
     setTimeout(() => setCopied(false), 2000);
+    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "copy" });
   };
 
   const handleShareWhatsApp = () => {
     if (!referralLink) return;
-    const text = `Hey! I've been using HireStepX to practice for interviews with AI - it's really helped me improve. Try it out: ${referralLink}`;
+    const text = `Hey! I've been practising interviews on HireStepX with an AI that scores your answers. Sign up with my link and we each get a free session: ${referralLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "whatsapp" });
   };
 
   const handleShareEmail = () => {
     if (!referralLink) return;
     const subject = "Try HireStepX - AI Mock Interviews";
-    const body = `Hey!\n\nI've been using HireStepX to practice for interviews with AI interviewers. It gives detailed feedback on STAR method, speech analytics, and more.\n\nSign up with my referral link: ${referralLink}`;
+    const body = `Hey!\n\nI've been using HireStepX to practice for interviews with AI interviewers. It gives detailed feedback on STAR method, speech analytics, and more.\n\nSign up with my link and we each get a free practice session: ${referralLink}`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "email" });
   };
 
   const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.08em", textTransform: "uppercase" };
@@ -1133,8 +1138,8 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
               fontFamily: font.mono, fontSize: 15, color: c.ivory,
               maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
-              {shortLink ? (
-                <>hirestepx.com/r/<span style={{ color: c.gilt }}>{referralCode?.toLowerCase()}</span></>
+              {displayLink ? (
+                <span style={{ color: c.gilt }}>{displayLink}</span>
               ) : "—"}
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>

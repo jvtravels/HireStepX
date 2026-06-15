@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { c, font } from "./tokens";
-import { useAuth } from "./AuthContext";
+import { useAuth, referralSignupUrl } from "./AuthContext";
 import { getUserSessions } from "./supabase";
 import { FREE_SESSION_LIMIT } from "./dashboardData";
 import { captureClientEvent } from "./posthogClient";
@@ -59,6 +59,9 @@ export default function OnboardingComplete() {
   }, [user?.id]);
 
   const score: number = (stateData.score as number) || 72;
+  // Attributed invite link — carries the user's referral code so a share from
+  // this peak-delight moment is actually credited (and rewards both sides).
+  const inviteUrl = referralSignupUrl(user?.referralCode);
   const aiFeedback: string = (stateData.aiFeedback as string) || "";
   const skillScores: Record<string, number> | null = (stateData.skillScores as Record<string, number>) || null;
   const weakestSkill = skillScores
@@ -137,9 +140,10 @@ export default function OnboardingComplete() {
           {/* Share your score */}
           <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 28, animation: "obcFadeIn 0.5s ease 0.5s both" }}>
             <button onClick={() => {
-              const text = `I just scored ${score}/100 on my first AI mock interview on HireStepX!\n\n${skillScores ? Object.entries(skillScores).map(([k, v]) => `${k}: ${v}`).join(" · ") + "\n\n" : ""}Practice your interviews with AI: https://app.hirestepx.com\n\n#InterviewPrep #HireStepX #MockInterview`;
+              const text = `I just scored ${score}/100 on my first AI mock interview on HireStepX!\n\n${skillScores ? Object.entries(skillScores).map(([k, v]) => `${k}: ${v}`).join(" · ") + "\n\n" : ""}Sign up with my link and we each get a free session: ${inviteUrl}\n\n#InterviewPrep #HireStepX #MockInterview`;
               if (navigator.share) { navigator.share({ text }).catch(() => {}); }
               else { navigator.clipboard.writeText(text).then(() => {}); }
+              captureClientEvent("referral_invite_sent", { surface: "onboarding", channel: "native" });
             }} style={{
               fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone,
               background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
@@ -154,7 +158,8 @@ export default function OnboardingComplete() {
             </button>
             <button onClick={() => {
               const text = encodeURIComponent(`Just scored ${score}/100 on my first AI mock interview on HireStepX!\n\nAI-powered interview practice is a game-changer.\n\n#InterviewPrep #HireStepX #MockInterview #CareerGrowth`);
-              window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://app.hirestepx.com")}&text=${text}`, "_blank", "noopener,noreferrer");
+              window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(inviteUrl)}&text=${text}`, "_blank", "noopener,noreferrer");
+              captureClientEvent("referral_invite_sent", { surface: "onboarding", channel: "linkedin" });
             }} style={{
               fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone,
               background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
@@ -168,8 +173,9 @@ export default function OnboardingComplete() {
               LinkedIn
             </button>
             <button onClick={() => {
-              const text = encodeURIComponent(`I just scored ${score}/100 on my first AI mock interview on HireStepX!\n\nPractice yours: https://app.hirestepx.com`);
+              const text = encodeURIComponent(`I just scored ${score}/100 on my first AI mock interview on HireStepX!\n\nSign up with my link and we each get a free session: ${inviteUrl}`);
               window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+              captureClientEvent("referral_invite_sent", { surface: "onboarding", channel: "whatsapp" });
             }} style={{
               fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone,
               background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
