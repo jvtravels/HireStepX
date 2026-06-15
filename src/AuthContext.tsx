@@ -167,6 +167,50 @@ function storeDeviceToken(token: string) {
   try { localStorage.setItem(DEVICE_TOKEN_KEY, token); } catch { /* expected */ }
 }
 
+/* ─── Referral capture/apply ───
+   A referral link lands on /signup?ref=HSX-XXXXXX. The code is stashed here at
+   page load and applied once the user reaches an authenticated session (after
+   email verification, or immediately for Google). The apply call is what closes
+   the loop — it rewards both sides server-side (see referral.ts). */
+const PENDING_REFERRAL_KEY = "hirestepx_pending_ref";
+const REFERRAL_CODE_RE = /^HSX-[A-Z0-9]{4,8}$/;
+
+/** Stash a referral code from a signup link for later application. No-ops on a
+ *  malformed code. Exported for the signup page to call on mount. */
+export function storePendingReferralCode(raw: string | null | undefined): void {
+  if (typeof raw !== "string") return;
+  const code = raw.trim().toUpperCase();
+  if (!REFERRAL_CODE_RE.test(code)) return;
+  try { localStorage.setItem(PENDING_REFERRAL_KEY, code); } catch { /* expected */ }
+}
+
+function readPendingReferralCode(): string | null {
+  try { return localStorage.getItem(PENDING_REFERRAL_KEY); } catch { return null; }
+}
+
+function clearPendingReferralCode(): void {
+  try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch { /* expected */ }
+}
+
+/** Apply a captured referral code now that we have an authenticated session.
+ *  Fire-and-forget: a referral failure must NEVER block login. Clears the
+ *  pending code on a definitive outcome (applied/already-used/invalid) but
+ *  keeps it on a transient 5xx/network error so a later session can retry. */
+async function applyPendingReferral(accessToken: string): Promise<void> {
+  const code = readPendingReferralCode();
+  if (!code) return;
+  try {
+    const res = await fetch("/api/referral", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ code }),
+    });
+    if (res.ok || (res.status >= 400 && res.status < 500)) clearPendingReferralCode();
+  } catch {
+    /* transient — keep the pending code for the next SIGNED_IN */
+  }
+}
+
 /* Session-fingerprint hijack detection used to live here. Removed —
    the only path was storeSessionFingerprint() at login, but no code
    ever read the stored value back to compare against a fresh
@@ -908,6 +952,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Persist Google provider token for Calendar API access
           if (session.provider_token) {
             try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
+          }
+          // Close the referral loop: apply any code captured from a signup link.
+          // Fire-and-forget on genuine sign-in only (not token refreshes) so it
+          // never blocks profile load; the server is idempotent for re-applies.
+          if (event === "SIGNED_IN" && session.access_token) {
+            void applyPendingReferral(session.access_token);
           }
           try {
             // Same 5s timeout guard as the restore path above — see

@@ -301,16 +301,36 @@ create index if not exists idx_feedback_user on feedback(user_id, created_at);
 create table if not exists referrals (
   id uuid primary key default gen_random_uuid(),
   referrer_id uuid references profiles(id) on delete cascade not null,
-  referral_code text unique not null,
+  -- NOTE: referral_code is the REFERRER's code and repeats across every
+  -- person they refer, so it must NOT be unique (a unique constraint here
+  -- silently capped each referrer at a single referral). One-referral-per-
+  -- referred-user is enforced instead by uniq_referrals_referred below.
+  referral_code text not null,
   referred_email text,
   referred_id uuid references profiles(id) on delete set null,
   status text default 'pending' check (status in ('pending', 'redeemed', 'rewarded')),
   reward_granted boolean default false,
+  -- Compare-and-swap gate for the double-sided reward. NULL = not yet paid
+  -- out; a single atomic PATCH flips it null → now() so a double-fire (retry,
+  -- concurrent SIGNED_IN) can never double-grant credits. See
+  -- _referral-reward-helpers.ts claimReferralReward().
+  reward_granted_at timestamptz,
   created_at timestamptz default now()
 );
 
 create index if not exists idx_referrals_code on referrals(referral_code);
 create index if not exists idx_referrals_referrer on referrals(referrer_id);
+-- A given user can be referred at most once. Partial (referred_id is null
+-- only for legacy email-invite rows that were never redeemed).
+create unique index if not exists uniq_referrals_referred
+  on referrals(referred_id) where referred_id is not null;
+
+-- ── Idempotent migration for already-deployed databases ──
+-- `create table if not exists` above is a no-op on an existing table, so the
+-- structural fixes (drop the one-referral-per-referrer unique, add the CAS
+-- column) are applied explicitly here. Safe to re-run.
+alter table referrals drop constraint if exists referrals_referral_code_key;
+alter table referrals add column if not exists reward_granted_at timestamptz;
 
 -- 7. Promo / coupon codes
 create table if not exists promo_codes (

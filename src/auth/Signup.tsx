@@ -5,7 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "../AuthContext";
+import { useAuth, storePendingReferralCode } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -174,6 +174,13 @@ export default function Signup() {
   useEffect(() => {
     trackAuth(loginViewedEvent("signup"));
   }, []);
+
+  // Capture a referral code from the signup link (/signup?ref=HSX-XXXXXX) so it
+  // can be applied once the account is verified and signed in. Stored, not
+  // applied here — the user has no session yet.
+  useEffect(() => {
+    storePendingReferralCode(searchParams?.get("ref") ?? null);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!showPassword) return;

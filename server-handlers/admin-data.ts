@@ -739,24 +739,32 @@ async function getSupportMessages() {
 interface ReferralRow {
   id: string;
   referrer_id: string;
-  referee_id?: string;
-  referee_email?: string;
+  referred_id?: string;
+  referred_email?: string;
   status: string;
   reward_granted_at?: string | null;
   created_at: string;
 }
 
+// A referral counts as "converted" once the reward has been paid out — i.e.
+// status 'rewarded' or a non-null reward_granted_at (the CAS stamp). The legacy
+// 'converted' status string never existed in this schema; the canonical values
+// are pending | redeemed | rewarded.
+function isReferralConverted(r: ReferralRow): boolean {
+  return r.status === "rewarded" || !!r.reward_granted_at;
+}
+
 async function getReferrals() {
   const monthAgo = daysAgo(30);
   const [allReferrals, recentProfiles] = await Promise.all([
-    fetchJSON<ReferralRow>("referrals?select=id,referrer_id,referee_id,referee_email,status,reward_granted_at,created_at&order=created_at.desc&limit=500"),
+    fetchJSON<ReferralRow>("referrals?select=id,referrer_id,referred_id,referred_email,status,reward_granted_at,created_at&order=created_at.desc&limit=500"),
     fetchJSON<{ id: string; name: string | null; email: string }>("profiles?select=id,name,email&limit=2000"),
   ]);
   const profileMap = new Map(recentProfiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
 
   const total = allReferrals.length;
   const last30d = allReferrals.filter((r) => r.created_at >= monthAgo).length;
-  const converted = allReferrals.filter((r) => r.status === "converted" || !!r.reward_granted_at).length;
+  const converted = allReferrals.filter(isReferralConverted).length;
   const conversionRate = total > 0 ? Math.round((converted / total) * 100) : 0;
 
   // Top referrers by total referrals brought in
@@ -764,7 +772,7 @@ async function getReferrals() {
   for (const r of allReferrals) {
     const cur = referrerCounts.get(r.referrer_id) || { count: 0, converted: 0 };
     cur.count++;
-    if (r.status === "converted" || r.reward_granted_at) cur.converted++;
+    if (isReferralConverted(r)) cur.converted++;
     referrerCounts.set(r.referrer_id, cur);
   }
   const topReferrers = Array.from(referrerCounts.entries())
@@ -781,7 +789,7 @@ async function getReferrals() {
   const recent = allReferrals.slice(0, 50).map((r) => ({
     id: r.id,
     referrerName: profileMap.get(r.referrer_id)?.name || "(deleted)",
-    refereeEmail: r.referee_email || (r.referee_id ? (profileMap.get(r.referee_id)?.email || "—") : "—"),
+    refereeEmail: r.referred_email || (r.referred_id ? (profileMap.get(r.referred_id)?.email || "—") : "—"),
     status: r.status,
     rewardGranted: !!r.reward_granted_at,
     createdAt: r.created_at,
