@@ -69,6 +69,14 @@ export function useInterviewSTT(
       deepgramRetryRef.current = 0;
       let stopped = false;
 
+      // Billable-STT instrumentation. Deepgram/Sarvam bill by audio (≈ wall-clock
+      // the mic streams), but until now we logged only the *provider name*, never
+      // duration — so per-session STT cost was unmeasurable. Stamp the moment this
+      // listening turn opens and emit the elapsed seconds (tagged with whichever
+      // provider actually served) on cleanup, so PostHog carries a real cost proxy.
+      const listenStartMs = Date.now();
+      let activeSttProvider = "deepgram";
+
       let deepgramCleanup: (() => void) | null = null;
       let sarvamCleanup: (() => void) | null = null;
 
@@ -139,6 +147,7 @@ export function useInterviewSTT(
         if (handle) {
           refs.sarvamRef.current = handle;
           sarvamCleanup = () => { handle.stop(); refs.sarvamRef.current = null; };
+          activeSttProvider = "sarvam";
           captureClientEvent("stt_provider_used", { provider: "sarvam", fellThroughFrom: "deepgram" });
         } else {
           // Previously this branch only logged to console — users hit Web
@@ -239,6 +248,7 @@ export function useInterviewSTT(
         if (handle) {
           refs.deepgramRef.current = handle;
           deepgramCleanup = () => { handle.stop(); refs.deepgramRef.current = null; };
+          activeSttProvider = "deepgram";
           captureClientEvent("stt_provider_used", { provider: "deepgram" });
         } else {
           console.warn("[Deepgram] setup failed, falling back to Sarvam AI");
@@ -310,6 +320,7 @@ export function useInterviewSTT(
         };
         try {
           recognition.start();
+          activeSttProvider = "webspeech";
           captureClientEvent("stt_provider_used", { provider: "webspeech", fellThroughFrom: "sarvam" });
         } catch (e) {
           console.warn("Speech recognition failed to start:", e);
@@ -324,6 +335,13 @@ export function useInterviewSTT(
       return () => {
         if (safetyTimer) clearTimeout(safetyTimer);
         stopped = true;
+        // Emit billable STT seconds for this listening turn (webspeech is free,
+        // but log it anyway so the provider mix is complete). Only when the mic
+        // actually streamed for a beat — sub-second blips are setup churn, not cost.
+        const seconds = Math.round((Date.now() - listenStartMs) / 1000);
+        if (seconds >= 1) {
+          captureClientEvent("stt_listening_seconds", { provider: activeSttProvider, seconds });
+        }
         deepgramCleanup?.();
         sarvamCleanup?.();
         refs.recognitionRef.current?.stop();
