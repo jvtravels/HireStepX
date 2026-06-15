@@ -1079,7 +1079,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const rlCheck = await fetch("/api/send-welcome", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "check", email: email.toLowerCase().trim() }),
+        body: JSON.stringify({ action: "check", email: email.toLowerCase().trim(), intent: "signup" }),
       });
       if (rlCheck.status === 429) {
         return { success: false, error: "Too many signup attempts. Please try again in a few minutes." };

@@ -725,7 +725,7 @@ async function delRedisKey(key: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
-async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: string, email?: string) {
+async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: string, email?: string, intent?: string) {
   const ip = (req.headers["x-forwarded-for"] as string || "127.0.0.1").split(",")[0].trim();
   const normalizedEmail = (email || "").toLowerCase().trim();
   const ipKey = `rl:login:ip:${ip}`;
@@ -751,10 +751,18 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
     if (ipAttempts >= IP_MAX_ATTEMPTS || emailAttempts >= AUTH_MAX_ATTEMPTS) {
       return res.status(429).json({ locked: true, message: "Too many failed login attempts. Please try again in 5 minutes.", remainingSeconds: AUTH_LOCKOUT_SECONDS });
     }
-    const signupKey = `rl:signup:ip:${ip}`;
-    const signupAttempts = await getRedisValue(signupKey);
-    if (signupAttempts >= AUTH_MAX_SIGNUP) {
-      return res.status(429).json({ locked: true, message: "Too many signup attempts. Please try again later.", remainingSeconds: AUTH_SIGNUP_WINDOW });
+    // Only the SIGNUP pre-flight consults the signup counter. The login
+    // pre-check ("check" with no signup intent) must NOT be gated by it —
+    // otherwise 5+ signups from a shared IP (mobile NAT / corporate / dev
+    // preview) would return a 429 that blocks LOGIN for everyone behind
+    // that IP. Signup's real enforcement still lives in the "signup"
+    // action's incrRedisKey cap below; this is just its early bail.
+    if (intent === "signup") {
+      const signupKey = `rl:signup:ip:${ip}`;
+      const signupAttempts = await getRedisValue(signupKey);
+      if (signupAttempts >= AUTH_MAX_SIGNUP) {
+        return res.status(429).json({ locked: true, message: "Too many signup attempts. Please try again later.", remainingSeconds: AUTH_SIGNUP_WINDOW });
+      }
     }
     return res.status(200).json({ locked: false, attempts: Math.max(ipAttempts, emailAttempts) });
   }
@@ -898,7 +906,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { email, name, userId, action, honeypot } = req.body || {};
+  const { email, name, userId, action, honeypot, intent } = req.body || {};
 
   // Honeypot check: if the hidden field is filled, it's a bot
   if (honeypot) {
@@ -923,7 +931,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           "Please use a permanent email address — temporary inboxes aren't supported.",
       });
     }
-    return handleAuthCheck(req, res, action, email);
+    return handleAuthCheck(req, res, action, email, intent);
   }
 
   // Google OAuth token exchange (doesn't require email)
