@@ -5,6 +5,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
+import { costBreakdown, kFactor } from "./_cost-helpers";
 
 /* ─── Config ─── */
 
@@ -136,15 +137,18 @@ async function getOverview() {
     weekUserCount,
     totalSessionCount,
     weekSessionCount,
+    monthSessionCount,
     profiles,
     recentSessions,
     payments,
     llmRecent,
+    serviceRecent,
   ] = await Promise.all([
     fetchCount("profiles"),
     fetchCount("profiles", `&created_at=gte.${weekAgo}`),
     fetchCount("sessions"),
     fetchCount("sessions", `&created_at=gte.${weekAgo}`),
+    fetchCount("sessions", `&created_at=gte.${monthAgo}`),
     fetchJSON<{ id: string; subscription_tier: string; practice_timestamps: string[] | null }>(
       `profiles?select=id,subscription_tier,practice_timestamps&limit=${LIMIT_PROFILES}`
     ),
@@ -156,6 +160,12 @@ async function getOverview() {
     ),
     fetchJSON<{ total_tokens: number; is_fallback: boolean; status: string; created_at: string }>(
       `llm_usage?select=total_tokens,is_fallback,status,created_at&order=created_at.desc&limit=${LIMIT_LLM}`
+    ),
+    // Voice cost lives in service_usage: TTS request_chars (precise) + STT
+    // token-issuance calls (count only — STT minutes aren't logged). Scoped to
+    // the 30-day window to match the per-session divisor.
+    fetchJSON<{ service: string; request_chars: number | null; status: string; created_at: string }>(
+      `service_usage?select=service,request_chars,status,created_at&created_at=gte.${monthAgo}&limit=5000`
     ),
   ]);
 
@@ -201,11 +211,61 @@ async function getOverview() {
   const errorRate = llmRecent.length > 0
     ? Math.round((llmRecent.filter(u => u.status === "error" || u.status === "timeout").length / llmRecent.length) * 100) : 0;
 
+  // ── Marginal cost (estimate, rate-card based — see _cost-helpers.ts) ──
+  // 30-day window so the per-session number isn't whipsawed by a quiet day.
+  // llmRecent is capped at LIMIT_LLM; on high volume this undercounts and the
+  // estimate reads low — acceptable for a dashboard signal, flagged in the UI.
+  const TTS_SERVICES = new Set(["azure_tts", "cartesia_tts", "sarvam_tts"]);
+  const STT_SERVICES = new Set(["deepgram_stt", "sarvam_stt"]);
+  let llmTokens30dPrimary = 0, llmTokens30dFallback = 0;
+  for (const u of llmRecent) {
+    if (!u.created_at || u.created_at < monthAgo) continue;
+    if (u.is_fallback) llmTokens30dFallback += u.total_tokens || 0;
+    else llmTokens30dPrimary += u.total_tokens || 0;
+  }
+  let ttsChars30d = 0, sttCalls30d = 0;
+  let llmTokensTodayPrimary = 0, llmTokensTodayFallback = 0, ttsCharsToday = 0, sttCallsToday = 0;
+  for (const u of llmRecent) {
+    if (!u.created_at?.startsWith(today)) continue;
+    if (u.is_fallback) llmTokensTodayFallback += u.total_tokens || 0;
+    else llmTokensTodayPrimary += u.total_tokens || 0;
+  }
+  for (const r of serviceRecent) {
+    const isToday = r.created_at?.startsWith(today);
+    if (TTS_SERVICES.has(r.service)) {
+      ttsChars30d += r.request_chars || 0;
+      if (isToday) ttsCharsToday += r.request_chars || 0;
+    } else if (STT_SERVICES.has(r.service) && r.status === "success") {
+      sttCalls30d += 1;
+      if (isToday) sttCallsToday += 1;
+    }
+  }
+  const cost30d = costBreakdown({
+    llmTokensPrimary: llmTokens30dPrimary,
+    llmTokensFallback: llmTokens30dFallback,
+    ttsChars: ttsChars30d,
+    sttCalls: sttCalls30d,
+    sessions: monthSessionCount,
+  });
+  const costToday = costBreakdown({
+    llmTokensPrimary: llmTokensTodayPrimary,
+    llmTokensFallback: llmTokensTodayFallback,
+    ttsChars: ttsCharsToday,
+    sttCalls: sttCallsToday,
+    sessions: recentSessions.filter(s => s.created_at?.startsWith(today)).length,
+  });
+
   return {
     users: { total: totalUserCount, today: profiles.filter(() => false).length, thisWeek: weekUserCount, activeLastWeek, tierBreakdown },
     sessions: { total: totalSessionCount, today: recentSessions.filter(s => s.created_at?.startsWith(today)).length, thisWeek: weekSessionCount, avgScore, perDay: sessionsPerDay },
     revenue: { totalPaise: totalRevenue, thisMonthPaise: revenueThisMonth, paymentCount: successPayments.length },
     llm: { tokensToday, fallbackRate, errorRate, totalCalls: llmRecent.length },
+    cost: {
+      perSessionInr: cost30d.perSessionInr,
+      todayInr: costToday.totalInr,
+      month: { totalInr: cost30d.totalInr, llmInr: cost30d.llmInr, ttsInr: cost30d.ttsInr, sttInr: cost30d.sttInr, sessions: cost30d.sessions },
+      estimate: true,
+    },
   };
 }
 
@@ -758,7 +818,7 @@ async function getReferrals() {
   const monthAgo = daysAgo(30);
   const [allReferrals, recentProfiles] = await Promise.all([
     fetchJSON<ReferralRow>("referrals?select=id,referrer_id,referred_id,referred_email,status,reward_granted_at,created_at&order=created_at.desc&limit=500"),
-    fetchJSON<{ id: string; name: string | null; email: string }>("profiles?select=id,name,email&limit=2000"),
+    fetchJSON<{ id: string; name: string | null; email: string; practice_timestamps: string[] | null }>("profiles?select=id,name,email,practice_timestamps&limit=2000"),
   ]);
   const profileMap = new Map(recentProfiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
 
@@ -766,6 +826,18 @@ async function getReferrals() {
   const last30d = allReferrals.filter((r) => r.created_at >= monthAgo).length;
   const converted = allReferrals.filter(isReferralConverted).length;
   const conversionRate = total > 0 ? Math.round((converted / total) * 100) : 0;
+
+  // K-factor = referred signups in the last 30d / users active in the last 30d.
+  // The doc's go/no-go metric for the referral loop (target > 0.3). Active =
+  // practiced at least once in the window. Reads 0 cleanly when there's no
+  // traffic yet (vs. a misleading Infinity).
+  const now = Date.now();
+  let activeLast30d = 0;
+  for (const p of recentProfiles) {
+    const ts = p.practice_timestamps;
+    if (ts?.length && now - new Date(ts[ts.length - 1]).getTime() < 30 * 86400000) activeLast30d++;
+  }
+  const k = kFactor(last30d, activeLast30d);
 
   // Top referrers by total referrals brought in
   const referrerCounts = new Map<string, { count: number; converted: number }>();
@@ -795,7 +867,7 @@ async function getReferrals() {
     createdAt: r.created_at,
   }));
 
-  return { total, last30d, converted, conversionRate, topReferrers, recent };
+  return { total, last30d, converted, conversionRate, kFactor: k, activeLast30d, topReferrers, recent };
 }
 
 interface PromoRow {

@@ -14,6 +14,10 @@ interface OverviewData {
   sessions: { total: number; today: number; thisWeek: number; avgScore: number; perDay: Record<string, number> };
   revenue: { totalPaise: number; thisMonthPaise: number; paymentCount: number };
   llm: { tokensToday: number; fallbackRate: number; errorRate: number; totalCalls: number };
+  cost?: {
+    perSessionInr: number; todayInr: number; estimate: boolean;
+    month: { totalInr: number; llmInr: number; ttsInr: number; sttInr: number; sessions: number };
+  };
 }
 
 interface UserRow {
@@ -103,6 +107,7 @@ export interface UserDetailData {
 
 export interface ReferralsData {
   total: number; last30d: number; converted: number; conversionRate: number;
+  kFactor?: number; activeLast30d?: number;
   topReferrers: Array<{ id: string; name: string; email: string; total: number; converted: number }>;
   recent: Array<{ id: string; referrerName: string; refereeEmail: string; status: string; rewardGranted: boolean; createdAt: string }>;
 }
@@ -781,6 +786,22 @@ export default function AdminDashboard() {
               {l.fallbackRate}% fallback · {l.errorRate}% errors
             </p>
           </div>
+          {overview.cost && (
+            <>
+              <div style={statCard}>
+                <p style={labelStyle}>Cost / Session</p>
+                <p style={bigNum}>₹{overview.cost.perSessionInr}<span style={{ fontSize: 12, color: c.stone }}> est.</span></p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: c.stone }}>list-rate estimate · 30d</p>
+              </div>
+              <div style={statCard}>
+                <p style={labelStyle}>AI Cost Today</p>
+                <p style={bigNum}>₹{overview.cost.todayInr}<span style={{ fontSize: 12, color: c.stone }}> est.</span></p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: c.stone }}>
+                  30d: ₹{overview.cost.month.totalInr} (LLM ₹{overview.cost.month.llmInr} · TTS ₹{overview.cost.month.ttsInr} · STT ₹{overview.cost.month.sttInr})
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Tier Breakdown */}
@@ -1908,6 +1929,11 @@ export default function AdminDashboard() {
           <div style={statCard}><p style={labelStyle}>Last 30 days</p><p style={bigNum}>{referrals.last30d}</p></div>
           <div style={statCard}><p style={labelStyle}>Converted</p><p style={{ ...bigNum, color: c.sage }}>{referrals.converted}</p></div>
           <div style={statCard}><p style={labelStyle}>Conversion Rate</p><p style={bigNum}>{referrals.conversionRate}%</p></div>
+          <div style={statCard}>
+            <p style={labelStyle}>K-factor (30d)</p>
+            <p style={{ ...bigNum, color: (referrals.kFactor ?? 0) >= 0.3 ? c.sage : c.ivory }}>{referrals.kFactor ?? 0}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: c.stone }}>signups / {referrals.activeLast30d ?? 0} active · target &gt; 0.3</p>
+          </div>
         </div>
 
         {referrals.topReferrers.length > 0 && (
