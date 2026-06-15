@@ -307,7 +307,7 @@ function InterviewInner() {
   return (
     <InterviewProvider value={engine}>
     <div style={{
-      width: "100vw", height: "100vh", background: e.cream,
+      width: "100vw", height: "100dvh", minHeight: "100vh", background: e.cream,
       display: "flex", flexDirection: "column", overflow: "hidden",
       fontFamily: ef.sans, color: e.coal,
     }}>
@@ -364,7 +364,7 @@ function InterviewInner() {
           .iv-controls { padding: 8px 12px !important; gap: 6px !important; }
           .iv-controls button { min-width: 48px !important; min-height: 48px !important; }
           .iv-controls .iv-hide-mobile { display: none !important; }
-          .iv-transcript-panel { width: 100% !important; max-width: none !important; position: fixed !important; bottom: 0 !important; top: auto !important; right: 0 !important; left: 0 !important; height: min(60vh, calc(100vh - 96px)) !important; max-height: calc(100vh - 96px) !important; border-radius: 20px 20px 0 0 !important; animation: slideUpSheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important; }
+          .iv-transcript-panel { width: 100% !important; max-width: none !important; position: fixed !important; bottom: 0 !important; top: auto !important; right: 0 !important; left: 0 !important; height: min(60vh, calc(100dvh - 96px)) !important; max-height: calc(100dvh - 96px) !important; border-radius: 20px 20px 0 0 !important; animation: slideUpSheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important; }
           /* Video preview default is 160×120 — 43% of a 375px viewport.
              Shrinks to ~90px to stay out of the way of the main stage.
              top respects notch/safe-area-inset on iOS. */
