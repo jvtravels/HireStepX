@@ -188,7 +188,7 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
     const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
     // Get user's subscription tier and expiry
     const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end,sessions_started_lifetime`,
       { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` }, signal: ac.signal },
     );
     if (!profileRes.ok) {
@@ -273,7 +273,16 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
       const range = sessionsRes.headers.get("content-range");
       const totalCount = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
 
-      if (totalCount >= FREE_SESSION_LIMIT) {
+      // Monotonic lifetime counter (audit P0-2): deleting sessions reduces the
+      // live row count but not this column, so a free user can't reset their
+      // allotment by deleting history. Gate on the high-water mark. Falls back
+      // to the row count when the column is absent (pre-migration deploys).
+      const lifetimeStarted = typeof profiles[0].sessions_started_lifetime === "number"
+        ? profiles[0].sessions_started_lifetime
+        : null;
+      const effectiveCount = lifetimeStarted !== null ? Math.max(lifetimeStarted, totalCount) : totalCount;
+
+      if (effectiveCount >= FREE_SESSION_LIMIT) {
         // Past the free allotment — allow only if the user holds a purchased
         // session credit, and spend it now (one credit = one session start).
         // Credits live in the service-role-only session_credits ledger.
@@ -283,10 +292,10 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
         }
         return { allowed: true };
       }
-      if (totalCount < FREE_SESSION_LIMIT) {
+      if (effectiveCount < FREE_SESSION_LIMIT) {
         // Atomic in-flight check: prevent race condition with concurrent sessions
         const inFlight = await incrementInFlightCounter(userId, "free", INFLIGHT_TTL_SEC);
-        if (inFlight !== null && totalCount + inFlight > FREE_SESSION_LIMIT) {
+        if (inFlight !== null && effectiveCount + inFlight > FREE_SESSION_LIMIT) {
           return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Upgrade to continue.` };
         }
       }

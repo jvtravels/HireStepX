@@ -647,6 +647,45 @@ create index if not exists profiles_deleted_at_idx on profiles (deleted_at) wher
 -- false on add, matching the private-by-default contract.
 alter table profiles add column if not exists is_profile_public boolean not null default false;
 
+-- Monotonic lifetime session-start counter (audit P0-2). The free-tier limit
+-- was derived by counting rows in `sessions`, but users may delete their own
+-- sessions (RLS allows it), so deleting rows reset the free allotment back to
+-- zero — effectively unlimited free sessions. This column is a high-water mark
+-- that only ever increments (via the trigger below); deletes never touch it,
+-- so checkSessionLimit can gate the free cap on it instead of the live count.
+alter table profiles add column if not exists sessions_started_lifetime integer not null default 0;
+
+-- Backfill existing users to their current session-row count so the high-water
+-- mark starts at the right place (greatest() keeps it monotonic if re-run).
+update profiles p set sessions_started_lifetime = greatest(
+  coalesce(p.sessions_started_lifetime, 0),
+  (select count(*) from sessions s where s.user_id = p.id)
+);
+
+-- Increment the counter on every session insert. SECURITY DEFINER so it can
+-- write profiles regardless of the caller's RLS context; the billing guard
+-- trigger above does not touch this column, so the increment survives. Deletes
+-- have no corresponding trigger, which is the whole point — the count is
+-- delete-proof. Idempotent: drops and recreates cleanly on re-run.
+create or replace function bump_sessions_started_lifetime()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update profiles
+    set sessions_started_lifetime = sessions_started_lifetime + 1
+    where id = new.user_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_bump_sessions_lifetime on sessions;
+create trigger trg_bump_sessions_lifetime
+  after insert on sessions
+  for each row execute function bump_sessions_started_lifetime();
+
 -- ═══════════════════════════════════════════════════════
 -- Support messages (Help & Support widget "Send Feedback")
 -- ═══════════════════════════════════════════════════════
