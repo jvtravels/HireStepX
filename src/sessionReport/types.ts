@@ -171,6 +171,19 @@ export interface FocusBannerData {
   accentSoft: string;
 }
 
+/** HR-round structured extraction passed through from the evaluator.
+ *  Drives the dedicated HrFullReport panels (motivation rewrite, notice
+ *  logistics, comp expectation, counter-offer risk, BGV gaps). */
+export interface HrReportData {
+  motivationBefore: string;
+  motivationAfter: string;
+  noticeDays: number | null;
+  noticeFlexibility: "buyout-possible" | "strict" | "not-stated";
+  compExpected: string | null;
+  counterOfferRisk: "low" | "med" | "high";
+  bgvGaps: string[];
+}
+
 export interface InterviewResultData {
   overallScore: number;
   verdict: Verdict;
@@ -220,6 +233,9 @@ export interface InterviewResultData {
    *  Undefined for behavioral sessions (BehavioralFullReport has its own
    *  hero) or when focus type isn't recognized. */
   focusBanner?: FocusBannerData;
+  /** HR-round-specific extraction — present only for hr-round sessions.
+   *  When set, HrFullReport renders and the generic panel stack is replaced. */
+  hrReport?: HrReportData;
   /** Set only for salary-negotiation sessions. Contains the offer
    *  trajectory across turns + the deal outcome. Drives the
    *  NegotiationOutcomeSection in the report (offer-progression

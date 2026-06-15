@@ -28,6 +28,7 @@ import type {
   CrossSessionInsight,
   DeliveryMetric,
   FocusBannerData,
+  HrReportData,
   InterviewResultData,
   LengthVerdict,
   Question,
@@ -267,6 +268,28 @@ function buildFocusBanner(
   };
 }
 
+/* ─── HR-round report builder ───────────────────────────────────────── */
+
+/** Maps the `report.hrReport` field (from evaluate-session) to the
+ *  view-model's `HrReportData`. Returns undefined when the field is
+ *  absent (non-HR sessions) or the evaluator couldn't extract the data
+ *  (short sessions, BGV not discussed, etc.). */
+function buildHrReport(report: SessionReport): HrReportData | undefined {
+  const raw = report.hrReport;
+  if (!raw) return undefined;
+  // Validate the minimum required pair before passing through.
+  if (!raw.motivationBefore && !raw.motivationAfter) return undefined;
+  return {
+    motivationBefore: raw.motivationBefore ?? "",
+    motivationAfter: raw.motivationAfter ?? "",
+    noticeDays: typeof raw.noticeDays === "number" ? raw.noticeDays : null,
+    noticeFlexibility: raw.noticeFlexibility ?? "not-stated",
+    compExpected: raw.compExpected ?? null,
+    counterOfferRisk: raw.counterOfferRisk ?? "med",
+    bgvGaps: Array.isArray(raw.bgvGaps) ? raw.bgvGaps : [],
+  };
+}
+
 /* ─── Top-level adapter ─────────────────────────────────────────────── */
 
 export interface AdapterContext {
@@ -305,6 +328,9 @@ export function sessionReportToInterviewResult(
   const isNegotiation =
     /negotiat|salary/i.test(session.type || "") ||
     /negotiat|salary/i.test(session.focus || "");
+  const isHrRound =
+    /hr.?round|\bhr\b/i.test(session.type || "") ||
+    /hr.?round|\bhr\b/i.test(session.focus || "");
 
   const scoreDelta = computeScoreDelta(ctx.recentScores);
   const weakestSkill = pickWeakestSkill(report.skills);
@@ -389,6 +415,7 @@ export function sessionReportToInterviewResult(
       : undefined,
     kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
     focusBanner: buildFocusBanner(session, report),
+    hrReport: isHrRound ? buildHrReport(report) : undefined,
   };
 }
 

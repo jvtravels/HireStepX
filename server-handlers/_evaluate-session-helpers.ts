@@ -636,3 +636,70 @@ export function normalizeCrossSessionInsights(
     }))
     .slice(0, 4);
 }
+
+/* ─── HR-round structured extraction ────────────────────────────────────
+   Populated only when the session focus is hr-round. Contains the
+   motivation rewrite + logistics facts the evaluator extracted from the
+   transcript so the HrFullReport component can render actionable panels
+   without fabricating data that wasn't in the conversation. */
+
+export interface HrReportData {
+  /** What the candidate actually said for "why this company" — verbatim excerpt
+   *  or close paraphrase from the transcript. */
+  motivationBefore: string;
+  /** Stronger rewrite that sounds like a real candidate (not an LLM press release).
+   *  Grounded in any specific product/leader/domain signals from the transcript. */
+  motivationAfter: string;
+  /** Notice period the candidate stated in days (e.g. 60), or null if not discussed. */
+  noticeDays: number | null;
+  /** How flexible the candidate was about serving the full notice period. */
+  noticeFlexibility: "buyout-possible" | "strict" | "not-stated";
+  /** CTC expectation the candidate stated, e.g. "35–40L" or "10% hike", or null. */
+  compExpected: string | null;
+  /** How likely the candidate is to take a counter-offer from their current employer. */
+  counterOfferRisk: "low" | "med" | "high";
+  /** Document gaps the candidate explicitly admitted in the BGV discussion. */
+  bgvGaps: string[];
+}
+
+export function normalizeHrReport(raw: unknown): HrReportData | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const motivationBefore =
+    typeof r.motivationBefore === "string" ? r.motivationBefore.trim().slice(0, 300) : "";
+  const motivationAfter =
+    typeof r.motivationAfter === "string" ? r.motivationAfter.trim().slice(0, 300) : "";
+  if (!motivationBefore && !motivationAfter) return null;
+  const noticeDays =
+    typeof r.noticeDays === "number" &&
+    isFinite(r.noticeDays) &&
+    r.noticeDays > 0 &&
+    r.noticeDays <= 365
+      ? Math.round(r.noticeDays)
+      : null;
+  const validFlex = ["buyout-possible", "strict", "not-stated"] as const;
+  const noticeFlexibility = validFlex.includes(r.noticeFlexibility as typeof validFlex[number])
+    ? (r.noticeFlexibility as typeof validFlex[number])
+    : "not-stated";
+  const compExpected =
+    typeof r.compExpected === "string" ? r.compExpected.trim().slice(0, 40) || null : null;
+  const validRisk = ["low", "med", "high"] as const;
+  const counterOfferRisk = validRisk.includes(r.counterOfferRisk as typeof validRisk[number])
+    ? (r.counterOfferRisk as typeof validRisk[number])
+    : "med";
+  const bgvGaps = Array.isArray(r.bgvGaps)
+    ? (r.bgvGaps as unknown[])
+        .filter((g): g is string => typeof g === "string" && g.trim().length > 0)
+        .map((g) => g.trim().slice(0, 80))
+        .slice(0, 6)
+    : [];
+  return {
+    motivationBefore,
+    motivationAfter,
+    noticeDays,
+    noticeFlexibility,
+    compExpected,
+    counterOfferRisk,
+    bgvGaps,
+  };
+}

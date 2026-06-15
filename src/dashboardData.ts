@@ -1145,6 +1145,21 @@ export interface SessionReport {
    *  Empty array for focuses without a spec or when the model omitted them.
    *  The adapter reads this to populate the FocusBanner headline metric. */
   focusMetrics?: Array<{ label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" }>;
+  /**
+   * HR-round-specific extraction — populated only for hr-round sessions by
+   * evaluate-session. Contains the motivation rewrite + logistics facts
+   * extracted from the transcript for the HrFullReport component.
+   * Undefined for all other interview focuses.
+   */
+  hrReport?: {
+    motivationBefore: string;
+    motivationAfter: string;
+    noticeDays: number | null;
+    noticeFlexibility: "buyout-possible" | "strict" | "not-stated";
+    compExpected: string | null;
+    counterOfferRisk: "low" | "med" | "high";
+    bgvGaps: string[];
+  };
   model: string;
 }
 

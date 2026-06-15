@@ -44,6 +44,7 @@ import {
   normalizeCrossSessionInsights,
   normalizeCoaching,
   normalizeFocusMetrics,
+  normalizeHrReport,
   type Coaching,
   type FocusMetric,
   type ResumeGroundingScore,
@@ -404,6 +405,16 @@ interface SessionReport {
    * shows no instrument strip and falls back to the coaching pair.
    */
   focusMetrics: FocusMetric[];
+  /** HR-round logistics & motivation block — only present when meta.type === "hr-round". */
+  hrReport?: {
+    motivationBefore: string;
+    motivationAfter: string;
+    noticeDays: number | null;
+    noticeFlexibility: "buyout-possible" | "strict" | "not-stated";
+    compExpected: string | null;
+    counterOfferRisk: "low" | "med" | "high";
+    bgvGaps: string[];
+  };
   model: string;
 }
 
@@ -460,7 +471,23 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const roleFamily = (meta?.roleFamily as keyof typeof ROLE_SKILLS) || "behavioral";
-    const skillAxes = ROLE_SKILLS[roleFamily] || ROLE_SKILLS.behavioral;
+    /* For HR-round sessions the generic role-family skills (PM/SWE etc.) are
+       replaced by the 8 dimensions the HR rubric actually grades on. This gives
+       the DimensionGate in HrFullReport real per-axis scores instead of
+       role-family proxies that don't map to what the interviewer evaluated. */
+    const HR_ROUND_SKILL_AXES = [
+      "Logistics clarity",
+      "Comp transparency",
+      "Switch-rationale honesty",
+      "Compliance readiness",
+      "Commitment signal",
+      "Benefits/policy literacy",
+      "Self-awareness",
+      "Motivation specificity",
+    ];
+    const skillAxes = meta?.type === "hr-round"
+      ? HR_ROUND_SKILL_AXES
+      : (ROLE_SKILLS[roleFamily] || ROLE_SKILLS.behavioral);
     const durationSec = meta?.duration || 600;
     const coreMetrics = computeCoreMetrics(transcript, durationSec);
     const advancedDelivery = computeAdvancedDelivery(transcript, durationSec);
@@ -832,7 +859,24 @@ Return a JSON object with EXACTLY this shape:
     // "Not stated"); "tone" is one of good|watch|miss|neutral. Omit a metric
     // only if the round genuinely produced no signal for it.
     { "label": "<pinned label>", "value": "<short string>", "tone": "<good|watch|miss|neutral>" }
-  ]` : ""}
+  ]` : ""}${meta?.type === "hr-round" ? `,
+  "hrReport": {
+    // HR-round-specific extraction — add ONLY for hr-round sessions.
+    // motivationBefore: verbatim excerpt (≤120 chars) of what the candidate said for "why this company / why this role". Keep it raw — quote their actual words.
+    // motivationAfter: a 1-2 sentence rewrite that would land better. Sound like a real candidate, NOT an LLM. No banned vocab (leverage / utilize / ensure / demonstrate). Ground it in any specific product, leader, or domain the candidate OR the transcript mentioned about the target company.
+    // noticeDays: integer days the candidate stated as their notice period (e.g. 60, 90), or null if not stated.
+    // noticeFlexibility: "buyout-possible" if they said they could buy out / discussed a signing bonus offset; "strict" if they said they must serve the full period; "not-stated" if the topic came up but they didn't clarify.
+    // compExpected: what they said as their target CTC or hike — short string like "35–42L" or "20% hike" or null if not stated.
+    // counterOfferRisk: "low" if they were clear and definitive they won't take a counter-offer; "high" if they were vague, non-committal, or implied they might entertain one; "med" otherwise.
+    // bgvGaps: an array of doc gaps the candidate explicitly admitted during the BGV discussion (e.g. ["Missing relieving letter from prior employer", "Form-16 FY24 not yet downloaded"]). Empty array [] if no gaps were mentioned or BGV wasn't covered.
+    "motivationBefore": "<their actual words, ≤120 chars>",
+    "motivationAfter": "<stronger rewrite, sounds like a candidate, ≤150 chars>",
+    "noticeDays": <integer or null>,
+    "noticeFlexibility": "<buyout-possible|strict|not-stated>",
+    "compExpected": "<string like '35-42L' or null>",
+    "counterOfferRisk": "<low|med|high>",
+    "bgvGaps": ["<gap 1>", "<gap 2>"]
+  }` : ""}
 }
 
 Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no markdown wrapping, no prose.`;
@@ -1035,6 +1079,13 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
          Empty array for focuses without a spec or when the model omitted
          them; the card degrades to the coaching pair. */
       focusMetrics: normalizeFocusMetrics((parsed as Record<string, unknown>).focusMetrics, meta?.type),
+      /* HR-round enrichment — only populated when meta.type === "hr-round"
+         and the LLM returned the hrReport block. normalizeHrReport returns
+         null when either the LLM omitted the block or both motivation fields
+         are empty (i.e. nothing useful to show). Non-HR sessions get undefined. */
+      hrReport: meta?.type === "hr-round"
+        ? normalizeHrReport((parsed as Record<string, unknown>).hrReport) ?? undefined
+        : undefined,
       model: result.model,
     };
 

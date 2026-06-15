@@ -843,6 +843,7 @@ export const SessionReport = memo(function SessionReport({
       campusPlacementMeta={campusPlacementMeta}
       salaryNegotiationMeta={salaryNegotiationMeta}
       behavioralFullReportData={behavioralFullReportData}
+      hrReportData={viewData?.hrReport}
     />
   );
 });

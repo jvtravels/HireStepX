@@ -19,6 +19,7 @@ import { t, f } from "./tokens";
 import { SESSION_REPORT_STYLES } from "./styles";
 import { NegotiationFullReport } from "./NegotiationFullReport";
 import BehavioralFullReport from "./BehavioralFullReport";
+import HrFullReport from "./HrFullReport";
 import type { BehavioralFullReportData } from "./types";
 import type { CredibilitySummary } from "../_credibilityCallout";
 import type {
@@ -30,6 +31,7 @@ import type {
   DeliveryMetric,
   FocusBannerData,
   HighlightKind,
+  HrReportData,
   InterviewResultData,
   Question,
   Skill,
@@ -70,6 +72,7 @@ export type {
   DeliveryMetric,
   FocusBannerData,
   HighlightKind,
+  HrReportData,
   InterviewResultData,
   Question,
   Skill,
@@ -342,6 +345,11 @@ export interface SessionReportViewProps {
    *  falls through to the existing behavior — safe rollback = unset
    *  the env var. */
   behavioralFullReportData?: BehavioralFullReportData;
+  /** HR-round structured extraction — when present, the view renders the
+   *  dedicated HrFullReport (dimension gate + motivation rewrite + logistics
+   *  + drill CTA) instead of the generic panel stack. Populated by the
+   *  adapter for sessions where focus is "hr-round". */
+  hrReportData?: HrReportData;
 }
 
 export default function SessionReportView({
@@ -361,6 +369,7 @@ export default function SessionReportView({
   offerNetValue,
   progressTrends,
   behavioralFullReportData,
+  hrReportData,
 }: SessionReportViewProps) {
   // Behavioral v2 dispatch — env-gated, opt-in. Renders the new
   // diagnostic-first report and skips the existing panel stack.
@@ -370,6 +379,40 @@ export default function SessionReportView({
     process.env.NEXT_PUBLIC_BEHAVIORAL_REPORT_V2 === "true";
   if (behavioralV2Enabled && behavioralFullReportData) {
     return <BehavioralFullReport data={behavioralFullReportData} />;
+  }
+  // HR-round dispatch — when `hrReportData` is present (adapter detected
+  // hr-round focus), render the dedicated HrFullReport and skip the
+  // generic panel stack. The FocusBannerStrip is embedded inside
+  // HrFullReport's ReconcileStrip so we don't render it twice.
+  if (hrReportData || data.hrReport) {
+    const hr = hrReportData ?? data.hrReport;
+    return (
+      <>
+        <style>{SESSION_REPORT_STYLES}</style>
+        <div style={{ background: t.cream, minHeight: "100vh", fontFamily: f.sans, color: t.coal, paddingBottom: 48 }}>
+          <Header onBack={onBack} backLabel={backLabel} onDownloadPdf={onDownloadPdf} onShare={onShare} />
+          <main
+            id="ir-main"
+            aria-label="HR Round report"
+            className="ir-main-container"
+            style={{ maxWidth: 1240, margin: "0 auto", padding: "0 clamp(14px, 4vw, 32px)", display: "flex", flexDirection: "column", gap: 16 }}
+          >
+            <HrFullReport
+              overallScore={data.overallScore}
+              skills={data.skills}
+              wins={data.strengths}
+              questions={data.questions}
+              hrReport={hr}
+              daysUntilInterview={data.daysUntilInterview}
+              role={data.role}
+              company={data.company}
+              onDrillSkill={onDrillSkill}
+            />
+            <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
+          </main>
+        </div>
+      </>
+    );
   }
   return (
     <>
