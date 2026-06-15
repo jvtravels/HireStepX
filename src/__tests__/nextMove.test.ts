@@ -52,9 +52,30 @@ describe("pickNextMove", () => {
       expect(out.weakestSkillName).toBe("Edge");
     });
 
+    it("humanizes a raw camelCase competency key for all user-facing copy, but keeps the raw key for the focus deep-link", () => {
+      // Regression: the salary-negotiation rubric scores arrive as raw
+      // camelCase keys (`leverageUse`). They used to leak verbatim into the
+      // headline/CTA ("Practice leverageUse"), which reads as broken UI.
+      const out = pickNextMove({
+        skills: [{ name: "leverageUse", score: 40 }],
+        currentStreak: 0,
+      });
+      // raw key preserved for the deep link + analytics
+      expect(out.weakestSkillName).toBe("leverageUse");
+      expect(out.ctaHref).toBe("/session/new?focus=leverageUse");
+      // humanized everywhere a human reads it
+      expect(out.weakestSkillLabel).toBe("Leverage use");
+      expect(out.ctaLabel).toBe("Practice Leverage use");
+      expect(out.headline).toContain("Leverage use");
+      // and the raw token must NOT appear in any user-facing string
+      expect(out.ctaLabel).not.toContain("leverageUse");
+      expect(out.headline).not.toContain("leverageUse");
+    });
+
     it("empty skills list → no weakness", () => {
       const out = pickNextMove({ skills: [], currentStreak: 0 });
       expect(out.weakestSkillName).toBe(null);
+      expect(out.weakestSkillLabel).toBe(null);
     });
 
     it("URL-encodes skill names with spaces or special chars", () => {

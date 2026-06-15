@@ -290,7 +290,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         const mapped = sessions.map(s => ({
           id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
-          focus: s.focus, duration: s.duration, score: s.score, questions: s.questions,
+          focus: s.focus, duration: s.duration,
+          /* Canonical score = the report's blended-and-anchored overall when a
+             report has been generated (report_json.overallScore), else the
+             quick eval persisted at save time (sessions.score). The report
+             page shows the blended number; without this the list/dashboard
+             showed the quick number for the same session (e.g. 64 vs 51).
+             New reports also write the blended value back into sessions.score
+             (evaluate-session saveCachedReport) — this client-side preference
+             additionally reconciles sessions whose reports were cached before
+             that writeback shipped, without forcing a re-evaluation. */
+          score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score,
+          questions: s.questions,
           ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
           /* Plain-language coaching pair, persisted inside report_json by
              evaluate-session. Undefined for pre-mvp-8 rows → the card

@@ -88,3 +88,16 @@ export function gapCopy(value: string | null | undefined): string {
   const phrase = SKILL_VOCAB[value]?.gap;
   return phrase || titleCaseFromKey(value);
 }
+
+/* Short, sentence-embeddable noun label for a skill key — for inline use
+ * like "Your Leverage use is the highest-leverage thing to practice".
+ * Unlike strengthCopy/gapCopy (which return full coaching phrases), this
+ * returns the humanized key itself: `leverageUse` → "Leverage use".
+ * Already-humanized phrases (anything with whitespace) pass through
+ * unchanged so LLM-authored labels aren't mangled. Never throws, never
+ * returns the raw camelCase token. */
+export function skillLabel(value: string | null | undefined): string {
+  if (!value) return "";
+  if (!isRawKey(value)) return value;
+  return titleCaseFromKey(value);
+}

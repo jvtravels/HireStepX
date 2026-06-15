@@ -277,8 +277,8 @@ export default function DashboardHome() {
   /* Supporting line under the hero headline, derived from what drove the CTA. */
   const nextMoveSubtitle = nextMove.coachingFocus
     ? `From your last HR round we flagged: ${nextMove.coachingFocus.label}.`
-    : nextMove.weakestSkillName
-      ? `A focused 25-minute drill on ${nextMove.weakestSkillName} moves your readiness fastest.`
+    : nextMove.weakestSkillLabel
+      ? `A focused 25-minute drill on ${nextMove.weakestSkillLabel} moves your readiness fastest.`
       : "Pick a role and start. After four sessions, your coach surfaces the specific patterns it's seeing across your STAR breakdowns.";
 
   /* Locale-formatted date is rendered client-only to avoid SSR/CSR
@@ -478,7 +478,15 @@ export default function DashboardHome() {
                 display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, margin: 0,
                 borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`,
               }}>
-                <StatCell label="Total sessions"  value={String(user?.practiceTimestamps?.length ?? core.recentSessions.length ?? 0)} unit="" />
+                {/* "Total sessions" = completed, saved sessions the user can
+                    open in their Sessions list. Must match that list's count.
+                    Earlier this read practice_timestamps.length — but those
+                    count session STARTS (incl. abandoned ones), the quota
+                    signal — which inflated the stat far above the real number
+                    of finished sessions (e.g. 202 vs 9). Quota math still uses
+                    practice_timestamps in DashboardContext; only this display
+                    stat changed. */}
+                <StatCell label="Total sessions"  value={String(core.recentSessions.length)} unit="" />
                 <StatCell label="Last score"      value={core.recentSessions[0]?.score != null ? String(core.recentSessions[0].score) : "—"} unit={core.recentSessions[0]?.score != null ? "/100" : ""} />
                 <StatCell label="Day streak"      value={String(core.currentStreak ?? 0)} unit="🔥" />
               </dl>

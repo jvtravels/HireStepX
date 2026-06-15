@@ -184,7 +184,11 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
                 <CalibrationBanner calibration={data.calibration} />
                 {data.calibration.note && (
                   <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "6px 0 0" }}>
-                    {data.calibration.note}.
+                    {/* Notes may or may not already end in a period (the
+                        "Generic calibration … scoring." default does). Collapse
+                        any trailing period/space to exactly one so we never
+                        render "scoring..". */}
+                    {data.calibration.note.replace(/[.\s]+$/, "")}.
                   </p>
                 )}
               </div>

@@ -115,6 +115,15 @@ async function saveCachedReport(sessionId: string, userId: string, report: Sessi
         report_json: report,
         report_version: REPORT_VERSION,
         report_generated_at: new Date().toISOString(),
+        // Reconcile the canonical sessions.score column with the report's
+        // blended overall. save-session.ts first writes the QUICK eval
+        // (/api/evaluate — raw LLM score) here; the report shows the richer
+        // blended-and-anchored score (computeBlendedOverall). Without this
+        // line the Sessions list / dashboard kept showing the quick number
+        // while the report showed the blended one (e.g. 64 vs 51) for the
+        // same session. Writing both in ONE atomic PATCH guarantees
+        // report_json.overallScore and sessions.score can never diverge.
+        score: report.overallScore,
       }),
     });
     if (!res.ok) {

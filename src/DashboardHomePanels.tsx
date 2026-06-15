@@ -3,6 +3,7 @@ import { c, font, sp, radius, shadow } from "./tokens";
 import { daysUntilEvent, formatEventDate, formatEventTime } from "./dashboardHelpers";
 import { SectionErrorBoundary } from "./ErrorBoundary";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
+import { skillLabel } from "./skillCopy";
 
 /* ═══════════════════════════════════════════════
    Extracted presentational components from DashboardHome.tsx
@@ -374,13 +375,13 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
               <SkillRadar skills={skills} />
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
                 {skills.map((sk) => (
-                  <div key={sk.name} role="button" tabIndex={0} aria-label={`Practice ${sk.name} — score ${sk.score}`}
+                  <div key={sk.name} role="button" tabIndex={0} aria-label={`Practice ${skillLabel(sk.name)} — score ${sk.score}`}
                     onClick={() => onNavigate(`/session/new?type=behavioral&focus=${sk.name.toLowerCase().replace(/\s+/g, "-")}`)}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNavigate(`/session/new?type=behavioral&focus=${sk.name.toLowerCase().replace(/\s+/g, "-")}`); } }}
                     style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "6px 8px", margin: "-6px -8px", borderRadius: radius.sm, transition: "background 0.15s ease" }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(14,12,8,0.03)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, flex: 1 }}>{sk.name}</span>
+                    <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, flex: 1 }}>{skillLabel(sk.name)}</span>
                     <div style={{ width: 60, height: 3, background: "rgba(14,12,8,0.06)", borderRadius: 2, overflow: "hidden" }}><div style={{ height: "100%", width: `${sk.score}%`, background: sk.color, borderRadius: 2, transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)" }} /></div>
                     <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: c.ivory, width: 24, textAlign: "right" }}>{sk.score}</span>
                     <span style={{ fontFamily: font.mono, fontSize: 11, color: c.sage, width: 30, textAlign: "right" }}>+{sk.score - sk.prev}</span>

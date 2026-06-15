@@ -12,6 +12,8 @@
  * users with exactly-70 skills would get no weakness-specific nudge.
  */
 
+import { skillLabel } from "./skillCopy";
+
 export interface SkillLike {
   name: string;
   score: number;
@@ -47,8 +49,19 @@ export interface CoachingFocus {
 }
 
 export interface NextMove {
-  /** Weakest skill name — null when no skill is below the practice threshold */
+  /**
+   * Weakest skill key — null when no skill is below the practice threshold.
+   * This is the RAW competency key (e.g. `leverageUse`) preserved for
+   * deep-link `?focus=` params and analytics. For anything user-facing,
+   * use `weakestSkillLabel` instead — the raw key reads as broken UI.
+   */
   weakestSkillName: string | null;
+  /**
+   * Humanized, sentence-embeddable label for the weakest skill
+   * (`leverageUse` → "Leverage use"). null when no weakness fired.
+   * Use this in all copy; never render `weakestSkillName` directly.
+   */
+  weakestSkillLabel: string | null;
   /** Hero copy for the card */
   headline: string;
   /** CTA button text */
@@ -141,6 +154,10 @@ export function pickNextMove(input: NextMoveInput): NextMove {
     return low && low.score < PRACTICE_THRESHOLD ? low.name : null;
   })();
 
+  // Humanized label for all user-facing copy. The raw key stays in
+  // `weakestSkillName` for the `?focus=` deep link + analytics.
+  const weakestSkillLabel = weakestSkillName ? skillLabel(weakestSkillName) : null;
+
   // Highest unmet milestone among 7/14/30. null once past 30.
   const nextStreakMilestone =
     currentStreak < 7 ? 7 :
@@ -153,8 +170,8 @@ export function pickNextMove(input: NextMoveInput): NextMove {
   // generic "practice X" nudges.
   const ctaLabel = matchedGap
     ? matchedGap.cta.label
-    : weakestSkillName
-      ? `Practice ${weakestSkillName}`
+    : weakestSkillLabel
+      ? `Practice ${weakestSkillLabel}`
       : currentStreak > 0
         ? "Keep the streak going"
         : "Start a session";
@@ -166,8 +183,8 @@ export function pickNextMove(input: NextMoveInput): NextMove {
 
   const headline = matchedGap
     ? matchedGap.cta.headline
-    : weakestSkillName
-      ? `Your ${weakestSkillName} is the highest-leverage thing to practice today.`
+    : weakestSkillLabel
+      ? `Your ${weakestSkillLabel} is the highest-leverage thing to practice today.`
       : currentStreak >= 3
         ? `You're on a ${currentStreak}-day streak — don't break it.`
         : "Pick up where you left off.";
@@ -190,6 +207,7 @@ export function pickNextMove(input: NextMoveInput): NextMove {
 
   return {
     weakestSkillName,
+    weakestSkillLabel,
     headline,
     ctaLabel,
     ctaHref,
