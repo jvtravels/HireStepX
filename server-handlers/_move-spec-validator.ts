@@ -54,16 +54,22 @@ function extractNumbers(s: string): string[] {
 /* Build the whitelist of numeric tokens the restyle may contain. The
  * source of truth is the CANONICAL string — it was rendered from the
  * spec, so any number in canonical is one the kernel computed and
- * authorized. We tolerate the int-vs-decimal restyle ("20" vs "20.0")
- * by adding both forms. */
+ * authorized. We tolerate ONLY the int-vs-decimal restyle of an
+ * INTEGER-valued figure ("20" ↔ "20.0").
+ *
+ * Decimal-collision fix (2026-06-15, unbiased review HIGH): a fractional
+ * figure must NOT be rounded into the whitelist — doing so authorized
+ * "20" for a canonical "20.4", silently shipping a ₹20.4L→₹20L rounding
+ * on exactly the fractional-lakh figures this market uses. Fractional
+ * values are whitelisted in their exact form only. */
 function authorizedFromCanonical(canonical: string): Set<string> {
   const out = new Set<string>();
   for (const n of extractNumbers(canonical)) {
     out.add(n);
     const parsed = Number(n);
-    if (Number.isFinite(parsed)) {
-      if (Number.isInteger(parsed)) out.add(`${parsed}.0`);
-      else out.add(String(Math.round(parsed)));
+    if (Number.isFinite(parsed) && Number.isInteger(parsed)) {
+      out.add(String(parsed)); // "20.0" also authorizes "20"
+      out.add(`${parsed}.0`); //  "20"   also authorizes "20.0"
     }
   }
   return out;
@@ -103,13 +109,16 @@ export function validateMoveSpecRestyle(
   }
 
   /* Check 2 — every number the canonical shipped must survive. The
-   * decimal/int tolerance: a canonical "20" survives as "20" or "20.0";
-   * "20.0" survives as "20.0" or "20". */
+   * decimal/int tolerance applies ONLY to integer-valued figures: a
+   * canonical "20" survives as "20" or "20.0", and "20.0" as "20.0" or
+   * "20". A FRACTIONAL figure ("20.4") must survive exactly — truncating
+   * it to "20" would treat a rounded restyle as faithful (the 2026-06-15
+   * decimal-collision class). */
   for (const n of canonicalNumbers) {
     if (foundSet.has(n)) continue;
     const parsed = Number(n);
-    if (Number.isFinite(parsed)) {
-      const intForm = String(Math.trunc(parsed));
+    if (Number.isFinite(parsed) && Number.isInteger(parsed)) {
+      const intForm = String(parsed);
       const dotZeroForm = `${intForm}.0`;
       if (foundSet.has(intForm) || foundSet.has(dotZeroForm)) continue;
     }

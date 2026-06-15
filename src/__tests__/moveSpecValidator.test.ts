@@ -188,3 +188,45 @@ describe("validateMoveSpecRestyle — counter-offer numeric discipline", () => {
     expect(result.detail).toContain("37");
   });
 });
+
+describe("validateMoveSpecRestyle — decimal-collision discipline (2026-06-15 HIGH)", () => {
+  /* The int/decimal tolerance must NOT round a fractional figure. Indian
+   * salaries are quoted in fractional lakhs (₹20.4L), and a restyle that
+   * rounds "20.4" → "20" is a real number change the candidate would
+   * notice — it must be caught, not waved through as "close enough". The
+   * spec arg is unused by the two numeric checks, so an empty object is
+   * sufficient to exercise them. */
+  const spec = {} as unknown as Parameters<typeof validateMoveSpecRestyle>[0];
+
+  it("REJECTS a fractional figure rounded down (20.4 → 20)", () => {
+    const canonical = "I can move to ₹20.4L total, with ₹3.6L variable.";
+    const rounded = "I can move to ₹20L total, with ₹3.6L variable.";
+    const result = validateMoveSpecRestyle(spec, canonical, rounded);
+    expect(result.valid).toBe(false);
+    /* "20" is not authorized for a canonical "20.4", so the new-number
+     * check fires first; either way the rounding is rejected. */
+    expect(result.reason).toBe("unauthorized-number");
+  });
+
+  it("REJECTS dropping a fractional figure entirely (no truncation alias)", () => {
+    const canonical = "Base ₹20.4L, variable ₹3.6L.";
+    const dropped = "Base is set, variable ₹3.6L.";
+    const result = validateMoveSpecRestyle(spec, canonical, dropped);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toBe("dropped-number");
+    expect(result.detail).toContain("20.4");
+  });
+
+  it("STILL tolerates the genuine int↔.0 restyle (20 ↔ 20.0)", () => {
+    const canonical = "We're at ₹20L total.";
+    expect(validateMoveSpecRestyle(spec, canonical, "We're at ₹20.0L total.").valid).toBe(true);
+    const canonicalDot = "We're at ₹20.0L total.";
+    expect(validateMoveSpecRestyle(spec, canonicalDot, "We're at ₹20L total.").valid).toBe(true);
+  });
+
+  it("accepts an exact fractional match (20.4 survives as 20.4)", () => {
+    const canonical = "Base ₹20.4L, variable ₹3.6L.";
+    const faithful = "₹20.4L base and ₹3.6L variable.";
+    expect(validateMoveSpecRestyle(spec, canonical, faithful).valid).toBe(true);
+  });
+});

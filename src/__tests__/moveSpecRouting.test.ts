@@ -171,20 +171,93 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
     expect(result.text).not.toContain("the agreed amount");
   });
 
-  it("flag ON — a faithful restyle is never slot-rejected (no silent downgrade)", async () => {
+  it("flag ON — the slot gate BODY fires: legacy passes, one dropped number trips slot:dropped-number", async () => {
+    process.env.NEGOTIATION_MOVE_SPEC_ENABLED = "1";
+    /* ARCH-C3b coverage (the MED gap the unbiased Class-C review flagged):
+     * the promoted slot gate's BODY had 0% live coverage because every
+     * prior fixture either fed a faithful restyle (gate doesn't fire) or a
+     * fully-number-stripped restyle (LEGACY validateRestyle's
+     * completeness/required checks fire FIRST, so the slot gate is never
+     * reached). This test threads the needle so the slot gate is the
+     * UNIQUE catcher:
+     *   - keeps every legacy-required close-recap word token
+     *     (fixed/variable/notice/bgv) → close-recap-incomplete passes
+     *   - keeps ≥1 number → numberPolicy "required" passes
+     *   - drops EXACTLY ONE canonical number → legacy's subset rule
+     *     (no NEW numbers) still passes, but the slot validator's Check 2
+     *     (every canonical number must survive) rejects.
+     * The only way to reach a "slot:dropped-number" reason is for the gate
+     * body to execute — so this gives it genuine coverage and proves an
+     * invalid slot really does force a canonical-fallback in the live
+     * pipeline, not just in the validator unit test. */
+    /* The close-recap canonical only passes legacy's completeness check
+     * (`close-recap-incomplete` requires fixed/variable/notice/bgv) when
+     * the planner emitted the notice + BGV clauses — which it does only
+     * once those topics were discussed. Stamp the two discussed-signals so
+     * the canonical renders the FULL recap; otherwise legacy pre-empts and
+     * the slot gate is never reached. */
+    const fullRecapState = {
+      ...mkCloseRecapState(),
+      noticeJoining: { noticePeriodDays: 60 } as never,
+      candidateProfile: { bgvAnxiety: true } as never,
+    } as NegotiationState;
+    /* The restyle must (a) keep all four legacy completeness tokens, (b)
+     * keep ≥1 number so numberPolicy "required" passes, (c) introduce no
+     * NEW salary scalar so legacy's subset rule passes, (d) stay short so
+     * `sentence-too-long` doesn't pre-empt, and (e) DROP exactly one
+     * canonical salary scalar so the slot validator is the unique catcher.
+     * The canonical's salary scalars are {20.4, 3.6, 2} (the ₹..L figures —
+     * "12-month"/"9 weeks"/"2-3 days" are NOT salary scalars). We keep ₹3.6L
+     * + ₹2L and drop the unique Fixed ₹20.4L, so the slot validator's
+     * Check 2 (every canonical number must survive) is the only thing that
+     * rejects this restyle. */
+    const dropFixedAmountLlm = vi.fn(
+      async (_sys: string, _user: string) =>
+        "Fixed and variable confirmed: variable ₹3.6L, joining ₹2L — notice and BGV all noted.",
+    );
+    const result = await generateBotReply(
+      fullRecapState,
+      dropFixedAmountLlm as never,
+    );
+    expect(result.action.kind).toBe("close-recap-formal");
+    /* The slot gate is the catcher — not legacy, not verbatim-repeat. */
+    expect(result.rejectReason).toBe("slot:dropped-number");
+    expect(result.source).toBe("canonical-fallback");
+    /* The shipped text is the kernel canonical, which retains the dropped
+     * Fixed amount — proof the number-dropping restyle was discarded. */
+    expect(result.text).toContain("20.4");
+  });
+
+  it("flag ON — a faithful restyle ships as 'movespec', never slot-rejected (no silent downgrade)", async () => {
     process.env.NEGOTIATION_MOVE_SPEC_ENABLED = "1";
     /* Regression guard for the ARCH-C3b gate's MED risk: a restyle that
-     * preserves every canonical number and invents none must pass the
-     * structural slot validator, so the gate must NEVER fire on it. We feed
-     * the canonical back verbatim (trivially faithful) and assert the
-     * rejection reason — if any — is never a "slot:*" code. This proves the
-     * promoted gate cannot silently downgrade good prose to canonical. */
-    const faithfulLlm = vi.fn(async (_sys: string, user: string) => user);
-    const result = await generateBotReply(
-      mkCloseRecapState(),
-      faithfulLlm as never,
+     * preserves every canonical salary scalar and invents none must pass
+     * BOTH legacy and the structural slot validator and actually SHIP as the
+     * MoveSpec restyle. Asserting only "rejectReason isn't slot:*" is too
+     * weak — a legacy reject (e.g. close-recap-incomplete / sentence-too-
+     * long) would also satisfy it while the MoveSpec path never ran. We use
+     * the FULL recap state (notice+BGV stamped, so legacy completeness
+     * passes) and a terse faithful restyle that reproduces EVERY canonical
+     * numeric token (the slot validator extracts all digits, not just salary
+     * scalars: {20.4, 3.6, 2, 12, 9, 2, 3}), keeps the four completeness
+     * tokens, invents no number, and stays under the 30-word length cap.
+     * That forces source === "movespec", proving the validator ran AND let
+     * the good prose through. */
+    const fullRecapState = {
+      ...mkCloseRecapState(),
+      noticeJoining: { noticePeriodDays: 60 } as never,
+      candidateProfile: { bgvAnxiety: true } as never,
+    } as NegotiationState;
+    const faithfulLlm = vi.fn(
+      async (_sys: string, _user: string) =>
+        "Fixed ₹20.4L, variable ₹3.6L, joining ₹2L, 12-month clawback, notice 9 weeks, BGV later, offer letter 2-3 days.",
     );
-    expect(result.rejectReason?.startsWith("slot:") ?? false).toBe(false);
+    const result = await generateBotReply(fullRecapState, faithfulLlm as never);
+    expect(result.action.kind).toBe("close-recap-formal");
+    expect(result.source).toBe("movespec");
+    expect(result.rejectReason ?? null).toBeNull();
+    /* The shipped text is the faithful restyle (not the kernel canonical). */
+    expect(result.text).toContain("12-month clawback");
   });
 
   it("flag ON — non-supported action stays on legacy 'restyle' source", async () => {

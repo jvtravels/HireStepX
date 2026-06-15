@@ -3201,6 +3201,16 @@ export function effectiveTargetCtcLpa(state: NegotiationState): number | null {
 export function totalScopedCounter(state: NegotiationState): number | null {
   if (state.lastCandidateCounterLpa == null) return null;
   if (state.lastCounterComponent === "fixed") return null;
+  /* In-hand / take-home framing: a total-scoped counter stated as a NET
+   * number is ~13-25% below the CTC it implies. Comparing the raw field
+   * against highestOfferMade (a TOTAL) false-accepted the candidate while
+   * they were still below their real ask. Prefer the CTC-equivalent —
+   * applyCandidateAnswer stamps it from the same parsed.target and clears
+   * it whenever a later non-in-hand counter lands, so it can't go stale.
+   * Mirrors statedTotalTargetCtcLpa on the target side. */
+  if (state.candidateTargetIsInHand && state.candidateTargetCtcEquivalentLpa != null) {
+    return state.candidateTargetCtcEquivalentLpa;
+  }
   return state.lastCandidateCounterLpa;
 }
 
@@ -4674,17 +4684,24 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       }
       next.candidateTarget = parsed.target;
       if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
-    }
-    /* Sprint B.3 (2026-05-15) — in-hand framing disambiguation. If the
-     * candidate's anchor utterance frames the number as in-hand /
-     * take-home, flag it and back-compute a CTC-equivalent so downstream
-     * consumers can switch frames. Pure derived; the original target
-     * stays as candidateTarget (still in candidate's units) so existing
-     * counter math doesn't silently shift frame. */
-    if (detectInHandFraming(answer)) {
-      next.candidateTargetIsInHand = true;
-      const ctcEq = backComputeCtcFromInHand(parsed.target);
-      if (ctcEq != null) next.candidateTargetCtcEquivalentLpa = ctcEq;
+      /* Sprint B.3 (2026-05-15) — in-hand framing disambiguation, scoped to
+       * the TOTAL target it describes. If this utterance frames the number
+       * as in-hand / take-home, flag it and back-compute a CTC-equivalent
+       * so downstream consumers (statedTotalTargetCtcLpa, totalScopedCounter)
+       * can switch frames. Class-A in-hand-counter fix (2026-06-15): recompute
+       * EVERY time the total target is (re)stated — set when in-hand framed,
+       * CLEAR otherwise — so a later total-framed counter can't inherit a stale
+       * take-home→CTC equivalent and false-accept ~13-25% low. The raw number
+       * stays in candidateTarget (candidate's units) so existing counter math
+       * doesn't silently shift frame; only the derived equivalent moves. */
+      if (detectInHandFraming(answer)) {
+        next.candidateTargetIsInHand = true;
+        const ctcEq = backComputeCtcFromInHand(parsed.target);
+        next.candidateTargetCtcEquivalentLpa = ctcEq != null ? ctcEq : undefined;
+      } else {
+        next.candidateTargetIsInHand = false;
+        next.candidateTargetCtcEquivalentLpa = undefined;
+      }
     }
   }
   if (parsed.currentCtc != null) next.candidateCurrentCtc = parsed.currentCtc;

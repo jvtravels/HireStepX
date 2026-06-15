@@ -1256,10 +1256,13 @@ function maybePlanCalibratedSurprise(
    * window has closed — fall through to the offer/close cascade. */
   if ((state.highestOfferMade ?? 0) > 0) return null;
   if (state.lastCandidateCounterLpa != null) return null;
-  /* Numeric anchor must be disclosed. */
+  /* Numeric anchor must be disclosed. Class-A (2026-06-15): read the
+   * total-CTC-scoped target, not the raw field — an in-hand-framed target
+   * compared raw against the total walkAway floor produced a false lowball
+   * flag (the take-home number is naturally ~13-25% below a CTC floor). */
   const anchor =
     state.userClaims?.expectedCtc?.value ??
-    state.candidateTarget ??
+    statedTotalTargetCtcLpa(state) ??
     null;
   if (anchor == null || !Number.isFinite(anchor) || anchor <= 0) return null;
   /* Band floor — use walkAway (real recruiter floor). */
@@ -3624,11 +3627,15 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
-  /* Probe-justification before first counter-base. */
+  /* Probe-justification before first counter-base. Class-A (2026-06-15):
+   * compare the total-CTC-scoped target against the initial offer so an
+   * in-hand-framed target (raw take-home) isn't under-detected vs a total
+   * offer (it would otherwise look smaller than it really is). */
+  const probeJustifyTarget = effectiveTargetCtcLpa(state);
   const shouldProbeJustification =
     state.phase === "counter-offer" &&
-    state.candidateTarget != null &&
-    state.candidateTarget > state.band.initialOffer * 1.05 &&
+    probeJustifyTarget != null &&
+    probeJustifyTarget > state.band.initialOffer * 1.05 &&
     !state.leversUsed.includes("probe-justification") &&
     !state.leversUsed.includes("counter-base") &&
     state.candidateCurrentCtc == null &&
@@ -5886,11 +5893,18 @@ export function shouldFireCtcInflationAnchor(state: NegotiationState): boolean {
 }
 
 /** Pure: build the CTC-inflation NextAction at the current anchor level.
- *  Uses `state.candidateTarget` as the headline (since the recruiter is
+ *  Uses the total-CTC-scoped target as the headline (the recruiter is
  *  matching the over-anchor on TOTAL package while the actual guaranteed
- *  cash is much lower). Returns null when no target is set. */
+ *  cash is much lower). Class-A (2026-06-15): read the same accessor the
+ *  firing gate (shouldFireCtcInflationAnchor) uses, so an in-hand-framed
+ *  target drives the headline AND the gate off the same CTC-equivalent —
+ *  otherwise the rebuttal anchored a 27L over-ask but rendered a 20L
+ *  breakdown. Returns null when no target is set. */
 export function planCtcInflationAnchor(state: NegotiationState): PlannedAction | null {
-  const ctc = state.candidateTarget;
+  const ctc =
+    (state.band != null
+      ? effectiveTargetCtcLpa(state)
+      : statedTotalTargetCtcLpa(state)) ?? state.candidateTarget;
   if (ctc == null || !Number.isFinite(ctc) || ctc <= 0) return null;
   const br = buildCtcInflationBreakdown(ctc);
   return {
