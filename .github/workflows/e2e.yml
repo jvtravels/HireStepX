@@ -78,7 +78,47 @@ jobs:
           # Tell playwright.config.ts to skip the local webServer — we're
           # hitting the live preview, not booting an app on the runner.
           PLAYWRIGHT_SKIP_WEBSERVER: "1"
-        run: npx playwright test
+          # Credentials for the authenticated funnel specs (onboarding,
+          # dashboard, interview). Without these, ~24 tests self-skip and CI
+          # goes green while testing none of the core funnel. Create a
+          # dedicated test user in the staging Supabase project and store its
+          # login as repo secrets so these run for real (P1-1).
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          # Emit a JSON report alongside the github reporter so the skip guard
+          # below can read the run's stats.
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results.json
+        run: npx playwright test --reporter=github,json
+      - name: Guard against silently-skipped authed tests
+        if: ${{ !cancelled() }}
+        # Once the TEST_USER_* secrets exist, the authed funnel must actually
+        # run — assert the skip count stays under the small allowance reserved
+        # for legitimate platform/viewport-conditional skips. When the secrets
+        # are absent we only warn (so this can't block before they're set up),
+        # but we make the gap loud so it can't regress silently.
+        env:
+          HAVE_CREDS: ${{ secrets.TEST_USER_EMAIL != '' && secrets.TEST_USER_PASSWORD != '' }}
+          # Allowance for known non-auth skips (e.g. mobile-only focus tests).
+          ALLOWED_SKIPS: "6"
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = "playwright-report/results.json";
+            if (!fs.existsSync(path)) { console.log("No JSON report found; skipping guard."); process.exit(0); }
+            const report = JSON.parse(fs.readFileSync(path, "utf8"));
+            const skipped = (report.stats && report.stats.skipped) || 0;
+            const allowed = parseInt(process.env.ALLOWED_SKIPS, 10);
+            const haveCreds = process.env.HAVE_CREDS === "true";
+            console.log("Playwright skipped " + skipped + " test(s); allowance " + allowed + "; creds present: " + haveCreds);
+            if (!haveCreds) {
+              console.log("::warning::TEST_USER_EMAIL / TEST_USER_PASSWORD are not set - the authenticated funnel is NOT being tested. Add them as repo secrets (P1-1).");
+              process.exit(0);
+            }
+            if (skipped > allowed) {
+              console.log("::error::" + skipped + " tests skipped (> " + allowed + "). The authenticated funnel is being silently skipped - check the test user credentials and login flow.");
+              process.exit(1);
+            }
+          '
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
