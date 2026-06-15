@@ -17,10 +17,17 @@ import {
   type InterviewEvent,
 } from "../dashboardHelpers";
 
+// daysUntilEvent interprets its date/time in LOCAL time, so the test must build
+// the date string in local time too. Using toISOString() (UTC) here made the
+// "now" case flake to -1 in zones ahead of UTC (e.g. IST after local midnight,
+// when the UTC date is still "yesterday").
+const localDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
 describe("daysUntilEvent", () => {
   it("returns 0 for an event happening now", () => {
     const now = new Date();
-    const date = now.toISOString().split("T")[0];
+    const date = localDate(now);
     const time = `${String(now.getHours() + 1).padStart(2, "0")}:00`;
     const days = daysUntilEvent(date, time);
     expect(days).toBeGreaterThanOrEqual(0);
@@ -29,7 +36,7 @@ describe("daysUntilEvent", () => {
 
   it("returns positive for future events", () => {
     const future = new Date(Date.now() + 5 * 86400000);
-    const date = future.toISOString().split("T")[0];
+    const date = localDate(future);
     const days = daysUntilEvent(date, "12:00");
     expect(days).toBeGreaterThanOrEqual(4);
     expect(days).toBeLessThanOrEqual(6);
@@ -37,7 +44,7 @@ describe("daysUntilEvent", () => {
 
   it("returns negative for past events", () => {
     const past = new Date(Date.now() - 3 * 86400000);
-    const date = past.toISOString().split("T")[0];
+    const date = localDate(past);
     const days = daysUntilEvent(date, "12:00");
     expect(days).toBeLessThan(0);
   });
