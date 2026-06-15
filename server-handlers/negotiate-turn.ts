@@ -25,7 +25,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit } from "./_shared";
 import { callLLM } from "./_llm";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import {
@@ -298,6 +298,18 @@ export default async function handler(
     const distinctId = distinctIdFrom(req, auth.userId);
 
     if (body.action === "init") {
+      /* Free-session cap enforcement (audit P0-1). generate-questions and
+       * evaluate both gate on checkSessionLimit; negotiate-turn previously
+       * relied only on checkQuota, letting a free user start unlimited
+       * negotiation sessions. The limit is enforced ONLY at init — a single
+       * negotiation counts as one session, so subsequent "turn" actions in
+       * the same negotiation are never blocked. */
+      if (auth.userId) {
+        const limit = await checkSessionLimit(auth.userId);
+        if (!limit.allowed) {
+          return new Response(JSON.stringify({ error: limit.reason }), { status: 403, headers });
+        }
+      }
       /* Field coercion / validation now lives in _request-validator.ts —
        * the values below are pre-cleaned (defaults applied, enums
        * narrowed, numbers asserted finite). SECURITY: body.band is
