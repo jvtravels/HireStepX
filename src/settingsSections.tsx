@@ -1035,7 +1035,6 @@ interface ReferralInviteRow {
   createdAt: string;
 }
 
-const REFERRAL_CAP = 6;
 
 export function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
   const { user } = useAuth();
@@ -1097,10 +1096,6 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
-  const earned = Math.min(stats.rewarded, REFERRAL_CAP);
-  const remaining = Math.max(REFERRAL_CAP - earned, 0);
-  const pct = (earned / REFERRAL_CAP) * 100;
-
   const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.08em", textTransform: "uppercase" };
 
   const linkBtn: React.CSSProperties = {
@@ -1122,8 +1117,8 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead
         kicker="Referral"
-        title="Bring a friend, earn a month"
-        desc={`They get 20% off their first Pro month. You get a free month when they convert. ${earned} earned, ${remaining} to go before the lifetime cap.`}
+        title="Bring a friend — you both get a free session"
+        desc={`When a friend signs up with your link, you each get a free practice session, credited instantly. ${stats.rewarded} earned so far.`}
       />
 
       <EditorialCard>
@@ -1151,16 +1146,13 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
             </div>
           </div>
 
-          <div style={{ padding: "20px 22px", borderRadius: 12, background: c.creamSoft, border: `1px solid ${c.border}` }} aria-label="Lifetime referral progress">
+          <div style={{ padding: "20px 22px", borderRadius: 12, background: c.creamSoft, border: `1px solid ${c.border}` }} aria-label="Referral rewards">
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>Free months earned</span>
-              <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{earned} of {REFERRAL_CAP}</span>
-            </div>
-            <div role="progressbar" aria-label="Free months earned" aria-valuemin={0} aria-valuemax={REFERRAL_CAP} aria-valuenow={earned} style={{ position: "relative", height: 8, background: c.border, borderRadius: 100 }}>
-              <div style={{ position: "absolute", left: 0, top: 0, height: 8, width: `${pct}%`, background: c.gilt, borderRadius: 100, transition: "width 0.3s" }} />
+              <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>Free sessions earned</span>
+              <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 700, color: c.gilt }}>{stats.rewarded}</span>
             </div>
             <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 10, lineHeight: 1.5 }}>
-              Each converted invite adds one month, capped at six.
+              {stats.redeemed} friend{stats.redeemed === 1 ? "" : "s"} joined with your link. You both get a free session the moment they sign up — no purchase needed.
             </div>
           </div>
         </div>
@@ -1171,7 +1163,7 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory }}>Your invites</div>
           <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 }}>
-            We tell you when they sign up, and again when they convert.
+            We tell you the moment a friend joins with your link.
           </div>
         </div>
         {invites.length === 0 ? (
@@ -1200,7 +1192,7 @@ function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boo
     .toUpperCase() || "?";
   const ts = invite.createdAt ? relativeTime(invite.createdAt) : "";
   const tone = invite.status === "rewarded"
-    ? { label: "Converted", bg: "#DCFCE7", fg: c.sage, border: "rgba(21,128,61,0.28)" }
+    ? { label: "Rewarded", bg: "#DCFCE7", fg: c.sage, border: "rgba(21,128,61,0.28)" }
     : invite.status === "redeemed"
       ? { label: "Joined", bg: "#E5E2F2", fg: c.indigo, border: "rgba(49,46,129,0.28)" }
       : { label: "Pending", bg: "#FEF3C7", fg: "#A16207", border: "rgba(161,98,7,0.28)" };
