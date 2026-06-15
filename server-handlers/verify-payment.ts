@@ -2,7 +2,7 @@
 /* Server-side signature verification + Supabase subscription update */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac } from "crypto";
 import {
   applyCorsHeaders,
   handlePreflightAndMethod,
@@ -13,7 +13,15 @@ import {
   supabaseAnonKey,
 } from "./_shared";
 import { grantSessionCredits } from "./_session-credits";
-import { computeProratedDays } from "./_proration-helpers";
+import {
+  PLAN_TIER,
+  PLAN_AMOUNT,
+  PLAN_LABEL,
+  TIER_RANK,
+  buildSignaturePayload,
+  verifyRazorpaySignature,
+  computeSubscriptionEnd,
+} from "./_payment-verification";
 
 /** Fetch with AbortController timeout (default 8s) */
 function fetchWithTimeout(url: string, opts: RequestInit & { timeout?: number } = {}): Promise<Response> {
@@ -54,12 +62,9 @@ async function clearPaymentIntent(orderId: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
-// PLAN_DURATION used for reference: weekly=7, monthly=setMonth(), yearly=365
-// "single" stays on the free tier — it grants session credits, not a tier change.
-const PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro" };
-const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 4900, monthly: 14900 };
-const PLAN_LABEL: Record<string, string> = { weekly: "Starter (₹49/week)", monthly: "Pro (₹149/month)" };
-const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2 };
+// Plan catalog, signature check, and end-date math live in
+// _payment-verification.ts so the money path is tested against real code.
+// "single" stays on the free tier — it grants session credits, not a tier.
 
 async function sendPaymentEmail(
   email: string,
@@ -234,16 +239,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 1. Verify Razorpay signature (HMAC-SHA256)
     // Subscriptions sign: subscription_id|payment_id; orders sign: order_id|payment_id
-    const signPayload = razorpay_subscription_id
-      ? `${razorpay_subscription_id}|${razorpay_payment_id}`
-      : `${razorpay_order_id}|${razorpay_payment_id}`;
-    const expectedSignature = createHmac("sha256", RAZORPAY_KEY_SECRET)
-      .update(signPayload)
-      .digest("hex");
-
-    const sigBuf = Buffer.from(razorpay_signature);
-    const expectedBuf = Buffer.from(expectedSignature);
-    if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
+    const signPayload = buildSignaturePayload({
+      orderId: razorpay_order_id,
+      subscriptionId: razorpay_subscription_id,
+      paymentId: razorpay_payment_id,
+    });
+    if (!verifyRazorpaySignature(signPayload, razorpay_signature, RAZORPAY_KEY_SECRET)) {
       console.error("Payment signature mismatch for", (razorpay_order_id || razorpay_subscription_id || "").slice(0, 8) + "...");
       return res.status(400).json({ error: "Payment signature verification failed", code: "SIGNATURE_MISMATCH" });
     }
@@ -509,42 +510,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // 4. Calculate subscription dates with mid-cycle upgrade proration
+    // 4. Calculate subscription dates with mid-cycle upgrade proration.
+    // The duration + price for proration are derived from the current plan's
+    // REAL dates (not the tier alone) inside _payment-verification, so yearly
+    // upgraders are no longer over-credited. See _proration-helpers.ts.
     const now = new Date();
-    const currentEnd = current?.subscription_end ? new Date(current.subscription_end) : null;
     const tier = PLAN_TIER[plan];
-    const isUpgrade = current && currentEnd && currentEnd > now
-      && (TIER_RANK[current.subscription_tier] || 0) < (TIER_RANK[tier] || 0);
-
-    // Resolve plan duration in days (avoid setMonth which has month-end overflow bugs)
-    const planDaysMap: Record<string, number> = { weekly: 7, monthly: 30 };
-    const planDays = planDaysMap[plan];
-    if (planDays === undefined) {
+    const dates = computeSubscriptionEnd({
+      plan,
+      now,
+      currentStartMs: current?.subscription_start ? new Date(current.subscription_start).getTime() : null,
+      currentEndMs: current?.subscription_end ? new Date(current.subscription_end).getTime() : null,
+      currentTier: current?.subscription_tier ?? null,
+    });
+    if (!dates) {
       return res.status(400).json({ error: "Invalid plan duration", code: "INVALID_PLAN" });
     }
-
-    let end: Date;
-    let proratedDays = 0;
-    if (isUpgrade && currentEnd) {
-      // Credit the unused portion of the current plan as bonus days on the new
-      // one. The duration + price are derived from the current plan's REAL
-      // dates (not the tier alone), so yearly upgraders are no longer over-
-      // credited. See _proration-helpers.ts for the math + tests.
-      proratedDays = computeProratedDays({
-        nowMs: now.getTime(),
-        currentStartMs: current.subscription_start ? new Date(current.subscription_start).getTime() : NaN,
-        currentEndMs: currentEnd.getTime(),
-        currentTier: current.subscription_tier,
-        newPlan: plan,
-      });
-      end = new Date(now);
-      end.setDate(end.getDate() + planDays + proratedDays);
-    } else {
-      // Extend from current end if still active (same tier renewal)
-      const base = currentEnd && currentEnd > now ? currentEnd : now;
-      end = new Date(base);
-      end.setDate(end.getDate() + planDays);
-    }
+    const { end, proratedDays } = dates;
 
     // 5. Store payment record FIRST (critical — must succeed before activating subscription)
     const paymentRecordRes = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payments`, {
