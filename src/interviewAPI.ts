@@ -409,6 +409,14 @@ export async function fetchLLMQuestions(params: {
   resumeIndustries?: string[];
   /** Structured education records — used for campus / govt-PSU rounds. */
   resumeEducation?: Array<Record<string, unknown>>;
+  /** Per-domain years of experience for split-career candidates — e.g.
+   *  `{"Product Design": 5, "Frontend Engineering": 1}`. When present the
+   *  question generator calibrates depth independently per domain: deep
+   *  design Qs + intro frontend Qs, rather than one uniform depth. */
+  resumeDomainYears?: Record<string, number>;
+  /** Promotion signals extracted from the resume (e.g. "Promoted to Senior
+   *  PM in 18 months at Flipkart"). Used as behavioral STAR probe anchors. */
+  resumePromotionSignals?: string[];
   candidateName?: string;
   negotiationStyle?: string;
   /** Optional coaching-drill hint forwarded from the dashboard's

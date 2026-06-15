@@ -423,7 +423,7 @@ export function useInterviewEngine() {
       }
     } catch { /* silent */ }
 
-    const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[]; topSkills?: string[]; headline?: string; experiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>; skillsDetailed?: Array<{ name: string; depth: string; yearsUsed?: number; recent?: boolean }>; keyAchievements?: string[]; industries?: string[] } | undefined;
+    const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[]; topSkills?: string[]; headline?: string; experiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>; skillsDetailed?: Array<{ name: string; depth: string; yearsUsed?: number; recent?: boolean }>; keyAchievements?: string[]; industries?: string[]; domainYearsExperience?: Record<string, number>; promotionSignals?: string[] } | undefined;
     /* Resume-role contamination guard for salary-negotiation sessions.
        Production bug (2026-05): user with a "Senior Product Designer" resume
        selected "Java Developer" + TCS + salary-neg; the LLM personalised
@@ -468,6 +468,13 @@ export function useInterviewEngine() {
       resumeKeyAchievements: effectiveUseResume ? aiProfile?.keyAchievements : undefined,
       resumeIndustries: effectiveUseResume ? aiProfile?.industries : undefined,
       resumeEducation: effectiveUseResume ? (user?.resumeData as Record<string, unknown> | undefined)?.education as Array<Record<string, unknown>> | undefined : undefined,
+      resumeDomainYears: effectiveUseResume ? (() => {
+        const ap = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as
+          { domainYearsExperience?: Record<string, number> } | undefined;
+        const map = ap?.domainYearsExperience;
+        return map && typeof map === "object" && Object.keys(map).length > 1 ? map : undefined;
+      })() : undefined,
+      resumePromotionSignals: effectiveUseResume ? aiProfile?.promotionSignals : undefined,
       candidateName: user?.name || undefined,
       negotiationStyle: negotiationStyle || undefined,
       drill: drillKey || undefined,

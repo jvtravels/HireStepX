@@ -350,6 +350,51 @@ export default function DashboardResume() {
   const analyzingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // JD Match — LLM-powered resume vs job description analysis.
+  // The /api/analyze-jd-match endpoint is fully implemented; this wires
+  // the frontend. Users paste a JD and click "Analyze Fit" to get a
+  // match score, missing skills, gaps, and interview tips specific to
+  // that JD. The suggestedFocus pre-fills the session-setup focus chip.
+  const [jdText, setJdText] = useState("");
+  const [jdAnalysis, setJdAnalysis] = useState<{
+    matchScore: number;
+    matchLabel: string;
+    matchedSkills: string[];
+    missingSkills: string[];
+    experienceMatch: string;
+    keyStrengths: string[];
+    gaps: string[];
+    interviewTips: string[];
+    suggestedFocus: string;
+  } | null>(null);
+  const [jdLoading, setJdLoading] = useState(false);
+  const [jdError, setJdError] = useState("");
+
+  const handleAnalyzeJD = async () => {
+    const resumeSource = user?.resumeText || resumeText;
+    if (!resumeSource || jdText.trim().length < 30) return;
+    setJdLoading(true);
+    setJdError("");
+    setJdAnalysis(null);
+    try {
+      const { apiFetch } = await import("./apiClient");
+      const res = await apiFetch<{ analysis?: Record<string, unknown>; error?: string }>(
+        "/api/analyze-jd-match",
+        { resumeText: resumeSource, jobDescription: jdText },
+      );
+      if (!res.ok || res.data?.error) {
+        throw new Error(res.data?.error || res.error || "Analysis failed");
+      }
+      if (res.data?.analysis) {
+        setJdAnalysis(res.data.analysis as typeof jdAnalysis);
+      }
+    } catch (err) {
+      setJdError(err instanceof Error ? err.message : "Could not analyze match. Try again.");
+    } finally {
+      setJdLoading(false);
+    }
+  };
+
   // ATS compliance check — auto-computes when resume/JD changes
   const atsResult = useMemo<ATSResult | null>(() => {
     const rText = user?.resumeText || resumeText;
@@ -1080,6 +1125,12 @@ export default function DashboardResume() {
       coverage={coverage}
       onDismissError={() => { setErrorMsg(""); if (phase === "error") setPhase("idle"); }}
       resumeText={resumeText}
+      jdText={jdText}
+      jdAnalysis={jdAnalysis}
+      jdLoading={jdLoading}
+      jdError={jdError}
+      onJDTextChange={(t) => { setJdText(t); if (!t) { setJdAnalysis(null); setJdError(""); } }}
+      onAnalyzeJD={() => { void handleAnalyzeJD(); }}
     />
     {/* Floating toast — surfaces feedback from showNotice() (e.g. "Polish
         applied", "Resume archived"). Single slot, auto-dismisses. Cream

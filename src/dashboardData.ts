@@ -921,6 +921,16 @@ export interface ResumeProfile {
    *  educationCerts (0-10), summaryClarity (0-15). Optional for back-compat. */
   scoreBreakdown?: Record<string, number>;
   improvements?: string[];
+  /** Notice period as stated on the resume (e.g. "30 days", "Immediate joiner").
+   *  Null if not stated. Used for HR-round calibration. */
+  noticePeriod?: string | null;
+  /** Current CTC as stated on the resume (e.g. "₹18 LPA"). Null if not stated.
+   *  Used for salary-negotiation pre-fill. */
+  currentCtc?: string | null;
+  /** Explicit promotion signals extracted from the resume
+   *  (e.g. "Promoted to Senior PM in 18 months at Flipkart").
+   *  Prime STAR story material; used as behavioral probe anchors. */
+  promotionSignals?: string[];
   /**
    * Structured per-role timeline. Optional because old cached profiles
    * (rows in resume_versions.parsed_data persisted before this field

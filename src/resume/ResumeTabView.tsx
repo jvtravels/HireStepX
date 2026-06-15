@@ -115,6 +115,24 @@ export interface ResumeTabViewProps {
 
   /* Fallback re-analyze (used when analysisSource === "fallback" with text) */
   resumeText: string;
+
+  /* JD Match — LLM-powered resume vs job description analysis */
+  jdText: string;
+  jdAnalysis: {
+    matchScore: number;
+    matchLabel: string;
+    matchedSkills: string[];
+    missingSkills: string[];
+    experienceMatch: string;
+    keyStrengths: string[];
+    gaps: string[];
+    interviewTips: string[];
+    suggestedFocus: string;
+  } | null;
+  jdLoading: boolean;
+  jdError: string;
+  onJDTextChange: (text: string) => void;
+  onAnalyzeJD: () => void;
 }
 
 /* ─── Reusable bits ────────────────────────────────────────────────── */
@@ -695,6 +713,12 @@ function DoneState(props: ResumeTabViewProps) {
     coverage,
     onDismissError,
     resumeText,
+    jdText,
+    jdAnalysis,
+    jdLoading,
+    jdError,
+    onJDTextChange,
+    onAnalyzeJD,
   } = props;
 
   const coverageStrong = coverage.filter((c) => isStrongBand(c.band)).length;
@@ -1734,6 +1758,174 @@ function DoneState(props: ResumeTabViewProps) {
                 ))}
               </div>
             </details>
+          )}
+        </SectionCard>
+      )}
+
+      {/* ─── JD Match — LLM-powered resume vs job description analysis.
+            The /api/analyze-jd-match endpoint is fully built; this is the
+            first frontend caller. Research finding (adversarially verified):
+            resume + JD joint input is what separates personalized coaching
+            from generic outputs. Users paste a JD → get a match score,
+            missing skills, gaps, and interview tips for THAT specific role.
+            The suggestedFocus can pre-fill session setup. */}
+      {profile && (
+        <SectionCard>
+          <SectionHeader
+            label="Job Description Match"
+            icon={
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+            }
+            trailing={
+              jdAnalysis ? (
+                <span style={{ fontFamily: f.mono, fontSize: 13, fontWeight: 700, color: jdAnalysis.matchScore >= 70 ? t.success : jdAnalysis.matchScore >= 50 ? t.warning : t.error }}>
+                  {jdAnalysis.matchScore}/100 · {jdAnalysis.matchLabel}
+                </span>
+              ) : (
+                <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>Paste a JD to see your fit</span>
+              )
+            }
+          />
+          {/* JD textarea + analyze button */}
+          {!jdAnalysis && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <textarea
+                value={jdText}
+                onChange={e => onJDTextChange(e.target.value)}
+                placeholder="Paste the job description here — requirements, responsibilities, qualifications…"
+                rows={5}
+                style={{
+                  width: "100%",
+                  fontFamily: f.sans,
+                  fontSize: 13,
+                  color: t.coal,
+                  background: t.creamSoft,
+                  border: `1px solid ${t.line}`,
+                  borderRadius: 8,
+                  padding: "10px 12px",
+                  resize: "vertical",
+                  outline: "none",
+                  lineHeight: 1.55,
+                  boxSizing: "border-box",
+                }}
+              />
+              {jdError && (
+                <p style={{ fontFamily: f.sans, fontSize: 12, color: t.error, margin: 0 }}>{jdError}</p>
+              )}
+              <button
+                type="button"
+                onClick={onAnalyzeJD}
+                disabled={jdLoading || jdText.trim().length < 30}
+                style={{
+                  alignSelf: "flex-start",
+                  fontFamily: f.sans,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: "9px 20px",
+                  borderRadius: 8,
+                  background: jdLoading || jdText.trim().length < 30 ? t.creamSoft : t.indigo,
+                  color: jdLoading || jdText.trim().length < 30 ? t.inkSoft : t.white,
+                  border: `1px solid ${jdLoading || jdText.trim().length < 30 ? t.line : "transparent"}`,
+                  cursor: jdLoading || jdText.trim().length < 30 ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                {jdLoading ? (
+                  <>
+                    <span style={{ width: 13, height: 13, border: `2px solid rgba(99,102,241,0.3)`, borderTopColor: t.indigo, borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
+                    Analyzing…
+                  </>
+                ) : "Analyze fit"}
+              </button>
+            </div>
+          )}
+          {/* JD analysis results */}
+          {jdAnalysis && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Score bar */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>Match strength</span>
+                  <span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.coal }}>
+                    Experience: {jdAnalysis.experienceMatch}
+                  </span>
+                </div>
+                <div style={{ height: 8, background: t.line, borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{
+                    width: `${jdAnalysis.matchScore}%`,
+                    height: "100%",
+                    background: jdAnalysis.matchScore >= 70 ? t.success : jdAnalysis.matchScore >= 50 ? t.warning : t.error,
+                    borderRadius: 4,
+                    transition: "width 0.8s ease",
+                  }} />
+                </div>
+              </div>
+              {/* Skills grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {jdAnalysis.matchedSkills.length > 0 && (
+                  <div>
+                    <p style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 8px" }}>✓ You have</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {jdAnalysis.matchedSkills.slice(0, 8).map(s => (
+                        <span key={s} style={{ fontFamily: f.sans, fontSize: 11, padding: "3px 9px", borderRadius: 999, background: t.success100, color: t.success, border: `1px solid ${t.successBorder}` }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {jdAnalysis.missingSkills.length > 0 && (
+                  <div>
+                    <p style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 8px" }}>⚡ Gaps to address</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {jdAnalysis.missingSkills.slice(0, 8).map(s => (
+                        <span key={s} style={{ fontFamily: f.sans, fontSize: 11, padding: "3px 9px", borderRadius: 999, background: t.warning100, color: t.warning, border: `1px solid ${t.warningBorder}` }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Gaps + interview tips */}
+              {jdAnalysis.gaps.length > 0 && (
+                <div>
+                  <p style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 8px" }}>Interview prep for your gaps</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {jdAnalysis.gaps.slice(0, 3).map((g, i) => (
+                      <div key={i} style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.55, padding: "8px 12px", background: t.creamSoft, borderRadius: 8, border: `1px solid ${t.line}` }}>
+                        {g}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Suggested focus + re-analyze */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                {jdAnalysis.suggestedFocus && (
+                  <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+                    Suggested focus:{" "}
+                    <a
+                      href={`/session/new?type=${encodeURIComponent(jdAnalysis.suggestedFocus)}`}
+                      style={{ color: t.indigo, fontWeight: 600, textDecoration: "none" }}
+                    >
+                      Start {jdAnalysis.suggestedFocus} practice →
+                    </a>
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { onJDTextChange(""); }}
+                  style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, background: "transparent", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+                >
+                  Try a different JD
+                </button>
+              </div>
+            </div>
           )}
         </SectionCard>
       )}

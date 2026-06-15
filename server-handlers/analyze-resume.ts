@@ -330,7 +330,10 @@ Return a JSON object with ALL of these fields filled in thoroughly:
       "topProjects": ["1-3 project names or 1-line descriptions of the most-impactful things they shipped in this role"]
     }
   ],
-  "improvements": ["2-4 actionable resume improvement suggestions, written as PLAIN STRINGS (not objects). Each string should describe WHAT to change AND WHY it matters in one sentence — e.g. 'Add quantified outcomes to your bullet points (numbers and percentages) — recruiters scan for measurable impact in 6 seconds.' DO NOT return objects with separate fields like {change, why}; return plain strings."]
+  "improvements": ["2-4 actionable resume improvement suggestions, written as PLAIN STRINGS (not objects). Each string should describe WHAT to change AND WHY it matters in one sentence — e.g. 'Add quantified outcomes to your bullet points (numbers and percentages) — recruiters scan for measurable impact in 6 seconds.' DO NOT return objects with separate fields like {change, why}; return plain strings."],
+  "noticePeriod": "<string or null. If the resume explicitly states a notice period (e.g. 'Immediate joiner', '30 days', '60 days') extract it verbatim. Otherwise null.>",
+  "currentCtc": "<string or null. If the resume states a current CTC or salary (e.g. '₹18 LPA', '$95,000') extract it verbatim. Otherwise null.>",
+  "promotionSignals": ["0-3 explicit promotion signals as plain strings, e.g. 'Promoted to Senior PM in 18 months at Flipkart'. Only include if the resume explicitly mentions a promotion, title change, or level-up within a company. Empty array if none."]
 }
 
 DEPTH RULES (skillsDetailed):

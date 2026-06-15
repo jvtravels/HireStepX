@@ -214,7 +214,7 @@ export default async function handler(req: Request): Promise<Response> {
   let requestFocus = "general";
   try {
     const rawBody = await req.json();
-    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, resumeSkillsDetailed, resumeKeyAchievements, resumeIndustries, resumeEducation, candidateName, negotiationStyle, drill, priorFlags } = rawBody;
+    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, resumeSkillsDetailed, resumeKeyAchievements, resumeIndustries, resumeEducation, resumeDomainYears, resumePromotionSignals, candidateName, negotiationStyle, drill, priorFlags } = rawBody;
     if (typeof type === "string") requestType = type;
     if (typeof focus === "string") requestFocus = focus;
     const isMini = mini === true;
@@ -591,10 +591,29 @@ INDIAN CONVERSATIONAL REGISTER (when writing the questions themselves):
         if (achievements.length > 0) parts.push(`KEY ACHIEVEMENTS (probe these in behavioral questions — ask for context, decision, trade-offs, and measurable outcome):\n${achievements.map(a => `- ${a}`).join("\n")}`);
       }
 
+      // promotionSignals — prime behavioral STAR material
+      if (Array.isArray(resumePromotionSignals) && resumePromotionSignals.length > 0) {
+        const signals = (resumePromotionSignals as unknown[]).slice(0, 3).map((s: unknown) => sanitizeForLLM(s, 120)).filter(Boolean);
+        if (signals.length > 0) parts.push(`PROMOTION SIGNALS (these are strong STAR anchors — probe the decisions, trade-offs, and outcomes that led to each promotion):\n${signals.map(s => `- ${s}`).join("\n")}`);
+      }
+
       // industries — use for scenario domain selection
       if (Array.isArray(resumeIndustries) && resumeIndustries.length > 0) {
         const industries = (resumeIndustries as unknown[]).slice(0, 3).map((i: unknown) => sanitizeForLLM(i, 60)).filter(Boolean);
         if (industries.length > 0) parts.push(`CANDIDATE INDUSTRY BACKGROUND: ${industries.join(", ")} — anchor case-study and strategic scenarios to these domains where possible.`);
+      }
+
+      // domainYearsExperience — per-domain depth calibration for split-career candidates
+      // (e.g., PM who was formerly a frontend engineer for 3 years)
+      if (resumeDomainYears && typeof resumeDomainYears === "object" && !Array.isArray(resumeDomainYears)) {
+        const domainEntries = Object.entries(resumeDomainYears as Record<string, unknown>)
+          .filter(([, v]) => typeof v === "number" && (v as number) > 0)
+          .sort(([, a], [, b]) => (b as number) - (a as number))
+          .slice(0, 4)
+          .map(([domain, yrs]) => `${sanitizeForLLM(domain, 50)}: ${yrs} yr${(yrs as number) !== 1 ? "s" : ""}`);
+        if (domainEntries.length > 1) {
+          parts.push(`SPLIT-CAREER DOMAIN DEPTH (calibrate question difficulty PER DOMAIN — depth reflects actual years, NOT a single level): ${domainEntries.join(" | ")}. Ask deep questions only for the domain with the most years; ask introductory questions for domains with fewer years.`);
+        }
       }
 
       // education — structured for campus/govt-PSU
