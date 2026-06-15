@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useDashboardSessions } from "./DashboardContext";
+import { pickNextMove } from "./nextMove";
 import { useDocTitle } from "./useDocTitle";
 import { captureClientEvent } from "./posthogClient";
 import type { DashboardSession } from "./dashboardTypes";
@@ -263,6 +264,23 @@ export default function DashboardHome() {
    * true. Set conservatively. */
   const hasPatternData = core.recentSessions.length >= 4;
 
+  /* The "Your next move" card is driven by the real personalization engine:
+   * it reads the user's weakest skill, last-session gap flags, and streak to
+   * produce a targeted headline + CTA (with a `drill` deep-link). Was
+   * previously hardcoded to the same STAR copy for everyone. */
+  const nextMove = useMemo(() => pickNextMove({
+    skills: core.skills.map((s) => ({ name: s.name, score: s.score })),
+    currentStreak: core.currentStreak,
+    topGaps: core.topGaps,
+  }), [core.skills, core.currentStreak, core.topGaps]);
+
+  /* Supporting line under the hero headline, derived from what drove the CTA. */
+  const nextMoveSubtitle = nextMove.coachingFocus
+    ? `From your last HR round we flagged: ${nextMove.coachingFocus.label}.`
+    : nextMove.weakestSkillName
+      ? `A focused 25-minute drill on ${nextMove.weakestSkillName} moves your readiness fastest.`
+      : "Pick a role and start. After four sessions, your coach surfaces the specific patterns it's seeing across your STAR breakdowns.";
+
   /* Locale-formatted date is rendered client-only to avoid SSR/CSR
    * hydration mismatches (server TZ vs. user TZ produces different
    * weekday strings on the en-IN locale). */
@@ -294,15 +312,16 @@ export default function DashboardHome() {
      can attribute Start clicks per CTA. The funnel
      dashboard_loaded → dashboard_start_clicked → interview_session_started
      → interview_session_completed answers "which surface converts?". */
-  const goToInterview = (surface: StartSurface) => () => {
+  const goToInterview = (surface: StartSurface, href: string = "/session/new") => () => {
     captureClientEvent("dashboard_start_clicked", {
       surface,
       hasData: core.hasData,
       sessions_count: core.recentSessions.length,
       streak: core.currentStreak,
       readiness: readiness,
+      next_move_focus: nextMove.coachingFocus?.gapCode ?? nextMove.weakestSkillName ?? null,
     });
-    router.push("/session/new");
+    router.push(href);
   };
   const goToSessions  = () => router.push("/sessions");
   const goToAnalytics = () => router.push("/analytics");
@@ -418,25 +437,13 @@ export default function DashboardHome() {
                   fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2,
                   letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px",
                 }}>
-                  {hasPatternData ? (
-                    <>
-                      Behavioral round, STAR{" "}
-                      <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>sharpening</em>
-                    </>
-                  ) : (
-                    <>
-                      Your first 25 minute{" "}
-                      <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>drill</em>
-                    </>
-                  )}
+                  {nextMove.headline}
                 </p>
                 <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
-                  {hasPatternData
-                    ? "Pattern from your last 8 runs: the Result section drifts to generic outcome language. Today's 25 minute drill targets the 3 weakest stories with a quantified-delta framework."
-                    : "Pick a role and start. After four sessions, your coach surfaces the specific patterns it's seeing across your STAR breakdowns."}
+                  {nextMoveSubtitle}
                 </p>
                 <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-                  <PrimaryCta onClick={goToInterview("next-move-primary")}>Start 25 min drill</PrimaryCta>
+                  <PrimaryCta onClick={goToInterview("next-move-primary", nextMove.ctaHref)}>{nextMove.ctaLabel}</PrimaryCta>
                   <OutlineCta onClick={goToInterview("next-move-outline")}>Pick a different focus</OutlineCta>
                 </div>
               </div>

@@ -657,7 +657,12 @@ export default function SessionSetup() {
   const router = useRouter();
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const preselectedFocus = searchParams.get("type");
+  /* `type` is the canonical param; `focus` is the alias the dashboard
+     "Your next move" engine emits (nextMove.ts). For gap CTAs that means
+     `?focus=hr-round`, which maps to the HR Round type below. Skill-name
+     focuses (e.g. ?focus=Communication) don't match a type and harmlessly
+     fall through to the role-recommended focus. */
+  const preselectedFocus = searchParams.get("type") || searchParams.get("focus");
   /* Bounce-back from useInterviewEngine when /interview was hit with a
      hard role × company mismatch. We prefill role + company from the
      URL so the candidate sees what got rejected, and surface the warn

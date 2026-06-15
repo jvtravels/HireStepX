@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { GAP_CTA_MAP } from "../nextMove";
+import { GAP_CTA_MAP, pickNextMove } from "../nextMove";
 
 /**
  * Contract test for the drill-key plumbing between three surfaces:
@@ -31,6 +31,18 @@ const KNOWN_DRILL_GUIDANCE_KEYS = new Set([
   "under_titled",
   "comp_floor",
   "comp_deflect",
+]);
+
+/**
+ * The `type` values SessionSetup.focusToType maps a URL focus onto. The
+ * dashboard CTA emits `?focus=<value>`; SessionSetup reads `type` OR `focus`
+ * and preselects the matching interview focus. Duplicated here (not imported)
+ * because SessionSetup pulls in React/Next at import time — a drift here means
+ * the gap CTA stops preselecting HR Round, which this test names.
+ */
+const KNOWN_SESSIONSETUP_TYPES = new Set([
+  "behavioral", "strategic", "technical", "case-study", "salary-negotiation",
+  "panel", "campus-placement", "hr-round", "management", "government-psu",
 ]);
 
 describe("Drill-CTA contract", () => {
@@ -78,6 +90,23 @@ describe("Drill-CTA contract", () => {
       expect(cta.label, `gap ${gapCode}: missing label`).toBeTruthy();
       expect(cta.headline, `gap ${gapCode}: missing headline`).toBeTruthy();
       expect(cta.headline.length).toBeGreaterThan(20);
+    }
+  });
+
+  it("each gap CTA href carries a focus SessionSetup recognizes plus its drill key", () => {
+    // The dashboard renders pickNextMove(...).ctaHref directly. If the engine
+    // emits a focus value SessionSetup can't map, the targeted interview type
+    // silently falls back to the role default — the promise breaks invisibly.
+    for (const [gapCode, cta] of Object.entries(GAP_CTA_MAP)) {
+      const { ctaHref } = pickNextMove({ skills: [], currentStreak: 0, topGaps: [gapCode] });
+      const url = new URL(ctaHref, "https://example.com");
+      const focus = url.searchParams.get("focus");
+      expect(focus, `gap ${gapCode}: ctaHref must carry a focus`).toBeTruthy();
+      expect(
+        KNOWN_SESSIONSETUP_TYPES.has(focus as string),
+        `gap ${gapCode}: focus "${focus}" is not in SessionSetup.focusToType — preselect will silently fail`,
+      ).toBe(true);
+      expect(url.searchParams.get("drill"), `gap ${gapCode}: ctaHref must carry the drill key`).toBe(cta.drill);
     }
   });
 });
