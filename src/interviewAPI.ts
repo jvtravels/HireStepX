@@ -438,31 +438,32 @@ export async function fetchLLMQuestions(params: {
     throw new Error("Too many requests. Please wait a moment and try again.");
   }
   const attempt = async (): Promise<LLMQuestionsResult | null> => {
-    const { authHeaders: getAuthHeaders } = await import("./supabase");
-    const headers = await getAuthHeaders();
-    const res = await fetch("/api/generate-questions", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(params),
-    });
+    // XHR transport (apiFetch) — extension-wrapped window.fetch can silently
+    // hang authenticated POSTs above a small body threshold; see apiClient.ts.
+    const res = await apiFetch<{
+      questions?: Array<{ type?: string; aiText?: string; text?: string; scoreNote?: string; persona?: string }>;
+      negotiationBand?: NegotiationBandData;
+    }>(
+      "/api/generate-questions",
+      params,
+    );
     if (res.status === 429) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.retryAfter ? `Too many requests. Please wait ${data.retryAfter} seconds and try again.` : "Too many requests. Please wait a moment and try again.");
+      const retryAfter = (res.errorData as { retryAfter?: number } | null)?.retryAfter;
+      throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds and try again.` : "Too many requests. Please wait a moment and try again.");
     }
     if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
       const reason = res.status === 401 ? "auth" : res.status === 403 ? "limit" : res.status === 503 ? "not-configured" : `error-${res.status}`;
-      console.warn(`[questions] generate-questions failed: ${res.status} (${reason})`, errBody.slice(0, 300));
+      console.warn(`[questions] generate-questions failed: ${res.status} (${reason})`, (res.error || "").slice(0, 300));
       // Throw with reason so caller can show specific message instead of generic fallback
       throw new Error(`Question generation failed: ${reason === "auth" ? "not logged in" : reason === "limit" ? "session limit reached" : reason === "not-configured" ? "AI not configured on server" : `server error ${res.status}`}`);
     }
-    const data = await res.json();
-    if (!data.questions || !Array.isArray(data.questions)) {
+    const data = res.data;
+    if (!data || !data.questions || !Array.isArray(data.questions)) {
       console.warn("[questions] generate-questions returned invalid data:", JSON.stringify(data).slice(0, 300));
       return null;
     }
     const isSalaryNeg = params.type === "salary-negotiation";
-    const negBandForGuard = (data as { negotiationBand?: NegotiationBandData }).negotiationBand;
+    const negBandForGuard = data.negotiationBand;
     const questions = data.questions
       .map((q: { type?: string; aiText?: string; text?: string; scoreNote?: string; persona?: string }, idx: number) => {
         let rawText = sanitizeQuestionPunctuation(q.aiText || q.text || "");
@@ -649,44 +650,39 @@ export async function fetchLLMEvaluation(params: {
   if (!checkRateLimit("evaluate", 5, 60_000)) {
     throw new Error("Too many requests. Please wait a moment and try again.");
   }
-  try {
-    return await withRetry(async () => {
-      const { authHeaders: getAuthHeaders } = await import("./supabase");
-      const headers = await getAuthHeaders();
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      const res = await fetch("/api/evaluate", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(params),
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-      if (res.status === 429) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.retryAfter ? `Too many requests. Please wait ${data.retryAfter} seconds and try again.` : "Too many requests. Please wait a moment and try again.");
-      }
-      if (res.status >= 500) throw new Error(`Evaluation server error: ${res.status}`);
-      if (!res.ok) return null;
-      const body = await res.json();
-      if (!body || typeof body.overallScore !== "number" || typeof body.feedback !== "string") return null;
-      return body;
-    }, {
-      // Zero retries here: the rich per-question evaluation runs via
-      // /api/evaluate-session when the user opens the report, so this
-      // quick eval is best-effort. Retrying would chain timeouts and
-      // trap the user on "Analyzing…" for 30-40s. Fallback scores are
-      // honest — let them land on the report fast.
-      retries: 0,
-      baseDelayMs: 0,
-      shouldRetry: () => false,
-    });
-  } catch (err) {
-    if (err instanceof DOMException && err.name === "AbortError") {
-      throw new Error("Evaluation timed out. Using estimated score.");
+  return await withRetry(async () => {
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+    // XHR transport (apiFetch) — resolves (never throws) on abort/network
+    // error, so we reconstruct the timeout signal from `timedOut` below.
+    const res = await apiFetch<EvaluationResult>(
+      "/api/evaluate",
+      params,
+      { signal: controller.signal },
+    );
+    clearTimeout(timer);
+    if (timedOut) throw new Error("Evaluation timed out. Using estimated score.");
+    if (res.status === 429) {
+      const retryAfter = (res.errorData as { retryAfter?: number } | null)?.retryAfter;
+      throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds and try again.` : "Too many requests. Please wait a moment and try again.");
     }
-    throw err;
-  }
+    if (res.status >= 500) throw new Error(`Evaluation server error: ${res.status}`);
+    if (!res.ok || !res.data) return null;
+    const body = res.data;
+    // Runtime defense: the server can return a 200 with a malformed body.
+    if (typeof body.overallScore !== "number" || typeof body.feedback !== "string") return null;
+    return body;
+  }, {
+    // Zero retries here: the rich per-question evaluation runs via
+    // /api/evaluate-session when the user opens the report, so this
+    // quick eval is best-effort. Retrying would chain timeouts and
+    // trap the user on "Analyzing…" for 30-40s. Fallback scores are
+    // honest — let them land on the report fast.
+    retries: 0,
+    baseDelayMs: 0,
+    shouldRetry: () => false,
+  });
 }
 
 /** Fetch a dynamic follow-up question based on the candidate's answer */
@@ -771,22 +767,20 @@ export async function fetchFollowUp(params: {
   if (!checkRateLimit("follow-up", 10, 60_000)) return null;
   try {
     return await withRetry(async () => {
-      const { authHeaders: getAuthHeaders } = await import("./supabase");
-      const headers = await getAuthHeaders();
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 14_000);
-      const res = await fetch("/api/follow-up", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(params),
-        signal: controller.signal,
-      });
+      // XHR transport (apiFetch) — see apiClient.ts for the extension-hang rationale.
+      const res = await apiFetch<{ needsFollowUp: boolean; followUpText: string; followUpType?: string }>(
+        "/api/follow-up",
+        params,
+        { signal: controller.signal },
+      );
       clearTimeout(timer);
       if (!res.ok) {
         if (res.status >= 500) throw new Error(`Server error: ${res.status}`);
-        return null as unknown as { needsFollowUp: boolean; followUpText: string; followUpType?: string };
+        return null;
       }
-      return await res.json();
+      return res.data;
     }, {
       retries: 2,
       baseDelayMs: 1000,
@@ -883,19 +877,13 @@ export async function negotiationKernelTurn(params: {
 async function postKernel(body: Record<string, unknown>): Promise<NegotiationKernelResponse | null> {
   if (!checkRateLimit("negotiate-turn", 30, 60_000)) return null;
   try {
-    const { authHeaders: getAuthHeaders } = await import("./supabase");
-    const headers = await getAuthHeaders();
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 14_000);
-    const res = await fetch("/api/negotiate-turn", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: ac.signal,
-    });
+    // XHR transport (apiFetch) — see apiClient.ts for the extension-hang rationale.
+    const res = await apiFetch<NegotiationKernelResponse>("/api/negotiate-turn", body, { signal: ac.signal });
     clearTimeout(timer);
     if (!res.ok) return null;
-    return await res.json() as NegotiationKernelResponse;
+    return res.data;
   } catch {
     return null;
   }

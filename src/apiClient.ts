@@ -23,6 +23,13 @@ export interface ApiResponse<T> {
   status: number;
   data: T | null;
   error: string | null;
+  /**
+   * The parsed JSON body on a non-2xx response, when the server returned one.
+   * `data` is intentionally null on failure, but some callers need structured
+   * error details (e.g. a 429's `retryAfter`). Null when the body was empty or
+   * not JSON. Always check `ok` first.
+   */
+  errorData: unknown;
   headers: Record<string, string>;
 }
 
@@ -52,7 +59,7 @@ export async function apiFetch<T = unknown>(
     // ever sending the request. xhr.abort() on an unsent XHR is a no-op and
     // won't fire onabort, which would leave the promise hanging.
     if (opts.signal?.aborted) {
-      settle({ ok: false, status: 0, data: null, error: "aborted", headers: {} });
+      settle({ ok: false, status: 0, data: null, error: "aborted", errorData: null, headers: {} });
       return;
     }
 
@@ -93,11 +100,12 @@ export async function apiFetch<T = unknown>(
           : (typeof errBody.error === "string"
               ? errBody.error
               : (parseFailed && rawText ? rawText.slice(0, 200) : `HTTP ${xhr.status}`)),
+        errorData: ok ? null : (parseFailed ? null : parsed),
         headers: headerMap,
       });
     };
-    xhr.onerror = () => settle({ ok: false, status: 0, data: null, error: "Network error", headers: {} });
-    xhr.onabort = () => settle({ ok: false, status: 0, data: null, error: "aborted", headers: {} });
+    xhr.onerror = () => settle({ ok: false, status: 0, data: null, error: "Network error", errorData: null, headers: {} });
+    xhr.onabort = () => settle({ ok: false, status: 0, data: null, error: "aborted", errorData: null, headers: {} });
 
     if (opts.signal) {
       abortListener = () => xhr.abort();
