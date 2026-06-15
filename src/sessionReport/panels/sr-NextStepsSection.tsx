@@ -19,12 +19,16 @@ export function NextStepsSection({
   weakestSkill,
   onTryWeakestQuestion,
   onDrillSkill,
+  resumeImprovements,
 }: {
   daysUntilInterview?: number;
   readinessSentence?: string;
   weakestSkill?: string;
   onTryWeakestQuestion?: () => void;
   onDrillSkill?: () => void;
+  /** Resume polish bullets from the AI analysis — shown when present
+   *  to connect interview coaching with resume quality. Max 3. */
+  resumeImprovements?: string[];
 }) {
   /* Drill weakest skill — bridges to drill mode. If the parent didn't
    * provide a handler we fall back to a no-op so the CTA is never a
@@ -121,6 +125,31 @@ export function NextStepsSection({
         >
           {readinessSentence}
         </p>
+      )}
+      {/* Resume fix card — shown when AI resume analysis has improvement bullets.
+          Connects interview coaching with resume quality in a single view. */}
+      {resumeImprovements && resumeImprovements.length > 0 && (
+        <div
+          style={{
+            background: "#FFFBF0",
+            border: `1px solid rgba(180,83,9,0.20)`,
+            borderLeft: `3px solid ${t.copper}`,
+            borderRadius: radius.bar,
+            padding: "14px 18px",
+            marginBottom: 16,
+          }}
+        >
+          <p style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.copper, margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            📄 Resume fixes that match this interview pattern
+          </p>
+          <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
+            {resumeImprovements.map((tip, i) => (
+              <li key={i} style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.55, marginBottom: i < resumeImprovements.length - 1 ? 4 : 0 }}>
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       <div className="ir-next-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         {cards.map((c) => (

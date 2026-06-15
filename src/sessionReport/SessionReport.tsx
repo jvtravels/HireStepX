@@ -370,12 +370,19 @@ export const SessionReport = memo(function SessionReport({
         topSkills?: string[];
         headline?: string;
         careerTrajectory?: string;
-        experiences?: Array<{ topProjects?: string[] }>;
+        keyAchievements?: string[];
+        industries?: string[];
+        improvements?: string[];
+        experiences?: Array<{ topProjects?: string[]; company?: string }>;
       } | undefined;
       const topProjects = (aiProfile?.experiences || [])
         .flatMap(e => Array.isArray(e?.topProjects) ? e.topProjects : [])
         .filter(p => typeof p === "string" && p.trim().length > 0)
         .slice(0, 5);
+      const companiesOnResume = (aiProfile?.experiences || [])
+        .map(e => e?.company)
+        .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
+        .slice(0, 8);
       const resumeContext = aiProfile && (
         (aiProfile.topSkills && aiProfile.topSkills.length) ||
         topProjects.length ||
@@ -386,6 +393,9 @@ export const SessionReport = memo(function SessionReport({
         topProjects: topProjects.length ? topProjects : undefined,
         headline: aiProfile.headline,
         careerTrajectory: aiProfile.careerTrajectory,
+        keyAchievements: aiProfile.keyAchievements?.slice(0, 4),
+        industries: aiProfile.industries?.slice(0, 3),
+        companiesOnResume: companiesOnResume.length ? companiesOnResume : undefined,
       } : undefined;
       const meta = {
         role: session.role,
@@ -688,6 +698,14 @@ export const SessionReport = memo(function SessionReport({
         user && typeof user === "object" && "nonNativeEnglish" in user
           ? Boolean((user as Record<string, unknown>).nonNativeEnglish)
           : false,
+      resumeImprovements: (() => {
+        const ap = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
+          improvements?: string[];
+        } | undefined;
+        return Array.isArray(ap?.improvements) && ap.improvements.length > 0
+          ? ap.improvements.slice(0, 3)
+          : undefined;
+      })(),
     });
   }, [
     report,

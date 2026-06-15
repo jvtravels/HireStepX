@@ -3314,7 +3314,9 @@ export function useInterviewEngine() {
           topSkills?: string[];
           headline?: string;
           careerTrajectory?: string;
-          experiences?: Array<{ topProjects?: string[] }>;
+          keyAchievements?: string[];
+          industries?: string[];
+          experiences?: Array<{ topProjects?: string[]; company?: string }>;
         } | undefined;
         if (!evalAiProfile) return undefined;
         return {
@@ -3324,6 +3326,12 @@ export function useInterviewEngine() {
             .slice(0, 5),
           headline: evalAiProfile.headline,
           careerTrajectory: evalAiProfile.careerTrajectory,
+          keyAchievements: evalAiProfile.keyAchievements?.slice(0, 4),
+          industries: evalAiProfile.industries?.slice(0, 3),
+          companiesOnResume: evalAiProfile.experiences
+            ?.map(e => e?.company)
+            .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
+            .slice(0, 8),
         };
       })() : undefined,
       jobDescription: jobDescription || undefined,

@@ -1333,6 +1333,50 @@ function DoneState(props: ResumeTabViewProps) {
         </div>
       )}
 
+      {/* ─── Score breakdown — show sub-criteria when scoreBreakdown exists.
+            The aggregate number (resumeScore) is already shown above;
+            this reveals the WHY behind the number (e.g. "Quantified
+            achievements: 8/20 — your resume has very few numbers").
+            Zero extra LLM calls: computed once at resume-upload. */}
+      {profile?.scoreBreakdown && resumeScore != null && (() => {
+        const bd = profile.scoreBreakdown as Record<string, number>;
+        const criteria: Array<{ key: string; label: string; max: number }> = [
+          { key: "quantifiedAchievements", label: "Quantified achievements", max: 20 },
+          { key: "relevantSkills",         label: "Relevant skills",         max: 20 },
+          { key: "experienceProgression",  label: "Experience progression",  max: 20 },
+          { key: "formattingStructure",    label: "Formatting & structure",  max: 15 },
+          { key: "summaryClarity",         label: "Summary clarity",         max: 15 },
+          { key: "educationCerts",         label: "Education & certs",       max: 10 },
+        ];
+        const items = criteria.map(c => ({ ...c, val: typeof bd[c.key] === "number" ? bd[c.key] : null }))
+          .filter(c => c.val !== null);
+        if (items.length === 0) return null;
+        return (
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 10px" }}>
+              Score breakdown
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {items.map(({ key, label, max, val }) => {
+                const pct = Math.round(((val as number) / max) * 100);
+                const barColor = pct >= 70 ? t.success : pct >= 45 ? t.warning : t.error;
+                return (
+                  <div key={key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, minWidth: 160, flexShrink: 0 }}>{label}</span>
+                    <div style={{ flex: 1, height: 5, background: t.line, borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: 3, transition: "width 0.6s ease" }} />
+                    </div>
+                    <span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.coal, minWidth: 38, textAlign: "right" }}>
+                      {val}/{max}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ─── DIAGNOSE band ────────────────────────────────────────── */}
       {profile && <BandLabel text="Diagnose" pre="What the AI sees on your resume" />}
 

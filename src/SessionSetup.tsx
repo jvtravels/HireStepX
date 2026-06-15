@@ -1782,6 +1782,60 @@ export default function SessionSetup() {
             </div>
 
 
+          {/* ─── Resume coaching brief — shown when AI resume exists.
+                A 2-line card surfacing interviewStrengths / interviewGaps
+                so the candidate knows what to lean on and watch for before
+                the first question fires. Data already exists on the profile;
+                zero extra network calls. */}
+          {(() => {
+            const rd = user?.resumeData as Record<string, unknown> | undefined;
+            const ap = rd?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[] } | undefined;
+            const strengths = Array.isArray(ap?.interviewStrengths) ? ap.interviewStrengths.slice(0, 2) : [];
+            const gaps = Array.isArray(ap?.interviewGaps) ? ap.interviewGaps.slice(0, 2) : [];
+            if (strengths.length === 0 && gaps.length === 0) return null;
+            return (
+              <div
+                style={{
+                  background: "#FFFBF0",
+                  border: `1px solid rgba(180,83,9,0.18)`,
+                  borderLeft: `3px solid ${T.copper}`,
+                  borderRadius: 10,
+                  padding: "14px 18px",
+                  marginTop: 28,
+                  maxWidth: 560,
+                  width: "100%",
+                  margin: "28px auto 0",
+                }}
+              >
+                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.copper, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                  Your resume coaching brief
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: strengths.length > 0 && gaps.length > 0 ? "1fr 1fr" : "1fr", gap: 12 }}>
+                  {strengths.length > 0 && (
+                    <div>
+                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: "#15803D", margin: "0 0 4px" }}>✓ Lean on these</p>
+                      <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
+                        {strengths.map((s, i) => (
+                          <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {gaps.length > 0 && (
+                    <div>
+                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: "#B45309", margin: "0 0 4px" }}>⚡ Prepare for these</p>
+                      <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
+                        {gaps.map((g, i) => (
+                          <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{g}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ─── Single canvas-style "Start practice" CTA + trust line.
                 The CTA stays clickable when only the mic is missing — it
                 triggers the prompt instead of failing silently. */}

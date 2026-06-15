@@ -556,7 +556,19 @@ INDIAN CONVERSATIONAL REGISTER (when writing the questions themselves):
           const header = [title, company, period].filter(Boolean).join(" • ");
           if (!header && bullets.length === 0) continue;
           const body = bullets.length > 0 ? `: ${bullets.join("; ")}` : "";
-          expLines.push(`- ${header}${body}`);
+          // AI-parsed extras: scope (ownership context), teamSize, cross-functional partners.
+          // These unlock calibrated management-depth and XFN questions.
+          const scope = typeof er.scope === "string" ? sanitizeForLLM(er.scope, 120) : "";
+          const teamSize = typeof er.teamSize === "number" && er.teamSize > 0 ? er.teamSize : null;
+          const partners = Array.isArray(er.partners)
+            ? (er.partners as unknown[]).slice(0, 4).map((p: unknown) => sanitizeForLLM(p, 50)).filter(Boolean)
+            : [];
+          const extras: string[] = [];
+          if (scope) extras.push(`scope: ${scope}`);
+          if (teamSize) extras.push(`team: ${teamSize} reports`);
+          if (partners.length > 0) extras.push(`partners: ${partners.join(", ")}`);
+          const extrasStr = extras.length > 0 ? ` [${extras.join(" | ")}]` : "";
+          expLines.push(`- ${header}${body}${extrasStr}`);
         }
         if (expLines.length > 0) {
           parts.push(`RESUME EXPERIENCE TIMELINE (structured — use these company / project anchors when asking questions; never invent companies or projects beyond this list):\n${expLines.join("\n")}\n\nGROUNDING RULE: at least one question stem should explicitly reference a company / project / bullet from above (e.g. "Walk me through the OCR pipeline you built at <company>" or "You mentioned <bullet> — what trade-off forced that choice?"). Do NOT fabricate companies or projects not listed.`);

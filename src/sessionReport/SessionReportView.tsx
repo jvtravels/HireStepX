@@ -502,6 +502,7 @@ export default function SessionReportView({
             daysUntilInterview={data.daysUntilInterview}
             readinessSentence={data.readinessSentence}
             weakestSkill={data.weakestSkill?.name}
+            resumeImprovements={data.resumeImprovements}
             onTryWeakestQuestion={
               onTryQuestionAgain
                 ? () => onTryQuestionAgain(data.questions[0]?.index ?? 1)

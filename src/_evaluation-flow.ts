@@ -78,6 +78,11 @@ export interface EvaluationFlowInput {
     topProjects?: string[];
     headline?: string;
     careerTrajectory?: string;
+    /* Extended grounding — enables missed-achievement detection, industry
+       context anchoring, and company-name credibility cross-checks. */
+    keyAchievements?: string[];
+    industries?: string[];
+    companiesOnResume?: string[];
   };
 
   /* Behavioural-only: who the candidate just talked to + how they sounded,
