@@ -143,6 +143,31 @@ export interface BiasFinding {
 }
 
 
+/** Focus-aware banner shown at the top of the report — one block that
+ *  instantly orients the candidate to what kind of round they just did
+ *  and the single headline number that round is graded on.
+ *
+ *  The chrome (icon, label, tagline, accent) is a static constant per
+ *  focus type. The headline metric is the first entry in the evaluator's
+ *  `focusMetrics` array (already scored against the transcript); the
+ *  remaining metrics are also surfaced for cross-reference. Undefined
+ *  when the session has no recognized focus type or when the behavioral
+ *  v2 path handles its own hero (FocusBanner is suppressed). */
+export interface FocusBannerData {
+  /** Emoji or short icon string, e.g. "⚙" or "💰". */
+  icon: string;
+  /** Short display label, e.g. "Technical Round · DSA". */
+  label: string;
+  /** Plain-English tagline — what the focus actually grades on. */
+  tagline: string;
+  /** The first (headline) focus metric from the evaluator. */
+  headlineMetric: { label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" };
+  /** All focus metrics the evaluator produced (up to 3). */
+  allMetrics: Array<{ label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" }>;
+  accent: string;
+  accentSoft: string;
+}
+
 export interface InterviewResultData {
   overallScore: number;
   verdict: Verdict;
@@ -188,6 +213,10 @@ export interface InterviewResultData {
     counts: { green: number; yellow: number; red: number };
     classifications: Array<{ bucket: "green" | "yellow" | "red"; reason: string }>;
   };
+  /** Focus-aware banner for the top of the report. See `FocusBannerData`.
+   *  Undefined for behavioral sessions (BehavioralFullReport has its own
+   *  hero) or when focus type isn't recognized. */
+  focusBanner?: FocusBannerData;
   /** Set only for salary-negotiation sessions. Contains the offer
    *  trajectory across turns + the deal outcome. Drives the
    *  NegotiationOutcomeSection in the report (offer-progression

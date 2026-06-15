@@ -27,6 +27,7 @@ import type {
   BiasFinding,
   CrossSessionInsight,
   DeliveryMetric,
+  FocusBannerData,
   InterviewResultData,
   LengthVerdict,
   Question,
@@ -42,6 +43,174 @@ import {
   type BehavioralFlag,
 } from "../../tempo/designs/canvases/interview-result-focus/_behavioral-coach";
 import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
+
+/* ─── Focus banner chrome constants ────────────────────────────────────
+   Icon/label/tagline/accent per focus type. Keys match the focus-type
+   strings from focus-signature-metrics.ts (and from session.type /
+   session.focus). The `headlineFallbackLabel` is shown when the evaluator
+   hasn't yet produced focusMetrics for this session (older rows). */
+
+interface FocusChrome {
+  icon: string;
+  label: string;
+  tagline: string;
+  /** Fallback label for the headline metric when focusMetrics is empty. */
+  headlineFallbackLabel: string;
+  accent: string;
+  accentSoft: string;
+}
+
+const FOCUS_CHROME: Record<string, FocusChrome> = {
+  behavioral: {
+    icon: "🗣",
+    label: "Behavioral Round",
+    tagline: "Did you tell stories with specifics, ownership, and clear outcomes?",
+    headlineFallbackLabel: "STAR coverage",
+    accent: "#312E81",
+    accentSoft: "#E5E2F2",
+  },
+  technical: {
+    icon: "⚙",
+    label: "Technical Round · DSA",
+    tagline: "Did you walk through approaches and state the complexity, not just code the answer?",
+    headlineFallbackLabel: "Complexity stated",
+    accent: "#0F766E",
+    accentSoft: "#CCFBF1",
+  },
+  "case-study": {
+    icon: "📊",
+    label: "Case Study · Product",
+    tagline: "Did you use a framework, name a real customer, and drive to a recommendation with a metric?",
+    headlineFallbackLabel: "Frameworks named",
+    accent: "#9333EA",
+    accentSoft: "#F3E8FF",
+  },
+  "salary-negotiation": {
+    icon: "💰",
+    label: "Salary Negotiation",
+    tagline: "Did you push back on the offer, or accept too quickly?",
+    headlineFallbackLabel: "Anchor strength",
+    accent: "#B45309",
+    accentSoft: "#FEF3C7",
+  },
+  "system-design": {
+    icon: "🏗",
+    label: "System Design",
+    tagline: "Did you ask about scale + capacity before drawing boxes? Did you call out failure modes?",
+    headlineFallbackLabel: "Capacity stated",
+    accent: "#1D4ED8",
+    accentSoft: "#DBEAFE",
+  },
+  strategic: {
+    icon: "🎯",
+    label: "Strategic / Leadership",
+    tagline: "Did you map stakeholders, name your vision, and own the bet you'd be making?",
+    headlineFallbackLabel: "Stakeholder scope",
+    accent: "#1E1B4B",
+    accentSoft: "#E5E2F2",
+  },
+  "campus-placement": {
+    icon: "🎓",
+    label: "Campus Placement · Fresher",
+    tagline: "Did you say 'I built X' or 'we built X'? Did you explain why you picked your tech stack?",
+    headlineFallbackLabel: "First-person",
+    accent: "#BE185D",
+    accentSoft: "#FCE7F3",
+  },
+  "hr-round": {
+    icon: "🤝",
+    label: "HR Round",
+    tagline: "HR grades you on 7 axes — motivation, compliance, commitment, stability, and more. One zero kills the offer.",
+    headlineFallbackLabel: "Red flags",
+    accent: "#B91C1C",
+    accentSoft: "#FEE2E2",
+  },
+  panel: {
+    icon: "👥",
+    label: "Panel Interview",
+    tagline: "Did you change tone for each panelist (HR / tech lead / hiring manager) and bridge between them?",
+    headlineFallbackLabel: "Panelists engaged",
+    accent: "#374151",
+    accentSoft: "#E5E7EB",
+  },
+  "government-psu": {
+    icon: "🏛",
+    label: "Government / PSU Board",
+    tagline: "Did you cite specific schemes, rulings, and policies — not just principles in the abstract?",
+    headlineFallbackLabel: "Schemes cited",
+    accent: "#7C2D12",
+    accentSoft: "#FED7AA",
+  },
+  management: {
+    icon: "📋",
+    label: "Management Round",
+    tagline: "Did you own a hard call, quantify your scope, and show how you developed your people?",
+    headlineFallbackLabel: "Decision ownership",
+    accent: "#064E3B",
+    accentSoft: "#D1FAE5",
+  },
+};
+/* alias */
+FOCUS_CHROME.managerial = FOCUS_CHROME.management;
+
+/** Normalize session.focus / session.type to the FOCUS_CHROME key.
+ *  Handles the many spellings that arrive from the frontend. */
+function normalizeFocusKey(raw: string): string {
+  const s = raw.toLowerCase().trim();
+  if (/\bsalary\b|\bnegotiat/.test(s)) return "salary-negotiation";
+  if (/\bcase.?stud/.test(s)) return "case-study";
+  if (/\bsystem.?design|\barch(itecture)?/.test(s)) return "system-design";
+  if (/\bcampus|\bfresher/.test(s)) return "campus-placement";
+  if (/\bhr.?round|\bhr\b/.test(s)) return "hr-round";
+  if (/\bgovernment|\bpsu|\bupsc|\bssc/.test(s)) return "government-psu";
+  if (/\bpanel/.test(s)) return "panel";
+  if (/\bstrategic|\bleadership/.test(s)) return "strategic";
+  if (/\bmanage?rial|\bmanagement/.test(s)) return "management";
+  if (/\btechnical|\bdsa|\bcoding/.test(s)) return "technical";
+  if (/\bbehavioral|\bbehavioural/.test(s)) return "behavioral";
+  return s; // pass through — may not match a chrome key
+}
+
+type SessionFocusMetricInput = { label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" };
+
+/** Build the FocusBannerData for the report header. Returns undefined when:
+ *  - the session focus type is not in the chrome registry
+ *  - the focus is behavioral (BehavioralFullReport owns its own hero)
+ *  The headline metric is the first focusMetric from the evaluator, or a
+ *  fallback label when the evaluator hasn't produced metrics yet. */
+function buildFocusBanner(
+  session: DashboardSession,
+): FocusBannerData | undefined {
+  const rawFocus = session.focus || session.type || "";
+  if (!rawFocus) return undefined;
+  const key = normalizeFocusKey(rawFocus);
+  // Behavioral report has its own hero via BehavioralFullReport — skip banner.
+  if (key === "behavioral") return undefined;
+  const chrome = FOCUS_CHROME[key];
+  if (!chrome) return undefined;
+
+  const evalMetrics: SessionFocusMetricInput[] = (session.focusMetrics ?? []).filter(
+    (m): m is SessionFocusMetricInput =>
+      typeof m === "object" && m !== null &&
+      typeof m.label === "string" &&
+      typeof m.value === "string" &&
+      (m.tone === "good" || m.tone === "watch" || m.tone === "miss" || m.tone === "neutral"),
+  );
+
+  const headlineMetric: FocusBannerData["headlineMetric"] = evalMetrics.length > 0
+    ? { label: evalMetrics[0].label, value: evalMetrics[0].value, tone: evalMetrics[0].tone }
+    : { label: chrome.headlineFallbackLabel, value: "—", tone: "neutral" };
+
+  return {
+    icon: chrome.icon,
+    label: chrome.label,
+    tagline: chrome.tagline,
+    headlineMetric,
+    allMetrics: evalMetrics,
+    accent: chrome.accent,
+    accentSoft: chrome.accentSoft,
+  };
+}
 
 /* ─── Top-level adapter ─────────────────────────────────────────────── */
 
@@ -164,6 +333,7 @@ export function sessionReportToInterviewResult(
         )
       : undefined,
     kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
+    focusBanner: buildFocusBanner(session),
   };
 }
 

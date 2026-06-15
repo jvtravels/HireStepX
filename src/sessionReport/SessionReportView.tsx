@@ -28,6 +28,7 @@ import type {
   Calibration,
   CrossSessionInsight,
   DeliveryMetric,
+  FocusBannerData,
   HighlightKind,
   InterviewResultData,
   Question,
@@ -67,6 +68,7 @@ export type {
   Calibration,
   CrossSessionInsight,
   DeliveryMetric,
+  FocusBannerData,
   HighlightKind,
   InterviewResultData,
   Question,
@@ -75,6 +77,135 @@ export type {
   ThoughtBubbleSegment,
   Verdict,
 };
+
+/* ─── Focus banner ─────────────────────────────────────────────────── */
+
+const TONE_VALUE_COLOR: Record<FocusBannerData["headlineMetric"]["tone"], string> = {
+  good: "#15803D",
+  watch: "#B45309",
+  miss: "#B91C1C",
+  neutral: "#374151",
+};
+
+function FocusBannerStrip({ banner }: { banner: FocusBannerData }) {
+  const valueColor = TONE_VALUE_COLOR[banner.headlineMetric.tone] ?? banner.accent;
+  return (
+    <div
+      aria-label={`${banner.label} focus`}
+      style={{
+        background: banner.accentSoft,
+        borderTop: `3px solid ${banner.accent}`,
+        borderRadius: 12,
+        padding: "16px 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        flexWrap: "wrap",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+        <div
+          aria-hidden="true"
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: banner.accent,
+            color: "#FFFFFF",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 20,
+            flexShrink: 0,
+          }}
+        >
+          {banner.icon}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0.8,
+              textTransform: "uppercase",
+              color: banner.accent,
+              marginBottom: 3,
+            }}
+          >
+            {banner.label}
+          </div>
+          <div style={{ fontSize: 13, color: "#0E0C08", fontWeight: 500, lineHeight: 1.4 }}>
+            {banner.tagline}
+          </div>
+        </div>
+      </div>
+
+      {/* Headline metric — the single most important number for this focus */}
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+            color: "#6E6759",
+            marginBottom: 2,
+          }}
+        >
+          {banner.headlineMetric.label}
+        </div>
+        <div
+          style={{
+            fontSize: 20,
+            fontWeight: 700,
+            color: valueColor,
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          }}
+        >
+          {banner.headlineMetric.value}
+        </div>
+      </div>
+
+      {/* Secondary metrics — if the evaluator produced more than the headline */}
+      {banner.allMetrics.length > 1 && (
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            flexWrap: "wrap",
+            width: "100%",
+            paddingTop: 10,
+            borderTop: `1px solid ${banner.accent}22`,
+          }}
+        >
+          {banner.allMetrics.slice(1).map((m) => {
+            const mColor = TONE_VALUE_COLOR[m.tone] ?? "#374151";
+            return (
+              <div
+                key={m.label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: "#374151",
+                }}
+              >
+                <span style={{ fontWeight: 700, color: "#6E6759", textTransform: "uppercase", fontSize: 10, letterSpacing: 0.5 }}>
+                  {m.label}
+                </span>
+                <span style={{ fontWeight: 700, color: mColor, fontFamily: "monospace" }}>
+                  {m.value}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─── Main component ──────────────────────────────────────────────── */
 
@@ -229,6 +360,7 @@ export default function SessionReportView({
           }}
         >
           <JumpNav />
+          {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} />}
           <HeroSection data={data} />
           {credibility && credibility.hasIssues && (
             <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />

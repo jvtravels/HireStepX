@@ -1,6 +1,16 @@
 /* global process */
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable the behavioral v2 diagnostic-first report. The env-flag gate in
+  // SessionReportView.tsx was a rollout safety valve during development —
+  // the BehavioralFullReport component is production-ready and the canvas
+  // design (interview-result-focus/Demos.tsx BehavioralStrongDemo) shows
+  // it as THE behavioral report. Set here so Vercel picks it up without
+  // requiring a separate env-var configuration step.
+  env: {
+    NEXT_PUBLIC_BEHAVIORAL_REPORT_V2: "true",
+  },
+
   turbopack: {
     root: process.cwd(),
     resolveAlias: {
