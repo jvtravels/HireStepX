@@ -1,5 +1,7 @@
 /* Vercel Cron — Uptime Monitor */
-/* Runs every 15 minutes, hits /api/health, logs degraded status */
+/* Hits /api/health, logs degraded status, emails on degradation. */
+/* Schedule lives in vercel.json (currently daily — bump to a 15-minute */
+/* cadence once on a Vercel plan that permits sub-daily crons). */
 /* Visible in Vercel Dashboard → Logs for alerting */
 
 export const config = { runtime: "edge" };
@@ -25,22 +27,28 @@ export default async function handler(req: Request): Promise<Response> {
     const data = await res.json();
 
     if (data.status !== "healthy") {
+      // services may be absent on older deploys / unexpected shapes — default
+      // to {} so a degraded response can never throw here (audit P1-3).
+      const services: Record<string, string> = (data.services && typeof data.services === "object")
+        ? data.services
+        : {};
+
       // Log as error so it's easy to filter in Vercel logs
       console.error(JSON.stringify({
         level: "alert",
         source: "uptime-check",
         status: data.status,
-        services: data.services,
+        services,
         timestamp: new Date().toISOString(),
       }));
 
       // If Resend is configured, send alert email
       const resendKey = process.env.RESEND_API_KEY;
       if (resendKey) {
-        const degradedServices = Object.entries(data.services as Record<string, string>)
+        const degradedServices = Object.entries(services)
           .filter(([, v]) => v !== "ok")
           .map(([k, v]) => `${k}: ${v}`)
-          .join(", ");
+          .join(", ") || "unknown (no per-service detail in response)";
 
         await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -52,7 +60,7 @@ export default async function handler(req: Request): Promise<Response> {
             from: "HireStepX Alerts <alerts@hirestepx.com>",
             to: ["support@hirestepx.com"],
             subject: `[ALERT] HireStepX services degraded: ${degradedServices}`,
-            text: `Health check at ${data.timestamp} returned status: ${data.status}\n\nServices:\n${JSON.stringify(data.services, null, 2)}\n\nCheck: ${baseUrl}/api/health`,
+            text: `Health check at ${data.timestamp} returned status: ${data.status}\n\nServices:\n${JSON.stringify(services, null, 2)}\n\nCheck: ${baseUrl}/api/health`,
           }),
         }).catch((err) => {
           console.error("Failed to send alert email:", err);

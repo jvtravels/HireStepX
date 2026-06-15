@@ -116,6 +116,10 @@ export default async function handler(req: Request): Promise<Response> {
   return new Response(JSON.stringify({
     status: allOk ? "healthy" : "degraded",
     timestamp: new Date().toISOString(),
+    // Per-service detail so the uptime cron can name the degraded service
+    // in its alert (audit P1-3). Reachability checks (supabase/upstash/llm)
+    // are live; the rest reflect env-var presence only.
+    services: checks,
   }), {
     status: allOk ? 200 : 503,
     headers: {
