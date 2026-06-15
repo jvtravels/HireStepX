@@ -25,8 +25,6 @@ const PRICE_MAP: Record<string, { amount: number; name: string; description: str
   single:           { amount: 900,    name: "HireStepX Single Session",   description: "Single mock interview session — ₹9" },
   weekly:           { amount: 4900,   name: "HireStepX Weekly",           description: "Weekly Plan — ₹49 · 10 sessions over 7 days" },
   monthly:          { amount: 14900,  name: "HireStepX Monthly",          description: "Monthly Plan — ₹149 · 40 sessions over 30 days" },
-  "yearly-starter": { amount: 203900, name: "HireStepX Weekly Annual",    description: "Annual Weekly — ₹2,039/year · 10 sessions/week" },
-  "yearly-pro":     { amount: 143000, name: "HireStepX Monthly Annual",   description: "Annual Monthly — ₹1,430/year · 40 sessions/month" },
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

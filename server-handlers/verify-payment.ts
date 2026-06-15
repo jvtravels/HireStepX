@@ -56,9 +56,9 @@ async function clearPaymentIntent(orderId: string): Promise<void> {
 
 // PLAN_DURATION used for reference: weekly=7, monthly=setMonth(), yearly=365
 // "single" stays on the free tier — it grants session credits, not a tier change.
-const PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro", "yearly-starter": "starter", "yearly-pro": "pro" };
-const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 4900, monthly: 14900, "yearly-starter": 203900, "yearly-pro": 143000 };
-const PLAN_LABEL: Record<string, string> = { weekly: "Starter (₹49/week)", monthly: "Pro (₹149/month)", "yearly-starter": "Starter Annual (₹2,039/year)", "yearly-pro": "Pro Annual (₹1,430/year)" };
+const PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro" };
+const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 4900, monthly: 14900 };
+const PLAN_LABEL: Record<string, string> = { weekly: "Starter (₹49/week)", monthly: "Pro (₹149/month)" };
 const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2 };
 
 async function sendPaymentEmail(
@@ -79,7 +79,7 @@ async function sendPaymentEmail(
   const planLabel = PLAN_LABEL[plan] || tier;
   const start = new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   const end = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-  const amountMap: Record<string, string> = { weekly: "₹49", monthly: "₹149", "yearly-starter": "₹2,039", "yearly-pro": "₹1,430" };
+  const amountMap: Record<string, string> = { weekly: "₹49", monthly: "₹149" };
   const amount = amountMap[plan] || "₹149";
 
   try {
@@ -517,7 +517,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       && (TIER_RANK[current.subscription_tier] || 0) < (TIER_RANK[tier] || 0);
 
     // Resolve plan duration in days (avoid setMonth which has month-end overflow bugs)
-    const planDaysMap: Record<string, number> = { weekly: 7, monthly: 30, "yearly-starter": 365, "yearly-pro": 365 };
+    const planDaysMap: Record<string, number> = { weekly: 7, monthly: 30 };
     const planDays = planDaysMap[plan];
     if (planDays === undefined) {
       return res.status(400).json({ error: "Invalid plan duration", code: "INVALID_PLAN" });

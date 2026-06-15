@@ -365,7 +365,6 @@ const PagesResponsiveSheet = () => (
    Deeper than the homepage slot. 4 tiers + comparison table + FAQ.
    ════════════════════════════════════════════════════════════════════ */
 export function PricingPageV2() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   useEffect(() => {
     captureClientEvent("pricing_page_viewed", { surface: "marketing_v2" });
   }, []);
@@ -439,80 +438,8 @@ export function PricingPageV2() {
     },
   ];
 
-  // Yearly plans — billed once per year, ~30% cheaper than monthly equivalent.
-  // Backend SKUs: "yearly-starter" (₹2,039/yr) and "yearly-pro" (₹1,430/yr).
-  const tiersYearly = [
-    {
-      name: "Free",
-      price: "₹0",
-      unit: "forever",
-      sub: "Try before you pay a rupee",
-      features: [
-        "3 mock sessions",
-        "Behavioural rounds + basic STAR score",
-        "Email report",
-        "No credit card required",
-      ],
-      cta: "Start free",
-      href: "/signup?plan=free",
-      featured: false,
-      studentDiscount: false,
-    },
-    {
-      name: "Per session",
-      price: "₹9",
-      unit: "/ session",
-      sub: "One mock, zero commitment",
-      features: [
-        "1 mock session",
-        "Voice in & out, all round types",
-        "Full STAR score + report",
-        "Credit never expires",
-      ],
-      cta: "Buy one session",
-      href: "/signup?plan=single",
-      featured: false,
-      studentDiscount: false,
-    },
-    {
-      name: "Starter Annual",
-      price: "₹2,039",
-      unit: "/ year",
-      sub: "₹170/week · billed ₹2,039/year · save ~30%",
-      features: [
-        "10 sessions per week, billed annually",
-        "Voice in & out, all round types",
-        "Company-specific rounds",
-        "Skill-decay tracking",
-        "₹170/week equivalent",
-      ],
-      cta: "Go annual (Starter)",
-      href: "/signup?plan=yearly-starter",
-      featured: false,
-      studentDiscount: true,
-    },
-    {
-      name: "Pro Annual",
-      price: "₹1,430",
-      unit: "/ year",
-      sub: "₹119/month · billed ₹1,430/year · save ~30%",
-      features: [
-        "40 sessions per month, billed annually",
-        "Everything in Starter Annual",
-        "Interview calendar + countdown",
-        "Session history & score trends",
-        "Export PDF, CSV, JSON",
-        "AI coach notes on every session",
-        "₹119/month equivalent",
-      ],
-      cta: "Go annual (Pro)",
-      href: "/signup?plan=yearly-pro",
-      featured: true,
-      studentDiscount: true,
-    },
-  ];
 
-  const tiers = billingCycle === "yearly" ? tiersYearly : tiersMonthly;
+  const tiers = tiersMonthly;
 
   const compareRows: Array<[string, string, string, string, string]> = [
     ["Mock sessions included", "3 (one-time)", "1 (one-time)", "10 / week", "40 / month"],
@@ -564,25 +491,6 @@ export function PricingPageV2() {
       {/* Tier cards */}
       <section className="mv2p-section" aria-label="Pricing tiers" style={{ ...sectionBase, paddingTop: 56 }}>
         <div className="mv2-container" style={container}>
-          {/* Billing cycle toggle */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 40 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999, padding: 4, gap: 2 }}>
-              <button
-                onClick={() => setBillingCycle("monthly")}
-                style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, padding: "8px 20px", borderRadius: 999, border: "none", cursor: "pointer", background: billingCycle === "monthly" ? t.white : "transparent", color: billingCycle === "monthly" ? t.coal : t.inkSoft, boxShadow: billingCycle === "monthly" ? shadows.card : "none", transition: "all 0.15s" }}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingCycle("yearly")}
-                style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, padding: "8px 20px", borderRadius: 999, border: "none", cursor: "pointer", background: billingCycle === "yearly" ? t.white : "transparent", color: billingCycle === "yearly" ? t.coal : t.inkSoft, boxShadow: billingCycle === "yearly" ? shadows.card : "none", transition: "all 0.15s", display: "inline-flex", alignItems: "center", gap: 8 }}
-              >
-                Yearly
-                <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const, background: "#15803D", color: "#fff", padding: "2px 7px", borderRadius: 999 }}>save 30%</span>
-              </button>
-            </div>
-          </div>
-
           <div
             className="mv2p-pricing-row"
             style={{
