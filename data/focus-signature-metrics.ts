@@ -295,3 +295,109 @@ export function signatureLabels(type: string | undefined): string[] {
   if (!type) return [];
   return (FOCUS_SIGNATURE_SPECS[type] ?? []).map((s) => s.label);
 }
+
+/* ── Per-question focus metrics ──────────────────────────────────────────────
+ * Each per-question card in the report shows 4 mini metric tiles that replace
+ * the generic (Words / Length / First-person / Quantified) strip with focus-
+ * specific signal. The LLM emits these inside each `perQuestion[].focusMetrics`
+ * entry — same tone enum (good|watch|miss|neutral) as the session-level strip. */
+
+export interface PerQuestionMetricSpec {
+  label: string;
+  measure: string;
+  valueHint: string;
+  toneRule: string;
+}
+
+export const PER_QUESTION_METRIC_SPECS: Record<string, PerQuestionMetricSpec[]> = {
+  behavioral: [
+    { label: "Words",          measure: "Word count of the candidate's answer.",                                                                   valueHint: '"218"',    toneRule: "good 120-240, watch <80 or >300, miss extreme outliers" },
+    { label: "First-person %", measure: "Share of ownership statements told as 'I' vs 'we'.",                                                      valueHint: '"64%"',    toneRule: "good ≥60, watch 40-59, miss <40" },
+    { label: "Specifics",      measure: "Count of concrete specifics: named numbers, dates, company names, or outcomes.",                          valueHint: '"5"',      toneRule: "good ≥4, watch 2-3, miss ≤1" },
+    { label: "STAR coverage",  measure: "Percentage of STAR elements present (Situation, Task, Action, Result — L is bonus).",                     valueHint: '"100%"',   toneRule: "good 100, watch 75, miss ≤50" },
+  ],
+  technical: [
+    { label: "Approaches",    measure: "Count of distinct solution approaches the candidate articulated (brute-force + optimal = 2).",              valueHint: '"2"',             toneRule: "good ≥2, watch 1 with reasoning, miss 1 with none" },
+    { label: "Complexity",    measure: "Whether the candidate stated Big-O for their final answer.",                                                valueHint: '"Stated" or "Not stated"', toneRule: "good stated, miss not stated" },
+    { label: "Edge cases",    measure: "Count of distinct edge cases raised unprompted.",                                                           valueHint: '"3"',             toneRule: "good ≥3, watch 1-2, miss 0" },
+    { label: "Test cases",    measure: "Count of concrete test-case examples the candidate mentioned.",                                             valueHint: '"2"',             toneRule: "good ≥2, watch 1, miss 0" },
+  ],
+  "case-study": [
+    { label: "Framework",      measure: "Whether the candidate named and held a structuring framework through the answer.",                        valueHint: '"Yes" or "No"', toneRule: "good when named and held, watch named but loose, miss absent" },
+    { label: "Solutions",      measure: "Count of distinct solution options the candidate generated before recommending.",                          valueHint: '"4"',           toneRule: "good ≥3, watch 2, miss ≤1" },
+    { label: "Recommendation", measure: "Whether the candidate landed a clear decisive recommendation (vs hedging).",                              valueHint: '"Yes" or "No"', toneRule: "good clear and defended, watch present but soft, miss none" },
+    { label: "Metrics named",  measure: "Count of success metrics or guardrails the candidate named.",                                             valueHint: '"1"',           toneRule: "good ≥2, watch 1, miss 0" },
+  ],
+  "system-design": [
+    { label: "Components",     measure: "Count of distinct, justified system components in the candidate's design.",                               valueHint: '"6"',           toneRule: "good ≥5, watch 3-4, miss <3" },
+    { label: "Capacity stated",measure: "Whether the candidate sized the system (TPS/QPS/storage) before designing.",                              valueHint: '"Yes" or "No"', toneRule: "good stated with numbers, watch vague, miss skipped" },
+    { label: "DB justified",   measure: "Whether the candidate justified their database choice (why SQL vs NoSQL, etc.).",                          valueHint: '"Yes" or "No"', toneRule: "good justified, watch vague, miss not mentioned" },
+    { label: "Failure modes",  measure: "Count of failure modes / bottlenecks the candidate reasoned about.",                                      valueHint: '"2"',           toneRule: "good ≥2, watch 1, miss 0" },
+  ],
+  strategic: [
+    { label: "Stakeholders",      measure: "Count of distinct stakeholder groups the candidate explicitly reasoned about.",                        valueHint: '"4"',           toneRule: "good ≥3, watch 2, miss ≤1" },
+    { label: "Time horizons",     measure: "How many time horizons (now / next / later) the candidate separated in their answer.",                 valueHint: '"3"',           toneRule: "good ≥2, watch 1, miss 0" },
+    { label: "Decision criteria", measure: "Count of concrete criteria the candidate used to evaluate options.",                                   valueHint: '"5"',           toneRule: "good ≥3, watch 2, miss ≤1" },
+    { label: "Risk owned",        measure: "Whether the candidate named a falsifiable risk they'd own rather than only upside.",                   valueHint: '"Yes" or "No"', toneRule: "good when real risk owned, watch hedged, miss none" },
+  ],
+  "campus-placement": [
+    { label: "Project ownership", measure: "Share of project claims stated as the candidate's specific contribution vs the team's.",               valueHint: '"38%"',         toneRule: "good ≥60, watch 40-59, miss <40" },
+    { label: "Architectural",     measure: "Count of architectural or design decisions the candidate explained with a 'why'.",                     valueHint: '"2"',           toneRule: "good ≥2, watch 1, miss 0" },
+    { label: "Fundamentals",      measure: "Count of core-fundamentals questions (OOP, OS, DBMS, DSA) answered correctly out of those asked.",    valueHint: '"5"',           toneRule: "good nearly all correct, watch mixed, miss most missed" },
+    { label: "Specific reasons",  measure: "Count of times the candidate gave a specific 'why' behind a tech/design choice rather than just 'what'.", valueHint: '"1"',       toneRule: "good ≥2, watch 1, miss 0" },
+  ],
+  panel: [
+    { label: "Panelists addressed", measure: "Count of panelists the candidate directly addressed or engaged in this answer.",                     valueHint: '"3"',     toneRule: "good all present, watch most, miss fixated on one" },
+    { label: "Direct response",     measure: "Percentage of the answer that directly addressed what the asking panelist asked (vs pivoting away).", valueHint: '"90%"',  toneRule: "good ≥80, watch 60-79, miss <60" },
+    { label: "Tone shifts",         measure: "Count of times the candidate adapted register to a different panelist in this answer.",               valueHint: '"2"',     toneRule: "good ≥1, neutral 0" },
+    { label: "Cross-references",    measure: "Count of times the candidate bridged back to an earlier panelist's question or comment.",            valueHint: '"1"',     toneRule: "good ≥1, neutral 0" },
+  ],
+  "government-psu": [
+    { label: "Ethics keywords",    measure: "Count of explicit ethics/integrity/impartiality markers in the answer.",                              valueHint: '"4"',     toneRule: "good ≥3, watch 1-2, miss 0" },
+    { label: "Public examples",    measure: "Count of real public-sector schemes, policies, or rulings cited by name.",                            valueHint: '"0"',     toneRule: "good ≥2, watch 1, miss 0" },
+    { label: "Service language",   measure: "Count of appropriate public-service register markers (serve, citizen, public interest, hierarchy).",  valueHint: '"6"',     toneRule: "good ≥4, watch 2-3, miss ≤1" },
+    { label: "Specific policies",  measure: "Count of specific acts, articles, provisions, or rules cited correctly.",                             valueHint: '"0"',     toneRule: "good ≥2, watch 1, miss 0" },
+  ],
+  management: [
+    { label: "People scope",       measure: "Whether the candidate quantified the team or budget they managed.",                                   valueHint: '"Quantified" or "Vague"', toneRule: "good quantified, watch partial, miss absent" },
+    { label: "Decision ownership", measure: "Whether the candidate owned a hard management call vs describing what 'we' did.",                     valueHint: '"Yes" or "No"',           toneRule: "good owned, watch shared, miss deflected" },
+    { label: "Coaching examples",  measure: "Count of concrete examples of developing or course-correcting a direct report.",                      valueHint: '"2"',                     toneRule: "good ≥2, watch 1, miss 0" },
+    { label: "Conflict handled",   measure: "Whether the candidate described how a team conflict was resolved rather than avoided.",                valueHint: '"Yes" or "No"',           toneRule: "good resolved with outcome, watch partial, miss avoided/absent" },
+  ],
+  "salary-negotiation": [
+    { label: "Anchor delta",      measure: "How far above the AI's offer the candidate counter-anchored, as a percent (0% = accepted without counter).", valueHint: '"+37%" or "0%"',          toneRule: "good ≥+15, watch +1-14, miss 0 or below" },
+    { label: "Concessions",       measure: "How many concessions the candidate gave in this turn, out of how many were pressed for.",                    valueHint: '"0 / 1" (given / pressed)', toneRule: "good 0 given, watch partial, miss folded first push" },
+    { label: "Silence held",      measure: "Estimated post-counter pause before the candidate spoke again (longer = more confident).",                   valueHint: '"4.2s"',                  toneRule: "good ≥3s, watch 1-2.9s, miss <1s" },
+    { label: "Disclosure leaks",  measure: "Count of premature disclosures that weakened leverage (current salary, hard ceiling, urgency).",             valueHint: '"0"',                     toneRule: "good 0, watch 1, miss ≥2" },
+  ],
+};
+
+/* `managerial` shares the management spec. */
+PER_QUESTION_METRIC_SPECS.managerial = PER_QUESTION_METRIC_SPECS.management;
+
+/**
+ * Render per-question metric instructions for the evaluator prompt. Returns ""
+ * when the focus has no per-question spec (metrics tile falls back to generic
+ * Words/Length/First-person/Quantified in the UI). Injected into the
+ * `perQuestion` section of the prompt so the LLM knows what to emit per item.
+ */
+export function formatPerQuestionMetricsPrompt(type: string | undefined): string {
+  if (!type) return "";
+  const specs = PER_QUESTION_METRIC_SPECS[type];
+  if (!specs || specs.length === 0) return "";
+  const lines = specs
+    .map(
+      (s, i) =>
+        `    ${i + 1}. label "${s.label}" — ${s.measure}\n` +
+        `       value format: ${s.valueHint}; tone: ${s.toneRule}.`,
+    )
+    .join("\n");
+  return (
+    `\n\nPER-QUESTION FOCUS METRICS (focus=${type}) — inside each perQuestion item, also emit:\n` +
+    `  "focusMetrics": [\n` +
+    `    // Exactly these ${specs.length} metrics per question, in this order.\n` +
+    `    // Echo labels verbatim. "value" is a SHORT display string (see format). "tone" is good|watch|miss|neutral.\n` +
+    `    { "label": "...", "value": "...", "tone": "good|watch|miss|neutral" }\n` +
+    `  ]\n${lines}`
+  );
+}

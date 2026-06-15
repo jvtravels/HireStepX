@@ -51,7 +51,7 @@ import {
   type WinOrFix as WinOrFixH,
   type RedFlag as RedFlagH,
 } from "./_evaluate-session-helpers";
-import { formatSignatureMetricsPrompt } from "../data/focus-signature-metrics";
+import { formatSignatureMetricsPrompt, formatPerQuestionMetricsPrompt } from "../data/focus-signature-metrics";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -209,6 +209,11 @@ interface EvaluateRequest {
       topProjects?: string[];
       headline?: string;
       careerTrajectory?: string;
+      /** Extended grounding: enables missed-achievement flags, industry-
+       *  context anchoring, and company-name credibility cross-checks. */
+      keyAchievements?: string[];
+      industries?: string[];
+      companiesOnResume?: string[];
     };
   };
 }
@@ -279,6 +284,9 @@ interface PerQuestionReport {
     whatMakesItStrong: string[]; // 2-4 bullets: specific reasons this answer is 90/100
   } | null;
   explanation: string;
+  /** Per-question focus-specific tiles — only present for non-behavioral focus
+   *  types that have PER_QUESTION_METRIC_SPECS. Replaces generic 4-tile strip. */
+  focusMetrics?: Array<{ label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" }>;
 }
 
 interface WinOrFix {
@@ -571,6 +579,7 @@ export default async function handler(req: Request): Promise<Response> {
        Labels are pinned in code; the model fills value + tone. Lands in the
        dynamic section after the rubric so it doesn't break prompt caching. */
     const signatureMetricsPrompt = formatSignatureMetricsPrompt(meta?.type);
+    const perQuestionMetricsPrompt = formatPerQuestionMetricsPrompt(meta?.type);
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
     // lets Groq's automatic prompt caching (which keys on the longest shared
@@ -683,11 +692,20 @@ Duration (s): ${durationSec}${
       const projects = Array.isArray(rc.topProjects) ? rc.topProjects.slice(0, 5).map(p => sanitizeForLLM(String(p || ""), 140)).filter(Boolean) : [];
       const headline = rc.headline ? sanitizeForLLM(String(rc.headline), 120) : "";
       const trajectory = rc.careerTrajectory ? sanitizeForLLM(String(rc.careerTrajectory), 200) : "";
+      const achievements = Array.isArray(rc.keyAchievements)
+        ? rc.keyAchievements.slice(0, 4).map(a => sanitizeForLLM(String(a || ""), 140)).filter(Boolean) : [];
+      const industries = Array.isArray(rc.industries)
+        ? rc.industries.slice(0, 3).map(i => sanitizeForLLM(String(i || ""), 60)).filter(Boolean) : [];
+      const companies = Array.isArray(rc.companiesOnResume)
+        ? rc.companiesOnResume.slice(0, 8).map(c => sanitizeForLLM(String(c || ""), 80)).filter(Boolean) : [];
       const lines: string[] = [];
       if (headline) lines.push(`Headline: ${headline}`);
       if (trajectory) lines.push(`Trajectory: ${trajectory}`);
       if (skills.length) lines.push(`Top skills: ${skills.join(", ")}`);
       if (projects.length) lines.push(`Notable projects: ${projects.join(" | ")}`);
+      if (achievements.length) lines.push(`Key achievements on CV (flag if candidate never referenced these): ${achievements.map(a => `"${a}"`).join("; ")}`);
+      if (industries.length) lines.push(`Industry background: ${industries.join(", ")} — anchor exemplars in these domains`);
+      if (companies.length) lines.push(`Verified employers (flag credibility risk if candidate claims a company not on this list): ${companies.join(", ")}`);
       if (!lines.length) return "";
       return `\n\nCANDIDATE RESUME CONTEXT (use to flag missed-opportunity moments and ground exemplars in their real background — DO NOT fabricate experience beyond what's listed here):\n${lines.join("\n")}`;
     })()}
@@ -696,7 +714,7 @@ TRANSCRIPT (numbered turns):
 """
 ${transcriptBlock}
 """
-${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}
+${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}
 
 RUBRIC — score each skill 0-100:
 ${skillAxes.map((s) => `- ${s}`).join("\n")}
@@ -769,7 +787,12 @@ Return a JSON object with EXACTLY this shape:
         "targetRange": "<expected range for this type of question, e.g. '120-240 words' for behavioral or '180-360' for system design>",
         "note": "<one line coaching, second-person>"
       },
-      "explanation": "<1-2 sentences on what worked/missed>"
+      "explanation": "<1-2 sentences on what worked/missed>"${perQuestionMetricsPrompt ? `,
+      "focusMetrics": [
+        // Per-question focus tiles — see PER-QUESTION FOCUS METRICS section above.
+        // Exactly the labels listed there, in order. Short value string + tone.
+        { "label": "...", "value": "...", "tone": "good|watch|miss|neutral" }
+      ]` : ""}
     }
   ],
   "scoreConfidence": <0.0-1.0 — YOUR self-reported confidence in the overall score. Lower if transcript is short/noisy or if the candidate's intent was ambiguous. 0.8 is typical; 0.95 means very confident; 0.55 means treat score as indicative only.>,

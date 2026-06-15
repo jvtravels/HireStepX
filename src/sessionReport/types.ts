@@ -85,6 +85,12 @@ export interface Question {
    *  delta (what the alternative does that the actual answer didn't).
    *  Optional — block is omitted entirely when absent. */
   idealAnswerSnippet?: { text: string; whyBetter: string };
+  /** Per-question focus-specific metric tiles. When present these replace the
+   *  generic 4-tile strip (Words / Length / First-person / Quantified) with
+   *  focus-aware signal (Approaches / Complexity / Edge cases / Test cases for
+   *  technical, etc.). Tone uses the same enum as session-level focusMetrics:
+   *  good | watch | miss | neutral. */
+  focusMetrics?: Array<{ label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" }>;
 }
 
 export interface CalibrationBand {
@@ -229,6 +235,11 @@ export interface InterviewResultData {
     counts: { green: number; yellow: number; red: number };
     classifications: Array<{ bucket: "green" | "yellow" | "red"; reason: string }>;
   };
+  /** Resume improvement bullets from the AI resume analysis — shown in the
+   *  Next Steps section to connect interview coaching with resume quality.
+   *  Sourced from `aiProfile.improvements` (computed once at resume-upload).
+   *  Undefined when no AI-parsed resume is available. */
+  resumeImprovements?: string[];
   /** Focus-aware banner for the top of the report. See `FocusBannerData`.
    *  Undefined for behavioral sessions (BehavioralFullReport has its own
    *  hero) or when focus type isn't recognized. */

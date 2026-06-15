@@ -314,6 +314,9 @@ export interface AdapterContext {
   /** Non-native English flag — softens the bias detector for hedging
    *  patterns that are politeness, not authority erosion. */
   nonNativeEnglish?: boolean;
+  /** Resume improvement bullets from the AI resume analysis — surfaced
+   *  in the Next Steps section to connect coaching with resume quality. */
+  resumeImprovements?: string[];
 }
 
 export function sessionReportToInterviewResult(
@@ -406,6 +409,9 @@ export function sessionReportToInterviewResult(
           counts: report.reverseInterview.counts,
           classifications: report.reverseInterview.classifications,
         }
+      : undefined,
+    resumeImprovements: Array.isArray(ctx.resumeImprovements) && ctx.resumeImprovements.length > 0
+      ? ctx.resumeImprovements.slice(0, 3)
       : undefined,
     negotiationOutcome: isNegotiation
       ? attachPowerContext(
@@ -758,6 +764,13 @@ function adaptQuestion(
       stripProsodyMarkup(q.question),
       isSkipped || q.verdict === "skipped" ? "weak" : q.verdict
     ),
+    focusMetrics: q.focusMetrics?.length
+      ? q.focusMetrics.map((m) => ({
+          label: m.label,
+          value: m.value,
+          tone: m.tone as "good" | "watch" | "miss" | "neutral",
+        }))
+      : undefined,
   };
 }
 

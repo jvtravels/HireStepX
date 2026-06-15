@@ -270,12 +270,25 @@ export function QuestionDetail({ q }: { q: Question }) {
             <StarChip active={q.star.learning} letter="L" label="Learning" />
           </div>
           <span aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: t.line }} />
-          {[
-            { label: "Words", value: `${q.metrics.wordCount}`, tone: t.coal },
-            { label: "Length", value: `${q.metrics.responseSec.toFixed(1)}s`, tone: t.coal },
-            { label: "First-person", value: `${q.metrics.firstPersonRatioPct}%`, tone: t.coal },
-            { label: "Quantified", value: `${q.metrics.quantificationCount}`, tone: q.metrics.quantificationCount === 0 ? t.error : t.coal },
-          ].map((m) => (
+          {/* Focus-aware override: if focusMetrics is present (technical,
+              case-study, system-design, etc.) render those tiles; otherwise
+              fall back to the generic 4. Tone strings map to design tokens. */}
+          {(q.focusMetrics
+            ? q.focusMetrics.map((m) => ({
+                label: m.label,
+                value: m.value,
+                tone: m.tone === "good" ? t.success
+                    : m.tone === "watch" ? t.copper
+                    : m.tone === "miss"  ? t.error
+                    : t.coal,
+              }))
+            : [
+                { label: "Words", value: `${q.metrics.wordCount}`, tone: t.coal },
+                { label: "Length", value: `${q.metrics.responseSec.toFixed(1)}s`, tone: t.coal },
+                { label: "First-person", value: `${q.metrics.firstPersonRatioPct}%`, tone: t.coal },
+                { label: "Quantified", value: `${q.metrics.quantificationCount}`, tone: q.metrics.quantificationCount === 0 ? t.error : t.coal },
+              ]
+          ).map((m) => (
             <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
               <span style={{ fontFamily: f.mono, fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkSoft }}>{m.label}</span>
               <span style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 600, color: m.tone, marginTop: 2 }}>{m.value}</span>

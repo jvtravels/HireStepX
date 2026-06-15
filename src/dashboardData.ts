@@ -915,6 +915,11 @@ export interface ResumeProfile {
   interviewGaps: string[];
   careerTrajectory: string;
   resumeScore?: number;
+  /** Six-axis breakdown from the AI resume analyzer (computed once at
+   *  upload time). Keys: quantifiedAchievements (0-20), relevantSkills
+   *  (0-20), formattingStructure (0-15), experienceProgression (0-20),
+   *  educationCerts (0-10), summaryClarity (0-15). Optional for back-compat. */
+  scoreBreakdown?: Record<string, number>;
   improvements?: string[];
   /**
    * Structured per-role timeline. Optional because old cached profiles
@@ -1059,6 +1064,9 @@ export interface SessionReportPerQuestion {
     whatMakesItStrong: string[];
   } | null;
   explanation: string;
+  /** Per-question focus-specific metric tiles — emitted by the evaluator for
+   *  non-behavioral focus types. Replaces the generic 4-tile strip in the UI. */
+  focusMetrics?: Array<{ label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" }>;
 }
 
 export interface SessionReportWinFix {
