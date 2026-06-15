@@ -1,6 +1,6 @@
 # HireStepX — Launch Marketing Document
 
-**Launch Date:** May 2, 2026 **Product:** HireStepX — AI Mock Interview Platform **Company:** Silva Vitalis LLC **Website:** hirestepx.com
+**Launch Date:** May 2, 2026 **Product:** HireStepX — AI Mock Interview Platform **Company:** HireStepX **Website:** hirestepx.com
 
 ---
 
@@ -355,7 +355,7 @@ Google, Apple, Microsoft, Meta, Amazon, McKinsey, Deloitte, Goldman Sachs, TCS, 
 ## 13. Company Information
 
 - **Product:** HireStepX
-- **Company:** Silva Vitalis LLC
+- **Company:** HireStepX
 - **Website:** hirestepx.com
 - **Location:** Built in San Francisco
 - **Market:** India-first, globally available

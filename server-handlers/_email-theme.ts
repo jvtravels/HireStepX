@@ -187,7 +187,7 @@ export function footer(opts: { manageUrl?: string; unsubUrl?: string } = {}): st
     <tr><td style="padding-top:22px;font-family:${SANS};font-size:12px;line-height:1.7;color:${C.inkSoft};">
       You're receiving this because you have an account at hirestepx.com.<br>
       ${manage} &middot; ${unsub}
-      <div style="margin-top:12px;font-size:11px;color:${C.inkFaint};">HireStepX by Silva Vitalis LLC &middot; Bengaluru, India</div>
+      <div style="margin-top:12px;font-size:11px;color:${C.inkFaint};">HireStepX</div>
     </td></tr>
   </table>`;
 }

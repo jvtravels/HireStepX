@@ -1,6 +1,6 @@
 # Level Up Interviews — Brand Strategy & Identity Guide
 
-**Product:** Level Up Interviews | **Client:** Silva Vitalis LLC | **Date:** April 2026
+**Product:** Level Up Interviews | **Client:** HireStepX | **Date:** April 2026
 
 ---
 
@@ -63,7 +63,7 @@ Secondary archetype: **The Ruler** — structured, commanding, quality-oriented.
 | Full product name | **Level Up Interviews** | "Welcome to Level Up Interviews" |
 | Marketing / SEO | **Level Up Interviews** | Page titles, meta descriptions |
 | Conversational / UI | **Level Up** | "Your Level Up session is ready" |
-| Legal / Contracts | **Level Up Interviews by Silva Vitalis LLC** | Terms of service, invoices |
+| Legal / Contracts | **HireStepX** | Terms of service, invoices |
 
 ---
 

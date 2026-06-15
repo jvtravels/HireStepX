@@ -1,6 +1,6 @@
 # Level Up Interviews — Competitor Analysis & UX Gap Assessment
 
-**Product:** Level Up Interviews | **Client:** Silva Vitalis LLC | **Date:** April 2026
+**Product:** Level Up Interviews | **Client:** HireStepX | **Date:** April 2026
 
 ---
 

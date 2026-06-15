@@ -1,6 +1,6 @@
 # Level Up Interviews — Product Roadmap
 
-**Client:** Silva Vitalis LLC | **Timeline:** 10 Weeks | **Start:** Week of April 7, 2026
+**Client:** HireStepX | **Timeline:** 10 Weeks | **Start:** Week of April 7, 2026
 
 ---
 
@@ -411,7 +411,7 @@ The repo currently contains a basic Vite + React scaffold. **The first major tas
 
 - [ ] Final security review: API routes protected, auth middleware verified, no exposed secrets
 
-- [ ] PM: Launch sign-off with Silva Vitalis
+- [ ] PM: Launch sign-off with the team
 
 #### Milestone M7 — Production Launch (End of Week 10)
 
@@ -537,4 +537,4 @@ DataRetentionPolicy
 3. **Set up Prisma schema** with all 7 entities
 4. **Configure Clerk** with auth middleware
 5. **Set up Vercel** project for preview deployments
-6. **Confirm AI provider** (OpenAI or Anthropic) with Silva Vitalis
+6. **Confirm AI provider** (OpenAI or Anthropic) with the team

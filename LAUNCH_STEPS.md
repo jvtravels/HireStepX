@@ -111,7 +111,7 @@ After Step 1 + Step 2 are done:
 
 1. **₹9 purchase** — log in as a test user, buy one ₹9 session via the pricing page, complete the Razorpay flow, and confirm the dashboard credit pill goes up by 1 and you can start a session. *(This is the critical one — proves the migration + payment path work end-to-end.)*
 2. **Pricing page** — `/pricing` shows 4 cards (Free, ₹9 Per session, ₹49 Weekly, ₹149 Monthly) and the comparison table has 4 plan columns.
-3. **Legal pages** — `/privacy` and `/terms` say "HireStepX" (no "Silva Vitalis LLC"); footer office reads "India / built in India".
+3. **Legal pages** — `/privacy` and `/terms` say "HireStepX"; footer office reads "India / built in India".
 4. **Public profile** — a brand-new user's public profile URL returns "private" until they opt in (private-by-default).
 
 ---
