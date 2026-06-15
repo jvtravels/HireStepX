@@ -1380,6 +1380,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Successful login — clear lockout counter (client + server)
     clearLoginLockout();
 
+    // Optimistically set the user NOW so isLoggedIn flips in this tab and
+    // the Login screen's redirect effect fires immediately. Previously
+    // login() relied entirely on the async onAuthStateChange(SIGNED_IN)
+    // handler to set the user — but that handler runs a up-to-5s getProfile
+    // and is subject to the initial-session dedup guard, so on a fresh login
+    // page it could be dropped/delayed. Result: the session was created
+    // (a manual refresh landed on the dashboard) but the tab never
+    // navigated. We build the user from the JWT here (same shape as the
+    // getProfile-timeout fallback paths); the SIGNED_IN/TOKEN_REFRESHED
+    // handlers then enrich it with full profile data when they resolve.
+    if (data?.user) {
+      const meta = data.user.user_metadata || {};
+      const cached = getCachedTier(data.user.id);
+      setUser({
+        id: data.user.id,
+        name: meta.name || meta.full_name || "",
+        email: data.user.email || email,
+        targetRole: cached?.targetRole || "",
+        resumeFileName: null,
+        hasCompletedOnboarding:
+          meta.has_completed_onboarding || getLocalOnboardingDone(data.user.id) || false,
+        emailVerified: true, // already passed the verification gate above
+        signedInVia: "email",
+        ...(cached
+          ? {
+              subscriptionTier: cached.tier,
+              subscriptionEnd: cached.subscriptionEnd,
+              practiceTimestamps: cached.practiceTimestamps || [],
+            }
+          : {}),
+      });
+    }
+
     // ─── Single-device enforcement — token rotation ───
     // New login wins: we generate a fresh device token, write it to
     // user_metadata on the server, and store it locally. Any other device
