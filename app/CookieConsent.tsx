@@ -49,13 +49,12 @@ export default function CookieConsent() {
         bottom: 20, left: 20, right: 20,
         maxWidth: 640, marginLeft: "auto", marginRight: "auto",
         zIndex: 9999,
-        background: "rgba(20,20,22,0.96)",
-        backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-        border: "1px solid rgba(245,242,237,0.12)",
+        background: "#FDFAF6",
+        border: "1px solid #E8E2D9",
         borderRadius: 14,
         padding: "18px 20px",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-        color: "#F5F2ED",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
+        color: "#0E0C08",
         fontFamily: "'Inter', system-ui, sans-serif",
         display: "flex",
         gap: 16,
@@ -63,10 +62,10 @@ export default function CookieConsent() {
         flexWrap: "wrap",
       }}
     >
-      <div id="cookie-consent-desc" style={{ flex: "1 1 260px", fontSize: 13, lineHeight: 1.55, color: "#D1CDC6" }}>
+      <div id="cookie-consent-desc" style={{ flex: "1 1 260px", fontSize: 13, lineHeight: 1.55, color: "#4A4540" }}>
         We use essential cookies to run HireStepX. With your permission we'll also use
         analytics cookies to improve the experience.{" "}
-        <a href="/privacy" style={{ color: "#D4B37F", textDecoration: "underline" }}>
+        <a href="/privacy" style={{ color: "#9B6E2E", textDecoration: "underline" }}>
           Privacy policy
         </a>
         .
@@ -77,9 +76,9 @@ export default function CookieConsent() {
           onClick={() => setConsent(false)}
           style={{
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            color: "#D1CDC6",
+            color: "#4A4540",
             background: "transparent",
-            border: "1px solid rgba(245,242,237,0.18)",
+            border: "1px solid #C8C0B4",
             borderRadius: 8, padding: "8px 14px",
             cursor: "pointer",
           }}
@@ -91,9 +90,9 @@ export default function CookieConsent() {
           onClick={() => setConsent(true)}
           style={{
             fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-            color: "#060607",
-            background: "#D4B37F",
-            border: "1px solid #D4B37F",
+            color: "#FDFAF6",
+            background: "#1A1814",
+            border: "1px solid #1A1814",
             borderRadius: 8, padding: "8px 14px",
             cursor: "pointer",
           }}
