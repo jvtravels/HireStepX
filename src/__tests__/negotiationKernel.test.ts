@@ -86,6 +86,57 @@ describe("totalScopedCounter", () => {
   it("returns null when no counter is on the table", () => {
     expect(totalScopedCounter(init())).toBeNull();
   });
+
+  /* HIGH#1 (2026-06-15 unbiased review) — the counter side must honour
+   * the same in-hand framing the target side does. A candidate who
+   * counters "30L total in hand" is asking for a CTC well above 30L;
+   * comparing a raw 30 against the recruiter's CTC offer under-counts
+   * exactly as the target-side bug did. totalScopedCounter must return
+   * the CTC-equivalent when the counter was framed in-hand. */
+  it("returns the CTC-equivalent for an in-hand total-scoped counter, not the raw figure", () => {
+    expect(
+      totalScopedCounter(
+        init({
+          lastCandidateCounterLpa: 30,
+          lastCounterComponent: "total",
+          candidateTargetIsInHand: true,
+          candidateTargetCtcEquivalentLpa: 41.2,
+        }),
+      ),
+    ).toBe(41.2);
+  });
+  it("falls back to the raw counter when in-hand framing has no CTC-equivalent", () => {
+    expect(
+      totalScopedCounter(
+        init({
+          lastCandidateCounterLpa: 30,
+          lastCounterComponent: "total",
+          candidateTargetIsInHand: true,
+          candidateTargetCtcEquivalentLpa: null,
+        }),
+      ),
+    ).toBe(30);
+  });
+});
+
+/* ─── In-hand frame staleness (HIGH#1, 2026-06-15) ──────────────────
+ * applyCandidateAnswer must set OR CLEAR the in-hand frame on every
+ * restatement of the total target. A stale in-hand flag left over from
+ * an earlier turn would keep grossing up a later CTC-framed counter. */
+
+describe("applyCandidateAnswer — in-hand frame lifecycle on the total target", () => {
+  it("sets the in-hand frame and a CTC-equivalent when the total is framed in-hand", () => {
+    const next = applyCandidateAnswer(init(), "My target is 16L in hand.");
+    expect(next.candidateTargetIsInHand).toBe(true);
+    expect(next.candidateTargetCtcEquivalentLpa).toBeGreaterThan(16);
+  });
+  it("CLEARS a stale in-hand frame when a later total is framed as CTC", () => {
+    const inHand = applyCandidateAnswer(init(), "My target is 16L in hand.");
+    expect(inHand.candidateTargetIsInHand).toBe(true);
+    const ctc = applyCandidateAnswer(inHand, "I'd like to revise to 24L total package.");
+    expect(ctc.candidateTargetIsInHand).toBe(false);
+    expect(ctc.candidateTargetCtcEquivalentLpa).toBeNull();
+  });
 });
 
 /* ─── parseCandidateAnswer ─────────────────────────────────────── */

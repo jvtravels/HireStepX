@@ -786,17 +786,21 @@ async function generateRestyledCanonical(
    * rejected (the dropped-number / percentage-inversion class legacy
    * misses). Fall back to canonical, which is kernel-authored truth.
    *
-   * Role: this is a STRUCTURAL BACKSTOP, not the first line of defense.
-   * For action kinds that have a legacy completeness check (e.g.
-   * close-recap-incomplete), legacy `validateRestyle` rejects a
-   * number-dropping restyle first and we never reach here — so the slot
-   * gate's unique reachable value is the dropped-number class on kinds
-   * WITHOUT a legacy completeness check. The added-number check overlaps
-   * legacy's subset rule, so this gate introduces no new false-positive
-   * class for invented numbers. A faithful restyle (every canonical number
-   * preserved, no new numbers) always passes the slot validator, so the
-   * gate cannot silently downgrade good prose — moveSpecRouting.test.ts
-   * asserts that regression guard. */
+   * Role: this is a STRUCTURAL BACKSTOP that catches a class legacy
+   * cannot see. Legacy `validateRestyle` measures number drift with
+   * `extractSalaryScalars` — ONLY ₹..L salary figures. The slot validator
+   * extracts EVERY digit token (notice weeks, clawback months, BGV/offer
+   * day counts, fractional lakhs). So even on kinds with a legacy
+   * completeness check (e.g. close-recap), a restyle can satisfy legacy
+   * (all salary scalars present) yet drop a non-salary number or round a
+   * fractional lakh — and the slot gate is the UNIQUE catcher there.
+   * moveSpecRouting.test.ts pins exactly this: a full close-recap restyle
+   * that drops ₹20.4L reaches and is rejected by this gate, not legacy.
+   * The added-number check overlaps legacy's subset rule, so this gate
+   * introduces no new false-positive class for invented numbers. A
+   * faithful restyle (every canonical number preserved, no new numbers)
+   * always passes the slot validator, so the gate cannot silently
+   * downgrade good prose — moveSpecRouting.test.ts asserts that too. */
   if (slot != null && !slot.valid) {
     void captureServerEvent(
       "negotiation_movespec_slot_validator_reject",

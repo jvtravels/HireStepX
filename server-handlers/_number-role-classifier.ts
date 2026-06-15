@@ -305,6 +305,27 @@ const RANGE_RE = new RegExp(
 const NON_SALARY_UNIT_RE =
   /(\d[\d,.]*)\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|yoe\b)/i;
 
+/* Per-month periodicity (2026-06-15, unbiased-review HIGH). The classifier
+ * normalizes every salary span to LPA (lakhs per ANNUM). A figure quoted PER
+ * MONTH ("2.4 lakh per month") must be annualized (× 12) or it under-counts
+ * by ~12× and silently false-accepts. Periodicity is decided PER SPAN by the
+ * span's OWN trailing context — never the whole utterance — so a mixed
+ * sentence ("I make 18 LPA now, I want 2.4 lakh per month") annualizes only
+ * the per-month figure and leaves the explicitly-annual one untouched. */
+const MONTHLY_SPAN_TRAIL_RE = /\b(?:per\s+month|a\s+month|monthly|per\s+mo|\/\s*month)\b/i;
+/* A span whose OWN matched text already carries an annual unit (LPA / the
+ * STT LP[a-z] family / per annum) is annual by construction — never apply the
+ * monthly multiplier to it, even if a stray "per month" trails (contradictory
+ * phrasing; annual wins).
+ *
+ * No leading \b: the unit abuts the digits in the no-whitespace form ("24LPA",
+ * which LPA_NUM_RE explicitly supports), where "4"→"L" is not a word boundary
+ * and a leading \b would silently miss it — re-allowing a ×12 inflation of an
+ * explicitly-annual figure. This RE is tested only against the narrow span
+ * substring (digits + unit), so dropping the boundary cannot match a unit
+ * embedded in an unrelated word. */
+const ANNUAL_UNIT_IN_SPAN_RE = /(?:lpa|lp[a-z]|per\s+annum|annual(?:ly)?|p\.?\s?a\.?)\b/i;
+
 function parseDigits(s: string): number {
   return parseFloat(s.replace(/,/g, ""));
 }
@@ -401,6 +422,19 @@ function findSalarySpans(text: string): SalarySpan[] {
     spans.push({ value: n, start: digitStart, end: digitEnd, isRangeUpper: false });
   }
   spans.sort((a, b) => a.start - b.start);
+  /* Per-span monthly annualization. For each span, search the text from its
+   * end up to the next span's start (capped at +20 chars so "₹2.4L in hand
+   * per month" still attributes, but a later number's "per month" cannot
+   * bleed back). Skip spans whose own unit is explicitly annual. */
+  for (let i = 0; i < spans.length; i++) {
+    const sp = spans[i];
+    if (ANNUAL_UNIT_IN_SPAN_RE.test(text.slice(sp.start, sp.end))) continue;
+    const nextStart = i + 1 < spans.length ? spans[i + 1].start : text.length;
+    const win = text.slice(sp.end, Math.min(nextStart, sp.end + 20));
+    if (MONTHLY_SPAN_TRAIL_RE.test(win)) {
+      sp.value = Math.round(sp.value * 12 * 10) / 10;
+    }
+  }
   return spans;
 }
 

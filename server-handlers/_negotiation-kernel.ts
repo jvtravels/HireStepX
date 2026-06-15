@@ -1340,9 +1340,23 @@ export interface NegotiationState {
 
   /* Sprint B.3 (2026-05-15) — in-hand vs CTC anchor disambiguation. When
    * true, candidateTarget is in-hand (not CTC). The CTC-equivalent is
-   * stored separately so downstream consumers can switch frames. Optional. */
+   * stored separately so downstream consumers can switch frames.
+   *
+   * Schema-stability fix (2026-06-15): both fields are initialized in
+   * initState and set/CLEARED on every total-target restatement, so they
+   * are part of the frozen kernel schema rather than conditionally added
+   * keys. The cleared sentinel is `null` (the kernel-wide convention for
+   * "absent"), NOT `undefined` — `undefined` survives in-memory key parity
+   * but JSON.stringify drops it, which would break serialize round-trip
+   * schema parity.
+   *
+   * Typed optional (`?`) to match the kernel's backfilled-field convention
+   * (candidateAskedAsRange, stalemateAtTurn, …): the runtime presence
+   * guarantee comes from initState seeding them + applyCandidateAnswer
+   * always set-or-clearing them + deserializeState backfilling them, not
+   * from the type. Hand-built test fixtures may omit them. */
   candidateTargetIsInHand?: boolean;
-  candidateTargetCtcEquivalentLpa?: number;
+  candidateTargetCtcEquivalentLpa?: number | null;
 
   /* PDF #18 root-cause (2026-05-15) — candidate-disclosure acks. Tracks
    * candidate-disclosed facts (notice period, current CTC, competing
@@ -2656,6 +2670,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     maxTurns: input.maxTurns ?? 20,
     candidateTarget: null,
     candidateTargetFixed: null,
+    candidateTargetIsInHand: false,
+    candidateTargetCtcEquivalentLpa: null,
     lastCandidateCounterLpa: null,
     lastCounterComponent: null,
     firstAnchoredTarget: null,
@@ -4274,6 +4290,14 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      quoted — structural phase gate (Phase 9). */
   const offerOnTable = (state.highestOfferMade ?? 0) > 0;
   const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null);
+  /* Per-month periodicity (2026-06-15, unbiased-review HIGH) is normalized at
+   * the SOURCE — _number-role-classifier.ts annualizes each salary span by its
+   * own trailing context, so parsed.target / currentCtc / competing already
+   * arrive in LPA regardless of monthly framing. The earlier whole-utterance
+   * normalization here was removed: it suppressed annualization whenever ANY
+   * annual marker appeared in the sentence, which re-opened the false-accept
+   * on the common mixed phrasing "I make 18 LPA now, I want 2.4 lakh per
+   * month". Per-span attribution at the classifier fixes that class properly. */
   /* PDF#27 Fix 2 (2026-05-17) — repetition-complaint detection. The
    * candidate flags that the bot is repeating itself ("stop repeating",
    * "I already answered that", "asked this before"). Stamp the turn so
@@ -4696,11 +4720,10 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
        * doesn't silently shift frame; only the derived equivalent moves. */
       if (detectInHandFraming(answer)) {
         next.candidateTargetIsInHand = true;
-        const ctcEq = backComputeCtcFromInHand(parsed.target);
-        next.candidateTargetCtcEquivalentLpa = ctcEq != null ? ctcEq : undefined;
+        next.candidateTargetCtcEquivalentLpa = backComputeCtcFromInHand(parsed.target);
       } else {
         next.candidateTargetIsInHand = false;
-        next.candidateTargetCtcEquivalentLpa = undefined;
+        next.candidateTargetCtcEquivalentLpa = null;
       }
     }
   }
@@ -7652,6 +7675,12 @@ export function deserializeState(json: string): NegotiationState {
   return {
     ...parsed,
     candidateAskedAsRange: s.candidateAskedAsRange ?? false,
+    /* Schema-stability backfill (2026-06-15) — the in-hand frame fields
+     * became required (no longer optional). Default in-flight sessions
+     * serialized before this change: not-in-hand, no CTC-equivalent. */
+    candidateTargetIsInHand: (s.candidateTargetIsInHand as boolean | undefined) ?? false,
+    candidateTargetCtcEquivalentLpa:
+      (s.candidateTargetCtcEquivalentLpa as number | null | undefined) ?? null,
     /* Audit Pass 3 / Fix 1 (2026-05-16) — backfill stalemate ledger
      * for in-flight sessions serialized before this field shipped. */
     stalemateAtTurn: (s.stalemateAtTurn as number | null | undefined) ?? null,

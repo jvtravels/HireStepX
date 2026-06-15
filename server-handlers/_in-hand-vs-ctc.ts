@@ -20,7 +20,13 @@ const IN_HAND_PATTERNS: RegExp[] = [
   /\d+\s*in\s+hand\b/i,
 ];
 
-/** True when the utterance frames a number as in-hand / take-home. Pure. */
+/** True when the utterance frames a number as in-hand / take-home. Pure.
+ *
+ *  NOTE: per-month PERIODICITY (annualizing "2.4 lakh per month" → 28.8 LPA)
+ *  is handled at the SOURCE in _number-role-classifier.ts, per salary span.
+ *  This module only handles the orthogonal net-vs-gross (in-hand→CTC) frame.
+ *  "per month" remains an in-hand cue here because monthly quotes are
+ *  colloquially take-home; the magnitude is already annualized upstream. */
 export function detectInHandFraming(text: string | null | undefined): boolean {
   if (!text || typeof text !== "string") return false;
   return IN_HAND_PATTERNS.some((p) => p.test(text));

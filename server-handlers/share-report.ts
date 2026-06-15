@@ -95,6 +95,7 @@ interface ProfileRow {
   name: string | null;
   target_role: string | null;
   target_company: string | null;
+  referral_code: string | null;
 }
 
 /**
@@ -180,7 +181,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (!token || typeof token !== "string" || token.length < 16) {
       return new Response(JSON.stringify({ error: "Invalid share link" }), { status: 404, headers });
     }
-    return await readShare(token, headers);
+    return await readShare(token, headers, req);
   }
 
   // ── Authenticated paths (create / revoke / list) ────────────
@@ -310,7 +311,7 @@ async function listShares(userId: string, headers: Record<string, string>): Prom
   );
 }
 
-async function readShare(token: string, headers: Record<string, string>): Promise<Response> {
+async function readShare(token: string, headers: Record<string, string>, req?: Request): Promise<Response> {
   const shareRes = await supa(
     `report_shares?token=eq.${encodeURIComponent(token)}&select=*&limit=1`,
     { headers: { Accept: "application/json" } },
@@ -333,7 +334,7 @@ async function readShare(token: string, headers: Record<string, string>): Promis
   // Fetch the underlying session + owner profile (small fields only; sanitized below).
   const [sessionRes, profileRes] = await Promise.all([
     supa(`sessions?id=eq.${encodeURIComponent(share.session_id)}&select=*&limit=1`, { headers: { Accept: "application/json" } }),
-    supa(`profiles?id=eq.${encodeURIComponent(share.user_id)}&select=id,name,target_role,target_company&limit=1`, { headers: { Accept: "application/json" } }),
+    supa(`profiles?id=eq.${encodeURIComponent(share.user_id)}&select=id,name,target_role,target_company,referral_code&limit=1`, { headers: { Accept: "application/json" } }),
   ]);
   if (!sessionRes.ok) {
     return new Response(JSON.stringify({ error: "Session not found" }), { status: 404, headers });
@@ -351,6 +352,14 @@ async function readShare(token: string, headers: Record<string, string>): Promis
     body: JSON.stringify({ view_count: share.view_count + 1, last_viewed_at: new Date().toISOString() }),
     headers: { Prefer: "return=minimal" },
   });
+
+  // The "visited" half of the growth loop. Attributed to the sharer so their
+  // share→visit→signup funnel is measurable (the visitor is anonymous here).
+  void captureServerEvent("shared_report_viewed", share.user_id, {
+    session_type: session.type,
+    view_count: share.view_count + 1,
+    is_first_view: share.view_count === 0,
+  }, req);
 
   const flags = {
     includeTranscript: !!share.include_transcript,
@@ -372,6 +381,7 @@ async function readShare(token: string, headers: Record<string, string>): Promis
         durationSec: session.duration,
         date: session.created_at,
         skillScores: session.skill_scores,
+        referralCode: profile?.referral_code || null,
       },
       expiresAt: share.expires_at,
       includeTranscript: flags.includeTranscript,

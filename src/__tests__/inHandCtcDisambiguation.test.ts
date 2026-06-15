@@ -3,6 +3,8 @@ import { describe, it, expect } from "vitest";
 import {
   initState,
   applyCandidateAnswer,
+  statedTotalTargetCtcLpa,
+  totalScopedCounter,
   type NegotiationBand,
   type NegotiationState,
   type AiMove,
@@ -12,6 +14,7 @@ import {
   detectInHandFraming,
   backComputeCtcFromInHand,
 } from "../../server-handlers/_in-hand-vs-ctc";
+import { classifyNumberRoles } from "../../server-handlers/_number-role-classifier";
 
 const BAND: NegotiationBand = { initialOffer: 15, maxStretch: 30, walkAway: 12, hasEquity: false };
 function makeState(overrides: Partial<NegotiationState> = {}): NegotiationState {
@@ -67,6 +70,62 @@ describe("Sprint B.3 — applyCandidateAnswer threads in-hand flag", () => {
     let s = makeState();
     s = applyCandidateAnswer(s, "I'm targeting 22 LPA CTC.");
     expect(s.candidateTargetIsInHand).toBeFalsy();
+  });
+});
+
+/* Per-month framing (2026-06-15, unbiased-review HIGH). A monthly figure
+ * stored as raw LPA under-counts by ~12× and silently false-accepts any real
+ * offer. Periodicity is normalized at the SOURCE (_number-role-classifier.ts)
+ * PER SPAN, by each number's own trailing context — so a mixed utterance
+ * annualizes only the per-month figure. These pin that behaviour. */
+describe("Per-month framing — classifier annualizes per span", () => {
+  it("'2.4 lakh per month' target → 28.8 LPA", () => {
+    expect(classifyNumberRoles("I want 2.4 lakh per month").target).toBe(28.8);
+  });
+  it("explicit-LPA figure is NOT annualized", () => {
+    expect(classifyNumberRoles("I want 24 LPA total").target).toBe(24);
+  });
+  it("MIXED utterance — only the per-month span annualizes (reviewer repro)", () => {
+    /* "I make 18 LPA now, I want 2.4 lakh per month": the whole-utterance
+     * guard mis-fired here (annual marker 'LPA' on the CURRENT figure
+     * suppressed annualizing the per-month TARGET, re-opening the
+     * false-accept). Per-span attribution fixes it: current stays 18,
+     * target becomes 28.8. */
+    const r = classifyNumberRoles("I make 18 LPA now, I want 2.4 lakh per month");
+    expect(r.currentCtc).toBe(18);
+    expect(r.target).toBe(28.8);
+  });
+  it("does not over-annualize 'in a month or two' (no salary span involved)", () => {
+    const r = classifyNumberRoles("I can join in a month, targeting 24 LPA");
+    expect(r.target).toBe(24);
+  });
+  it("an explicit annual unit WINS even with no whitespace + contradictory 'per month' (24LPA → 24, not 288)", () => {
+    /* LPA_NUM_RE supports the no-space form "24LPA"; the annual-unit guard
+     * must still recognize it as annual so a stray "per month" can't ×12 it.
+     * Covers the STT family too ("24LPE"). */
+    expect(classifyNumberRoles("I want 24LPA per month").target).toBe(24);
+    expect(classifyNumberRoles("I want 24LPE per month").target).toBe(24);
+  });
+});
+
+describe("Per-month framing — kernel + auto-accept safety", () => {
+  it("'2.4 lakh per month in hand' → target 28.8 LPA, in-hand, CTC-equiv well above 28.8 (not raw 2.4)", () => {
+    let s = makeState();
+    s = applyCandidateAnswer(s, "I'm expecting 2.4 lakh per month in hand.");
+    expect(s.candidateTarget).toBe(28.8);
+    expect(s.candidateTargetIsInHand).toBe(true);
+    expect(statedTotalTargetCtcLpa(s)).toBeGreaterThan(30);
+  });
+  it("a per-month total counter compares a CTC-equivalent, never the ~2.4 raw figure (no false-accept)", () => {
+    let s = makeState();
+    s = applyCandidateAnswer(s, "My target is 2.4 lakh per month total.");
+    expect(totalScopedCounter(s)).toBeGreaterThan(30);
+  });
+  it("the mixed utterance no longer under-counts the target through the kernel", () => {
+    let s = makeState();
+    s = applyCandidateAnswer(s, "I make 18 LPA now, I want 2.4 lakh per month");
+    expect(s.candidateTarget).toBe(28.8);
+    expect(statedTotalTargetCtcLpa(s)).toBeGreaterThan(28.8);
   });
 });
 

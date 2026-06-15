@@ -1741,8 +1741,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: handles, units",
-      "prose": "In this profitability-first era, and on the variable side — is it a fixed bonus or perf-linked?",
-      "actionKind": "component-probe",
+      "prose": "92% variable is significant — what's your comfort with that share, and have you been hitting payouts in full?",
+      "actionKind": "reactive-followup",
       "keywords": [
         "handles",
         "units"

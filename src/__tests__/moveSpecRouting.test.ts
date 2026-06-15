@@ -183,9 +183,15 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
      *   - keeps every legacy-required close-recap word token
      *     (fixed/variable/notice/bgv) → close-recap-incomplete passes
      *   - keeps ≥1 number → numberPolicy "required" passes
-     *   - drops EXACTLY ONE canonical number → legacy's subset rule
-     *     (no NEW numbers) still passes, but the slot validator's Check 2
-     *     (every canonical number must survive) rejects.
+     *   - introduces NO new salary scalar → legacy's subset rule passes
+     *     (legacy measures only ₹..L scalars), but the slot validator's
+     *     Check 2 (every canonical DIGIT token must survive) rejects.
+     * The restyle below drops several canonical numbers (the ₹20.4L fixed,
+     * plus the 12-month / 9-week / day-count tokens); Check 2 iterates the
+     * canonical numbers in order and short-circuits on the FIRST missing
+     * one (20.4), so the asserted detail is "20.4". It is not a single-drop
+     * fixture — the point is only that ≥1 canonical number is dropped while
+     * legacy stays green, so the slot gate is the unique catcher.
      * The only way to reach a "slot:dropped-number" reason is for the gate
      * body to execute — so this gives it genuine coverage and proves an
      * invalid slot really does force a canonical-fallback in the live
@@ -204,13 +210,14 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
     /* The restyle must (a) keep all four legacy completeness tokens, (b)
      * keep ≥1 number so numberPolicy "required" passes, (c) introduce no
      * NEW salary scalar so legacy's subset rule passes, (d) stay short so
-     * `sentence-too-long` doesn't pre-empt, and (e) DROP exactly one
-     * canonical salary scalar so the slot validator is the unique catcher.
-     * The canonical's salary scalars are {20.4, 3.6, 2} (the ₹..L figures —
-     * "12-month"/"9 weeks"/"2-3 days" are NOT salary scalars). We keep ₹3.6L
-     * + ₹2L and drop the unique Fixed ₹20.4L, so the slot validator's
-     * Check 2 (every canonical number must survive) is the only thing that
-     * rejects this restyle. */
+     * `sentence-too-long` doesn't pre-empt, and (e) DROP at least one
+     * canonical number so the slot validator is the unique catcher.
+     * Legacy's salary scalars are {20.4, 3.6, 2} (the ₹..L figures —
+     * "12-month"/"9 weeks"/"2-3 days" are NOT salary scalars, so legacy
+     * ignores them). We keep ₹3.6L + ₹2L and drop the Fixed ₹20.4L (and,
+     * incidentally, the non-salary tokens). The slot validator's Check 2
+     * walks the canonical digit tokens and short-circuits on the first
+     * missing one — 20.4 — making it the only thing that rejects. */
     const dropFixedAmountLlm = vi.fn(
       async (_sys: string, _user: string) =>
         "Fixed and variable confirmed: variable ₹3.6L, joining ₹2L — notice and BGV all noted.",

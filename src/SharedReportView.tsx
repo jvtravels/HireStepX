@@ -23,10 +23,28 @@ interface SharedReportPayload {
     durationSec: number;
     date: string;
     skillScores: Record<string, unknown> | null;
+    referralCode?: string | null;
   };
   expiresAt: string;
   includeTranscript: boolean;
   includePerQuestion: boolean;
+}
+
+/**
+ * The "convert" half of the share growth loop. A viewer who lands on a
+ * shared report is a warm lead — send them to signup with attribution so
+ * the sharer's referral code is credited (and the funnel is measurable via
+ * the UTM params) the moment they sign up. Falls back to a plain UTM'd
+ * signup link when the sharer has no referral code yet.
+ */
+function signupCtaHref(referralCode?: string | null): string {
+  const params = new URLSearchParams({
+    utm_source: "shared_report",
+    utm_medium: "referral",
+    utm_campaign: "report_share_loop",
+  });
+  if (referralCode) params.set("ref", referralCode);
+  return `https://hirestepx.com/signup?${params.toString()}`;
 }
 
 const BAND_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -212,7 +230,7 @@ function ReportBody({ data }: { data: SharedReportPayload }) {
           )}
         </p>
         <a
-          href="https://hirestepx.com"
+          href={signupCtaHref(meta.referralCode)}
           style={{
             display: "inline-block",
             fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
