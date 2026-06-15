@@ -710,14 +710,6 @@ export default function Onboarding() {
 
   const handleStartInterview = () => { finalizeOnboarding("interview"); };
   const handleGoToDashboard = () => { finalizeOnboarding("dashboard"); };
-  // Skip path → show a brief "saved for later" toast before nav so
-  // the user knows the flow isn't lost. The toast appears for ~900ms,
-  // then we navigate. finalizeOnboarding handles starting state +
-  // tracking; the toast is purely UX reassurance.
-  const handleSkip = () => {
-    setDraftToast("Saved. You can finish setup anytime from Settings.");
-    setTimeout(() => finalizeOnboarding("skip"), 900);
-  };
   // Back-compat: Enter key defaults to dashboard (safer than auto-starting an interview).
   const handleStart = handleGoToDashboard;
 
@@ -901,7 +893,6 @@ export default function Onboarding() {
               onDragLeave={() => { setIsDragging(false); setDragFileName(""); }}
               onDrop={(e) => { e.preventDefault(); setIsDragging(false); setDragFileName(""); handleFileChange(e.dataTransfer.files[0]); }}
               onFileChange={handleFileChange} onUndo={handleUndo}
-              onSkip={handleSkip}
             />
           )}
           {(resumeParsing || aiPhase === "analyzing") && aiPhase !== "done" && (
