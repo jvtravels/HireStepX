@@ -48,7 +48,16 @@ export const metadata: Metadata = {
   keywords:
     "mock interview, AI interview practice, interview preparation, STAR method, behavioral interview, technical interview, panel interview, campus placement, HR round, salary negotiation, India",
   authors: [{ name: "HireStepX" }],
-  robots: "index, follow",
+  /* Only the production deployment is indexable. Preview/staging deploys
+     (VERCEL_ENV "preview"/"development") return noindex so staging URLs
+     never compete with hirestepx.com in search or leak pre-release copy
+     into SERPs. This is the load-bearing signal — a <meta name="robots">
+     noindex deters indexing even for URLs a crawler already discovered,
+     which robots.txt alone does not. */
+  robots:
+    process.env.VERCEL_ENV === "production"
+      ? "index, follow"
+      : "noindex, nofollow",
   metadataBase: new URL("https://hirestepx.com"),
   /* Canonical only. No hreflang languages map until /hi/* actually exists —
    * pointing multiple locales at the same URL is a duplicate-content

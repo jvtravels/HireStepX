@@ -8,6 +8,16 @@ import type { MetadataRoute } from "next";
    landing for brand queries). */
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = "https://hirestepx.com";
+
+  /* Preview/staging deploys block all crawling — they must never be
+     indexed. Pairs with the noindex <meta> in app/layout.tsx (the meta
+     tag is the stronger signal; this just saves crawl budget). */
+  if (process.env.VERCEL_ENV !== "production") {
+    return {
+      rules: [{ userAgent: "*", disallow: "/" }],
+    };
+  }
+
   return {
     rules: [
       {

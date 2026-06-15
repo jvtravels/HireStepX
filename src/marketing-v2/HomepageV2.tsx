@@ -1499,12 +1499,16 @@ export function HeroV2() {
 }
 
 /* ─────────────────────────── 3. LOGO STRIP + STAT ─────────────────────────── */
-function LogoMark({ label, slug }: { label: string; slug: string }) {
-  /* simpleicons.org omits several brands for trademark reasons (Flipkart,
-     Deloitte, Microsoft, HDFC Bank, Accenture, …). When the glyph 404s
-     we swap the <img> for a serif wordmark so every brand still renders
-     and the strip never shows broken-image placeholders. */
-  const [failed, setFailed] = useState(false);
+function LogoMark({ label }: { label: string }) {
+  /* Uniform serif wordmark — NO external logo CDN.
+     We used to pull glyphs from cdn.simpleicons.org with an onError →
+     wordmark fallback, but simpleicons drops brands for trademark reasons
+     (Flipkart, Deloitte, Microsoft, Amazon, Adobe, Salesforce all 404'd in
+     prod), which produced console 404 noise, a fallback race that briefly
+     left 0-width broken <img>s, and an inconsistent strip where some brands
+     showed icons and others text. Rendering every brand as a wordmark is
+     visually consistent, zero-dependency, and can never 404 — the strip's
+     reliability no longer rides on a third-party CDN. */
   return (
     <span
       title={label}
@@ -1515,58 +1519,37 @@ function LogoMark({ label, slug }: { label: string; slug: string }) {
         height: 40,
         padding: "0 24px",
         flexShrink: 0,
+        fontFamily: fonts.serif,
+        fontSize: 22,
+        color: t.coal,
+        opacity: 0.72,
+        letterSpacing: "-0.01em",
+        whiteSpace: "nowrap",
       }}
     >
-      {failed ? (
-        <span
-          style={{
-            fontFamily: fonts.serif,
-            fontSize: 22,
-            color: t.coal,
-            opacity: 0.72,
-            letterSpacing: "-0.01em",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {label}
-        </span>
-      ) : (
-        <img
-          src={`https://cdn.simpleicons.org/${slug}/1a1a1a`}
-          alt={label}
-          loading="lazy"
-          onError={() => setFailed(true)}
-          style={{
-            height: 24,
-            width: "auto",
-            maxWidth: 140,
-            opacity: 0.72,
-            filter: "grayscale(100%)",
-          }}
-        />
-      )}
+      {label}
     </span>
   );
 }
 
 export function LogoStripV2() {
-  const logos: Array<[string, string]> = [
-    ["Razorpay", "razorpay"],
-    ["Zomato", "zomato"],
-    ["Flipkart", "flipkart"],
-    ["Swiggy", "swiggy"],
-    ["Paytm", "paytm"],
-    ["PhonePe", "phonepe"],
-    ["Infosys", "infosys"],
-    ["Wipro", "wipro"],
-    ["HDFC Bank", "hdfcbank"],
-    ["Deloitte", "deloitte"],
-    ["Accenture", "accenture"],
-    ["Google", "google"],
-    ["Microsoft", "microsoft"],
-    ["Amazon", "amazon"],
-    ["Adobe", "adobe"],
-    ["Salesforce", "salesforce"],
+  const logos: string[] = [
+    "Razorpay",
+    "Zomato",
+    "Flipkart",
+    "Swiggy",
+    "Paytm",
+    "PhonePe",
+    "Infosys",
+    "Wipro",
+    "HDFC Bank",
+    "Deloitte",
+    "Accenture",
+    "Google",
+    "Microsoft",
+    "Amazon",
+    "Adobe",
+    "Salesforce",
   ];
   return (
     <section
@@ -1615,12 +1598,12 @@ export function LogoStripV2() {
 
         <div className="mv2-logo-strip mv2-marquee-mask">
           <div className="mv2-marquee-track" aria-hidden>
-            {[...logos, ...logos].map(([label, slug], i) => (
-              <LogoMark key={`${label}-${i}`} label={label} slug={slug} />
+            {[...logos, ...logos].map((label, i) => (
+              <LogoMark key={`${label}-${i}`} label={label} />
             ))}
           </div>
           <span className="mv2-skip" aria-live="off">
-            Practiced for {logos.map(([l]) => l).join(", ")}
+            Practiced for {logos.join(", ")}
           </span>
         </div>
       </div>
