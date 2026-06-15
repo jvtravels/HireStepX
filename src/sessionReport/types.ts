@@ -160,8 +160,11 @@ export interface FocusBannerData {
   label: string;
   /** Plain-English tagline — what the focus actually grades on. */
   tagline: string;
-  /** The first (headline) focus metric from the evaluator. */
-  headlineMetric: { label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" };
+  /** The first (headline) focus metric from the evaluator.
+   *  `caption` is a one-liner that makes the value self-explanatory — e.g.
+   *  "you didn't say O(...) on either question". Optional: omitted when the
+   *  evaluator didn't produce a caption or the value is a fallback "—". */
+  headlineMetric: { label: string; value: string; tone: "good" | "watch" | "miss" | "neutral"; caption?: string };
   /** All focus metrics the evaluator produced (up to 3). */
   allMetrics: Array<{ label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" }>;
   accent: string;

@@ -177,9 +177,13 @@ type SessionFocusMetricInput = { label: string; value: string; tone: "good" | "w
  *  - the session focus type is not in the chrome registry
  *  - the focus is behavioral (BehavioralFullReport owns its own hero)
  *  The headline metric is the first focusMetric from the evaluator, or a
- *  fallback label when the evaluator hasn't produced metrics yet. */
+ *  fallback label when the evaluator hasn't produced metrics yet.
+ *  Metric source precedence: report.focusMetrics → session.focusMetrics
+ *  (report is freshest; session.focusMetrics is populated by DashboardContext
+ *  but absent for sessions opened via /session/[id] before the re-evaluate). */
 function buildFocusBanner(
   session: DashboardSession,
+  report?: SessionReport,
 ): FocusBannerData | undefined {
   const rawFocus = session.focus || session.type || "";
   if (!rawFocus) return undefined;
@@ -189,17 +193,68 @@ function buildFocusBanner(
   const chrome = FOCUS_CHROME[key];
   if (!chrome) return undefined;
 
-  const evalMetrics: SessionFocusMetricInput[] = (session.focusMetrics ?? []).filter(
-    (m): m is SessionFocusMetricInput =>
-      typeof m === "object" && m !== null &&
-      typeof m.label === "string" &&
-      typeof m.value === "string" &&
-      (m.tone === "good" || m.tone === "watch" || m.tone === "miss" || m.tone === "neutral"),
+  // Prefer focusMetrics from the evaluated report (freshest), fall back to
+  // session.focusMetrics (populated by DashboardContext on dashboard visits).
+  const rawMetrics: unknown[] =
+    (report?.focusMetrics && report.focusMetrics.length > 0)
+      ? report.focusMetrics
+      : (session.focusMetrics ?? []);
+
+  const evalMetrics: SessionFocusMetricInput[] = rawMetrics.filter(
+    (m): m is SessionFocusMetricInput => {
+      if (typeof m !== "object" || m === null) return false;
+      const r = m as Record<string, unknown>;
+      return (
+        typeof r.label === "string" &&
+        typeof r.value === "string" &&
+        (r.tone === "good" || r.tone === "watch" || r.tone === "miss" || r.tone === "neutral")
+      );
+    },
   );
 
   const headlineMetric: FocusBannerData["headlineMetric"] = evalMetrics.length > 0
     ? { label: evalMetrics[0].label, value: evalMetrics[0].value, tone: evalMetrics[0].tone }
     : { label: chrome.headlineFallbackLabel, value: "—", tone: "neutral" };
+
+  // Salary-neg accent adapts to outcome: strong negotiators get a green
+  // accent (canvas SALARY_NEG_STRONG_CHROME) when gapClosurePct ≥ 50%.
+  // gapClosurePct lives on negotiationOutcome which is built by the same
+  // adapter call, so we derive it inline here instead of cross-calling.
+  let accent = chrome.accent;
+  let accentSoft = chrome.accentSoft;
+  if (key === "salary-negotiation" && report) {
+    const answers = report.perQuestion.map((q) => q.answerText || "").join(" ");
+    const acceptedRe = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|i.?m happy with|agreed)\b/i;
+    const offerRe = /(?:extend|offering?|move to|stretch to|come up to|total ctc|can do)\s*(?:you\s*)?₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/i;
+    const askRe = /\b(?:expecting|target|want|asking|hoping|looking for|would like|i.?d like)\s*(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/gi;
+    const accepted = acceptedRe.test(answers);
+    let candidateAsk: number | null = null;
+    let am: RegExpExecArray | null;
+    askRe.lastIndex = 0;
+    while ((am = askRe.exec(answers)) !== null) {
+      const v = parseFloat(am[1]);
+      if (Number.isFinite(v) && v >= 3 && v <= 500) {
+        candidateAsk = candidateAsk === null ? v : Math.max(candidateAsk, v);
+      }
+    }
+    const allOfferMatches: number[] = [];
+    const lines = (report.perQuestion.map((q) => q.question || "")).join(" ");
+    const offerGlobal = new RegExp(offerRe.source, "gi");
+    let om: RegExpExecArray | null;
+    while ((om = offerGlobal.exec(lines)) !== null) {
+      const v = parseFloat(om[1]);
+      if (Number.isFinite(v) && v > 0) allOfferMatches.push(v);
+    }
+    if (allOfferMatches.length > 0 && candidateAsk !== null) {
+      const gap = candidateAsk - allOfferMatches[0];
+      const latest = allOfferMatches[allOfferMatches.length - 1];
+      const gapClosure = gap > 0 ? Math.round(((latest - allOfferMatches[0]) / gap) * 100) : 0;
+      if (accepted && gapClosure >= 50) {
+        accent = "#15803D"; // strong negotiator — green
+        accentSoft = "#DCFCE7";
+      }
+    }
+  }
 
   return {
     icon: chrome.icon,
@@ -207,8 +262,8 @@ function buildFocusBanner(
     tagline: chrome.tagline,
     headlineMetric,
     allMetrics: evalMetrics,
-    accent: chrome.accent,
-    accentSoft: chrome.accentSoft,
+    accent,
+    accentSoft,
   };
 }
 
@@ -333,7 +388,7 @@ export function sessionReportToInterviewResult(
         )
       : undefined,
     kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
-    focusBanner: buildFocusBanner(session),
+    focusBanner: buildFocusBanner(session, report),
   };
 }
 

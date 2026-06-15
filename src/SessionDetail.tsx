@@ -179,6 +179,19 @@ function localSessionToDashboardSession(local: LocalSession): DashboardSession {
        interview ended) or the version is stale. */
     cachedReport: local.report_json ?? undefined,
     cachedReportVersion: local.report_version ?? undefined,
+    /* Extract focusMetrics from report_json so buildFocusBanner in the
+       adapter gets the real LLM-scored metric values instead of "—".
+       report_json is typed as Record<string,unknown>; narrow before use. */
+    focusMetrics: (() => {
+      const fm = local.report_json?.focusMetrics;
+      if (!Array.isArray(fm)) return undefined;
+      return fm.filter(
+        (m): m is { label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" } =>
+          typeof m === "object" && m !== null &&
+          typeof (m as Record<string, unknown>).label === "string" &&
+          typeof (m as Record<string, unknown>).value === "string",
+      );
+    })(),
   };
 }
 

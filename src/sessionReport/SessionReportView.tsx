@@ -87,7 +87,7 @@ const TONE_VALUE_COLOR: Record<FocusBannerData["headlineMetric"]["tone"], string
   neutral: "#374151",
 };
 
-function FocusBannerStrip({ banner }: { banner: FocusBannerData }) {
+function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerData; daysUntilInterview?: number }) {
   const valueColor = TONE_VALUE_COLOR[banner.headlineMetric.tone] ?? banner.accent;
   return (
     <div
@@ -141,30 +141,74 @@ function FocusBannerStrip({ banner }: { banner: FocusBannerData }) {
         </div>
       </div>
 
-      {/* Headline metric — the single most important number for this focus */}
-      <div style={{ textAlign: "right", flexShrink: 0 }}>
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 0.8,
-            textTransform: "uppercase",
-            color: "#6E6759",
-            marginBottom: 2,
-          }}
-        >
-          {banner.headlineMetric.label}
+      {/* Right cluster: headline metric + optional days-to-interview countdown */}
+      <div style={{ display: "flex", alignItems: "center", gap: 24, flexShrink: 0 }}>
+        {/* Headline metric — the single most important number for this focus */}
+        <div style={{ textAlign: "right" }}>
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0.8,
+              textTransform: "uppercase",
+              color: "#6E6759",
+              marginBottom: 2,
+            }}
+          >
+            {banner.headlineMetric.label}
+          </div>
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: valueColor,
+              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            }}
+          >
+            {banner.headlineMetric.value}
+          </div>
+          {banner.headlineMetric.caption && (
+            <div style={{ fontSize: 11, color: "#6E6759", marginTop: 3, maxWidth: 240 }}>
+              {banner.headlineMetric.caption}
+            </div>
+          )}
         </div>
-        <div
-          style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: valueColor,
-            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          }}
-        >
-          {banner.headlineMetric.value}
-        </div>
+        {/* Countdown — only when the user has set an interview date */}
+        {typeof daysUntilInterview === "number" && daysUntilInterview > 0 && (
+          <div
+            style={{
+              borderLeft: "1px solid #D6CDB5",
+              paddingLeft: 24,
+              textAlign: "right",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                color: "#6E6759",
+                marginBottom: 2,
+              }}
+            >
+              Real round in
+            </div>
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 700,
+                color: "#B45309",
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+              }}
+            >
+              {daysUntilInterview}d
+            </div>
+            <div style={{ fontSize: 11, color: "#6E6759", marginTop: 3 }}>
+              Practice before then
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Secondary metrics — if the evaluator produced more than the headline */}
@@ -360,7 +404,7 @@ export default function SessionReportView({
           }}
         >
           <JumpNav />
-          {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} />}
+          {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
           <HeroSection data={data} />
           {credibility && credibility.hasIssues && (
             <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />

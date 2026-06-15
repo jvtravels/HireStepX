@@ -1141,6 +1141,10 @@ export interface SessionReport {
     counts: { green: number; yellow: number; red: number };
     verdict: "strong" | "neutral" | "weak" | "red_flag";
   } | null;
+  /** Per-focus signature strip — populated by evaluate-session (mvp-9+).
+   *  Empty array for focuses without a spec or when the model omitted them.
+   *  The adapter reads this to populate the FocusBanner headline metric. */
+  focusMetrics?: Array<{ label: string; value: string; tone: "good" | "watch" | "miss" | "neutral" }>;
   model: string;
 }
 
