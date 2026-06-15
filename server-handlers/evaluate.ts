@@ -33,7 +33,10 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   if (auth.userId) {
-    const limit = await checkSessionLimit(auth.userId);
+    // Scoring runs at session END. The session credit was already spent at start
+    // (generate-questions / negotiate-turn first turn), so pass consumeCredit:false
+    // to avoid charging a credit-holder TWICE for one session.
+    const limit = await checkSessionLimit(auth.userId, { consumeCredit: false });
     if (!limit.allowed) {
       return new Response(JSON.stringify({ error: limit.reason }), { status: 403, headers });
     }

@@ -3,10 +3,16 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, redisIncrByWithExpiry } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
 
 declare const process: { env: Record<string, string | undefined> };
 const CARTESIA_API_KEY = process.env.CARTESIA_API_KEY || "";
+
+// Free tier gets no paid voice — this token mints the Cartesia WebSocket path,
+// which is the PRIMARY Cartesia voice route, so it must carry the same cost
+// guard as tts.ts / azure-tts.ts (otherwise free users stream paid voice via
+// the token endpoint). VOICE_FREE_TIER=1 opens paid voice to free users.
+const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
 
 // Cartesia supports server-minted Access Tokens: we exchange the master key
 // for a short-lived, tts-scoped token and hand THAT to the client for its
@@ -34,6 +40,15 @@ export default async function handler(req: Request): Promise<Response> {
 
   const auth = await verifyAuth(req);
   if (!auth.authenticated) return unauthorizedResponse(headers);
+
+  // Free tier → no paid voice. The client handles 503 by failing over to the
+  // browser Web Speech API (zero cost). Same guard as tts.ts / azure-tts.ts.
+  if (!VOICE_FREE_TIER) {
+    const tier = await getSubscriptionTier(auth.userId!);
+    if (tier === "free") {
+      return new Response(JSON.stringify({ error: "Cartesia voice unavailable for free tier", code: "tts_free_disabled" }), { status: 503, headers });
+    }
+  }
 
   const ip = getClientIp(req);
   if (await isRateLimited(ip, "tts-token", 10, 60_000)) {

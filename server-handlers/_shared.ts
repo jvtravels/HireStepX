@@ -180,7 +180,14 @@ async function incrementInFlightCounter(userId: string, tier: string, ttlSec: nu
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 /** Check if a user has exceeded their plan's session limit. Uses atomic in-flight counter to prevent race conditions. */
-export async function checkSessionLimit(userId: string): Promise<{ allowed: boolean; reason?: string }> {
+export async function checkSessionLimit(
+  userId: string,
+  opts?: { consumeCredit?: boolean },
+): Promise<{ allowed: boolean; reason?: string }> {
+  // Only session-START callers spend a credit / take an in-flight slot. End-of-
+  // session callers (evaluate) pass consumeCredit:false so scoring a session the
+  // user already started and paid for cannot spend a SECOND credit. Default true.
+  const consumeCredit = opts?.consumeCredit !== false;
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return { allowed: true }; // skip in dev
 
   try {
@@ -286,14 +293,19 @@ export async function checkSessionLimit(userId: string): Promise<{ allowed: bool
         // Past the free allotment — allow only if the user holds a purchased
         // session credit, and spend it now (one credit = one session start).
         // Credits live in the service-role-only session_credits ledger.
+        // End-of-session callers (evaluate) pass consumeCredit:false: the credit
+        // was already spent at session start, so scoring must not spend a SECOND
+        // one. They are allowed through unconditionally (the session already ran).
+        if (!consumeCredit) return { allowed: true };
         const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
         if (!consumed) {
           return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Buy a session for ₹9 or upgrade.` };
         }
         return { allowed: true };
       }
-      if (effectiveCount < FREE_SESSION_LIMIT) {
-        // Atomic in-flight check: prevent race condition with concurrent sessions
+      if (effectiveCount < FREE_SESSION_LIMIT && consumeCredit) {
+        // Atomic in-flight check: prevent race condition with concurrent session
+        // STARTS. Skipped for end-of-session callers — they must not take a slot.
         const inFlight = await incrementInFlightCounter(userId, "free", INFLIGHT_TTL_SEC);
         if (inFlight !== null && effectiveCount + inFlight > FREE_SESSION_LIMIT) {
           return { allowed: false, reason: `Free plan limit reached (${FREE_SESSION_LIMIT} sessions). Upgrade to continue.` };
