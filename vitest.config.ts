@@ -78,12 +78,13 @@ export default defineConfig({
       thresholds: {
         // Global gate — see comment above for the rationale (60% of
         // the codebase is JSX UI we don't unit-test).
-        // Current: lines 20.6% / statements 19.7% / functions 17.8% /
-        // branches 16.7%. Ratchet floor 1 pt below to lock the gains.
-        lines: 19,
-        statements: 18,
-        functions: 16,
-        branches: 15,
+        // Current actuals (8028 tests): lines 49.2% / statements 47.6% /
+        // functions 41.9% / branches 43.3%. Floors set ~2pt below to lock
+        // the gains while tolerating minor run-to-run variance.
+        lines: 47,
+        statements: 45,
+        functions: 39,
+        branches: 41,
         // ─── Per-folder gate: server-handlers ───
         // server-handlers/ is pure server-side logic — payment flows,
         // session scoring, auth rate limits, email signing. A bug
@@ -92,16 +93,14 @@ export default defineConfig({
         // that ratchets upward as we add tests, rather than letting
         // the JSX-heavy aggregate disguise gaps in pure logic.
         //
-        // Current (post: evaluate-session / generate-questions /
-        // cancel-subscription / export-user-data helpers extracted +
-        // tested — 101 new tests): 13.26% statements / 12.64%
-        // branches / 18.93% functions / 12.61% lines. Floor set 1pt
-        // below to ratchet monotonically.
+        // Current actuals: lines 62.0% / statements 61.1% / functions
+        // 69.8% / branches 57.2%. Floors set ~3pt below to ratchet
+        // monotonically while tolerating minor run-to-run variance.
         "server-handlers/**": {
-          lines: 11,
-          statements: 12,
-          functions: 17,
-          branches: 11,
+          lines: 59,
+          statements: 58,
+          functions: 67,
+          branches: 54,
         },
       },
     },
