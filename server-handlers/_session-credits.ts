@@ -81,27 +81,28 @@ export async function grantSessionCredits(
   return null;
 }
 
-/** Spend one credit. Returns true if a credit was decremented, false if the
- *  user had none (or the write failed). The `balance=gt.0` filter is a
- *  server-side guard so the balance can never go negative; a rare double-spend
- *  under a client retry is acceptable for MVP (one lost ₹9 credit, never a
- *  charge), and concurrent session starts are already deduped by the Redis
- *  in-flight counter upstream. */
+/** Spend one credit. Returns true iff a credit was decremented, false if the
+ *  user had none (or the call failed).
+ *
+ *  Atomicity (audit N-4): this calls the `consume_session_credit` SQL function,
+ *  which decrements in a single `UPDATE … WHERE balance > 0` statement. Postgres
+ *  row-locking serializes concurrent calls, so two near-simultaneous session
+ *  starts can never both spend the same credit — the loser sees the already-
+ *  lowered balance and the guarded WHERE no longer matches. The previous
+ *  read-then-PATCH was non-atomic and admitted a rare double-spend. */
 export async function consumeSessionCredit(
   baseUrl: string,
   serviceKey: string,
   userId: string,
   fetchImpl: FetchImpl = fetch,
 ): Promise<boolean> {
-  const current = await getSessionCredits(baseUrl, serviceKey, userId, fetchImpl);
-  if (current <= 0) return false;
-  const res = await fetchImpl(
-    `${baseUrl}/rest/v1/session_credits?user_id=eq.${encodeURIComponent(userId)}&balance=gt.0`,
-    {
-      method: "PATCH",
-      headers: authHeaders(serviceKey, { "Content-Type": "application/json", Prefer: "return=minimal" }),
-      body: JSON.stringify({ balance: current - 1, updated_at: new Date().toISOString() }),
-    },
-  );
-  return res.ok;
+  const res = await fetchImpl(`${baseUrl}/rest/v1/rpc/consume_session_credit`, {
+    method: "POST",
+    headers: authHeaders(serviceKey, { "Content-Type": "application/json" }),
+    body: JSON.stringify({ p_user_id: userId }),
+  });
+  if (!res.ok) return false;
+  // The function returns a bare boolean; PostgREST serializes it as JSON `true`/`false`.
+  const consumed = await res.json().catch(() => false);
+  return consumed === true;
 }

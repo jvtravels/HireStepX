@@ -625,6 +625,36 @@ drop policy if exists "Users read own session credits" on session_credits;
 create policy "Users read own session credits" on session_credits
   for select using ((auth.uid())::text = user_id::text);
 
+-- Atomic single-credit spend (audit N-4). The previous helper did a non-atomic
+-- read-then-PATCH, so two near-simultaneous session starts could both pass the
+-- balance>0 check and spend a single credit twice. This function decrements in
+-- one UPDATE statement guarded by `balance > 0`; Postgres row-locking serializes
+-- concurrent calls, so the second sees the already-decremented balance and the
+-- WHERE no longer matches. Returns true iff a credit was actually consumed.
+-- Execute is restricted to the service role: a user must not be able to drain
+-- another user's credits by calling the RPC with a different user_id.
+create or replace function consume_session_credit(p_user_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  affected integer;
+begin
+  update session_credits
+     set balance = balance - 1,
+         updated_at = now()
+   where user_id = p_user_id
+     and balance > 0;
+  get diagnostics affected = row_count;
+  return affected > 0;
+end;
+$$;
+
+revoke all on function consume_session_credit(uuid) from public, anon, authenticated;
+grant execute on function consume_session_credit(uuid) to service_role;
+
 -- Re-engagement cron uses this to rate-limit emails per user (see re-engage-users.ts).
 alter table profiles add column if not exists re_engage_sent timestamptz;
 

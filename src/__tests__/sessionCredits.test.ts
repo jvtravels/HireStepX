@@ -83,24 +83,35 @@ describe("_session-credits", () => {
     expect(await grantSessionCredits(BASE, KEY, USER, 1, fn, 2)).toBeNull();
   });
 
-  it("consumes one credit when the balance is positive", async () => {
-    const { fn, calls } = mockFetch({ rows: [{ balance: 2 }], writeOk: true });
+  /** Build a fetch mock for the atomic consume RPC: POST /rest/v1/rpc/consume_session_credit
+   *  returns a bare boolean (the SQL function result). */
+  function mockRpc(opts: { ok?: boolean; result?: unknown }) {
+    const calls: Call[] = [];
+    const fn = vi.fn(async (url: string, init?: RequestInit) => {
+      const method = (init?.method || "GET").toUpperCase();
+      const body = init?.body ? JSON.parse(init.body as string) : undefined;
+      calls.push({ url, method, body });
+      return { ok: opts.ok ?? true, json: async () => opts.result } as Response;
+    });
+    return { fn: fn as unknown as typeof fetch, calls };
+  }
+
+  it("consumes one credit via the atomic RPC and reports success", async () => {
+    const { fn, calls } = mockRpc({ ok: true, result: true });
     expect(await consumeSessionCredit(BASE, KEY, USER, fn)).toBe(true);
-    const patch = calls.find(c => c.method === "PATCH");
-    expect(patch).toBeTruthy();
-    expect((patch!.body as { balance: number }).balance).toBe(1);
-    // The decrement is filtered server-side so balance can never go negative.
-    expect(patch!.url).toContain("balance=gt.0");
+    const rpc = calls.find(c => c.method === "POST");
+    expect(rpc).toBeTruthy();
+    expect(rpc!.url).toContain("/rpc/consume_session_credit");
+    expect((rpc!.body as { p_user_id: string }).p_user_id).toBe(USER);
   });
 
-  it("does not consume (and issues no write) when the balance is zero", async () => {
-    const { fn, calls } = mockFetch({ rows: [{ balance: 0 }] });
+  it("reports no consume when the RPC returns false (zero balance)", async () => {
+    const { fn } = mockRpc({ ok: true, result: false });
     expect(await consumeSessionCredit(BASE, KEY, USER, fn)).toBe(false);
-    expect(calls.some(c => c.method === "PATCH")).toBe(false);
   });
 
-  it("reports failure when the consume write fails", async () => {
-    const { fn } = mockFetch({ rows: [{ balance: 1 }], writeOk: false });
+  it("reports failure when the consume RPC call fails", async () => {
+    const { fn } = mockRpc({ ok: false, result: null });
     expect(await consumeSessionCredit(BASE, KEY, USER, fn)).toBe(false);
   });
 });
