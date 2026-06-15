@@ -35,6 +35,35 @@ describe("computeBreakdown", () => {
     expect(computeBreakdown(NaN)).toBeNull();
     expect(computeBreakdown(Infinity)).toBeNull();
   });
+
+  /* Numeric Finding 4 (2026-06-15) — clamp base to the band's baseStretch so
+   * the recap doesn't promise a fixed the band structurally won't pay. */
+  it("clamps base to baseStretch and reallocates the residual, still summing", () => {
+    // headline 40 → naive base 24; baseStretch caps it at 20, variableMax 10.
+    const b = computeBreakdown(40, { baseStretch: 20, variableMax: 10 })!;
+    expect(b.base).toBe(20); // clamped from 24
+    expect(b.base).toBeLessThanOrEqual(20);
+    expect(b.variable).toBeLessThanOrEqual(10); // respects variableMax
+    expect(b.base + b.variable + b.joining + b.pf).toBeCloseTo(40, 5);
+  });
+
+  it("leaves the split unchanged when base is already within baseStretch", () => {
+    const plain = computeBreakdown(30)!;
+    const capped = computeBreakdown(30, { baseStretch: 25, variableMax: 8 })!;
+    expect(capped.base).toBe(plain.base); // 18 ≤ 25, no clamp
+    expect(capped.variable).toBe(plain.variable);
+  });
+
+  /* variableMax is a TRUE ceiling: when the naive 20% slot already exceeds it
+   * (base-heavy band), variable must be clamped DOWN, with the excess flowing
+   * to joining — not left above the documented ceiling. */
+  it("clamps the naive variable down to variableMax and still sums", () => {
+    // headline 5 → naive variable 1.0; ceiling 0.8 must win.
+    const b = computeBreakdown(5, { variableMax: 0.8 })!;
+    expect(b.variable).toBeLessThanOrEqual(0.8);
+    expect(b.variable).toBe(0.8);
+    expect(b.base + b.variable + b.joining + b.pf).toBeCloseTo(5, 5);
+  });
 });
 
 describe("formatBreakdownSentence", () => {

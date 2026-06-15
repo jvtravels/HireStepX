@@ -58,7 +58,7 @@ import {
   type MoveSpec,
   type MoveSpecHelpers,
 } from "./_move-spec";
-import { validateMoveSpecRestyle } from "./_move-spec-validator";
+import { validateMoveSpecRestyle, type SlotValidationResult } from "./_move-spec-validator";
 import { clawbackForCompany } from "./_joining-bonus-clawback";
 import { sessionJitter } from "./_session-jitter";
 import {
@@ -705,28 +705,30 @@ async function generateRestyledCanonical(
   restyled = stripWrappingQuotes(stripCurlyQuotes((restyled || "").trim()));
 
   const validation = validateRestyle(canonical, restyled, state, action);
-  /* ARCH-C3a (2026-06-08) — typed slot validator observer.
+  /* ARCH-C3b (2026-06-15 architecture audit, Class C) — typed slot
+   * validator now GATES, no longer observe-only.
    *
-   * When the canonical was MoveSpec-rendered, also run the structural
-   * slot validator and emit telemetry on disagreement with the legacy
-   * regex-based validateRestyle. Pure observation — no gating change.
-   * One week of telemetry tells us whether the slot validator is a
-   * sufficient replacement for the 32-check regex validator (the
-   * targeted bug class is percentage inversions like session #55
-   * BUG-W03-1, which validateRestyle misses).
+   * When the canonical was MoveSpec-rendered we run the structural slot
+   * validator alongside the legacy regex `validateRestyle`. The restyle
+   * ships only if BOTH pass; either rejection falls back to the canonical
+   * (which is kernel-authored truth, so the fallback is always safe).
    *
-   * Four divergence modes worth logging:
-   *   - slot-rejects-legacy-accepts: slot validator caught something
-   *     legacy missed (THIS is the C3a win condition)
-   *   - legacy-rejects-slot-accepts: legacy caught something slot
-   *     missed (means the slot validator needs another check before
-   *     we can retire legacy)
-   *   - both-reject-different-reasons: useful for triangulating which
-   *     reason taxonomy to keep
-   *   - both-accept: silently absorbed (no event)
-   */
+   * What the slot validator adds over legacy:
+   *   - dropped-number survival (Check 2): legacy only enforces that
+   *     restyle numbers are a SUBSET of canonical's; it never checks that
+   *     every canonical scalar SURVIVED. The slot validator does, so an
+   *     LLM that quietly elides a salary number now triggers fallback.
+   *   - int/decimal tolerance: "20" ↔ "20.0" is accepted both ways.
+   * The added-number (unauthorized-number) check overlaps legacy's
+   * subset rule, so promoting it introduces no new false-positive class
+   * for invented numbers — only the genuine dropped-number win.
+   *
+   * Divergence telemetry is retained so we keep visibility into where the
+   * two validators disagree even after the slot validator is authoritative
+   * for MoveSpec-routed turns. */
+  let slot: SlotValidationResult | null = null;
   if (movespecRouted && routedSpec != null) {
-    const slot = validateMoveSpecRestyle(routedSpec, canonical, restyled);
+    slot = validateMoveSpecRestyle(routedSpec, canonical, restyled);
     if (slot.valid !== validation.valid || (slot.reason ?? null) !== (validation.reason ?? null)) {
       const divergenceMode = slot.valid && !validation.valid
         ? "legacy-rejects-slot-accepts"
@@ -778,6 +780,42 @@ async function generateRestyledCanonical(
       action,
       move,
       rejectReason: validation.reason,
+    };
+  }
+  /* ARCH-C3b gate — legacy accepted but the structural slot validator
+   * rejected (the dropped-number / percentage-inversion class legacy
+   * misses). Fall back to canonical, which is kernel-authored truth.
+   *
+   * Role: this is a STRUCTURAL BACKSTOP, not the first line of defense.
+   * For action kinds that have a legacy completeness check (e.g.
+   * close-recap-incomplete), legacy `validateRestyle` rejects a
+   * number-dropping restyle first and we never reach here — so the slot
+   * gate's unique reachable value is the dropped-number class on kinds
+   * WITHOUT a legacy completeness check. The added-number check overlaps
+   * legacy's subset rule, so this gate introduces no new false-positive
+   * class for invented numbers. A faithful restyle (every canonical number
+   * preserved, no new numbers) always passes the slot validator, so the
+   * gate cannot silently downgrade good prose — moveSpecRouting.test.ts
+   * asserts that regression guard. */
+  if (slot != null && !slot.valid) {
+    void captureServerEvent(
+      "negotiation_movespec_slot_validator_reject",
+      state.sessionId ?? "unknown",
+      {
+        actionKind: action.kind,
+        phase: state.phase,
+        turnIndex: state.turnIndex,
+        slotReason: slot.reason ?? null,
+        slotDetail: slot.detail ?? null,
+        textSample: restyled.slice(0, 200),
+      },
+    );
+    return {
+      text: canonical,
+      source: "canonical-fallback",
+      action,
+      move,
+      rejectReason: `slot:${slot.reason ?? "invalid"}`,
     };
   }
   /* PDF#30 R4 (2026-05-18, Meesho/Prita T18/T20/T22) — verbatim-repeat

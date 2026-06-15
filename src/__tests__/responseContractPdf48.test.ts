@@ -565,4 +565,61 @@ describe("PDF#48 — response contract", () => {
       expect(r.violations).not.toContain("internal-taxonomy");
     });
   });
+
+  /* 2026-06-15 architecture audit (Class C) — labeled-slot number
+   * whitelist. The whitelist must trust candidate-authored numbers and
+   * typed kernel slots, NOT numbers that merely appeared in the AI's own
+   * prior prose (which let a hallucinated figure self-authorize the next
+   * turn — leak propagation). */
+  describe("Class C — labeled-slot number whitelist", () => {
+    it("flags a number that only appeared in a prior AI turn (leak propagation prevented)", () => {
+      const r = validateResponseContract({
+        text: "Right now the fitment is ₹30.4 LPA, and as I noted earlier ₹37 LPA could be possible.",
+        move: BASE_MOVE,
+        state: baseState({
+          conversationLog: [
+            { speaker: "ai", text: "we might be able to do ₹37 LPA in some structure" },
+            { speaker: "candidate", text: "what's the latest number?" },
+          ],
+        }),
+        candidateLastUtterance: "what's the latest number?",
+      });
+      expect(r.violations).toContain("unauthorized-number");
+      expect(r.evidence.some(e => e.includes("37"))).toBe(true);
+    });
+
+    it("allows a number the CANDIDATE themselves stated in a recent turn", () => {
+      const r = validateResponseContract({
+        text: "Understood — against your ₹5 LPA bonus history, the ₹30.4 LPA fitment still holds.",
+        move: BASE_MOVE,
+        state: baseState({
+          conversationLog: [
+            { speaker: "candidate", text: "my last annual bonus was around 5 LPA" },
+          ],
+        }),
+        candidateLastUtterance: "does that change anything?",
+      });
+      expect(r.violations).not.toContain("unauthorized-number");
+    });
+
+    it("allows the joining-bonus figure once it is a tracked typed slot", () => {
+      const r = validateResponseContract({
+        text: "We can structure ₹30.4 LPA total with a ₹3 LPA joining bonus on top.",
+        move: BASE_MOVE,
+        state: baseState({ lastJoiningBonusOffered: 3 }),
+        candidateLastUtterance: "what does the package look like?",
+      });
+      expect(r.violations).not.toContain("unauthorized-number");
+    });
+
+    it("authorizes the joining bonus delivered on the move itself", () => {
+      const r = validateResponseContract({
+        text: "Here's ₹30.4 LPA with a ₹2 LPA joining bonus this turn.",
+        move: { lever: "joining-bonus", newTotalLpa: 30.4, joiningBonusAmount: 2 } as unknown as AiMove,
+        state: baseState(),
+        candidateLastUtterance: "can you add a joining bonus?",
+      });
+      expect(r.violations).not.toContain("unauthorized-number");
+    });
+  });
 });

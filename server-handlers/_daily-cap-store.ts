@@ -1,12 +1,21 @@
-/* Daily per-user turn-cap backing store (2026-05-14).
+/* Daily per-user turn-cap backing store (2026-05-14, Upstash-backed 2026-06-15).
  * ─────────────────────────────────────────────────────────────────────
- * Replaces the `turnsToday=0` placeholder in negotiate-turn.ts. Provides
- * an in-memory implementation with date-rollover that's good enough for
- * a single-region edge deployment. When `REDIS_URL` is set and an
- * `ioredis` (or compatible) client is available on disk, `getRedisClient`
- * lazily constructs a singleton and routes reads/writes through it;
- * otherwise it falls back to the in-memory map and logs ONCE so the
- * misconfiguration is visible without spamming.
+ * Replaces the `turnsToday=0` placeholder in negotiate-turn.ts. Production
+ * routes reads/writes through the project's already-provisioned Upstash
+ * Redis (the same instance behind the IP rate-limiter and the
+ * generate-questions response cache) via the shared REST helpers in
+ * `_shared.ts` — `redisGet` + `redisIncrByWithExpiry`. This is the only
+ * store that is shared across edge isolates / regions, so the daily cost
+ * cap actually holds in a distributed Vercel deployment.
+ *
+ * When Upstash is not configured (local dev, or the REST helpers return
+ * null on a transient failure) we fall back to an in-memory map with
+ * date-rollover. That fallback is per-isolate — fine for local dev, but
+ * it does NOT enforce a global cap, so Upstash must be configured in
+ * production for the cap to mean anything.
+ *
+ * Tests can inject a `RedisLike` client via `__setRedisClientForTests`,
+ * which takes precedence over both Upstash and the in-memory map.
  *
  * The store keys on (userId, ymd) so the count auto-resets at UTC
  * midnight. Anonymous traffic (no userId) is keyed on the string
@@ -18,7 +27,7 @@
  * own historical entry, short enough that abandoned keys don't pile
  * up). */
 
-declare const process: { env: Record<string, string | undefined> };
+import { redisGet, redisIncrByWithExpiry } from "./_shared";
 
 interface DailyEntry {
   date: string; // YYYY-MM-DD (UTC)
@@ -47,17 +56,13 @@ function redisKeyFor(userId: string | null | undefined, date: string): string {
 /** 36 hours — see header comment. */
 const REDIS_TTL_SEC = 36 * 60 * 60;
 
-/* ─── Redis client singleton ─────────────────────────────────────────
+/* ─── Test-injectable Redis client ───────────────────────────────────
  *
- * `getRedisClient` returns a client when (a) REDIS_URL is set and (b) a
- * runtime-loadable redis library is present. Today we look for ioredis;
- * if it's not in node_modules the dynamic import throws and we fall
- * back. The lazy-singleton + warning-once pattern means an operator
- * sees the misconfiguration without spamming the log on every turn.
- *
- * Typed as `unknown` because we cannot import the type at compile time
- * without adding ioredis to package.json — callers narrow to the small
- * surface they need via the `as unknown as T` bridge pattern. */
+ * Production does NOT use this — it goes straight to the Upstash REST
+ * helpers. The injection seam exists only so unit tests can exercise
+ * the "Redis present" and "Redis throws → fall back" branches without
+ * standing up a real instance. When set, it takes precedence over
+ * Upstash and the in-memory map. */
 interface RedisLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, mode: string, ttlSec: number): Promise<unknown>;
@@ -65,64 +70,17 @@ interface RedisLike {
   expire(key: string, ttlSec: number): Promise<unknown>;
 }
 
-let redisClient: RedisLike | null = null;
-let redisInitTried = false;
-let redisWarningLogged = false;
+let injectedClient: RedisLike | null = null;
 
-function logRedisWarning(message: string): void {
-  if (redisWarningLogged) return;
-  redisWarningLogged = true;
-  console.warn(`[daily-cap-store] ${message}`);
-}
-
-async function getRedisClient(): Promise<RedisLike | null> {
-  if (redisClient) return redisClient;
-  if (redisInitTried) return null;
-  redisInitTried = true;
-  const url = process?.env?.REDIS_URL;
-  if (!url) return null;
-  try {
-    /* Dynamic import — bundlers that can't resolve the module (e.g. edge
-     * runtime without ioredis installed) will throw here. We catch and
-     * fall back transparently. */
-    /* Hide the specifier behind `new Function` so neither TS, webpack,
-     * nor Turbopack resolves the dep at build time (ioredis is
-     * intentionally not in package.json — see header). At runtime,
-     * if the module is installed, the eval'd import resolves it;
-     * otherwise the catch falls back to in-memory.
-     *
-     * String-built `import(name)` used to be enough, but Turbopack now
-     * traces dynamic-import string vars through assignments and fails
-     * the build with `Module not found: Can't resolve 'ioredis'`.
-     * `new Function` is opaque to all known bundler static analysis. */
-    const ioredisName = "ioredis";
-    const dynamicImport = new Function("s", "return import(s);") as (s: string) => Promise<unknown>;
-    const mod = (await dynamicImport(ioredisName).catch(() => null)) as
-      | { default?: new (url: string) => RedisLike }
-      | null;
-    const Ctor = mod?.default;
-    if (!Ctor) {
-      logRedisWarning("REDIS_URL set but ioredis is not installed; using in-memory store.");
-      return null;
-    }
-    redisClient = new Ctor(url);
-    return redisClient;
-  } catch (err) {
-    logRedisWarning(
-      `REDIS_URL set but Redis client init failed (${
-        err instanceof Error ? err.message : String(err)
-      }); using in-memory store.`,
-    );
-    return null;
-  }
-}
-
-/** Test-only — re-initialise the Redis-detection state so tests that
- *  flip REDIS_URL mid-run can re-probe. */
+/** Test-only — reset the injected-client state. */
 export function __resetRedisClientForTests(): void {
-  redisClient = null;
-  redisInitTried = false;
-  redisWarningLogged = false;
+  injectedClient = null;
+}
+
+/** Test-only — swap in a fake RedisLike to exercise the Redis branch
+ *  without standing up a real server. */
+export function __setRedisClientForTests(client: RedisLike | null): void {
+  injectedClient = client;
 }
 
 /** Read current turn count for the given user, scoped to today (UTC).
@@ -131,44 +89,63 @@ export function __resetRedisClientForTests(): void {
  *  callers. */
 export async function getTurnsToday(userId: string | null | undefined): Promise<number> {
   const today = ymd();
-  const client = await getRedisClient();
-  if (client) {
+  const key = redisKeyFor(userId, today);
+
+  if (injectedClient) {
     try {
-      const raw = await client.get(redisKeyFor(userId, today));
+      const raw = await injectedClient.get(key);
       if (!raw) return 0;
       const n = parseInt(raw, 10);
       return Number.isFinite(n) && n >= 0 ? n : 0;
     } catch {
-      /* fall through to in-memory on Redis error — never block a turn
-       * on transient infra problems. */
+      /* fall through to in-memory on error — never block a turn on
+       * transient infra problems. */
+    }
+  } else {
+    /* Production path: Upstash REST. `redisGet` returns null when
+     * Upstash is unconfigured OR the key is genuinely absent; both
+     * resolve to "0 today" (an absent key means no turns yet), so we
+     * only trust a non-null, parseable value. */
+    const raw = await redisGet(key);
+    if (raw != null) {
+      const n = parseInt(raw, 10);
+      if (Number.isFinite(n) && n >= 0) return n;
     }
   }
+
   const k = keyFor(userId);
   const e = STORE.get(k);
   if (!e || e.date !== today) return 0;
   return e.count;
 }
 
-/** Atomically (within this V8 isolate, or via Redis INCR) increment and
- *  return the new count. Rolls over to 1 when the stored entry is from
- *  a previous day. */
+/** Atomically increment and return the new count. Rolls over to 1 when
+ *  the stored entry is from a previous day (Redis handles this via the
+ *  date-scoped key + TTL; the in-memory fallback checks the stored date). */
 export async function incrementTurnsToday(
   userId: string | null | undefined,
 ): Promise<number> {
   const today = ymd();
-  const client = await getRedisClient();
-  if (client) {
+  const key = redisKeyFor(userId, today);
+
+  if (injectedClient) {
     try {
-      const key = redisKeyFor(userId, today);
-      const next = await client.incr(key);
+      const next = await injectedClient.incr(key);
       /* Set the TTL on first-write only — INCR creates the key with no
        * TTL otherwise. EXPIRE is a no-op if a TTL already exists. */
-      if (next === 1) await client.expire(key, REDIS_TTL_SEC);
+      if (next === 1) await injectedClient.expire(key, REDIS_TTL_SEC);
       return next;
     } catch {
       /* fall through to in-memory */
     }
+  } else {
+    /* Production path: a single atomic INCRBY + EXPIRE(NX) over Upstash
+     * REST. Returns null when Upstash is unconfigured or unreachable, in
+     * which case we fall through to the per-isolate in-memory counter. */
+    const next = await redisIncrByWithExpiry(key, 1, REDIS_TTL_SEC);
+    if (next != null) return next;
   }
+
   const k = keyFor(userId);
   const e = STORE.get(k);
   if (!e || e.date !== today) {
@@ -180,15 +157,9 @@ export async function incrementTurnsToday(
   return e.count;
 }
 
-/** Test-only: reset the in-memory map. NOT exposed to handlers. */
+/** Test-only: reset the in-memory map and injected client. NOT exposed
+ *  to handlers. */
 export function __resetDailyCapStoreForTests(): void {
   STORE.clear();
   __resetRedisClientForTests();
-}
-
-/** Test-only — exposed so tests can swap in a fake RedisLike to exercise
- *  the Redis branch without standing up a real server. */
-export function __setRedisClientForTests(client: RedisLike | null): void {
-  redisClient = client;
-  redisInitTried = true;
 }

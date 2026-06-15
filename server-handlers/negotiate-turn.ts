@@ -13,10 +13,10 @@
  *       and verbatim-repeat guard, applies move to state, returns
  *       serialized new state + text.
  *
- * Feature-flagged: by default this endpoint returns 404 unless
- * NEGOTIATION_KERNEL_ENABLED=1. That means committing this to main is
- * safe — no traffic flows here until the env var flips, and Ship 3
- * (engine wiring) gates the client on the same flag via /api/feature-flags.
+ * Feature-flagged (opt-OUT): this endpoint is live by default and only
+ * returns 404 when NEGOTIATION_KERNEL_ENABLED=0 is explicitly set — see
+ * the ENABLED const below. The kill-switch lets us disable the kernel in
+ * prod without a deploy if a turn-quality regression slips through.
  *
  * The LLM is downstream of the kernel and CANNOT mutate state. If it
  * returns text that violates the band or repeats verbatim, we retry
@@ -572,10 +572,10 @@ export default async function handler(
           { status: 429, headers },
         );
       }
-      /* Daily per-user cap. Backing store is in-memory with date-rollover
-         (see _daily-cap-store). REDIS_URL hooks up a no-op stub today; a
-         future revision can swap in a real Redis client without touching
-         this call site. */
+      /* Daily per-user cap. Backed by the project's Upstash Redis (shared
+         across edge isolates/regions) via _daily-cap-store, so the cap
+         actually holds in production. Falls back to a per-isolate
+         in-memory counter only when Upstash is unconfigured (local dev). */
       const turnsToday = await getTurnsToday(auth.userId ?? null);
       const dailyCheck = checkUserDailyLimit(turnsToday);
       if (!dailyCheck.allowed) {

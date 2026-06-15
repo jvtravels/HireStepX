@@ -75,8 +75,8 @@ export const Strategic: TempoStoryboard = {
 
 export const HR: TempoStoryboard = {
   render: () => <HRWeakDemo />,
-  name: "10. HR Round — weak (42) · 4-chapter HR-native report · diagnose / act / practice / next",
-  layout: { x: 1490, y: 12200, width: 1440, height: 7200 },
+  name: "10. HR Round — weak (42) · production HrFullReport · 8-dim gate + logistics + motivation rewrite",
+  layout: { x: 1490, y: 12200, width: 1440, height: 5000 },
 };
 
 export const Government: TempoStoryboard = {

@@ -400,6 +400,15 @@ export async function fetchLLMQuestions(params: {
    *  at X") instead of generic prompts. Keep entries compact; the
    *  server clips to ~6 to bound prompt size. */
   resumeExperiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>;
+  /** Skill records with depth markers — used to calibrate question
+   *  difficulty (primary depth = deep technical Qs; exposure = introductory). */
+  resumeSkillsDetailed?: Array<{ name: string; depth: string; yearsUsed?: number; recent?: boolean }>;
+  /** Career achievement highlights — used as behavioral probe anchors. */
+  resumeKeyAchievements?: string[];
+  /** Industry domains (fintech/edtech/SaaS) — used for scenario selection. */
+  resumeIndustries?: string[];
+  /** Structured education records — used for campus / govt-PSU rounds. */
+  resumeEducation?: Array<Record<string, unknown>>;
   candidateName?: string;
   negotiationStyle?: string;
   /** Optional coaching-drill hint forwarded from the dashboard's
@@ -619,6 +628,14 @@ export async function fetchLLMEvaluation(params: {
       different vibe, candidate is confused. */
   interviewerName?: string;
   interviewerPersonality?: string;
+  /** Structured resume fields forwarded to evaluate-session to unlock the
+      resumeGrounding score (0-100). Without this the score is always null. */
+  resumeContext?: {
+    topSkills?: string[];
+    topProjects?: string[];
+    headline?: string;
+    careerTrajectory?: string;
+  };
 }, timeoutMs = 14000): Promise<EvaluationResult | null> {
   // Client-side rate limit: max 5 evaluations per 60s
   if (!checkRateLimit("evaluate", 5, 60_000)) {

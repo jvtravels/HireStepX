@@ -43,6 +43,9 @@ import {
   canDiscloseSpecificNumber,
   clampAnchorAgainstCandidateAsk,
   effectiveAnchorLpa,
+  statedTotalTargetCtcLpa,
+  effectiveTargetCtcLpa,
+  totalScopedCounter,
   type NegotiationState,
   type NegotiationPhase,
   type AiMove,
@@ -1300,7 +1303,12 @@ function maybePlanParaphraseRecap(
   const aboutToStallOpen = (() => {
     if ((state.stallTurnsRemaining ?? 0) > 0) return false; /* return-turn, not open */
     if (state.turnIndex < 1) return false;
-    const freshAsk = state.lastCandidateCounterLpa;
+    /* Class-A (2026-06-15) — compare a TOTAL-scoped counter against the total
+     * maxStretch. totalScopedCounter returns null for a FIXED-scoped counter
+     * ("₹26L fixed"), so a base ask can never falsely trip this over-band-total
+     * stall (the units-mismatch false-fire). Still reads the fresh this-turn
+     * counter, not the sticky intake target. */
+    const freshAsk = totalScopedCounter(state);
     if (freshAsk == null || freshAsk <= state.band.maxStretch) return false;
     if ((state.stallsFiredCount ?? 0) >= STALL_SESSION_CAP) return false;
     const personaCfg = getRecruiterSectorPersona(state.recruiterSectorPersona ?? "default");
@@ -1449,11 +1457,14 @@ function maybePlanProactiveSweetener(
     const sum = tail.reduce((acc, e) => acc + (e.delta ?? 0), 0);
     if (sum < 0) signal = "affinity-drop";
   }
-  /* (5b) Counter still pending above the recruiter's cap. */
+  /* (5b) Counter still pending above the recruiter's cap. Class-A
+   * (2026-06-15) — only a TOTAL-scoped counter is comparable to `highest` (a
+   * total offer); a fixed-component ask is not "pending above the cap". */
+  const pendingTotalCounter = totalScopedCounter(state);
   if (
     signal == null &&
-    state.lastCandidateCounterLpa != null &&
-    state.lastCandidateCounterLpa > highest
+    pendingTotalCounter != null &&
+    pendingTotalCounter > highest
   ) {
     signal = "counter-still-pending";
   }
@@ -1560,11 +1571,13 @@ function maybePlanManagerConsultStall(
   /* (B) Open-turn gates. */
   /* Gate 1 — not the first AI turn. Recruiter must have heard the ask. */
   if (state.turnIndex < 1) return null;
-  /* Gate 2 — candidate just dropped a hard ask above band.maxStretch.
-   * Uses lastCandidateCounterLpa (fresh this-turn signal) rather than
-   * sticky candidateTarget so a stale intake target doesn't keep
-   * re-triggering stalls across the session. */
-  const freshAsk = state.lastCandidateCounterLpa;
+  /* Gate 2 — candidate just dropped a hard TOTAL ask above band.maxStretch.
+   * Uses the fresh this-turn counter (not sticky candidateTarget) so a stale
+   * intake target doesn't keep re-triggering stalls across the session.
+   * Class-A (2026-06-15): routed through totalScopedCounter so a FIXED-scoped
+   * counter ("₹26L fixed") returns null and cannot falsely trip this
+   * over-band-total stall — that was the units-mismatch false-fire. */
+  const freshAsk = totalScopedCounter(state);
   if (freshAsk == null || freshAsk <= state.band.maxStretch) return null;
   /* Gate 3 — session-wide cap. */
   if ((state.stallsFiredCount ?? 0) >= STALL_SESSION_CAP) return null;
@@ -1598,95 +1611,18 @@ function maybePlanManagerConsultStall(
 }
 
 function planNextActionInternal(state: NegotiationState): PlannedAction {
-  /* Phase 5 Session A (2026-05-19) — multi-round persona handoff
-   * pre-emption. When the kernel just transitioned between round
-   * personas (maybeAdvanceRound pushed a fresh entry to
-   * state.roundTransitions THIS turn), the planner emits a dedicated
-   * `round-transition` action ahead of every other branch so the
-   * handoff prose runs in front of the candidate before the new
-   * persona starts their cascade.
-   *
-   * Default-OFF invariance: when `multiRoundEnabled` is false (HEAD
-   * default), `roundTransitions` is empty (initialised to []) and this
-   * branch never fires. Byte-identical to today. */
-  if (state.multiRoundEnabled === true && (state.roundTransitions?.length ?? 0) > 0) {
-    const transitions = state.roundTransitions!;
-    const last = transitions[transitions.length - 1];
-    if (last.atTurn === state.turnIndex) {
-      return {
-        kind: "round-transition",
-        from: last.from,
-        to: last.to,
-        _move: {
-          lever: "probe",
-          newTotalLpa: null,
-          rationale:
-            `Phase 5 Session A — multi-round handoff at turn ${state.turnIndex}: ` +
-            `${last.from} → ${last.to}.`,
-          actionKind: "round-transition",
-        },
-      };
-    }
-  }
-
-  /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall.
-   *
-   * Two-phase gate:
-   *   (A) Stall ALREADY in flight (stallTurnsRemaining > 0): ship the
-   *       return-turn this turn. The simulator commits to either a
-   *       small concession ("checked — we can move ₹X on JB only")
-   *       OR a hold ("checked — band stays"). Choice is deterministic
-   *       from persona + band headroom.
-   *   (B) Stall NOT in flight: consider opening one when ALL gates pass.
-   *       Gates are conservative — the audit explicitly forbids first-turn
-   *       short-circuit stalls.
-   *
-   * The stall genuinely models a leverage move; coaching downstream
-   * can observe `stallsFiredCount` and `lastStallContext`. */
-  /* Calibrated-surprise lowball (2026-05-29) — fires BEFORE the
-   * paraphrase / counter-offer / anchor cascade so the probe interrupts
-   * the standard flow when the candidate undershoots band floor by ≥20%.
-   * Also handles the Branch A follow-up (`accept-lowball-quiet`) when
-   * the prior turn classification stamped `acceptedLowball`. */
-  {
-    const cs = maybePlanCalibratedSurprise(state);
-    if (cs !== null) return cs;
-  }
-  /* Paraphrase-loop feature (2026-05-29) — pre-empt manager-consult-stall
-   * and close so the recap fires the turn BEFORE the decision push. */
-  {
-    const paraphrase = maybePlanParaphraseRecap(state);
-    if (paraphrase !== null) return paraphrase;
-  }
-  /* Proactive-sweetener feature (2026-05-30) — when the recruiter is
-   * cash-capped (highestOfferMade ≥ 95% of band.maxStretch) AND the
-   * candidate is cooling, the recruiter volunteers a non-cash
-   * sweetener INSTEAD of stalling for manager-consult. Slots BEFORE
-   * manager-consult-stall so the cooling-candidate / cash-capped
-   * pattern dangles relocation / signing-bonus / equity-refresh /
-   * joining-flex / notice-buyout-help rather than re-running the
-   * stall ritual. Single-fire so the cascade falls through to the
-   * stall on subsequent cooling turns. */
-  {
-    const sweetener = maybePlanProactiveSweetener(state);
-    if (sweetener !== null) return sweetener;
-  }
-  {
-    const stallSelected = maybePlanManagerConsultStall(state);
-    if (stallSelected !== null) return stallSelected;
-  }
-
-  /* Prior-context feature (2026-05-29) — HIGH priority on turn 1-2
-   * when the user declared an upfront competing-offer or retention
-   * context. Mid-stage `match-existing-offer-prose` and
-   * `retention-trump-warning` pre-empt routine stalls but sit BEHIND
-   * the terminal-cap and manager-consult-stall crisis branches above.
-   * Skipped silently when state.priorContext is undefined (back-compat
-   * byte-identity with the pre-feature cascade). */
-  {
-    const pre = maybePlanPriorContextAction(state);
-    if (pre !== null) return pre;
-  }
+  /* 2026-06-15 architecture audit — Planner Finding 1: terminal-phase and
+   * turn-budget caps are the highest-precedence concern, so they run FIRST.
+   * They were previously placed below the feature branches
+   * (calibrated-surprise, paraphrase-recap, proactive-sweetener,
+   * manager-consult-stall, prior-context), which meant a session past its
+   * turn budget or already in a terminal phase could emit a feature turn
+   * instead of closing — overshooting maxTurns / re-opening a settled deal.
+   * The prior-context branch's own comment already documents these caps as
+   * sitting "above" it; the code contradicted that. All five feature
+   * helpers self-gate to non-terminal phases, so hoisting is byte-identical
+   * except in the over-budget / stuck-progress / terminal cases these caps
+   * are designed to own. */
 
   /* PDF#38 BUG-D (2026-05-20) — stuck-progress terminal close. PDF#38
    * Flipkart SPD session ended at T8 with the candidate still
@@ -1709,11 +1645,19 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * candidate can respond to the offer. The Flipkart PDF#41 session
    * terminated abruptly after the candidate asked for a breakdown
    * because this guard fired with the anchor already on the table. */
+  /* 2026-06-15 architecture audit — Planner Finding 1 follow-up: also require
+   * no disclosed expected-CTC claim. The "non-disclosing" premise is that the
+   * candidate has given us nothing to work with; but a stated
+   * userClaims.expectedCtc IS a numeric anchor (it arms calibrated-surprise,
+   * which can legitimately fire under these same turn/offer conditions). Once
+   * the cap hoisted above the feature branches, omitting this guard would let
+   * the stalemate close pre-empt a valid calibrated-surprise probe. */
   if (
     !isTerminalPhase(state.phase) &&
     state.turnIndex >= 8 &&
     state.candidateCurrentCtc == null &&
     state.candidateTarget == null &&
+    state.userClaims?.expectedCtc?.value == null &&
     state.highestOfferMade === 0 &&
     state.leversUsed.includes("acknowledge-and-recover")
   ) {
@@ -1803,6 +1747,96 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         rationale: `Terminal phase ${state.phase} reached at turn ${state.acceptedAtTurn ?? state.walkedAwayAtTurn ?? state.stalemateAtTurn ?? "?"}; restate close.`,
       },
     };
+  }
+
+  /* Phase 5 Session A (2026-05-19) — multi-round persona handoff
+   * pre-emption. When the kernel just transitioned between round
+   * personas (maybeAdvanceRound pushed a fresh entry to
+   * state.roundTransitions THIS turn), the planner emits a dedicated
+   * `round-transition` action ahead of every other branch so the
+   * handoff prose runs in front of the candidate before the new
+   * persona starts their cascade.
+   *
+   * Default-OFF invariance: when `multiRoundEnabled` is false (HEAD
+   * default), `roundTransitions` is empty (initialised to []) and this
+   * branch never fires. Byte-identical to today. */
+  if (state.multiRoundEnabled === true && (state.roundTransitions?.length ?? 0) > 0) {
+    const transitions = state.roundTransitions!;
+    const last = transitions[transitions.length - 1];
+    if (last.atTurn === state.turnIndex) {
+      return {
+        kind: "round-transition",
+        from: last.from,
+        to: last.to,
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale:
+            `Phase 5 Session A — multi-round handoff at turn ${state.turnIndex}: ` +
+            `${last.from} → ${last.to}.`,
+          actionKind: "round-transition",
+        },
+      };
+    }
+  }
+
+  /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall.
+   *
+   * Two-phase gate:
+   *   (A) Stall ALREADY in flight (stallTurnsRemaining > 0): ship the
+   *       return-turn this turn. The simulator commits to either a
+   *       small concession ("checked — we can move ₹X on JB only")
+   *       OR a hold ("checked — band stays"). Choice is deterministic
+   *       from persona + band headroom.
+   *   (B) Stall NOT in flight: consider opening one when ALL gates pass.
+   *       Gates are conservative — the audit explicitly forbids first-turn
+   *       short-circuit stalls.
+   *
+   * The stall genuinely models a leverage move; coaching downstream
+   * can observe `stallsFiredCount` and `lastStallContext`. */
+  /* Calibrated-surprise lowball (2026-05-29) — fires BEFORE the
+   * paraphrase / counter-offer / anchor cascade so the probe interrupts
+   * the standard flow when the candidate undershoots band floor by ≥20%.
+   * Also handles the Branch A follow-up (`accept-lowball-quiet`) when
+   * the prior turn classification stamped `acceptedLowball`. */
+  {
+    const cs = maybePlanCalibratedSurprise(state);
+    if (cs !== null) return cs;
+  }
+  /* Paraphrase-loop feature (2026-05-29) — pre-empt manager-consult-stall
+   * and close so the recap fires the turn BEFORE the decision push. */
+  {
+    const paraphrase = maybePlanParaphraseRecap(state);
+    if (paraphrase !== null) return paraphrase;
+  }
+  /* Proactive-sweetener feature (2026-05-30) — when the recruiter is
+   * cash-capped (highestOfferMade ≥ 95% of band.maxStretch) AND the
+   * candidate is cooling, the recruiter volunteers a non-cash
+   * sweetener INSTEAD of stalling for manager-consult. Slots BEFORE
+   * manager-consult-stall so the cooling-candidate / cash-capped
+   * pattern dangles relocation / signing-bonus / equity-refresh /
+   * joining-flex / notice-buyout-help rather than re-running the
+   * stall ritual. Single-fire so the cascade falls through to the
+   * stall on subsequent cooling turns. */
+  {
+    const sweetener = maybePlanProactiveSweetener(state);
+    if (sweetener !== null) return sweetener;
+  }
+  {
+    const stallSelected = maybePlanManagerConsultStall(state);
+    if (stallSelected !== null) return stallSelected;
+  }
+
+  /* Prior-context feature (2026-05-29) — HIGH priority on turn 1-2
+   * when the user declared an upfront competing-offer or retention
+   * context. Mid-stage `match-existing-offer-prose` and
+   * `retention-trump-warning` pre-empt routine stalls but sit BEHIND
+   * the terminal-cap and manager-consult-stall crisis branches above.
+   * Skipped silently when state.priorContext is undefined (back-compat
+   * byte-identity with the pre-feature cascade). */
+  {
+    const pre = maybePlanPriorContextAction(state);
+    if (pre !== null) return pre;
   }
 
   /* PDF#34 Fix 3 (2026-05-18) — clarification-request branch.
@@ -2218,15 +2252,22 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * address PDF#44 Bug A is to ensure lastCandidateCounterLpa stamps
    * correctly when the candidate states a counter, not to weaken the
    * gate.) */
+  /* Class-A (2026-06-15) — totalScopedCounter returns null for FIXED-scoped
+   * counters ("₹26 LPA fixed at minimum"), which are raise-the-base asks, not
+   * acceptance of the TOTAL. Comparing a fixed ask against highestOfferMade (a
+   * total) false-accepted the candidate while they were still pushing on base.
+   * Only a total-scoped counter below the standing total offer is a genuine
+   * guaranteed-accept; a fixed-scoped counter falls through to counter-base. */
+  const autoAcceptCounter = totalScopedCounter(state);
   if (
-    state.lastCandidateCounterLpa != null &&
+    autoAcceptCounter != null &&
     state.highestOfferMade > 0 &&
-    state.lastCandidateCounterLpa <= state.highestOfferMade &&
+    autoAcceptCounter <= state.highestOfferMade &&
     !isTerminalPhase(state.phase)
   ) {
     const accLpa = clampToCloseFloor(
       state,
-      Math.min(state.highestOfferMade, state.lastCandidateCounterLpa),
+      Math.min(state.highestOfferMade, autoAcceptCounter),
     );
     const jb = state.lastJoiningBonusOffered;
     return {
@@ -2235,7 +2276,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         lever: "close-acceptance",
         newTotalLpa: accLpa,
         joiningBonusAmount: jb != null ? jb : undefined,
-        rationale: `Candidate counter ₹${state.lastCandidateCounterLpa}L ≤ current offer ₹${state.highestOfferMade}L — guaranteed-accept signal; close at ₹${accLpa}L (floor = highest offer).`,
+        rationale: `Candidate counter ₹${autoAcceptCounter}L ≤ current offer ₹${state.highestOfferMade}L — guaranteed-accept signal; close at ₹${accLpa}L (floor = highest offer).`,
       },
     };
   }
@@ -2454,11 +2495,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * minTurnsBeforeClose guard below). Threshold sits just above the
    * legacy counter-offer stiffening fixture (target=40, ceiling=28,
    * ratio≈1.43) to preserve the schedule semantics. */
+  /* Class-A (2026-06-15) — in-hand-adjust the total before the gap test so an
+   * in-hand ask isn't measured against the TOTAL ceiling in the wrong frame.
+   * Kept to stated TOTAL targets only (a fixed-component ask doesn't trigger a
+   * terminal gap walk-away). */
+  const gapGateTarget = statedTotalTargetCtcLpa(state);
   if (
     !isTerminalPhase(state.phase) &&
     state.phase !== "opening" &&
-    state.candidateTarget != null &&
-    state.candidateTarget > state.band.maxStretch * 1.5
+    gapGateTarget != null &&
+    gapGateTarget > state.band.maxStretch * 1.5
   ) {
     return {
       kind: "live-walk-away",
@@ -2467,7 +2513,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         lever: "close-walkaway",
         newTotalLpa: null,
         rationale:
-          `Walk-away gap-gate: candidate target ₹${state.candidateTarget}L exceeds ` +
+          `Walk-away gap-gate: candidate target ₹${gapGateTarget}L exceeds ` +
           `band ceiling ₹${state.band.maxStretch}L by >50% — gap is structurally unbridgeable.`,
       },
     };
@@ -2546,6 +2592,11 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    *       counter-offer planner branch downstream takes the turn,
    *       instead of band-disclosure-deflect winning the race). */
   if (state.highestOfferMade > 0 && !isTerminalPhase(state.phase)) {
+    /* Class-A (2026-06-15) — the counter-engagement escapes (c) below must
+     * compare a TOTAL counter against the total offer. A fixed-scoped counter
+     * is excluded (totalScopedCounter → null); it routes to counter-base via
+     * the fixed-counter branch, not these total-vs-total force-routes. */
+    const totalCounter = totalScopedCounter(state);
     /* (a) Acceptance close: candidate signalled acceptance THIS turn
      * (state.verbalAcceptanceTurn === state.turnIndex). The terminal
      * close branch above requires phase === "accepted"; that flip is
@@ -2608,8 +2659,8 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * the anchor; we now break that lock by force-routing past it
      * when the candidate's counter is on the table. */
     if (
-      state.lastCandidateCounterLpa != null &&
-      state.lastCandidateCounterLpa > state.highestOfferMade &&
+      totalCounter != null &&
+      totalCounter > state.highestOfferMade &&
       state.phase === "range-disclosure"
     ) {
       /* Force the planner to skip band-disclosure-deflect by treating
@@ -2635,8 +2686,8 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * branch at L2703). Same bounded-recursion guard: the recursive call
      * sees phase === "counter-offer" so this branch is skipped. */
     if (
-      state.lastCandidateCounterLpa != null &&
-      state.lastCandidateCounterLpa > state.highestOfferMade &&
+      totalCounter != null &&
+      totalCounter > state.highestOfferMade &&
       state.phase !== "counter-offer" &&
       state.phase !== "range-disclosure" &&
       state.phase !== "opening"
@@ -2654,6 +2705,86 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * expectation back to the panel. The PHASE name is retained as a state-
    * machine marker; only the rendered lever / prose changed. */
   if (state.phase === "range-disclosure" && !isTerminalPhase(state.phase)) {
+    /* Deflect-loop fix (2026-06-15) — break the band-disclosure-deflect
+     * sink.
+     *
+     * The deflect lever emits newTotalLpa:null, so it never advances
+     * highestOfferMade; and it discloses no literal range, so applyAiMove
+     * never stamps rangeDisclosedAtTurn (kernel ~6538). derivePhase only
+     * leaves range-disclosure when a number lands (highestOfferMade>0,
+     * kernel ~5845) OR a range was emitted (~5851) — neither of which a
+     * deflect produces. So once the candidate has put a usable target on
+     * the table, repeating the deflect is a closed loop: T4-T8 of
+     * salary-negotiation-happy-path-trace.json restate the identical
+     * deflection verbatim while highestOfferMade stays pinned at 0 and the
+     * recruiter never actually anchors.
+     *
+     * Fix: the deflect is only correct as a ONE-shot response to a bare
+     * "what's your band?" ask BEFORE the candidate has revealed a number.
+     * The moment number-discipline allows it — candidate target on the
+     * table (total or fixed-scoped, via canDiscloseSpecificNumber), band
+     * complete, nothing anchored yet — anchor the initial offer instead.
+     * The anchor sets highestOfferMade>0, which promotes the phase out of
+     * range-disclosure on the next derivePhase pass (~5845-5848), so the
+     * loop cannot re-enter. */
+    const lo = state.band?.initialOffer;
+    const hi = state.band?.maxStretch;
+    const bandComplete =
+      typeof lo === "number" && typeof hi === "number" && lo < hi;
+    const anchorAlreadyDisclosed = readAskedTopics(state).some(
+      (t) =>
+        t.topic === "band-anchor-with-rationale" ||
+        (t.topic as string) === "anchor-with-band" ||
+        (t.topic as string) === "anchor-with-offer",
+    );
+    if (
+      state.highestOfferMade === 0 &&
+      bandComplete &&
+      !anchorAlreadyDisclosed &&
+      canDiscloseSpecificNumber(state)
+    ) {
+      const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+      /* null = band ceiling sits below the candidate's disclosed CTC;
+       * honest-defer rather than anchor a pay cut (mirrors AUDIT-W02
+       * BUG-001 at the offer-ask gate below). */
+      if (anchored === null) {
+        return {
+          kind: "anchor-with-offer",
+          initialOffer: lo,
+          bandIncomplete: true,
+          satisfiesTopic: "band-anchor-with-rationale",
+          _move: {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale: `Deflect-loop fix — band ceiling (${hi}) below disclosed CTC (${state.candidateCurrentCtc}); honest-defer rather than re-deflect into a sink.`,
+            askedTopic: "band-anchor-with-rationale",
+            actionKind: "anchor-with-offer",
+          },
+        };
+      }
+      return {
+        kind: "anchor-with-offer",
+        initialOffer: anchored,
+        bandIncomplete: false,
+        satisfiesTopic: "band-anchor-with-rationale",
+        _move: {
+          lever: "probe",
+          newTotalLpa: anchored,
+          rationale:
+            `Deflect-loop fix — candidate target on the table ` +
+            `(${state.candidateTarget ?? state.candidateTargetFixed}L), band complete; ` +
+            `anchor point-offer at ₹${anchored}L (floor=${lo}, disclosed CTC=${state.candidateCurrentCtc ?? "?"}) ` +
+            `instead of re-deflecting. Breaks the range-disclosure sink.`,
+          askedTopic: "band-anchor-with-rationale",
+          actionKind: "anchor-with-offer",
+        },
+      };
+    }
+
+    /* No usable target yet → the deflect is correct: a bare band-disclosure
+     * ask before the candidate has named a number. Real Indian HR deflects
+     * and takes the expectation back to the panel rather than disclosing
+     * the internal band. */
     const floor = state.band.initialOffer;
     return {
       kind: "band-disclosure-deflect",
@@ -3817,8 +3948,12 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         if (state.candidateTarget != null) {
           const peerBandMedian =
             (state.band.maxStretch + state.band.initialOffer) / 2;
+          /* Class-A (2026-06-15) — bucket on the CTC-equivalent target so an
+           * in-hand-framed ask is compared in the same frame as the band
+           * median (both total-CTC), not under-quoted into the wrong quartile. */
+          const cmpTarget = effectiveTargetCtcLpa(state) ?? state.candidateTarget;
           const quartile: "top" | "median" =
-            state.candidateTarget >= peerBandMedian ? "top" : "median";
+            cmpTarget >= peerBandMedian ? "top" : "median";
           return {
             kind: "comparative-anchoring",
             quartile,
@@ -3870,7 +4005,11 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         break;
     }
 
-    const target = state.candidateTarget ?? state.band.maxStretch;
+    /* Class-A (2026-06-15) — effectiveTargetCtcLpa folds in-hand→CTC and
+     * fixed-only→implied-total so the aspiration isn't computed in the wrong
+     * frame (the in-hand under-quote / fixed-only fall-to-ceiling bugs). The
+     * Math.min(target, ceiling) below still clamps to band. */
+    const target = effectiveTargetCtcLpa(state) ?? state.band.maxStretch;
     /* Step 5 (2026-05-16, ResumeFactPack track) — when the candidate has
      * not disclosed their currentCtc, fall back to the resume-implied
      * prior CTC as a floor signal. The counter math anchors against
@@ -4517,14 +4656,21 @@ export function maybePlanTacticInject(
     };
   }
 
-  /* Fake competing candidate — turn 4+, candidate is over-band. */
+  /* Fake competing candidate — turn 4+, candidate is over-band.
+   * Class-A (2026-06-15) — over-band must be judged on a TOTAL-CTC basis.
+   * The raw `state.candidateTarget` may be in-hand-framed, so comparing it
+   * directly against `band.maxStretch` (a total) mismatched units and could
+   * mis-fire. effectiveTargetCtcLpa folds in-hand→CTC into the same basis
+   * as maxStretch. */
+  const fakeCompetingTarget =
+    state.band != null ? effectiveTargetCtcLpa(state) : null;
   if (
     !usedSet.has("fake-competing-candidate") &&
     state.turnIndex >= 4 &&
     state.phase === "counter-offer" &&
-    state.candidateTarget != null &&
+    fakeCompetingTarget != null &&
     state.band != null &&
-    state.candidateTarget > state.band.maxStretch
+    fakeCompetingTarget > state.band.maxStretch
   ) {
     return {
       kind: "fake-competing-candidate",
@@ -4536,7 +4682,7 @@ export function maybePlanTacticInject(
         rationale:
           `Bad-faith tactic inject (fake-competing-candidate): turn ` +
           `${state.turnIndex} ≥ 4 and candidate is over-band ` +
-          `(target ₹${state.candidateTarget}L > maxStretch ₹${state.band.maxStretch}L); ` +
+          `(CTC-basis target ₹${fakeCompetingTarget}L > maxStretch ₹${state.band.maxStretch}L); ` +
           `single-fire per session.`,
       },
     };
@@ -4755,8 +4901,9 @@ function wrapLeverExplore(
  *  rather than imported because the move-picker's copy is module-private
  *  and the planner is the new home for "what move next" logic. */
 function computeJoiningBonusAmount(state: NegotiationState): number {
-  const target = state.candidateTarget;
-  const refTop = target != null ? target : state.band.maxStretch;
+  /* Class-A (2026-06-15) — size the joining bonus off the unit-normalized
+   * total target (in-hand→CTC, fixed-only→implied total), not the raw field. */
+  const refTop = effectiveTargetCtcLpa(state) ?? state.band.maxStretch;
   const gap = Math.max(0, refTop - state.highestOfferMade);
   const baseJB = Math.min(6.0, Math.max(1.5, gap * 0.5));
   const multiplier =
@@ -5719,7 +5866,11 @@ export function shouldFireCtcInflationAnchor(state: NegotiationState): boolean {
   if (state.candidateTarget == null) return false;
   if (state.band == null) return false;
   if (!Number.isFinite(state.band.initialOffer) || state.band.initialOffer <= 0) return false;
-  const overAnchor = state.candidateTarget >= state.band.initialOffer * 1.3;
+  /* Class-A (2026-06-15) — detect over-anchoring on the CTC-equivalent target.
+   * An in-hand-framed ask under-states against the (total) initialOffer, which
+   * would under-detect the over-anchor this lever exists to teach. */
+  const targetCtc = effectiveTargetCtcLpa(state) ?? state.candidateTarget;
+  const overAnchor = targetCtc >= state.band.initialOffer * 1.3;
   if (!overAnchor) return false;
   /* Has the candidate already asked about the in-hand breakdown? If so,
    * the inflation lever is moot — the candidate has already exercised

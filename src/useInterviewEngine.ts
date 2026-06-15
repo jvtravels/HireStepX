@@ -423,7 +423,7 @@ export function useInterviewEngine() {
       }
     } catch { /* silent */ }
 
-    const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[]; topSkills?: string[]; headline?: string; experiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }> } | undefined;
+    const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[]; topSkills?: string[]; headline?: string; experiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>; skillsDetailed?: Array<{ name: string; depth: string; yearsUsed?: number; recent?: boolean }>; keyAchievements?: string[]; industries?: string[] } | undefined;
     /* Resume-role contamination guard for salary-negotiation sessions.
        Production bug (2026-05): user with a "Senior Product Designer" resume
        selected "Java Developer" + TCS + salary-neg; the LLM personalised
@@ -464,6 +464,10 @@ export function useInterviewEngine() {
       resumeGaps: effectiveUseResume ? aiProfile?.interviewGaps : undefined,
       resumeTopSkills: effectiveUseResume ? aiProfile?.topSkills : undefined,
       resumeExperiences: effectiveUseResume ? aiProfile?.experiences : undefined,
+      resumeSkillsDetailed: effectiveUseResume ? aiProfile?.skillsDetailed : undefined,
+      resumeKeyAchievements: effectiveUseResume ? aiProfile?.keyAchievements : undefined,
+      resumeIndustries: effectiveUseResume ? aiProfile?.industries : undefined,
+      resumeEducation: effectiveUseResume ? (user?.resumeData as Record<string, unknown> | undefined)?.education as Array<Record<string, unknown>> | undefined : undefined,
       candidateName: user?.name || undefined,
       negotiationStyle: negotiationStyle || undefined,
       drill: drillKey || undefined,
@@ -3305,6 +3309,23 @@ export function useInterviewEngine() {
       role: targetRole || user?.targetRole || "the role",
       company: targetCompany || user?.targetCompany,
       resumeText: shouldUseResume ? user?.resumeText : undefined,
+      resumeContext: shouldUseResume ? (() => {
+        const evalAiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
+          topSkills?: string[];
+          headline?: string;
+          careerTrajectory?: string;
+          experiences?: Array<{ topProjects?: string[] }>;
+        } | undefined;
+        if (!evalAiProfile) return undefined;
+        return {
+          topSkills: evalAiProfile.topSkills?.slice(0, 8),
+          topProjects: evalAiProfile.experiences
+            ?.flatMap(e => Array.isArray(e?.topProjects) ? e.topProjects : [])
+            .slice(0, 5),
+          headline: evalAiProfile.headline,
+          careerTrajectory: evalAiProfile.careerTrajectory,
+        };
+      })() : undefined,
       jobDescription: jobDescription || undefined,
       negotiationBand: negotiationBandRef.current,
       targetSalary,

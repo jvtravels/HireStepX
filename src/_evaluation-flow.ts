@@ -70,6 +70,16 @@ export interface EvaluationFlowInput {
   highestOfferMade?: number;
   negotiationStyle?: string;
 
+  /* Resume grounding — structured fields from the AI-parsed resume that
+     allow the evaluator to score how well answers reflect the candidate's
+     actual background (the resumeGrounding dimension in evaluate-session). */
+  resumeContext?: {
+    topSkills?: string[];
+    topProjects?: string[];
+    headline?: string;
+    careerTrajectory?: string;
+  };
+
   /* Behavioural-only: who the candidate just talked to + how they sounded,
      so the topPerformerAnswer matches the live interviewer's voice. */
   interviewerName?: string;
@@ -190,6 +200,7 @@ export async function runEvaluationFlow(input: EvaluationFlowInput): Promise<Eva
         } : undefined,
         interviewerName: input.interviewerName,
         interviewerPersonality: input.interviewerPersonality,
+        resumeContext: input.resumeContext,
       }),
       input.evalAbort,
     );

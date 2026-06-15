@@ -56,6 +56,7 @@ import { detectTerminalIntent, type TerminalIntent } from "./_terminal-intent";
 /* PDF#51 (2026-05-28) — unified question router. See header in
  * `_question-router.ts` for the consolidation log. */
 import { routeQuestionShape } from "./_question-router";
+import { computeBreakdown } from "./_negotiation-breakdown";
 
 /* Future Layer 5 contract — the structured envelope the LLM should
  * eventually emit in place of free-form prose. Keeping the type
@@ -619,25 +620,63 @@ export function validateResponseContract(input: ContractInput): ContractResult {
 
 function collectMoveNumbers(move: AiMove): number[] {
   const out: number[] = [];
-  if (typeof move.newTotalLpa === "number") out.push(move.newTotalLpa);
-  /* Future moves may carry additional whitelisted numbers (e.g.
-   * joining-bonus, retention figure). Add fields as kernel evolves;
-   * for now newTotalLpa is the only authoritative one. */
+  if (typeof move.newTotalLpa === "number") {
+    out.push(move.newTotalLpa);
+    /* 2026-06-15 architecture audit (Class C follow-up) — when the move
+     * delivers a headline total, the recruiter may also restate the
+     * server-composed structural breakdown of THAT total (base / variable /
+     * joining / pf). Those components are deterministically derived from
+     * newTotalLpa via the same computeBreakdown the breakdown/recap
+     * templating uses — they are authorized prose, not leaks. Without this,
+     * tightening isMentionedInRecentLog to candidate-only entries would
+     * falsely trip unauthorized-number on a legitimate breakdown
+     * restatement and force a filler fallback.
+     *
+     * Headline-source invariant: validateResponseContract (and thus this
+     * helper) runs ONLY on the kernel pipeline (negotiate-turn.ts), where
+     * move.newTotalLpa IS the headline the recruiter speaks this turn — the
+     * kernel templates the breakdown off the same move. The legacy follow-up
+     * path templates off highestOfferMade but does NOT run the contract, so
+     * there is no path where the authorized headline and the spoken headline
+     * diverge. If a future caller wires the contract into a path that speaks
+     * a different headline, authorize off THAT headline too. */
+    const b = computeBreakdown(move.newTotalLpa);
+    if (b) out.push(b.base, b.variable, b.joining, b.pf);
+  }
+  /* The joining-bonus figure is a labeled slot on the move — when the
+   * kernel delivers one this turn it is authorized prose, not a leak. */
+  if (typeof move.joiningBonusAmount === "number") out.push(move.joiningBonusAmount);
   return out;
 }
 
 function isMentionedInRecentLog(n: number, state: NegotiationState): boolean {
-  /* A number that has been openly discussed earlier in the
-   * conversation isn't a "new leak" — restating "your current
-   * 24 LPA" is fine. Look back 6 entries. */
+  /* 2026-06-15 architecture audit (Class C) — labeled-slot whitelist.
+   *
+   * A number is "conversation-public" (safe to restate, not a leak) only
+   * when it came from a TRUSTED source:
+   *   (a) the candidate said it themselves — their own log entries, OR
+   *   (b) a typed, kernel-tracked numeric slot (offers made, the band's
+   *       opening number, joining bonus offered, candidate-disclosed
+   *       facts, competing offer).
+   *
+   * The prior implementation scanned ALL recent log text — including the
+   * AI's own prose — so a number the LLM hallucinated on turn N landed in
+   * the log and then self-authorized on turn N+1 (leak propagation). We
+   * now scan ONLY candidate-authored entries; recruiter-public numbers
+   * must come through a typed slot below, never through free AI prose. */
   const log = state.conversationLog?.slice(-6) ?? [];
   for (const entry of log) {
+    if (entry.speaker !== "candidate") continue;
     const nums = extractNumbers(entry.text || "");
     if (nums.some(m => Math.abs(m - n) < 0.05)) return true;
   }
-  /* Also: the highest offer made and any of the candidate's
-   * disclosed numbers are conversation-public. */
+  /* Recruiter-public, typed slots: the highest offer made and the joining
+   * bonus already offered. NOTE: the band's maxStretch / walkAway are
+   * deliberately EXCLUDED — those are internal ceilings the recruiter must
+   * never leak. */
   if (state.highestOfferMade != null && Math.abs(state.highestOfferMade - n) < 0.05) return true;
+  if (state.lastJoiningBonusOffered != null && Math.abs(state.lastJoiningBonusOffered - n) < 0.05) return true;
+  /* Candidate-disclosed number (their stated target). */
   if (state.candidateTarget != null && Math.abs(state.candidateTarget - n) < 0.05) return true;
   /* PDF#51 (2026-05-28) — the candidate's own disclosed current CTC and
    * the band's initialOffer figure are also conversation-public:

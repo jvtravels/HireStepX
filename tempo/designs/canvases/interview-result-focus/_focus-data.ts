@@ -821,10 +821,12 @@ export const SALARY_NEG_STRONG: InterviewResultData = build({
      "Cross-session insights" panel that's currently invisible across all demos. */
   crossSessionInsights: [
     {
+      kind: "improvement" as const,
       title: "Anchoring discipline jumped 65 points across 3 sessions",
       body: "Session 1: scored 25 (accepted first offer). Session 3: scored 90 (countered with ₹52L + market data). The single skill axis with the largest improvement in any focus you've practised.",
     },
     {
+      kind: "persistent" as const,
       title: "BATNA framing still your relative weakness",
       body: "Across negotiation sessions, BATNA leverage is your lowest-scoring axis on average (62/100). Two more drills with explicit competing-offer scenarios and you'll cross the role bar.",
     },

@@ -278,7 +278,31 @@ describe("salary-negotiation — happy-path E2E (7-turn arc)", () => {
       expect(prose, `coaching marker leaked: ${rx}`).not.toMatch(rx);
     }
 
-    /* I4 + I5: any number quoted by the recruiter must respect the band. */
+    /* I4 + I5: band discipline.
+     *
+     * Two distinct invariants, kept distinct on purpose:
+     *
+     *   I4 (floor) — the COMMITTED TOTAL the kernel stands behind
+     *   (highestOfferMade) must never sit below walkAway. This is the
+     *   authoritative state-observable; once the recruiter anchors, the
+     *   total it owns is always ≥ walkAway. We assert on state, not prose
+     *   (per this file's stated philosophy), because a breakdown line
+     *   legitimately quotes COMPONENT numbers — base / variable / RSU —
+     *   that fall below walkAway (e.g. ₹20L fixed inside a ₹28L total).
+     *   Treating every ₹ number in prose as a total quote would false-
+     *   positive the moment the recruiter actually itemizes an offer.
+     *
+     *   I5 (ceiling) — NO number the recruiter quotes, total OR component,
+     *   may exceed maxStretch. Components are always ≤ the total they sum
+     *   into, so the prose ceiling scan stays valid and still catches any
+     *   render/LLM leak of an over-band figure. */
+    if ((next.highestOfferMade ?? 0) > 0) {
+      expect(
+        next.highestOfferMade,
+        `committed total ₹${next.highestOfferMade}L below walkAway ₹${HAPPY_PATH_BAND.walkAway}L`,
+      ).toBeGreaterThanOrEqual(HAPPY_PATH_BAND.walkAway);
+      expect(next.highestOfferMade).toBeLessThanOrEqual(HAPPY_PATH_BAND.maxStretch);
+    }
     const numbersInProse = Array.from(
       prose.matchAll(/₹\s*(\d+(?:\.\d+)?)\s*(?:L|LPA|lakh|lakhs)?/gi),
     ).map((m) => Number(m[1]));
@@ -287,9 +311,8 @@ describe("salary-negotiation — happy-path E2E (7-turn arc)", () => {
       if (n < 5 || n > 200) continue;
       expect(
         n,
-        `recruiter quoted ₹${n}L outside band [${HAPPY_PATH_BAND.walkAway}, ${HAPPY_PATH_BAND.maxStretch}]`,
-      ).toBeGreaterThanOrEqual(HAPPY_PATH_BAND.walkAway);
-      expect(n).toBeLessThanOrEqual(HAPPY_PATH_BAND.maxStretch);
+        `recruiter quoted ₹${n}L above maxStretch ₹${HAPPY_PATH_BAND.maxStretch}L`,
+      ).toBeLessThanOrEqual(HAPPY_PATH_BAND.maxStretch);
     }
 
     /* I6: profile flags only flip false → true within the arc. */

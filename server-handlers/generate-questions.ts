@@ -214,7 +214,7 @@ export default async function handler(req: Request): Promise<Response> {
   let requestFocus = "general";
   try {
     const rawBody = await req.json();
-    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, candidateName, negotiationStyle, drill, priorFlags } = rawBody;
+    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, resumeSkillsDetailed, resumeKeyAchievements, resumeIndustries, resumeEducation, candidateName, negotiationStyle, drill, priorFlags } = rawBody;
     if (typeof type === "string") requestType = type;
     if (typeof focus === "string") requestFocus = focus;
     const isMini = mini === true;
@@ -562,6 +562,41 @@ INDIAN CONVERSATIONAL REGISTER (when writing the questions themselves):
           parts.push(`RESUME EXPERIENCE TIMELINE (structured — use these company / project anchors when asking questions; never invent companies or projects beyond this list):\n${expLines.join("\n")}\n\nGROUNDING RULE: at least one question stem should explicitly reference a company / project / bullet from above (e.g. "Walk me through the OCR pipeline you built at <company>" or "You mentioned <bullet> — what trade-off forced that choice?"). Do NOT fabricate companies or projects not listed.`);
         }
       }
+
+      // skillsDetailed — depth-aware skill calibration
+      if (Array.isArray(resumeSkillsDetailed) && resumeSkillsDetailed.length > 0) {
+        const primary = (resumeSkillsDetailed as Array<Record<string, unknown>>).filter((s) => s["depth"] === "primary").map((s) => sanitizeForLLM(s["name"], 50)).filter(Boolean).slice(0, 6);
+        const exposure = (resumeSkillsDetailed as Array<Record<string, unknown>>).filter((s) => s["depth"] === "exposure").map((s) => sanitizeForLLM(s["name"], 50)).filter(Boolean).slice(0, 4);
+        const lines: string[] = [];
+        if (primary.length > 0) lines.push(`Primary (deep expertise): ${primary.join(", ")}`);
+        if (exposure.length > 0) lines.push(`Exposure only (surface knowledge): ${exposure.join(", ")}`);
+        if (lines.length > 0) parts.push(`SKILL DEPTH CALIBRATION (calibrate question difficulty accordingly — primary = deep technical Qs, exposure = introductory Qs only):\n${lines.join("\n")}`);
+      }
+
+      // keyAchievements — use as behavioral probe anchors
+      if (Array.isArray(resumeKeyAchievements) && resumeKeyAchievements.length > 0) {
+        const achievements = (resumeKeyAchievements as unknown[]).slice(0, 4).map((a: unknown) => sanitizeForLLM(a, 120)).filter(Boolean);
+        if (achievements.length > 0) parts.push(`KEY ACHIEVEMENTS (probe these in behavioral questions — ask for context, decision, trade-offs, and measurable outcome):\n${achievements.map(a => `- ${a}`).join("\n")}`);
+      }
+
+      // industries — use for scenario domain selection
+      if (Array.isArray(resumeIndustries) && resumeIndustries.length > 0) {
+        const industries = (resumeIndustries as unknown[]).slice(0, 3).map((i: unknown) => sanitizeForLLM(i, 60)).filter(Boolean);
+        if (industries.length > 0) parts.push(`CANDIDATE INDUSTRY BACKGROUND: ${industries.join(", ")} — anchor case-study and strategic scenarios to these domains where possible.`);
+      }
+
+      // education — structured for campus/govt-PSU
+      if (Array.isArray(resumeEducation) && resumeEducation.length > 0) {
+        const eduLines = (resumeEducation as Array<Record<string, unknown>>).slice(0, 3).map((e) => {
+          const degree = sanitizeForLLM(e["degree"] ?? e["qualification"], 80);
+          const institution = sanitizeForLLM(e["institution"] ?? e["school"] ?? e["college"], 80);
+          const cgpa = sanitizeForLLM(e["cgpa"] ?? e["grade"] ?? e["percentage"], 20);
+          const year = sanitizeForLLM(e["graduationYear"] ?? e["endYear"] ?? e["year"], 20);
+          return [degree, institution, cgpa ? `CGPA/Grade: ${cgpa}` : "", year].filter(Boolean).join(" · ");
+        }).filter(Boolean);
+        if (eduLines.length > 0) parts.push(`EDUCATION (use for campus-placement probes and cross-referencing academic background):\n${eduLines.map(l => `- ${l}`).join("\n")}`);
+      }
+
       return parts.length > 0 ? parts.join("\n") : "";
     })();
 

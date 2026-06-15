@@ -483,11 +483,13 @@ export const isTerminalPhase = (p: NegotiationPhase): boolean => TERMINAL_PHASES
  *      the candidate re-engages (the `walkAwayReturned` flag is set in
  *      applyCandidateAnswer). This is the only path out of any terminal
  *      phase and is a one-shot re-entry.
- *   2. verbal-renege — `verbalAcceptanceTurn` is set (candidate said yes
- *      and then re-opened). Only the move-picker stiffens; phase wants
- *      to stay in `counter-offer` while the bot stiffens, and any
- *      derivation that would otherwise compute a "lower" target phase
- *      should be allowed to land on counter-offer.
+ *   2. verbal-renege — `postVerbalRenegotiationCount > 0` (candidate said
+ *      yes and is now actively re-opening). Only the move-picker stiffens;
+ *      phase wants to stay in `counter-offer` while the bot stiffens, and
+ *      any derivation that would otherwise compute a "lower" target phase
+ *      should be allowed to land on counter-offer. Gated on the active
+ *      renege count, not the permanent `verbalAcceptanceTurn` stamp, so a
+ *      clean acceptance is never dragged backward.
  *
  * Terminal phases share rank so they never transition between each
  * other except via the walk-away-reopen exception. The two non-walk-away
@@ -523,13 +525,21 @@ export function canTransitionPhase(
    * phase (e.g. `probe-expectations`) while reopened should still be
    * allowed to clamp into `counter-offer` rather than getting stuck. */
   if (state.walkAwayReturned && to === "counter-offer") return true;
-  /* Exception 2: verbal-renege — `verbalAcceptanceTurn` is set when the
-   * candidate previously said yes but is now asking for more. The state-
-   * machine intentionally keeps us in `counter-offer` while the move-
-   * picker stiffens. If derivation produces `counter-offer` and we're
-   * sitting in a higher phase like `lever-explore` or `closing-push`,
-   * permit the regression so the stiffening path runs cleanly. */
-  if (state.verbalAcceptanceTurn != null && to === "counter-offer") return true;
+  /* Exception 2: verbal-renege — the candidate previously said yes but is
+   * now actively asking for more. The state-machine intentionally drops
+   * back to `counter-offer` while the move-picker stiffens. If derivation
+   * produces `counter-offer` and we're sitting in a higher phase like
+   * `lever-explore` or `closing-push`, permit the regression so the
+   * stiffening path runs cleanly.
+   *
+   * 2026-06-15 architecture audit — Kernel Finding 3: gate on an ACTIVE
+   * renege (postVerbalRenegotiationCount > 0, incremented in
+   * applyCandidateAnswer the moment the candidate reopens) rather than the
+   * permanent `verbalAcceptanceTurn != null` stamp. The stamp never
+   * clears, so the old gate let a clean acceptance be dragged backward to
+   * counter-offer indefinitely by any stray counter-offer derivation. The
+   * counter only implies the stamp is set, so this is strictly narrower. */
+  if (state.postVerbalRenegotiationCount > 0 && to === "counter-offer") return true;
   return false;
 }
 
@@ -803,6 +813,16 @@ export interface NegotiationState {
    *  Used by the auto-accept gate so a stale intake target can NEVER
    *  close the AI below highestOfferMade without an in-turn counter. */
   lastCandidateCounterLpa: number | null;
+  /** Deflect-loop fix (2026-06-15) — scope of the most recent
+   *  lastCandidateCounterLpa stamp. A `"fixed"` counter ("₹26 LPA fixed
+   *  at minimum") is a raise-the-base ask, NOT an acceptance of the
+   *  total; a `"total"` counter is a whole-package figure. The auto-accept
+   *  gate reads this so a fixed-scoped counter (e.g. 26) is never
+   *  mis-compared against a TOTAL offer (e.g. 28) and false-accepted —
+   *  which previously closed the candidate while they were still pushing
+   *  for more base. Null when no counter has landed yet. Cleared with
+   *  lastCandidateCounterLpa by applyAiMove. */
+  lastCounterComponent?: "fixed" | "total" | null;
   /** Phase 25a (2026-05-13) — the FIRST number the candidate ever
    *  anchored. Frozen on first non-null assignment; never updated
    *  after. Lets the red-flag layer detect upward drift ("Earlier
@@ -2637,6 +2657,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateTarget: null,
     candidateTargetFixed: null,
     lastCandidateCounterLpa: null,
+    lastCounterComponent: null,
     firstAnchoredTarget: null,
     candidateCurrentCtc: null,
     candidateCurrentCompany: null,
@@ -3105,6 +3126,16 @@ export function isFlatAck(answer: string | null | undefined): boolean {
  * Returns true when it's safe to disclose a specific number. Pure. */
 export function canDiscloseSpecificNumber(state: NegotiationState): boolean {
   if (state.candidateTarget != null) return true;
+  /* Deflect-loop fix (2026-06-15) — a fixed-component target ("₹26 LPA
+   * fixed at minimum") is still the candidate revealing their number, so
+   * number-discipline (rationale (a): "the candidate has anchored") is
+   * satisfied. Without this, a candidate who only ever states a fixed
+   * target keeps canDisclose=false, the planner never anchors, and the
+   * range-disclosure phase becomes a band-disclosure-deflect sink (see
+   * salary-negotiation-happy-path-trace.json T4-T8). derivePhase already
+   * folds candidateTargetFixed into its `target` gate (kernel ~5881), so
+   * this keeps the two in sync. */
+  if (state.candidateTargetFixed != null) return true;
   const refusals = state.probeRefusalCount ?? 0;
   if (refusals >= 2) {
     /* Discovery-complete check is only meaningful when the checklist is
@@ -3115,6 +3146,62 @@ export function canDiscloseSpecificNumber(state: NegotiationState): boolean {
     return isDiscoveryComplete(checklist, fam);
   }
   return false;
+}
+
+/* ── Class-A unit accessors (2026-06-15 architecture audit) ──────────
+ * Root cause the audit surfaced: candidateTarget / lastCandidateCounterLpa
+ * are unit-polymorphic — a number stamped in whatever the candidate spoke
+ * (TOTAL CTC, FIXED component, or IN-HAND/take-home) — yet most consumers
+ * compared it against TOTAL band/offer figures. That mix produced the
+ * in-hand under-quote (~13-25%) and the fixed-vs-total false-accept.
+ *
+ * These three accessors are the ONE place that normalizes the units. Every
+ * numeric decision must read through them; raw state.candidateTarget /
+ * state.lastCandidateCounterLpa are for echoing the candidate's own words in
+ * prose only. A future reader that goes through an accessor cannot
+ * reintroduce the mix. */
+
+/** The candidate's stated TOTAL target in LPA, converted to a CTC-equivalent
+ *  when they framed it as in-hand / take-home. Returns null when no *total*
+ *  target is stated (a fixed-only ask is not a total). */
+export function statedTotalTargetCtcLpa(state: NegotiationState): number | null {
+  if (state.candidateTarget == null) return null;
+  /* In-hand / take-home framing: candidateTarget is the take-home number the
+   * candidate spoke; the CTC-equivalent (gross-up of in-hand + the band's
+   * variable/benefit structure) is stamped alongside it in applyCandidateAnswer.
+   * Reading the raw take-home here is exactly the in-hand under-quote (~13-25%)
+   * the Class-A accessor exists to eliminate, so prefer the CTC-equivalent. */
+  if (state.candidateTargetIsInHand && state.candidateTargetCtcEquivalentLpa != null) {
+    return state.candidateTargetCtcEquivalentLpa;
+  }
+  return state.candidateTarget;
+}
+
+/** The candidate's effective TOTAL-CTC target for numeric decisions
+ *  (aspiration, headroom, bonus sizing). Folds, in priority order:
+ *    1. stated total (in-hand-adjusted) — statedTotalTargetCtcLpa
+ *    2. fixed-only ask → implied total = fixed + band variable headroom
+ *  Returns the UNCAPPED implied total (callers clamp to ceiling themselves
+ *  via Math.min, and over-band detection needs to see the overshoot).
+ *  Returns null only when no target of any kind is stated. */
+export function effectiveTargetCtcLpa(state: NegotiationState): number | null {
+  const stated = statedTotalTargetCtcLpa(state);
+  if (stated != null) return stated;
+  if (state.candidateTargetFixed != null) {
+    return state.candidateTargetFixed + (state.band.variableMax ?? 0);
+  }
+  return null;
+}
+
+/** The candidate's most recent counter IFF it was scoped to the TOTAL
+ *  package. Returns null for fixed-component counters ("₹26L fixed"), which
+ *  must never be compared against a total offer — that comparison was the
+ *  units-mismatch false-accept bug class. Every gate that compares a counter
+ *  against highestOfferMade (a total) must read this, not the raw field. */
+export function totalScopedCounter(state: NegotiationState): number | null {
+  if (state.lastCandidateCounterLpa == null) return null;
+  if (state.lastCounterComponent === "fixed") return null;
+  return state.lastCandidateCounterLpa;
 }
 
 /* Sprint A.4 (2026-05-15) — current-employer free-form extractor.
@@ -4570,6 +4657,9 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       const priorFixed = state.candidateTargetFixed;
       if (priorFixed == null || Math.abs(priorFixed - parsed.target) > 0.05) {
         next.lastCandidateCounterLpa = parsed.target;
+        /* Mark this counter fixed-scoped so the auto-accept gate doesn't
+         * compare a base ask against a total offer (deflect-loop fix). */
+        next.lastCounterComponent = "fixed";
       }
     } else {
       /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
@@ -4580,6 +4670,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       const prior = state.candidateTarget;
       if (prior == null || Math.abs(prior - parsed.target) > 0.05) {
         next.lastCandidateCounterLpa = parsed.target;
+        next.lastCounterComponent = "total";
       }
       next.candidateTarget = parsed.target;
       if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
@@ -5048,7 +5139,11 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      target+currentCtc (after current-turn binding). Rationale is
      sticky: last-stated wins, prior preserved when current turn
      mentions no rationale cue. */
-  next.hikePercent = computeHikePercent(next.candidateTarget, next.candidateCurrentCtc);
+  /* Class-A (2026-06-15) — hike% off the in-hand-adjusted total. A candidate
+   * who asks for "₹16L in-hand" is asking a ~₹18.4L CTC; computing the hike
+   * off the raw 16 understated their ask. statedTotalTargetCtcLpa handles the
+   * conversion and returns null for fixed-only asks (no total → no hike). */
+  next.hikePercent = computeHikePercent(statedTotalTargetCtcLpa(next), next.candidateCurrentCtc);
   if (parsed.rationale) next.rationale = parsed.rationale;
 
   /* Phase 13/14/15/16 — merge non-empty parses into sticky state.
@@ -5716,9 +5811,19 @@ function forcedPhaseFor(
 ): NegotiationPhase | null {
   if (group === "discovery") {
     const hasSignal =
-      state.candidateCurrentCtc != null || state.candidateTarget != null;
-    if (hasSignal) return "range-disclosure";
-    return "stalemate";
+      state.candidateCurrentCtc != null ||
+      state.candidateTarget != null ||
+      state.candidateTargetFixed != null;
+    if (!hasSignal) return "stalemate";
+    /* Class-B de-sink (2026-06-15) — if we're ALREADY in range-disclosure and
+     * have overstayed its budget, push FORWARD to a concrete anchor instead of
+     * returning range-disclosure again. The old `return "range-disclosure"`
+     * was a no-op when phase===range-disclosure, so the band-disclosure-deflect
+     * lever repeated verbatim every turn until the global turn budget dumped to
+     * stalemate (the reported deflect-loop sink). offer-presented routes the
+     * planner through its anchor gates so a real number lands next turn. */
+    if (state.phase === "range-disclosure") return "offer-presented";
+    return "range-disclosure";
   }
   if (group === "anchoring") return "counter-offer";
   /* counter group: route through closing-push first. Once closing-
@@ -5842,9 +5947,20 @@ function derivePhaseInner(state: NegotiationState): NegotiationPhase {
      * table, stay in range-disclosure until the bot has actually
      * disclosed a range AND at least one further turn has elapsed
      * (allowing the candidate to react). */
+    /* Class-B (2026-06-15) — fold candidateTargetFixed (and in-hand framing)
+     * into the "candidate has a target" test, matching the main cascade
+     * (kernel ~5906) and canDiscloseSpecificNumber. Without this a fixed-only
+     * ask ("₹26L fixed") routed to offer-presented (awaiting-first-reaction)
+     * instead of counter-offer for one turn before self-correcting. */
+    const hasTarget =
+      (statedTotalTargetCtcLpa(state) ?? state.candidateTargetFixed) != null;
     if (state.highestOfferMade > 0) {
-      /* A specific anchor has been put on the table — promote. */
-      if (state.candidateTarget != null) return "counter-offer";
+      /* A specific anchor has been put on the table — promote. This
+       * highestOfferMade>0 exit is the PRIMARY, intent-based exit: the
+       * anchor-with-offer action sets it directly, independent of any prose
+       * regex (the rangeDisclosedAtTurn detector below is legacy
+       * defense-in-depth, not the load-bearing trigger). */
+      if (hasTarget) return "counter-offer";
       return "offer-presented";
     }
     if (
@@ -5852,7 +5968,7 @@ function derivePhaseInner(state: NegotiationState): NegotiationPhase {
       state.turnIndex > state.rangeDisclosedAtTurn
     ) {
       /* Candidate has had a turn to react — advance to negotiation. */
-      if (state.candidateTarget != null) return "probe-expectations";
+      if (hasTarget) return "probe-expectations";
       return "offer-presented";
     }
     return "range-disclosure";
@@ -5878,7 +5994,12 @@ function derivePhaseInner(state: NegotiationState): NegotiationPhase {
    * which caused planNextAction to regress to discovery-probe even after
    * an anchor offer was on the table. Folding candidateTargetFixed into
    * the target gate drives the legitimate transition to counter-offer. */
-  const target = state.candidateTarget ?? state.candidateTargetFixed;
+  /* Class-A (2026-06-15) — in-hand-adjust the total before phase routing so
+   * an in-hand ask isn't compared against TOTAL band figures in the wrong
+   * frame. Fixed-only asks stay raw here (over-band detection at the
+   * lever-explore gate below wants to see a fixed ask that alone exceeds the
+   * total ceiling). */
+  const target = statedTotalTargetCtcLpa(state) ?? state.candidateTargetFixed;
   /* Negotiation-flow redesign commit 6 (2026-05-15) — sticky-floor
    * clauses (POST_PROBE_PHASES / isPostProbe / alreadyProbed /
    * candidateEngagedAtAll) removed. Monotonicity is now enforced
@@ -5932,10 +6053,12 @@ export interface AiMove {
   /** Kernel-computed joining-bonus amount (LPA, one-time). Set when
    *  lever='joining-bonus' OR when lever='close-acceptance' and a
    *  JB had previously been offered this session. The LLM MUST quote
-   *  this number — non-negotiable. Sizing logic: 40% of the gap
-   *  between current highest offer and candidateTarget (or maxStretch
-   *  when target is null), modulated by marketMode (hot 1.5 / neutral
-   *  1.0 / soft 0.7), clamped to [1.0, 6.0] LPA. Without this, the
+   *  this number — non-negotiable. Sizing logic (see
+   *  computeJoiningBonusAmount in _next-action-planner.ts): 50% of the gap
+   *  between current highest offer and the unit-normalized effective target
+   *  (effectiveTargetCtcLpa, or maxStretch when no target), clamped to
+   *  [1.5, 6.0] LPA, then modulated by marketMode (hot 1.5 / neutral 1.0 /
+   *  soft 0.7) and finally capped at the band spread. Without this, the
    *  LLM offered "joining bonus" three times without ever naming an
    *  amount (May 2026 session). */
   joiningBonusAmount?: number;
@@ -6067,6 +6190,9 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      * target can't keep firing the auto-accept gate on subsequent
      * turns where the candidate didn't actually re-counter. */
     lastCandidateCounterLpa: null,
+    /* Deflect-loop fix (2026-06-15) — the counter-scope marker is paired
+     * with lastCandidateCounterLpa; clear it on the same one-shot cycle. */
+    lastCounterComponent: null,
     /* Architectural bug-prevention (2026-05-15) — clear one-shot brief
      * tag attribution so next turn starts fresh. */
     lastBriefTags: undefined,

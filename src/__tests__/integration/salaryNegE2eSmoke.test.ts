@@ -466,25 +466,28 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
     expect(state.turnIndex).toBe(turnIdxBefore);
   });
 
-  it("Fix E — phase-transition matrix permits accepted → counter-offer ONLY when verbalAcceptanceTurn set", () => {
-    /* Direct unit-test of `canTransitionPhase` exception 2 at
-     * `_negotiation-kernel.ts:245`. Pre-Fix-C, this exception was
-     * unreachable from strict-boost / soft-accept paths because they
-     * never stamped `verbalAcceptanceTurn`. Post-Fix-C the matrix
-     * permission is uniform across all accept paths, which is the
-     * invariant Fix E asserts. */
-    const accepted: NegotiationState = {
+  it("Fix E — phase-transition matrix permits accepted → counter-offer ONLY on an active renege", () => {
+    /* Direct unit-test of `canTransitionPhase` exception 2. Pre-Fix-C
+     * this exception was unreachable from strict-boost / soft-accept
+     * paths because they never stamped `verbalAcceptanceTurn`; Fix-C made
+     * the stamp uniform across accept paths. The 2026-06-15 audit
+     * (Kernel Finding 3) then re-gated the permission on an ACTIVE renege
+     * (postVerbalRenegotiationCount > 0) rather than the permanent stamp,
+     * so a clean acceptance is never dragged back to counter-offer. */
+    const reneging: NegotiationState = {
       ...freshState(),
       phase: "accepted",
       verbalAcceptanceTurn: 5,
+      postVerbalRenegotiationCount: 1,
     };
-    expect(canTransitionPhase("accepted", "counter-offer", accepted)).toBe(true);
-    const acceptedNoVerbal: NegotiationState = {
+    expect(canTransitionPhase("accepted", "counter-offer", reneging)).toBe(true);
+    const cleanAccept: NegotiationState = {
       ...freshState(),
       phase: "accepted",
-      verbalAcceptanceTurn: null,
+      verbalAcceptanceTurn: 5,
+      postVerbalRenegotiationCount: 0,
     };
-    expect(canTransitionPhase("accepted", "counter-offer", acceptedNoVerbal)).toBe(false);
+    expect(canTransitionPhase("accepted", "counter-offer", cleanAccept)).toBe(false);
   });
 });
 

@@ -25,12 +25,17 @@ import {
   SYSTEM_DESIGN_PARTIAL,
   STRATEGIC_STRONG,
   CAMPUS_PLACEMENT_PARTIAL,
-  HR_WEAK,
   PANEL_STRONG,
   GOVERNMENT_PARTIAL,
 } from "./_focus-data";
 import { SalaryDesignPanels, WEAK_PRESET, STRONG_PRESET, type SalaryDesignPreset } from "./_salary-design-panels";
-import { HrDesignPanels, HR_WEAK_PRESET, type HrDesignPreset } from "./_hr-design-panels";
+/* Production HR component — no hooks / no "use client", safe to canvas-import. */
+import HrFullReport from "../../../../src/sessionReport/HrFullReport";
+import type {
+  HrReportData as ProdHrReportData,
+  Skill as ProdSkill,
+  Question as ProdQuestion,
+} from "../../../../src/sessionReport/types";
 
 interface FocusChrome {
   icon: string;
@@ -135,21 +140,16 @@ function FocusReport({
   data,
   chrome,
   salaryPanels,
-  hrPanels,
 }: {
   data: InterviewResultData;
   chrome: FocusChrome;
-  /* Optional design-only panels rendered below the standard report.
-     Salary Neg and HR Round each opt into their own panel stack — the
-     base report stays untouched. */
+  /* Optional design-only panels appended below the standard report body.
+     Salary Neg opts in; HR Round has its own production component
+     (HrFullReport via HRWeakDemo) and no longer uses this. */
   salaryPanels?: SalaryDesignPreset;
-  hrPanels?: HrDesignPreset;
 }) {
-  // The behavioural full layout has a self-contained hero (gauge + verbal
-  // verdict + at-a-glance + biggest gap) and its own next-steps countdown
-  // downstream, so the FocusBanner would just duplicate those signals and
-  // compete with the hero for the eyebrow slot. Skip it for fullLayout;
-  // all 10 other focuses keep the banner.
+  // Behavioural full layout has a self-contained hero so the FocusBanner
+  // would double up. All other focuses keep the banner.
   const showFocusBanner = !data.behavioral?.fullLayout;
   return (
     <CanvasProviders>
@@ -161,18 +161,8 @@ function FocusReport({
           role={data.role}
         />
       )}
-      {/* HR opts out of the generic InterviewResult shell — its panels
-          replace the report end-to-end, so the dual-vocabulary problem
-          (generic skill bars + HR dim gate scoring the same person twice)
-          can't happen. All other focuses keep the generic shell. */}
-      {hrPanels ? (
-        <HrDesignPanels preset={hrPanels} />
-      ) : (
-        <>
-          <InterviewResult data={data} />
-          {salaryPanels && <SalaryDesignPanels preset={salaryPanels} />}
-        </>
-      )}
+      <InterviewResult data={data} />
+      {salaryPanels && <SalaryDesignPanels preset={salaryPanels} />}
     </CanvasProviders>
   );
 }
@@ -290,6 +280,109 @@ const GOVERNMENT: FocusChrome = {
   accentSoft: "#FED7AA",
 };
 
+/* ─── HR Round production demo data ─────────────────────────────────────
+   Realistic Flipkart Senior PM HR round — score 42, 3 of 8 dimensions
+   failing (Compliance, Commitment, Motivation). Used by HRWeakDemo to
+   render the PRODUCTION HrFullReport component so the storyboard shows the
+   real UI, not a canvas-local mock. */
+
+const HR_PROD_SKILLS: ProdSkill[] = [
+  { name: "Logistics clarity",        score: 55 },
+  { name: "Comp transparency",        score: 48 },
+  { name: "Switch-rationale honesty", score: 50 },
+  { name: "Compliance readiness",     score: 30 },
+  { name: "Commitment signal",        score: 35 },
+  { name: "Benefits/policy literacy", score: 42 },
+  { name: "Self-awareness",           score: 48 },
+  { name: "Motivation specificity",   score: 28 },
+];
+
+const HR_PROD_WINS: string[] = [
+  "Career trajectory was internally consistent",
+  "Salary expectation was reasonable and anchored as a range",
+];
+
+const HR_PROD_REPORT: ProdHrReportData = {
+  motivationBefore: "great company, great opportunity — it's a well-known brand",
+  motivationAfter:
+    "Flipkart's UPI-Lite expansion into tier-3 is exactly the problem space I want to be in — owning a 0-to-1 PM lane in payments, not scaling something already built.",
+  noticeDays: 60,
+  noticeFlexibility: "not-stated",
+  compExpected: "42–48L",
+  counterOfferRisk: "high",
+  bgvGaps: [
+    "Form-16 FY22 missing",
+    "Relieving letter from prior employer not yet received",
+  ],
+};
+
+const HR_PROD_QUESTIONS: ProdQuestion[] = [
+  {
+    index: 1,
+    text: "Why are you leaving your current role?",
+    score: 38,
+    band: "weak",
+    answer: [{ text: "Honestly, my current manager doesn't really appreciate my work…" }],
+    star: { situation: false, task: false, action: false, result: false, learning: false },
+    metrics: { wordCount: 145, responseSec: 168, firstPersonRatioPct: 68, quantificationCount: 0 },
+    whyScored:
+      "Leaned negative — 'my current manager doesn't appreciate me'; HR reads this as a future risk. Motivation was generic. No Flipkart-specific research surfaced.",
+    redFlags: [
+      {
+        type: "blame",
+        severity: "high",
+        title: "Negative tone toward previous employer",
+        explanation:
+          "Even if true, HR reads this as a future risk. Reframe: 'I'm looking for [positive thing], which my current role can't offer.'",
+        quote: "my current manager doesn't appreciate me",
+      },
+      {
+        type: "vague",
+        severity: "medium",
+        title: "Generic motivation",
+        explanation:
+          "Every candidate says 'great company, great opportunity'. One Flipkart-specific reason beats five generic ones.",
+        quote: "great company, great opportunity",
+      },
+    ],
+    likelyFollowUp: "What specifically about Flipkart's product strategy resonates with your background?",
+  },
+  {
+    index: 2,
+    text: "What are your notice period and current CTC?",
+    score: 55,
+    band: "partial",
+    answer: [{ text: "I have a 60-day notice period. My current CTC is around 28L fixed plus 12% variable…" }],
+    star: { situation: false, task: false, action: false, result: false, learning: false },
+    metrics: { wordCount: 88, responseSec: 95, firstPersonRatioPct: 60, quantificationCount: 2 },
+    whyScored:
+      "Disclosed current CTC without being asked — anchors the negotiation low. Notice period stated but no mention of buyout possibility.",
+    likelyFollowUp: "Can you produce Form-16 and last 3 payslips for BGV?",
+  },
+  {
+    index: 3,
+    text: "Do you have other offers in hand? How committed are you to joining us if we proceed?",
+    score: 32,
+    band: "weak",
+    answer: [{ text: "Not really — I'm most interested in Flipkart but I'm also talking to a couple of places…" }],
+    star: { situation: false, task: false, action: false, result: false, learning: false },
+    metrics: { wordCount: 72, responseSec: 65, firstPersonRatioPct: 55, quantificationCount: 0 },
+    whyScored:
+      "Ambiguous on commitment. 'Most interested' without a joining-date lock reads as non-committal and increases drop-out risk in HR scoring.",
+    redFlags: [
+      {
+        type: "vague",
+        severity: "high",
+        title: "Commitment signal is weak",
+        explanation:
+          "HR's biggest fear in India is pre-joining drop-out. A joining-date commitment ('I can join within 10 days of offer') dramatically improves this score.",
+        quote: "I'm most interested in Flipkart but I'm also talking to a couple of places",
+      },
+    ],
+    likelyFollowUp: "If we make an offer today, when's the earliest you could join?",
+  },
+];
+
 /* ─── Demo exports ───────────────────────────────────────────── */
 
 export function BehavioralStrongDemo() {
@@ -310,6 +403,25 @@ export function SalaryNegStrongDemo() { return <FocusReport data={SALARY_NEG_STR
 export function SystemDesignPartialDemo() { return <FocusReport data={SYSTEM_DESIGN_PARTIAL} chrome={SYSTEM_DESIGN} />; }
 export function StrategicStrongDemo() { return <FocusReport data={STRATEGIC_STRONG} chrome={STRATEGIC} />; }
 export function CampusPlacementPartialDemo() { return <FocusReport data={CAMPUS_PLACEMENT_PARTIAL} chrome={CAMPUS_PLACEMENT} />; }
-export function HRWeakDemo() { return <FocusReport data={HR_WEAK} chrome={HR_ROUND} hrPanels={HR_WEAK_PRESET} />; }
+/* HR uses the PRODUCTION HrFullReport directly — no canvas-local mock.
+   The component has no hooks and no "use client", so it's safe to import
+   here. CanvasProviders supplies the styling context the canvas runner
+   expects. */
+export function HRWeakDemo() {
+  return (
+    <CanvasProviders>
+      <HrFullReport
+        overallScore={42}
+        skills={HR_PROD_SKILLS}
+        wins={HR_PROD_WINS}
+        questions={HR_PROD_QUESTIONS}
+        hrReport={HR_PROD_REPORT}
+        daysUntilInterview={3}
+        role="Senior Product Manager"
+        company="Flipkart"
+      />
+    </CanvasProviders>
+  );
+}
 export function PanelStrongDemo() { return <FocusReport data={PANEL_STRONG} chrome={PANEL} />; }
 export function GovernmentPartialDemo() { return <FocusReport data={GOVERNMENT_PARTIAL} chrome={GOVERNMENT} />; }

@@ -19,6 +19,9 @@ import {
   serializeState,
   deserializeState,
   isTerminalPhase,
+  statedTotalTargetCtcLpa,
+  effectiveTargetCtcLpa,
+  totalScopedCounter,
   type NegotiationBand,
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
@@ -29,6 +32,60 @@ const BAND: NegotiationBand = { initialOffer: 20, maxStretch: 28, walkAway: 16, 
 const init = (overrides: Partial<NegotiationState> = {}): NegotiationState => ({
   ...initState({ sessionId: "s1", role: "swe", company: "acme", band: BAND }),
   ...overrides,
+});
+
+/* ─── Class-A unit accessors (2026-06-15 architecture audit) ──────── */
+
+describe("statedTotalTargetCtcLpa", () => {
+  it("returns the raw total when not in-hand framed", () => {
+    expect(statedTotalTargetCtcLpa(init({ candidateTarget: 26 }))).toBe(26);
+  });
+  it("returns the CTC-equivalent when the target is in-hand framed", () => {
+    const s = init({
+      candidateTarget: 16,
+      candidateTargetIsInHand: true,
+      candidateTargetCtcEquivalentLpa: 18.4,
+    });
+    expect(statedTotalTargetCtcLpa(s)).toBe(18.4);
+  });
+  it("returns null for a fixed-only ask (no total stated)", () => {
+    expect(statedTotalTargetCtcLpa(init({ candidateTargetFixed: 26 }))).toBeNull();
+  });
+});
+
+describe("effectiveTargetCtcLpa", () => {
+  it("prefers the stated total over a fixed ask", () => {
+    expect(
+      effectiveTargetCtcLpa(init({ candidateTarget: 30, candidateTargetFixed: 26 })),
+    ).toBe(30);
+  });
+  it("derives an implied total from a fixed-only ask (fixed + variable headroom)", () => {
+    const band: NegotiationBand = { initialOffer: 28, maxStretch: 36, walkAway: 24, hasEquity: true, baseStretch: 26, variableMax: 8 };
+    const s = {
+      ...initState({ sessionId: "s1", role: "swe", company: "acme", band }),
+      candidateTargetFixed: 26,
+    };
+    expect(effectiveTargetCtcLpa(s)).toBe(34); // 26 + 8, uncapped (callers clamp)
+  });
+  it("returns null when no target of any kind is stated", () => {
+    expect(effectiveTargetCtcLpa(init())).toBeNull();
+  });
+});
+
+describe("totalScopedCounter", () => {
+  it("returns the counter for a total-scoped counter", () => {
+    expect(
+      totalScopedCounter(init({ lastCandidateCounterLpa: 30, lastCounterComponent: "total" })),
+    ).toBe(30);
+  });
+  it("returns null for a fixed-scoped counter (never compare base ask to total offer)", () => {
+    expect(
+      totalScopedCounter(init({ lastCandidateCounterLpa: 26, lastCounterComponent: "fixed" })),
+    ).toBeNull();
+  });
+  it("returns null when no counter is on the table", () => {
+    expect(totalScopedCounter(init())).toBeNull();
+  });
 });
 
 /* ─── parseCandidateAnswer ─────────────────────────────────────── */

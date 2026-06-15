@@ -8,9 +8,11 @@
  * Two legitimate backward exceptions:
  *   1. walk-away-reopen   — walkAwayReturned flag set after candidate
  *      re-engages from `walked-away`; phase hops to `counter-offer`.
- *   2. verbal-renege      — verbalAcceptanceTurn set after candidate
- *      said yes then re-opened; phase stays in `counter-offer` while
- *      the move-picker stiffens. */
+ *   2. verbal-renege      — postVerbalRenegotiationCount > 0 after the
+ *      candidate said yes then actively re-opened; phase stays in
+ *      `counter-offer` while the move-picker stiffens. Gated on the
+ *      active renege count (2026-06-15 audit, Kernel Finding 3), not the
+ *      permanent verbalAcceptanceTurn stamp. */
 import { describe, it, expect } from "vitest";
 import {
   initState,
@@ -107,20 +109,30 @@ describe("canTransitionPhase — monotonicity matrix", () => {
     expect(canTransitionPhase("walked-away", "counter-offer", withFlag)).toBe(true);
   });
 
-  it("allows verbal-renege regression to counter-offer when verbalAcceptanceTurn set", () => {
-    const reneging = mk({ verbalAcceptanceTurn: 4 });
+  it("allows verbal-renege regression to counter-offer when renege is active", () => {
+    const reneging = mk({ verbalAcceptanceTurn: 4, postVerbalRenegotiationCount: 1 });
     expect(canTransitionPhase("lever-explore", "counter-offer", reneging)).toBe(true);
     expect(canTransitionPhase("closing-push", "counter-offer", reneging)).toBe(true);
-    /* Without the flag the same transitions are forbidden. */
+    /* Without an active renege the same transitions are forbidden. */
     const plain = mk();
     expect(canTransitionPhase("lever-explore", "counter-offer", plain)).toBe(false);
     expect(canTransitionPhase("closing-push", "counter-offer", plain)).toBe(false);
   });
 
+  it("does NOT regress on a clean acceptance — stamp set but no active renege", () => {
+    /* Kernel Finding 3 (2026-06-15): the verbalAcceptanceTurn stamp never
+     * clears, so the old gate dragged a settled deal backward to
+     * counter-offer indefinitely. Gating on postVerbalRenegotiationCount
+     * means a clean acceptance (count 0) stays put. */
+    const cleanAccept = mk({ verbalAcceptanceTurn: 4, postVerbalRenegotiationCount: 0 });
+    expect(canTransitionPhase("lever-explore", "counter-offer", cleanAccept)).toBe(false);
+    expect(canTransitionPhase("closing-push", "counter-offer", cleanAccept)).toBe(false);
+  });
+
   it("verbal-renege exception does NOT open arbitrary backward transitions", () => {
     /* Only the counter-offer target is unlocked; lever-explore → probe-expectations
-     * stays blocked even with the flag set. */
-    const reneging = mk({ verbalAcceptanceTurn: 4 });
+     * stays blocked even with an active renege. */
+    const reneging = mk({ verbalAcceptanceTurn: 4, postVerbalRenegotiationCount: 1 });
     expect(canTransitionPhase("lever-explore", "probe-expectations", reneging)).toBe(false);
     expect(canTransitionPhase("counter-offer", "opening", reneging)).toBe(false);
   });
@@ -171,13 +183,13 @@ describe("derivePhase — clamped by monotonicity", () => {
   });
 
   it("verbal-renege keeps phase in counter-offer (matrix exception preserved)", async () => {
-    /* End-to-end smoke: a state with verbalAcceptanceTurn set should
-     * not regress below counter-offer when derivePhase runs. We assert
-     * via canTransitionPhase (the matrix) since derivePhase's own
-     * cascade rarely picks a backward target — the contract is what we
-     * pin here. */
+    /* End-to-end smoke: a state with an ACTIVE renege should not regress
+     * below counter-offer when derivePhase runs. We assert via
+     * canTransitionPhase (the matrix) since derivePhase's own cascade
+     * rarely picks a backward target — the contract is what we pin here. */
     const reneging = mk({
       verbalAcceptanceTurn: 4,
+      postVerbalRenegotiationCount: 1,
       phase: "lever-explore",
     });
     expect(canTransitionPhase("lever-explore", "counter-offer", reneging)).toBe(true);

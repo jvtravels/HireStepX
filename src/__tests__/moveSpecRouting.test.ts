@@ -138,6 +138,55 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
     }
   });
 
+  it("flag ON — a number-dropping restyle never ships (defense in depth)", async () => {
+    process.env.NEGOTIATION_MOVE_SPEC_ENABLED = "1";
+    /* Pipeline-level safety property: when the LLM returns a restyle that
+     * strips the kernel's salary scalars, the shipped text must NEVER be that
+     * restyle. Two layers enforce this — legacy validateRestyle's
+     * completeness/shape checks are the first catcher for kinds that have one
+     * (e.g. close-recap-incomplete), and the ARCH-C3b structural slot gate
+     * (validateMoveSpecRestyle Check 2: every canonical number must survive)
+     * is the backstop for kinds without a legacy completeness check. Either
+     * way the pipeline falls back to the kernel-authored canonical.
+     *
+     * Note: for THIS close-recap fixture legacy fires first, so the rejection
+     * reason is legacy's, not "slot:*". The slot validator's unique value
+     * (dropped-number on kinds legacy doesn't complete-check) is unit-tested
+     * directly in moveSpecValidator.test.ts; here we assert the end-to-end
+     * guarantee that stripped prose is discarded. */
+    const strippingLlm = vi.fn(async (_sys: string, user: string) =>
+      user.replace(/\d+(?:\.\d+)?/g, "the agreed amount"),
+    );
+    const result = await generateBotReply(
+      mkCloseRecapState(),
+      strippingLlm as never,
+    );
+    /* The number-stripped restyle must never be the shipped text. */
+    expect(result.source).not.toBe("movespec");
+    expect(result.source).not.toBe("restyle");
+    expect(result.source).toBe("canonical-fallback");
+    /* The shipped text is the kernel-authored canonical, which still carries
+     * its numbers — proof the stripped prose was discarded. */
+    expect(/\d/.test(result.text)).toBe(true);
+    expect(result.text).not.toContain("the agreed amount");
+  });
+
+  it("flag ON — a faithful restyle is never slot-rejected (no silent downgrade)", async () => {
+    process.env.NEGOTIATION_MOVE_SPEC_ENABLED = "1";
+    /* Regression guard for the ARCH-C3b gate's MED risk: a restyle that
+     * preserves every canonical number and invents none must pass the
+     * structural slot validator, so the gate must NEVER fire on it. We feed
+     * the canonical back verbatim (trivially faithful) and assert the
+     * rejection reason — if any — is never a "slot:*" code. This proves the
+     * promoted gate cannot silently downgrade good prose to canonical. */
+    const faithfulLlm = vi.fn(async (_sys: string, user: string) => user);
+    const result = await generateBotReply(
+      mkCloseRecapState(),
+      faithfulLlm as never,
+    );
+    expect(result.rejectReason?.startsWith("slot:") ?? false).toBe(false);
+  });
+
   it("flag ON — non-supported action stays on legacy 'restyle' source", async () => {
     process.env.NEGOTIATION_MOVE_SPEC_ENABLED = "1";
     const stubLlm = vi.fn(async (_sys: string, user: string) => user);
