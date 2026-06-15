@@ -3,11 +3,16 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
 
 // Shared TTS daily char budget across providers — see sarvam-tts.ts.
 const TTS_DAILY_CHAR_CAP = 30_000;
 const SECONDS_PER_DAY = 86_400;
+
+// Paid voice is a paying-tier benefit by default. Mirrors the Sarvam/Cartesia
+// gate so a free user failing over into Azure can't reach paid voice either.
+// VOICE_FREE_TIER=1 opens paid voice to free users.
+const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
 
 declare const process: { env: Record<string, string | undefined> };
 const AZURE_TTS_KEY = process.env.AZURE_TTS_KEY || "";
@@ -89,6 +94,15 @@ export default async function handler(req: Request): Promise<Response> {
     const trimmedText = text.trim().slice(0, 2000);
     if (trimmedText.length === 0) {
       return new Response(JSON.stringify({ error: "Text is empty" }), { status: 400, headers });
+    }
+
+    // Free tier → no paid voice; client fails over to the browser Web Speech API.
+    if (!VOICE_FREE_TIER) {
+      const tier = await getSubscriptionTier(auth.userId!);
+      if (tier === "free") {
+        logServiceUsage({ service: "azure_tts", endpoint: "tts/v1", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: "free_tier_disabled" });
+        return new Response(JSON.stringify({ error: "Azure TTS unavailable for free tier", code: "tts_free_disabled" }), { status: 503, headers });
+      }
     }
 
     // Shared daily TTS char budget — same Redis key as sarvam-tts / tts.ts

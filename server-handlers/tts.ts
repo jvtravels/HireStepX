@@ -3,13 +3,19 @@
 
 export const config = { runtime: "edge" };
 
-import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry } from "./_shared";
+import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
 
 // Shared TTS daily char budget — keyed identically in sarvam-tts.ts and
 // azure-tts.ts so a user can't dodge the cap by failing over between
 // providers. See server-handlers/sarvam-tts.ts for rationale.
 const TTS_DAILY_CHAR_CAP = 30_000;
 const SECONDS_PER_DAY = 86_400;
+
+// Paid voice is a paying-tier benefit by default. Sarvam (primary) gates free
+// users to the browser fallback; this Cartesia fallback must gate identically,
+// or a free user whose Sarvam request 503s simply fails over INTO paid Cartesia
+// — defeating the cost guard. VOICE_FREE_TIER=1 opens paid voice to free users.
+const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
 
 declare const process: { env: Record<string, string | undefined> };
 const CARTESIA_API_KEY = process.env.CARTESIA_API_KEY || "";
@@ -54,6 +60,16 @@ export default async function handler(req: Request): Promise<Response> {
     const trimmedText = text.trim().slice(0, 2000);
     if (trimmedText.length === 0) {
       return new Response(JSON.stringify({ error: "Text is empty" }), { status: 400, headers });
+    }
+
+    // Free tier → no paid voice. The client handles 503 by failing over to the
+    // browser Web Speech API (zero cost), so we don't need a special code.
+    if (!VOICE_FREE_TIER) {
+      const tier = await getSubscriptionTier(auth.userId!);
+      if (tier === "free") {
+        logServiceUsage({ service: "cartesia_tts", endpoint: "tts/bytes", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: "free_tier_disabled" });
+        return new Response(JSON.stringify({ error: "Cartesia TTS unavailable for free tier", code: "tts_free_disabled" }), { status: 503, headers });
+      }
     }
 
     // Shared daily TTS char budget across providers.

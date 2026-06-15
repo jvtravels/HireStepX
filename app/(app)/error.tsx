@@ -8,12 +8,12 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", padding: 32, fontFamily: "var(--font-ui, system-ui, sans-serif)" }}>
-      <h2 style={{ fontSize: 24, fontWeight: 600, color: "#e5e5e5", marginBottom: 8 }}>Something went wrong</h2>
-      <p style={{ fontSize: 14, color: "#a3a3a3", marginBottom: 24 }}>{error.message || "An unexpected error occurred."}</p>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", padding: 32, background: "#FAF7F0", fontFamily: "var(--font-ui, system-ui, sans-serif)" }}>
+      <h2 style={{ fontSize: 24, fontWeight: 600, color: "#0E0C08", marginBottom: 8 }}>Something went wrong</h2>
+      <p style={{ fontSize: 14, color: "#5c574e", marginBottom: 24 }}>{error.message || "An unexpected error occurred."}</p>
       <button
         onClick={reset}
-        style={{ padding: "10px 24px", fontSize: 14, fontWeight: 500, color: "#0a0a0a", background: "#22c55e", border: "none", borderRadius: 8, cursor: "pointer" }}
+        style={{ padding: "10px 24px", fontSize: 14, fontWeight: 500, color: "#FAF7F0", background: "#B45309", border: "none", borderRadius: 8, cursor: "pointer" }}
       >
         Try again
       </button>

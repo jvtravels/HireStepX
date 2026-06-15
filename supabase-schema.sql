@@ -762,6 +762,16 @@ begin
     new.razorpay_subscription_id := old.razorpay_subscription_id;
     new.cancel_at_period_end     := old.cancel_at_period_end;
     new.subscription_paused      := old.subscription_paused;
+    -- sessions_started_lifetime is a monotonic high-water mark that gates the
+    -- free-session cap (audit P0-2). RLS is row-level only, so without this a
+    -- user could PATCH /rest/v1/profiles setting it back to 0 and reset their
+    -- free allotment — defeating the whole counter. Enforce monotonicity for
+    -- non-service-role writes: the bump_sessions_started_lifetime trigger (which
+    -- runs in the user's role context) may still RAISE it by +1, but no caller
+    -- may LOWER it. A user raising it only hurts themselves, so that's harmless.
+    if new.sessions_started_lifetime < old.sessions_started_lifetime then
+      new.sessions_started_lifetime := old.sessions_started_lifetime;
+    end if;
   end if;
   return new;
 end;
