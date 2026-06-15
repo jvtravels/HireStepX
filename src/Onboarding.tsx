@@ -472,7 +472,7 @@ export default function Onboarding() {
       // on the same cached analysis even when pdf.js versions tweak
       // whitespace. Best-effort — null on browsers without SubtleCrypto.
       const fileHashPromise = computeFileHash(file);
-      const text = await extractResumeText(file);
+      let text = await extractResumeText(file);
       if (!text || text.trim().length < 30) {
         const fileExt = file.name.split(".").pop()?.toLowerCase();
         if (fileExt && ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(fileExt)) {
@@ -482,6 +482,16 @@ export default function Onboarding() {
           throw new Error("This looks like a scanned PDF — we can't extract its text. Try exporting from your resume builder as a searchable PDF, or save as DOCX and re-upload.");
         }
         throw new Error("Very little text was extracted. The file may be empty or corrupted — try re-exporting as a PDF or DOCX.");
+      }
+      // Mirror the server's 50,000-char ceiling (analyze-resume.ts rejects
+      // longer text with a 400) on the client. A resume this long is almost
+      // always a parsing artifact (embedded fonts, repeated boilerplate);
+      // trimming up front keeps the meaningful first pages and avoids an
+      // opaque post-upload failure. P0-5: client/server limits now agree.
+      const MAX_RESUME_TEXT_CHARS = 50000;
+      if (text.length > MAX_RESUME_TEXT_CHARS) {
+        track("resume_text_trimmed", { originalLen: text.length, trimmedTo: MAX_RESUME_TEXT_CHARS });
+        text = text.slice(0, MAX_RESUME_TEXT_CHARS);
       }
       const data = await parseResumeDataAsync(text);
       setResumeText(text);
