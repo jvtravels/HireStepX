@@ -8,8 +8,15 @@ import {
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
 import { isSlowConnection } from "./_browser-api-guards";
+import {
+  decideDeviceAction,
+  markDeviceGrace,
+  isWithinDeviceGrace,
+  clearDeviceGrace,
+  DEVICE_GRACE_MS,
+} from "./deviceSession";
 
-import type { Session } from "@supabase/supabase-js";
+import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { StoredResume } from "./resumeParser";
 
 /** Check if Supabase has a session token stored in localStorage */
@@ -165,6 +172,31 @@ export function getStoredDeviceToken(): string | null {
 
 function storeDeviceToken(token: string) {
   try { localStorage.setItem(DEVICE_TOKEN_KEY, token); } catch { /* expected */ }
+}
+
+/** Confirm a would-be single-device eviction against AUTHORITATIVE server
+ *  metadata before signing out. The JWT in a cached session is a snapshot — it
+ *  can still carry the PREVIOUS session's device token for a beat after our own
+ *  login rotated it, which is exactly what produced the self-eviction bug.
+ *  getUser() hits Supabase for the current value. Returns the decideDeviceAction
+ *  verdict against that fresh read plus the fresh token (so an "adopt" can store
+ *  it without a second round-trip). Fail-safe: any error → "keep", because
+ *  eviction is destructive and must never fire on an inconclusive read. */
+async function resolveDeviceWithServer(
+  client: SupabaseClient,
+  localToken: string | null,
+): Promise<{ action: "keep" | "adopt" | "evict"; serverToken: string | null }> {
+  try {
+    const { data, error } = await client.auth.getUser();
+    if (error || !data?.user) return { action: "keep", serverToken: null };
+    const freshServerToken = (data.user.user_metadata?.active_device_token as string | undefined) ?? null;
+    return {
+      action: decideDeviceAction({ localToken, serverToken: freshServerToken, withinGrace: isWithinDeviceGrace() }),
+      serverToken: freshServerToken,
+    };
+  } catch {
+    return { action: "keep", serverToken: null };
+  }
 }
 
 /* ─── Referral capture/apply ───
@@ -525,13 +557,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signingUpRef = useRef(false);
   // Prevent race condition: onAuthStateChange should not override getSession result during init
   const initialSessionRestoredRef = useRef(false);
-  // Suppresses the "session active on another device" kick-out during the
-  // brief window between a fresh login and the device-token updateUser
-  // landing on Supabase. Without this, the user who just logged in is
-  // signed out immediately because the session snapshot still carries the
-  // previous device's token while our localStorage already has the new
-  // one. Login/signup set this to true; it clears after a few seconds.
-  const justAuthenticatedRef = useRef(false);
+  // The post-login "don't evict me yet" grace window now lives in localStorage
+  // (see deviceSession.ts: markDeviceGrace / isWithinDeviceGrace) rather than an
+  // in-memory ref, so it survives the (auth)→(app) route-group provider remount
+  // that the old ref could not — that remount resetting the ref to false was the
+  // root cause of the post-login self-eviction.
   // Stable ref so checkExpiry can read user.id without depending on the full user object.
   // The full user dep caused the effect to restart on every setUser() call (fast-render,
   // profile load, TOKEN_REFRESHED → 3+ restarts on page load), stacking 10s timers and
@@ -832,33 +862,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser(loadedUser);
               cacheTier(session.user.id, loadedUser.subscriptionTier, loadedUser.subscriptionEnd, loadedUser.practiceTimestamps, loadedUser.targetRole);
               // ─── Single-device enforcement (restore path) ───
-              // Semantics:
-              //   • local == server  → this device is still the active one. Keep session.
-              //   • local missing    → first login post-upgrade; adopt server token.
-              //   • local ≠ server   → someone else logged in more recently from
-              //                        another device. Sign THIS device out. The
-              //                        user's data is safe; they just get kicked to /login.
-              //
-              // The 10s grace window (justAuthenticatedRef) protects the brand-new
-              // login on Device B — its session snapshot may still contain Device A's
-              // stale server token until the updateUser() call lands. Without grace,
-              // the freshly-logged-in user would immediately sign themselves out.
+              // decideDeviceAction encodes the keep/adopt/evict rule; see
+              // deviceSession.ts for the full rationale. Two safeguards make a
+              // FALSE eviction (the self-eviction bug) impossible:
+              //   1. The grace window is read from localStorage (isWithinDeviceGrace),
+              //      so it survives the (auth)→(app) route-group provider remount
+              //      that an in-memory ref could not.
+              //   2. A would-be eviction is re-confirmed against AUTHORITATIVE server
+              //      metadata via getUser() before we sign out — the session JWT here
+              //      can be a stale snapshot from before our own login rotated the token.
               const localToken = getStoredDeviceToken();
-              const serverToken = session.user.user_metadata?.active_device_token;
-              if (!justAuthenticatedRef.current && localToken && serverToken && localToken !== serverToken) {
-                console.warn("[auth] single-device: another device has taken over — signing out");
-                logAuditEvent("single_device_enforcement", { userId: session.user.id });
-                setUser(null);
-                await client.auth.signOut().catch(() => {});
-                try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
-                clearTimeout(safetyTimer);
-                setLoading(false);
-                return;
-              }
-              // No local token yet (first login after upgrade, or cleared localStorage):
-              // adopt server's so next check compares apples to apples.
-              if (!localToken && serverToken) {
+              const serverToken = session.user.user_metadata?.active_device_token as string | undefined;
+              const action = decideDeviceAction({ localToken, serverToken, withinGrace: isWithinDeviceGrace() });
+              if (action === "adopt" && serverToken) {
+                // First login on this origin (or cleared localStorage): adopt the
+                // server token so the next check compares like-for-like.
                 storeDeviceToken(serverToken);
+              } else if (action === "evict") {
+                const confirmed = await resolveDeviceWithServer(client, localToken);
+                if (confirmed.action === "evict") {
+                  console.warn("[auth] single-device: another device has taken over — signing out");
+                  logAuditEvent("single_device_enforcement", { userId: session.user.id });
+                  setUser(null);
+                  await client.auth.signOut().catch(() => {});
+                  try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
+                  clearDeviceGrace();
+                  clearTimeout(safetyTimer);
+                  setLoading(false);
+                  return;
+                }
+                // Authoritative server disagreed with the stale JWT — keep the
+                // session, and adopt the fresh token if we had none locally.
+                if (confirmed.action === "adopt" && confirmed.serverToken) {
+                  storeDeviceToken(confirmed.serverToken);
+                }
               }
             } else {
               // No profile found — create one rather than signing out
@@ -957,16 +994,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(false);
             return;
           }
-          // Single-device enforcement: only set new device token on genuine new logins,
-          // not on session restores/refreshes (which also fire SIGNED_IN)
-          if (event === "SIGNED_IN" && !getStoredDeviceToken()) {
+          // Single-device enforcement: mint a device token on a genuine new login
+          // that didn't already rotate one (OAuth/email-verify callbacks land here,
+          // not via login()). Skip session restores/refreshes (which also fire
+          // SIGNED_IN but keep the existing token), and skip while login()'s own
+          // rotation is mid-flight (grace open) so the two writers never race.
+          if (event === "SIGNED_IN" && !getStoredDeviceToken() && !isWithinDeviceGrace()) {
             const newDeviceToken = generateDeviceToken();
             storeDeviceToken(newDeviceToken);
-            // Grace window: the downstream mismatch check below would
-            // otherwise see local=newToken but session cache=oldToken (or
-            // undefined) and sign out the just-authenticated user.
-            justAuthenticatedRef.current = true;
-            setTimeout(() => { justAuthenticatedRef.current = false; }, 10_000);
+            // Open the durable grace window so the downstream/remounted check
+            // doesn't evict on local=newToken vs a stale JWT serverToken.
+            markDeviceGrace(DEVICE_GRACE_MS);
             client.auth.updateUser({ data: { active_device_token: newDeviceToken } }).catch(err => console.warn("[auth] updateUser(device_token) failed:", err?.message));
           }
           // Persist Google provider token for Calendar API access
@@ -1380,6 +1418,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Successful login — clear lockout counter (client + server)
     clearLoginLockout();
 
+    // ─── Single-device enforcement — token rotation (BEFORE the optimistic setUser) ───
+    // setUser() below flips isLoggedIn, and the Login screen's effect immediately
+    // router.replace()s into the (app) route group — which UNMOUNTS this (auth)
+    // provider and MOUNTS a fresh (app) provider whose restore-path device check
+    // runs at once. The new token and the grace window must therefore be persisted
+    // FIRST: both live in localStorage (storeDeviceToken / markDeviceGrace), which
+    // the remounted provider reads. The server write + refreshSession happen just
+    // below and bring the JWT into agreement. (This ordering is the core fix for
+    // the post-login self-eviction.)
+    const existingServerToken = data?.user?.user_metadata?.active_device_token;
+    const deviceToken = generateDeviceToken();
+    storeDeviceToken(deviceToken);
+    markDeviceGrace(DEVICE_GRACE_MS);
+
     // Optimistically set the user NOW so isLoggedIn flips in this tab and
     // the Login screen's redirect effect fires immediately. Previously
     // login() relied entirely on the async onAuthStateChange(SIGNED_IN)
@@ -1413,26 +1465,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    // ─── Single-device enforcement — token rotation ───
-    // New login wins: we generate a fresh device token, write it to
-    // user_metadata on the server, and store it locally. Any other device
-    // that still holds the old token will be kicked on its next session
-    // restore or 60-second checkExpiry poll.
-    //
-    // Grace window (15s) protects THIS tab from the onAuthStateChange
-    // handler's enforcement check — the session snapshot it has was
-    // captured BEFORE updateUser() completed, so it still shows the old
-    // server token. Without grace, we'd kick ourselves out immediately.
-    //
-    // We AWAIT the updateUser call so the rest of the flow knows the server
-    // really has the new token; previously this was fire-and-forget which
-    // made the Device A kick-out unreliable (sometimes Device A polled
-    // before the write landed and saw no mismatch).
-    justAuthenticatedRef.current = true;
-    setTimeout(() => { justAuthenticatedRef.current = false; }, 15_000);
-    const existingServerToken = data?.user?.user_metadata?.active_device_token;
-    const deviceToken = generateDeviceToken();
-    storeDeviceToken(deviceToken);
+    // Persist the rotated token to the server so any OTHER device holding the
+    // old token is kicked on its next restore / 60s poll. We AWAIT updateUser so
+    // the rest of the flow knows the server really has the new token (previously
+    // fire-and-forget, which made the other-device kick-out unreliable).
     // Build / update recent_devices history (max 5 entries, newest first).
     // This is purely audit data for the Settings → Recent activity list;
     // single-device enforcement still uses active_device_token alone.
@@ -1585,6 +1621,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* expected */ }
     try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
+    clearDeviceGrace();
     if (supabaseConfigured) { const client = await getSupabase(); await client.auth.signOut().catch(() => {}); }
     clearSessionStart();
     track("logout");
@@ -1751,21 +1788,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!session) return;
 
         // ─── Single-device enforcement (periodic check) ───
-        // Runs every 60s. If another device has logged in since we last
-        // synced, THIS tab's local token will no longer match the server's.
-        // That means a more-recent login has displaced us → sign out cleanly
-        // and let the multi-tab broadcast take care of the others.
-        // (The freshly-logged-in tab's localToken === server's — it stays.)
+        // Runs every 60s. If another device logged in since we last synced, THIS
+        // tab's local token no longer matches the server's → we've been displaced.
+        // Same two safeguards as the restore path: honour the durable grace window
+        // (a login that just happened in another route group), and confirm against
+        // authoritative server metadata via getUser() before the destructive
+        // sign-out, so a stale cached JWT can never kick a legitimate session.
         const localDeviceToken = getStoredDeviceToken();
-        const serverDeviceToken = session.user.user_metadata?.active_device_token;
-        if (localDeviceToken && serverDeviceToken && localDeviceToken !== serverDeviceToken) {
-          logAuditEvent("single_device_kicked", { userId: userRef.current?.id });
-          setSessionExpiryWarning("Signed in on another device — signing out here.");
-          setUser(null);
-          await client.auth.signOut().catch(() => {});
-          broadcastLogout();
-          try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
-          return;
+        const serverDeviceToken = session.user.user_metadata?.active_device_token as string | undefined;
+        const periodicAction = decideDeviceAction({
+          localToken: localDeviceToken,
+          serverToken: serverDeviceToken,
+          withinGrace: isWithinDeviceGrace(),
+        });
+        if (periodicAction === "adopt" && serverDeviceToken) {
+          storeDeviceToken(serverDeviceToken);
+        } else if (periodicAction === "evict") {
+          const confirmed = await resolveDeviceWithServer(client, localDeviceToken);
+          if (confirmed.action === "evict") {
+            logAuditEvent("single_device_kicked", { userId: userRef.current?.id });
+            setSessionExpiryWarning("Signed in on another device — signing out here.");
+            setUser(null);
+            await client.auth.signOut().catch(() => {});
+            broadcastLogout();
+            try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
+            clearDeviceGrace();
+            return;
+          }
+          if (confirmed.action === "adopt" && confirmed.serverToken) {
+            storeDeviceToken(confirmed.serverToken);
+          }
         }
 
         const exp = session.expires_at; // Unix timestamp in seconds
