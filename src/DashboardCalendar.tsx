@@ -36,9 +36,12 @@ import { DataLoadingSkeleton, ProGate } from "./dashboardComponents";
 const STYLE = `
 .cpr-tap { -webkit-tap-highlight-color: transparent; }
 .cpr-tap:focus-visible { outline: 2px solid ${c.slate}; outline-offset: 2px; border-radius: ${radius.sm}px; }
-.cpr-grid { display: grid; grid-template-columns: 320px 1fr; gap: ${sp.xl}px; align-items: start; }
+/* minmax(0, 1fr) not bare 1fr: a 1fr track is implicitly minmax(auto, 1fr),
+   so the month-grid child's wide min-content expands the track past the
+   container and overflows the viewport at mobile widths. */
+.cpr-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: ${sp.xl}px; align-items: start; }
 @media (max-width: 880px) {
-  .cpr-grid { grid-template-columns: 1fr; }
+  .cpr-grid { grid-template-columns: minmax(0, 1fr); }
   .cpr-header { flex-direction: column; align-items: flex-start; }
   .cpr-actions { align-items: stretch !important; width: 100%; }
 }

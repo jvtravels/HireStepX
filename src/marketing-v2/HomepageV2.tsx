@@ -3909,6 +3909,16 @@ export function FinalCTAFooterV2() {
   ];
   return (
     <footer aria-labelledby="hd-cta" style={{ background: t.cream, position: "relative" }}>
+      {/* Self-contained responsive collapse: this footer is rendered both by
+          HomepageV2 (whose ResponsiveSheet has the .mv2-footer-grid rule) AND
+          standalone on sub-pages via MarketingPagesV2 (whose sheet does NOT).
+          Without this, the 5-column grid never collapses on sub-pages and
+          overflows the viewport at mobile widths. Mirror the nav fix in NavV2. */}
+      <style>{`
+        @media (max-width: 880px) {
+          .mv2-footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+        }
+      `}</style>
       {/* Final CTA */}
       <div
         style={{
