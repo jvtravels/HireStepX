@@ -205,8 +205,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           borderBottom: `1px solid ${c.border}`,
           zIndex: 15,
         }}>
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <span style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, color: c.ivory, letterSpacing: "-0.01em" }}>HireStepX</span>
+          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+            <span style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, color: c.ivory, letterSpacing: "-0.01em", lineHeight: 1 }}>HireStepX</span>
           </Link>
           <button
             onClick={() => setSidebarOpen(true)}
