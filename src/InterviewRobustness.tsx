@@ -304,7 +304,7 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
     },
     {
       kbd: "···",
-      title: "Sometimes I&rsquo;ll stay quiet",
+      title: "Sometimes I’ll stay quiet",
       body: <>If your answer is good but vague, I might not jump in right away. The silence is a hint &mdash; there&rsquo;s usually one more detail worth adding.</>,
     },
     {

@@ -50,13 +50,18 @@ function roleToFamily(role: string | undefined): RoleFamily {
   return "swe";
 }
 
-function toTurns(
+export function toTurns(
   transcript: DashboardSession["transcript"]
 ): Array<{ role: "interviewer" | "candidate"; text: string }> {
   return (transcript || [])
     .filter((t) => t.text && t.text.trim().length > 0)
     .map((t) => ({
-      role: t.speaker === "interviewer" ? "interviewer" : "candidate",
+      // Engine transcript turns are tagged speaker "ai" | "user" | "system"
+      // (never "interviewer") — see useInterviewEngine. Mapping against
+      // "interviewer" was dead-always-false, so every turn (the AI's
+      // questions included) collapsed to "candidate" and the evaluator
+      // could not tell questions from answers. "ai" IS the interviewer.
+      role: t.speaker === "ai" ? "interviewer" : "candidate",
       text: t.text,
     }));
 }
