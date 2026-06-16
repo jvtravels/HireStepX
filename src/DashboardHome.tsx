@@ -800,9 +800,9 @@ export default function DashboardHome() {
           }
           .hsx-dh-root {
             padding-top: 20px;
-            padding-right: max(16px, env(safe-area-inset-right));
+            padding-right: max(8px, env(safe-area-inset-right));
             padding-bottom: max(48px, env(safe-area-inset-bottom));
-            padding-left: max(16px, env(safe-area-inset-left));
+            padding-left: max(8px, env(safe-area-inset-left));
           }
         }
         /* Narrow viewport: drop the leading session icon so the title

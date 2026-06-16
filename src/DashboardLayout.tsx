@@ -378,7 +378,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       </aside>
 
       {/* Main Content */}
-      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "76px 16px max(60px, env(safe-area-inset-bottom))" : "44px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(16px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(16px, env(safe-area-inset-right))" : undefined }}>
+      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "76px 12px max(60px, env(safe-area-inset-bottom))" : "44px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(12px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(12px, env(safe-area-inset-right))" : undefined }}>
 
         {/* Payment success/cancel banner */}
         {paymentBanner && (

@@ -1025,7 +1025,7 @@ input[type="range"]::-moz-range-thumb {
   .settings-form-grid { grid-template-columns: 1fr !important; }
   .settings-chip-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .dash-main { padding: 76px 24px 80px !important; }
+  .dash-main { padding: 76px 12px 80px !important; }
   .landing-section { padding-left: 28px !important; padding-right: 28px !important; }
 }
 
