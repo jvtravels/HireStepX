@@ -314,6 +314,15 @@ export function useInterviewEngine() {
           await apiFetch("/api/record-session-start", { sessionId, type: interviewType });
         } catch (e2) {
           console.error("[interview] record-session-start permanently failed:", e2 instanceof Error ? e2.message : e2);
+          // Quota is counted at START; a permanent failure here means this
+          // session is never debited (free test-drive) AND completion can't
+          // dedupe against it. Track so we can see how often the safeguard
+          // leaks rather than letting it fail silently.
+          captureClientEvent("record_session_start_failed", {
+            session_id: sessionId,
+            type: interviewType,
+            error: e2 instanceof Error ? e2.message : String(e2),
+          });
         }
       }
     })();
@@ -845,7 +854,10 @@ export function useInterviewEngine() {
 
   // AI Voice (Text-to-Speech). Refs declared early so the recovery
   // hook below can read interviewEndedRef without a forward reference.
-  const [aiVoiceEnabled, setAiVoiceEnabled] = useState(true);
+  // Initialize OFF when voice output is globally disabled (TTS kill-switch)
+  // so none of the voice-gated effects (backchannels, interjections, replay,
+  // speak()) fire and the UI doesn't advertise an affordance that does nothing.
+  const [aiVoiceEnabled, setAiVoiceEnabled] = useState(!VOICE_OUTPUT_DISABLED);
   const [showCaptions, setShowCaptions] = useState(false);
   const ttsCancelRef = useRef<(() => void) | null>(null);
   const ttsInstanceIdRef = useRef(0);
@@ -2214,8 +2226,13 @@ export function useInterviewEngine() {
   const handleNextQuestion = useCallback(() => {
     if (phase !== "listening" || advancingRef.current) return;
     advancingRef.current = true;
-    // Safety: always release advancing lock after 500ms regardless of code path
-    const advancingSafetyTimer = setTimeout(() => { advancingRef.current = false; }, 500);
+    // Safety backstop: release the advancing lock if some unforeseen throw
+    // skips the explicit resets below. Every real code path clears the lock
+    // itself; this only guards against a stuck lock. 500ms was too short — the
+    // async submit path (transcript clean → follow-up eval) routinely exceeds
+    // it, so the backstop could fire mid-advance and permit a double-submit.
+    // 4s comfortably outlasts a normal advance while still self-healing.
+    const advancingSafetyTimer = setTimeout(() => { advancingRef.current = false; }, 4000);
 
     try { ttsCancelRef.current?.(); } catch { /* ignore TTS cleanup errors */ }
     try { recognitionRef.current?.stop(); } catch { /* ignore STT cleanup errors */ }
@@ -3380,6 +3397,10 @@ export function useInterviewEngine() {
 
     let localOk = false;
     let cloudOk = false;
+    // True only when the IndexedDB last-resort backup write succeeds. Lets
+    // session_complete report whether the session is durably recoverable even
+    // when both the cloud and local-storage writes failed.
+    let idbBackupOk = false;
 
     /* Kernel-aware metrics for salary-negotiation sessions. Pure
        client-side derivation from the accumulated move history + the
@@ -3539,6 +3560,7 @@ export function useInterviewEngine() {
           score, questions: totalQuestions, transcript: evalTranscript, ai_feedback: aiFeedback,
           skill_scores: skillScores,
         });
+        idbBackupOk = true;
         setSaveWarning("Session saved to backup storage. Will sync when connection restores.");
         toast("Saved to backup — will sync when online.", "info");
       } catch {
@@ -3556,6 +3578,16 @@ export function useInterviewEngine() {
       haptic.completion();
     } catch { /* no-op if haptics module missing */ }
 
+    // Derive the true save outcome so the funnel doesn't over-count
+    // successes. Only a confirmed cloud write is "durably saved to the
+    // server"; queued retries and IndexedDB backups are recoverable but
+    // not yet on the server. `failed` means nothing persisted anywhere.
+    const savePath: "server" | "queued" | "indexeddb" | "failed" =
+      cloudOk ? "server"
+        : localOk ? "queued"
+        : idbBackupOk ? "indexeddb"
+        : "failed";
+    const durablySaved = savePath === "server";
     track("session_complete", {
       type: interviewType,
       score,
@@ -3565,7 +3597,18 @@ export function useInterviewEngine() {
       usedFallback: !!(usedFallbackScore || evalTimedOut),
       hasSkillScores: !!skillScores,
       hasFeedback: !!aiFeedback,
+      saved: durablySaved,
+      save_path: savePath,
     });
+    // Fire exactly once when the session did not durably reach the server,
+    // so success counts in the funnel can be reconciled against real saves.
+    if (!durablySaved) {
+      track("session_save_failed", {
+        // Where it ultimately landed (last-resort backup) vs. the server.
+        stage: savePath === "indexeddb" ? "indexeddb" : "server",
+        reason: savePath,
+      });
+    }
     track("interview_completed", { type: interviewType, questionsAnswered: currentStep, duration: elapsed });
     // PostHog: per-focus completion signal — terminal node of the
     // selected → started → completed funnel. Score / duration / question

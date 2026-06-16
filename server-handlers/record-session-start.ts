@@ -19,7 +19,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -88,9 +88,13 @@ export default async function handler(req: Request): Promise<Response> {
       },
     );
     if (!getRes.ok) {
-      console.warn(`[record-session-start] profile read failed HTTP ${getRes.status}`);
-      /* Don't fail the user-facing request — engine continues regardless. */
-      return new Response(JSON.stringify({ ok: false, recorded: false }), { status: 200, headers });
+      slog.error("record-session-start profile read failed", {
+        code: "record_session_start_profile_read_failed",
+        httpStatus: getRes.status,
+        userId: auth.userId,
+        sessionId,
+      });
+      return new Response(JSON.stringify({ ok: false, recorded: false }), { status: 500, headers });
     }
     const arr = await getRes.json().catch(() => []);
     const row = Array.isArray(arr) && arr[0] ? arr[0] : {};
@@ -146,16 +150,38 @@ export default async function handler(req: Request): Promise<Response> {
             body: JSON.stringify({ practice_timestamps: nextTimestamps, has_completed_onboarding: true }),
           },
         );
+        /* Deliberate soft case: started_session_ids column not yet
+           migrated. Stays a 200 so the client/engine doesn't treat it
+           as a hard error, but emit a structured signal so a monitor
+           can alarm that the migration is still pending. */
+        slog.warn("record-session-start schema migration pending", {
+          code: "record_session_start_schema_migration_pending",
+          retryOk: retry.ok,
+          retryHttpStatus: retry.status,
+          userId: auth.userId,
+          sessionId,
+        });
         return new Response(JSON.stringify({ ok: retry.ok, recorded: retry.ok, schemaMigrationPending: true }), { status: 200, headers });
       }
-      console.warn(`[record-session-start] patch failed HTTP ${patchRes.status}: ${t.slice(0, 200)}`);
-      return new Response(JSON.stringify({ ok: false, recorded: false }), { status: 200, headers });
+      slog.error("record-session-start patch failed", {
+        code: "record_session_start_patch_failed",
+        httpStatus: patchRes.status,
+        body: t.slice(0, 200),
+        userId: auth.userId,
+        sessionId,
+      });
+      return new Response(JSON.stringify({ ok: false, recorded: false }), { status: 500, headers });
     }
 
     return new Response(JSON.stringify({ ok: true, recorded: true }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`[record-session-start] threw: ${msg.slice(0, 200)}`);
-    return new Response(JSON.stringify({ ok: false, recorded: false, error: msg }), { status: 200, headers });
+    slog.error("record-session-start threw", {
+      code: "record_session_start_unexpected_error",
+      error: msg.slice(0, 200),
+      userId: auth.userId,
+      sessionId,
+    });
+    return new Response(JSON.stringify({ ok: false, recorded: false, error: msg }), { status: 500, headers });
   }
 }

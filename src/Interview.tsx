@@ -58,7 +58,23 @@ import { captureClientEvent } from "./posthogClient";
  */
 function addInterviewPreconnects() {
   if (typeof document === "undefined") return;
-  const hosts = ["https://api.cartesia.ai", "https://api.deepgram.com"];
+  const hosts = [
+    "https://api.cartesia.ai",   // Cartesia TTS — direct WSS from browser
+    "https://api.deepgram.com",  // Deepgram STT — direct WSS from browser
+    // Sarvam STT opens wss://api.sarvam.ai/speech-to-text/ws directly from
+    // the browser (sarvamSTT.ts). Sarvam/Azure TTS go through the same-origin
+    // /api/* proxy, so only the STT host is a direct cross-origin connection.
+    "https://api.sarvam.ai",
+  ];
+  // Supabase (auth refresh + storage + realtime) is hit directly from the
+  // browser on the project origin; preconnect it too. Env-derived, so guard
+  // against the value being absent (e.g. preview without the var set).
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
+    try {
+      hosts.push(new URL(supabaseUrl).origin);
+    } catch { /* malformed/empty env — skip the hint */ }
+  }
   for (const href of hosts) {
     if (document.querySelector(`link[rel="preconnect"][href="${href}"]`)) continue;
     const link = document.createElement("link");
