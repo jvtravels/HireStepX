@@ -66,6 +66,22 @@ export function toTurns(
     }));
 }
 
+/* Classify an evaluate-session error message as transient/retryable.
+   Transient errors back off and retry (and ultimately fall back to the
+   preliminary report); non-transient ones fail fast. Two prod-verified
+   429 shapes used to slip through and dead-end the user: the client 429
+   wrapper "Too many requests. Please wait a moment." (no status literal)
+   and the quota fail-closed body "Service temporarily unavailable…
+   quotaExceeded". Both are now caught. */
+export function isTransientReportError(raw: string): boolean {
+  return (
+    /\b(429|500|502|503|504)\b/.test(raw) ||
+    /overload|currently experiencing|temporarily unavailable|rate.?limit|too many requests|quota/i.test(
+      raw
+    )
+  );
+}
+
 function parseDurationSec(s: string | undefined): number {
   if (!s) return 0;
   // Matches "12m 34s", "12 min", "5m", "45s".
@@ -154,17 +170,104 @@ function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: st
   );
 }
 
+/* Preliminary scores the interview engine computed and persisted on the
+   session row — overall score + the headline strength/fix + the engine's
+   one-paragraph feedback. These are NOT the rich LLM coaching report; they
+   were produced live during the interview and stored, so we can always show
+   them even when /api/evaluate-session is unavailable. Shown clearly labeled
+   as preliminary, never passed off as the full report. */
+type PreliminarySummary = {
+  score: number;
+  topStrength: string;
+  topWeakness: string;
+  feedback: string;
+  role: string;
+  company?: string;
+};
+
+function PreliminaryCard({ p }: { p: PreliminarySummary }) {
+  const hasScore = p.score > 0;
+  return (
+    <div
+      style={{
+        textAlign: "left",
+        background: t.cream,
+        border: `1px solid ${t.line}`,
+        borderRadius: 14,
+        padding: 24,
+        marginBottom: 24,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: f.sans,
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: 0.6,
+          textTransform: "uppercase",
+          color: t.copper,
+          marginBottom: 14,
+        }}
+      >
+        Preliminary summary
+      </div>
+      {hasScore && (
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
+          <span style={{ fontFamily: f.serif, fontSize: 40, color: t.coal, lineHeight: 1 }}>
+            {Math.round(p.score)}
+          </span>
+          <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>/ 100 overall</span>
+        </div>
+      )}
+      {p.topStrength && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700, color: t.coal, marginBottom: 2 }}>
+            What went well
+          </div>
+          <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5 }}>
+            {p.topStrength}
+          </div>
+        </div>
+      )}
+      {p.topWeakness && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700, color: t.coal, marginBottom: 2 }}>
+            Biggest fix
+          </div>
+          <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5 }}>
+            {p.topWeakness}
+          </div>
+        </div>
+      )}
+      {p.feedback && (
+        <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55 }}>
+          {p.feedback}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ErrorShell({
   message,
   onRetry,
   onBack,
   backLabel,
+  preliminary,
 }: {
   message: string;
   onRetry: () => void;
   onBack: () => void;
   backLabel: string;
+  preliminary?: PreliminarySummary;
 }) {
+  const hasPreliminary = Boolean(
+    preliminary &&
+      (preliminary.score > 0 ||
+        preliminary.topStrength ||
+        preliminary.topWeakness ||
+        preliminary.feedback)
+  );
   return (
     <div
       style={{
@@ -194,13 +297,16 @@ function ErrorShell({
       >
         ← {backLabel}
       </button>
-      <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
+      <div style={{ maxWidth: 560, margin: hasPreliminary ? "40px auto 0" : "120px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>
-          Couldn&apos;t generate your report
+          {hasPreliminary ? "Your preliminary results" : "Couldn’t generate your report"}
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>
-          {message}
+          {hasPreliminary
+            ? "Here are the scores from your interview. The full coached report — model answers, STAR breakdowns and skill tracking — needs our scoring service, which is busy right now. Your transcript is safe; try again in a moment for the complete report."
+            : message}
         </p>
+        {hasPreliminary && preliminary && <PreliminaryCard p={preliminary} />}
         <button
           type="button"
           onClick={onRetry}
@@ -216,7 +322,7 @@ function ErrorShell({
             cursor: "pointer",
           }}
         >
-          Try again
+          {hasPreliminary ? "Generate full report" : "Try again"}
         </button>
       </div>
     </div>
@@ -417,9 +523,7 @@ export const SessionReport = memo(function SessionReport({
         resumeContext,
       };
 
-      const isTransient = (raw: string) =>
-        /\b(429|500|502|503|504)\b/.test(raw)
-        || /overload|currently experiencing|temporarily unavailable|rate.?limit/i.test(raw);
+      const isTransient = isTransientReportError;
 
       const delays = [0, 2000, 5000]; // immediate, then 2s, then 5s
       let lastErr: unknown = null;
@@ -846,7 +950,27 @@ export const SessionReport = memo(function SessionReport({
   /* ── Render gates ── */
   if (loading) return <LoadingShell onBack={onBack} backLabel={backLabel} />;
   if (errorMsg && !report) {
-    return <ErrorShell message={errorMsg} onRetry={onRetry} onBack={onBack} backLabel={backLabel} />;
+    /* Degrade gracefully: when the rich LLM report can't be generated,
+       fall back to the preliminary scores the interview engine already
+       computed and persisted on the session, rather than a dead-end error.
+       Clearly labeled as preliminary; the retry regenerates the full one. */
+    const preliminary: PreliminarySummary = {
+      score: session.score ?? 0,
+      topStrength: session.topStrength || "",
+      topWeakness: session.topWeakness || "",
+      feedback: session.feedback || "",
+      role: session.role,
+      company: session.company,
+    };
+    return (
+      <ErrorShell
+        message={errorMsg}
+        onRetry={onRetry}
+        onBack={onBack}
+        backLabel={backLabel}
+        preliminary={preliminary}
+      />
+    );
   }
   if (!viewData) {
     // Defensive — should be unreachable since loading covers null reports.
