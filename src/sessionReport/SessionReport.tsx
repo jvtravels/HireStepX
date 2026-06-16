@@ -406,7 +406,10 @@ export const SessionReport = memo(function SessionReport({
         role: session.role,
         roleFamily,
         type: session.type,
-        targetCompany: user?.targetCompany || null,
+        // Prefer the company captured for THIS session over the profile-level
+        // target. The profile field is usually empty, which dropped the
+        // session's real target company (e.g. "Razorpay") from the evaluator.
+        targetCompany: session.company || user?.targetCompany || null,
         difficulty:
           (session.difficulty as "warmup" | "standard" | "hard") || "standard",
         duration: parseDurationSec(session.duration),

@@ -144,6 +144,11 @@ export interface SessionRecord {
   type: string;
   difficulty: string;
   focus: string;
+  /* The role/company the candidate targeted at /session/new. Written by
+     server-handlers/save-session.ts; read back so the report's evaluator
+     meta tailors to the real role instead of the "general" focus fallback. */
+  target_role?: string | null;
+  target_company?: string | null;
   duration: number;
   score: number;
   questions: number;

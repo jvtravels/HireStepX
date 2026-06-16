@@ -139,7 +139,7 @@ function NotFoundScreen({ onBack }: { onBack: () => void }) {
 
 /* ─── LocalSession → DashboardSession adapter ────────────────────── */
 
-function localSessionToDashboardSession(local: LocalSession): DashboardSession {
+export function localSessionToDashboardSession(local: LocalSession): DashboardSession {
   const dateObj = new Date(local.date);
   const dateLabel = dateObj.toLocaleDateString("en-US", {
     month: "short",
@@ -155,12 +155,16 @@ function localSessionToDashboardSession(local: LocalSession): DashboardSession {
     date: local.date,
     dateLabel,
     type: local.type,
-    role: local.focus || "Candidate",
+    // Prefer the persisted target role over `focus`. `focus` is "general"
+    // when the setup form didn't pass a focus param, which used to collapse
+    // the evaluator's roleFamily to the "swe" default — a Senior Product
+    // Designer scored against an engineering rubric. See sessionDetailHelpers.
+    role: local.targetRole || local.focus || "Candidate",
     score: local.score ?? 0,
     change: 0, // not surfaced from local-only sessions; report's recent-scores fetch fills the trend
     duration,
     difficulty: local.difficulty,
-    company: undefined,
+    company: local.targetCompany || undefined,
     focus: local.focus,
     topStrength: local.strengths?.[0] || "",
     topWeakness: local.improvements?.[0] || "",
@@ -230,6 +234,8 @@ export default function SessionDetail() {
               type: record.type,
               difficulty: record.difficulty,
               focus: record.focus,
+              targetRole: record.target_role || undefined,
+              targetCompany: record.target_company || undefined,
               duration: record.duration,
               score: record.score,
               questions: record.questions,

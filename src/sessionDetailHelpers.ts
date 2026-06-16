@@ -193,6 +193,12 @@ export interface LocalSession {
   type: string;
   difficulty: string;
   focus: string;
+  /* The role/company the candidate set at /session/new, persisted on the
+     session row (target_role/target_company) and in the local SessionResult.
+     Carried through so the report's evaluator meta tailors to the real role
+     instead of falling back to `focus` ("general") → roleFamily "swe". */
+  targetRole?: string;
+  targetCompany?: string;
   duration: number;
   score: number;
   questions: number;
