@@ -8,6 +8,8 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { escapeHtml } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { grantSessionCredits } from "./_session-credits";
+import { resolveCapturedPayment } from "./_webhook-payment-helpers";
 
 
 const RAZORPAY_WEBHOOK_SECRET = (process.env.RAZORPAY_WEBHOOK_SECRET || "").trim();
@@ -79,6 +81,33 @@ async function claimPayment(paymentId: string, userId: string): Promise<"new" | 
     console.warn("[webhook] payment_dedup claim failed:", err);
     return "error";
   }
+}
+
+/** Delete the payment-abandonment intent key for an order so the hourly
+ *  recovery cron (send-abandonment-emails) never emails a buyer we've already
+ *  activated here. verify-payment clears this on the client path; the webhook
+ *  must do the same on the recovery path, or webhook-activated payers get a
+ *  "complete your purchase" email for a plan that is already live. */
+async function clearPaymentIntent(orderId: string): Promise<void> {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN || !orderId) return;
+  try {
+    await fetch(`${UPSTASH_URL}/DEL/${encodeURIComponent(`pay_intent:${orderId}`)}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+  } catch { /* best effort */ }
+}
+
+/** Roll back a payment_dedup claim so a Razorpay webhook re-delivery can
+ *  re-process cleanly. Used when activation fails AFTER we won the claim —
+ *  otherwise the retry short-circuits as "duplicate" and the buyer is charged
+ *  but never served. */
+async function releasePaymentClaim(paymentId: string): Promise<void> {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/payment_dedup?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
+    });
+  } catch { /* best effort — re-delivery still bounded by Razorpay retry policy */ }
 }
 
 // Vercel config: disable body parsing so we can access raw body for signature verification
@@ -493,14 +522,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const plan = notes.plan;
     const userId = notes.userId;
 
-    if (!plan || !userId || !PLAN_TIER[plan]) {
-      console.error("[webhook] Missing plan or userId in notes:", { plan, userId: userId?.slice(0, 8) });
+    if (typeof userId !== "string" || !userId) {
+      console.error("[webhook] Missing userId in notes:", { plan });
       return res.status(200).json({ received: true, skipped: "missing_notes" });
     }
 
-    if (amount !== PLAN_AMOUNT[plan]) {
-      console.error("[webhook] Amount mismatch:", { amount, expected: PLAN_AMOUNT[plan] });
-      return res.status(200).json({ received: true, skipped: "amount_mismatch" });
+    // Decide what this captured payment grants, validating the amount against
+    // server-authoritative pricing. Unlike the old flat `amount !== PLAN_AMOUNT`
+    // gate this also recognises single-session credit buys (₹9 × quantity) and
+    // promo-discounted weekly/monthly — both of which the safety net used to drop
+    // on the floor, leaving UPI buyers charged but not served.
+    const resolved = resolveCapturedPayment({ plan, amount, notes });
+    if (resolved.kind === "reject") {
+      console.error("[webhook] Captured payment rejected:", { plan, amount, reason: resolved.reason });
+      return res.status(200).json({ received: true, skipped: resolved.reason });
     }
 
     // Atomic claim FIRST — wins the cross-instance race before activation, so a
@@ -522,6 +557,85 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const now = new Date();
+
+    // ── Single-session credit buy — no tier change, grants the session_credits
+    //    ledger (mirrors verify-payment's single path). ──
+    if (resolved.kind === "credits") {
+      const quantity = resolved.quantity;
+      await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          id: crypto.randomUUID(),
+          user_id: userId,
+          razorpay_payment_id: paymentId,
+          razorpay_order_id: orderId,
+          plan: "single",
+          tier: "free",
+          amount,
+          currency: "INR",
+          status: "completed",
+          subscription_start: now.toISOString(),
+          subscription_end: now.toISOString(),
+        }),
+      }).catch(err => console.error("[webhook] Single payment record insert failed:", err));
+
+      // Money-critical: payment is captured, so retry the grant through transient
+      // Supabase failures. On total failure, release the dedup claim so a Razorpay
+      // re-delivery re-processes instead of short-circuiting as "duplicate".
+      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, quantity, fetch, 3);
+      if (newBalance === null) {
+        console.error("[webhook] Credit grant failed after retries for", userId.slice(0, 8));
+        await releasePaymentClaim(paymentId);
+        return res.status(500).json({ error: "Credit grant failed" });
+      }
+
+      // Idempotency backstop: record the payment_id on the profile so a replayed
+      // client callback short-circuits at the profile_payment_id_match check.
+      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+        method: "PATCH",
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ razorpay_payment_id: paymentId }),
+      }).catch(() => {});
+
+      if (orderId) await clearPaymentIntent(orderId);
+
+      if (RESEND_API_KEY && notes.email) {
+        const safeName = escapeHtml(notes.userName || "there");
+        try {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${RESEND_API_KEY}`,
+              "Content-Type": "application/json",
+              "Idempotency-Key": `credits-${paymentId}`,
+            },
+            body: JSON.stringify({
+              from: FROM_EMAIL,
+              to: [notes.email],
+              subject: `${quantity} session credit${quantity > 1 ? "s" : ""} added`,
+              html: emailShell({
+                preview: `Your ${quantity} session credit${quantity > 1 ? "s are" : " is"} ready.`,
+                body:
+                  title("Credits", { accentWord: "added." }) +
+                  para(`Hi ${safeName}, ${b(`${quantity} session credit${quantity > 1 ? "s" : ""}`)} ${quantity > 1 ? "have" : "has"} been added to your HireStepX account. Jump back in whenever you're ready.`) +
+                  button("Start practising", `${APP_URL}/dashboard`),
+              }),
+            }),
+          });
+        } catch (emailErr) { console.error("[webhook] Credit email failed:", emailErr); }
+      }
+
+      console.warn(`[webhook] Granted ${quantity} credit(s) for user ${userId.slice(0, 8)}...`);
+      return res.status(200).json({ received: true, activated: true, credits: newBalance });
+    }
+
+    // ── Subscription buy (weekly / monthly) — proration-aware tier activation. ──
     const profileRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_end`,
       { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
@@ -530,8 +644,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const currentEnd = Array.isArray(profileRows) && profileRows[0]?.subscription_end ? new Date(profileRows[0].subscription_end) : null;
     const base = currentEnd && currentEnd > now ? currentEnd : now;
     const end = new Date(base);
-    end.setDate(end.getDate() + PLAN_DURATION[plan]);
-    const tier = PLAN_TIER[plan];
+    end.setDate(end.getDate() + resolved.planDays);
+    const tier = resolved.tier;
 
     const updateRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
@@ -554,6 +668,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!updateRes.ok) {
       console.error("[webhook] Profile update failed:", updateRes.status);
+      // Activation failed AFTER we won the claim — release it so a re-delivery
+      // can retry instead of short-circuiting as "duplicate".
+      await releasePaymentClaim(paymentId);
       return res.status(500).json({ error: "Profile update failed" });
     }
 
@@ -579,6 +696,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         subscription_end: end.toISOString(),
       }),
     }).catch(err => console.error("[webhook] Payment record insert failed:", err));
+
+    if (orderId) await clearPaymentIntent(orderId);
 
     if (RESEND_API_KEY && notes.email) {
       const safeName = escapeHtml(notes.userName || "there");
