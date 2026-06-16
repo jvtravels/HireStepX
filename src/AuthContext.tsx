@@ -843,18 +843,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             didFastRender = true;
           }
           try {
-            // 5s timeout on profile fetch. Without this, any extension-
+            // Timeout on profile fetch. Without this, any extension-
             // wrapped fetch (Loom / Jam / Hotjar) that silently hangs
-            // pushes the whole auth init past the 10s safety timeout —
-            // user sees `[auth] safety timeout: forcing loading=false
-            // after 10000 ms` and the app boots with user=null even
-            // though their session is valid. The catch below builds a
-            // basic user from JWT user_metadata so they're not logged
-            // out; profile data hydrates on next route nav.
+            // pushes the whole auth init past the safety timeout —
+            // user sees `[auth] safety timeout: forcing loading=false`
+            // and the app boots with user=null even though their session
+            // is valid. The catch below builds a basic user from JWT
+            // user_metadata so they're not logged out; profile data
+            // hydrates on next route nav.
+            //
+            // The cap is connection-aware to mirror the safety timer
+            // (10s normal / 15s slow): on slow Indian mobile networks a
+            // cold getProfile routinely needs >5s, so we allow 8s there
+            // — enough to land the first attempt (avoiding the
+            // minimal-user flash + background retry) while staying well
+            // under the 15s slow-connection safety net.
+            const profileTimeoutMs = isSlowConnection() ? 8000 : 5000;
             const profile = await Promise.race([
               getProfile(session.user.id),
               new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("getProfile timeout (5s)")), 5000),
+                setTimeout(() => reject(new Error(`getProfile timeout (${profileTimeoutMs}ms)`)), profileTimeoutMs),
               ),
             ]);
             if (profile) {
@@ -1018,12 +1026,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             void applyPendingReferral(session.access_token);
           }
           try {
-            // Same 5s timeout guard as the restore path above — see
-            // there for rationale.
+            // Same connection-aware timeout guard as the restore path
+            // above — see there for rationale.
+            const profileTimeoutMs = isSlowConnection() ? 8000 : 5000;
             const profile = await Promise.race([
               getProfile(session.user.id),
               new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("getProfile timeout (5s)")), 5000),
+                setTimeout(() => reject(new Error(`getProfile timeout (${profileTimeoutMs}ms)`)), profileTimeoutMs),
               ),
             ]);
             if (profile) {
