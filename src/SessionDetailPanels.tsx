@@ -131,7 +131,7 @@ export const SessionNotFound = memo(function SessionNotFound({ onNavigate }: { o
       <p style={{ fontSize: 18, color: c.ivory, marginBottom: 8 }}>Session not found</p>
       <p style={{ fontSize: 13, color: c.stone, marginBottom: 24 }}>This session may have been deleted or the link is invalid.</p>
       <button onClick={onNavigate} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-        Back to Dashboard
+        Back to Sessions
       </button>
     </div>
   );
@@ -649,9 +649,9 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
           style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 22px", borderRadius: 8, border: `1px solid ${c.border}`, background: "transparent", color: c.chalk, cursor: "pointer" }}>
           Try {normalizeType(nextType)}
         </button>
-        <button onClick={() => onNavigate("/dashboard")}
+        <button onClick={() => onNavigate("/sessions")}
           style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, padding: "10px 22px", borderRadius: 8, border: `1px solid ${c.border}`, background: "transparent", color: c.stone, cursor: "pointer" }}>
-          Back to Dashboard
+          Back to Sessions
         </button>
       </div>
       {isFreeUser && (

@@ -98,7 +98,7 @@ function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetr
               fontSize: 13, cursor: "pointer",
             }}
           >
-            Back to Dashboard
+            Back to Sessions
           </button>
         </div>
       </div>
@@ -130,7 +130,7 @@ function NotFoundScreen({ onBack }: { onBack: () => void }) {
             cursor: "pointer",
           }}
         >
-          Back to Dashboard
+          Back to Sessions
         </button>
       </div>
     </Shell>
@@ -270,19 +270,11 @@ export default function SessionDetail() {
     [session]
   );
 
-  /* Referrer-aware back: if the user arrived from /sessions, send them
-     back there with a matching label; otherwise default to /dashboard.
-     document.referrer is read once at mount — clicking around inside the
-     report shouldn't change the meaning of "back". */
+  /* Always return to /sessions — that's the natural parent of a session
+     report. We keep the referrer check as a future hook but the default
+     is now /sessions, not /dashboard. */
   const [backTarget] = useState<{ href: string; label: string }>(() => {
-    if (typeof document === "undefined") return { href: "/dashboard", label: "Back to Dashboard" };
-    try {
-      const ref = new URL(document.referrer);
-      if (ref.origin === window.location.origin && ref.pathname.startsWith("/sessions")) {
-        return { href: "/sessions", label: "Back to Sessions" };
-      }
-    } catch { /* invalid or empty referrer — fall through to default */ }
-    return { href: "/dashboard", label: "Back to Dashboard" };
+    return { href: "/sessions", label: "Back to Sessions" };
   });
   const onBack = () => router.push(backTarget.href);
 
