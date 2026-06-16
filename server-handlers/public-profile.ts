@@ -119,7 +119,9 @@ export default async function handler(req: Request): Promise<Response> {
   });
 
   } catch (err) {
+    // This is a public, unauthenticated page — surface friendly copy, never a
+    // technical token. Real cause is logged server-side for debugging.
     console.error("[public-profile] Error:", err);
-    return new Response(JSON.stringify({ error: "Internal error" }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: "We couldn't load this profile right now. Please try again shortly." }), { status: 500, headers });
   }
 }

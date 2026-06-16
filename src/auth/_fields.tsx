@@ -131,6 +131,10 @@ export function Field({
   const [focused, setFocused] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const errorId = useId();
+  // The label sits as a sibling of the input (not wrapping it), so it needs an
+  // explicit htmlFor/id pairing — without it, screen readers and Chrome's a11y
+  // audit report "no label associated with a form field".
+  const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const hasError = invalid && !!errorMessage;
 
@@ -164,6 +168,7 @@ export function Field({
   return (
     <div>
       <label
+        htmlFor={inputId}
         className="hsx-login-field-label"
         style={{
           display: "block",
@@ -194,6 +199,7 @@ export function Field({
       >
         <input
           ref={inputRef}
+          id={inputId}
           type={type}
           name={name}
           value={value}
