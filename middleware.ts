@@ -21,6 +21,7 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isAllowedOnGate } from "./src/middlewareGate";
 
 const APP_HOST = "app.hirestepx.com";
 const MARKETING_HOST = "hirestepx.com";
@@ -124,20 +125,9 @@ const PRE_LAUNCH_HOSTS = new Set<string>([
   "app.hirestepx.com",
 ]);
 
-/**
- * Paths still reachable on a gated host. Everything else rewrites to `/`.
- * - "/" → renders Coming Soon page
- * - "/blog", "/terms", "/privacy", "/refund" → public marketing/legal
- * - "/api/" → waitlist + analytics endpoints stay reachable
- * - "/_next/", "/page/", "/profile/", "/report/share/" → static + shared views
- */
-const GATE_ALLOWLIST_PATHS = new Set(["/", "/blog", "/terms", "/privacy", "/refund"]);
-const GATE_ALLOWLIST_PREFIXES = ["/blog/", "/api/", "/_next/", "/page/", "/profile/", "/report/share/"];
-
-function isAllowedOnGate(pathname: string): boolean {
-  if (GATE_ALLOWLIST_PATHS.has(pathname)) return true;
-  return GATE_ALLOWLIST_PREFIXES.some(p => pathname.startsWith(p));
-}
+// Gate allowlist logic (which paths stay reachable while gated) lives in
+// src/middlewareGate.ts — pure and unit-tested. Allowed: marketing/legal
+// pages, /api, /_next, shared views, plus all static + SEO/PWA assets.
 
 function isMarketingPath(pathname: string): boolean {
   if (MARKETING_PATHS.has(pathname)) return true;
