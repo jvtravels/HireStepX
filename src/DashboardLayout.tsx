@@ -193,6 +193,39 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     // 60-80px gap at the bottom when the bar collapses. The vh value
     // is the fallback for pre-iOS 15.4 / Android <108.
     <div style={{ display: "flex", height: "100dvh", minHeight: "100vh", background: c.obsidian, overflow: "hidden" }}>
+      {/* Mobile sticky header — logo left, hamburger right. Sits below the
+          sidebar overlay (z:19) and sidebar itself (z:20) so the drawer
+          slides over it. Replaces the old inline "≡ Menu" content button. */}
+      {isMobile && (
+        <header style={{
+          position: "fixed", top: 0, left: 0, right: 0, height: 56,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0 20px",
+          background: c.cream,
+          borderBottom: `1px solid ${c.border}`,
+          zIndex: 15,
+        }}>
+          <Link href="/" style={{ textDecoration: "none" }}>
+            <span style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, color: c.ivory, letterSpacing: "-0.01em" }}>HireStepX</span>
+          </Link>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open navigation menu"
+            aria-expanded={sidebarOpen}
+            style={{
+              background: "none", border: "none", color: c.ivory,
+              cursor: "pointer", padding: 8, margin: -8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        </header>
+      )}
       <a href="#dashboard-main" style={{
         position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
         zIndex: 100, padding: "12px 24px", background: c.gilt, color: c.obsidian,
@@ -344,16 +377,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       </aside>
 
       {/* Main Content */}
-      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "20px 16px max(60px, env(safe-area-inset-bottom))" : "44px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(16px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(16px, env(safe-area-inset-right))" : undefined }}>
-        {isMobile && (
-          <button onClick={() => setSidebarOpen(true)} aria-label="Open navigation menu" aria-expanded={sidebarOpen}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.stone; e.currentTarget.style.background = "rgba(14,12,8,0.04)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = c.graphite; }}
-            style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8, padding: "12px 14px", minHeight: 44, cursor: "pointer", marginBottom: 20, color: c.ivory, display: "flex", alignItems: "center", gap: 8, transition: "background 160ms ease, border-color 160ms ease" }}>
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}>Menu</span>
-          </button>
-        )}
+      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "76px 16px max(60px, env(safe-area-inset-bottom))" : "44px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(16px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(16px, env(safe-area-inset-right))" : undefined }}>
 
         {/* Payment success/cancel banner */}
         {paymentBanner && (
