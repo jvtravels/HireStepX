@@ -69,7 +69,7 @@ export const SESSION_REPORT_STYLES = `
     border-bottom: 2px solid transparent;
     transition: color 160ms, border-color 160ms;
   }
-  .ir-tab-btn[aria-selected="true"] { color: #312E81; border-bottom-color: #312E81; }
+  .ir-tab-btn[aria-selected="true"] { color: #B45309; border-bottom-color: #B45309; }
   .ir-thumb-btn {
     background: transparent; border: 1px solid #EBE5D2; border-radius: 8px;
     padding: 6px 10px; cursor: pointer; color: #5A5448;
