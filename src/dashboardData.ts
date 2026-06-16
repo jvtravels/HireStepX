@@ -1211,6 +1211,25 @@ export interface EvaluateSessionInput {
   };
 }
 
+/**
+ * Error thrown by evaluateSessionWithAI that carries the HTTP status and any
+ * server-instructed Retry-After. Callers (SessionReport's load loop) honor
+ * `retryAfterMs` so they back off for as long as the server actually asked —
+ * instead of hammering an already-rate-limited endpoint on a fixed schedule.
+ */
+export class EvaluateSessionError extends Error {
+  readonly status: number;
+  readonly retryAfterMs: number | null;
+  readonly retryable: boolean;
+  constructor(message: string, opts: { status: number; retryAfterMs?: number | null; retryable?: boolean }) {
+    super(message);
+    this.name = "EvaluateSessionError";
+    this.status = opts.status;
+    this.retryAfterMs = opts.retryAfterMs ?? null;
+    this.retryable = opts.retryable ?? false;
+  }
+}
+
 export async function evaluateSessionWithAI(
   input: EvaluateSessionInput,
   signal?: AbortSignal,
@@ -1223,15 +1242,20 @@ export async function evaluateSessionWithAI(
       { signal },
     );
 
-    if (res.status === 401) throw new Error("Session expired — please refresh and sign in again.");
+    if (res.status === 401) {
+      throw new EvaluateSessionError("Session expired — please refresh and sign in again.", { status: 401, retryable: false });
+    }
     if (res.status === 429) {
       const retryAfter = (res.data as { retryAfter?: number } | null)?.retryAfter;
-      throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds.` : "Too many requests. Please wait a moment.");
+      throw new EvaluateSessionError(
+        retryAfter ? `Too many requests. Please wait ${retryAfter} seconds.` : "Too many requests. Please wait a moment.",
+        { status: 429, retryAfterMs: retryAfter ? retryAfter * 1000 : null, retryable: true },
+      );
     }
     if (!res.ok) {
       const msg = res.error || `HTTP ${res.status}`;
       console.error(`[evaluateSession] API error ${res.status}:`, msg);
-      throw new Error(msg);
+      throw new EvaluateSessionError(msg, { status: res.status, retryable: res.status >= 500 });
     }
     const report = res.data?.report;
     if (!report) {

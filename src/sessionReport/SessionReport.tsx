@@ -18,6 +18,7 @@ import { track } from "@vercel/analytics";
 import { captureClientEvent } from "../posthogClient";
 import {
   evaluateSessionWithAI,
+  EvaluateSessionError,
   fetchRecentSessionScores,
   fetchSessionCredibility,
   type SessionReport as SessionReportData,
@@ -525,14 +526,16 @@ export const SessionReport = memo(function SessionReport({
 
       const isTransient = isTransientReportError;
 
-      const delays = [0, 2000, 5000]; // immediate, then 2s, then 5s
+      // Retry budget. We make at most MAX_ATTEMPTS calls and never make the
+      // user wait longer than MAX_BACKOFF_MS for a retry — past that we bail
+      // to the graceful preliminary report rather than hammering an already
+      // rate-limited endpoint. Backoff honors the server's Retry-After when
+      // present (the 429 body's retryAfter), else exponential (2s, 4s).
+      const MAX_ATTEMPTS = 3;
+      const MAX_BACKOFF_MS = 6000;
       let lastErr: unknown = null;
-      for (let attempt = 0; attempt < delays.length; attempt++) {
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         if (cancelled || ac.signal.aborted) return;
-        if (delays[attempt] > 0) {
-          await new Promise(r => setTimeout(r, delays[attempt]));
-          if (cancelled || ac.signal.aborted) return;
-        }
         try {
           const res = await evaluateSessionWithAI(
             { sessionId: session.id, transcript: toTurns(session.transcript), meta },
@@ -558,7 +561,15 @@ export const SessionReport = memo(function SessionReport({
           lastErr = err;
           const raw = err instanceof Error ? err.message : "Failed to generate report";
           if (!isTransient(raw)) break; // non-transient — fail fast
-          // Otherwise loop to next backoff
+          if (attempt === MAX_ATTEMPTS - 1) break; // last attempt — no more waiting
+          // Honor the server's Retry-After when it told us one; otherwise
+          // exponential backoff. If the wait exceeds our budget, stop now and
+          // fall through to the preliminary report instead of a doomed retry.
+          const serverRetryMs = err instanceof EvaluateSessionError ? err.retryAfterMs : null;
+          const backoffMs = serverRetryMs ?? 2000 * Math.pow(2, attempt);
+          if (backoffMs > MAX_BACKOFF_MS) break;
+          await new Promise(r => setTimeout(r, backoffMs));
+          if (cancelled || ac.signal.aborted) return;
         }
       }
 
@@ -574,7 +585,7 @@ export const SessionReport = memo(function SessionReport({
           latencyMs: Date.now() - t0,
           error: msg.slice(0, 120),
           view: "main",
-          retries: delays.length,
+          retries: MAX_ATTEMPTS,
           silent: silentRefresh ? "yes" : "no",
         });
         if (!silentRefresh) {
