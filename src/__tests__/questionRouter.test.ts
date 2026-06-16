@@ -49,10 +49,34 @@ describe("routeCandidateQuestion — variants", () => {
       "tell me the figure",
       "what number are we looking at?",
       "what's the budget for this role?",
+      /* Crack 9 (2026-06-17) — natural phrasings the tight pattern used
+       * to drop. Reproduced live: recruiter dodged each of these for four
+       * turns because the router never classified them as anchor-ask, so
+       * the planner's anchor-preemption never fired and no ₹ was shared. */
+      "what are you offering",
+      "what can you put on the table?",
+      "what can you offer for this role?",
+      "I'd like to hear your number first",
+      "I still need a concrete number",
+      "I'm looking for a ballpark number",
     ];
     for (const s of samples) {
       const r = routeCandidateQuestion(s);
       expect(r?.kind, `expected anchor-ask for: ${s}`).toBe("anchor-ask");
+    }
+  });
+
+  it("does NOT anchor-ask on passing references to an offer/number (Crack 9 guard)", () => {
+    /* The widened pattern must still ignore utterances that merely
+     * mention an offer/number without demanding the figure — otherwise
+     * we'd anchor-preempt on small talk. */
+    for (const s of [
+      "the offer should be competitive",
+      "I want to understand the role better",
+      "looking for a good number of stock options to vest",
+    ]) {
+      const r = routeCandidateQuestion(s);
+      expect(r?.kind, `should NOT be anchor-ask: ${s}`).not.toBe("anchor-ask");
     }
   });
 

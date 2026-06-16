@@ -1930,25 +1930,57 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     state.highestOfferMade === 0 &&
     state.band?.initialOffer != null
   ) {
-    const clampedOpener = clampAnchorAgainstCandidateAsk(
-      state.band.initialOffer,
-      state.candidateTarget,
-      state.band.walkAway,
-    );
+    /* Crack 9 (2026-06-17) — anchor-ask must actually DISCLOSE a number.
+     *
+     * The legacy PDF#51 preemption returned `open-with-offer`. But that
+     * kind carries numberPolicy:"forbidden" in the response pipeline (in
+     * the kernel-first world `open-with-offer` is the no-number opening
+     * probe), so the prose layer gagged the figure — the candidate's
+     * explicit "what's your offer?" shipped a numberless probe and the
+     * offer was NEVER disclosed (reproduced live: recruiter dodged
+     * "what can you put on the table?" / "the figure you're offering?"
+     * four turns running). Emit `anchor-with-offer`
+     * (numberPolicy:"required", tokens LPA+fitment) instead, exactly
+     * like the AUDIT-3 discovery-complete anchor below, so band.initial
+     * reaches the candidate. Clamp above any disclosed CTC so we never
+     * anchor below current pay; null => honest defer, not a pay-cut. */
+    const lo = state.band.initialOffer;
+    const hi = state.band.maxStretch;
+    const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+    if (anchored === null) {
+      return {
+        kind: "anchor-with-offer",
+        initialOffer: lo,
+        bandIncomplete: true,
+        satisfiesTopic: "band-anchor-with-rationale",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale:
+            `Crack 9 anchor-ask defer — candidate asked for the offer at ` +
+            `turn ${state.turnIndex}, but band ceiling (${hi}) is below ` +
+            `disclosed CTC (${state.candidateCurrentCtc}); honest-defer ` +
+            `rather than a pay-cut anchor.`,
+          askedTopic: "band-anchor-with-rationale",
+          actionKind: "anchor-with-offer",
+        },
+      };
+    }
     return {
-      kind: "open-with-offer",
-      satisfiesTopic: "open-with-offer",
+      kind: "anchor-with-offer",
+      initialOffer: anchored,
+      bandIncomplete: false,
+      satisfiesTopic: "band-anchor-with-rationale",
       _move: {
-        lever: "open-with-offer",
-        newTotalLpa: clampedOpener,
+        lever: "probe",
+        newTotalLpa: anchored,
         rationale:
-          `PDF#51 direct anchor-ask preemption — candidate asked for the ` +
-          `offer at turn ${state.turnIndex}; ship band.initialOffer ` +
-          `(₹${clampedOpener} LPA${
-            clampedOpener < state.band.initialOffer
-              ? `, clamped from ${state.band.initialOffer}`
-              : ""
-          }) instead of holding discovery hostage.`,
+          `Crack 9 direct anchor-ask preemption — candidate asked for the ` +
+          `offer at turn ${state.turnIndex}; disclose band initial ` +
+          `₹${anchored} LPA via anchor-with-offer (open-with-offer gags ` +
+          `the number) instead of holding discovery hostage.`,
+        askedTopic: "band-anchor-with-rationale",
+        actionKind: "anchor-with-offer",
       },
     };
   }

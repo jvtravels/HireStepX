@@ -117,10 +117,16 @@ export type QuestionRoute =
 
 /** Direct ask FOR the offer — "what's your offer", "share the
  *  number", "what number are we looking at", "what's the budget for
- *  this role". Tight on purpose: passing references like "the offer
- *  should be competitive" must NOT match. */
+ *  this role". Crack 9 (2026-06-17) widened to catch the natural
+ *  phrasings real candidates use to demand the headline number —
+ *  "what are you offering", "what can you put on the table", "the
+ *  figure you're offering", "I need a concrete/specific number",
+ *  "I'd like to hear your number" — which the original tight pattern
+ *  silently dropped, leaving the recruiter probing forever instead of
+ *  disclosing the offer. Still tight on passing references: "the offer
+ *  should be competitive" / "thanks for the offer" must NOT match. */
 export const ANCHOR_ASK_RE =
-  /\b(?:what(?:'s|\s+is)\s+(?:your|the)\s+(?:offer|package|budget|number)|how\s+much\s+(?:is\s+(?:the|your)\s+offer|are\s+you\s+offering|can\s+you\s+offer)|(?:share|tell\s+me|give\s+me)\s+(?:the\s+)?(?:offer|number|figure|amount)|what\s+number\s+are\s+we\s+looking\s+at|what(?:'s|\s+is)\s+(?:the\s+)?budget\s+for\s+this\s+role)\b/i;
+  /\b(?:what(?:'s|\s+is)\s+(?:your|the)\s+(?:offer|package|budget|number)|how\s+much\s+(?:is\s+(?:the|your)\s+offer|are\s+you\s+offering|can\s+you\s+offer)|(?:share|tell\s+me|give\s+me)\s+(?:the\s+)?(?:offer|number|figure|amount)|what\s+number\s+are\s+we\s+looking\s+at|what(?:'s|\s+is)\s+(?:the\s+)?budget\s+for\s+this\s+role|what\s+are\s+you\s+offering|what\s+can\s+you\s+(?:offer|put\s+(?:on\s+the\s+table|forward|down))|put\s+(?:a\s+|an\s+)?(?:number|offer|figure)\s+on\s+the\s+table|(?:number|figure|ctc|package|amount)\s+(?:that\s+)?you(?:'re|\s+are)\s+offering|(?:need|want|looking\s+for|like\s+to\s+(?:hear|know|see))\s+(?:a\s+|the\s+|your\s+|an\s+)?(?:concrete\s+|specific\s+|actual\s+|real\s+|exact\s+|ballpark\s+|rough\s+)?(?:number|figure|lpa\s*(?:number|figure)?))\b/i;
 
 /** Breakdown / recap request — "in-hand", "share the breakdown",
  *  "summarise the offer", "components", "what is base, variable,

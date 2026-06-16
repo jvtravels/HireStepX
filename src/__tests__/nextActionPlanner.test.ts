@@ -527,3 +527,56 @@ describe("planNextAction — discovery topic skip / exhaustion", () => {
     expect(action.kind).toBe("band-anchor-with-rationale");
   });
 });
+
+describe("planNextAction — anchor-ask discloses a number (Crack 9, 2026-06-17)", () => {
+  /* Regression: a candidate explicitly asking for the offer must get a
+   * NUMBER, not a no-number probe. The legacy preemption returned
+   * `open-with-offer` (numberPolicy:"forbidden"), so the figure was
+   * gagged and the recruiter dodged forever. The preemption now emits
+   * `anchor-with-offer` (numberPolicy:"required"), which carries the
+   * band initial through the response pipeline. */
+  const anchorAsk = (text: string, overrides: Partial<NegotiationState> = {}) =>
+    init({
+      phase: "opening",
+      turnIndex: 1,
+      highestOfferMade: 0,
+      conversationLog: [
+        { speaker: "ai", text: "what's your current CTC?" },
+        { speaker: "candidate", text },
+      ],
+      ...overrides,
+    });
+
+  it("'what can you put on the table?' → anchor-with-offer carrying band initial", () => {
+    const action = planNextAction(anchorAsk("What can you put on the table?"));
+    expect(action.kind).toBe("anchor-with-offer");
+    if (action.kind === "anchor-with-offer") {
+      // Candidate hasn't disclosed CTC → discloses the band initial as-is.
+      expect(action.initialOffer).toBe(BAND.initialOffer);
+      expect(action.bandIncomplete).toBe(false);
+    }
+  });
+
+  it("'what are you offering for this role?' → anchor-with-offer", () => {
+    const action = planNextAction(anchorAsk("So what are you offering for this role?"));
+    expect(action.kind).toBe("anchor-with-offer");
+  });
+
+  it("anchor floors above a disclosed current CTC rather than under-cutting it", () => {
+    // Disclosed current 18 with a 25%+ senior hike floor pushes the anchor
+    // above the band initial (20) but stays within maxStretch (28).
+    const action = planNextAction(
+      anchorAsk("I need a concrete number, please.", { candidateCurrentCtc: 18 }),
+    );
+    expect(action.kind).toBe("anchor-with-offer");
+    if (action.kind === "anchor-with-offer") {
+      expect(action.initialOffer).toBeGreaterThanOrEqual(BAND.initialOffer);
+      expect(action.initialOffer).toBeLessThanOrEqual(BAND.maxStretch);
+    }
+  });
+
+  it("a passing reference ('thanks for the offer') does NOT trigger disclosure", () => {
+    const action = planNextAction(anchorAsk("Thanks for the offer."));
+    expect(action.kind).not.toBe("anchor-with-offer");
+  });
+});
