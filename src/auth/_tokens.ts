@@ -13,10 +13,14 @@ export const tokens = {
   indigoGray: "#3E3A6E",
   inkSoft: "#6E6759",
   // Was #A39C8B — failed WCAG AA at ~2.4:1 on cream #FAF7F0. Darkened
-  // to #7A7263 (~4.5:1) so body-text usages (spam-folder hint,
-  // password-meter labels, footer legal) read in sunlight on tier-2
-  // OLED phones. Decorative-only uses can drop back to inkFaintWeak.
-  inkFaint: "#7A7263",
+  // to #736B5D so body-text usages (spam-folder hint, password-meter
+  // labels, footer legal, marketing eyebrow labels) clear AA 4.5:1 on
+  // ALL cream surfaces — incl. the darker creamSoft #F4EFE3 used across
+  // marketing-v2, where the prior #7A7263 only reached 4.15:1. #736B5D:
+  // 4.59:1 on creamSoft, 4.92:1 on #FAF7F0, 5.26:1 on white; still
+  // lighter than inkSoft (#6E6759) so the text hierarchy is preserved.
+  // Decorative-only uses can drop back to inkFaintWeak.
+  inkFaint: "#736B5D",
   inkFaintWeak: "#A39C8B",
 
   // Brand — interactive
