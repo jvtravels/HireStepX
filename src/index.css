@@ -1025,7 +1025,7 @@ input[type="range"]::-moz-range-thumb {
   .settings-form-grid { grid-template-columns: 1fr !important; }
   .settings-chip-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .dash-main { padding: 28px 24px 80px !important; }
+  .dash-main { padding: 76px 24px 80px !important; }
   .landing-section { padding-left: 28px !important; padding-right: 28px !important; }
 }
 
@@ -1106,7 +1106,7 @@ input[type="range"]::-moz-range-thumb {
    base today but growing; cheap to support. */
 @media (max-width: 340px) {
   body { font-size: 14px; }
-  .dash-main { padding: 16px 12px 64px !important; }
+  .dash-main { padding: 76px 12px 64px !important; }
   .iv-controls { gap: 4px !important; padding: 8px 6px max(8px, env(safe-area-inset-bottom, 8px)) !important; }
   .iv-controls button { min-width: 44px !important; min-height: 44px !important; padding: 0 !important; }
   h1 { font-size: 22px !important; }
