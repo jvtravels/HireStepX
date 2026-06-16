@@ -1,7 +1,9 @@
 /* Vercel Cron — Uptime Monitor */
 /* Hits /api/health, logs degraded status, emails on degradation. */
-/* Schedule lives in vercel.json — runs every 5 minutes so degradation */
-/* is caught promptly. No logic here assumes any particular cadence. */
+/* Schedule lives in vercel.json — runs daily (the plan only permits */
+/* daily crons; sub-daily cadence is rejected at deploy time). For */
+/* minute-level uptime alerting, point an external monitor at /api/health. */
+/* No logic here assumes any particular cadence. */
 /* Visible in Vercel Dashboard → Logs for alerting */
 
 export const config = { runtime: "edge" };
