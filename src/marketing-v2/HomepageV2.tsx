@@ -592,7 +592,11 @@ function Waveform({ accent }: { accent?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 3, height: 26 }} aria-hidden>
       {Array.from({ length: bars }).map((_, i) => {
-        const h = 5 + Math.abs(Math.sin(i * 0.9)) * 21;
+        // Round to an integer: React serializes a float like 20.7707… to a
+        // truncated "20.7707px" string on the server but keeps full precision
+        // on the client, which trips a hydration mismatch warning. Source is
+        // deterministic, so rounding removes the warning without changing the look.
+        const h = Math.round(5 + Math.abs(Math.sin(i * 0.9)) * 21);
         return (
           <span
             key={i}
