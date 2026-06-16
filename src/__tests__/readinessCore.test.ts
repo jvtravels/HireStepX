@@ -60,6 +60,7 @@ function session(over: Partial<RawSession> = {}): RawSession {
     duration: over.duration ?? 1800,
     score: over.score ?? 70,
     questions: over.questions ?? 6,
+    company: over.company,
     negotiationMetrics: over.negotiationMetrics ?? null,
     report: over.report !== undefined ? over.report : report(),
   };
@@ -297,6 +298,38 @@ describe("computeReadiness — aggregations", () => {
     expect(ps.percentile).toBeGreaterThanOrEqual(2);
     expect(ps.percentile).toBeLessThanOrEqual(99);
     expect(p.meta.modelled).toContain("percentile");
+  });
+});
+
+describe("target company resolution", () => {
+  it("uses the profile target company when set", () => {
+    const p = computeReadiness(input([session({ id: "a", company: "Stripe" })], { targetCompany: "Razorpay" }))!;
+    expect(p.target.company).toBe("Razorpay");
+  });
+
+  it("falls back to the most recent session's company when the profile is blank", () => {
+    const sessions = [
+      session({ id: "a", createdAt: daysAgo(3), company: "Flipkart" }),
+      session({ id: "b", createdAt: daysAgo(1), company: "Razorpay" }),
+    ];
+    const p = computeReadiness(input(sessions, { targetCompany: "" }))!;
+    expect(p.target.company).toBe("Razorpay");
+    expect(p.cohort.label).toContain("Razorpay");
+  });
+
+  it("skips empty session companies to find the most recent non-empty one", () => {
+    const sessions = [
+      session({ id: "a", createdAt: daysAgo(3), company: "Flipkart" }),
+      session({ id: "b", createdAt: daysAgo(1), company: "  " }),
+    ];
+    const p = computeReadiness(input(sessions, { targetCompany: "" }))!;
+    expect(p.target.company).toBe("Flipkart");
+  });
+
+  it("never leaks the literal placeholder — uses generic copy when nothing is set", () => {
+    const p = computeReadiness(input([session({ id: "a", company: undefined })], { targetCompany: "" }))!;
+    expect(p.target.company).toBe("your target company");
+    expect(p.target.company).not.toBe("Target company");
   });
 });
 

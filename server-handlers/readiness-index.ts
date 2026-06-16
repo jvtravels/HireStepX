@@ -32,6 +32,7 @@ interface SessionRow {
   duration: number | null;
   score: number | null;
   questions: number | null;
+  target_company: string | null;
   negotiation_metrics: Record<string, unknown> | null;
   report_json: RIReport | null;
 }
@@ -72,7 +73,7 @@ export default async function handler(req: Request): Promise<Response> {
   // history. The core re-sorts ascending, and we reverse below to match.
   const sessionsQuery =
     `sessions?user_id=eq.${uid}` +
-    `&select=id,created_at,focus,type,difficulty,duration,score,questions,negotiation_metrics,report_json` +
+    `&select=id,created_at,focus,type,difficulty,duration,score,questions,target_company,negotiation_metrics,report_json` +
     `&order=created_at.desc&limit=${MAX_SESSIONS}`;
   const profileQuery =
     `profiles?id=eq.${uid}&select=target_role,target_company,experience_level,interview_date,practice_timestamps`;
@@ -110,6 +111,7 @@ export default async function handler(req: Request): Promise<Response> {
     duration: r.duration ?? undefined,
     score: r.score ?? undefined,
     questions: r.questions ?? undefined,
+    company: r.target_company || undefined,
     negotiationMetrics: r.negotiation_metrics ?? null,
     report: r.report_json ?? null,
   }));

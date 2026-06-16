@@ -91,6 +91,7 @@ export interface RawSession {
   duration?: number;            // seconds
   score?: number;               // sessions.score (0-100) — fallback for overallScore
   questions?: number;
+  company?: string;             // sessions.target_company — per-session target
   negotiationMetrics?: Record<string, unknown> | null;
   report: RIReport | null;
 }
@@ -563,14 +564,26 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
     pillars: [vectors[i].competence, vectors[i].consistency, vectors[i].coverage, vectors[i].currency, vectors[i].composure],
   }));
 
+  // The candidate's target company. Prefer the profile, but fall back to the
+  // company practiced in their most recent session — most users set a company
+  // when starting an interview but never fill the profile field, so the literal
+  // "Target company" placeholder otherwise leaks into the UI.
+  let resolvedCompany = profile.targetCompany || "";
+  if (!resolvedCompany) {
+    for (let i = n - 1; i >= 0; i--) {
+      const c = sessions[i].company?.trim();
+      if (c) { resolvedCompany = c; break; }
+    }
+  }
+
   return {
     ri, band: bandFromRi(ri, threshold), confidence, threshold, delta14d, sessions: n,
     percentile, hireBand, bandMix,
-    cohort: { label: `${[profile.targetCompany, profile.targetRole].filter(Boolean).join(" ") || "target"} hire bar`, ri: cohortRi },
+    cohort: { label: `${[resolvedCompany, profile.targetRole].filter(Boolean).join(" ") || "target"} hire bar`, ri: cohortRi },
     baseline: { ri: baselineRi, label: `your first session, ${weeksAgoLabel(Date.parse(sessions[0].createdAt), nowMs)}` },
     target: {
       role: profile.targetRole || "Your role",
-      company: profile.targetCompany || "Target company",
+      company: resolvedCompany || "your target company",
       round: focusLabel(focusKey(sessions[n - 1])) + " loop",
       date: fmtDate(profile.interviewDate),
     },
