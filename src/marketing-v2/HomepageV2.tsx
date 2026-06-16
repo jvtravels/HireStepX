@@ -317,6 +317,20 @@ export function NavV2() {
   }, [menuOpen]);
   return (
     <header role="banner">
+      {/* Self-contained nav responsive rules. NavV2 is rendered both by the
+          homepage and standalone by every marketing sub-page (via
+          MarketingPagesV2). The homepage ResponsiveSheet used to be the only
+          place these lived, so sub-pages shipped the desktop link row with no
+          way to collapse it — on a phone that forced a ~657px layout viewport
+          and zoomed the whole page out. Keeping the rules here means the nav
+          collapses correctly wherever it mounts. */}
+      <style>{`
+        @media (max-width: 880px) {
+          .mv2-nav-links { display: none !important; }
+          .mv2-nav-cta-label { display: none !important; }
+          .mv2-nav-burger { display: inline-flex !important; }
+        }
+      `}</style>
       <nav
         aria-label="Primary"
         style={{

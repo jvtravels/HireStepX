@@ -106,7 +106,12 @@ function Stack({ children, gap = 18 }: { children: React.ReactNode; gap?: number
    column on narrow (mobile) so nothing is squeezed. Top-aligned, so a
    shorter card simply leaves space below rather than stretching. */
 function Row({ narrow, children, gap = 18 }: { narrow: boolean; children: React.ReactNode; gap?: number }) {
-  return <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap, alignItems: "start" }}>{children}</div>;
+  // minmax(0, 1fr) rather than bare 1fr: a 1fr track is implicitly
+  // minmax(auto, 1fr), so a child with a wide min-content (a long skill row,
+  // an unbreakable label) blows the track past the container and clips on the
+  // right edge at phone widths. minmax(0, …) lets the track shrink and the
+  // child wrap instead.
+  return <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap, alignItems: "start" }}>{children}</div>;
 }
 
 /* A soft, non-blocking note that some figures are modelled estimates while

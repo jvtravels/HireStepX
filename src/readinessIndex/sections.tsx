@@ -730,7 +730,7 @@ function FlagRow({ flag }: { flag: TypedFlag }) {
 
 export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16 }}>
       <Card as="section">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div>
@@ -742,9 +742,9 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
         {d.refresh.length ? (
           <ul style={{ marginTop: 16, marginBottom: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
             {d.refresh.map((r) => (
-              <li key={r.skill} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: t.creamSoft, borderRadius: 10 }}>
+              <li key={r.skill} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, padding: "10px 12px", background: t.creamSoft, borderRadius: 10 }}>
                 <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: r.decay <= -5 ? t.error : t.copper, flexShrink: 0 }} />
-                <span style={{ flex: 1, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
+                <span style={{ flex: 1, minWidth: 0, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{r.days}d idle</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
                 <a href="/interview" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
