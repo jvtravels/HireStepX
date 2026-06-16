@@ -575,6 +575,10 @@ const FOCUS_STYLE = `
       border-left: none !important; border-top: 1px solid ${tok.line} !important;
       align-self: stretch !important; justify-content: center !important;
     }
+    /* Peek strip: tighten padding + let the meta row sit below the type label
+       on very narrow viewports so nothing overlaps. */
+    .hsx-peek-strip { padding: 9px 14px !important; gap: 8px !important; }
+    .hsx-peek-meta { gap: 6px !important; }
   }
 
   /* Touch-pointer hit target normalisation. Triggers on coarse
@@ -1003,9 +1007,10 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
           (right). Type & difficulty live up here as a quiet indigo+ink eyebrow
           so the serif identity below carries no metadata noise. PR/BEST badge
           and Draft state ride alongside type so achievement signals stay top. */}
-      <div style={{
+      <div className="hsx-peek-strip" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
         padding: "11px 20px", borderBottom: `1px solid ${tok.line}`, background: tok.creamSoft,
+        flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
           <span style={{
@@ -1041,7 +1046,7 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
           <div
             role="status"
             aria-label={`Score ${s.score}, ${meta.label}${hasDelta ? `, ${deltaUp ? "up" : "down"} ${Math.abs(delta!)}` : ""}`}
-            style={{ display: "inline-flex", alignItems: "baseline", gap: 12, fontVariantNumeric: "tabular-nums" }}
+            className="hsx-peek-meta" style={{ display: "inline-flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}
           >
             <span style={{ fontFamily: fonts.ui, fontSize: 11, color: tok.inkSoft, whiteSpace: "nowrap" }}>
               {dateText}{s.questions ? ` · ${s.questions} Qs` : ""}
