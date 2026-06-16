@@ -104,11 +104,40 @@ const APP_PREFIXES = [
   "/auth/callback",
 ];
 
-/* Pre-launch gate constants removed 2026-05-30 when marketing v2 went live.
- * The gate was rewriting unknown paths to / and silently hiding /how-it-works,
- * /pricing, /about, /for-students, /contact, /compare/chatgpt. If you need to
- * re-gate, restore PRE_LAUNCH_HOSTS, GATE_ALLOWLIST_PATHS, and the
- * isAllowedOnGate() helper from git history. */
+/**
+ * Pre-launch "Coming Soon" gate (restored 2026-06-16).
+ *
+ * Hosts that show ONLY the Coming Soon shell + the tiny allowlist below.
+ * Everything else gets rewritten to `/` so the gate can't be bypassed by
+ * typing /dashboard, /login, /admin, etc. directly.
+ *
+ * staging.hirestepx.com is intentionally EXCLUDED so the team can keep
+ * working with the full app while the public hosts are still gated.
+ *
+ * Manual override: NEXT_PUBLIC_COMING_SOON=0 disables the gate everywhere
+ * (single-env-var public launch). The marketing page handler respects the
+ * same flag so the two stay in sync.
+ */
+const PRE_LAUNCH_HOSTS = new Set<string>([
+  "hirestepx.com",
+  "www.hirestepx.com",
+  "app.hirestepx.com",
+]);
+
+/**
+ * Paths still reachable on a gated host. Everything else rewrites to `/`.
+ * - "/" → renders Coming Soon page
+ * - "/blog", "/terms", "/privacy", "/refund" → public marketing/legal
+ * - "/api/" → waitlist + analytics endpoints stay reachable
+ * - "/_next/", "/page/", "/profile/", "/report/share/" → static + shared views
+ */
+const GATE_ALLOWLIST_PATHS = new Set(["/", "/blog", "/terms", "/privacy", "/refund"]);
+const GATE_ALLOWLIST_PREFIXES = ["/blog/", "/api/", "/_next/", "/page/", "/profile/", "/report/share/"];
+
+function isAllowedOnGate(pathname: string): boolean {
+  if (GATE_ALLOWLIST_PATHS.has(pathname)) return true;
+  return GATE_ALLOWLIST_PREFIXES.some(p => pathname.startsWith(p));
+}
 
 function isMarketingPath(pathname: string): boolean {
   if (MARKETING_PATHS.has(pathname)) return true;
@@ -126,6 +155,19 @@ export async function middleware(request: NextRequest) {
   // Skip in development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     return NextResponse.next();
+  }
+
+  // ─── Pre-launch gate ─────────────────────────────────────────────
+  // Manual override: NEXT_PUBLIC_COMING_SOON=0 disables the gate everywhere
+  // so the team can do a public launch by flipping a single env var.
+  // The admin subdomain is exempt so the team can still reach the panel.
+  const gateDisabled = process.env.NEXT_PUBLIC_COMING_SOON === "0";
+  if (!gateDisabled && hostname !== ADMIN_HOST && PRE_LAUNCH_HOSTS.has(hostname) && !isAllowedOnGate(pathname)) {
+    // Rewrite (not redirect) so the URL stays clean and the user lands on
+    // the Coming Soon page rendered by app/(marketing)/page.tsx.
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.rewrite(url);
   }
 
   // Admin subdomain — gate page routes behind admin_token cookie, then rewrite

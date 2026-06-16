@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import HomepageV2 from "@/marketing-v2/HomepageV2";
+import ComingSoon from "@/ComingSoon";
 
 export const metadata: Metadata = {
   title: "HireStepX — AI Mock Interview Practice for Job Seekers",
@@ -46,18 +48,48 @@ const APPLICATION_SCHEMA = {
   ],
 };
 
-/* Marketing homepage v2 is now live at apex. Static + revalidate so the
-   page ships from the edge cache and the JSON-LD payload renders in the
-   first byte for crawlers. The ComingSoon gate has been retired. */
-export const dynamic = "force-static";
-export const revalidate = 3600;
+/* Pre-launch "Coming Soon" gate (restored 2026-06-16).
+ *
+ * Coming Soon renders ONLY on the public production apex hosts. Everywhere
+ * else (staging, app.*, vercel previews, localhost) shows the real
+ * marketing site so the team can keep shipping while the public site is
+ * gated. Rendered dynamically (read host header) so a single deploy serves
+ * both staging (full site) and www (Coming Soon) without per-env juggling.
+ *
+ * NEXT_PUBLIC_COMING_SOON manual override (kept in sync with middleware.ts):
+ *   - "0" → never gate (force the real site everywhere → public launch)
+ *   - "1" → always gate (lock everything down)
+ *   - unset → host-based default below
+ *
+ * The brand JSON-LD is injected on EVERY path so crawlers get the
+ * structured data whether they hit Coming Soon or the full homepage. */
+export const dynamic = "force-dynamic";
 
-export default function Page() {
+const PRODUCTION_HOSTS = new Set(["hirestepx.com", "www.hirestepx.com"]);
+
+export default async function Page() {
+  const override = process.env.NEXT_PUBLIC_COMING_SOON;
+
+  let gated: boolean;
+  if (override === "0") {
+    gated = false;
+  } else if (override === "1") {
+    gated = true;
+  } else {
+    // Host-based default. headers() needs await in the Next 15 app router.
+    let host = "";
+    try {
+      const h = await headers();
+      host = (h.get("host") || "").toLowerCase().split(":")[0]; // strip port
+    } catch { /* SSR-only API; on edge cases default to the full site */ }
+    gated = PRODUCTION_HOSTS.has(host);
+  }
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
-      <HomepageV2 />
+      {gated ? <ComingSoon /> : <HomepageV2 />}
     </>
   );
 }
