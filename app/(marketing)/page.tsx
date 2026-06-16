@@ -38,7 +38,7 @@ const APPLICATION_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "HireStepX",
-  applicationCategory: "EducationApplication",
+  applicationCategory: "EducationalApplication",
   operatingSystem: "Any (web)",
   offers: [
     { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "3 practice sessions" },

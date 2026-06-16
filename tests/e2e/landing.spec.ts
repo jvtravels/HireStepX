@@ -1,5 +1,19 @@
 import { test, expect } from "@playwright/test";
 
+/*
+ * Landing-page E2E targets HomepageV2 (src/marketing-v2/HomepageV2.tsx), the
+ * production homepage rendered at "/". Structure assumed by these specs:
+ *   - Sticky <nav aria-label="Primary"> with link row (hidden ≤880px) +
+ *     a ≤880px hamburger (button[aria-label="Open menu"]) that opens
+ *     <div id="mv2-mobile-menu">.
+ *   - Hero <h1 id="hd-hero"> "Practice the interview. Not the panic." with
+ *     CTAs "Start round 01" (/signup) and "Watch 60-sec preview".
+ *   - Section <h2> headings carry ids hd-focus / hd-story / hd-features /
+ *     hd-india / hd-why / hd-pricing / hd-compare / hd-faq.
+ *   - FAQ is <section id="faq"> with category tabs + native <details> items.
+ *   - Footer is <footer aria-labelledby="hd-cta"> with /privacy + /terms links.
+ */
+
 test.describe("Landing Page — Core", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
@@ -15,17 +29,17 @@ test.describe("Landing Page — Core", () => {
     await expect(h1).toContainText("interview", { timeout: 5000 });
   });
 
-  test("shows Get Started Free CTA in hero", async ({ page }) => {
-    await expect(page.getByText("Get Started Free").first()).toBeVisible();
+  test("shows primary hero CTA", async ({ page }) => {
+    await expect(page.getByRole("link", { name: /Start round 01/ })).toBeVisible();
   });
 
-  test("CTA links to signup for unauthenticated users", async ({ page }) => {
-    await page.getByText("Get Started Free").first().click();
+  test("hero CTA links to signup for unauthenticated users", async ({ page }) => {
+    await page.getByRole("link", { name: /Start round 01/ }).click();
     await expect(page).toHaveURL(/\/signup/);
   });
 
-  test("shows social proof badge with launch info", async ({ page }) => {
-    await expect(page.getByText(/3 free sessions, no credit card/i)).toBeVisible();
+  test("shows free-trial trust signal in hero", async ({ page }) => {
+    await expect(page.getByText(/no card needed/i).first()).toBeVisible();
   });
 });
 
@@ -35,23 +49,29 @@ test.describe("Landing Page — Navigation", () => {
   });
 
   test("shows navigation links on desktop", async ({ page, viewport }) => {
-    test.skip(!!viewport && viewport.width < 768, "Nav links hidden on mobile");
-    const nav = page.locator("nav");
-    await expect(nav.getByRole("link", { name: "How It Works" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Features" })).toBeVisible();
+    test.skip(!!viewport && viewport.width < 900, "Nav links collapse into the hamburger ≤880px");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav.getByRole("link", { name: "How it works" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Pricing" })).toBeVisible();
   });
 
-  test("login link is visible on desktop", async ({ page, viewport }) => {
-    test.skip(!!viewport && viewport.width < 768, "Login link hidden on mobile");
-    const nav = page.locator("nav");
-    await expect(nav.getByRole("link", { name: /log\s*in/i })).toBeVisible();
+  test("sign-in link is visible on desktop", async ({ page, viewport }) => {
+    test.skip(!!viewport && viewport.width < 900, "Auth links collapse into the hamburger ≤880px");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav.getByRole("link", { name: /sign\s*in/i })).toBeVisible();
   });
 
-  test("sign up link is visible on desktop", async ({ page, viewport }) => {
-    test.skip(!!viewport && viewport.width < 768, "Sign up link hidden on mobile");
-    const nav = page.locator("nav");
-    await expect(nav.getByRole("link", { name: /sign\s*up/i })).toBeVisible();
+  test("start-free link is visible on desktop", async ({ page, viewport }) => {
+    test.skip(!!viewport && viewport.width < 900, "Auth links collapse into the hamburger ≤880px");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav.getByRole("link", { name: /start free/i })).toBeVisible();
+  });
+
+  test("Pricing nav link routes to /pricing", async ({ page, viewport }) => {
+    test.skip(!!viewport && viewport.width < 900, "Nav links collapse into the hamburger ≤880px");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await nav.getByRole("link", { name: "Pricing" }).click();
+    await expect(page).toHaveURL(/\/pricing/);
   });
 });
 
@@ -60,176 +80,106 @@ test.describe("Landing Page — Sections", () => {
     await page.goto("/");
   });
 
-  test("company logos section is visible", async ({ page }) => {
-    await page.evaluate(() => window.scrollBy(0, 800));
-    await expect(page.getByText("Practice for interviews at 50+ companies including")).toBeVisible({ timeout: 5000 });
+  test("interview-types section is present", async ({ page }) => {
+    const heading = page.getByRole("heading", { name: /Ten interview types/ });
+    await heading.scrollIntoViewIfNeeded();
+    await expect(heading).toBeVisible({ timeout: 5000 });
   });
 
-  test("how it works section has three steps", async ({ page }) => {
-    const section = page.locator("#how-it-works");
-    await section.scrollIntoViewIfNeeded();
-    await expect(section.getByText("Upload your resume")).toBeVisible({ timeout: 5000 });
-    await expect(section.getByText("Practice in real time")).toBeVisible();
-    await expect(section.getByText("Review scored feedback")).toBeVisible();
-  });
-
-  test("See How It Works button scrolls to section", async ({ page }) => {
-    await page.getByRole("button", { name: "See How It Works" }).click();
-    await page.waitForTimeout(800);
-    const section = page.locator("#how-it-works");
-    await expect(section).toBeInViewport();
+  test("how-it-works section has three steps", async ({ page }) => {
+    const heading = page.getByRole("heading", { name: /Three steps/ });
+    await heading.scrollIntoViewIfNeeded();
+    await expect(heading).toBeVisible({ timeout: 5000 });
   });
 
   test("features section shows heading", async ({ page }) => {
-    const section = page.locator("#features");
-    await section.scrollIntoViewIfNeeded();
-    await expect(section.getByText("Not generic tips. Specific, scored practice.")).toBeVisible({ timeout: 5000 });
+    const heading = page.getByRole("heading", { name: /Not another/ });
+    await heading.scrollIntoViewIfNeeded();
+    await expect(heading).toBeVisible({ timeout: 5000 });
   });
 
-  test("pricing section has Free, Starter, and Pro plans", async ({ page }) => {
-    // Trigger lazy loading by scrolling to bottom, then scroll again after lazy content mounts
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    // Wait for lazy-loaded pricing section to appear in DOM
-    const pricing = page.locator("#pricing");
-    await expect(pricing).toBeAttached({ timeout: 8000 });
+  test("pricing section shows the four canonical plans", async ({ page }) => {
+    // HomepageV2 pricing lives at <section aria-labelledby="hd-pricing">, far
+    // down the page behind scroll-reveal. Scroll it into view, then assert.
+    const pricing = page.locator('section[aria-labelledby="hd-pricing"]');
     await pricing.scrollIntoViewIfNeeded();
-    await expect(pricing.getByRole("heading", { name: "Free" })).toBeVisible({ timeout: 8000 });
-    await expect(pricing.getByRole("heading", { name: "Starter" })).toBeVisible();
-    await expect(pricing.getByRole("heading", { name: "Pro" })).toBeVisible();
+    await expect(pricing.getByText("Free", { exact: true })).toBeVisible({ timeout: 8000 });
+    await expect(pricing.getByText("Per session", { exact: true })).toBeVisible();
+    await expect(pricing.getByText("Weekly", { exact: true })).toBeVisible();
+    await expect(pricing.getByText("Monthly", { exact: true })).toBeVisible();
   });
 
-  test("pricing section shows Sessions and Annual plans", async ({ page }) => {
-    // Trigger lazy loading by scrolling to bottom, then scroll again after lazy content mounts
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const pricing = page.locator("#pricing");
-    await expect(pricing).toBeAttached({ timeout: 8000 });
+  test("pricing section shows canonical prices and no removed annual plan", async ({ page }) => {
+    const pricing = page.locator('section[aria-labelledby="hd-pricing"]');
     await pricing.scrollIntoViewIfNeeded();
-    await expect(pricing.getByRole("heading", { name: "Sessions" })).toBeVisible({ timeout: 8000 });
-    await expect(pricing.getByRole("heading", { name: "Annual" })).toBeVisible();
-  });
-
-  test("testimonials section heading is visible", async ({ page }) => {
-    // Trigger lazy loading by scrolling to bottom, then scroll again after lazy content mounts
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect(page.getByText("They practiced here. Then got the offer.")).toBeVisible({ timeout: 8000 });
+    // Scope to the tier grid so prices don't collide with the masthead's
+    // "From ₹9 / session" eyebrow.
+    const grid = pricing.locator(".mv2-pricing-grid");
+    await expect(grid.getByText("₹9")).toBeVisible({ timeout: 8000 });
+    await expect(grid.getByText("₹49")).toBeVisible();
+    await expect(grid.getByText("₹149")).toBeVisible();
+    // The annual plan was removed from the product.
+    await expect(pricing.getByText("Annual")).toHaveCount(0);
+    await expect(page.getByText("₹1,199")).toHaveCount(0);
   });
 });
 
 test.describe("Landing Page — FAQ", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    // Trigger lazy loading by scrolling to bottom of page
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    // Wait for lazy content to mount, then scroll again to reach newly-rendered sections
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    // Wait for FAQ heading to appear (lazy-loaded + reveal animation)
-    await expect(page.getByText("Frequently asked questions")).toBeVisible({ timeout: 10000 });
-    // Scroll the FAQ section into view so reveal fires on child elements
-    const faqHeading = page.getByText("Frequently asked questions");
-    await faqHeading.scrollIntoViewIfNeeded();
+    const faq = page.locator("#faq");
+    await faq.scrollIntoViewIfNeeded();
+    await expect(page.getByRole("heading", { name: /Things you'd ask/ })).toBeVisible({ timeout: 10000 });
   });
 
-  test("FAQ section displays questions", async ({ page }) => {
-    await expect(page.getByText("Is HireStepX free to use?")).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("How does the AI mock interview work?")).toBeVisible();
+  test("FAQ section displays pricing questions by default", async ({ page }) => {
+    await expect(page.getByText("Is the free tier actually free?")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Do plans auto-renew?")).toBeVisible();
   });
 
-  test("FAQ item expands on click", async ({ page }) => {
-    const faqButton = page.getByRole("button").filter({ hasText: "Is HireStepX free to use?" });
-    await expect(faqButton).toBeVisible({ timeout: 5000 });
-    await faqButton.click();
-    // Answer should become visible after expanding
-    await expect(page.getByText(/Start with 3 full AI mock interviews/)).toBeVisible({ timeout: 3000 });
+  test("first FAQ item is open by default", async ({ page }) => {
+    // Native <details open> on the first item — its answer is visible.
+    await expect(page.getByText(/3 full mock sessions, full scoring/)).toBeVisible({ timeout: 5000 });
   });
 
-  test("FAQ item collapses on second click", async ({ page }) => {
-    const faqButton = page.getByRole("button").filter({ hasText: "Is HireStepX free to use?" });
-    await expect(faqButton).toBeVisible({ timeout: 5000 });
-    // Expand
-    await faqButton.click();
-    await expect(faqButton).toHaveAttribute("aria-expanded", "true");
-    // Collapse
-    await faqButton.click();
-    // The answer container collapses via maxHeight: 0 — check aria-expanded
-    await expect(faqButton).toHaveAttribute("aria-expanded", "false");
+  test("switching category tab swaps the questions", async ({ page }) => {
+    const tablist = page.getByRole("tablist", { name: "FAQ categories" });
+    await tablist.getByRole("tab", { name: /Product/ }).click();
+    await expect(page.getByText("Why not just use ChatGPT?")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Is the free tier actually free?")).toHaveCount(0);
   });
 
-  test("FAQ aria-expanded toggles correctly", async ({ page }) => {
-    const faqButton = page.getByRole("button").filter({ hasText: "Is HireStepX free to use?" });
-    await expect(faqButton).toBeVisible({ timeout: 5000 });
-    await expect(faqButton).toHaveAttribute("aria-expanded", "false");
-    await faqButton.click();
-    await expect(faqButton).toHaveAttribute("aria-expanded", "true");
-    await faqButton.click();
-    await expect(faqButton).toHaveAttribute("aria-expanded", "false");
-  });
-
-  test("only one FAQ item is open at a time", async ({ page }) => {
-    // Scope to FAQ section to avoid matching other aria-expanded buttons on the page
-    const faqSection = page.getByText("Frequently asked questions").locator("..").locator("..");
-    const faqButtons = faqSection.locator("button[aria-expanded]");
-    const count = await faqButtons.count();
-    test.skip(count < 2, "Not enough FAQ items to test accordion");
-    const first = faqButtons.nth(0);
-    const second = faqButtons.nth(1);
-    await first.scrollIntoViewIfNeeded();
-    await expect(first).toBeVisible({ timeout: 5000 });
-    // Open first FAQ
-    await first.click();
-    await expect(first).toHaveAttribute("aria-expanded", "true");
-    // Open second FAQ — first should close (accordion behavior)
-    await second.click();
-    await expect(second).toHaveAttribute("aria-expanded", "true");
-    await expect(first).toHaveAttribute("aria-expanded", "false");
+  test("a collapsed FAQ item expands on click", async ({ page }) => {
+    const item = page.locator("details.mv2p-faq").filter({ hasText: "Do plans auto-renew?" });
+    await item.locator("summary").click();
+    await expect(item).toHaveJSProperty("open", true);
+    await expect(page.getByText(/Weekly and Monthly are one-time top-ups/)).toBeVisible({ timeout: 3000 });
   });
 });
 
 test.describe("Landing Page — Footer", () => {
   test("footer renders with brand and legal links", async ({ page }) => {
     await page.goto("/");
-    // Trigger lazy loading — footer is lazy-loaded via React.lazy
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    // Wait for lazy content to mount, then scroll again to reach the footer
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
-    await expect(footer).toBeAttached({ timeout: 10000 });
     await footer.scrollIntoViewIfNeeded();
-    await expect(footer.getByText("HireStepX")).toBeVisible({ timeout: 5000 });
-    await expect(footer.getByText("Privacy Policy")).toBeVisible();
-    await expect(footer.getByText("Terms of Service")).toBeVisible();
+    await expect(footer.getByText(/HireStepX/).first()).toBeVisible({ timeout: 8000 });
+    await expect(footer.getByRole("link", { name: "Privacy" }).first()).toBeVisible();
+    await expect(footer.getByRole("link", { name: "Terms" }).first()).toBeVisible();
   });
 
-  test("privacy policy link navigates correctly", async ({ page }) => {
+  test("privacy link navigates correctly", async ({ page }) => {
     await page.goto("/");
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
-    await expect(footer).toBeAttached({ timeout: 10000 });
     await footer.scrollIntoViewIfNeeded();
-    await expect(footer.getByText("Privacy Policy")).toBeVisible({ timeout: 5000 });
-    await footer.getByText("Privacy Policy").click();
+    await footer.getByRole("link", { name: "Privacy" }).first().click();
     await expect(page).toHaveURL(/\/privacy/);
   });
 
-  test("terms of service link navigates correctly", async ({ page }) => {
+  test("terms link navigates correctly", async ({ page }) => {
     await page.goto("/");
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
-    await expect(footer).toBeAttached({ timeout: 10000 });
     await footer.scrollIntoViewIfNeeded();
-    await expect(footer.getByText("Terms of Service")).toBeVisible({ timeout: 5000 });
-    await footer.getByText("Terms of Service").click();
+    await footer.getByRole("link", { name: "Terms" }).first().click();
     await expect(page).toHaveURL(/\/terms/);
   });
 });
@@ -237,29 +187,30 @@ test.describe("Landing Page — Footer", () => {
 test.describe("Landing Page — Mobile", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test("mobile nav toggle exists", async ({ page }) => {
+  test("mobile nav hamburger is visible", async ({ page }) => {
     await page.goto("/");
-    const toggle = page.locator(".mobile-nav-toggle");
-    await expect(toggle).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
   });
 
-  test("mobile nav opens overlay with links", async ({ page }) => {
+  test("mobile nav opens menu with links", async ({ page }) => {
     await page.goto("/");
-    await page.locator(".mobile-nav-toggle").click();
-    await expect(page.locator("[role=dialog]")).toBeVisible();
-    await expect(page.getByText("Sign up").last()).toBeVisible();
+    await page.getByRole("button", { name: "Open menu" }).click();
+    const menu = page.locator("#mv2-mobile-menu");
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Pricing" })).toBeVisible();
+    await expect(menu.getByRole("link", { name: /start free/i })).toBeVisible();
   });
 
   test("mobile nav closes on Escape", async ({ page }) => {
     await page.goto("/");
-    await page.locator(".mobile-nav-toggle").click();
-    await expect(page.locator("[role=dialog]")).toBeVisible();
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(page.locator("#mv2-mobile-menu")).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.locator("[role=dialog]")).not.toBeVisible();
+    await expect(page.locator("#mv2-mobile-menu")).toHaveCount(0);
   });
 
   test("hero CTA is visible on mobile", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("Get Started Free").first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /Start round 01/ }).first()).toBeVisible();
   });
 });

@@ -250,7 +250,7 @@ export async function checkSessionLimit(
     if (tier === "team") { clearTimeout(timer); return { allowed: true }; }
 
     if (tier === "pro") {
-      // Pro: 30 sessions per month
+      // Pro: 40 sessions per month
       const now2 = new Date();
       const monthStart = new Date(Date.UTC(now2.getUTCFullYear(), now2.getUTCMonth(), 1));
       const monthISO = monthStart.toISOString();

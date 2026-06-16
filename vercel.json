@@ -16,7 +16,7 @@
     },
     {
       "path": "/api/uptime-check",
-      "schedule": "0 6 * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/re-engage-users",

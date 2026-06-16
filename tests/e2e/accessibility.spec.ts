@@ -128,27 +128,30 @@ test.describe("Accessibility — Legal Pages", () => {
 test.describe("Accessibility — Mobile Navigation", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test("mobile menu has role=dialog and aria-modal", async ({ page }) => {
+  test("mobile menu toggle exposes an accessible label", async ({ page }) => {
     await page.goto("/");
-    await page.locator(".mobile-nav-toggle").click();
-    const dialog = page.locator("[role=dialog][aria-modal=true]");
-    await expect(dialog).toBeVisible();
+    // HomepageV2 nav uses a labelled hamburger button (not a modal dialog).
+    await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(page.locator("#mv2-mobile-menu")).toBeVisible();
   });
 
-  test("mobile menu toggle has aria-expanded", async ({ page }) => {
+  test("mobile menu toggle has aria-expanded and aria-controls", async ({ page }) => {
     await page.goto("/");
-    const toggle = page.locator(".mobile-nav-toggle");
+    const toggle = page.getByRole("button", { name: "Open menu" });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(toggle).toHaveAttribute("aria-controls", "mv2-mobile-menu");
     await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    // Label flips to "Close menu" once open; assert expanded state on it.
+    await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
   });
 
   test("Escape key closes mobile menu", async ({ page }) => {
     await page.goto("/");
-    await page.locator(".mobile-nav-toggle").click();
-    await expect(page.locator("[role=dialog]")).toBeVisible();
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(page.locator("#mv2-mobile-menu")).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.locator("[role=dialog]")).not.toBeVisible();
+    await expect(page.locator("#mv2-mobile-menu")).toHaveCount(0);
   });
 });
 
@@ -205,32 +208,27 @@ test.describe("Accessibility — Keyboard Navigation", () => {
 test.describe("Accessibility — FAQ Section", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    // Two-phase scroll to trigger lazy loading
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect(page.getByText("Frequently asked questions")).toBeVisible({ timeout: 10000 });
-    await page.getByText("Frequently asked questions").scrollIntoViewIfNeeded();
+    const faq = page.locator("#faq");
+    await faq.scrollIntoViewIfNeeded();
+    await expect(page.getByRole("heading", { name: /Things you'd ask/ })).toBeVisible({ timeout: 10000 });
   });
 
-  test("FAQ buttons have aria-expanded attribute", async ({ page }) => {
-    const faqSection = page.getByText("Frequently asked questions").locator("..").locator("..");
-    const faqButtons = faqSection.locator("button[aria-expanded]");
-    const count = await faqButtons.count();
+  test("FAQ category tabs expose aria-selected", async ({ page }) => {
+    const tablist = page.getByRole("tablist", { name: "FAQ categories" });
+    const tabs = tablist.getByRole("tab");
+    const count = await tabs.count();
     expect(count).toBeGreaterThan(0);
-
-    // All FAQ buttons should start collapsed
-    for (let i = 0; i < count; i++) {
-      await expect(faqButtons.nth(i)).toHaveAttribute("aria-expanded", "false");
-    }
+    // Exactly one tab is selected at a time.
+    await expect(tablist.locator('[role="tab"][aria-selected="true"]')).toHaveCount(1);
   });
 
-  test("FAQ is keyboard-operable", async ({ page }) => {
-    const faqSection = page.getByText("Frequently asked questions").locator("..").locator("..");
-    const firstFaq = faqSection.locator("button[aria-expanded]").first();
-    await firstFaq.scrollIntoViewIfNeeded();
-    await firstFaq.focus();
+  test("FAQ items use native details and are keyboard-operable", async ({ page }) => {
+    // A collapsed item: open the auto-renew question via keyboard.
+    const item = page.locator("details.mv2p-faq").filter({ hasText: "Do plans auto-renew?" });
+    const summary = item.locator("summary");
+    await summary.scrollIntoViewIfNeeded();
+    await summary.focus();
     await page.keyboard.press("Enter");
-    await expect(firstFaq).toHaveAttribute("aria-expanded", "true");
+    await expect(item).toHaveJSProperty("open", true);
   });
 });

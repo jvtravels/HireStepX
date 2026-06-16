@@ -34,7 +34,7 @@ test.describe("Interview Flow — Unauthenticated", () => {
 test.describe("Interview Quick-Start — Unauthenticated", () => {
   test("quick start from landing page redirects to signup", async ({ page }) => {
     await page.goto("/");
-    await page.getByText("Get Started Free").first().click();
+    await page.getByRole("link", { name: /Start round 01/ }).first().click();
     await expect(page).toHaveURL(/\/signup/, { timeout: 5000 });
   });
 

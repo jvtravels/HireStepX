@@ -114,12 +114,12 @@ test.describe("Dashboard — Authenticated", () => {
 test.describe("Legal Pages — Public", () => {
   test("terms page loads", async ({ page }) => {
     await page.goto("/terms");
-    await expect(page.getByRole("heading", { name: "Terms of Service" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /Terms of service/i })).toBeVisible();
   });
 
   test("privacy page loads", async ({ page }) => {
     await page.goto("/privacy");
-    await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /Privacy/i })).toBeVisible();
   });
 });
 

@@ -220,7 +220,7 @@ export default function OnboardingComplete() {
                 onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.25)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.15)"; }}
               >
-                View Plans — from ₹10/session
+                View Plans — from ₹9/session
               </button>
             </div>
           )}
@@ -268,7 +268,7 @@ export default function OnboardingComplete() {
                 onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(180,83,9,0.35)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(180,83,9,0.25)"; }}
               >
-                Upgrade — from ₹10/session
+                Upgrade — from ₹9/session
               </button>
             </div>
           ) : (

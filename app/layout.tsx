@@ -197,7 +197,7 @@ const structuredData = [
       {
         "@type": "Question",
         name: "How much does it cost compared to a career coach?",
-        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b910 per session, or \u20b9149/month for 30 sessions with full AI coaching and analytics, available 24/7." },
+        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b99 per session, \u20b949/week for 10 sessions, or \u20b9149/month for 40 sessions with full AI coaching and analytics, available 24/7." },
       },
     ],
   },

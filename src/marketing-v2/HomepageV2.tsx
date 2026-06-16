@@ -1313,8 +1313,8 @@ export function HeroV2() {
               }}
             >
               AI mock interviews you actually speak to — scored against the
-              rubrics real Indian panels use. First three rounds free, no card
-              needed. STAR breakdown back before your chai cools.
+              rubrics real Indian panels use. Your first 3 sessions are free, no
+              card needed. STAR breakdown back before your chai cools.
             </p>
 
             <div
@@ -3941,7 +3941,7 @@ export function FinalCTAFooterV2() {
             }}
           >
             Free to start. No card, no commitment. Open your mic and run your
-            first round in under two minutes.
+            first session in under two minutes.
           </p>
           <a
             href="/signup"
@@ -3961,7 +3961,7 @@ export function FinalCTAFooterV2() {
               boxShadow: shadows.cta,
             }}
           >
-            Start your free round
+            Start free — 3 sessions
             <span aria-hidden style={{ fontSize: 20 }}>→</span>
           </a>
         </div>
