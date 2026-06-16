@@ -244,7 +244,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
       {/* Sidebar */}
       <aside aria-label="Navigation sidebar" style={{
-        width: 260, borderRight: `1px solid ${c.border}`, padding: "28px 18px 0",
+        width: 260, borderRight: `1px solid ${c.border}`, padding: isMobile ? "16px 14px 0" : "28px 18px 0",
         display: "flex", flexDirection: "column", position: "fixed", top: 0, bottom: 0,
         background: c.cream,
         zIndex: 20, overflow: "hidden",
@@ -252,18 +252,18 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
       }}>
         {isMobile && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 24, padding: "0 12px" }}>
-            <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 12, padding: "0 4px" }}>
+            <button onClick={() => setSidebarOpen(false)} aria-label="Close navigation menu" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 6 }}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         )}
-        <nav aria-label="Main navigation" style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 auto", overflow: "hidden" }}>
+        <nav aria-label="Main navigation" style={{ display: "flex", flexDirection: "column", gap: 2, flex: "0 0 auto" }}>
           {navItems.map((item) => (
             <button key={item.id}
               aria-current={activeNav === item.id ? "page" : undefined}
               aria-label={item.label}
               onClick={() => { nav.push(item.path); if (isMobile) setSidebarOpen(false); }}
               style={{
-                display: "flex", alignItems: "center", gap: 12, padding: "11px 14px",
+                display: "flex", alignItems: "center", gap: 12, padding: isMobile ? "10px 12px" : "11px 14px",
                 borderRadius: 10, border: "none", cursor: "pointer",
                 background: activeNav === item.id ? c.creamSoft : "transparent",
                 color: activeNav === item.id ? c.ivory : c.stone,
@@ -286,6 +286,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             </button>
           ))}
         </nav>
+
+        {/* Spacer — pushes plan card + user info to bottom */}
+        <div style={{ flex: 1 }} />
 
         {/* Plan Status */}
         <div style={{ margin: "0 8px 12px", padding: "14px", borderRadius: 12, background: isPro ? "rgba(21,128,61,0.11)" : (isFree && sessionsRemaining === 0) ? "rgba(180,83,9,0.14)" : "rgba(180,83,9,0.08)", border: `1px solid ${isPro ? "rgba(21,128,61,0.22)" : (isFree && sessionsRemaining === 0) ? "rgba(185,28,28,0.28)" : "rgba(180,83,9,0.2)"}`, flexShrink: 0 }}>
