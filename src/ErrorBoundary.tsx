@@ -1,6 +1,10 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
 import { c, font } from "./tokens";
 
+// Raw error messages can leak stack traces, internal identifiers, or PII into
+// the UI. Show them only in development; production users get the friendly copy.
+const IS_DEV = typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -90,7 +94,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <p style={{ fontSize: 13, color: c.stone, maxWidth: 400, lineHeight: 1.6, marginBottom: 24 }}>
             An unexpected error occurred. Your interview data is safe. Try refreshing, or go back to the dashboard.
           </p>
-          {this.state.error && (
+          {IS_DEV && this.state.error && (
             <pre
               style={{
                 fontSize: 11,
@@ -202,7 +206,7 @@ export class RouteErrorBoundary extends Component<{ children: ReactNode }, Route
           <p style={{ fontSize: 13, color: c.stone, marginBottom: 16, maxWidth: 360, margin: "0 auto 16px" }}>
             Your data is safe. Try again or navigate to another section.
           </p>
-          {this.state.error && (
+          {IS_DEV && this.state.error && (
             <pre style={{
               fontSize: 11, color: c.ember, background: "rgba(185,28,28,0.06)",
               border: "1px solid rgba(185,28,28,0.15)", borderRadius: 8,

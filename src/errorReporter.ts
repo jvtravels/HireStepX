@@ -3,6 +3,10 @@
 /* Also forwards to Sentry if NEXT_PUBLIC_SENTRY_DSN is configured. */
 /* Falls back silently if neither endpoint is available */
 
+import { shouldReportRejection } from "./errorReporterFilters";
+
+export { shouldReportRejection };
+
 const MAX_ERRORS_PER_SESSION = 20;
 let errorCount = 0;
 const SENTRY_DSN = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SENTRY_DSN) || "";
@@ -114,9 +118,8 @@ export function initErrorReporter() {
   // Unhandled promise rejections
   window.addEventListener("unhandledrejection", (event) => {
     const reason = event.reason;
+    if (!shouldReportRejection(reason)) return;
     const message = reason instanceof Error ? reason.message : String(reason);
-    // Don't report aborted fetches or common non-errors
-    if (message.includes("AbortError") || message.includes("Failed to fetch")) return;
     const stack = reason instanceof Error ? reason.stack : undefined;
     sendError(buildReport(`Unhandled rejection: ${message.slice(0, 200)}`, stack), reason);
   });
