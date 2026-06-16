@@ -4,9 +4,9 @@
 
 export const PLAN_CAPS = {
   free: { mock: 3, resumeParses: 5 },
-  starter: { mock: 40, resumeParses: 25 },   // 10/week × 4
-  pro: { mock: 40, resumeParses: 50 },
-  team: { mock: Infinity, resumeParses: Infinity },
+  starter: { mock: 40, resumeParses: 5 },
+  pro: { mock: 40, resumeParses: 5 },
+  team: { mock: Infinity, resumeParses: 5 },
 } as const;
 
 export type Tier = keyof typeof PLAN_CAPS;

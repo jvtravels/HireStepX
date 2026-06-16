@@ -203,7 +203,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           padding: "0 20px",
           background: c.cream,
           borderBottom: `1px solid ${c.border}`,
-          zIndex: 15,
+          zIndex: 18,
         }}>
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
             <span style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, color: c.ivory, letterSpacing: "-0.01em", lineHeight: 1 }}>HireStepX</span>
@@ -244,16 +244,34 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
       {/* Sidebar */}
       <aside aria-label="Navigation sidebar" style={{
-        width: 260, borderRight: `1px solid ${c.border}`, padding: isMobile ? "16px 14px 0" : "28px 18px 0",
+        width: 260, borderRight: `1px solid ${c.border}`, padding: isMobile ? "0 14px 0" : "28px 18px 0",
         display: "flex", flexDirection: "column", position: "fixed", top: 0, bottom: 0,
         background: c.cream,
         zIndex: 20, overflow: "hidden",
         transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-100%)") : "translateX(0)",
         transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
       }}>
+        {/* Mobile sidebar header — wordmark + hairline, same height as fixed topbar */}
         {isMobile && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 12, padding: "0 4px" }}>
-            <button onClick={() => setSidebarOpen(false)} aria-label="Close navigation menu" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 6 }}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <div style={{
+            height: 56,
+            display: "flex", alignItems: "center",
+            borderBottom: `1px solid ${c.border}`,
+            marginBottom: 8,
+            marginLeft: -14, marginRight: -14,
+            paddingLeft: 20, paddingRight: 20,
+            flexShrink: 0,
+          }}>
+            <Link
+              href="/"
+              onClick={() => setSidebarOpen(false)}
+              style={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+            >
+              <span style={{
+                fontFamily: font.display, fontSize: 20, fontWeight: 400,
+                color: c.ivory, letterSpacing: "-0.01em", lineHeight: 1,
+              }}>HireStepX</span>
+            </Link>
           </div>
         )}
         <nav aria-label="Main navigation" style={{ display: "flex", flexDirection: "column", gap: 2, flex: "0 0 auto" }}>

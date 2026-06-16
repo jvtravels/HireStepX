@@ -254,6 +254,7 @@ function StatTile({ label, value, qualifier, qualifierColor, bar }: StatTileProp
 
 const PageShell = ({ children }: { children: ReactNode }) => (
   <div
+    className="rtv-page-shell"
     style={{
       background: t.cream,
       minHeight: "100%",
@@ -262,6 +263,7 @@ const PageShell = ({ children }: { children: ReactNode }) => (
       padding: "16px 24px 64px",
     }}
   >
+    <style>{`@media (max-width: 768px) { .rtv-page-shell { padding-left: 0 !important; padding-right: 0 !important; } }`}</style>
     <div style={{ maxWidth: 980, margin: "0 auto" }}>{children}</div>
   </div>
 );

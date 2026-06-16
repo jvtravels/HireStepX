@@ -262,7 +262,7 @@ export default function SettingsPage() {
     <div style={{ width: "100%", maxWidth: 880, margin: "0 auto", isolation: "isolate" }}>
       {/* ── Sticky Header + Tabs ── */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 50,
+        position: "sticky", top: 0, zIndex: 10,
         background: c.obsidian,
         margin: "-12px 0 24px",
         padding: "12px 0 16px",

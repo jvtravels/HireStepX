@@ -72,7 +72,7 @@ function ExportButtons() {
 function StickyHeader({ d, range, onRange, showControls, stickTop = 0 }: { d: Fixture; range: RangeKey; onRange: (r: RangeKey) => void; showControls: boolean; stickTop?: number }) {
   const band = BAND_META[d.band];
   return (
-    <header style={{ position: "sticky", top: stickTop, zIndex: 20, background: t.cream, borderBottom: `1px solid ${t.line}` }}>
+    <header style={{ position: "sticky", top: stickTop, zIndex: 10, background: t.cream, borderBottom: `1px solid ${t.line}` }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 22px", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
@@ -188,7 +188,7 @@ function MobileShell({ d }: { d: Fixture }) {
     <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
       <StickyHeader d={d} range={range} onRange={setRange} showControls={false} stickTop={-20} />
-      <div style={{ padding: "14px 14px 48px" }}>
+      <div style={{ padding: "14px 0 48px" }}>
         <div style={{ marginBottom: 16 }}><SegControl range={range} onChange={setRange} /></div>
         <AnalyticsBody d={d} narrow range={range} activePillar={activePillar} onPillar={onPillar} />
       </div>
