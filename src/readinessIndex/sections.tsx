@@ -268,16 +268,16 @@ export function SessionDiff({ d, narrow }: { d: Fixture; narrow: boolean }) {
           <Title as="h3" size={20}>What moved between two points</Title>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontFamily: f.mono, fontSize: 10, color: t.inkSoft, textTransform: "uppercase" }}>
+          <label htmlFor="rix-compare-from" style={{ display: "inline-flex", gap: 6, alignItems: "center", fontFamily: f.mono, fontSize: 10, color: t.inkSoft, textTransform: "uppercase" }}>
             From
-            <select className="rix-focus" value={aId} onChange={(e) => setA(e.target.value)} style={selStyle}>
+            <select id="rix-compare-from" name="rix-compare-from" aria-label="Compare from session" className="rix-focus" value={aId} onChange={(e) => setA(e.target.value)} style={selStyle}>
               {d.snapshots.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </label>
           <span aria-hidden="true" style={{ color: t.inkFaint }}>→</span>
-          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontFamily: f.mono, fontSize: 10, color: t.inkSoft, textTransform: "uppercase" }}>
+          <label htmlFor="rix-compare-to" style={{ display: "inline-flex", gap: 6, alignItems: "center", fontFamily: f.mono, fontSize: 10, color: t.inkSoft, textTransform: "uppercase" }}>
             To
-            <select className="rix-focus" value={bId} onChange={(e) => setB(e.target.value)} style={selStyle}>
+            <select id="rix-compare-to" name="rix-compare-to" aria-label="Compare to session" className="rix-focus" value={bId} onChange={(e) => setB(e.target.value)} style={selStyle}>
               {d.snapshots.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </label>
