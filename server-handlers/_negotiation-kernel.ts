@@ -4360,6 +4360,25 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * Generalises across "what's the offer?", "what is your offer?",
    * "tell me the offer", "share your number", "what's the package"
    * without enumerating each fixture. */
+  /* 2026-06-17 — RECALL WIDENING (live-staging finding). The original
+   * shapes (A)-(D) required the offer-noun to sit IMMEDIATELY after a fixed
+   * ask-verb, so natural request frames slipped through and left
+   * offerAskedAtTurn null — which starves the planner's Fix-5 anchor gate
+   * (it anchors regardless of discovery completeness ONLY when this fires),
+   * looping the recruiter on discovery-probe deflections forever instead of
+   * putting a number down. A live negotiation stalled exactly this way on
+   * "what fitment can you put on the table?" and "where does the offer
+   * land?" — both unmatched. Shapes (E)-(H) add the missing frames.
+   *
+   * COST MODEL — unlike the _output-rail-offer-ask detector (which biases
+   * PRECISION because a false positive there swaps a real interaction for a
+   * canned stub), THIS gate biases RECALL: a false positive merely anchors
+   * the offer a touch early, which post-discovery is always legitimate HR
+   * behaviour. So the two detectors are deliberately NOT consolidated; they
+   * optimise opposite error costs. The "on the table" / "land" frames are
+   * scoped to a candidate REQUEST ("can you …", "put a number …", wh-form)
+   * so a candidate DISCLOSURE ("I have a competing offer on the table")
+   * does not trip the gate. Locked by negotiationOfferAskDetection.test. */
   const OFFER_ASK_RE = new RegExp(
     [
       // (A) ASK-VERB + optional possessor + offer-noun
@@ -4370,6 +4389,18 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       String.raw`\bbest\s+and\s+final\b`,
       // (D) "what are you offering"
       String.raw`\bwhat\s+are\s+you\s+offering\b`,
+      // (E1) request to put something "on the table": "can you put … on the table"
+      String.raw`\b(?:can|could|would|will)\s+you\b[^.?!]{0,40}\bon\s+the\s+table\b`,
+      // (E2) "put a number/offer/fitment on the table"
+      String.raw`\bput\s+(?:a\s+|the\s+|your\s+|some\s+)?(?:number|offer|fitment|figure|range)\s+on\s+the\s+table\b`,
+      // (F1) wh-form "where does/will/can the offer/number/… (land)"
+      String.raw`\bwhere\s+(?:does|will|would|can|is)\b[^.?!]{0,30}\b(?:offer|fitment|number|package|range)\b`,
+      // (F2) offer-noun + landing verb ("the offer lands / comes in at")
+      String.raw`\b(?:offer|fitment|number|package|range)\b[^.?!]{0,25}\b(?:land|lands|come\s+in|comes\s+in)\b`,
+      // (G) "what [offer-noun] can you offer / put / share / do / bring / stretch"
+      String.raw`\bwhat\s+(?:offer|fitment|number|package|range|figure)?\s*can\s+you\s+(?:offer|do|put|bring|stretch|share|give|provide)\b`,
+      // (H) "how much can you (offer) / are you offering"
+      String.raw`\bhow\s+much\s+(?:can\s+you|are\s+you\s+offering)\b`,
     ].join("|"),
     "i",
   );
