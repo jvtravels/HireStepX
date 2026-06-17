@@ -2316,16 +2316,37 @@ export function computeTurnDelta(
     }
   }
 
-  /* Competing offer — either numeric or named-vague signal. */
+  /* Competing offer — either numeric or named-vague signal.
+   *
+   * Live-staging finding (2026-06-17, completion sink #4): a candidate
+   * CLOSING on OUR offer ("happy to accept and move ahead with the offer
+   * letter") tripped the competing-offer credibility probe, because the
+   * format-status patterns in extractCompetingOfferDetail match a bare
+   * "offer letter" — which, in a close context, refers to OUR letter, not a
+   * competitor's. That set disclosedCompetingOffer, and the competing-
+   * credibility reactive rule pre-empted the post-anchor acceptance close,
+   * so the bot deflected instead of closing like a real HR.
+   *
+   * Fix: a competingOfferDetail whose ONLY signal is a format/state `status`
+   * (letter / email / verbal / signed) is ambiguous on its own. Treat it as
+   * a competing disclosure only when the SAME utterance is NOT an acceptance
+   * of our offer. Concrete competing context (company name, stage, amount,
+   * letter-share offer, on-hold) remains an unconditional trigger — a real
+   * competing disclosure carries one of those. */
+  const acceptingOurOffer =
+    parsed.signalsAcceptance || detectExplicitAcceptance(rawAnswer).accepted;
+  const competingDetailSignal =
+    parsed.competingOfferDetail.hasAny &&
+    (parsed.competingOfferDetail.company != null ||
+      parsed.competingOfferDetail.stage != null ||
+      parsed.competingOfferDetail.letterShareOffered ||
+      parsed.competingOfferDetail.onHold ||
+      parsed.competingOfferDetail.amount != null ||
+      (parsed.competingOfferDetail.status != null && !acceptingOurOffer));
   if (
     (post.competingOffer != null && post.competingOffer !== pre.competingOffer) ||
     parsed.signalsCompetingExistsWithoutNumber ||
-    (parsed.competingOfferDetail.hasAny &&
-      (parsed.competingOfferDetail.company != null ||
-        parsed.competingOfferDetail.status != null ||
-        parsed.competingOfferDetail.stage != null ||
-        parsed.competingOfferDetail.letterShareOffered ||
-        parsed.competingOfferDetail.onHold))
+    competingDetailSignal
   ) {
     d.disclosedCompetingOffer = true;
   }
