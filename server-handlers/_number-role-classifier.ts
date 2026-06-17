@@ -418,8 +418,14 @@ function findSalarySpans(text: string): SalarySpan[] {
    * mark a bare integer as a counter destination ("get the fixed closer to
    * 28") so Pass 4 emits the span; "to be N" is the positional opener for
    * "I'd like the fixed component to be 28". */
-  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target|expect(?:ing|ed)?|hoping|aim(?:ing)?|looking\s+for|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move)\b/i;
-  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|was|to)\s+|\b(?:to\s+be|closer\s+to|up\s+to)\s+|\b(?:anchor(?:ing)?|target|expect(?:ing|ed)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
+  /* Inflection alignment (live-staging, 2026-06-17): these two gate
+   * regexes hardcoded bare "target"/"expect", so `\btarget\b` failed to
+   * match the inflected "targeting" — "I was really targeting 28 fixed"
+   * (bare integer, no LPA unit) emitted no span and the counter vanished.
+   * Mirror the inflected forms already used in TARGET_CUES.left so the
+   * Pass-4 gate and the scored cue table stay in sync. */
+  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move)\b/i;
+  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to)\s+|\b(?:to\s+be|closer\s+to|up\s+to)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
   const SALARY_UNIT_NEARBY = /[\d,.]\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
   for (const m of text.matchAll(BARE_INT_RE)) {
     if (m.index == null) continue;

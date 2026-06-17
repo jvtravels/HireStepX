@@ -220,6 +220,18 @@ const ROWS: Row[] = [
     text: "I'd like the fixed component to be 28.",
     expect: { target: 28, targetComponent: "fixed" },
   },
+  {
+    // Inflection alignment: bare-integer "targeting" (no LPA unit) must
+    // bind — the Pass-4 gate used to hardcode uninflected "target".
+    label: "counter: 'I was really targeting 28 fixed though' → 28 fixed",
+    text: "Appreciate that. I was really targeting 28 fixed though — can we get it closer to that?",
+    expect: { target: 28, targetComponent: "fixed" },
+  },
+  {
+    label: "copula: 'My expectations are 32' (bare) → 32 total",
+    text: "My expectations are 32.",
+    expect: { target: 32, targetComponent: "total" },
+  },
 
   /* ── Negative cases (must NOT bind) ────────────────────────────── */
   { label: "rejects 100 crore (clamp)",  text: "I'm looking for 100 crore",             expect: { target: null } },
