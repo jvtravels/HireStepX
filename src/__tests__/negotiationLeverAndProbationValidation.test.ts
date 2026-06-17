@@ -130,3 +130,61 @@ describe("Gap D — fresher probation band stays at or below initialOffer", () =
     expect(() => deserializeState(serializeState(state))).not.toThrow();
   });
 });
+
+describe("L1 — equity figure must not overwrite currentCtc / fire spurious contradiction", () => {
+  it("a bundled RSU+notice discovery answer leaves currentCtc unchanged", async () => {
+    const llm = async () => {
+      throw new Error("LLM disabled for determinism");
+    };
+    let state = freshState();
+    state = applyCandidateAnswer(state, "My current fixed is 22 LPA.");
+    expect(state.candidateCurrentCtc).toBe(22);
+    let res = await generateBotReply(state, llm, "My current fixed is 22 LPA.", "ci");
+    state = applyAiMove(state, res.move, res.text);
+
+    // The line that used to misparse 3 (RSU) as a NEW currentCtc → contradiction-callout.
+    state = applyCandidateAnswer(state, "RSUs worth roughly 3 LPA a year. My notice is 60 days.");
+    expect(state.candidateCurrentCtc, "RSU figure must not overwrite currentCtc").toBe(22);
+    res = await generateBotReply(state, llm, "RSUs worth roughly 3 LPA a year. My notice is 60 days.", "ci");
+    expect(res.move?.lever, "no contradiction-recovery lever on a non-contradiction").not.toBe(
+      "acknowledge-and-recover",
+    );
+    state = applyAiMove(state, res.move, res.text);
+    expect(() => deserializeState(serializeState(state))).not.toThrow();
+  });
+});
+
+describe("Gap B — counter escalates when the candidate's ask is reachable", () => {
+  it("ships a counter-base above the opening anchor for an in-band target", async () => {
+    const llm = async () => {
+      throw new Error("LLM disabled for determinism");
+    };
+    let state = freshState();
+    const answers = [
+      "Hi, thanks for setting this up.",
+      "My current fixed is 22 LPA.",
+      "Split is 18 fixed and 4 variable.",
+      "My notice is 30 days.",
+      "I'm looking for 30 LPA.",
+      "I have a competing offer at 29 LPA.",
+      "My floor is 28, I can't go below that.",
+    ];
+    let counterFired = false;
+    let openingAnchor: number | null = null;
+    for (let i = 0; i < answers.length; i++) {
+      if (i > 0) state = applyCandidateAnswer(state, answers[i]);
+      const res = await generateBotReply(state, llm, i > 0 ? answers[i] : undefined, "ci");
+      state = applyAiMove(state, res.move, res.text);
+      if (openingAnchor == null && state.highestOfferMade > 0) openingAnchor = state.highestOfferMade;
+      if (res.move?.lever === "counter-base") counterFired = true;
+    }
+    // candidateTarget (30) must have been parsed — without it the planner never counters.
+    expect(state.candidateTarget).toBe(30);
+    expect(counterFired, "a reachable in-band target must trigger counter-base").toBe(true);
+    // And the offer must have escalated above the first anchor it disclosed.
+    expect(openingAnchor).not.toBeNull();
+    expect(state.highestOfferMade).toBeGreaterThan(openingAnchor as number);
+    // Never breach the band ceiling.
+    expect(state.highestOfferMade).toBeLessThanOrEqual(BAND.maxStretch);
+  });
+});

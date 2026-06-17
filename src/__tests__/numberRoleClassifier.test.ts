@@ -137,6 +137,57 @@ const ROWS: Row[] = [
     expect: { target: 40, targetAsRange: true },
   },
 
+  /* ── Equity-scope guard (L1 / PRI-50, 2026-06-17) ──────────────────
+   * An equity/RSU/ESOP/stock-framed number is an equity COMPONENT, not a
+   * CTC/target/competing figure. It must NOT bind to currentCtc even when
+   * the bot just asked for current CTC (the Gricean bare-number default) —
+   * otherwise it overwrites the real currentCtc and fires a spurious
+   * contradiction-callout. Captured separately by the component extractor. */
+  {
+    label: "RSU worth N → not currentCtc (bot asked current)",
+    text: "RSUs worth roughly 3 LPA a year. My notice is 60 days.",
+    ctx: { lastAiText: "What's your current CTC?" },
+    expect: { currentCtc: null, target: null, competing: null },
+  },
+  {
+    label: "ESOP N a year → not currentCtc",
+    text: "My ESOPs are around 4 lakh a year.",
+    ctx: { lastAiText: "What's your current CTC?" },
+    expect: { currentCtc: null },
+  },
+  {
+    label: "equity is N → not currentCtc",
+    text: "Equity is about 3 LPA on top.",
+    ctx: { lastAiText: "What's your current CTC?" },
+    expect: { currentCtc: null },
+  },
+  {
+    label: "I get stock worth N → equity beats scored current cue",
+    text: "I get stock worth 5 LPA annually.",
+    ctx: { lastAiText: "What's your current CTC?" },
+    expect: { currentCtc: null },
+  },
+  /* Guard must NOT over-reach: a real currentCtc with a TRAILING equity
+   * mention still binds the CTC number. */
+  {
+    label: "N LPA with equity on top → currentCtc still binds",
+    text: "My current CTC is 24 LPA with equity on top.",
+    ctx: { lastAiText: "What's your current CTC?" },
+    expect: { currentCtc: 24 },
+  },
+  {
+    label: "total CTC N including RSUs → currentCtc still binds",
+    text: "I'm at 22 LPA total CTC, including RSUs.",
+    ctx: { lastAiText: "What's your current CTC?" },
+    expect: { currentCtc: 22 },
+  },
+  {
+    label: "total CTC N of which M is RSU → binds total, not equity slice",
+    text: "My total CTC is 30 LPA, of which 4 LPA is RSU.",
+    ctx: { lastAiText: "What's your current CTC?" },
+    expect: { currentCtc: 30 },
+  },
+
   /* ── Negative cases (must NOT bind) ────────────────────────────── */
   { label: "rejects 100 crore (clamp)",  text: "I'm looking for 100 crore",             expect: { target: null } },
   { label: "rejects garbage commas",     text: "I'm expecting 30,00,000 lakhs",         expect: { target: null } },

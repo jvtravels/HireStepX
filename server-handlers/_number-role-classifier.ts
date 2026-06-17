@@ -587,6 +587,55 @@ function isNegatedSpan(text: string, span: SalarySpan): boolean {
   return !hasInverter;
 }
 
+/* ─── Equity-scope guard (L1 / PRI-50, 2026-06-17) ────────────────────
+ *
+ * A number explicitly framed as equity/RSU/ESOP/stock is NOT a CTC,
+ * target, or competing-offer figure — it's an equity component, captured
+ * separately by extractComponentBreakdown / extractEquityVesting. Without
+ * this guard a bundled discovery answer like "RSUs worth roughly 3 LPA a
+ * year. My notice is 60 days." fell through pickRole's bot-asked-current
+ * default and bound 3 as currentCtc, OVERWRITING the real currentCtc (22)
+ * from the prior turn. The kernel then saw current-CTC change 22→3 and
+ * fired a spurious contradiction-callout (lever acknowledge-and-recover) —
+ * which, pre-Gap-C, killed the session with a 400. Even post-Gap-C it's a
+ * wrong "you contradicted yourself" call-out on a non-contradiction.
+ *
+ * Deliberately narrow: this only suppresses spans that scored ZERO
+ * role cues (so an explicit "my current CTC is 24 LPA with equity" keeps
+ * binding 24 to current via its scored cue) AND have an equity keyword in
+ * a tight window adjacent to the number. */
+const EQUITY_SPAN_CUES = [
+  /\b(?:rsu|esop)s?\b/i,
+  /\bequity\b/i,
+  /\bstock(?:\s+(?:options?|units?|grants?|awards?))?\b/i,
+  /\brestricted\s+stock\b/i,
+  /\bshares\b/i,
+];
+function isEquityScopedSpan(text: string, span: SalarySpan): boolean {
+  const EQUITY_WINDOW = 30;
+  const leftWindow = text.slice(Math.max(0, span.start - EQUITY_WINDOW), span.start);
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + EQUITY_WINDOW));
+  const window = `${leftWindow} ${rightWindow}`;
+  return EQUITY_SPAN_CUES.some((re) => re.test(window));
+}
+
+/* Stronger form: an equity keyword sitting IMMEDIATELY before the number
+ * ("stock worth 5", "5 in RSUs" → "RSUs" right-adjacent is excluded here;
+ * this is left-only) scopes the number to equity even when a current cue
+ * ALSO fired ("I get stock worth 5 LPA" — "I get" is a current cue but the
+ * 5 is the stock value, not CTC). Left-only + tight window so a trailing
+ * "24 LPA with equity on top" keeps binding 24 to current. */
+const EQUITY_LEFT_ADJACENT = [
+  /\b(?:rsu|esop)s?\s+(?:worth|of|at|around|roughly|about)?\s*$/i,
+  /\bequity\s+(?:worth|of|at|is|around|roughly|about)?\s*$/i,
+  /\bstock(?:\s+(?:options?|units?|grants?|awards?))?\s+(?:worth|of|at|around|roughly|about)?\s*$/i,
+  /\bshares\s+(?:worth|of|at|around|roughly|about)?\s*$/i,
+];
+function isEquityLeftAdjacentSpan(text: string, span: SalarySpan): boolean {
+  const leftWindow = text.slice(Math.max(0, span.start - 24), span.start);
+  return EQUITY_LEFT_ADJACENT.some((re) => re.test(leftWindow));
+}
+
 /* ─── Aggregator ───────────────────────────────────────────────────── */
 
 /** Main entry point. Returns the role-bound numbers for the utterance.
@@ -631,6 +680,15 @@ export function classifyNumberRoles(
     // the precise contract.
     if (isNegatedSpan(text, span)) continue;
     const scores = scoreRolesForSpan(text, span);
+    /* Equity-scope guard (L1 / PRI-50): an equity/RSU/ESOP/stock-framed
+     * number with NO explicit current/target/competing cue is an equity
+     * component, not a CTC — don't let it fall through pickRole's
+     * bot-asked-current default and clobber the real currentCtc. */
+    const cueMax = Math.max(scores.current, scores.target, scores.competing);
+    if (cueMax === 0 && isEquityScopedSpan(text, span)) continue;
+    /* Equity keyword directly preceding the number overrides even a scored
+     * current cue ("I get stock worth 5 LPA"). */
+    if (isEquityLeftAdjacentSpan(text, span)) continue;
     const role = pickRole(scores, ctx, span, text);
     if (role == null) continue;
     if (role === "current" && currentCtc == null) {
