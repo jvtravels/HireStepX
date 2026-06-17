@@ -80,6 +80,12 @@ import {
   type ComponentBreakdown,
 } from "./_component-breakdown";
 import {
+  EMPTY_COMP,
+  applyObservations,
+  observationsFromParsed,
+  type CandidateComp,
+} from "./_compensation-model";
+import {
   extractHikeRationale,
   computeHikePercent,
   type RationaleResult,
@@ -1800,6 +1806,16 @@ export interface NegotiationState {
    *  clears it so a single contradiction doesn't re-fire forever. */
   lastContradiction?: ContradictionSignal | null;
 
+  /** Scope-typed compensation model (architecture upgrade, 2026-06-17) —
+   *  the candidate's stated current pay decomposed onto distinct axes
+   *  (total / fixed / variable / equity). Replaces the flat-scalar
+   *  currentCtc contradiction check: a base/variable figure lands on its
+   *  own axis and can never be mistaken for the headline total, so a
+   *  consistent breakdown ("36 base + 12 variable = 48 total") no longer
+   *  fires a spurious contradiction-callout. See _compensation-model.ts.
+   *  Optional / back-compat — absence ≡ EMPTY_COMP. */
+  candidateComp?: CandidateComp;
+
   /** Affinity-dynamic feature (2026-05-29) — recruiter's per-call affinity
    *  toward the candidate. Clamped to [-3, +3]. Starts at 0. Updated each
    *  candidate turn by applyAffinitySignals based on rapport markers.
@@ -2684,6 +2700,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateAskedAsRange: false,
     userClaims: {},
     lastContradiction: null,
+    candidateComp: { ...EMPTY_COMP },
     highestOfferMade: 0,
     firstOfferAtTurn: null,
     leversUsed: [],
@@ -4803,7 +4820,53 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       };
     }
   };
-  recordNumeric("currentCtc", parsed.currentCtc);
+  /* Scope-typed current-comp folding (architecture upgrade, 2026-06-17).
+   * The flat `recordNumeric("currentCtc", …)` path is RETIRED for current
+   * pay: it compared base/variable component figures against the single
+   * stored total and fired a spurious contradiction on a consistent
+   * breakdown ("36 base + 12 variable = 48 total"), looping the bot into a
+   * forced stalemate. We now fold the turn's parsed figures onto distinct
+   * axes (total / fixed / variable / equity) via the compensation model. A
+   * component can never contradict the total — only a genuine SAME-axis
+   * total move (48 → 60) fires. The total-axis contradiction is mapped back
+   * to the historical ContradictionSignal topic "currentCtc" so the planner
+   * and prose paths are unchanged. We still mirror the model's total into
+   * claimsNext.currentCtc so every downstream reader of userClaims keeps
+   * working. See _compensation-model.ts. */
+  {
+    const compBefore: CandidateComp = state.candidateComp ?? { ...EMPTY_COMP };
+    const observations = observationsFromParsed(
+      {
+        currentCtc: parsed.currentCtc,
+        componentBase: parsed.componentBreakdown.base,
+        componentVariable: parsed.componentBreakdown.variable,
+        componentEquity: parsed.componentBreakdown.equity,
+      },
+      state.turnIndex,
+      (answer || "").toString(),
+    );
+    const folded = applyObservations(compBefore, observations);
+    next.candidateComp = folded.comp;
+    // Mirror the reconciled headline total into the legacy flat claim so
+    // downstream consumers (reports, ledgers, summaries) keep reading it.
+    const total = folded.comp.total;
+    if (total != null) {
+      const priorFlat = claimsBefore.currentCtc;
+      claimsNext.currentCtc = {
+        value: total.value,
+        firstSeenTurn: priorFlat?.firstSeenTurn ?? total.firstSeenTurn,
+      };
+    }
+    // A genuine same-axis total contradiction maps to the historical topic.
+    if (folded.contradiction != null && folded.contradiction.axis === "total" && contradiction == null) {
+      contradiction = {
+        topic: "currentCtc",
+        oldValue: folded.contradiction.oldValue,
+        newValue: folded.contradiction.newValue,
+        firstSeenTurn: folded.contradiction.firstSeenTurn,
+      };
+    }
+  }
   /* Audit Fix #2 contract — a "fixed"-scoped target ("₹26 LPA fixed at
    * minimum") refers to a component, not the total package; routing it
    * to candidateTargetFixed (above) means it must NOT be compared
