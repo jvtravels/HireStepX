@@ -2730,6 +2730,32 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       const derived: NegotiationState = { ...state, phase: "counter-offer" };
       return planNextActionInternal(derived);
     }
+
+    /* THIRD completion sink (live-staging, 2026-06-17) — FIXED-scoped
+     * counter-as-question force-route.
+     *
+     * The branches above (c)/PDF#44 only catch TOTAL-scoped counters
+     * (`totalScopedCounter()` returns null for fixed-scoped ones). A
+     * candidate who counters on the FIXED axis but phrases it as a
+     * question ("I was targeting 50 fixed — can we get closer?") sets
+     * `askedQuestion`, which made the downstream generic `answer-direct`
+     * reactive branch pre-empt counter handling and ship a content-free
+     * "let me note that and come back" deflection — the recruiter never
+     * engaged the counter, so the negotiation could not close.
+     *
+     * Mirror the total-counter force-route: when a fresh fixed-scoped
+     * counter is live and we have an offer on the table, route into the
+     * counter-offer phase so the native counter handling engages it. */
+    if (
+      state.lastCandidateCounterLpa != null &&
+      state.lastCounterComponent === "fixed" &&
+      state.phase !== "counter-offer" &&
+      state.phase !== "range-disclosure" &&
+      state.phase !== "opening"
+    ) {
+      const derived: NegotiationState = { ...state, phase: "counter-offer" };
+      return planNextActionInternal(derived);
+    }
   }
 
   /* PDF#18 — range-disclosure phase override.
@@ -5077,6 +5103,18 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
         profile.mentionedTaxImplication ||
         profile.mentionedBgvConcern ||
         profile.mentionedMoonlighting);
+    /* THIRD completion sink (live-staging, 2026-06-17) — a candidate
+     * counter phrased as a question ("I was targeting 50 fixed — can we
+     * get closer?") sets `askedQuestion`, which let this generic answer-
+     * direct branch pre-empt counter handling and ship a content-free
+     * "let me note that and come back" deflection. When a fresh counter
+     * is on the table against a standing offer, DEFER answer-direct so
+     * planNextActionInternal's post-anchor counter-engagement routes
+     * (total via (c)/PDF#44, fixed via the fixed-counter force-route)
+     * own the turn and the recruiter actually negotiates. Mirrors the
+     * existing offerAsked / wiredProfileTopic skips. */
+    const liveCounterPending =
+      state.lastCandidateCounterLpa != null && state.highestOfferMade > 0;
     /* ArchRec 2 (2026-05-16) — was `answer-direct@${turnIndex}`. The
      * per-turn suffix made hasFired() always pass (every turn produced
      * a fresh string), so the "single-fire" intent was actually dead.
@@ -5086,7 +5124,8 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     if (
       !hasFired("answer-direct") &&
       !offerAskedThisTurn &&
-      !wiredProfileTopicMatches
+      !wiredProfileTopicMatches &&
+      !liveCounterPending
     ) {
       /* PDF#51 (2026-05-28) — deterministic-prose preempt.
        *
