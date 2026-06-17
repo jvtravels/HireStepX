@@ -72,6 +72,7 @@ import { inferCompanyMode } from "./_market-mode";
 import { generateBotReply, type GenerateAiTextFn } from "./_response-pipeline";
 import { deriveMoveTag, type MoveTag } from "./_move-tag";
 import type { NextAction } from "./_next-action-planner";
+import { renderCanonicalProse } from "./_canonical-prose";
 /* PDF#48 (2026-05-27) — response contract + terminal-intent classifier.
  * Architectural seam, not another helper module. See file headers for
  * the audit rationale + the eight failure modes this prevents. */
@@ -1001,7 +1002,35 @@ export default async function handler(
           const llmTextUsable =
             typeof text === "string" && text.trim().length > 0;
           if (!skipDueToStreak || !llmTextUsable) {
-            text = contractFallbackProse(contract.violations);
+            /* Salary-substance fallback (2026-06-18, live-staging finding).
+             *
+             * `contractFallbackProse` is content-free by design — its
+             * last-resort branch ships "Let me note that and come back to you
+             * with specifics." On a SALARY turn that reads as a dodge: the
+             * candidate pushes on comp and the bot diverts with no number,
+             * which is the opposite of a real HR closing a negotiation.
+             *
+             * The kernel already DECIDED the move for this turn
+             * (`state.plannedNextAction`, still populated here — it's cleared
+             * only by the `applyAiMove` call below). `renderCanonicalProse`
+             * renders that exact move deterministically: on-contract by
+             * construction AND carrying the standing offer / counter number.
+             * Prefer it so a comp push gets engaged with the real figure;
+             * only fall back to the generic divert when there's no planned
+             * action or it renders empty. */
+            let replacement: string | null = null;
+            const planned = state.plannedNextAction;
+            if (planned != null) {
+              /* plannedNextAction is typed `unknown` on the kernel state to
+               * avoid a kernel→planner type cycle; it is only ever a
+               * NextAction (stamped by the planner). */
+              const canonical = renderCanonicalProse(
+                planned as NextAction,
+                state,
+              ).trim();
+              if (canonical.length > 0) replacement = canonical;
+            }
+            text = replacement ?? contractFallbackProse(contract.violations);
             source = "fallback";
           }
         }
