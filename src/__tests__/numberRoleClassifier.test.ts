@@ -188,6 +188,39 @@ const ROWS: Row[] = [
     expect: { currentCtc: 30 },
   },
 
+  /* ── Counter-movement frames (live-staging, 2026-06-17) ─────────────
+   * After the recruiter anchors, candidates counter by asking to MOVE a
+   * component toward a number. These carry no classic target verb but are
+   * unambiguous counters; the verb-of-motion + destination IS the ask.
+   * Each must bind `target` AND scope to `fixed` when the moved component
+   * is the fixed/base. Previously all returned target:null and the counter
+   * fell through to a content-free deflection. */
+  {
+    label: "counter: 'get the fixed component closer to 28' → 28 fixed",
+    text: "Can we get the fixed component closer to 28?",
+    expect: { target: 28, targetComponent: "fixed" },
+  },
+  {
+    label: "counter: 'push the fixed closer to 28' → 28 fixed",
+    text: "Could we push the fixed closer to 28?",
+    expect: { target: 28, targetComponent: "fixed" },
+  },
+  {
+    label: "counter: 'hoping the base could be around 28' → 28 fixed",
+    text: "I was hoping the base could be around 28.",
+    expect: { target: 28, targetComponent: "fixed" },
+  },
+  {
+    label: "counter: 'bring the base up to 30' → 30 fixed",
+    text: "Can we bring the base up to 30?",
+    expect: { target: 30, targetComponent: "fixed" },
+  },
+  {
+    label: "counter: 'I'd like the fixed component to be 28' → 28 fixed",
+    text: "I'd like the fixed component to be 28.",
+    expect: { target: 28, targetComponent: "fixed" },
+  },
+
   /* ── Negative cases (must NOT bind) ────────────────────────────── */
   { label: "rejects 100 crore (clamp)",  text: "I'm looking for 100 crore",             expect: { target: null } },
   { label: "rejects garbage commas",     text: "I'm expecting 30,00,000 lakhs",         expect: { target: null } },

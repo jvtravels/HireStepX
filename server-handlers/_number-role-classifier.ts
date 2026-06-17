@@ -198,6 +198,20 @@ const TARGET_CUES: CueTable = {
     /\basking\b/i,
     /\bneed\b/i,
     /\bbetween\b/i,
+    /* Counter-movement frames (live-staging, 2026-06-17). After the
+     * recruiter anchors an offer, candidates counter by asking to MOVE a
+     * component toward a number — "can we get the fixed closer to 28",
+     * "push the base to 30", "bring it up to 32". These carry no classic
+     * target verb (expect/want/looking-for) yet are unambiguous counters:
+     * the verb-of-motion + a destination number IS the ask. Without these
+     * the bare-integer (Pass 4) and unit-bearing paths both scored zero
+     * target cues, the counter fell through to a content-free
+     * answer-direct deflection, and the negotiation could never close. */
+    /\bcloser\s+to\b/i,
+    /\bpush(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
+    /\bbump(?:\s+\w+){0,3}\s+(?:to|up)\b/i,
+    /\bbring(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
+    /\bmove(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
   ],
   right: [
     /\bchahiye\b/i,
@@ -399,8 +413,13 @@ function findSalarySpans(text: string): SalarySpan[] {
    *  LPA target range [5, 100]. NON_SALARY_UNIT_RE near the digit kills
    *  the match (28 days, 28%, 28 years). */
   const BARE_INT_RE = /(?:^|[^\d.,])(\d{1,3})\b/g;
-  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target|expect(?:ing|ed)?|hoping|aim(?:ing)?|looking\s+for|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for)\b/i;
-  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|was|to)\s+|\b(?:anchor(?:ing)?|target|expect(?:ing|ed)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
+  /* Counter-movement frames (live-staging, 2026-06-17) — see the matching
+   * note in TARGET_CUES above. "closer to", "push/bump/bring/move ... to/up"
+   * mark a bare integer as a counter destination ("get the fixed closer to
+   * 28") so Pass 4 emits the span; "to be N" is the positional opener for
+   * "I'd like the fixed component to be 28". */
+  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target|expect(?:ing|ed)?|hoping|aim(?:ing)?|looking\s+for|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move)\b/i;
+  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|was|to)\s+|\b(?:to\s+be|closer\s+to|up\s+to)\s+|\b(?:anchor(?:ing)?|target|expect(?:ing|ed)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
   const SALARY_UNIT_NEARBY = /[\d,.]\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
   for (const m of text.matchAll(BARE_INT_RE)) {
     if (m.index == null) continue;
@@ -742,9 +761,25 @@ const TOTAL_COMPONENT_CUES = [
 ];
 
 function detectTargetComponentScope(text: string, span: SalarySpan): "total" | "fixed" | null {
-  const COMPONENT_WINDOW = 20;
-  const leftWindow = text.slice(Math.max(0, span.start - COMPONENT_WINDOW), span.start);
-  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + COMPONENT_WINDOW));
+  /* Window widened 20→45 on the left (live-staging, 2026-06-17). A
+   * fixed/base cue can sit a full clause before the number — "I was
+   * hoping the base could be around 28" puts "base" ~19 chars out, and
+   * "can we get the fixed component closer to 28" puts "fixed" ~30 out;
+   * the old 20-char window missed both and mis-scoped the counter as
+   * total. We clip the left window back to the current clause (after the
+   * last sentence/comma boundary) so a PRIOR clause's "total"/"base"
+   * can't leak across — keeps the both-hit→total contract intact for
+   * single-clause "₹32 LPA total with base at ₹26". */
+  const LEFT_COMPONENT_WINDOW = 45;
+  const RIGHT_COMPONENT_WINDOW = 20;
+  let leftWindow = text.slice(Math.max(0, span.start - LEFT_COMPONENT_WINDOW), span.start);
+  const clauseCut = Math.max(
+    leftWindow.lastIndexOf("."),
+    leftWindow.lastIndexOf(";"),
+    leftWindow.lastIndexOf(","),
+  );
+  if (clauseCut >= 0) leftWindow = leftWindow.slice(clauseCut + 1);
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + RIGHT_COMPONENT_WINDOW));
   const window = `${leftWindow} ${rightWindow}`;
   const fixedHit = FIXED_COMPONENT_CUES.some((re) => re.test(window));
   const totalHit = TOTAL_COMPONENT_CUES.some((re) => re.test(window));
