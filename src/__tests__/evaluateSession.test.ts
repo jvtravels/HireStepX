@@ -316,6 +316,27 @@ describe("computeBlendedOverall", () => {
     expect(anchoredSpread).toBeLessThan(rawSpread);
     expect(anchoredSpread).toBeLessThanOrEqual(Math.round(rawSpread * (1 - 0.35)) + 1);
   });
+
+  /* PRI-36 — anchorClamped / anchorDelta telemetry signal. */
+  it("reports anchorClamped=true with a signed delta when the LLM disagrees by >18", () => {
+    // blend 90 vs anchor 50 → delta +40, well past the ±18 band → clamp fires.
+    const out = computeBlendedOverall([{ name: "X", score: 90 }], {}, 90, 50);
+    expect(out.anchorClamped).toBe(true);
+    expect(out.anchorDelta).toBeGreaterThan(18);
+  });
+
+  it("reports anchorClamped=false when the blend sits inside the ±18 band", () => {
+    // blend ~58 vs anchor 60 → delta tiny → no clamp.
+    const out = computeBlendedOverall([{ name: "X", score: 58 }], {}, 58, 60);
+    expect(out.anchorClamped).toBe(false);
+    expect(Math.abs(out.anchorDelta)).toBeLessThanOrEqual(18);
+  });
+
+  it("reports anchorClamped=false and zero delta when no anchor is supplied", () => {
+    const out = computeBlendedOverall([{ name: "X", score: 90 }], {}, 90);
+    expect(out.anchorClamped).toBe(false);
+    expect(out.anchorDelta).toBe(0);
+  });
 });
 
 describe("computeStructuralAnchor", () => {

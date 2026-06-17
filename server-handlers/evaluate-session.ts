@@ -968,7 +968,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     // Deterministic structural anchor stabilizes the score run-to-run on
     // identical transcripts (see computeStructuralAnchor / computeBlendedOverall).
     const structuralAnchor = computeStructuralAnchor(transcript);
-    const { weightedSkills, overallScore } = computeBlendedOverall(
+    const { weightedSkills, overallScore, anchorClamped, anchorDelta } = computeBlendedOverall(
       rawSkills,
       skillWeights,
       llmOverall,
@@ -1145,6 +1145,20 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       role: typeof meta?.role === "string" ? meta.role.slice(0, 100) : "",
       company: typeof meta?.targetCompany === "string" ? meta.targetCompany.slice(0, 60) : "",
     }, req);
+
+    // PRI-36 — measure how often the deterministic structural anchor has to
+    // override the LLM score (|blend − anchor| > ANCHOR_MAX_DEVIATION). A high
+    // rate means the LLM and the structure systematically disagree and the
+    // anchor calibration (base/weight) needs tuning.
+    if (anchorClamped) {
+      await captureServerEvent("score_anchor_clamped", distinctIdFrom(req, auth.userId), {
+        session_id: sessionId,
+        overall_score: overallScore,
+        structural_anchor: structuralAnchor,
+        llm_overall: llmOverall,
+        anchor_delta: anchorDelta,
+      }, req);
+    }
 
     return new Response(JSON.stringify({ report, cached: false }), { status: 200, headers });
   } catch (err) {

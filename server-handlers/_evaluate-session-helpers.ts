@@ -419,7 +419,18 @@ export function computeBlendedOverall(
    *  omitted the function behaves exactly as before (pure LLM blend) so
    *  existing callers/tests are unaffected. */
   structuralAnchor?: number,
-): { weightedSkills: Array<{ name: string; score: number; weight: number }>; overallScore: number } {
+): {
+  weightedSkills: Array<{ name: string; score: number; weight: number }>;
+  overallScore: number;
+  /** True when the ±ANCHOR_MAX_DEVIATION clamp actually changed the score —
+   *  i.e. the LLM blend disagreed with the deterministic structure by more
+   *  than the allowed band. Lets the handler emit `score_anchor_clamped`
+   *  telemetry (PRI-36) to measure how often that happens in production. */
+  anchorClamped: boolean;
+  /** Signed gap (blended − anchor) in points; 0 when no anchor supplied.
+   *  Magnitude > ANCHOR_MAX_DEVIATION ⇔ anchorClamped. */
+  anchorDelta: number;
+} {
   const weightedSkills = rawSkills.map((s) => ({
     name: s.name,
     score: s.score,
@@ -433,16 +444,21 @@ export function computeBlendedOverall(
   const blended = composite * 0.6 + llmOverall * 0.4;
 
   let anchored = blended;
+  let anchorClamped = false;
+  let anchorDelta = 0;
   if (typeof structuralAnchor === "number" && isFinite(structuralAnchor)) {
+    anchorDelta = Math.round((blended - structuralAnchor) * 10) / 10;
     const pulled = blended * (1 - ANCHOR_WEIGHT) + structuralAnchor * ANCHOR_WEIGHT;
     anchored = Math.max(
       structuralAnchor - ANCHOR_MAX_DEVIATION,
       Math.min(structuralAnchor + ANCHOR_MAX_DEVIATION, pulled),
     );
+    // The clamp "fired" only when it actually moved the pulled value.
+    anchorClamped = Math.abs(pulled - anchored) > 1e-9;
   }
 
   const overallScore = Math.max(0, Math.min(100, Math.round(anchored)));
-  return { weightedSkills, overallScore };
+  return { weightedSkills, overallScore, anchorClamped, anchorDelta };
 }
 
 /** Validate + clamp thoughtBubble segments coming from the LLM. */
