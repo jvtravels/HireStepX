@@ -313,14 +313,34 @@ export function resolveServerBand(
      * a no-op), so existing call-sites that ALSO clamp downstream stay
      * correct. Skip on internship stipends — those are deliberately
      * scaled below the full-CTC P50. */
+    let finalBand = targetClamped;
     if (!targetClamped.isInternshipStipend) {
       const resolverTier = company ? getCompanyTier(company) : null;
       const resolverClamp = clampBandToTierP50(targetClamped, role, resolverTier);
       if (resolverClamp.clamped) {
-        return { ...targetClamped, ...resolverClamp.band };
+        finalBand = { ...targetClamped, ...resolverClamp.band };
       }
     }
-    return targetClamped;
+
+    /* Gap D fix (2026-06-17) — keep probationOffer ≤ initialOffer.
+     * probationOffer is derived from the PRE-clamp initialOffer (~line
+     * 220). The target-role compressor (clampBandToTargetRoleMarket) and
+     * the tier-P50 clamp above both push initialOffer DOWN for structurally
+     * low-market titles (e.g. QA Engineer at IT-services: engineering-family
+     * reference band → 5 LPA) WITHOUT touching probationOffer — stranding it
+     * ABOVE the new initialOffer (6.9 > 5). probation pay is the *reduced*
+     * rate, never a raise, so validateState enforces probationOffer ≤
+     * initialOffer and threw `state.band.probationOffer-above-initialOffer`
+     * — a hard 400 at session init for every fresher in that role×tier.
+     * Re-derive from the final initialOffer using the same tier ratio. */
+    if (finalBand.probationOffer != null && finalBand.probationOffer > finalBand.initialOffer) {
+      const ratio = probationCfg?.ratio ?? 0.9;
+      finalBand = {
+        ...finalBand,
+        probationOffer: Math.round(finalBand.initialOffer * ratio * 10) / 10,
+      };
+    }
+    return finalBand;
   } catch {
     return DEFAULT_BAND;
   }

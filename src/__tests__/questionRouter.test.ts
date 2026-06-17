@@ -59,6 +59,13 @@ describe("routeCandidateQuestion — variants", () => {
       "I'd like to hear your number first",
       "I still need a concrete number",
       "I'm looking for a ballpark number",
+      /* Gap C / PRI-50 (2026-06-17) — reproduced in a live regression
+       * sweep (scenario S9): "what number can you put on the table"
+       * routed to reactive-followup, so no ₹ was disclosed. The tight
+       * pattern only had bare "what can you put on the table". */
+      "what number can you put on the table?",
+      "what figure can you put on the table?",
+      "so what's on the table?",
     ];
     for (const s of samples) {
       const r = routeCandidateQuestion(s);

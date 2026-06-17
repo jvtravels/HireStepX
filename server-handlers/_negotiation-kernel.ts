@@ -7027,24 +7027,44 @@ const VALID_PHASES: ReadonlySet<NegotiationPhase> = new Set<NegotiationPhase>([
   "stalemate",
 ]);
 
-const VALID_LEVERS: ReadonlySet<NegotiationLever> = new Set<NegotiationLever>([
-  "open-with-offer",
-  "probe",
-  "counter-base",
-  "joining-bonus",
-  "equity-grant",
-  "notice-buyout",
-  "benefits-summary",
-  "compensation-summary",
-  "notice-period-summary",
-  "hike-context-summary",
-  "hold-firm",
-  "close-acceptance",
-  "close-walkaway",
-  "close-stalemate",
-  "terminal-restate",
-  "ctc-inflation-anchor",
-]);
+/* Exhaustive registry of every NegotiationLever, keyed by a
+ * `Record<NegotiationLever, true>` so the COMPILER rejects this object the
+ * moment a lever is added to the union without being registered here.
+ *
+ * Gap C (2026-06-17) — `probe-justification` and `acknowledge-and-recover`
+ * were both emittable by the planner / move-picker (they assign
+ * `move.lever`) but were missing from the old hand-maintained set. Because
+ * `applyAiMove` appends `move.lever` to `state.leversUsed` and
+ * `validateState` rejects any lever not in this set, the FIRST time either
+ * fired (e.g. a contradiction-callout fires `acknowledge-and-recover`) the
+ * next turn's `deserializeState` threw `state.leversUsed`, `negotiate-turn`
+ * returned 400 "Invalid state", and the session died un-resumably in
+ * `phase:"opening"` (the bad lever sticks in the array, so every later turn
+ * 400s too — even ones whose own lever is valid). The Record shape is the
+ * fix AND the guard: drift can no longer compile. */
+const VALID_LEVER_RECORD: Record<NegotiationLever, true> = {
+  "open-with-offer": true,
+  "probe": true,
+  "probe-justification": true,
+  "counter-base": true,
+  "joining-bonus": true,
+  "equity-grant": true,
+  "notice-buyout": true,
+  "benefits-summary": true,
+  "compensation-summary": true,
+  "notice-period-summary": true,
+  "hike-context-summary": true,
+  "hold-firm": true,
+  "close-acceptance": true,
+  "close-walkaway": true,
+  "close-stalemate": true,
+  "terminal-restate": true,
+  "acknowledge-and-recover": true,
+  "ctc-inflation-anchor": true,
+};
+const VALID_LEVERS: ReadonlySet<NegotiationLever> = new Set(
+  Object.keys(VALID_LEVER_RECORD) as NegotiationLever[],
+);
 
 function isFiniteNonNegInt(n: unknown): n is number {
   return typeof n === "number" && Number.isFinite(n) && n >= 0 && Number.isInteger(n);
