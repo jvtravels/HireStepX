@@ -19,6 +19,12 @@ import { captureClientEvent } from "./posthogClient";
 import type { DashboardSession } from "./dashboardTypes";
 import { tokens as T, fonts as F, shadows as S } from "./auth/_tokens";
 import { UpcomingInterviews } from "./DashboardHomePanels";
+import {
+  computeResumeFreshness,
+  parseDismissal,
+  freshnessBucket,
+  RESUME_FRESHNESS_DISMISS_KEY,
+} from "./resumeFreshness";
 
 /* Funnel telemetry — these event names are the contract PostHog
    dashboards query, so they're stable. The `surface` prop on
@@ -204,6 +210,64 @@ function OutlineCta({ children, onClick, size = "md" }: {
       border: `1px solid ${t.lineStrong}`,
       fontFamily: f.sans, fontSize: 14, fontWeight: 500,
     }}>{children}</button>
+  );
+}
+
+/* ResumeFreshnessStrip — nudges returning users whose resume is stale.
+   Shows at 30 days, dismissable, reappears at 60. Real timestamp only:
+   sourced from StoredResume.parsedAt (no fake "N days ago"). All age /
+   dismissal math is in src/resumeFreshness.ts; this renders the result. */
+function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
+  parsedAt: string | null | undefined; onRefresh: () => void;
+}) {
+  // nowMs is captured once per mount; freshness changes on the order of
+  // days, so a live ticker would be wasted re-renders.
+  const [nowMs] = useState(() => Date.now());
+  const [dismissedAt, setDismissedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      setDismissedAt(window.localStorage.getItem(RESUME_FRESHNESS_DISMISS_KEY));
+    } catch { /* private mode / storage disabled → behave as not dismissed */ }
+  }, []);
+
+  const fresh = computeResumeFreshness(parsedAt, nowMs, parseDismissal(dismissedAt));
+  if (!fresh.show || fresh.days == null) return null;
+
+  const dismiss = () => {
+    const blob = JSON.stringify({ parsedAt, bucket: freshnessBucket(fresh.days as number) });
+    try { window.localStorage.setItem(RESUME_FRESHNESS_DISMISS_KEY, blob); } catch { /* ignore */ }
+    setDismissedAt(blob);
+  };
+
+  return (
+    <div role="status" style={{
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "12px 14px", marginBottom: 12,
+      background: t.copperSoft, border: `1px solid ${t.copperBorder}`, borderRadius: 10,
+    }}>
+      <span style={{ color: t.copper, flexShrink: 0, display: "inline-flex" }} aria-hidden>{Icons.clock}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0, lineHeight: 1.3 }}>
+          Your resume is {fresh.days} days old.
+        </p>
+        <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "2px 0 0", lineHeight: 1.45 }}>
+          Targets and panels drift. Refresh to keep practice aligned with your latest work.
+        </p>
+      </div>
+      <OutlineCta size="sm" onClick={onRefresh}>Refresh</OutlineCta>
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Dismiss resume freshness reminder"
+        style={{
+          flexShrink: 0, width: 28, height: 28, borderRadius: 8, cursor: "pointer",
+          background: "transparent", border: "none", color: t.inkMid,
+          fontFamily: f.sans, fontSize: 16, lineHeight: 1,
+        }}
+      >×</button>
+    </div>
   );
 }
 
@@ -620,6 +684,11 @@ export default function DashboardHome() {
               </p>
             </div>
           )}
+
+          {/* Stale-resume nudge (real timestamp; 30-day threshold). Renders
+              nothing when the resume is fresh, missing a parsedAt, or the
+              user has dismissed it for this bucket. */}
+          <ResumeFreshnessStrip parsedAt={user?.resumeData?.parsedAt} onRefresh={goToResume} />
 
           {/* Resume, inline single line. Copy generic (no fake "4 days ago"). */}
           <div style={{

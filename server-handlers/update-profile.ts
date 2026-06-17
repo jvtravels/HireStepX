@@ -66,6 +66,27 @@ export function sanitizeUpdate(raw: unknown): ProfileUpdate {
   return out;
 }
 
+/**
+ * Stamp `resume_data.parsedAt` with the current time on every resume write.
+ * This is the single source of truth for resume freshness: rather than
+ * stamping at each of the ~13 client construction sites of StoredResume,
+ * we stamp once here at the persistence chokepoint. Any write that carries
+ * a resume_data object (fresh AI analysis, regex fallback, or an in-place
+ * bullet edit) counts as the resume being refreshed, so we overwrite
+ * unconditionally — `parsedAt` means "last persisted", which is exactly
+ * what the dashboard freshness nudge cares about.
+ *
+ * Pure + clock-injected so it's unit-testable; the handler passes
+ * `new Date().toISOString()`.
+ */
+export function stampResumeParsedAt(updates: ProfileUpdate, nowIso: string): ProfileUpdate {
+  const rd = updates.resume_data;
+  if (rd && typeof rd === "object" && !Array.isArray(rd)) {
+    updates.resume_data = { ...(rd as Record<string, unknown>), parsedAt: nowIso };
+  }
+  return updates;
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return new Response(JSON.stringify({ error: "Server misconfigured" }), {
@@ -93,7 +114,7 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers });
   }
 
-  const updates = sanitizeUpdate(body);
+  const updates = stampResumeParsedAt(sanitizeUpdate(body), new Date().toISOString());
   if (Object.keys(updates).length === 0) {
     return new Response(JSON.stringify({ error: "No recognised fields to update" }), { status: 400, headers });
   }

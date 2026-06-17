@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeUpdate, ALLOWED_COLUMNS } from "../../server-handlers/update-profile";
+import { sanitizeUpdate, ALLOWED_COLUMNS, stampResumeParsedAt } from "../../server-handlers/update-profile";
 
 /**
  * sanitizeUpdate is the allow-list filter that stands between an
@@ -107,5 +107,43 @@ describe("sanitizeUpdate", () => {
     const result = sanitizeUpdate({ id: "attacker-user-id", name: "Jay" });
     expect("id" in result).toBe(false);
     expect(result.name).toBe("Jay");
+  });
+});
+
+/* Single source of truth for resume freshness (PRI-33): every resume_data
+ * write is stamped here, server-side, so the ~13 client construction sites
+ * of StoredResume don't each have to remember to do it. */
+describe("stampResumeParsedAt", () => {
+  const NOW = "2026-06-17T10:00:00.000Z";
+
+  it("stamps parsedAt onto a resume_data object write", () => {
+    const updates = { resume_data: { _type: "ai", headline: "PM" } };
+    const out = stampResumeParsedAt({ ...updates }, NOW);
+    expect((out.resume_data as Record<string, unknown>).parsedAt).toBe(NOW);
+    // Existing fields are preserved.
+    expect((out.resume_data as Record<string, unknown>)._type).toBe("ai");
+    expect((out.resume_data as Record<string, unknown>).headline).toBe("PM");
+  });
+
+  it("overwrites a stale/client-supplied parsedAt — a write means just-refreshed", () => {
+    const out = stampResumeParsedAt({ resume_data: { _type: "fallback", parsedAt: "2020-01-01T00:00:00.000Z" } }, NOW);
+    expect((out.resume_data as Record<string, unknown>).parsedAt).toBe(NOW);
+  });
+
+  it("is a no-op when the update carries no resume_data", () => {
+    const out = stampResumeParsedAt({ name: "Jay" }, NOW);
+    expect(out).toEqual({ name: "Jay" });
+    expect("resume_data" in out).toBe(false);
+  });
+
+  it("does not stamp when resume_data is null (an explicit clear)", () => {
+    const out = stampResumeParsedAt({ resume_data: null }, NOW);
+    expect(out.resume_data).toBeNull();
+  });
+
+  it("does not treat an array as a resume_data object", () => {
+    const out = stampResumeParsedAt({ resume_data: [1, 2, 3] }, NOW);
+    expect(Array.isArray(out.resume_data)).toBe(true);
+    expect((out.resume_data as unknown[]).length).toBe(3);
   });
 });

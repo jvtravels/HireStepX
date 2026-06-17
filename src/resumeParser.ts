@@ -205,8 +205,16 @@ export interface ParsedResume {
  */
 import type { ResumeProfile } from "./dashboardData";
 
-export type AiStoredResume = { _type: "ai" } & ResumeProfile;
-export type FallbackStoredResume = { _type: "fallback" } & ParsedResume;
+/**
+ * `parsedAt` — ISO-8601 timestamp of the last time this resume was parsed
+ * or persisted. Stamped server-side at the single write chokepoint
+ * (`server-handlers/update-profile.ts` → `stampResumeParsedAt`) so every
+ * client construction site gets it for free. Optional for back-compat:
+ * resume_data rows written before this field shipped won't carry it, and
+ * the freshness UI degrades gracefully (no strip) rather than guessing.
+ */
+export type AiStoredResume = { _type: "ai"; parsedAt?: string } & ResumeProfile;
+export type FallbackStoredResume = { _type: "fallback"; parsedAt?: string } & ParsedResume;
 export type StoredResume = AiStoredResume | FallbackStoredResume;
 
 export function isAiResume(r: StoredResume | null | undefined): r is AiStoredResume {
