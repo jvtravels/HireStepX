@@ -44,9 +44,21 @@ import type { NegotiationState, NegotiationPhase } from "./_negotiation-kernel";
 /** Vocabulary that signals "I want a number now". Curated from prod
  *  transcripts (Flipkart Sr PD, Meesho Sr PD, Swiggy SDE-3). Intentionally
  *  narrow: false positives here cost the candidate a real interaction
- *  (they get a stub instead of a probe), so we err toward false negatives. */
+ *  (they get a stub instead of a probe), so we err toward false negatives.
+ *
+ *  2026-06-19 — live staging verify (Acme Sr PD) surfaced a gap: a
+ *  candidate who pushes the cash lever directly ("push the base", "what
+ *  can you do on the base") or demands an explicit figure ("I need a
+ *  concrete revised base number to say yes") slipped past every
+ *  alternation, so the rail never fired and the LLM-restyle path shipped
+ *  a number-free concession ("there's some flexibility on the base").
+ *  No figure ever landed on the table → the deal-summary extractor found
+ *  nothing → the report rendered "0 of 5 stages / couldn't extract offer
+ *  numbers" over an accepted close. These demand phrasings are
+ *  unambiguous number-asks, so adding them keeps the rail's
+ *  false-negative bias intact while closing the cash-push hole. */
 export const OFFER_ASK_RE =
-  /\b(?:what(?:'s| is)?\s+(?:your|the)\s+offer|what\s+(?:number|range|figure|fitment|package|ctc)\s+(?:are|do)\s+you|what\s+are\s+you\s+offering|share\s+(?:the|your)\s+(?:range|number|offer|fitment)|can\s+you\s+share\s+(?:the|a|your)\s+(?:range|number|offer|fitment|figure)|what(?:'s| is)?\s+the\s+(?:range|number|fitment|budget)|tell\s+me\s+the\s+(?:range|number|offer)|how\s+much\s+(?:are\s+you\s+offering|can\s+you\s+offer)|what\s+can\s+you\s+offer)\b/i;
+  /\b(?:what(?:'s| is)?\s+(?:your|the)\s+offer|what\s+(?:number|range|figure|fitment|package|ctc)\s+(?:are|do)\s+you|what\s+are\s+you\s+offering|share\s+(?:the|your)\s+(?:range|number|offer|fitment)|can\s+you\s+share\s+(?:the|a|your)\s+(?:range|number|offer|fitment|figure)|what(?:'s| is)?\s+the\s+(?:range|number|fitment|budget)|tell\s+me\s+the\s+(?:range|number|offer)|how\s+much\s+(?:are\s+you\s+offering|can\s+you\s+offer)|what\s+can\s+you\s+offer|what\s+can\s+you\s+do\s+(?:on|about|for|with)\s+(?:the\s+)?(?:base|number|salary|cash|fixed|figure|comp|compensation|package)|need\s+(?:a\s+)?(?:(?:concrete|specific|real|firm|actual|revised|exact|proper|hard)\s+){1,3}(?:base\s+|cash\s+)?number|(?:give|name|put|throw|share)\s+me\s+(?:a\s+)?(?:concrete|specific|real|firm|revised|hard)?\s*number|(?:push|raise|bump|move|increase|improve)\s+(?:the\s+|on\s+the\s+)?(?:base|number|fixed|cash|offer)|number\s+to\s+say\s+yes)\b/i;
 
 /** Numbers in Indian salary register: bare "32", "32L", "32 LPA",
  *  "32 lakhs", "32.5L", "1.2 cr". A bare number alone is not enough

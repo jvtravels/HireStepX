@@ -54,6 +54,27 @@ describe("OFFER_ASK_RE", () => {
     }
   });
 
+  /* 2026-06-19 live-staging regression lock (Acme Sr PD). These cash-push /
+   * explicit-number demands slipped past every alternation, so the rail
+   * never fired and a number-free concession shipped over an accepted
+   * close (report rendered "0 of 5 stages"). They MUST trigger the rail. */
+  it("matches cash-push and explicit-number demands", () => {
+    const positives = [
+      "Push the base please.",
+      "The base matters most. Push the base please.",
+      "Can you raise the base more?",
+      "bump the base",
+      "what can you do on the base?",
+      "I need a concrete revised base number to say yes. What can you do on the base?",
+      "I need a specific number",
+      "give me a number",
+      "I won't move without a number to say yes",
+    ];
+    for (const p of positives) {
+      expect(OFFER_ASK_RE.test(p), `should match: ${p}`).toBe(true);
+    }
+  });
+
   it("does NOT match disclosures or non-asks", () => {
     const negatives = [
       "my current is 32L fixed",
@@ -122,6 +143,24 @@ describe("enforceOfferAskInvariant — block paths", () => {
     });
     expect(v.allow).toBe(false);
     expect(v.reason).toBe("indefinite-defer-after-offer-ask");
+  });
+
+  /* 2026-06-19 live-staging regression lock (Acme Sr PD): candidate pushed
+   * the base, the LLM-restyle path shipped a number-free concession, and
+   * no figure ever landed → report showed "0 of 5 stages". The rail must
+   * now catch the base-push and substitute a number-bearing stub. */
+  it("blocks the number-free 'some flexibility on the base' concession after a base-push", () => {
+    const v = enforceOfferAskInvariant({
+      candidateAnswer: "The base matters most. Push the base please.",
+      draftedText:
+        "I hear you. There's some flexibility on the base, and I could also " +
+        "look at a joining bonus or equity. What matters most to you?",
+      state: baseState,
+    });
+    expect(v.allow).toBe(false);
+    expect(v.reason).toBe("no-number-no-ceiling");
+    expect(v.substitute).toMatch(/\d/);
+    expect(v.substitute).toMatch(/35L/);
   });
 
   it("blocks no-number, no-ceiling responses when explicitly asked", () => {
