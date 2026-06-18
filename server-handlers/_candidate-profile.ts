@@ -267,7 +267,8 @@ function applyWaveDisables(result: CandidateProfileResult): CandidateProfileResu
       r.quickCommerceContext || r.d2cConsumerEquity
     )) ||
     (!w6 && (
-      r.wantsHigherBase || r.wantsJoiningBonus || r.wantsRelocationAllowance
+      r.wantsHigherBase || r.wantsJoiningBonus || r.wantsRelocationAllowance ||
+      r.wantsFlexibleWork
     )) ||
     (!w7 && (
       r.invokedCompetingOffer || r.askedAboutGrowthPath || r.gaveInconsistentNumbers || r.evasiveOnCurrentCtc
@@ -1017,7 +1018,10 @@ export interface CandidateProfileResult {
   wantsJoiningBonus: boolean;
   /** Candidate asked about relocation support/allowance. Monotone-up. */
   wantsRelocationAllowance: boolean;
-  /** Candidate asked about remote/hybrid as part of the offer. Monotone-up. */
+  /** Candidate asked about remote/hybrid work arrangement (days in office)
+   * as part of the offer — distinct from wfhEquipmentStipend (setup money).
+   * Gap #1 (2026-06-18). Monotone-up. */
+  wantsFlexibleWork: boolean;
   /** Candidate mentioned L&D budget, certifications, upskilling allowance. Monotone-up. */
   /** Candidate asked about equity refresh grants. Monotone-up. */
   /** Candidate mentioned title upgrade as part of expectation. Monotone-up. */
@@ -1447,6 +1451,7 @@ export const EMPTY_CANDIDATE_PROFILE: CandidateProfileResult = {
   wantsHigherBase: false,
   wantsJoiningBonus: false,
   wantsRelocationAllowance: false,
+  wantsFlexibleWork: false,
   /* Wave-7 (2026-05-15) — behavioral/psychological negotiation flags. */
   invokedCompetingOffer: false,
   askedAboutGrowthPath: false,
@@ -3295,6 +3300,15 @@ function detectWantsRelocationAllowance(t: string): boolean {
     /\b(?:moving\s+(?:allowance|support|assistance|expenses?))\b/i.test(t);
 }
 
+/* `wantsFlexibleWork` — candidate asked about hybrid / WFH / remote work
+ * ARRANGEMENT (days in office, flexible hours), distinct from
+ * wfhEquipmentStipend (one-time setup money). Gap #1 (2026-06-18). */
+function detectWantsFlexibleWork(t: string): boolean {
+  return /\b(?:work\s+from\s+home|wfh|hybrid|remote\s+work|remote\s+option|days?\s+from\s+home|days?\s+in\s+(?:the\s+)?office|in[-\s]?office\s+days?|work\s+flexibility|flexible\s+(?:work|hours|timing|schedule))\b/i.test(t) ||
+    /\b(?:can\s+i\s+(?:work|do)\s+(?:from\s+home|remote|hybrid))\b/i.test(t) ||
+    /\b(?:how\s+many\s+days?\s+(?:in\s+(?:the\s+)?office|from\s+home|wfo|wfh))\b/i.test(t);
+}
+
 /* `invokedCompetingOffer` — used competing offer as leverage. Distinct from
  * just mentioning it — requires explicit leverage language. */
 function detectInvokedCompetingOffer(t: string): boolean {
@@ -3739,6 +3753,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const wantsHigherBase = detectWantsHigherBase(text);
   const wantsJoiningBonus = detectWantsJoiningBonus(text);
   const wantsRelocationAllowance = detectWantsRelocationAllowance(text);
+  const wantsFlexibleWork = detectWantsFlexibleWork(text);
 
   /* Wave-7 (2026-05-15) — behavioral / psychological flags. */
   const invokedCompetingOffer = detectInvokedCompetingOffer(text);
@@ -3888,6 +3903,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     wantsHigherBase ||
     wantsJoiningBonus ||
     wantsRelocationAllowance ||
+    wantsFlexibleWork ||
     /* Wave-7 (2026-05-15) */
     invokedCompetingOffer ||
     askedAboutGrowthPath ||
@@ -4032,6 +4048,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     wantsHigherBase,
     wantsJoiningBonus,
     wantsRelocationAllowance,
+    wantsFlexibleWork,
     /* Wave-7 (2026-05-15) */
     invokedCompetingOffer,
     askedAboutGrowthPath,
@@ -4529,6 +4546,7 @@ export function mergeCandidateProfile(
     wantsHigherBase: p.wantsHigherBase || next.wantsHigherBase,
     wantsJoiningBonus: p.wantsJoiningBonus || next.wantsJoiningBonus,
     wantsRelocationAllowance: p.wantsRelocationAllowance || next.wantsRelocationAllowance,
+    wantsFlexibleWork: p.wantsFlexibleWork || next.wantsFlexibleWork,
     /* offerDeadlineText — latest non-null wins. */
     /* Wave-7 (2026-05-15) — all monotone-up. */
     invokedCompetingOffer: p.invokedCompetingOffer || next.invokedCompetingOffer,
@@ -4685,6 +4703,7 @@ export function mergeCandidateProfile(
     merged.wantsHigherBase ||
     merged.wantsJoiningBonus ||
     merged.wantsRelocationAllowance ||
+    merged.wantsFlexibleWork ||
     /* Wave-7 (2026-05-15) */
     merged.invokedCompetingOffer ||
     merged.askedAboutGrowthPath ||

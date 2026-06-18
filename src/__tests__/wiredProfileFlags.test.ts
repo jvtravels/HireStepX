@@ -35,6 +35,7 @@ const CASES: { flag: keyof typeof EMPTY_CANDIDATE_PROFILE; topic: DiscoveryTopic
   { flag: "wantsHigherBase", topic: "wants-higher-base" },
   { flag: "wantsJoiningBonus", topic: "wants-joining-bonus" },
   { flag: "wantsRelocationAllowance", topic: "wants-relocation-allowance" },
+  { flag: "wantsFlexibleWork", topic: "lever-work-mode" },
   { flag: "mentionedSpouseFamily", topic: "spouse-family-context" },
   { flag: "askedAboutReporting", topic: "reporting-structure" },
   { flag: "askedAboutGrowthPath", topic: "growth-path" },

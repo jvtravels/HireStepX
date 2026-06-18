@@ -5840,6 +5840,16 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
         rationale: "Candidate mentioned relocation — confirm intra-city vs inter-city to pick the right reimbursement bucket.",
       },
       {
+        flag: profile.wantsFlexibleWork,
+        topic: "lever-work-mode",
+        /* Gap #1 (2026-06-18) — a direct WFH/hybrid question gets a
+         * concrete, committed answer (not absorbed into a recap or
+         * deferred). Mirrors lever-work-mode prose: name the hybrid
+         * cadence and put it in the offer letter. */
+        ask: "On the work mode — we're hybrid, three days in office and two from home as the standard for this grade. Given the role I can formalise a two-day-in-office arrangement for you, and that goes into the offer letter so it isn't just a verbal understanding.",
+        rationale: "Candidate asked about WFH/hybrid — answer with the concrete hybrid cadence and commit a two-day-in-office arrangement into the offer letter; no deferral.",
+      },
+      {
         flag: profile.mentionedSpouseFamily,
         topic: "spouse-family-context",
         ask: "Got it — and on the family side, is your spouse also looking for a role in the same city, or is location flexibility something we should plan for?",
