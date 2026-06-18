@@ -169,10 +169,13 @@ export const SALARY_PUSH_RE = new RegExp(
     "anything\\s+(?:more|else)\\s+(?:you\\s+can\\s+do|on\\s+the\\s+(?:base|number|offer))",
     // what can you (actually/really) do/offer/stretch/manage/swing
     "what\\s+(?:can|could)\\s+you\\s+(?:actually\\s+|really\\s+)?(?:do|offer|stretch|manage|swing|push)\\b",
-    // best offer / best you can do
-    "(?:your|the)\\s+best\\s+(?:offer|number|you\\s+can\\s+do)",
-    "is\\s+that\\s+(?:your|the)\\s+best",
-    "best\\s+(?:you\\s+can\\s+do|and\\s+final)",
+    // best offer / best you can do / "is that (really) your best?"
+    "(?:your|the)\\s+best\\s+(?:offer|number|you(?:'ve|\\s+have)\\s+got|you\\s+can\\s+do)",
+    "is\\s+(?:that|this|\\d+(?:\\.\\d+)?l?)\\s+(?:really\\s+|honestly\\s+|seriously\\s+|truly\\s+)?(?:your|the)\\s+best",
+    "best\\s+(?:you\\s+can\\s+do|you(?:'ve|\\s+have)\\s+got|and\\s+final|offer\\s+you\\s+have)",
+    // "is that it?" / "is that all?" / "that's all you've got?"
+    "is\\s+that\\s+(?:it|all)\\b",
+    "that(?:'s|\\s+is)\\s+all\\s+you(?:'ve|\\s+have)\\s+got",
     // meet in the middle / halfway
     "meet\\s+(?:me\\s+)?(?:in\\s+the\\s+middle|half\\s*way)",
     // where can we / you land; can we land
