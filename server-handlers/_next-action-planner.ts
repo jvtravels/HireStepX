@@ -2792,22 +2792,25 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const hi = state.band?.maxStretch;
     const bandComplete =
       typeof lo === "number" && typeof hi === "number" && lo < hi;
-    const anchorAlreadyDisclosed = readAskedTopics(state).some(
-      (t) =>
-        t.topic === "band-anchor-with-rationale" ||
-        (t.topic as string) === "anchor-with-band" ||
-        (t.topic as string) === "anchor-with-offer",
-    );
+    /* The re-entry guard here is `highestOfferMade === 0`, NOT
+     * `!anchorAlreadyDisclosed`. A real anchor always sets
+     * highestOfferMade > 0, so this gate is already single-fire for
+     * genuine anchors. The ONLY case where a band-anchor-with-rationale
+     * stamp coexists with highestOfferMade === 0 is the numberless
+     * honest-defer — and there we WANT to re-enter so clampAnchorAbove-
+     * Disclosed can escalate from null (first defer) to `hi` (honest
+     * ceiling) on the repeat, instead of stalling in the deflect sink
+     * below. (Deflect-loop terminator, 2026-06-18 live-staging finding.) */
     if (
       state.highestOfferMade === 0 &&
       bandComplete &&
-      !anchorAlreadyDisclosed &&
       canDiscloseSpecificNumber(state)
     ) {
       const anchored = clampAnchorAboveDisclosed(lo, hi, state);
-      /* null = band ceiling sits below the candidate's disclosed CTC;
-       * honest-defer rather than anchor a pay cut (mirrors AUDIT-W02
-       * BUG-001 at the offer-ask gate below). */
+      /* null = band ceiling sits below the candidate's disclosed CTC AND
+       * we have not yet deferred once; honest-defer rather than anchor a
+       * pay cut (mirrors AUDIT-W02 BUG-001 at the offer-ask gate below).
+       * On the repeat, clamp returns `hi` and we anchor the ceiling. */
       if (anchored === null) {
         return {
           kind: "anchor-with-offer",
@@ -4901,8 +4904,31 @@ export function clampAnchorAboveDisclosed(
   /* AUDIT-W02 BUG-001 — If the hike-floored candidate exceeds the band
    * ceiling AND the candidate's disclosed current already exceeds the
    * band ceiling, clamping to `hi` would emit a pay-cut anchor. Signal
-   * defer instead. */
-  if (candidate > hi && disclosed > hi) return null;
+   * defer instead.
+   *
+   * Deflect-loop terminator (2026-06-18, live-staging finding) — but
+   * defer only ONCE. The honest-defer stamps `band-anchor-with-
+   * rationale` while putting no number on the table, so on the next
+   * relevant turn we'd defer again, and again, forever ("I'll have a
+   * firmer number once the panel signs off") — and past the min-turns
+   * floor the recruiter can even walk away on the candidate's own
+   * acceptance. Once we've already deferred (band-anchor-with-rationale
+   * stamped) and STILL have no number out (highestOfferMade === 0), a
+   * real recruiter stops stalling and puts their honest ceiling on the
+   * table: anchor at `hi`. This is the ONE point all ~6 honest-defer
+   * callers funnel through, so the loop can't drift back in at a site
+   * we forgot to patch. The first-defer null path is unchanged and stays
+   * pinned by clampAnchorAboveDisclosed.belowMaxStretch.test.ts. */
+  if (candidate > hi && disclosed > hi) {
+    const alreadyDeferred =
+      state.highestOfferMade === 0 &&
+      readAskedTopics(state).some(
+        (t) =>
+          t.topic === "band-anchor-with-rationale" ||
+          (t.topic as string) === "anchor-with-offer",
+      );
+    return alreadyDeferred ? hi : null;
+  }
   if (candidate <= lo) return lo;
   /* Cap by maxStretch — won't blow through the band ceiling even if the
    * candidate's current CTC is structurally above it. */
