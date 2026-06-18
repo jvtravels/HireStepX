@@ -90,6 +90,13 @@ export interface ResumeFactPack {
     companyName: string;
     companyTier: string;
   } | null;
+  /* One strong, verb-initial, preferably quantified achievement clause
+   * pulled from the latest role's description (e.g. "led the GST
+   * automation that saved ₹2 Cr"). Pre-cleaned to slot grammatically
+   * into "you've <clause>". null when the resume carries no qualifying
+   * impact bullet. Consumed by the hike-justification probe so the
+   * recruiter can name a concrete win instead of a role-family template. */
+  topAchievement: string | null;
 }
 
 /* ─── Company-tier projection ─────────────────────────────────────────
@@ -300,6 +307,71 @@ function computeLongestGap(
   return maxGap > 0 ? maxGap : null;
 }
 
+/* ─── Achievement extraction ──────────────────────────────────────────
+ *
+ * The legacy scalar path discarded every resume bullet. The salary-
+ * negotiation hike-justification probe reads far more like a recruiter
+ * who actually read the CV when it can name a concrete win — "you've led
+ * the GST automation that saved ₹2 Cr — what else justifies the jump?" —
+ * instead of a role-family template. We surface ONE such clause here.
+ *
+ * Invariants that keep the probe grammatical and credible:
+ *   - the clause MUST begin at a past-tense impact verb, so it slots into
+ *     "you've <clause>" without conjugation bugs,
+ *   - clauses carrying a hard metric (₹ / % / x / a 2+ digit number) win
+ *     over vague ones,
+ *   - length is capped so the probe stays a single tight clause.
+ * Pure. */
+const ACHIEVEMENT_IMPACT_VERB =
+  /\b(led|built|scaled|saved|grew|reduced|increased|improved|launched|shipped|owned|delivered|migrated|automated|drove|cut|boosted|achieved|generated|spearheaded|architected|designed|streamlined|optimized|optimised|raised|expanded|accelerated|rolled\s+out|set\s+up)\b/i;
+
+const ACHIEVEMENT_METRIC =
+  /(?:₹|rs\.?|inr)\s?\d|[\d.]+\s?(?:cr(?:ore)?s?|lakhs?|lpa|%|percent|\bx\b|million|mn|bn|users?|customers?|clients?|reqs?|qps)|\b\d{2,}\b/i;
+
+const ACHIEVEMENT_MAX_LEN = 120;
+const ACHIEVEMENT_MIN_WORDS_AFTER_VERB = 3;
+
+export function extractTopAchievement(
+  roles: Array<{ description?: string | null }>,
+): string | null {
+  let best: { clause: string; score: number } | null = null;
+  for (const role of roles) {
+    const desc = (role.description ?? "").trim();
+    if (!desc) continue;
+    // Break the description into bullet / sentence fragments.
+    const fragments = desc
+      .split(/[\n•·▪‣◦|]|(?<=[.;])\s+|\s[-–—]\s/)
+      .map((f) => f.trim())
+      .filter((f) => f.length >= 12);
+    for (const frag of fragments) {
+      const vm = ACHIEVEMENT_IMPACT_VERB.exec(frag);
+      if (!vm) continue;
+      let clause = frag.slice(vm.index).replace(/\s+/g, " ").trim();
+      if (clause.split(/\s+/).length < ACHIEVEMENT_MIN_WORDS_AFTER_VERB + 1) {
+        continue;
+      }
+      // Strip trailing punctuation / dangling conjunctions.
+      clause = clause.replace(/[\s,;:.\-–—]+$/, "");
+      if (clause.length > ACHIEVEMENT_MAX_LEN) {
+        clause = clause
+          .slice(0, ACHIEVEMENT_MAX_LEN)
+          .replace(/\s+\S*$/, "")
+          .replace(/[\s,;:.\-–—]+$/, "");
+      }
+      if (clause.length < 12) continue;
+      // Lowercase the leading verb so it reads "you've led …" mid-sentence.
+      clause = clause.charAt(0).toLowerCase() + clause.slice(1);
+      const score =
+        (ACHIEVEMENT_METRIC.test(clause) ? 100 : 0) + Math.min(clause.length, 80);
+      if (!best || score > best.score) best = { clause, score };
+    }
+    // Roles arrive latest-first; a quantified win on the most recent role
+    // is the strongest possible signal — stop once we have one.
+    if (best && best.score >= 100) break;
+  }
+  return best ? best.clause : null;
+}
+
 /* ─── Main extractor ──────────────────────────────────────────────── */
 
 export function buildResumeFactPack(
@@ -358,6 +430,10 @@ export function buildResumeFactPack(
     };
   }
 
+  // Achievement scan runs latest-role-first; fall back to all roles when
+  // none carry a company name (sorted is company-filtered).
+  const topAchievement = extractTopAchievement(sorted.length > 0 ? sorted : roles);
+
   return {
     priorCompanies,
     stackTags,
@@ -366,6 +442,7 @@ export function buildResumeFactPack(
     leadershipClaimed,
     gapMonths,
     latestRole,
+    topAchievement,
   };
 }
 

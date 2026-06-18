@@ -5556,7 +5556,11 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     );
     if (should) {
       const roleFamily = classifyRoleFamily(state.role);
-      const ask = getHikeJustificationProbe(roleFamily, state.role);
+      const ask = getHikeJustificationProbe(
+        roleFamily,
+        state.role,
+        state.resumeFactPack?.topAchievement ?? null,
+      );
       return {
         kind: "reactive-followup",
         ask,

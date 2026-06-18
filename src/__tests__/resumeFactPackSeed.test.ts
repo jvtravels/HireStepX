@@ -20,6 +20,7 @@ function makePack(over: Partial<ResumeFactPack> = {}): ResumeFactPack {
     mbaTier: null,
     leadershipClaimed: false,
     gapMonths: null,
+    topAchievement: null,
     latestRole: null,
     ...over,
   };

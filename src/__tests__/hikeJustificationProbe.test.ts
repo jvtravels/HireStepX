@@ -197,6 +197,52 @@ describe("hike-justification probe", () => {
     expect(brief).toContain("system");
   });
 
+  /* Resume-achievement wiring (2026-06-18). When a concrete resume win is
+   * threaded in, the probe must name it ("you've <clause> — what else
+   * justifies…") and take precedence over the role-family template. Absent
+   * or blank achievement → unchanged role-family behavior. */
+  it("achievement clause takes precedence over the role-family template", () => {
+    const p = getHikeJustificationProbe(
+      "engineering",
+      "Backend Software Engineer",
+      "led the GST automation that saved ₹2 Cr",
+    );
+    expect(p).toBe(
+      "you've led the GST automation that saved ₹2 Cr — what else justifies the kind of jump you're after?",
+    );
+    // Role-family jargon must NOT appear once a real win is named.
+    expect(p.toLowerCase()).not.toMatch(/system design|codebase/);
+  });
+
+  it("achievement overrides even for a non-software / generic family", () => {
+    const p = getHikeJustificationProbe(
+      "engineering",
+      "Finance Manager",
+      "cut working-capital cycle by 22%",
+    );
+    expect(p).toContain("cut working-capital cycle by 22%");
+    expect(p.startsWith("you've ")).toBe(true);
+  });
+
+  it("blank / null / whitespace achievement falls back to role-family probe", () => {
+    const base = getHikeJustificationProbe("sales", "Account Executive");
+    expect(getHikeJustificationProbe("sales", "Account Executive", null)).toBe(base);
+    expect(getHikeJustificationProbe("sales", "Account Executive", "")).toBe(base);
+    expect(getHikeJustificationProbe("sales", "Account Executive", "   ")).toBe(base);
+  });
+
+  it("buildHikeJustificationBrief embeds the achievement clause when provided", () => {
+    const brief = buildHikeJustificationBrief(
+      { currentCtcLpa: 13, expectedCtcLpa: 21, valueProofProvided: false },
+      "engineering",
+      "Backend Software Engineer",
+      "scaled the payments platform to 5M users",
+    );
+    expect(brief).toMatch(/^\[HIKE JUSTIFICATION REQUIRED:/);
+    expect(brief).toContain("scaled the payments platform to 5M users");
+    expect(brief).toContain("you've");
+  });
+
   it("buildHikeJustificationBrief returns null when probe should not fire", () => {
     expect(
       buildHikeJustificationBrief(

@@ -26,6 +26,7 @@ function makePack(extras: Partial<ResumeFactPack> = {}): ResumeFactPack {
     mbaTier: null,
     leadershipClaimed: false,
     gapMonths: null,
+    topAchievement: null,
     latestRole: { title: "SDE-2", companyName: "Flipkart", companyTier: "unicorn" },
     ...extras,
   };

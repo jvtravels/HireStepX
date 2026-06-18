@@ -513,6 +513,7 @@ function makeResumePack(latestCompany: string, tier: "unicorn" | "faang" | "serv
     mbaTier: null,
     leadershipClaimed: false,
     gapMonths: null,
+    topAchievement: null,
     latestRole: { title: "SDE-2", companyName: latestCompany, companyTier: tier },
   };
 }

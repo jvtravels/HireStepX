@@ -57,6 +57,7 @@ describe("PDF#27 Fix 6 — resume-aware opener is on the active pipeline path", 
       mbaTier: "none" as never,
       leadershipClaimed: false,
       gapMonths: null,
+      topAchievement: null,
       latestRole: {
         title: "Senior Product Designer",
         companyName: "Flipkart",

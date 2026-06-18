@@ -37,6 +37,7 @@ describe("F4 — resume-aware opener", () => {
       mbaTier: "none" as never,
       leadershipClaimed: false,
       gapMonths: null,
+      topAchievement: null,
       latestRole: {
         title: "Senior Product Designer",
         companyName: "Flipkart",
@@ -69,6 +70,7 @@ describe("F4 — resume-aware opener", () => {
       mbaTier: "none" as never,
       leadershipClaimed: false,
       gapMonths: null,
+      topAchievement: null,
       latestRole: { title: "", companyName: "", companyTier: "" },
     };
     const s = mkState({ resumeFactPack: rfp, turnIndex: 0 });
@@ -84,6 +86,7 @@ describe("F4 — resume-aware opener", () => {
       mbaTier: "none" as never,
       leadershipClaimed: false,
       gapMonths: null,
+      topAchievement: null,
       latestRole: {
         title: "Software Engineer",
         companyName: "Razorpay",

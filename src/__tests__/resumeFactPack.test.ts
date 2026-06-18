@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildResumeFactPack,
   classifyResumeCompanyTier,
+  extractTopAchievement,
   fuzzyCompanyMatch,
   normalizeCompanyName,
   resumeConfirmsCompany,
@@ -187,5 +188,93 @@ describe("fuzzyCompanyMatch / resumeConfirmsCompany", () => {
     expect(resumeConfirmsCompany(p, "Flipkart")).toBe(true);
     expect(resumeConfirmsCompany(p, "Cognizant")).toBe(true);
     expect(resumeConfirmsCompany(p, "Google")).toBe(false);
+  });
+});
+
+/* Resume-achievement extraction (2026-06-18). The hike-justification probe
+ * reads like a recruiter who actually opened the CV when it names a concrete
+ * win. Extraction must produce a clean, verb-initial, "you've <clause>"-
+ * grammatical phrase, prefer quantified bullets, and return null when the
+ * resume carries no qualifying impact line. */
+describe("extractTopAchievement", () => {
+  it("pulls a quantified, verb-initial clause from the latest role", () => {
+    const ach = extractTopAchievement([
+      {
+        description:
+          "Worked on various modules.\nLed the GST automation that saved ₹2 Cr annually across 12 entities.",
+      },
+    ]);
+    expect(ach).not.toBeNull();
+    expect(ach!.startsWith("led ")).toBe(true);
+    expect(ach).toContain("₹2 Cr");
+  });
+
+  it("output slots grammatically into 'you've <clause>'", () => {
+    const ach = extractTopAchievement([
+      { description: "Built and scaled the payments platform to 5M users." },
+    ]);
+    expect(ach).not.toBeNull();
+    // Leading verb lowercased so the probe frame reads naturally.
+    expect(`you've ${ach}`).toMatch(/^you've (built|scaled|owned|led) /);
+  });
+
+  it("prefers a metric-bearing bullet over a vague one", () => {
+    const ach = extractTopAchievement([
+      {
+        description:
+          "Owned the onboarding flow.\nReduced checkout drop-off by 38% in two quarters.",
+      },
+    ]);
+    expect(ach).toContain("38%");
+  });
+
+  it("scans the latest role first (roles arrive latest-first)", () => {
+    const ach = extractTopAchievement([
+      { description: "Migrated the billing stack to Kafka, cutting latency 60%." },
+      { description: "Led a team of 4 on an internal tool." },
+    ]);
+    expect(ach).toContain("60%");
+  });
+
+  it("returns null when no role carries an impact verb", () => {
+    expect(
+      extractTopAchievement([
+        { description: "Responsible for daily standups and ticket triage." },
+      ]),
+    ).toBeNull();
+    expect(extractTopAchievement([{ description: "" }])).toBeNull();
+    expect(extractTopAchievement([{}])).toBeNull();
+    expect(extractTopAchievement([])).toBeNull();
+  });
+
+  it("caps clause length and strips trailing punctuation", () => {
+    const long =
+      "Led a sprawling multi-quarter initiative that touched onboarding, billing, notifications, search, analytics, and the entire reporting subsystem end to end.";
+    const ach = extractTopAchievement([{ description: long }]);
+    expect(ach).not.toBeNull();
+    expect(ach!.length).toBeLessThanOrEqual(120);
+    expect(/[.,;:\-–—]$/.test(ach!)).toBe(false);
+  });
+
+  it("buildResumeFactPack surfaces topAchievement on the pack", () => {
+    const p = pack({
+      roles: [
+        {
+          companyName: "Flipkart",
+          startDate: "2021-02",
+          endDate: null,
+          description: "Architected the search ranking service handling 40k QPS.",
+        },
+      ],
+    });
+    expect(p.topAchievement).not.toBeNull();
+    expect(p.topAchievement).toContain("40k QPS");
+  });
+
+  it("topAchievement is null when the latest role has no impact bullet", () => {
+    const p = pack({
+      roles: [{ companyName: "Infosys", startDate: "2022-01", endDate: null }],
+    });
+    expect(p.topAchievement).toBeNull();
   });
 });

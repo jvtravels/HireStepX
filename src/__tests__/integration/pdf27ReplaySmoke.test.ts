@@ -56,6 +56,7 @@ const RESUME_PACK: ResumeFactPack = {
   mbaTier: null,
   leadershipClaimed: false,
   gapMonths: null,
+  topAchievement: null,
   latestRole: {
     title: "Senior Product Designer",
     companyName: "Flipkart",

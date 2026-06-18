@@ -83,15 +83,33 @@ const GENERIC_JUSTIFICATION_PROBE =
 const SOFTWARE_ENG_SIGNAL =
   /\b(software|backend|back-end|frontend|front-end|full[\s-]?stack|sde|swe|sdet|web\s+developer|app\s+developer|mobile\s+(?:engineer|developer)|android|ios\b|developer|programmer|devops|sre|site\s+reliability|platform\s+engineer|infrastructure\s+engineer|cloud\s+engineer|security\s+engineer|systems?\s+engineer|qa\s+(?:engineer|automation)|test\s+engineer|automation\s+engineer|tech(?:nical)?\s+lead|engineering\s+manager|software\s+architect|solutions?\s+architect)\b/i;
 
+/* Resume-achievement-aware probe. When the candidate's resume surfaced a
+ * concrete, quantified win, real HR names it before pushing on the hike —
+ * "you've led the GST automation that saved ₹2 Cr — what else justifies
+ * the jump?" — which beats any role-family template because it proves the
+ * recruiter actually read the CV. `achievement` is a verb-initial clause
+ * pre-cleaned by `extractTopAchievement` (lowercased leading verb, no
+ * trailing punctuation), so it slots into "you've <clause>" grammatically. */
+function buildResumeAwareProbe(achievement: string): string {
+  return `you've ${achievement} — what else justifies the kind of jump you're after?`;
+}
+
 /** Role-family-specific probe template. Pure.
  *
  * `role` (the raw title) disambiguates the engineering CATCH-ALL: when the
  * family is "engineering" but the title carries no software signal, the
- * generic probe ships instead of software jargon. */
+ * generic probe ships instead of software jargon.
+ *
+ * `achievement` (optional) is a resume-derived, verb-initial impact clause.
+ * When present it takes precedence over every role-family template — the
+ * probe names the candidate's actual win instead of a generic bucket. */
 export function getHikeJustificationProbe(
   roleFamily: RoleFamily,
   role?: string | null,
+  achievement?: string | null,
 ): string {
+  const ach = (achievement ?? "").trim();
+  if (ach) return buildResumeAwareProbe(ach);
   if (roleFamily === "engineering" && !SOFTWARE_ENG_SIGNAL.test(role || "")) {
     return GENERIC_JUSTIFICATION_PROBE;
   }
@@ -147,11 +165,12 @@ export function buildHikeJustificationBrief(
   input: HikeJustificationInputs,
   roleFamily: RoleFamily,
   role?: string | null,
+  achievement?: string | null,
 ): string | null {
   if (!shouldProbeHikeJustification(input)) return null;
   const delta = computeHikeDelta(input.currentCtcLpa, input.expectedCtcLpa);
   if (delta == null) return null;
   const pct = Math.round(delta * 100);
-  return `[HIKE JUSTIFICATION REQUIRED: ${pct}% jump — ask "${getHikeJustificationProbe(roleFamily, role)}"]`;
+  return `[HIKE JUSTIFICATION REQUIRED: ${pct}% jump — ask "${getHikeJustificationProbe(roleFamily, role, achievement)}"]`;
 }
 
