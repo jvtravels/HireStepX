@@ -813,6 +813,15 @@ export function renderCandidateQuestionResponse(
 /**
  * Generic fallback used when no pattern classifies and no LLM is in play.
  * Centralised so the canonical-prose layer doesn't hand-roll the string.
+ *
+ * MVP audit (2026-06-18) — the prior text ("Happy to address that — let me
+ * come back to where we were.") was itself a banned content-free deflection
+ * (it matches the FILLER_PHRASES guard). When an unclassifiable candidate
+ * question hit it, the downstream filler/loop guard stripped the phrase and
+ * the ACK bridge collapsed it to a degenerate stub ("Okay.."). The
+ * replacement is forward-moving — it invites the candidate to specify rather
+ * than promising to "come back" — so it survives the guard intact and never
+ * degenerates. No "address"/"come back" tokens that the filler guard keys on.
  */
 export const CANDIDATE_QUESTION_GENERIC_FALLBACK =
-  "Happy to address that — let me come back to where we were.";
+  "That's a fair thing to raise — tell me a bit more about what you're looking for there, and I'll factor it into how we structure the fitment.";
