@@ -59,6 +59,8 @@ describe("AR1 — PROBE_PRODUCING_KINDS contains every probe variant", () => {
       "lever-rsu-refresh",
       "lever-relocation",
       "lever-perf-bonus-cadence",
+      "lever-work-mode",
+      "lever-growth-path",
       "lever-joining-bonus-explained",
     ];
     for (const k of expected) {

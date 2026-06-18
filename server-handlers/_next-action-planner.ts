@@ -420,6 +420,14 @@ export type NextAction =
   | { kind: "lever-rsu-refresh"; satisfiesTopic: SatisfiesTopic }
   | { kind: "lever-relocation"; satisfiesTopic: SatisfiesTopic }
   | { kind: "lever-perf-bonus-cadence"; satisfiesTopic: SatisfiesTopic }
+  /* Gaps #1 / #6 (2026-06-18) — non-cash structural levers a real
+   * Indian HR commits ON THE SPOT and writes into the offer letter:
+   * work-mode (hybrid/WFH days) and growth-path (defined promotion
+   * timeline + scope + mentoring). Previously work-mode lived only as a
+   * discovery "note to self" and growth-path had no closing lever, so
+   * the bot could neither trade them nor close on them. */
+  | { kind: "lever-work-mode"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "lever-growth-path"; satisfiesTopic: SatisfiesTopic }
   | { kind: "lever-joining-bonus-explained"; satisfiesTopic: SatisfiesTopic }
   | { kind: "band-anchor-with-rationale"; satisfiesTopic: SatisfiesTopic }
   /* perfect 5 (2026-05-16) — Indian-recruiter band-defense moves.
@@ -757,6 +765,8 @@ export const PROBE_PRODUCING_KINDS: ReadonlySet<NextAction["kind"]> = new Set<Ne
   "lever-rsu-refresh",
   "lever-relocation",
   "lever-perf-bonus-cadence",
+  "lever-work-mode",
+  "lever-growth-path",
   "lever-joining-bonus-explained",
   "band-anchor-with-rationale",
   "internal-equity-defense",
@@ -4981,6 +4991,8 @@ function pickStructuralLever(state: NegotiationState): PlannedAction | null {
     { kind: "lever-retention-bonus", gated: false },
     { kind: "lever-relocation", gated: false },
     { kind: "lever-perf-bonus-cadence", gated: false },
+    { kind: "lever-work-mode", gated: false },
+    { kind: "lever-growth-path", gated: false },
   ];
   for (const { kind, gated } of rotation) {
     if (gated) continue;
@@ -4997,6 +5009,8 @@ type StructuralLeverKind =
   | "lever-rsu-refresh"
   | "lever-relocation"
   | "lever-perf-bonus-cadence"
+  | "lever-work-mode"
+  | "lever-growth-path"
   | "lever-joining-bonus-explained";
 
 function makeStructuralLeverAction(
@@ -5840,8 +5854,11 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
       {
         flag: profile.askedAboutGrowthPath,
         topic: "growth-path",
-        ask: "On the growth path — the standard journey here is two appraisal cycles to the next grade, faster if you take on a high-impact project. We'll discuss that in your first 30 days.",
-        rationale: "Candidate asked about growth path — give the appraisal-cycle anchor (Indian context: April/March cycle, two cycles to next grade).",
+        /* Gap #6 (2026-06-18) — was "We'll discuss that in your first 30
+         * days" (a deferral). Now commits a concrete, writeable horizon
+         * tied to the review and scope, consistent with lever-growth-path. */
+        ask: "On the growth path — this role has a defined path to the next grade at the 12 to 15 month mark, tied to your performance review and the charter you own, not just tenure. I can have those review milestones written into the offer annexure so it's committed up front, not left to a later conversation.",
+        rationale: "Candidate asked about growth path — commit a concrete promotion horizon (next grade at 12-15mo, review-tied) and offer to put the milestones in the offer annexure; no deferral.",
       },
       {
         flag: profile.askedAboutTeamSize,

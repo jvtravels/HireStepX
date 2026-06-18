@@ -341,6 +341,8 @@ export type DiscoveryTopic =
   | "lever-rsu-refresh"
   | "lever-relocation"
   | "lever-perf-bonus-cadence"
+  | "lever-work-mode"
+  | "lever-growth-path"
   | "lever-joining-bonus-explained"
   /* NegotiationLever values (move.lever fallback in applyAiMove pushes
    * these onto state.askedTopics when no askedTopic/actionKind is set).
@@ -423,6 +425,7 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "anchor-with-offer", "post-acceptance-document-request",
   "lever-grade-upgrade", "lever-retention-bonus", "lever-rsu-refresh",
   "lever-relocation", "lever-perf-bonus-cadence", "lever-joining-bonus-explained",
+  "lever-work-mode", "lever-growth-path",
   "open-with-offer", "probe", "probe-justification", "counter-base",
   "joining-bonus", "equity-grant", "benefits-summary", "compensation-summary",
   "notice-period-summary", "hike-context-summary", "hold-firm",
@@ -6510,6 +6513,8 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     "lever-rsu-refresh",
     "lever-relocation",
     "lever-perf-bonus-cadence",
+    "lever-work-mode",
+    "lever-growth-path",
     "lever-joining-bonus-explained",
   ]);
   if (move.actionKind && STRUCTURAL_LEVERS.has(move.actionKind)) {

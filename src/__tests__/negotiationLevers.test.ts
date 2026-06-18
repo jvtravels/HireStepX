@@ -124,6 +124,33 @@ describe("Fix 1 — Indian-context negotiation levers", () => {
     expect(prose).toMatch(/perf|cycle|bonus|appraisal/i);
   });
 
+  /* Gap #1 (2026-06-18) — work-mode is a committed, written lever, not a
+   * discovery note. Must name concrete hybrid days AND put it in the
+   * offer letter (no verbal-only deflection). */
+  it("lever-work-mode commits concrete hybrid days into the offer letter", () => {
+    const s = init({ highestOfferMade: 22 });
+    const prose = renderCanonicalProse(
+      { kind: "lever-work-mode" } as ReturnType<typeof planNextAction>,
+      s,
+    );
+    expect(prose).toMatch(/hybrid|office|home|work mode/i);
+    expect(prose).toMatch(/offer letter/i);
+    expect(prose).not.toMatch(/revert|confirm and/i);
+  });
+
+  /* Gap #6 (2026-06-18) — growth-path is a closing lever with writeable
+   * milestones, not discovery-only. Must name a concrete promotion
+   * horizon and commit it in writing. */
+  it("lever-growth-path names a concrete promotion horizon committed in writing", () => {
+    const s = init({ highestOfferMade: 22 });
+    const prose = renderCanonicalProse(
+      { kind: "lever-growth-path" } as ReturnType<typeof planNextAction>,
+      s,
+    );
+    expect(prose).toMatch(/next level|growth|promotion|review/i);
+    expect(prose).toMatch(/12 to 15 month|annexure|offer/i);
+  });
+
   it("canonical prose renders lever-joining-bonus-explained with clawback context", () => {
     const s = init({ highestOfferMade: 22, lastJoiningBonusOffered: 3 });
     const prose = renderCanonicalProse(

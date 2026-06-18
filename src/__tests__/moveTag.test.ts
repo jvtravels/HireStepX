@@ -108,6 +108,8 @@ const FIXTURES: ReadonlyArray<NextAction> = [
   { kind: "lever-rsu-refresh", satisfiesTopic: "targetAsked" },
   { kind: "lever-relocation", satisfiesTopic: "wants-relocation-allowance" },
   { kind: "lever-perf-bonus-cadence", satisfiesTopic: "targetAsked" },
+  { kind: "lever-work-mode", satisfiesTopic: "targetAsked" },
+  { kind: "lever-growth-path", satisfiesTopic: "growth-path" },
   { kind: "lever-joining-bonus-explained", satisfiesTopic: "wants-joining-bonus" },
   { kind: "band-anchor-with-rationale", satisfiesTopic: "targetAsked" },
   {

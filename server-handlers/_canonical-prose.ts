@@ -913,6 +913,18 @@ const PROSE_ARMS: ProseArmRegistry = {
   "lever-perf-bonus-cadence": () =>
     "On the performance bonus — it's paid out at the March appraisal cycle, with a mid-year top-up for top performers. The standard payout is 100% if your rating is on track, going up to 150% for top performers and 0% if the rating is below the threshold.",
 
+  /* Gap #1 (2026-06-18) — work-mode as a committed, written lever. Real
+   * Indian HR for a senior grade can flex hybrid days on the spot and put
+   * it in the offer letter, rather than leaving it a verbal understanding. */
+  "lever-work-mode": (_action, _state) =>
+    "On the work mode — we're hybrid, three days in office and two from home as the standard for this grade. Given the role, I can formalise a two-day-in-office arrangement for you, and that goes into the offer letter so it isn't just a verbal understanding.",
+
+  /* Gap #6 (2026-06-18) — growth-path as a closing lever with concrete,
+   * writeable milestones (next level at 12-15 months tied to the review,
+   * defined scope, mentor for the first two quarters). */
+  "lever-growth-path": (_action, _state) =>
+    "On the growth side — this role has a defined path to the next level at the 12 to 15 month mark, tied to your performance review, not just tenure. You'd own the charter end to end, and we pair you with a senior mentor for the first two quarters. I can put those review milestones into the offer annexure so it's committed, not just a conversation.",
+
   /* Audit fix 2026-05-21 — recruiter weaponises CTC-vs-in-hand
    * confusion. Numbers are accurate; the framing is the lie.
    * The simulator allows this once per session so the candidate

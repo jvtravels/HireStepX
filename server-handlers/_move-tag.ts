@@ -423,6 +423,18 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "counter",
         hint: "Recruiters tweak bonus timing to sweeten short-term cash — useful if you trust the payout history, weak if you don't.",
       };
+    case "lever-work-mode":
+      return {
+        label: "Offering work flexibility",
+        family: "counter",
+        hint: "Hybrid / WFH days are real quality-of-life value but cost the company nothing — get it into the offer letter, not left verbal.",
+      };
+    case "lever-growth-path":
+      return {
+        label: "Offering growth path",
+        family: "counter",
+        hint: "A defined promotion timeline and scope are worth chasing — but only if the review milestones go into the offer in writing, not just spoken.",
+      };
     case "lever-joining-bonus-explained":
       return {
         label: "Offering joining bonus",
