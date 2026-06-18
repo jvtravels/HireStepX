@@ -281,6 +281,7 @@ export type DiscoveryTopic =
   | "wants-higher-base"
   | "wants-joining-bonus"
   | "wants-relocation-allowance"
+  | "title-designation"
   | "spouse-family-context"
   | "reporting-structure"
   | "growth-path"
@@ -411,6 +412,7 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "hike-justification", "notice-buyout", "notice-buyout-confirm",
   "number-clarification", "value-proof", "answer-direct",
   "wants-higher-base", "wants-joining-bonus", "wants-relocation-allowance",
+  "title-designation",
   "spouse-family-context", "reporting-structure", "growth-path", "team-size",
   "tax-implication", "bgv-concern", "moonlighting-policy",
   "range-to-point", "range-deflection", "market-data-reference",

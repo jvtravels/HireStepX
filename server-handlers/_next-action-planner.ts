@@ -5840,6 +5840,17 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
         rationale: "Candidate mentioned relocation — confirm intra-city vs inter-city to pick the right reimbursement bucket.",
       },
       {
+        flag: profile.titlePrecisionAsk,
+        topic: "title-designation",
+        /* Gap #2 (2026-06-18) — a direct designation question used to be
+         * absorbed (detector existed, no answer). Give a concrete title
+         * with the grade mapping, and commit the designation in writing.
+         * For a pay-grade bump the candidate is routed to the
+         * lever-grade-upgrade panel step; here we settle the title. */
+        ask: "On the designation — the role carries a Senior title at this grade, and that's exactly what goes on the offer letter and your business card, not a generic band code. If you're asking about a higher grade than that, I can take a grade revision to the panel separately — but the Senior designation itself I can confirm for you right now.",
+        rationale: "Candidate asked about exact title/designation — confirm the concrete title and that it's written into the offer letter; route any pay-grade bump to the grade-upgrade panel step. No deferral.",
+      },
+      {
         flag: profile.wantsFlexibleWork,
         topic: "lever-work-mode",
         /* Gap #1 (2026-06-18) — a direct WFH/hybrid question gets a
