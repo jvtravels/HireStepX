@@ -133,6 +133,41 @@ export function isDiscoveryComplete(
   return required.every((k) => checklist[k] === true);
 }
 
+/* Discovery-incomplete anchor escape (2026-06-18, live-staging finding).
+ *
+ * isDiscoveryComplete is all-or-nothing: EVERY required item must be
+ * answered before the recruiter may anchor. That is correct as a
+ * "discovery fully done" signal, but using it as the ONLY gate on
+ * anchoring lets a single un-answered nice-to-have (comp split, notice
+ * period, value-proof) block the offer forever. Live symptom: a Hinglish
+ * candidate stated current comp + a fixed-scoped target but phrased
+ * notice as "60 din" (unparsed) and value-proof conversationally
+ * (unparsed); discovery never completed, so the bot ground through extra
+ * deflection turns before the ceiling-escalation finally forced a number
+ * — it read as a stall.
+ *
+ * A real recruiter anchors as soon as they know the two load-bearing
+ * facts — the candidate's CURRENT comp and their TARGET. Notice period,
+ * comp split, and value-proof are genuinely orthogonal to the opening
+ * number (the post-anchor discovery cascade already treats them as
+ * deferrable via ORTHOGONAL_POST_ANCHOR_ITEMS). This predicate encodes
+ * exactly that: discovery is "sufficient to anchor" once both essentials
+ * are answered, even if the remaining items never were. It is strictly
+ * weaker than isDiscoveryComplete (every complete checklist is also
+ * sufficient), so it can only ADD anchor opportunities, never remove
+ * them — and it can never fire before the candidate has disclosed both
+ * current and target, so it cannot short-circuit genuine discovery. */
+export function isDiscoverySufficientToAnchor(
+  checklist: DiscoveryChecklist,
+  roleFamily: RoleFamily,
+): boolean {
+  if (isDiscoveryComplete(checklist, roleFamily)) return true;
+  return (
+    checklist.currentCtcAnswered === true &&
+    checklist.targetAnswered === true
+  );
+}
+
 /* Negotiation-flow redesign commit 2 (2026-05-15) — sync parsed facts → checklist.
  *
  * Audit D5: parsed-facts → checklist-flag writes were asymmetric across

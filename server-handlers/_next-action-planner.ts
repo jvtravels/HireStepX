@@ -60,6 +60,7 @@ import {
   getNextOrderedDiscoveryItem,
   getNextOrderedDiscoveryQuestion,
   isDiscoveryComplete,
+  isDiscoverySufficientToAnchor,
 } from "./_discovery-stage";
 import { recommendWalkAway } from "./_recruiter-critique";
 import { estimateCounterOfferRisk } from "./_counter-offer-risk";
@@ -3170,7 +3171,15 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       state.discoveryChecklist != null
     ) {
       const roleFamily = classifyRoleFamily(state.role);
-      if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
+      /* 2026-06-18 — gate the discovery cascade on SUFFICIENCY, not
+       * completeness. Once the candidate has disclosed both essentials
+       * (current comp + target), stop re-probing nice-to-have items
+       * (comp split / notice / value-proof) and fall through to the
+       * anchor bridge below. Those orthogonal items are picked up by the
+       * post-anchor cascade. Without this, an un-answered nice-to-have
+       * (e.g. a Hinglish "60 din" notice that didn't parse) kept the
+       * cascade re-probing and the bot never reached the anchor. */
+      if (!isDiscoverySufficientToAnchor(state.discoveryChecklist, roleFamily)) {
         /* F7 (PDF#20 2026-05-15) — merge recently-asked topics into the
          * skip record so getNextOrderedDiscoveryItem advances past topics
          * that were asked within the last 3 turns. */
@@ -3353,9 +3362,14 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     if (
       state.highestOfferMade === 0 &&
       state.candidateCurrentCtc != null &&
-      state.candidateTarget != null &&
+      /* Accept a fixed-scoped target too (candidateTargetFixed). When a
+       * candidate states "Mujhe 32 LPA fixed chahiye", the value routes
+       * to candidateTargetFixed and candidateTarget stays null — the
+       * old `candidateTarget != null` guard skipped the clean anchor and
+       * the bot ground through extra deflection turns. */
+      (state.candidateTarget != null || state.candidateTargetFixed != null) &&
       state.discoveryChecklist != null &&
-      isDiscoveryComplete(
+      isDiscoverySufficientToAnchor(
         state.discoveryChecklist,
         classifyRoleFamily(state.role),
       ) &&
@@ -3393,8 +3407,8 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           lever: "probe",
           newTotalLpa: anchored,
           rationale:
-            `AUDIT-3 discovery-complete anchor: candidate volunteered current ₹${state.candidateCurrentCtc}L + target ₹${state.candidateTarget}L; ` +
-            `discovery satisfied; no offer on the table — anchor point-offer at ₹${anchored}L (band floor=${lo}).`,
+            `AUDIT-3 discovery-sufficient anchor: candidate volunteered current ₹${state.candidateCurrentCtc}L + target ₹${state.candidateTarget ?? state.candidateTargetFixed}L${state.candidateTarget == null ? " (fixed)" : ""}; ` +
+            `discovery sufficient; no offer on the table — anchor point-offer at ₹${anchored}L (band floor=${lo}).`,
           askedTopic: "band-anchor-with-rationale",
           actionKind: "anchor-with-offer",
         },
@@ -3636,7 +3650,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       state.phase === "probe-expectations" &&
       state.highestOfferMade === 0 &&
       (state.discoveryChecklist == null ||
-        isDiscoveryComplete(
+        isDiscoverySufficientToAnchor(
           state.discoveryChecklist,
           classifyRoleFamily(state.role),
         ))
@@ -3659,8 +3673,10 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * the candidate's target after they had already stated it. Once
      * candidateTarget is set, the probe-expectations fallback must NOT
      * fire — reroute to band-anchor (no offer yet) or counter-offer
-     * (offer on the table). */
-    if (state.candidateTarget != null) {
+     * (offer on the table). A fixed-scoped ask (candidateTargetFixed,
+     * candidateTarget null) is just as much an expressed expectation, so
+     * honor it too — otherwise a Hinglish "32 LPA fixed chahiye" loops. */
+    if (state.candidateTarget != null || state.candidateTargetFixed != null) {
       if (state.highestOfferMade === 0) {
         return {
           kind: "band-anchor-with-rationale",
