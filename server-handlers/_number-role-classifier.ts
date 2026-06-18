@@ -156,8 +156,22 @@ const CURRENT_CUES: CueTable = {
      * possessive pronoun; bare "Total CTC is..." was binding nothing,
      * leaving current-ctc null past turn 2. */
     /\btotal\s+(?:ctc|package|comp(?:ensation)?|pay)\b/i,
+    /* Hinglish current-comp frames (live-staging, 2026-06-18). Indian
+     * candidates routinely state their current pay as "abhi main 24 LPA
+     * pe hoon" (right now I'm at 24), "filhaal 24 le raha hoon"
+     * (currently drawing 24). The English `current` cue never fired on
+     * these, so currentCtc stayed null, discovery never completed the
+     * currentCtc item, and the bot stalled re-probing. The unambiguous
+     * present-state markers below ("abhi"/"filhaal" left, "pe/par hoon"
+     * + "le raha/rahi hoon" right) bind these to current. None overlap a
+     * target frame ("mujhe … chahiye"), so target binds are untouched. */
+    /\babhi\s+main\b/i,
+    /\bfil[h]?aal\b/i,
   ],
   right: [
+    /\bpe\s+h(?:oo?n|u|un)\b/i,
+    /\bpar\s+h(?:oo?n|u|un)\b/i,
+    /\ble\s+rah[ai]\s+h(?:oo?n|u|un)\b/i,
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
     /* AUDIT-2 (2026-06-08): the "X LPA total." compact disclosure cue

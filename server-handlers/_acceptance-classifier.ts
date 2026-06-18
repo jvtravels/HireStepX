@@ -107,6 +107,16 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   /\bi.?ll\s+join(?:\s+(?:the\s+)?(?:company|team|firm|role|offer))?\b/i,
   /\bi.?ll\s+go\s+with\s+(?:this|the\s+offer|that)\b/i,
   /\bworks\s+for\s+me[,\s]+i.?ll\s+sign\b/i,
+  /* Hinglish performative accept (live-staging, 2026-06-18). Indian
+   * candidates close with "accept karta/karti hoon" (I accept), "accept
+   * kar raha/rahi hoon" (I'm accepting), "accept karunga/karungi" /
+   * "accept kar lunga" (I'll accept), "accept kar liya" (accepted). The
+   * verb "accept" + Hindi conjugation is as unambiguous a speech act as
+   * "I accept" — strong enough to bypass the offer-reference phase gate,
+   * exactly like the English performatives above. Without it, a Hinglish
+   * acceptance with no surrounding English ("accept karta hoon") fell
+   * through to no-match and the candidate's close was lost. */
+  /\baccept\s+kar(?:ta|ti|unga|ungi|\s+rah[ai]|\s+l(?:u|oo)nga|\s+li(?:ya)?)\b/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
