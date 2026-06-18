@@ -2077,6 +2077,7 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
         valueProofProvided,
       },
       classifyRoleFamily(state.role),
+      state.role,
     );
     if (hikeBrief) parts.push(hikeBrief);
   }

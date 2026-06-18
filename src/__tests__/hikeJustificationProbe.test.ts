@@ -100,9 +100,63 @@ describe("hike-justification probe", () => {
     ).toBe(false);
   });
 
-  it("engineering probe references system design / scale / codebase", () => {
-    const p = getHikeJustificationProbe("engineering");
+  it("engineering probe references system design / scale / codebase (software title)", () => {
+    const p = getHikeJustificationProbe("engineering", "Backend Software Engineer");
     expect(p.toLowerCase()).toMatch(/system|scale|codebase|performance/);
+  });
+
+  /* Regression (2026-06-18): classifyRoleFamily defaults EVERY unmatched
+   * role to "engineering", which used to ship the software "system design /
+   * codebase / scale wins" probe to Finance, HR, Legal, Civil/Mechanical
+   * Engineer, Teacher… — "the static question asked to every role". The
+   * software probe must now require a positive software-title signal. */
+  it("engineering FAMILY but non-software title → generic probe, no software jargon", () => {
+    for (const role of [
+      "Finance Manager",
+      "HR Business Partner",
+      "Talent Acquisition Specialist",
+      "Civil Engineer",
+      "Mechanical Engineer",
+      "Legal Counsel",
+      "Operations Associate",
+      "Chartered Accountant",
+    ]) {
+      const p = getHikeJustificationProbe("engineering", role).toLowerCase();
+      expect(p, `role="${role}" leaked software jargon`).not.toMatch(
+        /system design|codebase|scale wins/,
+      );
+      expect(p).toContain("what justifies it");
+    }
+  });
+
+  it("engineering FAMILY with empty/missing title → generic probe (not software)", () => {
+    expect(getHikeJustificationProbe("engineering").toLowerCase()).not.toMatch(
+      /system design|codebase/,
+    );
+    expect(getHikeJustificationProbe("engineering", null).toLowerCase()).not.toMatch(
+      /system design|codebase/,
+    );
+    expect(getHikeJustificationProbe("engineering", "").toLowerCase()).not.toMatch(
+      /system design|codebase/,
+    );
+  });
+
+  it("software titles DO get the software probe", () => {
+    for (const role of [
+      "Software Engineer",
+      "Senior Backend Developer",
+      "Full Stack Developer",
+      "SDE-2",
+      "DevOps Engineer",
+      "Site Reliability Engineer",
+      "Frontend Engineer",
+      "Engineering Manager",
+    ]) {
+      const p = getHikeJustificationProbe("engineering", role).toLowerCase();
+      expect(p, `role="${role}" missed software probe`).toMatch(
+        /system design|codebase|scale/,
+      );
+    }
   });
 
   it("sales probe references quota / deal / account", () => {
@@ -135,6 +189,7 @@ describe("hike-justification probe", () => {
         valueProofProvided: false,
       },
       "engineering",
+      "Backend Software Engineer",
     );
     expect(brief).not.toBeNull();
     expect(brief).toMatch(/^\[HIKE JUSTIFICATION REQUIRED:/);
