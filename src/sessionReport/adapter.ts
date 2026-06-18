@@ -415,7 +415,10 @@ export function sessionReportToInterviewResult(
       : undefined,
     negotiationOutcome: isNegotiation
       ? attachPowerContext(
-          attachLowballEvent(buildNegotiationOutcome(report), session.negotiationMetrics?.lowballEvent),
+          attachLowballEvent(
+            buildNegotiationOutcome(report, session.negotiationMetrics),
+            session.negotiationMetrics?.lowballEvent,
+          ),
           session.negotiationMetrics?.powerContext,
         )
       : undefined,
@@ -425,12 +428,67 @@ export function sessionReportToInterviewResult(
   };
 }
 
-/** Derive the offer trajectory + deal outcome from the per-question
- *  transcript. Heuristic but deterministic: scan AI text for ₹X LPA
- *  totals (only the "total / offer" mentions, not component breakdowns),
- *  scan candidate text for explicit acceptance / walk-away / target
- *  numbers. Drives the salary-neg report section. */
-function buildNegotiationOutcome(report: SessionReport): InterviewResultData["negotiationOutcome"] {
+/** Adopt the negotiation outcome from the kernel's authoritative final
+ *  state (persisted on `negotiationMetrics`) instead of re-parsing the
+ *  transcript. The kernel KNOWS the offer trajectory, the candidate's
+ *  ask, and whether the deal closed — the regex heuristic below silently
+ *  failed on real sessions (a session that closed at ₹25.2L rendered
+ *  "0 of 5 stages, didn't close, no counter named"). Mirrors the
+ *  adoptKernelBand fix for the Deal Summary band.
+ *
+ *  Returns null for legacy rows persisted before the trajectory fields
+ *  were added (initialOfferLpa / offerTrajectoryLpa absent) — the caller
+ *  then falls back to the transcript heuristic. */
+function adoptKernelOutcome(
+  km: NonNullable<DashboardSession["negotiationMetrics"]>,
+): InterviewResultData["negotiationOutcome"] | null {
+  if (km.offerTrajectoryLpa == null || typeof km.initialOfferLpa !== "number") {
+    return null; // legacy row — no authoritative trajectory persisted
+  }
+  const outcome: "accepted" | "walked_away" | "no_agreement" =
+    km.outcome === "accepted" ? "accepted"
+    : km.outcome === "walked-away" ? "walked_away"
+    : "no_agreement"; // stalemate / in-progress → no close
+
+  const trajectory = km.offerTrajectoryLpa;
+  const offers = trajectory.map((total, i) => ({
+    turn: i + 1,
+    total,
+    question: "",
+  }));
+  const candidateAsk = km.candidateAskLpa ?? null;
+  const latest = trajectory.length > 0
+    ? trajectory[trajectory.length - 1]
+    : (typeof km.finalOfferLpa === "number" ? km.finalOfferLpa : null);
+  const finalTotal = outcome === "accepted"
+    ? (typeof km.finalOfferLpa === "number" ? km.finalOfferLpa : latest)
+    : null;
+
+  let gapClosurePct: number | null = null;
+  if (candidateAsk !== null && latest !== null && candidateAsk > km.initialOfferLpa) {
+    gapClosurePct = Math.max(0, Math.min(100, Math.round(
+      ((latest - km.initialOfferLpa) / (candidateAsk - km.initialOfferLpa)) * 100,
+    )));
+  }
+
+  return { offers, finalTotal, outcome, candidateAsk, gapClosurePct };
+}
+
+/** Derive the offer trajectory + deal outcome. Prefers the kernel's
+ *  authoritative final state (`negotiationMetrics`); falls back to a
+ *  heuristic transcript scan only for legacy rows that predate the
+ *  persisted trajectory. The heuristic is deterministic: scan AI text
+ *  for ₹X LPA totals (only the "total / offer" mentions, not component
+ *  breakdowns), scan candidate text for explicit acceptance / walk-away
+ *  / target numbers. Drives the salary-neg report section. */
+export function buildNegotiationOutcome(
+  report: SessionReport,
+  kernelMetrics?: DashboardSession["negotiationMetrics"],
+): InterviewResultData["negotiationOutcome"] {
+  if (kernelMetrics) {
+    const adopted = adoptKernelOutcome(kernelMetrics);
+    if (adopted) return adopted;
+  }
   const offers: Array<{ turn: number; total: number; question: string }> = [];
   const totalRe = /(?:offer(?:ing)?(?:\s+(?:you|to))?|extend(?:ing)?(?:\s+an?)?\s+offer|total(?:\s+ctc)?|stretch\s+to|move\s+to|land\s+at|come\s+up\s+to|i\s+can\s+do)\s*(?:you\s*)?₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/i;
   report.perQuestion.forEach((q, idx) => {

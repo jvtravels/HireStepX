@@ -155,12 +155,41 @@ describe("computeNegotiationMetrics", () => {
     expect(m.outcome).toBe("accepted");
     expect(m.lpaGained).toBe(5);
     expect(m.bandTraversal).toBe(0.5);
+    /* Authoritative offer/ask numbers — the report adopts these instead
+       of re-parsing the transcript. */
+    expect(m.initialOfferLpa).toBe(20);
+    expect(m.finalOfferLpa).toBe(25);
+    expect(m.offerTrajectoryLpa).toEqual([20, 25]);
     /* New fields surface kernel signals to the report layer. */
     expect(m.vossTacticsUsed).toEqual([]);
     expect(m.infoAsked).toEqual([]);
     expect(m.walkAwayReturned).toBe(false);
     expect(m.hardBandCap).toBe(false);
     expect(m.marketMode).toBe("neutral");
+  });
+
+  it("captures the candidate's effective ask + offer trajectory (cash turns only)", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ phase: "accepted", highestOfferMade: 27, candidateTarget: 30 }),
+      moves: [
+        move({ lever: "open-with-offer", newTotalLpa: 20 }),
+        move({ lever: "benefits-summary", newTotalLpa: null, turnIndex: 1 }), // non-cash → excluded
+        move({ lever: "counter-base", newTotalLpa: 24, turnIndex: 2 }),
+        move({ lever: "hold-firm", newTotalLpa: 27, turnIndex: 3 }),
+      ],
+    });
+    expect(m.candidateAskLpa).toBe(30);
+    expect(m.offerTrajectoryLpa).toEqual([20, 24, 27]); // null turn dropped
+    expect(m.initialOfferLpa).toBe(20);
+    expect(m.finalOfferLpa).toBe(27);
+  });
+
+  it("reports a null ask when the candidate never anchored", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ phase: "stalemate", candidateTarget: null }),
+      moves: [move({ lever: "open-with-offer", newTotalLpa: 20 })],
+    });
+    expect(m.candidateAskLpa).toBeNull();
   });
 
   it("surfaces voss tactics and info intents from final state", () => {

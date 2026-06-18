@@ -28,6 +28,7 @@ import type {
   InfoIntent,
   MarketMode,
 } from "./_negotiation-kernel";
+import { effectiveTargetCtcLpa } from "./_negotiation-kernel";
 import {
   critiqueRecruiterStrategy,
   type RecruiterCritiqueItem,
@@ -105,6 +106,26 @@ export interface NegotiationMetrics {
    *  Surfaces "the one moment that mattered most" rather than the
    *  whole list, so the post-session view stays focused. */
   pivotalTurn: PivotalTurn;
+  /* ── Authoritative offer/ask numbers (2026-06-18) ──────────────────
+   * The report's offer trajectory + close/stage detection used to be
+   * re-derived by regex-scanning the transcript (adapter.ts
+   * buildNegotiationOutcome). That heuristic silently failed on real
+   * sessions — a session that closed at ₹25.2L rendered "0 of 5 stages,
+   * didn't close, no counter named". The kernel already KNOWS these
+   * numbers; persisting them lets the report adopt kernel truth instead
+   * of guessing. Mirrors the adoptKernelBand fix for the Deal Summary
+   * band. */
+  /** The recruiter's opening offer (LPA) — band.initialOffer. */
+  initialOfferLpa: number;
+  /** The highest total CTC the recruiter put on the table (LPA). For an
+   *  accepted deal this is the agreed number. */
+  finalOfferLpa: number;
+  /** The candidate's effective target CTC (LPA), folding a fixed-only ask
+   *  into a total-equivalent. Null when they never anchored. */
+  candidateAskLpa: number | null;
+  /** Chronological cash offers the recruiter made (LPA), most-recent last.
+   *  One entry per cash turn; non-cash lever turns are excluded. */
+  offerTrajectoryLpa: ReadonlyArray<number>;
 }
 
 /** Compute kernel-aware metrics from final state + move history. Pure. */
@@ -143,6 +164,13 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     (m) => m.newTotalLpa != null && m.newTotalLpa > band.maxStretch + 0.01,
   );
 
+  /* Authoritative offer trajectory + ask — straight off the kernel, no
+     transcript re-parse. Cash turns only (non-cash levers carry null). */
+  const offerTrajectoryLpa = moves
+    .map((m) => m.newTotalLpa)
+    .filter((n): n is number => n != null);
+  const candidateAskLpa = effectiveTargetCtcLpa(finalState);
+
   return {
     outcome,
     anchorTurn,
@@ -159,6 +187,10 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     marketMode: finalState.marketMode ?? "neutral",
     recruiterCritique: critiqueRecruiterStrategy({ finalState, moves }),
     pivotalTurn: analyzePivotalTurn({ finalState, moves }),
+    initialOfferLpa: band.initialOffer,
+    finalOfferLpa: finalState.highestOfferMade,
+    candidateAskLpa,
+    offerTrajectoryLpa,
   };
 }
 

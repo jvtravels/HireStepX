@@ -80,6 +80,16 @@ export interface DashboardSession {
     overBandViolation: boolean;
     totalTurns: number;
     score: number;
+    /* Authoritative offer/ask numbers from kernel final state
+       (2026-06-18). Optional so old rows persisted without them
+       deserialize cleanly — the report adapter falls back to its
+       transcript-regex heuristic for those legacy rows. Present rows
+       drive the report's offer trajectory + close/stage detection from
+       kernel truth instead of re-parsing the transcript. */
+    initialOfferLpa?: number;
+    finalOfferLpa?: number;
+    candidateAskLpa?: number | null;
+    offerTrajectoryLpa?: ReadonlyArray<number>;
     /* Optional kernel signals — added in a later ship. Optional so old
        rows persisted without them deserialize cleanly. */
     vossTacticsUsed?: ReadonlyArray<string>;

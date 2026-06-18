@@ -3437,6 +3437,10 @@ export function useInterviewEngine() {
       overBandViolation: boolean;
       totalTurns: number;
       score: number;
+      initialOfferLpa: number;
+      finalOfferLpa: number;
+      candidateAskLpa: number | null;
+      offerTrajectoryLpa: ReadonlyArray<number>;
       vossTacticsUsed: ReadonlyArray<string>;
       infoAsked: ReadonlyArray<string>;
       walkAwayReturned: boolean;
