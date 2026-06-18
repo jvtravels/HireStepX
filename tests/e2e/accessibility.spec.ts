@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { installMocks } from "./_authed-helpers";
 
 /**
  * Accessibility tests using axe-core and manual checks.
@@ -7,18 +8,30 @@ import AxeBuilder from "@axe-core/playwright";
  */
 
 test.describe("Accessibility — Landing Page", () => {
-  test("landing page has no critical a11y violations", async ({ page }) => {
+  test("landing page has no critical or serious a11y violations", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("h1")).toBeVisible({ timeout: 5000 });
 
+    // Bar raised from critical-only to critical+serious, matching the
+    // signup/login bar — every structural / ARIA / name-role-value rule now
+    // gates landing at the serious level too.
+    //
+    // color-contrast remains the ONE excluded rule, now QUANTIFIED rather than
+    // hand-waved: enabling it surfaces 134 violation nodes on landing, all
+    // copper (#B45309) on cream tints (#F2E3D4) at <14px bold — measured 3.99:1
+    // vs the 4.5:1 AA threshold. Fixing them means darkening the copper scale
+    // or enforcing a min size/weight for copper text across marketing — a
+    // design decision with cross-surface visual blast radius, tracked as a
+    // founder-owned design fix in audit doc 02, not patched blind here. When it
+    // lands, delete this disableRules line so contrast gates in CI.
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa"])
       .exclude(".particle-canvas")
       .exclude("canvas")
-      .disableRules(["color-contrast"]) // dark theme contrast checked manually
+      .disableRules(["color-contrast"])
       .analyze();
 
-    expect(results.violations.filter(v => v.impact === "critical")).toEqual([]);
+    expect(results.violations.filter(v => v.impact === "critical" || v.impact === "serious")).toEqual([]);
   });
 
   test("skip-to-content link exists", async ({ page }) => {
@@ -108,6 +121,38 @@ test.describe("Accessibility — Login Page", () => {
     await page.goto("/login");
     const heading = page.locator("h1, h2").first();
     await expect(heading).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe("Accessibility — Authenticated surfaces", () => {
+  // The audit (doc 02, P1) flagged that axe-core never ran on the surfaces
+  // users pay for. This closes the gap for /analytics, which mounts reliably
+  // under the page.route() mock harness (see _authed-helpers.ts). The
+  // dashboard/sessions/settings/interview/report surfaces don't mount past the
+  // dev Suspense fallback within the test budget (the documented harness
+  // limitation in authed-surfaces.spec.ts) so they stay on the live-Vercel
+  // sweep, not here.
+  //
+  // color-contrast is excluded for the same quantified reason as landing:
+  // enabling it surfaces 58 nodes on /analytics, all the editorial copper /
+  // amber inks on cream at ~4.3:1 vs the 4.5:1 AA threshold — the same
+  // founder-owned copper-scale design fix. Every other rule gates at the
+  // critical+serious bar.
+  test("analytics has no critical or serious a11y violations", async ({ page }) => {
+    const leaks = await installMocks(page);
+    await page.goto("/analytics");
+    await expect(page).toHaveURL(/\/analytics/, { timeout: 15_000 });
+    await expect(page.locator("body")).toContainText(/Analytics|Readiness|Performance|Insights/i, { timeout: 30_000 });
+
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa"])
+      .exclude(".particle-canvas")
+      .exclude("canvas")
+      .disableRules(["color-contrast"])
+      .analyze();
+
+    expect(results.violations.filter(v => v.impact === "critical" || v.impact === "serious")).toEqual([]);
+    expect(leaks, `real Supabase calls leaked: ${leaks.join(", ")}`).toEqual([]);
   });
 });
 
