@@ -13,7 +13,7 @@ import { extractAccentMarkup } from "./_accent-parser";
 import { stripProsodyMarkup } from "./_prosody";
 import { useListeningInterjections } from "./_listening-interjections";
 import { buildThinkingPhrase } from "./_thinking-phrase";
-import { pickInitialNegotiationStyle, computeNegotiationPhase } from "./_negotiation-state";
+import { pickInitialNegotiationStyle, computeNegotiationPhase, adoptKernelBand, extractKernelBand } from "./_negotiation-state";
 import { runEvaluationFlow } from "./_evaluation-flow";
 import {
   isRepeatRequest,
@@ -2702,7 +2702,17 @@ export function useInterviewEngine() {
                   const parsedInit = JSON.parse(initRes.state) as {
                     turnIndex?: number;
                     candidateTarget?: number | null;
+                    band?: unknown;
                   };
+                  /* Kernel-first band adoption (2026-06-18). The kernel
+                     negotiates against the tier-clamped band resolved
+                     server-side; adopt it so the report (DealSummaryCard)
+                     and live dashboard show the band actually negotiated,
+                     not the unclamped generate-questions band. */
+                  const initKernelBand = extractKernelBand(parsedInit.band);
+                  if (initKernelBand) {
+                    negotiationBandRef.current = adoptKernelBand(negotiationBandRef.current, initKernelBand);
+                  }
                   kernelMovesRef.current.push({
                     lever: initRes.move.lever,
                     newTotalLpa: initRes.move.newTotalLpa,
@@ -2784,7 +2794,16 @@ export function useInterviewEngine() {
                   highestOfferMade?: number;
                   turnIndex?: number;
                   candidateTarget?: number | null;
+                  band?: unknown;
                 };
+                /* Keep the report band pinned to the kernel's authoritative
+                   band every turn (idempotent). The kernel band is fixed at
+                   init, but re-adopting guards against the init parse having
+                   been skipped on a retry path. */
+                const turnKernelBand = extractKernelBand(parsedState.band);
+                if (turnKernelBand) {
+                  negotiationBandRef.current = adoptKernelBand(negotiationBandRef.current, turnKernelBand);
+                }
                 const kernelHigh = typeof parsedState.highestOfferMade === "number" ? parsedState.highestOfferMade : 0;
                 if (kernelHigh > highestOfferRef.current) {
                   highestOfferRef.current = kernelHigh;

@@ -260,7 +260,10 @@ export function computeCtcBreakdown(input: CtcBreakdownInput): CtcBreakdownOutpu
     monthlyTakeHomeInr: Math.round(monthlyInr / 100) * 100,
     totalRealisticLpa: round1(totalRealistic),
     gapLpa: round1(gap),
-    gapPct: round1(gapPct * 100) / 100,
+    /* gapPct is a PERCENT (45.3 → "45.3%" at the render site), not a
+       fraction. The old `round1(gapPct*100)/100` divided the percent back
+       down to 0.453, so the Take-home reality row read "gap 0.453%". */
+    gapPct: round1(gapPct * 100),
   };
 }
 

@@ -83,3 +83,90 @@ export function computeNegotiationPhase(input: {
   );
   return NEGOTIATION_PHASES[phaseIdx];
 }
+
+/** The authoritative numeric core every negotiate-turn response carries on
+ *  its serialized kernel `state.band`. The kernel is the documented source
+ *  of truth ("kernel-first"): it negotiates against the tier-clamped band
+ *  resolved server-side by `resolveServerBand` + `clampBandToTierP50`. */
+export interface KernelBandCore {
+  initialOffer: number;
+  maxStretch: number;
+  walkAway: number;
+  hasEquity?: boolean;
+}
+
+/** Shape the report (DealSummaryCard) + live dashboard read. Mirrors
+ *  interviewAPI.NegotiationBandData structurally; kept local to avoid a
+ *  hook→API import cycle in the pure layer. */
+export interface ReportBand {
+  initialOffer: number;
+  minOffer: number;
+  maxStretch: number;
+  walkAway: number;
+  joiningBonusRange: [number, number];
+  hasEquity: boolean;
+  equityRange: [number, number];
+  bandContext: string;
+}
+
+/** Narrow an unknown parsed-JSON `state.band` to a KernelBandCore.
+ *  Returns null unless the three load-bearing numbers are finite — so a
+ *  shape change in the serialized state can never silently feed NaN/garbage
+ *  into the report band. */
+export function extractKernelBand(parsedBand: unknown): KernelBandCore | null {
+  if (parsedBand == null || typeof parsedBand !== "object") return null;
+  const b = parsedBand as Record<string, unknown>;
+  const initialOffer = b.initialOffer;
+  const maxStretch = b.maxStretch;
+  const walkAway = b.walkAway;
+  if (
+    typeof initialOffer !== "number" || !Number.isFinite(initialOffer) ||
+    typeof maxStretch !== "number" || !Number.isFinite(maxStretch) ||
+    typeof walkAway !== "number" || !Number.isFinite(walkAway)
+  ) {
+    return null;
+  }
+  return {
+    initialOffer,
+    maxStretch,
+    walkAway,
+    hasEquity: typeof b.hasEquity === "boolean" ? b.hasEquity : undefined,
+  };
+}
+
+/** STRUCTURAL FIX (2026-06-18) — Deal Summary band/package inflation.
+ *
+ * Two band pipelines used to diverge: `generate-questions` returned the
+ * UNCLAMPED `generateNegotiationBand` band to the client (stored in
+ * `negotiationBandRef`, the report's source), while `negotiate-turn`
+ * negotiated against the tier-CLAMPED kernel band. The report then showed
+ * a number (e.g. ₹80.9 LPA) that the bot never actually offered (it
+ * negotiated on ₹41.4 LPA), and "band captured" rendered 0%.
+ *
+ * The drift-proof fix is kernel-first: once the kernel exists, adopt ITS
+ * authoritative band for the report. This merges the kernel's load-bearing
+ * numbers over the descriptive metadata the resolver supplied (bonus/equity
+ * ranges, context blurb), and pins `minOffer` so it can never exceed the
+ * new (lower) initialOffer. Idempotent — re-applying the same kernel band
+ * is a no-op. */
+export function adoptKernelBand(
+  existing: ReportBand | null | undefined,
+  kernel: KernelBandCore,
+): ReportBand {
+  const hasEquity = kernel.hasEquity ?? existing?.hasEquity ?? false;
+  return {
+    initialOffer: kernel.initialOffer,
+    maxStretch: kernel.maxStretch,
+    walkAway: kernel.walkAway,
+    /* Keep the floor coherent with the (possibly lowered) initial offer.
+       A stale descriptive minOffer above the kernel initial would read as
+       "the company's minimum is higher than its opening offer". */
+    minOffer: existing
+      ? Math.min(existing.minOffer, kernel.initialOffer)
+      : kernel.walkAway,
+    hasEquity,
+    joiningBonusRange: existing?.joiningBonusRange ?? [0, 0],
+    equityRange: hasEquity ? (existing?.equityRange ?? [0, 0]) : [0, 0],
+    bandContext: existing?.bandContext ?? "",
+  };
+}
