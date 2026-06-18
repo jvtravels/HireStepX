@@ -178,6 +178,24 @@ const SCENARIOS: Scenario[] = [
     ],
     expectClose: "accepted",
   },
+  /* MVP-audit #71 regression lock (2026-06-19, reopened). A candidate who
+   * volunteers a unit-less target with the plainest verbs ("Need at least 34.")
+   * used to emit no span — target never bound, discovery stalled. The Pass-4
+   * gate extension (want/need + at-least/minimum-of framing) in
+   * _number-role-classifier.ts must keep this binding and reaching a real
+   * close. Current CTC is stated cleanly so this isolates the target path. */
+  {
+    name: "unitless-volunteered-target",
+    band: B(28, 40, 24),
+    turns: [
+      "Current CTC is 26 LPA fixed.",
+      "Need at least 34.",
+      "Push the base please.",
+      "Okay that revised number works, I accept.",
+      "Yes, please send the offer letter.",
+    ],
+    expectClose: "accepted",
+  },
 ];
 
 interface Finding {

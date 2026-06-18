@@ -459,8 +459,22 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
    * (bare integer, no LPA unit) emitted no span and the counter vanished.
    * Mirror the inflected forms already used in TARGET_CUES.left so the
    * Pass-4 gate and the scored cue table stay in sync. */
-  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move)\b/i;
-  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to)\s+|\b(?:to\s+be|closer\s+to|up\s+to)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
+  /* MVP-audit #71 (2026-06-19, reopened): unit-less unprompted TARGET.
+   * Fix B handled current-cued and bot-prompted bare integers; the symmetric
+   * gap was a candidate VOLUNTEERING a target with the plainest verbs —
+   * "I want 35.", "Need at least 34." — where the unit is dropped and no bot
+   * question primes the context. The scored TARGET_CUES table already carries
+   * `want`/`need` (so pickRole assigns the role correctly), but the Pass-4
+   * emission gate omitted them, so NO span was emitted and the target never
+   * bound — discovery stalled exactly like finding #2. We add the bare
+   * volitional verbs (want/need) plus the "at least" / "minimum of" floor
+   * framing to BOTH the presence test and the positional-opener test so the
+   * span is emitted; pickRole's existing target cues then bind it. Still NOT
+   * fixed: a bare LEADING number with only trailing weak intent ("35 would be
+   * good.") — that is genuinely speculative (collides with age/count) and the
+   * candidate-speaks-English/says-LPA premise makes it vanishingly rare. */
+  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move)\b/i;
+  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to)\s+|\b(?:to\s+be|closer\s+to|up\s+to|at\s+least|a\s+minimum\s+of|minimum\s+of)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
   const SALARY_UNIT_NEARBY = /[\d,.]\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
   /* MVP-audit Fix B (2026-06-18): three additional bare-integer emission
    * gates beyond the target-cue gate. Root cause of the discovery
