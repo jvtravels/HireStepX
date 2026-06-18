@@ -134,6 +134,12 @@ export const t = {
   warnInk: "#d97706",
   badInk:  "#dc2626",
 
+  /* Neutral slate — 2026-06-18. The tone="neutral" value colour + report
+     fallback ink (slate-700). Was hardcoded as #374151 in the report
+     orchestrator's TONE_VALUE_COLOR map and two sibling fallbacks; named
+     here so the single source of truth owns it (zero visual change). */
+  neutralInk: "#374151",
+
   /* Lines */
   line: "#EBE5D2",
   lineStrong: "#D6CDB5",

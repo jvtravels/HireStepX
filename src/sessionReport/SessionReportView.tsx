@@ -85,10 +85,10 @@ export type {
 /* ─── Focus banner ─────────────────────────────────────────────────── */
 
 const TONE_VALUE_COLOR: Record<FocusBannerData["headlineMetric"]["tone"], string> = {
-  good: "#15803D",
-  watch: "#B45309",
-  miss: "#B91C1C",
-  neutral: "#374151",
+  good: t.success,
+  watch: t.copper,
+  miss: t.error,
+  neutral: t.neutralInk,
 };
 
 function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerData; daysUntilInterview?: number }) {
@@ -116,7 +116,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
             height: 40,
             borderRadius: 10,
             background: banner.accent,
-            color: "#FFFFFF",
+            color: t.white,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -139,7 +139,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
           >
             {banner.label}
           </div>
-          <div style={{ fontSize: 13, color: "#0E0C08", fontWeight: 500, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 13, color: t.coal, fontWeight: 500, lineHeight: 1.4 }}>
             {banner.tagline}
           </div>
         </div>
@@ -155,7 +155,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
               fontWeight: 700,
               letterSpacing: 0.8,
               textTransform: "uppercase",
-              color: "#6E6759",
+              color: t.inkSoft,
               marginBottom: 2,
             }}
           >
@@ -172,7 +172,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
             {banner.headlineMetric.value}
           </div>
           {banner.headlineMetric.caption && (
-            <div style={{ fontSize: 11, color: "#6E6759", marginTop: 3, maxWidth: 240 }}>
+            <div style={{ fontSize: 11, color: t.inkSoft, marginTop: 3, maxWidth: 240 }}>
               {banner.headlineMetric.caption}
             </div>
           )}
@@ -181,7 +181,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
         {typeof daysUntilInterview === "number" && daysUntilInterview > 0 && (
           <div
             style={{
-              borderLeft: "1px solid #D6CDB5",
+              borderLeft: `1px solid ${t.lineStrong}`,
               paddingLeft: 24,
               textAlign: "right",
             }}
@@ -192,7 +192,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
                 fontWeight: 700,
                 letterSpacing: 0.8,
                 textTransform: "uppercase",
-                color: "#6E6759",
+                color: t.inkSoft,
                 marginBottom: 2,
               }}
             >
@@ -202,13 +202,13 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
               style={{
                 fontSize: 20,
                 fontWeight: 700,
-                color: "#B45309",
+                color: t.copper,
                 fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
               }}
             >
               {daysUntilInterview}d
             </div>
-            <div style={{ fontSize: 11, color: "#6E6759", marginTop: 3 }}>
+            <div style={{ fontSize: 11, color: t.inkSoft, marginTop: 3 }}>
               Practice before then
             </div>
           </div>
@@ -228,7 +228,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
           }}
         >
           {banner.allMetrics.slice(1).map((m) => {
-            const mColor = TONE_VALUE_COLOR[m.tone] ?? "#374151";
+            const mColor = TONE_VALUE_COLOR[m.tone] ?? t.neutralInk;
             return (
               <div
                 key={m.label}
@@ -237,10 +237,10 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
                   alignItems: "center",
                   gap: 6,
                   fontSize: 12,
-                  color: "#374151",
+                  color: t.neutralInk,
                 }}
               >
-                <span style={{ fontWeight: 700, color: "#6E6759", textTransform: "uppercase", fontSize: 10, letterSpacing: 0.5 }}>
+                <span style={{ fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", fontSize: 10, letterSpacing: 0.5 }}>
                   {m.label}
                 </span>
                 <span style={{ fontWeight: 700, color: mColor, fontFamily: "monospace" }}>

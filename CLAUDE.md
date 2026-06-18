@@ -13,8 +13,8 @@ evaluates their answers. Outputs a scored report with STAR breakdowns,
 a coached model answer, and skill-decay tracking for spaced repetition.
 
 Stack:
-- **Frontend**: Next.js 15 (App Router), React 19, plain inline styles
-  + Tailwind v4, `src/` for all page code
+- **Frontend**: Next.js 16 (^16.2.4, App Router), React 19 (^19.2.5), plain
+  inline styles + Tailwind v4, `src/` for all page code
 - **Backend**: Vercel Edge Functions + Node serverless under
   `server-handlers/` (shared implementation) exposed via `app/api/*/route.ts`
   (thin shims)
@@ -174,7 +174,7 @@ when new test batches clear them.
 
 - **Supabase storage key pattern** — `sb-<ref>-auth-token` in
   localStorage. If you mock auth in Playwright, match this pattern.
-- **Next.js 15 + React 19** — `setState` after unmount no longer warns.
+- **Next.js 16 + React 19** — `setState` after unmount no longer warns.
   Don't add defensive isMounted refs for this reason.
 - **Edge runtime** — no Node APIs. Use `crypto.subtle`, `fetch`, etc.
   Files in `server-handlers/` marked `runtime: "edge"` must be
