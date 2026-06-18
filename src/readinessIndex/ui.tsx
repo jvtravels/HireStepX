@@ -55,6 +55,12 @@ export function scoreColor(s: number): string {
   return t.error;
 }
 
+function ordinalSuffix(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+
 export function DeltaTag({ value, suffix = "" }: { value: number; suffix?: string }) {
   if (value === 0) return <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }} aria-label={`no change${suffix}`}>±0</span>;
   const color = value > 0 ? t.success : t.error;
@@ -176,7 +182,7 @@ export function RiGauge({ ri, threshold, band, cohort, size = 220 }: { ri: numbe
     return <line x1={cx + inner * Math.cos(rad)} y1={cy + inner * Math.sin(rad)} x2={cx + outer * Math.cos(rad)} y2={cy + outer * Math.sin(rad)} stroke={col} strokeWidth={2.5} strokeLinecap="round" />;
   };
   return (
-    <div role="img" aria-label={`Readiness Index ${ri} out of 100. ${BAND_META[band].label}. Company bar ${threshold}${cohort ? `. Typical hire ${cohort}` : ""}.`}
+    <div role="img" aria-label={`Readiness Index ${ri} out of 100. ${BAND_META[band].label}. Company bar ${threshold}${cohort ? `. Cohort bar ${cohort}` : ""}.`}
       style={{ position: "relative", width: size, height: size }}>
       <svg width={size} height={size} aria-hidden="true" focusable="false" style={{ transform: `rotate(${start}deg)`, transformOrigin: "center" }}>
         <circle cx={cx} cy={cy} r={r} fill="none" stroke={t.creamSoft} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${dash} ${circ}`} />
@@ -234,7 +240,7 @@ export function SkillBar({ s }: { s: Skill }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
       <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, width: 122, flexShrink: 0 }}>{s.name}</span>
-      <div role="img" aria-label={`${s.name}: ${s.score} out of 100, ${s.percentile}th percentile`} style={{ flex: 1, height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
+      <div role="img" aria-label={`${s.name}: ${s.score} out of 100, ${s.percentile}${ordinalSuffix(s.percentile)} percentile`} style={{ flex: 1, height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
         <div style={{ width: `${s.score}%`, height: "100%", background: scoreColor(s.score), borderRadius: 999 }} />
       </div>
       <span style={{ fontFamily: f.mono, fontSize: 12, color: t.coal, width: 26, textAlign: "right" }}>{s.score}</span>
