@@ -44,7 +44,7 @@ Acquisition / activation:
 Engagement to readiness:
 
 - `interview_session_started` / `interview_session_completed` — exist (`useInterviewEngine.ts`). props: focus, duration.
-- `report_viewed` — exists. props: overall_score, readiness, readiness_delta.
+- `report_viewed` — exists (`sessionReport/SessionReport.tsx`). props: score, band, is_first_report, and the **shipped** readiness fields `readiness_target_band` / `readiness_estimated_sessions` / `readiness_confidence` (current-session estimate — the Readiness-gain lever). `readiness_delta` is **not yet emitted**: it needs a persisted prior-session score (the trend is fetched in a later effect), so it is a founder/data follow-up, not a client property.
 - `coaching:next_move_cta_clicked` — **new, shipped.** Fired from the "Your next move" primary CTA (`DashboardHome.tsx`). props: gap_code, weakest_skill_name, drill_key. This makes the coaching loop measurable independently of the generic Start funnel.
 
 Retention / currency:
@@ -56,7 +56,7 @@ Referral / monetization (guardrails):
 
 - `referral_invite_sent` / `referral_signup` / `referral_reward_granted` — exist.
 - `pricing_page_viewed`, `checkout_opened`, `plan_upgraded` — exist.
-- `billing:payment_verified` — recommended, server-side from `verify-payment.ts`.
+- `payment_completed` — exists, server-side (`verify-payment.ts` fires it on a successful single-session credit grant and on a successful subscription grant). This **is** the free→paid guardrail signal; do **not** add a separate `billing:payment_verified` event — it would duplicate `payment_completed` and bloat the taxonomy. Reuse the existing name.
 
 ## Acceptance (the score does not rise until these are true on real traffic)
 

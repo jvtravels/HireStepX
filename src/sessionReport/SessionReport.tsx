@@ -619,6 +619,12 @@ export const SessionReport = memo(function SessionReport({
         score: report.overallScore,
         band: report.band,
         is_first_report: (user?.practiceTimestamps?.length ?? 0) <= 1,
+        // Readiness-gain North-Star lever: carry the current-session readiness
+        // estimate so report views are measurable against the readiness model.
+        // (readiness_delta needs a persisted prior score — tracked separately.)
+        readiness_target_band: report.readiness?.targetBand ?? null,
+        readiness_estimated_sessions: report.readiness?.estimatedSessions ?? null,
+        readiness_confidence: report.readiness?.confidence ?? null,
       });
     }
   }, [report, session.id, user?.practiceTimestamps?.length]);
