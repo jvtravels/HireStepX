@@ -3665,7 +3665,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           _move: {
             lever: "benefits-summary",
             newTotalLpa: null,
-            rationale: `Candidate target ₹${state.candidateTarget}L already on the table; anchor the band instead of re-probing expectations.`,
+            rationale: `Candidate target ₹${effectiveTargetCtcLpa(state) ?? state.candidateTarget}L already on the table; anchor the band instead of re-probing expectations.`,
             actionKind: "band-anchor-with-rationale",
             askedTopic: "band-anchor-with-rationale",
           },
@@ -3705,7 +3705,12 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       _move: {
         lever: "probe-justification",
         newTotalLpa: null,
-        rationale: `Candidate target ₹${state.candidateTarget}L exceeds initial ₹${state.band.initialOffer}L by >5% with no justification on the table; probe before countering.`,
+        /* Report the EFFECTIVE target (folds a fixed-scoped ask via
+           effectiveTargetCtcLpa). This gate fires on probeJustifyTarget,
+           which is non-null for fixed-scoped targets even when raw
+           candidateTarget is null — interpolating the raw value here was
+           the source of the "₹nullL" rationale the candidate saw echoed. */
+        rationale: `Candidate target ₹${probeJustifyTarget}L exceeds initial ₹${state.band.initialOffer}L by >5% with no justification on the table; probe before countering.`,
       },
     };
   }
@@ -4026,7 +4031,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             _move: {
               lever: "hold-firm",
               newTotalLpa: state.highestOfferMade,
-              rationale: `Comparative-anchoring: candidate target ₹${state.candidateTarget}L vs band-median ₹${peerBandMedian.toFixed(1)}L (quartile=${quartile}).`,
+              rationale: `Comparative-anchoring: candidate target ₹${cmpTarget}L vs band-median ₹${peerBandMedian.toFixed(1)}L (quartile=${quartile}).`,
               askedTopic: "comparative-anchoring",
               actionKind: "comparative-anchoring",
             },

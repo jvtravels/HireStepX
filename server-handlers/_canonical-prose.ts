@@ -939,7 +939,16 @@ const PROSE_ARMS: ProseArmRegistry = {
   },
 
   "comparative-anchoring": (action, state) => {
-    const target = state.candidateTarget;
+    /* Fold a fixed-scoped ask into a CTC-equivalent so a candidate who
+       stated only a fixed target still hears their actual number, not the
+       generic "where you're anchoring" fallback. Inlined (rather than
+       importing effectiveTargetCtcLpa) to avoid a runtime import cycle:
+       _negotiation-kernel → _trial-close-detector → _canonical-prose. */
+    const target =
+      state.candidateTarget ??
+      (state.candidateTargetFixed != null
+        ? state.candidateTargetFixed + (state.band.variableMax ?? 0)
+        : null);
     const targetStr = target != null && target > 0 ? `₹${target} LPA` : "where you're anchoring";
     if (action.quartile === "top") {
       return `Just to frame this — at ${targetStr}, you'd be at the top end of the ${gradeLabel(state)} band. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
