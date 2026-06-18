@@ -28,7 +28,29 @@ import type {
   InfoIntent,
   MarketMode,
 } from "./_negotiation-kernel";
-import { effectiveTargetCtcLpa } from "./_negotiation-kernel";
+
+/* The candidate's effective TOTAL-CTC target, inlined from the kernel's
+ * `effectiveTargetCtcLpa` (+ `statedTotalTargetCtcLpa`). This module is
+ * dynamically imported on the CLIENT (useInterviewEngine), so it must
+ * NOT take a runtime import on `_negotiation-kernel` — doing so drags the
+ * entire 5000-line kernel into the client chunk and breaks the bundler
+ * codegen (same import-hazard class as the _canonical-prose cycle).
+ * Types are erased, so the `import type` above is safe; this small pure
+ * fold is duplicated deliberately. Keep in sync with the kernel. */
+function effectiveTargetCtcLpaLocal(state: NegotiationState): number | null {
+  // statedTotalTargetCtcLpa: prefer the CTC-equivalent of an in-hand ask.
+  if (state.candidateTarget != null) {
+    if (state.candidateTargetIsInHand && state.candidateTargetCtcEquivalentLpa != null) {
+      return state.candidateTargetCtcEquivalentLpa;
+    }
+    return state.candidateTarget;
+  }
+  // Fixed-only ask → implied total = fixed + band variable headroom.
+  if (state.candidateTargetFixed != null) {
+    return state.candidateTargetFixed + (state.band.variableMax ?? 0);
+  }
+  return null;
+}
 import {
   critiqueRecruiterStrategy,
   type RecruiterCritiqueItem,
@@ -169,7 +191,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
   const offerTrajectoryLpa = moves
     .map((m) => m.newTotalLpa)
     .filter((n): n is number => n != null);
-  const candidateAskLpa = effectiveTargetCtcLpa(finalState);
+  const candidateAskLpa = effectiveTargetCtcLpaLocal(finalState);
 
   return {
     outcome,

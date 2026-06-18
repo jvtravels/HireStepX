@@ -6,6 +6,7 @@ import {
   type KernelTurnSummary,
 } from "../../server-handlers/_negotiation-metrics";
 import type { NegotiationState, NegotiationBand } from "../../server-handlers/_negotiation-kernel";
+import { effectiveTargetCtcLpa } from "../../server-handlers/_negotiation-kernel";
 import { EMPTY_CANDIDATE_PROFILE } from "../../server-handlers/_candidate-profile";
 
 const BAND: NegotiationBand = { initialOffer: 20, maxStretch: 30, walkAway: 16, hasEquity: false };
@@ -190,6 +191,24 @@ describe("computeNegotiationMetrics", () => {
       moves: [move({ lever: "open-with-offer", newTotalLpa: 20 })],
     });
     expect(m.candidateAskLpa).toBeNull();
+  });
+
+  it("candidateAskLpa stays in lockstep with the kernel's effectiveTargetCtcLpa", () => {
+    /* The metrics module inlines effectiveTargetCtcLpa (it must not take a
+       runtime import on the 5000-line kernel — that breaks the client
+       bundle). This parity test fails loudly if the inlined fold drifts
+       from the real kernel implementation across these shapes. */
+    const shapes: Partial<NegotiationState>[] = [
+      { candidateTarget: 30 },
+      { candidateTarget: null, candidateTargetFixed: 26 },
+      { candidateTarget: null, candidateTargetFixed: null },
+      { candidateTarget: 22, candidateTargetIsInHand: true, candidateTargetCtcEquivalentLpa: 28 },
+    ];
+    for (const shape of shapes) {
+      const state = makeState({ phase: "accepted", highestOfferMade: 25, ...shape });
+      const m = computeNegotiationMetrics({ finalState: state, moves: [move({ newTotalLpa: 20 })] });
+      expect(m.candidateAskLpa).toBe(effectiveTargetCtcLpa(state));
+    }
   });
 
   it("surfaces voss tactics and info intents from final state", () => {
