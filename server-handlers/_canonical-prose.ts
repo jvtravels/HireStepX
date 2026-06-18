@@ -430,6 +430,21 @@ function gradeLabel(_state: NegotiationState): string {
   return "this grade";
 }
 
+/* Gap #3 (2026-06-18) — relocation is a POLICY number a real recruiter
+ * quotes on the spot, not something to "confirm and revert" on. Size a
+ * concrete one-time allowance off the standing offer (≈5% of total,
+ * floored at ₹1L, capped at ₹3L, rounded to the nearest ₹0.5L) so the
+ * bot names a figure instead of deflecting. The hiring manager stays in
+ * the loop only for joining-date / accommodation logistics — never the
+ * money. */
+function relocationAllowanceLpa(state: NegotiationState): number {
+  const ref =
+    state.highestOfferMade > 0 ? state.highestOfferMade : state.band.initialOffer;
+  const raw = ref * 0.05;
+  const rounded = Math.round(raw * 2) / 2; // nearest 0.5
+  return Math.min(3, Math.max(1, rounded));
+}
+
 /** Polish 1 (2026-05-16) — multi-anchor escalation hierarchy.
  *
  * Real Indian recruiters route hedges through different escalation
@@ -889,7 +904,8 @@ const PROSE_ARMS: ProseArmRegistry = {
 
   "lever-relocation": (action, state) => {
     const anchor = selectEscalationAnchor(action, state);
-    return `On the relocation side — we have a standard relocation allowance plus temporary accommodation support for the first few weeks. Let me confirm the exact amount with ${anchor} and revert.`;
+    const reloc = relocationAllowanceLpa(state);
+    return `On relocation — we cover a one-time relocation allowance of ₹${reloc}L with your first payroll, plus company-paid temporary accommodation for the first 30 days and your family's travel. That's standard policy for this grade, so I can lock it in right now — ${anchor} only coordinates your joining date and the accommodation booking.`;
   },
 
   /* PDF#33 Move A (2026-05-18) — replaced teaser tail with the

@@ -93,6 +93,28 @@ describe("Fix 1 — Indian-context negotiation levers", () => {
     expect(prose).toMatch(/relocat/i);
   });
 
+  /* Gap #3 (2026-06-18) — relocation must NAME a concrete figure (no
+   * "confirm and revert" deflection) and lock it in. 22 → ₹1L (5% = 1.1,
+   * floored at the ₹1L minimum). */
+  it("lever-relocation names a concrete allowance figure, not a deferral", () => {
+    const s = init({ highestOfferMade: 22 });
+    const prose = renderCanonicalProse(
+      { kind: "lever-relocation" } as ReturnType<typeof planNextAction>,
+      s,
+    );
+    expect(prose).toMatch(/₹\d/); // a concrete rupee amount
+    expect(prose).toMatch(/lock it in/i);
+    expect(prose).not.toMatch(/confirm the exact amount/i);
+  });
+
+  it("lever-relocation scales the allowance with the offer (capped ₹3L)", () => {
+    const big = renderCanonicalProse(
+      { kind: "lever-relocation" } as ReturnType<typeof planNextAction>,
+      init({ highestOfferMade: 80 }),
+    );
+    expect(big).toContain("₹3L"); // 5% of 80 = 4 → capped at 3
+  });
+
   it("canonical prose renders lever-perf-bonus-cadence", () => {
     const s = init({ highestOfferMade: 22 });
     const prose = renderCanonicalProse(
