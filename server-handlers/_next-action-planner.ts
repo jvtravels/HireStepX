@@ -4125,7 +4125,20 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       const cap = getCompanyHikeCap(state.company);
       if (cap != null) {
         const capped = ctcBasis * (1 + cap / 100);
-        if (capped < ceiling) ceiling = Math.max(capped, floor);
+        /* #66 (2026-06-18) — the hike cap may only BIND when it sits at or
+         * above the standing-offer floor. If the band already extended an
+         * offer ABOVE the hike-implied cap (e.g. band {39.2, 56} on a
+         * candidate at 24 LPA — a 63% hike that deliberately breaches the
+         * 50% company cap), the per-current-CTC hike cap has already been
+         * overridden by the band decision and is moot. The previous
+         * `Math.max(capped, floor)` pinned the ceiling DOWN to the floor in
+         * that case, collapsing all in-band headroom to zero — so the
+         * planner read every in-band cash target as "no-headroom" and
+         * rotated non-cash levers forever instead of raising the cash
+         * anchor. When capped < floor we leave the ceiling at
+         * band.maxStretch (the company's real decision envelope); the cap
+         * only narrows the ceiling when it lands above the standing offer. */
+        if (capped < ceiling && capped >= floor) ceiling = capped;
         // F7 (2026-05-15) — clamp hike-cap to band.maxStretch * 1.10.
         // Company hike cap may exceed band.maxStretch by up to 10% —
         // company-specific reality overrides generic band, but not

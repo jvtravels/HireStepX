@@ -92,3 +92,63 @@ describe("F7 — hike-cap clamped to band.maxStretch × 1.10", () => {
     expect(src).toMatch(/Company hike cap may exceed band\.maxStretch by up to 10%/);
   });
 });
+
+/* #66 (2026-06-18, live-staging) — hike cap below the standing offer must
+ * NOT collapse in-band headroom.
+ *
+ * Live symptom: band {39.2, 56} (a Flipkart SWE band the salary-lookup
+ * pipeline produced), candidate disclosed currentCtc 24 and a fixed-scoped
+ * target of 48 LPA. The standing offer of 39.2 is a 63% hike over 24 — it
+ * already breaches Flipkart's 50% hike cap (24 × 1.50 = 36). The old
+ * `Math.max(capped, floor)` then pinned the counter ceiling DOWN to the
+ * floor (39.2), so aspiration = min(48, 39.2) = 39.2 ≤ floor and EVERY
+ * in-band cash target read as "no-headroom". The planner rotated non-cash
+ * levers (equity-grant, joining-bonus, notice-buyout…) forever and never
+ * raised the cash anchor — a real-life negotiation never reaching a cash
+ * counteroffer.
+ *
+ * Structural fix: the hike cap may only narrow the ceiling when it lands
+ * at or above the standing offer floor. When the band already extended an
+ * offer above the hike-implied cap (a deliberate band decision), the cap
+ * is moot and band.maxStretch governs — so in-band cash targets get a real
+ * counter-base concession.
+ */
+describe("#66 — hike cap below standing offer doesn't collapse cash headroom", () => {
+  const WIDE_BAND: NegotiationBand = {
+    initialOffer: 39.2,
+    maxStretch: 56,
+    walkAway: 26.6,
+    hasEquity: true,
+  };
+
+  function wideState(overrides: Partial<NegotiationState> = {}): NegotiationState {
+    return {
+      ...initState({ sessionId: "s66", role: "swe", company: "Flipkart", band: WIDE_BAND }),
+      phase: "counter-offer",
+      turnIndex: 4,
+      highestOfferMade: 39.2,
+      candidateCurrentCtc: 24, // 50% hike cap → 36, BELOW the 39.2 standing offer
+      candidateTargetFixed: 48, // fixed-scoped in-band target (≤ maxStretch 56)
+      ...overrides,
+    };
+  }
+
+  it("raises the cash anchor (counter-base) instead of pinning ceiling to the floor", () => {
+    const move = pickAiMove(wideState());
+    expect(move.lever).toBe("counter-base");
+    // The cash anchor must move ABOVE the standing offer toward the target.
+    expect(nt(move)).toBeGreaterThan(39.2);
+    // Still bounded by the band (maxStretch × 1.10 F7 clamp).
+    expect(nt(move)).toBeLessThanOrEqual(56 * 1.1 + 0.01);
+  });
+
+  it("a binding hike cap ABOVE the floor still narrows the ceiling (no regression)", () => {
+    /* currentCtc 30 → Flipkart 50% cap = 45, which is ABOVE the 39.2 floor
+     * and BELOW maxStretch 56, so it must still bind: the counter cannot
+     * exceed 45. Locks that the fix only neutralizes the cap when it falls
+     * below the offer, never when it legitimately constrains. */
+    const move = pickAiMove(wideState({ candidateCurrentCtc: 30, candidateTargetFixed: 54 }));
+    expect(move.lever).toBe("counter-base");
+    expect(nt(move)).toBeLessThanOrEqual(45 + 0.01);
+  });
+});
