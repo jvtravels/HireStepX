@@ -12,6 +12,9 @@
  *      assignments. Intro and closing always come from "Hiring Manager".
  */
 
+import { initState, type MarketMode } from "./_negotiation-kernel";
+import { renderCanonicalProse } from "./_canonical-prose";
+
 export type Persona = "Hiring Manager" | "Technical Lead" | "HR Partner";
 
 export const VALID_PERSONAS: Persona[] = ["Hiring Manager", "Technical Lead", "HR Partner"];
@@ -228,6 +231,73 @@ export function computeStepCount(opts: { mini: boolean; isSalaryType: boolean; i
   if (opts.mini) return 3 + 2;
   if (opts.interviewType === "hr-round") return 7 + 2;
   return 5 + 2;
+}
+
+/* ─── Salary-negotiation LLM-down fallback ────────────────────────────
+ *
+ * When both LLM providers are exhausted, salary-negotiation does NOT
+ * dead-end: the band is deterministic (generateNegotiationBand, no LLM)
+ * and /api/negotiate-turn owns every turn (also no LLM). This builder
+ * produces the seed session the client needs — a warm intro, the
+ * canonical kernel OPENER (a discovery probe with NO premature anchor,
+ * byte-identical to the success-path q[1] construction), and a closing.
+ *
+ * Why this matters (root cause of "0 of 5 stages"): the client's band
+ * fetch lives ONLY in this response (useInterviewEngine reads
+ * result.negotiationBand). On a 500 the band never loads → the kernel
+ * bails to the non-adaptive static script that never names a number →
+ * the deal-summary extractor finds nothing → the report renders a hollow
+ * "didn't close". Returning the band + opener here keeps the kernel
+ * reachable so it drives a real, staged close even with the LLMs down. */
+export interface SalaryFallbackStep {
+  type: string;
+  aiText: string;
+  aiTextDisplay: string;
+  question: string;
+  text: string;
+}
+
+export function buildSalaryNegotiationFallbackQuestions(opts: {
+  role: string;
+  company: string;
+  band: {
+    initialOffer: number;
+    maxStretch: number;
+    walkAway: number;
+    hasEquity?: boolean;
+    marketMode?: MarketMode;
+  };
+}): SalaryFallbackStep[] {
+  const { role, company, band } = opts;
+  let opener: string;
+  try {
+    const kernelState = initState({
+      sessionId: "generate-questions-opener-fallback",
+      role: role || "this role",
+      company: company || "this company",
+      band: {
+        initialOffer: Math.round(band.initialOffer),
+        maxStretch: Math.round(band.maxStretch),
+        walkAway: Math.round(band.walkAway),
+        hasEquity: band.hasEquity ?? false,
+      },
+      marketMode: band.marketMode ?? "neutral",
+    });
+    opener = renderCanonicalProse(
+      // renderCanonicalProse's first arg is the NextAction union; the bare
+      // "open-with-offer" literal needs widening to that param type.
+      { kind: "open-with-offer" } as Parameters<typeof renderCanonicalProse>[0],
+      kernelState,
+    );
+  } catch {
+    // Prose render should never throw, but if it does, ship a safe greeting
+    // rather than a blank turn — the kernel re-renders on its first reply.
+    opener = "Thanks for taking the time today. Let's get into it — to start, can you walk me through your current compensation structure?";
+  }
+  const introText = "Thanks for making time today — let's keep this conversational. Take your time, and feel free to type if that's easier.";
+  const closingText = "Thanks for talking it through with me today. We'll follow up with the next steps from here.";
+  const mk = (type: string, t: string): SalaryFallbackStep => ({ type, aiText: t, aiTextDisplay: t, question: t, text: t });
+  return [mk("intro", introText), mk("question", opener), mk("closing", closingText)];
 }
 
 export function computeQuestionCount(opts: { mini: boolean; isSalaryType: boolean; interviewType?: string }): number {

@@ -43,6 +43,7 @@ import {
   isSalaryNegotiationLengthOk,
   computeStepCount,
   buildStaticFallback,
+  buildSalaryNegotiationFallbackQuestions,
   flagOffRoleQuestions,
   type RawQuestion,
 } from "./_generate-questions-helpers";
@@ -212,6 +213,14 @@ export default async function handler(req: Request): Promise<Response> {
   // the catch path.
   let requestType = "behavioral";
   let requestFocus = "general";
+  /* Salary-negotiation deterministic band, computed BEFORE the LLM call
+   * (see ~`generateNegotiationBand` below). Hoisted so the catch block can
+   * still drive the kernel path when both LLM providers are exhausted —
+   * the band needs no LLM, and /api/negotiate-turn owns every turn, so a
+   * usable real-close session is still possible. */
+  let negotiationBandData: ReturnType<typeof generateNegotiationBand> | null = null;
+  let salaryOpenerRole = "this role";
+  let salaryOpenerCompany = "this company";
   try {
     const rawBody = await req.json();
     const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, resumeSkillsDetailed, resumeKeyAchievements, resumeIndustries, resumeEducation, resumeDomainYears, resumePromotionSignals, candidateName, negotiationStyle, drill, priorFlags } = rawBody;
@@ -678,7 +687,6 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
     // Interview-type-specific guidance to ensure questions match the format
     // Salary-negotiation guidance is dynamically generated from structured data (~100 tokens vs ~2,000 tokens)
     let salaryNegGuidance = "";
-    let negotiationBandData: ReturnType<typeof generateNegotiationBand> | null = null;
     if (interviewType === "salary-negotiation") {
       // Lazy-load salary-only helpers once at the top of the gate. Parallel
       // import() so the network/parse cost overlaps with the role-fit gate
@@ -713,6 +721,11 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
       salaryNegGuidance = buildSalaryNegotiationGuidance({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       negotiationBandData = generateNegotiationBand({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       salaryNegGuidance += `\n\n${negotiationBandData.bandContext}`;
+      /* Capture the opener labels now (raw role/company), so the catch path
+       * can render the canonical kernel opener identically to the success
+       * path if the LLM call below fails. */
+      salaryOpenerRole = (typeof role === "string" && role) ? role : "this role";
+      salaryOpenerCompany = (typeof company === "string" && company) ? company : "this company";
 
       /* Unmapped-company telemetry. When the candidate selects a company
          we don't have in COMPANY_TIER_MAP, the lookup silently falls
@@ -1658,14 +1671,67 @@ Requirements:
      * bank instead of a 500. The user can still run a usable session;
      * quality is lower than tailored output but materially better than a
      * dead-end error. Telemetry can monitor `_fallback="static"` rates. */
-    // Salary-negotiation has a strict 6-phase arc (offer/counter/probe/etc.)
-    // with a specific ₹ amount in step 2 — the bank's behavioral questions
-    // would fail the engine's negotiation state machine. Better to return a
-    // clear error than a structurally-wrong session.
+    /* Salary-negotiation: the OLD behaviour refused any fallback and 500'd,
+     * on the theory that the bank's behavioral questions would break the
+     * negotiation state machine. But that conflated TWO different things:
+     * the static question-bank script (genuinely arc-mismatched) and the
+     * deterministic band + kernel opener (which need NO LLM at all). The
+     * 500 dead-ended the client's band fetch → negotiationBandRef stayed
+     * null → the kernel BAILED to the non-adaptive static script that never
+     * names a number → the deal-summary extractor found nothing → the report
+     * rendered "0 of 5 stages" over what should have been a real close.
+     *
+     * Root-cause fix: when the band was already computed (it is, pre-LLM),
+     * return a 200 with a warm intro + the canonical kernel opener + the
+     * band. /api/negotiate-turn (deterministic) then owns every turn and
+     * drives a real close even with both LLM providers down. */
     if (requestType === "salary-negotiation") {
-      console.warn(`[generate-questions] LLM failed on salary-negotiation; refusing static fallback (arc-mismatch risk)`);
+      if (negotiationBandData) {
+        const fallbackQuestions = buildSalaryNegotiationFallbackQuestions({
+          role: salaryOpenerRole,
+          company: salaryOpenerCompany,
+          band: {
+            initialOffer: negotiationBandData.initialOffer,
+            maxStretch: negotiationBandData.maxStretch,
+            walkAway: negotiationBandData.walkAway,
+            hasEquity: negotiationBandData.hasEquity,
+            marketMode: (negotiationBandData as { marketMode?: "soft" | "neutral" | "hot" }).marketMode,
+          },
+        });
+        void captureServerEvent("gq_static_fallback", distinctIdFrom(req, auth.userId), {
+          error: errMsg.slice(0, 200),
+          is_timeout: isTimeout,
+          type: requestType,
+          focus: requestFocus,
+          salary_kernel_fallback: true,
+        }, req);
+        console.warn(`[generate-questions] salary-negotiation LLM failed; returning deterministic band + kernel opener (kernel drives the close)`);
+        return new Response(
+          JSON.stringify({
+            questions: fallbackQuestions,
+            negotiationBand: {
+              initialOffer: negotiationBandData.initialOffer,
+              minOffer: negotiationBandData.minOffer,
+              maxStretch: negotiationBandData.maxStretch,
+              walkAway: negotiationBandData.walkAway,
+              joiningBonusRange: negotiationBandData.joiningBonusRange,
+              hasEquity: negotiationBandData.hasEquity,
+              equityRange: negotiationBandData.equityRange,
+              bandContext: negotiationBandData.bandContext,
+              bandSource: negotiationBandData.bandSource ?? "tier-default",
+              sourceCount: negotiationBandData.sourceCount ?? 0,
+            },
+            _fallback: "static",
+          }),
+          { status: 200, headers },
+        );
+      }
+      /* Band was never computed (request failed before the band step, e.g.
+       * a role/company gate or a malformed body) — without it we can't seed
+       * the kernel, so fall through to the error response below. */
+      console.warn(`[generate-questions] LLM failed on salary-negotiation and no band available; returning error`);
       void captureServerEvent("gq_static_fallback_skipped", distinctIdFrom(req, auth.userId), {
-        reason: "salary_negotiation_arc",
+        reason: "salary_negotiation_no_band",
         error: errMsg.slice(0, 200),
       }, req);
       // Fall through to the regular error response below.
