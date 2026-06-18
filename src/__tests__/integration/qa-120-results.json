@@ -1081,8 +1081,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: understands, monthly, annual",
-      "prose": "honestly, got it on the total — what's the base split?",
-      "actionKind": "component-probe",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
       "keywords": [
         "understands",
         "monthly",

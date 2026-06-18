@@ -497,6 +497,31 @@ function scoreRolesForSpan(
   for (const m of leftWindow.matchAll(PRIOR_DISCLOSURE)) {
     if (m.index != null) lastEnd = Math.max(lastEnd, m.index + m[0].length);
   }
+  /* Clause-boundary clip (#67, live-staging 2026-06-18). The prior-
+   * disclosure clip above only fires when the EARLIER clause's number
+   * carried a salary unit (LPA / lakh / crore). When it didn't — a
+   * compound, UNIT-LESS disclosure like "I'm at 22 fixed currently,
+   * targeting 34 total" or "current is 18, expecting 26" — the prior
+   * clause's role cue ("currently" / "current") leaked into THIS span's
+   * left window and won the current>target tiebreak, so 34/26 mis-bound
+   * to current (or dropped) and the real target never registered.
+   *
+   * Clip at a clause boundary ONLY when a DIGIT precedes it within the
+   * window — i.e. the earlier clause carried its OWN number, so its
+   * cues belong to that number, not this span. The digit guard is
+   * load-bearing: a bare lead-in with no prior number ("I told you,
+   * 24 LPA CTC overall", "as I mentioned, 17 LPA total CTC") keeps its
+   * cue ("told you" / "mentioned") — clipping there would strip the
+   * only current cue and mis-bind the number. */
+  let clauseCut = -1;
+  for (const sep of [",", ";", "."]) {
+    let idx = leftWindow.indexOf(sep);
+    while (idx >= 0) {
+      if (/\d/.test(leftWindow.slice(0, idx))) clauseCut = Math.max(clauseCut, idx);
+      idx = leftWindow.indexOf(sep, idx + 1);
+    }
+  }
+  lastEnd = Math.max(lastEnd, clauseCut >= 0 ? clauseCut + 1 : -1);
   if (lastEnd >= 0) leftWindow = leftWindow.slice(lastEnd);
   const rightWindow = text.slice(span.end, Math.min(text.length, span.end + RIGHT_WINDOW));
   const scoreOne = (cues: CueTable): number => {

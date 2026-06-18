@@ -39,6 +39,16 @@ const ROWS: Row[] = [
   { label: "Total CTC is N LPA",         text: "Total CTC is 28 LPA — 24 fixed, 4 variable.", expect: { currentCtc: 28 } },
   { label: "Total package N",            text: "Total package 22 LPA right now",        expect: { currentCtc: 22 } },
 
+  /* ── Compound clause: prior-clause cue must NOT leak forward (#67) ──
+   * A unit-less earlier number ("22 fixed", "18") used to leave the
+   * left-window clip dormant, so the prior clause's current cue
+   * ("currently"/"current") leaked across the comma and mis-bound the
+   * LATER target as current. The digit-guarded clause clip fixes it
+   * while preserving bare lead-ins ("I told you, 24 LPA" above). */
+  { label: "compound: current+target, both unit-bearing", text: "I'm at 22 LPA fixed currently, targeting 34 LPA total.", expect: { currentCtc: 22, target: 34 } },
+  { label: "compound: unit-less current, target binds",    text: "I'm at 22 fixed currently, targeting 34 total.",        expect: { target: 34 } },
+  { label: "compound: current is 18, expecting 26",         text: "current is 18, expecting 26",                          expect: { target: 26 } },
+
   /* ── Target cues — English ─────────────────────────────────────── */
   { label: "expecting N",                text: "I'm expecting 30 LPA",                  expect: { target: 30 } },
   { label: "looking for N",              text: "looking for 28 LPA",                    expect: { target: 28 } },
