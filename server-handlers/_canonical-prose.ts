@@ -952,9 +952,9 @@ const PROSE_ARMS: ProseArmRegistry = {
         : null);
     const targetStr = target != null && target > 0 ? `₹${target} LPA` : "where you're anchoring";
     if (action.quartile === "top") {
-      return `Just to frame this — at ${targetStr}, you'd be at the top end of the ${gradeLabel(state)} band. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
+      return `Just to frame this — at ${targetStr}, you'd be at the top end of the band for ${gradeLabel(state)}. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
     }
-    return `At ${targetStr}, you'd be in the middle of the ${gradeLabel(state)} band — a good place to start, with room to grow at the next appraisal.`;
+    return `At ${targetStr}, you'd be in the middle of the band for ${gradeLabel(state)} — a good place to start, with room to grow at the next appraisal.`;
   },
 
   "anchor-with-offer": (action, state, helpers) =>
