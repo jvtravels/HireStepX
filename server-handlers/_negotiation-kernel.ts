@@ -4904,10 +4904,26 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     const total = folded.comp.total;
     if (total != null) {
       const priorFlat = claimsBefore.currentCtc;
-      claimsNext.currentCtc = {
-        value: total.value,
-        firstSeenTurn: priorFlat?.firstSeenTurn ?? total.firstSeenTurn,
-      };
+      if (priorFlat == null) {
+        claimsNext.currentCtc = { value: total.value, firstSeenTurn: total.firstSeenTurn };
+      } else {
+        /* Pin to the first-seen value within tolerance. The compensation
+           model folds small same-axis drift (e.g. 18 → 19, ~5.5%) into the
+           comp total WITHOUT raising a contradiction, but the legacy flat
+           claim must stay sticky like recordNumeric does — overwriting it
+           here made userClaims.currentCtc.value silently track the latest
+           rounded figure, which the prose/report then surfaced as if the
+           candidate had restated their pay. Only a genuine same-axis move
+           past tolerance (which also raises the contradiction below)
+           advances the mirrored value. */
+        const drift =
+          Math.abs(total.value - priorFlat.value) /
+          Math.max(Math.abs(priorFlat.value), 1e-9);
+        claimsNext.currentCtc = {
+          value: drift > NUMERIC_TOLERANCE ? total.value : priorFlat.value,
+          firstSeenTurn: priorFlat.firstSeenTurn,
+        };
+      }
     }
     // A genuine same-axis total contradiction maps to the historical topic.
     if (folded.contradiction != null && folded.contradiction.axis === "total" && contradiction == null) {
