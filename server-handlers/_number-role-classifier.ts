@@ -282,9 +282,30 @@ const LAST_AI_ASKED_TARGET = new RegExp(
     String.raw`\byour\s+(?:target|expectation|expected\s+ctc)\b`,
     String.raw`\bhow\s+much\s+(?:are\s+you\s+)?(?:looking|expecting|targeting|asking)\b`,
     String.raw`\bwhat\s+(?:are\s+you|number\s+are\s+you)\s+(?:looking\s+for|targeting|expecting)\b`,
+    /* MVP-audit Fix B (2026-06-18): the deterministic canonical target
+     * probes the bot actually emits — none of the patterns above matched
+     * them, so a bare-number reply ("32.") to the bot's OWN target question
+     * never bound to `target`, discovery stalled, and no offer was ever
+     * anchored. Match the canonical fitment/expected probes verbatim-ish so
+     * the Gricean bare-number default fires on the path the bot drives.
+     * See prose/discovery-probe.ts and prose/anchor-with-offer.ts. */
+    String.raw`\bfitment\s+(?:you\s+were|were\s+you|you.?re)\b`,
+    String.raw`\bwhat\s+fitment\b`,
+    String.raw`\banchoring\s+on\b`,
+    String.raw`\bwhat\s+range\s+are\s+you\b`,
+    String.raw`\bon\s+the\s+expected\s+(?:side|fitment)\b`,
   ].join("|"),
   "i",
 );
+
+/** MVP-audit Fix B (2026-06-18): strong present-pay cues used to emit a
+ *  bare-integer span in Pass 4 even with no explicit AI question context
+ *  ("Current 26 fixed.", "I'm at 22 fixed, targeting 34 total."). Tight on
+ *  purpose — only unambiguous current-pay idioms, never bare "at"/"I'm"
+ *  which collide with age/time ("I'm 28", "meet at 3"). pickRole then
+ *  scores the role; this gate only decides whether a span exists at all. */
+const CURRENT_CUE_PRESENCE =
+  /\b(?:current(?:ly)?|presently|at\s+present|in\s+hand|i.?m\s+at|i\s+am\s+at|earning|drawing|making|getting|take\s+home)\b/i;
 
 /* ─── Number-span finder ───────────────────────────────────────────── */
 
@@ -366,7 +387,7 @@ function unitMultiplier(unit: string): number {
 /** Scan the text and return every salary-shaped number, in left-to-right
  *  order. Ranges are emitted as a single `isRangeUpper` span (the lower
  *  bound is dropped). USD spans are converted to LPA at the FX boundary. */
-function findSalarySpans(text: string): SalarySpan[] {
+function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[] {
   const spans: SalarySpan[] = [];
   /* Pass 1 — ranges. Mark the upper bound, claim both numbers' offsets. */
   const claimedRanges = new Set<string>(); // "start-end" of digits we've claimed
@@ -441,6 +462,22 @@ function findSalarySpans(text: string): SalarySpan[] {
   const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move)\b/i;
   const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to)\s+|\b(?:to\s+be|closer\s+to|up\s+to)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
   const SALARY_UNIT_NEARBY = /[\d,.]\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
+  /* MVP-audit Fix B (2026-06-18): three additional bare-integer emission
+   * gates beyond the target-cue gate. Root cause of the discovery
+   * stalemate (audit finding #2): a candidate answering the recruiter's
+   * direct CTC question with a unit-less number ("24."), or stating
+   * present pay with a current cue ("Current 26 fixed.", "I'm at 22
+   * fixed"), emitted NO span — so currentCtc never bound, discovery never
+   * completed, and the bot looped the CTC probe to a stalemate. We emit
+   * the span here; pickRole's existing current/target/Gricean defaults
+   * assign the role. NOT the deferred unprompted unit-less TARGET case
+   * (#71): these bind via the bot's direct question or an explicit current
+   * cue, not by speculation. The pure-question gate is restricted to a
+   * lone bare number (no other span yet found) so an incidental integer in
+   * a unit-bearing answer ("26 LPA, team of 12") can't bind. */
+  const aiAskedCurrentCtc = !!ctx.lastAiText && LAST_AI_ASKED_CURRENT_CTC.test(ctx.lastAiText);
+  const aiAskedTargetCtc = !!ctx.lastAiText && LAST_AI_ASKED_TARGET.test(ctx.lastAiText);
+  const inProbeExpectations = ctx.phase === "probe-expectations";
   for (const m of text.matchAll(BARE_INT_RE)) {
     if (m.index == null) continue;
     const digitStart = m.index + m[0].search(/\d/);
@@ -449,8 +486,6 @@ function findSalarySpans(text: string): SalarySpan[] {
     const n = parseDigits(m[1]);
     if (!Number.isFinite(n) || n < 5 || n > 100) continue;
     const leftWindow = text.slice(Math.max(0, digitStart - LEFT_WINDOW), digitStart);
-    if (!TARGET_CUE_PRESENCE.test(leftWindow)) continue;
-    if (!POSITIONAL_OPENER_AT_END.test(leftWindow)) continue;
     const nearby = text.slice(Math.max(0, digitStart - 5), Math.min(text.length, digitEnd + 20));
     if (NON_SALARY_UNIT_RE.test(nearby)) continue;
     /* If a salary unit (LPA / lakh / crore) follows this integer, it
@@ -458,6 +493,16 @@ function findSalarySpans(text: string): SalarySpan[] {
      * the clamp. Don't second-guess. */
     const rightTail = text.slice(digitEnd, Math.min(text.length, digitEnd + 25));
     if (SALARY_UNIT_NEARBY.test(m[1] + rightTail)) continue;
+    const viaTargetCue =
+      TARGET_CUE_PRESENCE.test(leftWindow) && POSITIONAL_OPENER_AT_END.test(leftWindow);
+    const viaCurrentCue = CURRENT_CUE_PRESENCE.test(leftWindow);
+    /* Pure Gricean / phase context: the bot just asked CTC or expectation
+     * (or we're in probe-expectations) and the candidate replied with a
+     * lone bare number. Gate on `spans.length === 0` so only the first
+     * unit-less number in an otherwise-numberless reply binds. */
+    const viaQuestionContext =
+      spans.length === 0 && (aiAskedCurrentCtc || aiAskedTargetCtc || inProbeExpectations);
+    if (!viaTargetCue && !viaCurrentCue && !viaQuestionContext) continue;
     spans.push({ value: n, start: digitStart, end: digitEnd, isRangeUpper: false });
   }
   spans.sort((a, b) => a.start - b.start);
@@ -737,7 +782,7 @@ export function classifyNumberRoles(
    * { currentCtc: null }, the kernel sees no disclosure, and the engine
    * falls through — exact same shape as the LPE bug f5289f3 fixed. */
   const text = substituteEnglishNumbers(textIn);
-  const spans = findSalarySpans(text);
+  const spans = findSalarySpans(text, ctx);
   if (spans.length === 0) {
     return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };
   }
