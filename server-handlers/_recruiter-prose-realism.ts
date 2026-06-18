@@ -292,6 +292,125 @@ export function lowercaseFirst(s: string, candidateFirstName?: string | null): s
   return s;
 }
 
+/* ── Output-contract tidy pass (D5, 2026-06-18) ───────────────────────
+ *
+ * The realism chain (`chainProseOverlays`) runs up to five INDEPENDENT
+ * overlay layers — context-ref clause, persona-tic signature, power-
+ * posture, the humanizer's own tic/hedge/mood pass, and fallibility —
+ * each prepending a discourse-filler with its OWN probabilistic dice and
+ * no shared budget. On unlucky rolls they stack 2-3 deep into garbles a
+ * real Indian HR would never utter:
+ *   "In this profitability-first era, honestly, okay. what justifies it"
+ *   "To be fair, I mean, okay. structure. actually, ..."
+ * plus a broken capital after the sentence-final period ("okay. what").
+ *
+ * Enumerating "which layer fired" is the patchwork trap — every new
+ * overlay re-opens the hole. Instead we enforce an OUTPUT CONTRACT at the
+ * single composition point, independent of which layers fired:
+ *   (1) an utterance opens with AT MOST ONE leading discourse filler
+ *       before its first content word; stacked openers collapse to the
+ *       first (the richest — usually the sector context-ref clause).
+ *   (2) every sentence starts with a capital letter.
+ * Pure + idempotent. Only invoked on the overlay-active path, so the
+ * null-session snapshot path stays byte-identical. */
+
+/* Curated discourse openers NOT already present in the persona/hedge/
+ * context-ref banks (acks + generic markers a recruiter pads with). */
+const TIDY_EXTRA_OPENERS: readonly string[] = [
+  "sure", "yeah", "right", "okay", "ok", "alright", "noted",
+  "got it", "fine", "look", "frankly", "honestly", "basically",
+  "fundamentally", "i mean", "to be fair", "you know",
+  "actually", "well", "so", "now", "then",
+];
+
+let _tidyOpeners: string[] | null = null;
+/* Union of every phrase any overlay layer can prepend, lowercased and
+ * sorted longest-first so multi-word openers ("at the end of the day")
+ * match before their single-word substrings. Built lazily because
+ * ALL_CONTEXT_REF_PHRASES is declared later in the module. */
+function tidyOpenerPhrases(): string[] {
+  if (_tidyOpeners) return _tidyOpeners;
+  const all = [
+    ...Object.values(PERSONA_TICS).flat(),
+    ...Object.values(SECTOR_FORMAL_TIC_WHITELIST).flat(),
+    ...HEDGES,
+    ...ALL_CONTEXT_REF_PHRASES,
+    ...TIDY_EXTRA_OPENERS,
+  ]
+    .map((p) => p.toLowerCase().trim())
+    .filter((p) => p.length > 0);
+  _tidyOpeners = Array.from(new Set(all)).sort((a, b) => b.length - a.length);
+  return _tidyOpeners;
+}
+
+/* If `s` begins with a discourse opener delimited by a comma or period,
+ * return the opener (original casing) + the remainder after the
+ * delimiter. The trailing-punct requirement gives a token boundary, so
+ * "rightfully," / "lookout." never match as "right" / "look". */
+function matchLeadingOpener(
+  s: string,
+  openers: readonly string[],
+): { opener: string; rest: string } | null {
+  const lower = s.toLowerCase();
+  for (const op of openers) {
+    if (!lower.startsWith(op)) continue;
+    const after = s.slice(op.length);
+    const m = after.match(/^\s*[,.]\s+/);
+    if (m) return { opener: s.slice(0, op.length), rest: after.slice(m[0].length) };
+  }
+  return null;
+}
+
+/* Collapse a run of ≥2 stacked leading openers to the first one. */
+function collapseStackedOpeners(s: string, openers: readonly string[]): string {
+  const found: string[] = [];
+  let cur = s;
+  for (let i = 0; i < 6; i++) {
+    const m = matchLeadingOpener(cur, openers);
+    if (!m) break;
+    found.push(m.opener);
+    cur = m.rest;
+  }
+  if (found.length <= 1) return s;
+  return `${found[0]}, ${cur}`;
+}
+
+/* Capitalize the first letter of the utterance and the first letter
+ * after every sentence-final period / bang / question mark. */
+function fixSentenceCaps(s: string): string {
+  let out = s.replace(
+    /([.!?])(\s+)([a-z])/g,
+    (_m, p: string, ws: string, c: string) => p + ws + c.toUpperCase(),
+  );
+  out = out.replace(
+    /^(\s*["'(]*)([a-z])/,
+    (_m, pre: string, c: string) => pre + c.toUpperCase(),
+  );
+  return out;
+}
+
+/* Discourse markers / conjunctions that are NEVER proper nouns in this
+ * domain. When an overlay prepends an opener ("Right, ") in front of base
+ * prose that itself began with one of these ("So for this grade…"), the
+ * base word keeps its sentence-initial capital and we get "Right, So for
+ * this grade". Lowercasing the second word repairs the seam. Restricted
+ * to this whitelist so we never lowercase a real proper noun / vocative
+ * ("Look, Sandeep" / "Right, Bangalore"). */
+const TIDY_MIDSENTENCE_DOWNCASE =
+  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly)\b/g;
+
+export function tidyRealismArtifacts(s: string): string {
+  if (!s) return s;
+  let out = collapseStackedOpeners(s, tidyOpenerPhrases());
+  out = out.replace(/,\s*,/g, ",").replace(/[ \t]{2,}/g, " ");
+  out = fixSentenceCaps(out);
+  out = out.replace(
+    TIDY_MIDSENTENCE_DOWNCASE,
+    (_m, sep: string, w: string) => sep + w.charAt(0).toLowerCase() + w.slice(1),
+  );
+  return out;
+}
+
 /**
  * Decorate curated prose with persona-tic prefix + mid-sentence hedge +
  * checkback suffix. Probabilistic per (session, turn). Pure.

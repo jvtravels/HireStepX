@@ -51,6 +51,7 @@ import {
   applyPersonaTicSignature,
   applyContextRefOverlay,
   applyPowerPostureOverlay,
+  tidyRealismArtifacts,
 } from "./_recruiter-prose-realism";
 import { timeContextPrefix } from "./_recruiter-time-context";
 /* Phase 5 Session B (2026-05-19) — keep `getNegotiationRoundPersona`
@@ -1837,6 +1838,11 @@ export function chainProseOverlays(
       packageComplexity: computePackageComplexity(state),
       sessionId: state.sessionId,
     });
+    /* Final output-contract pass — runs AFTER every overlay layer so it
+     * sees the fully-composed utterance. Caps stacked discourse fillers
+     * to one and repairs sentence capitalization. Gated with the overlays
+     * so the null-session snapshot path stays byte-identical. */
+    out = tidyRealismArtifacts(out);
   }
   return out;
 }
