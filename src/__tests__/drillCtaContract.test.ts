@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GAP_CTA_MAP, pickNextMove } from "../nextMove";
+import { startDrill, currentQuestion, type DrillSkill } from "../../server-handlers/_drill-session";
 
 /**
  * Contract test for the drill-key plumbing between three surfaces:
@@ -107,6 +108,19 @@ describe("Drill-CTA contract", () => {
         `gap ${gapCode}: focus "${focus}" is not in SessionSetup.focusToType — preselect will silently fail`,
       ).toBe(true);
       expect(url.searchParams.get("drill"), `gap ${gapCode}: ctaHref must carry the drill key`).toBe(cta.drill);
+    }
+  });
+
+  it("every GAP_CTA_MAP drill key is a real, runnable DrillSkill (taxonomies unified)", () => {
+    // The micro-drill engine (server-handlers/_drill-session.ts) and the gap
+    // CTA (nextMove.ts) used to carry DISJOINT vocabularies — the engine knew
+    // only negotiation skills (esop|anchoring|…) while the CTA emitted HR-round
+    // keys (comp_floor|resume_facts|…). This asserts they're now ONE taxonomy:
+    // each gap CTA drill key must boot a valid 5-question drill, not throw.
+    for (const [gapCode, cta] of Object.entries(GAP_CTA_MAP)) {
+      const state = startDrill({ skill: cta.drill as DrillSkill, maxQuestions: 5 });
+      expect(state.script.length, `gap ${gapCode}: drill "${cta.drill}" must script 5 questions`).toBe(5);
+      expect(currentQuestion(state), `gap ${gapCode}: drill "${cta.drill}" must yield a first question`).toBeTruthy();
     }
   });
 });

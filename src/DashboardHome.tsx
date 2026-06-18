@@ -391,6 +391,26 @@ export default function DashboardHome() {
   const goToAnalytics = () => router.push("/analytics");
   const goToResume    = () => router.push("/resume");
 
+  /* North-Star coaching input: a click on the "Your next move" primary CTA.
+     Fires alongside dashboard_start_clicked but carries the coaching context
+     (gap code, weakest skill, drill key) so the coaching loop is measurable
+     independently of the generic Start funnel. drill_key is read from the
+     CTA href so it always matches what /session/new actually receives. */
+  const goToNextMove = () => {
+    let drillKey: string | null = null;
+    try {
+      drillKey = new URL(nextMove.ctaHref, "https://hirestepx.local").searchParams.get("drill");
+    } catch {
+      drillKey = null;
+    }
+    captureClientEvent("coaching:next_move_cta_clicked", {
+      gap_code: nextMove.coachingFocus?.gapCode ?? null,
+      weakest_skill_name: nextMove.weakestSkillName ?? null,
+      drill_key: drillKey,
+    });
+    goToInterview("next-move-primary", nextMove.ctaHref)();
+  };
+
   /* Fire dashboard_loaded exactly once per mount, after the first
      paint that has real data attached. Using a ref instead of effect
      deps so we don't re-fire when streak/sessions update mid-session
@@ -507,7 +527,7 @@ export default function DashboardHome() {
                   {nextMoveSubtitle}
                 </p>
                 <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-                  <PrimaryCta onClick={goToInterview("next-move-primary", nextMove.ctaHref)}>{nextMove.ctaLabel}</PrimaryCta>
+                  <PrimaryCta onClick={goToNextMove}>{nextMove.ctaLabel}</PrimaryCta>
                   <OutlineCta onClick={goToInterview("next-move-outline")}>Pick a different focus</OutlineCta>
                 </div>
               </div>

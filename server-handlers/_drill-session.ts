@@ -18,12 +18,26 @@
 
 import type { RecruiterSectorPersona } from "./_negotiation-kernel";
 
+/* DrillSkill is the single, unified drill vocabulary. The first group are
+ * the negotiation-kernel skills; the second group are the HR-round gap keys
+ * emitted by the dashboard "next move" CTA (GAP_CTA_MAP in src/nextMove.ts,
+ * `drill:` field). Keeping ONE union here means the gap CTA and this engine
+ * can never drift into two disjoint taxonomies — the drillCtaContract test
+ * asserts every GAP_CTA_MAP drill key is a valid DrillSkill below. */
 export type DrillSkill =
+  // Negotiation-kernel skills
   | "esop"
   | "notice-period"
   | "anchoring"
   | "red-flags"
-  | "silence";
+  | "silence"
+  // HR-round gap-CTA keys (must match GAP_CTA_MAP[*].drill in src/nextMove.ts)
+  | "resume_facts"
+  | "career_gap"
+  | "seniority"
+  | "under_titled"
+  | "comp_floor"
+  | "comp_deflect";
 
 export interface DrillConfig {
   skill: DrillSkill;
@@ -97,6 +111,48 @@ const SCRIPTS: Record<DrillSkill, readonly [string, string, string, string, stri
     "[pauses] Let me think about that. …",
     "[pauses] Is that your final number?",
   ],
+  resume_facts: [
+    "You just named an employer that isn't on your resume — walk me through that.",
+    "Your resume says three years there; you said 'about two'. Which is right for BGV?",
+    "Is the title on your CV the exact designation on your offer letter?",
+    "There's a six-month overlap between two roles here — explain it.",
+    "If our background-verification team calls, will every date and title match what you've told me?",
+  ],
+  career_gap: [
+    "There's a gap of roughly a year here — what were you doing?",
+    "Give me the one-line version a recruiter would accept.",
+    "Was that gap planned, or were you between jobs?",
+    "Did you keep your skills current during that time?",
+    "Why should that gap not worry us?",
+  ],
+  seniority: [
+    "Your title says 'Senior' but you have four years — justify the level.",
+    "What senior-scope work have you actually owned end-to-end?",
+    "Did you lead people, or lead projects?",
+    "Benchmarked against a nine-year senior, where do you honestly stand?",
+    "Be straight with me — are you senior today, or senior-track?",
+  ],
+  under_titled: [
+    "Your title is modest — why should we band you higher?",
+    "Walk me through scope your title doesn't capture.",
+    "What did you own that a typical person at your title wouldn't?",
+    "Should we level you by title or by scope — and why?",
+    "If comp anchors to your old title, what's your counter?",
+  ],
+  comp_floor: [
+    "What's the minimum you'd accept?",
+    "Whatever number you give, justify it.",
+    "That's above our band — can you go lower?",
+    "Why that floor and not ten percent less?",
+    "If we can't meet your floor, what happens?",
+  ],
+  comp_deflect: [
+    "Before we go further — what's your current CTC?",
+    "What number are you looking for?",
+    "I need a figure to proceed — give me one.",
+    "Are you flexible on compensation?",
+    "Just a ballpark — what's your expectation?",
+  ],
 };
 
 /* Recruiter ack templates used between turns. Sector flavor reserved
@@ -113,6 +169,12 @@ const KEYWORDS: Record<DrillSkill, readonly string[]> = {
   anchoring: ["range", "market", "based on", "benchmark", "data", "expecting", "ask", "target", "total comp"],
   "red-flags": ["written", "documented", "in writing", "concerned", "not comfortable", "policy", "boundaries", "specifics", "details"],
   silence: ["my ask", "based on", "as i said", "to repeat", "let me clarify", "the number is", "i'll wait", "happy to discuss"],
+  resume_facts: ["exact", "offer letter", "bgv", "background", "verification", "dates", "designation", "let me correct", "to clarify", "accurate"],
+  career_gap: ["upskilling", "caregiving", "deliberate", "planned", "certification", "freelance", "consulting", "ready", "one line", "no impact"],
+  seniority: ["owned", "led", "scope", "honest", "track", "impact", "delivered", "responsible", "mentored", "end-to-end"],
+  under_titled: ["scope", "owned", "responsible", "impact", "beyond my title", "level by scope", "benchmark", "market", "evidence", "deliverables"],
+  comp_floor: ["floor", "minimum", "based on", "market", "benchmark", "rationale", "non-negotiable", "walk away", "total comp", "data"],
+  comp_deflect: ["discuss later", "understand the role", "market rate", "fair", "based on scope", "range once", "align on role", "competitive", "open", "happy to"],
 };
 
 export function scoreAnswer(skill: DrillSkill, answer: string): number {
@@ -192,6 +254,12 @@ const VERDICT_LABEL: Record<DrillSkill, string> = {
   anchoring: "anchoring",
   "red-flags": "red-flag detection",
   silence: "silence handling",
+  resume_facts: "resume–interview reconciliation",
+  career_gap: "career-gap framing",
+  seniority: "seniority framing",
+  under_titled: "scope-over-title framing",
+  comp_floor: "comp floor + rationale",
+  comp_deflect: "comp deflection",
 };
 
 export function summarizeDrill(state: DrillState): DrillSummary {

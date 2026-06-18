@@ -280,6 +280,16 @@ function useReadinessPayload(): { state: FetchState; reload: () => void } {
           : null;
         if (!payload) { captureClientEvent("analytics_empty"); setState({ status: "empty" }); return; }
         captureClientEvent("analytics_viewed", { sessions: payload.sessions, sparse: payload.meta?.sparse ?? false, ri: payload.ri });
+        /* North-Star retention input: exposure of the skill-decay refresh
+           queue. Measuring 7-day return for users who saw a non-empty queue
+           vs. those who didn't is how we validate the spaced-repetition loop.
+           Fires once per successful load, only when the queue has entries. */
+        if (payload.refresh && payload.refresh.length > 0) {
+          captureClientEvent("readiness:refresh_queue_shown", {
+            idle_skill_count: payload.refresh.length,
+            top_idle_days: Math.max(...payload.refresh.map((r) => r.days)),
+          });
+        }
         setState({ status: "ready", payload });
       } catch (err) {
         if (!alive || (err instanceof DOMException && err.name === "AbortError")) return;

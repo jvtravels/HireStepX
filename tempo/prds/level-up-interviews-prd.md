@@ -1,12 +1,14 @@
 # HireStepX — Product Requirements Document
 
-**Product:** HireStepX (formerly Level Up Interviews / HireReady) | **Date:** April 2026 | **Status:** Live (Production) | **Version:** 2.1
+**Product:** HireStepX (formerly Level Up Interviews / HireReady) | **Date:** June 2026 | **Status:** Live (Production) | **Version:** 3.0 (as-built, reconciled to code)
+
+> **Maintenance note (June 2026):** This document is the single source of truth for HireStepX and is verified against the codebase. Earlier revisions (≤2.1) described a React 18 + Vite SPA, a Groq-only LLM, Google Cloud Neural2 TTS, and auto-renewing Starter/Pro subscriptions — none of which match the shipped product. Those sections have been corrected against `package.json`, `src/dashboardComponents.tsx`, the TTS/STT cascade in `server-handlers/`, and `REPORT_VERSION` in `server-handlers/evaluate-session.ts`. The living spec is re-verified at the top of every weekly review; a section that drifts from code is a defect.
 
 ---
 
 ## TL;DR
 
-HireStepX is a premium-positioned web platform that lets experienced professionals practice realistic, AI-driven mock interviews with instant scored feedback. It targets **B2C individual professionals** preparing for senior-level interviews. Users configure their interview type, difficulty, and target role, then engage in a real-time conversational mock interview with an AI interviewer that speaks questions aloud. After completion, they receive detailed scoring, skill breakdowns, ideal answer comparisons, and actionable coaching feedback — personalized against their uploaded resume. Monetized via Razorpay subscriptions with weekly (₹49) and monthly (₹149) auto-renewing plans.
+HireStepX is an AI-powered mock-interview platform aimed at Indian candidates preparing for real interviews. It targets **B2C individual candidates**. Users pick a target role/company, optionally upload a resume, then run a real-time voice mock interview with an AI interviewer that speaks (TTS) and listens (STT). After completion they receive a scored report with STAR breakdowns, a coached model answer, a five-pillar Readiness Index, and skill-decay tracking for spaced repetition — personalized against their uploaded resume. Monetized via Razorpay (INR, UPI-first) across four **non-auto-renewing** tiers: Free (₹0, 3 sessions), Per-session top-up (₹9), Weekly (₹49, 10 sessions / 7 days), and Monthly (₹149, 40 sessions / 30 days). Plans do not auto-renew; there is no annual plan.
 
 ---
 
@@ -20,7 +22,7 @@ Job interview preparation for senior professionals is underserved. Existing tool
 - **Generic prep tools:** Question banks (Glassdoor, LeetCode) — no personalization, no simulation
 - **AI competitors:** Emerging but lack luxury positioning and role-specific depth for senior professionals
 
-**Differentiation:** Luxury-grade dark-theme design (Instrument Serif headings, gilt accents), adaptive AI that tailors questions to resume and role, Google Cloud Neural2 TTS voices, resume-integrated evaluation, Google Calendar sync, and Indian market pricing via Razorpay subscriptions.
+**Differentiation:** Deep India-specific domain modelling (role-competency briefs, company-tier classifier, salary bands, Indian HR/behavioral personas, and an India communication-register detector), adaptive AI that tailors questions to resume and role, a multi-provider voice stack (Sarvam Bulbul → Cartesia → Azure → Web Speech for TTS; Deepgram → Sarvam → Web Speech for STT), resume-integrated evaluation, a five-pillar Readiness Index with skill-decay tracking, Google Calendar sync, and India-first pricing via Razorpay (UPI-first, non-auto-renewing tiers + per-session top-up).
 
 ---
 
@@ -76,7 +78,7 @@ Job interview preparation for senior professionals is underserved. Existing tool
 - **Calendar** (`/dashboard/calendar`) — Interview scheduling with event CRUD, one-way Google Calendar sync (keyword-filtered import: interview, round, screen, onsite, recruiter, hiring, placement, assessment, walkthrough), ICS export
 - **Analytics** (`/dashboard/analytics`) — Score trend chart with hover tooltips, skill radar with side-by-side legend (55/45 layout), KPI tiles, session type breakdown, resume skills vs interview performance bridge (green=strength, red=gap pills)
 - **Resume** (`/dashboard/resume`) — Resume intelligence: AI-analyzed profile with headline, skills, achievements, career trajectory, interview strengths/gaps. Resume Quality score bar with numbered improvement tips. Version history tracking (last 10 uploads with scores). Re-analysis and delete with confirmation. AI vs fallback profile discrimination (`_type: "ai"` | `_type: "fallback"`)
-- **Settings** (`/dashboard/settings`) — Profile editing (name, role, interview date), interview preferences (default difficulty), subscription management (upgrade, pause, resume, cancel, reactivate with confirmation flows), "Paused" and "Cancelling" status badges, progress bar with days remaining, AI voice selection (8 Neural2 voices), notification toggles, billing history table, payment method management link, data export (CSV), account deletion
+- **Settings** (`/dashboard/settings`) — Profile editing (name, role, interview date), interview preferences (default difficulty), plan management (top-up, access window with days-remaining progress bar), AI voice selection across the TTS provider cascade, notification toggles, billing history table, payment method management link, data export (CSV), account deletion
 - **Command Palette** — Keyboard shortcut (Cmd+K) for quick navigation across dashboard sections
 
 #### Session Setup (`/session/new`)
@@ -92,8 +94,8 @@ Job interview preparation for senior professionals is underserved. Existing tool
 - Real-time conversational AI interview with 7-step structure (intro → questions → follow-ups → closing)
 - LLM-generated questions personalized to role, company, industry, and resume
 - Dynamic follow-up questions based on candidate answers (4s timeout, non-blocking)
-- Google Cloud Neural2 TTS — AI speaks questions aloud (8 selectable voices)
-- Browser Speech Recognition API for candidate responses
+- Multi-provider TTS cascade — AI speaks questions aloud via Sarvam Bulbul (primary) → Cartesia WebSocket → Azure TTS → Web Speech API (last resort)
+- Multi-provider STT — candidate speech captured via Deepgram (primary) → Sarvam (fallback) → Web Speech API (last resort)
 - Manual text input fallback when mic unavailable
 - Real-time waveform visualization during AI speech
 - Live recording indicator badge during speech recognition
@@ -110,7 +112,8 @@ Job interview preparation for senior professionals is underserved. Existing tool
 
 #### Evaluation & Results
 
-- AI evaluation via Groq LLM (llama-3.3-70b-versatile model)
+- AI evaluation via an LLM cascade — Groq (primary) → Gemini → Cerebras → deterministic static fallback (`server-handlers/_llm.ts`); static rules/schema are kept ahead of per-call dynamic content to preserve Groq prompt caching
+- Versioned report schema (`REPORT_VERSION = "mvp-9"`, `server-handlers/evaluate-session.ts`) with STAR-presence detection, an India communication-register detector, per-question metrics, and a quick→blended score reconciled in one atomic write so the sessions list and report never diverge
 - Resume-aware evaluation — feedback personalized against candidate's resume when available
 - 35-second timeout with AbortController
 - Progress bar during evaluation
@@ -134,9 +137,12 @@ Job interview preparation for senior professionals is underserved. Existing tool
 
 #### Subscription & Payments
 
-- **Free tier:** 3 total sessions, behavioral questions only, basic feedback
-- **Starter (₹49/week):** 10 sessions/week, all question types, detailed feedback, resume analysis, PDF export. Auto-renewing weekly via Razorpay subscription.
-- **Pro (₹149/month):** Unlimited sessions, full AI coaching, performance analytics, interview calendar, export (PDF, CSV, JSON). Auto-renewing monthly via Razorpay subscription.
+- **Free tier:** 3 total sessions, basic score & feedback
+- **Per-session top-up (₹9):** one additional session credit; one-time Razorpay order, no recurring charge
+- **Weekly / "Starter" (₹49):** 10 sessions over 7 days, all question types, detailed feedback, resume analysis. **One-time top-up — does NOT auto-renew.**
+- **Monthly / "Pro" (₹149):** 40 sessions over 30 days (`PRO_MONTHLY_LIMIT = 40`), full AI coaching, performance analytics, interview calendar, export. **One-time top-up — does NOT auto-renew.**
+- 30% student discount on `.ac.in` / `.edu.in` emails; 7-day refund window; the annual plan was removed.
+- Internal tier keys remain `free | starter | pro`; "Starter"/"Pro" are legacy code identifiers for the Weekly/Monthly tiers, not auto-renewing subscriptions.
 - Razorpay subscription checkout integration (UPI, Cards, Netbanking)
 - Fallback to one-time order when subscription plans not configured
 - Server-side HMAC-SHA256 signature verification (dual-mode: order-based and subscription-based)
@@ -194,26 +200,28 @@ Job interview preparation for senior professionals is underserved. Existing tool
 
 | Layer | Choice | Notes |
 | --- | --- | --- |
-| Framework | React 18 + Vite 7 + TypeScript | SPA with client-side routing |
-| Routing | react-router-dom v7 | Route-based code splitting with lazy imports |
+| Framework | Next.js ^16.2.4 (App Router, Turbopack) + React ^19.2.5 + TypeScript | Server components + route handlers; `src/` holds page/component code |
+| Routing | Next.js App Router | File-based routing under `app/`; API handlers in `server-handlers/` exposed via `app/api/*/route.ts` shims |
 | Database | Supabase Postgres | Profiles, sessions, calendar events, payments, feedback tables |
 | Authentication | Supabase Auth | Email/password, Google OAuth, JWT tokens |
 | Payments | Razorpay | INR pricing, UPI/Cards/Netbanking, subscriptions + one-time orders |
-| AI / LLM | Groq API (llama-3.3-70b-versatile) | Question generation, evaluation, follow-ups, resume analysis, insights |
-| TTS | Google Cloud Text-to-Speech API | Neural2 voices (8 options), Edge Function proxy |
-| Speech Input | Browser Speech Recognition API | With manual text input fallback |
+| AI / LLM | Groq (primary) → Gemini → Cerebras → static fallback | `server-handlers/_llm.ts` cascade; question generation, evaluation, follow-ups, resume analysis, insights. Static rules/schema kept ahead of dynamic content to preserve Groq prompt caching |
+| TTS | Sarvam Bulbul → Cartesia (WebSocket PCM) → Azure → Web Speech | Multi-provider cascade with automatic fallback |
+| Speech Input | Deepgram → Sarvam → Web Speech API | Multi-provider STT cascade with manual text input fallback |
 | Hosting | Vercel | Edge Functions (LLM endpoints) + Serverless Functions (payment, cron) |
 | Rate Limiting | Upstash Redis | Per-endpoint buckets, no in-memory fallback |
 | Emails | Resend API | Payment, cancellation, pause, renewal, reminder emails |
 | Styling | Inline styles + design tokens | Dark luxury theme, custom `tokens.ts` color/font/shadow/gradient system |
-| Analytics | Vercel Analytics + Speed Insights | Bundled with deployment |
+| Analytics | PostHog (product analytics) + Vercel Speed Insights | Client + server-side capture (`src/posthogClient.ts`, `server-handlers/_posthog.ts`) |
 | Testing | Vitest + Testing Library | 24 test files, 319 tests |
 | Offline Storage | IndexedDB | Draft auto-save, evaluation retry queue |
 
 ### Application Architecture
 
+> **Note:** The tree below is from the legacy React/Vite SPA and is retained only for historical file-name reference. The live app is a Next.js App Router project: routes live under `app/`, shared page/component code under `src/` (e.g. `AuthContext.tsx`, `DashboardHome.tsx`, `Interview.tsx`, `useInterviewEngine.ts`), API handlers under `server-handlers/` exposed via thin `app/api/*/route.ts` shims, and large static data under `data/`. See `CLAUDE.md` for the authoritative directory map.
+
 ```
-src/
+src/  (legacy SPA layout — superseded by the Next.js structure above)
   main.tsx                  — App entry, router setup, lazy imports
   App.tsx                   — Landing page (particle canvas, parallax, pricing)
   AuthContext.tsx            — Auth state, login/signup/logout, subscription management
@@ -433,26 +441,28 @@ payments
 
 ## Subscription Tiers
 
-| Plan | Price | Duration | Limits | Features |
-| --- | --- | --- | --- | --- |
-| Free | ₹0 | Unlimited | 3 sessions total | Behavioral questions, basic score & feedback |
-| Starter | ₹49/week | 7 days (auto-renew) | 10 sessions/week | All question types, detailed feedback & skill scores, resume analysis, PDF export |
-| Pro | ₹149/month | 30 days (auto-renew) | Unlimited | Full AI coaching feedback, ideal answer comparisons, performance analytics & trends, interview calendar, Google Calendar sync, export (PDF, CSV, JSON) |
+All paid tiers are **one-time top-ups — none auto-renew.** Internal tier keys are `free | starter | pro`; the per-session ₹9 credit is a one-time order, not a tier.
 
-### Subscription Lifecycle
+| Plan (UI name) | Tier key | Price | Duration | Limits | Features |
+| --- | --- | --- | --- | --- | --- |
+| Free | `free` | ₹0 | Forever | 3 sessions total | Basic score & feedback, email report |
+| Per session | — (credit) | ₹9 | One session | +1 session credit | One-time top-up |
+| Weekly | `starter` | ₹49 | 7 days (no renew) | 10 sessions / 7 days | All question types, detailed feedback & skill scores, resume analysis |
+| Monthly | `pro` | ₹149 | 30 days (no renew) | 40 sessions / 30 days (`PRO_MONTHLY_LIMIT = 40`) | Full AI coaching, ideal-answer comparisons, performance analytics & trends, interview calendar, Google Calendar sync, export |
+
+30% student discount on `.ac.in` / `.edu.in` emails; 7-day refund window; the annual plan was removed.
+
+### Plan Lifecycle (one-time top-ups, no auto-renew)
 
 ```
-Purchase → Verify → Activate → [Pause ↔ Resume] → [Cancel → Reactivate] → Renew (webhook) → [Halt → Downgrade to Free]
+Purchase (one-time order) → Verify → Activate (timed access) → Expiry → Downgrade to Free
 ```
 
-- **Purchase:** Razorpay subscription created via `/api/create-subscription` (fallback: one-time order via `/api/create-order`)
-- **Verify:** Client sends payment response to `/api/verify-payment` — dual-mode HMAC verification (order or subscription), amount/status validation, subscription ID storage
-- **Proration:** Mid-cycle upgrade (Starter → Pro) credits remaining days proportionally as bonus days on new plan
-- **Pause:** User can pause auto-renewal via settings → `/api/pause-subscription` → Razorpay API
-- **Cancel:** Cancels at period end (keeps benefits) → `/api/cancel-subscription` → Razorpay API
-- **Reactivate:** Undo cancel before expiry → `/api/reactivate-subscription` → checks Razorpay subscription status
-- **Webhook:** `/api/razorpay-webhook` handles 8 event types for server-side consistency
-- **Expiry:** Cron job `/api/reset-expired-subscriptions` auto-downgrades + client-side 60s polling
+- **Purchase:** One-time Razorpay order via `/api/create-order` (UPI-first). There is no recurring subscription; nothing renews automatically.
+- **Verify:** Client sends payment response to `/api/verify-payment` — HMAC signature verification, server-side amount/status validation, duplicate-payment protection.
+- **Access window:** Verified payment grants a timed allotment (Weekly 7 days / Monthly 30 days) with the session caps above. When the window ends, access lapses with no charge.
+- **Expiry:** Cron `/api/reset-expired-subscriptions` plus client-side polling downgrades lapsed users to Free.
+- **Legacy plumbing (present but not the active model):** subscription/webhook/pause/cancel handlers exist in the codebase from an earlier auto-renew design and the `cancel_at_period_end` / `subscription_paused` columns remain. They are not part of the shipped non-auto-renewing flow; treat them as deprecated until removed.
 
 ### Tier Enforcement
 
