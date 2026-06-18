@@ -48,6 +48,13 @@ const ROWS: Row[] = [
   { label: "compound: current+target, both unit-bearing", text: "I'm at 22 LPA fixed currently, targeting 34 LPA total.", expect: { currentCtc: 22, target: 34 } },
   { label: "compound: unit-less current, target binds",    text: "I'm at 22 fixed currently, targeting 34 total.",        expect: { target: 34 } },
   { label: "compound: current is 18, expecting 26",         text: "current is 18, expecting 26",                          expect: { target: 26 } },
+  /* #66 follow-up — a digit GLUED to letters (level token SE3 / L5 /
+   * SDE2) is NOT a prior salary disclosure, so the clause clip must NOT
+   * fire on it. Before the FREE_STANDING_NUMBER guard, the "3" in "SE3"
+   * triggered a clip of "...at Myntra," and the 24 lost its current-CTC
+   * binding (eval scenario role-mismatch-needs-clarify). */
+  { label: "level token before comma keeps employer cue", text: "I'm a SE3 at Myntra, 24 LPA.",                          expect: { currentCtc: 24 } },
+  { label: "L-prefixed level token before comma",          text: "I'm L5 at Google, currently 30 LPA.",                 expect: { currentCtc: 30 } },
 
   /* ── Target cues — English ─────────────────────────────────────── */
   { label: "expecting N",                text: "I'm expecting 30 LPA",                  expect: { target: 30 } },

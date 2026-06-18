@@ -506,18 +506,27 @@ function scoreRolesForSpan(
    * left window and won the current>target tiebreak, so 34/26 mis-bound
    * to current (or dropped) and the real target never registered.
    *
-   * Clip at a clause boundary ONLY when a DIGIT precedes it within the
-   * window — i.e. the earlier clause carried its OWN number, so its
-   * cues belong to that number, not this span. The digit guard is
-   * load-bearing: a bare lead-in with no prior number ("I told you,
-   * 24 LPA CTC overall", "as I mentioned, 17 LPA total CTC") keeps its
-   * cue ("told you" / "mentioned") — clipping there would strip the
-   * only current cue and mis-bind the number. */
+   * Clip at a clause boundary ONLY when a FREE-STANDING NUMBER precedes
+   * it within the window — i.e. the earlier clause carried its OWN
+   * quantity, so its cues belong to that number, not this span. The
+   * guard is load-bearing twice over:
+   *   - a bare lead-in with no prior number ("I told you, 24 LPA CTC
+   *     overall", "as I mentioned, 17 LPA total CTC") keeps its cue
+   *     ("told you" / "mentioned") — clipping there would strip the only
+   *     current cue and mis-bind the number;
+   *   - a digit GLUED to letters is a level/identifier token, NOT a
+   *     salary ("I'm a SE3 at Myntra, 24 LPA", "L5 at Google, 30 LPA").
+   *     A bare `/\d/` guard fired on the "3" in "SE3" and clipped away
+   *     the "at <employer>" current-CTC context, dropping the binding
+   *     (eval scenario role-mismatch-needs-clarify). FREE_STANDING_NUMBER
+   *     requires the digit to begin at a word boundary, so SE3 / L5 /
+   *     SDE2 no longer count as a prior disclosure. */
+  const FREE_STANDING_NUMBER = /(?:^|[^A-Za-z0-9])\d/;
   let clauseCut = -1;
   for (const sep of [",", ";", "."]) {
     let idx = leftWindow.indexOf(sep);
     while (idx >= 0) {
-      if (/\d/.test(leftWindow.slice(0, idx))) clauseCut = Math.max(clauseCut, idx);
+      if (FREE_STANDING_NUMBER.test(leftWindow.slice(0, idx))) clauseCut = Math.max(clauseCut, idx);
       idx = leftWindow.indexOf(sep, idx + 1);
     }
   }
