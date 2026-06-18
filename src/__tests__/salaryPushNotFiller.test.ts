@@ -94,3 +94,61 @@ describe("salary push does not ship the generic candidate-question filler", () =
     expect(move.lever).not.toBe("probe");
   });
 });
+
+/* Structural invariant (2026-06-18) — the prior fix detected salary
+ * pushes via a regex (`isSalaryPush`) and skipped the filler for matches;
+ * any phrasing the regex missed re-broke. The structural replacement
+ * gates the filler on a single fact — `highestOfferMade > 0` — so it is
+ * phrasing-INDEPENDENT: over a standing offer the content-free deflection
+ * can never ship, no matter how the candidate words the turn. These tests
+ * deliberately use utterances NO push regex would catch, to prove the
+ * invariant holds without enumeration. The third test guards the inverse:
+ * pre-offer (no negotiation to advance yet) the acknowledgement is still
+ * legitimate, so the gate must NOT over-fire and swallow the opening. */
+describe("standing-offer invariant: filler forbidden once an offer is on the table (phrasing-independent)", () => {
+  const band: NegotiationBand = { initialOffer: 28, maxStretch: 40, walkAway: 22, hasEquity: true };
+
+  it("defers a novel push no regex would match → negotiation move, not filler", () => {
+    const s = pushState(band, "So where does that leave us?", {
+      candidateTarget: 36,
+      candidateCurrentCtc: 28,
+      highestOfferMade: 35,
+    });
+    expect(isFiller(planNextAction(s).kind)).toBe(false);
+    expect(pickAiMove(s).lever).not.toBe("probe");
+  });
+
+  it("engages a non-topical open-direct question over a standing offer (never deflects)", () => {
+    // "confirm by Friday" routes to open-direct — NOT a curated topic and
+    // NOT a wired-profile topic — so pre-fix it fell straight to the
+    // content-free filler. Over a standing offer that deflection is now
+    // forbidden; the engine owns the turn (in production the LLM prose can
+    // still address the timeline question while negotiating).
+    const s = pushState(band, "Can you confirm that by Friday?", {
+      candidateTarget: 36,
+      candidateCurrentCtc: 28,
+      highestOfferMade: 35,
+    });
+    expect(isFiller(planNextAction(s).kind)).toBe(false);
+  });
+
+  it("STILL ships the acknowledgement pre-offer (gate must not over-fire)", () => {
+    // Opening, no offer on the table yet → there is genuinely no
+    // negotiation move to advance, so the answer-direct acknowledgement
+    // remains the correct, legitimate response. The invariant is
+    // post-offer only; this proves it doesn't swallow the opening turn.
+    const base = initState({ sessionId: "f1b", role: "Software Engineer", company: "Acme", band });
+    const s: NegotiationState = {
+      ...base,
+      phase: "opening",
+      turnIndex: 1,
+      highestOfferMade: 0,
+      conversationLog: [{ speaker: "candidate", text: "So where does that leave us?" }],
+      lastTurnDelta: {
+        ...(base.lastTurnDelta ?? {}),
+        askedQuestion: true,
+      } as NegotiationState["lastTurnDelta"],
+    };
+    expect(isFiller(planNextAction(s).kind)).toBe(true);
+  });
+});

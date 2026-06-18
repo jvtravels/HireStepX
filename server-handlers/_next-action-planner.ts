@@ -93,7 +93,6 @@ import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 import {
   routeCandidateQuestion,
   latestCandidateText,
-  isSalaryPush,
   BREAKDOWN_ASK_RE,
   type QuestionRoute,
 } from "./_question-router";
@@ -5164,32 +5163,36 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
         profile.mentionedTaxImplication ||
         profile.mentionedBgvConcern ||
         profile.mentionedMoonlighting);
-    /* THIRD completion sink (live-staging, 2026-06-17) — a candidate
-     * counter phrased as a question ("I was targeting 50 fixed — can we
-     * get closer?") sets `askedQuestion`, which let this generic answer-
-     * direct branch pre-empt counter handling and ship a content-free
-     * "let me note that and come back" deflection. When a fresh counter
-     * is on the table against a standing offer, DEFER answer-direct so
-     * planNextActionInternal's post-anchor counter-engagement routes
-     * (total via (c)/PDF#44, fixed via the fixed-counter force-route)
-     * own the turn and the recruiter actually negotiates. Mirrors the
-     * existing offerAsked / wiredProfileTopic skips. */
-    const liveCounterPending =
-      state.lastCandidateCounterLpa != null && state.highestOfferMade > 0;
-    /* F1 (live-staging, 2026-06-18) — open-phrasing salary push with no
-     * fresh number. "Can you move closer?", "what can you actually do?",
-     * "is that your best?", "meet me in the middle" set `askedQuestion`
-     * but carry no parsed counter, so `liveCounterPending` (numeric) is
-     * false and this generic answer-direct branch shipped the content-
-     * free "Coming back to the structure — … let me come back to where
-     * we were." filler. A push against a standing offer is a negotiation
-     * MOVE: defer answer-direct so the counter-offer concession / lever
-     * engine owns the turn (counter-base when headroom remains, hold-
-     * firm-with-reason when it doesn't). Sibling skip to the numeric
-     * `liveCounterPending`, gated on an offer already being on the table. */
-    const salaryPushPending =
-      state.highestOfferMade > 0 &&
-      isSalaryPush(latestCandidateText(state));
+    /* Structural completion-sink invariant (2026-06-18) — replaces the
+     * accreted skip-pile (liveCounterPending numeric gate + the
+     * isSalaryPush open-phrasing regex from F1/THIRD-sink).
+     *
+     * Root insight: the generic non-topical branch in this block is the
+     * ONLY content-free move the planner can emit. Every other return
+     * path is substantive — the counter-offer concession engine, the
+     * defensive ladder, lever rotation (pickLeverExploreMove always
+     * returns a real lever), hold-firm, and the terminal
+     * `wrapLeverExplore(legacyMove, "default")` fallback. So the
+     * "let me come back to where we were." deflection is only ever the
+     * correct terminal move when there is genuinely no negotiation to
+     * advance — i.e. BEFORE any offer is on the table (opening /
+     * discovery). The moment an offer stands, deferring to the
+     * downstream cascade is ALWAYS at least as good as deflecting.
+     *
+     * The old approach tried to enumerate which utterances were
+     * negotiation moves (a numeric counter, then a regex of push
+     * phrasings) and skip the filler for those — an open-ended
+     * phrasing-matching game that re-broke on every new wording
+     * ("is that really your best?", Hinglish, oblique pushes, …).
+     * One invariant subsumes the whole list:
+     *
+     *   standing offer  ⇒  never ship the content-free filler.
+     *
+     * The curated-topic answer (route.kind === "topical") still fires
+     * over a standing offer — answering a real question (ESOP, notice
+     * buyout, …) is substantive, not a deflection — so ONLY the generic
+     * fallthrough at the end of this block is gated on `!hasStandingOffer`. */
+    const hasStandingOffer = state.highestOfferMade > 0;
     /* ArchRec 2 (2026-05-16) — was `answer-direct@${turnIndex}`. The
      * per-turn suffix made hasFired() always pass (every turn produced
      * a fresh string), so the "single-fire" intent was actually dead.
@@ -5199,9 +5202,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     if (
       !hasFired("answer-direct") &&
       !offerAskedThisTurn &&
-      !wiredProfileTopicMatches &&
-      !liveCounterPending &&
-      !salaryPushPending
+      !wiredProfileTopicMatches
     ) {
       /* PDF#51 (2026-05-28) — deterministic-prose preempt.
        *
@@ -5320,20 +5321,29 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
        * answered by generateAnswerToCandidate via the LLM factPack path;
        * the canonical here is only a fallback tail. Keep it as safe,
        * neutral candidate prose. */
-      return {
-        kind: "reactive-followup",
-        ask: "Sure — let me address that directly.",
-        trigger: "askedQuestion",
-        topic: "answer-direct",
-        satisfiesTopic: "answer-direct",
-        _move: {
-          lever: "probe",
-          newTotalLpa: null,
-          rationale: "Candidate asked a direct question this turn — answer before advancing.",
-          actionKind: "reactive-followup",
-          askedTopic: "answer-direct",
-        },
-      };
+      /* Generic non-topical filler — the planner's only content-free
+       * move. Forbidden over a standing offer (see the invariant comment
+       * above): when an offer is on the table we fall through to the
+       * downstream cascade (counter-offer engine / lever rotation /
+       * hold-firm), which always negotiates instead of deflecting. Pre-
+       * offer (opening / discovery) it remains the right acknowledgement
+       * while the recruiter is still gathering context. */
+      if (!hasStandingOffer) {
+        return {
+          kind: "reactive-followup",
+          ask: "Sure — let me address that directly.",
+          trigger: "askedQuestion",
+          topic: "answer-direct",
+          satisfiesTopic: "answer-direct",
+          _move: {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale: "Candidate asked a direct question this turn — answer before advancing.",
+            actionKind: "reactive-followup",
+            askedTopic: "answer-direct",
+          },
+        };
+      }
     }
   }
 
