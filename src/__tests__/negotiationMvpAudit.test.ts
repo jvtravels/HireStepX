@@ -158,6 +158,26 @@ const SCENARIOS: Scenario[] = [
     ],
     expectClose: "accepted",
   },
+  /* MVP-audit fast-follow regression lock (2026-06-18). A candidate who
+   * repeatedly signals frustration ("I already told you", "you keep
+   * asking") used to re-trigger acknowledge-and-recover every turn — the
+   * identical "let me not loop on that. Moving on." line three times in a
+   * row, a verbatim loop of the anti-loop line itself (the battery's
+   * verbatim-loop detector is the guard). The consecutive-fire suppression
+   * in _next-action-planner.ts must keep this advancing to a real close. */
+  {
+    name: "repeated-frustration-no-recover-loop",
+    band: B(28, 40, 24),
+    turns: [
+      "I already told you, 26 LPA.",
+      "I just said 26.",
+      "You keep asking the same thing.",
+      "Targeting 32 LPA.",
+      "Fine, I accept.",
+      "Yes, send the letter.",
+    ],
+    expectClose: "accepted",
+  },
 ];
 
 interface Finding {

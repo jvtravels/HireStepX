@@ -2169,8 +2169,24 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * Acceptable to ship as a standalone turn for v1; subsequent turns
    * resume the normal cascade because lastUserFrustrated is cleared
    * in applyAiMove. Not pushed through STRUCTURAL_LEVERS rotation
-   * (this is a meta / repair move, not a comp lever). */
-  if (state.lastUserFrustrated === true) {
+   * (this is a meta / repair move, not a comp lever).
+   *
+   * MVP-audit fast-follow (2026-06-18) — consecutive-fire guard. A
+   * candidate who keeps signalling frustration ("I already told you",
+   * "you keep asking") re-sets lastUserFrustrated every turn, and this
+   * branch re-emitted the IDENTICAL meta-line on each — three verbatim
+   * "let me not loop on that. Moving on." turns in a row, a loop of the
+   * very anti-loop line. The recover move is a one-shot rapport reset:
+   * if the immediately-preceding lever was already acknowledge-and-
+   * recover, suppress it and fall through to the real cascade. The
+   * post-recovery force-advance (see force-advance block above) has
+   * already skipped the last-asked topic, so the cascade now anchors the
+   * offer or probes the NEXT item instead of repeating the apology. */
+  const lastLeverForRecovery = state.leversUsed[state.leversUsed.length - 1];
+  if (
+    state.lastUserFrustrated === true &&
+    lastLeverForRecovery !== "acknowledge-and-recover"
+  ) {
     return {
       kind: "acknowledge-and-recover",
       satisfiesTopic: "acknowledge-and-recover",
