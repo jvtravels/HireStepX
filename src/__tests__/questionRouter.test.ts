@@ -25,6 +25,7 @@ import { describe, it, expect } from "vitest";
 import {
   routeCandidateQuestion,
   routeQuestionShape,
+  isSalaryPush,
 } from "../../server-handlers/_question-router";
 
 describe("routeCandidateQuestion — variants", () => {
@@ -174,5 +175,59 @@ describe("routeQuestionShape — detectors", () => {
     expect(shape.isDirectQuestion).toBe(false);
     expect(shape.isNumericQuestion).toBe(false);
     expect(shape.topics).toEqual([]);
+  });
+});
+
+/* F1 (live-staging, 2026-06-18) — open-phrasing salary pushes are
+ * negotiation MOVES, not generic questions. Pre-fix they set
+ * `askedQuestion` with no parsed counter, so the planner's answer-direct
+ * branch shipped the "Coming back to the structure — … come back to
+ * where we were." filler instead of letting the concession engine
+ * counter or hold-firm. `isSalaryPush` is the predicate the planner gates
+ * on (sibling to the numeric `liveCounterPending` skip). These tests lock
+ * the regex bank: every real push fires, benign direct questions don't. */
+describe("isSalaryPush — open-phrasing pressure on a standing offer", () => {
+  it("fires on the live-reproduced pushes and common variants", () => {
+    const pushes = [
+      "Can you move closer to 36?",
+      "Fine, what can you actually do?",
+      "Can you do better?",
+      "Could you do any better than that?",
+      "Is that your best?",
+      "Is that the best you can do?",
+      "What's your best number?",
+      "Let's meet in the middle.",
+      "Can we meet halfway?",
+      "Where can we land on this?",
+      "Is there any room to move on the base?",
+      "Any flexibility on the number?",
+      "Can you stretch a bit?",
+      "Can you stretch the band further?",
+      "Can you bump it up?",
+      "Can you push it higher?",
+      "Can you come up a bit on the base?",
+      "Get a little closer to my target and we have a deal.",
+    ];
+    for (const p of pushes) {
+      expect(isSalaryPush(p), `expected push: ${p}`).toBe(true);
+    }
+  });
+
+  it("does NOT fire on benign direct questions or null/empty", () => {
+    const benign = [
+      "What can you tell me about the team?",
+      "Can you move the start date closer?",
+      "Can you get me closer to the office?",
+      "What is the notice period?",
+      "Could you confirm the joining date?",
+      "How does the ESOP vesting work?",
+      "I'm happy with the offer.",
+      "",
+    ];
+    for (const b of benign) {
+      expect(isSalaryPush(b), `expected NOT a push: ${b}`).toBe(false);
+    }
+    expect(isSalaryPush(null)).toBe(false);
+    expect(isSalaryPush(undefined)).toBe(false);
   });
 });

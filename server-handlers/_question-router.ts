@@ -135,6 +135,73 @@ export const ANCHOR_ASK_RE =
 export const BREAKDOWN_ASK_RE =
   /\b(?:in[\s-]?hand|take[\s-]?home|guaranteed\s+cash|what.?s\s+(?:guaranteed|fixed)|monthly\s+take[\s-]?home|after\s+tax|summari[sz]e|recap)\b|(?:share|give|provide|walk\s+me\s+through|explain|tell\s+me|can\s+you|could\s+you|what(?:'?s| is)|need|want)\s+(?:me\s+|us\s+)?(?:the\s+|a\s+|an\s+)?(?:break(?:down|up)|split|structure|components?)\b|(?:break(?:down|up)|split|structure|components?)\s+of\s+(?:the\s+|this\s+|that\s+|\d)|what\s+is\s+(?:the\s+)?base\b|base\s*,?\s*variable\s*,?\s*bonus/i;
 
+/** Salary-PUSH detector (F1, 2026-06-18, live-staging) — open-phrasing
+ *  pressure on a standing offer that carries NO fresh number, so the
+ *  numeric-counter detectors (lastCandidateCounterLpa) miss it entirely:
+ *  "can you move closer?", "what can you actually do?", "can you do
+ *  better?", "is that your best?", "meet me in the middle", "where can
+ *  we land?", "any room to move?", "can you stretch / bump it up?".
+ *
+ *  These are negotiation MOVES, not generic questions. Live symptom: a
+ *  candidate pushing with one of these phrasings set `askedQuestion`,
+ *  and `planReactiveFollowup`'s answer-direct branch shipped the
+ *  content-free "Coming back to the structure — … let me come back to
+ *  where we were." filler instead of letting the counter-offer concession
+ *  / lever engine own the turn (counter-base when headroom remains,
+ *  hold-firm-with-reason when it doesn't). The planner consults
+ *  `isSalaryPush` as a sibling skip to the numeric `liveCounterPending`
+ *  gate so the negotiation engine — never the candidate-question
+ *  answerer — owns a push.
+ *
+ *  Tight by construction: every alternative pins a negotiation verb
+ *  ("do better", "stretch", "bump", "move/come closer to a number") so
+ *  benign direct questions ("what can you tell me about the team?",
+ *  "can you move the start date closer?") do not match — the `closer`
+ *  arm carries a negative lookahead for date/location nouns. */
+export const SALARY_PUSH_RE = new RegExp(
+  [
+    // move / get / come closer (to a number / target) — not a date or place
+    "(?:move|get|come)\\s+(?:a\\s+(?:bit|little)\\s+)?closer(?!\\s+to\\s+(?:the\\s+)?(?:office|city|home|location|team|start|joining|date))",
+    "closer\\s+to\\s+(?:\\d|my\\s+(?:target|number|ask|expectation|figure)|the\\s+(?:number|target|figure|ask|mark)|that(?:\\s+number)?)",
+    // do better / do more / anything more
+    "(?:can|could|would)\\s+you\\s+do\\s+(?:any\\s+)?(?:better|more)",
+    "do\\s+(?:any\\s+)?better\\s+(?:than\\s+(?:that|this|\\d)|here|on\\s+(?:the\\s+)?(?:base|number|offer))",
+    "anything\\s+(?:more|else)\\s+(?:you\\s+can\\s+do|on\\s+the\\s+(?:base|number|offer))",
+    // what can you (actually/really) do/offer/stretch/manage/swing
+    "what\\s+(?:can|could)\\s+you\\s+(?:actually\\s+|really\\s+)?(?:do|offer|stretch|manage|swing|push)\\b",
+    // best offer / best you can do
+    "(?:your|the)\\s+best\\s+(?:offer|number|you\\s+can\\s+do)",
+    "is\\s+that\\s+(?:your|the)\\s+best",
+    "best\\s+(?:you\\s+can\\s+do|and\\s+final)",
+    // meet in the middle / halfway
+    "meet\\s+(?:me\\s+)?(?:in\\s+the\\s+middle|half\\s*way)",
+    // where can we / you land; can we land
+    "where\\s+(?:can|could)\\s+(?:we|you)\\s+land",
+    "can\\s+we\\s+land\\s+(?:on|at|around)?\\s*\\d?",
+    // room / wiggle room / flexibility
+    "(?:any\\s+)?(?:wiggle\\s+)?room\\s+(?:to\\s+move|here|on\\s+(?:the\\s+)?(?:base|number|offer))",
+    "(?:any\\s+)?flexibility\\s+on\\s+(?:the\\s+)?(?:base|number|offer|comp|package|ctc)",
+    // stretch the band/number/offer
+    "(?:can|could)\\s+you\\s+stretch",
+    "stretch\\s+(?:a\\s+bit|further|more|the\\s+(?:band|number|offer|range))",
+    // bump / nudge / push it up
+    "bump\\s+(?:it\\s+|the\\s+(?:base|number|offer)\\s+)?up",
+    "(?:can|could)\\s+you\\s+(?:bump|nudge|push)\\s+(?:it|the\\s+(?:number|base|offer))",
+    "push\\s+(?:it\\s+)?(?:up|higher)",
+    // come up (on the base/number)
+    "come\\s+up\\s+(?:a\\s+(?:bit|little)|on\\s+(?:the\\s+)?(?:base|number|offer))",
+  ].join("|"),
+  "i",
+);
+
+/** True when the utterance is an open-phrasing salary push (see
+ *  SALARY_PUSH_RE). Pure; safe on null/empty. The planner gates this on
+ *  an offer already being on the table before treating it as a counter. */
+export function isSalaryPush(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  return SALARY_PUSH_RE.test(raw);
+}
+
 /* Shape detectors — extracted from the validator's local copy so
  * there is exactly one source of truth. */
 

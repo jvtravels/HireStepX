@@ -93,6 +93,7 @@ import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 import {
   routeCandidateQuestion,
   latestCandidateText,
+  isSalaryPush,
   BREAKDOWN_ASK_RE,
   type QuestionRoute,
 } from "./_question-router";
@@ -5175,6 +5176,20 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
      * existing offerAsked / wiredProfileTopic skips. */
     const liveCounterPending =
       state.lastCandidateCounterLpa != null && state.highestOfferMade > 0;
+    /* F1 (live-staging, 2026-06-18) — open-phrasing salary push with no
+     * fresh number. "Can you move closer?", "what can you actually do?",
+     * "is that your best?", "meet me in the middle" set `askedQuestion`
+     * but carry no parsed counter, so `liveCounterPending` (numeric) is
+     * false and this generic answer-direct branch shipped the content-
+     * free "Coming back to the structure — … let me come back to where
+     * we were." filler. A push against a standing offer is a negotiation
+     * MOVE: defer answer-direct so the counter-offer concession / lever
+     * engine owns the turn (counter-base when headroom remains, hold-
+     * firm-with-reason when it doesn't). Sibling skip to the numeric
+     * `liveCounterPending`, gated on an offer already being on the table. */
+    const salaryPushPending =
+      state.highestOfferMade > 0 &&
+      isSalaryPush(latestCandidateText(state));
     /* ArchRec 2 (2026-05-16) — was `answer-direct@${turnIndex}`. The
      * per-turn suffix made hasFired() always pass (every turn produced
      * a fresh string), so the "single-fire" intent was actually dead.
@@ -5185,7 +5200,8 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
       !hasFired("answer-direct") &&
       !offerAskedThisTurn &&
       !wiredProfileTopicMatches &&
-      !liveCounterPending
+      !liveCounterPending &&
+      !salaryPushPending
     ) {
       /* PDF#51 (2026-05-28) — deterministic-prose preempt.
        *
