@@ -5263,7 +5263,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
           const overlaysActive = sid.length > 0 && persona !== "default";
           let chained = prose;
           if (overlaysActive) {
-            chained = applyContextRefOverlay(chained, persona, sid);
+            chained = applyContextRefOverlay(chained, persona, sid, state.turnIndex);
             chained = applyPersonaTicSignature(chained, sid, persona);
           }
           chained = humanizeRecruiterProse(chained, {

@@ -1805,7 +1805,7 @@ export function chainProseOverlays(
    * existing humanizer mood layer uses the same gate. */
   const overlaysActive = sessionId.length > 0 && persona !== "default";
   if (overlaysActive) {
-    out = applyContextRefOverlay(out, persona, sessionId);
+    out = applyContextRefOverlay(out, persona, sessionId, state.turnIndex);
     out = applyPersonaTicSignature(out, sessionId, persona);
     /* Power-posture (2026-05-30). Fires only at |recruiterPower| ≥ 2,
      * 20% gate, idempotent. Slots HERE so the posture phrase wraps the

@@ -848,10 +848,22 @@ export function pickSectorContextRef(
   return bank[hPick % bank.length];
 }
 
+/* A market-context aside ("after the down-round corrections", "with the
+ * GCC consolidation push") is something a recruiter drops ONCE, early, to
+ * frame the band — not a verbal tic they repeat every turn. The phrase is
+ * deterministic per (session, persona), so a per-line probabilistic gate
+ * landed the IDENTICAL clause on 3-4 lines in a single conversation
+ * ("After the down-round corrections, ..." × 4), which reads robotic.
+ *
+ * Fix is single-fire-per-session, structural not probabilistic: pick one
+ * early turn deterministically from the session and prepend the aside only
+ * on that turn. At most one context-ref clause per conversation. */
+const CONTEXT_REF_WINDOW = 3; // turns 0..2 — the band-framing window
 export function applyContextRefOverlay(
   text: string,
   persona: RecruiterSectorPersona,
   sessionId: string,
+  turnIndex?: number,
 ): string {
   if (!text || !sessionId) return text;
   const textLower = text.toLowerCase();
@@ -860,8 +872,13 @@ export function applyContextRefOverlay(
   }
   const ref = pickSectorContextRef(persona, sessionId);
   if (!ref) return text;
-  const h = fnv1a(`ctx-ref-fire|${sessionId}|${persona}|${text}`);
-  if ((h / 0x100000000) >= 0.15) return text;
+  const ti =
+    typeof turnIndex === "number" && Number.isFinite(turnIndex)
+      ? Math.abs(Math.trunc(turnIndex))
+      : 0;
+  const chosenTurn =
+    fnv1a(`ctx-ref-turn|${sessionId}|${persona}`) % CONTEXT_REF_WINDOW;
+  if (ti !== chosenTurn) return text;
   return `${ref.charAt(0).toUpperCase()}${ref.slice(1)}, ${lowercaseFirst(text)}`;
 }
 

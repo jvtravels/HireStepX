@@ -105,3 +105,63 @@ describe("applyContextRefOverlay", () => {
     expect(noOverlay / total).toBeGreaterThanOrEqual(0.3);
   });
 });
+
+/* Single-fire-per-session (2026-06-18). A market-context aside is a one-
+ * time band-framing remark, not a verbal tic. Before this, the identical
+ * deterministic phrase bolted onto 3-4 lines of one negotiation. The
+ * overlay now fires on exactly one early turn (turnIndex gate). */
+describe("applyContextRefOverlay — single fire per session", () => {
+  /** A persona+sessionId whose context-ref pick is non-null (will fire). */
+  function firingSession(): { persona: RecruiterSectorPersona; sid: string } {
+    for (let i = 0; i < 2000; i++) {
+      const sid = `sess-onefire-${i}`;
+      if (pickSectorContextRef("indian-unicorn", sid) !== null) {
+        return { persona: "indian-unicorn", sid };
+      }
+    }
+    throw new Error("no firing session found — test invalid");
+  }
+
+  it("fires on at most one turn across a 12-turn sweep", () => {
+    // Sweep many sessions so we cover every chosenTurn bucket.
+    for (let s = 0; s < 200; s++) {
+      const sid = `sess-sweep-${s}`;
+      if (pickSectorContextRef("gcc", sid) === null) continue;
+      let fires = 0;
+      for (let ti = 0; ti < 12; ti++) {
+        if (applyContextRefOverlay(BASE, "gcc", sid, ti) !== BASE) fires++;
+      }
+      expect(fires, `session ${sid} fired on ${fires} turns`).toBe(1);
+    }
+  });
+
+  it("the single fire lands inside the early band-framing window (turn < 3)", () => {
+    const { persona, sid } = firingSession();
+    let firedAt = -1;
+    for (let ti = 0; ti < 12; ti++) {
+      if (applyContextRefOverlay(BASE, persona, sid, ti) !== BASE) {
+        firedAt = ti;
+        break;
+      }
+    }
+    expect(firedAt).toBeGreaterThanOrEqual(0);
+    expect(firedAt).toBeLessThan(3);
+  });
+
+  it("does not fire on a late turn (turnIndex 6) — the regression case", () => {
+    // Every firing session must be silent at turn 6 (the buyout turn that
+    // leaked the phrase before the fix).
+    for (let s = 0; s < 200; s++) {
+      const sid = `sess-late-${s}`;
+      if (pickSectorContextRef("indian-unicorn", sid) === null) continue;
+      expect(applyContextRefOverlay(BASE, "indian-unicorn", sid, 6)).toBe(BASE);
+    }
+  });
+
+  it("omitted turnIndex defaults to turn 0 (back-compat for callers)", () => {
+    const { persona, sid } = firingSession();
+    const withArg = applyContextRefOverlay(BASE, persona, sid, 0);
+    const noArg = applyContextRefOverlay(BASE, persona, sid);
+    expect(noArg).toBe(withArg);
+  });
+});
