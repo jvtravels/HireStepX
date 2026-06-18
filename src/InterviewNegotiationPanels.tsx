@@ -398,7 +398,8 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
         return (
           <details style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(20,17,10,0.04)", border: "1px solid rgba(20,17,10,0.06)" }}>
             <summary style={{ cursor: "pointer", fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Take-home reality · {inrFmt(breakdown.monthlyTakeHomeInr)}/mo · gap {breakdown.gapPct}%
+              {/* gapPct is a FRACTION (0.453) per _ctc-breakdown contract — render as a percent. */}
+              Take-home reality · {inrFmt(breakdown.monthlyTakeHomeInr)}/mo · gap {Math.round(breakdown.gapPct * 1000) / 10}%
             </summary>
             <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 12px", fontFamily: ef.sans, fontSize: 12, color: e.coal }}>
               <span style={{ color: e.inkSoft }}>Stated CTC</span><span>₹{breakdown.statedCtcLpa} LPA</span>
