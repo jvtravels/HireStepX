@@ -567,13 +567,29 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
     const viaTargetCue =
       TARGET_CUE_PRESENCE.test(leftWindow) && POSITIONAL_OPENER_AT_END.test(leftWindow);
     const viaCurrentCue = CURRENT_CUE_PRESENCE.test(leftWindow);
+    /* Adversarial-sweep fix (live-staging 2026-06-19) — RIGHT-side target
+     * cue. The left-cue gate above only fires when the target cue PRECEDES
+     * the number ("looking for 40"). Indian candidates routinely put the
+     * cue AFTER: "40 is my number", "40 is my ask", "42 is my final
+     * figure". The bare integer then emitted no span, so the candidate's
+     * stated ask never registered (live: "...so 40 is my number." bound
+     * nothing). Emit when an unambiguous TARGET_CUES.right idiom abuts the
+     * number; role assignment is left to scoreRolesForSpan, whose
+     * clause-clipped windows keep an adjacent earlier number's cues out. */
+    const viaTargetCueRight = TARGET_CUES.right.some((re) => re.test(rightTail));
+    /* Companion: a COMPETING cue in the left window ("competing offer at
+     * 42", "another offer at 42") with a UNIT-LESS amount. Pass 2 already
+     * claims unitted competing numbers ("42 LPA"); the bare-integer case
+     * fell through every gate (no target/current cue, not lone) and the
+     * competing offer was silently dropped. */
+    const viaCompetingCue = COMPETING_CUES.left.some((re) => re.test(leftWindow));
     /* Pure Gricean / phase context: the bot just asked CTC or expectation
      * (or we're in probe-expectations) and the candidate replied with a
      * lone bare number. Gate on `spans.length === 0` so only the first
      * unit-less number in an otherwise-numberless reply binds. */
     const viaQuestionContext =
       spans.length === 0 && (aiAskedCurrentCtc || aiAskedTargetCtc || inProbeExpectations);
-    if (!viaTargetCue && !viaCurrentCue && !viaQuestionContext) continue;
+    if (!viaTargetCue && !viaTargetCueRight && !viaCurrentCue && !viaCompetingCue && !viaQuestionContext) continue;
     spans.push({ value: n, start: digitStart, end: digitEnd, isRangeUpper: false });
   }
   spans.sort((a, b) => a.start - b.start);

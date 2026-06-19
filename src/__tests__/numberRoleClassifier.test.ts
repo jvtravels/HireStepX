@@ -374,7 +374,40 @@ const ROWS: Row[] = [
     expect: { target: 55, currentCtc: null },
   },
 
+  /* ── RIGHT-side target cue + unit-less competing (live-staging 2026-06-19) ──
+   * Indian candidates put the target cue AFTER the number ("40 is my
+   * number") and state competing offers unit-less ("competing offer at
+   * 42"). Both previously emitted no bare-integer span and bound nothing.
+   * Pass-4 now gates on a RIGHT-window target cue and a LEFT-window
+   * competing cue in addition to the pre-existing left-target/current
+   * gates. */
+  {
+    label: "RIGHT cue: '40 is my number' binds target",
+    text: "40 is my number",
+    expect: { target: 40, currentCtc: null },
+  },
+  {
+    label: "two-number: 'competing offer at 42, so 40 is my number' splits competing+target",
+    text: "I have a competing offer at 42, so 40 is my number.",
+    ctx: { phase: "counter-offer" },
+    expect: { target: 40, competing: 42 },
+  },
+  {
+    label: "unit-less competing offer binds competing",
+    text: "competing offer at 42",
+    expect: { competing: 42, target: null },
+  },
+  {
+    label: "'another offer at 38, but 45 is my ask' splits competing+target",
+    text: "I have another offer at 38, but 45 is my ask.",
+    ctx: { phase: "counter-offer" },
+    expect: { target: 45, competing: 38 },
+  },
+
   /* ── Negative cases (must NOT bind) ────────────────────────────── */
+  { label: "RIGHT-gate guard: '40 years old' binds nothing", text: "I'm 40 years old.",      expect: { currentCtc: null, target: null, competing: null } },
+  { label: "RIGHT-gate guard: '40 people' binds nothing",     text: "My team has 40 people.", expect: { currentCtc: null, target: null, competing: null } },
+  { label: "RIGHT-gate guard: '40 hours a week' binds nothing", text: "I work 40 hours a week.", expect: { currentCtc: null, target: null, competing: null } },
   { label: "rejects 100 crore (clamp)",  text: "I'm looking for 100 crore",             expect: { target: null } },
   { label: "rejects garbage commas",     text: "I'm expecting 30,00,000 lakhs",         expect: { target: null } },
   { label: "ignores N days",             text: "I need 30 days to decide",              expect: { currentCtc: null, target: null } },
