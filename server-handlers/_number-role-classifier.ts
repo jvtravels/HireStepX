@@ -274,7 +274,11 @@ const TARGET_CUES: CueTable = {
      * number", "55, non-negotiable", "55, no less"). Same rationale as the
      * ask-anchor block above — these are target assertions, never current. */
     /\bthat.?s\s+my\s+(?:number|ask|figure|final)\b/i,
-    /\bmy\s+(?:final\s+)?(?:number|ask)\b/i,
+    /* "42 is my final figure / my figure / my expectation" — Indian-HR
+     * candidates state the target as a "figure" or "expectation" just as
+     * often as "number/ask". Live-staging 2026-06-19: these bound null. */
+    /\bmy\s+(?:final\s+)?(?:number|ask|figure|expectation)\b/i,
+    /\bmy\s+bottom\s+line\b/i,
     /\bnon[-\s]?negotiable\b/i,
     /\bno\s+less\b/i,
   ],

@@ -403,6 +403,13 @@ const ROWS: Row[] = [
     ctx: { phase: "counter-offer" },
     expect: { target: 45, competing: 38 },
   },
+  /* RIGHT-cue idiom coverage — candidates state the target as a "figure",
+   * "expectation", or "bottom line" as often as "number/ask". */
+  { label: "RIGHT cue: '42 is my final figure' binds target", text: "42 is my final figure", expect: { target: 42 } },
+  { label: "RIGHT cue: '42 is my figure' binds target",       text: "42 is my figure",       expect: { target: 42 } },
+  { label: "RIGHT cue: '45 is my expectation' binds target",  text: "45 is my expectation",  expect: { target: 45 } },
+  { label: "RIGHT cue: '45 is my bottom line' binds target",  text: "45 is my bottom line",  expect: { target: 45 } },
+  { label: "RIGHT-cue guard: 'I figure I'll need 30 days' binds nothing", text: "I figure I'll need 30 days", expect: { target: null, currentCtc: null } },
 
   /* ── Negative cases (must NOT bind) ────────────────────────────── */
   { label: "RIGHT-gate guard: '40 years old' binds nothing", text: "I'm 40 years old.",      expect: { currentCtc: null, target: null, competing: null } },
