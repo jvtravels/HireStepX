@@ -4330,8 +4330,22 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
 
   /* `offerOnTable` lets the acceptance classifier veto commitment
      idioms ("sounds good") that arrive before any number has been
-     quoted — structural phase gate (Phase 9). */
-  const offerOnTable = (state.highestOfferMade ?? 0) > 0;
+     quoted — structural phase gate (Phase 9).
+
+     Bug-D fast-follow (2026-06-19) — a band presented as a RANGE
+     (`band-anchor-with-rationale`, when the candidate's CTC sits below
+     the band floor) sets no `highestOfferMade`, yet it IS a concrete
+     number the candidate can accept. Without counting it as an offer-
+     on-table the classifier vetoes the candidate's "that works for me,
+     let's close" as pre-offer filler, signalsAcceptance stays false,
+     and the session can never close against the stated band. Treating a
+     presented band as an offer-on-table is exactly what the phase gate
+     is meant to express — we are past discovery the moment the band is
+     communicated. */
+  const bandPresented = (state.askedTopics ?? []).some(
+    (t) => t.topic === "band-anchor-with-rationale",
+  );
+  const offerOnTable = (state.highestOfferMade ?? 0) > 0 || bandPresented;
   const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null);
   /* Per-month periodicity (2026-06-15, unbiased-review HIGH) is normalized at
    * the SOURCE — _number-role-classifier.ts annualizes each salary span by its
@@ -5767,7 +5781,42 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      * "sounds good" / "I'd be comfortable moving forward if X" was
      * tripping a premature close. */
     const strict = detectExplicitAcceptance(answer);
-    const hasOffer = state.highestOfferMade > 0;
+    let hasOffer = state.highestOfferMade > 0;
+    /* Bug-D fast-follow (2026-06-19, adversarial battery `competing-offer-
+     * then-accept`) — accept against a STATED BAND with no concrete point
+     * offer. When the candidate's current CTC sits BELOW the band floor the
+     * planner presents the band as a range (`band-anchor-with-rationale`,
+     * newTotalLpa:null) so they have room to bargain up; the concrete point
+     * offer is meant to arrive from their counter. But a candidate can ACCEPT
+     * the stated band outright without countering. We are already inside the
+     * `parsed.signalsAcceptance` branch, so the candidate HAS accepted — yet
+     * with highestOfferMade still 0 every downstream close path gates out
+     * (hasOffer false: the strict path at :5739, the soft-accept stamp at
+     * :5827, and the planner's post-anchor close gate all require a standing
+     * offer), and the session dead-ends on the acceptance — the exact never-
+     * close failure. Stating the band IS committing to its floor, so register
+     * the band floor as the standing offer and let the existing close logic
+     * land on it. NOT gated on `strict.accepted`: the realistic closing
+     * register here is the medium-confidence commitment idiom ("that works for
+     * me, let's go ahead and close"), identical to how bugD closes once a
+     * concrete offer exists — the only difference there is the offer was
+     * already on the table. Guarded on the band actually having been PRESENTED
+     * (askedTopics ledger) so a candidate who "accepts" before any band was
+     * communicated is NOT closed against an unspoken number. firstOfferAtTurn
+     * is back-dated to the band-presentation turn (not the current accept
+     * turn) so the PDF#48 stamped-this-turn premature-close guard reads the
+     * offer as pre-existing, which it semantically is. */
+    if (!hasOffer && state.band) {
+      const bandTopic = (state.askedTopics ?? []).find(
+        (t) => t.topic === "band-anchor-with-rationale",
+      );
+      const floor = state.band.initialOffer;
+      if (bandTopic && typeof floor === "number" && floor > 0) {
+        next.highestOfferMade = floor;
+        if (next.firstOfferAtTurn == null) next.firstOfferAtTurn = bandTopic.atTurn;
+        hasOffer = true;
+      }
+    }
     if (!strict.accepted) {
       /* Soft-acceptance fallback: 3+ consecutive non-counter, non-info
        * candidate turns means the candidate has stopped negotiating —

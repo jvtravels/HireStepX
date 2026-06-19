@@ -904,7 +904,13 @@ function planDiscoverySufficientAnchor(
   /* Clean case — the band floor sits above the candidate's current pay; STATE
    * THE BAND as a range (mirrors the probe-expectations bridge below) so the
    * candidate has a reference range to react to and there's room to bargain
-   * up. The candidate's counter drives the concrete offer downstream. */
+   * up. The candidate's counter drives the concrete offer downstream — and an
+   * outright acceptance of the stated band (with no concrete counter) is
+   * handled by the kernel's accept path, which treats a presented band as an
+   * offer-on-table and closes at the band floor (see the `bandPresented` /
+   * `band-anchor-with-rationale` accept handling in _negotiation-kernel.ts).
+   * Kept as a pure range here (newTotalLpa: null) so stating the band does NOT
+   * flip the phase to counter-offer prematurely and reroute the next probe. */
   return {
     kind: "band-anchor-with-rationale",
     satisfiesTopic: "band-anchor-with-rationale",
@@ -913,7 +919,7 @@ function planDiscoverySufficientAnchor(
       newTotalLpa: null,
       rationale:
         `Bug-D discovery-sufficient anchor: candidate disclosed current ₹${state.candidateCurrentCtc}L + target ₹${state.candidateTarget ?? state.candidateTargetFixed}L${state.candidateTarget == null ? " (fixed)" : ""} and one acknowledgment has fired; ` +
-        `no offer on the table — state the band (₹${lo}L–₹${hi}L) so the candidate has a reference range to react to.`,
+        `state the band (₹${lo}L–₹${hi}L) as a reference range the candidate can react to.`,
       actionKind: "band-anchor-with-rationale",
       askedTopic: "band-anchor-with-rationale",
     },

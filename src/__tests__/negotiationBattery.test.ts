@@ -248,3 +248,76 @@ describe("negotiation battery — adversarial must-never-happen invariants", () 
     );
   });
 });
+
+/* Outcome battery (2026-06-19) — accept against a STATED BAND with no
+ * concrete point offer. When the candidate's current CTC sits BELOW the
+ * band floor the planner presents the band as a RANGE
+ * (`band-anchor-with-rationale`, newTotalLpa:null) so they have room to
+ * bargain up; no `highestOfferMade` is stamped. A candidate can still
+ * ACCEPT the stated band outright without countering. The sev-1 this
+ * locks: with highestOfferMade still 0 the acceptance classifier vetoed
+ * the accept as pre-offer filler (offerOnTable=false) and every close
+ * path gated out — the session dead-ended on the candidate's "that works
+ * for me, let's close" and NEVER closed. Surfaced by the adversarial
+ * outcome battery (`competing-offer-then-accept`). The fix treats a
+ * presented band as an offer-on-table and registers the band floor as the
+ * standing offer on acceptance, so the close lands on the floor.
+ *
+ * These bands put the candidate's CTC BELOW initialOffer to force the
+ * range-anchor branch (the concrete-offer branch is already covered by
+ * S1/A7/A9 above). */
+const HIGH_BAND: NegotiationBand = {
+  initialOffer: 32,
+  maxStretch: 40,
+  walkAway: 26,
+  hasEquity: true,
+};
+
+describe("negotiation battery — accept against a stated band closes", () => {
+  it("competing-offer + outright accept of the range band closes at the floor", () => {
+    const { transcript, finalState } = runConversation({
+      sessionId: "outcome-competing-offer-accept",
+      role: "Staff Engineer",
+      company: "Stripe",
+      band: HIGH_BAND,
+      turns: [
+        "I'm at Razorpay, 30 LPA, 24 fixed 6 variable.",
+        "I have a competing offer at 38.",
+        "Targeting 40 to move.",
+        "Where would you land?",
+        "That works for me. Let's go ahead and close.",
+      ],
+    });
+    const last = transcript[transcript.length - 1];
+    expect(
+      last.phase,
+      "accepting a stated range-band outright must reach a real close, not dead-end at offer 0",
+    ).toBe("accepted");
+    expect(last.terminal).toBe(true);
+    expect(
+      finalState.highestOfferMade,
+      "the close must land on the band floor, not a phantom 0",
+    ).toBe(HIGH_BAND.initialOffer);
+  });
+
+  it("below-floor CTC + 'I accept' over the range band closes", () => {
+    const { transcript } = runConversation({
+      sessionId: "outcome-below-floor-accept",
+      role: "Staff Engineer",
+      company: "Stripe",
+      band: HIGH_BAND,
+      turns: [
+        "I'm at Swiggy, 28 LPA, 23 fixed 5 variable.",
+        "Targeting around 42.",
+        "What can you offer?",
+        "Okay, that's fair. I accept.",
+      ],
+    });
+    const last = transcript[transcript.length - 1];
+    expect(
+      last.phase,
+      "an explicit 'I accept' over a presented band must close",
+    ).toBe("accepted");
+    expect(last.terminal).toBe(true);
+  });
+});
