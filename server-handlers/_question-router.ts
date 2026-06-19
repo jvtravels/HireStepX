@@ -188,9 +188,17 @@ export const SALARY_PUSH_RE = new RegExp(
     "(?:can|could)\\s+you\\s+stretch",
     "stretch\\s+(?:a\\s+bit|further|more|the\\s+(?:band|number|offer|range))",
     // bump / nudge / push it up
-    "bump\\s+(?:it\\s+|the\\s+(?:base|number|offer)\\s+)?up",
-    "(?:can|could)\\s+you\\s+(?:bump|nudge|push)\\s+(?:it|the\\s+(?:number|base|offer))",
+    "bump\\s+(?:it\\s+|the\\s+(?:base|number|offer|cash|comp|package|salary|pay|ctc)\\s+)?up",
+    "(?:can|could)\\s+you\\s+(?:bump|nudge|push)\\s+(?:it|the\\s+(?:number|base|offer|cash|comp|compensation|package|salary|pay|ctc|fixed))",
     "push\\s+(?:it\\s+)?(?:up|higher)",
+    // increase / raise / improve the cash/comp/base/offer (live-staging
+    // 2026-06-19: "push the cash" / "increase the cash" went undetected,
+    // so the planner fell through to a vague-promise divert)
+    "(?:can|could)\\s+you\\s+(?:increase|raise|improve|up)\\s+(?:the\\s+)?(?:cash|comp|compensation|package|salary|pay|ctc|base|number|offer|fixed)",
+    // bare imperative form — "increase the cash", "raise the base", "improve the package"
+    "\\b(?:increase|raise|improve)\\s+(?:the\\s+)?(?:cash|comp|compensation|package|salary|pay|ctc|base|number|offer|fixed)\\b",
+    // bare "(a bit) more cash/money/comp" — open-phrasing cash push
+    "(?:a\\s+(?:bit|little)\\s+)?more\\s+(?:cash|money|comp|compensation|salary|pay)\\b",
     // come up (on the base/number)
     "come\\s+up\\s+(?:a\\s+(?:bit|little)|on\\s+(?:the\\s+)?(?:base|number|offer))",
   ].join("|"),

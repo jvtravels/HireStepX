@@ -213,6 +213,17 @@ describe("isSalaryPush — open-phrasing pressure on a standing offer", () => {
       "Can you push it higher?",
       "Can you come up a bit on the base?",
       "Get a little closer to my target and we have a deal.",
+      // live-staging 2026-06-19 — cash/comp push objects + increase/raise
+      // verbs + open "more cash" phrasing went undetected, so the planner
+      // fell through to an off-topic vague-promise (WFH) divert.
+      "Can you push the cash a little more?",
+      "increase the cash",
+      "could you raise the base?",
+      "improve the package a little",
+      "raise the number",
+      "increase the comp",
+      "a bit more cash please",
+      "more money please",
     ];
     for (const p of pushes) {
       expect(isSalaryPush(p), `expected push: ${p}`).toBe(true);
@@ -230,6 +241,10 @@ describe("isSalaryPush — open-phrasing pressure on a standing offer", () => {
       "Is that role based in Bangalore?",
       "Is that team part of the platform org?",
       "I'm happy with the offer.",
+      // near-misses for the 2026-06-19 verb arms — non-comp objects
+      "Can you improve the work-life balance?",
+      "Let's raise the bar for the team.",
+      "I figure I'll need 30 days.",
       "",
     ];
     for (const b of benign) {

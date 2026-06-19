@@ -95,6 +95,7 @@ import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 import {
   routeCandidateQuestion,
   latestCandidateText,
+  isSalaryPush,
   BREAKDOWN_ASK_RE,
   type QuestionRoute,
 } from "./_question-router";
@@ -5073,10 +5074,17 @@ export function maybePlanTacticInject(
     };
   }
 
-  /* Vague non-binding promise — mid-stage, low-probability slot. */
+  /* Vague non-binding promise — mid-stage, low-probability slot.
+   * Suppressed when the candidate's latest utterance is an open-phrasing
+   * salary push (live-staging 2026-06-19): a cash push like "push the
+   * cash a little more" deserves a money-lever response, NOT an off-topic
+   * vague WFH/title promise. Diverting to an unrelated soft topic over a
+   * direct cash ask reads as a non-sequitur stonewall. Let the planner
+   * fall through to lever-explore, which engages the number. */
   if (
     !usedSet.has("vague-promise") &&
-    state.turnIndex >= 2
+    state.turnIndex >= 2 &&
+    !isSalaryPush(latestCandidateText(state))
   ) {
     const slot = tacticHash(state.sessionId, `vague-promise-${state.turnIndex}`) % 5;
     if (slot === 0) {

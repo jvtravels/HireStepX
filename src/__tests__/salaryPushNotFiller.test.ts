@@ -26,7 +26,10 @@ import {
   type NegotiationBand,
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
-import { planNextAction } from "../../server-handlers/_next-action-planner";
+import {
+  planNextAction,
+  maybePlanTacticInject,
+} from "../../server-handlers/_next-action-planner";
 
 /* Build a realistic mid-negotiation state at counter-offer phase with an
  * offer already on the table and the candidate's latest utterance being a
@@ -150,5 +153,49 @@ describe("standing-offer invariant: filler forbidden once an offer is on the tab
       } as NegotiationState["lastTurnDelta"],
     };
     expect(isFiller(planNextAction(s).kind)).toBe(true);
+  });
+});
+
+/* Vague-promise divert suppression (live-staging 2026-06-19) — the
+ * bad-faith `vague-promise` tactic-inject (a soft non-binding promise on
+ * an OFF-TOPIC lever: WFH / joining-bonus / title) was firing on a
+ * deterministic (sessionId, turnIndex) slot REGARDLESS of what the
+ * candidate just said. When the candidate's latest utterance is an
+ * open-phrasing cash push ("Can you push the cash a little more?"), the
+ * planner would still divert to a WFH non-sequitur instead of engaging
+ * the number — exactly the "you ask for money, the bot talks about
+ * work-from-home" complaint. `maybePlanTacticInject` now suppresses the
+ * vague-promise arm when the latest utterance is a salary push, so the
+ * planner falls through to the money-lever engine.
+ *
+ * `sid="abc", turnIndex=4` deterministically lands the vague-promise/wfh
+ * slot — the neutral-utterance assertion proves the slot genuinely fires,
+ * so the push assertion proves the gate (not an unrelated miss). */
+describe("vague-promise tactic-inject is suppressed on a salary push", () => {
+  const band: NegotiationBand = { initialOffer: 28, maxStretch: 40, walkAway: 19, hasEquity: true };
+  const mk = (text: string): NegotiationState => {
+    const base = initState({ sessionId: "abc", role: "sr-pd", company: "flipkart", band });
+    return {
+      ...base,
+      phase: "counter-offer",
+      turnIndex: 4,
+      highestOfferMade: 30,
+      conversationLog: [{ speaker: "candidate", text }],
+    } as NegotiationState;
+  };
+
+  it("control: a neutral utterance at this slot DOES fire the vague-promise inject", () => {
+    const r = maybePlanTacticInject(mk("Let me think about that."));
+    expect(r?.kind).toBe("vague-promise");
+  });
+
+  it("a cash push at the same slot is NOT diverted to vague-promise (WFH/title)", () => {
+    const r = maybePlanTacticInject(mk("Can you push the cash a little more?"));
+    expect(r?.kind).not.toBe("vague-promise");
+  });
+
+  it("a bare-imperative cash push is likewise not diverted", () => {
+    const r = maybePlanTacticInject(mk("increase the cash"));
+    expect(r?.kind).not.toBe("vague-promise");
   });
 });
