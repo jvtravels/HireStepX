@@ -319,6 +319,7 @@ export function computeQuestionCount(opts: { mini: boolean; isSalaryType: boolea
 
 import { QUESTION_BANK, type FocusArea, type RoleFamily } from "../data/interview-question-bank";
 import { sampleBehavioralQuestions } from "../data/behavioral-question-bank";
+import { sampleHrQuestions } from "../data/hr-round-question-bank";
 
 export interface FallbackQuestion {
   type: string;
@@ -362,6 +363,28 @@ export function buildStaticFallback(opts: {
           scoreNote: `Competency: ${q.competency}; STAR focus: ${q.starFocus}.`,
         })),
         { type: "closing", aiText: "That's all I had — what questions do you have for me?" },
+      ];
+    }
+  }
+
+  // HR round → dedicated HR bank. The interview *type* is "hr-round" but
+  // the curated bank's FocusArea is "hr"; this fallback never normalises
+  // between them, so without this branch an HR session silently degrades
+  // to tier-3 behavioural prompts (wrong prep for the candidate). Match on
+  // either signal — type carries "hr-round", focus may be "hr"/"hr-round".
+  const type = (opts.type || "").toLowerCase();
+  if (focus === "hr" || focus === "hr-round" || type === "hr-round") {
+    const seed = ((count * 37) + (roleFamily.length * 13) + 7) >>> 0;
+    const sampled = sampleHrQuestions({ count, seed, weightByFrequency: true });
+    if (sampled.length > 0) {
+      return [
+        { type: "intro", aiText: "Hi — thanks for making the time. Let's start simple: walk me through your background and what's prompting you to look right now." },
+        ...sampled.map((q, i): FallbackQuestion => ({
+          type: i === 0 ? "warmup" : "main",
+          aiText: q.text,
+          scoreNote: `HR dimension: ${q.dimension}.`,
+        })),
+        { type: "closing", aiText: "That's everything from my side — what would you like to ask me about the role, the team, or the company?" },
       ];
     }
   }

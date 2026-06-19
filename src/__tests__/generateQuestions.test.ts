@@ -218,6 +218,43 @@ describe("buildStaticFallback", () => {
       expect(q.aiText.length).toBeGreaterThan(0);
     }
   });
+
+  /* Regression: HR-round sessions arrive with type "hr-round" but the
+     curated bank's FocusArea is "hr". Before the dedicated HR branch the
+     fallback never bridged them, so an HR session degraded to behavioural
+     STAR prompts — the wrong prep. These lock in real HR questions. */
+  it("returns HR questions for an hr-round type (not behavioural STAR)", () => {
+    const qs = buildStaticFallback({
+      type: "hr-round",
+      focus: "general",
+      difficulty: "standard",
+      roleFamily: "general",
+      count: 5,
+    });
+    expect(qs.length).toBeGreaterThanOrEqual(7);
+    expect(qs[0].type).toBe("intro");
+    expect(qs[qs.length - 1].type).toBe("closing");
+    expect(validateQuestionShape(qs as unknown[])).toBe(true);
+    const body = qs.filter((q) => q.type === "warmup" || q.type === "main");
+    // HR body items are tagged with their HR dimension; behavioural ones
+    // would carry a "Competency:" note instead.
+    expect(body.every((q) => (q.scoreNote || "").startsWith("HR dimension:"))).toBe(true);
+    // And not a single one is a STAR "Tell me about a time" behavioural probe.
+    expect(body.some((q) => /tell me about a time/i.test(q.aiText))).toBe(false);
+  });
+
+  it("also serves HR questions when focus is 'hr' regardless of type", () => {
+    const qs = buildStaticFallback({
+      type: "behavioral",
+      focus: "hr",
+      difficulty: "standard",
+      roleFamily: "swe",
+      count: 4,
+    });
+    const body = qs.filter((q) => q.type === "warmup" || q.type === "main");
+    expect(body.length).toBeGreaterThan(0);
+    expect(body.every((q) => (q.scoreNote || "").startsWith("HR dimension:"))).toBe(true);
+  });
 });
 
 
