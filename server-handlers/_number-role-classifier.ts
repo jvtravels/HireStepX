@@ -199,6 +199,18 @@ const TARGET_CUES: CueTable = {
     /\bexpect(?:ing|ed|ation|ations|s)?\b/i,
     /\bwant(?:ing)?\b/i,
     /\blooking\s+for\b/i,
+    /* Live-staging (2026-06-19) — "looking AT around 40 LPA for this move".
+     * The prior table carried only `looking\s+for`; "looking at" (consider
+     * /aim at, the more common spoken form) scored ZERO target cues, so a
+     * clear target fell through pickRole's Gricean default and bound to
+     * CURRENT whenever the bot's prior turn happened to mention "current
+     * package" (the equity probe does). That overwrote the real CTC and
+     * fired a false memory callback ("you're at ₹40 LPA right now, yeah?").
+     * Safe against current/competing collisions: when a stronger current
+     * ("my current CTC") or competing ("offer of") cue co-occurs, the
+     * current>competing>target tie-break still wins — "looking at" only
+     * decides the bind when it is the SOLE cue, which is exactly target. */
+    /\blooking\s+at\b/i,
     /\btarget(?:ing|ed|s)?\b/i,
     /\bhoping(?:\s+for)?\b/i,
     /\baim(?:ing)?\s+for\b/i,

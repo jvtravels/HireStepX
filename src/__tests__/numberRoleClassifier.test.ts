@@ -59,6 +59,18 @@ const ROWS: Row[] = [
   /* ── Target cues — English ─────────────────────────────────────── */
   { label: "expecting N",                text: "I'm expecting 30 LPA",                  expect: { target: 30 } },
   { label: "looking for N",              text: "looking for 28 LPA",                    expect: { target: 28 } },
+  /* Live-staging (2026-06-19): "looking AT N for this move" is the more
+   * common spoken target form. It carried no target cue, so it fell through
+   * pickRole's Gricean default and bound to CURRENT whenever the bot's prior
+   * turn mentioned "current package" (the equity probe), overwriting the real
+   * CTC and firing a false "you're at ₹40 LPA right now" callback. */
+  { label: "looking at N (equity probe ctx)", text: "I'm looking at around 40 LPA for this move.", ctx: { lastAiText: "On the equity side — does your current package include any ESOPs?" }, expect: { target: 40 } },
+  { label: "looking at N (no ctx)",      text: "I'm looking at around 40 LPA for this move.", expect: { target: 40 } },
+  /* Tie-break guard: when a stronger current/competing cue co-occurs with
+   * "looking at", current>competing>target must still win — "looking at"
+   * only decides the bind when it is the SOLE cue. */
+  { label: "looking at + current cue → current", text: "Looking at my current CTC, it's 30 LPA.", expect: { currentCtc: 30, target: null } },
+  { label: "looking at + offer cue → competing",  text: "I'm looking at an offer of 24 LPA from Razorpay.", expect: { competing: 24, target: null } },
   { label: "would like N",               text: "I would like 32 LPA",                   expect: { target: 32 } },
   { label: "I'd like N",                 text: "I'd like 35 LPA for this role",         expect: { target: 35 } },
   { label: "hoping for N",               text: "hoping for around 26 LPA",              expect: { target: 26 } },
