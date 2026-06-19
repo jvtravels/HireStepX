@@ -127,8 +127,19 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
    * like "accepting your feedback gracefully" or "then accept the role
    * later" do NOT match. Negation / hard-conditional / negotiating-but
    * vetoes run BEFORE this arm in classifyAcceptance, so "I won't accept"
-   * and "I'd accept if you can…" are already excluded. */
-  /(?:^|[.!?,]\s*)accept(?:ed|ing|s)?\b\s*(?:[.!?,]|$)/i,
+   * and "I'd accept if you can…" are already excluded.
+   *
+   * Adversarial sweep (2026-06-19) — terse candidates prefix the bare verb
+   * with an affirmative and no punctuation ("yes accept", "ok accept",
+   * "yeah accept") or append a bare object ("accept it", "yep accept it").
+   * The clause-boundary anchor above only fired for "accept."/"accepted."/
+   * "yes, accept" (comma), so "yes accept" fell through to no-match and the
+   * close was lost — a NO-CLOSE on an unambiguous acceptance. Allow an
+   * OPTIONAL leading affirmative and OPTIONAL trailing object; the verb +
+   * clause-end requirement is unchanged, so embedded uses ("accepting your
+   * feedback", "then accept the role later") still do not match, and the
+   * negation / conditional / negotiating-but vetoes still run first. */
+  /(?:^|[.!?,]\s*)(?:(?:yes|yeah|yep|yup|ok|okay|sure|alright|fine)[,\s]+)?accept(?:ed|ing|s)?\b(?:\s+(?:it|this|the\s+offer))?\s*(?:[.!?,]|$)/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than

@@ -56,6 +56,33 @@ describe("classifyAcceptance — performative tier", () => {
   it("strong on 'completely agree'", () => {
     expect(classifyAcceptance("I completely agree with the offer.").confidence).toBe("strong");
   });
+
+  /* Adversarial sweep (2026-06-19) — terse candidates prefix the bare verb
+   * with an affirmative (no punctuation) or append a bare object. Before the
+   * fix these returned no-match → NO-CLOSE on an unambiguous acceptance. */
+  it.each([
+    "yes accept",
+    "ok accept",
+    "yeah accept",
+    "okay accept",
+    "yes accept it",
+    "yep accept it",
+    "alright accept the offer",
+  ])("strong on terse affirmative+verb %j", (utter) => {
+    const r = classifyAcceptance(utter, { offerOnTable: true });
+    expect(r.accepted, `should accept: ${utter}`).toBe(true);
+    expect(r.reasons).toContain("performative-verb");
+  });
+
+  /* Negation / conditional vetoes still run BEFORE the bare-accept arm, so the
+   * affirmative-prefix extension must NOT swallow declines or hedges. */
+  it.each([
+    "no, I won't accept",
+    "I can't accept it",
+    "I'd accept it if you can add equity",
+  ])("does NOT accept negated/conditional %j", (utter) => {
+    expect(classifyAcceptance(utter, { offerOnTable: true }).accepted).toBe(false);
+  });
 });
 
 describe("classifyAcceptance — soft alignment tier", () => {
