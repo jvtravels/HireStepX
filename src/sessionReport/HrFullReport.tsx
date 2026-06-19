@@ -560,19 +560,19 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
       tone: "good",
       headline: "Counter-offer commitment: clear",
       body: "You came across as decided and non-negotiable with your current employer. HR read this as a low drop-out risk — that's exactly what they need before issuing the offer.",
-      script: '"I\'ve already made my decision and given PhonePe my word — if my current employer matches the comp, that changes nothing for me. The reason I\'m moving isn\'t the number, it\'s the 0-to-1 lane."',
+      script: '"I\'ve already made my decision, and I\'ve given you my word. If my current employer comes back with a counter, that changes nothing for me — I\'m moving for the role and the growth, not for the number."',
     },
     med: {
       tone: "warn",
       headline: "Counter-offer commitment: unclear",
       body: "You were somewhat non-committal on whether you'd take a counter-offer from your current employer. HR's biggest fear is extending an offer and having the candidate use it as a counter-offer lever. Sharpen this.",
-      script: '"I\'ve already made my decision — if my current company matches, I\'d still join. The reason I\'m moving is the charter, not the number, and that\'s not something they can match."',
+      script: '"I\'ve made my decision. Even if my current employer matches the comp, I\'d still join — what I\'m moving for is the scope of this role and where it takes my career, and that\'s not something a counter can give me."',
     },
     high: {
       tone: "bad",
       headline: "Counter-offer commitment: high risk",
       body: "Your answers on the commitment / other-offers probes were vague or implied you might take a counter from your current employer. This is the single biggest HR red flag in India — it signals you might not join even if they issue the offer.",
-      script: '"I have already resigned mentally. If [current company] countered, I\'d decline — the reason I\'m moving is [specific reason], and no counter-offer can give me that. I\'m not using PhonePe as leverage."',
+      script: '"I\'ve already made my decision to move, and a counter-offer from my current employer wouldn\'t change it — the reason I\'m leaving isn\'t the salary, it\'s the growth and the work, which a raise doesn\'t fix. I\'m not using this process as leverage."',
     },
   };
   const c = copy[risk];
