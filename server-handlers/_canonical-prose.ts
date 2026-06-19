@@ -1359,9 +1359,23 @@ const PROSE_ARMS: ProseArmRegistry = {
 
   /* Bad-faith tactic — fake competing candidate. Indian-recruiter
    * idiom: "another candidate", "ready to sign at the current band",
-   * gentle nudge rather than overt threat. */
-  "fake-competing-candidate": () =>
-    "Just being upfront with you — there's another candidate also in the final round, and they're ready to sign at the current band itself. I'd much rather close this with you, but the panel won't hold the slot indefinitely. Where can you genuinely land?",
+   * gentle nudge rather than overt threat. Five variants keyed off
+   * action.variant (planner picks via tacticHash(sessionId, …) % 5) so a
+   * returning user doesn't meet the identical "another candidate in the
+   * final round" line every time — the PRESSURE is constant, the framing
+   * rotates (parallel pipeline / backup candidate / internal ref /
+   * recruiter-as-ally / approved-headcount). Randomesque variety, not a
+   * persisted seen-set. */
+  "fake-competing-candidate": (action) => {
+    const variants = [
+      "Just being upfront with you — there's another candidate also in the final round, and they're ready to sign at the current band itself. I'd much rather close this with you, but the panel won't hold the slot indefinitely. Where can you genuinely land?",
+      "I'll be transparent — we're running two profiles in parallel for this position, and the other one is comfortable at the number on the table. You're my preferred pick, honestly, but I need something workable from your side to make the case. Where can you actually close?",
+      "One thing I should flag — there's a backup candidate the panel has already cleared who's okay with the current fitment. I don't want to go that route, but I can't sit on the role too long. What's the realistic number you'd sign at?",
+      "Straight with you — we had an internal referral come in late who fits the band as-is. I'd genuinely rather take you, so help me hold the line for you here. Where can you land that I can actually defend upstairs?",
+      "Look, I'm on your side here, but I'm being squeezed — there's a second-choice candidate ready at the approved headcount number, and leadership will ask why I'm stretching. Give me a figure I can justify, and I'll fight for you. Where can you genuinely come to?",
+    ];
+    return variants[(action.variant ?? 0) % variants.length];
+  },
 
   /* Prior-context feature (2026-05-29) — acknowledge an existing
    * competing offer the user declared at session init. Two variants

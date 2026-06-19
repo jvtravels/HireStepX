@@ -494,6 +494,7 @@ export default async function handler(
         parsedResume: body.parsedResume ?? null,
         recruiterSectorPersona: initRecruiterSectorPersona,
         recruiterPersona: scenarioSeed.recruiterPersona,
+        sessionDifficulty: scenarioSeed.difficulty,
         tierBucketHint: initTierBucket,
         callTimeIso: initCallTimeIso,
         powerSignals: { quarterTiming: initQuarterTiming },

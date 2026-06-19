@@ -683,7 +683,7 @@ export type NextAction =
    * per session. Low-priority — only emitted when no normal action
    * preempts. Carries `tactic` for the report layer / detection. */
   | { kind: "exploding-offer-pressure"; tactic: "exploding-offer-pressure"; deadline: "eod" | "friday" | "24h" }
-  | { kind: "fake-competing-candidate"; tactic: "fake-competing-candidate" }
+  | { kind: "fake-competing-candidate"; tactic: "fake-competing-candidate"; variant?: number }
   | { kind: "vague-promise"; tactic: "vague-promise"; topic: "wfh" | "joining-bonus" | "title" }
   /* Prior-context feature (2026-05-29) — caller-declared upfront
    * context (existing competing offer or current-employer retention
@@ -5236,6 +5236,7 @@ export function maybePlanTacticInject(
     return {
       kind: "fake-competing-candidate",
       tactic: "fake-competing-candidate",
+      variant: tacticHash(state.sessionId, "fake-competing-variant") % 5,
       _move: {
         lever: "hold-firm",
         newTotalLpa: state.highestOfferMade || null,

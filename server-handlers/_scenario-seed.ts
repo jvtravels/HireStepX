@@ -36,7 +36,7 @@
  * TA is never an external commission "agency" — so freshness never
  * costs realism.
  */
-import type { RecruiterPersona } from "./_negotiation-kernel";
+import type { RecruiterPersona, SessionDifficulty } from "./_negotiation-kernel";
 import type { CompanyTierBucket } from "../src/_negotiation-math";
 
 export interface ScenarioSeedInput {
@@ -51,9 +51,10 @@ export interface ScenarioSeedInput {
 export interface ScenarioSeed {
   /** The recruiter tone axis to run this session. */
   recruiterPersona: RecruiterPersona;
-  /** Coarse progression label, escalating with experience. Telemetry +
-   *  future adaptive-difficulty seam; does NOT alter kernel math today. */
-  difficulty: "warmup" | "standard" | "hardball";
+  /** Coarse progression label, escalating with experience. Wired into the
+   *  kernel via applyDifficultyToBand (modulates recruiter posture —
+   *  maxStretch / walkAway — never the pinned market anchor). */
+  difficulty: SessionDifficulty;
   /** The rotation index actually used (for telemetry / debugging). */
   rotationIndex: number;
 }
@@ -121,7 +122,7 @@ export function computeScenarioSeed(input: ScenarioSeedInput): ScenarioSeed {
   const rotationIndex = (userOffset + count) % tones.length;
   const recruiterPersona = tones[rotationIndex];
 
-  const difficulty: ScenarioSeed["difficulty"] =
+  const difficulty: SessionDifficulty =
     count <= 1 ? "warmup" : count <= 4 ? "standard" : "hardball";
 
   return { recruiterPersona, difficulty, rotationIndex };

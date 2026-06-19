@@ -784,6 +784,58 @@ export function applyPersonaToBand(
   return out;
 }
 
+/** Coarse adaptive-difficulty label for a session. Computed per-user from
+ *  prior negotiation count in `_scenario-seed.ts`. */
+export type SessionDifficulty = "warmup" | "standard" | "hardball";
+
+/* Adaptive session difficulty (2026-06-20) — repeat-session progression.
+ *
+ * `_scenario-seed.ts` computes a coarse difficulty from the user's prior
+ * negotiation count (warmup for the first sessions, ramping to hardball),
+ * but until now it only rode telemetry — the kernel never read it, so a
+ * 1st-session user and a 20th-session user faced byte-identical recruiter
+ * economics. A returning user therefore never felt the bot "get harder".
+ * This wires the dead seam.
+ *
+ * Difficulty modulates the recruiter's NEGOTIATING POSTURE, never the
+ * market truth:
+ *   - initialOffer (the P35 market anchor) is PINNED — the opening number
+ *     reflects the real market band and must not drift with practice
+ *     count. The deterministic-correctness guarantee stays intact.
+ *   - maxStretch (how far the recruiter will go) and walkAway (how soon
+ *     they walk) ARE the recruiter's strategy, and legitimately vary with
+ *     how tough this particular recruiter plays:
+ *       warmup   — concedes more, walks later  → more room to extract
+ *       standard — identity (baseline)
+ *       hardball — concedes less, walks sooner → tighter, less forgiving
+ *
+ * Deltas are proportional (so they scale sanely from a ₹7L IT-services
+ * band to a ₹60L GCC band) and small (≤5%), then clamped to preserve the
+ * invariant walkAway < initialOffer < maxStretch with a ≥0.5L spread each
+ * side. Applied AFTER applyPersonaToBand at init; "standard"/undefined is
+ * a pure identity transform, so every existing caller and test (none pass
+ * difficulty today) is byte-for-byte unchanged. */
+export function applyDifficultyToBand(
+  base: NegotiationBand,
+  difficulty: SessionDifficulty,
+): NegotiationBand {
+  if (difficulty === "standard") return base;
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  const out: NegotiationBand = { ...base };
+  if (difficulty === "warmup") {
+    out.maxStretch = round1(base.maxStretch * 1.05);
+    out.walkAway = round1(base.walkAway * 0.96);
+  } else {
+    /* hardball */
+    out.maxStretch = round1(base.maxStretch * 0.95);
+    out.walkAway = round1(base.walkAway * 1.04);
+  }
+  /* Preserve invariants — initialOffer pinned; ≥0.5L spread on each side. */
+  if (out.walkAway >= base.initialOffer) out.walkAway = round1(base.initialOffer - 0.5);
+  if (out.maxStretch <= base.initialOffer) out.maxStretch = round1(base.initialOffer + 0.5);
+  return out;
+}
+
 export interface NegotiationState {
   /* Identity */
   readonly sessionId: string;
@@ -2621,6 +2673,12 @@ export interface InitStateExtras {
    * the input band unless the caller pre-resolves it. */
   multiRoundEnabled?: boolean;
   perRoundBand?: Record<NegotiationRoundPersona, NegotiationBand>;
+  /* Adaptive session difficulty (2026-06-20) — forwarded from
+   * _scenario-seed.ts via negotiate-turn. Modulates recruiter posture
+   * (maxStretch / walkAway) through applyDifficultyToBand at init.
+   * Optional; "standard"/undefined is identity, so existing callers and
+   * tests are unchanged. */
+  sessionDifficulty?: SessionDifficulty;
 }
 
 export function initState(input: InitStateInput & InitStateExtras): NegotiationState {
@@ -2685,7 +2743,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     sessionId: input.sessionId,
     role: input.role,
     company: input.company,
-    band: applyPersonaToBand({ ...input.band }, input.recruiterPersona ?? "consultative"),
+    band: applyDifficultyToBand(
+      applyPersonaToBand({ ...input.band }, input.recruiterPersona ?? "consultative"),
+      input.sessionDifficulty ?? "standard",
+    ),
     phase: "opening",
     turnIndex: 0,
     /* BUG-5 (PDF#24, 2026-05-16) — default raised from 8 to 16, then
