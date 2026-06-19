@@ -132,3 +132,38 @@ describe("renderCanonicalProse — uses selected escalation anchor", () => {
     expect(prose).toMatch(/the hiring manager/i);
   });
 });
+
+describe("renderCanonicalProse — escalating verbatim-repeat breaker", () => {
+  /* Adversarial-sweep fix (2026-06-19). When the line the kernel is about
+   * to ship normalizes EQUAL to the prior AI line (state.lastAiText) AND an
+   * offer genuinely stands (highestOfferMade > 0), the candidate is
+   * stonewalling and the planner has nothing fresh. Instead of shipping the
+   * identical hold/stall a second time (a verbatim loop the user would
+   * rightly complain about), the prose boundary emits a forward-moving
+   * decision-deadline close-out — what a real recruiter does when a number
+   * is already on the table and the candidate keeps circling. */
+  const HELD = baseState({ highestOfferMade: 24 });
+  const action: NextAction = { kind: "counter-offer", counterTotalLpa: 24 } as NextAction;
+
+  it("ships the SAME line once, then escalates to a close-out on the verbatim repeat", () => {
+    const first = renderCanonicalProse(action, HELD);
+    expect(first.trim().length).toBeGreaterThan(0);
+
+    /* Second turn: the prior AI line is exactly what we just shipped. */
+    const repeated = renderCanonicalProse(action, { ...HELD, lastAiText: first });
+    expect(repeated).not.toBe(first);
+    /* The close-out is a forward-moving decision beat, not another hold. */
+    expect(repeated).toMatch(/circling|stretched as far|round in circles/i);
+    expect(repeated).toMatch(/₹24L/);
+  });
+
+  it("does NOT escalate pre-anchor (no offer on the table yet)", () => {
+    const PRE = baseState({ highestOfferMade: 0 });
+    const first = renderCanonicalProse(action, PRE);
+    const repeated = renderCanonicalProse(action, { ...PRE, lastAiText: first });
+    /* Pre-anchor verbatim repeats are handled upstream (parsing /
+     * negotiate-turn same-response guard), NOT by the close-out breaker —
+     * which would be nonsensical with no number to close on. */
+    expect(repeated).not.toMatch(/round in circles|shall I go ahead and start rolling out/i);
+  });
+});

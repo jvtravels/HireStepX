@@ -86,6 +86,25 @@ describe("tidyRealismArtifacts — sentence capitalization", () => {
     expect(tidyRealismArtifacts(a)).toBe(a);
     expect(tidyRealismArtifacts(b)).toBe(b);
   });
+
+  it("preserves the sentence boundary when collapsing openers across a period", () => {
+    /* Adversarial-sweep regression (2026-06-19, PDF#27 T6) — when two
+     * stacked openers are separated by a PERIOD ("Right, got it. What…"),
+     * collapsing them must keep the content a clean sentence
+     * ("Right. What…"), NOT glue a capitalized content word onto a comma
+     * ("Right, What…"). The comma-glued form reads as a declarative
+     * fragment + question and trips the response-pipeline validator's
+     * `declarative-plus-question-mark` reject. Surfaced once tidy began
+     * running on default-persona sessions (the humanizer prepends tics
+     * unconditionally, independent of sector persona). */
+    expect(
+      tidyRealismArtifacts("Right, got it. What fitment were you expecting for this role?"),
+    ).toBe("Right. What fitment were you expecting for this role?");
+    /* Comma-joined openers still collapse with a comma (no false period). */
+    expect(tidyRealismArtifacts("Okay, sure, the band is ₹30L.")).toBe(
+      "Okay, the band is ₹30L.",
+    );
+  });
 });
 
 describe("tidyRealismArtifacts — invariants", () => {

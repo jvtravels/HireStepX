@@ -350,29 +350,46 @@ function tidyOpenerPhrases(): string[] {
 function matchLeadingOpener(
   s: string,
   openers: readonly string[],
-): { opener: string; rest: string } | null {
+): { opener: string; rest: string; delim: "," | "." } | null {
   const lower = s.toLowerCase();
   for (const op of openers) {
     if (!lower.startsWith(op)) continue;
     const after = s.slice(op.length);
-    const m = after.match(/^\s*[,.]\s+/);
-    if (m) return { opener: s.slice(0, op.length), rest: after.slice(m[0].length) };
+    const m = after.match(/^\s*([,.])\s+/);
+    if (m) {
+      return {
+        opener: s.slice(0, op.length),
+        rest: after.slice(m[0].length),
+        delim: m[1] as "," | ".",
+      };
+    }
   }
   return null;
 }
 
-/* Collapse a run of ≥2 stacked leading openers to the first one. */
+/* Collapse a run of ≥2 stacked leading openers to the first one.
+ *
+ * Preserve the delimiter that immediately preceded the CONTENT (the last
+ * collapsed opener's delimiter). A period there marks a sentence boundary
+ * — "Right, got it. What fitment…" must collapse to "Right. What fitment…"
+ * (a clean sentence), NOT "Right, What fitment…", which glues a capital
+ * content word onto a comma and reads as a declarative+question fragment
+ * (the validator's `declarative-plus-question-mark` reject; surfaced once
+ * tidy began running on default-persona sessions). When the content was
+ * comma-joined, keep the comma. */
 function collapseStackedOpeners(s: string, openers: readonly string[]): string {
   const found: string[] = [];
+  let lastDelim: "," | "." = ",";
   let cur = s;
   for (let i = 0; i < 6; i++) {
     const m = matchLeadingOpener(cur, openers);
     if (!m) break;
     found.push(m.opener);
+    lastDelim = m.delim;
     cur = m.rest;
   }
   if (found.length <= 1) return s;
-  return `${found[0]}, ${cur}`;
+  return `${found[0]}${lastDelim} ${cur}`;
 }
 
 /* Capitalize the first letter of the utterance and the first letter
@@ -577,7 +594,13 @@ export function humanizeRecruiterProse(
         ];
       const head = out.slice(0, firstSentenceBoundary + 1);
       const tail = out.slice(firstSentenceBoundary + 2);
-      out = `${head} ${pick} ${lowercaseFirst(tail, ctx.candidateFirstName)}`;
+      /* Adversarial-sweep fix (2026-06-19) — the interruption is inserted
+       * AFTER a sentence-final boundary (firstSentenceBoundary matches
+       * [.!?]\s+[A-Z]), so it opens a new sentence and must be capitalized.
+       * Shipping it lowercase ("…for that city. wait, sorry —…") trips the
+       * lowercase-after-period fluency check. */
+      const pickCapped = pick.charAt(0).toUpperCase() + pick.slice(1);
+      out = `${head} ${pickCapped} ${lowercaseFirst(tail, ctx.candidateFirstName)}`;
     }
     /* Short-clause joiner — replaces one ". " with " and " ~12% so the
      * cadence sounds rushed. Only the first match, never the last

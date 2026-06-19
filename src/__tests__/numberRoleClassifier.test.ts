@@ -118,6 +118,46 @@ const ROWS: Row[] = [
     expect: { currentCtc: null, target: null, competing: null },
   },
 
+  /* ── Bare-integer CTC vs. non-salary trailing units (2026-06-19) ──
+   * A bare integer answered right after the bot asked for CTC is the
+   * candidate's number — even when a NON-salary figure trails it
+   * ("30, 7 yrs", "26 LPA, team of 12"). The non-salary-unit guard is
+   * anchored to the unit IMMEDIATELY trailing the integer, so it strips
+   * experience / headcount / tenure / percentage figures WITHOUT
+   * swallowing a genuine bare CTC. Conversely a number whose own trailing
+   * unit is non-salary ("relocate in 30 days", "5 years experience",
+   * "30% hike") must NOT bind as CTC. */
+  {
+    label: "bare CTC + trailing experience → current",
+    text: "I'm at 30, 7 yrs.",
+    ctx: { lastAiText: "What's your current total annual CTC?" },
+    expect: { currentCtc: 30 },
+  },
+  {
+    label: "CTC + trailing headcount → current",
+    text: "26 LPA, team of 12",
+    ctx: { lastAiText: "What's your current total annual CTC?" },
+    expect: { currentCtc: 26 },
+  },
+  {
+    label: "relocation-days integer → no CTC bind",
+    text: "I can relocate in 30 days",
+    ctx: { lastAiText: "What's your current total annual CTC?" },
+    expect: { currentCtc: null },
+  },
+  {
+    label: "years-experience integer → no CTC bind",
+    text: "5 years experience",
+    ctx: { lastAiText: "What's your current total annual CTC?" },
+    expect: { currentCtc: null },
+  },
+  {
+    label: "percentage-hike integer → no CTC bind",
+    text: "30% hike please",
+    ctx: { lastAiText: "What's your current total annual CTC?" },
+    expect: { currentCtc: null },
+  },
+
   /* ── Compound disclosures (same utterance, multiple roles) ─────── */
   {
     label: "current + target in one breath",

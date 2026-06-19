@@ -1694,6 +1694,40 @@ const PROSE_ARMS: ProseArmRegistry = {
   },
 };
 
+/* Adversarial-sweep fix (2026-06-19) — escalating verbatim-repeat
+ * breaker. Mirrors negotiate-turn.ts's same-response normalize (leading
+ * ack stripped, quotes folded, trailing punctuation dropped) so the two
+ * layers agree on what counts as "the same line". negotiate-turn's guard
+ * ships a generic "I realise I'm circling — let's reset" stub that
+ * ping-pongs with the repeated line and never reaches a real close; THIS
+ * guard fires upstream (at the prose boundary the offline sim also
+ * exercises) and, when an offer genuinely stands, escalates toward a
+ * decision-deadline close-out instead — which is what a real recruiter
+ * does when a candidate keeps stonewalling over a number that's already
+ * on the table. Keyed by turnIndex so consecutive escalations differ
+ * (no second-order loop) and so the phase-cap (AR3) still drives the
+ * session to a clean terminal. */
+const REPEAT_BREAKER_LEADING_ACK_RE =
+  /^\s*(?:got it|okay|ok|right|sure|alright|noted|understood|fair enough|fine|i hear you)[\s,.\-—:;]+/i;
+function normalizeForRepeat(s: string): string {
+  return (s || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[‘’“”]/g, "'")
+    .replace(REPEAT_BREAKER_LEADING_ACK_RE, "")
+    .replace(/\s+/g, " ")
+    .replace(/[.!?]+$/, "");
+}
+function escalatingCloseOut(offerLpa: number, turnIndex: number): string {
+  const offer = `₹${offerLpa}L`;
+  const POOL = [
+    `I don't want to keep circling on this. The strongest fitment I can stand behind at this grade is ${offer} — take a day to sit with it and let me know how you'd like to proceed.`,
+    `I've stretched as far as the band allows on this one. If ${offer} works for you, I'll get the paperwork moving; if it doesn't, I completely understand and we can revisit if anything changes on our side.`,
+    `Let's not go round in circles. ${offer} is the number I can commit to today — shall I go ahead and start rolling out the offer letter?`,
+  ];
+  return POOL[Math.abs(turnIndex) % POOL.length];
+}
+
 /** Canonical kernel-authored prose for every NextAction kind. The
  *  returned string is the EXACT line the bot would ship if the LLM
  *  restyle is unavailable or rejected. */
@@ -1783,6 +1817,21 @@ export function renderCanonicalProse(
     if (pfx) prefixedBody = `${pfx}${prefixedBody}`;
   }
   const finalProse = sentimentPrefix ? `${sentimentPrefix} ${prefixedBody}` : prefixedBody;
+  /* Adversarial-sweep fix (2026-06-19) — escalate, don't repeat. When the
+   * line we're about to ship normalizes equal to the prior AI line AND an
+   * offer genuinely stands, the candidate is stonewalling and the planner
+   * has nothing fresh; emit a forward-moving close-out beat instead of the
+   * identical hold/stall. Gated on highestOfferMade > 0 so a pre-anchor
+   * discovery re-probe (whose real fix is parsing, not escalation) is left
+   * alone. Walk-away terminals are already suppressed from the humanizer;
+   * they don't reach a repeat with a prior hold line in practice. */
+  if (finalProse.trim().length > 0 && state.highestOfferMade > 0) {
+    const prior = normalizeForRepeat(state.lastAiText || "");
+    const next = normalizeForRepeat(finalProse);
+    if (prior.length > 0 && next.length > 0 && prior === next) {
+      return escalatingCloseOut(state.highestOfferMade, state.turnIndex ?? 0);
+    }
+  }
   /* PDF #28 (2026-06-07) — kernel non-empty-prose contract.
    *
    * INVARIANT: renderCanonicalProse never returns empty/whitespace.
@@ -1875,10 +1924,22 @@ export function chainProseOverlays(
       packageComplexity: computePackageComplexity(state),
       sessionId: state.sessionId,
     });
-    /* Final output-contract pass — runs AFTER every overlay layer so it
-     * sees the fully-composed utterance. Caps stacked discourse fillers
-     * to one and repairs sentence capitalization. Gated with the overlays
-     * so the null-session snapshot path stays byte-identical. */
+  }
+  /* Final output-contract pass — runs AFTER every overlay layer so it sees
+   * the fully-composed utterance. Caps stacked discourse fillers to one and
+   * repairs sentence capitalization.
+   *
+   * Adversarial-sweep fix (2026-06-19): this MUST run on every real
+   * (non-null-session) turn, NOT only when `overlaysActive`. The
+   * `humanizeRecruiterProse` pass above prepends persona tics / hedges
+   * ("Look,", "right", "okay") UNCONDITIONALLY — independent of sector
+   * persona — so a "default"-persona session (a large share of real users,
+   * since unmapped companies fall back to "default") would humanize but
+   * never de-stack, shipping garble like "Look, right. Let's start…" and
+   * broken caps. Gating tidy on the SAME condition as the humanizer
+   * (sessionId present) closes that hole. Pure + idempotent, so the
+   * null-session snapshot path stays byte-identical. */
+  if (sessionId.length > 0) {
     out = tidyRealismArtifacts(out);
   }
   return out;

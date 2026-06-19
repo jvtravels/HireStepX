@@ -500,8 +500,18 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
     const n = parseDigits(m[1]);
     if (!Number.isFinite(n) || n < 5 || n > 100) continue;
     const leftWindow = text.slice(Math.max(0, digitStart - LEFT_WINDOW), digitStart);
-    const nearby = text.slice(Math.max(0, digitStart - 5), Math.min(text.length, digitEnd + 20));
-    if (NON_SALARY_UNIT_RE.test(nearby)) continue;
+    /* Non-salary-unit guard — kills "30 days" / "30%" / "30 years" / "7 yrs".
+     * Adversarial-sweep fix (2026-06-19): this MUST be anchored to the unit
+     * IMMEDIATELY trailing THIS integer. The prior `digitEnd + 20` window
+     * reached downstream and matched a DIFFERENT number's unit — e.g. for
+     * "I'm at 30, 7 yrs." the window around "30" swallowed "7 yrs", so the
+     * real CTC (30) was wrongly discarded and discovery looped the CTC probe
+     * forever. Build "<thisNumber><immediate tail>" and require the unit to
+     * abut this number (anchored ^). */
+    const NON_SALARY_UNIT_ANCHORED =
+      /^\d[\d,.]*\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|yoe\b)/i;
+    if (NON_SALARY_UNIT_ANCHORED.test(m[1] + text.slice(digitEnd, digitEnd + 10)))
+      continue;
     /* If a salary unit (LPA / lakh / crore) follows this integer, it
      * was already considered by Pass 2 — either claimed or rejected by
      * the clamp. Don't second-guess. */
