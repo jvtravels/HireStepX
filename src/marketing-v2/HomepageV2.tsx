@@ -357,15 +357,9 @@ export function NavV2() {
           <a
             href="/"
             aria-label="HireStepX home"
-            style={{
-              fontFamily: fonts.serif,
-              fontSize: 24,
-              color: t.coal,
-              textDecoration: "none",
-              letterSpacing: "-0.015em",
-            }}
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
           >
-            HireStep<span style={{ color: t.copper }}>X</span>
+            <img src="/wordmark.png" alt="HireStepX" style={{ height: 26, width: "auto" }} />
           </a>
 
           <div
@@ -4014,17 +4008,7 @@ export function FinalCTAFooterV2() {
           }}
         >
           <div>
-            <p
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 26,
-                color: t.coal,
-                margin: 0,
-                letterSpacing: "-0.015em",
-              }}
-            >
-              HireStep<span style={{ color: t.copper }}>X</span>
-            </p>
+            <img src="/wordmark.png" alt="HireStepX" style={{ height: 26, width: "auto", display: "block", marginBottom: 0 }} />
             <p
               style={{
                 fontFamily: fonts.sans,
