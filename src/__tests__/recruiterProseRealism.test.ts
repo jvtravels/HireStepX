@@ -232,3 +232,54 @@ describe("humanizeRecruiterProse — mood layer", () => {
     }
   });
 });
+
+/* Frantic-mood interruption × clause-joiner collision (live-staging
+ * 2026-06-20). Two independent rushed-cadence tics — the self-interruption
+ * ("…. Wait, sorry — what I meant was …") and the short-clause joiner
+ * (". " → " and ") — both target the FIRST sentence boundary. When both
+ * fired, the joiner glued " and " in front of the self-correction, shipping
+ * the broken "…let me see what I can structure and wait, sorry — what I
+ * meant was…". A self-correction cannot be coordinated with "and"; the two
+ * are now mutually exclusive (interruption wins, joiner skips). */
+describe("frantic mood — interruption and clause-joiner never collide", () => {
+  /* ≥3 sentences so the joiner regex (which needs two terminators in the
+   * tail) is eligible, and a lowercase-ending first clause so it can match. */
+  const THREE = "Hearing you out, let me see what I can structure. So for this grade we can do 35 LPA. And here is where we land finally.";
+  const BROKEN = /\band\s+(?:wait|actually),\s+sorry/i;
+
+  it("forced frantic: no ' and wait/actually, sorry' artifact, interruption still present", () => {
+    const out = humanizeRecruiterProse(THREE, {
+      sector: "early-startup",
+      sessionId: "frantic-collide",
+      turnIndex: 2,
+      mood: "frantic",
+      __forceLayer: { mood: true },
+    });
+    expect(out).not.toMatch(BROKEN);
+    /* The interruption (the higher-priority tic) must still fire. */
+    expect(/what i meant was|let me rephrase/i.test(out)).toBe(true);
+  });
+
+  it("never emits the broken join across a wide seed sweep", () => {
+    for (let i = 0; i < 1500; i++) {
+      const out = humanizeRecruiterProse(THREE, {
+        sector: "indian-unicorn",
+        sessionId: `fc-${i}`,
+        turnIndex: i % 9,
+        mood: "frantic",
+      });
+      expect(out).not.toMatch(BROKEN);
+    }
+  });
+
+  it("the numeric anchor (35 LPA) survives the frantic decorations", () => {
+    const out = humanizeRecruiterProse(THREE, {
+      sector: "early-startup",
+      sessionId: "frantic-anchor",
+      turnIndex: 1,
+      mood: "frantic",
+      __forceLayer: { mood: true },
+    });
+    expect(out).toContain("35 LPA");
+  });
+});

@@ -678,6 +678,7 @@ export function humanizeRecruiterProse(
     /* Self-interruption — fires ~15% on prose with at least two
      * sentences. Inserts after the first sentence boundary. Subtle,
      * not parodic. */
+    let interruptionInserted = false;
     const firstSentenceBoundary = out.search(/[.!?]\s+[A-Z]/);
     if (
       firstSentenceBoundary > 12 &&
@@ -698,11 +699,21 @@ export function humanizeRecruiterProse(
        * lowercase-after-period fluency check. */
       const pickCapped = pick.charAt(0).toUpperCase() + pick.slice(1);
       out = `${head} ${pickCapped} ${lowercaseFirst(tail, ctx.candidateFirstName)}`;
+      interruptionInserted = true;
     }
     /* Short-clause joiner — replaces one ". " with " and " ~12% so the
      * cadence sounds rushed. Only the first match, never the last
-     * sentence (so the prose still ends cleanly). */
-    if (ctx.__forceLayer?.mood || diceHit(ctx, "mood-frantic-join-fire", 0.12)) {
+     * sentence (so the prose still ends cleanly).
+     *
+     * MUTUAL EXCLUSION (live-staging 2026-06-20) — the joiner's regex is
+     * anchored to the FIRST ". " boundary, which is exactly the seam the
+     * self-interruption just created. When both fired, the joiner glued
+     * " and " in front of the self-correction phrase, producing the broken
+     * "…let me see what I can structure and wait, sorry — what I meant
+     * was…" — a self-correction can't be coordinated with "and". They are
+     * two competing rushed-cadence tics on the same boundary, so at most
+     * one may fire per turn. Skip the joiner whenever the interruption ran. */
+    if (!interruptionInserted && (ctx.__forceLayer?.mood || diceHit(ctx, "mood-frantic-join-fire", 0.12))) {
       const m = out.match(/^(.*?[a-z])\.\s+([A-Z].*[.!?])\s*([A-Z][^.!?]*[.!?])\s*$/);
       if (m) {
         out = `${m[1]} and ${lowercaseFirst(m[2], ctx.candidateFirstName)} ${m[3]}`;
