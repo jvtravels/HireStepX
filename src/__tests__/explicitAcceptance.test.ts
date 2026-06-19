@@ -40,3 +40,47 @@ describe("Bug 2: detectExplicitAcceptance — hedged signals do NOT accept", () 
     expect(detectExplicitAcceptance(null).accepted).toBe(false);
   });
 });
+
+/* Explicit deal-close commitment idioms (live-staging 2026-06-19).
+ * "Yes, let's close it." / "I said yes, let's close." were only reaching
+ * the medium-confidence commitment-idiom path, so the kernel's soft-accept
+ * trailing-non-counter / min-turns gate blocked the close and the bot kept
+ * negotiating over an explicit acceptance (offer ₹35.2L below target ₹36L,
+ * candidate said "let's close it" twice, bot replied "let me check with
+ * leadership" both times). Promoting them to STRICT makes them behave
+ * identically to "let's move forward with this offer" — canCloseSession
+ * passes unconditionally on reason="accept", so the deal closes.
+ * Guard the deal-close sense (strict) WITHOUT swallowing the negotiation
+ * move "close the gap" or the conversational "close this call". */
+describe("detectExplicitAcceptance — explicit deal-close commitment idioms", () => {
+  it("accepts the live-reproduced close commitments", () => {
+    for (const p of [
+      "That works. Yes, let's close it.",
+      "I said yes, let's close.",
+      "Yes, 40 works. Let's close it.",
+      "Let's close the deal.",
+      "Let's close this.",
+      "Let's finalize it.",
+      "Let's finalize.",
+      "Okay let's lock it in.",
+      "Great, close it out.",
+    ]) {
+      expect(detectExplicitAcceptance(p).accepted, `expected accept: ${p}`).toBe(true);
+    }
+  });
+
+  it("does NOT accept the negotiation move 'close the gap'", () => {
+    expect(detectExplicitAcceptance("Let's close the gap.").accepted).toBe(false);
+    expect(detectExplicitAcceptance("Can we close the gap a bit?").accepted).toBe(false);
+  });
+
+  it("does NOT accept the conversational 'close this call/interview' forms", () => {
+    expect(detectExplicitAcceptance("Let's close this call.").accepted).toBe(false);
+    expect(detectExplicitAcceptance("Can we close this interview?").accepted).toBe(false);
+    expect(detectExplicitAcceptance("Let's close this conversation.").accepted).toBe(false);
+  });
+
+  it("does NOT accept a conditional close (hedge veto)", () => {
+    expect(detectExplicitAcceptance("Let's close it if you can match 40.").accepted).toBe(false);
+  });
+});

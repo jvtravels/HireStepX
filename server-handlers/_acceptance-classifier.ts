@@ -516,6 +516,20 @@ const STRICT_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\blet'?s\s+move\s+forward\s+with\s+(?:this|the)\s+offer\b/i,
   /\bi'?ll\s+take\s+(?:it|the\s+offer)\b/i,
   /\bi'?m\s+signing\s+(?:today|now|tonight)\b/i,
+  /* Explicit deal-close commitment idioms (live-staging 2026-06-19):
+   * "Yes, let's close it." / "I said yes, let's close." were only
+   * reaching the medium-confidence commitment-idiom path, so the
+   * soft-accept trailing-non-counter gate blocked the close and the bot
+   * kept negotiating over an explicit acceptance. These are unambiguous
+   * consent — the candidate is asking to close the DEAL — so promote
+   * them to strict, identical to "let's move forward with this offer".
+   * The object is restricted to deal-nouns (NOT "close the gap" — a
+   * negotiation move) and the conversational sense ("close this
+   * interview/call") is excluded via lookahead (that routes to
+   * end-interview in _terminal-intent). */
+  /\blet'?s\s+(?:close|finali[sz]e)\s+(?:it|this|the\s+(?:deal|offer|number|fitment))\b(?!\s+(?:call|interview|conversation|session|chat|negotiation))/i,
+  /\blet'?s\s+(?:close|finali[sz]e)\s*(?:[.,!?]|$)/i,
+  /\b(?:close\s+it\s+out|lock\s+it\s+in)\b/i,
 ];
 
 /** Hedged-language vetoes — when ANY of these fire, accepted=false
