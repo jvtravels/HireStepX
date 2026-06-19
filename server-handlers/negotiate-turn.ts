@@ -25,7 +25,8 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit, countPriorNegotiationSessions } from "./_shared";
+import { computeScenarioSeed } from "./_scenario-seed";
 import { callLLM } from "./_llm";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import {
@@ -455,8 +456,32 @@ export default async function handler(
         if (monthInQuarter === 2) return "quarter-end";
         return "mid-quarter";
       })();
+      /* Repeat-session freshness (2026-06-20). Same (role, company,
+       * inputs) deterministically reproduce the same band/flow/numbers —
+       * correct economics, but it makes a RETURNING user feel the bot is
+       * identical every time. We rotate the recruiter TONE axis
+       * (hardline / consultative / founder / agency) across the user's
+       * sessions: a fully-built input that drives the LLM voice
+       * (PERSONA_HINTS) + invariant-clamped band economics
+       * (applyPersonaToBand), but which negotiate-turn never passed — so
+       * every session ran the single hardwired "consultative" tone.
+       *
+       * The rotation is keyed on the user's prior negotiation count, read
+       * fail-open (a DB blip → count 0 → still a valid, deterministic
+       * tone). Kernel move-selection + band math are untouched; only the
+       * INPUT recruiterPersona varies. Frozen into state at init, so the
+       * recruiter never changes mid-conversation. */
+      const resolvedSessionId = body.sessionId || crypto.randomUUID();
+      const priorNegotiationCount = auth.userId
+        ? await countPriorNegotiationSessions(auth.userId)
+        : 0;
+      const scenarioSeed = computeScenarioSeed({
+        userId: auth.userId ?? null,
+        priorNegotiationCount,
+        tierBucket: initTierBucket,
+      });
       let state = initState({
-        sessionId: body.sessionId || crypto.randomUUID(),
+        sessionId: resolvedSessionId,
         role,
         company,
         band: serverBand,
@@ -468,6 +493,7 @@ export default async function handler(
         resumeFactPack: body.resumeFactPack ?? null,
         parsedResume: body.parsedResume ?? null,
         recruiterSectorPersona: initRecruiterSectorPersona,
+        recruiterPersona: scenarioSeed.recruiterPersona,
         tierBucketHint: initTierBucket,
         callTimeIso: initCallTimeIso,
         powerSignals: { quarterTiming: initQuarterTiming },
@@ -516,6 +542,15 @@ export default async function handler(
          * sector persona kernel selected for this session. Logged
          * once at session start; never mutates. */
         salneg_persona: state.recruiterSectorPersona ?? "default",
+        /* Repeat-session freshness (2026-06-20) — the rotated recruiter
+         * TONE this session, the user's prior negotiation count that
+         * drove the rotation, and the coarse difficulty label. Lets us
+         * confirm returning users actually see tone variety and seeds a
+         * future adaptive-difficulty pass. */
+        salneg_tone: scenarioSeed.recruiterPersona,
+        salneg_difficulty: scenarioSeed.difficulty,
+        salneg_prior_count: priorNegotiationCount,
+        salneg_rotation_index: scenarioSeed.rotationIndex,
       }, req);
       if (source === "fallback") {
         void captureServerEvent("kernel_fallback", distinctId, { lever: move.lever, phase: state.phase, where: "init" }, req);

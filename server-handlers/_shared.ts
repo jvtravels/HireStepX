@@ -421,6 +421,40 @@ export async function checkSessionLimit(
   }
 }
 
+/* ─── Prior Negotiation Count (repeat-session freshness) ─── */
+
+/** Count this user's prior salary-negotiation sessions. Used by the
+ *  scenario-seed layer to rotate the recruiter tone across sessions so a
+ *  returning user doesn't face the identical recruiter every time.
+ *
+ *  Fail-open: returns 0 on any missing-env / timeout / non-2xx / parse
+ *  failure. A wrong count only changes WHICH plausible recruiter tone
+ *  the user gets — never correctness — so a DB blip must never block or
+ *  delay session start. Mirrors checkSessionLimit's REST + content-range
+ *  pattern. */
+export async function countPriorNegotiationSessions(userId: string): Promise<number> {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return 0; // dev / unconfigured
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&type=eq.salary-negotiation&select=id`,
+      { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, Prefer: "count=exact" }, signal: ac.signal },
+    );
+    clearTimeout(timer);
+    if (!res.ok) return 0;
+    const range = res.headers.get("content-range");
+    if (range) {
+      const total = parseInt(range.split("/")[1] || "0", 10);
+      return Number.isFinite(total) && total >= 0 ? total : 0;
+    }
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 /* ─── Subscription Tier Check ─── */
 
 /** Get the user's current subscription tier, accounting for expiry. Returns "pro" in dev mode. */
