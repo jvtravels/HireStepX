@@ -1646,6 +1646,18 @@ export const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextAction
     requiredTokens: [/\bLPA\b/i, /\b(?:recap|on\s+the\s+table)\b/i],
     bannedTokens: [/\d+\s*(?:[-\u2013\u2014]|\bto\b)\s*\d/],
   },
+  /* Straight-fitment breakdown (2026-06-19) — discloses the standing
+   * offer's fixed/variable split. Numbers REQUIRED (the disclosure exists
+   * to quote them); "fixed" + "variable" tokens pin the framing so the
+   * LLM restyle can't drift into a generic "happy to discuss the package"
+   * non-answer or silently drop a component. No range-dash ban here — the
+   * canonical legitimately quotes the "80-100%" variable payout band, and
+   * the disclosure names two DISCRETE component numbers, not a salary
+   * range. */
+  "offer-breakdown": {
+    numberPolicy: "required",
+    requiredTokens: [/\bfixed\b/i, /\bvariable\b/i],
+  },
   /* PDF#34 Fix 3 (2026-05-18) — clarify-prior-question. Optional
    * numbers (the base-split clarification quotes ₹X LPA from the
    * candidate's prior disclosure). Required tokens pin the

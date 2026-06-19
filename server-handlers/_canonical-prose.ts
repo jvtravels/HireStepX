@@ -997,6 +997,27 @@ const PROSE_ARMS: ProseArmRegistry = {
     `PF / NPS / insurance — real value, but non-cash. So the headline ₹${action.ctcLpa}L is the full envelope; ` +
     `the guaranteed annual cash is ₹${action.fixedLpa}L fixed.`,
 
+  /* Straight-fitment breakdown (2026-06-19) — candidate asked for the
+   * offer split when NO inflation anchor was weaponised. Quotes the SAME
+   * fixed/variable the close-recap will use (single source of truth:
+   * `deriveOfferFixedVariable`), so the numbers stay consistent through
+   * to close. No ESOP-paper / benefits carve-out — that's the inflation
+   * model, and this offer was never padded. Joining bonus, if any, is
+   * quoted ON TOP. */
+  "offer-breakdown": (action) => {
+    const jb = action.joiningBonusLpa;
+    const jbPart =
+      jb != null && jb > 0
+        ? ` On top of that, there's a one-time joining bonus of ₹${jb}L.`
+        : "";
+    return (
+      `Happy to break it down — the ₹${action.totalLpa}L is ₹${action.fixedLpa}L fixed, ` +
+      `which is your guaranteed monthly cash, plus a ₹${action.variableLpa}L variable target ` +
+      `paid on the annual performance rating. The fixed is contractual; the variable typically ` +
+      `pays out 80-100% on a meets-expectations rating.${jbPart}`
+    );
+  },
+
   "lever-joining-bonus-explained": (_action, state) => {
     const jb = state.lastJoiningBonusOffered;
     const jbPart = jb != null && jb > 0 ? `₹${jb}L ` : "";

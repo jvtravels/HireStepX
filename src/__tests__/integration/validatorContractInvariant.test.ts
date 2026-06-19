@@ -354,6 +354,27 @@ const FIXTURES: Fixture[] = [
       candidateCurrentCtc: 18,
     }),
   },
+  /* Straight-fitment breakdown (2026-06-19) — discloses the standing
+   * offer's fixed/variable split (single source of truth: the close-recap
+   * derivation). Numbers REQUIRED + "fixed"/"variable" tokens. Exercises
+   * the canonical prose ↔ contract agreement for the new kind. */
+  {
+    label: "offer-breakdown",
+    action: {
+      kind: "offer-breakdown",
+      totalLpa: 24,
+      fixedLpa: 20.4,
+      variableLpa: 3.6,
+      joiningBonusLpa: 2,
+      satisfiesTopic: "answer-direct",
+    },
+    state: mk({
+      phase: "counter-offer",
+      turnIndex: 5,
+      highestOfferMade: 24,
+      candidateCurrentCtc: 18,
+    }),
+  },
   /* Phase 5 Session A (2026-05-19) — round-transition handoff stub.
    * No NEXT_ACTION_CONTRACT entry (Session B owns prose + contract);
    * fixture exists to exercise the canonical-prose stub through the

@@ -6785,6 +6785,10 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
        * askedTopics ledger. */
       "ctc-inflation-anchor",
       "ctc-inflation-truth",
+      /* Straight-fitment breakdown (2026-06-19) — an info-disclosure of
+       * the standing offer's fixed/variable split, carrying no askedTopic;
+       * bypasses the askedTopics ledger like the inflation truth above. */
+      "offer-breakdown",
       /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall.
        * The stall is a leverage-tactic carrier, not a discovery probe;
        * its open + return turns legitimately bypass the askedTopics

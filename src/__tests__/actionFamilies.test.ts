@@ -131,6 +131,7 @@ describe("planner-emitted kinds are all taxonomy-mapped (regression guard)", () 
     "manager-consult-stall",
     "match-existing-offer-prose",
     "noticePeriodAsked",
+    "offer-breakdown",
     "panel-approval-stall",
     "paraphrase-recap",
     "polite-walkaway",

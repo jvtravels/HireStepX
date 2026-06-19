@@ -86,7 +86,14 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
   });
 
   describe("planner — offer-breakdown branch fires on breakdown request after a plain anchor", () => {
-    it("ships ctc-inflation-truth shape when candidate asks for breakdown post-offer", () => {
+    /* 2026-06-19 — a STRAIGHT fitment (no ctc-inflation-anchor weaponised)
+     * must ship the `offer-breakdown` action (fixed/variable derived from
+     * the SAME source-of-truth as the close-recap), NOT `ctc-inflation-
+     * truth` (the 60/18/12/5/5 model that carves ESOP-paper OUT of the
+     * headline). The old behaviour produced a turn-8 "guaranteed cash
+     * ₹19.9L" that contradicted the turn-9 close-recap "Fixed ₹28.2L" for
+     * the same ₹33.2L offer. */
+    it("ships offer-breakdown (not ctc-inflation-truth) when candidate asks for breakdown over a STRAIGHT fitment", () => {
       const state = initState({
         sessionId: "flipkart-breakdown-2026-05-22",
         company: "Flipkart",
@@ -105,12 +112,69 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
       ];
       state.turnIndex = 5;
       const action = planNextAction(state);
+      expect(action.kind).toBe("offer-breakdown");
+      const a = action as unknown as { totalLpa: number; fixedLpa: number; variableLpa: number };
+      expect(a.totalLpa).toBe(41);
+      // The straight-fitment split is fixed + variable = total (cash CTC),
+      // NOT a 60% carve-out. fixed must be the dominant share.
+      expect(a.fixedLpa).toBeGreaterThan(a.variableLpa);
+      expect(Math.round((a.fixedLpa + a.variableLpa) * 10) / 10).toBe(41);
+    });
+
+    it("breakdown numbers match the close-recap split byte-for-byte (single source of truth)", async () => {
+      const { deriveOfferFixedVariable } = await import(
+        "../../../server-handlers/_next-action-planner"
+      );
+      const state = initState({
+        sessionId: "consistency-2026-06-19",
+        company: "Flipkart",
+        role: "Senior Product Designer",
+        band: { initialOffer: 33, maxStretch: 40, walkAway: 19, hasEquity: true, baseStretch: 28.2, variableMax: 6 },
+        recruiterPersona: "consultative",
+        marketMode: "neutral",
+      });
+      state.highestOfferMade = 33.2;
+      state.phase = "closing-push";
+      state.conversationLog = [
+        { speaker: "ai", text: "Fitment is ₹33.2 LPA." },
+        { speaker: "candidate", text: "what's the base vs variable split?" },
+      ];
+      state.turnIndex = 8;
+      const action = planNextAction(state);
+      expect(action.kind).toBe("offer-breakdown");
+      const a = action as unknown as { fixedLpa: number; variableLpa: number };
+      // The close-recap derives its split from the same helper — assert
+      // the breakdown the candidate hears mid-negotiation IS what the
+      // close-recap will later quote.
+      const recap = deriveOfferFixedVariable(state, 33.2);
+      expect(a.fixedLpa).toBe(Math.round(recap.fixedLpa * 10) / 10);
+      expect(a.variableLpa).toBe(Math.round(recap.variableLpa * 10) / 10);
+      // And specifically the live-repro numbers: fixed 28.2, NOT 19.9.
+      expect(a.fixedLpa).toBe(28.2);
+      expect(a.fixedLpa).not.toBe(19.9);
+    });
+
+    it("STILL ships ctc-inflation-truth when an inflation anchor WAS weaponised", () => {
+      const state = initState({
+        sessionId: "inflation-weaponised-2026-06-19",
+        company: "Flipkart",
+        role: "Senior Product Designer",
+        band: { initialOffer: 41, maxStretch: 50, walkAway: 35, hasEquity: true },
+        recruiterPersona: "consultative",
+        marketMode: "neutral",
+      });
+      state.highestOfferMade = 41;
+      state.phase = "counter-offer";
+      // Inflation anchor fired this session.
+      state.leversUsed = ["ctc-inflation-anchor"];
+      state.ctcInflationAnchorCtcLpa = 41;
+      state.conversationLog = [
+        { speaker: "ai", text: "We can do ₹41L total package — ₹24.6L fixed, etc." },
+        { speaker: "candidate", text: "Can you share the breakdown of 41 LPA offer" },
+      ];
+      state.turnIndex = 5;
+      const action = planNextAction(state);
       expect(action.kind).toBe("ctc-inflation-truth");
-      // Sanity: the action carries component numbers around ~41 LPA.
-      const a = action as unknown as { ctcLpa: number; fixedLpa: number; variableLpa: number };
-      expect(a.ctcLpa).toBe(41);
-      expect(a.fixedLpa).toBeGreaterThan(20);
-      expect(a.variableLpa).toBeGreaterThan(5);
     });
   });
 
@@ -130,6 +194,12 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
       return s;
     }
 
+    /* 2026-06-19 — these straight-fitment guards now assert the action is
+     * NEITHER breakdown kind (a counter / non-cash ask must not be
+     * mis-routed to either the inflation truth OR the straight-fitment
+     * breakdown). */
+    const BREAKDOWN_KINDS = ["ctc-inflation-truth", "offer-breakdown"];
+
     it("does NOT fire breakdown when candidate counters with BARE number ('I had 38 in mind')", () => {
       const s = postAnchorState();
       s.conversationLog = [
@@ -137,7 +207,7 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
         { speaker: "candidate", text: "I had 38 in mind, what's your 41 made of" },
       ];
       const action = planNextAction(s);
-      expect(action.kind).not.toBe("ctc-inflation-truth");
+      expect(BREAKDOWN_KINDS).not.toContain(action.kind);
     });
 
     it("does NOT fire breakdown for counter-phrase 'looking for 45'", () => {
@@ -147,7 +217,7 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
         { speaker: "candidate", text: "I'm looking for 45, can you share the breakdown" },
       ];
       const action = planNextAction(s);
-      expect(action.kind).not.toBe("ctc-inflation-truth");
+      expect(BREAKDOWN_KINDS).not.toContain(action.kind);
     });
 
     it("does NOT fire CASH breakdown when candidate asks for EQUITY breakdown", () => {
@@ -157,7 +227,7 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
         { speaker: "candidate", text: "Can you share the structure of the equity / RSU vesting?" },
       ];
       const action = planNextAction(s);
-      expect(action.kind).not.toBe("ctc-inflation-truth");
+      expect(BREAKDOWN_KINDS).not.toContain(action.kind);
     });
 
     it("STILL fires breakdown for cash-keyword utterance ('what is base, variable, bonus')", () => {
@@ -167,7 +237,8 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
         { speaker: "candidate", text: "what is base, variable, bonus" },
       ];
       const action = planNextAction(s);
-      expect(action.kind).toBe("ctc-inflation-truth");
+      // Straight fitment (no inflation anchor) → offer-breakdown.
+      expect(action.kind).toBe("offer-breakdown");
     });
 
     it("does NOT fire CASH breakdown when candidate asks about WFH days structure", () => {
@@ -177,7 +248,7 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
         { speaker: "candidate", text: "what's the structure of the WFH days?" },
       ];
       const action = planNextAction(s);
-      expect(action.kind).not.toBe("ctc-inflation-truth");
+      expect(BREAKDOWN_KINDS).not.toContain(action.kind);
     });
 
     it("does NOT fire CASH breakdown when candidate asks about team / reporting structure", () => {
@@ -187,7 +258,7 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
         { speaker: "candidate", text: "can you share the structure of the team and reporting manager?" },
       ];
       const action = planNextAction(s);
-      expect(action.kind).not.toBe("ctc-inflation-truth");
+      expect(BREAKDOWN_KINDS).not.toContain(action.kind);
     });
   });
 

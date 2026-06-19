@@ -503,6 +503,26 @@ export type NextAction =
       joiningBonusLpa: number;
       benefitsLpa: number;
     }
+  /* Straight-fitment offer breakdown (2026-06-19). Fires when the
+   * candidate asks for the offer split AND no CTC-inflation anchor was
+   * ever weaponised this session. Distinct from `ctc-inflation-truth`:
+   * the inflation model carves ESOP-paper / benefits OUT of the headline
+   * (in-hand is only ~60% of the quoted package — correct ONLY when the
+   * recruiter padded an inflated anchor). A straight fitment was never
+   * padded, so its breakdown must use the SAME fixed/variable
+   * decomposition the close-recap will quote (fixed = min(total,
+   * baseStretch), variable = remainder), with any joining bonus quoted
+   * ON TOP. Routing a straight offer through the inflation model produced
+   * a turn-8 "guaranteed cash ₹19.9L" that contradicted the turn-9
+   * close-recap "Fixed ₹28.2L" for the same ₹33.2L offer (live staging). */
+  | {
+      kind: "offer-breakdown";
+      totalLpa: number;
+      fixedLpa: number;
+      variableLpa: number;
+      joiningBonusLpa?: number;
+      satisfiesTopic: SatisfiesTopic;
+    }
   /* Post-acceptance documentation request. Fires immediately after
    * `verbalAcceptanceTurn` is stamped (close-recap acceptance). Single-fire
    * via state.postAcceptanceDocsRequestedAtTurn; transitions to terminal. */
@@ -2303,7 +2323,22 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             lastCandidate,
           )))
     ) {
-      const action = planCtcInflationTruth(offerLpa);
+      /* Model selection (2026-06-19) — the inflation breakdown
+       * (`buildCtcInflationBreakdown`, 60/18/12/5/5, ESOP-paper carved
+       * OUT of the headline) is correct ONLY when a CTC-inflation anchor
+       * was actually weaponised this session. For a STRAIGHT fitment the
+       * headline was never padded, so its in-hand split must be the SAME
+       * fixed/variable the close-recap will quote — otherwise the turn-8
+       * breakdown ("guaranteed cash ₹19.9L") contradicts the turn-9
+       * close-recap ("Fixed ₹28.2L") for the very same offer (live
+       * staging 2026-06-19, session sweep-ctcmix-4). Pick the model that
+       * matches what actually happened on the table. */
+      const inflationAnchorWeaponised =
+        state.ctcInflationAnchorCtcLpa != null ||
+        (state.leversUsed?.includes("ctc-inflation-anchor") ?? false);
+      const action = inflationAnchorWeaponised
+        ? planCtcInflationTruth(offerLpa)
+        : planOfferBreakdown(state, offerLpa);
       if (action != null) return action;
     }
   }
@@ -6251,12 +6286,33 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
  * piece, noticeJoining for the notice runway). Always uses the
  * close-acceptance lever underneath so the kernel's terminal-phase
  * machinery still applies cleanly. */
+/* Single source of truth for the fixed/variable decomposition of a
+ * standing offer total. BOTH the formal close-recap and the mid-
+ * negotiation straight-fitment breakdown derive their split from here,
+ * so the candidate never hears two different "fixed" numbers for the
+ * same total CTC. fixed = min(total, baseStretch); variable = the
+ * remainder capped at variableMax. ESOP / joining bonus are quoted ON
+ * TOP — NOT carved out of the headline (that carve-out is the
+ * CTC-inflation model in `_ctc-inflation.ts`, reserved for a weaponised
+ * inflated anchor). Pure. */
+export function deriveOfferFixedVariable(
+  state: NegotiationState,
+  total: number,
+): { fixedLpa: number; variableLpa: number } {
+  const baseStretch = state.band.baseStretch ?? Math.round(total * 0.85 * 10) / 10;
+  const variableMax =
+    state.band.variableMax ?? Math.max(0, Math.round((total - baseStretch) * 10) / 10);
+  const fixedLpa = Math.min(total, baseStretch);
+  const variableLpa = Math.max(
+    0,
+    Math.min(variableMax, Math.round((total - fixedLpa) * 10) / 10),
+  );
+  return { fixedLpa, variableLpa };
+}
+
 function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
   const total = state.highestOfferMade;
-  const baseStretch = state.band.baseStretch ?? Math.round(total * 0.85 * 10) / 10;
-  const variableMax = state.band.variableMax ?? Math.max(0, Math.round((total - baseStretch) * 10) / 10);
-  const fixedLpa = Math.min(total, baseStretch);
-  const variableLpa = Math.max(0, Math.min(variableMax, Math.round((total - fixedLpa) * 10) / 10));
+  const { fixedLpa, variableLpa } = deriveOfferFixedVariable(state, total);
   /* PDF#45 B2 (2026-05-26) — recap-hallucination guard. Only emit
    * structural-fitment fields when the underlying state was actually
    * populated by a discovery turn. Previously these defaulted to
@@ -6494,6 +6550,43 @@ export function planCtcInflationTruth(headlineCtcLpa: number): PlannedAction | n
         "breakdown after the inflated anchor. Recruiter answers truthfully " +
         "with the same underlying numbers; the lie was the framing.",
       actionKind: "ctc-inflation-truth",
+    },
+  };
+}
+
+/** Pure: build the straight-fitment breakdown action for a candidate who
+ *  asked for the offer split when NO ctc-inflation anchor was weaponised.
+ *  Derives fixed/variable from `deriveOfferFixedVariable` — the SAME
+ *  source of truth the close-recap uses — so the disclosed split is
+ *  consistent with the close numbers (no "fixed ₹19.9L" breakdown that
+ *  contradicts a "Fixed ₹28.2L" close-recap). ESOP is NOT invented; any
+ *  joining bonus already on the table is quoted on top. Returns null on
+ *  a non-positive total. */
+export function planOfferBreakdown(
+  state: NegotiationState,
+  totalLpa: number,
+): PlannedAction | null {
+  if (!Number.isFinite(totalLpa) || totalLpa <= 0) return null;
+  const { fixedLpa, variableLpa } = deriveOfferFixedVariable(state, totalLpa);
+  const total = Math.round(totalLpa * 10) / 10;
+  const jb = state.lastJoiningBonusOffered;
+  const joiningBonusLpa =
+    jb != null && Number.isFinite(jb) && jb > 0 ? Math.round(jb * 10) / 10 : undefined;
+  return {
+    kind: "offer-breakdown",
+    totalLpa: total,
+    fixedLpa: Math.round(fixedLpa * 10) / 10,
+    variableLpa: Math.round(variableLpa * 10) / 10,
+    joiningBonusLpa,
+    satisfiesTopic: "answer-direct",
+    _move: {
+      lever: "benefits-summary", // a truthful info turn, not a fresh anchor
+      newTotalLpa: null,
+      rationale:
+        `Straight-fitment breakdown (no inflation anchor in play): disclose ₹${total}L as ` +
+        `fixed ₹${Math.round(fixedLpa * 10) / 10}L + variable ₹${Math.round(variableLpa * 10) / 10}L ` +
+        `— same split as the close-recap so the numbers stay consistent through to close.`,
+      actionKind: "offer-breakdown",
     },
   };
 }

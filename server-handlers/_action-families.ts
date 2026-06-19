@@ -116,6 +116,7 @@ export const KIND_TO_FAMILY: Readonly<Record<string, ActionFamily>> = {
 
   /* answer-direct — straight reply to a candidate question. */
   "answer-direct": "answer-direct",
+  "offer-breakdown": "answer-direct",
   "reactive-followup": "answer-direct",
 
   /* terminal-close — session-ending moves. */

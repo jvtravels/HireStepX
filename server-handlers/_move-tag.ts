@@ -603,6 +603,18 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         hint:
           "The recruiter has surfaced a non-cash sweetener unprompted — typically a signal cash is capped. Evaluate the sweetener on its own merits; the base isn't going to move further here.",
       };
+    /* Straight-fitment breakdown (2026-06-19) — the recruiter is
+     * disclosing the standing offer's fixed/variable split honestly (no
+     * inflated headline in play). Coaching frame: read the guaranteed
+     * (fixed) vs at-risk (variable) gap and decide whether the
+     * contractual cash clears your floor. */
+    case "offer-breakdown":
+      return {
+        label: "Offer breakdown",
+        family: "meta",
+        hint:
+          "The recruiter is breaking down the offer into fixed (guaranteed) and variable (at-risk) cash. Anchor your read on the FIXED number — that's what's contractual. If the fixed clears your floor, you're close to a yes.",
+      };
   }
   /* Exhaustiveness fallback — TS's stricter Vercel build flags this
    * function as "lacks ending return" without an explicit out-of-switch
