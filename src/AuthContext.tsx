@@ -950,6 +950,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Wait for onAuthStateChange listener to be fully registered and any pending
           // auth operations (e.g. token refresh) to complete before we touch the lock
           setTimeout(() => {
+            // Never poke the refresh token mid-interview. The access token
+            // (JWT) is valid for ~1h and an interview is ~25min, so it stays
+            // usable for the whole session without a refresh. A proactive
+            // refresh that hit a transient invalid-refresh-token (a multi-
+            // tab / reload rotation race) would sign the user out and 401
+            // the end-of-interview /api/sessions/save — losing the scored
+            // report. checkExpiry (which respects the same flag) handles any
+            // genuine expiry once the interview ends.
+            if (_interviewRefcount > 0) {
+              console.warn("[auth] skipping background refresh — interview in progress");
+              return;
+            }
             client.auth.refreshSession().then(({ data: refreshData, error: refreshError }) => {
               if (refreshError || !refreshData.session) {
                 // Only sign out if the refresh token is truly invalid (not a transient network error)

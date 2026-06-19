@@ -76,7 +76,7 @@ interface InterviewDraft {
    ═══════════════════════════════════════════════ */
 export function useInterviewEngine() {
   const router = useRouter();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, loading: authLoading } = useAuth();
 
   // Flip the global interview-in-progress flag so AuthContext's 60s
   // session-expiry check defers signout until the session ends.
@@ -754,6 +754,15 @@ export function useInterviewEngine() {
   const personalizedIntroRef = useRef(false);
   useEffect(() => {
     if (personalizedIntroRef.current) return;
+    // Wait for auth to resolve before locking the intro. `interviewerName`
+    // seeds on `user?.id`, which is undefined during the initial auth load
+    // and populates a moment later. Firing the one-shot intro while auth is
+    // still loading bakes in the empty-seed default name (e.g. "Prita
+    // Menon"), while the header avatar re-derives to the real name once the
+    // id arrives — so the spoken "I'm Prita" disagreed with the displayed
+    // "Siddharth Joshi". Deferring until `loading === false` means the intro
+    // and the avatar read the same final name from the one source of truth.
+    if (authLoading) return;
     if (interviewType !== "behavioral") return;
     if ((draftRef.current?.currentStep ?? 0) > 0) return;
     /* Resume-grounded rapport: pull first 1-2 projects from the AI-
@@ -785,7 +794,7 @@ export function useInterviewEngine() {
         ...prev.slice(1),
       ];
     });
-  }, [interviewType, interviewerName, user?.name, user?.targetRole, user?.targetCompany, user?.resumeData, targetRole, targetCompany]);
+  }, [authLoading, interviewType, interviewerName, user?.name, user?.targetRole, user?.targetCompany, user?.resumeData, targetRole, targetCompany]);
 
   // Panel interview: 3 members with gender-matched voices
   const isPanelInterview = interviewType === "panel";
@@ -1831,6 +1840,15 @@ export function useInterviewEngine() {
           }
         }
         if (result?.needsFollowUp && result.followUpText && currentStepRef.current === currentStep) {
+          // A follow-up with real text is, by definition, a fresh live-LLM
+          // response — it quotes the candidate's specific answer, which the
+          // static bank cannot do. If an earlier generate-questions call had
+          // fallen back to the static/cached bank and raised the "Practice
+          // mode" chip, the engine has now demonstrably recovered to live AI,
+          // so clear the stale provenance flag. Without this the chip stuck
+          // for the rest of the session and misled the candidate into
+          // thinking they were still answering canned questions.
+          setQuestionFallbackSource(null);
           // Preserve persona from the original question (or from API response) for panel interviews
           const followUpPersona = isPanelInterview ? ((result as { persona?: string }).persona || step.persona) : undefined;
           // Sanitize the LLM's raw follow-up the same way batch questions
@@ -3432,16 +3450,31 @@ export function useInterviewEngine() {
     if (outcome.saveWarning) setSaveWarning(outcome.saveWarning);
     if (outcome.toastMessage) toast(outcome.toastMessage, "info");
 
-    // Refresh auth token before saving results — capped so a hung network
-    // request can't trap the user on the loading spinner.
+    // Refresh the auth token before saving results ONLY when the access
+    // token is actually close to expiry. A *proactive* refresh here used to
+    // backfire and lose completed, scored reports: at ~25min into a ~1h JWT
+    // the access token has ample runway, but refreshSession() rotates the
+    // refresh token — and under reload/multi-tab races that refresh token
+    // can already be rotated out, returning a 400. supabase-js treats that
+    // as a hard sign-out (clears the stored session), so the very next
+    // /api/sessions/save POST goes out with no token and 401s — dropping the
+    // report the evaluate call just produced. When the access token still
+    // has comfortable runway we keep it and skip the risky refresh entirely;
+    // we only refresh when it's genuinely near expiry (where save would fail
+    // anyway without one). Capped so a hung request can't trap the spinner.
     try {
       const { getSupabase } = await import("./supabase");
       const client = await getSupabase();
-      const refreshResult = await Promise.race([
-        client.auth.refreshSession(),
-        new Promise<{ error: { message: string } }>((resolve) => setTimeout(() => resolve({ error: { message: "refresh timeout (3s)" } }), 3_000)),
-      ]);
-      if (refreshResult.error) console.warn("[interview] Auth refresh failed:", refreshResult.error.message);
+      const { data: { session } } = await client.auth.getSession();
+      const expSec = session?.expires_at ?? 0;
+      const secsLeft = expSec - Math.floor(Date.now() / 1000);
+      if (session && secsLeft < 120) {
+        const refreshResult = await Promise.race([
+          client.auth.refreshSession(),
+          new Promise<{ error: { message: string } }>((resolve) => setTimeout(() => resolve({ error: { message: "refresh timeout (3s)" } }), 3_000)),
+        ]);
+        if (refreshResult.error) console.warn("[interview] Auth refresh failed:", refreshResult.error.message);
+      }
     } catch { /* best effort */ }
 
     let localOk = false;
