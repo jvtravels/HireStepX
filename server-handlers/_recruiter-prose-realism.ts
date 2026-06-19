@@ -414,7 +414,7 @@ function fixSentenceCaps(s: string): string {
  * to this whitelist so we never lowercase a real proper noun / vocative
  * ("Look, Sandeep" / "Right, Bangalore"). */
 const TIDY_MIDSENTENCE_DOWNCASE =
-  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly)\b/g;
+  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let)\b/g;
 
 export function tidyRealismArtifacts(s: string): string {
   if (!s) return s;

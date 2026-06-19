@@ -68,6 +68,7 @@ import {
   type AnswerFrame,
   type PivotFrame,
 } from "./_compound-move-spec";
+import { tidyRealismArtifacts } from "./_recruiter-prose-realism";
 
 /* ARCH-C2a (2026-06-08) — env-flag gated wiring of the typed MoveSpec
  * layer (Commit 1) into the live response path. When OFF (default),
@@ -865,7 +866,18 @@ async function generateRestyledCanonical(
       rejectReason: "leading-ack-repeat-restyle",
     };
   }
-  return { text: restyled, source: movespecRouted ? "movespec" : "restyle", action, move };
+  /* Output-contract parity (live-staging, 2026-06-19). The canonical path
+   * runs every shipped utterance through `tidyRealismArtifacts` (the single
+   * output contract: ≤1 leading filler + correct sentence/clause caps) via
+   * chainProseOverlays. The LLM restyle path did NOT — so a restyle that
+   * re-glued a sector context-ref clause onto the probe and capitalized the
+   * next word shipped raw garble ("After the down-round corrections, Let's
+   * start with your current side — what's the total CTC at present?"). Run
+   * the SAME contract on the restyle before shipping so both composition
+   * points converge on identical formatting rules. Pure + idempotent; it
+   * touches only opener stacking and capitalization, never numbers or facts,
+   * so the just-passed restyle validators remain satisfied. */
+  return { text: tidyRealismArtifacts(restyled), source: movespecRouted ? "movespec" : "restyle", action, move };
 }
 
 /** BUG-4 (PDF#24, 2026-05-16) — every defer path used to ship the
@@ -1254,9 +1266,9 @@ async function generateAnswerToCandidate(
     ) {
       return shipDefer(canonicalFollowup, "composed-validation-fail");
     }
-    return { text: composed, source: "answer-restyle", action, move };
+    return { text: tidyRealismArtifacts(composed), source: "answer-restyle", action, move };
   }
-  return { text: answer, source: "answer-restyle", action, move };
+  return { text: tidyRealismArtifacts(answer), source: "answer-restyle", action, move };
 }
 
 /* AUDIT-3 Fix #1 (2026-06-08) — action kinds whose planner choice must

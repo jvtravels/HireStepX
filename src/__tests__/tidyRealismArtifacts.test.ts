@@ -80,6 +80,26 @@ describe("tidyRealismArtifacts — sentence capitalization", () => {
     );
   });
 
+  it("downcases an imperative 'Let's' glued after a context-ref clause comma", () => {
+    /* Live-staging (2026-06-19) — the LLM restyle re-glued a sector
+     * context-ref clause onto the discovery probe and kept the next word
+     * capitalized: "After the down-round corrections, Let's start with your
+     * current side — what's the total CTC at present?". The restyle path now
+     * runs the same output contract as canonical; "Let's" (a contraction of
+     * "let us", never a proper noun) downcases mid-sentence after the comma. */
+    expect(
+      tidyRealismArtifacts(
+        "After the down-round corrections, Let's start with your current side — what's the total CTC at present?",
+      ),
+    ).toBe(
+      "After the down-round corrections, let's start with your current side — what's the total CTC at present?",
+    );
+    /* But a sentence-initial 'Let' after a PERIOD stays capitalized. */
+    expect(
+      tidyRealismArtifacts("I can stretch to ₹26L fixed. Let me check with finance."),
+    ).toBe("I can stretch to ₹26L fixed. Let me check with finance.");
+  });
+
   it("never downcases a proper noun or vocative after a comma", () => {
     const a = "Look, Sandeep, take your time on this.";
     const b = "Right, Bangalore is the base location.";
