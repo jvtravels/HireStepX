@@ -1060,7 +1060,7 @@ export default function DashboardResume() {
         re-imports, no re-wiring. While the flag is false the JSX never
         evaluates at runtime. */}
     {MULTI_RESUME_UI_ENABLED && (loadingResumes || allResumes.length >= 1) && (
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: "16px 24px 0" }}>
+      <div style={{ maxWidth: 980, margin: "0 auto", padding: "16px 0 0" }}>
         {loadingResumes && allResumes.length === 0 ? (
           <div
             style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}

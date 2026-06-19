@@ -843,9 +843,9 @@ export default function DashboardHome() {
            CTAs. */
         .hsx-dh-root {
           padding-top: 16px;
-          padding-right: max(32px, env(safe-area-inset-right));
+          padding-right: 0;
           padding-bottom: max(64px, env(safe-area-inset-bottom));
-          padding-left: max(32px, env(safe-area-inset-left));
+          padding-left: 0;
         }
         /* 1180–1280px dead zone: keep the two-column grid but shrink the
            rail clamp so the main column gets breathing room on 13" laptops
@@ -863,9 +863,9 @@ export default function DashboardHome() {
           .hsx-dh-rail { order: 2; }
           .hsx-dh-root {
             padding-top: 14px;
-            padding-right: max(24px, env(safe-area-inset-right));
+            padding-right: 0;
             padding-bottom: max(56px, env(safe-area-inset-bottom));
-            padding-left: max(24px, env(safe-area-inset-left));
+            padding-left: 0;
           }
         }
         /* Stats grid: 3-up survives the rail collapse but labels truncate
@@ -889,9 +889,9 @@ export default function DashboardHome() {
           }
           .hsx-dh-root {
             padding-top: 10px;
-            padding-right: max(8px, env(safe-area-inset-right));
+            padding-right: 0;
             padding-bottom: max(48px, env(safe-area-inset-bottom));
-            padding-left: max(8px, env(safe-area-inset-left));
+            padding-left: 0;
           }
         }
         /* Narrow viewport: drop the leading session icon so the title

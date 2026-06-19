@@ -260,10 +260,10 @@ const PageShell = ({ children }: { children: ReactNode }) => (
       minHeight: "100%",
       color: t.coal,
       fontFamily: f.sans,
-      padding: "16px 24px 64px",
+      padding: "16px 0 64px",
     }}
   >
-    <style>{`@media (max-width: 768px) { .rtv-page-shell { padding-left: 0 !important; padding-right: 0 !important; } }`}</style>
+    <style>{``}</style>
     <div style={{ maxWidth: 980, margin: "0 auto" }}>{children}</div>
   </div>
 );
