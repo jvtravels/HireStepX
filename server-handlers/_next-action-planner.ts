@@ -75,6 +75,7 @@ import {
   applyFallibilityOverlay,
   applyPersonaTicSignature,
   applyContextRefOverlay,
+  tidyRealismArtifacts,
 } from "./_recruiter-prose-realism";
 import { timeContextToMoodDelta } from "./_recruiter-time-context";
 import { getCandidateFirstName } from "./_candidate-name";
@@ -5561,7 +5562,18 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
               sessionId: state.sessionId,
             });
           }
-          const spokenProse = chained;
+          /* Final output-contract pass — mirrors the canonical-prose and
+           * LLM-restyle exits. This answer-direct path composes its OWN
+           * overlay chain at the planner level (it is pre-humanized so
+           * canonical-prose suppresses re-humanizing), which means the
+           * single tidy pass in `_canonical-prose.ts` never sees this text.
+           * Without it, a stacked-tic roll ("Look, basically, on the buyout
+           * piece …") or a broken mid-sentence cap ships raw. Run tidy on
+           * every non-null-session turn — same gate as the humanizer above —
+           * so this third composition point honours the same contract.
+           * (Surfaced via the offline dice sweep, 2026-06-19.) */
+          const spokenProse =
+            sid.length > 0 ? tidyRealismArtifacts(chained) : chained;
           return {
             kind: "answer-direct",
             topic: route.topic,

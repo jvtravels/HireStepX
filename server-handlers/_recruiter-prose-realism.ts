@@ -343,6 +343,22 @@ function tidyOpenerPhrases(): string[] {
      * carry no content, so treating them as openers is always safe. Strip the
      * trailing comma — the union is matched as bare phrases. */
     ...FRANTIC_TICS.map((t) => t.replace(/,$/, "")),
+    /* Persona-tic SIGNATURE bank (applyPersonaTicSignature). A SECOND,
+     * independent tic layer from the humanizer's own tic pass — its tokens
+     * ("see", "actually", "right, right", and the Hinglish "ya so" / "ek
+     * minute") were absent from this union, so a signature tic stacked in
+     * front of a humanizer opener survived the collapse ("See, okay. So for
+     * this grade…", "Honestly, see, noted…" — two/three leading fillers).
+     * Same closed-class rationale as the frantic tics: pure discourse
+     * filler, always safe to treat as a collapsible opener. EXCLUDE the
+     * doubled "right, right" tic — it carries an internal comma and already
+     * collapses to a single "right" via the bare-"right" opener matching
+     * twice; registering it as one phrase would defeat that and leave the
+     * stutter standing (the MVP battery flags "Right, right." as a stacked
+     * opener). */
+    ...Object.values(PERSONA_TIC_BANKS)
+      .flat()
+      .filter((t) => !t.includes(",")),
   ]
     .map((p) => p.toLowerCase().trim())
     .filter((p) => p.length > 0);

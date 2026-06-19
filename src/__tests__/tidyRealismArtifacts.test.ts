@@ -175,6 +175,50 @@ describe("tidyRealismArtifacts — frantic-tic stack + subordinator seam (live 2
   });
 });
 
+describe("tidyRealismArtifacts — persona-tic-signature bank stack (live dice sweep 2026-06-19)", () => {
+  /* The humanizer runs a SECOND, independent tic layer
+   * (`applyPersonaTicSignature`) whose bank includes "see", "actually",
+   * "right, right" and the Hinglish "ya so" / "ek minute". Those tokens
+   * were absent from the stacked-opener collapse union, so a signature tic
+   * stacked in front of a humanizer opener shipped TWO/THREE leading
+   * fillers ("See, okay. So for this grade…", "Honestly, see, noted…").
+   * Wiring the bank into the union closes the gap — same closed-class
+   * rationale as the frantic tics. */
+  it("collapses a 'See,' signature tic stacked on an opener (period seam)", () => {
+    expect(
+      tidyRealismArtifacts(
+        "See, okay. So for this grade, the fitment we're able to offer is ₹40 LPA.",
+      ),
+    ).toBe("See. So for this grade, the fitment we're able to offer is ₹40 LPA.");
+  });
+
+  it("collapses a 'See,' tic stacked on an opener (comma seam)", () => {
+    expect(
+      tidyRealismArtifacts("See, so, before we go further, can you share your current CTC?"),
+    ).toBe("See, before we go further, can you share your current CTC?");
+  });
+
+  it("collapses a mid-stack 'see' signature tic to the first opener", () => {
+    expect(
+      tidyRealismArtifacts("Honestly, see, noted on the expected fitment — let's continue."),
+    ).toBe("Honestly, noted on the expected fitment — let's continue.");
+  });
+
+  it("collapses the doubled-word 'right, right' tic to a single opener", () => {
+    // "right, right" is a stutter tic in CASUAL_TICS, but the ≤1-filler
+    // contract neutralizes it: the bare "right" opener matches twice and
+    // collapses to a single "Right,". (The MVP fluency battery flags
+    // "Right, right." as a stacked-opener violation, so it must NOT survive
+    // — registering "right, right" as one union phrase is explicitly
+    // avoided to preserve this collapse.)
+    expect(
+      tidyRealismArtifacts(
+        "Right, right, let's start with your current side — what's the total CTC at present?",
+      ),
+    ).toBe("Right, let's start with your current side — what's the total CTC at present?");
+  });
+});
+
 describe("tidyRealismArtifacts — invariants", () => {
   it("is idempotent", () => {
     const garble =
