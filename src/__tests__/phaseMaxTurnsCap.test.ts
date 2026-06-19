@@ -85,14 +85,19 @@ describe("AR3 — discovery phase maxTurns cap", () => {
     expect(next).toBe("range-disclosure");
   });
 
-  it("discovery exceeded + no signal → stalemate", () => {
+  it("discovery exceeded + no signal → offer-presented (anchor anyway, never stalemate)", () => {
+    /* A6 adversarial fix (2026-06-19): a discovery overstay with no
+     * disclosed signal must NOT dead-end at "stalemate". A real recruiter
+     * puts a number on the table to break the deadlock, so forcedPhaseFor
+     * now force-advances to "offer-presented" where the planner anchors a
+     * band-floor offer. */
     const s = mkState({
       phase: "opening",
       turnIndex: 6,
       phaseEnteredAtTurn: 0,
     });
     const next = derivePhase(s);
-    expect(next).toBe("stalemate");
+    expect(next).toBe("offer-presented");
   });
 
   it("discovery within budget (5 turns or fewer) → not force-advanced", () => {

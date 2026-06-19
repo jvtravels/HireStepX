@@ -78,8 +78,12 @@ describe("LN1 — pickProbeOpener helper contract", () => {
   });
 
   it("rotation is deterministic across turn indices", () => {
-    /* NON_ACK_PROBE_OPENERS = ["So,", "Quick one —", "", "Coming to"] */
-    const expected = ["So,", "Quick one —", "", "Coming to"];
+    /* NON_ACK_PROBE_OPENERS = ["So,", "Quick one —", ""].
+     * S2/S4 fix (2026-06-19): "Coming to" was dropped — it is a clause
+     * lead-in that demands an object noun, so gluing it onto a fresh
+     * capitalized sentence produced mangled prose ("Coming to Let's start
+     * with…"). Rotation is now modulo 3. */
+    const expected = ["So,", "Quick one —", ""];
     for (let t = 1; t <= 8; t++) {
       const s = mkState({
         turnIndex: t,
@@ -88,7 +92,7 @@ describe("LN1 — pickProbeOpener helper contract", () => {
           { speaker: "candidate", text: "ok" },
         ],
       });
-      const idx = t % 4;
+      const idx = t % 3;
       expect(pickProbeOpener(s, "discovery-probe")).toBe(expected[idx]);
     }
   });

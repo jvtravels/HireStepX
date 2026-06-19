@@ -117,6 +117,18 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
    * acceptance with no surrounding English ("accept karta hoon") fell
    * through to no-match and the candidate's close was lost. */
   /\baccept\s+kar(?:ta|ti|unga|ungi|\s+rah[ai]|\s+l(?:u|oo)nga|\s+li(?:ya)?)\b/i,
+  /* Adversarial-sim S7 (2026-06-19) — bare performative accept verb with
+   * no subject and no object: "alright, accepted", "accepted.", "accept."
+   * Voice candidates routinely close with a single committal word. None
+   * of the subject-led / object-led arms above match it, so the close was
+   * silently lost (bot kept negotiating against an accepted offer). Anchor
+   * the verb to a clause boundary (^ or after . ! ? ,) AND require it to
+   * END a clause (terminal punctuation or string end) so embedded uses
+   * like "accepting your feedback gracefully" or "then accept the role
+   * later" do NOT match. Negation / hard-conditional / negotiating-but
+   * vetoes run BEFORE this arm in classifyAcceptance, so "I won't accept"
+   * and "I'd accept if you can…" are already excluded. */
+  /(?:^|[.!?,]\s*)accept(?:ed|ing|s)?\b\s*(?:[.!?,]|$)/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than

@@ -5990,7 +5990,17 @@ function forcedPhaseFor(
       state.candidateCurrentCtc != null ||
       state.candidateTarget != null ||
       state.candidateTargetFixed != null;
-    if (!hasSignal) return "stalemate";
+    /* A6 adversarial-sim (2026-06-19) — recruiter-anchors-first on a
+     * stonewall. A discovery overstay with NO disclosed signal used to dump
+     * straight to `stalemate` — the cardinal failure of a dead-end with no
+     * number ever on the table. A real recruiter instead states the band to
+     * break the deadlock. Route to `offer-presented`, which sends the
+     * planner through its anchor gates (including the A6 stonewall anchor)
+     * so a concrete number lands rather than a no-offer stalemate. The
+     * planner anchors well before this cap in the common case; this is the
+     * kernel-side backstop that guarantees the invariant "never stalemate
+     * without an offer." */
+    if (!hasSignal) return "offer-presented";
     /* Class-B de-sink (2026-06-15) — if we're ALREADY in range-disclosure and
      * have overstayed its budget, push FORWARD to a concrete anchor instead of
      * returning range-disclosure again. The old `return "range-disclosure"`

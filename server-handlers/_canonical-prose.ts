@@ -283,7 +283,16 @@ export function pickDiscoveryProbeOpener(turnIndex: number): string {
  *  (CANONICAL_OPENS_WITH_ACK_RE) — using it as a decorative opener would
  *  suppress the FL2 bridge spuriously. This subset is safe to prepend
  *  on any probe-kind body without interfering with the ACK pipeline. */
-const NON_ACK_PROBE_OPENERS = ["So,", "Quick one —", "", "Coming to"] as const;
+/* Adversarial-sim S2/S4 (2026-06-19) — this set is prepended verbatim as
+ * a SENTENCE PREFIX onto an already-complete probe sentence (see the
+ * `body = `${opener} ${body}`` concat downstream). "So,", "Quick one —"
+ * and "" are valid sentence-prefixes ("Quick one — Let's start with your
+ * current comp."). "Coming to" is NOT — it's a clause LEAD-IN that demands
+ * an object noun ("Coming to compensation, …"); gluing it onto a full
+ * sentence produced the mangled "Coming to Let's start with your current
+ * comp." Removed from the sentence-prefix rotation. (It remains available
+ * as a lead-in in DISCOVERY_PROBE_OPENERS where the body is a clause.) */
+const NON_ACK_PROBE_OPENERS = ["So,", "Quick one —", ""] as const;
 
 /** LN1 — kinds that the universal probe-opener rotation applies to.
  *  Identical to PROBE_KINDS_NEEDING_BRIDGE (defined later in file) by

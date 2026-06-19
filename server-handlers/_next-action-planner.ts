@@ -2063,10 +2063,23 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const alreadyDisclosed =
       lastAiText.includes("guaranteed cash is") ||
       lastAiText.includes("let me break it down honestly");
+    /* A8 adversarial-sim (2026-06-19) — a base/component breakdown ask
+     * ("what can you do on the base?", "and the base specifically?") often
+     * lands in probe-expectations / offer-presented once a concrete offer
+     * is on the table, NOT only in counter/closing. Previously those phases
+     * were excluded, so the planner ignored the base question and re-issued
+     * the SAME target probe ("what fitment were you expecting?") every turn
+     * — a verbatim dodge-loop. Admit those phases too, but ONLY when an
+     * offer GENUINELY stands (highestOfferMade > 0, not the band fallback),
+     * so a pre-anchor "what can you do?" still routes to a fresh anchor. */
+    const offerGenuinelyStands = state.highestOfferMade > 0;
     const isPostAnchorPhase =
       state.phase === "counter-offer" ||
       state.phase === "closing-push" ||
-      state.phase === "accepted";
+      state.phase === "accepted" ||
+      ((state.phase === "probe-expectations" ||
+        state.phase === "offer-presented") &&
+        offerGenuinelyStands);
     /* Counter-detection: candidate carries a salary number that is
      * NOT the recruiter's current offer — that's a counter, not a
      * breakdown ask. Restating the offer's own number (e.g. "share the
@@ -2117,7 +2130,32 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
        * from the router); the dual-check is paranoia against drift
        * if either side is monkey-patched in tests. */
       (questionRoute?.kind === "breakdown-ask" ||
-        detectOfferBreakdownRequest(lastCandidate))
+        detectOfferBreakdownRequest(lastCandidate) ||
+        /* A8 (2026-06-19) — the unified router classifies "what can you do
+         * on the base?" as anchor-ask (the greedy "what … can you do" frame)
+         * before breakdown-ask can claim it, so over a standing offer it
+         * never reached this branch and looped the target probe. When an
+         * offer genuinely stands AND the question explicitly names a cash
+         * component (base / fixed / variable / split / structure), treat it
+         * as a breakdown request regardless of the router's anchor-ask
+         * label. The cash/non-cash guards above already scope this to a
+         * genuine cash-component ask. */
+        (offerGenuinelyStands &&
+          /* Must be an actual QUESTION (routeCandidateQuestion non-null),
+           * not a statement that merely contains "structure" / "fixed". A
+           * candidate accepting with "that structure works for me" is NOT
+           * asking for a breakdown — without this guard the acceptance was
+           * mis-routed to ctc-inflation-truth instead of closing. */
+          questionRoute != null &&
+          /* And never preempt a FRESH verbal acceptance: if the candidate
+           * just accepted on this very turn, the post-anchor close (below)
+           * owns the turn — a component keyword in the acceptance prose
+           * ("the revised fitment / structure works for me") must not be
+           * mistaken for a breakdown ask. */
+          state.verbalAcceptanceTurn !== state.turnIndex &&
+          /\b(?:base|fixed|variable|split|break(?:down|up)|structure)\b/i.test(
+            lastCandidate,
+          )))
     ) {
       const action = planCtcInflationTruth(offerLpa);
       if (action != null) return action;
@@ -3196,6 +3234,62 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       state.discoveryStage === "discovery" &&
       state.discoveryChecklist != null
     ) {
+      /* A6 adversarial-sim (2026-06-19) — recruiter-anchors-first on a
+       * STONEWALL. When the candidate has answered several turns with pure
+       * flat-acks ("ok", "hmm", "sure") and disclosed NOTHING — no current
+       * CTC, no target, no fixed target — the discovery cascade below would
+       * re-issue the same probe every turn until the kernel's phase budget
+       * dumped the session to `stalemate` with ZERO offer ever made. That
+       * is the cardinal failure: a dead-end with no number on the table.
+       *
+       * A real Indian recruiter breaks exactly this deadlock by stating the
+       * band: "Let me put our range on the table — for this grade we're
+       * looking at ₹X." So after STONEWALL_TURNS content-free turns we
+       * anchor the band floor instead of probing a (N+1)th time. Gated
+       * hard: only when literally nothing has been disclosed AND the band
+       * is complete AND we haven't already anchored — so a candidate who is
+       * mid-disclosure or merely terse-but-substantive is never short-
+       * circuited. This is the structural counterpart to the kernel's
+       * forcedPhaseFor("discovery") escape (which now routes a no-signal
+       * discovery overstay to offer-presented rather than stalemate). */
+      const nothingDisclosed =
+        state.candidateCurrentCtc == null &&
+        state.candidateTarget == null &&
+        state.candidateTargetFixed == null;
+      /* Threshold = 5: give the discovery cascade a full run of probes
+       * (current-CTC soft + structural, target soft + structural) before
+       * the recruiter gives up on disclosure and states the band. Lower
+       * thresholds anchored over candidates who were merely slow to
+       * disclose (eval "partial-disclosure-no-target" regressed at 3). */
+      const STONEWALL_TURNS = 5;
+      if (
+        nothingDisclosed &&
+        state.turnIndex >= STONEWALL_TURNS &&
+        !bandAnchorAlreadyFired &&
+        state.highestOfferMade === 0
+      ) {
+        const lo = state.band?.initialOffer;
+        const hi = state.band?.maxStretch;
+        if (typeof lo === "number" && typeof hi === "number" && lo < hi) {
+          const anchored = clampAnchorAboveDisclosed(lo, hi, state) ?? lo;
+          return {
+            kind: "anchor-with-offer",
+            initialOffer: anchored,
+            bandIncomplete: false,
+            satisfiesTopic: "band-anchor-with-rationale",
+            _move: {
+              lever: "probe",
+              newTotalLpa: anchored,
+              rationale:
+                `A6 stonewall escape — candidate gave ${state.turnIndex} content-free ` +
+                `turns with no disclosure; recruiter anchors the band floor (₹${anchored}L) ` +
+                `to break the deadlock rather than probe again or stalemate with no offer.`,
+              askedTopic: "band-anchor-with-rationale",
+              actionKind: "anchor-with-offer",
+            },
+          };
+        }
+      }
       const roleFamily = classifyRoleFamily(state.role);
       /* 2026-06-18 — gate the discovery cascade on SUFFICIENCY, not
        * completeness. Once the candidate has disclosed both essentials
