@@ -377,6 +377,56 @@ function tidyOpenerPhrases(): string[] {
   return _tidyOpeners;
 }
 
+/* Clausal/adverbial openers that are sentence FRAGMENTS when punctuated as
+ * a standalone sentence. Unlike the interjection acks ("Right." / "Okay." /
+ * "Got it." — complete utterances that legitimately stand alone), a
+ * subordinate context-ref clause or sentence-adverbial demands continuation:
+ * "After the down-round corrections." / "To be fair." orphan the clause.
+ * The LLM restyle (and unlucky overlay seams) occasionally terminate such a
+ * lead-in with a period instead of a comma, shipping "After the down-round
+ * corrections. Let's start with your current side…" (surfaced live on
+ * staging, 2026-06-19). Re-join the fragment to the following clause with a
+ * comma. Scoped to this curated clausal set so the deliberate period form of
+ * the short acks ("Right. What fitment…") is untouched. */
+const TIDY_CLAUSAL_ADVERBIALS: readonly string[] = [
+  "to be fair",
+  "at the end of the day",
+  "from a stakeholder perspective",
+];
+let _tidyClausalOpeners: string[] | null = null;
+function tidyClausalOpeners(): string[] {
+  if (_tidyClausalOpeners) return _tidyClausalOpeners;
+  _tidyClausalOpeners = Array.from(
+    new Set(
+      [...ALL_CONTEXT_REF_PHRASES, ...TIDY_CLAUSAL_ADVERBIALS]
+        .map((p) => p.toLowerCase().trim())
+        .filter((p) => p.length > 0),
+    ),
+  ).sort((a, b) => b.length - a.length);
+  return _tidyClausalOpeners;
+}
+
+/* Re-join a leading clausal-opener fragment ("After the down-round
+ * corrections. Let's start…") to its following clause with a comma, and
+ * downcase the resumed word (lowercaseFirst keeps "I" / proper-noun-safe
+ * vocatives capitalized). Only the very first clause is considered; a
+ * period there is the fragment seam. */
+function joinClausalFragment(s: string, candidateFirstName?: string | null): string {
+  const lower = s.toLowerCase();
+  for (const op of tidyClausalOpeners()) {
+    if (!lower.startsWith(op)) continue;
+    const after = s.slice(op.length);
+    const m = after.match(/^\.\s+(\S.*)$/s);
+    if (m) {
+      return `${s.slice(0, op.length)}, ${lowercaseFirst(m[1], candidateFirstName)}`;
+    }
+    // Matched the opener prefix but it is not a period-terminated fragment
+    // (already comma-joined, or mid-word) — nothing to repair.
+    break;
+  }
+  return s;
+}
+
 /* If `s` begins with a discourse opener delimited by a comma or period,
  * return the opener (original casing) + the remainder after the
  * delimiter. The trailing-punct requirement gives a token boundary, so
@@ -463,6 +513,7 @@ const TIDY_MIDSENTENCE_DOWNCASE =
 export function tidyRealismArtifacts(s: string): string {
   if (!s) return s;
   let out = collapseStackedOpeners(s, tidyOpenerPhrases());
+  out = joinClausalFragment(out);
   out = out.replace(/,\s*,/g, ",").replace(/[ \t]{2,}/g, " ");
   out = fixSentenceCaps(out);
   out = out.replace(

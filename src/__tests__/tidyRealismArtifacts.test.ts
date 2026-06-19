@@ -219,6 +219,58 @@ describe("tidyRealismArtifacts — persona-tic-signature bank stack (live dice s
   });
 });
 
+describe("tidyRealismArtifacts — clausal-opener fragment re-join (live 2026-06-19)", () => {
+  /* Live-staging close run: the LLM restyle terminated a leading sector
+   * context-ref clause with a PERIOD, orphaning it as a fragment —
+   * "After the down-round corrections. Let's start with your current side…".
+   * A subordinate/adverbial lead-in demands continuation, so it re-joins to
+   * the following clause with a comma + downcased resumed word. The short
+   * interjection acks ("Right." / "Okay.") are NOT clausal and must keep the
+   * deliberate period form. */
+  it("re-joins a sector context-ref clause fragment to the following clause", () => {
+    expect(
+      tidyRealismArtifacts(
+        "After the down-round corrections. Let's start with your current side — what's the total CTC at present?",
+      ),
+    ).toBe(
+      "After the down-round corrections, let's start with your current side — what's the total CTC at present?",
+    );
+  });
+
+  it("re-joins an 'In this … era' context-ref fragment and downcases the resumed word", () => {
+    expect(
+      tidyRealismArtifacts("In this profitability-first era. What justifies the bump?"),
+    ).toBe("In this profitability-first era, what justifies the bump?");
+  });
+
+  it("re-joins a 'To be fair' adverbial fragment", () => {
+    expect(
+      tidyRealismArtifacts("To be fair. 60 days is a long runway — any flexibility on that?"),
+    ).toBe("To be fair, 60 days is a long runway — any flexibility on that?");
+  });
+
+  it("keeps 'I' capitalized when the resumed clause is first-person", () => {
+    expect(
+      tidyRealismArtifacts("With the H1B uncertainty. I'll have a firmer number once the panel signs off."),
+    ).toBe("With the H1B uncertainty, I'll have a firmer number once the panel signs off.");
+  });
+
+  it("does NOT touch the deliberate period form of short interjection acks", () => {
+    // These are complete utterances, not fragments — the period stays.
+    expect(tidyRealismArtifacts("Right. What fitment were you expecting for this role?")).toBe(
+      "Right. What fitment were you expecting for this role?",
+    );
+    expect(tidyRealismArtifacts("Okay. 60 days is a long runway.")).toBe(
+      "Okay. 60 days is a long runway.",
+    );
+  });
+
+  it("is a no-op when the context-ref clause is already comma-joined", () => {
+    const ok = "After the down-round corrections, let's start with your current side.";
+    expect(tidyRealismArtifacts(ok)).toBe(ok);
+  });
+});
+
 describe("tidyRealismArtifacts — invariants", () => {
   it("is idempotent", () => {
     const garble =
