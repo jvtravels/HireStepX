@@ -244,7 +244,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
       {/* Sidebar */}
       <aside aria-label="Navigation sidebar" style={{
-        width: 260, borderRight: `1px solid ${c.border}`, padding: isMobile ? "0 14px 0" : "28px 18px 0",
+        width: 260, borderRight: `1px solid ${c.border}`, padding: isMobile ? "0 14px 0" : "20px 18px 0",
         display: "flex", flexDirection: "column", position: "fixed", top: 0, bottom: 0,
         background: c.cream,
         zIndex: 20, overflow: "hidden",
@@ -271,9 +271,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             </Link>
           </div>
         ) : (
-          <div style={{ paddingBottom: 24, marginBottom: 4, borderBottom: `1px solid ${c.border}`, flexShrink: 0 }}>
+          <div style={{ paddingBottom: 14, marginBottom: 10, borderBottom: `1px solid ${c.border}`, flexShrink: 0 }}>
             <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-              <img src="/wordmark.png" alt="HireStepX" style={{ height: 22, width: "auto" }} />
+              <img src="/wordmark.png" alt="HireStepX" style={{ height: 20, width: "auto" }} />
             </Link>
           </div>
         )}
