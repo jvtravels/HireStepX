@@ -238,30 +238,29 @@ const TARGET_CUES: CueTable = {
     /\bbump(?:\s+\w+){0,3}\s+(?:to|up)\b/i,
     /\bbring(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
     /\bmove(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
-    /* Floor / walk-away-threshold framing (live-staging, 2026-06-19). A
-     * candidate stating a FLOOR — "I won't move for less than 55", "won't
-     * go below 55", "not a rupee less than 55", "anything less than 55 is a
-     * no" — is asserting their TARGET (a hard lower bound on the ask), NEVER
-     * their current pay. Before this block these phrasings scored ZERO role
-     * cues, so when the bot's prior turn had asked for the CURRENT package,
-     * the bare number fell through pickRole's Gricean "AI-asked-current →
-     * current" default and bound the floor as currentCtc — overwriting the
-     * real current AND dropping the target (live hard-haggle: candidate at
-     * ₹38L, floor ₹55L, bot read "you're at ₹55 LPA right now"). A floor is
-     * a target assertion; scoring it as a target cue makes pickRole return
-     * `target` outright (max>0) BEFORE the current-default can fire. The
-     * `(?:less|lower)\s+than` / `below` framing collides only with a current
-     * disclosure that ALSO carries an explicit current cue ("my current is
-     * less than 32"), where the current>target tiebreak still wins. */
+    /* Ask-anchor / hard-number framing (live-staging, 2026-06-19). A
+     * candidate anchoring their ASK — "I won't move for less than 55, that's
+     * my number", "at least 55", "55, non-negotiable", "not a rupee less than
+     * 55" — is asserting their TARGET, NEVER their current pay. Before this
+     * block these phrasings scored ZERO role cues, so when the bot's prior
+     * turn had asked for the CURRENT package, the bare number fell through
+     * pickRole's Gricean "AI-asked-current → current" default and bound the
+     * ask as currentCtc — overwriting the real current AND dropping the
+     * target (live hard-haggle: candidate at ₹38L, ask ₹55L, bot read
+     * "you're at ₹55 LPA right now"). Scoring these as target cues makes
+     * pickRole return `target` outright (max>0) before the current-default
+     * can fire. NOTE: explicit *walk-away floor* phrasings ("my floor is X",
+     * "can't go below X") are deliberately NOT here — a floor is distinct
+     * from a target (see candidateFloor / extractFloor) and must not
+     * overwrite a separately-stated target; those are routed away from role
+     * binding by isFloorScopedSpan below. */
     /\b(?:less|lower)\s+than\b/i,
-    /\bwon['']?t\s+(?:go|move|come|budge|settle|accept|take|do|drop)\b/i,
     /\b(?:no|not\s+a\s+rupee)\s+less\b/i,
     /\bat\s+least\b/i,
-    /\b(?:bare\s+)?minimum\s+(?:of\s+)?\b/i,
     /\bnon[-\s]?negotiable\b/i,
     /\bbottom\s+line\b/i,
     /\bfirm\s+(?:at|on)\b/i,
-    /\bmy\s+(?:number|floor|ask|figure)\b/i,
+    /\bmy\s+(?:number|ask|figure)\b/i,
   ],
   right: [
     /\bchahiye\b/i,
@@ -271,11 +270,11 @@ const TARGET_CUES: CueTable = {
     /\bexpect\s+kar(?:ta|ti)\s+hu\b/i,
     /\bchahta\s+hu\b/i,
     /\bchahti\s+hu\b/i,
-    /* Floor framing stated AFTER the number ("55 total, that's my number",
-     * "55, non-negotiable", "55, no less"). Same rationale as the left
-     * floor block above — these are target assertions, never current. */
-    /\bthat.?s\s+my\s+(?:number|ask|figure|floor|final)\b/i,
-    /\bmy\s+(?:final\s+)?(?:number|ask|floor)\b/i,
+    /* Ask-anchor framing stated AFTER the number ("55 total, that's my
+     * number", "55, non-negotiable", "55, no less"). Same rationale as the
+     * ask-anchor block above — these are target assertions, never current. */
+    /\bthat.?s\s+my\s+(?:number|ask|figure|final)\b/i,
+    /\bmy\s+(?:final\s+)?(?:number|ask)\b/i,
     /\bnon[-\s]?negotiable\b/i,
     /\bno\s+less\b/i,
   ],
@@ -716,7 +715,7 @@ function pickRole(
    * the cue table before this fires. */
   {
     const right = text.slice(span.end, Math.min(text.length, span.end + 25));
-    if (/^\s*total\s*[.!?,]/i.test(right)) {
+    if (/^\s*(?:total|overall)\s*(?:[.!?,]|$)/i.test(right)) {
       const targetAnywhere = TARGET_CUES.left.some((r) => r.test(text));
       const competingAnywhere = COMPETING_CUES.left.some((r) => r.test(text));
       if (!targetAnywhere && !competingAnywhere) return "current";
@@ -826,6 +825,41 @@ function isEquityLeftAdjacentSpan(text: string, span: SalarySpan): boolean {
   return EQUITY_LEFT_ADJACENT.some((re) => re.test(leftWindow));
 }
 
+/* ─── Walk-away-floor guard (live-staging, 2026-06-19) ─────────────────
+ *
+ * A candidate stating an explicit WALK-AWAY FLOOR — "my floor is 28",
+ * "I can't/won't go below 28", "the lowest I can do is 28", "rock-bottom
+ * 28" — is naming the MINIMUM they'll accept, which is a DISTINCT concept
+ * from both their current pay AND their target/ask (see candidateFloor /
+ * extractFloor in _misc-signals.ts; the kernel keeps the two apart and the
+ * planner says "distinct from their target"). These phrasings carry no
+ * role cue, so when the bot's prior turn asked for the CURRENT package the
+ * bare floor number fell through pickRole's Gricean "AI-asked-current →
+ * current" default and bound the FLOOR as currentCtc — the live hard-haggle
+ * read "you're at ₹55 LPA right now" off a stated floor. We must NOT instead
+ * route the floor to TARGET: a candidate at target 30 who then says "my
+ * floor is 28" must keep target=30, not have it overwritten by 28.
+ *
+ * So: a floor-scoped span that scored ZERO role cues binds to NO role here.
+ * Its value is captured by extractFloor → candidateFloor on the kernel side.
+ * Ask-anchor framing ("won't move for less than 55, that's my number",
+ * "at least 55") is deliberately NOT a floor cue — those score a target cue
+ * and bind to target, which is correct. The guard only fires on the
+ * explicit walk-away-floor register, and only when no role cue scored, so
+ * "my current floor is 22" (current cue present) still binds current. */
+const FLOOR_SCOPE_LEFT = [
+  /\bmy\s+(?:absolute\s+)?floor\b[^.0-9]*$/i,
+  /\bfloor\s+(?:is|would\s+be|sits?\s+at|of)\b[^.0-9]*$/i,
+  /\b(?:won['']?t|wouldn['']?t|can['']?t|cannot|couldn['']?t)\s+(?:go|come\s+down|drop|move)\s+(?:below|under|beneath)\b[^.0-9]*$/i,
+  /\b(?:lowest|least)\s+i\s+(?:can|could|would|will|'?d|am\s+willing\s+to)\b[^.0-9]*$/i,
+  /\brock[-\s]?bottom\b[^.0-9]*$/i,
+];
+function isFloorScopedSpan(text: string, span: SalarySpan): boolean {
+  const FLOOR_WINDOW = 40;
+  const leftWindow = text.slice(Math.max(0, span.start - FLOOR_WINDOW), span.start);
+  return FLOOR_SCOPE_LEFT.some((re) => re.test(leftWindow));
+}
+
 /* ─── Aggregator ───────────────────────────────────────────────────── */
 
 /** Main entry point. Returns the role-bound numbers for the utterance.
@@ -864,6 +898,16 @@ export function classifyNumberRoles(
   let currentFromRange = false;
   let targetFromRange = false;
   let targetComponent: "total" | "fixed" | null = null;
+  /* Compound current-disclosure scope (live-staging, 2026-06-19). A
+   * candidate who states components AND the total in one breath —
+   * "32 fixed plus 6 variable, so 38 total" — must have currentCtc bound to
+   * the TOTAL (38), not the first component (32). The classifier processes
+   * spans left-to-right (first-current-wins), so the leading "32 fixed"
+   * grabbed the slot and the explicit "38 total" was dropped — the bot then
+   * under-counted the candidate's current pay by the variable. We track the
+   * component scope of whatever currently holds the slot; an explicit
+   * total-scoped current span OVERRIDES a component-scoped one. */
+  let currentScope: "component" | "total" | null = null;
   for (const span of spans) {
     // Negation short-circuit: "Not 30 LPA, that's too high" must not
     // bind 30 to any role. See NEGATION_LEFT_PATTERNS / INVERTERS for
@@ -876,14 +920,27 @@ export function classifyNumberRoles(
      * bot-asked-current default and clobber the real currentCtc. */
     const cueMax = Math.max(scores.current, scores.target, scores.competing);
     if (cueMax === 0 && isEquityScopedSpan(text, span)) continue;
+    /* Walk-away-floor guard: an explicit floor ("my floor is 28", "can't go
+     * below 28") with no role cue binds to NO role — it's captured as
+     * candidateFloor by the kernel, distinct from current AND target. */
+    if (cueMax === 0 && isFloorScopedSpan(text, span)) continue;
     /* Equity keyword directly preceding the number overrides even a scored
      * current cue ("I get stock worth 5 LPA"). */
     if (isEquityLeftAdjacentSpan(text, span)) continue;
     const role = pickRole(scores, ctx, span, text);
     if (role == null) continue;
-    if (role === "current" && currentCtc == null) {
-      currentCtc = span.value;
-      currentFromRange = span.isRangeUpper;
+    if (role === "current") {
+      const scope = detectCurrentComponentScope(text, span);
+      if (currentCtc == null) {
+        currentCtc = span.value;
+        currentFromRange = span.isRangeUpper;
+        currentScope = scope;
+      } else if (currentScope === "component" && scope === "total") {
+        /* Explicit total supersedes an earlier component grab. */
+        currentCtc = span.value;
+        currentFromRange = span.isRangeUpper;
+        currentScope = scope;
+      }
     } else if (role === "target" && target == null) {
       target = span.value;
       targetFromRange = span.isRangeUpper;
@@ -909,6 +966,26 @@ export function classifyNumberRoles(
     targetAsRange: target != null ? targetAsRange : false,
     targetComponent: target != null ? (targetComponent ?? "total") : null,
   };
+}
+
+/* ─── Component-scope detection for a current-CTC span ─────────────────
+ *
+ * A current-classified number can be a COMPONENT ("32 fixed", "6 variable")
+ * or the TOTAL ("38 total", "38 overall"). When a candidate states both in
+ * one utterance, currentCtc must bind to the total, not the leading
+ * component. We read the word IMMEDIATELY trailing the number span (a tight
+ * 14-char right window — the unit/scope word abuts the figure in spoken
+ * Indian-HR register). Left-context is deliberately ignored here: "current
+ * is 32 fixed" has "current" on the LEFT but "fixed" on the RIGHT — the
+ * right-adjacent scope word is what tags THIS number. */
+function detectCurrentComponentScope(
+  text: string,
+  span: SalarySpan,
+): "component" | "total" | null {
+  const right = text.slice(span.end, Math.min(text.length, span.end + 14));
+  if (/^\s*(?:fixed|base|basic|variable|bonus)\b/i.test(right)) return "component";
+  if (/^\s*(?:total|overall)\b/i.test(right)) return "total";
+  return null;
 }
 
 /* ─── Component-scope detection for the bound target ───────────────── */

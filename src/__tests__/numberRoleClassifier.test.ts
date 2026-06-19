@@ -302,31 +302,60 @@ const ROWS: Row[] = [
     expect: { target: 32, targetComponent: "total" },
   },
 
-  /* ── Floor / walk-away-threshold framing binds TARGET, never current
-   *    (live-staging 2026-06-19). A candidate stating a hard lower bound —
-   *    "won't move for less than X", "at least X", "X, that's my number" —
-   *    is asserting their TARGET. The defect: when the bot's prior turn had
-   *    asked for the CURRENT package, the floor number fell through the
-   *    Gricean "AI-asked-current → current" default and bound as currentCtc,
-   *    overwriting the real current AND dropping the target. These rows pin
-   *    that a floor binds target EVEN when lastAiText is a current probe. */
+  /* ── Compound current disclosure binds the TOTAL, not the leading
+   *    component (live-staging 2026-06-19). "32 fixed plus 6 variable, so 38
+   *    total" must yield currentCtc=38; the classifier processes spans
+   *    left-to-right and the leading "32 fixed" used to grab the slot, so the
+   *    explicit "38 total" was dropped and the bot under-counted current pay
+   *    by the variable. An explicit total-scoped current span now overrides a
+   *    component-scoped grab. */
   {
-    label: "floor: 'won't move for less than 55 total, that's my number' (bot asked current) → target 55",
+    label: "compound current: '32 fixed plus 6 variable, so 38 total' → current 38 (not 32)",
+    text: "Current is 32 fixed plus 6 variable, so 38 total",
+    ctx: { lastAiText: "what's the total CTC at present?" },
+    expect: { currentCtc: 38, target: null },
+  },
+
+  /* ── Ask-anchor framing binds TARGET, never current; explicit walk-away
+   *    FLOOR framing binds NEITHER (live-staging 2026-06-19).
+   *
+   *    Ask-anchor ("won't move for less than X, that's my number", "at least
+   *    X", "X, non-negotiable") asserts the TARGET. The defect: when the
+   *    bot's prior turn asked for the CURRENT package, the bare number fell
+   *    through the Gricean "AI-asked-current → current" default and bound as
+   *    currentCtc, overwriting the real current AND dropping the target.
+   *
+   *    A *walk-away floor* ("won't go below X", "my floor is X") is a DISTINCT
+   *    concept from both current and target — the candidate's minimum, kept
+   *    apart from their ask (see candidateFloor / extractFloor in
+   *    _misc-signals.ts; the planner says "distinct from their target"). A
+   *    floor must bind NEITHER role here: not current (the live bug) and not
+   *    target (which would overwrite a separately-stated ask — see Gap B in
+   *    negotiationLeverAndProbationValidation). Its value is captured as
+   *    candidateFloor by the kernel, not by this classifier. */
+  {
+    label: "ask-anchor: 'won't move for less than 55 total, that's my number' (bot asked current) → target 55",
     text: "I won't move for less than 55 total, that's my number",
     ctx: { lastAiText: "And how is your current package structured?", phase: "probe-expectations" },
     expect: { target: 55, currentCtc: null, targetComponent: "total" },
   },
   {
-    label: "floor: same, when bot asked current TOTAL CTC → target 55 (never current)",
+    label: "ask-anchor: same, when bot asked current TOTAL CTC → target 55 (never current)",
     text: "I won't move for less than 55 total, that's my number",
     ctx: { lastAiText: "what's the total CTC at present?", phase: "probe-expectations" },
     expect: { target: 55, currentCtc: null },
   },
   {
-    label: "floor: 'won't go below 55' → target 55",
+    label: "walk-away floor: 'won't go below 55' binds NEITHER current nor target (→ candidateFloor)",
     text: "Honestly I won't go below 55.",
     ctx: { lastAiText: "your current package?" },
-    expect: { target: 55, currentCtc: null },
+    expect: { target: null, currentCtc: null },
+  },
+  {
+    label: "walk-away floor: 'my floor is 55' (bot asked current) binds NEITHER",
+    text: "My floor is 55, I can't go below that.",
+    ctx: { lastAiText: "what's your current CTC?" },
+    expect: { target: null, currentCtc: null },
   },
   {
     label: "floor: 'at least 55 total' → target 55",
