@@ -2,7 +2,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, checkSessionLimit, sanitizeForLLM, redisGet, redisSetEx, hashStable } from "./_shared";
+import { withAuthAndRateLimit, checkSessionLimit, sanitizeForLLM, redisGet, redisSetEx, hashStable } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
@@ -95,8 +95,6 @@ PREFERRED Indian-English alternatives:
 PERSONA DELIVERY: the persona may sprinkle 1-2 Indian-English softeners ("right?", "actually", "just briefly", "so", "yes please") into intro and interstitial lines to feel like a real Indian interviewer, but the main question text stays clean and direct — no softeners inside the question stem.`;
 
 declare const process: { env: Record<string, string | undefined> };
-const GROQ_KEY = process.env.GROQ_API_KEY || "";
-const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
@@ -184,11 +182,15 @@ function getCompanyTone(company: string): string {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  if (!GROQ_KEY && !GEMINI_KEY) {
-    return new Response(JSON.stringify({ error: "LLM not configured" }), {
-      status: 503, headers: withRequestId(corsHeaders(req)),
-    });
-  }
+  // No early "LLM not configured" bail-out. When NO provider key is set,
+  // callLLM() throws "No LLM configured" instantly (no network wait), which the
+  // catch block below treats identically to a provider outage: it serves the
+  // curated static question bank as a 200 `_fallback:"static"`. That unifies
+  // "misconfigured" and "providers down" into ONE resilient path so the
+  // interview is never un-startable when we have usable questions on disk —
+  // the same root-cause principle the salary-negotiation fallback applies
+  // further down. The fallover stays observable via the gq_static_fallback
+  // telemetry event (carrying the underlying error) and the _fallback flag.
 
   // Composed preamble: CORS → body size → origin → IP limit → auth → LLM quota
   const pre = await withAuthAndRateLimit(req, {

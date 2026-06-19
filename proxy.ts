@@ -1,4 +1,5 @@
-/* Next.js Edge Middleware — Domain-based routing + pre-launch gate
+/* Next.js Edge Proxy (the `proxy` convention that replaced `middleware` in
+ * Next.js 16) — Domain-based routing + pre-launch gate
  *
  * hirestepx.com         → marketing pages (/, /blog, /terms, /privacy, /page/*)
  * www.hirestepx.com     → marketing pages (currently pre-launch gated)
@@ -138,7 +139,7 @@ function isAppPath(pathname: string): boolean {
   return APP_PREFIXES.some(p => pathname.startsWith(p));
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.nextUrl.hostname;
 
