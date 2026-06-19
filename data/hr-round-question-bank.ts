@@ -45,6 +45,12 @@ export interface HrQuestion {
   /** How often this (or a near-paraphrase) shows up in real HR rounds,
    *  0–100. Soft weight when sampling "what HR actually asks". */
   frequencyPct: number;
+  /** The universal "tell me about yourself / walk me through your
+   *  background" opener. It IS the interview's opening beat, not a body
+   *  question — callers render it as the intro, so the sampler excludes
+   *  it from the body pool by default to avoid asking for the candidate's
+   *  background twice in a row. */
+  opener?: boolean;
 }
 
 /** Curated from real HR rounds across Indian service cos (TCS, Infosys,
@@ -66,7 +72,7 @@ export const HR_QUESTIONS: ReadonlyArray<HrQuestion> = [
   { id: "self-01", text: "What would you say are your greatest strengths, and how have they shown up at work?", dimension: "self-awareness", frequencyPct: 82 },
   { id: "self-02", text: "What is one weakness you're actively working on, and what are you doing about it?", dimension: "self-awareness", frequencyPct: 84 },
   { id: "self-03", text: "How would your current manager and teammates describe you?", dimension: "self-awareness", frequencyPct: 58 },
-  { id: "self-04", text: "Tell me about yourself — walk me through your background in a couple of minutes.", dimension: "self-awareness", frequencyPct: 90 },
+  { id: "self-04", text: "Tell me about yourself — walk me through your background in a couple of minutes.", dimension: "self-awareness", frequencyPct: 90, opener: true },
 
   // ── Culture & values ──
   { id: "cul-01", text: "What kind of work environment helps you do your best work?", dimension: "culture-values", frequencyPct: 70 },
@@ -127,18 +133,25 @@ export interface SampleHrOpts {
   seed: number;
   /** When true, bias the order toward higher-frequency questions. */
   weightByFrequency?: boolean;
+  /** Include the opener ("tell me about yourself") in the pool. Off by
+   *  default: the opener is rendered as the intro beat, so sampling it
+   *  into the body would ask for the candidate's background twice. */
+  includeOpener?: boolean;
 }
 
-/** Pick `count` HR questions, spreading coverage across dimensions
- *  before allowing a second question from any one dimension. Returns at
- *  most HR_QUESTIONS.length items; never throws. Deterministic for a
- *  given (count, seed). */
+/** Pick `count` HR *body* questions, spreading coverage across dimensions
+ *  before allowing a second question from any one dimension. Excludes the
+ *  opener by default (see `includeOpener`). Returns at most the pool size;
+ *  never throws. Deterministic for a given (count, seed). */
 export function sampleHrQuestions(opts: SampleHrOpts): HrQuestion[] {
-  const requested = Math.max(0, Math.min(opts.count, HR_QUESTIONS.length));
+  const source = opts.includeOpener
+    ? HR_QUESTIONS
+    : HR_QUESTIONS.filter((q) => !q.opener);
+  const requested = Math.max(0, Math.min(opts.count, source.length));
   if (requested === 0) return [];
   const rand = lcg(opts.seed);
 
-  let pool = shuffle(HR_QUESTIONS, rand);
+  let pool = shuffle(source, rand);
   if (opts.weightByFrequency) {
     // Stable sort by frequency DESC over the already-shuffled order so
     // ties stay seed-varied rather than bank-order-locked.

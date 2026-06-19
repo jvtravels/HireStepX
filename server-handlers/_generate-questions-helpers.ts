@@ -378,7 +378,10 @@ export function buildStaticFallback(opts: {
     const sampled = sampleHrQuestions({ count, seed, weightByFrequency: true });
     if (sampled.length > 0) {
       return [
-        { type: "intro", aiText: "Hi — thanks for making the time. Let's start simple: walk me through your background and what's prompting you to look right now." },
+        // The intro IS the "tell me about yourself" opener (the sampler
+        // excludes that question from the body), so this is the single
+        // background beat — it must not also pre-empt a body question.
+        { type: "intro", aiText: "Hi — thanks for making the time. To get us started, tell me a little about yourself and walk me through your background." },
         ...sampled.map((q, i): FallbackQuestion => ({
           type: i === 0 ? "warmup" : "main",
           aiText: q.text,

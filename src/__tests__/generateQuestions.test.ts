@@ -241,6 +241,15 @@ describe("buildStaticFallback", () => {
     expect(body.every((q) => (q.scoreNote || "").startsWith("HR dimension:"))).toBe(true);
     // And not a single one is a STAR "Tell me about a time" behavioural probe.
     expect(body.some((q) => /tell me about a time/i.test(q.aiText))).toBe(false);
+
+    // Regression: the intro IS the "tell me about yourself" opener, so the
+    // body must not re-ask for the candidate's background. (Before the
+    // opener-exclusion fix, the highest-frequency "walk me through your
+    // background" question front-loaded into the body, asking it twice.)
+    const asksBackground = (t: string) =>
+      /walk me through your background|tell me (a little |a bit )?about yourself/i.test(t);
+    expect(asksBackground(qs[0].aiText)).toBe(true); // intro opens with it
+    expect(body.some((q) => asksBackground(q.aiText))).toBe(false); // body never repeats it
   });
 
   it("also serves HR questions when focus is 'hr' regardless of type", () => {

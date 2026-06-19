@@ -69,14 +69,31 @@ describe("sampleHrQuestions", () => {
 
   it("handles count 0 and over-large counts gracefully", () => {
     expect(sampleHrQuestions({ count: 0, seed: 1 })).toEqual([]);
-    expect(sampleHrQuestions({ count: 9999, seed: 1 })).toHaveLength(HR_QUESTIONS.length);
+    // Body pool excludes the opener by default.
+    const bodySize = HR_QUESTIONS.filter((q) => !q.opener).length;
+    expect(sampleHrQuestions({ count: 9999, seed: 1 })).toHaveLength(bodySize);
+    expect(sampleHrQuestions({ count: 9999, seed: 1, includeOpener: true })).toHaveLength(
+      HR_QUESTIONS.length,
+    );
   });
 
-  it("weightByFrequency front-loads the most common questions", () => {
+  it("excludes the opener from the body by default so background isn't asked twice", () => {
+    const opener = HR_QUESTIONS.find((q) => q.opener);
+    expect(opener).toBeDefined();
+    const body = sampleHrQuestions({ count: HR_QUESTIONS.length, seed: 11, weightByFrequency: true });
+    expect(body.some((q) => q.id === opener!.id)).toBe(false);
+    // ...but it's available when explicitly requested.
+    const withOpener = sampleHrQuestions({ count: HR_QUESTIONS.length, seed: 11, includeOpener: true });
+    expect(withOpener.some((q) => q.id === opener!.id)).toBe(true);
+  });
+
+  it("weightByFrequency front-loads the most common BODY question", () => {
     const picked = sampleHrQuestions({ count: 3, seed: 5, weightByFrequency: true });
-    // The single most-asked question in the bank should appear in a small
-    // weighted draw.
-    const topFreq = Math.max(...HR_QUESTIONS.map((q) => q.frequencyPct));
-    expect(picked.some((q) => q.frequencyPct === topFreq)).toBe(true);
+    // The most-asked question among the body pool (opener excluded) should
+    // appear in a small weighted draw.
+    const topBodyFreq = Math.max(
+      ...HR_QUESTIONS.filter((q) => !q.opener).map((q) => q.frequencyPct),
+    );
+    expect(picked.some((q) => q.frequencyPct === topBodyFreq)).toBe(true);
   });
 });
