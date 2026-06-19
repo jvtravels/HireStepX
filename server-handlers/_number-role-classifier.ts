@@ -398,7 +398,7 @@ const RANGE_RE = new RegExp(
 /** Units that should make us SKIP a numeric match — these are not
  *  salary disclosures. `\d+ days`, `\d+ years`, `\d+%`, `\d+ PF`. */
 const NON_SALARY_UNIT_RE =
-  /(\d[\d,.]*)\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|yoe\b)/i;
+  /(\d[\d,.]*)\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|reportees?\b|engineers?\b|developers?\b|devs?\b|designers?\b|analysts?\b|interns?\b|teammates?\b|contributors?\b|folks?\b|headcount\b|yoe\b)/i;
 
 /* Per-month periodicity (2026-06-15, unbiased-review HIGH). The classifier
  * normalizes every salary span to LPA (lakhs per ANNUM). A figure quoted PER
@@ -560,9 +560,26 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
      * forever. Build "<thisNumber><immediate tail>" and require the unit to
      * abut this number (anchored ^). */
     const NON_SALARY_UNIT_ANCHORED =
-      /^\d[\d,.]*\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|yoe\b)/i;
+      /^\d[\d,.]*\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|reportees?\b|engineers?\b|developers?\b|devs?\b|designers?\b|analysts?\b|interns?\b|teammates?\b|contributors?\b|folks?\b|headcount\b|yoe\b)/i;
     if (NON_SALARY_UNIT_ANCHORED.test(m[1] + text.slice(digitEnd, digitEnd + 10)))
       continue;
+    /* Non-salary LEFT context (live-staging 2026-06-19, scenario C —
+     * Razorpay PM). A bare integer naming a TEAM / GROUP / HEADCOUNT size —
+     * "managed a team of 8", "group of 12", "headcount of 30", "a squad of
+     * 6" — is an org-size metric, NOT a salary figure. NON_SALARY_UNIT_RE
+     * above only catches the disqualifier AFTER the number ("8 people", "8
+     * engineers"); the collective-noun framing puts it BEFORE the number
+     * ("team of 8") with nothing trailing, so "8" leaked through the
+     * probe-expectations bare-number default and bound as the candidate's
+     * target. Since 8 ≤ the ₹35L offer, the auto-accept gate then read it as
+     * a guaranteed-accept counter and FALSE-CLOSED the negotiation at turn 2
+     * — every later turn (the real ₹40 ask, a conditional accept) was then
+     * treated as post-close noise. Anchored to the end of the left window so
+     * only an immediately-preceding collective frame suppresses the span; a
+     * genuine "₹8 LPA" still carries its unit and never reaches Pass 4. */
+    const NON_SALARY_LEFT_CONTEXT =
+      /\b(?:team|squad|group|crew|pod|cohort|batch|org|organi[sz]ation|division|department|dept|headcount|staff|workforce|reportees?|reports?)\s+(?:of|size\s+of|sized|comprising|with)\s*$/i;
+    if (NON_SALARY_LEFT_CONTEXT.test(leftWindow)) continue;
     /* If a salary unit (LPA / lakh / crore) follows this integer, it
      * was already considered by Pass 2 — either claimed or rejected by
      * the clamp. Don't second-guess. */

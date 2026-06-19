@@ -411,6 +411,18 @@ const ROWS: Row[] = [
   { label: "RIGHT cue: '45 is my bottom line' binds target",  text: "45 is my bottom line",  expect: { target: 45 } },
   { label: "RIGHT-cue guard: 'I figure I'll need 30 days' binds nothing", text: "I figure I'll need 30 days", expect: { target: null, currentCtc: null } },
 
+  /* ── Team / headcount LEFT-context guard (live-staging 2026-06-19) ──
+   * A bare integer naming a team/group/headcount SIZE must never bind as
+   * a salary figure. The collective noun sits BEFORE the number ("team of
+   * 8") with nothing trailing, so the trailing NON_SALARY_UNIT guard can't
+   * see it. In probe-expectations this leaked as target=8 and (8 ≤ offer)
+   * false-closed the negotiation at turn 2. */
+  { label: "team-of N in probe → no bind",      text: "I led the UPI roadmap, grew GMV 3x, and managed a team of 8.", ctx: { phase: "probe-expectations" }, expect: { currentCtc: null, target: null, competing: null } },
+  { label: "group of N → no bind",              text: "I ran a group of 12 across two pods.", ctx: { phase: "probe-expectations" }, expect: { target: null } },
+  { label: "headcount of N → no bind",          text: "My headcount of 30 spanned three teams.", ctx: { phase: "probe-expectations" }, expect: { target: null } },
+  { label: "managed N engineers (trailing) → no bind", text: "I managed 20 engineers last year.", ctx: { phase: "probe-expectations" }, expect: { target: null } },
+  { label: "team-size guard does NOT eat a real ₹N LPA target", text: "I managed a team of 8, and I'm targeting 40 LPA.", ctx: { phase: "probe-expectations" }, expect: { target: 40 } },
+
   /* ── Negative cases (must NOT bind) ────────────────────────────── */
   { label: "RIGHT-gate guard: '40 years old' binds nothing", text: "I'm 40 years old.",      expect: { currentCtc: null, target: null, competing: null } },
   { label: "RIGHT-gate guard: '40 people' binds nothing",     text: "My team has 40 people.", expect: { currentCtc: null, target: null, competing: null } },
