@@ -56,6 +56,18 @@ const ROWS: Row[] = [
   { label: "level token before comma keeps employer cue", text: "I'm a SE3 at Myntra, 24 LPA.",                          expect: { currentCtc: 24 } },
   { label: "L-prefixed level token before comma",          text: "I'm L5 at Google, currently 30 LPA.",                 expect: { currentCtc: 30 } },
 
+  /* ── Lowered-counter / concession frames (live-staging 2026-06-19, #93) ──
+   * A candidate conceding toward the offer names a new lower TARGET with a
+   * verb-of-motion. These previously bound nothing, so the bot kept arguing
+   * the stale opening anchor. Asserted in counter-offer phase (no AI-asked
+   * context) to prove the cue — not the phase default — does the binding. */
+  { label: "get to N (bare)",            text: "Can you get to 35?",                    ctx: { phase: "counter-offer" }, expect: { target: 35 } },
+  { label: "get the fixed to N",         text: "Can you get the fixed to 28?",          ctx: { phase: "counter-offer" }, expect: { target: 28 } },
+  { label: "stretch to N",               text: "If you stretch to 38 I'm interested.",  ctx: { phase: "counter-offer" }, expect: { target: 38 } },
+  { label: "come up to N",               text: "Could you come up to 36?",              ctx: { phase: "counter-offer" }, expect: { target: 36 } },
+  { label: "close at N",                 text: "Let's close at 35.",                    ctx: { phase: "counter-offer" }, expect: { target: 35 } },
+  { label: "make it N",                  text: "Make it 38 and we have a deal.",        ctx: { phase: "counter-offer" }, expect: { target: 38 } },
+
   /* ── Target cues — English ─────────────────────────────────────── */
   { label: "expecting N",                text: "I'm expecting 30 LPA",                  expect: { target: 30 } },
   { label: "looking for N",              text: "looking for 28 LPA",                    expect: { target: 28 } },

@@ -238,6 +238,20 @@ const TARGET_CUES: CueTable = {
     /\bbump(?:\s+\w+){0,3}\s+(?:to|up)\b/i,
     /\bbring(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
     /\bmove(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
+    /* Lowered-counter frames (live-staging 2026-06-19, #93). When the
+     * candidate CONCEDES toward the offer — "can you get to 35", "stretch
+     * to 38", "come up to 36", "let's close at 35", "make it 38" — they are
+     * naming a new, lower TARGET. These carried no classic target verb and
+     * weren't in the counter-movement block above, so the conceded number
+     * scored zero cues, fell through pickRole, and never bound. The planner
+     * then kept arguing the candidate's STALE opening anchor instead of
+     * engaging the closer number — a stall. Sibling to the push/bump/bring/
+     * move frames; same "verb-of-motion + destination" shape. */
+    /\bget(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
+    /\bstretch(?:\s+\w+){0,3}\s+(?:to|up|towards?)\b/i,
+    /\bcome\s+up\s+(?:to|towards?)\b/i,
+    /\bclose\s+(?:it\s+|this\s+)?(?:at|out\s+at)\b/i,
+    /\bmake\s+it\b/i,
     /* Ask-anchor / hard-number framing (live-staging, 2026-06-19). A
      * candidate anchoring their ASK — "I won't move for less than 55, that's
      * my number", "at least 55", "55, non-negotiable", "not a rupee less than
@@ -524,8 +538,8 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
    * unit-less floor emits a span even when the bot's prior turn didn't ask a
    * target question and we're not in probe-expectations. The scored
    * TARGET_CUES floor block then binds it to target (see note there). */
-  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move|less\s+than|lower\s+than|below|at\s+least|minimum|non[-\s]?negotiable|bottom\s+line|my\s+(?:number|floor|ask|figure))\b/i;
-  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to|than|below)\s+|\b(?:to\s+be|closer\s+to|up\s+to|at\s+least|a\s+minimum\s+of|minimum\s+of|less\s+than|lower\s+than|no\s+less\s+than|not\s+less\s+than)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
+  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move|get|stretch|come\s+up|close\s+at|make\s+it|less\s+than|lower\s+than|below|at\s+least|minimum|non[-\s]?negotiable|bottom\s+line|my\s+(?:number|floor|ask|figure))\b/i;
+  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to|than|below)\s+|\b(?:to\s+be|closer\s+to|up\s+to|at\s+least|a\s+minimum\s+of|minimum\s+of|less\s+than|lower\s+than|no\s+less\s+than|not\s+less\s+than|make\s+it)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
   const SALARY_UNIT_NEARBY = /[\d,.]\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
   /* MVP-audit Fix B (2026-06-18): three additional bare-integer emission
    * gates beyond the target-cue gate. Root cause of the discovery
