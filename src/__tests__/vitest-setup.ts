@@ -41,3 +41,30 @@ if (
     configurable: true,
   });
 }
+
+// jsdom resolves the optional native `canvas` package when it's present, then
+// drives image decoding through it inside HTMLImageElement._updateTheImageData.
+// A broken / stub `canvas` install makes `new Canvas.Image()` throw, so ANY
+// <img src=...> render (e.g. the wordmark on OnboardingComplete) crashes —
+// non-deterministically, only when a worker shard happens to run that file. We
+// never decode images under test, so neutralize the side effect at its source
+// on the impl prototype. This is ordering-independent and covers every code
+// path (the `.src` setter and React's setAttribute) in one place.
+if (typeof window !== "undefined" && typeof window.HTMLImageElement === "function") {
+  try {
+    const probe = window.document.createElement("img");
+    const implSym = Object.getOwnPropertySymbols(probe).find(
+      (s) => String(s) === "Symbol(impl)",
+    );
+    if (implSym) {
+      const impl = (probe as unknown as Record<symbol, unknown>)[implSym];
+      const proto = impl ? (Object.getPrototypeOf(impl) as Record<string, unknown>) : null;
+      if (proto && typeof proto._updateTheImageData === "function") {
+        proto._updateTheImageData = function () {};
+      }
+    }
+  } catch {
+    // Best-effort: if jsdom internals change shape, tests that don't render
+    // <img> are unaffected and image-rendering tests fail loudly as before.
+  }
+}

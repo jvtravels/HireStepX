@@ -2,6 +2,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { consumeSessionCredit } from "./_session-credits";
+import { verifyJwtLocally, importEs256VerifyKey } from "./_jwt-verify";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -77,6 +78,73 @@ export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: bo
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
 
+/* ─── Local JWT verification (JWKS) ───────────────────────────────────────
+ *
+ * Supabase issues asymmetric ES256 JWTs with a published JWKS. We verify the
+ * signature + claims locally (Web Crypto) so the common case — a valid token —
+ * never round-trips to /auth/v1/user. That round-trip, fired concurrently by
+ * the several authed calls an interview makes at session start, was getting
+ * rate-limited/timed-out and surfacing as spurious 401s on record-session-
+ * start / follow-up. See _jwt-verify.ts for the full story + safety contract:
+ * local verify only ever produces a fast positive; everything else defers to
+ * the network introspection below, so there is no security regression. */
+
+const JWKS_TTL_MS = 10 * 60 * 1000;
+const JWKS_NEGATIVE_REFETCH_MS = 30 * 1000;
+let jwksCache: { keys: Map<string, CryptoKey>; fetchedAt: number } | null = null;
+let jwksInflight: Promise<Map<string, CryptoKey> | null> | null = null;
+
+async function fetchJwksKeys(): Promise<Map<string, CryptoKey> | null> {
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/.well-known/jwks.json`, {
+      headers: { apikey: SUPABASE_ANON_KEY },
+      signal: ac.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const body = (await res.json()) as { keys?: JsonWebKey[] };
+    if (!body || !Array.isArray(body.keys)) return null;
+    const keys = new Map<string, CryptoKey>();
+    for (const jwk of body.keys) {
+      const kid = (jwk as { kid?: string }).kid;
+      if (!kid) continue;
+      const key = await importEs256VerifyKey(jwk);
+      if (key) keys.set(kid, key);
+    }
+    return keys;
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve a JWKS verify key by `kid`, with module-level caching and a single
+ * bounded refetch when an unknown kid appears (key rotation). Returns null when
+ * the key can't be resolved — callers must treat that as "defer to network". */
+async function resolveJwksKey(kid: string): Promise<CryptoKey | null> {
+  if (!SUPABASE_URL) return null;
+  const now = Date.now();
+
+  if (jwksCache && now - jwksCache.fetchedAt < JWKS_TTL_MS) {
+    const cached = jwksCache.keys.get(kid);
+    if (cached) return cached;
+    // Fresh-ish cache but unknown kid → possible rotation. Allow one refetch,
+    // throttled so a barrage of forged kids can't hammer the JWKS endpoint.
+    if (now - jwksCache.fetchedAt < JWKS_NEGATIVE_REFETCH_MS) return null;
+  }
+
+  if (!jwksInflight) {
+    jwksInflight = fetchJwksKeys().then((keys) => {
+      if (keys) jwksCache = { keys, fetchedAt: Date.now() };
+      jwksInflight = null;
+      return keys;
+    });
+  }
+  const keys = await jwksInflight;
+  return keys ? keys.get(kid) ?? null : null;
+}
+
 /** Verify the user's JWT token against Supabase Auth. Returns userId if valid.
  *
  * Distinguishes between three failure classes so we don't bounce users mid-
@@ -102,6 +170,16 @@ export async function verifyAuth(req: Request): Promise<{ authenticated: boolean
 
   const token = authHeader.slice(7);
 
+  // Fast path: verify the ES256 token locally against Supabase's JWKS. Only a
+  // fully valid token short-circuits here; anything else falls through to the
+  // network introspection below (see _jwt-verify.ts safety contract).
+  const local = await verifyJwtLocally(token, {
+    resolveKey: resolveJwksKey,
+    now: Math.floor(Date.now() / 1000),
+    issuer: `${SUPABASE_URL}/auth/v1`,
+  });
+  if (local.kind === "ok") return { authenticated: true, userId: local.userId };
+
   const tryOnce = async (): Promise<{ kind: "ok"; userId: string } | { kind: "auth-fail" } | { kind: "transient"; reason: string }> => {
     try {
       const ac = new AbortController();
@@ -117,6 +195,10 @@ export async function verifyAuth(req: Request): Promise<{ authenticated: boolean
       // 401/403 = bad/expired token. 5xx = Supabase incident.
       if (res.status === 401 || res.status === 403) return { kind: "auth-fail" };
       if (res.status >= 500 && res.status <= 599) return { kind: "transient", reason: `HTTP ${res.status}` };
+      // 408 Request Timeout / 429 Too Many Requests are load/infra signals, not
+      // a verdict on the token — treat as transient so a burst of authed calls
+      // at session start can't turn a valid token into a spurious 401.
+      if (res.status === 408 || res.status === 429) return { kind: "transient", reason: `HTTP ${res.status}` };
       if (!res.ok) return { kind: "auth-fail" };
       const user = await res.json();
       if (!user.id || typeof user.id !== "string") return { kind: "auth-fail" };
