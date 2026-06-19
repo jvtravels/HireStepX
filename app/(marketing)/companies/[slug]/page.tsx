@@ -126,7 +126,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     headline: page.searchPhrase,
     description: page.intro,
     author: { "@type": "Organization", name: "HireStepX" },
-    publisher: { "@type": "Organization", name: "HireStepX", logo: { "@type": "ImageObject", url: "https://hirestepx.com/icon-512.svg" } },
+    publisher: { "@type": "Organization", name: "HireStepX", logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" } },
     datePublished: "2026-05-05",
     dateModified: "2026-05-05",
     inLanguage: "en-IN",

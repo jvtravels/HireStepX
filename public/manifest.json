@@ -11,20 +11,14 @@
   "id": "com.hirestepx.pwa",
   "icons": [
     {
-      "src": "/icon-192.svg",
-      "sizes": "192x192",
+      "src": "/favicon.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.svg",
-      "sizes": "512x512",
+      "src": "/favicon.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
@@ -36,14 +30,14 @@
       "short_name": "New session",
       "description": "Start a new mock interview session",
       "url": "/session/new",
-      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     },
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View your practice stats and history",
       "url": "/dashboard",
-      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     }
   ]
 }

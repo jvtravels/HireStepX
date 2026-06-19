@@ -94,7 +94,7 @@ export const metadata: Metadata = {
     title: "HireStepX",
     // Absolute path — Next's Metadata API accepts string | string[] here.
     // We reuse the 192 SVG; iOS rasterises from the device's preferred size.
-    startupImage: ["/icon-512.svg"],
+    startupImage: ["/favicon.svg"],
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
@@ -102,7 +102,7 @@ export const metadata: Metadata = {
     // apple-touch-icon points at the same 512 asset — iOS picks the best
     // size from the 512 SVG. When we ship a rasterised 180×180 PNG later,
     // update this href.
-    "apple-touch-icon": "/icon-512.svg",
+    "apple-touch-icon": "/favicon.svg",
   },
 };
 
@@ -207,7 +207,7 @@ const structuredData = [
     name: "HireStepX",
     legalName: "HireStepX",
     url: "https://hirestepx.com",
-    logo: "https://hirestepx.com/logo.png",
+    logo: "https://hirestepx.com/wordmark.png",
     description:
       "AI-powered mock interview platform for job seekers in India. Practice for Google, TCS, Flipkart, and 50+ companies.",
     foundingDate: "2026",
