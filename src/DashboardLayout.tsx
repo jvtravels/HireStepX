@@ -251,8 +251,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-100%)") : "translateX(0)",
         transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
       }}>
-        {/* Mobile sidebar header — wordmark + hairline, same height as fixed topbar */}
-        {isMobile && (
+        {/* Sidebar wordmark — mobile gets a full-bleed header row; desktop gets a compact top block */}
+        {isMobile ? (
           <div style={{
             height: 56,
             display: "flex", alignItems: "center",
@@ -268,6 +268,12 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               style={{ textDecoration: "none", display: "flex", alignItems: "center" }}
             >
               <img src="/wordmark.png" alt="HireStepX" style={{ height: 24, width: "auto" }} />
+            </Link>
+          </div>
+        ) : (
+          <div style={{ paddingBottom: 24, marginBottom: 4, borderBottom: `1px solid ${c.border}`, flexShrink: 0 }}>
+            <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+              <img src="/wordmark.png" alt="HireStepX" style={{ height: 22, width: "auto" }} />
             </Link>
           </div>
         )}
