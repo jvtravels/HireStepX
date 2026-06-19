@@ -252,6 +252,17 @@ const TARGET_CUES: CueTable = {
     /\bcome\s+up\s+(?:to|towards?)\b/i,
     /\bclose\s+(?:it\s+|this\s+)?(?:at|out\s+at)\b/i,
     /\bmake\s+it\b/i,
+    /* Conditional-close verbs (live-staging 2026-06-19, #94). The two
+     * commonest Indian-candidate close phrasings — "if you can do 36",
+     * "can you do 36", "if you match 36" — name a concrete number the
+     * candidate will accept on. "do" is gated to an offer-REQUEST frame
+     * (can/could/if-you-can/able-to) so a bare "I do 3 standups" cannot
+     * false-bind a target; "match" is salary-specific enough before a
+     * number to stand alone. Without these the conditional acceptance
+     * carried no bound counter, so the planner's close-engagement gate
+     * had nothing to converge on and the bot diverted to a JB probe. */
+    /\b(?:can\s+you|could\s+you|you\s+can|you\s+could|if\s+you\s+can|if\s+you\s+could|able\s+to)\s+do\b/i,
+    /\bmatch(?:ing|es|ed)?\b/i,
     /* Ask-anchor / hard-number framing (live-staging, 2026-06-19). A
      * candidate anchoring their ASK — "I won't move for less than 55, that's
      * my number", "at least 55", "55, non-negotiable", "not a rupee less than
@@ -538,9 +549,18 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
    * unit-less floor emits a span even when the bot's prior turn didn't ask a
    * target question and we're not in probe-expectations. The scored
    * TARGET_CUES floor block then binds it to target (see note there). */
-  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move|get|stretch|come\s+up|close\s+at|make\s+it|less\s+than|lower\s+than|below|at\s+least|minimum|non[-\s]?negotiable|bottom\s+line|my\s+(?:number|floor|ask|figure))\b/i;
-  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to|than|below)\s+|\b(?:to\s+be|closer\s+to|up\s+to|at\s+least|a\s+minimum\s+of|minimum\s+of|less\s+than|lower\s+than|no\s+less\s+than|not\s+less\s+than|make\s+it)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
-  const SALARY_UNIT_NEARBY = /[\d,.]\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
+  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move|get|stretch|come\s+up|close\s+at|make\s+it|do|match|less\s+than|lower\s+than|below|at\s+least|minimum|non[-\s]?negotiable|bottom\s+line|my\s+(?:number|floor|ask|figure))\b/i;
+  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to|than|below)\s+|\b(?:to\s+be|closer\s+to|up\s+to|at\s+least|a\s+minimum\s+of|minimum\s+of|less\s+than|lower\s+than|no\s+less\s+than|not\s+less\s+than|make\s+it|do|match)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
+  /* Anchored to the IMMEDIATE tail of THIS integer (live-staging 2026-06-19,
+   * #94). The prior unanchored form `[\d,.]\s*unit` matched a DIFFERENT
+   * number's unit downstream: in "do 36 with a 3 lakh joining bonus" it saw
+   * the "3 lakh" and suppressed the bare 36 entirely, so the candidate's
+   * real counter never bound. Same greedy-window defect already fixed for
+   * NON_SALARY_UNIT_ANCHORED below. `^` + `\s*` means only whitespace may sit
+   * between the number and the unit — an intervening digit (another number)
+   * breaks the match, so "36" is no longer swallowed by "3 lakh", while a
+   * genuine "36 lakh" / "36 LPA" still abuts and is correctly deferred. */
+  const SALARY_UNIT_NEARBY = /^[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
   /* MVP-audit Fix B (2026-06-18): three additional bare-integer emission
    * gates beyond the target-cue gate. Root cause of the discovery
    * stalemate (audit finding #2): a candidate answering the recruiter's
@@ -911,6 +931,25 @@ function isFloorScopedSpan(text: string, span: SalarySpan): boolean {
   return FLOOR_SCOPE_LEFT.some((re) => re.test(leftWindow));
 }
 
+/* Component-bonus scope (live-staging 2026-06-19, #94). A number whose
+ * IMMEDIATE right context names a one-time component — "3 lakh joining
+ * bonus", "2L sign-on", "1.5 lakh relocation", "5 lakh retention bonus"
+ * — is a sweetener ASK, not the candidate's target/current/competing
+ * TOTAL. In "if you can do 36 with a 3 lakh joining bonus", the "do"
+ * target-cue sits in the left window of BOTH 36 and 3, so the JB amount
+ * (3) was scoring a spurious target and — being unit-bearing — beat the
+ * bare 36, binding target=3. The kernel tracks JB asks separately; this
+ * span must bind to NO role. Anchored to the number (optional unit, then
+ * the component noun) so the REAL target one clause earlier ("...do 36
+ * with...") is untouched — its right context starts with "with", not a
+ * component noun. */
+const COMPONENT_BONUS_RIGHT_ANCHORED =
+  /^\s*(?:lpa|lakhs?|lacs?|lac|l|k)?\.?\s*(?:as\s+(?:a\s+)?)?(?:joining|signing|sign[-\s]?on|relocation|relo|retention|one[-\s]?time|joining\s+bonus|signing\s+bonus)(?:\s+(?:bonus|allowance|assistance|pay))?\b/i;
+function isComponentBonusScopedSpan(text: string, span: SalarySpan): boolean {
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 40));
+  return COMPONENT_BONUS_RIGHT_ANCHORED.test(rightWindow);
+}
+
 /* ─── Aggregator ───────────────────────────────────────────────────── */
 
 /** Main entry point. Returns the role-bound numbers for the utterance.
@@ -964,6 +1003,9 @@ export function classifyNumberRoles(
     // bind 30 to any role. See NEGATION_LEFT_PATTERNS / INVERTERS for
     // the precise contract.
     if (isNegatedSpan(text, span)) continue;
+    /* Component-bonus guard (#94): a JB / sign-on / relocation amount
+     * binds to NO role regardless of any cue leaking into its window. */
+    if (isComponentBonusScopedSpan(text, span)) continue;
     const scores = scoreRolesForSpan(text, span);
     /* Equity-scope guard (L1 / PRI-50): an equity/RSU/ESOP/stock-framed
      * number with NO explicit current/target/competing cue is an equity

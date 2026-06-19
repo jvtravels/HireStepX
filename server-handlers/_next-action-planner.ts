@@ -2607,6 +2607,67 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     }
   }
 
+  /* Near-offer conditional close-engagement (live-staging 2026-06-19, #94).
+   *
+   * When the candidate gives a CONDITIONAL acceptance — "if you can do 36,
+   * that works for me", "provided you cover the buyout, I'm in" — they have
+   * named the concrete terms on which they WILL sign. A real Indian recruiter
+   * facing a conditional yes within a rupee of the offer MEETS it and closes;
+   * they do not divert to interrogating the joining-bonus rationale (#94),
+   * re-argue the band ceiling (#92), or stall on panel approval (#93). Those
+   * are the exact forbidden "divert/stall on a near-offer close" failure
+   * modes. The legacy planner had no branch for this — `conditionalAcceptance`
+   * was parsed (decision-deadline module) but consulted ONLY as a downstream
+   * LLM cosmetic hint, never by the kernel. We converge here, deterministically.
+   *
+   * Precedence: below the auto-accept gate (a counter ≤ offer is already a
+   * guaranteed accept) and the trial-close gate, above every probe / lever /
+   * ceiling path. Single source of truth: the converge number is the kernel's
+   * own bound counter (totalScopedCounter → lastCandidateCounterLpa); the JB
+   * amount the candidate asked for is NOT bound as a target (component-bonus
+   * guard in the classifier), so it can never inflate the close.
+   *
+   * Guard rails:
+   *   - Only fires on a fresh conditional acceptance (merge is last-stated-wins).
+   *   - A concrete counter only converges when it sits WITHIN a small gap above
+   *     the standing offer AND at/under the band ceiling — a conditional ask
+   *     beyond the ceiling or far above the offer is a genuine gap the normal
+   *     counter/hold-firm logic must still work, so we fall through there.
+   *   - A conditional yes with NO cash number (a non-cash condition — "once you
+   *     confirm the band, that's acceptable") closes at the standing offer. */
+  if (
+    !isTerminalPhase(state.phase) &&
+    state.highestOfferMade > 0 &&
+    state.decisionDeadline?.conditionalAcceptance === true
+  ) {
+    const offer = state.highestOfferMade;
+    const ceil = state.band.maxStretch;
+    const condNum = totalScopedCounter(state) ?? state.lastCandidateCounterLpa ?? null;
+    /* Gap a recruiter will close instantly: the larger of ₹2L or 6% of the
+     * standing offer. Wider gaps remain a live negotiation. */
+    const gap = Math.max(2, offer * 0.06);
+    let closeAt: number | null = null;
+    if (condNum == null) {
+      closeAt = offer;
+    } else if (condNum <= ceil && condNum - offer <= gap) {
+      closeAt = Math.max(offer, condNum);
+    }
+    if (closeAt != null) {
+      const jb = state.lastJoiningBonusOffered;
+      return {
+        kind: "close",
+        mode: "accept",
+        _move: {
+          lever: "close-acceptance",
+          newTotalLpa: clampToCloseFloor(state, closeAt),
+          joiningBonusAmount: jb != null ? jb : undefined,
+          rationale: `Near-offer conditional acceptance: candidate will close on ₹${condNum ?? offer}L (offer ₹${offer}L, ceiling ₹${ceil}L); converge at ₹${closeAt}L and close rather than divert.`,
+          askedTopic: "close-confirmation",
+        },
+      };
+    }
+  }
+
   /* ITEM 3 (2026-05-15) — equity-clarity probe: fires when band has equity,
    * the last bot reply contained equity language but did not cover all four
    * clarity pillars, and the equity-clarity probe hasn't been fired yet.
