@@ -186,8 +186,14 @@ type PreliminarySummary = {
   company?: string;
 };
 
+/* Deliberately NO score is rendered here. The only number available at this
+   stage is the engine's structural estimate (computeFallbackScores — driven by
+   answer count / length / time, NOT answer quality), which flatters weak
+   interviews and is meaningless without the coached evaluation. Showing it
+   would teach the user a false readiness signal right before a real interview.
+   We surface the qualitative notes the engine captured (if any) and route hard
+   to the retry CTA for the real AI report instead. */
 function PreliminaryCard({ p }: { p: PreliminarySummary }) {
-  const hasScore = p.score > 0;
   return (
     <div
       style={{
@@ -210,16 +216,8 @@ function PreliminaryCard({ p }: { p: PreliminarySummary }) {
           marginBottom: 14,
         }}
       >
-        Preliminary summary
+        Early notes
       </div>
-      {hasScore && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
-          <span style={{ fontFamily: f.serif, fontSize: 40, color: t.coal, lineHeight: 1 }}>
-            {Math.round(p.score)}
-          </span>
-          <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>/ 100 overall</span>
-        </div>
-      )}
       {p.topStrength && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700, color: t.coal, marginBottom: 2 }}>
@@ -262,12 +260,21 @@ function ErrorShell({
   backLabel: string;
   preliminary?: PreliminarySummary;
 }) {
+  // A session exists to retry scoring for (drives the reassuring "saved, not
+  // scored yet" treatment + retry CTA). score>0 means the engine ran, even if
+  // we deliberately don't surface that structural number.
   const hasPreliminary = Boolean(
     preliminary &&
       (preliminary.score > 0 ||
         preliminary.topStrength ||
         preliminary.topWeakness ||
         preliminary.feedback)
+  );
+  // Only render the inner notes card when there's qualitative content to show —
+  // never an empty box once the number is gone.
+  const hasQualitativeNotes = Boolean(
+    preliminary &&
+      (preliminary.topStrength || preliminary.topWeakness || preliminary.feedback)
   );
   return (
     <div
@@ -300,14 +307,14 @@ function ErrorShell({
       </button>
       <div style={{ maxWidth: 560, margin: hasPreliminary ? "40px auto 0" : "120px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>
-          {hasPreliminary ? "Your preliminary results" : "Couldn’t generate your report"}
+          {hasPreliminary ? "Your session is saved" : "Couldn’t generate your report"}
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>
           {hasPreliminary
-            ? "Here are the scores from your interview. The full coached report — model answers, STAR breakdowns and skill tracking — needs our scoring service, which is busy right now. Your transcript is safe; try again in a moment for the complete report."
+            ? "We captured your full interview — but it isn’t scored yet. The coached report (model answers, STAR breakdowns and skill tracking) needs our AI scoring service, which is busy right now. Your transcript is safe; generate it in a moment for your real evaluation."
             : message}
         </p>
-        {hasPreliminary && preliminary && <PreliminaryCard p={preliminary} />}
+        {hasQualitativeNotes && preliminary && <PreliminaryCard p={preliminary} />}
         <button
           type="button"
           onClick={onRetry}
