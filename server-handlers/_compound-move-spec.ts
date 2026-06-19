@@ -59,7 +59,16 @@ export type PivotFrame =
   /* Commit-requiring: anchor / counter / band-anchor / open-with-offer
    *  — anything that puts a NUMBER on the table the candidate is
    *  expected to react to this turn. */
-  | "commit-requiring";
+  | "commit-requiring"
+  /* Terminal: the turn ENDS the negotiation — graceful walk-away,
+   *  stalemate disengage, polite decline, terminal restate. Prefixing a
+   *  defer lead ("Coming back to the structure —" / "Let me check and
+   *  come back —") onto a walk-away is incoherent: there's no structure
+   *  to return to and no callback coming. Suppress the lead, ship the
+   *  terminal prose alone (live-staging 2026-06-19: an over-band walk-away
+   *  shipped "Coming back to the structure — looks like this may not be
+   *  the right fit … thanks for the time"). */
+  | "terminal";
 
 /** Forbidden (answer, pivot) pairs. The constructor throws on a match. */
 const INCOMPATIBLE_FRAME_PAIRS: ReadonlySet<`${AnswerFrame}|${PivotFrame}`> =
@@ -78,6 +87,11 @@ const INCOMPATIBLE_FRAME_PAIRS: ReadonlySet<`${AnswerFrame}|${PivotFrame}`> =
     /* Defer cannot share a turn with a commit-requiring anchor for the
      * same reason as hedge — undermines the anchor's force. */
     "defer|commit-requiring",
+    /* Neither defer nor hedge can share a turn with a terminal frame —
+     * you don't promise to "come back to you" or "check with the hiring
+     * manager" in the same breath as walking away or disengaging. */
+    "defer|terminal",
+    "hedge|terminal",
   ]);
 
 /** Map a NextAction kind to its pivot frame class. Lives here (not on
@@ -95,6 +109,18 @@ export function classifyPivotByAction(action: NextAction): PivotFrame {
     case "comparative-anchoring":
     case "calibrated-surprise-lowball":
       return "commit-requiring";
+    /* Terminal frames — the turn ends the negotiation. `close` with mode
+     * "accept" is a formal close-recap (not terminal-disengage), so it
+     * stays close-recap; walkaway / stalemate disengage are terminal.
+     * `live-walk-away` only disengages on mode "walk" (hold-firm / probe
+     * continue the negotiation, so they stay neutral). */
+    case "terminal-restate":
+    case "polite-walkaway":
+      return "terminal";
+    case "close":
+      return action.mode === "accept" ? "close-recap" : "terminal";
+    case "live-walk-away":
+      return action.mode === "walk" ? "terminal" : "neutral";
     default:
       return "neutral";
   }

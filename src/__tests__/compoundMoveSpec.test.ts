@@ -22,6 +22,8 @@ describe("CompoundMoveSpec — constructor compatibility matrix", () => {
     ["hedge", "commit-requiring"],
     ["defer", "close-recap"],
     ["defer", "commit-requiring"],
+    ["defer", "terminal"],
+    ["hedge", "terminal"],
   ] as const;
   for (const [a, p] of forbidden) {
     it(`throws on ${a} + ${p}`, () => {
@@ -36,6 +38,7 @@ describe("CompoundMoveSpec — constructor compatibility matrix", () => {
     ["neutral", "neutral"],
     ["neutral", "close-recap"],
     ["neutral", "commit-requiring"],
+    ["neutral", "terminal"],
     ["hedge", "neutral"],
     ["defer", "neutral"],
   ] as const;
@@ -91,6 +94,25 @@ describe("classifyPivotByAction — known kinds", () => {
         classifyPivotByAction({ kind } as unknown as NextAction),
       ).toBe("neutral");
     }
+  });
+
+  /* Terminal frames (2026-06-19) — a turn that ENDS the negotiation must
+   * not carry a defer lead ("Coming back to the structure —"). */
+  it("terminal-restate / polite-walkaway → terminal", () => {
+    expect(classifyPivotByAction({ kind: "terminal-restate" } as NextAction)).toBe("terminal");
+    expect(classifyPivotByAction({ kind: "polite-walkaway" } as NextAction)).toBe("terminal");
+  });
+
+  it("close → terminal for walkaway/stalemate, close-recap for accept", () => {
+    expect(classifyPivotByAction({ kind: "close", mode: "walkaway" } as NextAction)).toBe("terminal");
+    expect(classifyPivotByAction({ kind: "close", mode: "stalemate" } as NextAction)).toBe("terminal");
+    expect(classifyPivotByAction({ kind: "close", mode: "accept" } as NextAction)).toBe("close-recap");
+  });
+
+  it("live-walk-away → terminal only on mode 'walk' (hold-firm/probe continue → neutral)", () => {
+    expect(classifyPivotByAction({ kind: "live-walk-away", mode: "walk" } as NextAction)).toBe("terminal");
+    expect(classifyPivotByAction({ kind: "live-walk-away", mode: "hold-firm" } as NextAction)).toBe("neutral");
+    expect(classifyPivotByAction({ kind: "live-walk-away", mode: "probe" } as NextAction)).toBe("neutral");
   });
 });
 

@@ -948,11 +948,16 @@ function buildDeferText(
   ctx?: { sessionId: string | undefined; actionKind: string; phase: string; turnIndex: number },
 ): string {
   /* ARCH-C2c — frame-compatibility short-circuit. Mirrors CompoundMoveSpec
-   * matrix: defer + close-recap and defer + commit-requiring are both
-   * forbidden. Ship the canonical pivot alone; emit telemetry so we can
-   * see refusal rate per pivot kind. */
+   * matrix: defer + close-recap, defer + commit-requiring, and defer +
+   * terminal are all forbidden. Ship the canonical pivot alone; emit
+   * telemetry so we can see refusal rate per pivot kind. The terminal arm
+   * (2026-06-19) stops a walk-away / stalemate / polite-decline from
+   * shipping with a "Coming back to the structure —" defer lead — there
+   * is no structure to return to once the bot is disengaging. */
   if (
-    (pivotFrame === "close-recap" || pivotFrame === "commit-requiring") &&
+    (pivotFrame === "close-recap" ||
+      pivotFrame === "commit-requiring" ||
+      pivotFrame === "terminal") &&
     canonicalFollowup
   ) {
     if (ctx) {
