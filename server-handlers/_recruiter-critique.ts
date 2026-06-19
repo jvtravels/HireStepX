@@ -603,10 +603,66 @@ export function recommendWalkAway(state: NegotiationState): {
     ].join("|"),
     "i",
   );
+  /* Counter-proposal / movement engagement — Bug-D fast-follow (2026-06-19).
+   * LEVER_EXPLORE_ENGAGEMENT_RE only catches non-cash sweetener probes
+   * ("how about a joining bonus?"). It MISSES the most common engaged move of
+   * all: an in-band counter on base/fixed cash ("can we get the fixed closer
+   * to 30?", "I can come down to 34", "let's meet in the middle"). The
+   * candidate's recorded peak `target` stays pinned at their FIRST number
+   * (40) even after they signal flexibility, so the over-band walk condition
+   * (1) fired ON a constructive counter — the bot walked away mid-negotiation
+   * from someone actively converging. A candidate proposing movement is the
+   * antithesis of the intransigence condition (1) protects against, so this
+   * counts as engagement and suppresses the deadlock walk. */
+  const COUNTER_PROPOSAL_ENGAGEMENT_RE = new RegExp(
+    [
+      // proposing a component move toward / to a number
+      String.raw`(?:fixed|base|cash|ctc|number|offer|total)\b[^.!?]{0,30}(?:closer\s+to|up\s+to|to|at|around|near)\s*₹?\s*\d`,
+      String.raw`(?:closer\s+to|move\s+(?:it\s+)?(?:up\s+)?to|get\s+(?:it|the\s+\w+)\s+to|bump\s+(?:it\s+)?to|land\s+(?:it\s+)?(?:at|around))\s*₹?\s*\d`,
+      // candidate conceding downward
+      String.raw`(?:i\s+can|i.?d|i\s+could|happy\s+to|willing\s+to)\s+(?:come\s+down|move|flex|adjust|go)\s+(?:down\s+)?(?:to|toward)?\s*₹?\s*\d`,
+      String.raw`i.?m\s+(?:comfortable|okay|fine)\s+(?:at|with|around)\s*₹?\s*\d`,
+      // split-the-difference / meet-in-the-middle compromise framing
+      String.raw`meet\s+(?:me\s+)?(?:in\s+the\s+middle|halfway|at\s*₹?\s*\d)`,
+      String.raw`split\s+the\s+difference`,
+      // "can we (get|do|make|work) ... <num>" component ask
+      String.raw`can\s+we\s+(?:get|do|make|work|land|settle|land\s+on|agree\s+on)\b[^.!?]{0,30}\d`,
+    ].join("|"),
+    "i",
+  );
   const candidateIsEngaging =
     lastCandidateText.length > 0 &&
     !DISENGAGEMENT_PREFIX_RE.test(lastCandidateText) &&
-    LEVER_EXPLORE_ENGAGEMENT_RE.test(lastCandidateText);
+    (LEVER_EXPLORE_ENGAGEMENT_RE.test(lastCandidateText) ||
+      COUNTER_PROPOSAL_ENGAGEMENT_RE.test(lastCandidateText));
+
+  /* Bug-D (2026-06-19, live staging) — never walk away from a candidate who
+   * is trying to CLOSE. The engagement carve-out above only matches lever-
+   * explore probes ("how about a joining bonus?"); an outright acceptance or
+   * closing signal ("that works for me, let's go ahead and close") matches
+   * neither it nor the disengagement prefix, so a candidate who has relented
+   * below their original (now-stale) target and is accepting the standing
+   * offer still tripped the over-band / dragged-too-long walk conditions and
+   * the bot walked away ON the acceptance — the cardinal failure. A candidate
+   * closing is the literal opposite of one you disengage from, so suppress the
+   * coaching walk and let the planner's post-anchor close branches own the
+   * turn. Guarded against negated / conditional-on-an-unmet-number forms
+   * ("that won't work", "only if you hit 40") so a real decline still walks. */
+  const CLOSING_ACCEPTANCE_RE =
+    /\b(?:that\s+works(?:\s+for\s+me)?|works\s+for\s+me|sounds?\s+good|let.?s\s+(?:go\s+ahead|close|wrap(?:\s+(?:this|it)\s+up)?|do\s+(?:it|this)|finali[sz]e|proceed|move\s+forward)|ready\s+to\s+(?:move\s+forward|proceed|sign|close|join|go\s+ahead)|happy\s+to\s+(?:proceed|move\s+forward|accept|join|close)|i.?m\s+(?:in|aligned|on\s+board|good\s+with\s+(?:that|this|it))|i\s+accept|we\s+(?:have|got)\s+a\s+deal|count\s+me\s+in)\b/i;
+  const CLOSING_NEGATION_RE =
+    /\b(?:not|don.?t|doesn.?t|won.?t|can.?t|cannot|isn.?t|wouldn.?t|unless|only\s+if|as\s+long\s+as)\b/i;
+  const candidateIsClosing =
+    lastCandidateText.length > 0 &&
+    !DISENGAGEMENT_PREFIX_RE.test(lastCandidateText) &&
+    !CLOSING_NEGATION_RE.test(lastCandidateText) &&
+    CLOSING_ACCEPTANCE_RE.test(lastCandidateText);
+
+  /* Combined suppression for the negotiation-deadlock walk conditions
+   * (1)/(2)/(4). Condition (3) — stacked bad-actor risk — is intentionally
+   * NOT suppressed: a closing signal does not reduce requisition-protection
+   * risk (a renege-history candidate "accepting" is exactly the trap). */
+  const suppressDeadlockWalk = candidateIsEngaging || candidateIsClosing;
 
   /* (1) target far above ceiling with no flex (3+ stale turns). */
   if (
@@ -615,7 +671,7 @@ export function recommendWalkAway(state: NegotiationState): {
     typeof band.maxStretch === "number" &&
     target > band.maxStretch * 1.2 * walkMult &&
     turn >= 3 &&
-    !candidateIsEngaging
+    !suppressDeadlockWalk
   ) {
     return {
       walk: true,
@@ -627,7 +683,7 @@ export function recommendWalkAway(state: NegotiationState): {
   if (
     (state.finalOfferAssertedCount ?? 0) >= 3 &&
     !state.walkAwayReturned &&
-    !candidateIsEngaging
+    !suppressDeadlockWalk
   ) {
     return {
       walk: true,
@@ -661,7 +717,7 @@ export function recommendWalkAway(state: NegotiationState): {
     typeof band.maxStretch === "number" &&
     state.highestOfferMade >= band.maxStretch - 0.01 &&
     turn >= 8 &&
-    !candidateIsEngaging
+    !suppressDeadlockWalk
   ) {
     return {
       walk: true,

@@ -450,3 +450,72 @@ describe("recommendWalkAway — Wave-7 disengagement signal", () => {
     expect(r.walk).toBe(false);
   });
 });
+
+describe("recommendWalkAway — Bug-D close/engagement carve-out", () => {
+  /* The cardinal failure: a candidate who has relented and is ACCEPTING the
+   * standing offer keeps a stale over-band target on record (their first
+   * number), so the over-band walk condition fired ON the acceptance and the
+   * bot walked away from a candidate trying to close. A candidate closing —
+   * or making a constructive in-band counter — must NEVER be walked away from.
+   * These lock the suppression; a genuine over-band decline must still walk. */
+  function withLastCandidate(text: string, over: Partial<NegotiationState> = {}) {
+    return makeState({
+      ...over,
+      conversationLog: [{ speaker: "candidate", text }],
+    });
+  }
+
+  it("does NOT walk on an explicit acceptance despite a stale over-band target", () => {
+    const r = recommendWalkAway(
+      withLastCandidate("Great, that works for me. Let's go ahead and close.", {
+        candidateTarget: 40, // 33% over ceiling 30 — would otherwise walk
+        turnIndex: 5,
+      }),
+    );
+    expect(r.walk).toBe(false);
+  });
+
+  it("does NOT walk on a constructive in-band counter (movement signal)", () => {
+    const r = recommendWalkAway(
+      withLastCandidate("The fixed feels a bit low — can we get it closer to 28?", {
+        candidateTarget: 40,
+        turnIndex: 5,
+      }),
+    );
+    expect(r.walk).toBe(false);
+  });
+
+  it("does NOT walk when the candidate offers to come down to a number", () => {
+    const r = recommendWalkAway(
+      withLastCandidate("I can come down to 32 if the fixed is solid.", {
+        candidateTarget: 40,
+        turnIndex: 5,
+      }),
+    );
+    expect(r.walk).toBe(false);
+  });
+
+  it("STILL walks on a genuine over-band decline (no engagement, no close)", () => {
+    const r = recommendWalkAway(
+      withLastCandidate("40 is my floor and I'm not moving off it.", {
+        candidateTarget: 40,
+        turnIndex: 5,
+      }),
+    );
+    expect(r.walk).toBe(true);
+    expect(r.reason).toMatch(/above band ceiling/);
+  });
+
+  it("STILL walks on a negated/conditional 'that works' that is not a real close", () => {
+    /* "that won't work unless you hit 40" contains the acceptance token
+     * "work" but is a conditional decline — the negation guard must keep it
+     * walking, not mistake it for a close. */
+    const r = recommendWalkAway(
+      withLastCandidate("That won't work for me unless you can hit 40.", {
+        candidateTarget: 40,
+        turnIndex: 5,
+      }),
+    );
+    expect(r.walk).toBe(true);
+  });
+});

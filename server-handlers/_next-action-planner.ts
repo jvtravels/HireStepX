@@ -798,6 +798,128 @@ type PlannedAction = NextAction & { _move: AiMove };
  *  means planNextAction sees the already-advanced phase and emits the
  *  natural next-group action through the existing cascade — no override
  *  needed at this layer. */
+/* Bug-D (2026-06-19, live staging) — recruiter-anchors-once-discovery-
+ * sufficient, extracted from the AUDIT-3 Fix A inline bridge (~L3500) so the
+ * SAME decision can run at two priority points inside planNextActionInternal:
+ *   (1) HOISTED above the reactive-followup / warm-ack / callback-prior-
+ *       context / live-walk-away branches — those all sit above the original
+ *       L3226 anchor gate and kept winning the turn once current CTC + target
+ *       were known, so the planner re-probed forever, NEVER put a number on
+ *       the table, and a later candidate acceptance with no standing offer
+ *       routed to live-walk-away. A real Indian recruiter, once current+target
+ *       are known and nothing is on the table, STATES THE BAND.
+ *   (2) the original post-discovery fall-through (kept as a belt-and-braces
+ *       second call site).
+ * Returns an anchor-with-offer action when the candidate has disclosed current
+ * CTC + target, discovery is sufficient, and no offer has been made yet; null
+ * otherwise. The equity-clarity and credibility probes remain HIGHER priority
+ * than call site (1) — they are legitimate one-shot pre-anchor clarifications. */
+function planDiscoverySufficientAnchor(
+  state: NegotiationState,
+): PlannedAction | null {
+  if (
+    !(
+      state.highestOfferMade === 0 &&
+      state.candidateCurrentCtc != null &&
+      (state.candidateTarget != null || state.candidateTargetFixed != null) &&
+      state.discoveryChecklist != null &&
+      isDiscoverySufficientToAnchor(
+        state.discoveryChecklist,
+        classifyRoleFamily(state.role),
+      ) &&
+      readAskedTopics(state).every(
+        (t) =>
+          t.topic !== "band-anchor-with-rationale" &&
+          (t.topic as string) !== "anchor-with-offer",
+      )
+    )
+  ) {
+    return null;
+  }
+  /* Rhythm gate: a real recruiter acknowledges a FRESH comp disclosure before
+   * stating the band — they don't slap a number down in the same breath the
+   * candidate names their expectation. So when the candidate disclosed a comp
+   * fact THIS very turn (current CTC, target, or split), defer to the natural
+   * reactive acknowledgment and let the anchor fire on the NEXT turn. This
+   * preserves the "react at T(n), anchor at T(n+1)" cadence the happy-path arc
+   * locks, while still breaking Bug D's failure mode — where, turn after turn
+   * with nothing new disclosed, reactive-followups kept winning and the anchor
+   * never got a turn. lastTurnDelta is the precise per-turn signal (it flags
+   * only values that CHANGED this turn — a restatement does not count). */
+  const disclosedCompThisTurn =
+    state.lastTurnDelta?.disclosedCurrentCtc === true ||
+    state.lastTurnDelta?.disclosedExpectedCtc === true ||
+    state.lastTurnDelta?.disclosedFixedVariableSplit === true;
+  if (disclosedCompThisTurn) {
+    return null;
+  }
+  const lo = state.band.initialOffer;
+  const hi = state.band.maxStretch;
+  const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+  /* AUDIT-W02 BUG-001 — when the band ceiling sits below the candidate's
+   * disclosed CTC, stating the band as a range would advertise a pay cut;
+   * honest-defer with a point anchor flagged bandIncomplete instead. */
+  if (anchored === null) {
+    return {
+      kind: "anchor-with-offer",
+      initialOffer: lo,
+      bandIncomplete: true,
+      satisfiesTopic: "band-anchor-with-rationale",
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale: `AUDIT-W02 BUG-001 — band ceiling (${hi}) below disclosed CTC (${state.candidateCurrentCtc}); honest-defer rather than pay-cut anchor.`,
+        askedTopic: "band-anchor-with-rationale",
+        actionKind: "anchor-with-offer",
+      },
+    } as PlannedAction;
+  }
+  /* Pay-cut-range guard (the second half of Bug D). When the candidate already
+   * earns at/above the band FLOOR, narrating the band as a range (₹lo–₹hi)
+   * would advertise pay-cut numbers (everything from lo up to their current
+   * CTC). Worse, a range move carries newTotalLpa:null, so highestOfferMade
+   * stays 0 and the deal can never actually CLOSE — the candidate's eventual
+   * acceptance, finding no standing offer, routes to live-walk-away. Emit a
+   * concrete POINT anchor at the clamped value instead: it sits above their
+   * current pay (clampAnchorAboveDisclosed lifts to currentCtc×(1+hike),
+   * capped at the ceiling) AND sets highestOfferMade, so the negotiation has a
+   * real number to converge on. */
+  if (state.candidateCurrentCtc != null && state.candidateCurrentCtc >= lo) {
+    return {
+      kind: "anchor-with-offer",
+      initialOffer: anchored,
+      bandIncomplete: false,
+      satisfiesTopic: "band-anchor-with-rationale",
+      _move: {
+        lever: "probe",
+        newTotalLpa: anchored,
+        rationale:
+          `Bug-D discovery-sufficient point-anchor: candidate's current ₹${state.candidateCurrentCtc}L is at/above the band floor ₹${lo}L, so a range would advertise a pay cut and leave no standing offer; ` +
+          `anchor a concrete ₹${anchored}L (lifted above current pay, capped at ceiling ₹${hi}L) the candidate can actually close on.`,
+        askedTopic: "band-anchor-with-rationale",
+        actionKind: "anchor-with-offer",
+      },
+    } as PlannedAction;
+  }
+  /* Clean case — the band floor sits above the candidate's current pay; STATE
+   * THE BAND as a range (mirrors the probe-expectations bridge below) so the
+   * candidate has a reference range to react to and there's room to bargain
+   * up. The candidate's counter drives the concrete offer downstream. */
+  return {
+    kind: "band-anchor-with-rationale",
+    satisfiesTopic: "band-anchor-with-rationale",
+    _move: {
+      lever: "benefits-summary",
+      newTotalLpa: null,
+      rationale:
+        `Bug-D discovery-sufficient anchor: candidate disclosed current ₹${state.candidateCurrentCtc}L + target ₹${state.candidateTarget ?? state.candidateTargetFixed}L${state.candidateTarget == null ? " (fixed)" : ""} and one acknowledgment has fired; ` +
+        `no offer on the table — state the band (₹${lo}L–₹${hi}L) so the candidate has a reference range to react to.`,
+      actionKind: "band-anchor-with-rationale",
+      askedTopic: "band-anchor-with-rationale",
+    },
+  } as PlannedAction;
+}
+
 export function planNextAction(state: NegotiationState): NextAction {
   return planNextActionInternal(state);
 }
@@ -2543,6 +2665,19 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     }
   }
 
+  /* Bug-D (2026-06-19) — recruiter-anchors-once-discovery-sufficient, call
+   * site (1). Hoisted ABOVE planReactiveFollowup / warm-ack / callback-prior-
+   * context / live-walk-away: once current CTC + target are known and no offer
+   * is on the table, STATE THE BAND rather than fire another reactive probe.
+   * Without this the planner re-probed every turn, never anchored, and a later
+   * acceptance with no standing offer routed to live-walk-away (cardinal
+   * failure). Stays BELOW the equity-clarity and credibility probes above —
+   * those are legitimate one-shot pre-anchor clarifications. */
+  if (!isTerminalPhase(state.phase)) {
+    const earlyAnchor = planDiscoverySufficientAnchor(state);
+    if (earlyAnchor) return earlyAnchor;
+  }
+
   if (!isTerminalPhase(state.phase)) {
     const reactive = planReactiveFollowup(state);
     if (reactive) return reactive;
@@ -3223,6 +3358,11 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     state.discoveryChecklist != null &&
     (state.discoveryChecklist.currentCtcAnswered !== true ||
       state.discoveryChecklist.targetAnswered !== true);
+  /* Bug-D (2026-06-19) — the discovery-sufficient + no-offer anchor is now
+   * forced earlier, at call site (1) of planDiscoverySufficientAnchor (above
+   * the reactive-followup / callback / walk-away branches), so this gate keeps
+   * its original shape. The inline AUDIT-3 bridge below remains as call site
+   * (2) for the phase==="opening" turn-1 both-volunteered path. */
   if (
     state.phase === "opening" ||
     ((state.phase === "range-disclosure" ||
