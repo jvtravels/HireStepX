@@ -116,9 +116,7 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
     }}>
       <div className="iv-info-bar-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 24px", flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: ef.serif, fontSize: 15, fontWeight: 400, color: e.coal, letterSpacing: "0.02em" }}>
-            HireStepX
-          </span>
+          <img src="/wordmark.png" alt="HireStepX" style={{ height: 20, width: "auto", flexShrink: 0 }} />
           <div style={{ width: 1, height: 16, background: "rgba(20,17,10,0.05)" }} />
           {displayCompany && (
             <>

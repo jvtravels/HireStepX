@@ -560,27 +560,11 @@ export function PasswordChecklist({ checks }: PasswordChecklistProps) {
 
 export function Wordmark() {
   return (
-    <div
+    <img
+      src="/wordmark.png"
+      alt="HireStepX"
       className="hsx-wordmark hsx-login-wordmark"
-      style={{
-        display: "flex",
-        alignItems: "baseline",
-        gap: 0,
-        fontFamily: f.serif,
-        fontSize: 22,
-        fontWeight: 600,
-        color: t.coal,
-        letterSpacing: -0.4,
-        cursor: "default",
-      }}
-    >
-      <span>HireStep</span>
-      <span
-        className="hsx-wordmark-x"
-        style={{ fontStyle: "italic", color: t.copper }}
-      >
-        X
-      </span>
-    </div>
+      style={{ height: 32, width: "auto", display: "block" }}
+    />
   );
 }

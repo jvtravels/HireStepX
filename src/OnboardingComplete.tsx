@@ -82,7 +82,7 @@ export default function OnboardingComplete() {
     <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column" }}>
       {/* Top bar */}
       <div style={{ padding: "20px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${c.border}` }}>
-        <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, letterSpacing: "0.06em" }}>HireStepX</span>
+        <img src="/wordmark.png" alt="HireStepX" style={{ height: 22, width: "auto" }} />
       </div>
 
       <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "48px 24px", overflowY: "auto" }}>

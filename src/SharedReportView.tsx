@@ -87,13 +87,7 @@ export default function SharedReportView({ token }: { token: string }) {
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
         {/* Branding header */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: font.display, fontSize: 16, color: c.obsidian, fontWeight: 700,
-          }}>H</div>
-          <span style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, letterSpacing: "-0.01em" }}>HireStepX</span>
+          <img src="/wordmark.png" alt="HireStepX" style={{ height: 22, width: "auto" }} />
           <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginLeft: "auto" }}>Shared Interview Report</span>
         </div>
 

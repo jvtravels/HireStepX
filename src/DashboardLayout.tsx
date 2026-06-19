@@ -206,7 +206,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           zIndex: 18,
         }}>
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
-            <span style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, color: c.ivory, letterSpacing: "-0.01em", lineHeight: 1 }}>HireStepX</span>
+            <img src="/wordmark.png" alt="HireStepX" style={{ height: 24, width: "auto" }} />
           </Link>
           <button
             onClick={() => setSidebarOpen(true)}
@@ -267,10 +267,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               onClick={() => setSidebarOpen(false)}
               style={{ textDecoration: "none", display: "flex", alignItems: "center" }}
             >
-              <span style={{
-                fontFamily: font.display, fontSize: 20, fontWeight: 400,
-                color: c.ivory, letterSpacing: "-0.01em", lineHeight: 1,
-              }}>HireStepX</span>
+              <img src="/wordmark.png" alt="HireStepX" style={{ height: 24, width: "auto" }} />
             </Link>
           </div>
         )}
