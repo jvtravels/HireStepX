@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#FAF7F0"/>
-  <rect x="1" y="1" width="30" height="30" rx="5" fill="#FAF7F0" stroke="#D6CDB5" stroke-width="0.75"/>
-  <text x="16" y="23" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="20" font-weight="400" fill="#312E81">H</text>
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="1080" height="1080" fill="#FAF7F0"/>
+<path d="M214.396 229L349.67 229L544.568 454.795L730.945 229L866.218 229L610.602 540L866.218 851H727.76L540.307 623.075L353.844 851H214.396L472.143 540L214.396 229Z" fill="#B45309"/>
+<path d="M553.422 453.873L617.882 532.687L625.821 542.394L617.62 551.88L553.159 626.435L541.78 639.596L530.516 626.337L467.169 551.783L459.189 542.391L466.91 532.786L530.257 453.972L541.778 439.638L553.422 453.873Z" fill="#B45309" stroke="#FAF7F0" stroke-width="29.8219"/>
 </svg>
