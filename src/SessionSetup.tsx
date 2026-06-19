@@ -254,6 +254,19 @@ const focusToType: Record<string, string> = {
   "Government / PSU": "government-psu",
 };
 
+/* MVP launch (2026-06): these focuses are shown in the picker but render as
+   "Coming soon" — visible so users see the roadmap and get interested, but
+   not yet selectable. The other five (Behavioral, Case Study, Campus
+   Placement, HR Round, Salary Negotiation) are live. To ship one of these,
+   remove it from this set — no other change needed. */
+const COMING_SOON_FOCUSES = new Set<InterviewFocus>([
+  "Strategic",
+  "Technical Leadership",
+  "Management",
+  "Panel Interview",
+  "Government / PSU",
+]);
+
 function getRecommendedFocus(role?: string): string {
   if (!role) return "Behavioral";
   const r = role.toLowerCase();
@@ -745,11 +758,20 @@ export default function SessionSetup() {
   useEffect(() => {
     if (!relevantFocusSet) return;
     const current = interviewFocus[0];
-    if (current && relevantFocusSet.has(current as InterviewFocus)) return;
+    // A "Coming soon" focus is never a valid selection — fall through and
+    // pick a live one even if it's in the relevant set (handles persisted
+    // drafts that point at a focus we've since locked behind the MVP gate).
+    if (
+      current &&
+      !COMING_SOON_FOCUSES.has(current as InterviewFocus) &&
+      relevantFocusSet.has(current as InterviewFocus)
+    ) return;
     const recommended = getRecommendedFocus(targetRole);
-    const fallback = relevantFocusSet.has(recommended as InterviewFocus)
-      ? recommended
-      : roleProfile.focuses[0] || "Behavioral";
+    const fallback =
+      !COMING_SOON_FOCUSES.has(recommended as InterviewFocus) &&
+      relevantFocusSet.has(recommended as InterviewFocus)
+        ? recommended
+        : roleProfile.focuses.find((f) => !COMING_SOON_FOCUSES.has(f)) || "Behavioral";
     setInterviewFocus([fallback]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relevantFocusSet]);
@@ -1648,8 +1670,8 @@ export default function SessionSetup() {
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       {relevantFocusSet
-                        ? `Showing the focuses real interviews for "${targetRole.trim()}" actually use.${recommendedFocus && recommendedFocus !== "Behavioral" && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
-                        : recommendedFocus && recommendedFocus !== "Behavioral"
+                        ? `Showing the focuses real interviews for "${targetRole.trim()}" actually use.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
+                        : recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus)
                           ? "Choose one area to focus on. The recommended pick for your role is highlighted."
                           : "Choose one area to focus on."}
                     </div>
@@ -1708,35 +1730,55 @@ export default function SessionSetup() {
                         ? allOpts.filter((o) => relevantFocusSet.has(o.value as InterviewFocus))
                         : allOpts;
                       return filtered.map(opt => {
-                        const sel = interviewFocus[0] === opt.value;
-                        const isRecommended = opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
+                        /* MVP gate: "Coming soon" focuses stay visible (so
+                           users see the roadmap) but aren't selectable. They
+                           drop role=radio so the roving-tabindex arrow nav
+                           skips them, and `disabled` blocks clicks. */
+                        const comingSoon = COMING_SOON_FOCUSES.has(opt.value as InterviewFocus);
+                        const sel = !comingSoon && interviewFocus[0] === opt.value;
+                        const isRecommended = !comingSoon && opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
                         return (
-                          <button key={opt.value} className="ob-focus-card" onClick={() => setInterviewFocus([opt.value])}
+                          <button key={opt.value} className="ob-focus-card"
+                            onClick={comingSoon ? undefined : () => setInterviewFocus([opt.value])}
                             type="button"
-                            role="radio"
-                            aria-checked={sel}
+                            disabled={comingSoon}
+                            {...(comingSoon
+                              ? { "aria-disabled": true as const }
+                              : { role: "radio", "aria-checked": sel })}
                             /* Roving tabindex: only the selected (or first
                                if none selected) chip is in the tab order;
-                               arrow keys move between siblings. */
-                            tabIndex={sel ? 0 : -1}
+                               arrow keys move between siblings. Coming-soon
+                               cards are never in the tab order. */
+                            tabIndex={comingSoon ? -1 : sel ? 0 : -1}
+                            title={comingSoon ? "Coming soon — not available yet" : undefined}
                             style={{
-                              padding: 14, borderRadius: 12, cursor: "pointer", transition: "all 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
-                              background: sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
-                              border: `1px solid ${sel ? T.indigo : T.line}`,
-                              boxShadow: sel ? `0 0 0 3px ${T.indigoRing}` : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+                              padding: 14, borderRadius: 12, cursor: comingSoon ? "not-allowed" : "pointer", transition: "all 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
+                              background: comingSoon ? T.cream : sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
+                              border: `1px ${comingSoon ? "dashed" : "solid"} ${sel ? T.indigo : T.line}`,
+                              boxShadow: comingSoon ? "none" : sel ? `0 0 0 3px ${T.indigoRing}` : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+                              opacity: comingSoon ? 0.65 : 1,
                               display: "flex", alignItems: "center", gap: 10, color: T.coal,
                               position: "relative", fontFamily: F.sans,
                             }}>
                             {isRecommended && (
                               <span className="hsx-recommend-badge" style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 10, fontWeight: 600, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
                             )}
-                            <span style={{ width: 32, height: 32, borderRadius: 6, background: T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            {comingSoon && (
+                              <span style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 10, fontWeight: 600, color: T.inkSoft, background: T.white, border: `1px solid ${T.line}`, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Coming soon</span>
+                            )}
+                            <span style={{ width: 32, height: 32, borderRadius: 6, background: comingSoon ? T.line : T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               {opt.icon}
                             </span>
                             <span style={{ fontSize: 13, fontWeight: 500, color: T.coal, flex: 1, lineHeight: 1.2 }}>{opt.value}</span>
-                            <span aria-hidden style={{ width: 18, height: 18, borderRadius: 999, border: `1.5px solid ${sel ? T.indigo : T.line}`, background: sel ? T.indigo : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-                            </span>
+                            {comingSoon ? (
+                              <span aria-hidden style={{ width: 18, height: 18, color: T.inkSoft, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                              </span>
+                            ) : (
+                              <span aria-hidden style={{ width: 18, height: 18, borderRadius: 999, border: `1.5px solid ${sel ? T.indigo : T.line}`, background: sel ? T.indigo : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                              </span>
+                            )}
                           </button>
                         );
                       });
