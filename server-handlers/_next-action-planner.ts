@@ -968,6 +968,33 @@ export function planNextAction(state: NegotiationState): NextAction {
   return planNextActionInternal(state);
 }
 
+/** #93 (2026-06-19, live-staging) — the close number to honor when a
+ *  candidate accepts/signals-close AT a concrete figure just above the
+ *  standing offer ("36 and I'll sign today"). Sources, in order of
+ *  authority: a TOTAL-scoped bound counter, the last bound counter, then
+ *  the sticky candidate target (the acceptance/close gates that consult
+ *  this only fire when the candidate is closing, so the target is the
+ *  number they're signing at, not an aspirational ask). Honored only
+ *  when it sits ABOVE the offer, AT/UNDER the band ceiling, and within a
+ *  trivial gap (the larger of ₹2L or 6% of the offer) — otherwise the
+ *  standing offer stands. Returning a number ABOVE the offer is always
+ *  safe: clampToCloseFloor raises, never lowers. */
+export function nearOfferCloseNumber(state: NegotiationState): number {
+  const offer = state.highestOfferMade;
+  if (!(offer > 0)) return offer;
+  const cnum =
+    totalScopedCounter(state) ??
+    state.lastCandidateCounterLpa ??
+    state.candidateTarget ??
+    null;
+  if (cnum == null) return offer;
+  const gap = Math.max(2, offer * 0.06);
+  if (cnum > offer && cnum <= state.band.maxStretch && cnum - offer <= gap) {
+    return cnum;
+  }
+  return offer;
+}
+
 /** Recover the AiMove the planner constructed alongside the action. The
  *  move is cached on the planned action; this fn is the inverse of the
  *  planner's construction step. */
@@ -2593,14 +2620,26 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       state.highestOfferMade > 0
     ) {
       const jb = state.lastJoiningBonusOffered;
+      /* #93 (2026-06-19, live-staging) — honor the candidate's near-offer
+       * number on close. A candidate who signals close-readiness AT a
+       * concrete number just above the standing offer ("36 and I'll sign
+       * today") must be closed at THAT number when it's a trivial,
+       * in-band gap — not short-changed back down to the standing offer.
+       * Closing below the number the candidate offered to sign at is the
+       * forbidden under-close (reads as bait-and-switch). Same gap math as
+       * the #94 conditional-close gate: the larger of ₹2L or 6% of offer,
+       * capped at the band ceiling. Outside that window we close at the
+       * standing offer as before (clampToCloseFloor only raises, never
+       * lowers, so a stray low counter can't drag the close down). */
+      const closeAt = nearOfferCloseNumber(state);
       return {
         kind: "close",
         mode: "accept",
         _move: {
           lever: "close-acceptance",
-          newTotalLpa: clampToCloseFloor(state, state.highestOfferMade),
+          newTotalLpa: clampToCloseFloor(state, closeAt),
           joiningBonusAmount: jb != null ? jb : undefined,
-          rationale: `Candidate signaled close readiness (trial-close detected on prior turn); emit close-confirmation.`,
+          rationale: `Candidate signaled close readiness (trial-close detected on prior turn); close at ₹${closeAt}L (offer ₹${state.highestOfferMade}L).`,
           askedTopic: "close-confirmation",
         },
       };
@@ -2963,14 +3002,17 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       !(state.reactiveFollowupsFired ?? []).includes("close-confirmation")
     ) {
       const jb = state.lastJoiningBonusOffered;
+      /* #93 — honor a near-offer accepted number (e.g. "36 and I'll sign
+       * today") rather than short-changing back to the standing offer. */
+      const closeAt = nearOfferCloseNumber(state);
       return {
         kind: "close",
         mode: "accept",
         _move: {
           lever: "close-acceptance",
-          newTotalLpa: clampToCloseFloor(state, state.highestOfferMade),
+          newTotalLpa: clampToCloseFloor(state, closeAt),
           joiningBonusAmount: jb != null ? jb : undefined,
-          rationale: `Post-anchor acceptance: candidate verbally accepted at turn ${state.verbalAcceptanceTurn}; close at ₹${state.highestOfferMade}L (floor=highestOfferMade).`,
+          rationale: `Post-anchor acceptance: candidate verbally accepted at turn ${state.verbalAcceptanceTurn}; close at ₹${closeAt}L (offer ₹${state.highestOfferMade}L).`,
           askedTopic: "close-confirmation",
         },
       };
