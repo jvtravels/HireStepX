@@ -170,6 +170,20 @@ describe("PDF#48 — response contract", () => {
       expect(detectTerminalIntent("can you provide 32 LPA for this offer?")).toBeNull();
     });
 
+    it("does not misread the push-challenge 'that's all you've got?' as end-interview (live-staging 2026-06-19)", () => {
+      /* "that's all you've got / you have / you can do" is a salary push
+       * daring the recruiter to do better — NOT a request to wrap. The bot
+       * used to ship the graceful-close defer and walk mid-negotiation. */
+      expect(detectTerminalIntent("Is that it? That's all you've got?")).toBeNull();
+      expect(detectTerminalIntent("That's all you've got?")).toBeNull();
+      expect(detectTerminalIntent("that's all you have?")).toBeNull();
+      expect(detectTerminalIntent("that's all you can do?")).toBeNull();
+      // Genuine wrap forms still route to end-interview.
+      expect(detectTerminalIntent("That's all, thanks.")).toBe("end-interview");
+      expect(detectTerminalIntent("that's all from me")).toBe("end-interview");
+      expect(detectTerminalIntent("that's enough for today")).toBe("end-interview");
+    });
+
     it("does not misread a deal-CLOSE (acceptance) as end-interview (live-staging 2026-06-19)", () => {
       /* "close" is overloaded: "close the deal"/"close it" = ACCEPT, only
        * "close this call/interview" = end the conversation. The bot used to

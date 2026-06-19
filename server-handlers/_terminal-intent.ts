@@ -93,7 +93,14 @@ const END_INTERVIEW_PATTERNS: RegExp[] = [
   /\b(?:can\s+(?:we|you)|let'?s|please)\s+close\s+(?:this|the)\s+(?:interview|conversation|call|session|chat|negotiation)\b/i,
   /\bi\s+(?:want\s+to\s+|need\s+to\s+|have\s+to\s+|gotta\s+)?(?:end|stop|leave|go|exit)\s+(?:this|the|now)\b/i,
   /\b(?:end|stop|exit)\s+(?:the\s+|this\s+)?(?:interview|conversation|session|chat)\b/i,
-  /\b(?:that'?s\s+(?:all|enough)|we'?re\s+done\s+here|i'?m\s+done)\b/i,
+  /* "that's all" / "that's enough" reads as ending ONLY when it is not the
+   * push-challenge form "that's all you've got / you have / you can do" — a
+   * salary push daring the recruiter to do better, NOT a request to wrap
+   * (live-staging 2026-06-19: candidate said "Is that it? That's all you've
+   * got?" mid-negotiation and the bot shipped the graceful-close defer and
+   * walked instead of holding firm). The negative lookahead keeps the
+   * genuine wrap forms ("that's all, thanks", "that's all from me"). */
+  /\b(?:that'?s\s+(?:all|enough)(?!\s+you\b)|we'?re\s+done\s+here|i'?m\s+done)\b/i,
 ];
 
 export function detectTerminalIntent(candidateText: string): TerminalIntent {
