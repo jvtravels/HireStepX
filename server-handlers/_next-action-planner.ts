@@ -4490,7 +4490,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       state.candidateCurrentCtc == null && state.impliedPriorCtcFromResume != null
         ? state.impliedPriorCtcFromResume
         : 0;
-    const floor = Math.max(state.highestOfferMade, effectiveAnchorLpa(state), priorCtcFloor);
+    const baseFloor = Math.max(state.highestOfferMade, effectiveAnchorLpa(state), priorCtcFloor);
     let ceiling = state.band.maxStretch;
     /* Hike-cap ceiling: prefer stated currentCtc, but when withheld and a
      * resume-implied prior CTC exists, use that as the basis. Same hard
@@ -4518,7 +4518,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
          * anchor. When capped < floor we leave the ceiling at
          * band.maxStretch (the company's real decision envelope); the cap
          * only narrows the ceiling when it lands above the standing offer. */
-        if (capped < ceiling && capped >= floor) ceiling = capped;
+        if (capped < ceiling && capped >= baseFloor) ceiling = capped;
         // F7 (2026-05-15) — clamp hike-cap to band.maxStretch * 1.10.
         // Company hike cap may exceed band.maxStretch by up to 10% —
         // company-specific reality overrides generic band, but not
@@ -4527,10 +4527,47 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         // the ceiling far above any reasonable band, defeating the
         // structural walk-away protections.
         const hardCap = state.band.maxStretch * 1.10;
-        if (ceiling > hardCap) ceiling = Math.max(hardCap, floor);
+        if (ceiling > hardCap) ceiling = Math.max(hardCap, baseFloor);
       }
     }
     const aspiration = Math.min(target, ceiling);
+    /* Competing-aware counter floor (#92, 2026-06-19, live-staging).
+     * A credible, in-band competing offer ABOVE our standing offer is
+     * leverage we can and should answer — a real recruiter who can match
+     * within band does so rather than parroting a generic split-toward-
+     * target that lands below the candidate's stated competing number.
+     * Before this, the competing offer touched the counter math only via
+     * `competingCredibility → counterOfferRisk`, which *shrinks* the
+     * concession (retention-risk logic) — exactly backwards for leverage.
+     *
+     * Gate tightly to avoid regressing the proof-discipline paths:
+     *   - NAMED (company present) or letter-in-hand — a bare vague "I have
+     *     another offer" without a recognised company is left to the
+     *     existing fake-leverage-challenge / vague-credibility probe.
+     *   - strictly ABOVE baseFloor (real leverage over our offer),
+     *   - within ceiling (out-of-band/inflated numbers are handled by the
+     *     hold / inflated-number prose guard, never auto-matched here), and
+     *   - strictly BELOW the candidate's own aspiration — we never counter
+     *     at/above what they're asking, and this keeps a real concession
+     *     gap so the split math ships a move instead of collapsing to
+     *     no-headroom/lever-explore (a competing number that exceeds the
+     *     candidate's stated target is contradictory input; leave it to the
+     *     normal curve).
+     * When it fires, the counter floor rises to the competing number so
+     * newTotal lands at-or-above it (a genuine match), still under ceiling. */
+    const competingFloor = (() => {
+      const co = state.competingOffer;
+      if (co == null) return 0;
+      const named =
+        state.competingOfferDetail?.company != null ||
+        state.competingOfferDetail?.letterShareOffered === true;
+      if (!named) return 0;
+      if (co <= baseFloor) return 0;
+      if (co > ceiling) return 0;
+      if (co >= aspiration) return 0;
+      return co;
+    })();
+    const floor = Math.max(baseFloor, competingFloor);
 
     if (aspiration <= floor + 0.1) {
       return wrapLeverExplore(pickLeverExploreMove(state), "no-headroom");
@@ -4737,7 +4774,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       _move: {
         lever: "counter-base",
         newTotalLpa: newTotal,
-        rationale: `Split toward target (stiffening ${splitSchedule[counterCount] ?? 0.05}, effective ${split.toFixed(2)}, boost ${boost.toFixed(2)}, market ${state.marketMode}${state.walkAwayReturned ? ", returned" : ""}): floor ₹${floor} → ₹${newTotal} (target ₹${target}, ceiling ₹${ceiling}${priorCtcFloor > 0 ? `, priorCtcFloor ₹${priorCtcFloor}` : ""}).`,
+        rationale: `Split toward target (stiffening ${splitSchedule[counterCount] ?? 0.05}, effective ${split.toFixed(2)}, boost ${boost.toFixed(2)}, market ${state.marketMode}${state.walkAwayReturned ? ", returned" : ""}): floor ₹${floor} → ₹${newTotal} (target ₹${target}, ceiling ₹${ceiling}${priorCtcFloor > 0 ? `, priorCtcFloor ₹${priorCtcFloor}` : ""}${competingFloor > 0 ? `, competing-match floor ₹${competingFloor}` : ""}).`,
       },
     };
   }

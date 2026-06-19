@@ -24,7 +24,7 @@ import {
   type NegotiationBand,
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
-import { planNextAction } from "../../server-handlers/_next-action-planner";
+import { planNextAction, actionToLever } from "../../server-handlers/_next-action-planner";
 
 const band: NegotiationBand = { initialOffer: 35, maxStretch: 40, walkAway: 30, hasEquity: false };
 
@@ -59,8 +59,9 @@ describe("#94 — near-offer conditional close-engagement", () => {
     s = applyCandidateAnswer(s, "if you can do 36 with a 3 lakh joining bonus, that works for me");
     const action = planNextAction(s);
     expect(action.kind === "close" || action.kind === "auto-accept").toBe(true);
-    expect(action._move.lever).toBe("close-acceptance");
-    expect(action._move.newTotalLpa).toBe(36);
+    const move = actionToLever(action, s);
+    expect(move.lever).toBe("close-acceptance");
+    expect(move.newTotalLpa).toBe(36);
   });
 
   it("a non-cash conditional ('once you confirm the band, that's acceptable') closes at the standing offer", () => {
@@ -69,7 +70,7 @@ describe("#94 — near-offer conditional close-engagement", () => {
     expect(s.decisionDeadline.conditionalAcceptance).toBe(true);
     const action = planNextAction(s);
     expect(action.kind === "close" || action.kind === "auto-accept").toBe(true);
-    expect(action._move.newTotalLpa).toBe(35);
+    expect(actionToLever(action, s).newTotalLpa).toBe(35);
   });
 
   it("does NOT fire when the conditional number is far above the offer (live negotiation continues)", () => {
@@ -79,7 +80,7 @@ describe("#94 — near-offer conditional close-engagement", () => {
     const action = planNextAction(s);
     // Must NOT close at 48 (above ceiling) — falls through to normal handling.
     if (action.kind === "close" || action.kind === "auto-accept") {
-      expect(action._move.newTotalLpa).not.toBe(48);
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(48);
     }
   });
 });

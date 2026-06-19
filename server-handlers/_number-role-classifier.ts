@@ -321,6 +321,18 @@ const COMPETING_CUES: CueTable = {
     /\breceived\s+(?:an?\s+)?offer\b/i,
     /\bgot\s+an?\s+offer(?:\s+(?:of|at))?\b/i,
     /\bmultiple\s+offers?\b/i,
+    /* Rival-company-named competing offer (live-staging 2026-06-19, #92).
+     * Candidates routinely cite a competitor by name with the company
+     * BETWEEN "offer" and the amount — "I have an offer from Zomato at 38",
+     * "got a Swiggy offer at 40 LPA". The `\boffer\s+(?:of|at)\b` cue above
+     * needs them adjacent, so the rival amount bound to NO role and the bot
+     * could not acknowledge or match it — the "competing offer ignored"
+     * defect. Allow up to a short company name between "offer from" and the
+     * amount; the negative lookahead keeps it from matching OUR offer
+     * ("the offer from you at 35"). Plus a bare "have an/another offer"
+     * presence cue for phrasings with no "from". */
+    /\boffer\s+from\s+(?!you\b|us\b|your\b|me\b|the\s+company\b|here\b)\w+(?:\s+\w+){0,3}\s+(?:of|at)\b/i,
+    /\b(?:have|hold)\s+(?:an?|another|other)\s+offers?\b/i,
   ],
   right: [],
 };
