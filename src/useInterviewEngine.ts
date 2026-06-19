@@ -1190,6 +1190,7 @@ export function useInterviewEngine() {
   const lastAnswerQualityRef = useRef<"strong" | "decent" | "weak" | "short">("decent");
   const lastAnswerTextRef = useRef("");
   const introStartedRef = useRef<string | false>(false);
+  const introAnalyticsFiredRef = useRef(false);
   const lastEffectStepRef = useRef(-1);
 
   useEffect(() => {
@@ -1337,7 +1338,28 @@ export function useInterviewEngine() {
 
     // Guard: if step is already playing and only the script length changed (not currentStep),
     // don't restart. This prevents follow-up insertions from interrupting active TTS or recording.
-    if (currentStep === 0 && introStartedRef.current && step.aiText === introStartedRef.current) {
+    //
+    // The phase check is load-bearing (2026-06-19 hang fix). Without it, this
+    // guard fires on ANY re-run where step.aiText matches introStartedRef —
+    // including a re-run that lands in the *gap* between scheduling the
+    // thinking→speaking timer and that timer actually firing. The sequence that
+    // hung prod-shaped sessions: (1) the personalized-intro effect (~line 770)
+    // swaps step[0].aiText to the warm intro and a run schedules the speak
+    // timer + sets introStartedRef to that text; (2) one more re-render runs
+    // that run's cleanup — which clears the in-flight thinkTimer AND the 12s
+    // thinking-safety timer — then re-invokes this effect; (3) the re-run sees
+    // step.aiText === introStartedRef and early-returned here WITHOUT
+    // rescheduling, leaving the engine parked in phase="thinking" forever
+    // (observed: flowGenerationRef frozen, 0 exchanges, no logs, captions stuck
+    // on "thinking…"). Mirroring the currentStep>0 guard below — only skip when
+    // the intro is genuinely in flight (speaking/listening) — lets a re-run
+    // during "thinking" fall through and reschedule the speak path.
+    if (
+      currentStep === 0
+      && introStartedRef.current
+      && step.aiText === introStartedRef.current
+      && (phase === "speaking" || phase === "listening")
+    ) {
       return;
     }
     if (currentStep > 0 && currentStep === lastEffectStepRef.current && (phase === "speaking" || phase === "listening")) {
@@ -1348,6 +1370,13 @@ export function useInterviewEngine() {
 
     if (currentStep === 0) {
       introStartedRef.current = step.aiText;
+      // Fire the start analytics exactly once. The intro effect can now legitimately
+      // re-run while still in "thinking" (see the phase-gated guard above), so dedupe
+      // on a dedicated ref rather than relying on the guard to short-circuit repeats.
+      if (introAnalyticsFiredRef.current) {
+        // already counted this session's start — skip the duplicate events
+      } else {
+      introAnalyticsFiredRef.current = true;
       track("interview_started", { type: interviewType, mode: isMiniMode ? "mini" : "full", isPanel: isPanelInterview });
       // PostHog: per-focus session-started signal. Same `focus` property
       // shape as interview_focus_selected / interview_session_completed so
@@ -1363,6 +1392,7 @@ export function useInterviewEngine() {
         // signup → wow-moment conversion is working.
         is_first_session: (user?.practiceTimestamps?.length ?? 0) === 0,
       });
+      }
     }
 
     const gen = ++flowGenerationRef.current;
