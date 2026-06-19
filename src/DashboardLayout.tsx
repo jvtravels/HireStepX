@@ -273,7 +273,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         ) : (
           <div style={{ paddingBottom: 14, marginBottom: 10, borderBottom: `1px solid ${c.border}`, flexShrink: 0 }}>
             <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-              <img src="/wordmark.png" alt="HireStepX" style={{ height: 26, width: "auto" }} />
+              <img src="/wordmark.png" alt="HireStepX" style={{ height: 34, width: "auto" }} />
             </Link>
           </div>
         )}
