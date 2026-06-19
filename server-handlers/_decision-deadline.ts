@@ -78,7 +78,19 @@ const WEEKDAY_DEADLINE_PATTERNS = [
   /\b(?:respond|decide|answer|need)\s+(?:by|before)\s+(today|tonight|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
 ];
 
-const COMMITMENT_IDIOM = /\b(?:i.?ll\s+(?:sign|accept|take\s+it|join|come\s+on\s+board)|i.?m\s+in|count\s+me\s+in|sign\s+today|accept\s+today|close\s+(?:this\s+)?today|done\s+deal|deal\b|sold\b|i.?d\s+(?:sign|accept|take)|will\s+(?:sign|accept|join))\b/i;
+/* Commitment idioms that close the conditional ("if X, <commitment>").
+ * Live-staging 2026-06-19 (Razorpay PM, #94): a candidate who frames the
+ * conditional as "...that works for me" / "...I can make that work" /
+ * "...that's acceptable" was NOT detected (only sign/accept/deal idioms
+ * were listed). The conditional acceptance went invisible, so the planner
+ * kept arguing the candidate's STALE opening anchor instead of engaging
+ * the concrete near-offer number — a divert, exactly the failure mode we
+ * forbid. These "soft-commit" idioms are the most common Indian-candidate
+ * phrasing for "yes, on that condition". extractConditional still requires
+ * a CONDITIONAL_CLAUSE ("if/when/provided/…") to co-occur, so a bare
+ * "that works" with no condition does NOT trip this — keeping false
+ * positives near zero. */
+const COMMITMENT_IDIOM = /\b(?:i.?ll\s+(?:sign|accept|take\s+it|join|come\s+on\s+board)|i.?m\s+in|count\s+me\s+in|sign\s+today|accept\s+today|close\s+(?:this\s+)?today|done\s+deal|deal\b|sold\b|i.?d\s+(?:sign|accept|take)|will\s+(?:sign|accept|join)|that\s+works(?:\s+for\s+me)?|works\s+for\s+me|i\s+can\s+(?:make\s+(?:that|it)\s+work|live\s+with\s+that|work\s+with\s+that)|that.?s\s+acceptable|that.?(?:d|ll)\s+work|i.?d\s+be\s+(?:comfortable|fine|okay|ok)\s+with\s+that|happy\s+with\s+that|i.?d\s+take\s+that|we.?(?:ve|re)\s+(?:got\s+a\s+deal|good))\b/i;
 
 const CONDITIONAL_CLAUSE = /\b(?:if|when|provided|as\s+long\s+as|on\s+condition|contingent\s+on|subject\s+to|once\s+you)\b/i;
 

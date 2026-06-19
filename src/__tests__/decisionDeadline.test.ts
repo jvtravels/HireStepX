@@ -70,6 +70,32 @@ describe("extractDecisionDeadline — conditional accept", () => {
   it("does NOT fire on conditional without commitment", () => {
     expect(extractDecisionDeadline("if you match 30 LPA, can we discuss?").conditionalAcceptance).toBe(false);
   });
+
+  /* Soft-commit idioms (live-staging 2026-06-19, Razorpay PM #94). These
+   * are the most common Indian-candidate phrasings for "yes, on that
+   * condition" and were previously invisible — the bot kept arguing the
+   * stale opening anchor instead of engaging the concrete number. */
+  it("fires on 'if you can do X, that works for me'", () => {
+    const r = extractDecisionDeadline("if you can do 36 with a 3 lakh joining bonus, that works for me");
+    expect(r.conditionalAcceptance).toBe(true);
+    expect(r.conditionalEvidence).toContain("works");
+  });
+
+  it("fires on 'when you confirm X, that's acceptable'", () => {
+    expect(extractDecisionDeadline("when you confirm the band, that's acceptable").conditionalAcceptance).toBe(true);
+  });
+
+  it("fires on 'if you stretch to X, I can make that work'", () => {
+    expect(extractDecisionDeadline("if you stretch to 38, I can make that work").conditionalAcceptance).toBe(true);
+  });
+
+  it("fires on 'as long as you do X, I'd take that'", () => {
+    expect(extractDecisionDeadline("as long as you cover relocation, I'd take that").conditionalAcceptance).toBe(true);
+  });
+
+  it("does NOT fire on bare 'that works for me' with no condition", () => {
+    expect(extractDecisionDeadline("38 works for me").conditionalAcceptance).toBe(false);
+  });
 });
 
 describe("extractDecisionDeadline — hasAny + empty", () => {
