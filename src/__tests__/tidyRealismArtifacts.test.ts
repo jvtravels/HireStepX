@@ -127,6 +127,54 @@ describe("tidyRealismArtifacts — sentence capitalization", () => {
   });
 });
 
+describe("tidyRealismArtifacts — frantic-tic stack + subordinator seam (live 2026-06-19)", () => {
+  /* Live-staging stonewall probe: the mood layer's frantic pause tic
+   * ("Umm,") stacked in front of an opener + a "Before we go further…"
+   * probe, and shipped TWO leading fillers with a broken mid-sentence
+   * capital: "Umm, so, Before we go further, can you share your current
+   * CTC — fixed, variable, and in-hand?". Two root causes: (1) FRANTIC_TICS
+   * were missing from the stacked-opener collapse union, so the collapse
+   * bailed at "Umm,"; (2) "Before" was not in the mid-sentence downcase
+   * whitelist. Both fixed structurally. */
+  it("collapses a frantic tic + opener and downcases the subordinator", () => {
+    expect(
+      tidyRealismArtifacts(
+        "Umm, so, Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      ),
+    ).toBe(
+      "Umm, before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+    );
+  });
+
+  it("collapses 'Uh,' frantic tic the same way", () => {
+    expect(tidyRealismArtifacts("Uh, look, here is the structure.")).toBe(
+      "Uh, here is the structure.",
+    );
+  });
+
+  it("downcases each whitelisted subordinator after a leading opener comma", () => {
+    expect(tidyRealismArtifacts("Right, Before we counter, what's your number?")).toBe(
+      "Right, before we counter, what's your number?",
+    );
+    expect(tidyRealismArtifacts("Look, Since you asked, the band is ₹30L.")).toBe(
+      "Look, since you asked, the band is ₹30L.",
+    );
+    expect(tidyRealismArtifacts("Okay, Once finance signs off, we revert.")).toBe(
+      "Okay, once finance signs off, we revert.",
+    );
+  });
+
+  it("still never downcases a proper noun after the expanded whitelist", () => {
+    // Regression guard: extending the whitelist must NOT touch proper nouns.
+    expect(tidyRealismArtifacts("Right, Bangalore is the base location.")).toBe(
+      "Right, Bangalore is the base location.",
+    );
+    expect(tidyRealismArtifacts("Look, Sandeep, take your time on this.")).toBe(
+      "Look, Sandeep, take your time on this.",
+    );
+  });
+});
+
 describe("tidyRealismArtifacts — invariants", () => {
   it("is idempotent", () => {
     const garble =

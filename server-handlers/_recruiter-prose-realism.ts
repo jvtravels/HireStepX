@@ -336,6 +336,13 @@ function tidyOpenerPhrases(): string[] {
     ...HEDGES,
     ...ALL_CONTEXT_REF_PHRASES,
     ...TIDY_EXTRA_OPENERS,
+    /* Mood-layer frantic pause tics ("Uh,", "Umm,"). Omitting these let the
+     * stacked-opener collapse bail at the first token when a frantic tic sat
+     * in front of another opener ("Umm, so, Before we go further…" survived
+     * with TWO leading fillers, violating the ≤1-filler contract). The tics
+     * carry no content, so treating them as openers is always safe. Strip the
+     * trailing comma — the union is matched as bare phrases. */
+    ...FRANTIC_TICS.map((t) => t.replace(/,$/, "")),
   ]
     .map((p) => p.toLowerCase().trim())
     .filter((p) => p.length > 0);
@@ -412,9 +419,19 @@ function fixSentenceCaps(s: string): string {
  * base word keeps its sentence-initial capital and we get "Right, So for
  * this grade". Lowercasing the second word repairs the seam. Restricted
  * to this whitelist so we never lowercase a real proper noun / vocative
- * ("Look, Sandeep" / "Right, Bangalore"). */
+ * ("Look, Sandeep" / "Right, Bangalore").
+ *
+ * The whitelist is a CLOSED grammatical class — discourse markers plus the
+ * subordinating conjunctions / temporal-gerund openers that canonical prose
+ * bodies start with (Before/After/Since/While/Given/Once/Coming/Moving/…).
+ * None is a proper noun in recruiter comp-talk, so this stays proper-noun
+ * safe. Casing alone can't distinguish "Before" (common) from "Bangalore"
+ * (proper noun), so we enumerate the safe function words rather than
+ * lowercase by heuristic. Live-staging (2026-06-19): the mood layer's
+ * frantic tic stacked in front of a "Before we go further…" probe and the
+ * old whitelist (lacking "Before") shipped "Umm, so, Before we go further". */
 const TIDY_MIDSENTENCE_DOWNCASE =
-  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let)\b/g;
+  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let|Before|After|Since|While|Given|Once|Coming|Moving|Picking|Unless|Until|Although|Though|When|Where)\b/g;
 
 export function tidyRealismArtifacts(s: string): string {
   if (!s) return s;
