@@ -49,6 +49,7 @@ import {
   type NegotiationState,
   type NegotiationPhase,
   type AiMove,
+  type NegotiationLever,
   type DiscoveryTopic,
   type ContradictionTopic,
 } from "./_negotiation-kernel";
@@ -380,7 +381,22 @@ export type NextAction =
       candidateProposedBaseLpa?: number;
       satisfiesTopic: SatisfiesTopic;
     }
-  | { kind: "lever-explore"; from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default" }
+  /* lever-explore rotates a CONCRETE non-cash lever each round
+   * (equity → joining-bonus → notice-buyout → benefits → hold-firm via
+   * pickLeverExploreMove). Surface that lever (and the kernel-sized
+   * joining-bonus amount) on the action so canonical prose can NAME it
+   * instead of shipping the same generic "let me see what else we can
+   * structure on the fitment" teaser every round — the live-staging
+   * 2026-06-19 teaser-loop defect (candidate heard the identical line
+   * twice while we silently picked equity, then a joining bonus, and
+   * communicated neither). leverKind absent ⇒ legacy/test callsites,
+   * which keep the generic line. */
+  | {
+      kind: "lever-explore";
+      from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default";
+      leverKind?: NegotiationLever;
+      joiningBonusLpa?: number;
+    }
   | { kind: "hold-firm"; mode: "verbal-accept" | "lever-loop" }
   | { kind: "rescission" }
   /* Fix 4 (2026-05-16) — formal close recap. Fires when phase is
@@ -5289,7 +5305,13 @@ function wrapLeverExplore(
   move: AiMove,
   from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default",
 ): PlannedAction {
-  return { kind: "lever-explore", from, _move: move };
+  return {
+    kind: "lever-explore",
+    from,
+    leverKind: move.lever,
+    joiningBonusLpa: move.joiningBonusAmount,
+    _move: move,
+  };
 }
 
 /** Phase 28 (2026-05-13) — compute the joining-bonus amount. See original

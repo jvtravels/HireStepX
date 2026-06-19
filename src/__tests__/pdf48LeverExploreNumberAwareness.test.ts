@@ -71,3 +71,46 @@ describe("PDF#48 B2 — lever-explore engages the candidate's counter number", (
     expect(prose).not.toMatch(/explore the fitment further/i);
   });
 });
+
+describe("anti-teaser-loop — lever-explore NAMES the concrete lever (live-staging 2026-06-19)", () => {
+  /* Live bug: pickLeverExploreMove rotates a distinct concrete lever each
+   * round (equity → joining-bonus → notice-buyout → benefits) but the
+   * canonical arm shipped the same generic "let me see what else we can
+   * structure on the fitment." line every time — the candidate heard the
+   * identical teaser back-to-back while we silently picked different
+   * levers and communicated none of them. The planner now stamps the
+   * selected lever on the action (leverKind) so prose names it. */
+  const mk = (leverKind: string, extra: Partial<NextAction> = {}) =>
+    ({ kind: "lever-explore", from: "default", leverKind, ...extra } as unknown as NextAction);
+
+  it("equity-grant round names the ESOP grant", () => {
+    const prose = renderCanonicalProse(mk("equity-grant"), mkState({ highestOfferMade: 40 }));
+    expect(prose).toMatch(/ESOP|equity/i);
+    expect(prose).not.toContain("let me see what else we can structure on the fitment.");
+  });
+
+  it("joining-bonus round names the bonus AND quotes the kernel-sized amount", () => {
+    const prose = renderCanonicalProse(
+      mk("joining-bonus", { joiningBonusLpa: 3 } as Partial<NextAction>),
+      mkState({ highestOfferMade: 40 }),
+    );
+    expect(prose).toMatch(/joining bonus/i);
+    expect(prose).toContain("₹3L");
+  });
+
+  it("notice-buyout round names the notice-period buyout", () => {
+    const prose = renderCanonicalProse(mk("notice-buyout"), mkState({ highestOfferMade: 40 }));
+    expect(prose).toMatch(/notice period|buyout/i);
+  });
+
+  it("benefits-summary round lays out concrete non-cash items", () => {
+    const prose = renderCanonicalProse(mk("benefits-summary"), mkState({ highestOfferMade: 40 }));
+    expect(prose).toMatch(/insurance|ESOP|joining bonus/i);
+  });
+
+  it("two consecutive different levers do NOT repeat verbatim", () => {
+    const a = renderCanonicalProse(mk("equity-grant"), mkState({ highestOfferMade: 40 }));
+    const b = renderCanonicalProse(mk("joining-bonus", { joiningBonusLpa: 2 } as Partial<NextAction>), mkState({ highestOfferMade: 40 }));
+    expect(a).not.toBe(b);
+  });
+});

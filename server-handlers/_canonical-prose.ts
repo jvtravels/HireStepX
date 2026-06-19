@@ -872,7 +872,7 @@ const PROSE_ARMS: ProseArmRegistry = {
   "counter-offer": (action, state, helpers) =>
     proseCounterOffer(action, state, helpers),
 
-  "lever-explore": (_action, state) => {
+  "lever-explore": (action, state) => {
     /* PDF#48 B2 (2026-05-25) — number-aware lever-explore. When the
      * candidate just gave a counter number (lastCandidateCounterLpa)
      * but the planner picked lever-explore (counter above band /
@@ -881,8 +881,46 @@ const PROSE_ARMS: ProseArmRegistry = {
      * filler. Real recruiters acknowledge what was just put on the
      * table before pivoting to non-cash levers. */
     const counter = state.lastCandidateCounterLpa;
-    if (typeof counter === "number" && counter > 0) {
-      return `On the ₹${counter}L ask — that's above the cash band I can structure on this grade. Let me see what else we can put together on the fitment.`;
+    const counterAck =
+      typeof counter === "number" && counter > 0
+        ? `On the ₹${counter}L ask — that's above the cash band I can structure on this grade. `
+        : "";
+
+    /* Anti-teaser-loop (live-staging 2026-06-19). pickLeverExploreMove
+     * rotates a DISTINCT concrete lever every round (equity → joining
+     * bonus → notice buyout → benefits), but this arm used to ship the
+     * same generic "let me see what else we can structure on the
+     * fitment" line regardless — so a candidate who pushed twice heard
+     * the identical teaser back-to-back while we silently picked
+     * different levers and communicated none of them. Name the lever the
+     * planner actually selected so each round delivers something
+     * concrete. `leverKind` is populated by wrapLeverExplore; it's absent
+     * only at the legacy/test callsites that construct the action
+     * inline, where we fall through to the generic line (regression
+     * guard in pdf48LeverExploreNumberAwareness.test.ts). */
+    switch (action.leverKind) {
+      case "equity-grant":
+        return `${counterAck}On the equity side — I can add an ESOP grant at this level, vesting over four years, over and above the cash fitment. Let me put the annual-value figure together and share it before the offer letter.`;
+      case "joining-bonus": {
+        const amt = action.joiningBonusLpa;
+        const amtPart =
+          typeof amt === "number" && amt > 0
+            ? `a one-time ₹${amt}L joining bonus`
+            : "a one-time joining bonus";
+        return `${counterAck}What I can do is ${amtPart} with your first month's payroll to bridge part of the gap. Let me confirm the exact figure internally and revert.`;
+      }
+      case "notice-buyout":
+        return `${counterAck}On the notice period — we can absorb your buyout cost from our side as part of the joining bonus, so the switch doesn't come out of your pocket.`;
+      case "benefits-summary":
+        return `${counterAck}Let me lay out the full non-cash side — the ESOP grant, insurance cover for you and dependents, and the joining bonus together lift the effective package beyond the cash number.`;
+      case "hold-firm":
+        return state.highestOfferMade > 0
+          ? `${counterAck}We'll hold the fitment at ₹${state.highestOfferMade}L as per our band for this grade. Take some time on it and revert.`
+          : `${counterAck}We'll hold here as per our band for this grade. Take some time on it and revert.`;
+    }
+
+    if (counterAck) {
+      return `${counterAck}Let me see what else we can put together on the fitment.`;
     }
     return "Let me see what else we can structure on the fitment.";
   },
