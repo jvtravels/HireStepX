@@ -842,7 +842,7 @@ export default function DashboardHome() {
            into the bottom padding instead of letting them clip last-row
            CTAs. */
         .hsx-dh-root {
-          padding-top: 32px;
+          padding-top: 16px;
           padding-right: max(32px, env(safe-area-inset-right));
           padding-bottom: max(64px, env(safe-area-inset-bottom));
           padding-left: max(32px, env(safe-area-inset-left));
@@ -862,7 +862,7 @@ export default function DashboardHome() {
           .hsx-dh-grid { grid-template-columns: 1fr !important; }
           .hsx-dh-rail { order: 2; }
           .hsx-dh-root {
-            padding-top: 28px;
+            padding-top: 14px;
             padding-right: max(24px, env(safe-area-inset-right));
             padding-bottom: max(56px, env(safe-area-inset-bottom));
             padding-left: max(24px, env(safe-area-inset-left));
@@ -888,7 +888,7 @@ export default function DashboardHome() {
             border-top: none;
           }
           .hsx-dh-root {
-            padding-top: 20px;
+            padding-top: 10px;
             padding-right: max(8px, env(safe-area-inset-right));
             padding-bottom: max(48px, env(safe-area-inset-bottom));
             padding-left: max(8px, env(safe-area-inset-left));
