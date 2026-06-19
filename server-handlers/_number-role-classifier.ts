@@ -238,6 +238,30 @@ const TARGET_CUES: CueTable = {
     /\bbump(?:\s+\w+){0,3}\s+(?:to|up)\b/i,
     /\bbring(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
     /\bmove(?:\s+\w+){0,3}\s+(?:to|up|closer|towards?)\b/i,
+    /* Floor / walk-away-threshold framing (live-staging, 2026-06-19). A
+     * candidate stating a FLOOR — "I won't move for less than 55", "won't
+     * go below 55", "not a rupee less than 55", "anything less than 55 is a
+     * no" — is asserting their TARGET (a hard lower bound on the ask), NEVER
+     * their current pay. Before this block these phrasings scored ZERO role
+     * cues, so when the bot's prior turn had asked for the CURRENT package,
+     * the bare number fell through pickRole's Gricean "AI-asked-current →
+     * current" default and bound the floor as currentCtc — overwriting the
+     * real current AND dropping the target (live hard-haggle: candidate at
+     * ₹38L, floor ₹55L, bot read "you're at ₹55 LPA right now"). A floor is
+     * a target assertion; scoring it as a target cue makes pickRole return
+     * `target` outright (max>0) BEFORE the current-default can fire. The
+     * `(?:less|lower)\s+than` / `below` framing collides only with a current
+     * disclosure that ALSO carries an explicit current cue ("my current is
+     * less than 32"), where the current>target tiebreak still wins. */
+    /\b(?:less|lower)\s+than\b/i,
+    /\bwon['']?t\s+(?:go|move|come|budge|settle|accept|take|do|drop)\b/i,
+    /\b(?:no|not\s+a\s+rupee)\s+less\b/i,
+    /\bat\s+least\b/i,
+    /\b(?:bare\s+)?minimum\s+(?:of\s+)?\b/i,
+    /\bnon[-\s]?negotiable\b/i,
+    /\bbottom\s+line\b/i,
+    /\bfirm\s+(?:at|on)\b/i,
+    /\bmy\s+(?:number|floor|ask|figure)\b/i,
   ],
   right: [
     /\bchahiye\b/i,
@@ -247,6 +271,13 @@ const TARGET_CUES: CueTable = {
     /\bexpect\s+kar(?:ta|ti)\s+hu\b/i,
     /\bchahta\s+hu\b/i,
     /\bchahti\s+hu\b/i,
+    /* Floor framing stated AFTER the number ("55 total, that's my number",
+     * "55, non-negotiable", "55, no less"). Same rationale as the left
+     * floor block above — these are target assertions, never current. */
+    /\bthat.?s\s+my\s+(?:number|ask|figure|floor|final)\b/i,
+    /\bmy\s+(?:final\s+)?(?:number|ask|floor)\b/i,
+    /\bnon[-\s]?negotiable\b/i,
+    /\bno\s+less\b/i,
   ],
 };
 
@@ -485,8 +516,13 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
    * fixed: a bare LEADING number with only trailing weak intent ("35 would be
    * good.") — that is genuinely speculative (collides with age/count) and the
    * candidate-speaks-English/says-LPA premise makes it vanishingly rare. */
-  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move)\b/i;
-  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to)\s+|\b(?:to\s+be|closer\s+to|up\s+to|at\s+least|a\s+minimum\s+of|minimum\s+of)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
+  /* Floor framing ("won't move for less than 55", "at least 55", "no less
+   * than 55") added to BOTH the presence test and the positional-opener so a
+   * unit-less floor emits a span even when the bot's prior turn didn't ask a
+   * target question and we're not in probe-expectations. The scored
+   * TARGET_CUES floor block then binds it to target (see note there). */
+  const TARGET_CUE_PRESENCE = /\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping|aim(?:ing)?|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking|comfortable\s+with|settle\s+for|closer\s+to|push|bump|bring|move|less\s+than|lower\s+than|below|at\s+least|minimum|non[-\s]?negotiable|bottom\s+line|my\s+(?:number|floor|ask|figure))\b/i;
+  const POSITIONAL_OPENER_AT_END = /(?:\b(?:around|about|at|of|near|like|maybe|is|are|was|were|be|to|than|below)\s+|\b(?:to\s+be|closer\s+to|up\s+to|at\s+least|a\s+minimum\s+of|minimum\s+of|less\s+than|lower\s+than|no\s+less\s+than|not\s+less\s+than)\s+|\b(?:anchor(?:ing)?|target(?:ing|ed|s)?|expect(?:ing|ed|ation|ations|s)?|hoping(?:\s+for)?|aim(?:ing)?\s+for|looking\s+for|want(?:ing|ed|s)?|need(?:ing|ed|s)?|would\s+like|i.?d\s+like|asking)\s+(?:around\s+|about\s+|at\s+|of\s+)?)$/i;
   const SALARY_UNIT_NEARBY = /[\d,.]\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
   /* MVP-audit Fix B (2026-06-18): three additional bare-integer emission
    * gates beyond the target-cue gate. Root cause of the discovery

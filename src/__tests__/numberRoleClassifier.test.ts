@@ -302,6 +302,49 @@ const ROWS: Row[] = [
     expect: { target: 32, targetComponent: "total" },
   },
 
+  /* ── Floor / walk-away-threshold framing binds TARGET, never current
+   *    (live-staging 2026-06-19). A candidate stating a hard lower bound —
+   *    "won't move for less than X", "at least X", "X, that's my number" —
+   *    is asserting their TARGET. The defect: when the bot's prior turn had
+   *    asked for the CURRENT package, the floor number fell through the
+   *    Gricean "AI-asked-current → current" default and bound as currentCtc,
+   *    overwriting the real current AND dropping the target. These rows pin
+   *    that a floor binds target EVEN when lastAiText is a current probe. */
+  {
+    label: "floor: 'won't move for less than 55 total, that's my number' (bot asked current) → target 55",
+    text: "I won't move for less than 55 total, that's my number",
+    ctx: { lastAiText: "And how is your current package structured?", phase: "probe-expectations" },
+    expect: { target: 55, currentCtc: null, targetComponent: "total" },
+  },
+  {
+    label: "floor: same, when bot asked current TOTAL CTC → target 55 (never current)",
+    text: "I won't move for less than 55 total, that's my number",
+    ctx: { lastAiText: "what's the total CTC at present?", phase: "probe-expectations" },
+    expect: { target: 55, currentCtc: null },
+  },
+  {
+    label: "floor: 'won't go below 55' → target 55",
+    text: "Honestly I won't go below 55.",
+    ctx: { lastAiText: "your current package?" },
+    expect: { target: 55, currentCtc: null },
+  },
+  {
+    label: "floor: 'at least 55 total' → target 55",
+    text: "at least 55 total",
+    expect: { target: 55, currentCtc: null },
+  },
+  {
+    label: "floor: 'my number is 55, not a rupee less' → target 55",
+    text: "my number is 55, not a rupee less",
+    expect: { target: 55, currentCtc: null },
+  },
+  {
+    label: "floor: '55, non-negotiable' (bot asked target) → target 55",
+    text: "55, non-negotiable",
+    ctx: { lastAiText: "And your target for this move?" },
+    expect: { target: 55, currentCtc: null },
+  },
+
   /* ── Negative cases (must NOT bind) ────────────────────────────── */
   { label: "rejects 100 crore (clamp)",  text: "I'm looking for 100 crore",             expect: { target: null } },
   { label: "rejects garbage commas",     text: "I'm expecting 30,00,000 lakhs",         expect: { target: null } },
