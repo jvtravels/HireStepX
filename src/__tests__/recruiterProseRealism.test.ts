@@ -190,6 +190,35 @@ describe("humanizeRecruiterProse — mood layer", () => {
     expect(interruptHit / N).toBeLessThan(0.30);
   });
 
+  it("frantic: self-interruption never glues a redundant discourse filler onto the resumed clause", () => {
+    /* Live-staging (2026-06-19) — the frantic self-interruption
+     * ("…what I meant was") landed in front of a sentence that itself
+     * opened with a discourse filler, shipping the awkward seam
+     * "…what I meant was so for this grade…". The interruption phrase
+     * already supplies the pivot, so the leading filler on the resumed
+     * clause is stripped. Drive the mood layer deterministically and
+     * assert the garble never appears while the anchor stays intact. */
+    const PROSE =
+      "For this grade the fitment is fixed at ₹30 LPA. So the variable sits on top of that.";
+    let interruptHit = 0;
+    for (let i = 0; i < 80; i++) {
+      const out = humanizeRecruiterProse(PROSE, {
+        sessionId: `frantic-resume-${i}`,
+        turnIndex: 0,
+        mood: "frantic",
+        __forceLayer: { mood: true },
+      });
+      // The numeric anchor is never mutated by the realism chain.
+      expect(out).toContain("₹30 LPA");
+      // The redundant-filler seam must never ship.
+      expect(out.toLowerCase()).not.toMatch(/what i meant was so\b/);
+      expect(out.toLowerCase()).not.toMatch(/rephrase — so\b/);
+      if (/wait, sorry —|actually, sorry —/i.test(out)) interruptHit++;
+    }
+    // Sanity: the forced mood layer actually exercises the interruption.
+    expect(interruptHit).toBeGreaterThan(0);
+  });
+
   it("deriveRecruiterMood: deterministic per sessionId, spreads across the three buckets", () => {
     expect(deriveRecruiterMood("s-1")).toBe(deriveRecruiterMood("s-1"));
     expect(deriveRecruiterMood(null)).toBe("warm");

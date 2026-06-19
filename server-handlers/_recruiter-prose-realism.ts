@@ -162,6 +162,17 @@ const FRANTIC_INTERRUPTIONS = [
   "wait, sorry — what I meant was",
   "actually, sorry — let me rephrase —",
 ];
+/* The self-interruption is glued in front of the resumed clause. When
+ * that clause itself opens with a discourse filler ("So for this grade…",
+ * "Basically, the cash sits…") the seam reads awkwardly —
+ * "…what I meant was so for this grade" (surfaced live on staging,
+ * 2026-06-19). The interruption phrase already supplies the conversational
+ * pivot, so a leading filler on the resumed clause is redundant: strip a
+ * single one. Restricted to unambiguous discourse fillers that cannot
+ * double as content after "was" — deliberately NOT "now"/"then" (temporal),
+ * "look"/"right" (verb/adjective), or "see" (verb). */
+const REDUNDANT_RESUME_OPENER_RE =
+  /^(?:so|basically|well|honestly|anyway|okay),?\s+/i;
 /* Brusque softener-strippers. Drops the standalone word with its
  * trailing space; the regex is anchored to word boundaries so we don't
  * mangle "justify" or "maybely" (not a word, but the regex is the
@@ -626,7 +637,9 @@ export function humanizeRecruiterProse(
           Math.floor(rand01(ctx, "mood-frantic-interrupt-pick") * FRANTIC_INTERRUPTIONS.length)
         ];
       const head = out.slice(0, firstSentenceBoundary + 1);
-      const tail = out.slice(firstSentenceBoundary + 2);
+      const tail = out
+        .slice(firstSentenceBoundary + 2)
+        .replace(REDUNDANT_RESUME_OPENER_RE, "");
       /* Adversarial-sweep fix (2026-06-19) — the interruption is inserted
        * AFTER a sentence-final boundary (firstSentenceBoundary matches
        * [.!?]\s+[A-Z]), so it opens a new sentence and must be capitalized.
