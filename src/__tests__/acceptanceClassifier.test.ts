@@ -124,6 +124,23 @@ describe("classifyAcceptance — commitment idiom + phase gate", () => {
        Gate skipped; behavior matches pre-Phase-9 path. */
     expect(classifyAcceptance("Sounds good, let's go ahead.").accepted).toBe(true);
   });
+
+  it("accepts deal-CLOSE idioms when offer on table (live-staging 2026-06-19)", () => {
+    /* "Let's close it" / "close the deal" is a finalize-the-deal commit,
+       NOT a request to end the call. Live bug: the bot shipped a defer
+       message and walked over an explicit acceptance. */
+    expect(classifyAcceptance("Yes, 40 works. Let's close it.", { offerOnTable: true }).accepted).toBe(true);
+    expect(classifyAcceptance("Let's close it.", { offerOnTable: true }).accepted).toBe(true);
+    expect(classifyAcceptance("let's close the deal", { offerOnTable: true }).accepted).toBe(true);
+    expect(classifyAcceptance("close the deal", { offerOnTable: true }).accepted).toBe(true);
+  });
+
+  it("VETOES bare 'let's close it' before any offer (phase gate)", () => {
+    /* You can't close a deal that doesn't exist yet — pre-offer filler. */
+    const r = classifyAcceptance("let's close it", { offerOnTable: false });
+    expect(r.accepted).toBe(false);
+    expect(r.reasons).toContain("phase-gate-no-offer-veto");
+  });
 });
 
 describe("classifyAcceptance — Hindi-mix", () => {

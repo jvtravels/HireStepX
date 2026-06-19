@@ -153,6 +153,15 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
   /\bit.?s\s+a\s+deal\b/i,
   /\bdone\s+deal\b/i,
   /\blet.?s\s+(?:go\s+ahead|do\s+it|lock\s+it\s+in|proceed)\b/i,
+  /* Deal-close idioms (live-staging 2026-06-19). "let's close it" /
+   * "let's close the deal" / "close the deal" / "let's close this out" are
+   * unambiguous finalize-the-deal commits in a negotiation — the candidate
+   * is accepting, not asking to end the call (which terminal-intent owns,
+   * and which requires an explicit conversational noun). Gated as a
+   * commitment idiom so the offer-on-table phase gate still applies: you
+   * cannot "close the deal" before one exists. */
+  /\blet.?s\s+close\s+(?:it|this\s+out|the\s+deal|this\s+deal)\b/i,
+  /\bclose\s+(?:the|this)\s+deal\b/i,
   /\bi.?m\s+happy\s+with\s+(?:that|the\s+offer)\b/i,
   /\bfine\s+with\s+me\b/i,
   /* Session B (2026-05-14) — bare commitment tokens. Each must be the
@@ -260,6 +269,11 @@ const SPLIT_CLAUSE_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\bit.?s\s+a\s+deal\b/i,
   /\bdone\s+deal\b/i,
   /\bdeal\b/i,
+  /* Deal-close idioms as a split clause: "Yes, 40 works. Let's close it."
+   * splits into "Yes, 40 works" + "Let's close it" — the second clause
+   * must register as the commit. See COMMITMENT_IDIOM_PATTERNS rationale. */
+  /\blet.?s\s+close\s+(?:it|this\s+out|the\s+deal|this\s+deal)\b/i,
+  /\bclose\s+(?:the|this)\s+deal\b/i,
   /* Session B (2026-05-14) — bare-token commit phrases. Per-sentence
    * pass via splitSentences means "done. when's the start date?" splits
    * into "done." + "when's the start date?", and the first sentence

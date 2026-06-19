@@ -76,7 +76,21 @@ const WITHDRAW_PATTERNS: RegExp[] = [
 ];
 
 const END_INTERVIEW_PATTERNS: RegExp[] = [
-  /\b(?:can\s+(?:we|you)|let'?s|please)\s+(?:end|stop|wrap\s+up|finish|close|terminate)\s+(?:this|the)?\s*(?:interview|conversation|call|session|chat|negotiation)?\b/i,
+  /* Unambiguous end-the-conversation verbs — the conversational object
+   * (interview/call/…) is optional because these verbs don't collide with
+   * a deal-close. NOTE: "close" is deliberately NOT in this set. In a live
+   * negotiation "let's close it" / "let's close the deal" / "close it out"
+   * means CLOSE THE DEAL (accept), not close the conversation — routing it
+   * here shipped a defer message ("we can wrap here, pick this up later")
+   * over an explicit acceptance and killed the close (live-staging
+   * 2026-06-19: candidate said "Yes, 40 works. Let's close it." and the bot
+   * walked instead of finalizing). "close" gets its own pattern below that
+   * REQUIRES an explicit conversational noun. */
+  /\b(?:can\s+(?:we|you)|let'?s|please)\s+(?:end|stop|wrap\s+up|finish|terminate)\s+(?:this|the)?\s*(?:interview|conversation|call|session|chat|negotiation)?\b/i,
+  /* "close" only reads as end-interview when an explicit conversational
+   * noun follows ("close this call", "close the session"). "close it" /
+   * "close the deal" are handled as ACCEPTANCE by the kernel. */
+  /\b(?:can\s+(?:we|you)|let'?s|please)\s+close\s+(?:this|the)\s+(?:interview|conversation|call|session|chat|negotiation)\b/i,
   /\bi\s+(?:want\s+to\s+|need\s+to\s+|have\s+to\s+|gotta\s+)?(?:end|stop|leave|go|exit)\s+(?:this|the|now)\b/i,
   /\b(?:end|stop|exit)\s+(?:the\s+|this\s+)?(?:interview|conversation|session|chat)\b/i,
   /\b(?:that'?s\s+(?:all|enough)|we'?re\s+done\s+here|i'?m\s+done)\b/i,

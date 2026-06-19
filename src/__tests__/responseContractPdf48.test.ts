@@ -170,6 +170,19 @@ describe("PDF#48 — response contract", () => {
       expect(detectTerminalIntent("can you provide 32 LPA for this offer?")).toBeNull();
     });
 
+    it("does not misread a deal-CLOSE (acceptance) as end-interview (live-staging 2026-06-19)", () => {
+      /* "close" is overloaded: "close the deal"/"close it" = ACCEPT, only
+       * "close this call/interview" = end the conversation. The bot used to
+       * ship a defer message over an explicit acceptance and walk. */
+      expect(detectTerminalIntent("Yes, 40 works. Let's close it.")).toBeNull();
+      expect(detectTerminalIntent("Let's close it.")).toBeNull();
+      expect(detectTerminalIntent("let's close the deal")).toBeNull();
+      expect(detectTerminalIntent("close the deal, I'm in")).toBeNull();
+      // Explicit conversational object still routes to end-interview.
+      expect(detectTerminalIntent("can we close this call")).toBe("end-interview");
+      expect(detectTerminalIntent("let's close this interview")).toBe("end-interview");
+    });
+
     it("produces a graceful close response per intent", () => {
       expect(gracefulCloseResponse("reject-offer")).toMatch(/Understood/);
       expect(gracefulCloseResponse("withdraw")).toMatch(/withdrawn/);
