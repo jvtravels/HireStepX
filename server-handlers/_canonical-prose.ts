@@ -150,6 +150,23 @@ export const BANNED_RECRUITER_IDIOM = [
   "counter offer is within",
   "specifics of the offer to finalize",
   "to finalize the offer",
+  /* Live staging audit (2026-06-20) — American / non-Indian-HR register
+   * the restyle LLM drifted into. Indian recruiters say "band" / "range"
+   * / "bracket", never "corridor"; "range piece" is a mangled fragment
+   * the LLM produced for "the range"; "neighborhood" and "equity stretch"
+   * are American idioms (canonical now ships "in the same range" /
+   * "equity headroom" instead, so any occurrence here is LLM padding);
+   * "level with you" and "i've given you my best" are American
+   * negotiation idioms. Banned at the prompt + enforced structurally by
+   * validateRestyle's BANNED_RECRUITER_IDIOM_RE → falls back to clean
+   * canonical prose. */
+  "corridor",
+  "range piece",
+  "neighborhood",
+  "equity stretch",
+  "level with you",
+  "i've given you my best",
+  "i have given you my best",
 ] as const;
 
 /** PDF#48 B1 (2026-05-25) — paraphrase-family bans expressed as regex
@@ -1600,17 +1617,17 @@ const PROSE_ARMS: ProseArmRegistry = {
     const persona = helpers.sectorPersona;
     const variant = state.turnIndex % 2;
     const neighborhood = selectBySectorPersona(persona, {
-      "it-services": "in the same neighborhood on the fitment",
+      "it-services": "in the same range on the fitment",
       "gcc": "in the same range on the global band",
-      "indian-unicorn": "in the same neighborhood — with the equity stretch we have room for",
-      "early-startup": "in the same neighborhood, with equity doing the real heavy lifting",
+      "indian-unicorn": "in the same range — with the equity headroom we have",
+      "early-startup": "in the same range, with equity doing the real heavy lifting",
       "bfsi": "in the same range on the fitment, working the variable + deferred side",
       "psu": "as close as the pay scale will allow",
       "consulting-big4": "in the same range on the grade fitment",
       "fmcg-management": "in the same range within the LDP cohort band",
       "edtech": "in the same range within where the band sits post the sector reset",
       "consulting-mbb": "in the same range on the cohort band",
-      "default": "in the same neighborhood",
+      "default": "in the same range",
     });
     if (variant === 0) {
       return `${action.company} making you an offer says something about your market value — let me make sure we're ${neighborhood}.`;

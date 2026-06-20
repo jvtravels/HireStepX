@@ -80,7 +80,9 @@ describe("renderCandidateQuestionResponse — variant rotation", () => {
     const proseA = renderCandidateQuestionResponse("budget-disclosure", null, "director", "seed-1:0");
     const proseB = renderCandidateQuestionResponse("budget-disclosure", null, "director", "seed-99:99");
     expect(proseA).toBe(proseB);
-    expect(proseA).toContain("zip code");
+    // #114 lexicon: the director override dropped the "zip code" Americanism
+    // for Indian recruiter register; "panel's read" is unique to this override.
+    expect(proseA).toContain("panel's read");
   });
 });
 

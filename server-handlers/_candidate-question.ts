@@ -353,28 +353,28 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
   },
   "budget-disclosure": {
     base:
-      "On the budget — I can't share the full internal band, but the fitment sits in a defined corridor for this grade. If you share even a rough target, I'll tell you straightaway whether it lands.",
+      "On the budget — I can't share the full internal band, but the fitment sits in a defined range for this grade. If you share even a rough target, I'll tell you straightaway whether it lands.",
     variants: [
-      "On budget — I can't put the internal band on the table, but I can tell you we have a defined corridor at this grade. Give me a rough target and I'll say straight away whether it lands or whether there's a gap.",
-      "Budget-wise — the band stays internal, that's a panel call. What I can do is take your number and tell you immediately if it's in the corridor or if we'll need to work to close a gap.",
+      "On budget — I can't put the internal band on the table, but I can tell you we have a defined range at this grade. Give me a rough target and I'll say straight away whether it lands or whether there's a gap.",
+      "Budget-wise — the band stays internal, that's a panel call. What I can do is take your number and tell you immediately if it's in the range or if we'll need to work to close a gap.",
     ],
     phaseTinted: {
       "closing-push":
         "On budget — we're close enough that I'd rather not keep dancing around the band. Give me your final number and I'll go to the panel one more time with it. I want this to land.",
       "opening":
-        "On the budget piece — bit early to be giving you the internal band, but the fitment for this grade sits in a defined corridor. If you share roughly what you're looking for, I'll tell you upfront whether it lands in the same zone.",
+        "On the budget piece — bit early to be giving you the internal band, but the fitment for this grade sits in a defined range. If you share roughly what you're looking for, I'll tell you upfront whether it lands in the same zone.",
       "counter-offer":
-        "On the budget — panel's heard you out, and your positioning landed well. The corridor hasn't widened on paper, but I have more room to fight within it now than I did in round 1. Give me your number and I'll take it up.",
+        "On the budget — panel's heard you out, and your positioning landed well. The band hasn't widened on paper, but I have more room to work within it now than I did in round 1. Give me your number and I'll take it up.",
     },
     registerVariants: {
-      /* Direct candidate ("just tell me the number") — drop the corridor
+      /* Direct candidate ("just tell me the number") — drop the range
        * preamble, match their cadence. */
       "direct":
         "Can't share the band. Give me your target and I'll tell you straight if it lands or if there's a gap.",
       /* Formal candidate ("kindly share the range") — keep the full
-       * corridor framing, tighten to written-register cadence. */
+       * band framing, tighten to written-register cadence. */
       "formal":
-        "On the budget piece — I won't share the internal band, but the fitment for this grade sits in a defined corridor. If you share your expectation, I'll tell you straightaway whether it lands.",
+        "On the budget piece — I won't share the internal band, but the fitment for this grade sits in a defined range. If you share your expectation, I'll tell you straightaway whether it lands.",
     },
     sectorOverrides: {
       /* PSU formality + escalation register — real PSU HR routes
@@ -384,15 +384,15 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
       "psu":
         "On the budget piece — grade-pay rules govern the fitment at this level, and any deviation has to be signed off by the deputy GM. If you can share your expectation in writing, I'll put it through the approval line and revert with where we land.",
       /* Big-4 register — consulting recruiters anchor in "band /
-       * fitment corridor" language; "panel" is replaced by "P&C". */
+       * fitment range" language; "panel" is replaced by "P&C". */
       "consulting-big4":
-        "On budget — the fitment corridor is set by P&C against the grade we've slotted you at. I can't share the corridor itself, but share your expectation and I'll tell you whether we're within fitment or whether the partner has to be looped in.",
+        "On budget — the fitment band is set by P&C against the grade we've slotted you at. I can't share the band itself, but share your expectation and I'll tell you whether we're within fitment or whether the partner has to be looped in.",
       /* Edtech — bands have been re-cut after the correction and the
        * recruiter is slightly defensive about it; growth-math justifies
        * less than it used to, and joining bonuses aren't lubricating the
        * conversation anymore. */
       "edtech":
-        "On the budget piece — I'll level with you: the bands at this grade got re-cut after the sector reset, so the number we can put on the table is going to feel tighter than what you might've heard from edtech recruiters two years ago. Share your expectation and I'll tell you straight whether it lands in the new band or whether we're going to have to have a harder conversation. Joining bonus isn't really a lever I have anymore.",
+        "On the budget piece — I'll be straight with you: the bands at this grade got re-cut after the sector reset, so the number we can put on the table is going to feel tighter than what you might've heard from edtech recruiters two years ago. Share your expectation and I'll tell you straight whether it lands in the new band or whether we're going to have to have a harder conversation. Joining bonus isn't really a lever I have anymore.",
       /* MBB pre-MBA — bands are intake-cohort fixed. Base isn't on the
        * table; the recruiter routes the conversation to bonus / study
        * leave levers without apologising for the band rigidity. */
@@ -401,7 +401,7 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
     },
     roundOverrides: {
       "director":
-        "On the budget — at this level the fitment isn't a single number, it's a corridor we move inside based on the panel's read of you. Give me a rough target and I'll tell you if we're in the same zip code.",
+        "On the budget — at this level the fitment isn't a single number, it's a range we move inside based on the panel's read of you. Give me a rough target and I'll tell you if we're in the same zone.",
     },
     sectorPhaseOverrides: {
       /* P0-7 composition — sector content + phase warmth combined.
@@ -585,10 +585,10 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
   },
   "range-grade-leverage": {
     base:
-      "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you share even a rough target, I'll tell you straightaway whether it lands, and I can take it back to the panel if there's a gap.",
+      "On the range — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you share even a rough target, I'll tell you straightaway whether it lands, and I can take it back to the panel if there's a gap.",
     variants: [
       "On range — internal bands stay internal, but the fitment moves with the grade. Give me your rough target and I'll tell you straight up whether it lands in the same zone; if not, I'll carry the delta to the panel.",
-      "Range piece — the grade we've slotted you against drives the corridor; the corridor isn't something I can share. Tell me what you're targeting and I'll level with you on whether we close it here or whether the panel needs to look at it.",
+      "On the range — the grade we've slotted you against drives the band; the band itself isn't something I can share. Tell me what you're targeting and I'll be straight with you on whether we close it here or whether the panel needs to look at it.",
     ],
     phaseTinted: {
       "closing-push":
@@ -600,7 +600,7 @@ const RESPONSE_BANK: Record<CandidateQuestionTopic, ResponseBankEntry> = {
     },
     sectorOverrides: {
       "psu":
-        "Sir, the pay band at this grade is fixed by cadre rules — no internal corridor here. If you share your expectation, I'll have it checked against the grade entitlement and revert.",
+        "Sir, the pay band at this grade is fixed by cadre rules — no internal band to share here. If you share your expectation, I'll have it checked against the grade entitlement and revert.",
     },
     sectorPhaseOverrides: {
       "indian-unicorn": {
