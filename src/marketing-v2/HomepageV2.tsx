@@ -4264,7 +4264,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.4, color: "#B45309", marginBottom: 6 }}>✦ AI NEGOTIATION VERDICT</div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5, marginBottom: 10 }}>Countered with data, held silence twice, closed at ₹48L — 71% gap closure on the first-offer anchor.</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5, marginBottom: 10 }}>Countered with data, held silence twice, closed at ₹48L. 71% gap closure on the first-offer anchor.</div>
           <div style={{ fontSize: 8, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: "#6E6759" }}>
             Calibrated to Senior EM · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55
           </div>
