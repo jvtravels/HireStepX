@@ -61,6 +61,26 @@ async function logUsage(entry: {
   }
 }
 
+/* LLM error classification (pure, exported for unit testing).
+ *
+ * A 429 normally means a per-second rate limit that recovers within ~1s, so a
+ * single short-backoff retry before failover is worth it. But a 429 carrying
+ * "exceeded your current quota" / "plan and billing" / "RESOURCE_EXHAUSTED" is
+ * a hard daily-cap or billing block that will NOT recover in 800ms — retrying
+ * it only adds latency before the inevitable failover. Observed live: Gemini
+ * quota-exhausted 429s sat in the retry path on every static-fallback request.
+ * Treat quota exhaustion as permanent so the chain fails over immediately. */
+export function isQuotaExhausted(msg: string): boolean {
+  return /current quota|plan and billing|billing details|resource_exhausted|quota.?exceeded|exceeded.*quota/i.test(msg);
+}
+
+/** Transient = worth one short-backoff retry on the SAME provider before
+ *  failover. Quota exhaustion is explicitly excluded (it's permanent). */
+export function isTransientLLMError(msg: string): boolean {
+  if (isQuotaExhausted(msg)) return false;
+  return /\b(429|500|502|503|504)\b/.test(msg) || /overload|rate.?limit|temporar/i.test(msg);
+}
+
 interface LLMOptions {
   prompt: string;
   temperature?: number;
@@ -192,13 +212,10 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     return timeoutMs;
   };
 
-  // Transient: 429 (rate limit), 500/502/503/504 (overload/gateway). These
-  // recover within ~1s in practice — Gemini's "model is currently
-  // experiencing high traffic" 503 is the canonical case. Retry once with
-  // a short backoff before failing over to the next provider, so the
-  // user-visible "Couldn't generate your report" doesn't fire on a blip.
-  const isTransient = (msg: string): boolean =>
-    /\b(429|500|502|503|504)\b/.test(msg) || /overload|rate.?limit|temporar/i.test(msg);
+  // Retry classification lives in module-scope isTransientLLMError (above):
+  // transient → one short-backoff retry on the same provider; quota exhaustion
+  // and other hard errors → fail over to the next provider immediately.
+  const isTransient = isTransientLLMError;
 
   const callOnce = async (provider: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }): Promise<LLMResult> => {
     const ac = new AbortController();
