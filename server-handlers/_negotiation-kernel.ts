@@ -4335,6 +4335,39 @@ function applyMoodShift(
 
   n.recruiterMoodDynamic = nextDynamic;
   n.recruiterMoodDynamicEnteredAtTurn = enteredAt;
+
+  /* ---------- 4. Cold-line / rewarm-line single-fire latch ----------
+   * The prose layer (`humanizeRecruiterProse`) appends ONE cold line when
+   * the recruiter is `cooled` and ONE rewarm prefix when `rewarmed`. Both
+   * are deterministic given their gate, so the kernel — which runs BEFORE
+   * the prose for this turn — stamps the firing turn the FIRST turn of each
+   * episode. The prose then fires iff the latch is null OR equals the
+   * current turn (see `coldLineAlreadyFired` / `rewarmLineAlreadyFired`
+   * wiring in the planner and canonical-prose). Leaving the state clears
+   * the latch so a LATER cooling/rewarming episode re-fires exactly once.
+   *
+   * Without this, the latch field stayed null forever and the cold line
+   * re-fired on every consecutive cooled turn — the "Look, I've given you
+   * my best — if this doesn't work for you, I understand." tail repeated
+   * verbatim on turns 5/6/7 (live staging, 2026-06-20). Re-cool resets
+   * `enteredAt` every turn the candidate keeps confronting, so an
+   * entered-this-turn gate was insufficient; a sticky per-episode latch is
+   * the structural fix. */
+  let coldFiredAt = pre.recruiterMoodColdLineFiredAtTurn ?? null;
+  if (nextDynamic === "cooled") {
+    if (coldFiredAt == null) coldFiredAt = turn;
+  } else {
+    coldFiredAt = null;
+  }
+  n.recruiterMoodColdLineFiredAtTurn = coldFiredAt;
+
+  let rewarmFiredAt = pre.recruiterMoodRewarmLineFiredAtTurn ?? null;
+  if (nextDynamic === "rewarmed") {
+    if (rewarmFiredAt == null) rewarmFiredAt = turn;
+  } else {
+    rewarmFiredAt = null;
+  }
+  n.recruiterMoodRewarmLineFiredAtTurn = rewarmFiredAt;
 }
 
 

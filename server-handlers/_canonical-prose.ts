@@ -1982,10 +1982,17 @@ export function chainProseOverlays(
     candidateFirstName: getCandidateFirstName(state),
     mood: state.recruiterMood ?? null,
     moodDynamic: state.recruiterMoodDynamic ?? null,
-    coldLineAlreadyFired:
-      state.recruiterMoodColdLineFiredAtTurn != null,
-    rewarmLineAlreadyFired:
-      state.recruiterMoodRewarmLineFiredAtTurn != null,
+    /* Fire the cold line iff the latch is unset OR was stamped THIS turn
+     * (first turn of the cooling episode); later cooled turns suppress it.
+     * Exactly once per episode. Same for the rewarm prefix. */
+    coldLineAlreadyFired: !(
+      state.recruiterMoodColdLineFiredAtTurn == null ||
+      state.recruiterMoodColdLineFiredAtTurn === state.turnIndex
+    ),
+    rewarmLineAlreadyFired: !(
+      state.recruiterMoodRewarmLineFiredAtTurn == null ||
+      state.recruiterMoodRewarmLineFiredAtTurn === state.turnIndex
+    ),
   });
   if (overlaysActive) {
     out = applyFallibilityOverlay(out, {

@@ -5752,10 +5752,18 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
             candidateFirstName: getCandidateFirstName(state),
             mood: state.recruiterMood ?? null,
             moodDynamic: state.recruiterMoodDynamic ?? null,
-            coldLineAlreadyFired:
-              state.recruiterMoodColdLineFiredAtTurn != null,
-            rewarmLineAlreadyFired:
-              state.recruiterMoodRewarmLineFiredAtTurn != null,
+            /* Fire the cold line iff the latch is unset OR was stamped
+             * THIS turn (the first turn of the cooling episode). On later
+             * cooled turns the latch < turnIndex → suppressed, so the line
+             * appears exactly once per episode. Same for the rewarm prefix. */
+            coldLineAlreadyFired: !(
+              state.recruiterMoodColdLineFiredAtTurn == null ||
+              state.recruiterMoodColdLineFiredAtTurn === state.turnIndex
+            ),
+            rewarmLineAlreadyFired: !(
+              state.recruiterMoodRewarmLineFiredAtTurn == null ||
+              state.recruiterMoodRewarmLineFiredAtTurn === state.turnIndex
+            ),
           });
           if (overlaysActive) {
             chained = applyFallibilityOverlay(chained, {
