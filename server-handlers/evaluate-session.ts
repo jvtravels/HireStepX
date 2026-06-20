@@ -912,20 +912,32 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     // fell through to Gemini and exhausted that quota too. 2500 keeps
     // total request budget around 8.8K, well under the TPM ceiling, with
     // 50% headroom over the historical p100 completion size.
-    const result = await callLLM(
-      { prompt, temperature: 0.25, maxTokens: 2500, jsonMode: true },
-      35000,
-      { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
-    );
+    // A provider outage must degrade like an unparseable response, NOT a 500.
+    // callLLM THROWS when every provider fails (quota/timeout/overload). If we
+    // let that throw bubble to the outer catch, the user gets a scary
+    // "Evaluation error" 500 — even though the next block already handles the
+    // identical "no usable report" outcome gracefully with a retryable 503.
+    // So guard the primary call and route a thrown outage into the same
+    // retry-then-503 path. result stays null until a call actually succeeds.
+    let result: Awaited<ReturnType<typeof callLLM>> | null = null;
+    try {
+      result = await callLLM(
+        { prompt, temperature: 0.25, maxTokens: 2500, jsonMode: true },
+        35000,
+        { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
+      );
+    } catch (primaryErr) {
+      console.error(`[evaluate-session] Primary LLM call failed (all providers): ${primaryErr instanceof Error ? primaryErr.message.slice(0, 150) : String(primaryErr)}`);
+    }
     const tLLM = Date.now() - tLLM0;
 
-    let parsed = extractJSON<Partial<SessionReport>>(result.text);
+    let parsed = result ? extractJSON<Partial<SessionReport>>(result.text) : null;
     if (!parsed) {
-      // First parse failed — common causes are truncation past maxTokens
-      // or the model wrapping JSON in prose ("Here's the evaluation: ...").
-      // Retry once with a strict prefix at temperature 0 before giving
-      // up on a 25-minute interview the user can't easily replay.
-      console.warn(`[evaluate-session] JSON parse failed on first attempt. Model: ${result.model}, retrying strict.`);
+      // First attempt yielded no usable report — either the provider chain
+      // threw (outage) or the model wrapped/truncated the JSON. Retry once
+      // with a strict prefix at temperature 0 before giving up on a 25-minute
+      // interview the user can't easily replay.
+      console.warn(`[evaluate-session] No parseable report on first attempt (model: ${result?.model ?? "none"}); retrying strict.`);
       try {
         const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
         const retry = await callLLM(
@@ -933,20 +945,25 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
           18000,
           { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 12000 },
         );
-        parsed = extractJSON<Partial<SessionReport>>(retry.text);
+        const retryParsed = extractJSON<Partial<SessionReport>>(retry.text);
+        if (retryParsed) {
+          parsed = retryParsed;
+          result = retry; // downstream model/timing logging reflects the call that actually produced the report
+        }
       } catch (retryErr) {
         console.error(`[evaluate-session] Retry call failed:`, retryErr);
       }
-      if (!parsed) {
-        // Both attempts failed. Return 503 (not 500) with transcript_saved
-        // hint so the client can show "Your session is saved — retry
-        // evaluation" rather than implying data loss.
-        console.error(`[evaluate-session] Both attempts failed for user ${auth.userId}.`);
-        return new Response(
-          JSON.stringify({ error: "Couldn't generate your report right now. Your transcript is saved — please retry in a moment.", retryable: true, transcript_saved: true }),
-          { status: 503, headers },
-        );
-      }
+    }
+
+    if (!parsed || !result) {
+      // Both attempts failed (provider outage or unparseable output). Return
+      // 503 (not 500) with transcript_saved so the client shows "Your session
+      // is saved — retry evaluation" rather than implying data loss.
+      console.error(`[evaluate-session] Could not generate report for user ${auth.userId} (outage or unparseable output).`);
+      return new Response(
+        JSON.stringify({ error: "Couldn't generate your report right now. Your transcript is saved — please retry in a moment.", retryable: true, transcript_saved: true }),
+        { status: 503, headers },
+      );
     }
 
     // Build final report — merge deterministic metrics with LLM output.
