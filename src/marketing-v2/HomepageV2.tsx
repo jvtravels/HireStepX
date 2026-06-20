@@ -4162,11 +4162,11 @@ const TR = "transform 0.50s cubic-bezier(0.16,1,0.3,1), opacity 0.38s ease, filt
 
 /* ─── Card: Behavioral — left ── (exact canvas copy) */
 function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
-  const skills = [
-    { label: "STAR coherence",   score: 88, c: "#15803D" },
-    { label: "Outcome clarity",  score: 88, c: "#15803D" },
-    { label: "Ownership voice",  score: 71, c: "#B45309" },
-    { label: "Conflict balance", score: 42, c: "#B91C1C" },
+  const star = [
+    { key: "S", label: "Situation",  score: 88, c: "#15803D" },
+    { key: "T", label: "Task",       score: 88, c: "#15803D" },
+    { key: "A", label: "Action",     score: 71, c: "#B45309" },
+    { key: "R", label: "Result",     score: 42, c: "#B91C1C" },
   ];
   const rptF = { sans: "Inter, system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
   return (
@@ -4201,28 +4201,18 @@ function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
           </div>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 8px", background: "#FEFDF8" }}>
+      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 6px", background: "#FEFDF8" }}>
         <span style={{ fontSize: 8, background: "#E5E2F2", color: "#312E81", padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>BEHAVIORAL INTERVIEW · FULL REPORT</span>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: "#0E0C08", marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your behavioral answers</div>
-        <div style={{ fontSize: 8, color: "#6E6759", marginTop: 3 }}>Each panel turns one STAR skill into something you can rehearse.</div>
       </div>
-      <div style={{ margin: "10px 16px 0", background: "#312E81", borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
-        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
-        <div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>Skill breakdown</div>
-          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.65)" }}>Where each axis landed and what it means for your prep.</div>
-        </div>
-      </div>
-      <div style={{ padding: "10px 16px 14px" }}>
-        {skills.map(s => (
-          <div key={s.label} style={{ marginBottom: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ fontSize: 8.5, color: "#4A4540" }}>{s.label}</span>
-              <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono }}>{s.score}</span>
-            </div>
-            <div style={{ height: 4, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
+      <div style={{ padding: "8px 16px 14px" }}>
+        {star.map(s => (
+          <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+            <span style={{ width: 18, height: 18, borderRadius: 4, background: s.c, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: rptF.mono }}>{s.key}</span>
+            <span style={{ fontSize: 8.5, color: "#4A4540", width: 52, flexShrink: 0 }}>{s.label}</span>
+            <div style={{ flex: 1, height: 4, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${s.score}%`, background: s.c, borderRadius: 2 }} />
             </div>
+            <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono, width: 20, textAlign: "right", flexShrink: 0 }}>{s.score}</span>
           </div>
         ))}
       </div>
