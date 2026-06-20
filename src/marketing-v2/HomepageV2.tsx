@@ -4494,6 +4494,113 @@ export function PersonalizedReportsV2() {
   );
 }
 
+/* ─────────────────────────── SECURITY & COMPLIANCE ─────────────────────────── */
+export function SecurityComplianceV2() {
+  const cards = [
+    {
+      title: "DPDP Act 2023",
+      desc: "Built for India's Digital Personal Data Protection Act. Your data rights are enforced by design, not just policy.",
+      icon: (
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#312E81" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="24" cy="24" r="18" />
+          <path d="M24 6v3M24 39v3M6 24h3M39 24h3" />
+          <path d="M17 24a7 7 0 0 1 7-7v7h7a7 7 0 1 1-14 0Z" fill="#E5E2F2" stroke="#312E81" strokeWidth="1.5" />
+          <text x="24" y="26.5" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="#312E81" stroke="none" fontFamily="Inter, sans-serif">DPDP</text>
+        </svg>
+      ),
+    },
+    {
+      title: "Encrypted at rest",
+      desc: "All resumes, transcripts, and voice data stored with AES-256 encryption and row-level security. Nothing leaks between users.",
+      icon: (
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#312E81" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="10" y="22" width="28" height="20" rx="4" />
+          <path d="M16 22v-6a8 8 0 0 1 16 0v6" />
+          <circle cx="24" cy="32" r="3" fill="#E5E2F2" />
+          <line x1="24" y1="35" x2="24" y2="38" />
+        </svg>
+      ),
+    },
+    {
+      title: "No AI training on your data",
+      desc: "Your interviews, resume, and voice recordings are never used to train AI models. Your sessions belong to you alone.",
+      icon: (
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#312E81" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M24 8c-8.84 0-16 7.16-16 16s7.16 16 16 16 16-7.16 16-16S32.84 8 24 8Z" />
+          <path d="M16 32 32 16" strokeWidth="2" />
+          <path d="M20 16h8M20 20h5" strokeWidth="1.4" />
+        </svg>
+      ),
+    },
+    {
+      title: "You're in control",
+      desc: "Delete your account and every byte of your data from Settings, instantly. No support ticket. No waiting period.",
+      icon: (
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#312E81" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M24 10a14 14 0 0 1 14 14c0 4.5-2.1 8.5-5.4 11.1" />
+          <path d="M10 24A14 14 0 0 1 24 10" />
+          <path d="M10 24a14 14 0 0 0 14 14" />
+          <circle cx="24" cy="24" r="5" fill="#E5E2F2" />
+          <polyline points="30,18 36,18 36,24" />
+          <line x1="24" y1="24" x2="36" y2="18" strokeWidth="1.6" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <section style={{ background: t.cream, padding: "96px 0 80px" }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px" }}>
+        {/* Label */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: 0.8, color: "#B45309", background: "#FEF3C7", padding: "4px 14px", borderRadius: 20, border: "1px solid #FDE68A" }}>
+            SECURITY &amp; PRIVACY
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 56, fontWeight: 400, lineHeight: 1.05, color: t.coal, textAlign: "center", margin: "0 auto 16px", letterSpacing: -1.5, maxWidth: 640 }}>
+          Your data stays <span style={{ fontStyle: "italic", color: "#312E81" }}>yours</span>
+        </h2>
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: "0 auto 64px", maxWidth: 480, fontFamily: fonts.sans }}>
+          Built for India's regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.
+        </p>
+
+        {/* Cards grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          {cards.map((c) => (
+            <div
+              key={c.title}
+              style={{
+                background: "#FEFDF8",
+                border: "1px solid rgba(180,83,9,0.1)",
+                borderRadius: 14,
+                padding: "28px 24px 28px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                minHeight: 260,
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: t.coal, marginBottom: 10, fontFamily: fonts.sans }}>
+                  {c.title}
+                </div>
+                <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "#4A4540", margin: 0, fontFamily: fonts.sans }}>
+                  {c.desc}
+                </p>
+              </div>
+              <div style={{ marginTop: 32 }}>
+                {c.icon}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─────────────────────────── COMPOSED PAGE ─────────────────────────── */
 export default function HomepageV2() {
   return (
@@ -4529,6 +4636,7 @@ export default function HomepageV2() {
         <TestimonialsV2 />
         <PricingV2 />
         <BuiltForIndiaV2 />
+        <SecurityComplianceV2 />
         <FAQV2 />
       </main>
       <FinalCTAFooterV2 />
