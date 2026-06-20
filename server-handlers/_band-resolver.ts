@@ -208,6 +208,30 @@ export function resolveServerBand(
         band.initialOffer = tierBand.target;
         band.maxStretch = tierBand.ceil;
         band.walkAway = Math.max(1, Math.round(tierBand.floor * 0.95 * 10) / 10);
+      } else if (band.maxStretch < tierBand.floor) {
+        /* Bug (2026-06-20, live staging) — UNDER-resolution rebase (UP).
+         * The legacy salary-lookup pipeline silently DROPS the experience
+         * signal for some IT-services × role combinations: a Senior SWE
+         * (8 YoE) at Infosys resolved to init=8.9 / maxStretch=9.4 — a
+         * FRESHER band — while the canonical YoE-aware tier table puts the
+         * senior floor at 11.2 (target 15.4, ceil 19.6). Because the only
+         * rebase was the one-way DOWN-ratchet above, that degenerate band
+         * shipped: the recruiter opened a pay-cut anchor BELOW the
+         * candidate's own current CTC, then the gap-gate read every
+         * realistic ask as "structurally unbridgeable" and walked away at
+         * turn ~4. This breaks the negotiation for the single largest
+         * Indian employer segment (TCS/Infosys/Wipro/Cognizant/HCL laterals).
+         *
+         * When the resolved band sits ENTIRELY below the tier-table floor
+         * for the resolved seniority, the lookup is under-resolved; rebase
+         * UP to the tier band. Trigger is deliberately tight (whole band
+         * below floor) so it fires only on genuine breakage — every healthy
+         * band (TCS senior 15.3-22.8, Google 97.5, Flipkart 70+) sits above
+         * the floor and is untouched. Symmetric with the down-ratchet; the
+         * tier table is the canonical Indian-market source either way. */
+        band.initialOffer = tierBand.target;
+        band.maxStretch = tierBand.ceil;
+        band.walkAway = Math.max(1, Math.round(tierBand.floor * 0.95 * 10) / 10);
       }
     }
 
