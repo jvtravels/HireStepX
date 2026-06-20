@@ -1186,45 +1186,7 @@ function SectionMasthead({
   live?: boolean;
   style?: CSSProperties;
 }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        fontFamily: fonts.sans,
-        fontSize: 11,
-        lineHeight: 1,
-        color: t.inkFaint,
-        textTransform: "uppercase",
-        letterSpacing: "0.2em",
-        fontWeight: 600,
-        ...style,
-      }}
-    >
-      <span style={{ color: t.coal }}>{n}</span>
-      <span aria-hidden style={{ color: t.inkFaint }}>/</span>
-      <span>{label}</span>
-      <span aria-hidden style={{ flex: 1, height: 1, background: t.line }} />
-      {right ? (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          {live ? (
-            <span
-              aria-hidden
-              className="mv2-pulse-dot"
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: t.success,
-              }}
-            />
-          ) : null}
-          {right}
-        </span>
-      ) : null}
-    </div>
-  );
+  return null;
 }
 
 /* Aspirational micro-copy, not testimonials. We don't have customers
