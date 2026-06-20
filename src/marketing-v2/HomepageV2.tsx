@@ -4587,7 +4587,7 @@ export function VideoCtaV2() {
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "80px 40px", maxWidth: 720, margin: "0 auto" }}>
 
         <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 64, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2, whiteSpace: "nowrap" }}>
-          Hear the silence. <span style={{ fontStyle: "italic", color: "#B45309" }}>Then answer it.</span>
+          Hear the silence. <span style={{ fontStyle: "italic", color: "#ffffff" }}>Then answer it.</span>
         </h2>
 
         <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 480, fontFamily: fonts.sans }}>
