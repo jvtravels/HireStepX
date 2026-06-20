@@ -4590,7 +4590,7 @@ export function VideoCtaV2() {
           Hear the silence. <span style={{ fontStyle: "italic", color: "#ffffff" }}>Then answer it.</span>
         </h2>
 
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 480, fontFamily: fonts.sans }}>
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 480, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif" }}>
           HireStepX asks real follow-up questions, catches vague answers, and scores you — just like a bar-raiser would.
         </p>
 
