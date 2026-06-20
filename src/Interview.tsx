@@ -233,7 +233,7 @@ function InterviewInner() {
     displayRole, displayCompany, displayFocus, interviewerName, interviewType: focusType,
     isPanelInterview, panelMembers, activePersona,
     ttsDurationMs, speechEnded,
-    saveWarning, questionFallbackSource, liveMetrics,
+    saveWarning, liveMetrics,
     isSalaryNegotiation, negotiationBand, negotiationStyle,
 
     setCurrentTranscript, setSpeechUnavailable, setIsMuted,
@@ -413,7 +413,6 @@ function InterviewInner() {
         isSalaryNegotiation={isSalaryNegotiation}
         isPanelInterview={isPanelInterview}
         connectionStatus={mapConnectionStatus(isOffline)}
-        questionFallbackSource={questionFallbackSource}
         isMuted={isMuted}
         onToggleMute={() => setIsMuted(m => !m)}
         videoEnabled={video.videoEnabled}
