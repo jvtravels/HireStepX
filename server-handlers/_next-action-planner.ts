@@ -4356,6 +4356,52 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       const derived: NegotiationState = { ...state, phase: "counter-offer" };
       return planNextActionInternal(derived);
     }
+    /* #122 (2026-06-21, live staging) — post-anchor re-probe loop. Repro
+     * (Flipkart EM, content-free candidate): after the #121 stonewall
+     * anchor put ₹32.7L on the table, phase = "probe-expectations" with
+     * highestOfferMade > 0. The candidate kept stonewalling ("Hmm." /
+     * "I see." / "Okay.") and this fallthrough re-emitted the IDENTICAL
+     * "What fitment were you expecting for this role?" probe-expectations
+     * action three turns running — the bot looping backwards over an
+     * offer it had already put down, begging for a number while ignoring
+     * its own standing offer.
+     *
+     * Root cause: `probe-expectations` is semantically a PRE-anchor move
+     * (ask the candidate's number before we put an offer down). The two
+     * bridges above both early-out on `highestOfferMade === 0`, so once an
+     * offer stands the cascade fell straight through to this unconditional
+     * re-probe. Asking "what were you expecting?" ONCE over a standing offer
+     * is a legitimate gap-gauge (the activeStageGating unit tests bless it) —
+     * the defect is the REPEAT. The F7 askedTopics ledger that would normally
+     * single-fire it gets tail-rewound on content-free / noise answers (the
+     * exact stonewall path), so the ledger can't gate this. Use the #119
+     * stonewall predicate instead: once an offer stands AND the candidate has
+     * disclosed NOTHING past the turn threshold, they are stonewalling — HOLD
+     * the number and invite a decision via offer-recap rather than begging for
+     * a figure over our own offer (and rather than auto-escalating cash, which
+     * would over-concede for free). offer-recap restates highestOfferMade
+     * WITHOUT moving the band. A fresh probe-expectations with an offer but no
+     * stonewall history (turnIndex 0) still flows through to the single probe
+     * below. (Post-anchor twin of the pre-anchor probe→anchor bridge.) */
+    const stonewalledOverOffer =
+      (state.highestOfferMade ?? 0) > 0 &&
+      state.candidateCurrentCtc == null &&
+      state.candidateTarget == null &&
+      state.candidateTargetFixed == null &&
+      state.turnIndex >= 5;
+    if (stonewalledOverOffer) {
+      return {
+        kind: "offer-recap",
+        offerLpa: state.highestOfferMade,
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          rationale:
+            `Offer ₹${state.highestOfferMade}L already on the table and candidate has not named a target after stonewalling;` +
+            ` hold the standing number and invite a decision instead of re-probing expectations (would beg for a figure over our own offer).`,
+        },
+      };
+    }
     return {
       kind: "probe-expectations",
       satisfiesTopic: "targetAsked",

@@ -506,9 +506,17 @@ function fixSentenceCaps(s: string): string {
  * (proper noun), so we enumerate the safe function words rather than
  * lowercase by heuristic. Live-staging (2026-06-19): the mood layer's
  * frantic tic stacked in front of a "Before we go further…" probe and the
- * old whitelist (lacking "Before") shipped "Umm, so, Before we go further". */
+ * old whitelist (lacking "Before") shipped "Umm, so, Before we go further".
+ *
+ * #122 (2026-06-21, live staging) — the interrogative wh-words (What/Why/
+ * How/Which/Who) were missing, so a mood tic prepended in front of a probe
+ * body that opens with one shipped a capital after the comma ("Honestly,
+ * What fitment were you expecting for this role?", live Flipkart EM). The
+ * wh-interrogatives are a CLOSED grammatical class — none is ever a proper
+ * noun in recruiter comp-talk — so they extend the same proper-noun-safe
+ * whitelist as When/Where (already present). */
 const TIDY_MIDSENTENCE_DOWNCASE =
-  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let|Before|After|Since|While|Given|Once|Coming|Moving|Picking|Unless|Until|Although|Though|When|Where)\b/g;
+  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let|Before|After|Since|While|Given|Once|Coming|Moving|Picking|Unless|Until|Although|Though|When|Where|What|Why|How|Which|Who)\b/g;
 
 export function tidyRealismArtifacts(s: string): string {
   if (!s) return s;

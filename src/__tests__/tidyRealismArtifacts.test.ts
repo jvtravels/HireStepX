@@ -80,6 +80,29 @@ describe("tidyRealismArtifacts — sentence capitalization", () => {
     );
   });
 
+  it("downcases a wh-interrogative capitalized after a prepended mood tic", () => {
+    /* #122 (2026-06-21, live staging) — the frantic-mood humanizer prepended
+     * a tic ("Honestly, ") in front of a probe body that opens with a
+     * wh-interrogative, shipping a capital after the comma: "Honestly, What
+     * fitment were you expecting for this role?" (live Flipkart EM). The
+     * wh-words (What/Why/How/Which/Who) are a CLOSED grammatical class and,
+     * mid-sentence after a discourse-opener comma, are never proper nouns —
+     * so they downcase like any other glued opener. */
+    expect(
+      tidyRealismArtifacts("Honestly, What fitment were you expecting for this role?"),
+    ).toBe("Honestly, what fitment were you expecting for this role?");
+    expect(tidyRealismArtifacts("Look, Why is the band capped there?")).toBe(
+      "Look, why is the band capped there?",
+    );
+    expect(tidyRealismArtifacts("Right, Which component are you weighing?")).toBe(
+      "Right, which component are you weighing?",
+    );
+    /* But a wh-word after a PERIOD (real sentence start) stays capitalized. */
+    expect(tidyRealismArtifacts("Got it. What were you expecting?")).toBe(
+      "Got it. What were you expecting?",
+    );
+  });
+
   it("downcases an imperative 'Let's' glued after a context-ref clause comma", () => {
     /* Live-staging (2026-06-19) — the LLM restyle re-glued a sector
      * context-ref clause onto the discovery probe and kept the next word

@@ -475,3 +475,77 @@ describe("negotiation battery — stonewall anchors, never ₹0 stalemate (#121)
     }
   });
 });
+
+/* #122 (2026-06-21, live staging) — post-anchor re-probe loop. After the
+ * #121 stonewall anchor put ₹32.7L on the table (phase = "probe-expectations"),
+ * a content-free candidate ("Hmm." / "I see." / "Okay.") got the IDENTICAL
+ * "What fitment were you expecting for this role?" probe-expectations action
+ * three turns running — the bot begging for a number while ignoring its own
+ * standing offer. probe-expectations is a PRE-anchor move; once an offer
+ * stands the recruiter must HOLD it (offer-recap) and invite a decision,
+ * never re-probe expectations and never auto-escalate cash for free. */
+describe("negotiation battery — no post-anchor expectations re-probe (#122)", () => {
+  const STONEWALL_BAND: NegotiationBand = {
+    initialOffer: 32.7,
+    maxStretch: 56,
+    walkAway: 26.6,
+    hasEquity: true,
+  };
+
+  it("content-free stonewall: once an offer stands, never re-probe 'what were you expecting'", () => {
+    const { transcript } = runConversation({
+      sessionId: "post-anchor-reprobe-122",
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: STONEWALL_BAND,
+      initExtras: {
+        experienceLevel: "senior",
+        applicableYoe: 9,
+        totalYoe: 9,
+        primaryDomain: "engineering",
+      },
+      turns: [
+        "Hmm.",
+        "I see.",
+        "Not sure.",
+        "Okay.",
+        "Right.",
+        "Hmm.",
+        "I see.",
+        "Okay.",
+        "Sure.",
+        "Hmm.",
+      ],
+      stopOnTerminal: false,
+    });
+
+    // An offer must land (the #121 anchor).
+    expect(
+      transcript.some((t) => t.highestOfferMade > 0),
+      "bot must anchor a concrete offer under a stonewall",
+    ).toBe(true);
+
+    // Once an offer is on the table, no later turn may emit the
+    // expectations re-probe — neither the action kind nor its prose.
+    const EXPECTATIONS_PROBE_RE = /what fitment were you expecting/i;
+    let offerSeen = false;
+    for (const t of transcript) {
+      if (t.highestOfferMade > 0) offerSeen = true;
+      if (!offerSeen) continue;
+      expect(
+        t.kind,
+        `post-anchor probe-expectations re-probe: ${t.aiText}`,
+      ).not.toBe("probe-expectations");
+      expect(
+        EXPECTATIONS_PROBE_RE.test(t.aiText),
+        `post-anchor begs for a number over a standing offer: ${t.aiText}`,
+      ).toBe(false);
+    }
+
+    // Register + fluency stay clean throughout.
+    for (const t of transcript) {
+      expect(registerViolations(t.aiText), `register: ${t.aiText}`).toEqual([]);
+      expect(fluencyViolations(t.aiText), `fluency: ${t.aiText}`).toEqual([]);
+    }
+  });
+});
