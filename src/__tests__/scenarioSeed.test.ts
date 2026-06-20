@@ -18,6 +18,8 @@ import { describe, it, expect } from "vitest";
 import {
   computeScenarioSeed,
   compatibleTones,
+  reconstructSeenPersonas,
+  tierBucketForCompanyTier,
   type ScenarioSeed,
 } from "../../server-handlers/_scenario-seed";
 import type { RecruiterPersona } from "../../server-handlers/_negotiation-kernel";
@@ -173,5 +175,116 @@ describe("computeScenarioSeed — degraded inputs", () => {
     expect(s0.recruiterPersona).not.toBe(s1.recruiterPersona);
     expect(["consultative", "hardline"]).toContain(s0.recruiterPersona);
     expect(["consultative", "hardline"]).toContain(s1.recruiterPersona);
+  });
+});
+
+describe("computeScenarioSeed — cross-session ledger (seenPersonas)", () => {
+  it("empty / omitted ledger reproduces the legacy count-modulo pick exactly", () => {
+    for (const tier of ALL_TIERS) {
+      for (let count = 0; count < 6; count++) {
+        const legacy = computeScenarioSeed({ userId: "u1", priorNegotiationCount: count, tierBucket: tier });
+        const withEmpty = computeScenarioSeed({ userId: "u1", priorNegotiationCount: count, tierBucket: tier, seenPersonas: [] });
+        expect(withEmpty.recruiterPersona).toBe(legacy.recruiterPersona);
+        expect(withEmpty.rotationIndex).toBe(legacy.rotationIndex);
+      }
+    }
+  });
+
+  it("never repeats the immediately-prior persona, whatever the count says", () => {
+    const tier: CompanyTierBucket = "growth_startup"; // 4 tones
+    // Force a degenerate count that, modulo-only, would re-pick the last tone.
+    for (const last of compatibleTones(tier)) {
+      const seed = computeScenarioSeed({
+        userId: "u1",
+        priorNegotiationCount: 0,
+        tierBucket: tier,
+        seenPersonas: [last],
+      });
+      expect(seed.recruiterPersona).not.toBe(last);
+      expect(compatibleTones(tier)).toContain(seed.recruiterPersona);
+    }
+  });
+
+  it("prefers the stalest tone: re-serves the oldest-seen once all are seen", () => {
+    const tier: CompanyTierBucket = "it_services"; // [consultative, agency, hardline]
+    // Seen oldest→newest: consultative (stalest), agency, hardline (freshest).
+    const seed = computeScenarioSeed({
+      userId: "u1",
+      priorNegotiationCount: 3,
+      tierBucket: tier,
+      seenPersonas: ["consultative", "agency", "hardline"],
+    });
+    expect(seed.recruiterPersona).toBe("consultative");
+  });
+
+  it("guarantees no back-to-back repeat even across mixed tiers", () => {
+    // Alternating tier sizes (2 vs 3 tones) is exactly where count-modulo
+    // can collide; the ledger must still prevent consecutive repeats.
+    const tierSeq: (CompanyTierBucket | null)[] = [
+      "bfsi", "it_services", "psu", "growth_startup", "bfsi", "it_services", null, "fmcg",
+    ];
+    const seen: ReturnType<typeof compatibleTones> = [];
+    let prev: string | null = null;
+    tierSeq.forEach((tier, i) => {
+      const seed = computeScenarioSeed({
+        userId: "mixed-user",
+        priorNegotiationCount: i,
+        tierBucket: tier,
+        seenPersonas: [...seen],
+      });
+      if (prev !== null) expect(seed.recruiterPersona).not.toBe(prev);
+      expect(compatibleTones(tier)).toContain(seed.recruiterPersona);
+      seen.push(seed.recruiterPersona);
+      prev = seed.recruiterPersona;
+    });
+  });
+});
+
+describe("reconstructSeenPersonas — ledger replay from prior companies", () => {
+  it("returns one tone per prior session, all tier-compatible, in order", () => {
+    const tiers: (CompanyTierBucket | null)[] = ["growth_startup", "growth_startup", "growth_startup"];
+    const seen = reconstructSeenPersonas("user-x", tiers);
+    expect(seen).toHaveLength(3);
+    tiers.forEach((tier, i) => expect(compatibleTones(tier)).toContain(seen[i]));
+  });
+
+  it("is self-consistent: consecutive same-tier sessions never repeat a tone", () => {
+    const tiers: (CompanyTierBucket | null)[] = new Array(5).fill("it_services");
+    const seen = reconstructSeenPersonas("user-y", tiers);
+    for (let i = 1; i < seen.length; i++) expect(seen[i]).not.toBe(seen[i - 1]);
+  });
+
+  it("empty history → empty ledger", () => {
+    expect(reconstructSeenPersonas("user-z", [])).toEqual([]);
+  });
+
+  it("feeds back into computeScenarioSeed so the next session avoids the last tone", () => {
+    const tiers: (CompanyTierBucket | null)[] = ["bfsi", "bfsi", "bfsi"];
+    const seen = reconstructSeenPersonas("returning", tiers);
+    const next = computeScenarioSeed({
+      userId: "returning",
+      priorNegotiationCount: tiers.length,
+      tierBucket: "bfsi",
+      seenPersonas: seen,
+    });
+    expect(next.recruiterPersona).not.toBe(seen[seen.length - 1]);
+  });
+});
+
+describe("tierBucketForCompanyTier — single source of truth", () => {
+  it("maps representative company tiers to the right bucket", () => {
+    expect(tierBucketForCompanyTier("faang")).toBe("listed_big_tech");
+    expect(tierBucketForCompanyTier("gcc")).toBe("listed_big_tech");
+    expect(tierBucketForCompanyTier("indian-unicorn")).toBe("mature_unicorn");
+    expect(tierBucketForCompanyTier("startup-early")).toBe("early_startup");
+    expect(tierBucketForCompanyTier("startup-growth")).toBe("growth_startup");
+    expect(tierBucketForCompanyTier("it-services")).toBe("it_services");
+    expect(tierBucketForCompanyTier("bfsi-domestic")).toBe("bfsi");
+    expect(tierBucketForCompanyTier("fmcg-mnc")).toBe("fmcg");
+    expect(tierBucketForCompanyTier("government-psu")).toBe("psu");
+  });
+
+  it("maps null / unknown tier to null bucket", () => {
+    expect(tierBucketForCompanyTier(null)).toBeNull();
   });
 });

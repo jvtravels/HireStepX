@@ -455,6 +455,45 @@ export async function countPriorNegotiationSessions(userId: string): Promise<num
   }
 }
 
+/** Read this user's prior salary-negotiation companies, oldest → newest.
+ *  Feeds the cross-session persona ledger: the scenario-seed layer
+ *  reconstructs the recruiter tones actually served by replaying the
+ *  deterministic seed over these companies' tiers, then picks the
+ *  least-recently-seen tone for the new session. "Reuse existing
+ *  sessions" — reads only the already-persisted `target_company` column;
+ *  no new table, no write path.
+ *
+ *  Fail-open: returns [] on any missing-env / timeout / non-2xx / parse
+ *  failure. A missing ledger only weakens anti-repetition back to the
+ *  count-modulo rotation — never blocks or delays session start. Capped
+ *  at the most recent `limit` sessions (returned ascending) since only
+ *  the recent tail matters for "don't repeat what they just saw". */
+export async function readPriorNegotiationCompanies(
+  userId: string,
+  limit = 40,
+): Promise<string[]> {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return []; // dev / unconfigured
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&type=eq.salary-negotiation&select=target_company,created_at&order=created_at.desc&limit=${encodeURIComponent(String(limit))}`,
+      { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` }, signal: ac.signal },
+    );
+    clearTimeout(timer);
+    if (!res.ok) return [];
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return [];
+    // Fetched newest-first (so the cap keeps the recent tail); the
+    // reconstruction wants chronological order, so reverse to ascending.
+    return rows
+      .reverse()
+      .map((r) => (r && typeof r.target_company === "string" ? r.target_company : ""));
+  } catch {
+    return [];
+  }
+}
+
 /* ─── Subscription Tier Check ─── */
 
 /** Get the user's current subscription tier, accounting for expiry. Returns "pro" in dev mode. */

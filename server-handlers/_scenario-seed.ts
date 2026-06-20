@@ -38,6 +38,7 @@
  */
 import type { RecruiterPersona, SessionDifficulty } from "./_negotiation-kernel";
 import type { CompanyTierBucket } from "../src/_negotiation-math";
+import type { CompanyTier } from "../data/company-tiers";
 
 export interface ScenarioSeedInput {
   /** Authenticated user id, or null for anonymous / dev sessions. */
@@ -46,6 +47,16 @@ export interface ScenarioSeedInput {
   priorNegotiationCount: number;
   /** Company tier bucket, used to constrain plausible recruiter tones. */
   tierBucket: CompanyTierBucket | null;
+  /** The recruiter tones this user has ALREADY faced, oldest → newest
+   *  (the actual cross-session ledger, reconstructed from their prior
+   *  sessions — see `reconstructSeenPersonas`). When supplied, persona
+   *  selection prefers the least-recently-seen compatible tone, so a
+   *  returning user is *guaranteed* never to draw the persona from their
+   *  immediately-prior session and cycles the full compatible set before
+   *  any repeat — true cross-session anti-repetition rather than the
+   *  count-modulo approximation. Omitted / empty ⇒ the original
+   *  deterministic `(userOffset + count) % len` rotation, unchanged. */
+  seenPersonas?: RecruiterPersona[];
 }
 
 export interface ScenarioSeed {
@@ -107,9 +118,62 @@ export function compatibleTones(tier: CompanyTierBucket | null): RecruiterPerson
   }
 }
 
+/* Map the data-layer `CompanyTier` (company-tiers.ts) to the kernel's
+ * `CompanyTierBucket`. SINGLE SOURCE OF TRUTH for this projection — the
+ * negotiate-turn init path and the cross-session persona reconstruction
+ * MUST agree on a company's bucket, or the reconstructed ledger wouldn't
+ * line up with the tones actually served. Pure. */
+export function tierBucketForCompanyTier(
+  tier: CompanyTier | null,
+): CompanyTierBucket | null {
+  switch (tier) {
+    case "faang": case "big-tech": case "gcc":      return "listed_big_tech";
+    case "indian-unicorn": case "saas-product":     return "mature_unicorn";
+    case "edtech": case "startup-growth":           return "growth_startup";
+    case "startup-early":                           return "early_startup";
+    case "it-services":                             return "it_services";
+    case "bfsi-global": case "bfsi-domestic":       return "bfsi";
+    case "fmcg-mnc":                                return "fmcg";
+    case "government-psu":                          return "psu";
+    default:                                        return null;
+  }
+}
+
+/** Pick the least-recently-seen compatible tone. `seen` is oldest →
+ *  newest. A never-seen tone scores -1 (maximally stale) so it is always
+ *  preferred; among ties we start scanning from `startIndex` (the
+ *  original deterministic rotation index) and keep the FIRST best with a
+ *  strict `<`, so an empty `seen` reproduces the legacy
+ *  `tones[startIndex]` pick exactly. The most-recently-seen tone carries
+ *  the highest score and is therefore never chosen while any alternative
+ *  exists (≥2 tones always exist), guaranteeing no back-to-back repeat. */
+function selectLeastRecentTone(
+  tones: RecruiterPersona[],
+  seen: readonly RecruiterPersona[],
+  startIndex: number,
+): { tone: RecruiterPersona; index: number } {
+  const lastSeenAt = new Map<RecruiterPersona, number>();
+  seen.forEach((p, i) => lastSeenAt.set(p, i));
+  let bestTone = tones[startIndex];
+  let bestIndex = startIndex;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (let k = 0; k < tones.length; k++) {
+    const idx = (startIndex + k) % tones.length;
+    const tone = tones[idx];
+    const score = lastSeenAt.has(tone) ? (lastSeenAt.get(tone) as number) : -1;
+    if (score < bestScore) {
+      bestScore = score;
+      bestTone = tone;
+      bestIndex = idx;
+    }
+  }
+  return { tone: bestTone, index: bestIndex };
+}
+
 /** Deterministically pick this session's recruiter tone + difficulty
- *  from the user's identity and how many negotiations they've already
- *  practised. Pure. */
+ *  from the user's identity, how many negotiations they've already
+ *  practised, and — when supplied — the actual ledger of tones they've
+ *  faced (`seenPersonas`, oldest → newest). Pure. */
 export function computeScenarioSeed(input: ScenarioSeedInput): ScenarioSeed {
   const tones = compatibleTones(input.tierBucket);
   const count = Number.isFinite(input.priorNegotiationCount)
@@ -119,11 +183,47 @@ export function computeScenarioSeed(input: ScenarioSeedInput): ScenarioSeed {
   /* Stable per-user offset so two users at count=0 don't both land on
    * tones[0]. Anonymous sessions (no userId) start at 0 deterministically. */
   const userOffset = input.userId ? fnv1a(input.userId) % tones.length : 0;
-  const rotationIndex = (userOffset + count) % tones.length;
-  const recruiterPersona = tones[rotationIndex];
+  const startIndex = (userOffset + count) % tones.length;
+
+  /* Without a seen-ledger this collapses to the legacy
+   * `tones[startIndex]` rotation; with one it prefers the stalest tone,
+   * upgrading the count-modulo APPROXIMATION of "don't repeat" into a
+   * GUARANTEE keyed on what the user actually faced (correct even when
+   * sessions span multiple tiers with differently-sized tone sets). */
+  const { tone: recruiterPersona, index: rotationIndex } = selectLeastRecentTone(
+    tones,
+    input.seenPersonas ?? [],
+    startIndex,
+  );
 
   const difficulty: SessionDifficulty =
     count <= 1 ? "warmup" : count <= 4 ? "standard" : "hardball";
 
   return { recruiterPersona, difficulty, rotationIndex };
+}
+
+/** Reconstruct, purely from a user's prior negotiation companies (the
+ *  already-persisted `target_company` column, in chronological order),
+ *  the recruiter tones they were actually served. This is the
+ *  "reuse existing sessions" ledger: no new table, no write path — we
+ *  replay the same deterministic seed logic over the historical tiers,
+ *  folding each pick into the seen-list so the reconstruction is
+ *  self-consistent with how the NEXT session will select. Returns the
+ *  tones oldest → newest, ready to hand back into `computeScenarioSeed`
+ *  as `seenPersonas`. Pure. */
+export function reconstructSeenPersonas(
+  userId: string | null,
+  priorTiers: readonly (CompanyTierBucket | null)[],
+): RecruiterPersona[] {
+  const seen: RecruiterPersona[] = [];
+  priorTiers.forEach((tier, i) => {
+    const { recruiterPersona } = computeScenarioSeed({
+      userId,
+      priorNegotiationCount: i,
+      tierBucket: tier,
+      seenPersonas: seen,
+    });
+    seen.push(recruiterPersona);
+  });
+  return seen;
 }

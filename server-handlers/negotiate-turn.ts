@@ -25,8 +25,8 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit, countPriorNegotiationSessions } from "./_shared";
-import { computeScenarioSeed } from "./_scenario-seed";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit, countPriorNegotiationSessions, readPriorNegotiationCompanies } from "./_shared";
+import { computeScenarioSeed, reconstructSeenPersonas, tierBucketForCompanyTier } from "./_scenario-seed";
 import { callLLM } from "./_llm";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import {
@@ -407,20 +407,9 @@ export default async function handler(
        * (tierBucket, band shape). Mirrors the analyzer's `tierBucket`
        * helper so the kernel + analyzer agree on the persona. Kernel
        * is data-tier-agnostic; we compute here and pass via init. */
-      const initTierBucket: CompanyTierBucket | null = (() => {
-        const t = getCompanyTier(company);
-        switch (t) {
-          case "faang": case "big-tech": case "gcc":          return "listed_big_tech";
-          case "indian-unicorn": case "saas-product":         return "mature_unicorn";
-          case "edtech": case "startup-growth":               return "growth_startup";
-          case "startup-early":                                return "early_startup";
-          case "it-services":                                  return "it_services";
-          case "bfsi-global": case "bfsi-domestic":           return "bfsi";
-          case "fmcg-mnc":                                     return "fmcg";
-          case "government-psu":                               return "psu";
-          default:                                             return null;
-        }
-      })();
+      const initTierBucket: CompanyTierBucket | null = tierBucketForCompanyTier(
+        getCompanyTier(company),
+      );
       const initRecruiterSectorPersona = selectRecruiterSectorPersona({
         tierBucket: initTierBucket,
         band: serverBand,
@@ -466,19 +455,39 @@ export default async function handler(
        * (applyPersonaToBand), but which negotiate-turn never passed — so
        * every session ran the single hardwired "consultative" tone.
        *
-       * The rotation is keyed on the user's prior negotiation count, read
-       * fail-open (a DB blip → count 0 → still a valid, deterministic
-       * tone). Kernel move-selection + band math are untouched; only the
-       * INPUT recruiterPersona varies. Frozen into state at init, so the
+       * Selection is keyed on the user's prior negotiation count AND the
+       * reconstructed ledger of tones they've actually faced (see the
+       * seed computation below), both read fail-open (a DB blip → empty
+       * ledger / count 0 → still a valid, deterministic tone). Kernel
+       * move-selection + band math are untouched; only the INPUT
+       * recruiterPersona varies. Frozen into state at init, so the
        * recruiter never changes mid-conversation. */
       const resolvedSessionId = body.sessionId || crypto.randomUUID();
-      const priorNegotiationCount = auth.userId
-        ? await countPriorNegotiationSessions(auth.userId)
-        : 0;
+      /* Cross-session anti-repetition (2026-06-20). Two fail-open reads in
+       * parallel: the exact prior count (drives difficulty progression +
+       * the deterministic rotation offset) and the recent prior COMPANIES
+       * (drive the persona ledger). We replay the deterministic seed over
+       * each prior company's tier to reconstruct the recruiter tones this
+       * user actually faced — no new table, no write path, just the
+       * already-persisted `target_company` column — then select the
+       * least-recently-seen compatible tone. This upgrades "don't repeat"
+       * from a count-modulo approximation to a guarantee keyed on the
+       * user's real history, correct even across mixed company tiers. */
+      const [priorNegotiationCount, priorCompanies] = auth.userId
+        ? await Promise.all([
+            countPriorNegotiationSessions(auth.userId),
+            readPriorNegotiationCompanies(auth.userId),
+          ])
+        : [0, [] as string[]];
+      const seenPersonas = reconstructSeenPersonas(
+        auth.userId ?? null,
+        priorCompanies.map((c) => tierBucketForCompanyTier(getCompanyTier(c))),
+      );
       const scenarioSeed = computeScenarioSeed({
         userId: auth.userId ?? null,
         priorNegotiationCount,
         tierBucket: initTierBucket,
+        seenPersonas,
       });
       let state = initState({
         sessionId: resolvedSessionId,
