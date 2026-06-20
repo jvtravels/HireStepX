@@ -147,6 +147,23 @@ export function inferExperienceFromRole(role: string): string | undefined {
   const r = role.toLowerCase();
   if (/\b(vp|vice president|director|head of|chief|cxo|c[deot]o|c-?suite|partner)\b/.test(r)) return "executive";
   if (/\b(lead|principal|staff|architect)\b/.test(r)) return "lead";
+  /* People-management titles are never entry/mid by title alone — an
+   * Engineering/Delivery/Group Manager carries a team and typically 8-12+
+   * YoE. When applicableYoe is unknown (no resume / setup didn't collect
+   * it), the resolver previously fell through to undefined here and
+   * generateNegotiationBand produced a fresher-shaped band: a Flipkart
+   * "Engineering Manager" resolved to 19.4–25.6 LPA and the recruiter
+   * opened a ₹23.4 anchor — below half a real EM's market — then walked
+   * away on any realistic ask (live staging, 2026-06-20). Map clear
+   * line/eng-management titles to "lead" and bare "manager" to "senior".
+   * Junior-qualified manager titles (Assistant/Deputy/Trainee/Associate
+   * Manager) stay un-inferred — those genuinely run mid/entry in the
+   * Indian market and the YoE/onboarding signal should drive them. */
+  const juniorManager = /\b(assistant|asst|deputy|dy|trainee|associate)\s+manager\b/.test(r);
+  if (!juniorManager) {
+    if (/\b(engineering|eng|software|development|dev|delivery|group|senior|sr\.?|general|technical|technology|product\s+engineering)\s+manager\b/.test(r)) return "lead";
+    if (/\bmanager\b/.test(r)) return "senior";
+  }
   if (/\b(senior|sr\.?|sr )/.test(r)) return "senior";
   return undefined;
 }
