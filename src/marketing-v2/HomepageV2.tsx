@@ -4735,10 +4735,9 @@ export default function HomepageV2() {
         <PricingV2 />
         <BuiltForIndiaV2 />
         <SecurityComplianceV2 />
-        <VideoCtaV2 />
         <FAQV2 />
+        <VideoCtaV2 />
       </main>
-      <FinalCTAFooterV2 />
       <MobileStickyCTA />
     </div>
   );
