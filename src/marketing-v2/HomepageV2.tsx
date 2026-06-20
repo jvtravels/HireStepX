@@ -4678,14 +4678,10 @@ export function VideoCtaV2() {
           HireStepX asks real follow-up questions, catches vague answers, and scores you — just like a bar-raiser would.
         </p>
 
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#B45309", color: "#FAF7F0", padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: fonts.sans, letterSpacing: 0.1 }}>
             Start your free interview
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </a>
-          <a href="#demo" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(250,247,240,0.08)", color: "#FAF7F0", border: "1px solid rgba(250,247,240,0.18)", padding: "14px 24px", borderRadius: 8, fontWeight: 500, fontSize: 15, textDecoration: "none", fontFamily: fonts.sans }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" /><path d="M6.5 5.5l4 2.5-4 2.5V5.5Z" fill="currentColor" /></svg>
-            Watch a session
           </a>
         </div>
 
