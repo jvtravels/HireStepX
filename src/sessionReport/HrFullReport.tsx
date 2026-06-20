@@ -151,7 +151,7 @@ function DimensionGate({ skills }: { skills: Skill[] }) {
   if (skills.length === 0) {
     return (
       <Panel>
-        <Eyebrow kicker="THE 7-DIMENSION GATE" title="How HR scored you" />
+        <Eyebrow kicker="THE DIMENSION GATE" title="How HR scored you" />
         <EmptyState message="Dimension scores not available for this session. Re-run the session to get the full breakdown." />
       </Panel>
     );
@@ -162,7 +162,7 @@ function DimensionGate({ skills }: { skills: Skill[] }) {
   return (
     <Panel>
       <Eyebrow
-        kicker="THE 7-DIMENSION GATE"
+        kicker={`THE ${skills.length}-DIMENSION GATE`}
         title="How HR scored you"
         sub="HR uses multiple axes, not one. You need to clear ≥60/100 on every axis — one zero anywhere often kills the offer."
       />
@@ -931,7 +931,7 @@ export default function HrFullReport({
       <SectionBand
         label="01 · Diagnose"
         title="Where you stand right now"
-        subtitle="Your scores across the 7 axes HR actually grades on."
+        subtitle="Your scores across every axis HR actually grades on."
         accent={ERROR}
         bg={ERROR_SOFT}
       />

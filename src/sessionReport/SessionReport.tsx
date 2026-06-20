@@ -832,8 +832,15 @@ export const SessionReport = memo(function SessionReport({
       recentScores,
       percentile,
       daysUntilInterview,
-      targetRole: user?.targetRole || session.role,
-      targetCompany: user?.targetCompany || session.company,
+      /* finding #113 (2026-06-20) — a session report describes THAT
+       * session. The session's own role/company must win; the profile
+       * default is only a fallback for legacy rows that never recorded
+       * one. The prior order (profile first) leaked the user's standing
+       * target onto every report — an Engineering-Manager negotiation
+       * rendered the H1 "Senior Product Designer" because that was the
+       * profile default. */
+      targetRole: session.role || user?.targetRole,
+      targetCompany: session.company || user?.targetCompany,
       // Bias-detector softening for non-native English speakers. Reads
       // a conventional `nonNativeEnglish` flag off the auth user when
       // present; defaults to false. Safe lookup via `in` so we don't
