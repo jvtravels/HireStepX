@@ -60,6 +60,11 @@ const ResponsiveSheet = () => (
       .mv2-mobile-cta { display: flex !important; }
       /* Security & Compliance: collapse 4-col to 2-col at tablet */
       .mv2-security-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      /* Objections: collapse 3-col (72px 1fr 1fr) → 2-col (number + content).
+         The response <p> is forced into col 2 so it stacks under the quote,
+         not under the number. Same pattern as the 881-1100px breakpoint. */
+      .mv2-why-row { grid-template-columns: 40px 1fr !important; gap: 20px !important; padding: 28px 0 !important; }
+      .mv2-why-row > p:last-child { grid-column: 2 / 3 !important; }
       main, footer { padding-bottom: 96px; }
     }
     /* ── Small laptops (lg) ── */
