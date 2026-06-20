@@ -300,13 +300,15 @@ export const AUTH_STYLES = `
     }
   }
 
-  /* Tablet (≤960px) — content anchored to top rather than centered to
-     avoid the large dead zone above the headline on 768px-tall viewports. */
+  /* Tablet (≤960px) — content anchored near the top rather than centered
+     to avoid the large dead zone above the headline on portrait tablets.
+     Top padding uses 3.5vh (not 5vh) so a 1024px-tall iPad gets 36px,
+     not 51px, of breathing room before the first element. */
   @media (max-width: 960px) {
     .hsx-login-topbar { padding: 24px 32px !important; }
     .hsx-login-main {
       justify-content: flex-start !important;
-      padding: clamp(32px, 5vh, 56px) 24px clamp(24px, 4vh, 48px) !important;
+      padding: clamp(20px, 3.5vh, 40px) 24px clamp(20px, 3vh, 36px) !important;
     }
   }
 `;

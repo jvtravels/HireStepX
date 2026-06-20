@@ -31,8 +31,8 @@ const containerNarrow: CSSProperties = {
 
 const sectionBase: CSSProperties = {
   position: "relative",
-  paddingTop: 96,
-  paddingBottom: 96,
+  paddingTop: 80,
+  paddingBottom: 80,
 };
 
 const h1Display: CSSProperties = {
@@ -151,8 +151,8 @@ function PageHero({
       className="mv2p-page-hero"
       style={{
         position: "relative",
-        paddingTop: 140,
-        paddingBottom: 80,
+        paddingTop: 80,
+        paddingBottom: 60,
         background: t.cream,
         borderBottom: `1px solid ${t.line}`,
       }}
@@ -333,8 +333,13 @@ const PagesResponsiveSheet = () => (
     }
 
     @media (max-width: 640px) {
-      .mv2p-page-hero { padding-top: 100px !important; padding-bottom: 56px !important; }
-      .mv2p-section { padding-top: 64px !important; padding-bottom: 64px !important; }
+      /* Hero: cut from 80px to 48px — nav is already 68px so users still
+         see 116px of context before the first word. */
+      .mv2p-page-hero { padding-top: 48px !important; padding-bottom: 40px !important; }
+      /* Container: match the 18px landing-page gutter so secondary pages
+         feel identical to the homepage on a phone. */
+      .mv2-container { padding-left: 18px !important; padding-right: 18px !important; }
+      .mv2p-section { padding-top: 52px !important; padding-bottom: 52px !important; }
       .mv2p-grid-2 { grid-template-columns: 1fr !important; gap: 28px !important; }
       .mv2p-grid-3 { grid-template-columns: 1fr !important; gap: 20px !important; }
       .mv2p-grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
@@ -352,6 +357,11 @@ const PagesResponsiveSheet = () => (
       main, footer { padding-bottom: 96px !important; }
     }
     @media (max-width: 880px) and (min-width: 641px) {
+      /* Tablet: intermediate hero padding — keeps a clean editorial gap
+         without the 140→80px cliff of the desktop default. */
+      .mv2p-page-hero { padding-top: 64px !important; padding-bottom: 48px !important; }
+      /* Container: tighten to 20px to mirror the landing-page tablet gutter. */
+      .mv2-container { padding-left: 20px !important; padding-right: 20px !important; }
       .mv2p-grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
       .mv2p-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
       .mv2p-form { grid-template-columns: 1fr !important; }
