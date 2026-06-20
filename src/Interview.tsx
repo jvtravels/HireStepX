@@ -375,6 +375,11 @@ function InterviewInner() {
           .iv-canvas-topbar-left { gap: 10px !important; min-width: 0 !important; flex: 1 1 auto !important; overflow: hidden !important; }
           .iv-canvas-topbar-right { gap: 6px !important; flex-shrink: 0 !important; }
           .iv-canvas-mobile-hide { display: none !important; }
+          /* Chip on mobile shows company + focus only (role hidden via iv-canvas-mobile-hide).
+             Reduce letter-spacing so "FLIPKART · SALARY NEGOTIATION" fits single-line. */
+          .iv-canvas-contextchip { letter-spacing: 0.7px !important; font-size: 9.5px !important; max-width: 100%; }
+          /* Shrink Mic/Camera labels on mobile so the right side doesn't crowd the chip */
+          .iv-canvas-topbar-right span { font-size: 11px !important; }
           .iv-canvas-stage { padding: 16px 14px !important; gap: 14px !important; }
           .iv-center { padding: 16px !important; }
           .iv-controls { padding: 8px 12px !important; gap: 6px !important; }

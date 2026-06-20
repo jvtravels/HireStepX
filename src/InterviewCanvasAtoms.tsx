@@ -78,24 +78,38 @@ export function CanvasStatusPill({ status }: { status: CanvasConnectionStatus })
    onto a new line on narrow viewports via flex-wrap. The chip becomes
    slightly taller on phones (rare) instead of hiding information. */
 export function CanvasContextChip({ role, company, focus }: { role: string; company: string; focus: string }) {
+  /* flex-wrap: nowrap keeps all segments on one line. The old "wrap" strategy
+     caused the chip to collapse to the min-content width of its widest item
+     ("ENGINEERING MANAGER" ≈ 240px as inline-flex), so subsequent segments
+     stacked vertically on ALL viewport sizes — even 1440px desktops.
+     On mobile we additionally hide role + its separator via iv-canvas-mobile-hide
+     so the chip stays single-line within the narrow topbar. */
   return (
     <span
       aria-label={`Interviewing for ${role}${company ? " at " + company : ""}, focus: ${focus}`}
       title={`${role}${company ? " · " + company : ""} · ${focus}`}
       className="iv-canvas-contextchip"
       style={{
-        display: "inline-flex", alignItems: "center", flexWrap: "wrap",
-        rowGap: 4, columnGap: 8,
+        display: "inline-flex", alignItems: "center", flexWrap: "nowrap",
+        columnGap: 8,
         fontFamily: ef.mono, fontSize: 10.5, fontWeight: 500,
         textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft,
         background: e.creamSoft, border: `1px solid ${e.line}`,
         padding: "5px 10px", borderRadius: 6,
+        overflow: "hidden",
       }}
     >
-      <span style={{ color: e.coal, fontWeight: 600 }}>{role}</span>
-      {company && (<><span aria-hidden style={{ color: e.inkFaint }}>·</span><span>{company}</span></>)}
+      {/* Role + first separator hidden on mobile — company is the most
+          identifying segment and fits within the narrow topbar alone. */}
+      <span className="iv-canvas-mobile-hide" style={{ color: e.coal, fontWeight: 600, whiteSpace: "nowrap" }}>{role}</span>
+      {company && (
+        <>
+          <span className="iv-canvas-mobile-hide" aria-hidden style={{ color: e.inkFaint }}>·</span>
+          <span style={{ whiteSpace: "nowrap" }}>{company}</span>
+        </>
+      )}
       <span aria-hidden style={{ color: e.inkFaint }}>·</span>
-      <span style={{ color: e.copper }}>{focus}</span>
+      <span style={{ color: e.copper, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{focus}</span>
     </span>
   );
 }
