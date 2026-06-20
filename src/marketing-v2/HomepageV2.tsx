@@ -4387,47 +4387,36 @@ function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
 
 export function PersonalizedReportsV2() {
   const [hov, setHov] = useState<"left" | "center" | "right" | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const showcaseRef = useRef<HTMLDivElement>(null);
 
+  /* Bidirectional scroll reveal — tracks isIntersecting every crossing */
+  useEffect(() => {
+    const el = showcaseRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setRevealed(true); return; }
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => setRevealed(e.isIntersecting)),
+      { threshold: 0.12, rootMargin: "0px 0px -5% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  /* Reveal transition — slow cubic on enter/exit; faster hover on top */
+  const RV = "transform 0.72s cubic-bezier(0.16,1,0.3,1), opacity 0.55s ease";
+  /* Hover transition — snappy, applied to the inner transform div */
   const TR = "transform 0.50s cubic-bezier(0.16,1,0.3,1), opacity 0.38s ease, filter 0.50s ease";
+
   const lActive = hov === "left";
   const cActive = hov === "center";
   const rActive = hov === "right";
   const anyHov  = hov !== null;
 
-  const leftStyle: React.CSSProperties = {
-    position: "absolute", left: 220, bottom: 60,
-    transformOrigin: "bottom center",
-    transform: lActive  ? "rotate(0deg) translateY(-30px) scale(1.08)"
-             : anyHov   ? "rotate(-10deg) translateY(6px) scale(0.86)"
-             :             "rotate(-8deg)",
-    zIndex:   lActive ? 12 : anyHov ? 2 : 3,
-    opacity:  anyHov && !lActive ? 0.65 : 1,
-    filter:   anyHov && !lActive ? "brightness(0.92) saturate(0.2)" : "none",
-    transition: TR,
-  };
+  /* Stagger delays: 0 / 120 / 240ms on enter; all 0ms on exit (snap away together) */
+  const delay = (n: number) => revealed ? `${n * 120}ms` : "0ms";
 
-  const centerStyle: React.CSSProperties = {
-    position: "absolute", left: "50%", bottom: 60,
-    transform: cActive  ? "translateX(-50%) translateY(-30px) scale(1.08)"
-             : anyHov   ? "translateX(-50%) translateY(6px) scale(0.86)"
-             :             "translateX(-50%)",
-    zIndex:   cActive ? 12 : anyHov ? 4 : 5,
-    opacity:  anyHov && !cActive ? 0.65 : 1,
-    filter:   anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none",
-    transition: TR,
-  };
-
-  const rightStyle: React.CSSProperties = {
-    position: "absolute", right: 220, bottom: 60,
-    transformOrigin: "bottom center",
-    transform: rActive  ? "rotate(0deg) translateY(-30px) scale(1.08)"
-             : anyHov   ? "rotate(10deg) translateY(6px) scale(0.86)"
-             :             "rotate(8deg)",
-    zIndex:   rActive ? 12 : anyHov ? 2 : 3,
-    opacity:  anyHov && !rActive ? 0.65 : 1,
-    filter:   anyHov && !rActive ? "brightness(0.92) saturate(0.2)" : "none",
-    transition: TR,
-  };
+  /* ── Outer div: absolute position + scroll reveal (translateY + opacity) ──
+     ── Inner div: hover transforms (rotate / scale)                         ── */
 
   return (
     <section
@@ -4436,40 +4425,47 @@ export function PersonalizedReportsV2() {
     >
       <style>{rpt_STYLES}</style>
 
-      {/* ── Fan card showcase — exact canvas layout ── */}
-      <div style={{ position: "relative", width: "100%", height: 580, flexShrink: 0, clipPath: "inset(-280px -60px 0 -60px)" }}>
-        {/* Left card */}
-        <div style={leftStyle} onMouseEnter={() => setHov("left")} onMouseLeave={() => setHov(null)}>
-          <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
-            Behavioral · 82/100<br />Razorpay Senior PD
-            <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+      {/* ── Fan card showcase ── */}
+      <div ref={showcaseRef} style={{ position: "relative", width: "100%", height: 580, flexShrink: 0, clipPath: "inset(-280px -60px 0 -60px)" }}>
+
+        {/* Left card — outer: position + reveal; inner: hover */}
+        <div style={{ position: "absolute", left: 220, bottom: 60, zIndex: lActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(0) }}>
+          <div style={{ transformOrigin: "bottom center", transform: lActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(-10deg) translateY(6px) scale(0.86)" : "rotate(-8deg)", opacity: anyHov && !lActive ? 0.65 : 1, filter: anyHov && !lActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("left")} onMouseLeave={() => setHov(null)}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+              Behavioral · 82/100<br />Razorpay Senior PD
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+            </div>
+            <RPT_InterviewCard lifted={lActive} />
           </div>
-          <RPT_InterviewCard lifted={lActive} />
         </div>
 
         {/* Center card */}
-        <div style={centerStyle} onMouseEnter={() => setHov("center")} onMouseLeave={() => setHov(null)}>
-          <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
-            Salary Neg · ₹48L landed<br />PhonePe Senior EM
-            <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+        <div style={{ position: "absolute", left: "50%", bottom: 60, zIndex: cActive ? 12 : anyHov ? 4 : 5, transform: revealed ? "translateX(-50%) translateY(0px)" : "translateX(-50%) translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(1) }}>
+          <div style={{ transform: cActive ? "translateY(-30px) scale(1.08)" : anyHov ? "translateY(6px) scale(0.86)" : "none", opacity: anyHov && !cActive ? 0.65 : 1, filter: anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("center")} onMouseLeave={() => setHov(null)}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+              Salary Neg · ₹48L landed<br />PhonePe Senior EM
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+            </div>
+            <RPT_ReportCard lifted={cActive} />
           </div>
-          <RPT_ReportCard lifted={cActive} />
         </div>
 
         {/* Right card */}
-        <div style={rightStyle} onMouseEnter={() => setHov("right")} onMouseLeave={() => setHov(null)}>
-          <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
-            Campus · 58/100<br />Infosys SWE Fresher
-            <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+        <div style={{ position: "absolute", right: 220, bottom: 60, zIndex: rActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(2) }}>
+          <div style={{ transformOrigin: "bottom center", transform: rActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(10deg) translateY(6px) scale(0.86)" : "rotate(8deg)", opacity: anyHov && !rActive ? 0.65 : 1, filter: anyHov && !rActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("right")} onMouseLeave={() => setHov(null)}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+              Campus · 58/100<br />Infosys SWE Fresher
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+            </div>
+            <RPT_ProgressCard lifted={rActive} />
           </div>
-          <RPT_ProgressCard lifted={rActive} />
         </div>
 
         {/* Bottom fade */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 360, background: "linear-gradient(to bottom, transparent 0%, #FAF7F0 70%)", zIndex: 15, pointerEvents: "none" }} />
       </div>
 
-      {/* ── Headline — exact canvas copy ── */}
+      {/* ── Headline ── */}
       <div className="rpt-a4" style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80 }}>
         <h2 id="hd-reports" className="rpt-a4" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5 }}>
           Personalized reports after
