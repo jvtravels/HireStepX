@@ -4270,29 +4270,42 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
           </div>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid #EAE3D0", padding: "14px 18px 12px", background: "#FEFDF8" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontSize: 8.5, background: "#FED7AA", color: "#B45309", padding: "3px 10px", borderRadius: 20, fontWeight: 600 }}>SALARY NEGOTIATION · FULL REPORT</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "#15803D" }}>3 of 3 stages ✓</span>
+      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 18px 8px", background: "#FEFDF8" }}>
+        <span style={{ fontSize: 8.5, background: "#FED7AA", color: "#B45309", padding: "3px 10px", borderRadius: 20, fontWeight: 600 }}>SALARY NEGOTIATION · FULL REPORT</span>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0E0C08", marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your negotiation</div>
+        <div style={{ fontSize: 8.5, color: "#6E6759", marginTop: 3 }}>Each panel turns one negotiation skill into something you can act on.</div>
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: "#B45309", letterSpacing: 0.4 }}>THE 30-SECOND READ</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#0E0C08", marginTop: 4, lineHeight: 1.35, fontFamily: rptF.serif }}>
+            Landed ₹48L — ₹10L above opening. 71% gap closure in 3 rounds.
+          </div>
+          <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 8.5, color: "#6E6759" }}>How far you got in the negotiation</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#15803D" }}>3 of 3 stages</span>
+          </div>
         </div>
-        <div style={{ fontFamily: rptF.serif, color: "#B45309", fontSize: 21, fontWeight: 700, lineHeight: 1.1, marginBottom: 3 }}>₹48L landed</div>
-        <div style={{ fontSize: 9, color: "#6E6759", lineHeight: 1.4 }}>₹10L above the opening offer · closed in 3 rounds</div>
       </div>
-      <div style={{ padding: "0 18px 14px" }}>
-        <div style={{ display: "flex", gap: 2, margin: "10px 0 8px" }}>
-          {phases.map((p, i) => (
-            <div key={p.n} style={{ flex: 1, height: 3, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: revealed ? "100%" : "0%", background: "#15803D", borderRadius: 2, transition: `width 0.6s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 420 + i * 100}ms` }} />
-            </div>
+      <div style={{ margin: "10px 18px 0", background: "#312E81", borderRadius: 7, padding: "9px 14px", display: "flex", gap: 12, alignItems: "center" }}>
+        <span style={{ fontSize: 8.5, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "3px 8px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 4</span>
+        <div>
+          <div style={{ fontSize: 9.5, fontWeight: 700, color: "#fff" }}>What happened in this call</div>
+          <div style={{ fontSize: 8, color: "rgba(255,255,255,0.65)" }}>Every moment that mattered: what you said, what you missed, what it cost.</div>
+        </div>
+      </div>
+      <div style={{ padding: "10px 18px 14px" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#0E0C08", marginBottom: 6 }}>01  How far you got in the negotiation</div>
+        <div style={{ display: "flex", gap: 2, marginBottom: 8 }}>
+          {phases.map(p => (
+            <div key={p.n} style={{ flex: 1, height: 4, background: "#15803D", borderRadius: 2 }} />
           ))}
         </div>
         {phases.map(p => (
           <div key={p.n} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderTop: "1px solid #F0EDE3" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#15803D", color: "#fff", fontSize: 7.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{p.n}</span>
-              <span style={{ fontSize: 9, fontWeight: 500, color: "#4A4540" }}>{p.label}</span>
+              <span style={{ width: 17, height: 17, borderRadius: "50%", background: "#15803D", color: "#fff", fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{p.n}</span>
+              <span style={{ fontSize: 9, fontWeight: 600, color: "#0E0C08" }}>{p.label}</span>
             </div>
-            <span style={{ fontSize: 7.5, fontWeight: 600, color: "#15803D", background: "#DCFCE7", padding: "2px 6px", borderRadius: 3 }}>DONE ✓</span>
+            <span style={{ fontSize: 8, fontWeight: 600, color: "#15803D", background: "#DCFCE7", padding: "2px 7px", borderRadius: 3 }}>DONE ✓</span>
           </div>
         ))}
       </div>
