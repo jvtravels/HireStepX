@@ -274,7 +274,7 @@ const HIGH_BAND: NegotiationBand = {
 };
 
 describe("negotiation battery — accept against a stated band closes", () => {
-  it("competing-offer + outright accept of the range band closes at the floor", () => {
+  it("competing-offer + outright accept of the range band closes above the disclosed-CTC floor", () => {
     const { transcript, finalState } = runConversation({
       sessionId: "outcome-competing-offer-accept",
       role: "Staff Engineer",
@@ -294,10 +294,24 @@ describe("negotiation battery — accept against a stated band closes", () => {
       "accepting a stated range-band outright must reach a real close, not dead-end at offer 0",
     ).toBe("accepted");
     expect(last.terminal).toBe(true);
+    /* #115 fast-follow (2026-06-20): the accept-on-band close now respects the
+     * disclosed-CTC hike floor (bandAcceptOfferFloor) instead of locking the
+     * raw band floor. The old behaviour closed at the band floor (₹32L) — a
+     * single-digit hike that sat BELOW the candidate's own stated competing
+     * offer of ₹38L (the under-market pay-cut defect). With a Staff Engineer
+     * (senior → 25% hike floor) on a tight band, the floor saturates the band
+     * ceiling, so the close lands at maxStretch 40 — the candidate's target. */
     expect(
       finalState.highestOfferMade,
-      "the close must land on the band floor, not a phantom 0",
-    ).toBe(HIGH_BAND.initialOffer);
+      "the close must clear the raw band floor — no sub-CTC / sub-competing-offer close",
+    ).toBeGreaterThan(HIGH_BAND.initialOffer);
+    expect(
+      finalState.highestOfferMade,
+      "the close is capped at the band ceiling — never fabricated above maxStretch",
+    ).toBeLessThanOrEqual(HIGH_BAND.maxStretch);
+    /* Deterministic landing for this fixture: disclosed-CTC hike floor
+     * saturates the tight band → close at the ceiling. */
+    expect(finalState.highestOfferMade).toBe(40);
   });
 
   it("below-floor CTC + 'I accept' over the range band closes", () => {

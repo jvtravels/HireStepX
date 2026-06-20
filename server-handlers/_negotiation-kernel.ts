@@ -4400,6 +4400,40 @@ function applyMoodShift(
 
 /* ─── State transition: fold candidate's answer into state ───────── */
 
+/** #115 fast-follow (2026-06-20, live staging) — disclosed-CTC floor on the
+ *  band-accept close path.
+ *
+ *  When a candidate ACCEPTS a stated band with no concrete point offer (the
+ *  `!hasOffer && state.band` arm in applyCandidateAnswer), the kernel locks
+ *  `state.band.initialOffer` in as the standing offer. But initialOffer is the
+ *  anchor-LOW band floor; for a candidate whose DISCLOSED current CTC sits
+ *  above that floor, closing there finalizes a pay CUT. Live evidence: a
+ *  Flipkart Engineering Manager at ₹48L current accepted and closed at ₹27.8L
+ *  fixed / ₹32.7L total — a 42% cut nobody would ever sign.
+ *
+ *  The planner's anchor path already honours this via
+ *  clampAnchorAboveDisclosed; this is the symmetric guard for the kernel's
+ *  accept-on-band path, which cannot import the planner (import cycle —
+ *  planner depends on this module). The hike-percent rule MIRRORS the
+ *  planner's minHikePctForRole (25% for senior/lead/≥4-YoE, else 15%);
+ *  kept inline rather than shared to avoid the cycle. The floor is capped at
+ *  the band ceiling (maxStretch) so a structurally-tight band (ceil below the
+ *  candidate's CTC — the overqualified / down-level case) still resolves to
+ *  the best the band allows rather than overshooting it. When current CTC is
+ *  undisclosed the band floor is returned unchanged (back-compat). Pure. */
+export function bandAcceptOfferFloor(state: NegotiationState): number {
+  const base = state.band.initialOffer;
+  const disclosed = state.candidateCurrentCtc;
+  if (typeof disclosed !== "number" || disclosed <= 0) return base;
+  const role = (state.role || "").toLowerCase();
+  const seniorRoleRe = /\b(?:senior|lead|principal|staff|sr\.?|director|head|manager|vp|chief)\b/i;
+  const isSenior = seniorRoleRe.test(role) || (state.candidateApplicableYoe ?? 0) >= 4;
+  const hikePct = isSenior ? 0.25 : 0.15;
+  const hikeFloor = Math.round(disclosed * (1 + hikePct));
+  const ceil = state.band.maxStretch ?? base;
+  return Math.min(Math.max(base, hikeFloor), Math.max(base, ceil));
+}
+
 /** Apply a candidate turn to state. Returns a new state — never
  *  mutates the input. Terminal phases are sticky: if state.phase is
  *  already terminal, returns state unchanged. */
@@ -5931,7 +5965,10 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       const bandTopic = (state.askedTopics ?? []).find(
         (t) => t.topic === "band-anchor-with-rationale",
       );
-      const floor = state.band.initialOffer;
+      /* #115 fast-follow: floor the registered offer to the disclosed-CTC
+       * hike floor so accept-on-band never locks a pay cut below the
+       * candidate's current CTC. See bandAcceptOfferFloor. */
+      const floor = bandAcceptOfferFloor(state);
       if (bandTopic && typeof floor === "number" && floor > 0) {
         next.highestOfferMade = floor;
         if (next.firstOfferAtTurn == null) next.firstOfferAtTurn = bandTopic.atTurn;
