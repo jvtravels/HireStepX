@@ -597,6 +597,7 @@ CRITICAL RULES:
 - VOICE & DICTION (applies to ALL prose fields, especially topPerformerAnswer.text and restructured.text): write the way a real candidate SPEAKS in an interview, not the way an LLM writes. Default to ordinary words, contractions, and short clauses.
   Banned LLM-isms (use the plain alternative):
     leverage → use; utilize → use; facilitate → help; demonstrate → show; ensure → make sure;
+    delve / delve into / delving → look at, go through, get into;
     deep-dive / dive deep → look at, walk through; navigate → handle, deal with;
     drive impact / drive results / drive value — replace with a concrete verb (ship, hit, raise, cut);
     stakeholder alignment / cross-functional alignment → working with X and Y; getting X and Y on the same page;

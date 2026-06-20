@@ -4,6 +4,7 @@ import {
   FAIRNESS_DIRECTIVE,
   LENGTH_TARGETS_DIRECTIVE,
   SELF_CHECK_DIRECTIVE,
+  VOICE_DICTION_DIRECTIVE,
   TYPE_RUBRIC_WEIGHTS,
   SUPPORTED_INTERVIEW_TYPES,
   getRubricWeight,
@@ -42,6 +43,32 @@ describe("static prompt directives", () => {
 
   it("self-check directive forbids fabrication", () => {
     expect(SELF_CHECK_DIRECTIVE).toMatch(/fabricate|fabrication|never/i);
+  });
+});
+
+/* VOICE_DICTION_DIRECTIVE is shared by evaluate.ts (quick eval) and
+ * mirrors the inline block in evaluate-session.ts. It exists because the
+ * quick evaluator had NO register guard, so "Delve deeper", "leverage",
+ * etc. leaked verbatim into the candidate-facing coaching copy (observed
+ * live on staging). These assertions lock the worst offenders. */
+describe("VOICE_DICTION_DIRECTIVE", () => {
+  it("is a non-trivial directive", () => {
+    expect(VOICE_DICTION_DIRECTIVE.length).toBeGreaterThan(120);
+    expect(VOICE_DICTION_DIRECTIVE).toMatch(/banned/i);
+  });
+
+  it("explicitly bans 'delve' — the LLM tell observed in live coaching copy", () => {
+    expect(VOICE_DICTION_DIRECTIVE).toMatch(/delve/i);
+  });
+
+  it("bans the other canonical LLM-isms", () => {
+    expect(VOICE_DICTION_DIRECTIVE).toMatch(/leverage/i);
+    expect(VOICE_DICTION_DIRECTIVE).toMatch(/utilize/i);
+    expect(VOICE_DICTION_DIRECTIVE).toMatch(/robust|seamless|world-class/i);
+  });
+
+  it("applies to the candidate-facing prose fields", () => {
+    expect(VOICE_DICTION_DIRECTIVE).toMatch(/feedback|improvements|strengths/i);
   });
 });
 

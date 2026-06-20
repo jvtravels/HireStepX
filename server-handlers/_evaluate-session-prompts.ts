@@ -20,6 +20,26 @@ export const LENGTH_TARGETS_DIRECTIVE =
 export const SELF_CHECK_DIRECTIVE =
   "SELF-CHECK: Before finalizing, internally verify each fix has a concrete transcript quote and each skill score has at least one supporting moment. If a score and its evidence don't match, recalibrate the score to match the evidence — never fabricate evidence to match a preset score.";
 
+/* VOICE & DICTION — applies to EVERY prose field the candidate reads
+ * (feedback, strengths, improvements, model answers, per-question notes).
+ * The quick evaluator (evaluate.ts) historically had no register guard at
+ * all, so canned LLM-isms ("delve deeper", "leverage", "robust") leaked
+ * straight into the coaching copy. Mirrors the richer inline block in
+ * evaluate-session.ts. "delve / delving" is called out explicitly — it is
+ * the single most recognisable AI tell and was observed live in coaching. */
+export const VOICE_DICTION_DIRECTIVE =
+  "VOICE & DICTION (applies to ALL prose you write — feedback, strengths, improvements, idealAnswers, tips): write the way a real coach SPEAKS, not the way an LLM writes. Use ordinary words, contractions, and short clauses. " +
+  "Banned LLM-isms — use the plain alternative instead: " +
+  "delve / delve into / delving → look at, go through, get into; " +
+  "deep-dive / dive deep → look at, walk through; " +
+  "leverage → use; utilize → use; facilitate → help; demonstrate → show; ensure → make sure; " +
+  "navigate → handle, deal with; drive impact / drive results → ship, hit, raise, cut (a concrete verb); " +
+  "ideate / ideation → think up, brainstorm; circle back → follow up; " +
+  "additionally / furthermore / moreover → and, also, plus; " +
+  "seamless / robust / scalable / world-class / best-in-class → drop unless the candidate actually said it. " +
+  "Also banned: \"Importantly,\" / \"Notably,\" / \"It's worth noting\" sentence-openers, and hedges like \"in terms of\" / \"with respect to\". " +
+  "If a sentence reads like it was generated, rewrite it so it sounds like a sharp mentor talking to a candidate.";
+
 /* Per-type rubric weights — different interview formats prize different
  * dimensions. A perfect case-study answer is structurally rigorous; a
  * perfect behavioral answer follows STAR; a perfect technical answer
