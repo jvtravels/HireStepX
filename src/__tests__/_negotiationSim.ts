@@ -145,6 +145,10 @@ const REGISTER_RULES: ReadonlyArray<{ rule: string; re: RegExp }> = [
   { rule: "us-social-security", re: /\bsocial security\b/i },
   // "$" amounts or "k" salary framing (US "120k") rather than LPA/lakh.
   { rule: "k-salary-framing", re: /\b\d{2,3}\s?k\b(?!\s?(?:m|km))/i },
+  /* US baseball idiom (2026-06-21, live staging) — an Indian recruiter
+   * says "rough figure / rough range", never "ballpark". Same #114
+   * Americanism family as corridor/zip-code. */
+  { rule: "us-idiom-ballpark", re: /\bball\s?park\b/i },
 ];
 
 export function registerViolations(text: string): RegisterViolation[] {

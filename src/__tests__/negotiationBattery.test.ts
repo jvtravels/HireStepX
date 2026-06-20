@@ -335,3 +335,69 @@ describe("negotiation battery — accept against a stated band closes", () => {
     expect(last.terminal).toBe(true);
   });
 });
+
+/* #119 (2026-06-21, live staging) — post-anchor discovery regression.
+ * Repro: a desperate / content-free candidate who never discloses a number.
+ * The bot correctly anchors the band floor (A6 stonewall escape), but a turn
+ * later REGRESSED into a cold "share your current CTC — fixed, variable,
+ * in-hand?" discovery-probe — looping backwards over an offer it had already
+ * put on the table. Once an offer stands and the candidate has stonewalled,
+ * the recruiter must hold the number and move toward a decision, never dig
+ * back into the candidate's *current* comp. */
+describe("negotiation battery — no post-anchor current-CTC regression (#119)", () => {
+  /* A backwards probe asks about the candidate's CURRENT comp split after an
+   * offer is already on the table. Forward expectation asks ("what were you
+   * expecting?") are fine — they shape the counter; current-comp digs do not. */
+  const BACKWARD_CURRENT_CTC_RE =
+    /current\s+(?:total\s+)?ctc[^.?!]*\b(?:fixed|variable|in-?hand|split)\b|\bfixed[,\s].*variable.*in-?hand\b/i;
+
+  it("content-free stonewall: bot never re-probes current CTC once an offer is on the table", () => {
+    const STONEWALL_BAND: NegotiationBand = {
+      initialOffer: 32,
+      maxStretch: 58,
+      walkAway: 28,
+      hasEquity: true,
+    };
+    const { transcript } = runConversation({
+      sessionId: "post-anchor-stonewall",
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: STONEWALL_BAND,
+      initExtras: { experienceLevel: "senior", applicableYoe: 11 },
+      turns: [
+        "Hi, thanks for the call.",
+        "Honestly whatever you can offer is fine, I really want this role.",
+        "I don't really have a number in mind, just tell me what you can do.",
+        "I trust you, whatever works for the company works for me.",
+        "Yeah I'll take whatever the package is, let's just finalize.",
+        "Please just go ahead with whatever you think is fair.",
+        "I'm good with anything, no need to discuss numbers.",
+        "Let's just lock it in, whatever you decide.",
+      ],
+    });
+
+    // The bot must put a real number down despite the stonewall.
+    expect(
+      transcript.some((t) => t.highestOfferMade > 0),
+      "bot must anchor a concrete offer even under a total stonewall",
+    ).toBe(true);
+
+    // Once an offer is on the table, no later line may dig back into the
+    // candidate's CURRENT CTC split — that is the backwards regression.
+    let offerSeen = false;
+    for (const t of transcript) {
+      if (t.highestOfferMade > 0) offerSeen = true;
+      if (offerSeen) {
+        expect(
+          BACKWARD_CURRENT_CTC_RE.test(t.aiText),
+          `post-anchor backwards current-CTC probe: ${t.aiText}`,
+        ).toBe(false);
+      }
+    }
+
+    // And register stays clean (no "ballpark" — #120) across the whole flow.
+    for (const t of transcript) {
+      expect(registerViolations(t.aiText), `register: ${t.aiText}`).toEqual([]);
+    }
+  });
+});

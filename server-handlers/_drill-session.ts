@@ -151,7 +151,7 @@ const SCRIPTS: Record<DrillSkill, readonly [string, string, string, string, stri
     "What number are you looking for?",
     "I need a figure to proceed — give me one.",
     "Are you flexible on compensation?",
-    "Just a ballpark — what's your expectation?",
+    "Just a rough figure — what's your expectation?",
   ],
 };
 

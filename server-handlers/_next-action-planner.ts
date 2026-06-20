@@ -1387,7 +1387,7 @@ function buildUncertaintyRangeAsk(itemRoot: string): string {
   }
   /* Fallback for any other discovery topic — just acknowledge the
    * uncertainty and reframe as approximate. */
-  return "Rough range or ballpark is fine — no need for an exact number.";
+  return "A rough range is fine — no need for an exact number.";
 }
 
 /* Paraphrase-loop feature (2026-05-29) — recap-before-decision gate.
@@ -4173,9 +4173,30 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           "valueProofAsked",
           "fixedVariableSplitAsked",
         ]);
+        /* #119 (2026-06-21, live staging) — post-anchor stonewall guard.
+         * Repro (Flipkart EM, content-free candidate): the bot anchored
+         * ₹32L, then REGRESSED to a cold "share your current CTC — fixed,
+         * variable, in-hand?" discovery-probe a turn later. currentCtc /
+         * target are deliberately kept probeable post-anchor (their answers
+         * reshape the counter) — but that justification evaporates when the
+         * candidate has disclosed NOTHING across the whole session: re-asking
+         * a 4th time is futile and reads as the bot looping backwards over an
+         * offer it already put down. This is the post-anchor twin of the A6
+         * pre-anchor stonewall escape (which only guards highestOfferMade===0).
+         * Once an offer is on the table AND the candidate has stonewalled past
+         * the threshold, suppress the tier-1 re-probe and fall through to the
+         * offer-standing close/counter bridge below — the recruiter holds the
+         * number and invites a decision instead of probing again. */
+        const stonewalledPostAnchor =
+          (state.highestOfferMade ?? 0) > 0 &&
+          state.candidateCurrentCtc == null &&
+          state.candidateTarget == null &&
+          state.candidateTargetFixed == null &&
+          state.turnIndex >= 5;
         const allowProbeWithOfferOnTable =
-          state.highestOfferMade === 0 ||
-          (next != null && !ORTHOGONAL_POST_ANCHOR_ITEMS.has(next.item));
+          !stonewalledPostAnchor &&
+          (state.highestOfferMade === 0 ||
+            (next != null && !ORTHOGONAL_POST_ANCHOR_ITEMS.has(next.item)));
         if (next != null && allowProbeWithOfferOnTable) {
           return {
             kind: "discovery-probe",
@@ -6563,7 +6584,7 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
       {
         flag: profile.deflectedOnRange,
         topic: "range-deflection",
-        ask: "I understand wanting to hear our number first — fair. Our band for this grade has a defined range; if you can share even a rough target, I can tell you straight away whether we're in the same ballpark.",
+        ask: "I understand wanting to hear our number first — fair. Our band for this grade has a defined range; if you can share even a rough target, I can tell you straight away whether we're in the same range.",
         rationale: "Candidate is deflecting on number disclosure — re-anchor with band-grade language and invite mutual disclosure.",
       },
       {

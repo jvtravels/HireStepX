@@ -66,7 +66,7 @@ export function proseDiscoveryProbe(
   const REASK_PROBES: Partial<Record<string, readonly [string, string]>> = {
     currentCtc: [
       "I still need a figure to anchor the fitment — what's your current total CTC, even a rough one?",
-      "Given even a ballpark helps here, where does your current CTC sit today?",
+      "Given even a rough figure helps here, where does your current CTC sit today?",
     ],
     fixedVariableSplit: [
       "Before we move on — roughly how does your current package split between fixed and variable?",

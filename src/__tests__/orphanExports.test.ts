@@ -63,6 +63,7 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["foldFactsIntoState", "public kernel ingestor; alternate path for non-LLM fact extraction tooling"],
   ["validateState", "public kernel asserter; called by deserializeState which IS wired; rg's word-boundary misses the property-form call"],
   ["isVerbatimRepeat", "kernel-public verbatim-repeat detector kept post kernel-first-cleanup (2026-05-16); covered by unit tests and reserved for the next-tier restyle guard"],
+  ["isOfferOnTable", "#118 (2026-06-21) — single source of truth for 'an offer stands' (highestOfferMade>0 OR a band-anchor-with-rationale topic was asked); consumed inside _negotiation-kernel.ts by canCloseSession's accept/soft-accept gate + the acceptance classifier (rg excludes the defining file); exported so closePathInvariantAudit + prematureCloseGuard can pin the ₹0L-close guard directly"],
 
   /* ── Discovery helpers exported for replay / audit tooling ─────────── */
   ["getRequiredDiscoveryItems", "audit-tool public API; used by scripts/audit-* (not always tsconfig-tracked)"],
