@@ -4569,7 +4569,7 @@ export function SecurityComplianceV2() {
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
 export function VideoCtaV2() {
   return (
-    <section style={{ position: "relative", minHeight: 580, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#0E0C08" }}>
+    <section style={{ position: "relative", minHeight: 580, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
 
       {/* Background video — swap /demo-loop.mp4 with actual product recording */}
       <video
@@ -4578,7 +4578,7 @@ export function VideoCtaV2() {
         loop
         playsInline
         crossOrigin="anonymous"
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.38 }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
       >
         <source src="/cta.mp4" type="video/mp4" />
       </video>
