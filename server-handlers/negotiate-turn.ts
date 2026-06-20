@@ -504,6 +504,7 @@ export default async function handler(
         recruiterSectorPersona: initRecruiterSectorPersona,
         recruiterPersona: scenarioSeed.recruiterPersona,
         sessionDifficulty: scenarioSeed.difficulty,
+        tacticRotation: scenarioSeed.tacticRotation,
         tierBucketHint: initTierBucket,
         callTimeIso: initCallTimeIso,
         powerSignals: { quarterTiming: initQuarterTiming },
@@ -561,6 +562,7 @@ export default async function handler(
         salneg_difficulty: scenarioSeed.difficulty,
         salneg_prior_count: priorNegotiationCount,
         salneg_rotation_index: scenarioSeed.rotationIndex,
+        salneg_tactic_rotation: scenarioSeed.tacticRotation,
       }, req);
       if (source === "fallback") {
         void captureServerEvent("kernel_fallback", distinctId, { lever: move.lever, phase: state.phase, where: "init" }, req);

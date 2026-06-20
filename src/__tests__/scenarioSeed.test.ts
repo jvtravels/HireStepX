@@ -153,6 +153,36 @@ describe("computeScenarioSeed — difficulty progression", () => {
   });
 });
 
+describe("computeScenarioSeed — #107 tactic rotation cursor", () => {
+  const rot = (userId: string | null, n: number): number =>
+    computeScenarioSeed({ userId, priorNegotiationCount: n, tierBucket: "bfsi" }).tacticRotation;
+
+  it("is deterministic for the same (userId, count)", () => {
+    expect(rot("u-tac", 3)).toBe(rot("u-tac", 3));
+  });
+
+  it("steps by exactly 1 each session (guarantees variant cycling downstream)", () => {
+    const base = rot("stepper", 0);
+    expect(rot("stepper", 1)).toBe(base + 1);
+    expect(rot("stepper", 2)).toBe(base + 2);
+    expect(rot("stepper", 5)).toBe(base + 5);
+  });
+
+  it("uses a per-user offset distinct from the persona offset (two users de-synced)", () => {
+    // Different users at count=0 should generally not share the same cursor
+    // (a stable per-user fnv1a offset). Sample a handful and require spread.
+    const cursors = new Set(
+      ["a", "b", "c", "d", "e", "f"].map((u) => rot(u, 0) % 5),
+    );
+    expect(cursors.size).toBeGreaterThan(1);
+  });
+
+  it("anonymous (null userId) is a stable count-based cursor", () => {
+    expect(rot(null, 0)).toBe(0);
+    expect(rot(null, 3)).toBe(3);
+  });
+});
+
 describe("computeScenarioSeed — degraded inputs", () => {
   it("anonymous (null userId) returns a valid deterministic tone", () => {
     const a = computeScenarioSeed({ userId: null, priorNegotiationCount: 0, tierBucket: "psu" });

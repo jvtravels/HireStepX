@@ -68,6 +68,19 @@ export interface ScenarioSeed {
   difficulty: SessionDifficulty;
   /** The rotation index actually used (for telemetry / debugging). */
   rotationIndex: number;
+  /** Cross-session bad-faith-tactic rotation cursor (2026-06-20). A
+   *  per-user-stable offset stepped by exactly 1 each session
+   *  (`fnv1a(userId|"tactic") + priorNegotiationCount`). The planner mods
+   *  this per tactic family to pick the deadline / line / topic VARIANT,
+   *  so a returning user does NOT see the identical exploding-offer
+   *  deadline, fake-competing line, or vague-promise topic every session:
+   *  because the cursor advances by 1, consecutive sessions land on
+   *  different variants and a full cycle elapses before any repeat. Unlike
+   *  the legacy `tacticHash(sessionId, …)` seeding (random per session, no
+   *  anti-repetition, not reconstructable), this is deterministic in
+   *  (userId, count) — both known at init — so no ledger replay is needed.
+   *  Frozen into kernel state at init. */
+  tacticRotation: number;
 }
 
 /* Tiny FNV-1a — mirrors `_session-jitter.ts`. Duplicated rather than
@@ -199,7 +212,16 @@ export function computeScenarioSeed(input: ScenarioSeedInput): ScenarioSeed {
   const difficulty: SessionDifficulty =
     count <= 1 ? "warmup" : count <= 4 ? "standard" : "hardball";
 
-  return { recruiterPersona, difficulty, rotationIndex };
+  /* Bad-faith-tactic rotation cursor — a stable per-user offset (distinct
+   * salt from the persona offset so tactic variants don't move in lockstep
+   * with tone) stepped by the session count. The planner mods this per
+   * tactic family; stepping by 1 each session guarantees no consecutive
+   * variant repeat and a full cycle before any repeat. Anonymous sessions
+   * (no userId) get a stable offset of 0 + count, still non-repeating. */
+  const tacticOffset = input.userId ? fnv1a(`${input.userId}|tactic`) : 0;
+  const tacticRotation = (tacticOffset + count) >>> 0;
+
+  return { recruiterPersona, difficulty, rotationIndex, tacticRotation };
 }
 
 /** Reconstruct, purely from a user's prior negotiation companies (the

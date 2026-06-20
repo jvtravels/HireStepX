@@ -275,3 +275,89 @@ describe("applyCandidateAnswer — userCaughtTactics ledger", () => {
     expect(next.userCaughtTactics).toContain("exploding-offer-pressure");
   });
 });
+
+/* ── #107 cross-session bad-faith tactic VARIANT rotation ──
+ * When state carries a `tacticRotation` cursor (seeded per user, stepped
+ * by 1 each session), the exploding-offer deadline / fake-competing line /
+ * vague-promise topic the user sees must ROTATE session-to-session — a
+ * returning user should not replay the identical tactic flavour. When the
+ * cursor is absent (legacy / test fixtures) the planner keeps the
+ * session-local hash seeding unchanged. */
+describe("maybePlanTacticInject — #107 cross-session variant rotation", () => {
+  const explodingAt = (rot: number | undefined): string => {
+    const s = init({
+      sessionId: "rot-x",
+      phase: "counter-offer",
+      turnIndex: 6,
+      highestOfferMade: 22,
+      candidateTarget: 25,
+      tacticRotation: rot,
+    });
+    const a = maybePlanTacticInject(s);
+    expect(a!.kind).toBe("exploding-offer-pressure");
+    return (a as { deadline: string }).deadline;
+  };
+
+  it("exploding-offer deadline advances every session and cycles the full set (no repeat within a cycle)", () => {
+    // 3 deadlines → 3 consecutive rotation values must be all-distinct.
+    const seen = [explodingAt(10), explodingAt(11), explodingAt(12)];
+    expect(new Set(seen).size).toBe(3);
+    // consecutive sessions never repeat
+    expect(seen[0]).not.toBe(seen[1]);
+    expect(seen[1]).not.toBe(seen[2]);
+    // and it wraps deterministically — value 13 == value 10
+    expect(explodingAt(13)).toBe(seen[0]);
+  });
+
+  it("is deterministic for a given rotation cursor", () => {
+    expect(explodingAt(7)).toBe(explodingAt(7));
+  });
+
+  const fakeVariantAt = (rot: number | undefined): number => {
+    const s = init({
+      sessionId: "rot-f",
+      phase: "counter-offer",
+      turnIndex: 4,
+      highestOfferMade: 22,
+      candidateTarget: 32, // > maxStretch
+      tacticRotation: rot,
+    });
+    const a = maybePlanTacticInject(s);
+    expect(a!.kind).toBe("fake-competing-candidate");
+    return (a as { variant: number }).variant;
+  };
+
+  it("fake-competing line variant cycles all 5 across 5 sessions", () => {
+    const seen = [0, 1, 2, 3, 4].map((d) => fakeVariantAt(100 + d));
+    expect(new Set(seen).size).toBe(5);
+    expect(fakeVariantAt(105)).toBe(seen[0]); // wraps
+  });
+
+  it("de-syncs tactic families: exploding & fake-competing don't move in lockstep", () => {
+    // familySalt differs (0 vs 1), so for the SAME cursor the two families
+    // sit at different offsets into their variant lists — confirms the
+    // salt decoupling (regression guard against a single shared cursor).
+    const dl = ["eod", "friday", "24h"];
+    const cursor = 5;
+    const explodingIdx = dl.indexOf(explodingAt(cursor)); // (5+0)%3 = 2
+    const fakeIdx = fakeVariantAt(cursor); // (5+1)%5 = 1
+    expect(explodingIdx).toBe(2);
+    expect(fakeIdx).toBe(1);
+  });
+
+  it("falls back to legacy session-local seeding when tacticRotation is absent", () => {
+    // Two different sessionIds, no rotation cursor → variant derives from
+    // the session hash (legacy behaviour), independent of any cursor.
+    const a = explodingAt(undefined);
+    const b = init({
+      sessionId: "rot-x-other",
+      phase: "counter-offer",
+      turnIndex: 6,
+      highestOfferMade: 22,
+      candidateTarget: 25,
+    });
+    const bMove = maybePlanTacticInject(b) as { deadline: string };
+    expect(["eod", "friday", "24h"]).toContain(a);
+    expect(["eod", "friday", "24h"]).toContain(bMove.deadline);
+  });
+});

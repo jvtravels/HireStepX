@@ -1045,6 +1045,16 @@ export interface NegotiationState {
    * start. Default "consultative" preserves legacy behaviour. */
   recruiterPersona: RecruiterPersona;
 
+  /* Cross-session bad-faith-tactic rotation cursor (2026-06-20). Seeded
+   * once at init from _scenario-seed.ts (`fnv1a(userId|"tactic") + count`)
+   * and frozen; the planner mods it per tactic family to pick the
+   * deadline / line / topic VARIANT so a returning user doesn't replay the
+   * identical bad-faith tactic each session. Optional for back-compat:
+   * hand-built test fixtures and pre-2026-06-20 serialized sessions omit
+   * it, and the planner falls back to the legacy session-local
+   * `tacticHash(sessionId, …)` seeding when it's undefined. */
+  tacticRotation?: number;
+
   /* Phase 3 of Salary-Negotiation SCORE_IMPROVEMENT_PLAN (2026-05-18) —
    * Indian recruiter SECTOR archetype (IT Services / GCC / Indian
    * Unicorn / Early Startup / BFSI / default). Frozen at session start
@@ -2679,6 +2689,12 @@ export interface InitStateExtras {
    * Optional; "standard"/undefined is identity, so existing callers and
    * tests are unchanged. */
   sessionDifficulty?: SessionDifficulty;
+  /* Cross-session bad-faith-tactic rotation cursor (2026-06-20) —
+   * forwarded from _scenario-seed.ts via negotiate-turn. Frozen onto
+   * state; the planner mods it per tactic family to rotate the variant a
+   * returning user sees. Optional; undefined ⇒ planner falls back to the
+   * legacy session-local hash seeding (existing callers/tests unchanged). */
+  tacticRotation?: number;
 }
 
 export function initState(input: InitStateInput & InitStateExtras): NegotiationState {
@@ -2805,6 +2821,11 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     hardBandCap: input.hardBandCap ?? false,
     marketMode: input.marketMode ?? "neutral",
     recruiterPersona: input.recruiterPersona ?? "consultative",
+    /* Cross-session bad-faith-tactic rotation cursor (2026-06-20). When the
+     * caller (negotiate-turn via _scenario-seed) supplies it, freeze it so
+     * the planner rotates tactic variants across sessions; when omitted,
+     * leave it undefined and the planner uses its legacy session hash. */
+    tacticRotation: input.tacticRotation,
     /* Phase 3 of Salary-Negotiation plan — sector persona derived once
      * from the (tierBucket hint, band shape, company). Caller-supplied
      * value wins; otherwise the kernel runs the selector against the
@@ -8030,6 +8051,10 @@ export function deserializeState(json: string): NegotiationState {
     hardBandCap: s.hardBandCap ?? false,
     marketMode: (s.marketMode as MarketMode | undefined) ?? "neutral",
     recruiterPersona: (s.recruiterPersona as RecruiterPersona | undefined) ?? "consultative",
+    /* 2026-06-20 tactic-rotation back-compat: sessions serialized before
+     * this field shipped revive with it undefined, so the planner keeps
+     * the legacy session-local tacticHash seeding for them. */
+    tacticRotation: s.tacticRotation as number | undefined,
     /* Phase 3 — sector-persona back-compat: in-flight sessions
      * serialised before Phase 3 shipped get "default", which renders
      * the legacy prose surfaces (no persona-conditional overrides). */

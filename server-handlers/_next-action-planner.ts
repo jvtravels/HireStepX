@@ -5308,6 +5308,35 @@ function tacticHash(sessionId: string | null | undefined, salt: string): number 
   return h >>> 0;
 }
 
+/** Cross-session bad-faith-tactic VARIANT selector (2026-06-20, #107).
+ *
+ *  Picks which deadline / line / topic a single-fire tactic uses this
+ *  session, out of `n` options. When the session carries a
+ *  `tacticRotation` cursor (seeded once at init in _scenario-seed.ts as
+ *  `fnv1a(userId|"tactic") + priorNegotiationCount`), the variant is
+ *  `(cursor + familySalt) % n`. Because the cursor advances by exactly 1
+ *  each session, a returning user lands on a DIFFERENT variant every
+ *  session and cycles the whole set before any repeat — true cross-session
+ *  anti-repetition, deterministic in (userId, count). `familySalt`
+ *  de-syncs the three tactic families so they don't all step together.
+ *
+ *  Fallback: states with no `tacticRotation` (hand-built test fixtures,
+ *  pre-#107 serialized sessions, anonymous-with-no-seed paths) keep the
+ *  legacy session-local `tacticHash(sessionId, …)` seeding unchanged, so
+ *  no existing behaviour or test moves. Pure. */
+function rotatedTacticVariant(
+  state: NegotiationState,
+  familySalt: number,
+  legacySalt: string,
+  n: number,
+): number {
+  const cursor = state.tacticRotation;
+  if (cursor == null || !Number.isFinite(cursor)) {
+    return tacticHash(state.sessionId, legacySalt) % n;
+  }
+  return ((Math.floor(cursor) + familySalt) % n + n) % n;
+}
+
 /** Bad-faith tactic injection (2026-05-29). Returns a low-priority
  *  tactic PlannedAction or null when no tactic gate fires.
  *
@@ -5338,7 +5367,7 @@ export function maybePlanTacticInject(
     state.acceptedAtTurn == null
   ) {
     const deadlines: ("eod" | "friday" | "24h")[] = ["eod", "friday", "24h"];
-    const pick = deadlines[tacticHash(state.sessionId, "exploding-offer-deadline") % 3];
+    const pick = deadlines[rotatedTacticVariant(state, 0, "exploding-offer-deadline", 3)];
     return {
       kind: "exploding-offer-pressure",
       tactic: "exploding-offer-pressure",
@@ -5374,7 +5403,7 @@ export function maybePlanTacticInject(
     return {
       kind: "fake-competing-candidate",
       tactic: "fake-competing-candidate",
-      variant: tacticHash(state.sessionId, "fake-competing-variant") % 5,
+      variant: rotatedTacticVariant(state, 1, "fake-competing-variant", 5),
       _move: {
         lever: "hold-firm",
         newTotalLpa: state.highestOfferMade || null,
@@ -5403,7 +5432,7 @@ export function maybePlanTacticInject(
     const slot = tacticHash(state.sessionId, `vague-promise-${state.turnIndex}`) % 5;
     if (slot === 0) {
       const topics: ("wfh" | "joining-bonus" | "title")[] = ["wfh", "joining-bonus", "title"];
-      const pick = topics[tacticHash(state.sessionId, "vague-promise-topic") % 3];
+      const pick = topics[rotatedTacticVariant(state, 2, "vague-promise-topic", 3)];
       return {
         kind: "vague-promise",
         tactic: "vague-promise",
