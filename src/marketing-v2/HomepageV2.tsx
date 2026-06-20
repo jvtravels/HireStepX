@@ -4182,7 +4182,7 @@ function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
               <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
-              <path d="M7,46 A33,33 0 0,1 61,17" fill="none" stroke="#15803D" strokeWidth="7" strokeLinecap="round" />
+              <path d="M7,46 A33,33 0 0,1 68,28" fill="none" stroke="#15803D" strokeWidth="7" strokeLinecap="round" />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>82</div>
             <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: "#9E9589" }}>/ 100</div>
@@ -4251,7 +4251,7 @@ function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
           <div style={{ position: "relative", width: 92, height: 56, margin: "0 auto 9px" }}>
             <svg viewBox="0 0 90 56" width="92" height="56">
               <path d="M8,52 A37,37 0 0,1 82,52" fill="none" stroke="#E8E0D0" strokeWidth="8" strokeLinecap="round" />
-              <path d="M8,52 A37,37 0 0,1 69,18" fill="none" stroke="#15803D" strokeWidth="8" strokeLinecap="round" />
+              <path d="M8,52 A37,37 0 0,1 77,34" fill="none" stroke="#15803D" strokeWidth="8" strokeLinecap="round" />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 25, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>84</div>
             <div style={{ position: "absolute", bottom: -5, left: 0, right: 0, textAlign: "center", fontSize: 8, color: "#9E9589" }}>/ 100</div>
@@ -4337,7 +4337,7 @@ function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
               <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
-              <path d="M7,46 A33,33 0 0,1 42,14" fill="none" stroke="#B45309" strokeWidth="7" strokeLinecap="round" />
+              <path d="M7,46 A33,33 0 0,1 48,14" fill="none" stroke="#B45309" strokeWidth="7" strokeLinecap="round" />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>58</div>
             <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: "#9E9589" }}>/ 100</div>
