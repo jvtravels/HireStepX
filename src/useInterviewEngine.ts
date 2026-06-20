@@ -770,12 +770,31 @@ export function useInterviewEngine() {
        actually worked on. Falls through to the generic intro when the
        resume isn't present (resumeless practice flow). */
     const introAiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
-      experiences?: Array<{ topProjects?: string[] }>;
+      experiences?: Array<{ topProjects?: string[]; bullets?: string[]; title?: string; company?: string }>;
+      keyAchievements?: string[];
     } | undefined;
-    const introTopProjects = (introAiProfile?.experiences || [])
-      .flatMap(e => Array.isArray(e?.topProjects) ? e.topProjects : [])
-      .filter(p => typeof p === "string" && p.trim().length > 0)
-      .slice(0, 2);
+    const cleanPhrase = (p: unknown): string => (typeof p === "string" ? p.trim() : "");
+    /* Resume grounding for the intro silently failed in the field when
+       experiences[].topProjects was empty — a narrow nested slot that the
+       parser often doesn't populate even for a rich resume (live QA, 2026-06:
+       a full resume still produced the generic "where are you joining from"
+       opener). Broaden the source so the "I saw you worked on X" rapport beat
+       fires far more often: dedicated project names first, then a headline
+       achievement, then the first experience bullet, then a role-at-company
+       phrase as the last grounded resort. The builder trims to a spoken-safe
+       length, so an over-long bullet still degrades gracefully. */
+    const introTopProjects = (() => {
+      const exps = introAiProfile?.experiences || [];
+      const named = exps.flatMap(e => (Array.isArray(e?.topProjects) ? e.topProjects : [])).map(cleanPhrase).filter(Boolean);
+      if (named.length) return named.slice(0, 2);
+      const achievements = (introAiProfile?.keyAchievements || []).map(cleanPhrase).filter(Boolean);
+      if (achievements.length) return achievements.slice(0, 1);
+      const firstBullet = exps.flatMap(e => (Array.isArray(e?.bullets) ? e.bullets : [])).map(cleanPhrase).filter(Boolean);
+      if (firstBullet.length) return firstBullet.slice(0, 1);
+      const firstExp = exps.find(e => cleanPhrase(e?.title) && cleanPhrase(e?.company));
+      if (firstExp) return [`${cleanPhrase(firstExp.title)} at ${cleanPhrase(firstExp.company)}`];
+      return [];
+    })();
     const intro = buildBehavioralIntro({
       interviewerName,
       candidateName: user?.name || undefined,

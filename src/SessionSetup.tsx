@@ -1640,7 +1640,7 @@ export default function SessionSetup() {
                         value={targetCompany}
                         onChange={(v) => { setTargetCompany(v); setCompanyTouched(true); }}
                         suggestions={COMPANY_SUGGESTIONS}
-                        placeholder={isNegotiationFocus ? "Required for salary negotiation — e.g. Razorpay, Google" : "e.g. Google, Stripe..."}
+                        placeholder={isNegotiationFocus ? "Required for salary negotiation — e.g. Razorpay, Google" : "e.g. Flipkart, Razorpay, TCS..."}
                         label={isNegotiationFocus ? "Company" : "Company (optional)"}
                         required={companyRequired}
                         error={
