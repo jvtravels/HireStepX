@@ -4470,13 +4470,13 @@ export function PersonalizedReportsV2() {
 
       {/* ── Headline — exact canvas copy ── */}
       <div className="rpt-a4" style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80 }}>
-        <h2 id="hd-reports" className="rpt-a4" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 92, fontWeight: 400, lineHeight: 1.05, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5 }}>
+        <h2 id="hd-reports" className="rpt-a4" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.05, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5 }}>
           Personalized reports after
         </h2>
-        <h2 className="rpt-a5" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 92, fontWeight: 400, fontStyle: "italic", lineHeight: 1.05, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
+        <h2 className="rpt-a5" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.05, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
           every interview
         </h2>
-        <p className="rpt-a6" style={{ fontSize: 15, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 720, fontWeight: 400, fontFamily: "Inter, system-ui, sans-serif" }}>
+        <p className="rpt-a6" style={{ fontSize: 18, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 720, fontWeight: 400, fontFamily: "Inter, system-ui, sans-serif" }}>
           HireStepX gives you a full breakdown after every interview — what landed,
           what to sharpen, and your exact next practice session.
         </p>
