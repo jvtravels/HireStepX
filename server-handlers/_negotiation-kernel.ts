@@ -3408,6 +3408,20 @@ export function detectConsecutiveDeadEnd(state: NegotiationState): boolean {
   return candidateCount >= 3 && deadEnds >= 3;
 }
 
+/** Single source of truth for "is there a concrete offer the candidate
+ *  can actually accept?". An offer is on the table when the recruiter has
+ *  quoted a number (highestOfferMade > 0) OR has presented the band as a
+ *  reference range (the `band-anchor-with-rationale` topic — the kernel
+ *  treats a presented band as an offer-on-table; see the accept path's
+ *  band-floor close). Used by the acceptance classifier (line ~4503) and
+ *  the premature-close guard so both agree on what "accept" can refer to. */
+export function isOfferOnTable(state: NegotiationState): boolean {
+  const bandPresented = (state.askedTopics ?? []).some(
+    (t) => t.topic === "band-anchor-with-rationale",
+  );
+  return (state.highestOfferMade ?? 0) > 0 || bandPresented;
+}
+
 /** Premature-close guard. Returns true when the kernel is permitted to
  *  transition into a terminal phase given the current state. The
  *  caller passes the candidate answer (for explicit-decline detection)
@@ -3434,6 +3448,31 @@ export function canCloseSession(
   if (reason === "max-turns") return true;
   /* Explicit decline always passes the guard. */
   if (reason === "decline") return true;
+  /* #118 (2026-06-21, live staging) — nothing-on-the-table guard.
+   *
+   * Live (Flipkart EM, desperate candidate): "Honestly whatever you offer
+   * is fine, I just need this job." → "Yes I accept whatever the number
+   * is." The bot was still in discovery — it had NEVER stated an anchor or
+   * a band. The strict-accept fast-path below (`reason === "accept"`)
+   * passed unconditionally, the kernel force-closed, and because
+   * highestOfferMade was still 0 when attachPostAcceptanceMessage cached
+   * the recap, the close shipped "Locking the close at ₹0L total comp".
+   *
+   * This is the SAME invariant the PDF#48 comment below states — "an
+   * accept cannot logically exist BEFORE an offer the candidate has seen"
+   * — but it must apply to STRICT accepts too: "I accept whatever the
+   * number is" is consent to nothing when no number was ever named. Gate
+   * BOTH accept and soft-accept on a concrete offer/band being on the
+   * table (isOfferOnTable — the same predicate the acceptance classifier
+   * uses). With nothing on the table, decline the close; the planner then
+   * falls through to its discovery-sufficient anchor (state the offer
+   * first), which is the only correct move. */
+  if (
+    (reason === "accept" || reason === "soft-accept") &&
+    !isOfferOnTable(state)
+  ) {
+    return false;
+  }
   /* PDF#48 (2026-05-26) — structural anti-premature-close invariant.
    *
    * The bug: a candidate answered three data-collection questions
@@ -4497,10 +4536,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      presented band as an offer-on-table is exactly what the phase gate
      is meant to express — we are past discovery the moment the band is
      communicated. */
-  const bandPresented = (state.askedTopics ?? []).some(
-    (t) => t.topic === "band-anchor-with-rationale",
-  );
-  const offerOnTable = (state.highestOfferMade ?? 0) > 0 || bandPresented;
+  const offerOnTable = isOfferOnTable(state);
   const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null, state.company ?? null);
   /* Per-month periodicity (2026-06-15, unbiased-review HIGH) is normalized at
    * the SOURCE — _number-role-classifier.ts annualizes each salary span by its

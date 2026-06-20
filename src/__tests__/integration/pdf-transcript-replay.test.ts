@@ -81,13 +81,20 @@ describe("PDF transcript replay — pinned non-regressions", () => {
       },
       [
         "my current CTC is 16 LPA, expecting around 40 LPA",
-        "yes I accept 40 LPA, let's move forward",
+        /* #118 (2026-06-21) — the candidate must accept an offer the bot has
+         * actually made. The original 2-turn script had the candidate
+         * "accept 40 LPA" one turn after disclosure, before the bot had
+         * offered anything — that close is now correctly blocked (an accept
+         * cannot exist before an offer; see canCloseSession / isOfferOnTable).
+         * Give the bot a turn to put its anchor on the table, THEN accept. */
+        "okay, what can you offer?",
+        "yes I accept, let's move forward",
       ],
     );
-    // Last turn must have produced a terminal phase given an explicit accept.
-    // (Lenient: kernel may still need one anchoring turn before locking in,
-    // but the final state across the sequence should not be "opening".)
-    expect(turns[turns.length - 1].phaseAfter).not.toBe("opening");
+    // Explicit acceptance of a genuinely-offered, in-band number must reach a
+    // terminal (accepted) phase — not stall, and not the old ₹0L pseudo-close.
+    expect(turns[turns.length - 1].terminalAfter).toBe(true);
+    expect(turns[turns.length - 1].phaseAfter).toBe("accepted");
   });
 
   it("kernel never auto-closes on a single discovery turn regardless of utterance", () => {

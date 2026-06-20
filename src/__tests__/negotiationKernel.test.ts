@@ -1345,6 +1345,15 @@ describe("engine wrap contract", () => {
     it(`${path.name}: terminal phase survives wrap move + round-trip`, () => {
       let state = init({ maxTurns: path.name === "stalemate" ? 2 : 8 });
       state = applyAiMove(state, pickAiMove(state), "Our offer is ₹20 LPA.");
+      /* #118 (2026-06-21) — an accept can only close against an offer that
+       * actually stands. The init move above is a probe (newTotalLpa null),
+       * so the "₹20 LPA" was only cosmetic text; reflect a genuine standing
+       * offer so the accepted wrap-contract path exercises a real close
+       * rather than the now-blocked accept-with-nothing-on-the-table case. */
+      if (path.name === "accepted") {
+        state.highestOfferMade = 20;
+        state.firstOfferAtTurn = state.turnIndex;
+      }
 
       if (path.triggerAnswer) {
         state = applyCandidateAnswer(state, path.triggerAnswer);

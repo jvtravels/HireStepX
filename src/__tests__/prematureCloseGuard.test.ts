@@ -17,6 +17,12 @@ function fakeState(overrides: Partial<NegotiationState> = {}): NegotiationState 
     turnIndex: 0,
     minTurnsBeforeClose: 8,
     conversationLog: [],
+    /* #118 (2026-06-21) — these turn-gating cases all presuppose an offer
+     * the candidate is reacting to; canCloseSession now declines an
+     * accept/soft-accept when NOTHING is on the table (isOfferOnTable),
+     * so seed a standing offer by default. The dedicated #118 block below
+     * overrides this to 0 to pin the no-offer guard. */
+    highestOfferMade: 30,
     ...overrides,
   } as NegotiationState;
 }
@@ -60,6 +66,25 @@ describe("canCloseSession — premature close guard", () => {
   it("explicit-decline language at low turn unlocks soft-accept close", () => {
     const s = fakeState({ turnIndex: 3 });
     expect(canCloseSession(s, "I'm passing on this opportunity", "soft-accept")).toBe(true);
+  });
+
+  /* #118 (2026-06-21, live staging) — an accept cannot close a deal with
+   * no offer on the table. Live: desperate candidate "whatever you offer
+   * is fine ... yes I accept whatever the number is" while still in
+   * discovery → force-close shipped "Locking the close at ₹0L total comp". */
+  it("#118 blocks strict accept when no offer is on the table (₹0L close guard)", () => {
+    const s = fakeState({ turnIndex: 12, highestOfferMade: 0 });
+    expect(canCloseSession(s, "yes I accept whatever the number is", "accept")).toBe(false);
+    expect(canCloseSession(s, "sounds good, let's go ahead", "soft-accept")).toBe(false);
+  });
+
+  it("#118 allows accept once a band has been presented (offer-on-table via band)", () => {
+    const s = fakeState({
+      turnIndex: 4,
+      highestOfferMade: 0,
+      askedTopics: [{ topic: "band-anchor-with-rationale", atTurn: 2 }],
+    } as Partial<NegotiationState>);
+    expect(canCloseSession(s, "I accept", "accept")).toBe(true);
   });
 });
 

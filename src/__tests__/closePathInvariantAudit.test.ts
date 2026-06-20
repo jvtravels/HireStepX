@@ -24,6 +24,11 @@ import { describe, it, expect } from "vitest";
 import {
   initState,
   pickAiMove,
+  applyCandidateAnswer,
+  applyAiMove,
+  canCloseSession,
+  isOfferOnTable,
+  isTerminalPhase,
   type NegotiationBand,
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
@@ -109,5 +114,63 @@ describe("close-path invariant audit — every close-acceptance respects clampTo
       expect(move.lever).toBe("close-acceptance");
       expect(move.newTotalLpa!, `randomised case hi=${hi} counter=${counter}`).toBeGreaterThanOrEqual(hi);
     }
+  });
+});
+
+/* #118 (2026-06-21, live staging) — an acceptance cannot close a deal that
+ * has no offer on the table. Live (Flipkart EM, desperate candidate):
+ * "Honestly whatever you offer is fine, I just need this job." → "Yes I
+ * accept whatever the number is." The bot was still in discovery (no anchor
+ * ever stated). The strict-accept fast-path closed unconditionally and,
+ * because highestOfferMade was still 0 when the post-acceptance recap was
+ * cached, shipped "Locking the close at ₹0L total comp". The fix gates
+ * canCloseSession's accept/soft-accept on isOfferOnTable(state). */
+describe("#118 — accept with nothing on the table must not force a ₹0L close", () => {
+  const EM_BAND: NegotiationBand = { initialOffer: 32.7, maxStretch: 56, walkAway: 26.6, hasEquity: true };
+  const mkEm = (overrides: Partial<NegotiationState> = {}): NegotiationState => ({
+    ...initState({ sessionId: "118", role: "Engineering Manager", company: "Flipkart", band: EM_BAND }),
+    ...overrides,
+  });
+
+  it("isOfferOnTable: false pre-anchor, true once an offer or band exists", () => {
+    expect(isOfferOnTable(mkEm())).toBe(false);
+    expect(isOfferOnTable(mkEm({ highestOfferMade: 32.7 }))).toBe(true);
+    expect(
+      isOfferOnTable(mkEm({ askedTopics: [{ topic: "band-anchor-with-rationale", atTurn: 2 }] })),
+    ).toBe(true);
+  });
+
+  it("canCloseSession declines accept/soft-accept when nothing is on the table", () => {
+    const s = mkEm({ turnIndex: 3, highestOfferMade: 0 });
+    expect(canCloseSession(s, "yes I accept whatever the number is", "accept")).toBe(false);
+    expect(canCloseSession(s, "sounds good", "soft-accept")).toBe(false);
+    /* …but still closes once an offer genuinely stands. */
+    const withOffer = mkEm({ turnIndex: 3, highestOfferMade: 40 });
+    expect(canCloseSession(withOffer, "I accept", "accept")).toBe(true);
+    /* …and explicit decline / max-turns are never gated by this. */
+    expect(canCloseSession(s, "no thanks", "decline")).toBe(true);
+    expect(canCloseSession(s, "", "max-turns")).toBe(true);
+  });
+
+  it("full flow: desperate accept with no offer never closes at ₹0L", () => {
+    let state = mkEm();
+    state = applyAiMove(state, pickAiMove(state), "init");
+    for (const a of [
+      "Honestly whatever you offer is fine, I just need this job.",
+      "Yes I accept whatever the number is.",
+      "Okay sounds good, I accept.",
+    ]) {
+      state = applyCandidateAnswer(state, a);
+      state = applyAiMove(state, pickAiMove(state), "x");
+      /* Must never have force-closed against an unspoken number. */
+      expect(state.postAcceptanceMessage ?? "").not.toContain("₹0L");
+      if (isTerminalPhase(state.phase)) {
+        /* If it ever does terminate here it must be a stalemate, never an
+         * accepted close at zero. */
+        expect(state.phase).not.toBe("accepted");
+      }
+    }
+    expect(state.highestOfferMade).toBe(0);
+    expect(state.phase).not.toBe("accepted");
   });
 });
