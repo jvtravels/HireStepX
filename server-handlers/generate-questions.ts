@@ -273,9 +273,15 @@ export default async function handler(req: Request): Promise<Response> {
       try {
         const parsed = JSON.parse(cached);
         // Fire telemetry so you can measure cache effectiveness in PostHog —
-        // a healthy hit rate means the cache is doing its job. Best-effort:
-        // don't await, don't let telemetry block the response.
-        void captureServerEvent("gq_cache_hit", distinctIdFrom(req, auth.userId), {
+        // a healthy hit rate means the cache is doing its job. MUST be awaited:
+        // captureServerEvent only flushes via captureImmediate, and in the Edge
+        // runtime the function freezes the moment we return the Response, which
+        // cancels any un-awaited (fire-and-forget) flush in flight. A prior
+        // `void` here is exactly why gq_cache_hit never reached PostHog despite
+        // real traffic. The added latency is a single POST on the already-fast
+        // cache path — the cache's real win (skipping the multi-second LLM call)
+        // is unaffected.
+        await captureServerEvent("gq_cache_hit", distinctIdFrom(req, auth.userId), {
           type: typeof type === "string" ? type : "",
           focus: typeof focus === "string" ? focus : "",
           company: typeof company === "string" ? company.slice(0, 60) : "",
@@ -1771,7 +1777,14 @@ Requirements:
       });
       if (fallbackQuestions.length > 0 && validateQuestionShape(fallbackQuestions)) {
         console.warn(`[generate-questions] returning static fallback after LLM failure: ${errMsg.slice(0, 100)}`);
-        void captureServerEvent("gq_static_fallback", distinctIdFrom(req, auth.userId), {
+        // MUST be awaited (not `void`): this is a terminal return on the Edge
+        // runtime, where the function freezes after the Response is returned and
+        // cancels any un-flushed fire-and-forget capture. A prior `void` here is
+        // why gq_static_fallback showed zero events in PostHog even though live
+        // responses carried `_fallback:"static"` — the single most important
+        // LLM-reliability signal was invisible. This path is already the
+        // degraded (LLM-down) path, so the extra flush latency is irrelevant.
+        await captureServerEvent("gq_static_fallback", distinctIdFrom(req, auth.userId), {
           error: errMsg.slice(0, 200),
           is_timeout: isTimeout,
           type: requestType,
