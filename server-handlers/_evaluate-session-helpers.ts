@@ -147,6 +147,48 @@ export const ROLE_SKILLS: Record<string, string[]> = {
   behavioral: ["Structure", "Ownership", "Impact", "Communication", "Composure"],
 };
 
+/* HR-round sessions are graded on the 8 HR rubric dimensions, not the
+   candidate's role-family competencies — so the DimensionGate in the report
+   gets real per-axis scores instead of role-family proxies. */
+export const HR_ROUND_SKILL_AXES: readonly string[] = [
+  "Logistics clarity",
+  "Comp transparency",
+  "Switch-rationale honesty",
+  "Compliance readiness",
+  "Commitment signal",
+  "Benefits/policy literacy",
+  "Self-awareness",
+  "Motivation specificity",
+];
+
+/* Salary-negotiation sessions are scored on negotiation craft, not role-family
+   competencies (a PM negotiating is graded on anchoring/leverage, not product
+   sense). These six axes mirror the salary-negotiation focus recipe dimensions
+   verbatim (data/focus-question-recipes.ts) so the LLM's per-skill scores stay
+   consistent with the rubric it is already grading against (#99). */
+export const NEGOTIATION_SKILL_AXES: readonly string[] = [
+  "Anchor strength",
+  "Counter-offer judgement",
+  "Trade-off awareness",
+  "Structural fluency",
+  "Tactical composure",
+  "Walk-away discipline",
+];
+
+/* Single source of truth for the report's skill axes. Focus type wins over
+   role family: an HR round or a salary negotiation is graded on what the
+   interviewer actually evaluated, regardless of the candidate's role. Falls
+   back to role-family competencies (then behavioral) for everything else. */
+export function resolveSkillAxes(
+  metaType: string | undefined,
+  roleFamily: string | undefined,
+): string[] {
+  if (metaType === "hr-round") return [...HR_ROUND_SKILL_AXES];
+  if (metaType === "salary-negotiation") return [...NEGOTIATION_SKILL_AXES];
+  const family = (roleFamily || "behavioral") as keyof typeof ROLE_SKILLS;
+  return [...(ROLE_SKILLS[family] || ROLE_SKILLS.behavioral)];
+}
+
 export const DEFAULT_BANDS: BandThresholds = {
   strongHire: 85,
   hire: 70,

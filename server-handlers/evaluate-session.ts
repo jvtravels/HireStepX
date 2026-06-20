@@ -25,6 +25,7 @@ import { PROBE_TEXTS } from "./_behavioral-followup-bank";
 import { BEHAVIORAL_COMPETENCIES, COMPETENCY_LABELS } from "../data/behavioral-question-bank";
 import {
   ROLE_SKILLS,
+  resolveSkillAxes,
   DEFAULT_BANDS,
   applyBands,
   resolveCompanyProfile,
@@ -488,23 +489,10 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const roleFamily = (meta?.roleFamily as keyof typeof ROLE_SKILLS) || "behavioral";
-    /* For HR-round sessions the generic role-family skills (PM/SWE etc.) are
-       replaced by the 8 dimensions the HR rubric actually grades on. This gives
-       the DimensionGate in HrFullReport real per-axis scores instead of
-       role-family proxies that don't map to what the interviewer evaluated. */
-    const HR_ROUND_SKILL_AXES = [
-      "Logistics clarity",
-      "Comp transparency",
-      "Switch-rationale honesty",
-      "Compliance readiness",
-      "Commitment signal",
-      "Benefits/policy literacy",
-      "Self-awareness",
-      "Motivation specificity",
-    ];
-    const skillAxes = meta?.type === "hr-round"
-      ? HR_ROUND_SKILL_AXES
-      : (ROLE_SKILLS[roleFamily] || ROLE_SKILLS.behavioral);
+    /* Focus type wins over role family — an HR round or a salary negotiation is
+       graded on what the interviewer actually evaluated, not the candidate's
+       role-family proxies (#99). See resolveSkillAxes in the helpers. */
+    const skillAxes = resolveSkillAxes(meta?.type, roleFamily);
     const durationSec = meta?.duration || 600;
     const coreMetrics = computeCoreMetrics(transcript, durationSec);
     const advancedDelivery = computeAdvancedDelivery(transcript, durationSec);

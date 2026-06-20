@@ -17,6 +17,10 @@ import {
   normalizeCoaching,
   normalizeCrossSessionInsights,
   normalizeFocusMetrics,
+  resolveSkillAxes,
+  NEGOTIATION_SKILL_AXES,
+  HR_ROUND_SKILL_AXES,
+  ROLE_SKILLS,
   DEFAULT_BANDS,
   type TranscriptTurn,
   type WinOrFix,
@@ -29,6 +33,51 @@ import {
  * so we can verify the score blend, calibration, and grounding guards
  * without needing the LLM or HTTP harness.
  */
+
+describe("resolveSkillAxes (#99 negotiation taxonomy)", () => {
+  it("returns negotiation craft axes for a salary-negotiation focus, regardless of role family", () => {
+    // A PM negotiating must be graded on anchoring/leverage, not product sense.
+    const axes = resolveSkillAxes("salary-negotiation", "pm");
+    expect(axes).toEqual([...NEGOTIATION_SKILL_AXES]);
+    expect(axes).toContain("Anchor strength");
+    expect(axes).toContain("Walk-away discipline");
+    // No generic role-family proxy should leak in.
+    expect(axes).not.toContain("Product Sense");
+  });
+
+  it("ignores role family for negotiation even when roleFamily is swe/em/data", () => {
+    for (const fam of ["swe", "em", "data", "behavioral", undefined]) {
+      expect(resolveSkillAxes("salary-negotiation", fam)).toEqual([
+        ...NEGOTIATION_SKILL_AXES,
+      ]);
+    }
+  });
+
+  it("returns the 8 HR-round axes for an hr-round focus", () => {
+    expect(resolveSkillAxes("hr-round", "pm")).toEqual([...HR_ROUND_SKILL_AXES]);
+  });
+
+  it("falls back to role-family competencies for ordinary focuses", () => {
+    expect(resolveSkillAxes("behavioral", "pm")).toEqual(ROLE_SKILLS.pm);
+    expect(resolveSkillAxes(undefined, "swe")).toEqual(ROLE_SKILLS.swe);
+  });
+
+  it("falls back to behavioral axes for an unknown role family", () => {
+    expect(resolveSkillAxes(undefined, "marketing")).toEqual(
+      ROLE_SKILLS.behavioral,
+    );
+    expect(resolveSkillAxes(undefined, undefined)).toEqual(
+      ROLE_SKILLS.behavioral,
+    );
+  });
+
+  it("returns a fresh array (mutating the result never corrupts the constants)", () => {
+    const axes = resolveSkillAxes("salary-negotiation", "pm");
+    axes.push("tampered");
+    expect(NEGOTIATION_SKILL_AXES).not.toContain("tampered");
+    expect(NEGOTIATION_SKILL_AXES).toHaveLength(6);
+  });
+});
 
 describe("applyBands", () => {
   it("classifies into all five bands at boundary scores", () => {
