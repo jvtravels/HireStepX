@@ -4595,7 +4595,7 @@ export function VideoCtaV2() {
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 720, margin: "0 auto", alignSelf: "flex-start" }}>
 
         <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 64, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2 }}>
-          Prepare Like Top Candidates Do
+          Prepare Like Top <span style={{ fontStyle: "italic" }}>Candidates Do</span>
         </h2>
 
         <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 560, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif" }}>
