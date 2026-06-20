@@ -13,7 +13,7 @@
  * verbatim — no defer lead.
  */
 import { describe, it, expect, vi } from "vitest";
-import { generateBotReply } from "../../server-handlers/_response-pipeline";
+import { generateBotReply, classifyLlmThrow } from "../../server-handlers/_response-pipeline";
 import { proseCloseRecapFormal } from "../../server-handlers/prose/close-recap-formal";
 import type {
   NegotiationState,
@@ -109,5 +109,45 @@ describe("ARCH-C2c — buildDeferText drops defer lead for close-recap / commit-
        * canonical directly). Equality is the strongest contract. */
       expect(result.text).toBe(canonical);
     }
+  });
+});
+
+/* 2026-06-20 — classifyLlmThrow: the restyle catch used to collapse every
+ * LLM failure into one opaque "llm-throw" reject reason. Live PostHog showed
+ * 221 such throws (~79% of ALL restyle rejections) with no way to tell a
+ * timeout from a 429 from an auth failure — the single biggest reason the LLM
+ * polish layer never ships was unobservable. These pin the classifier so the
+ * telemetry label is correct on the next staging run. */
+describe("classifyLlmThrow — restyle failure-mode labels for telemetry", () => {
+  it("labels per-provider timeout (AbortError) as llm-timeout", () => {
+    const abort = new Error("The operation was aborted");
+    abort.name = "AbortError";
+    expect(classifyLlmThrow(abort)).toBe("llm-timeout");
+    expect(classifyLlmThrow(new Error("request aborted due to timeout"))).toBe("llm-timeout");
+  });
+
+  it("labels rate-limit (429) as llm-rate-limit", () => {
+    expect(classifyLlmThrow(new Error("Groq error 429: rate limit exceeded"))).toBe("llm-rate-limit");
+    expect(classifyLlmThrow(new Error("Too Many Requests — rate limit"))).toBe("llm-rate-limit");
+  });
+
+  it("labels auth failures (401/403) as llm-auth", () => {
+    expect(classifyLlmThrow(new Error("Groq error 401: invalid api key"))).toBe("llm-auth");
+    expect(classifyLlmThrow(new Error("Gemini error 403: Unauthorized"))).toBe("llm-auth");
+  });
+
+  it("labels provider 5xx as llm-5xx", () => {
+    expect(classifyLlmThrow(new Error("Groq error 503: service unavailable"))).toBe("llm-5xx");
+  });
+
+  it("labels config / provider-chain exhaustion distinctly", () => {
+    expect(classifyLlmThrow(new Error("No LLM configured — set GROQ_API_KEY"))).toBe("llm-unconfigured");
+    expect(classifyLlmThrow(new Error("All LLM providers failed"))).toBe("llm-all-providers-failed");
+  });
+
+  it("falls back to the generic llm-throw for unrecognised errors", () => {
+    expect(classifyLlmThrow(new Error("something weird happened"))).toBe("llm-throw");
+    expect(classifyLlmThrow("not even an Error")).toBe("llm-throw");
+    expect(classifyLlmThrow(undefined)).toBe("llm-throw");
   });
 });

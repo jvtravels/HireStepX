@@ -141,6 +141,30 @@ export interface PipelineResult {
   rejectReason?: string;
 }
 
+/** Classify why an LLM restyle call threw, so telemetry can distinguish
+ *  the dominant failure mode (timeout vs rate-limit vs auth vs other)
+ *  instead of collapsing everything into one opaque "llm-throw". The
+ *  caller still falls back to the canonical regardless — this only labels
+ *  the rejectReason that lands in `kernel_validate_fail.kinds`.
+ *
+ *  callLLM (server-handlers/_llm.ts) surfaces:
+ *    - AbortError / "aborted" message  → per-provider timeout
+ *    - "Groq error 429: …" / "…429…"   → provider rate-limit
+ *    - "Groq error 401/403: …"         → provider auth
+ *    - "No LLM configured …"           → missing keys (env/config) */
+export function classifyLlmThrow(err: unknown): string {
+  const name = err instanceof Error ? err.name : "";
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  const lower = msg.toLowerCase();
+  if (name === "AbortError" || lower.includes("abort")) return "llm-timeout";
+  if (lower.includes("no llm configured")) return "llm-unconfigured";
+  if (lower.includes("all llm providers failed")) return "llm-all-providers-failed";
+  if (/\b429\b/.test(msg) || lower.includes("rate limit")) return "llm-rate-limit";
+  if (/\b401\b|\b403\b/.test(msg) || lower.includes("unauthor")) return "llm-auth";
+  if (/\b5\d\d\b/.test(msg)) return "llm-5xx";
+  return "llm-throw";
+}
+
 /** Top-level generator. Always returns a useful text — falls back to
  *  the canonical verbatim if the LLM throws or the restyle violates
  *  semantics. */
@@ -697,8 +721,23 @@ async function generateRestyledCanonical(
   let restyled: string;
   try {
     restyled = await generateAiText(system, user, { temperature: 0.4 });
-  } catch {
-    return { text: canonical, source: "canonical-fallback", action, move, rejectReason: "llm-throw" };
+  } catch (err) {
+    /* 2026-06-20 — Previously a bare `catch {}` that collapsed EVERY LLM
+     * failure into the single opaque rejectReason "llm-throw". Live PostHog
+     * showed 221 such throws (≈79% of all restyle rejections) with no way to
+     * tell a timeout from a 429 from an auth failure — i.e. the #1 reason the
+     * LLM polish layer never ships was unobservable. Classify the throw so
+     * `kernel_validate_fail.kinds` tells us the real cause on the next staging
+     * run. Behaviour is unchanged: every branch still falls back to the
+     * kernel-authored canonical (always safe), only the telemetry label
+     * differs. */
+    return {
+      text: canonical,
+      source: "canonical-fallback",
+      action,
+      move,
+      rejectReason: classifyLlmThrow(err),
+    };
   }
   /* LN7 / Audit Pass 4 (PDF#27, 2026-05-17) — strip typographic curly
    * quotes BEFORE validateRestyle so downstream regex matches see
@@ -906,10 +945,51 @@ async function generateRestyledCanonical(
  * branch and rotate the lead. Additive — default sub-tag preserves
  * legacy phrasing. */
 type ValidationSubReason = "meta-leak" | "too-long" | "verbatim" | "other";
+
+/* 2026-06-20 — defer-lead rotation. The "structure" lead is the single
+ * most-shipped defer prefix (it's the default for BOTH the validation/
+ * meta-leak branch AND the llm-throw/empty-llm fallthrough, and live
+ * telemetry shows llm-throw alone fires on ~79% of rejected restyles).
+ * A single fixed string meant it repeated verbatim across consecutive
+ * turns whenever the LLM kept failing — exactly the "Coming back to the
+ * structure —" repeat observed on live staging (turns 4 and 7). The
+ * whole-text de-dup guard never caught it because only the PREFIX
+ * repeated, not the whole line.
+ *
+ * Fix: rotate within a small register-matched pool keyed on
+ * (sessionId, turnIndex). turnIndex increments every AI turn, so
+ * `(seed + turnIndex) % pool.length` is guaranteed to differ between any
+ * two consecutive turns; the sessionId hash offsets the starting point
+ * so two different episodes don't open on the same lead. Pool[0] is the
+ * legacy phrasing so a seedless/turn-0 call is byte-identical to before. */
+const STRUCTURE_DEFER_LEADS = [
+  "Coming back to the structure —",
+  "Stepping back to the numbers —",
+  "Let me get us back on track —",
+  "Back to the substance of it —",
+] as const;
+
+function hashSeed(s: string | undefined): number {
+  let h = 0;
+  const str = s ?? "";
+  for (let i = 0; i < str.length; i++) {
+    h = (h * 31 + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+function rotateStructureLead(seed: number | undefined): string {
+  if (seed == null) return STRUCTURE_DEFER_LEADS[0];
+  return STRUCTURE_DEFER_LEADS[seed % STRUCTURE_DEFER_LEADS.length];
+}
+
 function buildDeferLead(
   reason: "fact-gap" | "llm-throw" | "empty-llm" | "validation",
   missing: string[],
   validationSubReason: ValidationSubReason = "other",
+  /* Rotation seed = hashSeed(sessionId) + turnIndex, supplied by
+   * buildDeferText. Optional so legacy/unit callers keep the [0] lead. */
+  rotateSeed?: number,
 ): string {
   if (reason === "fact-gap") {
     const topic = missing[0] ?? "";
@@ -921,7 +1001,7 @@ function buildDeferLead(
   }
   if (reason === "validation") {
     switch (validationSubReason) {
-      case "meta-leak": return "Coming back to the structure —";
+      case "meta-leak": return rotateStructureLead(rotateSeed);
       case "too-long":  return "To keep this tight —";
       case "verbatim":  return "Picking up from where we were —";
       case "other":     return "Let me reframe —";
@@ -929,7 +1009,7 @@ function buildDeferLead(
   }
   /* llm-throw / empty-llm — quietly fall through to the planned next
    * move; no fake-callback theatre. */
-  return "Coming back to the structure —";
+  return rotateStructureLead(rotateSeed);
 }
 
 function buildDeferText(
@@ -976,7 +1056,12 @@ function buildDeferText(
     }
     return canonicalFollowup;
   }
-  const lead = buildDeferLead(reason, missing, validationSubReason);
+  /* Seed defer-lead rotation on (sessionId, turnIndex) so the "structure"
+   * lead can't repeat verbatim across consecutive deferring turns. When no
+   * ctx is supplied (legacy/unit callers) the seed is undefined → lead[0],
+   * preserving byte-identical legacy phrasing. */
+  const rotateSeed = ctx ? hashSeed(ctx.sessionId) + ctx.turnIndex : undefined;
+  const lead = buildDeferLead(reason, missing, validationSubReason, rotateSeed);
   /* AUDIT-W02 D8 (2026-06-08) — if canonicalFollowup is the fallback
    * stub ("Let me come back to that / you …"), prefixing it with a
    * lead produces double-defer prose like "Coming back to the structure
