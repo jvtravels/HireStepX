@@ -4583,7 +4583,7 @@ export function VideoCtaV2() {
         loop
         playsInline
         crossOrigin="anonymous"
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }}
       >
         <source src="/cta.mp4" type="video/mp4" />
       </video>
