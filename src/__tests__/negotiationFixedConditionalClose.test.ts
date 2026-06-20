@@ -38,6 +38,7 @@ import {
   nearOfferCloseNumber,
   fixedScopedCloseTotal,
   undeliverableFixedConditionAsk,
+  fixedConditionBlocksClose,
 } from "../../server-handlers/_next-action-planner";
 
 /* baseStretch 30 (fixed-component ceiling), variableMax 6, maxStretch 40. */
@@ -194,6 +195,82 @@ describe("#105 — conditional-close gate declines an undeliverable fixed ask", 
     const action = planNextAction(s);
     expect(action.kind === "close" || action.kind === "auto-accept").toBe(true);
     expect(actionToLever(action, s).newTotalLpa).toBe(33);
+  });
+});
+
+/* ── Live production shape (the reported #105 reproduction) ──
+ * A fixed conditional close ("if you can do ₹40L fixed, I'll sign") is recorded
+ * by the live classifier as `candidateTargetFixed` with `lastCounterComponent`
+ * left null and NO `lastCandidateCounterLpa`. Production bands also frequently
+ * carry NO `baseStretch`/`variableMax` (base cap defaults to maxStretch,
+ * variable headroom defaults to 0). The v1 fix keyed everything on
+ * `lastCounterComponent === "fixed"`, so it never engaged for this shape and
+ * the planner still stealth-closed at the standing offer. */
+const prodBand: NegotiationBand = {
+  initialOffer: 33,
+  maxStretch: 45.1,
+  walkAway: 28,
+  hasEquity: false,
+  // no baseStretch / variableMax — matches live bands
+};
+
+function prodFixedState(overrides: Partial<NegotiationState>): NegotiationState {
+  return {
+    ...initState({ sessionId: "fc105p", role: "product", company: "Razorpay", band: prodBand }),
+    highestOfferMade: 34.5,
+    ...overrides,
+  };
+}
+
+describe("#105 — live shape: candidateTargetFixed with lastCounterComponent null", () => {
+  it("resolveFixedCloseAsk path: a deliverable-as-a-number fixed ask a REAL gap above the offer blocks the close", () => {
+    // 40 ≤ maxStretch 45.1 (deliverable as a number), but 40-34.5 = 5.5 ≫ gap 2.07.
+    const s = prodFixedState({ candidateTargetFixed: 40, lastCounterComponent: null });
+    expect(fixedConditionBlocksClose(s)).toBe(true);
+  });
+
+  it("undeliverable fixed ask (above the band ceiling) blocks the close", () => {
+    // 48 > maxStretch 45.1 → delivered null.
+    const s = prodFixedState({ candidateTargetFixed: 48, lastCounterComponent: null });
+    expect(fixedScopedCloseTotal(s)).toBeNull();
+    expect(fixedConditionBlocksClose(s)).toBe(true);
+  });
+
+  it("a fixed ask AT/NEAR the offer (within the gap) does NOT block — close honors it", () => {
+    // 36 ≤ 45.1, 36-34.5 = 1.5 ≤ gap 2.07 → deliverable and near → close.
+    const s = prodFixedState({ candidateTargetFixed: 36, lastCounterComponent: null });
+    expect(fixedConditionBlocksClose(s)).toBe(false);
+    expect(fixedScopedCloseTotal(s)).toBe(36);
+  });
+
+  it("conditional-close gate does NOT stealth-close the live ₹40L-fixed case", () => {
+    let s = initState({ sessionId: "fc105live", role: "product", company: "Razorpay", band: prodBand });
+    s = { ...s, minTurnsBeforeClose: 0, highestOfferMade: 34.5 };
+    s = {
+      ...s,
+      decisionDeadline: { ...s.decisionDeadline, conditionalAcceptance: true },
+      candidateTargetFixed: 40,
+      lastCounterComponent: null,
+      lastCandidateCounterLpa: null,
+    };
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("close");
+    expect(action.kind).not.toBe("auto-accept");
+  });
+
+  it("conditional-close gate does NOT stealth-close the live ₹48L-fixed (undeliverable) case", () => {
+    let s = initState({ sessionId: "fc105live48", role: "product", company: "Razorpay", band: prodBand });
+    s = { ...s, minTurnsBeforeClose: 0, highestOfferMade: 34.5 };
+    s = {
+      ...s,
+      decisionDeadline: { ...s.decisionDeadline, conditionalAcceptance: true },
+      candidateTargetFixed: 48,
+      lastCounterComponent: null,
+      lastCandidateCounterLpa: null,
+    };
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("close");
+    expect(action.kind).not.toBe("auto-accept");
   });
 });
 

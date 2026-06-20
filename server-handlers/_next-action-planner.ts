@@ -994,13 +994,13 @@ export function nearOfferCloseNumber(state: NegotiationState): number {
    * an undeliverable fixed ask yields null → the offer stands (and the
    * close gates below decline rather than stealth-close). When the signal is
    * total-scoped the legacy chain is unchanged. */
+  const totalCnum = totalScopedCounter(state);
   const cnum =
-    state.lastCounterComponent === "fixed"
-      ? fixedScopedCloseTotal(state)
-      : totalScopedCounter(state) ??
-        state.lastCandidateCounterLpa ??
-        state.candidateTarget ??
-        null;
+    totalCnum != null
+      ? totalCnum
+      : resolveFixedCloseAsk(state) != null
+        ? fixedScopedCloseTotal(state) // implied total iff deliverable, else null
+        : state.lastCandidateCounterLpa ?? state.candidateTarget ?? null;
   if (cnum == null) return offer;
   const gap = Math.max(2, offer * 0.06);
   if (cnum > offer && cnum <= state.band.maxStretch && cnum - offer <= gap) {
@@ -1009,11 +1009,30 @@ export function nearOfferCloseNumber(state: NegotiationState): number {
   return offer;
 }
 
-/** #105 — the DELIVERABLE total-equivalent of a FIXED-scoped close signal,
- *  or null when the band cannot deliver it.
+/** #105 — the FIXED figure the candidate has pinned a (conditional) close to,
+ *  or null. Two shapes occur in the wild:
+ *    1. a FIXED-scoped counter — `lastCounterComponent === "fixed"` carries
+ *       the number on `lastCandidateCounterLpa`; and
+ *    2. a fixed-scoped conditional ask ("if you can do ₹40L fixed, I'll
+ *       sign") — the live classifier records this as `candidateTargetFixed`
+ *       and leaves `lastCounterComponent` null. A component-only check missed
+ *       exactly this (the reported #105 reproduction), so we consult
+ *       `candidateTargetFixed` too.
+ *  A stated TOTAL counter takes priority over a fixed target (the callers
+ *  check `totalScopedCounter` first). Pure. */
+function resolveFixedCloseAsk(state: NegotiationState): number | null {
+  if (state.lastCounterComponent === "fixed" && state.lastCandidateCounterLpa != null) {
+    return state.lastCandidateCounterLpa;
+  }
+  if (state.candidateTargetFixed != null) return state.candidateTargetFixed;
+  return null;
+}
+
+/** #105 — the DELIVERABLE total-equivalent of a FIXED-scoped close ask, or
+ *  null when the band cannot deliver it.
  *
  *  A candidate who closes conditionally on a FIXED number ("if you can do
- *  ₹17L fixed, I'll sign today") has not stated a total. The fixed ask still
+ *  ₹40L fixed, I'll sign today") has not stated a total. The fixed ask still
  *  implies a total — fixed + the band's variable headroom — but honoring it
  *  is only legitimate when the band can actually deliver it: the fixed
  *  component must sit at/under the base ceiling (`band.baseStretch`) AND the
@@ -1022,11 +1041,9 @@ export function nearOfferCloseNumber(state: NegotiationState): number {
  *  returns null — the caller must DECLINE the condition (naming the unmet
  *  fixed term) rather than silently close on lower total terms.
  *
- *  Returns null when the standing signal is NOT fixed-scoped (the
- *  total-scoped paths own that case). Pure. */
+ *  Returns null when no fixed close-ask is on the table. Pure. */
 export function fixedScopedCloseTotal(state: NegotiationState): number | null {
-  if (state.lastCounterComponent !== "fixed") return null;
-  const fixed = state.candidateTargetFixed ?? state.lastCandidateCounterLpa;
+  const fixed = resolveFixedCloseAsk(state);
   if (fixed == null) return null;
   const baseCap = state.band.baseStretch ?? state.band.maxStretch;
   if (fixed > baseCap) return null; // undeliverable as a fixed component
@@ -1044,10 +1061,27 @@ export function fixedScopedCloseTotal(state: NegotiationState): number | null {
 export function undeliverableFixedConditionAsk(
   state: NegotiationState,
 ): number | null {
-  if (state.lastCounterComponent !== "fixed") return null;
-  const fixed = state.candidateTargetFixed ?? state.lastCandidateCounterLpa;
+  const fixed = resolveFixedCloseAsk(state);
   if (fixed == null) return null;
   return fixedScopedCloseTotal(state) == null ? fixed : null;
+}
+
+/** #105 — true when a pending FIXED close-ask cannot be honored AT or NEAR
+ *  the standing offer, so a close here would be a stealth under-close (the
+ *  "we're in the same range, lock it at ₹X" framing while the candidate
+ *  actually asked for a higher fixed number). Blocks when the fixed ask is
+ *  either structurally undeliverable OR a real gap above the offer (beyond
+ *  the trivial close window). A deliverable fixed ask at/under the offer, or
+ *  within the near-offer gap, does NOT block — the close honors it. Pure. */
+export function fixedConditionBlocksClose(state: NegotiationState): boolean {
+  const fixed = resolveFixedCloseAsk(state);
+  if (fixed == null) return false;
+  const offer = state.highestOfferMade;
+  if (!(offer > 0)) return false;
+  const delivered = fixedScopedCloseTotal(state);
+  if (delivered == null) return true; // undeliverable fixed ask → block
+  const gap = Math.max(2, offer * 0.06);
+  return delivered - offer > gap; // deliverable but a real live gap → block
 }
 
 /** Recover the AiMove the planner constructed alongside the action. The
@@ -2674,16 +2708,18 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       !closeFiredAlready &&
       state.highestOfferMade > 0
     ) {
-      /* #105 (2026-06-20) — do NOT close when the standing close signal is
-       * an UNDELIVERABLE FIXED conditional ask. Closing here would land on
-       * the standing total framed as meeting the candidate's terms while
-       * silently dropping the unmet fixed condition (the "same range" stealth
-       * under-close). Fall through instead: the fixed-counter completion sink
-       * (L3111) re-routes the turn into counter-offer so the recruiter
-       * honestly engages the base/structure cap. A DELIVERABLE fixed ask is
-       * unaffected — nearOfferCloseNumber converts it to its implied total. */
-      const undeliverableFixed = undeliverableFixedConditionAsk(state);
-      if (undeliverableFixed == null) {
+      /* #105 (2026-06-20, live-staging) — do NOT close when a pending FIXED
+       * close-ask cannot be honored at/near the standing offer. Closing here
+       * would land on the standing total framed as meeting the candidate's
+       * terms while silently dropping the unmet fixed condition (the "we're
+       * in the same range, lock it at ₹X" stealth under-close — confirmed
+       * live: candidate asked ₹40L fixed against a ₹34.5L offer and the bot
+       * closed at ₹34.5L). Fall through instead: the fixed-counter completion
+       * sink (L3111+) re-routes the turn into counter-offer so the recruiter
+       * honestly engages the base/structure cap. A DELIVERABLE fixed ask at or
+       * within the near-offer gap is unaffected — nearOfferCloseNumber
+       * converts it to its implied total and we close on that. */
+      if (!fixedConditionBlocksClose(state)) {
         const jb = state.lastJoiningBonusOffered;
         /* #93 (2026-06-19, live-staging) — honor the candidate's near-offer
          * number on close. A candidate who signals close-readiness AT a
@@ -2748,37 +2784,37 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const offer = state.highestOfferMade;
     const ceil = state.band.maxStretch;
     /* #105 (2026-06-20, live-staging) — scope-aware conditional close.
-     * A FIXED-scoped conditional ask ("if 17 fixed works, I'll sign") is not
-     * a total: totalScopedCounter() returns null and the legacy
-     * `?? state.lastCandidateCounterLpa` fallback re-admitted the raw fixed
-     * figure, comparing it against the (total) offer. When the band cannot
-     * deliver that fixed term the old code then closed at the standing offer
-     * (`condNum <= ceil && gap` passing on the fixed number, or the
-     * `condNum == null` → close-at-offer path) and framed it "we're in the
-     * same range" — a stealth under-close that never acknowledged the unmet
-     * fixed condition. Now: a fixed ask converts to its implied total ONLY
-     * when deliverable (fixedScopedCloseTotal); an UNDELIVERABLE fixed ask
-     * does NOT close here — we fall through to the fixed-counter cascade
-     * (L3111) which honestly engages the base/structure cap. The non-cash
-     * conditional yes (no number at all) still closes at the standing offer. */
-    const isFixedScoped = state.lastCounterComponent === "fixed";
-    const condNum = isFixedScoped
-      ? fixedScopedCloseTotal(state)
-      : totalScopedCounter(state) ?? state.lastCandidateCounterLpa ?? null;
-    const undeliverableFixed = undeliverableFixedConditionAsk(state);
-    /* Gap a recruiter will close instantly: the larger of ₹2L or 6% of the
+     * A FIXED-scoped conditional ask ("if you can do ₹40L fixed, I'll sign")
+     * is not a total: totalScopedCounter() returns null, and the live
+     * classifier records the figure on candidateTargetFixed with
+     * lastCounterComponent left null. The legacy gate consulted ONLY counters,
+     * so condNum was null and it closed at the standing offer framed "we're in
+     * the same range" — a stealth under-close that silently dropped the unmet
+     * fixed term (confirmed live: ₹40L fixed ask vs ₹34.5L offer closed at
+     * ₹34.5L). Now we resolve the close figure by scope, in priority:
+     *   1. a TOTAL counter (totalScopedCounter) — the #94 path;
+     *   2. a FIXED ask (counter or candidateTargetFixed) → its implied total,
+     *      honored ONLY when the band can deliver it AND it sits within the
+     *      near-offer gap; otherwise we do NOT close (fall through to the
+     *      fixed-counter cascade which engages the base/structure cap);
+     *   3. no number at all (a pure non-cash condition) → close at the offer.
+     * Gap a recruiter will close instantly: the larger of ₹2L or 6% of the
      * standing offer. Wider gaps remain a live negotiation. */
     const gap = Math.max(2, offer * 0.06);
+    const totalCounter = totalScopedCounter(state);
+    const fixedAsk = resolveFixedCloseAsk(state);
     let closeAt: number | null = null;
-    if (condNum != null) {
-      if (condNum <= ceil && condNum - offer <= gap) {
-        closeAt = Math.max(offer, condNum);
+    if (totalCounter != null) {
+      if (totalCounter <= ceil && totalCounter - offer <= gap) {
+        closeAt = Math.max(offer, totalCounter);
       }
-    } else if (undeliverableFixed == null) {
-      /* No number at all (a pure non-cash condition) → close at the standing
-       * offer. An undeliverable FIXED ask (undeliverableFixed != null) is
-       * deliberately excluded: closeAt stays null so we decline via the
-       * fixed-counter cascade instead of a "same range" stealth close. */
+    } else if (fixedAsk != null) {
+      const delivered = fixedScopedCloseTotal(state);
+      if (delivered != null && delivered <= ceil && delivered - offer <= gap) {
+        closeAt = Math.max(offer, delivered);
+      }
+      /* else: undeliverable, or a real gap above the offer → fall through. */
+    } else {
       closeAt = offer;
     }
     if (closeAt != null) {
@@ -2790,7 +2826,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           lever: "close-acceptance",
           newTotalLpa: clampToCloseFloor(state, closeAt),
           joiningBonusAmount: jb != null ? jb : undefined,
-          rationale: `Near-offer conditional acceptance: candidate will close on ₹${condNum ?? offer}L (offer ₹${offer}L, ceiling ₹${ceil}L); converge at ₹${closeAt}L and close rather than divert.`,
+          rationale: `Near-offer conditional acceptance: deliverable close at ₹${closeAt}L (offer ₹${offer}L, ceiling ₹${ceil}L); converge and close rather than divert.`,
           askedTopic: "close-confirmation",
         },
       };
