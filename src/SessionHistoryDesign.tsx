@@ -2309,7 +2309,7 @@ function ReportView({ onBack }: { onBack: () => void }) {
    minHeight 44). Secondary lives as a quiet text affordance below. */
 function EmptyView({ onStart }: { onStart: () => void }) {
   return (
-    <div className="hsx-pad-empty" style={{ padding: "120px 56px", maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+    <div className="hsx-pad-empty" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 80px)", padding: "40px 56px", maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
       <div style={{ width: 88, height: 88, borderRadius: radii.pill, background: tok.copperSoft, color: tok.copper, display: "grid", placeItems: "center", fontSize: 36, margin: "0 auto 28px" }}>◷</div>
       <span style={{ display: "inline-block", fontFamily: fonts.mono, fontSize: 11, fontWeight: 500, color: tok.inkSoft, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>No sessions yet</span>
       <h1 style={{

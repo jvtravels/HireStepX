@@ -101,7 +101,7 @@ export default function AnalyticsPage() {
 
   if (sessions.length === 0) {
     return (
-      <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", padding: "60px 20px" }}>
+      <div style={{ maxWidth: 560, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", margin: "0 auto", textAlign: "center", padding: "20px" }}>
         <div style={{ width: 64, height: 64, borderRadius: 16, margin: "0 auto 24px", background: "rgba(21,128,61,0.06)", border: `1px solid rgba(21,128,61,0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         </div>

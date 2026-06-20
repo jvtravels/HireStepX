@@ -560,7 +560,7 @@ const featureHighlights: Record<string, { icon: string; items: string[] }> = {
 export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
   const highlights = featureHighlights[feature];
   return (
-    <div style={{ position: "relative", minHeight: 400, overflow: "hidden" }}>
+    <div style={{ position: "relative", minHeight: "calc(100dvh - 160px)", overflow: "hidden" }}>
       {/* Blurred preview background */}
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, opacity: 0.15, filter: "blur(6px)", pointerEvents: "none", padding: 40 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
@@ -576,8 +576,8 @@ export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: 
         </div>
       </div>
 
-      {/* Lock overlay */}
-      <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 400, textAlign: "center", padding: 40, zIndex: 1 }}>
+      {/* Lock overlay — flex-centered within the full-viewport-height container */}
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100dvh - 160px)", textAlign: "center", padding: 40, zIndex: 1 }}>
         <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(180,83,9,0.06)", border: `1.5px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
           <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>

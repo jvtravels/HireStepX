@@ -270,7 +270,10 @@ export const AUTH_STYLES = `
   @media (min-width: 1024px) {
     .hsx-login-main {
       flex-direction: row !important;
-      align-items: center !important;
+      /* flex-start so the hero headline anchors to the form's top edge,
+         not its vertical midpoint — the hero is shorter than the form so
+         center would push it ~100px down, misaligning it from the primary CTA. */
+      align-items: flex-start !important;
       justify-content: center !important;
       gap: 72px !important;
       padding: 40px 64px !important;
