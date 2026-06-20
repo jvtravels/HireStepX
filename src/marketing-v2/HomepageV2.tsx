@@ -4601,19 +4601,6 @@ export function VideoCtaV2() {
           </a>
         </div>
 
-        {/* Social proof strip */}
-        <div style={{ marginTop: 48, display: "flex", gap: 32, justifyContent: "center", flexWrap: "wrap" }}>
-          {[
-            { n: "3 free", label: "sessions, no card" },
-            { n: "10 types", label: "of interviews" },
-            { n: "50+", label: "companies" },
-          ].map(item => (
-            <div key={item.n} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#FAF7F0", fontFamily: "'Instrument Serif', Georgia, serif", letterSpacing: -0.5 }}>{item.n}</div>
-              <div style={{ fontSize: 11, color: "rgba(250,247,240,0.5)", marginTop: 2, fontFamily: fonts.sans }}>{item.label}</div>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
