@@ -4390,16 +4390,22 @@ export function PersonalizedReportsV2() {
   const [revealed, setRevealed] = useState(false);
   const showcaseRef = useRef<HTMLDivElement>(null);
 
-  /* Bidirectional scroll reveal — tracks isIntersecting every crossing */
+  /* Bidirectional scroll reveal — two observers with different thresholds:
+     enter fires when 12% visible; exit fires the moment any part leaves */
   useEffect(() => {
     const el = showcaseRef.current;
     if (!el || typeof IntersectionObserver === "undefined") { setRevealed(true); return; }
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => setRevealed(e.isIntersecting)),
+    const enterIO = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) setRevealed(true); }),
       { threshold: 0.12, rootMargin: "0px 0px -5% 0px" },
     );
-    io.observe(el);
-    return () => io.disconnect();
+    const exitIO = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (!e.isIntersecting) setRevealed(false); }),
+      { threshold: 0 },
+    );
+    enterIO.observe(el);
+    exitIO.observe(el);
+    return () => { enterIO.disconnect(); exitIO.disconnect(); };
   }, []);
 
   /* Reveal transition — slow cubic on enter/exit; faster hover on top */
