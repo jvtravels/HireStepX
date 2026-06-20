@@ -4508,8 +4508,8 @@ export function SecurityComplianceV2() {
           <line x1="12" y1="16" x2="22" y2="16" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
           <line x1="12" y1="20" x2="22" y2="20" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
           <line x1="12" y1="24" x2="18" y2="24" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="31" cy="31" r="9.5" fill="#FEF3C7" stroke="#B45309" strokeWidth="1.7" />
-          <path d="M27 31l2.5 2.5 4.5-5" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="31" cy="31" r="9.5" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
+          <path d="M27 31l2.5 2.5 4.5-5" stroke="#312E81" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
@@ -4520,7 +4520,7 @@ export function SecurityComplianceV2() {
         /* Indigo body + copper shackle */
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="9" y="21" width="26" height="17" rx="4" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
-          <path d="M15 21v-5.5a7 7 0 0 1 14 0V21" stroke="#B45309" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+          <path d="M15 21v-5.5a7 7 0 0 1 14 0V21" stroke="#312E81" strokeWidth="2.2" strokeLinecap="round" fill="none" />
           <circle cx="22" cy="30" r="3.5" fill="#312E81" />
           <line x1="22" y1="33" x2="22" y2="36" stroke="#312E81" strokeWidth="2" strokeLinecap="round" />
         </svg>
@@ -4546,9 +4546,9 @@ export function SecurityComplianceV2() {
           <line x1="32" y1="17" x2="36" y2="17" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
           <line x1="32" y1="22" x2="36" y2="22" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
           <line x1="32" y1="27" x2="36" y2="27" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <circle cx="32" cy="32" r="9" fill="#FAF7F0" />
-          <circle cx="32" cy="32" r="7.5" stroke="#B45309" strokeWidth="1.8" fill="none" />
-          <line x1="27.3" y1="36.7" x2="36.7" y2="27.3" stroke="#B45309" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="32" cy="32" r="9" fill="#EEEDF8" />
+          <circle cx="32" cy="32" r="7.5" stroke="#312E81" strokeWidth="1.8" fill="none" />
+          <line x1="27.3" y1="36.7" x2="36.7" y2="27.3" stroke="#312E81" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
     },
@@ -4559,8 +4559,8 @@ export function SecurityComplianceV2() {
         /* Indigo shield + copper person = you own your data */
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M22 4L8 10v11c0 9.2 6 17.3 14 19.8 8-2.5 14-10.6 14-19.8V10L22 4Z" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" strokeLinejoin="round" />
-          <circle cx="22" cy="18" r="4" fill="#B45309" />
-          <path d="M13.5 31.5c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5" fill="#B45309" />
+          <circle cx="22" cy="18" r="4" fill="#312E81" />
+          <path d="M13.5 31.5c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5" fill="#312E81" />
         </svg>
       ),
     },
