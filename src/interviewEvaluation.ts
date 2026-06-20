@@ -357,7 +357,11 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
 
   // Filter out numbers that matched as current CTC, then take the MAX as counter
   // Also prefer numbers that appear in target/ask context over generic mentions
-  const targetContextRe = /(?:expecting|want|need|asking|target|hoping|looking for|would like|i'd like)\s*(?:₹?\s*)?(\d+(?:\.\d+)?)/gi;
+  // finding #112 (2026-06-20) — inflect the verbs so spoken forms bind.
+  // A bare `target` could not match inside "targeting 65" (the most common
+  // spoken anchor), so the candidate's counter was dropped and the report
+  // under-credited the negotiation. Mirror the kernel's target-cue set.
+  const targetContextRe = /(?:expect(?:ing|ed)?|want(?:ing|ed|s)?|need(?:ing|ed|s)?|asking(?:\s+for)?|target(?:ing|ed|s)?|aim(?:ing)?(?:\s+for)?|hoping(?:\s+for)?|looking\s+(?:for|at)|would\s+like|i'd\s+like|settle\s+for|closer\s+to|at\s+least)\s*(?:₹?\s*)?(\d+(?:\.\d+)?)/gi;
   const targetNums = new Set<string>();
   let tMatch: RegExpExecArray | null;
   while ((tMatch = targetContextRe.exec(allText)) !== null) targetNums.add(tMatch[1]);

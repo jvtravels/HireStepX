@@ -121,7 +121,7 @@ const FOCUS_CHROME: Record<string, FocusChrome> = {
   "hr-round": {
     icon: "🤝",
     label: "HR Round",
-    tagline: "HR grades you on 7 axes — motivation, compliance, commitment, stability, and more. One zero kills the offer.",
+    tagline: "HR grades you on multiple axes — motivation, compliance, commitment, stability, and more. One zero kills the offer.",
     headlineFallbackLabel: "Red flags",
     accent: "#B91C1C",
     accentSoft: "#FEE2E2",
@@ -510,9 +510,16 @@ export function buildNegotiationOutcome(
   if (acceptedRe.test(allAnswers)) outcome = "accepted";
   else if (walkRe.test(allAnswers)) outcome = "walked_away";
 
-  // Candidate's highest stated target (their ask)
+  // Candidate's highest stated target (their ask). The cue set mirrors the
+  // kernel's TARGET_CUE_PRESENCE (_number-role-classifier) so a counter the
+  // kernel would bind is the same one the report's stage-tracker credits.
+  // finding #112 (2026-06-20) — the prior pattern wrote a bare `target`,
+  // which `\btarget\b` could not match inside "targeting 65 LPA fixed"
+  // (the spoken form): the report then read "NO COUNTER NAMED" even though
+  // the candidate anchored hard twice. Inflect the verbs and widen the cue
+  // set (aiming/need/i need/settle for/at least/minimum) to close the gap.
   let candidateAsk: number | null = null;
-  const askRe = /\b(?:expecting|target|want|asking|hoping|looking for|would like|i.?d like)\s*(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/gi;
+  const askRe = /\b(?:expect(?:ing|ed)?|target(?:ing|ed|s)?|aim(?:ing)?(?:\s+for)?|want(?:ing|ed|s)?|asking(?:\s+for)?|hoping(?:\s+for)?|looking\s+(?:for|at)|would\s+like|i.?d\s+like|i\s+need|need(?:ing|ed|s)?|settle\s+for|closer\s+to|at\s+least|minimum\s+(?:of\s+)?)\s*(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/gi;
   let am: RegExpExecArray | null;
   while ((am = askRe.exec(allAnswers)) !== null) {
     const v = parseFloat(am[1]);

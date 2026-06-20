@@ -119,4 +119,38 @@ describe("legacy rows without a persisted trajectory fall back to the transcript
     expect(outcome!.outcome).toBe("accepted"); // from regex, not kernel
     expect(outcome!.offers.length).toBeGreaterThan(0);
   });
+
+  /* finding #112 (2026-06-20) — the live Flipkart EM session ended without
+   * a persisted trajectory, so the report fell to the transcript heuristic.
+   * The candidate anchored hard ("I'm targeting 65 LPA fixed" / "I need ₹65
+   * LPA fixed") yet the stage-tracker read "NO COUNTER NAMED" because the
+   * ask regex carried a bare `target` that `\btarget\b` could not match
+   * inside "targeting". The fix inflects the verbs; this locks it. */
+  it("credits a counter stated as 'targeting 65 LPA' in the transcript fallback", () => {
+    const legacy = {
+      outcome: "stalemate",
+      anchorTurn: 2,
+      leverDiversity: 1,
+      lpaGained: 0,
+      lpaPerTurn: 0,
+      bandTraversal: 0,
+      overBandViolation: false,
+      totalTurns: 7,
+      score: 40,
+    } as unknown as KernelMetrics;
+    const report = {
+      perQuestion: [
+        {
+          question: "What are you looking for?",
+          answerText:
+            "I'm currently at 48 LPA fixed. For this role at Flipkart, I'm targeting 65 LPA fixed.",
+        },
+        { question: "That's a stretch.", answerText: "I need ₹65 LPA fixed to move." },
+      ],
+    } as unknown as SessionReport;
+    const outcome = buildNegotiationOutcome(report, legacy);
+    expect(outcome!.candidateAsk).toBe(65);
+    expect(derivePhases(outcome!)[0].reached).toBe(true); // counter IS named
+    expect(derivePhases(outcome!)[0].note).toBe("Asked for ₹65 LPA");
+  });
 });
