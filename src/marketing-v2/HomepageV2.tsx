@@ -4573,17 +4573,43 @@ export function SecurityComplianceV2() {
 
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
 export function VideoCtaV2() {
-  return (
-    <section style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
+  const [revealed, setRevealed] = React.useState(false);
+  const sectionRef = React.useRef<HTMLElement>(null);
 
-      {/* Background video — swap /demo-loop.mp4 with actual product recording */}
+  React.useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setRevealed(true); obs.disconnect(); } },
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const fadeUp = (delay: number): React.CSSProperties => ({
+    opacity: revealed ? 1 : 0,
+    transform: revealed ? "translateY(0)" : "translateY(28px)",
+    transition: `opacity 0.75s ease ${delay}ms, transform 0.75s ease ${delay}ms`,
+  });
+
+  return (
+    <section ref={sectionRef} style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
+
+      {/* Background video */}
       <video
         autoPlay
         muted
         loop
         playsInline
         crossOrigin="anonymous"
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }}
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "cover", objectPosition: "center 20%",
+          opacity: revealed ? 1 : 0,
+          transform: revealed ? "scale(1)" : "scale(1.06)",
+          transition: "opacity 1.2s ease 0ms, transform 1.4s ease 0ms",
+        }}
       >
         <source src="/cta.mp4" type="video/mp4" />
       </video>
@@ -4594,15 +4620,15 @@ export function VideoCtaV2() {
       {/* Content */}
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 1100, margin: "0 auto", alignSelf: "flex-start" }}>
 
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2, whiteSpace: "nowrap" }}>
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2, whiteSpace: "nowrap", ...fadeUp(100) }}>
           Prepare Like Top <span style={{ fontStyle: "italic" }}>Candidates Do</span>
         </h2>
 
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 560, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif" }}>
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 560, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
           Practice with AI interviewers trained to simulate real hiring conversations, identify weaknesses, and help you improve before the actual interview.
         </p>
 
-        <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", ...fadeUp(400) }}>
           <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#B45309", color: "#FAF7F0", padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
             Start your free interview
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
