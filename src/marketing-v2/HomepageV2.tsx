@@ -4161,7 +4161,7 @@ const RV = "transform 0.72s cubic-bezier(0.16,1,0.3,1), opacity 0.55s ease";
 const TR = "transform 0.50s cubic-bezier(0.16,1,0.3,1), opacity 0.38s ease, filter 0.50s ease";
 
 /* ─── Card: Behavioral — left ── (exact canvas copy) */
-function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
+function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean; revealed?: boolean; baseDelay?: number }) {
   const star = [
     { key: "S", label: "Situation",  score: 88, c: "#15803D" },
     { key: "T", label: "Task",       score: 88, c: "#15803D" },
@@ -4169,6 +4169,8 @@ function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
     { key: "R", label: "Result",     score: 42, c: "#B91C1C" },
   ];
   const rptF = { sans: "Inter, system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
+  /* Arc length for 82% of a semicircle: π × r × 0.82 = π × 33 × 0.82 ≈ 85 */
+  const arcLen = 85;
   return (
     <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: "#FAF7F0", padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
@@ -4182,7 +4184,9 @@ function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
               <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
-              <path d="M7,46 A33,33 0 0,1 68,28" fill="none" stroke="#15803D" strokeWidth="7" strokeLinecap="round" />
+              <path d="M7,46 A33,33 0 0,1 68,28" fill="none" stroke="#15803D" strokeWidth="7" strokeLinecap="round"
+                strokeDasharray={arcLen} strokeDashoffset={revealed ? 0 : arcLen}
+                style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>82</div>
             <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: "#9E9589" }}>/ 100</div>
@@ -4205,12 +4209,12 @@ function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
         <span style={{ fontSize: 8, background: "#E5E2F2", color: "#312E81", padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>BEHAVIORAL INTERVIEW · FULL REPORT</span>
       </div>
       <div style={{ padding: "8px 16px 14px" }}>
-        {star.map(s => (
+        {star.map((s, i) => (
           <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
             <span style={{ width: 18, height: 18, borderRadius: 4, background: s.c, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: rptF.mono }}>{s.key}</span>
             <span style={{ fontSize: 8.5, color: "#4A4540", width: 52, flexShrink: 0 }}>{s.label}</span>
             <div style={{ flex: 1, height: 4, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${s.score}%`, background: s.c, borderRadius: 2 }} />
+              <div style={{ height: "100%", width: revealed ? `${s.score}%` : "0%", background: s.c, borderRadius: 2, transition: `width 0.7s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 400 + i * 80}ms` }} />
             </div>
             <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono, width: 20, textAlign: "right", flexShrink: 0 }}>{s.score}</span>
           </div>
@@ -4221,13 +4225,15 @@ function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
 }
 
 /* ─── Card: Salary neg — center ── (exact canvas copy) */
-function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
+function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean; revealed?: boolean; baseDelay?: number }) {
   const phases = [
     { n: 1, label: "Named a counter number" },
     { n: 2, label: "Justified with market data" },
     { n: 3, label: "Closed at ₹48L target" },
   ];
   const rptF = { sans: "Inter, system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif" };
+  /* Arc length for 84% of a semicircle: π × r × 0.84 = π × 37 × 0.84 ≈ 98 */
+  const arcLen = 98;
   return (
     <div style={{ width: 520, background: "#FEFDF8", borderRadius: 18, border: "1.5px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 56px 160px rgba(14,12,8,0.34), 0 16px 48px rgba(14,12,8,0.16)" : "0 48px 140px rgba(14,12,8,0.26), 0 12px 40px rgba(14,12,8,0.12)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: "#FAF7F0", padding: "10px 18px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
@@ -4241,7 +4247,9 @@ function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
           <div style={{ position: "relative", width: 92, height: 56, margin: "0 auto 9px" }}>
             <svg viewBox="0 0 90 56" width="92" height="56">
               <path d="M8,52 A37,37 0 0,1 82,52" fill="none" stroke="#E8E0D0" strokeWidth="8" strokeLinecap="round" />
-              <path d="M8,52 A37,37 0 0,1 77,34" fill="none" stroke="#15803D" strokeWidth="8" strokeLinecap="round" />
+              <path d="M8,52 A37,37 0 0,1 77,34" fill="none" stroke="#15803D" strokeWidth="8" strokeLinecap="round"
+                strokeDasharray={arcLen} strokeDashoffset={revealed ? 0 : arcLen}
+                style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 25, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>84</div>
             <div style={{ position: "absolute", bottom: -5, left: 0, right: 0, textAlign: "center", fontSize: 8, color: "#9E9589" }}>/ 100</div>
@@ -4272,8 +4280,10 @@ function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
       </div>
       <div style={{ padding: "0 18px 14px" }}>
         <div style={{ display: "flex", gap: 2, margin: "10px 0 8px" }}>
-          {phases.map(p => (
-            <div key={p.n} style={{ flex: 1, height: 3, background: "#15803D", borderRadius: 2 }} />
+          {phases.map((p, i) => (
+            <div key={p.n} style={{ flex: 1, height: 3, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: revealed ? "100%" : "0%", background: "#15803D", borderRadius: 2, transition: `width 0.6s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 420 + i * 100}ms` }} />
+            </div>
           ))}
         </div>
         {phases.map(p => (
@@ -4291,7 +4301,7 @@ function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
 }
 
 /* ─── Card: Campus placement — right ── (exact canvas copy) */
-function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
+function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean; revealed?: boolean; baseDelay?: number }) {
   const skills = [
     { label: "Communication",     score: 75, c: "#15803D" },
     { label: "Fundamentals",      score: 70, c: "#15803D" },
@@ -4299,6 +4309,8 @@ function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
     { label: "Project depth",     score: 40, c: "#B91C1C" },
   ];
   const rptF = { sans: "Inter, system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
+  /* Arc length for 58% of a semicircle: π × r × 0.58 = π × 33 × 0.58 ≈ 60 */
+  const arcLen = 60;
   return (
     <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: "#FAF7F0", padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
@@ -4312,7 +4324,9 @@ function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
               <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
-              <path d="M7,46 A33,33 0 0,1 48,14" fill="none" stroke="#B45309" strokeWidth="7" strokeLinecap="round" />
+              <path d="M7,46 A33,33 0 0,1 48,14" fill="none" stroke="#B45309" strokeWidth="7" strokeLinecap="round"
+                strokeDasharray={arcLen} strokeDashoffset={revealed ? 0 : arcLen}
+                style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>58</div>
             <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: "#9E9589" }}>/ 100</div>
@@ -4344,14 +4358,14 @@ function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
         </div>
       </div>
       <div style={{ padding: "10px 16px 14px" }}>
-        {skills.map(s => (
+        {skills.map((s, i) => (
           <div key={s.label} style={{ marginBottom: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
               <span style={{ fontSize: 8.5, color: "#4A4540" }}>{s.label}</span>
               <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono }}>{s.score}</span>
             </div>
             <div style={{ height: 4, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${s.score}%`, background: s.c, borderRadius: 2 }} />
+              <div style={{ height: "100%", width: revealed ? `${s.score}%` : "0%", background: s.c, borderRadius: 2, transition: `width 0.7s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 400 + i * 80}ms` }} />
             </div>
           </div>
         ))}
@@ -4411,7 +4425,7 @@ export function PersonalizedReportsV2() {
               Behavioral · 82/100<br />Razorpay Senior PD
               <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
             </div>
-            <RPT_InterviewCard lifted={lActive} />
+            <RPT_InterviewCard lifted={lActive} revealed={revealed} baseDelay={0} />
           </div>
         </div>
 
@@ -4422,7 +4436,7 @@ export function PersonalizedReportsV2() {
               Salary Neg · ₹48L landed<br />PhonePe Senior EM
               <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
             </div>
-            <RPT_ReportCard lifted={cActive} />
+            <RPT_ReportCard lifted={cActive} revealed={revealed} baseDelay={120} />
           </div>
         </div>
 
@@ -4433,7 +4447,7 @@ export function PersonalizedReportsV2() {
               Campus · 58/100<br />Infosys SWE Fresher
               <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
             </div>
-            <RPT_ProgressCard lifted={rActive} />
+            <RPT_ProgressCard lifted={rActive} revealed={revealed} baseDelay={240} />
           </div>
         </div>
 
