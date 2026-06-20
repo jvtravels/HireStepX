@@ -4588,6 +4588,9 @@ export function VideoCtaV2() {
         <source src="/cta.mp4" type="video/mp4" />
       </video>
 
+      {/* Dark gradient — top to transparent */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)", pointerEvents: "none" }} />
+
       {/* Content */}
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 720, margin: "0 auto", alignSelf: "flex-start" }}>
 
