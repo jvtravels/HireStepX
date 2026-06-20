@@ -4363,21 +4363,15 @@ export function PersonalizedReportsV2() {
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 360, background: "linear-gradient(to bottom, transparent 0%, #FAF7F0 70%)", zIndex: 15, pointerEvents: "none" }} />
       </div>
 
-      {/* ── Headline — scroll-revealed same as cards, fires after last card lands ── */}
-      <div style={{
-        display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80,
-        opacity: revealed ? 1 : 0,
-        transform: revealed ? "translateY(0px)" : "translateY(32px)",
-        transition: RV,
-        transitionDelay: revealed ? delay(3) : "0ms",
-      }}>
-        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px" }}>
+      {/* ── Headline — staggered scroll reveal, each line fires after the cards land ── */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80 }}>
+        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(3) : "0ms" }}>
           Personalized reports after
         </h2>
-        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
+        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5, opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(4) : "0ms" }}>
           every interview
         </h2>
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', Inter, system-ui, sans-serif" }}>
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', Inter, system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
           HireStepX gives you a full breakdown after every interview — what landed,
           what to sharpen, and your exact next practice session.
         </p>
