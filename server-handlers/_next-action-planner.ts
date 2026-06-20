@@ -3352,7 +3352,19 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     PRE_ANCHOR_PHASES.has(state.phase) &&
     !hasOutstandingInfoAsk &&
     state.candidateCurrentCtc != null &&
-    state.candidateTarget == null
+    state.candidateTarget == null &&
+    /* Bug (2026-06-20, live staging) — a FIXED-scoped target counts as a
+     * stated expectation. The classifier routes "18-20 LPA fixed" to
+     * candidateTargetFixed and deliberately leaves candidateTarget null
+     * (kernel L4861, total-vs-fixed scope split). This discovery cascade
+     * keyed on candidateTarget alone, so a candidate who stated their ask
+     * in fixed terms read as "target pending" forever — the planner kept
+     * firing component probes (… probe esop before anchoring) even AFTER
+     * the candidate said "I'll sign today". Once EITHER a total or a fixed
+     * target is on the table, discovery is sufficient; stop probing and let
+     * the anchor / counter-engagement paths run. Mirrors the anchor-readiness
+     * gates that already accept candidateTargetFixed (L862, L3792, L4101). */
+    state.candidateTargetFixed == null
   ) {
     /* PDF#34 Fix 2 (2026-05-18) — anchor circuit-breaker.
      *
