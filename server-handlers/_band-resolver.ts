@@ -134,6 +134,25 @@ export const DEFAULT_BAND: NegotiationBand = {
   hasEquity: false,
 };
 
+/** People-management eng/tech titles (Engineering / Delivery / Group /
+ *  Dev / Software / Technical / Platform / Data / QA / SRE Manager, plus
+ *  the seniorised "Senior / General Manager"). Deliberately ENUMERATES the
+ *  management-bearing prefixes rather than matching a bare "manager" — that
+ *  keeps the IC "…Manager" titles that aren't people-managers in the Indian
+ *  market OUT (Product / Program / Project / Account / Community Manager).
+ *  Shared by inferExperienceFromRole (seniority inference) and the
+ *  people-manager band-floor pass (#115). */
+const PEOPLE_MANAGER_TITLE_RE =
+  /\b(engineering|eng|software|development|dev|delivery|group|senior|sr\.?|general|technical|technology|platform|infrastructure|infra|data|qa|test|sre|site reliability|product\s+engineering)\s+manager\b/;
+
+/** Representative YoE for a first-line people-manager when the session
+ *  carries no resume / onboarding YoE (URL-launch or sparse setup). First-
+ *  line eng managers in the Indian market typically sit at 9-13 YoE; 11
+ *  anchors the tier-table manager band without over-reaching into
+ *  senior-EM / director territory. Consumed only by the #115 band-floor
+ *  pass — never overrides a real applicableYoe. */
+const MANAGER_DEFAULT_YOE = 11;
+
 /** Senior-inference fallback. When the client doesn't pass an explicit
  *  experienceLevel (legacy session, missing onboarding field), infer it
  *  from role-title prefixes so seniority still propagates into the band.
@@ -161,7 +180,7 @@ export function inferExperienceFromRole(role: string): string | undefined {
    * Indian market and the YoE/onboarding signal should drive them. */
   const juniorManager = /\b(assistant|asst|deputy|dy|trainee|associate)\s+manager\b/.test(r);
   if (!juniorManager) {
-    if (/\b(engineering|eng|software|development|dev|delivery|group|senior|sr\.?|general|technical|technology|product\s+engineering)\s+manager\b/.test(r)) return "lead";
+    if (PEOPLE_MANAGER_TITLE_RE.test(r)) return "lead";
     if (/\bmanager\b/.test(r)) return "senior";
   }
   if (/\b(senior|sr\.?|sr )/.test(r)) return "senior";
@@ -380,6 +399,51 @@ export function resolveServerBand(
         ...finalBand,
         probationOffer: Math.round(finalBand.initialOffer * ratio * 10) / 10,
       };
+    }
+
+    /* People-manager band floor (2026-06-20, live staging #115). The legacy
+     * salary-lookup keys an Engineering Manager to a generic senior-IC company
+     * row that caps the band well below the manager market and IGNORES the
+     * experienceLevel entirely — a Flipkart EM resolved to init 32.7 /
+     * maxStretch 43.6 (and stayed there for "lead" AND "executive"), while the
+     * canonical tier table's manager band at a representative managerial YoE
+     * tops at ceil 56 (target 39.2). The recruiter therefore opened ~₹28L fixed
+     * and could never stretch past ~₹44L total for a role whose real first-line
+     * EM market is ₹50L+ — a candidate asking a realistic EM number could not be
+     * met (live staging, Flipkart EM, candidate asked 65).
+     *
+     * The under-resolution is TITLE-driven, not YoE-driven: even with a known
+     * applicableYoe the salary-lookup row still wins (an EM at yoe=10 also
+     * resolved 32.7/43.6), so gating on unknown-YoE would invert the band —
+     * a candidate who supplied a resume would get a WORSE manager band than one
+     * who didn't. Fire for any GENUINE people-management title
+     * (PEOPLE_MANAGER_TITLE_RE — excludes IC "Product/Program/Project Manager"),
+     * querying the tier manager band at the candidate's real YoE when known and
+     * a representative managerial YoE otherwise. Lift the ceil to the manager
+     * ceil; lift the opener only up to the manager FLOOR (so anchor-low opening
+     * behaviour is preserved — we never open above the band floor); nudge the
+     * walk-away floor to stay coherent. One-way (never lowers) and applied AFTER
+     * the down-clamps so it is the authoritative final word for managers. Uses
+     * existing calibrated tier numbers — no invented values. Bands already at or
+     * above the manager ceil, and IC roles, are untouched. */
+    if (
+      company &&
+      !isInternshipRole(role) &&
+      PEOPLE_MANAGER_TITLE_RE.test(role.toLowerCase())
+    ) {
+      const mgrBand = getBandTierRoleBand(
+        classifyBandTier(company),
+        role,
+        applicableYoe ?? MANAGER_DEFAULT_YOE,
+      );
+      if (finalBand.maxStretch < mgrBand.ceil) {
+        finalBand = {
+          ...finalBand,
+          initialOffer: Math.max(finalBand.initialOffer, mgrBand.floor),
+          maxStretch: mgrBand.ceil,
+          walkAway: Math.max(finalBand.walkAway, Math.round(mgrBand.floor * 0.95 * 10) / 10),
+        };
+      }
     }
     return finalBand;
   } catch {

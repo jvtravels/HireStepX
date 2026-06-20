@@ -68,3 +68,66 @@ describe("band under-resolution rebase (UP) — IT-services senior laterals", ()
     expect(flipkart.maxStretch).toBeGreaterThan(flipkartFloor);
   });
 });
+
+/* #115 (2026-06-20, live staging) — people-manager band floor.
+ *
+ * The salary-lookup keys a people-management title (Engineering Manager) to
+ * a generic senior-IC company row and IGNORES experienceLevel, so a Flipkart
+ * EM resolved to init 32.7 / maxStretch 43.6 (and stayed there for "lead" AND
+ * "executive") — ~22% under the canonical tier-table manager ceil (56) and
+ * far under the real first-line EM market. A candidate asking a realistic EM
+ * number could never be met; the recruiter capped ~₹44L total.
+ *
+ * resolveServerBand now lifts a genuine people-manager band UP to the
+ * calibrated tier-table manager band (ceil → manager ceil; opener → at least
+ * the manager floor), one-way, at the candidate's real YoE when known and a
+ * representative managerial YoE otherwise. These pin:
+ *   (1) the EM ceil clears the tier manager ceil regardless of YoE signal;
+ *   (2) known-YoE and unknown-YoE managers resolve the SAME band (no inversion
+ *       where supplying a resume yields a worse band);
+ *   (3) IC "…Manager" titles (Product / Program / Project) are NOT lifted;
+ *   (4) the opener stays anchor-low (never above the manager floor).
+ */
+describe("#115 — people-manager band floor", () => {
+  it("Flipkart Engineering Manager clears the tier-table manager ceil", () => {
+    const tierMgr = getBandForRole(classifyCompanyTier("flipkart"), "Engineering Manager", 11);
+    const noYoe = resolveServerBand("Engineering Manager", "Flipkart", undefined, null);
+    expect(noYoe.maxStretch).toBeGreaterThanOrEqual(tierMgr.ceil);
+    /* The live defect: maxStretch capped at 43.6. Must now reach the
+     * manager ceil (56) — a real EM stretch, not a senior-IC cap. */
+    expect(noYoe.maxStretch).toBeGreaterThanOrEqual(56);
+    expect(noYoe.maxStretch).toBeGreaterThan(43.6);
+  });
+
+  it("does not invert on YoE — known-YoE and unknown-YoE EM resolve the same band", () => {
+    const noYoe = resolveServerBand("Engineering Manager", "Flipkart", undefined, null);
+    const yoe10 = resolveServerBand("Engineering Manager", "Flipkart", undefined, 10);
+    /* Supplying a resume (YoE) must never produce a WORSE manager band than
+     * leaving it blank — both lift to the manager ceil. */
+    expect(yoe10.maxStretch).toBe(noYoe.maxStretch);
+    expect(yoe10.maxStretch).toBeGreaterThan(43.6);
+  });
+
+  it("keeps the opener anchor-low (never above the manager floor)", () => {
+    const tierMgr = getBandForRole(classifyCompanyTier("flipkart"), "Engineering Manager", 11);
+    const band = resolveServerBand("Engineering Manager", "Flipkart", undefined, null);
+    /* Opener must clear the floor (no sub-band lowball) but never exceed it
+     * just because the ceil was lifted — anchor-low behaviour is preserved. */
+    expect(band.initialOffer).toBeGreaterThanOrEqual(tierMgr.floor);
+    expect(band.walkAway).toBeLessThan(band.initialOffer);
+    expect(band.initialOffer).toBeLessThan(band.maxStretch);
+  });
+
+  it("does NOT lift IC '…Manager' titles (Product / Program / Project Manager)", () => {
+    /* These carry no people-management responsibility in the Indian market;
+     * the salary-lookup band for them is correct and must be untouched. */
+    const pm = resolveServerBand("Product Manager", "Flipkart", undefined, null);
+    const pgm = resolveServerBand("Program Manager", "Flipkart", undefined, null);
+    const prjm = resolveServerBand("Project Manager", "Flipkart", undefined, null);
+    /* The EM lift takes the ceil to 56; an IC PM at Flipkart sits well below
+     * that. If the gate wrongly matched these, the ceil would jump to 56. */
+    expect(pm.maxStretch).toBeLessThan(50);
+    expect(pgm.maxStretch).toBeLessThan(50);
+    expect(prjm.maxStretch).toBeLessThan(50);
+  });
+});
