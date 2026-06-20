@@ -4154,11 +4154,11 @@ function StructuredData() {
 
 const rpt_STYLES = `
 @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
-@keyframes rpt-fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
-.rpt-a4 { animation: rpt-fadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
-.rpt-a5 { animation: rpt-fadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.44s both; }
-.rpt-a6 { animation: rpt-fadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.58s both; }
 `;
+
+/* Module-level constants — avoid recomputing these on every render */
+const RV = "transform 0.72s cubic-bezier(0.16,1,0.3,1), opacity 0.55s ease";
+const TR = "transform 0.50s cubic-bezier(0.16,1,0.3,1), opacity 0.38s ease, filter 0.50s ease";
 
 /* ─── Card: Behavioral — left ── (exact canvas copy) */
 function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
@@ -4408,11 +4408,6 @@ export function PersonalizedReportsV2() {
     return () => { enterIO.disconnect(); exitIO.disconnect(); };
   }, []);
 
-  /* Reveal transition — slow cubic on enter/exit; faster hover on top */
-  const RV = "transform 0.72s cubic-bezier(0.16,1,0.3,1), opacity 0.55s ease";
-  /* Hover transition — snappy, applied to the inner transform div */
-  const TR = "transform 0.50s cubic-bezier(0.16,1,0.3,1), opacity 0.38s ease, filter 0.50s ease";
-
   const lActive = hov === "left";
   const cActive = hov === "center";
   const rActive = hov === "right";
@@ -4471,15 +4466,21 @@ export function PersonalizedReportsV2() {
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 360, background: "linear-gradient(to bottom, transparent 0%, #FAF7F0 70%)", zIndex: 15, pointerEvents: "none" }} />
       </div>
 
-      {/* ── Headline ── */}
-      <div className="rpt-a4" style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80 }}>
-        <h2 id="hd-reports" className="rpt-a4" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5 }}>
+      {/* ── Headline — scroll-revealed same as cards, fires after last card lands ── */}
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80,
+        opacity: revealed ? 1 : 0,
+        transform: revealed ? "translateY(0px)" : "translateY(32px)",
+        transition: RV,
+        transitionDelay: revealed ? delay(3) : "0ms",
+      }}>
+        <h2 id="hd-reports" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5 }}>
           Personalized reports after
         </h2>
-        <h2 className="rpt-a5" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
           every interview
         </h2>
-        <p className="rpt-a6" style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 720, fontWeight: 400, fontFamily: "'Satoshi', Inter, system-ui, sans-serif" }}>
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 720, fontWeight: 400, fontFamily: "'Satoshi', Inter, system-ui, sans-serif" }}>
           HireStepX gives you a full breakdown after every interview — what landed,
           what to sharpen, and your exact next practice session.
         </p>
