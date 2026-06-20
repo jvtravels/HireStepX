@@ -4153,6 +4153,7 @@ function StructuredData() {
 /* ─────────────────────────── PERSONALIZED REPORTS ─────────────────────────── */
 
 const rpt_STYLES = `
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
 @keyframes rpt-fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
 .rpt-a4 { animation: rpt-fadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
 .rpt-a5 { animation: rpt-fadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.44s both; }
@@ -4476,7 +4477,7 @@ export function PersonalizedReportsV2() {
         <h2 className="rpt-a5" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: "72px", color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
           every interview
         </h2>
-        <p className="rpt-a6" style={{ fontSize: 18, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 720, fontWeight: 400, fontFamily: "Inter, system-ui, sans-serif" }}>
+        <p className="rpt-a6" style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 720, fontWeight: 400, fontFamily: "'Satoshi', Inter, system-ui, sans-serif" }}>
           HireStepX gives you a full breakdown after every interview — what landed,
           what to sharpen, and your exact next practice session.
         </p>
