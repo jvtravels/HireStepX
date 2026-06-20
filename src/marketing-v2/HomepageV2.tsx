@@ -4617,7 +4617,7 @@ export function SecurityComplianceV2() {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                minHeight: 320,
+                minHeight: 260,
               }}
             >
               <div>
