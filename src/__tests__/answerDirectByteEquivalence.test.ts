@@ -99,7 +99,14 @@ const VARIATIONS: ReadonlyArray<Variation> = [
     expectedTopic: "in-hand-monthly",
     state: {
       sessionId: "v3-in-hand",
-      turnIndex: 6,
+      /* #121 (2026-06-21) — below STONEWALL_ANCHOR_TURNS (5). At turn ≥5 with
+       * nothing disclosed and no offer, the planner now (correctly) fires the
+       * hoisted stonewall band-anchor instead of answer-direct — a candidate
+       * who stonewalled that long and then asks for the number gets the band
+       * stated. This case exercises the answer-direct PROSE path, which still
+       * owns the turn pre-stonewall (high-turn anchor covered by the #121
+       * negotiation battery). */
+      turnIndex: 4,
       phase: "opening",
       recruiterSectorPersona: "bfsi",
     },
@@ -120,7 +127,10 @@ const VARIATIONS: ReadonlyArray<Variation> = [
     expectedTopic: "range-grade-leverage",
     state: {
       sessionId: "v5-range-grade",
-      turnIndex: 8,
+      /* #121 (2026-06-21) — below STONEWALL_ANCHOR_TURNS (5); see in-hand
+       * case above. A stonewalled candidate asking for the range at turn ≥5
+       * now gets the band anchored, not an answer-direct deflection. */
+      turnIndex: 4,
       phase: "opening",
       recruiterSectorPersona: "indian-unicorn",
     },

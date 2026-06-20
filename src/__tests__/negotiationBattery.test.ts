@@ -401,3 +401,77 @@ describe("negotiation battery — no post-anchor current-CTC regression (#119)",
     }
   });
 });
+
+describe("negotiation battery — stonewall anchors, never ₹0 stalemate (#121)", () => {
+  /* Live staging repro (Flipkart EM, real LLM): a content-free / desperate
+   * candidate who refuses EVERY number got probed turn after turn — the
+   * reactive-followups (ctc-gentle-push / range-deflection / answer-direct)
+   * captured each turn so the deep A6 stonewall escape never got a turn, the
+   * bot NEVER anchored, and the kernel dumped the session to a ₹0-offer
+   * "let's pause here" stalemate close. The hoisted planStonewallAnchor (call
+   * site 1, above the reactive-followups) must guarantee a concrete number
+   * lands and the session converges to a real close. */
+  const REFUSAL_BAND: NegotiationBand = {
+    initialOffer: 45,
+    maxStretch: 70,
+    walkAway: 38,
+    hasEquity: true,
+  };
+  const REFUSAL_TURNS = [
+    "I'd rather not share my current CTC.",
+    "I don't want to give a number.",
+    "Can you just tell me what you're offering?",
+    "Whatever you think is fair.",
+    "I really need this job, please.",
+    "Just make me an offer, I'm flexible.",
+    "Okay that sounds fine.",
+    "Yes, I accept.",
+  ];
+
+  it("anchors a concrete offer and closes — no ₹0 stalemate", () => {
+    const { transcript, finalState } = runConversation({
+      sessionId: "stonewall-anchor-121",
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: REFUSAL_BAND,
+      initExtras: {
+        experienceLevel: "senior",
+        applicableYoe: 10,
+        totalYoe: 10,
+        primaryDomain: "engineering",
+      },
+      turns: REFUSAL_TURNS,
+    });
+
+    // A real number must land — never a ₹0-offer dead end.
+    const anchored = transcript.filter((t) => t.highestOfferMade > 0);
+    expect(
+      anchored.length > 0,
+      "stonewall must produce a concrete offer, not a ₹0 stalemate",
+    ).toBe(true);
+    expect(finalState.highestOfferMade).toBeGreaterThan(0);
+    // The offer must sit within the band (floor..ceiling), not below walk-away.
+    expect(finalState.highestOfferMade).toBeGreaterThanOrEqual(
+      REFUSAL_BAND.initialOffer,
+    );
+    expect(finalState.highestOfferMade).toBeLessThanOrEqual(
+      REFUSAL_BAND.maxStretch,
+    );
+
+    // The conversation must converge to a real terminal close, not stalemate.
+    const last = transcript[transcript.length - 1];
+    expect(last.terminal, "stonewall flow should reach a terminal phase").toBe(
+      true,
+    );
+    expect(
+      finalState.phase,
+      "must close (accepted), not stalemate",
+    ).not.toBe("stalemate");
+
+    // Register + fluency stay clean throughout.
+    for (const t of transcript) {
+      expect(registerViolations(t.aiText), `register: ${t.aiText}`).toEqual([]);
+      expect(fluencyViolations(t.aiText), `fluency: ${t.aiText}`).toEqual([]);
+    }
+  });
+});

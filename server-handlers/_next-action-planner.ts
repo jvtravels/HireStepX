@@ -964,6 +964,81 @@ function planDiscoverySufficientAnchor(
   } as PlannedAction;
 }
 
+/* #121 (2026-06-21, live staging) — STONEWALL anchor, hoisted to call
+ * site (1) alongside planDiscoverySufficientAnchor.
+ *
+ * The A6 stonewall escape already existed, but ONLY inside the deep
+ * discovery-cascade branch (~L3705) — which sits BELOW the reactive-
+ * followup branches. Live repro (Flipkart EM, content-free/desperate
+ * candidate who refuses every number): the reactive-followups
+ * (`ctc-gentle-push`, `range-deflection`, `answer-direct`,
+ * `acknowledge-and-recover`) captured every single turn and re-probed,
+ * so the deep A6 escape NEVER got a turn. The bot never anchored,
+ * `highestOfferMade` stayed 0, and the kernel dumped the session to a
+ * ₹0-offer "let's pause here" stalemate close (cardinal failure: no
+ * number ever on the table for a candidate who genuinely wanted the
+ * job). planDiscoverySufficientAnchor is the hoisted escape for the
+ * candidate who DID disclose current+target; this is its companion for
+ * the opposite extreme — disclosed NOTHING. A real Indian recruiter
+ * breaks both deadlocks the same way: state the band. Hoisting the
+ * band-floor anchor ABOVE the reactive-followups guarantees a number
+ * lands before stalemate. Gated identically to the deep A6 (nothing
+ * disclosed, band complete, no prior anchor, no offer, turn ≥ N) so a
+ * mid-disclosure or terse-but-substantive candidate is never short-
+ * circuited. The deep A6 stays as a belt-and-braces second call site. */
+const STONEWALL_ANCHOR_TURNS = 5;
+function planStonewallAnchor(state: NegotiationState): PlannedAction | null {
+  if (state.highestOfferMade !== 0) return null;
+  if (state.discoveryStage !== "discovery" || state.discoveryChecklist == null) {
+    return null;
+  }
+  const tier1Missing =
+    state.discoveryChecklist.currentCtcAnswered !== true ||
+    state.discoveryChecklist.targetAnswered !== true;
+  const phaseEligible =
+    state.phase === "opening" ||
+    ((state.phase === "range-disclosure" ||
+      state.phase === "probe-expectations") &&
+      tier1Missing);
+  if (!phaseEligible) return null;
+  const nothingDisclosed =
+    state.candidateCurrentCtc == null &&
+    state.candidateTarget == null &&
+    state.candidateTargetFixed == null;
+  if (!nothingDisclosed) return null;
+  if (state.turnIndex < STONEWALL_ANCHOR_TURNS) return null;
+  const alreadyAnchored = readAskedTopics(state).some(
+    (t) =>
+      t.topic === "band-anchor-with-rationale" ||
+      (t.topic as string) === "anchor-with-band" ||
+      (t.topic as string) === "anchor-with-offer",
+  );
+  if (alreadyAnchored) return null;
+  const lo = state.band?.initialOffer;
+  const hi = state.band?.maxStretch;
+  if (typeof lo !== "number" || typeof hi !== "number" || !(lo < hi)) {
+    return null;
+  }
+  const anchored = clampAnchorAboveDisclosed(lo, hi, state) ?? lo;
+  return {
+    kind: "anchor-with-offer",
+    initialOffer: anchored,
+    bandIncomplete: false,
+    satisfiesTopic: "band-anchor-with-rationale",
+    _move: {
+      lever: "probe",
+      newTotalLpa: anchored,
+      rationale:
+        `A6 stonewall escape (hoisted, #121) — candidate gave ${state.turnIndex} ` +
+        `content-free turns with no disclosure; recruiter anchors the band floor ` +
+        `(₹${anchored}L) to break the deadlock rather than probe again or stalemate ` +
+        `with no offer.`,
+      askedTopic: "band-anchor-with-rationale",
+      actionKind: "anchor-with-offer",
+    },
+  } as PlannedAction;
+}
+
 export function planNextAction(state: NegotiationState): NextAction {
   return planNextActionInternal(state);
 }
@@ -2961,6 +3036,13 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   if (!isTerminalPhase(state.phase)) {
     const earlyAnchor = planDiscoverySufficientAnchor(state);
     if (earlyAnchor) return earlyAnchor;
+    /* #121 (2026-06-21) — stonewall companion to the discovery-sufficient
+     * anchor, same priority slot (above reactive-followups). Fires only
+     * when the candidate has disclosed NOTHING for STONEWALL_ANCHOR_TURNS+
+     * turns with no offer on the table — states the band floor to break
+     * the deadlock instead of re-probing into a ₹0-offer stalemate. */
+    const stonewallAnchor = planStonewallAnchor(state);
+    if (stonewallAnchor) return stonewallAnchor;
   }
 
   if (!isTerminalPhase(state.phase)) {
@@ -6285,9 +6367,16 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
    * and hike-justification respectively (see earlier in this function). */
 
   /* Rule: ctc-gentle-push — candidate was evasive about current CTC and we're
-   * at turn 3+ already. One gentle push before accepting the refusal. */
+   * at turn 3+ already. One gentle push before accepting the refusal.
+   * #121 (2026-06-21, live staging) — pre-anchor ONLY. "Knowing your current
+   * package helps me make a strong case internally" is a fitment-calibration
+   * ask; once an offer is on the table the fitment is already set, so a
+   * post-anchor current-CTC push reads as the bot ignoring its own offer (live
+   * Flipkart-EM stonewall repro: anchored ₹45L at T5, then re-pushed for
+   * current CTC at T6). Gate on highestOfferMade === 0. */
   if (
     state.candidateProfile?.evasiveOnCurrentCtc &&
+    state.highestOfferMade === 0 &&
     state.turnIndex >= 3 &&
     !hasFired("ctc-gentle-push")
   ) {
@@ -6582,7 +6671,12 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
         rationale: "Candidate gave a range instead of a target — pin down the actual point before the lever rotation locks in.",
       },
       {
-        flag: profile.deflectedOnRange,
+        /* #121 (2026-06-21, live staging) — pre-anchor ONLY. "If you share a
+         * rough target I can tell you whether we're in the same range" only
+         * makes sense before our number is on the table; once anchored, the
+         * range is already stated, so this re-push reads as a loop. Gate on
+         * highestOfferMade === 0. */
+        flag: profile.deflectedOnRange && state.highestOfferMade === 0,
         topic: "range-deflection",
         ask: "I understand wanting to hear our number first — fair. Our band for this grade has a defined range; if you can share even a rough target, I can tell you straight away whether we're in the same range.",
         rationale: "Candidate is deflecting on number disclosure — re-anchor with band-grade language and invite mutual disclosure.",

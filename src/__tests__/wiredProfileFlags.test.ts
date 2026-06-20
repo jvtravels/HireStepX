@@ -31,7 +31,15 @@ const init = (
   candidateProfile: { ...EMPTY_CANDIDATE_PROFILE, hasAny: true, ...profileOverrides },
 });
 
-const CASES: { flag: keyof typeof EMPTY_CANDIDATE_PROFILE; topic: DiscoveryTopic }[] = [
+const CASES: {
+  flag: keyof typeof EMPTY_CANDIDATE_PROFILE;
+  topic: DiscoveryTopic;
+  /* #121 (2026-06-21) — per-case state override. range-deflection is now
+   * pre-anchor-scoped (its "I can tell you whether we're in the same range"
+   * framing is incoherent once an offer is on the table), so that case must
+   * be driven with no standing offer. */
+  stateOverride?: Partial<NegotiationState>;
+}[] = [
   { flag: "wantsHigherBase", topic: "wants-higher-base" },
   { flag: "wantsJoiningBonus", topic: "wants-joining-bonus" },
   { flag: "wantsRelocationAllowance", topic: "wants-relocation-allowance" },
@@ -45,14 +53,21 @@ const CASES: { flag: keyof typeof EMPTY_CANDIDATE_PROFILE; topic: DiscoveryTopic
   { flag: "mentionedBgvConcern", topic: "bgv-concern" },
   { flag: "mentionedMoonlighting", topic: "moonlighting-policy" },
   { flag: "gaveRangeNotPoint", topic: "range-to-point" },
-  { flag: "deflectedOnRange", topic: "range-deflection" },
+  {
+    flag: "deflectedOnRange",
+    topic: "range-deflection",
+    stateOverride: { highestOfferMade: 0, phase: "probe-expectations" },
+  },
   { flag: "referencedMarketData", topic: "market-data-reference" },
 ];
 
 describe("Fix 5 — wired candidate-profile flags drive reactive followups", () => {
-  for (const { flag, topic } of CASES) {
+  for (const { flag, topic, stateOverride } of CASES) {
     it(`profile.${String(flag)} → reactive-followup topic=${topic}`, () => {
-      const s = init({ [flag]: true } as Partial<typeof EMPTY_CANDIDATE_PROFILE>);
+      const s = init(
+        { [flag]: true } as Partial<typeof EMPTY_CANDIDATE_PROFILE>,
+        stateOverride ?? {},
+      );
       const action = planNextAction(s);
       expect(action.kind).toBe("reactive-followup");
       if (action.kind === "reactive-followup") {
