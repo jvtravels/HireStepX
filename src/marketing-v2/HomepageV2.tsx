@@ -4432,12 +4432,12 @@ export function PersonalizedReportsV2() {
   return (
     <section
       aria-labelledby="hd-reports"
-      style={{ background: "#FAF7F0", overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 100, paddingBottom: 80 }}
+      style={{ background: "#FAF7F0", overflowX: "clip", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, paddingBottom: 80 }}
     >
       <style>{rpt_STYLES}</style>
 
       {/* ── Fan card showcase — exact canvas layout ── */}
-      <div style={{ position: "relative", width: "100%", height: 580, flexShrink: 0, clipPath: "inset(-160px -60px 0 -60px)" }}>
+      <div style={{ position: "relative", width: "100%", height: 580, flexShrink: 0, clipPath: "inset(-280px -60px 0 -60px)" }}>
         {/* Left card */}
         <div style={leftStyle} onMouseEnter={() => setHov("left")} onMouseLeave={() => setHov(null)}>
           <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
