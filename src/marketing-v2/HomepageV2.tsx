@@ -4163,22 +4163,22 @@ const TR = "transform 0.50s cubic-bezier(0.16,1,0.3,1), opacity 0.38s ease, filt
 /* ─── Card: Behavioral — left ── (exact canvas copy) */
 function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
   const skills = [
-    { label: "Answer structure",  score: 88, c: "#15803D" },
-    { label: "Outcome clarity",   score: 88, c: "#15803D" },
-    { label: "Owns the outcome",  score: 71, c: "#B45309" },
-    { label: "Conflict framing",  score: 42, c: "#B91C1C" },
+    { label: "STAR coherence",   score: 88, c: "#15803D" },
+    { label: "Outcome clarity",  score: 88, c: "#15803D" },
+    { label: "Ownership voice",  score: 71, c: "#B45309" },
+    { label: "Conflict balance", score: 42, c: "#B91C1C" },
   ];
   const rptF = { sans: "Inter, system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
   return (
     <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: "#FAF7F0", padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>ROLE READINESS</span>
+        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>READINESS</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: "#15803D" }}>68%</span>
         <span style={{ fontSize: 8, color: "#6E6759" }}>Razorpay Senior PD · ~3 sessions to close gap</span>
       </div>
       <div style={{ display: "flex", gap: 0, padding: "14px 16px 12px" }}>
         <div style={{ width: 124, flexShrink: 0 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 6 }}>SESSION SCORE</div>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 6 }}>OVERALL SCORE</div>
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
               <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
@@ -4190,16 +4190,28 @@ function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
           <span style={{ fontSize: 7.5, background: "#DCFCE7", color: "#15803D", padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Hire ✓</span>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
             <svg width="28" height="12" viewBox="0 0 28 12"><polyline points="0,10 5,7 10,9 16,4 22,6 28,2" fill="none" stroke="#15803D" strokeWidth="1.2" /></svg>
-            <span style={{ fontSize: 8, color: "#15803D", fontWeight: 700 }}>↑ 6 <span style={{ fontWeight: 400, color: "#9E9589" }}>vs last</span></span>
+            <span style={{ fontSize: 9, color: "#15803D", fontWeight: 700 }}>↑ 6</span>
           </div>
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: "#B45309", marginBottom: 5 }}>✦ AI INTERVIEW VERDICT</div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5 }}>Specific and owned. Tighten Q2 "we" usage to separate your contribution from the team's.</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5, marginBottom: 9 }}>Specific, owned, outcome-anchored. Tighten the Q2 "we" usage — then you're ready for the bar-raiser.</div>
+          <div style={{ fontSize: 7.5, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: "#6E6759" }}>
+            Calibrated to Senior · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55
+          </div>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid #EAE3D0", padding: "8px 16px 6px", background: "#FEFDF8" }}>
+      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 8px", background: "#FEFDF8" }}>
         <span style={{ fontSize: 8, background: "#E5E2F2", color: "#312E81", padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>BEHAVIORAL INTERVIEW · FULL REPORT</span>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: "#0E0C08", marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your behavioral answers</div>
+        <div style={{ fontSize: 8, color: "#6E6759", marginTop: 3 }}>Each panel turns one STAR skill into something you can rehearse.</div>
+      </div>
+      <div style={{ margin: "10px 16px 0", background: "#312E81", borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
+        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>Skill breakdown</div>
+          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.65)" }}>Where each axis landed and what it means for your prep.</div>
+        </div>
       </div>
       <div style={{ padding: "10px 16px 14px" }}>
         {skills.map(s => (
@@ -4218,7 +4230,7 @@ function RPT_InterviewCard({ lifted }: { lifted?: boolean }) {
   );
 }
 
-/* ─── Card: Salary neg — center ── */
+/* ─── Card: Salary neg — center ── (exact canvas copy) */
 function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
   const phases = [
     { n: 1, label: "Named a counter number" },
@@ -4229,13 +4241,13 @@ function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
   return (
     <div style={{ width: 520, background: "#FEFDF8", borderRadius: 18, border: "1.5px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 56px 160px rgba(14,12,8,0.34), 0 16px 48px rgba(14,12,8,0.16)" : "0 48px 140px rgba(14,12,8,0.26), 0 12px 40px rgba(14,12,8,0.12)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: "#FAF7F0", padding: "10px 18px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>ROLE READINESS</span>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>READINESS</span>
         <span style={{ fontSize: 14, fontWeight: 800, color: "#15803D" }}>84%</span>
         <span style={{ fontSize: 8.5, color: "#6E6759" }}>PhonePe Senior EM · Top quartile, ready to negotiate.</span>
       </div>
       <div style={{ display: "flex", gap: 0, padding: "16px 18px 14px" }}>
         <div style={{ width: 144, flexShrink: 0 }}>
-          <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 7 }}>SESSION SCORE</div>
+          <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 7 }}>OVERALL SCORE</div>
           <div style={{ position: "relative", width: 92, height: 56, margin: "0 auto 9px" }}>
             <svg viewBox="0 0 90 56" width="92" height="56">
               <path d="M8,52 A37,37 0 0,1 82,52" fill="none" stroke="#E8E0D0" strokeWidth="8" strokeLinecap="round" />
@@ -4249,24 +4261,41 @@ function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
           </div>
           <div style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 4 }}>
             <svg width="30" height="13" viewBox="0 0 30 13"><polyline points="0,11 5,8 10,10 16,4 22,6 30,2" fill="none" stroke="#15803D" strokeWidth="1.3" /></svg>
-            <span style={{ fontSize: 8, color: "#15803D", fontWeight: 700 }}>↑ 19 <span style={{ fontWeight: 400, color: "#9E9589" }}>vs last</span></span>
+            <span style={{ fontSize: 9.5, color: "#15803D", fontWeight: 700 }}>↑ 19</span>
           </div>
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.4, color: "#B45309", marginBottom: 6 }}>✦ AI NEGOTIATION VERDICT</div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5 }}>Countered with data, held silence twice — landed ₹48L above the opening offer.</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5, marginBottom: 10 }}>Countered with data, held silence twice, closed at ₹48L — 71% gap closure on the first-offer anchor.</div>
+          <div style={{ fontSize: 8, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: "#6E6759" }}>
+            Calibrated to Senior EM · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55
+          </div>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 18px", background: "#FEFDF8" }}>
+      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 18px 8px", background: "#FEFDF8" }}>
         <span style={{ fontSize: 8.5, background: "#FED7AA", color: "#B45309", padding: "3px 10px", borderRadius: 20, fontWeight: 600 }}>SALARY NEGOTIATION · FULL REPORT</span>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0E0C08", marginTop: 8, fontFamily: rptF.serif, lineHeight: 1.25 }}>
-          Landed ₹48L — ₹10L above the opening offer.
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0E0C08", marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your negotiation</div>
+        <div style={{ fontSize: 8.5, color: "#6E6759", marginTop: 3 }}>Each panel turns one negotiation skill into something you can act on.</div>
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: "#B45309", letterSpacing: 0.4 }}>THE 30-SECOND READ</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#0E0C08", marginTop: 4, lineHeight: 1.35, fontFamily: rptF.serif }}>
+            Landed ₹48L — ₹10L above opening. 71% gap closure in 3 rounds.
+          </div>
+          <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 8.5, color: "#6E6759" }}>How far you got in the negotiation</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#15803D" }}>3 of 3 stages</span>
+          </div>
         </div>
-        <div style={{ marginTop: 6, display: "flex", justifyContent: "flex-end" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#15803D" }}>3 of 3 stages ✓</span>
+      </div>
+      <div style={{ margin: "10px 18px 0", background: "#312E81", borderRadius: 7, padding: "9px 14px", display: "flex", gap: 12, alignItems: "center" }}>
+        <span style={{ fontSize: 8.5, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "3px 8px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 4</span>
+        <div>
+          <div style={{ fontSize: 9.5, fontWeight: 700, color: "#fff" }}>What happened in this call</div>
+          <div style={{ fontSize: 8, color: "rgba(255,255,255,0.65)" }}>Every moment that mattered: what you said, what you missed, what it cost.</div>
         </div>
       </div>
       <div style={{ padding: "10px 18px 14px" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#0E0C08", marginBottom: 6 }}>01  How far you got in the negotiation</div>
         <div style={{ display: "flex", gap: 2, marginBottom: 8 }}>
           {phases.map(p => (
             <div key={p.n} style={{ flex: 1, height: 4, background: "#15803D", borderRadius: 2 }} />
@@ -4286,25 +4315,25 @@ function RPT_ReportCard({ lifted }: { lifted?: boolean }) {
   );
 }
 
-/* ─── Card: Campus placement — right ── */
+/* ─── Card: Campus placement — right ── (exact canvas copy) */
 function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
   const skills = [
     { label: "Communication",     score: 75, c: "#15803D" },
     { label: "Fundamentals",      score: 70, c: "#15803D" },
     { label: "Project ownership", score: 45, c: "#B91C1C" },
-    { label: "Technical depth",   score: 40, c: "#B91C1C" },
+    { label: "Project depth",     score: 40, c: "#B91C1C" },
   ];
   const rptF = { sans: "Inter, system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
   return (
     <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: "#FAF7F0", padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>ROLE READINESS</span>
+        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>READINESS</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: "#B45309" }}>42%</span>
         <span style={{ fontSize: 8, color: "#6E6759" }}>Infosys SWE Fresher · ~5 sessions to close gap</span>
       </div>
       <div style={{ display: "flex", gap: 0, padding: "14px 16px 12px" }}>
         <div style={{ width: 124, flexShrink: 0 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 6 }}>SESSION SCORE</div>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 6 }}>OVERALL SCORE</div>
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
               <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
@@ -4316,7 +4345,7 @@ function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
           <span style={{ fontSize: 7.5, background: "#FEF3C7", color: "#92400E", padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Lean Hire</span>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
             <svg width="28" height="12" viewBox="0 0 28 12"><polyline points="0,4 5,7 10,5 16,10 22,8 28,12" fill="none" stroke="#B91C1C" strokeWidth="1.2" /></svg>
-            <span style={{ fontSize: 8, color: "#B91C1C", fontWeight: 700 }}>↓ 8 <span style={{ fontWeight: 400, color: "#9E9589" }}>vs last</span></span>
+            <span style={{ fontSize: 9, color: "#B91C1C", fontWeight: 700 }}>↓ 8</span>
           </div>
         </div>
         <div style={{ flex: 1 }}>
@@ -4327,8 +4356,17 @@ function RPT_ProgressCard({ lifted }: { lifted?: boolean }) {
           </div>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid #EAE3D0", padding: "8px 16px 6px", background: "#FEFDF8" }}>
+      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 8px", background: "#FEFDF8" }}>
         <span style={{ fontSize: 8, background: "#FEF3C7", color: "#92400E", padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>CAMPUS PLACEMENT · FULL REPORT</span>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: "#0E0C08", marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your campus interview</div>
+        <div style={{ fontSize: 8, color: "#6E6759", marginTop: 3 }}>Each panel turns one campus skill into something you can rehearse.</div>
+      </div>
+      <div style={{ margin: "10px 16px 0", background: "#312E81", borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
+        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>Skill breakdown</div>
+          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.65)" }}>Where each axis landed and what to practice next.</div>
+        </div>
       </div>
       <div style={{ padding: "10px 16px 14px" }}>
         {skills.map(s => (
