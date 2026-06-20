@@ -408,8 +408,17 @@ export function buildStaticFallback(opts: {
     if (sampled.length > 0) {
       return [
         { type: "intro", aiText: "Hi — let's get started. To warm up, tell me a bit about yourself and what brings you to this role." },
-        ...sampled.map((q, i): FallbackQuestion => ({
-          type: i === 0 ? "warmup" : "main",
+        ...sampled.map((q): FallbackQuestion => ({
+          // Canonical InterviewStep type. The LLM path emits "question"
+          // (see generate-questions.ts prompt) and the entire engine —
+          // totalQuestions/currentQuestionNum counters, progress dots, the
+          // end-modal, and the saved `questions` count — recognizes only
+          // "question"/"follow-up". The old "warmup"/"main" tags were a
+          // divergent vocabulary invisible to all of it, so an LLM-down
+          // session (static fallback) rendered "answered 0 of 0 questions"
+          // and persisted questions:0. Difficulty escalation lives on the
+          // bank entry, not the step type.
+          type: "question",
           aiText: q.text,
           scoreNote: `Competency: ${q.competency}; STAR focus: ${q.starFocus}.`,
         })),
@@ -432,8 +441,17 @@ export function buildStaticFallback(opts: {
         // excludes that question from the body), so this is the single
         // background beat — it must not also pre-empt a body question.
         { type: "intro", aiText: "Hi — thanks for making the time. To get us started, tell me a little about yourself and walk me through your background." },
-        ...sampled.map((q, i): FallbackQuestion => ({
-          type: i === 0 ? "warmup" : "main",
+        ...sampled.map((q): FallbackQuestion => ({
+          // Canonical InterviewStep type. The LLM path emits "question"
+          // (see generate-questions.ts prompt) and the entire engine —
+          // totalQuestions/currentQuestionNum counters, progress dots, the
+          // end-modal, and the saved `questions` count — recognizes only
+          // "question"/"follow-up". The old "warmup"/"main" tags were a
+          // divergent vocabulary invisible to all of it, so an LLM-down
+          // session (static fallback) rendered "answered 0 of 0 questions"
+          // and persisted questions:0. Difficulty escalation lives on the
+          // bank entry, not the step type.
+          type: "question",
           aiText: q.text,
           scoreNote: `HR dimension: ${q.dimension}.`,
         })),
@@ -455,8 +473,10 @@ export function buildStaticFallback(opts: {
   const picked = pool.slice(0, opts.count);
   const questions: FallbackQuestion[] = [
     { type: "intro", aiText: "Hi — let's get started. To warm up, tell me a bit about yourself and what brings you to this role." },
-    ...picked.map((q, i): FallbackQuestion => ({
-      type: i === 0 ? "warmup" : "main",
+    ...picked.map((q): FallbackQuestion => ({
+      // Canonical InterviewStep type — see the note above. "warmup"/"main"
+      // were invisible to the engine's question counters.
+      type: "question",
       aiText: q.text,
       scoreNote: q.styleNote,
     })),

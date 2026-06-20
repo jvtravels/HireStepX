@@ -234,13 +234,34 @@ describe("buildStaticFallback", () => {
       experienceLevel: "senior",
       count: 5,
     });
-    const body = qs.filter((q) => q.type === "warmup" || q.type === "main");
+    const body = qs.filter((q) => q.type === "question");
     expect(body.length).toBeGreaterThan(0);
     // Curated BEHAVIORAL_50 path stamps "Competency:"; the QUESTION_BANK
     // tier path stamps a styleNote — so this proves we took the curated path.
     expect(body.every((q) => (q.scoreNote || "").startsWith("Competency:"))).toBe(true);
     // The specific SWE question a designer must never receive here.
     expect(body.some((q) => /owned an outage|post-mortem/i.test(q.aiText))).toBe(false);
+  });
+
+  /* Regression (live QA, 2026-06-21): the static fallback fires whenever the
+     LLM is down — the *default* on a degraded provider. Its body steps must
+     carry the canonical "question" type, NOT the old "warmup"/"main" tags the
+     engine never counted. With the divergent tags, an LLM-down behavioural
+     session showed "answered 0 of 0 questions" and saved questions:0. */
+  it("emits only canonical InterviewStep types — no warmup/main leakage", () => {
+    for (const opts of [
+      { type: "behavioral", focus: "general", roleFamily: "designer-senior", count: 5 },
+      { type: "hr-round", focus: "general", roleFamily: "general", count: 5 },
+      { type: "behavioral", focus: "general", roleFamily: "swe", count: 4 },
+    ]) {
+      const qs = buildStaticFallback({ ...opts, difficulty: "standard" });
+      const types = new Set(qs.map((q) => q.type));
+      expect([...types].every((t) => ["intro", "question", "follow-up", "closing"].includes(t))).toBe(true);
+      expect(types.has("warmup")).toBe(false);
+      expect(types.has("main")).toBe(false);
+      // The counter the engine actually uses must be non-zero.
+      expect(qs.filter((q) => q.type === "question").length).toBeGreaterThan(0);
+    }
   });
 
   /* Regression: HR-round sessions arrive with type "hr-round" but the
@@ -259,7 +280,7 @@ describe("buildStaticFallback", () => {
     expect(qs[0].type).toBe("intro");
     expect(qs[qs.length - 1].type).toBe("closing");
     expect(validateQuestionShape(qs as unknown[])).toBe(true);
-    const body = qs.filter((q) => q.type === "warmup" || q.type === "main");
+    const body = qs.filter((q) => q.type === "question");
     // HR body items are tagged with their HR dimension; behavioural ones
     // would carry a "Competency:" note instead.
     expect(body.every((q) => (q.scoreNote || "").startsWith("HR dimension:"))).toBe(true);
@@ -284,7 +305,7 @@ describe("buildStaticFallback", () => {
       roleFamily: "swe",
       count: 4,
     });
-    const body = qs.filter((q) => q.type === "warmup" || q.type === "main");
+    const body = qs.filter((q) => q.type === "question");
     expect(body.length).toBeGreaterThan(0);
     expect(body.every((q) => (q.scoreNote || "").startsWith("HR dimension:"))).toBe(true);
   });
