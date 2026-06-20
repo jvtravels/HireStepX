@@ -4157,6 +4157,18 @@ function StructuredData() {
 
 const rpt_STYLES = `
 @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
+
+/* Fan card showcase — responsive containment */
+@media (max-width: 640px) {
+  /* Hide side cards on mobile; only the center report card stays */
+  .mv2-rpt-side { display: none !important; }
+  /* Make the center card fluid so it fits within the mobile viewport */
+  .mv2-rpt-center-card { width: min(520px, calc(100vw - 48px)) !important; }
+  /* Shrink top padding and headline for mobile */
+  .mv2-rpt-section { padding-top: 60px !important; padding-bottom: 48px !important; }
+  .mv2-rpt-h2 { font-size: 40px !important; letter-spacing: -1px !important; }
+  .mv2-rpt-showcase { height: 440px !important; }
+}
 `;
 
 /* Module-level constants — avoid recomputing these on every render */
@@ -4175,7 +4187,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
   /* Arc length for 82% of a semicircle: π × r × 0.82 = π × 33 × 0.82 ≈ 85 */
   const arcLen = 85;
   return (
-    <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
+    <div style={{ width: 460, minHeight: 620, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: "#FAF7F0", padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>READINESS</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: "#15803D" }}>68%</span>
@@ -4211,7 +4223,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
       <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 6px", background: "#FEFDF8" }}>
         <span style={{ fontSize: 8, background: "#E5E2F2", color: "#312E81", padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>BEHAVIORAL INTERVIEW · FULL REPORT</span>
       </div>
-      <div style={{ padding: "8px 16px 14px" }}>
+      <div style={{ padding: "8px 16px 10px" }}>
         {star.map((s, i) => (
           <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
             <span style={{ width: 18, height: 18, borderRadius: 4, background: s.c, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: rptF.mono }}>{s.key}</span>
@@ -4222,6 +4234,20 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
             <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono, width: 20, textAlign: "right", flexShrink: 0 }}>{s.score}</span>
           </div>
         ))}
+      </div>
+      <div style={{ margin: "0 16px", background: "#312E81", borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
+        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 2 OF 4</span>
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>AI coached model answer</div>
+          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.65)" }}>See exactly how a Strong Hire would answer Q2.</div>
+        </div>
+      </div>
+      <div style={{ padding: "10px 16px 14px" }}>
+        <div style={{ fontSize: 8, fontWeight: 700, color: "#B45309", letterSpacing: 0.4, marginBottom: 6 }}>✦ MODEL ANSWER EXCERPT</div>
+        <div style={{ fontSize: 9, color: "#4A4540", lineHeight: 1.6, background: "#F3EFE5", borderRadius: 5, padding: "8px 10px", borderLeft: "2px solid #B45309" }}>
+          {"Instead of 'we reduced latency,' say: "}
+          <span style={{ fontStyle: "italic", color: "#0E0C08" }}>{"I led the caching rewrite — my call to switch to Redis cut p99 from 420ms to 38ms, unblocking the iOS team."}</span>
+        </div>
       </div>
     </div>
   );
@@ -4238,7 +4264,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
   /* Arc length for 84% of a semicircle: π × r × 0.84 = π × 37 × 0.84 ≈ 98 */
   const arcLen = 98;
   return (
-    <div style={{ width: 520, background: "#FEFDF8", borderRadius: 18, border: "1.5px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 56px 160px rgba(14,12,8,0.34), 0 16px 48px rgba(14,12,8,0.16)" : "0 48px 140px rgba(14,12,8,0.26), 0 12px 40px rgba(14,12,8,0.12)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
+    <div className="mv2-rpt-center-card" style={{ width: 520, background: "#FEFDF8", borderRadius: 18, border: "1.5px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 56px 160px rgba(14,12,8,0.34), 0 16px 48px rgba(14,12,8,0.16)" : "0 48px 140px rgba(14,12,8,0.26), 0 12px 40px rgba(14,12,8,0.12)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: "#FAF7F0", padding: "10px 18px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>READINESS</span>
         <span style={{ fontSize: 14, fontWeight: 800, color: "#15803D" }}>84%</span>
@@ -4427,15 +4453,16 @@ export function PersonalizedReportsV2() {
   return (
     <section
       aria-labelledby="hd-reports"
-      style={{ background: "#FAF7F0", overflowX: "clip", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, paddingBottom: 80 }}
+      className="mv2-rpt-section"
+      style={{ background: "#FAF7F0", overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, paddingBottom: 80 }}
     >
       <style>{rpt_STYLES}</style>
 
       {/* ── Fan card showcase ── */}
-      <div ref={showcaseRef} style={{ position: "relative", width: "100%", height: 580, flexShrink: 0, clipPath: "inset(-280px -60px 0 -60px)" }}>
+      <div ref={showcaseRef} className="mv2-rpt-showcase" style={{ position: "relative", width: "100%", height: 580, flexShrink: 0, clipPath: "inset(-280px -60px 0 -60px)" }}>
 
         {/* Left card — outer: position + reveal; inner: hover */}
-        <div style={{ position: "absolute", left: 220, bottom: 60, zIndex: lActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(0) }}>
+        <div className="mv2-rpt-side" style={{ position: "absolute", left: 220, bottom: 60, zIndex: lActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(0) }}>
           <div style={{ transformOrigin: "bottom center", transform: lActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(-10deg) translateY(6px) scale(0.86)" : "rotate(-8deg)", opacity: anyHov && !lActive ? 0.65 : 1, filter: anyHov && !lActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("left")} onMouseLeave={() => setHov(null)}>
             <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Behavioral · 82/100<br />Razorpay Senior PD
@@ -4457,7 +4484,7 @@ export function PersonalizedReportsV2() {
         </div>
 
         {/* Right card */}
-        <div style={{ position: "absolute", right: 220, bottom: 60, zIndex: rActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(2) }}>
+        <div className="mv2-rpt-side" style={{ position: "absolute", right: 220, bottom: 60, zIndex: rActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(2) }}>
           <div style={{ transformOrigin: "bottom center", transform: rActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(10deg) translateY(6px) scale(0.86)" : "rotate(8deg)", opacity: anyHov && !rActive ? 0.65 : 1, filter: anyHov && !rActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("right")} onMouseLeave={() => setHov(null)}>
             <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Campus · 58/100<br />Infosys SWE Fresher
@@ -4479,10 +4506,10 @@ export function PersonalizedReportsV2() {
         transition: RV,
         transitionDelay: revealed ? delay(3) : "0ms",
       }}>
-        <h2 id="hd-reports" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5 }}>
+        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px" }}>
           Personalized reports after
         </h2>
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
+        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
           every interview
         </h2>
         <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', Inter, system-ui, sans-serif" }}>
