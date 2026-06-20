@@ -93,8 +93,8 @@ export function buildBehavioralIntro(opts: BuildBehavioralIntroOpts): string {
   /* Greeting — uses candidate first name when known, falls back to
      a warm-but-neutral opener otherwise. */
   const greeting = candidateFirst
-    ? `Hi ${candidateFirst}, thanks for taking the time today.`
-    : `Hi, thanks for taking the time today.`;
+    ? `Hi ${candidateFirst}, thanks for making the time today.`
+    : `Hi, thanks for making the time today.`;
 
   /* Self-introduction. The "I'll be your interviewer for the next
      few minutes" framing matches Indian recruiting register — warmer
@@ -116,24 +116,24 @@ export function buildBehavioralIntro(opts: BuildBehavioralIntroOpts): string {
   let rapportHook: string;
   if (company && isServicesTrack(company)) {
     rapportHook = role
-      ? `Before we get into the structured questions — just briefly, walk me through your background a bit, your academics and what you've been doing currently. And what's drawing you to ${role} at ${company}?`
-      : `Before we get into the structured questions — just briefly, walk me through your background a bit, your academics and what you've been doing currently. And what brings you to ${company}?`;
+      ? `Before we get into the structured questions — just briefly, take me through your background a bit, your academics and what you've been doing currently. And what got you interested in ${role} at ${company}?`
+      : `Before we get into the structured questions — just briefly, take me through your background a bit, your academics and what you've been doing currently. And what brings you to ${company}?`;
   } else if (firstProject && role && company) {
     /* Resume-grounded variant — references a specific project so the
        candidate hears "you actually read my CV" in the first 8 seconds.
        Reserved for product-co paths because services-track keeps the
        pedigree ritual above. */
-    rapportHook = `Before we get into the structured questions — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what's drawing you to ${role} at ${company}?`;
+    rapportHook = `Before we get into the structured questions — I saw on your resume you worked on ${firstProject}. Tell me about that briefly, and what got you interested in ${role} at ${company}?`;
   } else if (firstProject && role) {
-    rapportHook = `Before we get started — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what's drawing you to ${role}?`;
+    rapportHook = `Before we get started — I saw on your resume you worked on ${firstProject}. Tell me about that briefly, and what got you interested in ${role}?`;
   } else if (firstProject) {
-    rapportHook = `Before we get started — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what brings you here?`;
+    rapportHook = `Before we get started — I saw on your resume you worked on ${firstProject}. Tell me about that briefly, and what brings you here?`;
   } else if (role && company) {
-    rapportHook = `Before we get into the structured questions — just briefly, where are you joining from today, and what's drawing you to ${role} at ${company}?`;
+    rapportHook = `Before we get into the structured questions — just briefly, where are you joining from today, and what got you interested in ${role} at ${company}?`;
   } else if (role) {
-    rapportHook = `Before we get started — just briefly, where are you joining from today, and what's drawing you to ${role}?`;
+    rapportHook = `Before we get started — just briefly, where are you joining from today, and what got you interested in ${role}?`;
   } else if (company) {
-    rapportHook = `Before we get started — just briefly, where are you joining from today, and what's drawing you to ${company}?`;
+    rapportHook = `Before we get started — just briefly, where are you joining from today, and what got you interested in ${company}?`;
   } else {
     rapportHook = `Before we get started — just briefly, where are you joining from today, and what brings you here?`;
   }

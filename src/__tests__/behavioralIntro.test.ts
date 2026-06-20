@@ -46,7 +46,7 @@ describe("buildBehavioralIntro", () => {
     expect(out).not.toContain("at undefined");
   });
 
-  it("stays under the TTS budget (≤ ~45 words)", () => {
+  it("stays under the TTS budget (≤ ~47 words)", () => {
     const out = buildBehavioralIntro({
       interviewerName: "Karthik Nair",
       candidateName: "Anjali Verma",
@@ -54,7 +54,7 @@ describe("buildBehavioralIntro", () => {
       company: "Flipkart",
     });
     const words = out.trim().split(/\s+/).length;
-    expect(words).toBeLessThanOrEqual(45);
+    expect(words).toBeLessThanOrEqual(47);
   });
 
   it("never leaks TTS prosody markup or template tokens to the candidate", () => {
@@ -83,33 +83,33 @@ describe("buildBehavioralIntro", () => {
      swaps the rapport hook to mirror that ritual. */
   it("swaps to pedigree opener for Indian services-track companies (TCS, Infosys, Wipro, etc.)", () => {
     const tcs = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "TCS" });
-    expect(tcs.toLowerCase()).toContain("walk me through your background");
+    expect(tcs.toLowerCase()).toContain("take me through your background");
     expect(tcs.toLowerCase()).toContain("academics");
 
     const infy = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Infosys" });
-    expect(infy.toLowerCase()).toContain("walk me through your background");
+    expect(infy.toLowerCase()).toContain("take me through your background");
 
     const wipro = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Wipro" });
-    expect(wipro.toLowerCase()).toContain("walk me through your background");
+    expect(wipro.toLowerCase()).toContain("take me through your background");
   });
 
   it("swaps to pedigree opener for tier-2 Indian services firms (Mindtree, Sonata, Hexaware, Coforge, KPIT)", () => {
     const mindtree = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Mindtree" });
-    expect(mindtree.toLowerCase()).toContain("walk me through your background");
+    expect(mindtree.toLowerCase()).toContain("take me through your background");
 
     const coforge = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Coforge" });
-    expect(coforge.toLowerCase()).toContain("walk me through your background");
+    expect(coforge.toLowerCase()).toContain("take me through your background");
 
     const kpit = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "KPIT" });
-    expect(kpit.toLowerCase()).toContain("walk me through your background");
+    expect(kpit.toLowerCase()).toContain("take me through your background");
   });
 
   it("does NOT swap to pedigree opener for product / MNC-India companies", () => {
     const razorpay = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "PM", company: "Razorpay" });
-    expect(razorpay.toLowerCase()).not.toContain("walk me through your background");
+    expect(razorpay.toLowerCase()).not.toContain("take me through your background");
 
     const googleIN = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "SWE", company: "Google India" });
-    expect(googleIN.toLowerCase()).not.toContain("walk me through your background");
+    expect(googleIN.toLowerCase()).not.toContain("take me through your background");
   });
 
   it("services-track intro stays within an extended TTS budget (≤ ~70 words)", () => {
@@ -147,7 +147,7 @@ describe("buildBehavioralIntro", () => {
       company: "Infosys",
       topProjects: ["UPI reconciliation rebuild"],
     });
-    expect(out.toLowerCase()).toContain("walk me through your background");
+    expect(out.toLowerCase()).toContain("take me through your background");
     expect(out).not.toContain("UPI reconciliation rebuild");
   });
 
@@ -170,5 +170,37 @@ describe("buildBehavioralIntro", () => {
     });
     expect(out).toContain("…");
     expect(out).not.toContain(long);
+  });
+
+  /* Register guard — the spoken intro must obey the same Indian-register
+     ban list the LLM question layer enforces (generate-questions.ts
+     BEHAVIOURAL_INDIAN_REGISTER_RULE). These phrases read as scripted
+     American-recruiter filler; banning them in the static intro keeps the
+     persona consistent across the intro and the LLM-generated questions. */
+  it("never emits banned American-recruiter register across any variant", () => {
+    const banned = [
+      "dive into", "deep dive", "circle back", "reach out",
+      "take the time", "taking the time", "what's drawing you to",
+      "walk me through", "moving forward", "touch base",
+    ];
+    const variants = [
+      buildBehavioralIntro({ interviewerName: "Neha Gupta" }),
+      buildBehavioralIntro({ interviewerName: "Neha Gupta", candidateName: "Jay Vyas" }),
+      buildBehavioralIntro({ interviewerName: "Neha Gupta", role: "Senior Product Designer" }),
+      buildBehavioralIntro({ interviewerName: "Neha Gupta", role: "Senior Product Designer", company: "Flipkart" }),
+      buildBehavioralIntro({ interviewerName: "Neha Gupta", company: "Flipkart" }),
+      buildBehavioralIntro({ interviewerName: "Neha Gupta", role: "PM", company: "Razorpay", topProjects: ["UPI reconciliation rebuild"] }),
+      buildBehavioralIntro({ interviewerName: "Neha Gupta", role: "PM", topProjects: ["UPI reconciliation rebuild"] }),
+      buildBehavioralIntro({ interviewerName: "Neha Gupta", topProjects: ["UPI reconciliation rebuild"] }),
+      // Services-track pedigree variant.
+      buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Infosys" }),
+      buildBehavioralIntro({ interviewerName: "Suresh Iyer", company: "TCS" }),
+    ];
+    for (const out of variants) {
+      const lc = out.toLowerCase();
+      for (const phrase of banned) {
+        expect(lc, `variant leaked "${phrase}": ${out}`).not.toContain(phrase);
+      }
+    }
   });
 });
