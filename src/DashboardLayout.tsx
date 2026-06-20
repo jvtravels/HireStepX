@@ -238,6 +238,18 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ── Tablet responsive padding ──────────────────────────────────────
+           isMobile (≤1023px) uses 12px inline side padding, which is fine on
+           a 375px phone but cramped on a 768px tablet. These overrides scale
+           the horizontal breathing room up through the tablet range without
+           touching the desktop path (≥1024px uses the sidebar inline layout). */
+        @media (min-width: 600px) and (max-width: 1023px) {
+          .dash-main { padding-left: 24px !important; padding-right: 24px !important; }
+        }
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .dash-main { padding-left: 32px !important; padding-right: 32px !important; }
+        }
       `}</style>
 
       {isMobile && sidebarOpen && <div role="button" aria-label="Close navigation menu" tabIndex={0} onClick={() => setSidebarOpen(false)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSidebarOpen(false); }} style={{ position: "fixed", inset: 0, background: "rgba(14,12,8,0.45)", zIndex: 19 }} />}
@@ -402,7 +414,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       </aside>
 
       {/* Main Content */}
-      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "68px 12px max(60px, env(safe-area-inset-bottom))" : "32px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(12px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(12px, env(safe-area-inset-right))" : undefined }}>
+      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "76px 12px max(60px, env(safe-area-inset-bottom))" : "32px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(12px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(12px, env(safe-area-inset-right))" : undefined }}>
 
         {/* Payment success/cancel banner */}
         {paymentBanner && (

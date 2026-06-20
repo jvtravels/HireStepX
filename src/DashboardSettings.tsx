@@ -260,8 +260,27 @@ export default function SettingsPage() {
 
   return (
     <div style={{ width: "100%", maxWidth: 880, margin: "0 auto", isolation: "isolate" }}>
+      <style>{`
+        /* ── Settings mobile fixes ────────────────────────────────────────
+           On ≤1023px the dashboard main has paddingTop:76px (clearing the
+           56px fixed nav header + 20px gap). The sticky header's -12px
+           margin collapses that gap to 64px → flush with the nav.
+           Override to 0 so "Settings" heading gets the full 20px gap. */
+        @media (max-width: 1023px) {
+          .settings-sticky-header { margin-top: 0 !important; }
+        }
+        /* ── Tab overflow fix at 375px ────────────────────────────────────
+           Three tabs (Account | Plan & Data | Referral) plus keyboard-shortcut
+           kbd badges (~22px each) total ~402px — wider than the 351px
+           content column at 375px. Hide the badges on touch and tighten
+           horizontal tab padding so all 3 tabs fit without scrolling. */
+        @media (max-width: 600px) {
+          .settings-pills kbd { display: none !important; }
+          .settings-pills button { padding-left: 10px !important; padding-right: 10px !important; }
+        }
+      `}</style>
       {/* ── Sticky Header + Tabs ── */}
-      <div style={{
+      <div className="settings-sticky-header" style={{
         position: "sticky", top: 0, zIndex: 10,
         background: c.obsidian,
         margin: "-12px 0 24px",
