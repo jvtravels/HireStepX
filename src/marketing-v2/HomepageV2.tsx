@@ -3174,35 +3174,6 @@ export function PricingV2() {
                 >
                   {tier.sub}
                 </p>
-                {/* Per-card .ac.in / .edu.in discount surfacing — paid tiers only.
-                    Footer chip stays as the umbrella affordance; this puts the
-                    discount where the price decision actually happens. */}
-                {tier.studentDiscount && (
-                  <p
-                    style={{
-                      margin: "10px 0 0",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontFamily: fonts.sans,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                      padding: "4px 8px",
-                      borderRadius: 999,
-                      color: tier.featured ? t.copper100 : t.copper,
-                      background: tier.featured
-                        ? t.copper100Soft
-                        : t.copper100,
-                      border: tier.featured
-                        ? `1px solid ${t.copper100SoftLine}`
-                        : `1px solid ${t.lineStrong}`,
-                    }}
-                  >
-                    .ac.in / .edu.in · 30% off
-                  </p>
-                )}
               </div>
               <ul
                 style={{
