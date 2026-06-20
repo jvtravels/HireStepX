@@ -29,6 +29,14 @@ import { formatCsvSalaryNegContext, getCsvLikelyLocations } from "./csv-band-pro
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote, variablePayoutFactorForTier } from "../src/_ctc-breakdown";
 import { tierFlexibility, type CompanyTierBucket } from "../src/_negotiation-math";
 import { detectRoleCompanyFit } from "../src/_role-company-fit";
+/* People-manager band floor (#115 fast-follow). Imported from the pure,
+ * dependency-free band-tier table so BOTH band-resolution entry points —
+ * this generateNegotiationBand (the generate-questions seed path) AND
+ * resolveServerBand (the negotiate-turn kernel path) — apply the SAME
+ * lift. Without it, the generate-questions path keyed a Flipkart
+ * Engineering Manager to a senior-IC/company-override lowball
+ * (₹19.4/₹25.6) for the opening offer + the LLM bandContext prose. */
+import { liftPeopleManagerBand } from "../server-handlers/_company-band-tiers";
 
 /** Map the legacy CompanyTier string to the new negotiation-math
  *  CompanyTierBucket vocabulary used by tierFlexibility / variable-payout
@@ -879,19 +887,38 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
      * the senior band was miscalibrated wide (₹29.4-84L); the band is
      * now ₹30-42L (P35 ≈ ₹34L) and this clamp guarantees future
      * miscalibrations can't reproduce the bug class. */
-    const initialOffer = clampOpenerToP35(totalMin, totalMax);
-    const minOffer = Math.round(totalMin * 0.95 * 10) / 10;
-    const maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
+    let initialOffer = clampOpenerToP35(totalMin, totalMax);
+    let minOffer = Math.round(totalMin * 0.95 * 10) / 10;
+    let maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
     /* `walkAway` is the kernel's CANDIDATE-FLOOR — the offer below which
        the recruiter would rather walk than entertain. Must satisfy
        walkAway < initialOffer < maxStretch (kernel invariant). We compute
        it from the band floor, not the band ceiling. Historical bug: this
        used to be totalMax*1.1 (a ceiling concept) and the kernel
        interpreted that as a floor, inverting band ordering. */
-    const recruiterCeiling = Math.round(totalMax * 1.1 * 10) / 10;
+    let recruiterCeiling = Math.round(totalMax * 1.1 * 10) / 10;
     let walkAway = Math.round(Math.min(minOffer, initialOffer * 0.9) * 10) / 10;
     if (walkAway >= initialOffer) walkAway = Math.round((initialOffer - 0.5) * 10) / 10;
     if (walkAway < 0.5) walkAway = 0.5;
+    /* People-manager band floor (#115) — applied BEFORE the component
+       breakdown + bandContext prose below so BOTH the numbers and the
+       LLM-facing prose reflect the lifted manager band (no contradiction
+       between a ₹19 base breakdown and a ₹32.7 opener). Single source of
+       truth shared with resolveServerBand. No-op for non-manager / IC
+       "…Manager" titles and bands already at/above the manager ceil. */
+    {
+      const lifted = liftPeopleManagerBand({ initialOffer, maxStretch, walkAway }, params.role, params.company);
+      if (lifted.maxStretch !== maxStretch || lifted.initialOffer !== initialOffer) {
+        initialOffer = lifted.initialOffer;
+        maxStretch = lifted.maxStretch;
+        walkAway = lifted.walkAway;
+        /* Keep the prose-facing dependent numbers coherent with the lift:
+           the floor must not sit above the walk-away floor, and the
+           recruiter ceiling must stay above the (raised) max stretch. */
+        minOffer = Math.max(minOffer, walkAway);
+        recruiterCeiling = Math.max(recruiterCeiling, Math.round(maxStretch * 1.1 * 10) / 10);
+      }
+    }
     const hasEquity = (override.equityType ?? "none") !== "none";
     const equityRange: [number, number] = hasEquity
       ? [adjOv(override.equityMin ?? 0), adjOv(override.equityMax ?? 0)]
@@ -1042,10 +1069,19 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
       executive: { initial: 50, min: 40,  max: 90,  walk: 38 },
     };
     const f = fallbackByExp[exp] ?? fallbackByExp.mid;
+    /* People-manager band floor (#115) — a genuine people-management title
+       that fell all the way to the data-less fallback (no override, no
+       salary entry) still must not anchor below the tier manager band. */
+    const fb = liftPeopleManagerBand(
+      { initialOffer: f.initial, maxStretch: f.max, walkAway: f.walk },
+      params.role,
+      params.company,
+    );
+    const fbMin = Math.max(f.min, fb.walkAway);
     return {
-      initialOffer: f.initial, minOffer: f.min, maxStretch: f.max, walkAway: f.walk,
-      joiningBonusRange: [0, Math.max(0.5, f.initial * 0.1)], hasEquity: false, equityRange: [0, 0],
-      bandContext: `No specific salary data for this role/company. Conservative fallback for ${exp} level: ₹${f.initial} LPA initial offer, ₹${f.max} LPA max stretch.`,
+      initialOffer: fb.initialOffer, minOffer: fbMin, maxStretch: fb.maxStretch, walkAway: fb.walkAway,
+      joiningBonusRange: [0, Math.max(0.5, fb.initialOffer * 0.1)], hasEquity: false, equityRange: [0, 0],
+      bandContext: `No specific salary data for this role/company. Conservative fallback for ${exp} level: ₹${fb.initialOffer} LPA initial offer, ₹${fb.maxStretch} LPA max stretch.`,
       bandSource: "fallback",
       sourceCount: 0,
       companyTierResolved,
@@ -1058,20 +1094,33 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
   // P35 clamp safety net — see override-path comment above for rationale.
   const totalMin = adj(entry.total_min);
   const totalMax = adj(entry.total_max);
-  const initialOffer = clampOpenerToP35(totalMin, totalMax);
+  let initialOffer = clampOpenerToP35(totalMin, totalMax);
 
   // Min offer: slightly below the data range min (floor)
-  const minOffer = Math.round(totalMin * 0.95 * 10) / 10;
+  let minOffer = Math.round(totalMin * 0.95 * 10) / 10;
 
   // Max stretch: 90th percentile of range
-  const maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
+  let maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
 
   // Walk-away floor: kernel-semantic floor (below initialOffer). Anchored to
   // minOffer when valid, otherwise 90% of initialOffer. Invariant clamp at end.
-  const recruiterCeiling = Math.round(totalMax * 1.1 * 10) / 10;
+  let recruiterCeiling = Math.round(totalMax * 1.1 * 10) / 10;
   let walkAway = Math.round(Math.min(minOffer, initialOffer * 0.9) * 10) / 10;
   if (walkAway >= initialOffer) walkAway = Math.round((initialOffer - 0.5) * 10) / 10;
   if (walkAway < 0.5) walkAway = 0.5;
+  /* People-manager band floor (#115) — see override-path comment above.
+     Applied before the component breakdown + bandContext prose so numbers
+     and prose stay consistent. Single source shared with resolveServerBand. */
+  {
+    const lifted = liftPeopleManagerBand({ initialOffer, maxStretch, walkAway }, params.role, params.company);
+    if (lifted.maxStretch !== maxStretch || lifted.initialOffer !== initialOffer) {
+      initialOffer = lifted.initialOffer;
+      maxStretch = lifted.maxStretch;
+      walkAway = lifted.walkAway;
+      minOffer = Math.max(minOffer, walkAway);
+      recruiterCeiling = Math.max(recruiterCeiling, Math.round(maxStretch * 1.1 * 10) / 10);
+    }
+  }
 
   const hasEquity = entry.equity_type !== "none";
   const equityRange: [number, number] = hasEquity

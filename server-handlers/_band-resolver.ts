@@ -23,6 +23,8 @@ import type { NegotiationBand } from "./_negotiation-kernel";
 import {
   classifyCompanyTier as classifyBandTier,
   getBandForRole as getBandTierRoleBand,
+  liftPeopleManagerBand,
+  PEOPLE_MANAGER_TITLE_RE,
 } from "./_company-band-tiers";
 import { clampBandToTargetRoleMarket } from "./_band-target-clamp";
 import { clampBandToTierP50 } from "./_band-sanity";
@@ -134,24 +136,12 @@ export const DEFAULT_BAND: NegotiationBand = {
   hasEquity: false,
 };
 
-/** People-management eng/tech titles (Engineering / Delivery / Group /
- *  Dev / Software / Technical / Platform / Data / QA / SRE Manager, plus
- *  the seniorised "Senior / General Manager"). Deliberately ENUMERATES the
- *  management-bearing prefixes rather than matching a bare "manager" — that
- *  keeps the IC "…Manager" titles that aren't people-managers in the Indian
- *  market OUT (Product / Program / Project / Account / Community Manager).
- *  Shared by inferExperienceFromRole (seniority inference) and the
- *  people-manager band-floor pass (#115). */
-const PEOPLE_MANAGER_TITLE_RE =
-  /\b(engineering|eng|software|development|dev|delivery|group|senior|sr\.?|general|technical|technology|platform|infrastructure|infra|data|qa|test|sre|site reliability|product\s+engineering)\s+manager\b/;
-
-/** Representative YoE for a first-line people-manager when the session
- *  carries no resume / onboarding YoE (URL-launch or sparse setup). First-
- *  line eng managers in the Indian market typically sit at 9-13 YoE; 11
- *  anchors the tier-table manager band without over-reaching into
- *  senior-EM / director territory. Consumed only by the #115 band-floor
- *  pass — never overrides a real applicableYoe. */
-const MANAGER_DEFAULT_YOE = 11;
+/** PEOPLE_MANAGER_TITLE_RE and MANAGER_DEFAULT_YOE moved to
+ *  _company-band-tiers.ts (#115 fast-follow, 2026-06-20) so the people-
+ *  manager band floor (liftPeopleManagerBand) has a single definition
+ *  shared by BOTH this resolver AND generateNegotiationBand. PEOPLE_MANAGER_
+ *  TITLE_RE is re-imported above for inferExperienceFromRole's seniority
+ *  inference. */
 
 /** Senior-inference fallback. When the client doesn't pass an explicit
  *  experienceLevel (legacy session, missing onboarding field), infer it
@@ -426,25 +416,7 @@ export function resolveServerBand(
      * the down-clamps so it is the authoritative final word for managers. Uses
      * existing calibrated tier numbers — no invented values. Bands already at or
      * above the manager ceil, and IC roles, are untouched. */
-    if (
-      company &&
-      !isInternshipRole(role) &&
-      PEOPLE_MANAGER_TITLE_RE.test(role.toLowerCase())
-    ) {
-      const mgrBand = getBandTierRoleBand(
-        classifyBandTier(company),
-        role,
-        applicableYoe ?? MANAGER_DEFAULT_YOE,
-      );
-      if (finalBand.maxStretch < mgrBand.ceil) {
-        finalBand = {
-          ...finalBand,
-          initialOffer: Math.max(finalBand.initialOffer, mgrBand.floor),
-          maxStretch: mgrBand.ceil,
-          walkAway: Math.max(finalBand.walkAway, Math.round(mgrBand.floor * 0.95 * 10) / 10),
-        };
-      }
-    }
+    finalBand = { ...finalBand, ...liftPeopleManagerBand(finalBand, role, company, applicableYoe) };
     return finalBand;
   } catch {
     return DEFAULT_BAND;

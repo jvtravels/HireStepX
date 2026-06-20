@@ -406,6 +406,70 @@ export function getBandForRole(
   };
 }
 
+/* People-management eng/tech titles (Engineering / Delivery / Group /
+ * Dev / Software / Technical / Platform / Data / QA / SRE Manager, plus
+ * the seniorised "Senior / General Manager"). Deliberately ENUMERATES the
+ * management-bearing prefixes rather than matching a bare "manager" — that
+ * keeps the IC "…Manager" titles that aren't people-managers in the Indian
+ * market OUT (Product / Program / Project / Account / Community Manager).
+ *
+ * Moved here 2026-06-20 (#115 fast-follow) from _band-resolver so the
+ * people-manager band floor has ONE definition shared by BOTH band-
+ * resolution entry points — `resolveServerBand` (the negotiate-turn
+ * kernel path) AND `generateNegotiationBand` (the generate-questions seed
+ * path that the candidate's opening offer + prose are built from). The
+ * lift previously lived only in resolveServerBand, so the generate-
+ * questions path shipped an unlifted ₹19.4/₹25.6 lowball for a Flipkart
+ * Engineering Manager. See liftPeopleManagerBand. */
+export const PEOPLE_MANAGER_TITLE_RE =
+  /\b(engineering|eng|software|development|dev|delivery|group|senior|sr\.?|general|technical|technology|platform|infrastructure|infra|data|qa|test|sre|site reliability|product\s+engineering)\s+manager\b/;
+
+/** Representative YoE for a first-line people-manager when the caller has
+ *  no resume / onboarding YoE. First-line eng managers in the Indian
+ *  market typically sit at 9-13 YoE; 11 anchors the tier-table manager
+ *  band without over-reaching into senior-EM / director territory. */
+export const MANAGER_DEFAULT_YOE = 11;
+
+/** Intern guard — never lift an "Engineering Manager Intern"-style title
+ *  into the full-time manager band. Mirrors _band-resolver.isInternshipRole. */
+const INTERN_TITLE_RE = /\b(intern|internship|intern[- ]?ship|summer intern|industrial trainee)\b/i;
+
+/** People-manager band floor (#115) — the single source of truth for
+ *  lifting a genuine people-management title UP to the calibrated tier-
+ *  table manager band when the resolved band sits below it.
+ *
+ *  The legacy salary-lookup keys a people-management title (Engineering
+ *  Manager) to a generic senior-IC company row and IGNORES seniority, so a
+ *  Flipkart EM resolved to a senior-IC cap (~43.6, or a ₹25.6 company-
+ *  override lowball) — well under the real first-line EM market. This lifts
+ *  the ceil to the manager ceil and the opener up to (at most) the manager
+ *  FLOOR (anchor-low opening preserved — we never open above the floor);
+ *  the walk-away floor nudges up to stay coherent. One-way (never lowers),
+ *  uses existing calibrated tier numbers (no invented values), and is a
+ *  no-op for IC "…Manager" titles, intern titles, and bands already at or
+ *  above the manager ceil. Pure given inputs. */
+export function liftPeopleManagerBand(
+  band: { initialOffer: number; maxStretch: number; walkAway: number },
+  role: string,
+  company: string | null | undefined,
+  applicableYoe?: number | null,
+): { initialOffer: number; maxStretch: number; walkAway: number } {
+  if (!role || !company) return band;
+  if (INTERN_TITLE_RE.test(role)) return band;
+  if (!PEOPLE_MANAGER_TITLE_RE.test(role.toLowerCase())) return band;
+  const mgrBand = getBandForRole(
+    classifyCompanyTier(company),
+    role,
+    applicableYoe ?? MANAGER_DEFAULT_YOE,
+  );
+  if (band.maxStretch >= mgrBand.ceil) return band;
+  return {
+    initialOffer: Math.max(band.initialOffer, mgrBand.floor),
+    maxStretch: mgrBand.ceil,
+    walkAway: Math.max(band.walkAway, Math.round(mgrBand.floor * 0.95 * 10) / 10),
+  };
+}
+
 /* ─── Counter-offer risk: well-funded employers ─────────────────────
  *
  * Tier-1 ship (2026-05-15): when a candidate currently works at one of these
