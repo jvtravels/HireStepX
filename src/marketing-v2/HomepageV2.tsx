@@ -4592,9 +4592,9 @@ export function VideoCtaV2() {
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)", pointerEvents: "none" }} />
 
       {/* Content */}
-      <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 720, margin: "0 auto", alignSelf: "flex-start" }}>
+      <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 1100, margin: "0 auto", alignSelf: "flex-start" }}>
 
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2 }}>
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2, whiteSpace: "nowrap" }}>
           Prepare Like Top <span style={{ fontStyle: "italic" }}>Candidates Do</span>
         </h2>
 
