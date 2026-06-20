@@ -4501,11 +4501,15 @@ export function SecurityComplianceV2() {
       title: "DPDP Act 2023",
       desc: "Built for India's Digital Personal Data Protection Act. Your data rights are enforced by design, not just policy.",
       icon: (
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#312E81" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="24" cy="24" r="18" />
-          <path d="M24 6v3M24 39v3M6 24h3M39 24h3" />
-          <path d="M17 24a7 7 0 0 1 7-7v7h7a7 7 0 1 1-14 0Z" fill="#E5E2F2" stroke="#312E81" strokeWidth="1.5" />
-          <text x="24" y="26.5" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="#312E81" stroke="none" fontFamily="Inter, sans-serif">DPDP</text>
+        /* Document (indigo) + copper official seal */
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="7" y="4" width="22" height="28" rx="3" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
+          <path d="M22 4v7h7" fill="#C9C6E8" stroke="#312E81" strokeWidth="1.4" strokeLinejoin="round" />
+          <line x1="12" y1="16" x2="22" y2="16" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="12" y1="20" x2="22" y2="20" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="12" y1="24" x2="18" y2="24" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="31" cy="31" r="9.5" fill="#FEF3C7" stroke="#B45309" strokeWidth="1.7" />
+          <path d="M27 31l2.5 2.5 4.5-5" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
@@ -4513,11 +4517,12 @@ export function SecurityComplianceV2() {
       title: "Encrypted at rest",
       desc: "All resumes, transcripts, and voice data stored with AES-256 encryption and row-level security. Nothing leaks between users.",
       icon: (
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#312E81" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="10" y="22" width="28" height="20" rx="4" />
-          <path d="M16 22v-6a8 8 0 0 1 16 0v6" />
-          <circle cx="24" cy="32" r="3" fill="#E5E2F2" />
-          <line x1="24" y1="35" x2="24" y2="38" />
+        /* Indigo body + copper shackle */
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="9" y="21" width="26" height="17" rx="4" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
+          <path d="M15 21v-5.5a7 7 0 0 1 14 0V21" stroke="#B45309" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+          <circle cx="22" cy="30" r="3.5" fill="#312E81" />
+          <line x1="22" y1="33" x2="22" y2="36" stroke="#312E81" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
     },
@@ -4525,10 +4530,25 @@ export function SecurityComplianceV2() {
       title: "No AI training on your data",
       desc: "Your interviews, resume, and voice recordings are never used to train AI models. Your sessions belong to you alone.",
       icon: (
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#312E81" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M24 8c-8.84 0-16 7.16-16 16s7.16 16 16 16 16-7.16 16-16S32.84 8 24 8Z" />
-          <path d="M16 32 32 16" strokeWidth="2" />
-          <path d="M20 16h8M20 20h5" strokeWidth="1.4" />
+        /* Indigo CPU/chip + copper prohibition ring */
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="12" y="12" width="20" height="20" rx="3" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
+          <rect x="16" y="16" width="12" height="12" rx="1.5" fill="#312E81" opacity="0.15" stroke="#312E81" strokeWidth="1.2" />
+          <line x1="17" y1="8" x2="17" y2="12" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="22" y1="8" x2="22" y2="12" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="27" y1="8" x2="27" y2="12" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="17" y1="32" x2="17" y2="36" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="22" y1="32" x2="22" y2="36" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="27" y1="32" x2="27" y2="36" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="8" y1="17" x2="12" y2="17" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="8" y1="22" x2="12" y2="22" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="8" y1="27" x2="12" y2="27" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="32" y1="17" x2="36" y2="17" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="32" y1="22" x2="36" y2="22" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="32" y1="27" x2="36" y2="27" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
+          <circle cx="32" cy="32" r="9" fill="#FAF7F0" />
+          <circle cx="32" cy="32" r="7.5" stroke="#B45309" strokeWidth="1.8" fill="none" />
+          <line x1="27.3" y1="36.7" x2="36.7" y2="27.3" stroke="#B45309" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
     },
@@ -4536,13 +4556,11 @@ export function SecurityComplianceV2() {
       title: "You're in control",
       desc: "Delete your account and every byte of your data from Settings, instantly. No support ticket. No waiting period.",
       icon: (
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#312E81" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M24 10a14 14 0 0 1 14 14c0 4.5-2.1 8.5-5.4 11.1" />
-          <path d="M10 24A14 14 0 0 1 24 10" />
-          <path d="M10 24a14 14 0 0 0 14 14" />
-          <circle cx="24" cy="24" r="5" fill="#E5E2F2" />
-          <polyline points="30,18 36,18 36,24" />
-          <line x1="24" y1="24" x2="36" y2="18" strokeWidth="1.6" />
+        /* Indigo shield + copper person = you own your data */
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 4L8 10v11c0 9.2 6 17.3 14 19.8 8-2.5 14-10.6 14-19.8V10L22 4Z" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" strokeLinejoin="round" />
+          <circle cx="22" cy="18" r="4" fill="#B45309" />
+          <path d="M13.5 31.5c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5" fill="#B45309" />
         </svg>
       ),
     },
@@ -4551,16 +4569,9 @@ export function SecurityComplianceV2() {
   return (
     <section style={{ background: t.cream, padding: "96px 0 80px" }}>
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px" }}>
-        {/* Label */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: 0.8, color: "#B45309", background: "#FEF3C7", padding: "4px 14px", borderRadius: 20, border: "1px solid #FDE68A" }}>
-            SECURITY &amp; PRIVACY
-          </span>
-        </div>
-
         {/* Headline */}
         <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 56, fontWeight: 400, lineHeight: 1.05, color: t.coal, textAlign: "center", margin: "0 auto 16px", letterSpacing: -1.5, maxWidth: 640 }}>
-          Your data stays <span style={{ fontStyle: "italic", color: "#312E81" }}>yours</span>
+          Your data stays <span style={{ fontStyle: "italic", color: "#B45309" }}>yours</span>
         </h2>
         <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: "0 auto 64px", maxWidth: 480, fontFamily: fonts.sans }}>
           Built for India's regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.

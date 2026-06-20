@@ -12,6 +12,7 @@ import Homepagev2, {
   NavV2,
   PricingV2,
   ProductStoryV2,
+  SecurityComplianceV2,
   TestimonialsV2,
   TrustRowV2,
 } from '../../../../src/marketing-v2/HomepageV2';
@@ -43,80 +44,86 @@ export const NavSection: TempoStoryboard = {
 export const HeroSection: TempoStoryboard = {
   render: () => <HeroV2 />,
   name: "Hero",
-  layout: { x: 0, y: 6850, width: 1440, height: 1200 },
+  layout: { x: -4574, y: 11370, width: 1440, height: 657 },
 };
 
 export const LogoStripSection: TempoStoryboard = {
   render: () => <LogoStripV2 />,
   name: "Logo strip + stat",
-  layout: { x: 0, y: 8100, width: 1440, height: 420 },
+  layout: { x: 4234, y: 8891, width: 1440, height: 559 },
 };
 
 export const ProductStorySection: TempoStoryboard = {
   render: () => <ProductStoryV2 />,
   name: "3-step product story",
-  layout: { x: 0, y: 8570, width: 1440, height: 1600 },
+  layout: { x: 4234, y: 10885, width: 1440, height: 1760 },
 };
 
 export const FeatureGridSection: TempoStoryboard = {
   render: () => <FeatureGridV2 />,
   name: "Feature grid",
-  layout: { x: 0, y: 10220, width: 1440, height: 1100 },
+  layout: { x: 2457, y: 8091, width: 1440, height: 1213 },
 };
 
 export const TestimonialsSection: TempoStoryboard = {
   render: () => <TestimonialsV2 />,
   name: "Testimonials",
-  layout: { x: 0, y: 11370, width: 1440, height: 700 },
+  layout: { x: 2210, y: 10193, width: 1440, height: 974 },
 };
 
 export const PricingSection: TempoStoryboard = {
   render: () => <PricingV2 />,
   name: "Pricing",
-  layout: { x: 0, y: 12120, width: 1440, height: 800 },
+  layout: { x: 2664, y: 12120, width: 1440, height: 1049 },
 };
 
 export const BuiltForIndiaSection: TempoStoryboard = {
   render: () => <BuiltForIndiaV2 />,
   name: "Built for India",
-  layout: { x: 0, y: 12970, width: 1440, height: 700 },
+  layout: { x: 0, y: 12970, width: 100, height: 1204 },
+};
+
+export const SecurityComplianceSection: TempoStoryboard = {
+  render: () => <SecurityComplianceV2 />,
+  name: "Security & Compliance",
+  layout: { x: -1653, y: 14607, width: 1440, height: 648 },
 };
 
 export const TrustRowSection: TempoStoryboard = {
   render: () => <TrustRowV2 />,
   name: "Trust row",
-  layout: { x: 0, y: 13720, width: 1440, height: 140 },
+  layout: { x: 0, y: 13720, width: 1440, height: 93 },
 };
 
 export const ChangelogTeaseSection: TempoStoryboard = {
   render: () => <ChangelogTeaseV2 />,
   name: "Changelog tease",
-  layout: { x: 1490, y: 170, width: 1440, height: 140 },
+  layout: { x: 1490, y: 170, width: 100, height: 377 },
 };
 
 export const ComparisonSection: TempoStoryboard = {
   render: () => <ComparisonV2 />,
   name: "Comparison vs ChatGPT / question banks",
-  layout: { x: 1490, y: 360, width: 1440, height: 900 },
+  layout: { x: 1490, y: 360, width: 100, height: 1616 },
 };
 
 export const FAQSection: TempoStoryboard = {
   render: () => <FAQV2 />,
   name: "Pricing FAQ",
-  layout: { x: 1490, y: 1310, width: 1440, height: 900 },
+  layout: { x: 1490, y: 1310, width: 100, height: 2103 },
 };
 
 
 export const FinalCTAFooterSection: TempoStoryboard = {
   render: () => <FinalCTAFooterV2 />,
   name: "Final CTA + footer",
-  layout: { x: 0, y: 13910, width: 1440, height: 1100 },
+  layout: { x: 1944, y: 13813, width: 100, height: 1965 },
 };
 
 export const InterviewFocusSection: TempoStoryboard = {
   render: () => <InterviewFocusV2 />,
   name: "Interview focus (roles × companies)",
-  layout: { x: 1490, y: 2260, width: 1440, height: 1100 },
+  layout: { x: 1490, y: 2260, width: 1440, height: 1046 },
 };
 
 export const LivePreviewRoute: TempoRouteStoryboard = {
