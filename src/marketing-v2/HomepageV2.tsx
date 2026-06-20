@@ -3280,8 +3280,6 @@ export function PricingV2() {
           {[
             ["✓", "Cancel anytime · no lock-in"],
             ["✓", "7-day refund on Monthly · 24h on Weekly"],
-            ["✓", "GST-ready receipt on every order"],
-            ["✓", "30% off for .ac.in / .edu.in"],
           ].map(([k, v]) => (
             <span key={v} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <span
