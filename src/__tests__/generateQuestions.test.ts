@@ -219,6 +219,30 @@ describe("buildStaticFallback", () => {
     }
   });
 
+  /* Regression (live QA, 2026-06): a Senior Product Designer's behavioural
+     session arrived with focus:"general" (not "behavioral"). Keying the
+     behavioural branch on focus alone let it fall through to the cross-role
+     QUESTION_BANK tier-3, which served a `swe`-tagged "owned an outage / what
+     did the post-mortem change?" — wrong discipline. The branch now also
+     matches on TYPE, and the curated bank is role-steered. */
+  it("serves curated behavioural questions for a behavioural TYPE even when focus is 'general'", () => {
+    const qs = buildStaticFallback({
+      type: "behavioral",
+      focus: "general",
+      difficulty: "standard",
+      roleFamily: "designer-senior",
+      experienceLevel: "senior",
+      count: 5,
+    });
+    const body = qs.filter((q) => q.type === "warmup" || q.type === "main");
+    expect(body.length).toBeGreaterThan(0);
+    // Curated BEHAVIORAL_50 path stamps "Competency:"; the QUESTION_BANK
+    // tier path stamps a styleNote — so this proves we took the curated path.
+    expect(body.every((q) => (q.scoreNote || "").startsWith("Competency:"))).toBe(true);
+    // The specific SWE question a designer must never receive here.
+    expect(body.some((q) => /owned an outage|post-mortem/i.test(q.aiText))).toBe(false);
+  });
+
   /* Regression: HR-round sessions arrive with type "hr-round" but the
      curated bank's FocusArea is "hr". Before the dedicated HR branch the
      fallback never bridged them, so an HR session degraded to behavioural

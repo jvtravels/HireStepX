@@ -215,6 +215,15 @@ export default async function handler(req: Request): Promise<Response> {
   // the catch path.
   let requestType = "behavioral";
   let requestFocus = "general";
+  /* Hoisted so the catch-path static fallback can infer the candidate's
+     role family (and seniority) when both LLM providers fail. Without this,
+     the fallback shipped a hardcoded roleFamily:"general" set — which is how
+     a Senior Product Designer once received SWE-flavoured behavioural
+     questions ("tell me about an outage you owned") on the LLM-down path
+     (live QA, 2026-06). The try-scoped `role`/`experienceLevel` destructure
+     is invisible to the catch, so we mirror the relevant fields here. */
+  let requestRole = "";
+  let requestExperienceLevel = "";
   /* Salary-negotiation deterministic band, computed BEFORE the LLM call
    * (see ~`generateNegotiationBand` below). Hoisted so the catch block can
    * still drive the kernel path when both LLM providers are exhausted —
@@ -228,6 +237,8 @@ export default async function handler(req: Request): Promise<Response> {
     const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, resumeSkillsDetailed, resumeKeyAchievements, resumeIndustries, resumeEducation, resumeDomainYears, resumePromotionSignals, candidateName, negotiationStyle, drill, priorFlags } = rawBody;
     if (typeof type === "string") requestType = type;
     if (typeof focus === "string") requestFocus = focus;
+    if (typeof role === "string") requestRole = role;
+    if (typeof experienceLevel === "string") requestExperienceLevel = experienceLevel;
     const isMini = mini === true;
 
     /* Response cache — keyed on the stable hash of the full request body.
@@ -484,7 +495,14 @@ BEHAVIOURAL QUESTION SHAPING:
 
 INDIAN CONVERSATIONAL REGISTER (when writing the questions themselves):
 - The candidate audience is Indian engineers / PMs / analysts / managers interviewing for Indian-context roles. Phrase questions in Indian English register — clear, professional, slightly more formal than American startup-speak, but NOT stiff colonial English.
-- You MAY include Indian-context anchors where they fit: cross-team handoffs to onsite/offshore, festival/quarter-end pressure (Diwali, BBD, year-end close), tier-2 market constraints (lower bandwidth / different price sensitivity / vernacular UX), service-vs-product company transitions, joint family / hometown move-back constraints (only when role-relevant), CXO-pressure in flat org structures.
+- MANDATORY India grounding: at LEAST ONE main question MUST be anchored in a real India-operational scenario the candidate would actually have lived, drawn from this menu (pick what fits the role — do NOT bolt on an irrelevant one):
+    • onsite/offshore or client-timezone coordination (IST vs US/EU client hours, late-night calls, handoff to an onsite team)
+    • festival / peak-load pressure (Diwali / Big Billion Days / end-of-quarter close / GST or year-end crunch)
+    • tier-2/3 market or Bharat-user constraints (low bandwidth, regional-language UX, price sensitivity, cash-on-delivery, UPI-first flows)
+    • service-to-product transition, or shipping under a fixed client SOW / billing-pressure
+    • resourcing reality (lean team, fresher-heavy team you had to mentor, attrition mid-project, hiring-freeze)
+    • flat-org CXO pressure or a skip-level founder escalation in a fast-scaling Indian startup
+- This is a REQUIREMENT, not a suggestion — a generic FAANG-style stem set with zero India operational texture is a FAIL. But do NOT force India context into EVERY stem; one or two grounded ones plus clean general STAR questions is the right mix.
 - DO NOT force Hinglish into question text. Stay in clear English so non-native readers parse on the first pass. Hinglish belongs in the interviewer's filler / acknowledgement turns, not the structured question stems.
 - Hedged disagreement and respectful pushback ("with respect, I'd push back") are the Indian register for conviction — your stems should INVITE that register, not penalise it. Example: "Tell me about a time you respectfully pushed back on a senior leader's call" — works in both registers.`
       : "";
@@ -1743,7 +1761,12 @@ Requirements:
         type: requestType,
         focus: requestFocus,
         difficulty: "standard",
-        roleFamily: "general",
+        // Infer the discipline from the requested role so the LLM-down path
+        // still ships role-appropriate questions (a designer must not get
+        // SWE-flavoured behavioural probes). Falls back to "general" only
+        // when the role is unrecognised.
+        roleFamily: inferRoleFamily(requestRole) ?? "general",
+        experienceLevel: requestExperienceLevel || undefined,
         count: Math.max(3, stepCount - 2),
       });
       if (fallbackQuestions.length > 0 && validateQuestionShape(fallbackQuestions)) {

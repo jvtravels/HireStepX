@@ -318,8 +318,40 @@ export function computeQuestionCount(opts: { mini: boolean; isSalaryType: boolea
  * generic warmup mix. Always returns at least 5 questions; never throws. */
 
 import { QUESTION_BANK, type FocusArea, type RoleFamily } from "../data/interview-question-bank";
-import { sampleBehavioralQuestions } from "../data/behavioral-question-bank";
+import { sampleBehavioralQuestions, type BehavioralRole } from "../data/behavioral-question-bank";
 import { sampleHrQuestions } from "../data/hr-round-question-bank";
+
+/* Map the broad interview-bank RoleFamily onto the behavioural bank's
+   compact 6-role discipline taxonomy. Drives the behavioural fallback so a
+   designer doesn't get SWE-flavoured probes and vice versa (live QA bug,
+   2026-06). Families with no behavioural-discipline analogue (sales,
+   finance, legal, civil-services…) return undefined → the sampler keeps its
+   universal/standard mix, which is the correct neutral behaviour. */
+function toBehavioralRole(roleFamily: string): BehavioralRole | undefined {
+  switch (roleFamily) {
+    case "swe": case "ml": case "psu-engineer": return "engineer";
+    case "pm": return "pm";
+    case "em": return "manager";
+    case "data": case "ds-research": case "quant": case "scientist": return "data";
+    case "design": case "designer-senior": return "designer";
+    case "ops": return "ops";
+    default: return undefined;
+  }
+}
+
+/* Coarse experienceLevel → years-of-experience for the behavioural sampler's
+   seniorityFloor filter (so a fresher isn't asked staff-level org-strategy
+   questions on the LLM-down path). Mirrors the calibration buckets used in
+   generate-questions.ts. Undefined when unknown → sampler skips the floor. */
+function toYoe(experienceLevel: string | undefined): number | undefined {
+  switch ((experienceLevel || "").toLowerCase()) {
+    case "entry": case "fresher": return 1;
+    case "mid": return 4;
+    case "senior": case "lead": return 8;
+    case "executive": return 12;
+    default: return undefined;
+  }
+}
 
 export interface FallbackQuestion {
   type: string;
@@ -333,17 +365,27 @@ export function buildStaticFallback(opts: {
   focus?: string;
   difficulty?: string;
   roleFamily?: string;
+  experienceLevel?: string;
   count: number;
 }): FallbackQuestion[] {
   const focus = (opts.focus || "").toLowerCase();
+  const type = (opts.type || "").toLowerCase();
   const roleFamily = (opts.roleFamily || "general").toLowerCase();
   const count = opts.count;
 
-  // Behavioural focus → draw from the curated 50-question bank with
+  // Behavioural session → draw from the curated 50-question bank with
   // competency-deduped sampling. Anyone running the static fallback for
   // a behavioural interview gets a real-interviewer-grade set instead of
-  // generic prompts.
-  if (focus === "behavioral" || focus === "behavioural") {
+  // generic prompts. Match on TYPE as well as focus (mirrors the HR branch
+  // below): a behavioural session can arrive with focus:"general" — keying
+  // only on focus let it fall through to the cross-role QUESTION_BANK path,
+  // which once handed a Senior Product Designer a `swe`-tagged "owned an
+  // outage / post-mortem" question (live QA, 2026-06).
+  const behavioralByType = (type === "behavioral" || type === "behavioural")
+    // An explicit HR focus is the more specific signal and owns its own
+    // branch below — don't let a behavioural *type* hijack an HR session.
+    && focus !== "hr" && focus !== "hr-round";
+  if (focus === "behavioral" || focus === "behavioural" || behavioralByType) {
     const seed = ((count * 31) + (focus.length * 17) + (roleFamily.length)) >>> 0;
     /* Opt in to frequency-weighted sampling for the LLM-down fallback
        path: a candidate who hits this code is already getting a degraded
@@ -353,7 +395,16 @@ export function buildStaticFallback(opts: {
        Groq/Gemini) still uses the unweighted bank for the
        canonical-phrasing rule — see the rationale in
        `generate-questions.ts`. */
-    const sampled = sampleBehavioralQuestions({ count, seed, weightByFrequency: true });
+    const sampled = sampleBehavioralQuestions({
+      count, seed, weightByFrequency: true,
+      // Discipline + seniority steering: questions whose roleAffinity excludes
+      // the candidate's discipline are downweighted (not eliminated), and
+      // questions above the candidate's seniority floor are hard-filtered.
+      // Without this a designer's LLM-down fallback drew SWE outage/post-mortem
+      // probes (live QA, 2026-06).
+      role: toBehavioralRole(roleFamily),
+      yoe: toYoe(opts.experienceLevel),
+    });
     if (sampled.length > 0) {
       return [
         { type: "intro", aiText: "Hi — let's get started. To warm up, tell me a bit about yourself and what brings you to this role." },
@@ -372,7 +423,6 @@ export function buildStaticFallback(opts: {
   // between them, so without this branch an HR session silently degrades
   // to tier-3 behavioural prompts (wrong prep for the candidate). Match on
   // either signal — type carries "hr-round", focus may be "hr"/"hr-round".
-  const type = (opts.type || "").toLowerCase();
   if (focus === "hr" || focus === "hr-round" || type === "hr-round") {
     const seed = ((count * 37) + (roleFamily.length * 13) + 7) >>> 0;
     const sampled = sampleHrQuestions({ count, seed, weightByFrequency: true });
