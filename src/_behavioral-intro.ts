@@ -123,19 +123,19 @@ export function buildBehavioralIntro(opts: BuildBehavioralIntroOpts): string {
        candidate hears "you actually read my CV" in the first 8 seconds.
        Reserved for product-co paths because services-track keeps the
        pedigree ritual above. */
-    rapportHook = `Before we dive into the structured questions — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what's drawing you to ${role} at ${company}?`;
+    rapportHook = `Before we get into the structured questions — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what's drawing you to ${role} at ${company}?`;
   } else if (firstProject && role) {
-    rapportHook = `Before we dive in — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what's drawing you to ${role}?`;
+    rapportHook = `Before we get started — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what's drawing you to ${role}?`;
   } else if (firstProject) {
-    rapportHook = `Before we dive in — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what brings you here?`;
+    rapportHook = `Before we get started — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what brings you here?`;
   } else if (role && company) {
-    rapportHook = `Before we dive into the structured questions — just briefly, where are you joining from today, and what's drawing you to ${role} at ${company}?`;
+    rapportHook = `Before we get into the structured questions — just briefly, where are you joining from today, and what's drawing you to ${role} at ${company}?`;
   } else if (role) {
-    rapportHook = `Before we dive in — just briefly, where are you joining from today, and what's drawing you to ${role}?`;
+    rapportHook = `Before we get started — just briefly, where are you joining from today, and what's drawing you to ${role}?`;
   } else if (company) {
-    rapportHook = `Before we dive in — just briefly, where are you joining from today, and what's drawing you to ${company}?`;
+    rapportHook = `Before we get started — just briefly, where are you joining from today, and what's drawing you to ${company}?`;
   } else {
-    rapportHook = `Before we dive in — just briefly, where are you joining from today, and what brings you here?`;
+    rapportHook = `Before we get started — just briefly, where are you joining from today, and what brings you here?`;
   }
 
   return `${greeting} ${selfIntro} ${rapportHook}`;

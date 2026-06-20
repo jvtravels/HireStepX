@@ -428,7 +428,7 @@ export function useInterviewEngine() {
       const cached = localStorage.getItem(`hirestepx_cache_sessions_${user?.id}`);
       if (cached && cached.length < 500_000) {
         const pastSessions = JSON.parse(cached);
-        adaptiveHints = getAdaptiveHints(pastSessions, jdAnalysisData?.missingSkills);
+        adaptiveHints = getAdaptiveHints(pastSessions, jdAnalysisData?.missingSkills, interviewType);
       }
     } catch { /* silent */ }
 

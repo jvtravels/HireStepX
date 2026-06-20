@@ -305,7 +305,21 @@ export async function saveSessionResult(result: SessionResult, userId?: string):
  * Analyze recent sessions to identify weak skills and past question topics.
  * Used for spaced repetition / adaptive question selection.
  */
-export function getAdaptiveHints(sessions: { skill_scores?: Record<string, unknown> | null; questions?: number; type?: string; date?: string }[], jdMissingSkills?: string[]): {
+/* Skill taxonomies don't transfer across these families. Salary-negotiation
+   scores `leverageUse` / `anchoring` / `concessionStrategy`; a behavioural /
+   HR / technical round scores `communication` / `ownership` / `structure`.
+   Feeding negotiation weak-skills into a behavioural question fetch (live bug,
+   2026-06: a behavioural session requested questions targeting `leverageUse`
+   + `concessionStrategy`) produces off-discipline probes. We isolate the
+   negotiation family from the interview family so adaptive hints only resurface
+   skills the *current* session type can actually exercise. Within the interview
+   family the competencies are transferable (a weak `communication` surfaced in
+   an HR round is a fair target for a behavioural round), so they stay merged. */
+function skillFamily(type: string | undefined): "negotiation" | "interview" {
+  return (type || "").toLowerCase().includes("negotiation") ? "negotiation" : "interview";
+}
+
+export function getAdaptiveHints(sessions: { skill_scores?: Record<string, unknown> | null; questions?: number; type?: string; date?: string }[], jdMissingSkills?: string[], currentType?: string): {
   weakSkills: string[];
   pastTopics: string[];
   suggestedFocus?: string;
@@ -315,10 +329,14 @@ export function getAdaptiveHints(sessions: { skill_scores?: Record<string, unkno
   // Extract all skill scores from recent sessions (most recent first)
   const skillAgg: Record<string, { scores: number[]; lastSeen: number }> = {};
   const topicSet = new Set<string>();
+  // When the caller tells us which session is being prepped, only aggregate
+  // skill scores from sessions in the same family — see skillFamily() above.
+  const targetFamily = currentType ? skillFamily(currentType) : null;
 
   sessions.slice(0, 20).forEach((s, idx) => {
     if (s.type) topicSet.add(s.type);
     if (!s.skill_scores || typeof s.skill_scores !== "object") return;
+    if (targetFamily && skillFamily(s.type) !== targetFamily) return;
     for (const [name, raw] of Object.entries(s.skill_scores)) {
       const score = typeof raw === "number" ? raw : typeof raw === "object" && raw !== null && "score" in raw ? (raw as { score: number }).score : 0;
       if (!skillAgg[name]) skillAgg[name] = { scores: [], lastSeen: idx };

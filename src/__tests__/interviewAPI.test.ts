@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { saveSessionResult } from "../interviewAPI";
+import { saveSessionResult, getAdaptiveHints } from "../interviewAPI";
 import type { SessionResult } from "../interviewAPI";
 
 // Mock supabase (saveSession is no longer used — the client now routes
@@ -139,6 +139,45 @@ describe("interviewAPI", () => {
       expect(stored.ai_feedback).toBe("Excellent performance");
       expect(stored.skill_scores.communication).toBe(95);
       expect(stored.ideal_answers.length).toBe(1);
+    });
+  });
+
+  describe("getAdaptiveHints — skill-family isolation", () => {
+    /* Live bug (2026-06): a behavioural session requested questions targeting
+       negotiation skills (leverageUse, concessionStrategy) because a prior
+       salary-negotiation session's low scores leaked into the weak-skill set.
+       Negotiation and interview skill taxonomies must not cross-contaminate. */
+    const negSession = {
+      type: "salary-negotiation",
+      skill_scores: { leverageUse: 30, anchoring: 35, concessionStrategy: 40 },
+    };
+    const behavSession = {
+      type: "behavioral",
+      skill_scores: { communication: 45, ownership: 50 },
+    };
+
+    it("excludes negotiation skills when prepping a behavioural session", () => {
+      const hints = getAdaptiveHints([negSession, behavSession], undefined, "behavioral");
+      expect(hints.weakSkills).toContain("communication");
+      expect(hints.weakSkills).not.toContain("leverageUse");
+      expect(hints.weakSkills).not.toContain("concessionStrategy");
+    });
+
+    it("excludes interview skills when prepping a negotiation session", () => {
+      const hints = getAdaptiveHints([negSession, behavSession], undefined, "salary-negotiation");
+      expect(hints.weakSkills).toContain("leverageUse");
+      expect(hints.weakSkills).not.toContain("communication");
+    });
+
+    it("merges all families when no currentType is given (legacy behaviour)", () => {
+      const hints = getAdaptiveHints([negSession, behavSession]);
+      expect(hints.weakSkills).toContain("communication");
+      expect(hints.weakSkills).toContain("leverageUse");
+    });
+
+    it("still surfaces every past topic regardless of family filter", () => {
+      const hints = getAdaptiveHints([negSession, behavSession], undefined, "behavioral");
+      expect(hints.pastTopics).toEqual(expect.arrayContaining(["salary-negotiation", "behavioral"]));
     });
   });
 });
