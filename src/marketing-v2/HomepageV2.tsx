@@ -4574,7 +4574,7 @@ export function SecurityComplianceV2() {
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
 export function VideoCtaV2() {
   return (
-    <section style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <section style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
 
       {/* Background video — swap /demo-loop.mp4 with actual product recording */}
       <video
@@ -4589,7 +4589,7 @@ export function VideoCtaV2() {
       </video>
 
       {/* Content */}
-      <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "80px 40px", maxWidth: 720, margin: "0 auto" }}>
+      <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 720, margin: "0 auto", alignSelf: "flex-start" }}>
 
         <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 64, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2 }}>
           Prepare Like Top Candidates Do
