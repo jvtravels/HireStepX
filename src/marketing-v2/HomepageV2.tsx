@@ -4480,7 +4480,7 @@ export function PersonalizedReportsV2() {
         <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5 }}>
           every interview
         </h2>
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 720, fontWeight: 400, fontFamily: "'Satoshi', Inter, system-ui, sans-serif" }}>
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', Inter, system-ui, sans-serif" }}>
           HireStepX gives you a full breakdown after every interview — what landed,
           what to sharpen, and your exact next practice session.
         </p>
