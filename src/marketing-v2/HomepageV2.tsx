@@ -58,6 +58,8 @@ const ResponsiveSheet = () => (
       .mv2-pricing-grid { grid-template-columns: 1fr !important; }
       .mv2-focus-grid { grid-template-columns: 1fr !important; }
       .mv2-mobile-cta { display: flex !important; }
+      /* Security & Compliance: collapse 4-col to 2-col at tablet */
+      .mv2-security-grid { grid-template-columns: repeat(2, 1fr) !important; }
       main, footer { padding-bottom: 96px; }
     }
     /* ── Small laptops (lg) ── */
@@ -4594,8 +4596,8 @@ export function SecurityComplianceV2() {
   ];
 
   return (
-    <section style={{ background: t.cream, padding: "96px 0 80px" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px" }}>
+    <section style={{ background: t.cream, padding: "96px 0 80px", overflowX: "hidden" }}>
+      <div className="mv2-container" style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px" }}>
         {/* Headline */}
         <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 56, fontWeight: 400, lineHeight: 1.05, color: t.coal, textAlign: "center", margin: "0 auto 16px", letterSpacing: -1.5, maxWidth: 640 }}>
           Your data stays <span style={{ fontStyle: "italic", color: "#B45309" }}>yours</span>
@@ -4604,8 +4606,8 @@ export function SecurityComplianceV2() {
           Built for India's regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.
         </p>
 
-        {/* Cards grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+        {/* Cards grid — collapses to 2-col at ≤880px via .mv2-security-grid */}
+        <div className="mv2-security-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {cards.map((c) => (
             <div
               key={c.title}
@@ -4631,6 +4633,72 @@ export function SecurityComplianceV2() {
               <div style={{ marginTop: 32 }}>
                 {c.icon}
               </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────── VIDEO CTA ─────────────────────────── */
+export function VideoCtaV2() {
+  return (
+    <section style={{ position: "relative", minHeight: 580, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#0E0C08" }}>
+
+      {/* Background video — swap /demo-loop.mp4 with actual product recording */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.38 }}
+      >
+        <source src="/demo-loop.mp4" type="video/mp4" />
+      </video>
+
+      {/* Gradient overlays — top + bottom fade for depth */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #0E0C08 0%, transparent 30%, transparent 70%, #0E0C08 100%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 40%, rgba(14,12,8,0.55) 100%)" }} />
+
+      {/* Content */}
+      <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "80px 40px", maxWidth: 720, margin: "0 auto" }}>
+
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(180,83,9,0.15)", border: "1px solid rgba(180,83,9,0.35)", borderRadius: 20, padding: "5px 14px 5px 10px", marginBottom: 32 }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#B45309", display: "inline-block", boxShadow: "0 0 6px #B45309" }} />
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: "#FED7AA", letterSpacing: 0.5 }}>Live AI interview — no scripts, no shortcuts</span>
+        </div>
+
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 64, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2 }}>
+          Hear the silence.<br />
+          <span style={{ fontStyle: "italic", color: "#B45309" }}>Then answer it.</span>
+        </h2>
+
+        <p style={{ fontSize: 17, lineHeight: 1.7, color: "rgba(250,247,240,0.68)", margin: "0 auto 40px", maxWidth: 480, fontFamily: fonts.sans }}>
+          HireStepX asks real follow-up questions, catches vague answers, and scores you — just like a bar-raiser would.
+        </p>
+
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#B45309", color: "#FAF7F0", padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: fonts.sans, letterSpacing: 0.1 }}>
+            Start your free interview
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </a>
+          <a href="#demo" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(250,247,240,0.08)", color: "#FAF7F0", border: "1px solid rgba(250,247,240,0.18)", padding: "14px 24px", borderRadius: 8, fontWeight: 500, fontSize: 15, textDecoration: "none", fontFamily: fonts.sans }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" /><path d="M6.5 5.5l4 2.5-4 2.5V5.5Z" fill="currentColor" /></svg>
+            Watch a session
+          </a>
+        </div>
+
+        {/* Social proof strip */}
+        <div style={{ marginTop: 48, display: "flex", gap: 32, justifyContent: "center", flexWrap: "wrap" }}>
+          {[
+            { n: "3 free", label: "sessions, no card" },
+            { n: "10 types", label: "of interviews" },
+            { n: "50+", label: "companies" },
+          ].map(item => (
+            <div key={item.n} style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#FAF7F0", fontFamily: "'Instrument Serif', Georgia, serif", letterSpacing: -0.5 }}>{item.n}</div>
+              <div style={{ fontSize: 11, color: "rgba(250,247,240,0.5)", marginTop: 2, fontFamily: fonts.sans }}>{item.label}</div>
             </div>
           ))}
         </div>
@@ -4675,6 +4743,7 @@ export default function HomepageV2() {
         <PricingV2 />
         <BuiltForIndiaV2 />
         <SecurityComplianceV2 />
+        <VideoCtaV2 />
         <FAQV2 />
       </main>
       <FinalCTAFooterV2 />
