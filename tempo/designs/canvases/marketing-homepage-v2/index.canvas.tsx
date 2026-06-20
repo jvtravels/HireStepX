@@ -15,6 +15,7 @@ import Homepagev2, {
   SecurityComplianceV2,
   TestimonialsV2,
   TrustRowV2,
+  VideoCtaV2,
 } from '../../../../src/marketing-v2/HomepageV2';
 
 const page: TempoPage = {
@@ -89,6 +90,12 @@ export const SecurityComplianceSection: TempoStoryboard = {
   layout: { x: -1653, y: 14607, width: 1440, height: 648 },
 };
 
+export const VideoCtaSection: TempoStoryboard = {
+  render: () => <VideoCtaV2 />,
+  name: "Video CTA",
+  layout: { x: -1653, y: 15400, width: 1440, height: 580 },
+};
+
 export const TrustRowSection: TempoStoryboard = {
   render: () => <TrustRowV2 />,
   name: "Trust row",
@@ -123,7 +130,7 @@ export const FinalCTAFooterSection: TempoStoryboard = {
 export const InterviewFocusSection: TempoStoryboard = {
   render: () => <InterviewFocusV2 />,
   name: "Interview focus (roles × companies)",
-  layout: { x: 1490, y: 2260, width: 1440, height: 1046 },
+  layout: { x: 1490, y: 2260, width: 100, height: 2754 },
 };
 
 export const LivePreviewRoute: TempoRouteStoryboard = {
