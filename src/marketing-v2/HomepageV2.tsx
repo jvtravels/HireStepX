@@ -4442,7 +4442,7 @@ export function PersonalizedReportsV2() {
 
         {/* Center card */}
         <div style={{ position: "absolute", left: "50%", bottom: 60, zIndex: cActive ? 12 : anyHov ? 4 : 5, transform: revealed ? "translateX(-50%) translateY(0px)" : "translateX(-50%) translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(1) }}>
-          <div style={{ transform: cActive ? "translateY(-30px) scale(1.08)" : anyHov ? "translateY(6px) scale(0.86)" : "none", opacity: anyHov && !cActive ? 0.65 : 1, filter: anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("center")} onMouseLeave={() => setHov(null)}>
+          <div style={{ transform: cActive ? "translateY(-30px) scale(1.08)" : lActive ? "rotate(8deg) translateY(6px) scale(0.86)" : rActive ? "rotate(-8deg) translateY(6px) scale(0.86)" : "none", opacity: anyHov && !cActive ? 0.65 : 1, filter: anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("center")} onMouseLeave={() => setHov(null)}>
             <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Salary Neg · ₹48L landed<br />PhonePe Senior EM
               <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
