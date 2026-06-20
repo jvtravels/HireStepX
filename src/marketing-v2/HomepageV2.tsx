@@ -4595,7 +4595,7 @@ export function VideoCtaV2() {
         </p>
 
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#B45309", color: "#FAF7F0", padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: fonts.sans, letterSpacing: 0.1 }}>
+          <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#B45309", color: "#FAF7F0", padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
             Start your free interview
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </a>
