@@ -4605,7 +4605,7 @@ export function VideoCtaV2() {
         crossOrigin="anonymous"
         style={{
           position: "absolute", inset: 0, width: "100%", height: "100%",
-          objectFit: "cover", objectPosition: "center 20%",
+          objectFit: "cover", objectPosition: "center 75%",
           opacity: revealed ? 1 : 0,
           transform: revealed ? "scale(1)" : "scale(0.96)",
           transition: "opacity 1.2s ease 0ms, transform 1.4s ease 0ms",
