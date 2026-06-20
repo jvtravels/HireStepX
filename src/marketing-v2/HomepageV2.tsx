@@ -3068,7 +3068,7 @@ export function PricingV2() {
             Costs less than{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>one chai a day.</span>
           </h2>
-          <p style={{ ...body, fontSize: 19, fontWeight: 400, color: t.inkSoft, marginTop: 16, maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
+          <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
             Free to start. Buy one session, a week, or a month, whichever matches your prep. UPI / cards / netbanking accepted at checkout.
           </p>
         </MotionReveal>
