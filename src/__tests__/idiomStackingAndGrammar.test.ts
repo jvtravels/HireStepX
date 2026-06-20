@@ -6,7 +6,10 @@
  * consecutive identical openers across a 4-turn probe sequence.
  */
 import { describe, it, expect } from "vitest";
-import { validateRestyle } from "../../server-handlers/_response-pipeline";
+import {
+  validateRestyle,
+  DECLARATIVE_PLUS_QUESTION_RE,
+} from "../../server-handlers/_response-pipeline";
 import {
   countPreferredIdioms,
   IDIOM_PER_UTTERANCE_CAP,
@@ -98,6 +101,48 @@ describe("validateRestyle — declarative-plus-question grammar (Bug 1)", () => 
     const ok = "Noted on the expected side. What's the current CTC?";
     const r = validateRestyle(canonical, ok, mkState());
     expect(r.valid).toBe(true);
+  });
+
+  /* Over-rejection fix (2026-06-20, live staging) — the grammar guard
+   * DECLARATIVE_PLUS_QUESTION_RE is unit-tested directly here because the
+   * full validateRestyle pipeline gates on canonical↔restyle semantics too,
+   * which would mask the grammar boundary. An acknowledgement lead followed
+   * by a GENUINE question (interrogative second clause) is correct English
+   * and must NOT trip the guard — this was the #1 validator reject on a live
+   * discovery turn, silently downgrading good LLM restyles to robotic
+   * canonical prose. */
+  it.each([
+    "Right, is your variable a fixed bonus or perf-linked?",
+    "Got it, are you open to a slightly higher variable component?",
+    "Sure, what does your current package look like on the fixed side?",
+    "Noted, how soon could you join if we move ahead?",
+    "Okay, could you share the breakup of fixed versus variable?",
+    "Alright, do you have other offers in play right now?",
+    "Understood, which component matters most to you?",
+  ])("DECLARATIVE_PLUS_QUESTION_RE does NOT match ack + genuine question: %s", (ok) => {
+    expect(DECLARATIVE_PLUS_QUESTION_RE.test(ok), `wrongly matched: ${ok}`).toBe(false);
+  });
+
+  /* The guard must STILL fire when the post-comma clause is declarative
+   * (no interrogative opener) but carries a trailing "?" — the actual
+   * grammar defect from Bug 1, with assorted leads. */
+  it.each([
+    "Fair enough on your current compensation, let's look at the total CTC at present?",
+    "Right, let's look at the total CTC at present?",
+    "Got it, we should firm up the expected number?",
+    "Sure, I'll need the fixed-variable split?",
+  ])("DECLARATIVE_PLUS_QUESTION_RE still matches ack + declarative clause + '?': %s", (bad) => {
+    expect(DECLARATIVE_PLUS_QUESTION_RE.test(bad), `should match: ${bad}`).toBe(true);
+  });
+
+  /* Integration: the original Bug-1 line still rejects through the full
+   * validateRestyle with reason `declarative-plus-question-mark`. */
+  it("validateRestyle still rejects the original Bug-1 declarative line", () => {
+    const canonical = "Got it on the current side — what's the total CTC at present?";
+    const bad = "Fair enough on your current compensation, let's look at the total CTC at present?";
+    const r = validateRestyle(canonical, bad, mkState());
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.reason).toBe("declarative-plus-question-mark");
   });
 });
 

@@ -1563,8 +1563,20 @@ const SENTIMENT_VOCAB_RE =
  *  connective to be comma-joined to the rest of the same clause AND no
  *  intervening period / em-dash / question-mark before the trailing "?"
  *  so genuine two-sentence acks still pass. */
-const DECLARATIVE_PLUS_QUESTION_RE =
-  /^\s*(?:fair enough|got it|sure|right|okay|alright|noted|understood)[^.?\u2014\u2013]*,[^.?\u2014\u2013]*\?\s*$/i;
+/* Over-rejection fix (2026-06-20, live staging) \u2014 the original pattern
+ * fired on ANY "<ack>, <clause>?" line, including grammatically-correct
+ * recruiter questions like "Right, is your variable a fixed bonus or
+ * perf-linked?" (ack + genuine question \u2014 perfectly natural English). That
+ * silently fell every such restyle back to robotic canonical prose
+ * (rejectReason `declarative-plus-question-mark` was the #1 validator reject
+ * on a live staging discovery turn). The grammar defect this guards is a
+ * DECLARATIVE second clause carrying a trailing "?" ("Fair enough \u2026, let's
+ * look at the total CTC at present?") \u2014 so only reject when the post-comma
+ * clause is NOT itself a question. The negative lookahead exempts clauses
+ * that open with an interrogative auxiliary/wh-word; a declarative lead-in
+ * ("let's", "we", "I'll", \u2026) still trips the guard. */
+export const DECLARATIVE_PLUS_QUESTION_RE =
+  /^\s*(?:fair enough|got it|sure|right|okay|alright|noted|understood)[^.?\u2014\u2013]*,(?!\s*(?:is|are|am|was|were|do|does|did|can|could|would|will|shall|should|may|might|have|has|had|what|which|who|whom|whose|when|where|why|how)\b)[^.?\u2014\u2013]*\?\s*$/i;
 
 /** F1 / Audit Pass 2 (PDF#25, 2026-05-16) — topic-keyword map.
  *
