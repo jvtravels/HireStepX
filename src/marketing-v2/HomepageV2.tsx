@@ -4664,11 +4664,6 @@ export function VideoCtaV2() {
       {/* Content */}
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "80px 40px", maxWidth: 720, margin: "0 auto" }}>
 
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(180,83,9,0.15)", border: "1px solid rgba(180,83,9,0.35)", borderRadius: 20, padding: "5px 14px 5px 10px", marginBottom: 32 }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#B45309", display: "inline-block", boxShadow: "0 0 6px #B45309" }} />
-          <span style={{ fontSize: 11.5, fontWeight: 600, color: "#FED7AA", letterSpacing: 0.5 }}>Live AI interview — no scripts, no shortcuts</span>
-        </div>
-
         <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 64, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2 }}>
           Hear the silence.<br />
           <span style={{ fontStyle: "italic", color: "#B45309" }}>Then answer it.</span>
