@@ -3918,81 +3918,6 @@ export function FinalCTAFooterV2() {
           .mv2-footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
         }
       `}</style>
-      {/* Final CTA */}
-      <div
-        style={{
-          paddingTop: 140,
-          paddingBottom: 140,
-          textAlign: "center",
-          position: "relative",
-        }}
-      >
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(ellipse 70% 50% at 50% 100%, rgba(49, 46, 129, 0.08) 0%, transparent 60%)",
-            contain: "paint",
-            pointerEvents: "none",
-          }}
-        />
-        <div style={{ ...container, position: "relative" }}>
-          <h2
-            id="hd-cta"
-            style={{
-              fontFamily: fonts.serif,
-              fontSize: "clamp(48px, 7vw, 88px)",
-              color: t.coal,
-              margin: 0,
-              lineHeight: 1.0,
-              letterSpacing: "-0.035em",
-              fontWeight: 400,
-            }}
-          >
-            Your next interview is
-            <br />
-            <span style={{ fontStyle: "italic", color: t.copper }}>
-              three sessions away.
-            </span>
-          </h2>
-          <p
-            style={{
-              ...body,
-              fontSize: 17,
-              marginTop: 28,
-              maxWidth: 520,
-              marginLeft: "auto",
-              marginRight: "auto",
-            }}
-          >
-            Free to start. No card, no commitment. Open your mic and run your
-            first session in under two minutes.
-          </p>
-          <a
-            href="/signup"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 36,
-              fontFamily: fonts.sans,
-              fontSize: 16,
-              fontWeight: 600,
-              color: t.white,
-              background: t.indigo,
-              padding: "16px 28px",
-              borderRadius: 999,
-              textDecoration: "none",
-              boxShadow: shadows.cta,
-            }}
-          >
-            Start free — 3 sessions
-            <span aria-hidden style={{ fontSize: 20 }}>→</span>
-          </a>
-        </div>
-      </div>
 
       {/* Compact footer */}
       <div
@@ -4733,6 +4658,7 @@ export default function HomepageV2() {
         <FAQV2 />
         <VideoCtaV2 />
       </main>
+      <FinalCTAFooterV2 />
       <MobileStickyCTA />
     </div>
   );
