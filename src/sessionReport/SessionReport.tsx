@@ -861,21 +861,20 @@ export const SessionReport = memo(function SessionReport({
   ]);
 
   /* ── Cross-session skill-progress trends (negotiation reports) ──
-     Reuses the skill_scores persisted on prior session rows to show
-     whether the user is improving on Anchoring / ESOPs / Concessions /
-     etc. Scoped to the current report's skill names so the panel shows
-     one coherent taxonomy. Best-effort: any failure leaves the panel
-     hidden. Gated on negotiationOutcome to match the panel's copy. */
+     Reuses the skill_scores persisted on prior negotiation sessions to
+     show whether the user is improving on anchoring / concession strategy
+     / closing technique / etc. Keyed off the engine's persisted skill
+     keys (not the LLM report's display skills, which use a different
+     taxonomy that wouldn't match across sessions). Best-effort: any
+     failure leaves the panel hidden. Gated on negotiationOutcome to match
+     the panel's copy. */
   useEffect(() => {
     if (!viewData || !viewData.negotiationOutcome) {
       setProgressTrends(undefined);
       return;
     }
     let cancelled = false;
-    const skillNames = (viewData.skills || [])
-      .map((s) => s.name)
-      .filter((n): n is string => typeof n === "string" && n.trim().length > 0);
-    fetchSkillProgressTrends(skillNames)
+    fetchSkillProgressTrends({ negotiationOnly: true })
       .then((trends) => {
         if (!cancelled) setProgressTrends(trends.length > 0 ? trends : undefined);
       })

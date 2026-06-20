@@ -182,17 +182,51 @@ export interface SessionSkillRow {
   sector?: string;
 }
 
+/* Curated display labels for the negotiation skill_scores keys the
+ * interview engine persists (camelCase). Keys outside this map fall back
+ * to a generic camelCase / snake_case → Title Case split. Kept here (not
+ * in the panel) so the same label is used for grouping AND rendering —
+ * humanizing must happen before computeTrend groups by skill string. */
+const SKILL_LABELS: Record<string, string> = {
+  anchoring: "Anchoring",
+  composure: "Composure",
+  confidence: "Confidence",
+  leverageUse: "Leverage Use",
+  specificity: "Specificity",
+  communication: "Communication",
+  packageThinking: "Package Thinking",
+  closingTechnique: "Closing Technique",
+  professionalTone: "Professional Tone",
+  concessionStrategy: "Concession Strategy",
+};
+
+export function humanizeSkillKey(key: string): string {
+  const k = key.trim();
+  if (!k) return k;
+  if (SKILL_LABELS[k]) return SKILL_LABELS[k];
+  return k
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 /* Flatten persisted session rows into per-skill progress points. A row
  * with no skill_scores (older sessions, save failures) contributes
  * nothing rather than poisoning the series with zeros. Non-finite scores
- * and non-finite timestamps are skipped for the same reason. */
+ * and non-finite timestamps are skipped for the same reason. An optional
+ * `labelFn` maps the raw skill_scores key to a display label (applied
+ * before grouping, so e.g. `concessionStrategy` → "Concession Strategy"
+ * groups consistently across sessions). */
 export function sessionRowsToProgressPoints(
   rows: SessionSkillRow[],
+  labelFn?: (key: string) => string,
 ): SkillProgressPoint[] {
   const points: SkillProgressPoint[] = [];
   for (const row of rows) {
     if (!row.skillScores || !Number.isFinite(row.completedAt)) continue;
-    for (const [skill, raw] of Object.entries(row.skillScores)) {
+    for (const [rawKey, raw] of Object.entries(row.skillScores)) {
       const scorePct =
         typeof raw === "number"
           ? raw
@@ -200,6 +234,7 @@ export function sessionRowsToProgressPoints(
             ? raw.score
             : NaN;
       if (!Number.isFinite(scorePct)) continue;
+      const skill = labelFn ? labelFn(rawKey) : rawKey;
       if (!skill.trim()) continue;
       points.push({
         skill,

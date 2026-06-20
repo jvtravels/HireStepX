@@ -1310,30 +1310,33 @@ export async function fetchRecentSessionScores(limit = 10): Promise<SessionTrend
  * — no new table, no migration). Reads via the authenticated supabase
  * client (RLS scopes to the current user).
  *
- * When `onlySkills` is supplied (the current session's skill names) the
- * result is scoped to those skills so a negotiation report shows only
- * negotiation skills, not a mix from other session types. Best-effort:
- * returns [] on any failure so the caller simply omits the panel.
+ * The trends are keyed off the engine's persisted skill_scores keys
+ * (`anchoring`, `concessionStrategy`, …) — NOT the LLM report's display
+ * skills, which use a different (generic) taxonomy and would not match
+ * across sessions. Keys are humanized for display. When `negotiationOnly`
+ * is set the rows are filtered to salary-negotiation sessions so the
+ * panel shows one coherent skill set rather than mixing in behavioral /
+ * HR-round skills. Best-effort: returns [] on any failure so the caller
+ * simply omits the panel.
  */
 export async function fetchSkillProgressTrends(
-  onlySkills?: string[],
-  limit = 24,
+  opts: { negotiationOnly?: boolean; limit?: number } = {},
 ): Promise<SkillTrend[]> {
+  const { negotiationOnly = false, limit = 30 } = opts;
   try {
     const { getSupabase } = await import("./supabase");
-    const {
-      sessionRowsToProgressPoints,
-      computeAllTrends,
-      computeTrendsForSkills,
-    } = await import("./sessionReport/progressTracking");
+    const { sessionRowsToProgressPoints, computeAllTrends, humanizeSkillKey } =
+      await import("./sessionReport/progressTracking");
     const client = await getSupabase();
     const { data: sessionData } = await client.auth.getSession();
     const userId = sessionData.session?.user?.id;
     if (!userId) return [];
-    const { data, error } = await client
+    let q = client
       .from("sessions")
-      .select("id, created_at, skill_scores, target_company")
-      .eq("user_id", userId)
+      .select("id, created_at, skill_scores, target_company, type, focus")
+      .eq("user_id", userId);
+    if (negotiationOnly) q = q.eq("type", "salary-negotiation");
+    const { data, error } = await q
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) {
@@ -1353,10 +1356,9 @@ export async function fetchSkillProgressTrends(
         skillScores: r.skill_scores,
         sector: r.target_company ?? undefined,
       })),
+      humanizeSkillKey,
     );
-    return onlySkills && onlySkills.length > 0
-      ? computeTrendsForSkills(points, onlySkills)
-      : computeAllTrends(points);
+    return computeAllTrends(points);
   } catch (err) {
     console.warn(
       "[fetchSkillProgressTrends] unexpected error:",

@@ -11,6 +11,7 @@ import {
   computeTrend,
   computeTrendsForSkills,
   createInMemoryProgressStore,
+  humanizeSkillKey,
   sessionRowsToProgressPoints,
   type SessionSkillRow,
   type SkillProgressPoint,
@@ -213,6 +214,22 @@ describe("sessionRowsToProgressPoints", () => {
     expect(pts).toEqual([{ skill: "Anchoring", scorePct: 50, sessionId: "s1", completedAt: t0, sector: undefined }]);
   });
 
+  it("applies labelFn before grouping so a key humanizes consistently", () => {
+    const pts = sessionRowsToProgressPoints(
+      [
+        row("s1", t0, { concessionStrategy: 40 }),
+        row("s2", t0 + DAY, { concessionStrategy: 55 }),
+      ],
+      humanizeSkillKey,
+    );
+    expect(pts.map((p) => p.skill)).toEqual(["Concession Strategy", "Concession Strategy"]);
+    // Grouping stays consistent → one trend across both sessions.
+    const trends = computeAllTrends(pts);
+    expect(trends).toHaveLength(1);
+    expect(trends[0].skill).toBe("Concession Strategy");
+    expect(trends[0].sparkline).toEqual([40, 55]);
+  });
+
   it("end-to-end: derived points feed computeTrendsForSkills into a real up-trend", () => {
     const pts = sessionRowsToProgressPoints([
       row("s1", t0, { Anchoring: 50 }),
@@ -223,6 +240,25 @@ describe("sessionRowsToProgressPoints", () => {
     expect(trend.sparkline).toEqual([50, 60, 70]);
     expect(trend.trend).toBe("up");
     expect(trend.latestScore).toBe(70);
+  });
+});
+
+describe("humanizeSkillKey", () => {
+  it("maps known negotiation keys to curated labels", () => {
+    expect(humanizeSkillKey("anchoring")).toBe("Anchoring");
+    expect(humanizeSkillKey("concessionStrategy")).toBe("Concession Strategy");
+    expect(humanizeSkillKey("closingTechnique")).toBe("Closing Technique");
+    expect(humanizeSkillKey("leverageUse")).toBe("Leverage Use");
+  });
+
+  it("falls back to Title Case for unknown camelCase / snake_case keys", () => {
+    expect(humanizeSkillKey("riskAppetite")).toBe("Risk Appetite");
+    expect(humanizeSkillKey("walk_away_discipline")).toBe("Walk Away Discipline");
+    expect(humanizeSkillKey("communication")).toBe("Communication");
+  });
+
+  it("returns empty for blank input", () => {
+    expect(humanizeSkillKey("   ")).toBe("");
   });
 });
 
