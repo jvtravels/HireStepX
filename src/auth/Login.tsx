@@ -365,6 +365,11 @@ export default function Login() {
                 color: t.indigo,
                 fontWeight: 600,
                 textDecoration: "none",
+                /* 44px min touch target (WCAG 2.5.5) without visual bloat */
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: 44,
+                padding: "0 2px",
               }}
             >
               Sign up
@@ -740,7 +745,8 @@ export default function Login() {
             fontFamily: f.sans,
             fontSize: 12,
             color: t.inkFaint,
-            lineHeight: 1.6,
+            /* 2.0 line-height → 24px per line = WCAG 2.2 AA 2.5.8 minimum tap height */
+            lineHeight: 2.0,
             maxWidth: 480,
             margin: "0 auto",
           }}

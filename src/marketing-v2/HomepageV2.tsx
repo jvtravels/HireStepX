@@ -78,7 +78,9 @@ const ResponsiveSheet = () => (
       .mv2-logo-strip { gap: 24px !important; }
       .mv2-comparison-table { font-size: 12px !important; }
       .mv2-faq-grid { grid-template-columns: 1fr !important; }
-      .mv2-hero-display { font-size: clamp(48px, 10vw, 80px) !important; }
+      /* Cap at 64px so the heading doesn't stack to 4 lines in the ~343px
+         text column of the 2-col hero at 13" laptop widths (881–1100px). */
+      .mv2-hero-display { font-size: clamp(48px, 7.5vw, 64px) !important; }
       .mv2-focus-grid { grid-template-columns: repeat(2, 1fr) !important; }
     }
     .mv2-skip { position: absolute; left: -9999px; top: 0; }
