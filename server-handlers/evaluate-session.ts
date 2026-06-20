@@ -22,6 +22,7 @@ import {
   getRubricWeight,
 } from "./_evaluate-session-prompts";
 import { PROBE_TEXTS } from "./_behavioral-followup-bank";
+import { sanitizeVoiceValue } from "./_voice-sanitizer";
 import { BEHAVIORAL_COMPETENCIES, COMPETENCY_LABELS } from "../data/behavioral-question-bank";
 import {
   ROLE_SKILLS,
@@ -484,7 +485,11 @@ export default async function handler(req: Request): Promise<Response> {
         const totalMs = Date.now() - t0;
         console.warn(`[evaluate-session] CACHE HIT session=${sessionId.slice(0, 8)} lookup=${tCache}ms total=${totalMs}ms`);
         headers["X-Timing"] = `cacheLookup=${tCache},total=${totalMs},cached=1`;
-        return new Response(JSON.stringify({ report: cached, cached: true }), { status: 200, headers });
+        /* Sanitize on read too: reports cached before the register fix shipped
+           still hold "delve"/"seamless"/etc. Cleaning here scrubs them on
+           re-open without a migration. */
+        const cleanCached = sanitizeVoiceValue(cached);
+        return new Response(JSON.stringify({ report: cleanCached, cached: true }), { status: 200, headers });
       }
     }
 
@@ -1132,10 +1137,16 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       console.warn(`[evaluate-session] validation failed for session=${sessionId.slice(0, 8)}; returning anyway with warning`);
     }
 
+    /* Deterministic register enforcement — strip the unambiguous AI tells the
+       VOICE_DICTION_DIRECTIVE can't reliably suppress, across every prose
+       field (verdict, wins/fixes, coaching, perQuestion notes, idealAnswers).
+       Done BEFORE caching so the persisted copy is clean too. */
+    const cleanReport = sanitizeVoiceValue(report) as SessionReport;
+
     // Persist to cache so re-opens are instant. Awaited so the edge isolate
     // doesn't terminate mid-write (same lesson as llm_usage in _llm.ts).
     // Cache failures are non-fatal — the user still gets their report.
-    if (auth.userId) await saveCachedReport(sessionId, auth.userId, report);
+    if (auth.userId) await saveCachedReport(sessionId, auth.userId, cleanReport);
 
     const totalMs = Date.now() - t0;
     console.warn(`[evaluate-session] OK session=${sessionId.slice(0, 8)} score=${overallScore} band=${report.band} llm=${tLLM}ms total=${totalMs}ms model=${result.model}`);
@@ -1167,7 +1178,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       }, req);
     }
 
-    return new Response(JSON.stringify({ report, cached: false }), { status: 200, headers });
+    return new Response(JSON.stringify({ report: cleanReport, cached: false }), { status: 200, headers });
   } catch (err) {
     const totalMs = Date.now() - t0;
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
