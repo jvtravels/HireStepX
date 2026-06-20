@@ -4573,10 +4573,10 @@ export function SecurityComplianceV2() {
 
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
 export function VideoCtaV2() {
-  const [revealed, setRevealed] = React.useState(false);
-  const sectionRef = React.useRef<HTMLElement>(null);
+  const [revealed, setRevealed] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
@@ -4587,7 +4587,7 @@ export function VideoCtaV2() {
     return () => obs.disconnect();
   }, []);
 
-  const fadeUp = (delay: number): React.CSSProperties => ({
+  const fadeUp = (delay: number): CSSProperties => ({
     opacity: revealed ? 1 : 0,
     transform: revealed ? "translateY(0)" : "translateY(28px)",
     transition: `opacity 0.75s ease ${delay}ms, transform 0.75s ease ${delay}ms`,
