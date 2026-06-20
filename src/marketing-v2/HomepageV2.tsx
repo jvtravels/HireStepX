@@ -4658,10 +4658,6 @@ export function VideoCtaV2() {
         <source src="/cta.mp4" type="video/mp4" />
       </video>
 
-      {/* Gradient overlays — top + bottom fade for depth */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #0E0C08 0%, transparent 30%, transparent 70%, #0E0C08 100%)" }} />
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 40%, rgba(14,12,8,0.55) 100%)" }} />
-
       {/* Content */}
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "80px 40px", maxWidth: 720, margin: "0 auto" }}>
 
