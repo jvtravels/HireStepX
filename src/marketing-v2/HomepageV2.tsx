@@ -4569,7 +4569,7 @@ export function SecurityComplianceV2() {
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
 export function VideoCtaV2() {
   return (
-    <section style={{ position: "relative", minHeight: 580, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <section style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
 
       {/* Background video — swap /demo-loop.mp4 with actual product recording */}
       <video
