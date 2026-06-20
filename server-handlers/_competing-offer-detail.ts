@@ -108,6 +108,22 @@ const AMOUNT_CR_RE = /\b(\d+(?:\.\d+)?)\s*(?:cr|crore)s?\b/i;
 const COMPETING_AMOUNT_CONTEXT_RE =
   /\b(?:their|other|another|competing|alternate|alternative)\s+(?:offer|number|comp|ctc|package|amount|figure|range)\b|\b(?:offer|number|comp|ctc|package)\s+(?:from\s+them|on\s+the\s+table|in\s+hand)\b|\bthey\s+(?:offered|are\s+offering|gave|will\s+give|will\s+pay|mentioned|said|told\s+me|quoted)\b|\bthe\s+(?:number|offer|amount|figure)\s+(?:being\s+)?discussed\b/i;
 
+/* finding #110 (2026-06-20) — current-CTC clauses. A candidate's stated
+ * CURRENT pay ("currently at 48 LPA", "current CTC is 48", "I'm at 48
+ * fixed") is NEVER the competing-offer amount. We blank these spans
+ * before scanning for a number so a current-CTC figure can't be
+ * mis-attributed as the rival offer — even when a genuine competing
+ * company is named elsewhere in the same utterance. The authoritative
+ * current/target/competing split lives in the number-role classifier;
+ * this extractor must not contradict it by re-reading the candidate's
+ * own current pay as a rival's number. */
+const CURRENT_CTC_CLAUSE_RE =
+  /\b(?:currently|presently|right\s+now)\s+(?:at|on|drawing|making|earning|getting|taking\s+home)\s+₹?\s*\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|cr|crores?)?(?:\s+(?:fixed|total|ctc))?|\bcurrent\s+(?:ctc|salary|comp|compensation|package|fixed|pay)\s+(?:is\s+)?₹?\s*\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|cr|crores?)?|\bi\s*(?:'?m|\s+am)\s+(?:currently\s+)?(?:at|on|drawing|making|earning)\s+₹?\s*\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|cr|crores?)?|\b(?:i\s+(?:make|earn|draw|take\s+home))\s+₹?\s*\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|cr|crores?)?/gi;
+
+function maskCurrentCtcClauses(text: string): string {
+  return text.replace(CURRENT_CTC_CLAUSE_RE, (m) => " ".repeat(m.length));
+}
+
 function extractCompetingAmount(
   text: string,
   hasCompetingContext: boolean,
@@ -117,12 +133,15 @@ function extractCompetingAmount(
    *     passes hasCompetingContext=true), OR
    *   - one of the dedicated "their offer" / "competing offer" markers. */
   if (!hasCompetingContext && !COMPETING_AMOUNT_CONTEXT_RE.test(text)) return null;
-  const cr = AMOUNT_CR_RE.exec(text);
+  /* finding #110 — blank current-CTC spans so a stated current pay can
+   * never surface as the competing amount. */
+  const scan = maskCurrentCtcClauses(text);
+  const cr = AMOUNT_CR_RE.exec(scan);
   if (cr && cr[1]) {
     const n = parseFloat(cr[1]);
     if (Number.isFinite(n)) return n * 100;
   }
-  const lpa = AMOUNT_LPA_RE.exec(text);
+  const lpa = AMOUNT_LPA_RE.exec(scan);
   if (lpa && lpa[1]) {
     const n = parseFloat(lpa[1]);
     if (Number.isFinite(n)) return n;
@@ -244,11 +263,64 @@ export function hasConcreteTell(detail: CompetingOfferDetail | null | undefined)
   return detail.company != null && detail.status != null && detail.amount != null;
 }
 
-export function extractCompetingOfferDetail(text: string): CompetingOfferDetail {
+/* finding #110 (2026-06-20) — canonicalize a free-text company name to a
+ * COMPANY_PATTERNS key (or null if unrecognized). Used to suppress the
+ * HIRING company from ever being read as a COMPETING-offer company:
+ * "for this role at Flipkart, I'm targeting 65" must not register
+ * Flipkart — the employer we're negotiating WITH — as a rival offer. */
+export function canonicalizeCompany(name: string | null | undefined): string | null {
+  if (!name) return null;
+  for (const { canonical, pattern } of COMPANY_PATTERNS) {
+    if (pattern.test(name)) return canonical;
+  }
+  return null;
+}
+
+/* finding #114 (2026-06-20) — branded display names. COMPANY_PATTERNS
+ * keys are lowercase canonical forms used for matching; rendering them
+ * verbatim leaks "flipkart"/"tcs"/"phonepe" into recruiter prose. This
+ * map restores the brand casing (acronyms upper, camel brands intact);
+ * unknown values fall back to word-wise title-case. */
+const COMPANY_DISPLAY: Record<string, string> = {
+  google: "Google", microsoft: "Microsoft", amazon: "Amazon", meta: "Meta",
+  apple: "Apple", flipkart: "Flipkart", swiggy: "Swiggy", zomato: "Zomato",
+  paytm: "Paytm", phonepe: "PhonePe", razorpay: "Razorpay", cred: "CRED",
+  uber: "Uber", ola: "Ola", tcs: "TCS", infosys: "Infosys", wipro: "Wipro",
+  accenture: "Accenture", deloitte: "Deloitte", cognizant: "Cognizant",
+  myntra: "Myntra", "byju's": "BYJU'S", unacademy: "Unacademy",
+  atlassian: "Atlassian", salesforce: "Salesforce", oracle: "Oracle",
+  sap: "SAP", adobe: "Adobe", intuit: "Intuit",
+};
+
+export function displayCompany(name: string | null | undefined): string {
+  if (!name) return "";
+  const key = name.trim().toLowerCase();
+  if (COMPANY_DISPLAY[key]) return COMPANY_DISPLAY[key];
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
+export function extractCompetingOfferDetail(
+  text: string,
+  /** finding #110 — the company we're hiring for. When it matches a
+   *  recognised brand it is excluded from competing-company detection so
+   *  the candidate's reference to THIS role's employer ("for this role at
+   *  Flipkart") is never mis-read as a competing offer. */
+  hiringCompany?: string | null,
+): CompetingOfferDetail {
   if (!text) return EMPTY;
+
+  const hiringCanonical = canonicalizeCompany(hiringCompany);
 
   let company: string | null = null;
   for (const { canonical, pattern } of COMPANY_PATTERNS) {
+    /* finding #110 — never read the HIRING company as a competing offer.
+     * Skip it and keep scanning for a genuinely different company (a real
+     * rival offer mentioned in the same utterance still resolves). */
+    if (hiringCanonical != null && canonical === hiringCanonical) continue;
     if (pattern.test(text)) {
       company = canonical;
       break;

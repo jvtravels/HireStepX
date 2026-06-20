@@ -83,7 +83,7 @@ import { getCandidateFirstName } from "./_candidate-name";
 import { analyzeEquityClarity } from "./_trial-close-detector";
 import { marketDataSources } from "./_candidate-profile";
 import { resumeConfirmsCompany } from "./_resume-fact-pack";
-import { hasConcreteTell } from "./_competing-offer-detail";
+import { hasConcreteTell, displayCompany } from "./_competing-offer-detail";
 import { getRecruiterSectorPersona } from "./_indian-recruiter-personas";
 import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 /* PDF#51 (2026-05-28) — unified candidate-question router. Replaces
@@ -5022,7 +5022,7 @@ export function maybePlanPriorContextAction(
       const off = ctx.existingCompetingOffer;
       return {
         kind: "acknowledge-existing-offer",
-        company: off.company,
+        company: displayCompany(off.company),
         amountLpa: off.amountLpa,
         signed: off.signed,
         deadline: off.deadline,
@@ -5112,7 +5112,7 @@ export function maybePlanPriorContextAction(
       const withinBand = off.amountLpa <= cap;
       return {
         kind: "match-existing-offer-prose",
-        company: off.company,
+        company: displayCompany(off.company),
         competingAmountLpa: off.amountLpa,
         withinBand,
         _move: {
@@ -5278,7 +5278,7 @@ export function maybePlanCompetingOfferWarmAck(
   if (!co) return null;
   return {
     kind: "competing-offer-warm-ack",
-    company: co.value.company,
+    company: displayCompany(co.value.company),
     amountLpa: co.value.amount,
     _move: {
       lever: "probe",

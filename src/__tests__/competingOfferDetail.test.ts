@@ -3,6 +3,7 @@ import {
   extractCompetingOfferDetail,
   mergeCompetingOfferDetail,
   hasConcreteTell,
+  displayCompany,
 } from "../../server-handlers/_competing-offer-detail";
 
 describe("extractCompetingOfferDetail — company", () => {
@@ -24,6 +25,67 @@ describe("extractCompetingOfferDetail — company", () => {
 
   it("returns null when no known brand", () => {
     expect(extractCompetingOfferDetail("offer from a small startup").company).toBe(null);
+  });
+});
+
+describe("finding #110 — hiring company never a competing offer", () => {
+  it("does NOT treat the hiring company as a competing offer", () => {
+    // The Flipkart EM repro: candidate states current CTC then references
+    // THIS role at Flipkart. Flipkart is the employer, not a rival.
+    const d = extractCompetingOfferDetail(
+      "I'm currently at 48 LPA fixed. For this role at Flipkart, I'm targeting 65 LPA fixed.",
+      "Flipkart",
+    );
+    expect(d.company).toBe(null);
+    expect(d.amount).toBe(null);
+    expect(d.hasAny).toBe(false);
+  });
+
+  it("does NOT read current CTC as the competing amount even with a real rival named", () => {
+    const d = extractCompetingOfferDetail(
+      "I'm currently at 48 LPA, and I have an offer from Google.",
+      "Flipkart",
+    );
+    expect(d.company).toBe("google");
+    // 48 is current CTC, not the Google offer amount → amount stays null
+    expect(d.amount).toBe(null);
+  });
+
+  it("still resolves a genuine competing company that differs from the hiring company", () => {
+    const d = extractCompetingOfferDetail(
+      "Their offer from Amazon is 70 LPA. For the Flipkart role I want more.",
+      "Flipkart",
+    );
+    expect(d.company).toBe("amazon");
+    expect(d.amount).toBe(70);
+  });
+
+  it("no hiringCompany arg preserves legacy behavior (back-compat)", () => {
+    expect(extractCompetingOfferDetail("Flipkart is in the running").company).toBe("flipkart");
+  });
+});
+
+/* finding #114 — companies are stored canonical-lowercase ("flipkart")
+ * but must render branded in prose. displayCompany owns that mapping:
+ * acronym-aware where needed (TCS, SAP), special-cased brands
+ * (PhonePe, CRED, BYJU'S), and Title-Case for the long tail. */
+describe("finding #114 — displayCompany branding", () => {
+  it("title-cases ordinary brands", () => {
+    expect(displayCompany("flipkart")).toBe("Flipkart");
+    expect(displayCompany("google")).toBe("Google");
+    expect(displayCompany("amazon")).toBe("Amazon");
+  });
+
+  it("preserves acronyms and special casing", () => {
+    expect(displayCompany("tcs")).toBe("TCS");
+    expect(displayCompany("sap")).toBe("SAP");
+    expect(displayCompany("phonepe")).toBe("PhonePe");
+    expect(displayCompany("cred")).toBe("CRED");
+  });
+
+  it("passes through null/undefined as empty string", () => {
+    expect(displayCompany(null)).toBe("");
+    expect(displayCompany(undefined)).toBe("");
   });
 });
 

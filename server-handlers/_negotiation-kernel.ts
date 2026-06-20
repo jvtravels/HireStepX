@@ -3839,6 +3839,12 @@ export function parseCandidateAnswer(
    *  total − base, or base = total − variable). Optional to preserve
    *  back-compat for callers that don't have state context. */
   priorTotalCtc: number | null = null,
+  /** finding #110 (2026-06-20) — the company we're hiring for
+   *  (state.company). Threaded to extractCompetingOfferDetail so the
+   *  hiring company is never mis-read as a competing offer ("for this
+   *  role at Flipkart, I'm targeting 65" must not register Flipkart as a
+   *  rival). Optional to preserve back-compat for fixture callers. */
+  hiringCompany: string | null = null,
 ): ParsedAnswer {
   /* STT fragility audit (2026-05-22) — kernel-boundary normalization.
    *
@@ -3973,7 +3979,7 @@ export function parseCandidateAnswer(
   const noticeJoining = extractNoticeJoining(a);
   const equityVesting = extractEquityVesting(a);
   const locationMode = extractLocationMode(a);
-  const competingOfferDetail = extractCompetingOfferDetail(a);
+  const competingOfferDetail = extractCompetingOfferDetail(a, hiringCompany);
   const decisionDeadline = extractDecisionDeadline(a);
   const candidateProfile = extractCandidateProfile(a);
   const miscSignals = extractMiscSignals(a);
@@ -4461,7 +4467,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     (t) => t.topic === "band-anchor-with-rationale",
   );
   const offerOnTable = (state.highestOfferMade ?? 0) > 0 || bandPresented;
-  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null);
+  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null, state.company ?? null);
   /* Per-month periodicity (2026-06-15, unbiased-review HIGH) is normalized at
    * the SOURCE — _number-role-classifier.ts annualizes each salary span by its
    * own trailing context, so parsed.target / currentCtc / competing already
