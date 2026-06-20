@@ -20,10 +20,12 @@ import {
   evaluateSessionWithAI,
   EvaluateSessionError,
   fetchRecentSessionScores,
+  fetchSkillProgressTrends,
   fetchSessionCredibility,
   type SessionReport as SessionReportData,
   type SessionTrendPoint,
 } from "../dashboardData";
+import type { SkillTrend } from "./progressTracking";
 import { summarizeCredibility, type CredibilitySummary } from "../_credibilityCallout";
 import {
   fetchLiveCohort,
@@ -355,6 +357,12 @@ export const SessionReport = memo(function SessionReport({
   const [errorMsg, setErrorMsg] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
   const [trend, setTrend] = useState<SessionTrendPoint[]>([]);
+  /* Cross-session skill-progress trends for the Skill Progress panel.
+     Derived from the skill_scores already on the user's session rows
+     (no new table). Populated only for negotiation reports — the panel
+     copy is negotiation-scoped — and left undefined otherwise so the
+     panel is skipped. */
+  const [progressTrends, setProgressTrends] = useState<SkillTrend[] | undefined>(undefined);
   const [liveCohort, setLiveCohort] = useState<LiveCohort | null>(null);
   const [credibility, setCredibility] = useState<CredibilitySummary | undefined>(undefined);
   /* Campus-placement: tier-aware CGPA calibration the analyzer used.
@@ -852,6 +860,33 @@ export const SessionReport = memo(function SessionReport({
     user,
   ]);
 
+  /* ── Cross-session skill-progress trends (negotiation reports) ──
+     Reuses the skill_scores persisted on prior session rows to show
+     whether the user is improving on Anchoring / ESOPs / Concessions /
+     etc. Scoped to the current report's skill names so the panel shows
+     one coherent taxonomy. Best-effort: any failure leaves the panel
+     hidden. Gated on negotiationOutcome to match the panel's copy. */
+  useEffect(() => {
+    if (!viewData || !viewData.negotiationOutcome) {
+      setProgressTrends(undefined);
+      return;
+    }
+    let cancelled = false;
+    const skillNames = (viewData.skills || [])
+      .map((s) => s.name)
+      .filter((n): n is string => typeof n === "string" && n.trim().length > 0);
+    fetchSkillProgressTrends(skillNames)
+      .then((trends) => {
+        if (!cancelled) setProgressTrends(trends.length > 0 ? trends : undefined);
+      })
+      .catch(() => {
+        /* Soft-fail — the panel simply doesn't render. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewData]);
+
   /* ── Behavioral v2 report prop bag ──
      Computed only for behavioral focus + when both report and analyzer
      meta are present. The View itself gates rendering behind the env
@@ -1016,6 +1051,7 @@ export const SessionReport = memo(function SessionReport({
       onDisputeCredibility={onDisputeCredibility}
       campusPlacementMeta={campusPlacementMeta}
       salaryNegotiationMeta={salaryNegotiationMeta}
+      progressTrends={progressTrends}
       behavioralFullReportData={behavioralFullReportData}
       hrReportData={viewData?.hrReport}
     />

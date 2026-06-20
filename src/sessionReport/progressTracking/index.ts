@@ -146,3 +146,69 @@ export function computeAllTrends(history: SkillProgressPoint[]): SkillTrend[] {
   const skills = Array.from(new Set(history.map((p) => p.skill))).sort();
   return skills.map((s) => computeTrend(history, s));
 }
+
+/* Trends for ONLY the named skills (e.g. the current session's skill set),
+ * each computed across the full `history`. Scopes the panel to one
+ * taxonomy (a negotiation report shows negotiation skills) rather than
+ * mixing in skills from unrelated session types the user also practised.
+ * Skills absent from history still get a zero-baselined trend so the
+ * caller can decide whether to render them. Order: alphabetical. */
+export function computeTrendsForSkills(
+  history: SkillProgressPoint[],
+  onlySkills: SkillName[],
+): SkillTrend[] {
+  const wanted = Array.from(
+    new Set(onlySkills.map((s) => s.trim()).filter((s) => s.length > 0)),
+  ).sort();
+  return wanted.map((s) => computeTrend(history, s));
+}
+
+/* ─── Session-derived persistence (the "reuse existing sessions" store) ──
+ *
+ * Per the product decision to avoid a new table, cross-session skill
+ * trends are derived on the fly from the rows already persisted in the
+ * `sessions` table — specifically the `skill_scores` jsonb column, which
+ * the interview engine writes at save time (skill name → 0–100 score).
+ * No migration, no write path: each completed session IS the durable
+ * record. `SessionSkillRow` is the minimal projection a caller fetches. */
+export interface SessionSkillRow {
+  sessionId: string;
+  /** Epoch ms the session completed (parsed from the row's created_at). */
+  completedAt: number;
+  /** The persisted `skill_scores` jsonb. Values are 0–100 numbers, or a
+   *  legacy `{ score }` wrapper (mirrors dashboardData's extractScore). */
+  skillScores: Record<string, number | { score: number }> | null | undefined;
+  /** Optional sector tag, carried from the row's target_company. */
+  sector?: string;
+}
+
+/* Flatten persisted session rows into per-skill progress points. A row
+ * with no skill_scores (older sessions, save failures) contributes
+ * nothing rather than poisoning the series with zeros. Non-finite scores
+ * and non-finite timestamps are skipped for the same reason. */
+export function sessionRowsToProgressPoints(
+  rows: SessionSkillRow[],
+): SkillProgressPoint[] {
+  const points: SkillProgressPoint[] = [];
+  for (const row of rows) {
+    if (!row.skillScores || !Number.isFinite(row.completedAt)) continue;
+    for (const [skill, raw] of Object.entries(row.skillScores)) {
+      const scorePct =
+        typeof raw === "number"
+          ? raw
+          : raw && typeof raw === "object" && typeof raw.score === "number"
+            ? raw.score
+            : NaN;
+      if (!Number.isFinite(scorePct)) continue;
+      if (!skill.trim()) continue;
+      points.push({
+        skill,
+        scorePct,
+        sessionId: row.sessionId,
+        completedAt: row.completedAt,
+        sector: row.sector,
+      });
+    }
+  }
+  return points;
+}

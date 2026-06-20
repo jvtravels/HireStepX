@@ -4,6 +4,7 @@ import { supabaseConfigured } from "./supabase";
 import type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState, SessionCoaching, SessionFocusMetric } from "./dashboardTypes";
 import { scoreLabel } from "./dashboardTypes";
 import { strengthCopy, gapCopy } from "./skillCopy";
+import type { SkillTrend } from "./sessionReport/progressTracking";
 
 /** Retry a fetch-based async function on network errors (not on 4xx/5xx) */
 async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1000): Promise<T> {
@@ -1300,6 +1301,69 @@ export async function fetchRecentSessionScores(limit = 10): Promise<SessionTrend
   return rows
     .map((r) => ({ id: r.id, date: r.created_at, score: r.score }))
     .reverse(); // oldest → newest for left-to-right rendering
+}
+
+/**
+ * Cross-session negotiation-skill trends for the report's Skill Progress
+ * panel. Derived on the fly from the `skill_scores` already persisted on
+ * each `sessions` row (the "reuse existing sessions" persistence approach
+ * — no new table, no migration). Reads via the authenticated supabase
+ * client (RLS scopes to the current user).
+ *
+ * When `onlySkills` is supplied (the current session's skill names) the
+ * result is scoped to those skills so a negotiation report shows only
+ * negotiation skills, not a mix from other session types. Best-effort:
+ * returns [] on any failure so the caller simply omits the panel.
+ */
+export async function fetchSkillProgressTrends(
+  onlySkills?: string[],
+  limit = 24,
+): Promise<SkillTrend[]> {
+  try {
+    const { getSupabase } = await import("./supabase");
+    const {
+      sessionRowsToProgressPoints,
+      computeAllTrends,
+      computeTrendsForSkills,
+    } = await import("./sessionReport/progressTracking");
+    const client = await getSupabase();
+    const { data: sessionData } = await client.auth.getSession();
+    const userId = sessionData.session?.user?.id;
+    if (!userId) return [];
+    const { data, error } = await client
+      .from("sessions")
+      .select("id, created_at, skill_scores, target_company")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.warn("[fetchSkillProgressTrends] query failed:", error.message);
+      return [];
+    }
+    const rows = (data || []) as Array<{
+      id: string;
+      created_at: string;
+      skill_scores: Record<string, number | { score: number }> | null;
+      target_company: string | null;
+    }>;
+    const points = sessionRowsToProgressPoints(
+      rows.map((r) => ({
+        sessionId: r.id,
+        completedAt: new Date(r.created_at).getTime(),
+        skillScores: r.skill_scores,
+        sector: r.target_company ?? undefined,
+      })),
+    );
+    return onlySkills && onlySkills.length > 0
+      ? computeTrendsForSkills(points, onlySkills)
+      : computeAllTrends(points);
+  } catch (err) {
+    console.warn(
+      "[fetchSkillProgressTrends] unexpected error:",
+      err instanceof Error ? err.message : err,
+    );
+    return [];
+  }
 }
 
 /**

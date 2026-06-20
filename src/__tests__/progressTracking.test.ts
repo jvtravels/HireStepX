@@ -9,7 +9,10 @@ import { describe, expect, it } from "vitest";
 import {
   computeAllTrends,
   computeTrend,
+  computeTrendsForSkills,
   createInMemoryProgressStore,
+  sessionRowsToProgressPoints,
+  type SessionSkillRow,
   type SkillProgressPoint,
 } from "../sessionReport/progressTracking";
 
@@ -153,6 +156,73 @@ describe("computeAllTrends", () => {
     ];
     const all = computeAllTrends(hist);
     expect(all.map((tr) => tr.skill)).toEqual(["Anchoring", "Concessions", "ESOPs"]);
+  });
+});
+
+describe("computeTrendsForSkills", () => {
+  it("returns trends only for the named skills, sorted, deduped", () => {
+    const hist = [
+      pt("Anchoring", 40, 0),
+      pt("ESOPs", 50, 0),
+      pt("Concessions", 60, 0),
+      pt("Anchoring", 50, 1),
+    ];
+    const out = computeTrendsForSkills(hist, ["ESOPs", "Anchoring", "ESOPs", " "]);
+    expect(out.map((tr) => tr.skill)).toEqual(["Anchoring", "ESOPs"]);
+  });
+
+  it("yields a zero-baselined trend for a named skill absent from history", () => {
+    const out = computeTrendsForSkills([pt("Anchoring", 70, 0)], ["Silence Discipline"]);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ skill: "Silence Discipline", latestScore: 0, sparkline: [] });
+  });
+});
+
+describe("sessionRowsToProgressPoints", () => {
+  const row = (
+    sessionId: string,
+    completedAt: number,
+    skillScores: SessionSkillRow["skillScores"],
+    sector?: string,
+  ): SessionSkillRow => ({ sessionId, completedAt, skillScores, sector });
+
+  it("flattens numeric skill_scores into one point per skill", () => {
+    const pts = sessionRowsToProgressPoints([
+      row("s1", t0, { Anchoring: 60, ESOPs: 40 }, "razorpay"),
+    ]);
+    expect(pts).toHaveLength(2);
+    expect(pts).toContainEqual({ skill: "Anchoring", scorePct: 60, sessionId: "s1", completedAt: t0, sector: "razorpay" });
+    expect(pts).toContainEqual({ skill: "ESOPs", scorePct: 40, sessionId: "s1", completedAt: t0, sector: "razorpay" });
+  });
+
+  it("unwraps the legacy { score } wrapper shape", () => {
+    const pts = sessionRowsToProgressPoints([row("s1", t0, { Anchoring: { score: 72 } })]);
+    expect(pts).toEqual([{ skill: "Anchoring", scorePct: 72, sessionId: "s1", completedAt: t0, sector: undefined }]);
+  });
+
+  it("skips rows with null/absent skill_scores or non-finite timestamps", () => {
+    expect(sessionRowsToProgressPoints([row("s1", t0, null)])).toEqual([]);
+    expect(sessionRowsToProgressPoints([row("s1", t0, undefined)])).toEqual([]);
+    expect(sessionRowsToProgressPoints([row("s1", NaN, { Anchoring: 50 })])).toEqual([]);
+  });
+
+  it("skips non-finite scores and blank skill names without poisoning the series", () => {
+    const pts = sessionRowsToProgressPoints([
+      row("s1", t0, { Anchoring: 50, Junk: Number.NaN, "  ": 80 }),
+    ]);
+    expect(pts).toEqual([{ skill: "Anchoring", scorePct: 50, sessionId: "s1", completedAt: t0, sector: undefined }]);
+  });
+
+  it("end-to-end: derived points feed computeTrendsForSkills into a real up-trend", () => {
+    const pts = sessionRowsToProgressPoints([
+      row("s1", t0, { Anchoring: 50 }),
+      row("s2", t0 + DAY, { Anchoring: 60 }),
+      row("s3", t0 + 2 * DAY, { Anchoring: 70 }),
+    ]);
+    const [trend] = computeTrendsForSkills(pts, ["Anchoring"]);
+    expect(trend.sparkline).toEqual([50, 60, 70]);
+    expect(trend.trend).toBe("up");
+    expect(trend.latestScore).toBe(70);
   });
 });
 
