@@ -480,3 +480,23 @@ export function getScript(type: string | null, difficulty: string | null, user: 
     speakingDuration: Math.round(step.speakingDuration * speedMultiplier),
   }));
 }
+
+/* Load-bearing invariant: a live interview script MUST contain at least one
+   answerable turn (a "question" or "follow-up" step). The intro and closing
+   alone are not an interview.
+
+   Why this exists: under LLM pressure (e.g. Groq TPM throttling) the
+   generate-questions response can degrade to an intro/closing-only payload —
+   or every question can fail the aiText-length filter in interviewAPI, leaving
+   only a synthesized closing. Committing such a script collapses the engine to
+   `[intro]`/`[intro, closing]`, so `totalQuestions` reads 0. That 0 then leaks
+   into the end-modal ("answered 0 of 0 questions") AND into the saved session
+   record (`questions: 0`) even though the candidate actually answered turns.
+
+   Guarding both the API boundary (drop the result → fall back to getScript)
+   and the engine mutation site (never overwrite a valid script with a
+   question-less one) keeps the invariant true no matter how the LLM misbehaves. */
+export function scriptHasQuestion(steps: InterviewStep[] | null | undefined): boolean {
+  if (!Array.isArray(steps)) return false;
+  return steps.some(s => s?.type === "question" || s?.type === "follow-up");
+}

@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- test file: partial mock objects require any casts */
 import { describe, it, expect } from "vitest";
-import { scriptsByType, defaultScript, getMiniScript, getScript } from "../interviewScripts";
+import { scriptsByType, defaultScript, getMiniScript, getScript, scriptHasQuestion } from "../interviewScripts";
+import type { InterviewStep } from "../interviewScripts";
+
+const step = (type: InterviewStep["type"], aiText = "x".repeat(20)): InterviewStep => ({
+  type, aiText, thinkingDuration: 100, speakingDuration: 100, waitForUser: true,
+});
 
 describe("interviewScripts", () => {
   describe("scriptsByType", () => {
@@ -177,6 +182,36 @@ describe("interviewScripts", () => {
       const script = getScript("technical", "intense", null);
       const closing = script[script.length - 1];
       expect(closing.waitForUser).toBe(false);
+    });
+  });
+
+  describe("scriptHasQuestion — the 0-of-0 invariant", () => {
+    it("is true for a normal [intro, question, closing] script", () => {
+      expect(scriptHasQuestion([step("intro"), step("question"), step("closing")])).toBe(true);
+    });
+
+    it("is true when only a follow-up is present (dynamic turns count)", () => {
+      expect(scriptHasQuestion([step("intro"), step("follow-up")])).toBe(true);
+    });
+
+    it("is FALSE for the degenerate intro+closing-only script (the bug)", () => {
+      expect(scriptHasQuestion([step("intro"), step("closing")])).toBe(false);
+    });
+
+    it("is FALSE for an intro-only collapse (questions.slice(1) emptied it)", () => {
+      expect(scriptHasQuestion([step("intro")])).toBe(false);
+    });
+
+    it("is false for an empty array and for null/undefined", () => {
+      expect(scriptHasQuestion([])).toBe(false);
+      expect(scriptHasQuestion(null)).toBe(false);
+      expect(scriptHasQuestion(undefined)).toBe(false);
+    });
+
+    it("every getScript output satisfies the invariant", () => {
+      for (const type of ["behavioral", "technical", "case-study", "strategic", "hr-round", "salary-negotiation"]) {
+        expect(scriptHasQuestion(getScript(type, "standard", null))).toBe(true);
+      }
     });
   });
 });

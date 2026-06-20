@@ -25,7 +25,7 @@ import {
 import { useToast } from "./Toast";
 import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
-import { getMiniScript, getScript } from "./interviewScripts";
+import { getMiniScript, getScript, scriptHasQuestion } from "./interviewScripts";
 import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, getAdaptiveHints, negotiationKernelInit, negotiationKernelTurn } from "./interviewAPI";
 import { initLiveSession, saveInterviewTurn, getLatestSessionInsightFlags } from "./supabase";
 import { deriveCandidateState } from "./_emotional-state";
@@ -510,16 +510,27 @@ export function useInterviewEngine() {
         setQuestionFallbackSource(null);
       }
       const step = currentStepRef.current;
-      if (questions && questions.length > 0 && step === 0) {
-        // Step 0 (intro) is already speaking — keep current intro, replace only steps 1+
-        // This prevents the jarring mid-sentence cut when LLM questions arrive
+      /* Keep the already-speaking fallback intro and graft on the LLM's
+         question/closing steps. The server contract is [intro, ...questions,
+         closing], so we drop the LLM's own intro — but only when it actually
+         IS an intro. If the LLM omitted it and led with a question, slicing
+         blindly would discard a real question (and, in the degenerate
+         single-question case, leave a question-less script). */
+      const llmTail = (questions && questions[0]?.type === "intro") ? questions.slice(1) : (questions ?? []);
+      if (questions && questions.length > 0 && (step === 0 || step === 1)) {
+        // Step 0: intro is already speaking — preserve it, swap in steps 1+ to
+        // avoid a jarring mid-sentence cut. Step 1: user moved past the intro.
         console.warn(`[interview] LLM generated ${questions.length} custom questions (merging from step 1, preserving intro)`);
-        setInterviewScript(prev => [prev[0], ...questions.slice(1)]);
-        setSaveWarning("");
-      } else if (questions && questions.length > 0 && step === 1) {
-        // User already moved past intro — safe to replace entire script
-        console.warn(`[interview] LLM generated ${questions.length} custom questions (replacing at step ${step})`);
-        setInterviewScript(prev => [prev[0], ...questions.slice(1)]);
+        setInterviewScript(prev => {
+          const next = [prev[0], ...llmTail];
+          // Invariant: never overwrite a valid script with a question-less one.
+          // prev is the always-valid fallback (getScript), so keeping it is safe.
+          if (!scriptHasQuestion(next)) {
+            console.warn("[interview] LLM merge produced no question steps — keeping fallback script");
+            return prev;
+          }
+          return next;
+        });
         setSaveWarning("");
       } else if (questions && questions.length > 0 && step >= 2) {
         // Late arrival: merge remaining LLM questions into the script from the current position onward
@@ -541,7 +552,9 @@ export function useInterviewEngine() {
             return q.type === "closing"; // Always include closing
           });
           if (llmFutureSteps.length === 0) return prev; // Nothing useful to merge
-          return [...keepPrefix, ...llmFutureSteps];
+          const next = [...keepPrefix, ...llmFutureSteps];
+          if (!scriptHasQuestion(next)) return prev; // never collapse to a question-less script
+          return next;
         });
         setSaveWarning("");
       } else if (!questions) {

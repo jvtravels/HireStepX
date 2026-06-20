@@ -1,6 +1,7 @@
 /* ─── Interview API Client: LLM calls, session persistence, offline retry ─── */
 
 import type { InterviewStep } from "./interviewScripts";
+import { scriptHasQuestion } from "./interviewScripts";
 import { apiFetch } from "./apiClient";
 import { openIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import { checkRateLimit } from "./rateLimit";
@@ -637,6 +638,15 @@ export async function fetchLLMQuestions(params: {
     });
     if (downgradedCount > 0) {
       console.warn(`[questions] quality-filter downgraded ${downgradedCount}/${questions.length} steps to safe fallbacks`);
+    }
+    /* Invariant guard: a result with no answerable turn (only intro/closing
+       survived, or the LLM emitted no questions at all) is not a usable
+       interview. Signal failure so useInterviewEngine keeps its always-valid
+       fallback script instead of collapsing the live script to [intro] —
+       which would surface as "0 of 0 questions" and save `questions: 0`. */
+    if (!scriptHasQuestion(filteredQuestions)) {
+      console.warn("[questions] LLM produced no answerable question steps — signaling fallback");
+      return null;
     }
     return { questions: filteredQuestions, negotiationBand: data.negotiationBand || undefined, _fallback: fallbackHint };
   };
