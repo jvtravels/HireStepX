@@ -4432,7 +4432,7 @@ export function PersonalizedReportsV2() {
   return (
     <section
       aria-labelledby="hd-reports"
-      style={{ background: "#FAF7F0", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingBottom: 80 }}
+      style={{ background: "#FAF7F0", overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 100, paddingBottom: 80 }}
     >
       <style>{rpt_STYLES}</style>
 
