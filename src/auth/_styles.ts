@@ -218,12 +218,6 @@ export const AUTH_STYLES = `
     .hsx-login-form-fields { gap: 14px !important; }
   }
 
-  /* Tablet (≤960px) — modest tightening */
-  @media (max-width: 960px) {
-    .hsx-login-topbar { padding: 24px 32px !important; }
-    .hsx-login-main   { padding: clamp(24px, 4vh, 48px) 24px !important; }
-  }
-
   /* Mobile (≤640px) — single column, shrunk paddings, lighter chrome */
   @media (max-width: 640px) {
     .hsx-login-topbar { padding: 20px 20px !important; gap: 12px !important; }
@@ -268,5 +262,51 @@ export const AUTH_STYLES = `
     .hsx-login-main { padding-top: 12px !important; padding-bottom: 16px !important; }
     .hsx-login-subtitle { margin-bottom: 20px !important; }
     .hsx-login-footer { padding: 12px 20px 16px !important; }
+  }
+
+  /* Desktop two-column layout (≥1024px) — hero on left, form on right.
+     Eliminates the wide empty space on desktop where a centred single
+     column wastes ~900px of a 1440px viewport. */
+  @media (min-width: 1024px) {
+    .hsx-login-main {
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 72px !important;
+      padding: 40px 64px !important;
+      max-width: 1120px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    .hsx-login-hero {
+      flex: 1 1 auto !important;
+      text-align: left !important;
+      margin-bottom: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+    }
+    .hsx-login-hero h1 {
+      font-size: clamp(2.25rem, 3.5vw, 3.75rem) !important;
+      white-space: normal !important;
+    }
+    .hsx-login-subtitle {
+      text-align: left !important;
+    }
+    .hsx-login-form {
+      width: 440px !important;
+      max-width: 440px !important;
+      flex-shrink: 0 !important;
+    }
+  }
+
+  /* Tablet (≤960px) — content anchored to top rather than centered to
+     avoid the large dead zone above the headline on 768px-tall viewports. */
+  @media (max-width: 960px) {
+    .hsx-login-topbar { padding: 24px 32px !important; }
+    .hsx-login-main {
+      justify-content: flex-start !important;
+      padding: clamp(32px, 5vh, 56px) 24px clamp(24px, 4vh, 48px) !important;
+    }
   }
 `;

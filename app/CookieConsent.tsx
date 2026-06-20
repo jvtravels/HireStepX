@@ -40,10 +40,25 @@ export default function CookieConsent() {
   if (!visible) return null;
 
   return (
+    <>
+      <style>{`
+        @media (max-width: 640px) {
+          .hsx-cookie-banner {
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            max-width: 100% !important;
+            border-radius: 14px 14px 0 0 !important;
+            padding: 14px 16px env(safe-area-inset-bottom, 16px) !important;
+            gap: 10px !important;
+          }
+        }
+      `}</style>
     <div
       role="dialog"
       aria-label="Cookie consent"
       aria-describedby="cookie-consent-desc"
+      className="hsx-cookie-banner"
       style={{
         position: "fixed",
         bottom: 20, left: 20, right: 20,
@@ -101,5 +116,6 @@ export default function CookieConsent() {
         </button>
       </div>
     </div>
+    </>
   );
 }

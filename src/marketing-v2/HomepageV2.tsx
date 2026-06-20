@@ -329,6 +329,8 @@ export function NavV2() {
           .mv2-nav-links { display: none !important; }
           .mv2-nav-cta-label { display: none !important; }
           .mv2-nav-burger { display: inline-flex !important; }
+          /* Hide the "Sign in" text link — it's in the mobile drawer */
+          .mv2-nav-sign-in { display: none !important; }
         }
       `}</style>
       <nav
@@ -420,6 +422,7 @@ export function NavV2() {
               <>
                 <a
                   href="/login"
+                  className="mv2-nav-sign-in"
                   style={{
                     fontFamily: fonts.sans,
                     fontSize: 14,
