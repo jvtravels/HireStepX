@@ -4654,7 +4654,7 @@ export function VideoCtaV2() {
         playsInline
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.38 }}
       >
-        <source src="/demo-loop.mp4" type="video/mp4" />
+        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" type="video/mp4" />
       </video>
 
       {/* Gradient overlays — top + bottom fade for depth */}
