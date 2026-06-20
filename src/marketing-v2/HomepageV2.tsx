@@ -4150,6 +4150,365 @@ function StructuredData() {
   );
 }
 
+/* ─────────────────────────── PERSONALIZED REPORTS ─────────────────────────── */
+
+/* Mini chip-free card components — self-contained, no props needed */
+function ReportCardBehavioral({ lifted }: { lifted?: boolean }) {
+  const skills = [
+    { label: "STAR coherence",  score: 88, c: "#15803D" },
+    { label: "Outcome clarity", score: 88, c: "#15803D" },
+    { label: "Ownership voice", score: 71, c: "#B45309" },
+    { label: "Conflict balance",score: 42, c: "#B91C1C" },
+  ];
+  const sh = lifted
+    ? "0 32px 96px rgba(14,12,8,0.24), 0 8px 24px rgba(14,12,8,0.10)"
+    : "0 8px 40px rgba(14,12,8,0.10), 0 2px 8px rgba(14,12,8,0.05)";
+  return (
+    <div style={{ width: "100%", background: "#FEFDF8", borderRadius: 14, border: "1px solid rgba(180,83,9,0.08)", boxShadow: sh, overflow: "hidden", fontFamily: fonts.sans, transition: "box-shadow 0.5s ease" }}>
+      <div style={{ background: t.cream, padding: "8px 14px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.inkFaint }}>READINESS</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: t.success }}>68%</span>
+        <span style={{ fontSize: 7.5, color: t.inkFaint }}>Razorpay Senior PD · ~3 sessions</span>
+      </div>
+      <div style={{ display: "flex", padding: "12px 14px 10px" }}>
+        <div style={{ width: 110, flexShrink: 0 }}>
+          <div style={{ fontSize: 7.5, fontWeight: 700, color: t.inkFaint, marginBottom: 5 }}>OVERALL SCORE</div>
+          <div style={{ position: "relative", width: 76, height: 46, margin: "0 auto 7px" }}>
+            <svg viewBox="0 0 80 50" width="76" height="46">
+              <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
+              <path d="M7,46 A33,33 0 0,1 61,17" fill="none" stroke="#15803D" strokeWidth="7" strokeLinecap="round" />
+            </svg>
+            <div style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", fontSize: 20, fontWeight: 800, color: t.coal, lineHeight: 1 }}>82</div>
+          </div>
+          <span style={{ fontSize: 7, background: t.success100, color: t.success, padding: "2px 6px", borderRadius: 3, fontWeight: 600 }}>Hire ✓</span>
+          <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 3 }}>
+            <svg width="24" height="10" viewBox="0 0 28 12"><polyline points="0,10 5,7 10,9 16,4 22,6 28,2" fill="none" stroke="#15803D" strokeWidth="1.2" /></svg>
+            <span style={{ fontSize: 8, color: t.success, fontWeight: 700 }}>↑ 6</span>
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 7.5, fontWeight: 700, color: t.copper, marginBottom: 4 }}>✦ AI INTERVIEW VERDICT</div>
+          <div style={{ fontSize: 9.5, fontWeight: 600, color: t.coal, lineHeight: 1.45, marginBottom: 8 }}>Specific, owned, outcome-anchored. Tighten the Q2 "we" usage — then you're ready for the bar-raiser.</div>
+          <div style={{ fontSize: 7, background: "#F3EFE5", padding: "3px 7px", borderRadius: 3, color: t.inkFaint }}>Calibrated to Senior · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55</div>
+        </div>
+      </div>
+      <div style={{ borderTop: "1px solid #EAE3D0", padding: "8px 14px 6px", background: "#FEFDF8" }}>
+        <span style={{ fontSize: 7.5, background: t.indigo100, color: t.indigo, padding: "2px 8px", borderRadius: 20, fontWeight: 600 }}>BEHAVIORAL INTERVIEW · FULL REPORT</span>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: t.coal, marginTop: 6, fontFamily: fonts.serif, lineHeight: 1.25 }}>The full breakdown of your behavioral answers</div>
+      </div>
+      <div style={{ margin: "8px 14px 0", background: t.indigo, borderRadius: 6, padding: "7px 10px", display: "flex", gap: 8, alignItems: "center" }}>
+        <span style={{ fontSize: 7.5, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 6px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
+        <div>
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: "#fff" }}>Skill breakdown</div>
+          <div style={{ fontSize: 7, color: "rgba(255,255,255,0.65)" }}>Where each axis landed and what it means for your prep.</div>
+        </div>
+      </div>
+      <div style={{ padding: "9px 14px 12px" }}>
+        {skills.map(s => (
+          <div key={s.label} style={{ marginBottom: 7 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
+              <span style={{ fontSize: 8, color: t.inkSoft }}>{s.label}</span>
+              <span style={{ fontSize: 8, fontWeight: 700, color: s.c, fontFamily: fonts.mono }}>{s.score}</span>
+            </div>
+            <div style={{ height: 3, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${s.score}%`, background: s.c, borderRadius: 2 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReportCardSalary({ lifted }: { lifted?: boolean }) {
+  const phases = [
+    { n: 1, label: "Named a counter number" },
+    { n: 2, label: "Justified with market data" },
+    { n: 3, label: "Closed at ₹48L target" },
+  ];
+  const sh = lifted
+    ? "0 48px 130px rgba(14,12,8,0.30), 0 12px 36px rgba(14,12,8,0.14)"
+    : "0 32px 100px rgba(14,12,8,0.18), 0 8px 28px rgba(14,12,8,0.08)";
+  return (
+    <div style={{ width: "100%", background: "#FEFDF8", borderRadius: 16, border: "1.5px solid rgba(180,83,9,0.08)", boxShadow: sh, overflow: "hidden", fontFamily: fonts.sans, transition: "box-shadow 0.5s ease" }}>
+      <div style={{ background: t.cream, padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.5, color: t.inkFaint }}>READINESS</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: t.success }}>84%</span>
+        <span style={{ fontSize: 8, color: t.inkFaint }}>PhonePe Senior EM · Top quartile, ready to negotiate.</span>
+      </div>
+      <div style={{ display: "flex", padding: "14px 16px 12px" }}>
+        <div style={{ width: 130, flexShrink: 0 }}>
+          <div style={{ fontSize: 8, fontWeight: 700, color: t.inkFaint, marginBottom: 6 }}>OVERALL SCORE</div>
+          <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
+            <svg viewBox="0 0 90 56" width="84" height="52">
+              <path d="M8,52 A37,37 0 0,1 82,52" fill="none" stroke="#E8E0D0" strokeWidth="8" strokeLinecap="round" />
+              <path d="M8,52 A37,37 0 0,1 69,18" fill="none" stroke="#15803D" strokeWidth="8" strokeLinecap="round" />
+            </svg>
+            <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 23, fontWeight: 800, color: t.coal, lineHeight: 1 }}>84</div>
+          </div>
+          <span style={{ fontSize: 7.5, background: t.success100, color: t.success, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Strong Hire ✓</span>
+          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="26" height="11" viewBox="0 0 30 13"><polyline points="0,11 5,8 10,10 16,4 22,6 30,2" fill="none" stroke="#15803D" strokeWidth="1.3" /></svg>
+            <span style={{ fontSize: 9, color: t.success, fontWeight: 700 }}>↑ 19</span>
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 8, fontWeight: 700, color: t.copper, marginBottom: 5 }}>✦ AI NEGOTIATION VERDICT</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.45, marginBottom: 8 }}>Countered with data, held silence twice, closed at ₹48L — 71% gap closure on the first-offer anchor.</div>
+          <div style={{ fontSize: 7.5, background: "#F3EFE5", padding: "3px 7px", borderRadius: 3, color: t.inkFaint }}>Calibrated to Senior EM · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55</div>
+        </div>
+      </div>
+      <div style={{ borderTop: "1px solid #EAE3D0", padding: "9px 16px 7px", background: "#FEFDF8" }}>
+        <span style={{ fontSize: 8, background: t.warning100, color: t.copper, padding: "2px 9px", borderRadius: 20, fontWeight: 600 }}>SALARY NEGOTIATION · FULL REPORT</span>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: t.coal, marginTop: 6, fontFamily: fonts.serif, lineHeight: 1.25 }}>The full breakdown of your negotiation</div>
+        <div style={{ marginTop: 6 }}>
+          <div style={{ fontSize: 8, fontWeight: 700, color: t.copper, letterSpacing: 0.4 }}>THE 30-SECOND READ</div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: t.coal, marginTop: 3, lineHeight: 1.35, fontFamily: fonts.serif }}>Landed ₹48L — ₹10L above opening. 71% gap closure in 3 rounds.</div>
+          <div style={{ marginTop: 5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 8, color: t.inkFaint }}>How far you got</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: t.success }}>3 of 3 stages</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ margin: "9px 16px 0", background: t.indigo, borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
+        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 4</span>
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>What happened in this call</div>
+          <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.65)" }}>Every moment that mattered — what you said, what it cost.</div>
+        </div>
+      </div>
+      <div style={{ padding: "9px 16px 12px" }}>
+        {phases.map(p => (
+          <div key={p.n} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderTop: "1px solid #F0EDE3" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 16, height: 16, borderRadius: "50%", background: t.success, color: "#fff", fontSize: 7.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{p.n}</span>
+              <span style={{ fontSize: 8.5, fontWeight: 600, color: t.coal }}>{p.label}</span>
+            </div>
+            <span style={{ fontSize: 7.5, fontWeight: 600, color: t.success, background: t.success100, padding: "2px 6px", borderRadius: 3 }}>DONE ✓</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReportCardCampus({ lifted }: { lifted?: boolean }) {
+  const skills = [
+    { label: "Communication",    score: 75, c: "#15803D" },
+    { label: "Fundamentals",     score: 70, c: "#15803D" },
+    { label: "Project ownership",score: 45, c: "#B91C1C" },
+    { label: "Project depth",    score: 40, c: "#B91C1C" },
+  ];
+  const sh = lifted
+    ? "0 32px 96px rgba(14,12,8,0.24), 0 8px 24px rgba(14,12,8,0.10)"
+    : "0 8px 40px rgba(14,12,8,0.10), 0 2px 8px rgba(14,12,8,0.05)";
+  return (
+    <div style={{ width: "100%", background: "#FEFDF8", borderRadius: 14, border: "1px solid rgba(180,83,9,0.08)", boxShadow: sh, overflow: "hidden", fontFamily: fonts.sans, transition: "box-shadow 0.5s ease" }}>
+      <div style={{ background: t.cream, padding: "8px 14px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.inkFaint }}>READINESS</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: t.copper }}>42%</span>
+        <span style={{ fontSize: 7.5, color: t.inkFaint }}>Infosys SWE Fresher · ~5 sessions</span>
+      </div>
+      <div style={{ display: "flex", padding: "12px 14px 10px" }}>
+        <div style={{ width: 110, flexShrink: 0 }}>
+          <div style={{ fontSize: 7.5, fontWeight: 700, color: t.inkFaint, marginBottom: 5 }}>OVERALL SCORE</div>
+          <div style={{ position: "relative", width: 76, height: 46, margin: "0 auto 7px" }}>
+            <svg viewBox="0 0 80 50" width="76" height="46">
+              <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
+              <path d="M7,46 A33,33 0 0,1 42,14" fill="none" stroke="#B45309" strokeWidth="7" strokeLinecap="round" />
+            </svg>
+            <div style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", fontSize: 20, fontWeight: 800, color: t.coal, lineHeight: 1 }}>58</div>
+          </div>
+          <span style={{ fontSize: 7, background: t.warning100, color: t.copper, padding: "2px 6px", borderRadius: 3, fontWeight: 600 }}>Lean Hire</span>
+          <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 3 }}>
+            <svg width="24" height="10" viewBox="0 0 28 12"><polyline points="0,4 5,7 10,5 16,10 22,8 28,12" fill="none" stroke="#B91C1C" strokeWidth="1.2" /></svg>
+            <span style={{ fontSize: 8, color: t.error, fontWeight: 700 }}>↓ 8</span>
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 7.5, fontWeight: 700, color: t.copper, marginBottom: 4 }}>✦ AI CAMPUS VERDICT</div>
+          <div style={{ fontSize: 9.5, fontWeight: 600, color: t.coal, lineHeight: 1.45, marginBottom: 7 }}>Enthusiasm came through. Project section drifted to "we" — distinguish your individual contribution.</div>
+          <div style={{ fontSize: 7, background: t.error100, padding: "3px 7px", borderRadius: 3, color: "#7F1D1D", fontWeight: 600 }}>⚠ RED FLAG: "we built the backend" — vague project role</div>
+        </div>
+      </div>
+      <div style={{ borderTop: "1px solid #EAE3D0", padding: "8px 14px 6px", background: "#FEFDF8" }}>
+        <span style={{ fontSize: 7.5, background: t.warning100, color: t.copper, padding: "2px 8px", borderRadius: 20, fontWeight: 600 }}>CAMPUS PLACEMENT · FULL REPORT</span>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: t.coal, marginTop: 6, fontFamily: fonts.serif, lineHeight: 1.25 }}>The full breakdown of your campus interview</div>
+      </div>
+      <div style={{ margin: "8px 14px 0", background: t.indigo, borderRadius: 6, padding: "7px 10px", display: "flex", gap: 8, alignItems: "center" }}>
+        <span style={{ fontSize: 7.5, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 6px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
+        <div>
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: "#fff" }}>Skill breakdown</div>
+          <div style={{ fontSize: 7, color: "rgba(255,255,255,0.65)" }}>Where each axis landed and what to practice next.</div>
+        </div>
+      </div>
+      <div style={{ padding: "9px 14px 12px" }}>
+        {skills.map(s => (
+          <div key={s.label} style={{ marginBottom: 7 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
+              <span style={{ fontSize: 8, color: t.inkSoft }}>{s.label}</span>
+              <span style={{ fontSize: 8, fontWeight: 700, color: s.c, fontFamily: fonts.mono }}>{s.score}</span>
+            </div>
+            <div style={{ height: 3, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${s.score}%`, background: s.c, borderRadius: 2 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function PersonalizedReportsV2() {
+  const [hov, setHov] = useState<"left" | "center" | "right" | null>(null);
+  const lActive = hov === "left";
+  const cActive = hov === "center";
+  const rActive = hov === "right";
+  const anyHov  = hov !== null;
+
+  const TR = "transform 0.50s cubic-bezier(0.16,1,0.3,1), opacity 0.38s ease, filter 0.50s ease";
+
+  const leftStyle: React.CSSProperties = {
+    position: "absolute", left: 0, bottom: 40,
+    width: "clamp(280px, 28vw, 400px)",
+    transformOrigin: "bottom center",
+    transform: lActive  ? "rotate(0deg) translateY(-28px) scale(1.08)"
+             : anyHov   ? "rotate(-10deg) translateY(6px) scale(0.86)"
+             :             "rotate(-8deg)",
+    zIndex:   lActive ? 12 : anyHov ? 2 : 3,
+    opacity:  anyHov && !lActive ? 0.65 : 1,
+    filter:   anyHov && !lActive ? "brightness(0.92) saturate(0.2)" : "none",
+    transition: TR,
+    cursor: "pointer",
+  };
+
+  const centerStyle: React.CSSProperties = {
+    position: "absolute", left: "50%", bottom: 40,
+    width: "clamp(320px, 32vw, 460px)",
+    transform: cActive  ? "translateX(-50%) translateY(-28px) scale(1.08)"
+             : anyHov   ? "translateX(-50%) translateY(6px) scale(0.86)"
+             :             "translateX(-50%)",
+    zIndex:   cActive ? 12 : anyHov ? 4 : 5,
+    opacity:  anyHov && !cActive ? 0.65 : 1,
+    filter:   anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none",
+    transition: TR,
+    cursor: "pointer",
+  };
+
+  const rightStyle: React.CSSProperties = {
+    position: "absolute", right: 0, bottom: 40,
+    width: "clamp(280px, 28vw, 400px)",
+    transformOrigin: "bottom center",
+    transform: rActive  ? "rotate(0deg) translateY(-28px) scale(1.08)"
+             : anyHov   ? "rotate(10deg) translateY(6px) scale(0.86)"
+             :             "rotate(8deg)",
+    zIndex:   rActive ? 12 : anyHov ? 2 : 3,
+    opacity:  anyHov && !rActive ? 0.65 : 1,
+    filter:   anyHov && !rActive ? "brightness(0.92) saturate(0.2)" : "none",
+    transition: TR,
+    cursor: "pointer",
+  };
+
+  return (
+    <section
+      aria-labelledby="hd-reports"
+      className="mv2-section mv2-cv-auto"
+      style={{ ...sectionBase, background: t.cream, overflow: "hidden" }}
+    >
+      <style>{`
+        @keyframes rpt-fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes rpt-floatC { 0%,100% { transform:translateX(-50%) translateY(0); } 50% { transform:translateX(-50%) translateY(-10px); } }
+      `}</style>
+
+      {/* Card fan showcase */}
+      <div style={{
+        position: "relative",
+        width: "100%",
+        height: "clamp(340px, 42vw, 580px)",
+        flexShrink: 0,
+        /* Clip only the bottom edge so shadows + annotations overflow freely */
+        clipPath: "inset(-200px -80px 0 -80px)",
+      }}>
+        {/* Left */}
+        <div
+          style={leftStyle}
+          onMouseEnter={() => setHov("left")}
+          onMouseLeave={() => setHov(null)}
+        >
+          <div style={{ position: "absolute", top: -56, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: fonts.sans, fontWeight: 400, fontSize: 11, color: "#9E9589", lineHeight: 1.4, opacity: anyHov ? 0 : 1, transition: "opacity 0.3s ease" }}>
+            Behavioral · 82/100<br />Razorpay Senior PD
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+          </div>
+          <ReportCardBehavioral lifted={lActive} />
+        </div>
+
+        {/* Center */}
+        <div
+          style={centerStyle}
+          onMouseEnter={() => setHov("center")}
+          onMouseLeave={() => setHov(null)}
+        >
+          <div style={{ position: "absolute", top: -56, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: fonts.sans, fontWeight: 400, fontSize: 11, color: "#9E9589", lineHeight: 1.4, opacity: anyHov ? 0 : 1, transition: "opacity 0.3s ease" }}>
+            Salary Neg · ₹48L landed<br />PhonePe Senior EM
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+          </div>
+          <ReportCardSalary lifted={cActive} />
+        </div>
+
+        {/* Right */}
+        <div
+          style={rightStyle}
+          onMouseEnter={() => setHov("right")}
+          onMouseLeave={() => setHov(null)}
+        >
+          <div style={{ position: "absolute", top: -56, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: fonts.sans, fontWeight: 400, fontSize: 11, color: "#9E9589", lineHeight: 1.4, opacity: anyHov ? 0 : 1, transition: "opacity 0.3s ease" }}>
+            Campus · 58/100<br />Infosys SWE Fresher
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+          </div>
+          <ReportCardCampus lifted={rActive} />
+        </div>
+
+        {/* Bottom fade */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "55%", background: `linear-gradient(to bottom, transparent 0%, ${t.cream} 70%)`, zIndex: 15, pointerEvents: "none" }} />
+      </div>
+
+      {/* Headline */}
+      <MotionReveal style={{ textAlign: "center", marginTop: -80, position: "relative", zIndex: 16 }}>
+        <SectionMasthead n="04" label="Reports" right="After every session" style={{ marginBottom: 28, maxWidth: 720, margin: "0 auto 28px" }} />
+        <h2 id="hd-reports" style={{ ...h2, margin: "0 auto 20px" }}>
+          Personalized reports after
+          <br />
+          <span style={{ fontStyle: "italic", color: t.copper }}>every interview</span>
+        </h2>
+        <p style={{ ...body, textAlign: "center", margin: "0 auto 36px", maxWidth: 560 }}>
+          HireStepX gives you a full breakdown after every interview — what landed,
+          what to sharpen, and your exact next practice session.
+        </p>
+        <a
+          href="/signup"
+          className="mv2-tap-44 mv2-cta-primary"
+          style={{
+            fontFamily: fonts.sans,
+            fontSize: 15,
+            fontWeight: 600,
+            color: t.white,
+            background: t.indigo,
+            padding: "14px 28px",
+            borderRadius: 999,
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          See your first report
+          <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 16 }}>→</span>
+        </a>
+      </MotionReveal>
+    </section>
+  );
+}
+
 /* ─────────────────────────── COMPOSED PAGE ─────────────────────────── */
 export default function HomepageV2() {
   return (
@@ -4180,6 +4539,7 @@ export default function HomepageV2() {
         <LogoStripV2 />
         <ProductStoryV2 />
         <InterviewFocusV2 />
+        <PersonalizedReportsV2 />
         <FeatureGridV2 />
         <TestimonialsV2 />
         <PricingV2 />
