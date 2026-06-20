@@ -157,21 +157,27 @@ describe("renderCanonicalProse — accept arms suppress the colliding 'excited' 
   ]) {
     const label = action.kind === "auto-accept" ? "auto-accept" : "close[accept]";
 
-    it(`${label}: no duplicated "in the same range" / no "Glad we're in the same range" prefix`, () => {
+    it(`${label}: the "in the same range" phrase appears once, no "Glad we're…" prefix collision`, () => {
       const prose = renderCanonicalProse(action, EXCITED);
-      /* The collision phrase must appear exactly once. */
+      expect(prose).not.toMatch(/^\s*Glad we're in the same range/i);
+      expect(prose).toMatch(/^We're in the same range, then —/);
       const hits = (prose.match(/in the same range/gi) || []).length;
       expect(hits).toBe(1);
-      expect(prose).not.toMatch(/^\s*Glad we're in the same range/i);
-      expect(prose).toMatch(/^We're in the same range, then\./);
+    });
+
+    it(`${label}: states the final agreed number (highestOfferMade) explicitly`, () => {
+      const prose = renderCanonicalProse(action, EXCITED);
+      expect(prose).toMatch(/₹22L/);
+      expect(prose).toMatch(/lock it at ₹22L/);
     });
 
     it(`${label}: humanizer suppressed — no mid-sentence hedge on the acceptance`, () => {
       const prose = renderCanonicalProse(action, EXCITED);
       expect(prose).not.toMatch(/\bI mean,/i);
-      /* Exact terminal accept line, anchor included, no doubled "fitment". */
+      /* Exact terminal accept line: approved idiom + explicit figure +
+       * anchor, no doubled "fitment", no banned "we're aligned". */
       expect(prose).toBe(
-        "We're in the same range, then. Let me run this past finance for fitment approval once and revert with the formal offer letter.",
+        "We're in the same range, then — let's lock it at ₹22L. Let me run this past finance for fitment approval once and revert with the formal offer letter.",
       );
     });
   }

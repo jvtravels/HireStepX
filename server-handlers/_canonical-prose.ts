@@ -504,6 +504,28 @@ export function selectEscalationAnchor(
   }
 }
 
+/** Terminal accept line. (2026-06-20, live staging) — the close used to
+ *  ship a vague "We're in the same range, then." that never named the
+ *  agreed number. For a negotiation TRAINER the closing figure is the
+ *  single most important fact of the session, and the vagueness hid a
+ *  conditional-acceptance gap: a candidate who said "if you can do ₹20L
+ *  I'll sign" (above the ₹17.7L ceiling) was closed at ₹17.7L while the
+ *  prose only said "same range" — the user couldn't tell what they
+ *  actually got. State the standing offer (highestOfferMade) explicitly
+ *  when one exists; fall back to the idiom only when no number was ever
+ *  put on the table (rare verbal-accept edge). Keeps the approved
+ *  "in the same range" idiom + "revert with the formal offer letter" so
+ *  the Indian-HR register is intact (NB "we're aligned" is banned jargon). */
+export function closeAcceptProse(
+  state: NegotiationState,
+  anchor: string,
+): string {
+  const fig = state.highestOfferMade > 0 ? `₹${state.highestOfferMade}L` : null;
+  return fig
+    ? `We're in the same range, then — let's lock it at ${fig}. Let me run this past ${anchor} once and revert with the formal offer letter.`
+    : `We're in the same range, then. Let me run this past ${anchor} once and revert with the formal offer letter.`;
+}
+
 /** Perfect 2 (2026-05-16) — emotional acknowledgement prefix.
  *
  *  Indian-recruiter idiom (NOT therapist-speak): a single one-liner the
@@ -802,7 +824,7 @@ const PROSE_ARMS: ProseArmRegistry = {
   "close": (action, state) => {
     if (action.mode === "accept") {
       const anchor = selectEscalationAnchor(action, state);
-      return `We're in the same range, then. Let me run this past ${anchor} once and revert with the formal offer letter.`;
+      return closeAcceptProse(state, anchor);
     }
     if (action.mode === "walkaway") {
       return "Looking at where your expectations are versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Thanks for taking the time to speak with us.";
@@ -812,7 +834,7 @@ const PROSE_ARMS: ProseArmRegistry = {
 
   "auto-accept": (action, state) => {
     const anchor = selectEscalationAnchor(action, state);
-    return `We're in the same range, then. Let me run this past ${anchor} once and revert with the formal offer letter.`;
+    return closeAcceptProse(state, anchor);
   },
 
   "reactive-followup": (action, state, helpers) =>
