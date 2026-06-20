@@ -802,7 +802,7 @@ const PROSE_ARMS: ProseArmRegistry = {
   "close": (action, state) => {
     if (action.mode === "accept") {
       const anchor = selectEscalationAnchor(action, state);
-      return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
+      return `We're in the same range, then. Let me run this past ${anchor} once and revert with the formal offer letter.`;
     }
     if (action.mode === "walkaway") {
       return "Looking at where your expectations are versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Thanks for taking the time to speak with us.";
@@ -812,7 +812,7 @@ const PROSE_ARMS: ProseArmRegistry = {
 
   "auto-accept": (action, state) => {
     const anchor = selectEscalationAnchor(action, state);
-    return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
+    return `We're in the same range, then. Let me run this past ${anchor} once and revert with the formal offer letter.`;
   },
 
   "reactive-followup": (action, state, helpers) =>
@@ -1823,6 +1823,22 @@ export function renderCanonicalProse(
       sentimentPrefix = null;
     } else if (action.kind === "live-walk-away" && action.mode === "walk") {
       sentimentPrefix = null;
+    } else if (
+      (action.kind === "close" && action.mode === "accept") ||
+      action.kind === "auto-accept"
+    ) {
+      /* Bug (2026-06-20, live staging) — the terminal accept arms render
+       * "We're in the same range, then. …" which the "excited" sentiment
+       * prefix ("Glad we're in the same range —") DUPLICATES, shipping
+       * "Glad we're in the same range — We're in the same range, then."
+       * (observed verbatim on a closed Infosys-senior negotiation). The
+       * accept line carries its own warm closing register — the same
+       * reason close-recap-formal and the walk-away arms already suppress
+       * the prefix. Suppress it here for every sentiment: a "Take your
+       * time on this —" (hesitant) or "I hear you — and I want to be
+       * straight" (frustrated) cushion in front of an acceptance is
+       * tonally contradictory anyway. */
+      sentimentPrefix = null;
     }
   }
   let body = renderCanonicalProseBody(action, state);
@@ -1875,7 +1891,15 @@ export function renderCanonicalProse(
   const shouldSuppressHumanize =
     HUMANIZER_SUPPRESSED_KINDS.has(action.kind) ||
     (action.kind === "close" && action.mode === "walkaway") ||
-    (action.kind === "live-walk-away" && action.mode === "walk");
+    (action.kind === "live-walk-away" && action.mode === "walk") ||
+    /* Bug (2026-06-20, live staging) — the terminal accept arms carry
+     * their own closing register, exactly like close-recap-formal (which
+     * is already in HUMANIZER_SUPPRESSED_KINDS). A mid-sentence hedge
+     * inside the acceptance reads as wavering at the worst moment
+     * ("We're in the same range, I mean, then." — observed verbatim).
+     * Suppress the humanizer here for tone-register parity. */
+    (action.kind === "close" && action.mode === "accept") ||
+    action.kind === "auto-accept";
   const humanizedBody = shouldSuppressHumanize
     ? body
     : chainProseOverlays(body, state);

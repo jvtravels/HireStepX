@@ -133,6 +133,50 @@ describe("renderCanonicalProse — uses selected escalation anchor", () => {
   });
 });
 
+describe("renderCanonicalProse — accept arms suppress the colliding 'excited' prefix", () => {
+  /* Bug (2026-06-20, live staging) — a closed Infosys-senior negotiation
+   * shipped: "Glad we're in the same range — We're in the same range, I
+   * mean, then. Let me run this fitment past finance for fitment approval
+   * once …". Three defects on the terminal accept line:
+   *   (1) the "excited" sentiment prefix ("Glad we're in the same range —")
+   *       duplicates the accept canonical's own "We're in the same range";
+   *   (2) the humanizer injected a mid-sentence hedge ("I mean,") into the
+   *       acceptance, which reads as wavering at the close;
+   *   (3) the anchor "finance for fitment approval" collided with the
+   *       canonical's leading "this fitment past", doubling "fitment".
+   * The accept arms now carry their own closing register (like
+   * close-recap-formal and the walk-away arms). */
+  const EXCITED = baseState({
+    highestOfferMade: 22,
+    lastTurnDelta: { candidateSentiment: "excited" } as NegotiationState["lastTurnDelta"],
+  });
+
+  for (const action of [
+    { kind: "close", mode: "accept" } as NextAction,
+    { kind: "auto-accept" } as NextAction,
+  ]) {
+    const label = action.kind === "auto-accept" ? "auto-accept" : "close[accept]";
+
+    it(`${label}: no duplicated "in the same range" / no "Glad we're in the same range" prefix`, () => {
+      const prose = renderCanonicalProse(action, EXCITED);
+      /* The collision phrase must appear exactly once. */
+      const hits = (prose.match(/in the same range/gi) || []).length;
+      expect(hits).toBe(1);
+      expect(prose).not.toMatch(/^\s*Glad we're in the same range/i);
+      expect(prose).toMatch(/^We're in the same range, then\./);
+    });
+
+    it(`${label}: humanizer suppressed — no mid-sentence hedge on the acceptance`, () => {
+      const prose = renderCanonicalProse(action, EXCITED);
+      expect(prose).not.toMatch(/\bI mean,/i);
+      /* Exact terminal accept line, anchor included, no doubled "fitment". */
+      expect(prose).toBe(
+        "We're in the same range, then. Let me run this past finance for fitment approval once and revert with the formal offer letter.",
+      );
+    });
+  }
+});
+
 describe("renderCanonicalProse — escalating verbatim-repeat breaker", () => {
   /* Adversarial-sweep fix (2026-06-19). When the line the kernel is about
    * to ship normalizes EQUAL to the prior AI line (state.lastAiText) AND an
