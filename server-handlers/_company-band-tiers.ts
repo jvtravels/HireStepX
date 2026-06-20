@@ -457,11 +457,21 @@ export function liftPeopleManagerBand(
   if (!role || !company) return band;
   if (INTERN_TITLE_RE.test(role)) return band;
   if (!PEOPLE_MANAGER_TITLE_RE.test(role.toLowerCase())) return band;
-  const mgrBand = getBandForRole(
-    classifyCompanyTier(company),
-    role,
-    applicableYoe ?? MANAGER_DEFAULT_YOE,
-  );
+  /* #117 (2026-06-21, live staging) — the manager band must be resolved at
+   * AT LEAST the representative first-line-manager YoE. Holding a genuine
+   * people-management title IS itself a seniority floor: a first-line EM
+   * promoted only 4 years ago still commands the manager-grade market, not a
+   * junior-IC band. Threading the candidate's raw applicableYoe straight into
+   * getBandForRole let a low value (e.g. yoe=4, yoeScale 0.85) scale the
+   * MANAGER floor DOWN — a Flipkart EM with applicableYoe=4 resolved to
+   * 23.8/34/16.2 and the kernel CLOSED at ₹31.4L total, BELOW the candidate's
+   * own ₹48L CTC and below the unlifted-null EM floor (₹32.7/₹56). Clamp the
+   * lookup YoE to MANAGER_DEFAULT_YOE so applicableYoe can only ever lift the
+   * manager band (a 15-yr senior EM still scales up), never sink it below the
+   * first-line-EM floor. One source of truth — both resolveServerBand and the
+   * generate-questions seed go through this helper. */
+  const mgrYoe = Math.max(applicableYoe ?? MANAGER_DEFAULT_YOE, MANAGER_DEFAULT_YOE);
+  const mgrBand = getBandForRole(classifyCompanyTier(company), role, mgrYoe);
   if (band.maxStretch >= mgrBand.ceil) return band;
   return {
     initialOffer: Math.max(band.initialOffer, mgrBand.floor),

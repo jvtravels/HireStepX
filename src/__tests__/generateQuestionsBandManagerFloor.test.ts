@@ -87,3 +87,43 @@ describe("#116 — people-manager band floor on the generate-questions seed path
     expect(seed.maxStretch).toBe(kernel.maxStretch);
   });
 });
+
+describe("#117 — low applicableYoe must not sink the people-manager floor", () => {
+  /* Live staging (2026-06-21, Flipkart EM, init applicableYoe=4 — a
+   * first-line EM promoted 4 yrs ago): the kernel band resolved to
+   * 23.8 / 34 / 16.2 and the negotiation CLOSED at ₹31.4L total — BELOW the
+   * candidate's own ₹48L current CTC and below the unlifted-null EM floor
+   * (32.7 / 56). Cause: liftPeopleManagerBand threaded the raw applicableYoe
+   * (yoeScale(4)=0.85) straight into the MANAGER-band lookup, scaling the
+   * floor itself down to a junior-IC band. Holding a people-management title
+   * IS a seniority floor — applicableYoe may only LIFT the manager band,
+   * never sink it below the representative first-line-EM band. */
+  it("Flipkart EM with applicableYoe=4 clears the null-YoE EM floor (no ₹31.4L close)", () => {
+    const floor = resolveServerBand("Engineering Manager", "Flipkart", "senior", null);
+    const low = resolveServerBand("Engineering Manager", "Flipkart", "senior", 4);
+    expect(low.maxStretch).toBe(floor.maxStretch);
+    expect(low.maxStretch).toBeGreaterThan(34); // the live junior-scaled ceil
+    expect(low.walkAway).toBeGreaterThanOrEqual(floor.walkAway);
+    expect(low.initialOffer).toBeGreaterThan(23.8); // the live junior-scaled opener
+  });
+
+  it("applicableYoe can still LIFT a senior EM above the first-line floor", () => {
+    const floor = resolveServerBand("Engineering Manager", "Flipkart", "senior", null);
+    const senior = resolveServerBand("Engineering Manager", "Flipkart", "senior", 15);
+    /* The clamp is one-way: a 15-yr senior EM scales UP past the
+     * representative-YoE floor — we only block sinking BELOW it. */
+    expect(senior.maxStretch).toBeGreaterThan(floor.maxStretch);
+  });
+
+  it("liftPeopleManagerBand floor is monotonic non-decreasing in applicableYoe", () => {
+    const low = { initialOffer: 10, maxStretch: 12, walkAway: 8 };
+    const ceils = [0, 2, 4, 8, 11, 15, 20].map(
+      (y) => liftPeopleManagerBand(low, "Engineering Manager", "Flipkart", y).maxStretch,
+    );
+    for (let i = 1; i < ceils.length; i++) {
+      expect(ceils[i]).toBeGreaterThanOrEqual(ceils[i - 1]);
+    }
+    /* And the lowest (yoe=0) already clears the junior-scaled ₹34 ceil. */
+    expect(ceils[0]).toBeGreaterThan(34);
+  });
+});
