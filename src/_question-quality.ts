@@ -107,6 +107,12 @@ export function checkQuestionQuality(
   step: QualityCheckInput,
   focus: string,
   role: string,
+  /** Normalized texts already present in the script (kept questions +
+   *  fallbacks substituted earlier in the same pass). When a step is
+   *  downgraded, buildFallback picks the first pool entry NOT in this
+   *  set, so two failing steps never collapse to the identical canned
+   *  question. Pass the running `used` set from the caller. */
+  avoid?: Set<string>,
 ): QualityResult {
   const issues: QualityIssue[] = [];
   const text = (step.aiText || "").trim();
@@ -152,59 +158,124 @@ export function checkQuestionQuality(
    * focus-aware questions that won't embarrass us. The downstream
    * follow-up generator will recover real specificity from the
    * candidate's answer. */
-  const fallback = buildFallback(step.type, focus, role, step.idx, step.total);
+  const fallback = buildFallback(step.type, focus, role, step.idx, step.total, avoid);
   return { ok: false, issues, fallback };
 }
 
-function buildFallback(type: string, focus: string, role: string, idx: number, total: number): string {
+/** Normalize a question for duplicate detection: lowercase, collapse
+ *  whitespace, strip surrounding punctuation. Used to compare a
+ *  candidate fallback against questions already in the script so we
+ *  never emit the same question twice. Exported so the caller can
+ *  seed the `avoid` set from the script's existing questions. */
+export function normalizeQuestion(s: string): string {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Candidate fallback questions for a (type, focus, position) bucket.
+ * Buckets that historically collapsed to a single string (behavioural
+ * mid-session, technical mid-session) now expose a small POOL of
+ * distinct stems so that when multiple steps in one script fail the
+ * quality check they can each take a different question instead of all
+ * landing on the same one. buildFallback picks the first entry not
+ * already used in this script. Order = preference.
+ */
+function fallbackPool(type: string, focus: string, role: string, idx: number, total: number): string[] {
   const safeRole = (role || "this role").slice(0, 80);
   if (type === "intro") {
-    return `Welcome — thanks for taking the time. We're going to spend the next 20 minutes covering a few areas relevant to ${safeRole}. I'll ask, you talk — there are no trick questions. Ready to start?`;
+    return [`Welcome — thanks for taking the time. We're going to spend the next 20 minutes covering a few areas relevant to ${safeRole}. I'll ask, you talk — there are no trick questions. Ready to start?`];
   }
   if (type === "closing") {
-    return "We've covered a lot of ground — thanks. Before we wrap, do you have any questions for me about the role, team, or how the rest of the process unfolds?";
+    return ["We've covered a lot of ground — thanks. Before we wrap, do you have any questions for me about the role, team, or how the rest of the process unfolds?"];
   }
+  const isEarly = idx === 1;
+  const isLate = idx >= total - 2;
   // questions / follow-ups — pick by focus + position
   if (focus === "technical" || focus === "system-design") {
-    if (idx === 1) return `Walk me through one technical project you've shipped recently — what you owned, what you'd redo, what surprised you.`;
-    if (idx >= total - 2) return `Tell me about a system you built or owned where things broke at scale. What was the failure mode, and how did you decide what to fix first?`;
-    return `Pick a technical decision you made in the last 12 months that you'd defend hardest, and one you'd quietly walk back if asked. Why each?`;
+    if (isEarly) return [`Walk me through one technical project you've shipped recently — what you owned, what you'd redo, what surprised you.`];
+    if (isLate) return [`Tell me about a system you built or owned where things broke at scale. What was the failure mode, and how did you decide what to fix first?`];
+    return [
+      `Pick a technical decision you made in the last 12 months that you'd defend hardest, and one you'd quietly walk back if asked. Why each?`,
+      `Tell me about a time you had to choose between shipping fast and getting it right on a system you owned. How did you decide, and what did the trade-off cost?`,
+      `Describe a bug or outage that took far longer to diagnose than you expected. How did you finally isolate it, and what did you change so it wouldn't recur?`,
+    ];
   }
   if (focus === "case-study") {
-    if (idx === 1) return `Let's say a B2B SaaS in your domain is seeing 18% MoM signup growth but flat MRR. What's your first hypothesis, and how would you validate it?`;
-    return `Stay with the same case — what's the single metric you'd ask the CEO for if you could only have one to make your call?`;
+    if (isEarly) return [`Let's say a B2B SaaS in your domain is seeing 18% MoM signup growth but flat MRR. What's your first hypothesis, and how would you validate it?`];
+    return [
+      `Stay with the same case — what's the single metric you'd ask the CEO for if you could only have one to make your call?`,
+      `Same case — if you had to recommend one action with the data you have today, what would it be, and what's the biggest risk you'd be taking?`,
+    ];
   }
   if (focus === "hr-round" || focus === "hr") {
-    return `Tell me concretely — why are you exploring a change right now, and what's making you think this role specifically (not just any new role)?`;
+    return [
+      `Tell me concretely — why are you exploring a change right now, and what's making you think this role specifically (not just any new role)?`,
+      `Walk me through your notice period and how a transition would actually work on your end if we moved forward.`,
+      `What would have to be true about the team and the work here for you to be genuinely happy a year in?`,
+    ];
   }
   if (focus === "panel") {
-    if (idx === 1) return `Each of us will dig into a different facet — I'll start with the broadest: walk us through the project that best represents how you operate end-to-end, not just the highlight reel.`;
-    if (idx >= total - 2) return `One of us is going to push back hard on a decision you stand by — pick that decision now and tell us what you'd defend, what data you'd bring, and where you'd genuinely concede.`;
-    return `Different functions in a panel notice different signals — tell us about a cross-functional disagreement where engineering, design, and business each saw the same situation differently. How did you read the room?`;
+    if (isEarly) return [`Each of us will dig into a different facet — I'll start with the broadest: walk us through the project that best represents how you operate end-to-end, not just the highlight reel.`];
+    if (isLate) return [`One of us is going to push back hard on a decision you stand by — pick that decision now and tell us what you'd defend, what data you'd bring, and where you'd genuinely concede.`];
+    return [
+      `Different functions in a panel notice different signals — tell us about a cross-functional disagreement where engineering, design, and business each saw the same situation differently. How did you read the room?`,
+      `Tell us about a time you had to align several teams who each wanted something different. How did you get to a decision everyone could live with?`,
+    ];
   }
   if (focus === "strategic") {
-    if (idx === 1) return `Set the strategic frame: pick one bet your org made in the last 18 months that you'd argue was right *or* wrong, and walk me through how you'd defend that view to the board.`;
-    if (idx >= total - 2) return `Tell me about a second-order consequence of a decision you owned that you didn't anticipate at the time. What would you change in how you scope decisions today?`;
-    return `Stay strategic — what's a trade-off in your roadmap right now where the obviously-correct answer is the one you're choosing *against*, and why?`;
+    if (isEarly) return [`Set the strategic frame: pick one bet your org made in the last 18 months that you'd argue was right *or* wrong, and walk me through how you'd defend that view to the board.`];
+    if (isLate) return [`Tell me about a second-order consequence of a decision you owned that you didn't anticipate at the time. What would you change in how you scope decisions today?`];
+    return [
+      `Stay strategic — what's a trade-off in your roadmap right now where the obviously-correct answer is the one you're choosing *against*, and why?`,
+      `Tell me about a time you killed or paused an initiative that was working, because something more important needed the resources. How did you make that call?`,
+    ];
   }
   if (focus === "salary-negotiation") {
-    return `Help me understand where your expectations are anchored — what's driving the number you have in mind?`;
+    return [`Help me understand where your expectations are anchored — what's driving the number you have in mind?`];
   }
   if (focus === "government-psu") {
-    return `Walk me through a decision you've taken where short-term efficiency conflicted with due process. How did you reason about it?`;
+    return [
+      `Walk me through a decision you've taken where short-term efficiency conflicted with due process. How did you reason about it?`,
+      `Tell me about a time you had to uphold a rule or policy that was unpopular with the people around you. How did you handle it?`,
+    ];
   }
   if (focus === "management" || focus === "managerial") {
-    return `Tell me about a time you had to escalate a risk to leadership when the team wanted to push through. How did you frame it, and what changed afterwards?`;
+    return [
+      `Tell me about a time you had to escalate a risk to leadership when the team wanted to push through. How did you frame it, and what changed afterwards?`,
+      `Tell me about a time you had to manage out or turn around an underperformer. What did you do, and where did it land?`,
+      `Tell me about a time you had to deliver with fewer people or less time than the work needed. How did you decide what the team would not do?`,
+    ];
   }
   if (focus === "campus-placement") {
-    return `Pick a college project or internship you're proudest of — walk me through the problem, your specific contribution, and what you'd do differently.`;
+    return [
+      `Pick a college project or internship you're proudest of — walk me through the problem, your specific contribution, and what you'd do differently.`,
+      `Tell me about a time you had to learn something technical quickly for a project or exam. How did you go about it?`,
+    ];
   }
   // Default behavioural-style fallback
-  if (idx === 1) {
-    return `Tell me about a recent project at work you're proud of — what you owned, what was hard, and how you'd describe the outcome to someone who wasn't there.`;
+  if (isEarly) {
+    return [`Tell me about a recent project at work you're proud of — what you owned, what was hard, and how you'd describe the outcome to someone who wasn't there.`];
   }
-  if (idx >= total - 2) {
-    return `Tell me about a real failure — not a near miss. What went wrong, what did you take responsibility for, and what's different in how you work today because of it?`;
+  if (isLate) {
+    return [`Tell me about a real failure — not a near miss. What went wrong, what did you take responsibility for, and what's different in how you work today because of it?`];
   }
-  return `Tell me about a time you disagreed with a teammate or stakeholder on something that mattered. How did you raise it, and where did it land?`;
+  return [
+    `Tell me about a time you disagreed with a teammate or stakeholder on something that mattered. How did you raise it, and where did it land?`,
+    `Tell me about a time you had to deliver under a tight deadline with more on your plate than time allowed. How did you decide what to cut?`,
+    `Tell me about a time you had to bring someone around to your point of view when you had no authority over them. What did you do?`,
+    `Tell me about a time you owned a messy, ambiguous problem with no clear direction. How did you create clarity for yourself and the people around you?`,
+  ];
+}
+
+function buildFallback(type: string, focus: string, role: string, idx: number, total: number, avoid?: Set<string>): string {
+  const pool = fallbackPool(type, focus, role, idx, total);
+  if (avoid && avoid.size > 0) {
+    const fresh = pool.find((c) => !avoid.has(normalizeQuestion(c)));
+    if (fresh) return fresh;
+  }
+  return pool[0];
 }

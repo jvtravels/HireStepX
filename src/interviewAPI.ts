@@ -6,7 +6,7 @@ import { openIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import { checkRateLimit } from "./rateLimit";
 import { extractAccentMarkup } from "./_accent-parser";
 import { stripProsodyMarkup } from "./_prosody";
-import { checkQuestionQuality } from "./_question-quality";
+import { checkQuestionQuality, normalizeQuestion } from "./_question-quality";
 
 const RESULTS_KEY = "hirestepx_sessions";
 const IDB_STORE = "drafts";
@@ -583,16 +583,52 @@ export async function fetchLLMQuestions(params: {
        arc rules. */
     const focus = (params.focus || params.type || "behavioral").toLowerCase();
     const role = params.role || "";
+
+    /* Pass server-side fallback / cache provenance through to the
+       caller so the interview chrome can surface a "practice mode"
+       badge when the static question bank fired. Server sets
+       `_fallback: "static"` when both LLMs failed, undefined
+       otherwise. `_cached` is the analogous flag for Upstash hits.
+       Computed BEFORE the quality filter because the filter's
+       behaviour depends on provenance (see below). */
+    const fallbackHint =
+      typeof (data as { _fallback?: unknown })._fallback === "string"
+        ? ((data as { _fallback: string })._fallback)
+        : (data as { _cached?: unknown })._cached === true
+        ? "cached"
+        : undefined;
+
+    /* Quality post-filter. Two important provenance rules:
+
+       1. STATIC fallback is exempt. When the server served the curated
+          static question bank (`_fallback === "static"`, i.e. both LLMs
+          were down), those questions are human-vetted and intentionally
+          terse ("Tell me about a time you failed."). Running the LLM-
+          output filter over them mis-flags them as "too-short" / "no
+          anchor" and downgrades several distinct bank questions to the
+          SAME canned fallback — which produced the live bug where a
+          candidate got the identical "disagreed with a teammate…"
+          question twice and three conflict questions in a row. The
+          curated bank must ship untouched.
+
+       2. For the LLM / cached path the filter still runs, but downgrades
+          are now dedup-aware: `used` seeds with every question already
+          in the script and grows as we substitute, so two failing steps
+          can't collapse onto the same fallback string. */
     let downgradedCount = 0;
-    const filteredQuestions = isSalaryNeg ? questions : questions.map((q: InterviewStep, idx: number) => {
+    const skipQualityFilter = isSalaryNeg || fallbackHint === "static";
+    const used = new Set<string>(questions.map((q: InterviewStep) => normalizeQuestion(q.aiText)));
+    const filteredQuestions = skipQualityFilter ? questions : questions.map((q: InterviewStep, idx: number) => {
       const result = checkQuestionQuality(
         { type: q.type, aiText: q.aiText, idx, total: questions.length },
         focus,
         role,
+        used,
       );
       if (result.ok) return q;
       console.warn(`[questions] step ${idx} (${q.type}) failed quality check:`, result.issues.map((i) => `${i.rule}(${i.detail})`).join(", "), "→ falling back");
       downgradedCount++;
+      used.add(normalizeQuestion(result.fallback));
       return {
         ...q,
         aiText: result.fallback,
@@ -600,19 +636,8 @@ export async function fetchLLMQuestions(params: {
       };
     });
     if (downgradedCount > 0) {
-      console.info(`[questions] quality-filter downgraded ${downgradedCount}/${questions.length} steps to safe fallbacks`);
+      console.warn(`[questions] quality-filter downgraded ${downgradedCount}/${questions.length} steps to safe fallbacks`);
     }
-    /* Pass server-side fallback / cache provenance through to the
-       caller so the interview chrome can surface a "practice mode"
-       badge when the static question bank fired. Server sets
-       `_fallback: "static"` when both LLMs failed, undefined
-       otherwise. `_cached` is the analogous flag for Upstash hits. */
-    const fallbackHint =
-      typeof (data as { _fallback?: unknown })._fallback === "string"
-        ? ((data as { _fallback: string })._fallback)
-        : (data as { _cached?: unknown })._cached === true
-        ? "cached"
-        : undefined;
     return { questions: filteredQuestions, negotiationBand: data.negotiationBand || undefined, _fallback: fallbackHint };
   };
   for (let i = 0; i < 3; i++) {
