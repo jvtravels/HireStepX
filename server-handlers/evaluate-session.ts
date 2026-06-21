@@ -1,6 +1,9 @@
-/* Vercel Edge Function — Interview Session Evaluation (MVP Report) */
+/* Vercel Node Serverless Function — Interview Session Evaluation (MVP Report) */
 
-export const config = { runtime: "edge", maxDuration: 60 };
+// Runtime + duration are authoritatively set on the route segment
+// (app/api/evaluate-session/route.ts): nodejs + maxDuration 60. App Router
+// ignores this `config` export, so it's kept only as accurate documentation.
+export const config = { runtime: "nodejs", maxDuration: 60 };
 
 import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
