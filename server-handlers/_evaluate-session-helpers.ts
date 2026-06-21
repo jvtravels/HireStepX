@@ -923,6 +923,15 @@ const BGV_TOPIC_RE =
   /\b(?:bgv|background\s+(?:check|verification)|relieving\s+letter|reliev|pay\s*slip|payslip|form\s*16|marksheet|mark\s+sheet|uan|epf|offer\s+letter|experience\s+letter|reference\s+check|document|verification|gap\s+in\s+(?:employment|career))\b/i;
 const COUNTER_OFFER_TOPIC_RE =
   /\b(?:counter[-\s]?offer|other\s+offers?|competing\s+offer|retention|current\s+employer\s+(?:match|retain|counter)|are\s+you\s+(?:interviewing|considering)|in\s+the\s+market)\b/i;
+// Notice-period / joining-timeline topic — gates noticeDays + noticeFlexibility
+// so the report can't assert a notice period or buyout stance for a candidate
+// who was never asked about it (same grounding invariant as BGV / counter-offer).
+const NOTICE_TOPIC_RE =
+  /\b(?:notice\s*period|serve\s+(?:my\s+|the\s+)?notice|buy[\s-]?out|buyout|last\s+working\s+day|reliev|when\s+can\s+you\s+(?:join|start)|how\s+(?:soon|early|quickly)\s+can\s+you\s+(?:join|start)|joining\s+(?:date|timeline)|notice\s+to\s+serve|\d+\s*(?:months?|mos?|weeks?|wks?|days?)\s+notice)\b/i;
+// Compensation-expectation topic — gates compExpected so the report can't put a
+// CTC/hike figure in the candidate's mouth when comp never came up.
+const COMP_TOPIC_RE =
+  /\b(?:ctc|salary|compensation|\bcomp\b|package|\blpa\b|lakhs?|crores?|\bhike\b|expected\s+(?:comp|salary|ctc|package|number)|comp(?:ensation)?\s+expectation|current\s+(?:ctc|salary|package|comp)|in[\s-]?hand|take[\s-]?home|₹)\b/i;
 
 /**
  * Normalize + ground the LLM's hrReport block. `conversationCorpus` (the full
@@ -947,13 +956,22 @@ export function normalizeHrReport(
   // P1 #8 — deterministic backstop: drop a rewrite that still leans on filler.
   if (motivationAfter && isGenericMotivation(motivationAfter)) motivationAfter = "";
   if (!motivationBefore && !motivationAfter) return null;
-  const noticeDays = coerceNoticeDays(r.noticeDays);
+  // P2 — notice/comp grounding: like BGV + counter-offer below, these logistics
+  // fields may only be asserted if their topic actually surfaced in the
+  // conversation. Otherwise the LLM can fabricate a notice period, buyout
+  // stance, or CTC expectation the candidate never stated.
+  const noticeGrounded = !grounded || NOTICE_TOPIC_RE.test(corpus);
+  const compGrounded = !grounded || COMP_TOPIC_RE.test(corpus);
+  const noticeDays = noticeGrounded ? coerceNoticeDays(r.noticeDays) : null;
   const validFlex = ["buyout-possible", "strict", "not-stated"] as const;
-  const noticeFlexibility = validFlex.includes(r.noticeFlexibility as typeof validFlex[number])
-    ? (r.noticeFlexibility as typeof validFlex[number])
-    : "not-stated";
+  const noticeFlexibility =
+    noticeGrounded && validFlex.includes(r.noticeFlexibility as typeof validFlex[number])
+      ? (r.noticeFlexibility as typeof validFlex[number])
+      : "not-stated";
   const compExpected =
-    typeof r.compExpected === "string" ? r.compExpected.trim().slice(0, 40) || null : null;
+    compGrounded && typeof r.compExpected === "string"
+      ? r.compExpected.trim().slice(0, 40) || null
+      : null;
   // P0 #6 — counter-offer risk defaults to "not-assessed", not "med". When we
   // have the corpus and the topic never came up, force "not-assessed" so the
   // report doesn't manufacture a retention script (re-introduces script-leak).

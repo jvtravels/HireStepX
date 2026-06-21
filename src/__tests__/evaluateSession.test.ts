@@ -724,6 +724,45 @@ describe("normalizeHrReport (P0 #6 / P1 #7 / #8 grounding)", () => {
     expect(r?.bgvGaps).toEqual(["Missing relieving letter from prior employer"]);
   });
 
+  it("drops ungrounded noticeDays + noticeFlexibility when notice never came up", () => {
+    const corpus = "Why do you want this role? Because of the product mission. What excites you?";
+    const r = normalizeHrReport(base, corpus);
+    expect(r?.noticeDays).toBeNull();
+    expect(r?.noticeFlexibility).toBe("not-stated");
+  });
+
+  it("keeps noticeDays + noticeFlexibility when notice WAS discussed", () => {
+    const corpus = "What's your notice period? I serve 60 days but a buyout is possible.";
+    const r = normalizeHrReport(base, corpus);
+    expect(r?.noticeDays).toBe(60);
+    expect(r?.noticeFlexibility).toBe("buyout-possible");
+  });
+
+  it("recognizes joining-timeline phrasing as notice grounding", () => {
+    const corpus = "When can you join if we move ahead with an offer?";
+    const r = normalizeHrReport(base, corpus);
+    expect(r?.noticeDays).toBe(60);
+  });
+
+  it("drops ungrounded compExpected when comp never came up", () => {
+    const corpus = "What's your notice period? Sixty days. Tell me about a conflict you handled.";
+    const r = normalizeHrReport(base, corpus);
+    expect(r?.compExpected).toBeNull();
+  });
+
+  it("keeps compExpected when CTC/comp WAS discussed", () => {
+    const corpus = "What's your expected CTC for this role? I'm looking at 35-42L.";
+    const r = normalizeHrReport(base, corpus);
+    expect(r?.compExpected).toBe("35-42L");
+  });
+
+  it("does NOT gate notice/comp when no corpus is supplied (back-compat)", () => {
+    const r = normalizeHrReport(base);
+    expect(r?.noticeDays).toBe(60);
+    expect(r?.compExpected).toBe("35-42L");
+    expect(r?.noticeFlexibility).toBe("buyout-possible");
+  });
+
   it("blanks a generic motivationAfter (filler backstop)", () => {
     const r = normalizeHrReport({ ...base, motivationAfter: "I want to grow my career here" });
     expect(r?.motivationAfter).toBe("");
