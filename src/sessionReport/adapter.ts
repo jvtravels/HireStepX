@@ -464,10 +464,16 @@ function adoptKernelOutcome(
     ? (typeof km.finalOfferLpa === "number" ? km.finalOfferLpa : latest)
     : null;
 
+  // PRI-52 (2026-06-21): gap closure must measure movement off the FIRST offer
+  // the AI actually made — trajectory[0] — not km.initialOfferLpa, which is the
+  // band FLOOR (market P35) and was never offered. Anchoring the denominator on
+  // the floor understated the opening and inflated the apparent closure. Fall
+  // back to the band floor only when no cash offer was ever made.
+  const firstOfferMade = trajectory.length > 0 ? trajectory[0] : km.initialOfferLpa;
   let gapClosurePct: number | null = null;
-  if (candidateAsk !== null && latest !== null && candidateAsk > km.initialOfferLpa) {
+  if (candidateAsk !== null && latest !== null && candidateAsk > firstOfferMade) {
     gapClosurePct = Math.max(0, Math.min(100, Math.round(
-      ((latest - km.initialOfferLpa) / (candidateAsk - km.initialOfferLpa)) * 100,
+      ((latest - firstOfferMade) / (candidateAsk - firstOfferMade)) * 100,
     )));
   }
 

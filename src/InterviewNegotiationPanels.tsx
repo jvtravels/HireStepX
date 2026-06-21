@@ -229,10 +229,17 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
   const cleanAiText = (text: string) =>
     text.replace(numBeforeQuoteRe, "").replace(candidateQuoteRe, "").replace(gapContextRe, "");
 
-  // Extract initial offer: prefer negotiationBand, else find the first AI "offer" context
+  // PRI-52 (2026-06-21): the "Initial Offer" headline + improvement % must
+  // reflect the first offer the AI ACTUALLY made to the candidate — not
+  // negotiationBand.initialOffer, which is the band FLOOR (market P35) and is
+  // never spoken aloud. Surfacing the floor produced a phantom "Initial Offer
+  // ₹32.7" + "+60% improvement" when the bot opened well above the floor. So
+  // always extract the first offer-context number the AI actually stated, and
+  // fall back to the band floor ONLY when nothing could be extracted (e.g. a
+  // voice transcript that lost the number).
   // Look for patterns like "offer of ₹X", "total of ₹X", "we can offer ₹X", "package of ₹X"
   let extractedInitialOffer = 0;
-  if (!negotiationBand?.initialOffer) {
+  {
     const offerContextRe = /(?:offer(?:ing)?|total|package|ctc|compensation)\s+(?:of\s+|is\s+|at\s+|worth\s+)?₹?\s*(\d+(?:[,.]\d+)*)\s*(?:l?pa|lakh|lakhs|[lL]\b)/gi;
     for (const aiText of aiTexts) {
       const cleaned = cleanAiText(aiText);
@@ -259,7 +266,10 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
       }
     }
   }
-  const initialOffer = negotiationBand?.initialOffer ?? extractedInitialOffer;
+  // The first offer ACTUALLY made wins; the band floor is only a last resort.
+  const initialOffer = extractedInitialOffer > 0
+    ? extractedInitialOffer
+    : (negotiationBand?.initialOffer ?? 0);
 
   // Final offer: scan AI messages backwards for the last offer (with non-offer contexts stripped)
   // Do NOT use an initialOffer floor — if the initial offer extraction was wrong, the floor propagates the error

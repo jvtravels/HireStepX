@@ -893,7 +893,11 @@ function planDiscoverySufficientAnchor(
   }
   const lo = state.band.initialOffer;
   const hi = state.band.maxStretch;
-  const anchored = clampAnchorAboveDisclosed(lo, hi, state);
+  /* #PRI-53 — this is the OPENING anchor (gated on highestOfferMade === 0
+   * above), so reserve concession headroom below the ceiling rather than
+   * pinning maxStretch. clampOpeningAnchor preserves the honest-defer null
+   * path and the pay-cut floor; counters/closes elsewhere keep the full band. */
+  const anchored = clampOpeningAnchor(lo, hi, state);
   /* AUDIT-W02 BUG-001 — when the band ceiling sits below the candidate's
    * disclosed CTC, stating the band as a range would advertise a pay cut;
    * honest-defer with a point anchor flagged bandIncomplete instead. */
@@ -5906,6 +5910,48 @@ export function clampAnchorAboveDisclosed(
   /* Cap by maxStretch — won't blow through the band ceiling even if the
    * candidate's current CTC is structurally above it. */
   return Math.min(hi, candidate);
+}
+
+/* #PRI-53 (2026-06-21, live staging) — OPENING-anchor headroom.
+ *
+ * clampAnchorAboveDisclosed is shared by the opening anchor, mid-negotiation
+ * counters, AND the close — for counters/closes, reaching the band ceiling is
+ * correct (that's the whole point of conceding upward). But for the OPENING
+ * offer it is a defect: a "tough"/aggressive manager whose disclosed-CTC hike
+ * floor overshoots the ceiling (e.g. current ₹48L, band ₹32.7–₹52.3L → 25%
+ * hike floor ₹60L) gets clamped to maxStretch and opens AT its own ceiling.
+ * The candidate then has nowhere to negotiate up to — the practice is dead on
+ * arrival.
+ *
+ * This wraps clampAnchorAboveDisclosed and, FOR THE OPENING ONLY, backs the
+ * anchor off below the ceiling so a concession margin exists. It never opens
+ * below a real raise over the disclosed CTC (no pay-cut opening) and never
+ * below the band floor; when the band is genuinely too tight to satisfy both
+ * (CTC sits right under the ceiling), it prefers the small-raise floor over
+ * pinning the exact ceiling. Counters/closes are untouched — they still call
+ * clampAnchorAboveDisclosed directly. */
+export function clampOpeningAnchor(
+  lo: number,
+  hi: number,
+  state: NegotiationState,
+): number | null {
+  const base = clampAnchorAboveDisclosed(lo, hi, state);
+  if (base === null) return null; // honest-defer path preserved verbatim
+  if (!(hi > lo)) return base; // degenerate band — nothing to reserve
+  /* Reserve ~20% of the band spread (min ₹1L) below the ceiling so the
+   * candidate has somewhere to push the offer up to. */
+  const headroom = Math.max(1, Math.round((hi - lo) * 0.2));
+  const capped = hi - headroom;
+  if (base <= capped) return base; // already leaves room — unchanged
+  /* base is pinned near/at the ceiling. Back off to `capped`, but never below
+   * a minimal (5%) raise over the disclosed CTC, and never below the floor. */
+  const disclosed = state.candidateCurrentCtc;
+  const minRaiseOverCtc =
+    typeof disclosed === "number" && disclosed > 0
+      ? Math.min(hi, Math.round(disclosed * 1.05))
+      : lo;
+  const floor = Math.max(lo, minRaiseOverCtc);
+  return Math.max(floor, Math.min(base, capped));
 }
 
 function pickStructuralLever(state: NegotiationState): PlannedAction | null {
