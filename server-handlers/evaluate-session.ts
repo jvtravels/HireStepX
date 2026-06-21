@@ -3,7 +3,7 @@
 // Runtime + duration are authoritatively set on the route segment
 // (app/api/evaluate-session/route.ts): nodejs + maxDuration 60. App Router
 // ignores this `config` export, so it's kept only as accurate documentation.
-export const config = { runtime: "nodejs", maxDuration: 90 };
+export const config = { runtime: "nodejs", maxDuration: 100 };
 
 import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
@@ -956,10 +956,14 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
         // (Gemini/Cerebras) get a much larger budget: gemini-2.5-flash is far
         // more verbose for the SAME schema and truncated the HR-round report at
         // both 2500 AND 4000 (observed completions pinned at the cap → unparseable
-        // JSON → empty report). 8000 fits gemini-2.5-flash's 8192 output ceiling
-        // with headroom; the Node 60s runtime accommodates the longer generation.
+        // JSON → empty report). A complete report is ~5100 completion tokens, so
+        // 8000 fits gemini-2.5-flash's 8192 ceiling with headroom.
         { prompt, temperature: 0.25, maxTokens: 2500, fallbackMaxTokens: 8000, jsonMode: true },
-        35000,
+        // 50s overall: a complete gemini-2.5-flash report runs ~20-24s normally
+        // but spikes past 35s under provider throttling — a 35s cap aborted
+        // working calls. Groq stays capped at 15s (groqTimeoutMs) so a real
+        // Groq incident still fails over fast. Bounded by the 100s maxDuration.
+        50000,
         { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
       );
     } catch (primaryErr) {
@@ -983,7 +987,10 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
           // attempt (primary hit a fast outage/429), the verbose fallback needs
           // the same 8000-token room and time to produce a complete report.
           { prompt: strictPrompt, temperature: 0, maxTokens: 2500, fallbackMaxTokens: 8000, jsonMode: true },
-          30000,
+          // 40s: when the retry is the real attempt (primary failed fast), the
+          // verbose fallback needs room to finish. primary(50) + retry(40) +
+          // overhead stays under the 100s maxDuration.
+          40000,
           { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 12000 },
         );
         const retryParsed = extractJSON<Partial<SessionReport>>(retry.text);
