@@ -1707,9 +1707,20 @@ Requirements:
         : "",
     }, req);
 
-    // Best-effort: cache the successful response for ~5 min so retries /
-    // double-clicks on the same body don't spend tokens.
-    void redisSetEx(cacheKey, CACHE_TTL_SEC, JSON.stringify(responseBody));
+    // Cache the successful response for ~5 min so retries / double-clicks
+    // on the same body don't spend tokens. MUST be awaited: on the Edge
+    // runtime the function freezes the instant we return the Response,
+    // cancelling any un-awaited (fire-and-forget) write in flight — the
+    // same failure mode that kept gq_cache_hit from ever flushing (see the
+    // cache-hit path above). A prior `void` here is exactly why the cache
+    // never populated and the hit rate sat at ~0%. The added latency is a
+    // single Redis SET on a request that already spent seconds in the LLM
+    // — negligible. Wrapped so a transient Redis failure stays best-effort
+    // and never discards an otherwise-valid response (an unguarded throw
+    // would fall through to the static-fallback catch below).
+    try {
+      await redisSetEx(cacheKey, CACHE_TTL_SEC, JSON.stringify(responseBody));
+    } catch { /* best-effort cache write; never fail the request on it */ }
 
     return new Response(JSON.stringify(responseBody), { status: 200, headers });
   } catch (err) {
