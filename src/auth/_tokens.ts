@@ -90,7 +90,7 @@ export const tokens = {
  * fell through to system-ui because the file was never loaded. */
 export const fonts = {
   serif: "'Instrument Serif', Georgia, serif",
-  sans: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+  sans: "'Satoshi', Inter, system-ui, -apple-system, sans-serif",
   mono: "'JetBrains Mono', monospace",
 } as const;
 
