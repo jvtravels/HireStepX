@@ -518,43 +518,100 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         ) : (
           <div style={{ marginTop: 16, padding: "16px", borderRadius: 12, background: c.carbon, border: `1px solid ${c.border}` }}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
               <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>
                 Pay per session
               </span>
               <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>
-                ₹{SINGLE_SESSION_PRICE} each · credits never expire
+                ₹{SINGLE_SESSION_PRICE} each · no expiry
               </span>
             </div>
 
-            {/* Quantity picker */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-              {[1, 3, 5, 10].map(qty => {
-                const selected = singleQty === qty;
-                return (
-                  <button
-                    key={qty}
-                    onClick={() => setSingleQty(qty)}
-                    disabled={!!loading}
-                    style={{
-                      flex: 1, padding: "7px 4px", borderRadius: 8, border: `1.5px solid ${selected ? c.gilt : c.border}`,
-                      background: selected ? `rgba(180,83,9,0.08)` : c.graphite,
-                      color: selected ? c.gilt : c.stone,
-                      fontFamily: font.ui, fontSize: 12, fontWeight: selected ? 700 : 500,
-                      cursor: loading ? "default" : "pointer",
-                      transition: "border-color 0.15s, color 0.15s, background 0.15s",
-                      textAlign: "center" as const,
+            {/* Stepper — free choice of any qty 1–10 */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              {/* Decrement */}
+              <button
+                onClick={() => setSingleQty(q => Math.max(1, q - 1))}
+                disabled={singleQty <= 1 || !!loading}
+                aria-label="Remove one session"
+                style={{
+                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                  border: `1.5px solid ${singleQty <= 1 ? c.border : c.borderHover}`,
+                  background: c.graphite,
+                  color: singleQty <= 1 ? c.stone : c.ivory,
+                  cursor: singleQty <= 1 || !!loading ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 20, fontWeight: 300,
+                  opacity: singleQty <= 1 ? 0.35 : 1,
+                  transition: "opacity 0.15s, border-color 0.15s",
+                }}
+              >−</button>
+
+              {/* Number display + label — centre column */}
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ position: "relative", display: "inline-block" }}>
+                  {/* Invisible size anchor so the layout never jumps between 1 and 10 */}
+                  <span aria-hidden style={{ visibility: "hidden", fontFamily: font.ui, fontSize: 28, fontWeight: 700 }}>10</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={singleQty}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\D/g, "");
+                      if (raw === "") { setSingleQty(1); return; }
+                      const n = parseInt(raw, 10);
+                      if (!isNaN(n)) setSingleQty(Math.min(10, Math.max(1, n)));
                     }}
-                  >
-                    {qty === 1 ? "1" : qty}
-                    <br />
-                    <span style={{ fontSize: 10, fontWeight: 400, opacity: 0.8 }}>
-                      {qty === 1 ? "session" : "sessions"}
-                    </span>
-                  </button>
-                );
-              })}
+                    onBlur={e => {
+                      const n = parseInt(e.target.value, 10);
+                      setSingleQty(isNaN(n) || n < 1 ? 1 : Math.min(10, n));
+                    }}
+                    disabled={!!loading}
+                    aria-label="Number of sessions"
+                    style={{
+                      position: "absolute", inset: 0,
+                      width: "100%", height: "100%",
+                      textAlign: "center",
+                      fontFamily: font.ui, fontSize: 28, fontWeight: 700,
+                      color: c.gilt,
+                      background: "transparent",
+                      border: "none", outline: "none",
+                      /* hide native number spinners */
+                      MozAppearance: "textfield",
+                    }}
+                  />
+                </div>
+                <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: "2px 0 0" }}>
+                  {singleQty === 1 ? "session" : "sessions"}
+                </p>
+              </div>
+
+              {/* Increment */}
+              <button
+                onClick={() => setSingleQty(q => Math.min(10, q + 1))}
+                disabled={singleQty >= 10 || !!loading}
+                aria-label="Add one session"
+                style={{
+                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                  border: `1.5px solid ${singleQty >= 10 ? c.border : c.gilt}`,
+                  background: singleQty >= 10 ? c.graphite : `rgba(180,83,9,0.1)`,
+                  color: singleQty >= 10 ? c.stone : c.gilt,
+                  cursor: singleQty >= 10 || !!loading ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 20, fontWeight: 300,
+                  opacity: singleQty >= 10 ? 0.35 : 1,
+                  transition: "opacity 0.15s, border-color 0.15s, background 0.15s",
+                }}
+              >+</button>
             </div>
+
+            {/* Total + cap note */}
+            <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center", marginBottom: 14 }}>
+              {singleQty >= 10
+                ? <span style={{ color: c.gilt }}>Max 10 per order · ₹{SINGLE_SESSION_PRICE * singleQty} total</span>
+                : `₹${SINGLE_SESSION_PRICE} × ${singleQty} = ₹${SINGLE_SESSION_PRICE * singleQty}`}
+            </p>
 
             {/* Buy button */}
             <button
