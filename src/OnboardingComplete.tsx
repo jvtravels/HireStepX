@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { c, font } from "./tokens";
 import { useAuth, referralSignupUrl } from "./AuthContext";
@@ -82,7 +83,7 @@ export default function OnboardingComplete() {
     <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column" }}>
       {/* Top bar */}
       <div style={{ padding: "20px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${c.border}` }}>
-        <img src="/wordmark.png" alt="HireStepX" style={{ height: 22, width: "auto" }} />
+        <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 22, width: "auto" }} />
       </div>
 
       <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "48px 24px", overflowY: "auto" }}>

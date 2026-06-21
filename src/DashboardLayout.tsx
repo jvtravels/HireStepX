@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
@@ -206,7 +207,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           zIndex: 18,
         }}>
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
-            <img src="/wordmark.png" alt="HireStepX" style={{ height: 24, width: "auto" }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 24, width: "auto" }} />
           </Link>
           <button
             onClick={() => setSidebarOpen(true)}
@@ -282,13 +283,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               onClick={() => setSidebarOpen(false)}
               style={{ textDecoration: "none", display: "flex", alignItems: "center" }}
             >
-              <img src="/wordmark.png" alt="HireStepX" style={{ height: 24, width: "auto" }} />
+              <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 24, width: "auto" }} />
             </Link>
           </div>
         ) : (
           <div style={{ paddingBottom: 20, flexShrink: 0 }}>
             <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 14 }}>
-              <img src="/wordmark.png" alt="HireStepX" style={{ height: 26, width: "auto" }} />
+              <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 26, width: "auto" }} />
             </Link>
           </div>
         )}

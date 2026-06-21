@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef, type CSSProperties } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
 import { useAuth, hasStoredSession } from "../AuthContext";
@@ -370,7 +371,7 @@ export function NavV2() {
             aria-label="HireStepX home"
             style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
           >
-            <img src="/wordmark.png" alt="HireStepX" style={{ height: 26, width: "auto" }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 26, width: "auto" }} />
           </a>
 
           <div
@@ -3876,7 +3877,7 @@ export function FinalCTAFooterV2() {
           }}
         >
           <div>
-            <img src="/wordmark.png" alt="HireStepX" style={{ height: 26, width: "auto", display: "block", marginBottom: 0 }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 26, width: "auto", display: "block", marginBottom: 0 }} />
             <p
               style={{
                 fontFamily: fonts.sans,

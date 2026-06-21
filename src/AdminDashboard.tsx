@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
+import Image from "next/image";
 import { c, font, radius } from "./tokens";
 import { QualityContent } from "./AdminQualityDashboard";
 import { EmptyState } from "./components/EmptyState";
@@ -2138,7 +2139,7 @@ export default function AdminDashboard() {
           border: `1px solid ${c.border}`, borderRadius: radius.xl,
         }}>
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <img src="/wordmark.png" alt="HireStepX" style={{ height: 26, width: "auto", display: "inline-block" }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 26, width: "auto", display: "inline-block" }} />
             <span style={{ display: "block", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: c.stone, marginTop: 6 }}>Admin Console</span>
           </div>
 
@@ -2205,7 +2206,7 @@ export default function AdminDashboard() {
         background: c.graphite,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/wordmark.png" alt="HireStepX" style={{ height: 22, width: "auto" }} />
+          <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 22, width: "auto" }} />
           <span style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: c.stone, background: `${c.ember}22`, padding: "3px 10px", borderRadius: 100 }}>Admin</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>

@@ -8,6 +8,7 @@
    All data is mock — no API calls, no providers. */
 "use client";
 import React from "react";
+import Image from "next/image";
 import { strengthCopy, gapCopy } from "./skillCopy";
 
 type Variant = "list" | "detail" | "report" | "empty";
@@ -777,7 +778,7 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
         aria-label="Primary"
         style={{ borderRight: `1px solid ${tok.line}`, padding: "28px 20px", background: tok.creamSoft, display: "flex", flexDirection: "column" }}>
         <div className="hsx-rail-brand" style={{ display: "flex", alignItems: "center", marginBottom: 36 }}>
-          <img src="/wordmark.png" alt="HireStepX" style={{ height: 22, width: "auto" }} />
+          <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 22, width: "auto" }} />
         </div>
         <nav className="hsx-rail-nav" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {tabs.map(t => {
