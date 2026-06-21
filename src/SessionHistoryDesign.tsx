@@ -104,7 +104,7 @@ const THEMES: Record<SessionHistoryTheme, React.CSSProperties> = {
     "--hsx-line": "#EBE5D2",
     "--hsx-line-strong": "#D6CDB5",
     "--hsx-font-serif": "'Instrument Serif', Georgia, serif",
-    "--hsx-font-ui": "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    "--hsx-font-ui": "'Satoshi', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
     "--hsx-font-mono": "'JetBrains Mono', monospace",
   } as React.CSSProperties,
 };

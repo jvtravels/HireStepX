@@ -795,24 +795,24 @@ export const SESSION_REPORT_STYLES = `
     font-size: 18px; font-weight: 700; color: #312E81; line-height: 1;
   }
   .ir-bias-label {
-    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-family: 'Satoshi', system-ui, sans-serif;
     font-size: 13px; color: #2A241B; font-weight: 600;
   }
   .ir-bias-example {
     display: block;
-    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-family: 'Satoshi', system-ui, sans-serif;
     font-size: 11px; color: #5A5448; font-style: italic;
     margin: 4px 0 6px;
   }
   .ir-bias-tip {
-    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-family: 'Satoshi', system-ui, sans-serif;
     font-size: 12px; color: #312E81; line-height: 1.4;
   }
 
   /* ─── Trust + useful dual polls (footer) ─── */
   .ir-poll-row {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-family: 'Satoshi', system-ui, sans-serif;
     font-size: 12px; color: #5A5448;
   }
   .ir-poll-yes, .ir-poll-no {

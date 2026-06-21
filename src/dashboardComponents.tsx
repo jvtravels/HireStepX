@@ -123,7 +123,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   };
   const font = {
     display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-    ui: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    ui: "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     mono: "'JetBrains Mono', 'SF Mono', monospace",
   };
   const PLANS = PLANS_MONTHLY;

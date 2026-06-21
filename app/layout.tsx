@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
+import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "../src/index.css";
 
 /* ── Google Fonts via next/font ──
@@ -20,15 +20,6 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
   preload: true,
   fallback: ["Georgia", "Times New Roman", "serif"],
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-ui",
-  display: "swap",
-  preload: true,
-  fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -238,7 +229,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${instrumentSerif.variable} ${jetbrainsMono.variable}`}
     >
       <head>
         {/*
@@ -248,6 +239,14 @@ export default function RootLayout({
           but only the /interview route actually uses those services. We now
           preconnect from Interview.tsx with useEffect-injected links.
         */}
+        {/* Satoshi — primary UI font. Loaded from Fontshare CDN with a
+            preconnect to eliminate DNS + TLS round-trip on the font request.
+            Inter removed: Satoshi now owns --font-ui end-to-end. */}
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link
+          rel="stylesheet"
+          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap"
+        />
         <link rel="preconnect" href="https://esluwqkqoofmquqdevap.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
 

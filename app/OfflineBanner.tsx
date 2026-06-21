@@ -51,7 +51,7 @@ export function OfflineBanner() {
         color: isBack ? "#e0f5e6" : "#D4B37F",
         textAlign: "center",
         padding: "8px 16px",
-        fontFamily: "'Inter', system-ui, sans-serif",
+        fontFamily: "'Satoshi', system-ui, sans-serif",
         fontSize: 14,
         transition: "opacity 0.4s ease",
         opacity: isBack ? 0.95 : 1,

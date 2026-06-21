@@ -91,7 +91,7 @@ export default function SessionHistoryRoute() {
        Three rows lands beneath the H1 + KPI strip without scrolling
        on a 1366×768 viewport, which is the most common breakpoint. */
     const ui =
-      "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+      "'Satoshi', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
     const line = "#EBE5D2";
     const lineFaint = "#F2EEDE";
     const skeleton = (

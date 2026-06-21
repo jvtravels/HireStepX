@@ -84,13 +84,12 @@ export const tokens = {
   successMist: "rgba(34, 197, 94, 0.14)",
 } as const;
 
-/* Inter is loaded via next/font/google in app/layout.tsx as the --font-ui
- * CSS variable. The fallback chain mirrors next/font's so first paint
- * matches the loaded font's metrics. The previous "Satoshi" name silently
- * fell through to system-ui because the file was never loaded. */
+/* Satoshi is the primary UI font, loaded from Fontshare CDN via a <link>
+ * in app/layout.tsx. --font-ui is defined in src/index.css :root so all
+ * var(--font-ui) references resolve to Satoshi. Inter has been removed. */
 export const fonts = {
   serif: "'Instrument Serif', Georgia, serif",
-  sans: "'Satoshi', Inter, system-ui, -apple-system, sans-serif",
+  sans: "'Satoshi', system-ui, -apple-system, sans-serif",
   mono: "'JetBrains Mono', monospace",
 } as const;
 

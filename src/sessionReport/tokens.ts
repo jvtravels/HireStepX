@@ -146,13 +146,12 @@ export const t = {
 } as const;
 
 export const f = {
-  /* Instrument Serif + JetBrains Mono are loaded by `app/layout.tsx`.
-     Satoshi is NOT loaded — we fall through to Inter (also loaded), which
-     has near-identical x-height and metrics. Adding Satoshi via
-     `next/font/local` would be the right long-term fix; not blocking. */
+  /* Instrument Serif + JetBrains Mono loaded by `app/layout.tsx`.
+     Satoshi is the primary UI font, loaded from Fontshare CDN via <link>
+     in app/layout.tsx. Inter has been removed from the stack. */
   serif: "'Instrument Serif', Georgia, serif",
   sans:
-    "'Satoshi', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   mono: "'JetBrains Mono', 'SF Mono', monospace",
 } as const;
 

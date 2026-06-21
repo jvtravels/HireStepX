@@ -30,7 +30,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       style={{
         background: "#FAF7F0",
         minHeight: "100vh",
-        fontFamily: "'Satoshi', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        fontFamily: "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         color: "#0E0C08",
         padding: "20px 32px",
       }}
