@@ -517,7 +517,7 @@ export default function DashboardHome() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 240 }}>
                 <Eyebrow tone="copper" as="h2"><span id="dh-next">Your next move</span></Eyebrow>
-                <p style={{
+                <p className="hsx-dh-next-heading" style={{
                   fontFamily: f.serif, fontSize: 28, fontWeight: 400, lineHeight: 1.2,
                   letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px",
                 }}>
@@ -847,11 +847,16 @@ export default function DashboardHome() {
           padding-bottom: max(64px, env(safe-area-inset-bottom));
           padding-left: 0;
         }
-        /* 1180–1280px dead zone: keep the two-column grid but shrink the
-           rail clamp so the main column gets breathing room on 13" laptops
-           and 1280px external monitors. */
-        @media (max-width: 1280px) and (min-width: 1181px) {
-          .hsx-dh-grid { grid-template-columns: minmax(0, 1fr) minmax(240px, 300px) !important; gap: 24px !important; }
+        /* 1181–1500px: keep two-column grid but shrink the rail so the main
+           column has room to breathe on 13–14" laptops and common 1280–1440px
+           monitors. The gap drops to 20px to recover additional horizontal space. */
+        @media (max-width: 1500px) and (min-width: 1181px) {
+          .hsx-dh-grid { grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) !important; gap: 20px !important; }
+        }
+        /* Next-move headline: drop from 28px → 22px so it fits in 2 lines
+           at the narrowed main column on small-desktop viewports. */
+        @media (max-width: 1440px) and (min-width: 1181px) {
+          .hsx-dh-next-heading { font-size: 22px !important; }
         }
         /* Grid collapse threshold raised to 1180px: between 768px (where
            DashboardLayout shows the 260px sidebar) and 1080px (old breakpoint)

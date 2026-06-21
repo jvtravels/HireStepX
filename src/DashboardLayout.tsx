@@ -239,15 +239,19 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ── Tablet responsive padding ──────────────────────────────────────
+        /* ── Responsive padding ─────────────────────────────────────────────
            Mobile (≤599px) gets 20px inline padding (set inline above).
-           600–767px steps up to 28px; 768–1023px to 36px. Desktop (≥1024px)
-           uses the sidebar inline layout with 52px fixed via the inline style. */
+           600–767px steps up to 28px; 768–1023px to 36px.
+           Small desktop (1024–1439px) drops from the 52px default to 32px
+           so the content area gains 40px on cramped 13–14" screens. */
         @media (min-width: 600px) and (max-width: 1023px) {
           .dash-main { padding-left: 28px !important; padding-right: 28px !important; }
         }
         @media (min-width: 768px) and (max-width: 1023px) {
           .dash-main { padding-left: 36px !important; padding-right: 36px !important; }
+        }
+        @media (min-width: 1024px) and (max-width: 1439px) {
+          .dash-main { padding-left: 32px !important; padding-right: 32px !important; }
         }
       `}</style>
 
