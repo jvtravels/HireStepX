@@ -9,7 +9,7 @@ import { isWalkAway } from "./_walkaway-detection";
 import { deriveConvState, phaseForState, type ConvState } from "./_negotiation-state";
 import { detectAllFailures } from "./_negotiation-failures";
 import { callLLM, extractJSON } from "./_llm";
-import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens } from "./_follow-up-helpers";
+import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens, sanitizeBehaviouralRegister } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, generateNegotiationBand, type NegotiationStyle } from "../data/salary-lookup";
 import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor } from "../src/_question-category";
@@ -2777,6 +2777,15 @@ Repeat-text in followUpText is FORBIDDEN.`;
     const isCandidateAcceptance = type === "salary-negotiation" && !!negotiationFacts?.acceptedImmediately;
     const isCandidateWalking = type === "salary-negotiation" && isWalkAway(answer);
     const conversationDone = isCandidateAcceptance || isCandidateWalking;
+
+    // Behavioural register hygiene — deterministically scrub banned
+    // American-startup / LLM-ism register ("dive deeper", "circle back",
+    // "delve", …) that the prompt-level ban only catches by exact string
+    // and the model evades with un-listed variants. Behavioural path only;
+    // the salary-negotiation surface owns its register via _canonical-prose.
+    if (!isSalaryNeg) {
+      parsed.followUpText = sanitizeBehaviouralRegister(parsed.followUpText || "");
+    }
 
     return new Response(JSON.stringify({
       needsFollowUp,

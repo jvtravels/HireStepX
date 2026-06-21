@@ -11,6 +11,7 @@ import {
   normalizeForDuplicate,
   isDuplicateOfRecent,
   composeDuplicateReplyRescue,
+  sanitizeBehaviouralRegister,
 } from "../../server-handlers/_follow-up-helpers";
 
 /**
@@ -800,5 +801,59 @@ describe("detectSalaryPhase (state-first regressions)", () => {
         facts: { topicsRaised: ["esops", "joining-bonus"] },
       }),
     ).toBe("benefits-discussion");
+  });
+});
+
+describe("sanitizeBehaviouralRegister", () => {
+  it("rewrites the live-caught 'dive deeper' leak to clean Indian-English", () => {
+    const input = "Let's dive deeper into the pilot you ran - what were the actual numbers?";
+    const out = sanitizeBehaviouralRegister(input);
+    expect(out).toBe("Let's go deeper into the pilot you ran - what were the actual numbers?");
+    expect(/dive/i.test(out)).toBe(false);
+  });
+
+  it("covers the whole 'dive' verb-metaphor family", () => {
+    expect(sanitizeBehaviouralRegister("Let's dive in.")).toBe("Let's get into it.");
+    expect(sanitizeBehaviouralRegister("dive into the details")).toBe("get into the details");
+    expect(sanitizeBehaviouralRegister("diving into that")).toBe("getting into that");
+    expect(sanitizeBehaviouralRegister("Can we dive in here?")).toBe("Can we get started here?");
+  });
+
+  it("scrubs 'delve' and 'unpack' LLM-isms", () => {
+    expect(sanitizeBehaviouralRegister("Let me delve into that")).toBe("Let me go into that");
+    expect(sanitizeBehaviouralRegister("delve deeper into the result")).toBe("go deeper into the result");
+    expect(sanitizeBehaviouralRegister("Let's unpack that decision")).toBe("Let's break down that decision");
+  });
+
+  it("scrubs American connective register banned at the prompt", () => {
+    expect(sanitizeBehaviouralRegister("Let's circle back to that")).toBe("Let's come back to that");
+    expect(sanitizeBehaviouralRegister("we can touch base later")).toBe("we can check in later");
+    expect(sanitizeBehaviouralRegister("did you reach out to them?")).toBe("did you get in touch with them?");
+    expect(sanitizeBehaviouralRegister("you should reach out")).toBe("you should get in touch");
+    expect(sanitizeBehaviouralRegister("how did you leverage that?")).toBe("how did you use that?");
+  });
+
+  it("preserves leading-letter capitalization of the matched phrase", () => {
+    expect(sanitizeBehaviouralRegister("Delve into it")).toBe("Go into it");
+    expect(sanitizeBehaviouralRegister("Reach out to HR")).toBe("Get in touch with HR");
+  });
+
+  it("leaves clean prose untouched and is idempotent", () => {
+    const clean = "Can you walk me through one specific instance and what you personally did?";
+    expect(sanitizeBehaviouralRegister(clean)).toBe(clean);
+    const once = sanitizeBehaviouralRegister("Let's dive deeper into it");
+    expect(sanitizeBehaviouralRegister(once)).toBe(once);
+  });
+
+  it("handles empty / non-string input without throwing", () => {
+    expect(sanitizeBehaviouralRegister("")).toBe("");
+    // @ts-expect-error — runtime guard for a non-string slipping through
+    expect(sanitizeBehaviouralRegister(null)).toBe(null);
+  });
+
+  it("guarantees no banned token survives across a mixed paragraph", () => {
+    const input = "Great, let's dive deeper. We can circle back and you can reach out to leverage your network.";
+    const out = sanitizeBehaviouralRegister(input);
+    expect(/\b(dive|delve|circle back|touch base|reach out|leverage|unpack)\b/i.test(out)).toBe(false);
   });
 });

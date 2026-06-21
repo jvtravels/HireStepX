@@ -673,3 +673,86 @@ export function composeDuplicateReplyRescue(
   // honesty + a lever-pointing question.
   return `You're right, I've been circling — apologies for repeating myself. Let me be straight: tell me which lever matters most to you — base, variable, joining bonus, or notice-period flexibility — and I'll work on that one concretely.`;
 }
+
+/* ── Behavioural register hygiene ─────────────────────────────────────
+ *  The behavioural follow-up coach is prompted (follow-up.ts line ~57)
+ *  to avoid American-startup / LLM-ism register — "let's dive in",
+ *  "reach out", "circle back" etc. — and speak natural Indian English.
+ *  But a prompt-level ban is a *string* ban: it lists a handful of exact
+ *  phrases, so the model reliably evades it with an un-listed variant
+ *  ("dive deeper", "diving into", "delve into", "unpack that"). Live
+ *  staging probing caught "Let's dive deeper into the pilot…" leaking
+ *  through on ~1-in-5 samples — the same banned-register class tasks
+ *  ISSUE-4 / ISSUE-4b purged from the intro, reappearing in the dynamic
+ *  turn because nothing downstream of the LLM enforced it.
+ *
+ *  This is the structural guarantee the prompt cannot give: a
+ *  deterministic post-generation rewrite that maps the whole register
+ *  family to clean, meaning-preserving Indian-English equivalents,
+ *  independent of how the model phrased it on any given sample. Each
+ *  rule is a conservative verb-phrase swap that never changes meaning
+ *  (e.g. "dive deeper into X" → "go deeper into X"). Applied ONLY on
+ *  the behavioural path — the salary-negotiation surface has its own
+ *  register system in _canonical-prose.ts and is left byte-identical.
+ *
+ *  Scope is deliberately narrow: only unambiguous register offenders,
+ *  so it can run unconditionally without risk of mangling good prose. */
+interface RegisterRule {
+  re: RegExp;
+  to: string;
+}
+
+const BEHAVIOURAL_REGISTER_RULES: readonly RegisterRule[] = [
+  // "dive" verb-as-metaphor family — the ISSUE-4 offender and its variants.
+  // Order matters: the more specific "... into" / "... deeper" forms must
+  // run before the bare "dive in" / "dive into" rules so the longer phrase
+  // wins and the shorter rule never sees a partial leftover.
+  { re: /\blet'?s dive in\b/gi, to: "let's get into it" },
+  { re: /\bdive deeper into\b/gi, to: "go deeper into" },
+  { re: /\bdiving deeper into\b/gi, to: "going deeper into" },
+  { re: /\bdive deeper\b/gi, to: "go deeper" },
+  { re: /\bdiving deeper\b/gi, to: "going deeper" },
+  { re: /\bdive into\b/gi, to: "get into" },
+  { re: /\bdiving into\b/gi, to: "getting into" },
+  { re: /\bdive in\b/gi, to: "get started" },
+  // "delve" — the canonical LLM-ism (see BUG/task #22).
+  { re: /\bdelve deeper into\b/gi, to: "go deeper into" },
+  { re: /\bdelve deeper\b/gi, to: "go deeper" },
+  { re: /\bdelve into\b/gi, to: "go into" },
+  { re: /\bdelve\b/gi, to: "look" },
+  // "unpack" as a metaphor.
+  { re: /\blet'?s unpack\b/gi, to: "let's break down" },
+  { re: /\bunpack that\b/gi, to: "break that down" },
+  // American-startup connective tissue explicitly banned at the prompt.
+  { re: /\bcircle back\b/gi, to: "come back" },
+  { re: /\btouch base\b/gi, to: "check in" },
+  { re: /\breach out to\b/gi, to: "get in touch with" },
+  { re: /\breach out\b/gi, to: "get in touch" },
+  // "leverage" (verb) — corporate filler; "use" is always cleaner.
+  { re: /\bleverage\b/gi, to: "use" },
+];
+
+/** Preserve the leading-letter case of the matched phrase so a
+ *  sentence-initial replacement stays capitalized. */
+function matchLeadingCase(replacement: string, matched: string): string {
+  const first = matched.charAt(0);
+  if (first && first === first.toUpperCase() && first !== first.toLowerCase()) {
+    return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+  }
+  return replacement;
+}
+
+/**
+ * Deterministically rewrite banned American-startup / LLM-ism register
+ * in a behavioural follow-up to clean Indian-English equivalents. Pure,
+ * idempotent, meaning-preserving. Returns the input unchanged when there
+ * is nothing to rewrite (the common case).
+ */
+export function sanitizeBehaviouralRegister(text: string): string {
+  if (typeof text !== "string" || text.length === 0) return text;
+  let out = text;
+  for (const { re, to } of BEHAVIOURAL_REGISTER_RULES) {
+    out = out.replace(re, (matched) => matchLeadingCase(to, matched));
+  }
+  return out;
+}
