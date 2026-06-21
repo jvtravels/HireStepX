@@ -4267,8 +4267,21 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
+  /* #132 (2026-06-21, live Flipkart-EM) — one-shot guard on every
+   * info-disclosure lever, not just benefits-summary. `state.infoAsked`
+   * is CUMULATIVE (kernel never clears it), so a single early "what's the
+   * bonus structure?" leaves `compensation-breakdown` sticky for the rest
+   * of the session. Without a one-shot gate the planner re-shipped the
+   * SAME canonical disclosure on consecutive turns — e.g. a candidate
+   * pushing to close above the band ceiling ("put your best number, I'll
+   * sign") got the verbatim "On the structure — fixed is the bulk…" line
+   * twice in a row instead of a firm ceiling-assert + close-invite. Each
+   * company-policy disclosure is informative once; a re-ask now falls
+   * through to the counter/close logic (which asserts the ceiling and
+   * invites the close) rather than looping the explainer. */
   const wantsBenefits =
     !isTerminalPhase(state.phase) &&
+    !state.leversUsed.includes("benefits-summary") &&
     state.infoAsked.includes("benefits-overview");
   if (wantsBenefits) {
     return {
@@ -4284,6 +4297,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
 
   const wantsCompStructure =
     !isTerminalPhase(state.phase) &&
+    !state.leversUsed.includes("compensation-summary") &&
     state.infoAsked.includes("compensation-breakdown");
   if (wantsCompStructure) {
     return {
@@ -4299,6 +4313,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
 
   const wantsNoticePolicy =
     !isTerminalPhase(state.phase) &&
+    !state.leversUsed.includes("notice-period-summary") &&
     state.infoAsked.includes("notice-period-ask");
   if (wantsNoticePolicy) {
     return {
@@ -4314,6 +4329,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
 
   const wantsHikeContext =
     !isTerminalPhase(state.phase) &&
+    !state.leversUsed.includes("hike-context-summary") &&
     state.infoAsked.includes("hike-percentage-ask");
   if (wantsHikeContext) {
     return {

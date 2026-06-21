@@ -160,4 +160,55 @@ describe("close-classifier acceptance guards (#124/#125/#126)", () => {
     // should I take to the panel?" contradiction-callout.
     expect(transcript.every((t) => t.kind !== "contradiction-callout")).toBe(true);
   });
+
+  it("#132 — an info-disclosure lever never re-fires verbatim on consecutive turns above the ceiling", () => {
+    // Live Flipkart-EM (2026-06-21): the candidate, already pushed to the
+    // band ceiling (open CTC-lifted to maxStretch), kept demanding a higher
+    // fixed number. Because `state.infoAsked` is CUMULATIVE, an early
+    // "bonus"/"variable" mention left `compensation-breakdown` sticky and the
+    // planner re-shipped the SAME canonical "On the structure — fixed is the
+    // bulk…" disclosure on consecutive turns (only an LLM-inserted "right,"
+    // differed). The one-shot lever guard now lets each company-policy
+    // disclosure fire at most once; a re-ask falls through to the
+    // counter/close path instead of looping the explainer.
+    const CEIL_BAND: NegotiationBand = {
+      initialOffer: 32.7,
+      maxStretch: 53.2,
+      walkAway: 27.7,
+      hasEquity: true,
+    };
+    const { transcript } = runConversation({
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: CEIL_BAND,
+      initExtras: { applicableYoe: 10, experienceLevel: "senior", currentCtcLpa: 48 },
+      turns: [
+        "My current CTC is 48 LPA — 40 fixed plus about 8 in variable and stock.",
+        "I'm targeting 65 LPA fixed. That's the number that makes this move worthwhile.",
+        "Equity is fine, but the fixed cash is what matters. I have a competing offer from Razorpay at 62 LPA fixed. If you can get close on cash, I'm ready to sign.",
+        "A one-time bonus doesn't move my base. Can you get the fixed to 58 LPA? If you can do that, we have a deal.",
+        "Let's not go in circles on structure. Put your best fixed number on the table right now, and if it works I'll sign today.",
+        "I hear you on the buyout, but I need a fixed number. What's your best fixed?",
+        "Come on, give me the best fixed you can do.",
+      ],
+      stopOnTerminal: false,
+    });
+    // No single info-disclosure lever ships twice in a row…
+    const INFO_LEVERS = new Set([
+      "compensation-summary",
+      "benefits-summary",
+      "notice-period-summary",
+      "hike-context-summary",
+    ]);
+    for (let i = 1; i < transcript.length; i++) {
+      const prev = transcript[i - 1];
+      const cur = transcript[i];
+      if (INFO_LEVERS.has(cur.lever)) {
+        expect(cur.lever).not.toBe(prev.lever);
+      }
+    }
+    // …and no canonical line repeats verbatim across the whole conversation.
+    const botLines = transcript.map((t) => t.aiText.trim()).filter(Boolean);
+    expect(new Set(botLines).size).toBe(botLines.length);
+  });
 });
