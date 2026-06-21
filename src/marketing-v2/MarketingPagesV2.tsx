@@ -389,7 +389,7 @@ export function PricingPageV2() {
       unit: "forever",
       sub: "Try before you pay a rupee",
       features: [
-        "3 mock sessions",
+        "2 mock sessions",
         "Behavioural rounds + basic STAR score",
         "Email report",
         "No credit card required",
@@ -460,7 +460,7 @@ export function PricingPageV2() {
 
   // Monthly column hidden — 3 visible tiers: Free, Per session, Weekly
   const compareRows: Array<[string, string, string, string]> = [
-    ["Mock sessions included", "3 (one-time)", "1 (one-time)", "7 / week"],
+    ["Mock sessions included", "2 (one-time)", "1 (one-time)", "7 / week"],
     ["Voice in & out", "Yes", "Yes", "Yes"],
     ["STAR scoring", "Yes", "Yes", "Yes"],
     ["Company-specific rounds", "Limited", "Yes", "Yes"],
@@ -826,7 +826,7 @@ export function HowItWorksV2() {
         meta={
           <div className="mv2p-cta-row" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <a href="/signup" style={ctaPrimary("lg")} className="mv2-tap-44">
-              Start free: 3 sessions
+              Start free: 2 sessions
             </a>
             <a href="/pricing" style={ctaGhost("lg")} className="mv2-tap-44">
               See pricing
@@ -1351,7 +1351,7 @@ export function ForStudentsV2() {
         meta={
           <div className="mv2p-cta-row" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <a href="/signup?plan=free" style={ctaPrimary("lg")} className="mv2-tap-44">
-              Start with 3 free sessions
+              Start with 2 free sessions
             </a>
             <span
               style={{

@@ -31,7 +31,7 @@ function extractScore(raw: unknown): number {
 }
 
 /* ─── Constants ─── */
-export const FREE_SESSION_LIMIT = 3;
+export const FREE_SESSION_LIMIT = 2;
 /* Marketing surfaces (HomepageV2 PricingV2 + MarketingPagesV2 pricing
    table) promise 10 sessions/week, 40 sessions/month, ₹9/session.
    Keep these constants aligned with the customer-facing promise —

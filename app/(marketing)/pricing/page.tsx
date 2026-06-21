@@ -4,7 +4,7 @@ import { PricingPageV2 } from "@/marketing-v2/MarketingPagesV2";
 export const metadata: Metadata = {
   title: "Pricing | HireStepX",
   description:
-    "Free 3 sessions, ₹9/session, ₹49/week (7 sessions). UPI accepted. 30% student discount on .ac.in / .edu.in.",
+    "Free 2 sessions, ₹9/session, ₹49/week (7 sessions). UPI accepted. 30% student discount on .ac.in / .edu.in.",
   alternates: { canonical: "/pricing" },
 };
 
@@ -28,7 +28,7 @@ const BREADCRUMB_SCHEMA = {
  * offerCount are derived from this array so the schema can't drift
  * out of sync with the on-page table when a tier is added or removed. */
 const PRICING_TIERS = [
-  { name: "Free",        price: "0",  description: "3 practice sessions, no card required", anchor: "free" },
+  { name: "Free",        price: "0",  description: "2 practice sessions, no card required", anchor: "free" },
   { name: "Per session", price: "9",  description: "Single mock interview session",         anchor: "per-session" },
   { name: "Weekly",      price: "49", description: "7 sessions over 7 days",                anchor: "weekly" },
   // Monthly plan temporarily hidden — keep data here for when it returns

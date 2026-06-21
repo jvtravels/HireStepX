@@ -7,7 +7,7 @@ import { verifyJwtLocally, importEs256VerifyKey } from "./_jwt-verify";
 declare const process: { env: Record<string, string | undefined> };
 
 /* ─── Plan Limits (single source of truth for backend) ─── */
-const FREE_SESSION_LIMIT = 3;
+const FREE_SESSION_LIMIT = 2;
 const STARTER_WEEKLY_LIMIT = 7;
 const PRO_MONTHLY_LIMIT = 40;
 
