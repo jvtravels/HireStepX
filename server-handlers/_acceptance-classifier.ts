@@ -530,6 +530,21 @@ const STRICT_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\blet'?s\s+(?:close|finali[sz]e)\s+(?:it|this|the\s+(?:deal|offer|number|fitment))\b(?!\s+(?:call|interview|conversation|session|chat|negotiation))/i,
   /\blet'?s\s+(?:close|finali[sz]e)\s*(?:[.,!?]|$)/i,
   /\b(?:close\s+it\s+out|lock\s+it\s+in)\b/i,
+  /* #124 (2026-06-21, live-staging audit S13) — forward-commitment close
+   * idioms. "Sounds good, let's go ahead" / "let's proceed" / "let's do it" /
+   * "go ahead and close/send/finalise" are unambiguous same-turn consent over
+   * a standing offer — structurally identical to the existing "let's move
+   * forward with this offer". Without strict status they fell to
+   * medium-confidence soft-accept, and PDF#48's one-AI-turn-wait gate
+   * suppressed the close on the candidate's FIRST reaction to the anchor
+   * (firstOfferAtTurn === turnIndex), so the bot re-probed expectations
+   * instead of closing. detectExplicitAcceptance is consulted ONLY post-offer
+   * (the strictBoost call is gated on highestOfferMade>0; the other call site
+   * sits inside the signalsAcceptance branch), so these cannot fire pre-offer.
+   * HEDGE_VETO_PATTERNS still runs first, so "let's go ahead if you can do X"
+   * stays conditional and is NOT promoted. */
+  /\blet'?s\s+(?:go\s+ahead|proceed|do\s+it)\b/i,
+  /\bgo\s+ahead\s+and\s+(?:close|send|finali[sz]e|draft|process|lock|roll)\b/i,
 ];
 
 /** Hedged-language vetoes — when ANY of these fire, accepted=false

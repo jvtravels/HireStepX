@@ -5065,6 +5065,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   const recordNumeric = (
     topic: "currentCtc" | "expectedCtc" | "noticePeriod",
     parsedValue: number | null | undefined,
+    opts?: { selfRevisable?: boolean },
   ): void => {
     if (parsedValue == null || !Number.isFinite(parsedValue)) return;
     const prior = claimsBefore[topic];
@@ -5074,6 +5075,19 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     }
     const drift = Math.abs(parsedValue - prior.value) / Math.max(Math.abs(prior.value), 1e-9);
     if (drift > NUMERIC_TOLERANCE && contradiction == null) {
+      /* #126 (2026-06-21) — the candidate's OWN ask (expectedCtc / target)
+       * is theirs to revise mid-negotiation. Lowering it ("I wanted 50, but
+       * if you can do 38 I'm in") is a concession; raising it is re-anchoring.
+       * Neither is a factual inconsistency, so the "which one should I take
+       * to the panel?" contradiction-callout — designed for immutable FACTS
+       * the candidate can't legitimately restate (current CTC, a competing
+       * offer's amount) — must NOT fire here. Track the latest stated ask
+       * (firstSeen pinned) and skip the callout. Before this guard a normal
+       * self-lowered ask false-fired a contradiction and derailed the close. */
+      if (opts?.selfRevisable) {
+        claimsNext[topic] = { value: parsedValue, firstSeenTurn: prior.firstSeenTurn };
+        return;
+      }
       contradiction = {
         topic,
         oldValue: prior.value,
@@ -5152,7 +5166,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * contradiction detector spuriously fires. Only total-scoped targets
    * feed the expectedCtc ledger. */
   if (parsed.targetComponent !== "fixed") {
-    recordNumeric("expectedCtc", parsed.target);
+    recordNumeric("expectedCtc", parsed.target, { selfRevisable: true });
   }
   recordNumeric("noticePeriod", parsed.noticeJoining.noticePeriodDays);
 
@@ -6006,7 +6020,20 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
        * candidate's current CTC. See bandAcceptOfferFloor. */
       const floor = bandAcceptOfferFloor(state);
       if (bandTopic && typeof floor === "number" && floor > 0) {
-        next.highestOfferMade = floor;
+        /* #124 (2026-06-21) — honor an in-band candidate TARGET on accept.
+         * When the candidate accepts a stated band and has named a total
+         * target the band can deliver (≤ maxStretch), close at that target,
+         * not the bare CTC-hike floor: the band affords it and the candidate
+         * explicitly asked for it, so closing below it shortchanges an
+         * accepted deal. Falls back to the hike floor when no in-band target
+         * was named (the #115 below-floor protection is preserved — floor is
+         * the lower bound). Mirrors nearOfferCloseNumber's target-honoring on
+         * the concrete-offer path. */
+        const ceil = state.band.maxStretch ?? floor;
+        const tgt = effectiveTargetCtcLpa(state);
+        const registered =
+          tgt != null && tgt > floor ? Math.min(tgt, ceil) : floor;
+        next.highestOfferMade = registered;
         if (next.firstOfferAtTurn == null) next.firstOfferAtTurn = bandTopic.atTurn;
         hasOffer = true;
       }
