@@ -420,7 +420,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 ["Priority support", "Removed"],
               ]
             : [
-                ["10 sessions per week", "Removed"],
+                ["7 sessions per week", "Removed"],
                 ["All question types", "Removed"],
                 ["Detailed feedback", "Removed"],
                 ["Resume analysis", "Removed"],

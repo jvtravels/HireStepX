@@ -3031,7 +3031,7 @@ export function PricingV2() {
       unit: "/ 7 days",
       sub: "Sprint before placement week",
       features: [
-        "10 sessions · 7 days",
+        "7 sessions · 7 days",
         "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
