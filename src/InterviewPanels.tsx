@@ -232,7 +232,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
         <DotGridVisualizer active={phase === "speaking"} thinking={phase === "thinking"} />
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-        <span style={{ fontFamily: ef.serif, fontSize: 17, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>{interviewerName}</span>
+        <span style={{ fontFamily: ef.serif, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>{interviewerName}</span>
         <span aria-live="polite" aria-atomic="true" role="status" style={{
           fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
           color: phase === "speaking" ? e.copper : phase === "listening" ? e.indigo : e.inkSoft,
@@ -831,7 +831,7 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
         </svg>
       </div>
       <h2 style={{
-        margin: 0, fontFamily: ef.serif, fontSize: 26, fontWeight: 400,
+        margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
         lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
       }}>
         Session <em style={{ color: e.copper, fontStyle: "italic" }}>complete</em>.
@@ -1342,7 +1342,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
           <div>
-            <span style={{ fontFamily: ef.serif, fontSize: 19, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
+            <span style={{ fontFamily: ef.serif, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
               Transcript
             </span>
             <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>
@@ -1494,7 +1494,7 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
           }
         `}</style>
         <h3 id="end-modal-title" style={{
-          margin: 0, fontFamily: ef.serif, fontSize: 26, fontWeight: 400,
+          margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
           lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
         }}>
           End the interview <em style={{ color: e.copper, fontStyle: "italic" }}>now</em>?
@@ -1567,7 +1567,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
       {!(usedFallbackScore || evalTimedOut) ? (
         <>
           <div style={{ width: 48, height: 48, border: `3px solid ${e.line}`, borderTopColor: "#312E81", borderRadius: "50%", animation: "spin 0.8s linear infinite", marginBottom: 24 }} />
-          <h3 style={{ fontFamily: ef.serif, fontSize: 26, fontWeight: 400, color: e.coal, marginBottom: 8, letterSpacing: "-0.01em" }}>Coaching your report</h3>
+          <h3 style={{ fontFamily: ef.serif, fontSize: 28, fontWeight: 400, color: e.coal, marginBottom: 8, letterSpacing: "-0.01em" }}>Coaching your report</h3>
           <p style={{ fontFamily: ef.sans, fontSize: 14, color: e.inkSoft }}>Reading your transcript and drafting per-question coach notes…</p>
           <p style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, opacity: 0.7, marginTop: 4 }}>
             {evalElapsed < 10 ? "This usually takes 10\u201330 seconds." : evalElapsed < 25 ? `Almost there… (${evalElapsed}s)` : `Taking longer than usual… (${evalElapsed}s)`}

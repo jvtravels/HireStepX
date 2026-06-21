@@ -176,7 +176,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
                 AI Interview Verdict
               </span>
             </div>
-            <p style={{ fontFamily: f.serif, fontSize: 19, color: t.coal, lineHeight: 1.45, margin: 0 }}>
+            <p style={{ fontFamily: f.serif, fontSize: 18, color: t.coal, lineHeight: 1.45, margin: 0 }}>
               {data.aiVerdict}
             </p>
             {data.calibration && (

@@ -24,7 +24,7 @@ import {
   daysUntilEvent, formatEventDate, formatEventTime,
   generateICS, generateGoogleCalendarURL, interviewTypeOptions,
   focusForType, COMMON_TIMEZONES, zonedWallTimeToUtc, formatTimeInZone,
-  hourInZone, isAwkwardHour, describeReminders, parseNaturalEvent,
+  hourInZone, isAwkwardHour, describeReminders, parseNaturalEvent, timezoneLabel,
 } from "./dashboardHelpers";
 import { ROLE_SUGGESTIONS } from "./onboardingData";
 import { COMPANY_SUGGESTIONS } from "../data/company-suggestions";
@@ -246,7 +246,7 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.lg, gap: sp.md, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: sp.sm }}>
           <span style={{ color: c.gilt, display: "flex" }}><Icon size={16}>{I.sparkle}</Icon></span>
-          <h2 style={{ fontFamily: font.display, fontSize: 17, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
+          <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
           {hasPrep && <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder}>{nodes.length - 1} sessions</Pill>}
         </div>
         <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, letterSpacing: 0.3 }}>
@@ -674,7 +674,10 @@ export default function CalendarPage() {
     // vanish from the UI yet reappear on the next refresh, which reads as a bug.
     const prevEvents = events;
     const prevFocused = focusedId;
-    updateEvents(events.filter((e) => e.id !== id));
+    // Drop the interview AND its prep-session children. The server cascade-deletes
+    // the runway it generated; mirroring that here keeps the month-grid markers
+    // from lingering until the next reload.
+    updateEvents(events.filter((e) => e.id !== id && e.parentInterviewId !== id));
     if (focusedId === id) setFocusedId(null);
     const res = await deleteEvent(id);
     if (!res.ok && res.status !== 404) {
@@ -919,7 +922,7 @@ export default function CalendarPage() {
               {showDualTime && candidateLocalLabel && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: c.chalk, background: c.graphite, border: `1px solid ${c.borderSubtle}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui }}>
                   <Icon size={14} stroke={c.gilt}>{I.globe}</Icon>
-                  That is <strong style={{ color: c.ivory, fontWeight: 600 }}>{candidateLocalLabel}</strong> your time ({candidateTz}).
+                  That is <strong style={{ color: c.ivory, fontWeight: 600 }}>{candidateLocalLabel}</strong> your time in {timezoneLabel(candidateTz)}.
                 </div>
               )}
               {formAwkward && (
@@ -1052,7 +1055,7 @@ export default function CalendarPage() {
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: sp.sm, marginBottom: 3, flexWrap: "wrap" }}>
-                        <h2 style={{ fontFamily: font.display, fontSize: 19, fontWeight: 400, color: c.ivory, margin: 0 }}>
+                        <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>
                           {heroName}
                         </h2>
                         <Pill bg={c.slateLight} fg={c.slate}>{heroRound || "Interview"}</Pill>
@@ -1071,7 +1074,7 @@ export default function CalendarPage() {
                       {formatEventDate(focused.date)} · {formatEventTime(focused.time)}
                       {heroLocalLabel && <span style={{ color: c.gilt, fontWeight: 500 }}> ({heroLocalLabel} your time)</span>}
                     </div>
-                    <div style={{ fontSize: 12, color: c.stone, fontFamily: font.ui, marginTop: 2 }}>{focused.timezone || heroTz} · {focused.duration} min{focused.location ? ` · ${focused.location}` : ""}</div>
+                    <div style={{ fontSize: 12, color: c.stone, fontFamily: font.ui, marginTop: 2 }}>{timezoneLabel(focused.timezone || heroTz)} · {focused.duration} min{focused.location ? ` · ${focused.location}` : ""}</div>
                   </div>
                 </div>
 
@@ -1114,7 +1117,7 @@ export default function CalendarPage() {
               <div style={{ color: c.stone, display: "flex", justifyContent: "center", marginBottom: 12, opacity: 0.5 }}>
                 <Icon size={40} sw={1.3}>{I.cal}</Icon>
               </div>
-              <h2 style={{ fontFamily: font.display, fontSize: 19, fontWeight: 400, color: c.ivory, margin: "0 0 6px" }}>No upcoming interviews</h2>
+              <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: "0 0 6px" }}>No upcoming interviews</h2>
               <p style={{ fontSize: 13, color: c.chalk, margin: "0 auto 18px", maxWidth: 360, lineHeight: 1.5 }}>
                 Add your interview schedule to get countdown reminders and an adaptive Prep Runway of mock sessions.
               </p>

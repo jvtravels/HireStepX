@@ -322,7 +322,7 @@ export function SectionBand({
       <div style={{ flex: 1, minWidth: 0 }}>
         <h3
           style={{
-            fontSize: 17, fontWeight: 600, color: t.coal,
+            fontSize: 18, fontWeight: 600, color: t.coal,
             letterSpacing: -0.2, fontFamily: f.serif,
             margin: 0,
           }}
@@ -496,7 +496,7 @@ export function StatTile(props: StatTileProps) {
           {props.value}
         </div>
         {props.phrase && (
-          <div style={{ fontSize: 17, fontWeight: 600, color, lineHeight: 1.2 }}>{props.phrase}</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color, lineHeight: 1.2 }}>{props.phrase}</div>
         )}
       </div>
     );

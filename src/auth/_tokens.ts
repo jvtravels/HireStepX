@@ -93,6 +93,20 @@ export const fonts = {
   mono: "'JetBrains Mono', monospace",
 } as const;
 
+/* Typography scale — mirrors the --text-* CSS custom properties in index.css.
+ * Use these in JS/TSX inline styles. Never introduce a raw pixel size outside
+ * this scale for body/UI text. Hero display sizes (>28px) use clamp() inline. */
+export const textSize = {
+  xs:   11,  // captions, timestamps, metadata chips
+  sm:   12,  // helper text, secondary labels, table cells
+  base: 13,  // body copy, form fields, list items
+  md:   14,  // slightly emphasised body (cards, nav items)
+  lg:   16,  // sub-headings, section labels
+  xl:   18,  // card headings, modal titles
+  "2xl": 22, // section headings
+  "3xl": 28, // page headings
+} as const;
+
 export const shadows = {
   card:
     "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",

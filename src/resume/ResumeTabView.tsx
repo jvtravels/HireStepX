@@ -633,7 +633,7 @@ function IdleState({
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </div>
-          <div style={{ fontFamily: f.sans, fontSize: 17, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>
+          <div style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>
             Drag a file here, or <span style={{ color: t.indigo, textDecoration: "underline", textUnderlineOffset: 3 }}>browse</span>
           </div>
           <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 6 }}>

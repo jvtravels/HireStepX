@@ -2070,7 +2070,7 @@ export default function AdminDashboard() {
               {Object.entries(calendar.byType).map(([type, n]) => (
                 <div key={type} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <span style={{ fontSize: 11, color: c.stone, textTransform: "uppercase", letterSpacing: "0.06em" }}>{type}</span>
-                  <span style={{ fontFamily: font.mono, fontSize: 20, color: c.ivory, fontWeight: 600 }}>{n}</span>
+                  <span style={{ fontFamily: font.mono, fontSize: 22, color: c.ivory, fontWeight: 600 }}>{n}</span>
                 </div>
               ))}
             </div>

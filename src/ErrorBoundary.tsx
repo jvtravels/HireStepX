@@ -88,7 +88,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>
             Something went wrong
           </h1>
           <p style={{ fontSize: 13, color: c.stone, maxWidth: 400, lineHeight: 1.6, marginBottom: 24 }}>

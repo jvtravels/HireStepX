@@ -286,7 +286,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
           <span style={{ color: c.gilt, display: "flex" }}>
             <Icon size={16}>{I.sparkle}</Icon>
           </span>
-          <h2 style={{ fontFamily: font.display, fontSize: 17, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
+          <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
           <Pill bg={T.copper100} fg={c.giltDark} bd={T.copperBorder}>
             {scenario.archetype}
           </Pill>
@@ -814,7 +814,7 @@ export default function CalendarPrepRunway() {
                 </div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: sp.sm, marginBottom: 3 }}>
-                    <h2 style={{ fontFamily: font.display, fontSize: 19, fontWeight: 400, color: c.ivory, margin: 0 }}>
+                    <h2 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>
                       {s.company} · {s.role}
                     </h2>
                     <Pill bg={c.slateLight} fg={c.slate}>{s.anchorLabel}</Pill>

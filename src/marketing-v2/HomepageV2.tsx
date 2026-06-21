@@ -277,7 +277,7 @@ const h2: CSSProperties = {
 
 const body: CSSProperties = {
   fontFamily: fonts.sans,
-  fontSize: 17,
+  fontSize: 18,
   lineHeight: 1.6,
   color: t.indigoGray,
   margin: 0,
@@ -990,7 +990,7 @@ function ProductMockHero() {
             key={`question-${idx}`}
             style={{
               fontFamily: fonts.sans,
-              fontSize: 17,
+              fontSize: 18,
               color: t.coal,
               lineHeight: 1.55,
               margin: 0,
@@ -1019,7 +1019,7 @@ function ProductMockHero() {
             key={`transcript-${idx}-${phase}`}
             style={{
               fontFamily: fonts.sans,
-              fontSize: 17,
+              fontSize: 18,
               color: t.inkSoft,
               lineHeight: 1.55,
               margin: 0,
@@ -2031,7 +2031,7 @@ function StepMock({ step }: { step: number }) {
         <p
           style={{
             fontFamily: fonts.serif,
-            fontSize: 26,
+            fontSize: 28,
             color: t.coal,
             margin: 0,
             marginTop: 12,
@@ -2065,7 +2065,7 @@ function StepMock({ step }: { step: number }) {
               <p
                 style={{
                   fontFamily: fonts.serif,
-                  fontSize: 17,
+                  fontSize: 18,
                   color: t.coal,
                   margin: 0,
                 }}
@@ -3413,7 +3413,7 @@ export function ComparisonV2() {
                       textAlign: "left",
                       padding: "18px 24px",
                       fontFamily: fonts.serif,
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: 400,
                       color: h.accent ? t.indigo : t.inkSoft,
                       letterSpacing: "-0.01em",
@@ -3660,7 +3660,7 @@ export function FAQV2() {
                 style={{
                   cursor: "pointer",
                   fontFamily: fonts.serif,
-                  fontSize: 19,
+                  fontSize: 18,
                   color: t.coal,
                   letterSpacing: "-0.01em",
                   listStyle: "none",
@@ -4044,64 +4044,64 @@ const TR = "transform 0.50s cubic-bezier(0.16,1,0.3,1), opacity 0.38s ease, filt
 /* ─── Card: Behavioral — left ── (exact canvas copy) */
 function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean; revealed?: boolean; baseDelay?: number }) {
   const star = [
-    { key: "S", label: "Situation",  score: 88, c: "#15803D" },
-    { key: "T", label: "Task",       score: 88, c: "#15803D" },
-    { key: "A", label: "Action",     score: 71, c: "#B45309" },
-    { key: "R", label: "Result",     score: 42, c: "#B91C1C" },
+    { key: "S", label: "Situation",  score: 88, c: t.success },
+    { key: "T", label: "Task",       score: 88, c: t.success },
+    { key: "A", label: "Action",     score: 71, c: t.copper },
+    { key: "R", label: "Result",     score: 42, c: t.error },
   ];
   const rptF = { sans: "'Satoshi', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
   /* Arc length for 82% of a semicircle: π × r × 0.82 = π × 33 × 0.82 ≈ 85 */
   const arcLen = 85;
   return (
     <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
-      <div style={{ background: "#FAF7F0", padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>READINESS</span>
-        <span style={{ fontSize: 13, fontWeight: 800, color: "#15803D" }}>68%</span>
-        <span style={{ fontSize: 8, color: "#6E6759" }}>Razorpay Senior PD · ~3 sessions to close gap</span>
+      <div style={{ background: t.cream, padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: t.success }}>68%</span>
+        <span style={{ fontSize: 8, color: t.inkSoft }}>Razorpay Senior PD · ~3 sessions to close gap</span>
       </div>
       <div style={{ display: "flex", gap: 0, padding: "14px 16px 12px" }}>
         <div style={{ width: 124, flexShrink: 0 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 6 }}>OVERALL SCORE</div>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.inkSoft, marginBottom: 6 }}>OVERALL SCORE</div>
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
               <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
-              <path d="M7,46 A33,33 0 0,1 68,28" fill="none" stroke="#15803D" strokeWidth="7" strokeLinecap="round"
+              <path d="M7,46 A33,33 0 0,1 68,28" fill="none" stroke={t.success} strokeWidth="7" strokeLinecap="round"
                 strokeDasharray={arcLen} strokeDashoffset={revealed ? 0 : arcLen}
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
-            <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>82</div>
-            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: "#9E9589" }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: t.coal, lineHeight: 1 }}>82</div>
+            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkFaintWeak }}>/ 100</div>
           </div>
-          <span style={{ fontSize: 7.5, background: "#DCFCE7", color: "#15803D", padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Hire ✓</span>
+          <span style={{ fontSize: 7.5, background: t.success100, color: t.success, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Hire ✓</span>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
-            <svg width="28" height="12" viewBox="0 0 28 12"><polyline points="0,10 5,7 10,9 16,4 22,6 28,2" fill="none" stroke="#15803D" strokeWidth="1.2" /></svg>
-            <span style={{ fontSize: 9, color: "#15803D", fontWeight: 700 }}>↑ 6</span>
+            <svg width="28" height="12" viewBox="0 0 28 12"><polyline points="0,10 5,7 10,9 16,4 22,6 28,2" fill="none" stroke={t.success} strokeWidth="1.2" /></svg>
+            <span style={{ fontSize: 9, color: t.success, fontWeight: 700 }}>↑ 6</span>
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: "#B45309", marginBottom: 5 }}>✦ AI INTERVIEW VERDICT</div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5, marginBottom: 9 }}>Specific, owned, outcome-anchored. Tighten the Q2 "we" usage — then you're ready for the bar-raiser.</div>
-          <div style={{ fontSize: 7.5, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: "#6E6759" }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: t.copper, marginBottom: 5 }}>✦ AI INTERVIEW VERDICT</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 9 }}>Specific, owned, outcome-anchored. Tighten the Q2 "we" usage — then you're ready for the bar-raiser.</div>
+          <div style={{ fontSize: 7.5, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: t.inkSoft }}>
             Calibrated to Senior · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55
           </div>
         </div>
       </div>
       <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 6px", background: "#FEFDF8" }}>
-        <span style={{ fontSize: 8, background: "#E5E2F2", color: "#312E81", padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>BEHAVIORAL INTERVIEW · FULL REPORT</span>
+        <span style={{ fontSize: 8, background: t.indigo100, color: t.indigo, padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>BEHAVIORAL INTERVIEW · FULL REPORT</span>
       </div>
       <div style={{ padding: "8px 16px 10px" }}>
         {star.map((s, i) => (
           <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
             <span style={{ width: 18, height: 18, borderRadius: 4, background: s.c, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: rptF.mono }}>{s.key}</span>
             <span style={{ fontSize: 8.5, color: "#4A4540", width: 52, flexShrink: 0 }}>{s.label}</span>
-            <div style={{ flex: 1, height: 4, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 4, background: t.line, borderRadius: 2, overflow: "hidden" }}>
               <div style={{ height: "100%", width: revealed ? `${s.score}%` : "0%", background: s.c, borderRadius: 2, transition: `width 0.7s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 400 + i * 80}ms` }} />
             </div>
             <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono, width: 20, textAlign: "right", flexShrink: 0 }}>{s.score}</span>
           </div>
         ))}
       </div>
-      <div style={{ margin: "0 16px", background: "#312E81", borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
+      <div style={{ margin: "0 16px", background: t.indigo, borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
         <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 2 OF 4</span>
         <div>
           <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>AI coached model answer</div>
@@ -4109,10 +4109,10 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
         </div>
       </div>
       <div style={{ padding: "10px 16px 14px" }}>
-        <div style={{ fontSize: 8, fontWeight: 700, color: "#B45309", letterSpacing: 0.4, marginBottom: 6 }}>✦ MODEL ANSWER EXCERPT</div>
-        <div style={{ fontSize: 9, color: "#4A4540", lineHeight: 1.6, background: "#F3EFE5", borderRadius: 5, padding: "8px 10px", borderLeft: "2px solid #B45309" }}>
+        <div style={{ fontSize: 8, fontWeight: 700, color: t.copper, letterSpacing: 0.4, marginBottom: 6 }}>✦ MODEL ANSWER EXCERPT</div>
+        <div style={{ fontSize: 9, color: "#4A4540", lineHeight: 1.6, background: "#F3EFE5", borderRadius: 5, padding: "8px 10px", borderLeft: `2px solid ${t.copper}` }}>
           {"Instead of 'we reduced latency,' say: "}
-          <span style={{ fontStyle: "italic", color: "#0E0C08" }}>{"I led the caching rewrite — my call to switch to Redis cut p99 from 420ms to 38ms, unblocking the iOS team."}</span>
+          <span style={{ fontStyle: "italic", color: t.coal }}>{"I led the caching rewrite — my call to switch to Redis cut p99 from 420ms to 38ms, unblocking the iOS team."}</span>
         </div>
       </div>
     </div>
@@ -4131,56 +4131,56 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
   const arcLen = 98;
   return (
     <div className="mv2-rpt-center-card" style={{ width: 520, background: "#FEFDF8", borderRadius: 18, border: "1.5px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 56px 160px rgba(14,12,8,0.34), 0 16px 48px rgba(14,12,8,0.16)" : "0 48px 140px rgba(14,12,8,0.26), 0 12px 40px rgba(14,12,8,0.12)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
-      <div style={{ background: "#FAF7F0", padding: "10px 18px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>READINESS</span>
-        <span style={{ fontSize: 14, fontWeight: 800, color: "#15803D" }}>84%</span>
-        <span style={{ fontSize: 8.5, color: "#6E6759" }}>PhonePe Senior EM · Top quartile, ready to negotiate.</span>
+      <div style={{ background: t.cream, padding: "10px 18px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
+        <span style={{ fontSize: 14, fontWeight: 800, color: t.success }}>84%</span>
+        <span style={{ fontSize: 8.5, color: t.inkSoft }}>PhonePe Senior EM · Top quartile, ready to negotiate.</span>
       </div>
       <div style={{ display: "flex", gap: 0, padding: "16px 18px 14px" }}>
         <div style={{ width: 144, flexShrink: 0 }}>
-          <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 7 }}>OVERALL SCORE</div>
+          <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.5, color: t.inkSoft, marginBottom: 7 }}>OVERALL SCORE</div>
           <div style={{ position: "relative", width: 92, height: 56, margin: "0 auto 9px" }}>
             <svg viewBox="0 0 90 56" width="92" height="56">
               <path d="M8,52 A37,37 0 0,1 82,52" fill="none" stroke="#E8E0D0" strokeWidth="8" strokeLinecap="round" />
-              <path d="M8,52 A37,37 0 0,1 77,34" fill="none" stroke="#15803D" strokeWidth="8" strokeLinecap="round"
+              <path d="M8,52 A37,37 0 0,1 77,34" fill="none" stroke={t.success} strokeWidth="8" strokeLinecap="round"
                 strokeDasharray={arcLen} strokeDashoffset={revealed ? 0 : arcLen}
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
-            <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 25, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>84</div>
-            <div style={{ position: "absolute", bottom: -5, left: 0, right: 0, textAlign: "center", fontSize: 8, color: "#9E9589" }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 25, fontWeight: 800, color: t.coal, lineHeight: 1 }}>84</div>
+            <div style={{ position: "absolute", bottom: -5, left: 0, right: 0, textAlign: "center", fontSize: 8, color: t.inkFaintWeak }}>/ 100</div>
           </div>
           <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 8, background: "#DCFCE7", color: "#15803D", padding: "3px 7px", borderRadius: 3, fontWeight: 600 }}>Strong Hire ✓</span>
+            <span style={{ fontSize: 8, background: t.success100, color: t.success, padding: "3px 7px", borderRadius: 3, fontWeight: 600 }}>Strong Hire ✓</span>
           </div>
           <div style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 4 }}>
-            <svg width="30" height="13" viewBox="0 0 30 13"><polyline points="0,11 5,8 10,10 16,4 22,6 30,2" fill="none" stroke="#15803D" strokeWidth="1.3" /></svg>
-            <span style={{ fontSize: 9.5, color: "#15803D", fontWeight: 700 }}>↑ 19</span>
+            <svg width="30" height="13" viewBox="0 0 30 13"><polyline points="0,11 5,8 10,10 16,4 22,6 30,2" fill="none" stroke={t.success} strokeWidth="1.3" /></svg>
+            <span style={{ fontSize: 9.5, color: t.success, fontWeight: 700 }}>↑ 19</span>
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.4, color: "#B45309", marginBottom: 6 }}>✦ AI NEGOTIATION VERDICT</div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5, marginBottom: 10 }}>Countered with data, held silence twice, closed at ₹48L. 71% gap closure on the first-offer anchor.</div>
-          <div style={{ fontSize: 8, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: "#6E6759" }}>
+          <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.4, color: t.copper, marginBottom: 6 }}>✦ AI NEGOTIATION VERDICT</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 10 }}>Countered with data, held silence twice, closed at ₹48L. 71% gap closure on the first-offer anchor.</div>
+          <div style={{ fontSize: 8, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: t.inkSoft }}>
             Calibrated to Senior EM · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55
           </div>
         </div>
       </div>
       <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 18px 8px", background: "#FEFDF8" }}>
-        <span style={{ fontSize: 8.5, background: "#FED7AA", color: "#B45309", padding: "3px 10px", borderRadius: 20, fontWeight: 600 }}>SALARY NEGOTIATION · FULL REPORT</span>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0E0C08", marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your negotiation</div>
-        <div style={{ fontSize: 8.5, color: "#6E6759", marginTop: 3 }}>Each panel turns one negotiation skill into something you can act on.</div>
+        <span style={{ fontSize: 8.5, background: "#FED7AA", color: t.copper, padding: "3px 10px", borderRadius: 20, fontWeight: 600 }}>SALARY NEGOTIATION · FULL REPORT</span>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: t.coal, marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your negotiation</div>
+        <div style={{ fontSize: 8.5, color: t.inkSoft, marginTop: 3 }}>Each panel turns one negotiation skill into something you can act on.</div>
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 8.5, fontWeight: 700, color: "#B45309", letterSpacing: 0.4 }}>THE 30-SECOND READ</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#0E0C08", marginTop: 4, lineHeight: 1.35, fontFamily: rptF.serif }}>
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: t.copper, letterSpacing: 0.4 }}>THE 30-SECOND READ</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.coal, marginTop: 4, lineHeight: 1.35, fontFamily: rptF.serif }}>
             Landed ₹48L — ₹10L above opening. 71% gap closure in 3 rounds.
           </div>
           <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 8.5, color: "#6E6759" }}>How far you got in the negotiation</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#15803D" }}>3 of 3 stages</span>
+            <span style={{ fontSize: 8.5, color: t.inkSoft }}>How far you got in the negotiation</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: t.success }}>3 of 3 stages</span>
           </div>
         </div>
       </div>
-      <div style={{ margin: "10px 18px 0", background: "#312E81", borderRadius: 7, padding: "9px 14px", display: "flex", gap: 12, alignItems: "center" }}>
+      <div style={{ margin: "10px 18px 0", background: t.indigo, borderRadius: 7, padding: "9px 14px", display: "flex", gap: 12, alignItems: "center" }}>
         <span style={{ fontSize: 8.5, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "3px 8px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 4</span>
         <div>
           <div style={{ fontSize: 9.5, fontWeight: 700, color: "#fff" }}>What happened in this call</div>
@@ -4188,19 +4188,19 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
         </div>
       </div>
       <div style={{ padding: "10px 18px 14px" }}>
-        <div style={{ fontSize: 9, fontWeight: 700, color: "#0E0C08", marginBottom: 6 }}>01  How far you got in the negotiation</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: t.coal, marginBottom: 6 }}>01  How far you got in the negotiation</div>
         <div style={{ display: "flex", gap: 2, marginBottom: 8 }}>
           {phases.map(p => (
-            <div key={p.n} style={{ flex: 1, height: 4, background: "#15803D", borderRadius: 2 }} />
+            <div key={p.n} style={{ flex: 1, height: 4, background: t.success, borderRadius: 2 }} />
           ))}
         </div>
         {phases.map(p => (
           <div key={p.n} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderTop: "1px solid #F0EDE3" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <span style={{ width: 17, height: 17, borderRadius: "50%", background: "#15803D", color: "#fff", fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{p.n}</span>
-              <span style={{ fontSize: 9, fontWeight: 600, color: "#0E0C08" }}>{p.label}</span>
+              <span style={{ width: 17, height: 17, borderRadius: "50%", background: t.success, color: "#fff", fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{p.n}</span>
+              <span style={{ fontSize: 9, fontWeight: 600, color: t.coal }}>{p.label}</span>
             </div>
-            <span style={{ fontSize: 8, fontWeight: 600, color: "#15803D", background: "#DCFCE7", padding: "2px 7px", borderRadius: 3 }}>DONE ✓</span>
+            <span style={{ fontSize: 8, fontWeight: 600, color: t.success, background: t.success100, padding: "2px 7px", borderRadius: 3 }}>DONE ✓</span>
           </div>
         ))}
       </div>
@@ -4211,54 +4211,54 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
 /* ─── Card: Campus placement — right ── (exact canvas copy) */
 function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean; revealed?: boolean; baseDelay?: number }) {
   const skills = [
-    { label: "Communication",     score: 75, c: "#15803D" },
-    { label: "Fundamentals",      score: 70, c: "#15803D" },
-    { label: "Project ownership", score: 45, c: "#B91C1C" },
-    { label: "Project depth",     score: 40, c: "#B91C1C" },
+    { label: "Communication",     score: 75, c: t.success },
+    { label: "Fundamentals",      score: 70, c: t.success },
+    { label: "Project ownership", score: 45, c: t.error },
+    { label: "Project depth",     score: 40, c: t.error },
   ];
   const rptF = { sans: "'Satoshi', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
   /* Arc length for 58% of a semicircle: π × r × 0.58 = π × 33 × 0.58 ≈ 60 */
   const arcLen = 60;
   return (
     <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
-      <div style={{ background: "#FAF7F0", padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: "#6E6759" }}>READINESS</span>
-        <span style={{ fontSize: 13, fontWeight: 800, color: "#B45309" }}>42%</span>
-        <span style={{ fontSize: 8, color: "#6E6759" }}>Infosys SWE Fresher · ~5 sessions to close gap</span>
+      <div style={{ background: t.cream, padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: t.copper }}>42%</span>
+        <span style={{ fontSize: 8, color: t.inkSoft }}>Infosys SWE Fresher · ~5 sessions to close gap</span>
       </div>
       <div style={{ display: "flex", gap: 0, padding: "14px 16px 12px" }}>
         <div style={{ width: 124, flexShrink: 0 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: "#6E6759", marginBottom: 6 }}>OVERALL SCORE</div>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.inkSoft, marginBottom: 6 }}>OVERALL SCORE</div>
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
               <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
-              <path d="M7,46 A33,33 0 0,1 48,14" fill="none" stroke="#B45309" strokeWidth="7" strokeLinecap="round"
+              <path d="M7,46 A33,33 0 0,1 48,14" fill="none" stroke={t.copper} strokeWidth="7" strokeLinecap="round"
                 strokeDasharray={arcLen} strokeDashoffset={revealed ? 0 : arcLen}
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
-            <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: "#0E0C08", lineHeight: 1 }}>58</div>
-            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: "#9E9589" }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: t.coal, lineHeight: 1 }}>58</div>
+            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkFaintWeak }}>/ 100</div>
           </div>
-          <span style={{ fontSize: 7.5, background: "#FEF3C7", color: "#92400E", padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Lean Hire</span>
+          <span style={{ fontSize: 7.5, background: "#FEF3C7", color: t.copperDark, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Lean Hire</span>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
-            <svg width="28" height="12" viewBox="0 0 28 12"><polyline points="0,4 5,7 10,5 16,10 22,8 28,12" fill="none" stroke="#B91C1C" strokeWidth="1.2" /></svg>
-            <span style={{ fontSize: 9, color: "#B91C1C", fontWeight: 700 }}>↓ 8</span>
+            <svg width="28" height="12" viewBox="0 0 28 12"><polyline points="0,4 5,7 10,5 16,10 22,8 28,12" fill="none" stroke={t.error} strokeWidth="1.2" /></svg>
+            <span style={{ fontSize: 9, color: t.error, fontWeight: 700 }}>↓ 8</span>
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: "#B45309", marginBottom: 5 }}>✦ AI CAMPUS VERDICT</div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: "#0E0C08", lineHeight: 1.5, marginBottom: 8 }}>Enthusiasm came through. Project section drifted to "we" — distinguish your individual contribution.</div>
-          <div style={{ fontSize: 8, background: "#FEE2E2", padding: "4px 8px", borderRadius: 3, color: "#7F1D1D", fontWeight: 600 }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: t.copper, marginBottom: 5 }}>✦ AI CAMPUS VERDICT</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 8 }}>Enthusiasm came through. Project section drifted to "we" — distinguish your individual contribution.</div>
+          <div style={{ fontSize: 8, background: t.error100, padding: "4px 8px", borderRadius: 3, color: "#7F1D1D", fontWeight: 600 }}>
             ⚠ RED FLAG: "we built the backend" — vague project role
           </div>
         </div>
       </div>
       <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 8px", background: "#FEFDF8" }}>
-        <span style={{ fontSize: 8, background: "#FEF3C7", color: "#92400E", padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>CAMPUS PLACEMENT · FULL REPORT</span>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: "#0E0C08", marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your campus interview</div>
-        <div style={{ fontSize: 8, color: "#6E6759", marginTop: 3 }}>Each panel turns one campus skill into something you can rehearse.</div>
+        <span style={{ fontSize: 8, background: "#FEF3C7", color: t.copperDark, padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>CAMPUS PLACEMENT · FULL REPORT</span>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: t.coal, marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your campus interview</div>
+        <div style={{ fontSize: 8, color: t.inkSoft, marginTop: 3 }}>Each panel turns one campus skill into something you can rehearse.</div>
       </div>
-      <div style={{ margin: "10px 16px 0", background: "#312E81", borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
+      <div style={{ margin: "10px 16px 0", background: t.indigo, borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
         <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
         <div>
           <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>Skill breakdown</div>
@@ -4272,7 +4272,7 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
               <span style={{ fontSize: 8.5, color: "#4A4540" }}>{s.label}</span>
               <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono }}>{s.score}</span>
             </div>
-            <div style={{ height: 4, background: "#EBE5D2", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ height: 4, background: t.line, borderRadius: 2, overflow: "hidden" }}>
               <div style={{ height: "100%", width: revealed ? `${s.score}%` : "0%", background: s.c, borderRadius: 2, transition: `width 0.7s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 400 + i * 80}ms` }} />
             </div>
           </div>
@@ -4320,7 +4320,7 @@ export function PersonalizedReportsV2() {
     <section
       aria-labelledby="hd-reports"
       className="mv2-rpt-section"
-      style={{ background: "#FAF7F0", overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, paddingBottom: 80 }}
+      style={{ background: t.cream, overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, paddingBottom: 80 }}
     >
       <style>{rpt_STYLES}</style>
 
@@ -4330,9 +4330,9 @@ export function PersonalizedReportsV2() {
         {/* Left card — outer: position + reveal; inner: hover */}
         <div className="mv2-rpt-side" style={{ position: "absolute", left: 220, bottom: 60, zIndex: lActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(0) }}>
           <div style={{ transformOrigin: "bottom center", transform: lActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(-10deg) translateY(6px) scale(0.86)" : "rotate(-8deg)", opacity: anyHov && !lActive ? 0.65 : 1, filter: anyHov && !lActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("left")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Behavioral · 82/100<br />Razorpay Senior PD
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
             </div>
             <RPT_InterviewCard lifted={lActive} revealed={revealed} baseDelay={0} />
           </div>
@@ -4341,9 +4341,9 @@ export function PersonalizedReportsV2() {
         {/* Center card */}
         <div style={{ position: "absolute", left: "50%", bottom: 60, zIndex: cActive ? 12 : anyHov ? 4 : 5, transform: revealed ? "translateX(-50%) translateY(0px)" : "translateX(-50%) translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(1) }}>
           <div style={{ transform: cActive ? "translateY(-30px) scale(1.08)" : anyHov ? "translateY(6px) scale(0.86)" : "none", opacity: anyHov && !cActive ? 0.65 : 1, filter: anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("center")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Salary Neg · ₹48L landed<br />PhonePe Senior EM
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
             </div>
             <RPT_ReportCard lifted={cActive} revealed={revealed} baseDelay={120} />
           </div>
@@ -4352,24 +4352,24 @@ export function PersonalizedReportsV2() {
         {/* Right card */}
         <div className="mv2-rpt-side" style={{ position: "absolute", right: 220, bottom: 60, zIndex: rActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(2) }}>
           <div style={{ transformOrigin: "bottom center", transform: rActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(10deg) translateY(6px) scale(0.86)" : "rotate(8deg)", opacity: anyHov && !rActive ? 0.65 : 1, filter: anyHov && !rActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("right")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Campus · 58/100<br />Infosys SWE Fresher
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: "#9E9589" }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
             </div>
             <RPT_ProgressCard lifted={rActive} revealed={revealed} baseDelay={240} />
           </div>
         </div>
 
         {/* Bottom fade */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 360, background: "linear-gradient(to bottom, transparent 0%, #FAF7F0 70%)", zIndex: 15, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 360, background: `linear-gradient(to bottom, transparent 0%, ${t.cream} 70%)`, zIndex: 15, pointerEvents: "none" }} />
       </div>
 
       {/* ── Headline — staggered scroll reveal, each line fires after the cards land ── */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80 }}>
-        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: "#0E0C08", margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(3) : "0ms" }}>
+        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: t.coal, margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(3) : "0ms" }}>
           Personalized reports after
         </h2>
-        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: "#B45309", margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5, opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(4) : "0ms" }}>
+        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: t.copper, margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5, opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(4) : "0ms" }}>
           every interview
         </h2>
         <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
@@ -4390,13 +4390,13 @@ export function SecurityComplianceV2() {
       icon: (
         /* Document (indigo) + copper official seal */
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="7" y="4" width="22" height="28" rx="3" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
-          <path d="M22 4v7h7" fill="#C9C6E8" stroke="#312E81" strokeWidth="1.4" strokeLinejoin="round" />
-          <line x1="12" y1="16" x2="22" y2="16" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="12" y1="20" x2="22" y2="20" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="12" y1="24" x2="18" y2="24" stroke="#312E81" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="31" cy="31" r="9.5" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
-          <path d="M27 31l2.5 2.5 4.5-5" stroke="#312E81" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="7" y="4" width="22" height="28" rx="3" fill={t.indigo100} stroke={t.indigo} strokeWidth="1.7" />
+          <path d="M22 4v7h7" fill="#C9C6E8" stroke={t.indigo} strokeWidth="1.4" strokeLinejoin="round" />
+          <line x1="12" y1="16" x2="22" y2="16" stroke={t.indigo} strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="12" y1="20" x2="22" y2="20" stroke={t.indigo} strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="12" y1="24" x2="18" y2="24" stroke={t.indigo} strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="31" cy="31" r="9.5" fill={t.indigo100} stroke={t.indigo} strokeWidth="1.7" />
+          <path d="M27 31l2.5 2.5 4.5-5" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
@@ -4406,10 +4406,10 @@ export function SecurityComplianceV2() {
       icon: (
         /* Indigo body + copper shackle */
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="9" y="21" width="26" height="17" rx="4" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
-          <path d="M15 21v-5.5a7 7 0 0 1 14 0V21" stroke="#312E81" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-          <circle cx="22" cy="30" r="3.5" fill="#312E81" />
-          <line x1="22" y1="33" x2="22" y2="36" stroke="#312E81" strokeWidth="2" strokeLinecap="round" />
+          <rect x="9" y="21" width="26" height="17" rx="4" fill={t.indigo100} stroke={t.indigo} strokeWidth="1.7" />
+          <path d="M15 21v-5.5a7 7 0 0 1 14 0V21" stroke={t.indigo} strokeWidth="2.2" strokeLinecap="round" fill="none" />
+          <circle cx="22" cy="30" r="3.5" fill={t.indigo} />
+          <line x1="22" y1="33" x2="22" y2="36" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
     },
@@ -4419,23 +4419,23 @@ export function SecurityComplianceV2() {
       icon: (
         /* Indigo CPU/chip + copper prohibition ring */
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="12" y="12" width="20" height="20" rx="3" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" />
-          <rect x="16" y="16" width="12" height="12" rx="1.5" fill="#312E81" opacity="0.15" stroke="#312E81" strokeWidth="1.2" />
-          <line x1="17" y1="8" x2="17" y2="12" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="22" y1="8" x2="22" y2="12" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="27" y1="8" x2="27" y2="12" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="17" y1="32" x2="17" y2="36" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="22" y1="32" x2="22" y2="36" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="27" y1="32" x2="27" y2="36" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="8" y1="17" x2="12" y2="17" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="8" y1="22" x2="12" y2="22" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="8" y1="27" x2="12" y2="27" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="32" y1="17" x2="36" y2="17" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="32" y1="22" x2="36" y2="22" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="32" y1="27" x2="36" y2="27" stroke="#312E81" strokeWidth="1.6" strokeLinecap="round" />
-          <circle cx="32" cy="32" r="9" fill="#EEEDF8" />
-          <circle cx="32" cy="32" r="7.5" stroke="#312E81" strokeWidth="1.8" fill="none" />
-          <line x1="27.3" y1="36.7" x2="36.7" y2="27.3" stroke="#312E81" strokeWidth="2" strokeLinecap="round" />
+          <rect x="12" y="12" width="20" height="20" rx="3" fill={t.indigo100} stroke={t.indigo} strokeWidth="1.7" />
+          <rect x="16" y="16" width="12" height="12" rx="1.5" fill={t.indigo} opacity="0.15" stroke={t.indigo} strokeWidth="1.2" />
+          <line x1="17" y1="8" x2="17" y2="12" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="22" y1="8" x2="22" y2="12" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="27" y1="8" x2="27" y2="12" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="17" y1="32" x2="17" y2="36" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="22" y1="32" x2="22" y2="36" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="27" y1="32" x2="27" y2="36" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="8" y1="17" x2="12" y2="17" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="8" y1="22" x2="12" y2="22" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="8" y1="27" x2="12" y2="27" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="32" y1="17" x2="36" y2="17" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="32" y1="22" x2="36" y2="22" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="32" y1="27" x2="36" y2="27" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" />
+          <circle cx="32" cy="32" r="9" fill={t.indigo100} />
+          <circle cx="32" cy="32" r="7.5" stroke={t.indigo} strokeWidth="1.8" fill="none" />
+          <line x1="27.3" y1="36.7" x2="36.7" y2="27.3" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
     },
@@ -4445,9 +4445,9 @@ export function SecurityComplianceV2() {
       icon: (
         /* Indigo shield + copper person = you own your data */
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 4L8 10v11c0 9.2 6 17.3 14 19.8 8-2.5 14-10.6 14-19.8V10L22 4Z" fill="#EEEDF8" stroke="#312E81" strokeWidth="1.7" strokeLinejoin="round" />
-          <circle cx="22" cy="18" r="4" fill="#312E81" />
-          <path d="M13.5 31.5c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5" fill="#312E81" />
+          <path d="M22 4L8 10v11c0 9.2 6 17.3 14 19.8 8-2.5 14-10.6 14-19.8V10L22 4Z" fill={t.indigo100} stroke={t.indigo} strokeWidth="1.7" strokeLinejoin="round" />
+          <circle cx="22" cy="18" r="4" fill={t.indigo} />
+          <path d="M13.5 31.5c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5" fill={t.indigo} />
         </svg>
       ),
     },
@@ -4458,7 +4458,7 @@ export function SecurityComplianceV2() {
       <div className="mv2-container" style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px" }}>
         {/* Headline */}
         <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 56, fontWeight: 400, lineHeight: 1.05, color: t.coal, textAlign: "center", margin: "0 auto 16px", letterSpacing: -1.5, maxWidth: 640 }}>
-          Your data stays <span style={{ fontStyle: "italic", color: "#B45309" }}>yours</span>
+          Your data stays <span style={{ fontStyle: "italic", color: t.copper }}>yours</span>
         </h2>
         <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: "0 auto 64px", maxWidth: 480, fontFamily: fonts.sans }}>
           Built for India's regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.
@@ -4548,7 +4548,7 @@ export function VideoCtaV2() {
       {/* Content */}
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 1100, margin: "0 auto", alignSelf: "flex-start" }}>
 
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.04, color: "#FAF7F0", margin: "0 0 20px", letterSpacing: -2, whiteSpace: "nowrap", ...fadeUp(100) }}>
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.04, color: t.cream, margin: "0 0 20px", letterSpacing: -2, whiteSpace: "nowrap", ...fadeUp(100) }}>
           Prepare Like Top <span style={{ fontStyle: "italic" }}>Candidates Do</span>
         </h2>
 
@@ -4557,7 +4557,7 @@ export function VideoCtaV2() {
         </p>
 
         <div style={{ display: "flex", justifyContent: "center", ...fadeUp(400) }}>
-          <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#B45309", color: "#FAF7F0", padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
+          <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
             Start your free interview
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </a>

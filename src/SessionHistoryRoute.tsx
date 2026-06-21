@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import SessionHistoryDesign, { type SessionHistoryItem } from "./SessionHistoryDesign";
 import { useDashboardSessions } from "./DashboardContext";
 import type { DashboardSession } from "./dashboardTypes";
+import { tokens as T } from "./auth/_tokens";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -92,7 +93,7 @@ export default function SessionHistoryRoute() {
        on a 1366×768 viewport, which is the most common breakpoint. */
     const ui =
       "'Satoshi', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
-    const line = "#EBE5D2";
+    const line = T.line;
     const lineFaint = "#F2EEDE";
     const skeleton = (
       <div
@@ -170,7 +171,7 @@ export default function SessionHistoryRoute() {
       <div
         style={{
           minHeight: "100vh",
-          background: "#FAF7F0",
+          background: T.cream,
           fontFamily: ui,
           padding: "40px 56px",
         }}

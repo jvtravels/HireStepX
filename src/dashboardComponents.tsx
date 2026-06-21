@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, memo } from "react";
 import { captureClientEvent } from "./posthogClient";
 import dynamic from "next/dynamic";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import type { DashboardSession } from "./dashboardTypes";
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
@@ -116,10 +117,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   // Cream palette shadow — matches the marketing /pricing page and settings repaint.
   // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
   const c = {
-    obsidian: "#FAF7F0", graphite: "#FDFCF7", carbon: "#F4EFE3",
-    ivory: "#0E0C08", chalk: "#3F3A33", stone: "#6B655C",
-    gilt: "#B45309", giltDark: "#92400E", sage: "#15803D", ember: "#B91C1C",
-    border: "#EBE5D2", borderHover: "#D6CDB5",
+    obsidian: T.cream, graphite: "#FDFCF7", carbon: T.creamSoft,
+    ivory: T.coal, chalk: "#3F3A33", stone: "#6B655C",
+    gilt: T.copper, giltDark: T.copperDark, giltLight: T.copper100,
+    sage: T.success, ember: T.error,
+    slate: T.indigo,
+    border: T.line, borderHover: T.lineStrong,
   };
   const font = {
     display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
@@ -282,7 +285,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         description: data.description,
         order_id: data.orderId,
         prefill: { email: user?.email || "", name: user?.name || "" },
-        theme: { color: "#B45309" },
+        theme: { color: c.gilt },
         handler: function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
           setPendingVerification({
             razorpay_order_id: response.razorpay_order_id,
@@ -415,7 +418,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               } catch { setPromoError("Could not validate code"); }
               finally { setPromoLoading(false); }
             }} style={{
-              fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "#F4E5D8",
+              fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: c.giltLight,
               border: `1px solid ${c.borderHover}`, borderRadius: 8, padding: "8px 14px", cursor: promoLoading ? "wait" : "pointer", opacity: !promoCode.trim() ? 0.5 : 1,
             }}>
               {promoLoading ? "..." : "Apply"}
@@ -440,9 +443,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             return (
               <div key={plan.id} style={{
                 position: "relative", padding: 22, borderRadius: 20,
-                background: featured ? "#1E1B4B" : c.graphite,
-                color: featured ? "#FAF7F0" : c.ivory,
-                border: `1px solid ${featured ? "#1E1B4B" : isCurrent ? c.borderHover : c.border}`,
+                background: featured ? T.indigoDeep : c.graphite,
+                color: featured ? c.obsidian : c.ivory,
+                border: `1px solid ${featured ? T.indigoDeep : isCurrent ? c.borderHover : c.border}`,
                 boxShadow: featured ? "0 1px 0 rgba(30,27,75,.04), 0 12px 32px -16px rgba(30,27,75,.40)" : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
                 display: "flex", flexDirection: "column", gap: 16,
               }}>
@@ -450,13 +453,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   <span style={{
                     position: "absolute", top: -12, left: 24,
                     fontFamily: font.ui, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                    color: "#0E0C08", background: "#F4E5D8",
+                    color: c.ivory, background: c.giltLight,
                     padding: "4px 10px", borderRadius: 999, border: `1px solid ${c.borderHover}`,
                   }}>{ribbonText}</span>
                 )}
                 <div>
-                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? "#F4E5D8" : c.gilt }}>{plan.name}</p>
-                  <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? "#FAF7F0" : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? c.giltLight : c.gilt }}>{plan.name}</p>
+                  <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? c.obsidian : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                     {plan.price}
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(250,247,240,0.7)" : c.stone }}>
                       {plan.unit}
@@ -468,13 +471,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {plan.features.map((f) => (
                     <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(250,247,240,0.86)" : c.chalk }}>
-                      <span aria-hidden style={{ color: featured ? "#F4E5D8" : c.gilt, marginTop: 2 }}>→</span>{f}
+                      <span aria-hidden style={{ color: featured ? c.giltLight : c.gilt, marginTop: 2 }}>→</span>{f}
                     </li>
                   ))}
                 </ul>
 
                 {isCurrent ? (
-                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? "#F4E5D8" : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
+                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? c.giltLight : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
                 ) : plan.id === "free" ? (
                   <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.stone, textAlign: "center" }}>
                     {currentTier === "free" ? "Your current plan" : plan.cta}
@@ -482,8 +485,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 ) : (
                   <button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
                     style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: "none",
-                      background: featured ? "#FAF7F0" : "#312E81",
-                      color: featured ? "#0E0C08" : "#FFFFFF",
+                      background: featured ? c.obsidian : c.slate,
+                      color: featured ? c.ivory : "#FFFFFF",
                       fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer",
                       opacity: loading && loading !== plan.id ? 0.5 : 1,
                       boxShadow: featured ? "0 1px 0 rgba(244,229,216,.08), 0 8px 24px rgba(244,229,216,0.18)" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
@@ -796,7 +799,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
                   strokeLinecap="round" className="score-ring" />
               </svg>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <span style={{ fontFamily: font.mono, fontSize: 26, fontWeight: 700, color: c.ivory, lineHeight: 1 }}>{session.score}</span>
+                <span style={{ fontFamily: font.mono, fontSize: 28, fontWeight: 700, color: c.ivory, lineHeight: 1 }}>{session.score}</span>
                 <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: scoreLabelColor(session.score), marginTop: 2 }}>{scoreLabel(session.score)}</span>
               </div>
             </div>

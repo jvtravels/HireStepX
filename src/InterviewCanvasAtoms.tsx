@@ -258,7 +258,7 @@ export function CanvasPersonaLabel({ name, state }: { name: string; state: Canva
   })();
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-      <span style={{ fontFamily: ef.serif, fontSize: 17, fontWeight: 500, color: e.coal, letterSpacing: -0.2 }}>
+      <span style={{ fontFamily: ef.serif, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: -0.2 }}>
         {name}
       </span>
       <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, letterSpacing: 0.05 }}>

@@ -361,7 +361,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ fontFamily: ef.serif, fontSize: 14, fontWeight: 600, color: e.coal }}>Deal Summary</span>
-        <span style={{ fontFamily: ef.sans, fontSize: 20, fontWeight: 700, color: gradeColor }}>{grade}</span>
+        <span style={{ fontFamily: ef.sans, fontSize: 22, fontWeight: 700, color: gradeColor }}>{grade}</span>
       </div>
 
       {/* Numbers row */}

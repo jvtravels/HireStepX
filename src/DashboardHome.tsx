@@ -1128,7 +1128,7 @@ function MilestoneTimeline() {
         }}>{Icons.lock}</span>
         <div style={{ flex: 1, minWidth: 200 }}>
           <Eyebrow as="h3" tone="ink">Next up</Eyebrow>
-          <div style={{ fontFamily: f.serif, fontSize: 20, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: "4px 0 8px" }}>
+          <div style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: "4px 0 8px" }}>
             {next.label}
           </div>
           <div style={{ position: "relative", height: 4, borderRadius: 999, background: t.line, overflow: "hidden" }}

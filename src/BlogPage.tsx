@@ -673,7 +673,7 @@ function BlogIndex() {
                   <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 8px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{post.company}</span>
                   <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "3px 8px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999 }}>{post.category}</span>
                 </div>
-                <h3 style={{ fontFamily: fonts.serif, fontSize: 19, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.012em", marginBottom: 12, flex: 1, textWrap: "balance" }}>
+                <h3 style={{ fontFamily: fonts.serif, fontSize: 18, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.012em", marginBottom: 12, flex: 1, textWrap: "balance" }}>
                   <Link href={`/blog/${post.slug}`} className="blog-card-link">
                     {post.title}
                   </Link>
@@ -831,7 +831,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                         padding: "22px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left",
                       }}
                     >
-                      <span style={{ fontFamily: fonts.sans, fontSize: 17, fontWeight: 600, color: t.coal, lineHeight: 1.4, paddingRight: 16 }}>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 18, fontWeight: 600, color: t.coal, lineHeight: 1.4, paddingRight: 16 }}>
                         {faq.question}
                       </span>
                       <span

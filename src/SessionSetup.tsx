@@ -1860,7 +1860,7 @@ export default function SessionSetup() {
                 <div style={{ display: "grid", gridTemplateColumns: strengths.length > 0 && gaps.length > 0 ? "1fr 1fr" : "1fr", gap: 12 }}>
                   {strengths.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: "#15803D", margin: "0 0 4px" }}>✓ Lean on these</p>
+                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.success, margin: "0 0 4px" }}>✓ Lean on these</p>
                       <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
                         {strengths.map((s, i) => (
                           <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{s}</li>
@@ -1870,7 +1870,7 @@ export default function SessionSetup() {
                   )}
                   {gaps.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: "#B45309", margin: "0 0 4px" }}>⚡ Prepare for these</p>
+                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.copper, margin: "0 0 4px" }}>⚡ Prepare for these</p>
                       <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
                         {gaps.map((g, i) => (
                           <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{g}</li>

@@ -1097,7 +1097,7 @@ function SessionCard({ s, isSelected, isDue: _isDue, badge, dateText, patternCou
           {/* Identity — the one editorial note. Serif "Role at Company", italic
               "at" connector. No sub-line; metadata lives in the header strip. */}
           <div style={{
-            fontFamily: fonts.serif, fontSize: 20, color: tok.coal,
+            fontFamily: fonts.serif, fontSize: 22, color: tok.coal,
             lineHeight: 1.15, letterSpacing: -0.2,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
@@ -2079,7 +2079,7 @@ function DetailView({
                   alignItems: "flex-end", gap: 2, minWidth: 60,
                 }}>
                   <span style={{
-                    fontFamily: fonts.serif, fontSize: 26, fontWeight: 400,
+                    fontFamily: fonts.serif, fontSize: 28, fontWeight: 400,
                     color, lineHeight: 1, fontVariantNumeric: "tabular-nums",
                   }}>{q.score}</span>
                   <span style={{
@@ -2111,7 +2111,7 @@ function DetailView({
               </div>
               <p style={{
                 margin: 0,
-                fontFamily: fonts.serif, fontSize: 17, fontWeight: 400,
+                fontFamily: fonts.serif, fontSize: 18, fontWeight: 400,
                 color: tok.coal, lineHeight: 1.55,
               }}>{line.text}</p>
               {line.scoreNote && (
@@ -2136,7 +2136,7 @@ function DetailView({
             textTransform: "uppercase", marginBottom: 14,
           }}>Coach notes</div>
           <div style={{
-            fontFamily: fonts.serif, fontSize: 17, fontWeight: 400,
+            fontFamily: fonts.serif, fontSize: 18, fontWeight: 400,
             color: tok.coal, lineHeight: 1.7, whiteSpace: "pre-wrap",
           }}>{s.feedback}</div>
         </div>
@@ -2294,7 +2294,7 @@ function ReportView({ onBack }: { onBack: () => void }) {
       {/* Next CTA */}
       <div style={{ padding: 22, background: tok.coal, color: tok.cream, borderRadius: radii.cardLg, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontFamily: fonts.serif, fontSize: 20, fontStyle: "italic", lineHeight: 1.2, color: tok.copper100 }}>Next move</div>
+          <div style={{ fontFamily: fonts.serif, fontSize: 22, fontStyle: "italic", lineHeight: 1.2, color: tok.copper100 }}>Next move</div>
           <div style={{ fontSize: 14, marginTop: 4 }}>System Design, Razorpay round 2. Suggested for Friday.</div>
         </div>
         <button style={{ padding: "12px 22px", borderRadius: 10, background: tok.copper, color: tok.cream, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Schedule next session →</button>
@@ -2409,7 +2409,7 @@ function HelpPanel({ onClose, allowDelete = true, allowDrafts = true }: { onClos
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
           <div>
             <div style={{ fontSize: 11, color: tok.copper, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Sessions</div>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0 }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0 }}>
               Keys, actions, and bands.
             </h2>
           </div>

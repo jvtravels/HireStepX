@@ -120,7 +120,7 @@ export function DrillSessionView({
             <p
               style={{
                 fontFamily: f.serif,
-                fontSize: 17,
+                fontSize: 18,
                 color: t.coal,
                 margin: 0,
                 lineHeight: 1.5,

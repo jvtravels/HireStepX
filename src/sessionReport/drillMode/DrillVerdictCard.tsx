@@ -37,7 +37,7 @@ export function DrillVerdictCard({
       <p
         style={{
           fontFamily: f.serif,
-          fontSize: 20,
+          fontSize: 22,
           color: t.coal,
           margin: `0 0 ${space.md}px`,
           lineHeight: 1.4,

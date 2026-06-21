@@ -341,7 +341,7 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
         <h2
           id="iv-coachmark-title"
           style={{
-            margin: 0, fontFamily: ef.serif, fontSize: 26, fontWeight: 400,
+            margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
             lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
           }}
         >

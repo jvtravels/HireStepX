@@ -228,7 +228,7 @@ function StarMatrix({ rows }: { rows: BehavioralStarRow[] }) {
         <h2
           style={{
             margin: 0,
-            fontSize: 17,
+            fontSize: 18,
             fontWeight: 600,
             color: t.coal,
             letterSpacing: -0.2,
@@ -850,7 +850,7 @@ export default function BehavioralFullReport({
                   <span style={{ fontSize: 13, color: t.inkSoft }}>{row.l}</span>
                   <span
                     style={{
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: 700,
                       color: row.color,
                       fontVariantNumeric: "tabular-nums",
@@ -954,7 +954,7 @@ export default function BehavioralFullReport({
                 marginBottom: 12,
               }}
             >
-              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: t.coal }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: t.coal }}>
                 Transcript replay
               </h2>
             </div>

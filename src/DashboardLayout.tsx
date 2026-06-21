@@ -399,7 +399,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         {/* User info */}
         <div style={{ borderTop: `1px solid ${c.border}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#F4E5D8", border: `1px solid rgba(180,83,9,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: T.copper100, border: `1px solid rgba(180,83,9,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.gilt }}>{(displayName || "?")[0].toUpperCase()}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -422,7 +422,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* Payment success/cancel banner */}
         {paymentBanner && (
-          <div role="alert" style={{ padding: "12px 16px", marginBottom: 16, borderRadius: 10, background: paymentBanner === "success" ? "#DCFCE7" : "#FEE2E2", border: `1px solid ${paymentBanner === "success" ? "rgba(21,128,61,0.22)" : "rgba(185,28,28,0.22)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div role="alert" style={{ padding: "12px 16px", marginBottom: 16, borderRadius: 10, background: paymentBanner === "success" ? T.success100 : T.error100, border: `1px solid ${paymentBanner === "success" ? "rgba(21,128,61,0.22)" : "rgba(185,28,28,0.22)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {paymentBanner === "success" ? (
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -444,7 +444,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* Sync error banner */}
         {syncError && (
-          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: "#FEE2E2", border: "1px solid rgba(185,28,28,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: T.error100, border: "1px solid rgba(185,28,28,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{syncError}</span>
@@ -522,7 +522,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               {/* Getting Started */}
               <Link href="/how-it-works" style={{ textDecoration: "none" }} onClick={() => setHelpOpen(false)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: c.creamSoft, cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#F4E5D8"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = T.copper100; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = c.creamSoft; e.currentTarget.style.borderColor = c.border; }}>
                   <span style={{ color: c.gilt, flexShrink: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
                   Getting Started
@@ -531,7 +531,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               {/* FAQs */}
               <Link href="/#faq" style={{ textDecoration: "none" }} onClick={() => setHelpOpen(false)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: c.creamSoft, cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#F4E5D8"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = T.copper100; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = c.creamSoft; e.currentTarget.style.borderColor = c.border; }}>
                   <span style={{ color: c.gilt, flexShrink: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
                   FAQs
@@ -548,7 +548,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 color: c.gilt, fontFamily: font.ui, fontSize: 12, fontWeight: 600, textDecoration: "none",
                 transition: "background 0.15s",
               }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "#F4E5D8"}
+                onMouseEnter={(e) => e.currentTarget.style.background = T.copper100}
                 onMouseLeave={(e) => e.currentTarget.style.background = c.creamSoft}>
                 support@hirestepx.com
               </a>

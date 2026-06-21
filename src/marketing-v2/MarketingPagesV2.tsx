@@ -82,7 +82,7 @@ const eyebrow: CSSProperties = {
 
 const lead: CSSProperties = {
   fontFamily: fonts.sans,
-  fontSize: 19,
+  fontSize: 18,
   lineHeight: 1.55,
   color: t.indigoGray,
   margin: 0,
@@ -244,7 +244,7 @@ export function FAQItem({ q, a, first }: { q: string; a: string; first?: boolean
           alignItems: "center",
           gap: 16,
           fontFamily: fonts.serif,
-          fontSize: 19,
+          fontSize: 18,
           fontWeight: 400,
           color: t.coal,
           letterSpacing: "-0.01em",
@@ -966,7 +966,7 @@ export function AboutV2() {
       <section className="mv2p-section" aria-label="Mission" style={{ ...sectionBase }}>
         <div className="mv2-container" style={containerNarrow}>
           <MDXProse>
-            <p style={{ fontSize: 19, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 18, lineHeight: 1.7 }}>
               India produces 1.5 million engineering graduates a year. A third can't land a first interview that goes past round one. The reason is rarely talent. It's that interview prep, the way it's taught, was designed for a labor market that doesn't exist anymore: coaching that costs ₹10,000 a session, friends who can only roleplay so many times, and YouTube videos from 2018 about a hiring funnel that's already changed twice.
             </p>
             <p>
@@ -1161,7 +1161,7 @@ export function ContactV2() {
               <h2
                 style={{
                   ...h3,
-                  fontSize: 26,
+                  fontSize: 28,
                   margin: 0,
                   marginBottom: 4,
                 }}
@@ -1405,7 +1405,7 @@ export function ForStudentsV2() {
                   boxShadow: shadows.card,
                 }}
               >
-                <h3 style={{ ...h3, fontSize: 20, marginBottom: 10 }}>{title}</h3>
+                <h3 style={{ ...h3, fontSize: 22, marginBottom: 10 }}>{title}</h3>
                 <p style={{ ...body, fontSize: 14, lineHeight: 1.6 }}>{copy}</p>
               </article>
             ))}
