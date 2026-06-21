@@ -37,7 +37,10 @@ const sectionBase: CSSProperties = {
 
 const h1Display: CSSProperties = {
   fontFamily: fonts.serif,
-  fontSize: "clamp(48px, 7vw, 96px)",
+  /* Was clamp(48px, 7vw, 96px) — at 1366px that's 95.6px which swallows
+     40% of the viewport before pricing cards can appear. Cap at 72px and
+     use a gentler vw rate so desktop headings stay bold without dominating. */
+  fontSize: "clamp(48px, 5.5vw, 72px)",
   lineHeight: 1.0,
   letterSpacing: "-0.03em",
   color: t.coal,
