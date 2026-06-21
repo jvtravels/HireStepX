@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
-import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
+import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
 import { daysUntilEvent } from "./dashboardHelpers";
 import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   // changes. Each sub-context only notifies when ITS slice changes.
   const { displayName, persisted } = useDashboardCore();
   const { calendarEvents, refreshSessions } = useDashboardSessions();
-  const { isFree, isStarter, isPro, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek } = useDashboardSubscription();
+  const { isFree, isStarter, isPro, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining } = useDashboardSubscription();
   // True when we have a session but profile fetch (tier-bearing) hasn't
   // returned yet. profileToUser always sets subscriptionTier; the JWT-only
   // fallback path leaves it undefined. Avoid rendering "Free Plan" in this
@@ -343,7 +343,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             {tierKnown && (
               <span
                 title={isPro
-                  ? "Unlimited sessions · STAR coaching · skill decay tracking · PDF reports"
+                  ? `${PRO_MONTHLY_LIMIT} sessions/month · STAR coaching · skill decay tracking · PDF reports`
                   : isStarter
                   ? `${STARTER_WEEKLY_LIMIT} sessions/week · STAR coaching · PDF reports · ₹49/week`
                   : "3 lifetime sessions · basic feedback · upgrade anytime"}
@@ -358,20 +358,31 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </span>
             )}
           </div>
-          <p style={{ fontFamily: font.ui, fontSize: 11, color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0)) ? c.ember : c.stone, lineHeight: 1.4, marginBottom: isStarter && user?.subscriptionEnd ? 3 : 8, fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1) || (isStarter && starterRemaining <= 2)) ? 600 : 400 }}>
-            {!tierKnown ? "\u00a0" : isPro ? "Unlimited sessions" : isStarter ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions this week${starterRemaining <= 2 && starterRemaining > 0 ? ", running low" : ""}` : sessionsRemaining > 0 ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? ", last one" : ""}` : "No sessions left. Upgrade to continue."}
+          <p style={{ fontFamily: font.ui, fontSize: 11, color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? c.ember : c.stone, lineHeight: 1.4, marginBottom: (isStarter || isPro) && user?.subscriptionEnd ? 3 : 8, fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1) || (isStarter && starterRemaining <= 2) || (isPro && proRemaining <= 5)) ? 600 : 400 }}>
+            {!tierKnown ? "\u00a0"
+              : isPro
+                ? proRemaining > 0
+                  ? `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions this month${proRemaining <= 5 ? ", running low" : ""}`
+                  : "Monthly limit reached. Resets next month."
+              : isStarter
+                ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions this week${starterRemaining <= 2 && starterRemaining > 0 ? ", running low" : ""}`
+              : sessionsRemaining > 0
+                ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? ", last one" : ""}`
+              : "No sessions left. Upgrade to continue."}
           </p>
           {user?.subscriptionEnd && isStarter && (
             <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, marginBottom: 10 }}>
               Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · sessions reset Sun
             </p>
           )}
-          {tierKnown && (isFree || isStarter) && (
+          {tierKnown && (isFree || isStarter || isPro) && (
             <div style={{ height: 3, borderRadius: 2, background: c.border, marginBottom: 12 }}>
               {isFree ? (
                 <div style={{ height: "100%", borderRadius: 2, background: sessionsRemaining === 0 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsUsed / FREE_SESSION_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
-              ) : (
+              ) : isStarter ? (
                 <div style={{ height: "100%", borderRadius: 2, background: starterRemaining === 0 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsThisWeek / STARTER_WEEKLY_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
+              ) : (
+                <div style={{ height: "100%", borderRadius: 2, background: proRemaining === 0 ? c.ember : c.sage, width: `${Math.min(100, (sessionsThisMonth / PRO_MONTHLY_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
               )}
             </div>
           )}

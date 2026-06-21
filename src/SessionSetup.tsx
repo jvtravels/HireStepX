@@ -22,7 +22,7 @@ import { getAudioContextCtor } from "./_browser-api-guards";
 import { useToast } from "./Toast";
 import { unlockAudio, prefetchTTS } from "./tts";
 import { UpgradeModal } from "./dashboardComponents";
-import { FREE_SESSION_LIMIT } from "./dashboardData";
+import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
 import { GAP_CTA_MAP } from "./nextMove";
 
 /**
@@ -802,8 +802,20 @@ export default function SessionSetup() {
   const SESSION_LENGTH = `${sessionMinutes}m`;
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const isFreeUser = !user?.subscriptionTier || user.subscriptionTier === "free";
+  const isStarterUser = user?.subscriptionTier === "starter";
+  const isProUser = user?.subscriptionTier === "pro";
   const freeSessionCount = user?.practiceTimestamps?.length ?? 0;
-  const atSessionLimit = isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT;
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);
+  const practiceTimestamps = user?.practiceTimestamps ?? [];
+  const sessionsThisWeek = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= weekStart.getTime(); } catch { return false; } }).length;
+  const sessionsThisMonth = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; } }).length;
+  const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
+  const proRemaining = Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth);
+  const atSessionLimit = (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT)
+    || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT)
+    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT);
   const { toast } = useToast();
 
   /* Warn-flag bounce-back toast: useInterviewEngine sends users back
@@ -1886,41 +1898,59 @@ export default function SessionSetup() {
           {/* ─── Single canvas-style "Start practice" CTA + trust line.
                 The CTA stays clickable when only the mic is missing — it
                 triggers the prompt instead of failing silently. */}
-          {/* Session quota scarcity signal — shown when ≤2 free sessions remain */}
-          {isFreeUser && typeof (FREE_SESSION_LIMIT - freeSessionCount) === 'number' && (FREE_SESSION_LIMIT - freeSessionCount) <= 2 && (
-            <div
-              style={{
-                background: (FREE_SESSION_LIMIT - freeSessionCount) <= 1 ? 'rgba(185,28,28,0.08)' : 'rgba(180,83,9,0.08)',
-                color: (FREE_SESSION_LIMIT - freeSessionCount) <= 1 ? T.error : T.copper,
-                border: `1px solid ${(FREE_SESSION_LIMIT - freeSessionCount) <= 1 ? 'rgba(185,28,28,0.2)' : 'rgba(180,83,9,0.2)'}`,
-                borderRadius: 10,
-                padding: '10px 16px',
-                marginBottom: 14,
-                fontSize: 13,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-              }}
-            >
-              <span>
-                {(FREE_SESSION_LIMIT - freeSessionCount) <= 0
-                  ? 'No free sessions left — upgrade to continue.'
-                  : (FREE_SESSION_LIMIT - freeSessionCount) === 1
-                  ? 'This is your last free session.'
-                  : `${FREE_SESSION_LIMIT - freeSessionCount} free sessions remaining.`}
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowUpgradeModal(true)}
-                style={{ background: 'none', border: 'none', fontWeight: 600,
-                         color: 'inherit', cursor: 'pointer', fontSize: 13,
-                         textDecoration: 'underline', padding: 0 }}
+          {/* Session quota scarcity signal — shown when sessions are running low on any paid plan,
+              or ≤2 remaining for free tier. Each tier has its own threshold and copy. */}
+          {(() => {
+            const freeLeft = FREE_SESSION_LIMIT - freeSessionCount;
+            const showFree = isFreeUser && freeLeft <= 2;
+            const showStarter = isStarterUser && starterRemaining <= 2;
+            const showPro = isProUser && proRemaining <= 5;
+            if (!showFree && !showStarter && !showPro) return null;
+            const isUrgent = (isFreeUser && freeLeft <= 1) || (isStarterUser && starterRemaining === 0) || (isProUser && proRemaining === 0);
+            const message = showPro
+              ? proRemaining === 0
+                ? 'Monthly session limit reached — resets 1st of next month.'
+                : `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions left this month.`
+              : showStarter
+              ? starterRemaining === 0
+                ? 'Weekly session limit reached — resets on Sunday.'
+                : `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left this week.`
+              : freeLeft <= 0
+              ? 'No free sessions left — upgrade to continue.'
+              : freeLeft === 1
+              ? 'This is your last free session.'
+              : `${freeLeft} free sessions remaining.`;
+            return (
+              <div
+                style={{
+                  background: isUrgent ? 'rgba(185,28,28,0.08)' : 'rgba(180,83,9,0.08)',
+                  color: isUrgent ? T.error : T.copper,
+                  border: `1px solid ${isUrgent ? 'rgba(185,28,28,0.2)' : 'rgba(180,83,9,0.2)'}`,
+                  borderRadius: 10,
+                  padding: '10px 16px',
+                  marginBottom: 14,
+                  fontSize: 13,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}
               >
-                Upgrade
-              </button>
-            </div>
-          )}
+                <span>{message}</span>
+                {(showFree || showStarter) && (
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgradeModal(true)}
+                    style={{ background: 'none', border: 'none', fontWeight: 600,
+                             color: 'inherit', cursor: 'pointer', fontSize: 13,
+                             textDecoration: 'underline', padding: 0 }}
+                  >
+                    Upgrade
+                  </button>
+                )}
+              </div>
+            );
+          })()}
           <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 48, paddingTop: 24 }}>
             {(() => {
               const needsMic = formComplete && micStatus !== "granted" && micStatus !== "requesting";

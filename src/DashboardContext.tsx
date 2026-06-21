@@ -7,7 +7,7 @@ import { type InterviewEvent, loadEvents } from "./dashboardHelpers";
 import {
   type PersistedState, type DashboardSession, type SkillData, type TrendPoint,
   type RealSession, type SkillVelocity, type CompanyReadiness, type ImprovementPlan,
-  FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT,
+  FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT,
   loadState, saveState, getSessionData,
   generateFallbackInsights, generateNotifications, generateGoals,
   getReturnContext, getSmartScheduleSuggestion, getImprovementPlan,
@@ -60,6 +60,10 @@ interface SubscriptionContextValue {
   sessionsRemaining: number;
   starterRemaining: number;
   sessionsThisWeek: number;
+  /** Sessions started in the current calendar month — used to track Pro's 40/month cap. */
+  sessionsThisMonth: number;
+  /** Sessions remaining for Pro this calendar month (max 0). Always 0 for non-Pro tiers. */
+  proRemaining: number;
 }
 
 interface UIContextValue {
@@ -575,7 +579,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     try { return new Date(t).getTime() >= weekStart.getTime(); } catch { return false; }
   }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
-  const atSessionLimit = (isFree && sessionsUsed >= FREE_SESSION_LIMIT) || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT);
+  // Pro plan: 40 sessions per calendar month. Track this so the sidebar
+  // and SessionSetup can show real remaining counts instead of "Unlimited".
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const sessionsThisMonth = practiceTimestamps.filter((t) => {
+    try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; }
+  }).length;
+  const proRemaining = isPro ? Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth) : 0;
+  const atSessionLimit = (isFree && sessionsUsed >= FREE_SESSION_LIMIT)
+    || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT)
+    || (isPro && sessionsThisMonth >= PRO_MONTHLY_LIMIT);
 
   const daysLeft = persisted.interviewDate ? daysUntil(persisted.interviewDate) : 0;
   const readinessScore = scoreTrend.length > 0 && skills.length > 0 ? computeReadiness(scoreTrend, skills) : 0;
@@ -662,7 +676,8 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, isPro, atSessionLimit,
     sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek,
-  }), [isFree, isStarter, isPro, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek]);
+    sessionsThisMonth, proRemaining,
+  }), [isFree, isStarter, isPro, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining]);
 
   const uiValue: UIContextValue = useMemo(() => ({
     showUpgradeModal, setShowUpgradeModal,
