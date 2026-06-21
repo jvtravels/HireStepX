@@ -2999,7 +2999,7 @@ export function PricingV2() {
       unit: "forever",
       sub: "Try before you pay a rupee",
       features: [
-        "3 mock sessions",
+        "2 mock sessions",
         "Behavioural rounds + basic STAR score",
         "Email report",
         "No card required",
@@ -3041,24 +3041,11 @@ export function PricingV2() {
       featured: false,
       studentDiscount: true,
     },
-    {
-      name: "Monthly",
-      price: "₹149",
-      unit: "/ 30 days",
-      sub: "Most loved during placement season",
-      features: [
-        "40 sessions · 30 days",
-        "Everything in Weekly",
-        "Interview calendar + countdown",
-        "Performance analytics & trends",
-        "Export PDF, CSV, JSON",
-        "Priority coach feedback",
-      ],
-      cta: "Go monthly",
-      href: "/signup?plan=monthly",
-      featured: true,
-      studentDiscount: true,
-    },
+    // Monthly plan temporarily hidden — re-enable by removing hidden:true
+    // { name: "Monthly", price: "₹149", unit: "/ 30 days", sub: "Most loved during placement season",
+    //   features: ["40 sessions · 30 days", "Everything in Weekly", "Interview calendar + countdown",
+    //     "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"],
+    //   cta: "Go monthly", href: "/signup?plan=monthly", featured: true, studentDiscount: true },
   ];
   return (
     <section ref={sectionRef} className="mv2-section" aria-labelledby="hd-pricing" style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}>
