@@ -587,29 +587,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 6a. Consume exactly one promo use — only now, after the charge cleared and
-    // the subscription is live. Compare-and-swap on current_uses keeps it
-    // atomic-ish across concurrent callbacks (the filter only matches the row
-    // we read). Best-effort: a failed increment must not fail an activated
-    // payment — at worst a code is under-counted, never double-spent by THIS
-    // user since the order's idempotency key already includes the promo code.
+    // the subscription is live. A single RPC call (consume_promo_code) does the
+    // SELECT + UPDATE atomically inside a Postgres transaction, eliminating the
+    // read-then-write race that the previous SELECT+PATCH pattern had under
+    // concurrent Razorpay webhook + client-callback delivery. Best-effort: a
+    // failed call must not fail an already-activated payment.
     if (promoCodeUsed) {
       try {
-        const pRes = await fetchWithTimeout(
-          `${SUPABASE_URL}/rest/v1/promo_codes?code=eq.${encodeURIComponent(promoCodeUsed)}&select=id,current_uses,max_uses`,
-          { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
-        );
-        const pRows = await pRes.json().catch(() => []);
-        const pr = Array.isArray(pRows) && pRows[0] ? pRows[0] : null;
-        if (pr && pr.id != null) {
-          const used = typeof pr.current_uses === "number" ? pr.current_uses : 0;
-          await fetchWithTimeout(
-            `${SUPABASE_URL}/rest/v1/promo_codes?id=eq.${encodeURIComponent(String(pr.id))}&current_uses=eq.${used}`,
-            {
-              method: "PATCH",
-              headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-              body: JSON.stringify({ current_uses: used + 1 }),
+        const promoRpcRes = await fetchWithTimeout(
+          `${SUPABASE_URL}/rest/v1/rpc/consume_promo_code`,
+          {
+            method: "POST",
+            headers: {
+              apikey: SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              "Content-Type": "application/json",
             },
-          );
+            body: JSON.stringify({ p_code: promoCodeUsed }),
+          },
+        );
+        const promoResult = await promoRpcRes.json().catch(() => null);
+        if (promoResult === null || (Array.isArray(promoResult) && promoResult.length === 0)) {
+          console.warn("[verify-payment] consume_promo_code returned null/empty — code exhausted or not found:", promoCodeUsed);
         }
       } catch (promoErr) {
         console.warn("[verify-payment] promo consumption failed (non-fatal):", promoErr);

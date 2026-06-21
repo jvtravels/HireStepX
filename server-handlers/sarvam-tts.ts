@@ -57,10 +57,8 @@ const SARVAM_TTS_ENDPOINT = "https://api.sarvam.ai/text-to-speech";
  *   - VOICE_FREE_TIER=1        → let free users use paid Sarvam TTS too.
  *   - SARVAM_TTS_FREE_DISABLED=1 → legacy hard kill switch (still honoured).
  * Either guard active ⇒ free tier is pushed to the browser fallback. */
-// voiceOpenToFreeTier=true means free users get Sarvam TTS (e.g. during a promotion)
-const voiceOpenToFreeTier = process.env.VOICE_FREE_TIER === "1";
-// sarvamFreeDisabled=true is the legacy kill-switch — overrides voiceOpenToFreeTier
-const sarvamFreeDisabled = process.env.SARVAM_TTS_FREE_DISABLED === "1";
+const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
+const SARVAM_TTS_FREE_DISABLED = process.env.SARVAM_TTS_FREE_DISABLED === "1";
 
 /* COST GUARDRAIL — pin to bulbul:v2.
  *
@@ -153,7 +151,7 @@ export default async function handler(req: Request): Promise<Response> {
     // tier from the profiles table; the client already handles 503 by failing
     // over, so we don't need to surface a special error code. Operators can
     // open paid voice to free users with VOICE_FREE_TIER=1.
-    if (!voiceOpenToFreeTier || sarvamFreeDisabled) {
+    if (!VOICE_FREE_TIER || SARVAM_TTS_FREE_DISABLED) {
       const tier = await getSubscriptionTier(auth.userId!);
       if (tier === "free") {
         logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: "free_tier_disabled" });
@@ -286,38 +284,44 @@ export default async function handler(req: Request): Promise<Response> {
         return { offset: -1, size: 0 };
       };
       const firstData = findData(parts[0]);
-      const extraPcm: Uint8Array[] = [];
-      let extraLen = 0;
-      for (let k = 1; k < parts.length; k++) {
-        const d = findData(parts[k]);
-        if (d.offset < 0) continue;
-        const pcm = parts[k].subarray(d.offset, d.offset + d.size);
-        extraPcm.push(pcm);
-        extraLen += pcm.length;
-      }
-      // Build merged buffer = first WAV (header + data) + extra PCM
-      const merged = new Uint8Array(parts[0].length + extraLen);
-      merged.set(parts[0], 0);
-      let cursor = parts[0].length;
-      for (const pcm of extraPcm) {
-        merged.set(pcm, cursor);
-        cursor += pcm.length;
-      }
-      // Patch RIFF size (offset 4, little-endian uint32) and data size
-      const newRiffSize = merged.length - 8;
-      merged[4] = newRiffSize & 0xff;
-      merged[5] = (newRiffSize >> 8) & 0xff;
-      merged[6] = (newRiffSize >> 16) & 0xff;
-      merged[7] = (newRiffSize >> 24) & 0xff;
-      if (firstData.offset > 0) {
+      // Guard: if the first chunk has no 'data' sub-chunk (negative offset),
+      // merging would produce a corrupt WAV. Fall back to the raw first part
+      // rather than emitting garbage audio. Subsequent chunks are discarded.
+      if (firstData.offset < 0) {
+        console.error("[sarvam-tts] WAV merge skipped: first chunk has no data sub-chunk — returning parts[0] verbatim");
+        audioBytes = parts[0];
+      } else {
+        const extraPcm: Uint8Array[] = [];
+        let extraLen = 0;
+        for (let k = 1; k < parts.length; k++) {
+          const d = findData(parts[k]);
+          if (d.offset < 0) continue;
+          const pcm = parts[k].subarray(d.offset, d.offset + d.size);
+          extraPcm.push(pcm);
+          extraLen += pcm.length;
+        }
+        // Build merged buffer = first WAV (header + data) + extra PCM
+        const merged = new Uint8Array(parts[0].length + extraLen);
+        merged.set(parts[0], 0);
+        let cursor = parts[0].length;
+        for (const pcm of extraPcm) {
+          merged.set(pcm, cursor);
+          cursor += pcm.length;
+        }
+        // Patch RIFF size (offset 4, little-endian uint32) and data size
+        const newRiffSize = merged.length - 8;
+        merged[4] = newRiffSize & 0xff;
+        merged[5] = (newRiffSize >> 8) & 0xff;
+        merged[6] = (newRiffSize >> 16) & 0xff;
+        merged[7] = (newRiffSize >> 24) & 0xff;
         const newDataSize = firstData.size + extraLen;
         const sizeAt = firstData.offset - 4;
         merged[sizeAt] = newDataSize & 0xff;
         merged[sizeAt + 1] = (newDataSize >> 8) & 0xff;
         merged[sizeAt + 2] = (newDataSize >> 16) & 0xff;
         merged[sizeAt + 3] = (newDataSize >> 24) & 0xff;
+        audioBytes = merged;
       }
-      audioBytes = merged;
     }
 
     if (audioBytes.byteLength < 100) {

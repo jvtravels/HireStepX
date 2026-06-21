@@ -355,18 +355,6 @@ export default function DashboardHome() {
     );
   }, []);
 
-  const [celebrateMilestone, setCelebrateMilestone] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!realStreak) return;
-    const celebrated = Number(localStorage.getItem('hsx_last_celebrated_streak') ?? 0);
-    const crossed = [7, 14, 30].find(m => realStreak >= m && celebrated < m) ?? null;
-    if (crossed) {
-      setCelebrateMilestone(crossed);
-      localStorage.setItem('hsx_last_celebrated_streak', String(crossed));
-    }
-  }, [realStreak]);
-
   /* Demo gating. Only when NEXT_PUBLIC_DASHBOARD_DEMO=1 do unbacked
      sections render with sample numbers. Otherwise they render as
      honest "Coming soon" stubs so real users never see fake metrics.
@@ -522,34 +510,6 @@ export default function DashboardHome() {
               </div>
               {demoMode ? <DailyGoalRibbonInline /> : <DailyGoalStub />}
             </div>
-            {celebrateMilestone && (
-              <div
-                role="status"
-                aria-live="polite"
-                style={{
-                  background: T.warning100,
-                  border: `1px solid ${T.warningLine}`,
-                  borderRadius: 12,
-                  padding: '14px 20px',
-                  marginTop: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  cursor: 'pointer',
-                }}
-                onClick={() => setCelebrateMilestone(null)}
-              >
-                <span style={{ fontSize: 28 }}>🎉</span>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600, color: T.warningInk, fontSize: 15 }}>
-                    {celebrateMilestone}-day streak! You earned a free session.
-                  </p>
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: T.copper }}>
-                    Tap to dismiss
-                  </p>
-                </div>
-              </div>
-            )}
           </section>
 
           {/* Next move, single emphasized card. No KPI grid above it; one focal point. */}
@@ -649,6 +609,10 @@ export default function DashboardHome() {
               real={realSessions}
               fallback={MOCK_FALLBACK_SESSIONS}
               demoMode={demoMode}
+              hasResume={!!user?.resumeData}
+              hasTargetRole={!!user?.targetRole}
+              onGoToResume={goToResume}
+              onGoToSettings={() => router.push("/settings")}
               onStart={goToInterview("recent-empty")}
               onOpenSession={(id) => {
                 const s = realSessions.find((r) => r.id === id);
@@ -1025,10 +989,17 @@ function DailyGoalRibbonInline() {
   );
 }
 
-function RecentSessionsList({ real, fallback, demoMode, onStart, onOpenSession }: {
+function RecentSessionsList({ real, fallback, demoMode, hasResume, hasTargetRole, onGoToResume, onGoToSettings, onStart, onOpenSession }: {
   real: DashboardSession[];
   fallback: DemoSession[];
   demoMode: boolean;
+  /* Onboarding state — drives the empty state copy so new users see the
+     right next action rather than a generic "start a session" CTA before
+     the AI has anything to personalise against. */
+  hasResume: boolean;
+  hasTargetRole: boolean;
+  onGoToResume: () => void;
+  onGoToSettings: () => void;
   onStart: () => void;
   /* Navigates to /session/[id] for the report view. Demo fallback rows
      skip this — they have no real id and clicking sample data would
@@ -1043,6 +1014,37 @@ function RecentSessionsList({ real, fallback, demoMode, onStart, onOpenSession }
             <SessionRow key={i} title={row.title} date={row.date} score={row.score} icon={row.icon} first={i === 0} />
           ))}
         </ul>
+      );
+    }
+    /* Onboarding-aware empty state: guide the user through the two
+       prerequisites (resume → target role) before showing the practice CTA.
+       Without a resume the AI has nothing to personalise against; without a
+       target role the question bank defaults to generic questions that don't
+       match any specific hiring bar. */
+    if (!hasResume) {
+      return (
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12,
+          padding: "18px 4px",
+        }}>
+          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.5 }}>
+            Upload your resume first — AI personalises every question to your background.
+          </p>
+          <PrimaryCta size="sm" onClick={onGoToResume}>Upload resume</PrimaryCta>
+        </div>
+      );
+    }
+    if (!hasTargetRole) {
+      return (
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12,
+          padding: "18px 4px",
+        }}>
+          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.5 }}>
+            Set your target role for industry-specific questions.
+          </p>
+          <PrimaryCta size="sm" onClick={onGoToSettings}>Set target role</PrimaryCta>
+        </div>
       );
     }
     return (

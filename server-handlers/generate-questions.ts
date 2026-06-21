@@ -201,11 +201,14 @@ export default async function handler(req: Request): Promise<Response> {
     checkQuota: true,
   });
   if (pre instanceof Response) return pre;
-  const { headers, auth } = pre;
+  const { headers, auth, quota } = pre;
 
-  // Server-side session limit enforcement (runs after quota, before LLM call)
+  // Server-side session limit enforcement (runs after quota, before LLM call).
+  // Pass the tier already resolved by checkLLMQuota (via withAuthAndRateLimit's
+  // quota result) to avoid a second profile fetch for pro/team users — the N+1
+  // that was firing on every session start.
   if (auth.userId) {
-    const limit = await checkSessionLimit(auth.userId);
+    const limit = await checkSessionLimit(auth.userId, { tier: quota?.tier });
     if (!limit.allowed) {
       return new Response(JSON.stringify({ error: limit.reason }), { status: 403, headers });
     }

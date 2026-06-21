@@ -54,6 +54,7 @@ import { CoachNotesSection } from "./panels/sr-CoachNotesSection";
 import { BiasSection } from "./panels/sr-BiasSection";
 import { ReverseInterviewSection } from "./panels/sr-ReverseInterviewSection";
 import { NextStepsSection } from "./panels/sr-NextStepsSection";
+import { ScheduleNextSection } from "./panels/sr-ScheduleNextSection";
 import { FooterSection } from "./panels/sr-FooterSection";
 import { ReferralInviteSection } from "./panels/sr-ReferralInviteSection";
 import { CampusCgpaCalibrationNote } from "./panels/sr-CampusCgpaCalibrationNote";
@@ -514,6 +515,7 @@ export default function SessionReportView({
                 : undefined
             }
           />
+          <ScheduleNextSection todayIso={new Date().toISOString()} />
           <ReferralInviteSection score={data.overallScore} />
           <FooterSection
             onTrustAnswer={onTrustAnswer}
