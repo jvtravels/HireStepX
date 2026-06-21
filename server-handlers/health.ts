@@ -102,7 +102,10 @@ export default async function handler(req: Request): Promise<Response> {
     supabase,
     upstash,
     llm,
-    tts: process.env.GCP_TTS_API_KEY ? "ok" : "missing",
+    // TTS chain is Sarvam (primary) → Cartesia → Azure; "ok" if any provider is configured.
+    // (Was GCP_TTS_API_KEY, which isn't in this stack — it forced a permanent "degraded".)
+    tts: (process.env.SARVAM_API_KEY || process.env.CARTESIA_API_KEY || process.env.AZURE_TTS_KEY)
+      ? "ok" : "missing",
     stt: process.env.DEEPGRAM_API_KEY ? "ok" : "missing",
     payments: process.env.RAZORPAY_KEY_ID ? "ok" : "missing",
     email: process.env.RESEND_API_KEY ? "ok" : "missing",
