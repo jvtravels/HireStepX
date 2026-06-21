@@ -3045,7 +3045,35 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     if (stonewallAnchor) return stonewallAnchor;
   }
 
-  if (!isTerminalPhase(state.phase)) {
+  /* #128 (2026-06-21, live-staging Flipkart-EM) — in-band conditional-accept
+   * convergence routing. When the candidate has named a concrete TOTAL number
+   * as a conditional acceptance ("if you can do 46 I'm in") that sits within
+   * the band ceiling but ABOVE the near-offer instant-close gap, the
+   * conditional-close block above deliberately falls through (a 7L gap on a
+   * 39L offer is a genuine live negotiation, not an instant close). The bug
+   * was that flow then hit the reactive justify-probe, which interrogates the
+   * candidate for the very number they just committed to — a tone-deaf stall.
+   * The structural fix is pure ROUTING: this is a convergence signal, so yield
+   * the reactive/wired probes and let flow reach the counter-base concession
+   * engine (single source of truth), which steps the cash anchor UP toward the
+   * number (and, via #92, matches a named in-band competing offer). Subsequent
+   * turns narrow the gap until the near-offer close fires — realistic Indian-HR
+   * convergence rather than a probe loop. Gated tightly: an above-ceiling
+   * conditional number is NOT in-band, so it still falls to the normal
+   * hold/walk-away path (negotiationConditionalClose.test.ts live-negotiation
+   * lock preserved). */
+  const inBandConditionalConverge = (() => {
+    if (isTerminalPhase(state.phase)) return false;
+    if (!(state.highestOfferMade > 0)) return false;
+    if (state.decisionDeadline?.conditionalAcceptance !== true) return false;
+    const tc = totalScopedCounter(state);
+    if (tc == null) return false;
+    if (tc > state.band.maxStretch) return false;
+    const gap = Math.max(2, state.highestOfferMade * 0.06);
+    return tc - state.highestOfferMade > gap;
+  })();
+
+  if (!isTerminalPhase(state.phase) && !inBandConditionalConverge) {
     const reactive = planReactiveFollowup(state);
     if (reactive) return reactive;
     /* Fix 5 (2026-05-16) — state-based wired profile-flag rules. These

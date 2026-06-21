@@ -81,6 +81,34 @@ describe("close-classifier acceptance guards (#124/#125/#126)", () => {
     expect(finalState.highestOfferMade).toBe(40);
   });
 
+  it("#128 — in-band conditional accept above the gap concedes (not a justify-probe) and converges", () => {
+    const { transcript, finalState } = runConversation({
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: { initialOffer: 32, maxStretch: 52, walkAway: 28, hasEquity: true },
+      initExtras: { applicableYoe: 8, experienceLevel: "senior", currentCtcLpa: 34 },
+      turns: [
+        "Currently 34 LPA.",
+        "I have a competing offer from Razorpay at 46.",
+        "Can you match it?",
+        "If you can do 46 I'm in.",
+        "46 works, I'll sign today.",
+        "Yes, 46 and I'm in.",
+      ],
+    });
+    // The turn that handled "If you can do 46 I'm in." must be a cash
+    // concession, NOT a probe interrogating the candidate for the number they
+    // just committed to. (Pre-#128 this fired probe-expectations / a reactive
+    // justify-probe and stalled.)
+    const condTurn = transcript.find((t) => t.candidate === "If you can do 46 I'm in.");
+    expect(condTurn).toBeTruthy();
+    expect(condTurn!.kind).not.toMatch(/probe|reactive|expectations/i);
+    // The offer must move UP toward the in-band ask (39 → >39), never stall flat.
+    expect(condTurn!.highestOfferMade).toBeGreaterThan(39);
+    // And the negotiation converges to a real close (no probe loop).
+    expect(finalState.phase).toBe("accepted");
+  });
+
   it("#126 — self-lowered ask is a concession, not a contradiction-callout", () => {
     const { transcript } = runConversation({
       role: "Engineering Manager",
