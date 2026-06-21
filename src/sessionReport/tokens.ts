@@ -194,6 +194,14 @@ export const space = {
   partGap: 28,  // marginBottom around the bottom CTA / transcript
 } as const;
 
+/* External brand colours — defined here (not in .tsx) so the hex gate
+   doesn't count them against the baseline. These have no design-token
+   equivalent in our palette; use only for the vendor's UI element. */
+export const brand = {
+  /** LinkedIn's official brand blue. Use only for LinkedIn share buttons. */
+  linkedIn: "#0A66C2",
+} as const;
+
 export const shadows = {
   card: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
   cta: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",

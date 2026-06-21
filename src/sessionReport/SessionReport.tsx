@@ -358,6 +358,11 @@ export const SessionReport = memo(function SessionReport({
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
+  /* Public share URL — set when the user clicks "Share Report" and the
+     API returns a URL. Passed to SessionReportView so the LinkedIn share
+     button and ReferralInviteSection can surface the report link rather
+     than just the referral signup URL. */
+  const [shareUrl, setShareUrl] = useState<string | undefined>(undefined);
   const [trend, setTrend] = useState<SessionTrendPoint[]>([]);
   /* Cross-session skill-progress trends for the Skill Progress panel.
      Derived from the skill_scores already on the user's session rows
@@ -799,6 +804,11 @@ export const SessionReport = memo(function SessionReport({
         return;
       }
       const url = res.data.url;
+      /* Persist the URL so SessionReportView can pass it to the LinkedIn
+         share button and ReferralInviteSection. This is set once and never
+         cleared — the URL is valid for 14 days, so keeping it in state
+         for the lifetime of this view is correct. */
+      setShareUrl(url);
       const ttl = res.data.expiresAt
         ? new Date(res.data.expiresAt).toLocaleDateString()
         : "in 14 days";
@@ -1045,6 +1055,7 @@ export const SessionReport = memo(function SessionReport({
       backLabel={backLabel}
       onDownloadPdf={onDownloadPdf}
       onShare={onShare}
+      shareUrl={shareUrl}
       onTryQuestionAgain={onTryQuestionAgain}
       onDrillSkill={onDrillSkill}
       onTrustAnswer={onTrustAnswer}

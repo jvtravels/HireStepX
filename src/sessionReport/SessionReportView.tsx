@@ -54,9 +54,9 @@ import { CoachNotesSection } from "./panels/sr-CoachNotesSection";
 import { BiasSection } from "./panels/sr-BiasSection";
 import { ReverseInterviewSection } from "./panels/sr-ReverseInterviewSection";
 import { NextStepsSection } from "./panels/sr-NextStepsSection";
-import { ScheduleNextSection } from "./panels/sr-ScheduleNextSection";
 import { FooterSection } from "./panels/sr-FooterSection";
 import { ReferralInviteSection } from "./panels/sr-ReferralInviteSection";
+import { ScoreCardDownloadButton } from "./panels/sr-ScoreCard";
 import { CampusCgpaCalibrationNote } from "./panels/sr-CampusCgpaCalibrationNote";
 import { CredibilitySection } from "./panels/sr-CredibilitySection";
 import { OfferEconomicsPanel } from "./panels/sr-OfferEconomicsPanel";
@@ -273,6 +273,11 @@ export interface SessionReportViewProps {
   /** Share-link handler — POSTs to /api/share-report and copies the
    *  resulting URL to clipboard. */
   onShare?: () => void;
+  /** Public share URL for the report — when provided, used by the LinkedIn
+   *  share button and passed to ReferralInviteSection so both surface the
+   *  same URL. Populated by SessionReport.tsx after /api/share-report
+   *  resolves; undefined until the user hits "Share Report". */
+  shareUrl?: string;
   /** "Try this question again" — invoked from the Next-Steps first
    *  card. Production routes to /session/new with the weakest question
    *  pre-loaded. */
@@ -360,6 +365,7 @@ export default function SessionReportView({
   backLabel,
   onDownloadPdf,
   onShare,
+  shareUrl,
   onTryQuestionAgain,
   onDrillSkill,
   onTrustAnswer,
@@ -410,7 +416,7 @@ export default function SessionReportView({
               company={data.company}
               onDrillSkill={onDrillSkill}
             />
-            <ReferralInviteSection score={data.overallScore} />
+            <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
             <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
           </main>
         </div>
@@ -515,8 +521,21 @@ export default function SessionReportView({
                 : undefined
             }
           />
-          <ScheduleNextSection todayIso={new Date().toISOString()} />
-          <ReferralInviteSection score={data.overallScore} />
+          {/* Score card download — surfaces after the report body so the
+              candidate has read their results before sharing. Guards the
+              Canvas API call client-side via typeof window check inside
+              downloadScoreCard. Only shows when we have the data needed. */}
+          <div style={{ display: "flex", justifyContent: "flex-end", paddingBottom: 8 }}>
+            <ScoreCardDownloadButton
+              score={data.overallScore}
+              role={data.role}
+              company={data.company}
+              topStrength={data.strengths[0] ?? ""}
+              topGap={data.weakestSkill?.tip ?? data.improvements[0] ?? ""}
+              verdict={data.aiVerdict}
+            />
+          </div>
+          <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
           <FooterSection
             onTrustAnswer={onTrustAnswer}
             onUsefulAnswer={onUsefulAnswer}
