@@ -597,7 +597,19 @@ alter table profiles add column if not exists last_summary_email_at timestamptz;
 -- Bonus-session economy retired. Zero out any outstanding balances before
 -- dropping the columns so existing rows don't carry orphaned values into
 -- any downstream snapshot/backup tooling that still references them.
-update profiles set session_credits = 0 where session_credits is not null and session_credits <> 0;
+-- Guarded by a column-existence check: on a FRESH database `profiles` is
+-- created without `session_credits`, and a bare `update … set session_credits`
+-- would fail to parse and abort the whole schema apply. The drop below is
+-- already `if exists`, so the guard only needs to wrap the UPDATE.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_name = 'profiles' and column_name = 'session_credits'
+  ) then
+    update profiles set session_credits = 0 where session_credits is not null and session_credits <> 0;
+  end if;
+end $$;
 alter table profiles drop column if exists session_credits;
 alter table profiles drop column if exists last_streak_reward_day;
 
@@ -789,8 +801,13 @@ drop policy if exists "Users can view own profile" on profiles;
 create policy "Users can view own profile" on profiles
   for select using ((auth.uid())::text = id::text);
 drop policy if exists "Users can update own profile" on profiles;
+-- `with check` is row-ownership defense-in-depth: it stops a user from
+-- re-pointing their own row's id to another user during an UPDATE. It does
+-- NOT restrict which COLUMNS change (RLS can't) — the billing-column lockdown
+-- is the guard_profile_billing_columns() BEFORE-UPDATE trigger below.
 create policy "Users can update own profile" on profiles
-  for update using ((auth.uid())::text = id::text);
+  for update using ((auth.uid())::text = id::text)
+  with check ((auth.uid())::text = id::text);
 drop policy if exists "Users can insert own profile" on profiles;
 create policy "Users can insert own profile" on profiles
   for insert with check ((auth.uid())::text = id::text);
@@ -877,7 +894,8 @@ create policy "Users can insert own feedback" on feedback
   for insert with check ((auth.uid())::text = user_id::text);
 drop policy if exists "Users can update own feedback" on feedback;
 create policy "Users can update own feedback" on feedback
-  for update using ((auth.uid())::text = user_id::text);
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);
 drop policy if exists "Users can delete own feedback" on feedback;
 create policy "Users can delete own feedback" on feedback
   for delete using ((auth.uid())::text = user_id::text);
@@ -905,7 +923,8 @@ create policy "Users can insert own question feedback" on question_feedback
   for insert with check ((auth.uid())::text = user_id::text);
 drop policy if exists "Users can update own question feedback" on question_feedback;
 create policy "Users can update own question feedback" on question_feedback
-  for update using ((auth.uid())::text = user_id::text);
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);
 
 -- Credibility disputes: candidate-owned. Users insert/update their own
 -- rows; service role aggregates across users for false-positive auditing.
@@ -918,7 +937,8 @@ create policy "Users can insert own credibility disputes" on credibility_dispute
   for insert with check ((auth.uid())::text = user_id::text);
 drop policy if exists "Users can update own credibility disputes" on credibility_disputes;
 create policy "Users can update own credibility disputes" on credibility_disputes
-  for update using ((auth.uid())::text = user_id::text);
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);
 
 -- Payments: users can only view their own payments (insert via service role only)
 drop policy if exists "Users can view own payments" on payments;
