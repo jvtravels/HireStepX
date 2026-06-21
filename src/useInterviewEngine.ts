@@ -3615,7 +3615,11 @@ export function useInterviewEngine() {
       focus: interviewFocus,
       duration: elapsed,
       score,
-      questions: totalQuestions,
+      // Persist the count of distinct questions posed (base questions only).
+      // totalQuestions counts each inserted follow-up as its own question,
+      // which over-counts the session (a 5-question round with 3 follow-ups
+      // persisted as "8 questions" and rendered 8 synthetic cards downstream).
+      questions: baseQuestionCount,
       transcript: evalTranscript,
       ai_feedback: aiFeedback,
       skill_scores: skillScores,
@@ -3675,7 +3679,7 @@ export function useInterviewEngine() {
         await saveToIDB(`hirestepx_unsaved_${sessionId}`, {
           id: sessionId, date: new Date().toISOString(), type: interviewType,
           difficulty: interviewDifficulty, focus: interviewFocus, duration: elapsed,
-          score, questions: totalQuestions, transcript: evalTranscript, ai_feedback: aiFeedback,
+          score, questions: baseQuestionCount, transcript: evalTranscript, ai_feedback: aiFeedback,
           skill_scores: skillScores,
         });
         idbBackupOk = true;
@@ -3711,7 +3715,7 @@ export function useInterviewEngine() {
       score,
       difficulty: interviewDifficulty,
       duration: elapsed,
-      questions: totalQuestions,
+      questions: baseQuestionCount,
       usedFallback: !!(usedFallbackScore || evalTimedOut),
       hasSkillScores: !!skillScores,
       hasFeedback: !!aiFeedback,
@@ -3727,7 +3731,7 @@ export function useInterviewEngine() {
         reason: savePath,
       });
     }
-    track("interview_completed", { type: interviewType, questionsAnswered: currentStep, duration: elapsed });
+    track("interview_completed", { type: interviewType, questionsAnswered: currentQuestionNum, duration: elapsed });
     // PostHog: per-focus completion signal — terminal node of the
     // selected → started → completed funnel. Score / duration / question
     // count let the dashboard build "Pro plan engagement by focus" or
@@ -3737,8 +3741,8 @@ export function useInterviewEngine() {
       score,
       difficulty: interviewDifficulty,
       duration_seconds: elapsed,
-      questions: totalQuestions,
-      questions_answered: currentStep,
+      questions: baseQuestionCount,
+      questions_answered: currentQuestionNum,
       used_fallback: !!(usedFallbackScore || evalTimedOut),
       has_skill_scores: !!skillScores,
       has_feedback: !!aiFeedback,
@@ -3789,7 +3793,7 @@ export function useInterviewEngine() {
     }
     // handleEnd reads many derived values (draftKey/evalTimedOut/evaluating/interviewScript/jdAnalysisData/jobDescription/negotiationStyle/shouldUseResume/targetRole/targetSalary/toast/usedFallbackScore) at fire-time. It runs exactly once per session — re-creating the callback on each of these would only churn ref identity without changing behavior since handleEndRef holds the latest version.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, elapsed, interviewType, interviewDifficulty, interviewFocus, totalQuestions, user, updateUser, currentStep, interviewScript.length, transcript, currentTranscript]);
+  }, [router, elapsed, interviewType, interviewDifficulty, interviewFocus, baseQuestionCount, currentQuestionNum, user, updateUser, currentStep, interviewScript.length, transcript, currentTranscript]);
 
   // Auto-finalize once we hit the done phase. The closing step now has
   // waitForUser: false so the engine reaches "done" automatically — fire

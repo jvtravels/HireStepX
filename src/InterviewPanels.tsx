@@ -1436,11 +1436,18 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
 
 /* ─── End Interview Modal ─── */
 
-export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuestions, isOffline, handleEnd, setShowEndModal, endModalTriggerRef }: {
-  currentQuestionNum: number; totalQuestions: number; isOffline: boolean;
+export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuestions, baseQuestionCount, isOffline, handleEnd, setShowEndModal, endModalTriggerRef }: {
+  currentQuestionNum: number; totalQuestions: number; baseQuestionCount?: number; isOffline: boolean;
   handleEnd: () => void; setShowEndModal: (v: boolean) => void;
   endModalTriggerRef: React.RefObject<HTMLSpanElement | null>;
 }) {
+  // Denominator must share the numerator's basis. currentQuestionNum is a
+  // BASE-question position (capped at baseQuestionCount, follow-ups counted
+  // under their parent question), so the total must be baseQuestionCount —
+  // NOT totalQuestions, which inflates by every inserted follow-up and made
+  // a fully-answered 5-question session read "5 of 8". Fall back to
+  // totalQuestions only in the degenerate baseQuestionCount===0 case.
+  const questionTotal = baseQuestionCount || totalQuestions;
   const closeFocus = () => { setShowEndModal(false); endModalTriggerRef.current?.querySelector("button")?.focus(); };
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- dialog needs click/keyboard handlers for dismissal and focus trap
@@ -1491,7 +1498,7 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
           margin: "10px 0 22px", fontFamily: ef.sans, fontSize: 14,
           lineHeight: 1.55, color: e.inkSoft,
         }}>
-          You&rsquo;ve answered <strong style={{ color: e.coal, fontWeight: 600 }}>{currentQuestionNum} of {totalQuestions}</strong> questions. We&rsquo;ll still score what you&rsquo;ve done so far &mdash; but a partial session won&rsquo;t reflect your full performance.
+          You&rsquo;ve answered <strong style={{ color: e.coal, fontWeight: 600 }}>{Math.min(currentQuestionNum, questionTotal)} of {questionTotal}</strong> questions. We&rsquo;ll still score what you&rsquo;ve done so far &mdash; but a partial session won&rsquo;t reflect your full performance.
         </p>
         {isOffline && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(185,28,28,0.08)", border: "1px solid rgba(185,28,28,0.20)", marginBottom: 16 }}>

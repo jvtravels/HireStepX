@@ -228,7 +228,7 @@ function InterviewInner() {
     usedFallbackScore, evalTimedOut, lastSessionId,
     evaluating, evalElapsed, aiVoiceEnabled,
     currentTranscript, microFeedback,
-    totalQuestions, currentQuestionNum, isCurrentFollowUp,
+    totalQuestions, currentQuestionNum, baseQuestionCount, isCurrentFollowUp,
     timeRemaining, timePercent,
     displayRole, displayCompany, displayFocus, interviewerName, interviewType: focusType,
     isPanelInterview, panelMembers, activePersona,
@@ -801,6 +801,7 @@ function InterviewInner() {
       {showEndModal && (
         <EndModal
           currentQuestionNum={currentQuestionNum} totalQuestions={totalQuestions}
+          baseQuestionCount={baseQuestionCount}
           isOffline={isOffline} handleEnd={handleEnd}
           setShowEndModal={setShowEndModal} endModalTriggerRef={endModalTriggerRef}
         />
@@ -813,6 +814,7 @@ function InterviewInner() {
           attempt={reconnectAttempt}
           currentQuestion={currentQuestionNum}
           totalQuestions={totalQuestions}
+          baseQuestionCount={baseQuestionCount}
         />
       )}
 

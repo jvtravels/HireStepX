@@ -142,13 +142,19 @@ export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: {
  * sustained and blocking interaction is the right move.
  */
 
-export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt = 1, currentQuestion, totalQuestions, onPause }: {
+export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt = 1, currentQuestion, totalQuestions, baseQuestionCount, onPause }: {
   attempt?: number;
   currentQuestion: number;
   totalQuestions: number;
+  /** Base-question count (questions only, follow-ups excluded). Shares the
+   *  numerator's basis so "Q3 of 5" can't render as "Q3 of 8". Falls back to
+   *  totalQuestions only when base is 0 (degenerate script). */
+  baseQuestionCount?: number;
   onPause?: () => void;
 }) {
   const escalate = attempt >= 3;
+  const questionTotal = baseQuestionCount || totalQuestions;
+  const questionPos = Math.min(currentQuestion, questionTotal);
 
   /* ─── Lightweight inline banner (attempts 1–2) ──────────────────── */
   if (!escalate) {
@@ -173,7 +179,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
       >
         <div style={{ width: 14, height: 14, border: `2px solid rgba(180,83,9,0.30)`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
         <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4 }}>
-          Reconnecting… your progress is safe (Q{currentQuestion} of {totalQuestions}).
+          Reconnecting… your progress is safe (Q{questionPos} of {questionTotal}).
         </span>
       </div>
     );
@@ -207,7 +213,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           margin: "8px 0 0", fontFamily: ef.sans, fontSize: 13, color: e.coal, lineHeight: 1.55,
         }}>
           Your network blipped. We&rsquo;ve saved everything up to question{" "}
-          <strong style={{ color: e.coal }}>{currentQuestion} of {totalQuestions}</strong>
+          <strong style={{ color: e.coal }}>{questionPos} of {questionTotal}</strong>
           . You&rsquo;ll pick up where you left off.
         </p>
         <div style={{
