@@ -1104,12 +1104,6 @@ export function ContactV2() {
       href: "mailto:support@hirestepx.com",
     },
     {
-      name: "Colleges + universities",
-      detail: "Placement-cell partnerships, bulk licensing, on-campus pilots.",
-      contact: "colleges@hirestepx.com",
-      href: "mailto:colleges@hirestepx.com",
-    },
-    {
       name: "Press + media",
       detail: "Interviews, data requests, founder availability.",
       contact: "press@hirestepx.com",
@@ -1190,7 +1184,6 @@ export function ContactV2() {
                   <option value="">Pick one</option>
                   <option>Account or billing</option>
                   <option>Bug or technical issue</option>
-                  <option>College / university partnership</option>
                   <option>Press or media</option>
                   <option>Something else</option>
                 </select>

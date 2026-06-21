@@ -5,7 +5,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 export const metadata: Metadata = {
   title: "Contact | HireStepX",
   description:
-    "Talk to HireStepX. Support, sales for colleges, partnerships, press. We reply within one business day.",
+    "Talk to HireStepX. Support, partnerships, press. We reply within one business day.",
   alternates: { canonical: "/contact" },
 };
 
