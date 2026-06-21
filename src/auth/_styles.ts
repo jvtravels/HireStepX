@@ -303,22 +303,15 @@ export const AUTH_STYLES = `
     }
   }
 
-  /* Tablet (≤960px) — tighten the topbar and cap vertical padding so the
-     form sits higher on landscape phones, which are short. */
+  /* Tablet (≤960px) — content anchored near the top rather than centered
+     to avoid the large dead zone above the headline on portrait tablets.
+     Top padding uses 3.5vh (not 5vh) so a 1024px-tall iPad gets 36px,
+     not 51px, of breathing room before the first element. */
   @media (max-width: 960px) {
     .hsx-login-topbar { padding: 24px 32px !important; }
     .hsx-login-main {
+      justify-content: flex-start !important;
       padding: clamp(20px, 3.5vh, 40px) 24px clamp(20px, 3vh, 36px) !important;
-    }
-  }
-
-  /* Portrait tablet (641–960px) — vertically centre the form block so the
-     dead zone is distributed evenly above and below rather than pooling
-     below the CTA. At phone (≤640px) centering is already applied above;
-     at desktop (≥1024px) the two-column layout takes over. */
-  @media (min-width: 641px) and (max-width: 960px) {
-    .hsx-login-main {
-      justify-content: center !important;
     }
   }
 `;
