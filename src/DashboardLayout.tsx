@@ -344,43 +344,59 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
             {isPro ? (
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+              /* Exhausted: copper shield matches the card's copper theme */
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={proExhausted ? c.gilt : c.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
             ) : isStarter ? (
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             ) : (
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
             )}
-            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: isPro ? c.sage : c.gilt, letterSpacing: "0.01em" }}>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: isPro ? (proExhausted ? c.gilt : c.sage) : c.gilt, letterSpacing: "0.01em" }}>
               {!tierKnown ? "Loading plan…" : isPro ? "Pro Plan" : isStarter ? "Starter Plan" : "Free Plan"}
             </span>
             {tierKnown && (
               <span
+                role="img"
+                tabIndex={0}
+                aria-label={isPro
+                  ? `${PRO_MONTHLY_LIMIT} sessions/month, STAR coaching, skill decay tracking, PDF reports`
+                  : isStarter
+                  ? `${STARTER_WEEKLY_LIMIT} sessions/week, STAR coaching, PDF reports, ₹49/week`
+                  : "3 lifetime sessions, basic feedback, upgrade anytime"}
                 title={isPro
                   ? `${PRO_MONTHLY_LIMIT} sessions/month · STAR coaching · skill decay tracking · PDF reports`
                   : isStarter
                   ? `${STARTER_WEEKLY_LIMIT} sessions/week · STAR coaching · PDF reports · ₹49/week`
                   : "3 lifetime sessions · basic feedback · upgrade anytime"}
-                style={{ display: "inline-flex", alignItems: "center", cursor: "help", color: isPro ? c.sage : c.gilt, opacity: 0.45, flexShrink: 0 }}
+                style={{ display: "inline-flex", alignItems: "center", cursor: "help", color: isPro ? (proExhausted ? c.gilt : c.sage) : c.gilt, opacity: 0.45, flexShrink: 0 }}
               >
-                <svg aria-label="What's included" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               </span>
             )}
             {isPro && tierKnown && user?.subscriptionEnd && (
-              <span style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, color: c.sage, opacity: 0.75, whiteSpace: "nowrap" }}>
+              <span
+                aria-label={`Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, color: proExhausted ? c.stone : c.sage, opacity: 0.75, whiteSpace: "nowrap" }}
+              >
                 Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </span>
             )}
           </div>
-          <p style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4,
-            marginBottom: (isStarter || isPro) && user?.subscriptionEnd ? 3 : 8,
-            color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? c.ember : c.stone,
-            fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1 && !proExhausted && !starterExhausted) || (isStarter && starterRemaining <= 2) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? 600 : 400,
-          }}>
+          <p
+            aria-live="polite"
+            style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4,
+              /* Exhausted states: full 8px gap \u2014 no subordinate date line below */
+              marginBottom: proExhausted || starterExhausted || freeExhausted ? 8 : (isStarter || isPro) && user?.subscriptionEnd ? 3 : 8,
+              color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? c.ember : c.stone,
+              fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1 && !proExhausted && !starterExhausted) || (isStarter && starterRemaining <= 2) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? 600 : 400,
+            }}
+          >
             {!tierKnown ? "\u00a0"
               : proExhausted
-                ? `All ${PRO_MONTHLY_LIMIT} sessions used this month.`
+                /* Count format stays consistent with active-quota phrasing */
+                ? `${PRO_MONTHLY_LIMIT}/${PRO_MONTHLY_LIMIT} sessions used this month`
               : starterExhausted
-                ? `All ${STARTER_WEEKLY_LIMIT} sessions used this week.`
+                ? `${STARTER_WEEKLY_LIMIT}/${STARTER_WEEKLY_LIMIT} sessions used this week`
               : isPro
                 ? `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions this month${proRemaining <= 5 ? ", running low" : ""}`
               : isStarter
@@ -394,46 +410,48 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · sessions reset Sun
             </p>
           )}
-          {tierKnown && (isFree || isStarter || isPro) && (
-            proExhausted || starterExhausted || freeExhausted
-              /* Achievement pips: all filled in copper = "you completed your sessions" */
-              ? <div style={{ display: "flex", gap: 3, marginBottom: 12 }}>
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: c.gilt }} />
-                  ))}
-                </div>
-              /* Progress bar: partial fill for active-quota states */
-              : <div style={{ height: 3, borderRadius: 2, background: c.border, marginBottom: 12 }}>
-                  {isFree ? (
-                    <div style={{ height: "100%", borderRadius: 2, background: sessionsRemaining === 1 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsUsed / FREE_SESSION_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
-                  ) : isStarter ? (
-                    <div style={{ height: "100%", borderRadius: 2, background: starterRemaining <= 2 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsThisWeek / STARTER_WEEKLY_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
-                  ) : (
-                    <div style={{ height: "100%", borderRadius: 2, background: proRemaining <= 5 ? c.ember : c.sage, width: `${Math.min(100, (sessionsThisMonth / PRO_MONTHLY_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
-                  )}
-                </div>
-          )}
+          {tierKnown && (isFree || isStarter || isPro) && (() => {
+            /* Single bar for all states: copper when exhausted, ember when low, sage/gilt when healthy */
+            const pct = isFree
+              ? Math.min(100, (sessionsUsed / FREE_SESSION_LIMIT) * 100)
+              : isStarter
+              ? Math.min(100, (sessionsThisWeek / STARTER_WEEKLY_LIMIT) * 100)
+              : Math.min(100, (sessionsThisMonth / PRO_MONTHLY_LIMIT) * 100);
+            const fill = proExhausted || freeExhausted || starterExhausted
+              ? c.gilt
+              : isPro ? (proRemaining <= 5 ? c.ember : c.sage)
+              : isStarter ? (starterRemaining <= 2 ? c.ember : c.gilt)
+              : (sessionsRemaining === 1 ? c.ember : c.gilt);
+            const ariaLabel = proExhausted || starterExhausted || freeExhausted
+              ? "All sessions used"
+              : isPro ? `${sessionsThisMonth} of ${PRO_MONTHLY_LIMIT} sessions used this month`
+              : isStarter ? `${sessionsThisWeek} of ${STARTER_WEEKLY_LIMIT} sessions used this week`
+              : `${sessionsUsed} of ${FREE_SESSION_LIMIT} sessions used`;
+            return (
+              <div
+                role="progressbar"
+                aria-label={ariaLabel}
+                aria-valuenow={Math.round(pct)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                style={{ height: 3, borderRadius: 2, background: c.border, marginBottom: 12 }}
+              >
+                <div style={{ height: "100%", borderRadius: 2, background: fill, width: `${pct}%`, transition: "width 0.4s ease" }} />
+              </div>
+            );
+          })()}
           {!tierKnown ? (
             <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
           ) : proExhausted ? (
-            /* Exhausted Pro: reframe as an opportunity, not a wall */
-            <>
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginBottom: 8, lineHeight: 1.5 }}>
-                Keep your prep streak going.
-              </p>
-              <button
-                onClick={() => setShowUpgradeModal(true)}
-                title="Add more sessions or upgrade your plan (⌘B)"
-                style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: c.gilt, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", transition: "filter 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
-                onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-              >Upgrade plan →</button>
-              {user?.subscriptionEnd && (
-                <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginTop: 7, opacity: 0.65 }}>
-                  Resets {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                </p>
-              )}
-            </>
+            /* Exhausted Pro: single focused CTA — date already shown in header */
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              title="Add more sessions or upgrade your plan (⌘B)"
+              aria-label="Upgrade your plan to get more sessions"
+              style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: c.gilt, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", transition: "filter 0.2s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
+              onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
+            >Upgrade plan →</button>
           ) : isPro ? (
             /* Active Pro: neutral management actions */
             <>
