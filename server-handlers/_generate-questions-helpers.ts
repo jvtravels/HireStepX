@@ -322,10 +322,14 @@ import { sampleBehavioralQuestions, type BehavioralRole } from "../data/behavior
 import { sampleHrQuestions } from "../data/hr-round-question-bank";
 
 /* Map the broad interview-bank RoleFamily onto the behavioural bank's
-   compact 6-role discipline taxonomy. Drives the behavioural fallback so a
+   compact discipline taxonomy. Drives the behavioural fallback so a
    designer doesn't get SWE-flavoured probes and vice versa (live QA bug,
-   2026-06). Families with no behavioural-discipline analogue (sales,
-   finance, legal, civil-services…) return undefined → the sampler keeps its
+   2026-06). marketing + sales map through too — not because the bank has
+   their own affinity-tagged questions, but so the sampler STEERS them out
+   of other disciplines' locked questions (a marketer was observed live to
+   draw an engineer's "complex codebase" onboarding probe on the LLM-down
+   path, 2026-06). Families with genuinely no analogue (finance, legal,
+   civil-services…) still return undefined → the sampler keeps its
    universal/standard mix, which is the correct neutral behaviour. */
 function toBehavioralRole(roleFamily: string): BehavioralRole | undefined {
   switch (roleFamily) {
@@ -335,6 +339,8 @@ function toBehavioralRole(roleFamily: string): BehavioralRole | undefined {
     case "data": case "ds-research": case "quant": case "scientist": return "data";
     case "design": case "designer-senior": return "designer";
     case "ops": return "ops";
+    case "marketing": return "marketing";
+    case "sales": return "sales";
     default: return undefined;
   }
 }

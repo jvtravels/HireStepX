@@ -88,7 +88,7 @@ export type BehavioralDifficulty = "warmup" | "standard" | "hard";
 
 /** Role families used for tilt — keep deliberately coarse so tagging
  *  stays cheap and the sampler's role match doesn't over-fit. */
-export type BehavioralRole = "pm" | "engineer" | "designer" | "manager" | "data" | "ops";
+export type BehavioralRole = "pm" | "engineer" | "designer" | "manager" | "data" | "ops" | "marketing" | "sales";
 
 export const BEHAVIORAL_ROLES: ReadonlyArray<BehavioralRole> = [
   "pm",
@@ -97,6 +97,12 @@ export const BEHAVIORAL_ROLES: ReadonlyArray<BehavioralRole> = [
   "manager",
   "data",
   "ops",
+  // marketing + sales carry no affinity-tagged questions of their own yet —
+  // they exist so the sampler can STEER these candidates away from
+  // discipline-locked questions (e.g. an engineer's "complex codebase"
+  // probe) into the universal pool, instead of role:undefined → no steering.
+  "marketing",
+  "sales",
 ] as const;
 
 export interface BehavioralQuestion {
@@ -197,7 +203,7 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   // ── mentorship-team (4)
   { id: "mnt-01", text: "Tell me about a time you mentored someone.",                                                          competency: "mentorship-team",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 70, seniorityFloor: 3 },
   { id: "mnt-02", text: "Tell me about a time you helped a struggling teammate.",                                              competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 60, roleAffinity: ["manager", "pm", "designer"] },
-  { id: "mnt-03", text: "Tell me about a time you onboarded a new joiner onto a complex codebase.",                            competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 45, seniorityFloor: 3 },
+  { id: "mnt-03", text: "Tell me about a time you onboarded a new joiner onto a complex codebase.",                            competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 45, seniorityFloor: 3, roleAffinity: ["engineer"] },
   { id: "mnt-04", text: "Tell me about a time you delegated something you would normally do yourself.",                        competency: "mentorship-team",    starFocus: "action",          difficulty: "hard",     frequencyPct: 40, seniorityFloor: 5 },
   { id: "mnt-05", text: "Tell me about a time you raised the design quality of your team — through mentoring juniors, running design crits, or building a system.", competency: "mentorship-team", starFocus: "action+result", difficulty: "hard", frequencyPct: 65, roleAffinity: ["designer"], seniorityFloor: 5 },
 

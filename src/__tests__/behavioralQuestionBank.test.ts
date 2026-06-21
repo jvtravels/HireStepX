@@ -162,6 +162,38 @@ describe("sampleBehavioralQuestions — role/yoe tilt", () => {
     }
   });
 
+  it("the 'complex codebase' onboarding probe is engineer-affinity (not universal)", () => {
+    /* Regression: this question lacked roleAffinity, so it counted as
+       universal and leaked to a marketer on the LLM-down path (live QA,
+       2026-06). It is intrinsically an engineering question. */
+    const codebaseQ = BEHAVIORAL_50.find(q => /complex codebase/i.test(q.text));
+    expect(codebaseQ).toBeDefined();
+    expect(codebaseQ?.roleAffinity).toEqual(["engineer"]);
+  });
+
+  it("role='marketing' steers away from engineer-locked questions (no codebase probe)", () => {
+    // count=12 covers every competency once; plenty of universal alternatives
+    // exist for mentorship-team, so the engineer-only codebase probe must not
+    // appear for a marketer.
+    const out = sampleBehavioralQuestions({ count: 12, seed: 9, role: "marketing" });
+    expect(out.some(q => /complex codebase/i.test(q.text))).toBe(false);
+    for (const q of out) {
+      // Any role-locked question that survived must include marketing.
+      if (q.roleAffinity && q.roleAffinity.length > 0) {
+        expect(q.roleAffinity.includes("marketing")).toBe(true);
+      }
+    }
+  });
+
+  it("role='sales' likewise draws only universal-or-sales questions", () => {
+    const out = sampleBehavioralQuestions({ count: 12, seed: 21, role: "sales" });
+    for (const q of out) {
+      if (q.roleAffinity && q.roleAffinity.length > 0) {
+        expect(q.roleAffinity.includes("sales")).toBe(true);
+      }
+    }
+  });
+
   it("deterministic snapshot: count=5, seed=42, no role/yoe", () => {
     /* Pinned snapshot to catch unintended drift in the sampler logic.
        Adding/removing bank entries naturally changes the shuffle output,
