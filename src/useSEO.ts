@@ -131,7 +131,7 @@ export function webAppJsonLd(): Record<string, unknown> {
       "@type": "Offer",
       price: "0",
       priceCurrency: "INR",
-      description: "Free plan with 3 interview sessions",
+      description: "Free plan with 2 interview sessions",
     },
   };
 }

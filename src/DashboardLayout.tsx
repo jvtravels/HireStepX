@@ -362,12 +362,12 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   ? `${PRO_MONTHLY_LIMIT} sessions/month, STAR coaching, skill decay tracking, PDF reports`
                   : isStarter
                   ? `${STARTER_WEEKLY_LIMIT} sessions/week, STAR coaching, PDF reports, ₹49/week`
-                  : "3 lifetime sessions, basic feedback, upgrade anytime"}
+                  : "2 lifetime sessions, basic feedback, upgrade anytime"}
                 title={isPro
                   ? `${PRO_MONTHLY_LIMIT} sessions/month · STAR coaching · skill decay tracking · PDF reports`
                   : isStarter
                   ? `${STARTER_WEEKLY_LIMIT} sessions/week · STAR coaching · PDF reports · ₹49/week`
-                  : "3 lifetime sessions · basic feedback · upgrade anytime"}
+                  : "2 lifetime sessions · basic feedback · upgrade anytime"}
                 style={{ display: "inline-flex", alignItems: "center", cursor: "help", color: isPro ? (proExhausted ? c.gilt : c.sage) : c.gilt, opacity: 0.45, flexShrink: 0 }}
               >
                 <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>

@@ -135,7 +135,7 @@ export async function generateMetadata(
   if (!page) return { title: "Not Found" };
 
   const title = `${page.searchPhrase} — Practice Free | HireStepX`;
-  const description = `${page.intro.split(".")[0]}. Practice with AI voice feedback. 3 free sessions, no credit card.`;
+  const description = `${page.intro.split(".")[0]}. Practice with AI voice feedback. 2 free sessions, no credit card.`;
 
   return {
     title,

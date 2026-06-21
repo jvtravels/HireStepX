@@ -17,7 +17,7 @@ export const revalidate = 86400; /* 24 h */
 export const metadata: Metadata = {
   title: "Interview Questions by Company & Role | HireStepX",
   description:
-    "Real, verified interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 30+ more companies. Practice answering them with AI voice feedback — 3 sessions free.",
+    "Real, verified interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 30+ more companies. Practice answering them with AI voice feedback — 2 sessions free.",
   keywords: [
     "interview questions",
     "company interview questions",

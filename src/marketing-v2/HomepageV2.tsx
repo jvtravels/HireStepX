@@ -1300,7 +1300,7 @@ export function HeroV2() {
               }}
             >
               AI mock interviews you actually speak to — scored against the
-              rubrics real Indian panels use. Your first 3 sessions are free, no
+              rubrics real Indian panels use. Your first 2 sessions are free, no
               card needed. STAR breakdown back before your chai cools.
             </p>
 
@@ -1375,7 +1375,7 @@ export function HeroV2() {
               }}
             >
               <span style={{ color: t.coal, fontWeight: 600 }}>
-                3 sessions free
+                2 sessions free
               </span>
               <span aria-hidden style={{ color: t.inkFaint }}>·</span>
               <span>No card needed</span>
@@ -3503,7 +3503,7 @@ export function FAQV2() {
     {
       cat: "Pricing",
       q: "What if I just want to try it?",
-      a: "Sign up free and get 3 full mock sessions — no card needed. If you have an interview tomorrow, that's enough to practice once and review the report.",
+      a: "Sign up free and get 2 full mock sessions — no card needed. If you have an interview tomorrow, that's enough to practice once and review the report.",
     },
     {
       cat: "Pricing",
@@ -4636,7 +4636,7 @@ export function MobileStickyCTA() {
         }}
       >
         <span style={{ fontFamily: fonts.serif, fontStyle: "italic", color: t.copper100 }}>
-          3 free sessions
+          2 free sessions
         </span>{" "}
         · No card needed
       </span>

@@ -35,7 +35,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "HireStepX: AI-Powered Mock Interview Platform",
   description:
-    "Practice mock interviews with AI interviewers. Get real-time feedback, STAR analysis, and personalized coaching. 3 free sessions, no credit card required.",
+    "Practice mock interviews with AI interviewers. Get real-time feedback, STAR analysis, and personalized coaching. 2 free sessions, no credit card required.",
   keywords:
     "mock interview, AI interview practice, interview preparation, STAR method, behavioral interview, technical interview, panel interview, campus placement, HR round, salary negotiation, India",
   authors: [{ name: "HireStepX" }],
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     url: "https://hirestepx.com/",
     title: "HireStepX: AI Mock Interview Practice",
     description:
-      "Practice mock interviews with AI. Get scored on STAR structure, communication, and technical depth. 3 free sessions.",
+      "Practice mock interviews with AI. Get scored on STAR structure, communication, and technical depth. 2 free sessions.",
     // Image is auto-picked up from app/opengraph-image.tsx (dynamic 1200x630).
     // Sub-routes can still override by exporting openGraph.images from their
     // own generateMetadata (or by dropping a sibling opengraph-image.tsx).
@@ -126,7 +126,7 @@ const structuredData = [
       "@type": "Offer",
       price: "0",
       priceCurrency: "INR",
-      description: "3 free sessions, no credit card required",
+      description: "2 free sessions, no credit card required",
     },
   },
   {

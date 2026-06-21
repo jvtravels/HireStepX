@@ -26,7 +26,7 @@ We reserve the right to suspend accounts that appear to be compromised or are be
   },
   {
     title: "4. Free Tier and Paid Plans",
-    body: `HireStepX offers a free tier that includes 3 AI mock interview sessions. Beyond the free tier, you can purchase:
+    body: `HireStepX offers a free tier that includes 2 AI mock interview sessions. Beyond the free tier, you can purchase:
 
 - Session packs: A fixed number of additional interview sessions.
 - Subscription plans: Monthly or annual plans with a set number of sessions per billing period and additional features.

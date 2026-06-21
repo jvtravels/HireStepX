@@ -526,7 +526,7 @@ export default function ComingSoon() {
                 <div
                   style={{
                     fontFamily: F.serif,
-                    fontSize: 20,
+                    fontSize: 22,
                     fontWeight: 500,
                     color: T.coal,
                     letterSpacing: "-0.012em",
@@ -642,7 +642,7 @@ export default function ComingSoon() {
                   type="submit"
                   className="cs-cta"
                   disabled={isSending}
-                  aria-label="Submit email to join the HireStepX waitlist and get 3 free mocks"
+                  aria-label="Submit email to join the HireStepX waitlist and get 2 free mocks"
                   style={{
                     fontFamily: F.sans,
                     fontSize: 15,
@@ -680,7 +680,7 @@ export default function ComingSoon() {
                     </>
                   ) : (
                     <>
-                      Get 3 free mocks
+                      Get 2 free mocks
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
                         <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
                       </svg>

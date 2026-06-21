@@ -266,7 +266,7 @@ async function handleVerifyReminder(req: VercelRequest, res: VercelResponse, nor
           preview: "Your free sessions are waiting behind one click.",
           body:
             title("One step", { accentWord: "left." }) +
-            para(`Hi ${safeName}, you signed up but haven't confirmed your email yet. Your ${b("3 free mock interviews")} are ready the moment you do.`) +
+            para(`Hi ${safeName}, you signed up but haven't confirmed your email yet. Your ${b("2 free mock interviews")} are ready the moment you do.`) +
             button("Verify and start", verifyUrl) +
             para(
               `A fresh link, valid for ${b("24 hours")}. If you've already verified, you're all set, just ignore this.`,
@@ -604,7 +604,7 @@ async function handleVerify(req: VercelRequest, res: VercelResponse, email: stri
           preview: "One click to confirm it's you and unlock your free sessions.",
           body:
             title("Welcome,", { accentWord: `${safeName}.` }) +
-            para(`Glad you're here. One quick step before you start: confirm this is your email. Your ${b("3 free mock interviews")} are waiting on the other side.`) +
+            para(`Glad you're here. One quick step before you start: confirm this is your email. Your ${b("2 free mock interviews")} are waiting on the other side.`) +
             button("Verify my email", verifyUrl) +
             para(`Once you're verified, here's how to get going:`) +
             orderedList([

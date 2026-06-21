@@ -500,7 +500,7 @@ const posts: BlogPost[] = [
       { question: "Is it possible to over-practice for interviews?", answer: "Yes — if your answers start sounding rehearsed and robotic. The goal is to be naturally structured, not scripted. If you're memorizing answers word-for-word, switch to practicing with random follow-up questions to stay adaptable." },
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "campus-placement-interview-tips", "how-to-introduce-yourself-in-interview"],
-    cta: "Start your mock interview practice right now — 3 free AI sessions with scored feedback. See your baseline score in 10 minutes.",
+    cta: "Start your mock interview practice right now — 2 free AI sessions with scored feedback. See your baseline score in 10 minutes.",
   },
   {
     slug: "star-method-interview-answers",

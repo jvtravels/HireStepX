@@ -74,7 +74,7 @@ export async function generateMetadata(
   const page = getSeoPageBySlug(slug);
   if (!page) return { title: "Not Found" };
   const title = `${page.searchPhrase} — Practice Free | HireStepX`;
-  const description = `${page.intro.split(".")[0]}. Practice with AI mock interviews + real-time feedback. 3 free sessions, no credit card.`;
+  const description = `${page.intro.split(".")[0]}. Practice with AI mock interviews + real-time feedback. 2 free sessions, no credit card.`;
   return {
     title,
     description,
@@ -181,7 +181,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
               padding: "14px 24px", borderRadius: 999,
               fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 500,
             }}>
-              Practice this interview free → 3 sessions, no card
+              Practice this interview free → 2 sessions, no card
             </Link>
             <Link href="/pricing" style={{
               display: "inline-flex", alignItems: "center",
@@ -280,7 +280,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             </h2>
             <p style={{ fontSize: 14, color: "#3E3A6E", margin: "10px 0 18px", lineHeight: 1.5 }}>
               The AI interviewer asks {companyLabel}-style questions, listens to your voice answer,
-              and gives you scored feedback in 2 minutes. 3 sessions free.
+              and gives you scored feedback in 2 minutes. 2 sessions free.
             </p>
             <Link href={practiceHref} style={{
               display: "inline-flex", alignItems: "center", gap: 8,

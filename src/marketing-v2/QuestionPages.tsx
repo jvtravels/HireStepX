@@ -337,7 +337,7 @@ function BottomCTA({
         The AI interviewer asks {companyLabel}-style questions, listens to your voice answer,
         and gives scored feedback on structure, specificity, and delivery.
         {totalCount > 5 && ` All ${totalCount} questions available after signup.`}
-        {" "}3 sessions free, no credit card.
+        {" "}2 sessions free, no credit card.
       </p>
       <Link
         href={practiceHref}
@@ -626,7 +626,7 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
               fontWeight: 600,
             }}
           >
-            Start free practice — 3 sessions, no card →
+            Start free practice — 2 sessions, no card →
           </Link>
         </div>
 
@@ -760,7 +760,7 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
               margin: "12px 0 22px",
             }}
           >
-            AI voice interviewer, real-time answer scoring, STAR framework coaching. 3 free
+            AI voice interviewer, real-time answer scoring, STAR framework coaching. 2 free
             sessions, no credit card required.
           </p>
           <Link
