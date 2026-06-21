@@ -21,6 +21,9 @@ import {
   resolveSkillAxes,
   isStarShapedFocus,
   deriveSkillWeightsFromRubric,
+  canonicalizeAxisName,
+  reconcileSkillAxisNames,
+  skillsCoverAxes,
   isUsableEvalReport,
   normalizeHrReport,
   isGenericMotivation,
@@ -499,12 +502,35 @@ describe("isUsableEvalReport (fallback truncation guard — never serve empty re
   });
 
   it("requires the hrReport block for hr-round even when skills are present", () => {
-    const skills = [{ name: "Comp transparency", score: 70 }];
+    const skills = HR_ROUND_SKILL_AXES.map((name) => ({ name, score: 70 }));
     // This is exactly the observed BFSI/Gemini failure: skills filled but no hrReport.
     expect(isUsableEvalReport({ skills }, "hr-round")).toBe(false);
     expect(isUsableEvalReport({ skills, hrReport: null }, "hr-round")).toBe(false);
     expect(isUsableEvalReport({ skills, hrReport: [] }, "hr-round")).toBe(false);
     expect(isUsableEvalReport({ skills, hrReport: { noticeDays: 90 } }, "hr-round")).toBe(true);
+  });
+
+  it("rejects an hr-round report missing any of the 8 rubric dimensions", () => {
+    // Drop the most-weighted BFSI axis — a partial rubric must NOT render.
+    const partial = HR_ROUND_SKILL_AXES.filter((n) => n !== "Compliance readiness").map(
+      (name) => ({ name, score: 70 }),
+    );
+    expect(isUsableEvalReport({ skills: partial, hrReport: { noticeDays: 90 } }, "hr-round")).toBe(false);
+  });
+
+  it("accepts an hr-round report whose axis names drifted but cover all 8 (tolerant match)", () => {
+    // LLM paraphrased spacing/punctuation/casing — still semantically complete.
+    const drifted = [
+      { name: "logistics-clarity", score: 70 },
+      { name: "Comp Transparency", score: 70 },
+      { name: "switch rationale honesty", score: 70 },
+      { name: "Compliance  Readiness", score: 70 },
+      { name: "Commitment signal", score: 70 },
+      { name: "Benefits/Policy Literacy", score: 70 },
+      { name: "self awareness", score: 70 },
+      { name: "Motivation Specificity", score: 70 },
+    ];
+    expect(isUsableEvalReport({ skills: drifted, hrReport: { noticeDays: 90 } }, "hr-round")).toBe(true);
   });
 
   it("does not require hrReport for non-hr focuses", () => {
@@ -552,6 +578,71 @@ describe("deriveSkillWeightsFromRubric (P0 #1 — live HR overlay weights)", () 
     ]);
     const weighted = computeBlendedOverall(skills, weights, 60);
     expect(weighted.overallScore).toBeGreaterThan(equal.overallScore);
+  });
+});
+
+describe("skill-name reconciliation (P1 — overlay weights survive LLM name drift)", () => {
+  it("canonicalizeAxisName collapses case/spacing/punctuation", () => {
+    expect(canonicalizeAxisName("Logistics clarity")).toBe("logisticsclarity");
+    expect(canonicalizeAxisName("logistics-clarity")).toBe("logisticsclarity");
+    expect(canonicalizeAxisName("Logistics  Clarity")).toBe("logisticsclarity");
+    expect(canonicalizeAxisName("Benefits/policy literacy")).toBe("benefitspolicyliteracy");
+    expect(canonicalizeAxisName("")).toBe("");
+  });
+
+  it("renames drifted skill names back to the canonical axis spelling", () => {
+    const drifted = [
+      { name: "logistics-clarity", score: 70 },
+      { name: "Comp Transparency", score: 65 },
+    ];
+    const out = reconcileSkillAxisNames(drifted, HR_ROUND_SKILL_AXES);
+    expect(out.map((s) => s.name)).toEqual(["Logistics clarity", "Comp transparency"]);
+    // scores preserved verbatim
+    expect(out.map((s) => s.score)).toEqual([70, 65]);
+  });
+
+  it("leaves unknown skills untouched and preserves order", () => {
+    const mixed = [
+      { name: "Comp Transparency", score: 50 },
+      { name: "Made-up axis", score: 90 },
+    ];
+    const out = reconcileSkillAxisNames(mixed, HR_ROUND_SKILL_AXES);
+    expect(out.map((s) => s.name)).toEqual(["Comp transparency", "Made-up axis"]);
+  });
+
+  it("reconciliation lets the overlay weight reach a drifted axis (the actual bug)", () => {
+    // "logistics-clarity" drifted; without reconcile, skillWeights lookup misses
+    // and the axis is weighted at the 1.0 fallback instead of its tuned 0.4 —
+    // silently discarding the calibration. Reconcile must restore the tuned
+    // weight AND the canonical label.
+    const drifted = [
+      { name: "logistics-clarity", score: 85 },
+      { name: "Commitment signal", score: 40 },
+    ];
+    const weights = { "Logistics clarity": 0.4, "Commitment signal": 0.2 };
+    const withoutReconcile = computeBlendedOverall(drifted, weights, 60);
+    // Bug reproduced: drifted name missed its weight, got the 1.0 fallback.
+    expect(withoutReconcile.weightedSkills[0].weight).toBe(1.0);
+    const reconciled = reconcileSkillAxisNames(drifted, HR_ROUND_SKILL_AXES);
+    const withReconcile = computeBlendedOverall(reconciled, weights, 60);
+    // Fixed: tuned 0.4 weight now applies, and the label is canonical.
+    expect(withReconcile.weightedSkills[0].weight).toBe(0.4);
+    expect(withReconcile.weightedSkills[0].name).toBe("Logistics clarity");
+    // The composite differs from the mis-weighted one (calibration now lands).
+    expect(withReconcile.overallScore).not.toBe(withoutReconcile.overallScore);
+  });
+
+  it("skillsCoverAxes is true only when every canonical axis is present", () => {
+    const full = HR_ROUND_SKILL_AXES.map((name) => ({ name }));
+    expect(skillsCoverAxes(full, HR_ROUND_SKILL_AXES)).toBe(true);
+    // tolerant: drifted spellings still count as covered
+    const drifted = HR_ROUND_SKILL_AXES.map((name) => ({ name: name.toUpperCase() }));
+    expect(skillsCoverAxes(drifted, HR_ROUND_SKILL_AXES)).toBe(true);
+    // missing one axis → not covered
+    const partial = HR_ROUND_SKILL_AXES.slice(0, 7).map((name) => ({ name }));
+    expect(skillsCoverAxes(partial, HR_ROUND_SKILL_AXES)).toBe(false);
+    // non-string names are ignored, not crashed on
+    expect(skillsCoverAxes([{ name: 123 as unknown }], HR_ROUND_SKILL_AXES)).toBe(false);
   });
 });
 

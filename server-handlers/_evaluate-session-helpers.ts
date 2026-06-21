@@ -219,6 +219,46 @@ export function deriveSkillWeightsFromRubric(
   return out;
 }
 
+/* Normalize a skill/dimension name for tolerant matching: lowercase, drop every
+   non-alphanumeric run. "Logistics clarity", "Logistics  Clarity" and
+   "logistics-clarity" all collapse to "logisticsclarity". */
+export function canonicalizeAxisName(name: string): string {
+  return (name || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+/* Reconcile LLM-returned skill names back to a canonical axis list. Any skill
+   whose normalized name matches a canonical axis is renamed to the canonical
+   spelling verbatim; unknown skills pass through unchanged. Without this, a
+   paraphrased name ("Logistics" vs "Logistics clarity") silently (a) misses its
+   overlay weight in computeBlendedOverall — skillWeights[name] is undefined, so
+   the sector/seniority calibration falls back to 1.0 — and (b) mislabels the
+   dimension in the rendered report. */
+export function reconcileSkillAxisNames<T extends { name: string }>(
+  rawSkills: readonly T[],
+  canonicalAxes: readonly string[],
+): T[] {
+  const canonByNorm = new Map<string, string>();
+  for (const axis of canonicalAxes) canonByNorm.set(canonicalizeAxisName(axis), axis);
+  return rawSkills.map((s) => {
+    const canon = canonByNorm.get(canonicalizeAxisName(s.name));
+    return canon && canon !== s.name ? { ...s, name: canon } : s;
+  });
+}
+
+/* True when `skills` (matched tolerantly by normalized name) covers every
+   canonical axis. Used to reject an HR report that omitted a rubric dimension
+   (e.g. a BFSI round missing "Compliance readiness", the most-weighted axis) so
+   the caller retries rather than rendering a partial rubric as if complete. */
+export function skillsCoverAxes(
+  skills: ReadonlyArray<{ name?: unknown }>,
+  canonicalAxes: readonly string[],
+): boolean {
+  const present = new Set(
+    skills.map((s) => canonicalizeAxisName(typeof s?.name === "string" ? s.name : "")),
+  );
+  return canonicalAxes.every((axis) => present.has(canonicalizeAxisName(axis)));
+}
+
 /* A parsed LLM response can be syntactically valid JSON yet semantically
    empty — e.g. a verbose fallback model (gemini-2.5-flash) truncates the large
    report at its token cap, closing the object after the early fields but before
@@ -240,6 +280,11 @@ export function isUsableEvalReport(
   if (metaType === "hr-round") {
     const hr = (parsed as { hrReport?: unknown }).hrReport;
     if (!hr || typeof hr !== "object" || Array.isArray(hr)) return false;
+    // The HR rubric is 8 dimensions; a report missing one renders an
+    // incomplete (and silently mis-weighted) breakdown. Reject so the caller
+    // retries rather than surfacing a partial rubric. Matched tolerantly by
+    // normalized name so a paraphrased-but-present axis is not falsely rejected.
+    if (!skillsCoverAxes(skills as Array<{ name?: unknown }>, HR_ROUND_SKILL_AXES)) return false;
   }
   return true;
 }

@@ -43,6 +43,8 @@ import {
   computeStructuralAnchor,
   isStarShapedFocus,
   deriveSkillWeightsFromRubric,
+  reconcileSkillAxisNames,
+  HR_ROUND_SKILL_AXES,
   isUsableEvalReport,
   normalizeThoughtBubble,
   normalizeScoreConfidence,
@@ -745,6 +747,7 @@ ${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n
 
 RUBRIC — score each skill 0-100:
 ${skillAxes.map((s) => `- ${s}`).join("\n")}
+In the "skills" array, return ALL of the axes above, one entry each, using each axis name EXACTLY as written (do not abbreviate, paraphrase, reorder-rename, or merge axes). The downstream score weighting keys on these exact names.
 
 Return a JSON object with EXACTLY this shape:
 {
@@ -1019,7 +1022,16 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
 
     // Build final report — merge deterministic metrics with LLM output.
     // Apply company calibration: re-weight skills + use company-specific bands.
-    const rawSkills = Array.isArray(parsed.skills) ? parsed.skills.slice(0, 8) : [];
+    // For HR rounds, reconcile any drifted skill names back to the canonical
+    // axes BEFORE blending: a paraphrased name ("Logistics" vs "Logistics
+    // clarity") would otherwise miss its overlay weight (skillWeights[name]
+    // undefined -> 1.0, discarding the sector/seniority calibration) and render
+    // a mislabeled dimension. isUsableEvalReport already guaranteed all 8 axes
+    // are present (tolerant match), so this only normalizes spelling.
+    const slicedSkills = Array.isArray(parsed.skills) ? parsed.skills.slice(0, 8) : [];
+    const rawSkills = meta?.type === "hr-round"
+      ? reconcileSkillAxisNames(slicedSkills, HR_ROUND_SKILL_AXES)
+      : slicedSkills;
     /* HR rounds weight the displayed composite by the resolved rubric (sector/
        seniority overlay); everything else uses the company role-family weights.
        Falling back to {} = equal 1.0 weighting. */
