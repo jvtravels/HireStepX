@@ -5,7 +5,7 @@ import { c, font } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import { scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import type { DashboardSession } from "./dashboardTypes";
-import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
+import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT, SINGLE_SESSION_PRICE } from "./dashboardData";
 import { SectionErrorBoundary } from "./ErrorBoundary";
 
 // Cream/indigo/copper results report — ported from the `interview-result`
@@ -137,6 +137,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState("");
   const [showPromo, setShowPromo] = useState(false);
+  /* Quantity for single-session top-up: 1–10, backend enforces the cap. */
+  const [singleQty, setSingleQty] = useState(1);
   // Store Razorpay response + plan in state so useEffect handles verification
   // (fetch inside Razorpay's handler callback doesn't work reliably)
   const [pendingVerification, setPendingVerification] = useState<{
@@ -223,7 +225,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         // Pass the previewed promo code; the server re-validates it against the
         // ACTUAL plan and applies the discount authoritatively (an invalid code
         // is silently ignored and the user is charged full price).
-        body: JSON.stringify({ plan: planId, userId: user?.id, email: user?.email, promoCode: promoResult?.valid ? promoResult.code : undefined }),
+        body: JSON.stringify({ plan: planId, userId: user?.id, email: user?.email, promoCode: promoResult?.valid ? promoResult.code : undefined, ...(planId === "single" ? { quantity: singleQty } : {}) }),
       });
       if (!res.ok) {
         let errMsg = "Could not start checkout. Please try again.";
@@ -504,23 +506,78 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           })}
         </div>
 
-        {/* Single-session top-up — the moment-of-need option for a free user who
-            just needs one more interview without committing to a subscription. */}
+        {/* Single-session top-up — quantity-aware: buy 1–10 credits at ₹9 each,
+            no subscription required. The backend enforces the 1–10 cap. */}
         {creditSuccess !== null ? (
           <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: "#E8F2EA", border: `1px solid #BFD9C3`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.sage }}>
-              Session credit added{creditSuccess > 0 ? ` — you have ${creditSuccess} ${creditSuccess === 1 ? "credit" : "credits"}` : ""}. Close this to start your interview.
+              {creditSuccess === 1 ? "1 session credit" : `${creditSuccess} session credits`} added. Close this to start your interview.
             </span>
           </div>
         ) : (
-          <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: c.carbon, border: `1px solid ${c.border}`, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center" }}>
-            <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk }}>
-              Just need one more? Buy a <strong style={{ color: c.ivory }}>single session for ₹9</strong> — no subscription.
-            </span>
-            <button onClick={() => handleCheckout("single")} disabled={!!loading}
-              style={{ padding: "8px 16px", borderRadius: 9, border: `1px solid ${c.borderHover}`, background: c.graphite, color: c.ivory, fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== "single" ? 0.5 : 1 }}>
-              {loading === "single" ? "Opening Razorpay..." : loading === "verifying" ? "Verifying..." : "Buy single · ₹9"}
+          <div style={{ marginTop: 16, padding: "16px", borderRadius: 12, background: c.carbon, border: `1px solid ${c.border}` }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+              <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>
+                Pay per session
+              </span>
+              <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>
+                ₹{SINGLE_SESSION_PRICE} each · credits never expire
+              </span>
+            </div>
+
+            {/* Quantity picker */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+              {[1, 3, 5, 10].map(qty => {
+                const selected = singleQty === qty;
+                return (
+                  <button
+                    key={qty}
+                    onClick={() => setSingleQty(qty)}
+                    disabled={!!loading}
+                    style={{
+                      flex: 1, padding: "7px 4px", borderRadius: 8, border: `1.5px solid ${selected ? c.gilt : c.border}`,
+                      background: selected ? `rgba(180,83,9,0.08)` : c.graphite,
+                      color: selected ? c.gilt : c.stone,
+                      fontFamily: font.ui, fontSize: 12, fontWeight: selected ? 700 : 500,
+                      cursor: loading ? "default" : "pointer",
+                      transition: "border-color 0.15s, color 0.15s, background 0.15s",
+                      textAlign: "center" as const,
+                    }}
+                  >
+                    {qty === 1 ? "1" : qty}
+                    <br />
+                    <span style={{ fontSize: 10, fontWeight: 400, opacity: 0.8 }}>
+                      {qty === 1 ? "session" : "sessions"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Buy button */}
+            <button
+              onClick={() => handleCheckout("single")}
+              disabled={!!loading}
+              style={{
+                width: "100%", padding: "10px 0", borderRadius: 9, border: "none",
+                background: c.gilt, color: "#FDFCF7",
+                fontFamily: font.ui, fontSize: 13, fontWeight: 700,
+                cursor: loading ? "wait" : "pointer",
+                opacity: loading && loading !== "single" ? 0.5 : 1,
+                transition: "filter 0.15s",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.filter = "brightness(0.9)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.filter = ""; }}
+            >
+              {loading === "single"
+                ? "Opening Razorpay..."
+                : loading === "verifying"
+                ? "Verifying..."
+                : <>Buy {singleQty === 1 ? "1 session" : `${singleQty} sessions`} · ₹{SINGLE_SESSION_PRICE * singleQty} <span style={{ fontSize: 15 }}>→</span></>
+              }
             </button>
           </div>
         )}
