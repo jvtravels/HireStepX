@@ -754,6 +754,51 @@ describe("normalizeReadiness", () => {
     });
     expect(r?.confidence).toBe("medium");
   });
+
+  it("bumps targetBand to the next band up when the LLM echoes the current band", () => {
+    // current band = hire, LLM also returned "hire" → must become strongHire
+    const r = normalizeReadiness(
+      { targetBand: "hire", estimatedHours: 20, estimatedSessions: 3, confidence: "medium", rationale: "x" },
+      "hire",
+    );
+    expect(r?.targetBand).toBe("strongHire");
+  });
+
+  it("bumps a too-low targetBand above the current band", () => {
+    // current band = hire, LLM returned a LOWER target → must climb to strongHire
+    const r = normalizeReadiness(
+      { targetBand: "leanHire", estimatedHours: 10, estimatedSessions: 2, confidence: "low", rationale: "x" },
+      "hire",
+    );
+    expect(r?.targetBand).toBe("strongHire");
+  });
+
+  it("keeps a valid forecast that already points up", () => {
+    const r = normalizeReadiness(
+      { targetBand: "hire", estimatedHours: 15, estimatedSessions: 2, confidence: "high", rationale: "x" },
+      "leanHire",
+    );
+    expect(r?.targetBand).toBe("hire");
+  });
+
+  it("drops the forecast when the candidate is already at the top band", () => {
+    const r = normalizeReadiness(
+      { targetBand: "strongHire", estimatedHours: 5, estimatedSessions: 1, confidence: "high", rationale: "x" },
+      "strongHire",
+    );
+    expect(r).toBeNull();
+  });
+
+  it("leaves the forecast unchanged when no current band is supplied", () => {
+    const r = normalizeReadiness({
+      targetBand: "hire",
+      estimatedHours: 10,
+      estimatedSessions: 1,
+      confidence: "medium",
+      rationale: "x",
+    });
+    expect(r?.targetBand).toBe("hire");
+  });
 });
 
 describe("normalizeCoaching", () => {

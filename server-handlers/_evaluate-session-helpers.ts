@@ -657,14 +657,39 @@ export function normalizeBlindSpots(raw: unknown): BlindSpot[] {
     .slice(0, 5);
 }
 
-export function normalizeReadiness(raw: unknown): ReadinessForecast | null {
+/** Full band ladder, low→high, for ordering comparisons. */
+const BAND_RANK: Record<string, number> = {
+  strongNoHire: 0,
+  noHire: 1,
+  leanHire: 2,
+  hire: 3,
+  strongHire: 4,
+};
+/** Bands a readiness forecast may target, ascending. */
+const TARGET_BANDS_ASC: ReadinessForecast["targetBand"][] = ["leanHire", "hire", "strongHire"];
+
+export function normalizeReadiness(
+  raw: unknown,
+  currentBand?: string,
+): ReadinessForecast | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as ReadinessForecast;
-  const validBands = ["strongHire", "hire", "leanHire"];
   const validConf = ["low", "medium", "high"];
-  if (!validBands.includes(r.targetBand)) return null;
+  if (!TARGET_BANDS_ASC.includes(r.targetBand)) return null;
+  let targetBand = r.targetBand;
+  // A readiness FORECAST must point UP — the goal band has to be strictly above
+  // the candidate's current band. The LLM sometimes echoes the current band
+  // (observed: targetBand "hire" while already AT hire), which renders as
+  // "20h of practice to reach the band you're already in". Enforce the next
+  // achievable band above current; if the candidate is already at the top
+  // (strongHire), there's no higher band to forecast toward — drop the card.
+  if (currentBand && BAND_RANK[currentBand] !== undefined) {
+    const nextUp = TARGET_BANDS_ASC.find((b) => BAND_RANK[b] > BAND_RANK[currentBand]);
+    if (!nextUp) return null;
+    if (BAND_RANK[targetBand] <= BAND_RANK[currentBand]) targetBand = nextUp;
+  }
   return {
-    targetBand: r.targetBand,
+    targetBand,
     estimatedHours: Math.max(0, Math.min(500, Math.round(Number(r.estimatedHours) || 0))),
     estimatedSessions: Math.max(0, Math.min(100, Math.round(Number(r.estimatedSessions) || 0))),
     confidence: validConf.includes(r.confidence) ? r.confidence : "medium",
