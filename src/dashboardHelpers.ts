@@ -180,7 +180,10 @@ export function generateGoogleCalendarURL(event: InterviewEvent): string {
   if (!inst) return "https://calendar.google.com/calendar";
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: event.company ? `${event.title} (${event.company})` : event.title,
+    text:
+      event.company && !event.title.toLowerCase().includes(event.company.toLowerCase())
+        ? `${event.title} (${event.company})`
+        : event.title,
     dates: `${icsUtc(inst.start)}/${icsUtc(inst.end)}`,
     details: `Interview Type: ${event.type}\n${event.notes || ""}`,
     location: event.location,
@@ -250,6 +253,30 @@ export const COMMON_TIMEZONES: { id: string; label: string }[] = [
   { id: "Australia/Sydney", label: "Sydney (AEST)" },
   { id: "UTC", label: "UTC" },
 ];
+
+/** Legacy IANA aliases some browsers/OSes still report (notably "Asia/Calcutta"
+ *  for IST), mapped to the canonical zone our picker lists. Without this an
+ *  Indian candidate whose browser reports the deprecated alias never matches the
+ *  "Asia/Kolkata" option, so they see a raw alias and a duplicated picker row. */
+const TZ_ALIASES: Record<string, string> = {
+  "Asia/Calcutta": "Asia/Kolkata",
+  "Asia/Katmandu": "Asia/Kathmandu",
+  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Asia/Rangoon": "Asia/Yangon",
+  "Europe/Kiev": "Europe/Kyiv",
+};
+
+/** Canonicalize a possibly-legacy IANA zone id to the form our picker uses. */
+export function canonicalTimezone(tz: string): string {
+  return TZ_ALIASES[tz] || tz;
+}
+
+/** Friendly label for a zone id (e.g. "India (IST)"), canonicalizing legacy
+ *  aliases first and falling back to the raw id for zones outside our list. */
+export function timezoneLabel(tz: string): string {
+  const id = canonicalTimezone(tz);
+  return COMMON_TIMEZONES.find((z) => z.id === id)?.label || id;
+}
 
 /** Offset in ms such that local_wall = utc + offset, for `timeZone` at the
  *  instant `utcDate`. Derived from Intl parts, so it honours DST automatically. */
