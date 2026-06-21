@@ -219,6 +219,31 @@ export function deriveSkillWeightsFromRubric(
   return out;
 }
 
+/* A parsed LLM response can be syntactically valid JSON yet semantically
+   empty — e.g. a verbose fallback model (gemini-2.5-flash) truncates the large
+   report at its token cap, closing the object after the early fields but before
+   `skills`/`hrReport`. extractJSON happily returns that object, and the report
+   builder then defaults the missing arrays to [] and the score to 50 — surfacing
+   a confident-looking "noHire 50" with a blank skills breakdown. That is worse
+   than no report. Treat such a response as unusable so the caller retries and,
+   failing that, returns a retryable 503 ("transcript saved") instead.
+
+   Minimum bar: a non-empty skills array (every report type renders it), plus —
+   for hr-round — the structured hrReport block (its whole value proposition). */
+export function isUsableEvalReport(
+  parsed: { skills?: unknown; hrReport?: unknown } | null | undefined,
+  metaType?: string,
+): boolean {
+  if (!parsed || typeof parsed !== "object") return false;
+  const skills = (parsed as { skills?: unknown }).skills;
+  if (!Array.isArray(skills) || skills.length === 0) return false;
+  if (metaType === "hr-round") {
+    const hr = (parsed as { hrReport?: unknown }).hrReport;
+    if (!hr || typeof hr !== "object" || Array.isArray(hr)) return false;
+  }
+  return true;
+}
+
 export const DEFAULT_BANDS: BandThresholds = {
   strongHire: 85,
   hire: 70,

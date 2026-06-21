@@ -85,6 +85,15 @@ interface LLMOptions {
   prompt: string;
   temperature?: number;
   maxTokens?: number;
+  // Output budget for the FALLBACK providers (Gemini/Cerebras) only. Groq is
+  // primary and bounded by a tight free-tier TPM ceiling that counts
+  // (prompt + max_tokens), so its budget must stay small. The fallbacks have
+  // ~10× higher TPM, and at least one (gemini-2.5-flash) is materially more
+  // verbose on the same JSON schema — at the Groq-sized cap it truncates large
+  // reports (e.g. the HR-round report) mid-object, yielding an empty/degenerate
+  // result. Give the fallbacks more room so a Groq outage still produces a
+  // complete report. Defaults to maxTokens when unset.
+  fallbackMaxTokens?: number;
   jsonMode?: boolean;
   fast?: boolean;
 }
@@ -141,7 +150,7 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMRe
       contents: [{ parts: [{ text: opts.prompt }] }],
       generationConfig: {
         temperature: opts.temperature ?? 0.3,
-        maxOutputTokens: opts.maxTokens ?? 2000,
+        maxOutputTokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
         ...(opts.jsonMode ? { responseMimeType: "application/json" } : {}),
         thinkingConfig: { thinkingBudget: 0 },
       },
@@ -172,7 +181,7 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
       model,
       messages: [{ role: "user", content: opts.prompt }],
       temperature: opts.temperature ?? 0.3,
-      max_tokens: opts.maxTokens ?? 2000,
+      max_tokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
       ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
   });

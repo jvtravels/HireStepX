@@ -20,6 +20,7 @@ import {
   resolveSkillAxes,
   isStarShapedFocus,
   deriveSkillWeightsFromRubric,
+  isUsableEvalReport,
   normalizeHrReport,
   isGenericMotivation,
   coerceNoticeDays,
@@ -443,6 +444,38 @@ describe("isStarShapedFocus (P0 #2 — anchor gating)", () => {
     for (const f of ["behavioral", "case-study", "system-design", "leadership", undefined]) {
       expect(isStarShapedFocus(f)).toBe(true);
     }
+  });
+});
+
+describe("isUsableEvalReport (fallback truncation guard — never serve empty reports)", () => {
+  it("rejects null / non-object", () => {
+    expect(isUsableEvalReport(null)).toBe(false);
+    expect(isUsableEvalReport(undefined)).toBe(false);
+  });
+
+  it("rejects a parsed object with missing or empty skills (the truncation symptom)", () => {
+    expect(isUsableEvalReport({})).toBe(false);
+    expect(isUsableEvalReport({ skills: [] })).toBe(false);
+    expect(isUsableEvalReport({ skills: "nope" as unknown })).toBe(false);
+  });
+
+  it("accepts a non-HR report with a non-empty skills array", () => {
+    expect(isUsableEvalReport({ skills: [{ name: "Ownership", score: 80 }] }, "behavioral")).toBe(true);
+  });
+
+  it("requires the hrReport block for hr-round even when skills are present", () => {
+    const skills = [{ name: "Comp transparency", score: 70 }];
+    // This is exactly the observed BFSI/Gemini failure: skills filled but no hrReport.
+    expect(isUsableEvalReport({ skills }, "hr-round")).toBe(false);
+    expect(isUsableEvalReport({ skills, hrReport: null }, "hr-round")).toBe(false);
+    expect(isUsableEvalReport({ skills, hrReport: [] }, "hr-round")).toBe(false);
+    expect(isUsableEvalReport({ skills, hrReport: { noticeDays: 90 } }, "hr-round")).toBe(true);
+  });
+
+  it("does not require hrReport for non-hr focuses", () => {
+    const skills = [{ name: "Impact", score: 75 }];
+    expect(isUsableEvalReport({ skills }, "salary-negotiation")).toBe(true);
+    expect(isUsableEvalReport({ skills }, undefined)).toBe(true);
   });
 });
 

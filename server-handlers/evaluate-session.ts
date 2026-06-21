@@ -39,6 +39,7 @@ import {
   computeStructuralAnchor,
   isStarShapedFocus,
   deriveSkillWeightsFromRubric,
+  isUsableEvalReport,
   normalizeThoughtBubble,
   normalizeScoreConfidence,
   normalizeStoryReuse,
@@ -936,7 +937,12 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     let result: Awaited<ReturnType<typeof callLLM>> | null = null;
     try {
       result = await callLLM(
-        { prompt, temperature: 0.25, maxTokens: 2500, jsonMode: true },
+        // Groq (primary) stays at 2500 — its tight free-tier TPM counts
+        // prompt+max_tokens and a complete report fits in ~2200. The fallbacks
+        // (Gemini/Cerebras) get a larger budget because gemini-2.5-flash is
+        // verbose enough to truncate the HR-round report at 2500 (observed:
+        // completions pinned at exactly the cap → empty skills/hrReport).
+        { prompt, temperature: 0.25, maxTokens: 2500, fallbackMaxTokens: 4000, jsonMode: true },
         35000,
         { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
       );
@@ -946,21 +952,25 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const tLLM = Date.now() - tLLM0;
 
     let parsed = result ? extractJSON<Partial<SessionReport>>(result.text) : null;
-    if (!parsed) {
-      // First attempt yielded no usable report — either the provider chain
-      // threw (outage) or the model wrapped/truncated the JSON. Retry once
+    if (!isUsableEvalReport(parsed, meta?.type)) {
+      // First attempt yielded no usable report — the provider chain threw
+      // (outage), the model wrapped/truncated the JSON, OR it returned
+      // syntactically-valid-but-empty JSON (a verbose fallback model truncating
+      // at its token cap leaves skills/hrReport unset). Either way, retry once
       // with a strict prefix at temperature 0 before giving up on a 25-minute
       // interview the user can't easily replay.
-      console.warn(`[evaluate-session] No parseable report on first attempt (model: ${result?.model ?? "none"}); retrying strict.`);
+      console.warn(`[evaluate-session] No usable report on first attempt (model: ${result?.model ?? "none"}); retrying strict.`);
       try {
         const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
         const retry = await callLLM(
-          { prompt: strictPrompt, temperature: 0, maxTokens: 2500, jsonMode: true },
+          { prompt: strictPrompt, temperature: 0, maxTokens: 2500, fallbackMaxTokens: 4000, jsonMode: true },
           18000,
           { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 12000 },
         );
         const retryParsed = extractJSON<Partial<SessionReport>>(retry.text);
-        if (retryParsed) {
+        // Only accept the retry if it cleared the same usability bar — a second
+        // empty/truncated object is no better than the first.
+        if (isUsableEvalReport(retryParsed, meta?.type)) {
           parsed = retryParsed;
           result = retry; // downstream model/timing logging reflects the call that actually produced the report
         }
@@ -969,11 +979,12 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       }
     }
 
-    if (!parsed || !result) {
-      // Both attempts failed (provider outage or unparseable output). Return
-      // 503 (not 500) with transcript_saved so the client shows "Your session
-      // is saved — retry evaluation" rather than implying data loss.
-      console.error(`[evaluate-session] Could not generate report for user ${auth.userId} (outage or unparseable output).`);
+    if (!parsed || !result || !isUsableEvalReport(parsed, meta?.type)) {
+      // Both attempts failed (provider outage, unparseable output, or a
+      // syntactically-valid-but-empty report). Return 503 (not 500) with
+      // transcript_saved so the client shows "Your session is saved — retry
+      // evaluation" rather than implying data loss or showing a blank report.
+      console.error(`[evaluate-session] Could not generate report for user ${auth.userId} (outage or unusable output).`);
       return new Response(
         JSON.stringify({ error: "Couldn't generate your report right now. Your transcript is saved — please retry in a moment.", retryable: true, transcript_saved: true }),
         { status: 503, headers },
