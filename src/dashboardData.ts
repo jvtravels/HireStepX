@@ -37,7 +37,7 @@ export const FREE_SESSION_LIMIT = 3;
    Keep these constants aligned with the customer-facing promise —
    server-handlers/_shared.ts mirrors the limits for quota
    enforcement. */
-export const STARTER_WEEKLY_LIMIT = 10;
+export const STARTER_WEEKLY_LIMIT = 7;
 export const PRO_MONTHLY_LIMIT = 40;
 export const SINGLE_SESSION_PRICE = 9; // ₹9 per session
 export const STORAGE_KEY = "hirestepx_dashboard";
