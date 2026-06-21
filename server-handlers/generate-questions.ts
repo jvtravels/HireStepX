@@ -247,14 +247,38 @@ export default async function handler(req: Request): Promise<Response> {
      * client-side retries on transient failures, and identical session
      * starts within minutes. Deliberate regens after 5 min get a fresh set. */
     const CACHE_TTL_SEC = 300;
-    // Cache key uses ONLY the inputs that determine question content, not
-    // the full body. pastTopics + priorFlags are per-session and change
-    // every call → hashing the full body gave a ~0% hit rate. By hashing
-    // a normalized subset we get genuine hits on repeat (role, company,
+    // Cache key uses the inputs that determine question content, not the
+    // full body. pastTopics + priorFlags are per-session and change every
+    // call → hashing the full body gave a ~0% hit rate. By hashing a
+    // normalized subset we get genuine hits on repeat (role, company,
     // focus, type) combos — the dominant pattern on Indian free-tier
     // where users re-run the same Razorpay / PM / behavioral setup.
-    // Trade-off: two users with same role+company but different past
-    // questions will share questions. Acceptable for a 5-minute TTL.
+    //
+    // CRITICAL: the LLM-generated questions are resume/JD-ANCHORED — the
+    // prompt forces stems to reference the candidate's own employers,
+    // projects, and achievements. So the resume-grounding inputs MUST be
+    // part of the key, otherwise within the TTL a second user with the
+    // same role+company but a different resume would be served the FIRST
+    // user's questions — leaking their employer / project / achievement
+    // names. We fold a stable hash of all grounding inputs into the key.
+    // No-resume users hash to the same empty grounding → still share
+    // (no PII to leak); same user re-running the same resume still hits.
+    const groundingPayload = {
+      resumeText: typeof resumeText === "string" ? resumeText : "",
+      jobDescription: typeof jobDescription === "string" ? jobDescription : "",
+      candidateName: typeof candidateName === "string" ? candidateName : "",
+      weakSkills: Array.isArray(weakSkills) ? weakSkills : [],
+      resumeExperiences: Array.isArray(resumeExperiences) ? resumeExperiences : [],
+      resumeKeyAchievements: Array.isArray(resumeKeyAchievements) ? resumeKeyAchievements : [],
+      resumeEducation: Array.isArray(resumeEducation) ? resumeEducation : [],
+      resumeTopSkills: Array.isArray(resumeTopSkills) ? resumeTopSkills : [],
+      resumeStrengths: Array.isArray(resumeStrengths) ? resumeStrengths : [],
+      resumeGaps: Array.isArray(resumeGaps) ? resumeGaps : [],
+      resumeSkillsDetailed: Array.isArray(resumeSkillsDetailed) ? resumeSkillsDetailed : [],
+      resumeIndustries: Array.isArray(resumeIndustries) ? resumeIndustries : [],
+      resumeDomainYears: resumeDomainYears ?? null,
+      resumePromotionSignals: resumePromotionSignals ?? null,
+    };
     const cacheKeyInput = {
       type: typeof type === "string" ? type : "",
       focus: typeof focus === "string" ? focus : "",
@@ -266,6 +290,7 @@ export default async function handler(req: Request): Promise<Response> {
       mini: mini === true,
       drill: typeof drill === "string" ? drill : "",
       negotiationStyle: typeof negotiationStyle === "string" ? negotiationStyle : "",
+      grounding: await hashStable(JSON.stringify(groundingPayload)),
     };
     const cacheKey = `gq:${await hashStable(JSON.stringify(cacheKeyInput))}`;
     const cached = await redisGet(cacheKey);

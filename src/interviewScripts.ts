@@ -76,7 +76,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
     { type: "closing", aiText: "That wraps it up — thanks for the conversation. All the best for what's next.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   strategic: [
-    { type: "intro", aiText: "Welcome to your strategic interview session. Today we'll explore your vision-setting ability, roadmap thinking, and business alignment. Let's dive in — are you ready?", thinkingDuration: 500, speakingDuration: 5000, waitForUser: true },
+    { type: "intro", aiText: "Welcome to your strategic interview session. Today we'll explore your vision-setting ability, roadmap thinking, and business alignment. Let's get started — are you ready?", thinkingDuration: 500, speakingDuration: 5000, waitForUser: true },
     { type: "question", aiText: "Imagine you've just joined a company as VP of Engineering. The product has strong market fit but the tech stack is aging. How would you approach building a 3-year technical strategy?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Focus on: strategic vision, prioritization, stakeholder buy-in" },
     { type: "question", aiText: "Tell me about a time you had to pivot a major initiative based on changing business conditions. How did you recognize the need and communicate the change?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: adaptability, communication, decisiveness" },
     { type: "question", aiText: "How do you ensure engineering strategy stays aligned with business goals? Walk me through your approach to cross-functional planning.", thinkingDuration: 700, speakingDuration: 4500, waitForUser: true, scoreNote: "Focus on: cross-functional alignment, planning rigor" },
@@ -148,6 +148,23 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
 };
 
 export const defaultScript = scriptsByType.behavioral;
+
+/* When the candidate hasn't set a target role we substitute the bare noun
+ * "role" for {role}/${role}. That reads correctly in the dominant slots
+ * ("the role position", "a role", "this role position"). The old fallback
+ * "the role" carried its own article and produced broken double-article
+ * copy — "the the role position", "as a the role", "this the role role".
+ * Use the bare noun for interpolation, and tidyFallbackRole() to repair the
+ * handful of bank templates that then read awkwardly ("this role role",
+ * "as role"). Applied ONLY on the fallback path, so real job titles are
+ * never touched. */
+export const ROLE_FALLBACK = "role";
+
+export function tidyFallbackRole(text: string): string {
+  return text
+    .replace(/\bas role\b/gi, "as a professional")
+    .replace(/\brole role\b/gi, "role");
+}
 
 /** Type-specific question banks for practice rounds — expanded pools for randomization */
 type QuestionBank = { q: string; qResume: string; scoreNote: string };
@@ -285,7 +302,8 @@ const miniQuestionsByType: Record<string, QuestionBank[]> = {
 /** Generate a 3-question quick onboarding interview script */
 export function getMiniScript(user: User | null, company?: string, interviewType?: string): InterviewStep[] {
   const name = user?.name?.split(" ")[0] || "";
-  const role = user?.targetRole || "the role";
+  const role = user?.targetRole || ROLE_FALLBACK;
+  const roleIsFallback = !user?.targetRole;
   const targetCompany = company || user?.targetCompany || "";
   const hasResume = !!user?.resumeFileName;
   // Only the fallback (regex-parsed) variant carries an experience array;
@@ -313,7 +331,8 @@ export function getMiniScript(user: User | null, company?: string, interviewType
 
   const makeQ = (bank: { q: string; qResume: string; scoreNote: string }) => {
     const raw = hasResume && title ? bank.qResume : bank.q;
-    return raw.replace(/\{title\}/g, title).replace(/\{role\}/g, role);
+    const out = raw.replace(/\{title\}/g, title).replace(/\{role\}/g, role);
+    return roleIsFallback ? tidyFallbackRole(out) : out;
   };
 
   const isPanel = typeKey === "panel";
@@ -358,7 +377,8 @@ export function getScript(type: string | null, difficulty: string | null, user: 
   const speedMultiplier = difficulty === "warmup" ? 1.4 : difficulty === "intense" ? 0.6 : 1;
   const thinkMultiplier = difficulty === "warmup" ? 1.5 : difficulty === "intense" ? 0.5 : 1;
 
-  const role = user?.targetRole || "the role";
+  const role = user?.targetRole || ROLE_FALLBACK;
+  const roleIsFallback = !user?.targetRole;
   const company = user?.targetCompany;
   const industry = user?.industry;
   const name = user?.name?.split(" ")[0] || "";
@@ -417,7 +437,8 @@ export function getScript(type: string | null, difficulty: string | null, user: 
     const panelPersonas = ["Technical Lead", "Hiring Manager", "HR Partner", "Technical Lead", "Hiring Manager"];
     questionSteps = selected.map((bank, i) => {
       const raw = hasResume && title ? bank.qResume : bank.q;
-      const aiText = raw.replace(/\{title\}/g, title).replace(/\{role\}/g, role);
+      const interpolated = raw.replace(/\{title\}/g, title).replace(/\{role\}/g, role);
+      const aiText = roleIsFallback ? tidyFallbackRole(interpolated) : interpolated;
       return {
         type: "question" as const,
         aiText,

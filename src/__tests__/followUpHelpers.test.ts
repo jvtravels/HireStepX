@@ -833,6 +833,17 @@ describe("sanitizeBehaviouralRegister", () => {
     expect(sanitizeBehaviouralRegister("how did you leverage that?")).toBe("how did you use that?");
   });
 
+  it("rewrites leverage as a VERB but preserves leverage as a NOUN", () => {
+    // Verb sense → "use" (preceded by subject / "to" / modal, not a determiner)
+    expect(sanitizeBehaviouralRegister("you can leverage your network")).toBe("you can use your network");
+    expect(sanitizeBehaviouralRegister("to leverage that relationship")).toBe("to use that relationship");
+    // Noun sense → preserved (a rewrite to "use" would mangle meaning)
+    expect(sanitizeBehaviouralRegister("what leverage did you have?")).toBe("what leverage did you have?");
+    expect(sanitizeBehaviouralRegister("you had no leverage there")).toBe("you had no leverage there");
+    expect(sanitizeBehaviouralRegister("that gave you high leverage")).toBe("that gave you high leverage");
+    expect(sanitizeBehaviouralRegister("your leverage in the negotiation")).toBe("your leverage in the negotiation");
+  });
+
   it("preserves leading-letter capitalization of the matched phrase", () => {
     expect(sanitizeBehaviouralRegister("Delve into it")).toBe("Go into it");
     expect(sanitizeBehaviouralRegister("Reach out to HR")).toBe("Get in touch with HR");

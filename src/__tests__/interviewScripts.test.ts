@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- test file: partial mock objects require any casts */
 import { describe, it, expect } from "vitest";
-import { scriptsByType, defaultScript, getMiniScript, getScript, scriptHasQuestion } from "../interviewScripts";
+import { scriptsByType, defaultScript, getMiniScript, getScript, scriptHasQuestion, tidyFallbackRole } from "../interviewScripts";
 import type { InterviewStep } from "../interviewScripts";
 
 const step = (type: InterviewStep["type"], aiText = "x".repeat(20)): InterviewStep => ({
@@ -182,6 +182,39 @@ describe("interviewScripts", () => {
       const script = getScript("technical", "intense", null);
       const closing = script[script.length - 1];
       expect(closing.waitForUser).toBe(false);
+    });
+  });
+
+  describe("role-fallback grammar (candidate has no targetRole set)", () => {
+    const TYPES = ["behavioral", "hr-round", "campus-placement", "strategic", "technical", "management", "panel", "case-study"];
+    // The old fallback "the role" produced broken double-article / double-noun
+    // copy once interpolated into bank/intro templates. None of these may survive.
+    const BROKEN = [/\bthe the\b/i, /\ba the\b/i, /\bthis the\b/i, /\brole role\b/i, /\bas role\b/i, /\{role\}/];
+
+    it("getScript emits no broken role copy when targetRole is unset", () => {
+      for (const t of TYPES) {
+        const text = getScript(t, "standard", null).map((s) => s.aiText).join(" │ ");
+        for (const re of BROKEN) expect(text, `${t}: ${text}`).not.toMatch(re);
+      }
+    });
+
+    it("getMiniScript emits no broken role copy when targetRole is unset", () => {
+      for (const t of TYPES) {
+        const text = getMiniScript(null, undefined, t).map((s) => s.aiText).join(" │ ");
+        for (const re of BROKEN) expect(text, `${t}: ${text}`).not.toMatch(re);
+      }
+    });
+
+    it("tidyFallbackRole repairs the awkward bank slots", () => {
+      expect(tidyFallbackRole("measure your success in this role role")).toBe("measure your success in this role");
+      expect(tidyFallbackRole("joined a company as role and approved")).toBe("joined a company as a professional and approved");
+    });
+
+    it("leaves real role titles untouched (tidy only runs on the fallback path)", () => {
+      const user = { targetRole: "Engineering Manager", targetCompany: "Razorpay" } as { targetRole: string; targetCompany: string };
+      const text = getScript("panel", "standard", user as never).map((s) => s.aiText).join(" ");
+      expect(text).toContain("Engineering Manager");
+      expect(text).not.toMatch(/\{role\}/);
     });
   });
 

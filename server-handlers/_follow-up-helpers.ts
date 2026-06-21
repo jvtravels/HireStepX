@@ -728,8 +728,16 @@ const BEHAVIOURAL_REGISTER_RULES: readonly RegisterRule[] = [
   { re: /\btouch base\b/gi, to: "check in" },
   { re: /\breach out to\b/gi, to: "get in touch with" },
   { re: /\breach out\b/gi, to: "get in touch" },
-  // "leverage" (verb) — corporate filler; "use" is always cleaner.
-  { re: /\bleverage\b/gi, to: "use" },
+  // "leverage" as a VERB ("leverage that relationship" → "use that
+  // relationship") is corporate filler; "use" is cleaner. But "leverage"
+  // as a NOUN ("your leverage in the negotiation", "high leverage", "no
+  // leverage") MUST be preserved — rewriting it to "use" mangles meaning.
+  // We skip the noun sense by refusing to match when a determiner /
+  // quantifier / possessive / adjective immediately precedes it.
+  {
+    re: /(?<!\b(?:the|a|an|your|my|his|her|its|our|their|more|less|high|low|enough|some|any|no|what|which|that|this|much|little|extra|real|strong|maximum|negotiating|financial|pricing)\s)\bleverage\b/gi,
+    to: "use",
+  },
 ];
 
 /** Preserve the leading-letter case of the matched phrase so a
