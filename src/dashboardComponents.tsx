@@ -106,11 +106,14 @@ export function DataLoadingSkeleton() {
 }
 
 /* ─── Upgrade Modal ─── */
-const PLANS_MONTHLY = [
-  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",    features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"], featured: false },
-  { id: "weekly",  tier: "starter", name: "Weekly",      price: "\u20B949",  unit: "/ 7 days",  sub: "Sprint before placement week",       cta: "Go weekly",     features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7 days`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"], featured: false },
-  { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",    features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"], featured: true },
+const PLANS_ALL = [
+  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false, hidden: false },
+  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false, hidden: false },
+  { id: "weekly",  tier: "starter", name: "Weekly",      price: "\u20B949",  unit: "/ 7 days",  sub: "Sprint before placement week",       cta: "Go weekly",        features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7 days`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"],                                                                                                        featured: true,  hidden: false },
+  /* Monthly plan \u2014 hidden until re-enabled. Keep all data intact so re-enabling is a one-line change. */
+  { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",       features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"],                                                    featured: false, hidden: true  },
 ];
+const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 
 
 export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void }) {
@@ -414,7 +417,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               setPromoLoading(true); setPromoError("");
               try {
                 const hdrs = await import("./supabase").then(m => m.authHeaders());
-                const res = await fetch("/api/validate-promo", { method: "POST", headers: hdrs, body: JSON.stringify({ code: promoCode.trim(), plan: "monthly" }) });
+                const res = await fetch("/api/validate-promo", { method: "POST", headers: hdrs, body: JSON.stringify({ code: promoCode.trim(), plan: "weekly" }) });
                 const data = await res.json();
                 if (data.valid) { setPromoResult(data); } else { setPromoError(data.error || "Invalid code"); setPromoResult(null); }
               } catch { setPromoError("Could not validate code"); }
@@ -667,7 +670,7 @@ export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: 
         >
           Upgrade to Pro
         </button>
-        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>Starting at just ₹149/month</span>
+        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>Starting at just ₹9/session</span>
       </div>
     </div>
   );

@@ -398,6 +398,7 @@ export function PricingPageV2() {
       href: "/signup?plan=free",
       featured: false,
       studentDiscount: false,
+      hidden: false,
     },
     {
       name: "Per session",
@@ -414,6 +415,7 @@ export function PricingPageV2() {
       href: "/signup?plan=single",
       featured: false,
       studentDiscount: false,
+      hidden: false,
     },
     {
       name: "Weekly",
@@ -421,17 +423,19 @@ export function PricingPageV2() {
       unit: "/ 7 days",
       sub: "Sprint before placement week",
       features: [
-        "10 sessions · 7 days",
+        "7 sessions · 7 days",
         "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
       ],
       cta: "Go weekly",
       href: "/signup?plan=weekly",
-      featured: false,
+      featured: true,
       studentDiscount: true,
+      hidden: false,
     },
     {
+      /* Monthly plan — hidden until re-enabled. Keep all data intact. */
       name: "Monthly",
       price: "₹149",
       unit: "/ 30 days",
@@ -446,37 +450,37 @@ export function PricingPageV2() {
       ],
       cta: "Go monthly",
       href: "/signup?plan=monthly",
-      featured: true,
+      featured: false,
       studentDiscount: true,
+      hidden: true, // temporarily hidden — re-enable when monthly plan returns
     },
   ];
 
+  const tiers = tiersMonthly.filter(t => !t.hidden);
 
-  const tiers = tiersMonthly;
-
-  const compareRows: Array<[string, string, string, string, string]> = [
-    ["Mock sessions included", "3 (one-time)", "1 (one-time)", "10 / week", "40 / month"],
-    ["Voice in & out", "Yes", "Yes", "Yes", "Yes"],
-    ["STAR scoring", "Yes", "Yes", "Yes", "Yes"],
-    ["Company-specific rounds", "Limited", "Yes", "Yes", "Yes"],
-    ["Skill-decay tracking", "No", "No", "Yes", "Yes"],
-    ["AI coach notes", "No", "No", "No", "Yes"],
-    ["Report retention", "30 days", "30 days", "90 days", "1 year"],
-    [".ac.in / .edu.in discount", "No", "No", "30% off", "30% off"],
+  // Monthly column hidden — 3 visible tiers: Free, Per session, Weekly
+  const compareRows: Array<[string, string, string, string]> = [
+    ["Mock sessions included", "3 (one-time)", "1 (one-time)", "7 / week"],
+    ["Voice in & out", "Yes", "Yes", "Yes"],
+    ["STAR scoring", "Yes", "Yes", "Yes"],
+    ["Company-specific rounds", "Limited", "Yes", "Yes"],
+    ["Skill-decay tracking", "No", "No", "Yes"],
+    ["Report retention", "30 days", "30 days", "90 days"],
+    [".ac.in / .edu.in discount", "No", "No", "30% off"],
   ];
 
   const faqs: Array<[string, string]> = [
     [
       "Do plans auto-renew?",
-      "No. Weekly and Monthly are one-time top-ups. They expire on day 7 or 30. You buy again when you want more. No surprise charges.",
+      "No. Per-session credits never expire. Weekly is a one-time top-up that expires after 7 days. You buy again when you want more. No surprise charges.",
     ],
     [
-      "What happens to unused sessions?",
-      "Weekly sessions reset after 7 days, Monthly after 30. We don't roll them over because the value is concentrated prep, not stockpiling. If you bought less than a week ago and haven't used any, ping support for a refund.",
+      "What happens to unused weekly sessions?",
+      "Weekly sessions reset after 7 days. We don't roll them over because the value is concentrated prep, not stockpiling. If you bought less than a week ago and haven't used any, ping support for a refund. Per-session credits never expire.",
     ],
     [
       "Do you have a student discount?",
-      "Verified .ac.in / .edu.in email = 30% off Weekly and Monthly. Apply once, lasts your degree. No re-verification each semester.",
+      "Verified .ac.in / .edu.in email = 30% off Weekly. Apply once, lasts your degree. No re-verification each semester.",
     ],
     [
       "Can I switch plans?",
@@ -724,23 +728,12 @@ export function PricingPageV2() {
                 </tr>
               </thead>
               <tbody>
-                {compareRows.map(([feature, free, perSession, weekly, monthly], i) => (
+                {compareRows.map(([feature, free, perSession, weekly], i) => (
                   <tr key={feature} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
                     <th scope="row" style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, textAlign: "left", fontFamily: fonts.sans, fontSize: 14 }}>{feature}</th>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{free}</td>
                     <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{perSession}</td>
-                    <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{weekly}</td>
-                    <td
-                      style={{
-                        padding: "14px 20px",
-                        color: t.coal,
-                        fontWeight: 500,
-                        borderLeft: `1px solid ${t.line}`,
-                        background: t.indigoMist,
-                      }}
-                    >
-                      {monthly}
-                    </td>
+                    <td style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, borderLeft: `1px solid ${t.line}`, background: t.indigoMist }}>{weekly}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1420,14 +1413,14 @@ export function ForStudentsV2() {
           <div style={{ textAlign: "center" }}>
             <p style={{ ...eyebrow, marginBottom: 16 }}>Student pricing</p>
             <h2 style={h2}>
-              30% off Weekly & Monthly with{" "}
+              30% off Weekly with{" "}
               <span style={{ fontStyle: "italic", color: t.copper }}>.ac.in / .edu.in</span>
             </h2>
             <p style={{ ...lead, marginTop: 24, marginLeft: "auto", marginRight: "auto" }}>
-              Verify your college email once. Discount lasts your full degree; no re-verification each semester. Monthly drops from ₹149 to ₹104. That's 40 scored mocks for less than the cost of one coaching session.
+              Verify your college email once. Discount lasts your full degree; no re-verification each semester. Weekly drops from ₹49 to ₹34. That's 7 scored mocks for less than a coffee.
             </p>
             <div style={{ marginTop: 32 }}>
-              <a href="/signup?plan=monthly&edu" style={ctaPrimary("lg")} className="mv2-tap-44">
+              <a href="/signup?plan=weekly&edu" style={ctaPrimary("lg")} className="mv2-tap-44">
                 Verify .ac.in email
               </a>
             </div>
@@ -1475,7 +1468,7 @@ export function CompareChatGPTV2() {
     ["Resume integration", "Parses your resume; asks about your projects", "You paste resume each time; forgets next session"],
     ["Skill-decay tracking", "Knows when you're slipping; queues spaced reps", "No memory between conversations"],
     ["Indian context", "TCS Digital, Razorpay, Infosys SP/PP, RBI Grade B", "Knows India exists; knows little about Indian hiring"],
-    ["Cost per scored mock", "₹4.90 on Weekly · ₹3.73 on Monthly", "$20/mo for Plus, no scoring included"],
+    ["Cost per scored mock", "₹7.00 on Weekly · ₹9 per session", "$20/mo for Plus, no scoring included"],
     ["Privacy", "Encrypted; auto-delete in 90 days; never shared", "Used to train OpenAI models unless you flip the toggle"],
   ];
 
