@@ -63,6 +63,7 @@ import {
   type RedFlag as RedFlagH,
 } from "./_evaluate-session-helpers";
 import { formatSignatureMetricsPrompt, formatPerQuestionMetricsPrompt } from "../data/focus-signature-metrics";
+import { buildDeterministicNegotiationReport } from "./_deterministic-neg-report";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -1036,6 +1037,25 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
           console.error(`[evaluate-session] Last-resort 8b attempt failed:`, fastErr);
         }
       }
+    }
+
+    if (
+      (!parsed || !result || !isUsableEvalReport(parsed, meta?.type)) &&
+      meta?.type === "salary-negotiation"
+    ) {
+      // DETERMINISTIC FALLBACK (#PRI-51) — salary-negotiation only. Every LLM
+      // tier above is down/quota'd, but the report assembly below needs the LLM
+      // ONLY for the `parsed` slice (skills/overallScore/verdict/wins/fixes);
+      // everything else (metrics, bands, Deal Summary) is deterministic. So
+      // synthesize that slice from transcript signals and fall through to the
+      // SAME tested assembly instead of 503-ing a 25-minute interview. The
+      // candidate gets a real, honest report flagged as an estimate
+      // (scoreConfidence 0.4) rather than a retry dead-end. HR/behavioral keep
+      // the 503 path — their value (8-axis rubric, hrReport) can't be faithfully
+      // synthesized without the model.
+      console.warn(`[evaluate-session] LLM chain exhausted for salary-negotiation; synthesizing deterministic report for user ${auth.userId}.`);
+      parsed = buildDeterministicNegotiationReport(transcript);
+      result = { text: "", model: "deterministic-neg-fallback", fallback: true, latencyMs: 0 };
     }
 
     if (!parsed || !result || !isUsableEvalReport(parsed, meta?.type)) {
