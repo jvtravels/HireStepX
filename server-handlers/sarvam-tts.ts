@@ -57,8 +57,10 @@ const SARVAM_TTS_ENDPOINT = "https://api.sarvam.ai/text-to-speech";
  *   - VOICE_FREE_TIER=1        → let free users use paid Sarvam TTS too.
  *   - SARVAM_TTS_FREE_DISABLED=1 → legacy hard kill switch (still honoured).
  * Either guard active ⇒ free tier is pushed to the browser fallback. */
-const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
-const SARVAM_TTS_FREE_DISABLED = process.env.SARVAM_TTS_FREE_DISABLED === "1";
+// voiceOpenToFreeTier=true means free users get Sarvam TTS (e.g. during a promotion)
+const voiceOpenToFreeTier = process.env.VOICE_FREE_TIER === "1";
+// sarvamFreeDisabled=true is the legacy kill-switch — overrides voiceOpenToFreeTier
+const sarvamFreeDisabled = process.env.SARVAM_TTS_FREE_DISABLED === "1";
 
 /* COST GUARDRAIL — pin to bulbul:v2.
  *
@@ -151,7 +153,7 @@ export default async function handler(req: Request): Promise<Response> {
     // tier from the profiles table; the client already handles 503 by failing
     // over, so we don't need to surface a special error code. Operators can
     // open paid voice to free users with VOICE_FREE_TIER=1.
-    if (!VOICE_FREE_TIER || SARVAM_TTS_FREE_DISABLED) {
+    if (!voiceOpenToFreeTier || sarvamFreeDisabled) {
       const tier = await getSubscriptionTier(auth.userId!);
       if (tier === "free") {
         logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: "free_tier_disabled" });

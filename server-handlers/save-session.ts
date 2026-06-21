@@ -22,6 +22,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
 import { resolveActiveResumeVersionId } from "./_resume-versioning";
+import { computeStreakReward } from "./_streak-reward";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
 import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
@@ -310,6 +311,52 @@ export default async function handler(req: Request): Promise<Response> {
       );
       if (patchRes.ok) {
         practiceAppended = true;
+
+        /* Grant a bonus session credit when the user crosses a streak
+           milestone (7, 14, or 30 consecutive practice days). Uses the
+           same read-modify-write pattern as the timestamps append above:
+           safe because a user completes at most one session at a time,
+           so concurrent PATCH races are not a real concern. */
+        if (!alreadyCounted) {
+          const streakReward = computeStreakReward(existing, nowIso);
+          if (streakReward > 0) {
+            try {
+              const creditsRes = await fetch(
+                `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
+                {
+                  headers: {
+                    apikey: SUPABASE_SERVICE_KEY,
+                    Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+                  },
+                },
+              );
+              if (creditsRes.ok) {
+                const creditsArr = await creditsRes.json().catch(() => []);
+                const creditsRow = Array.isArray(creditsArr) && creditsArr[0] ? creditsArr[0] : {};
+                const currentCredits: number = typeof creditsRow.session_credits === "number" ? creditsRow.session_credits : 0;
+                const creditsPatchRes = await fetch(
+                  `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
+                  {
+                    method: "PATCH",
+                    headers: {
+                      "Content-Type": "application/json",
+                      apikey: SUPABASE_SERVICE_KEY,
+                      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+                      Prefer: "return=minimal",
+                    },
+                    body: JSON.stringify({ session_credits: currentCredits + streakReward }),
+                  },
+                );
+                if (!creditsPatchRes.ok) {
+                  const ct = await creditsPatchRes.text().catch(() => "");
+                  console.warn(`[save-session] streak credit patch failed HTTP ${creditsPatchRes.status}: ${ct.slice(0, 200)}`);
+                }
+              }
+            } catch (credErr) {
+              console.warn(`[save-session] streak reward threw: ${(credErr as Error).message}`);
+            }
+          }
+        }
       } else {
         const t = await patchRes.text().catch(() => "");
         console.warn(`[save-session] practice_timestamps patch failed HTTP ${patchRes.status}: ${t.slice(0, 200)}`);

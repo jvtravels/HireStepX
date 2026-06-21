@@ -99,7 +99,7 @@ function getNegPhaseLabel(questionNum: number): string {
   return idx < NEG_PHASES.length ? NEG_PHASES[idx] : `Round ${questionNum}`;
 }
 
-export const InterviewHeader = memo(function InterviewHeader({ displayCompany, displayRole, displayFocus, llmLoading, currentStep, phase, elapsed, currentQuestionNum, totalQuestions, baseQuestionCount, isCurrentFollowUp, saveWarning, onRetry, isSalaryNegotiation }: {
+export const InterviewHeader = memo(function InterviewHeader({ displayCompany, displayRole, displayFocus, llmLoading, currentStep, phase, elapsed, currentQuestionNum, totalQuestions, baseQuestionCount, isCurrentFollowUp, saveWarning, onRetry, isSalaryNegotiation, sessionId }: {
   displayCompany: string; displayRole: string; displayFocus: string;
   llmLoading: boolean; currentStep: number;
   phase: string; elapsed: number;
@@ -107,6 +107,7 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
   baseQuestionCount?: number; isCurrentFollowUp?: boolean;
   saveWarning?: string; onRetry?: () => void;
   isSalaryNegotiation?: boolean;
+  sessionId?: string | null;
 }) {
   return (
     <header className="iv-info-bar" style={{
@@ -196,6 +197,27 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
               }} />
             ))}
           </div>
+        </div>
+      )}
+      {phase === 'done' && (
+        <div style={{ padding: '0 24px 10px', display: 'flex', justifyContent: 'flex-end' }}>
+          <a
+            href={typeof sessionId !== 'undefined' && sessionId ? `/session/${sessionId}` : '/dashboard'}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 18px',
+              background: e.indigo,
+              color: e.white,
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            View your report →
+          </a>
         </div>
       )}
     </header>

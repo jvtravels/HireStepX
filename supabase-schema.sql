@@ -2,6 +2,8 @@
 -- Level Up Interviews — Supabase Schema
 -- Run this in Supabase SQL Editor (Dashboard > SQL)
 -- ═══════════════════════════════════════════════════════
+-- Migration notes:
+--   2026-06-21: added service_usage table + 'team' tier to profiles CHECK constraint
 
 -- 1. Profiles (extends auth.users)
 create table if not exists profiles (
@@ -18,7 +20,7 @@ create table if not exists profiles (
   resume_text text default '',
   practice_timestamps jsonb default '[]'::jsonb,
   avatar_url text default '',
-  subscription_tier text default 'free' check (subscription_tier in ('free', 'starter', 'pro')),
+  subscription_tier text default 'free' check (subscription_tier in ('free', 'starter', 'pro', 'team')), -- 'team' tier: B2B/college cohort plan
   subscription_start timestamptz,
   subscription_end timestamptz,
   cancel_at_period_end boolean default false,
@@ -1204,4 +1206,28 @@ alter table salary_offers enable row level security;
 drop policy if exists "Users manage own offers" on salary_offers;
 create policy "Users manage own offers" on salary_offers
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ── Service Usage Monitoring ──────────────────────────────────────────────────
+-- Tracks TTS, LLM, and STT provider calls for cost and error-rate visibility.
+-- logServiceUsage() in _shared.ts writes here; reads are ops/admin only.
+create table if not exists service_usage (
+  id            uuid         primary key default gen_random_uuid(),
+  service       text         not null,
+  endpoint      text,
+  user_id       uuid         references profiles(id) on delete set null,
+  status        text         not null
+                             check (status in ('success','error','timeout','rate_limited')),
+  latency_ms    integer,
+  request_chars integer,
+  response_bytes integer,
+  error_message text,
+  meta          jsonb,
+  created_at    timestamptz  not null default now()
+);
+alter table service_usage enable row level security;
+-- No user-facing RLS policy — service-role writes only.
+create index if not exists idx_service_usage_service
+  on service_usage(service, created_at desc);
+create index if not exists idx_service_usage_user
+  on service_usage(user_id, created_at desc);
 

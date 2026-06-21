@@ -259,7 +259,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       {isMobile && sidebarOpen && <div role="button" aria-label="Close navigation menu" tabIndex={0} onClick={() => setSidebarOpen(false)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSidebarOpen(false); }} style={{ position: "fixed", inset: 0, background: "rgba(14,12,8,0.45)", zIndex: 19 }} />}
 
       {/* Sidebar */}
-      <aside aria-label="Navigation sidebar" style={{
+      <aside aria-label="Navigation sidebar" inert={isMobile && !sidebarOpen ? true : undefined} aria-hidden={isMobile && !sidebarOpen} style={{
         width: 260, borderRight: `1px solid ${c.border}`, padding: isMobile ? "0 14px 0" : "20px 18px 0",
         display: "flex", flexDirection: "column", position: "fixed", top: 0, bottom: 0,
         background: c.cream,
@@ -383,7 +383,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.87)")}
                 onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
               >Manage Subscription</button>
-              <button onClick={() => setShowUpgradeModal(true)} title="Cancel or downgrade your subscription" style={{ display: "block", width: "100%", marginTop: 6, background: "none", border: "none", cursor: "pointer", fontFamily: font.ui, fontSize: 10, color: c.stone, opacity: 0.6, textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
+              <button onClick={() => setShowUpgradeModal(true)} title="Cancel or downgrade your subscription" style={{ display: "block", width: "100%", marginTop: 6, background: "none", border: "none", cursor: "pointer", fontFamily: font.ui, fontSize: 12, color: T.inkFaint ?? '#736B5D', opacity: 1, textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
                 onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
               >Cancel plan</button>
@@ -418,7 +418,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       </aside>
 
       {/* Main Content */}
-      <main id="dashboard-main" className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "76px 20px max(60px, env(safe-area-inset-bottom))" : "32px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(20px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(20px, env(safe-area-inset-right))" : undefined }}>
+      <main id="dashboard-main" tabIndex={-1} className="dash-main" style={{ flex: 1, marginLeft: isMobile ? 0 : 260, padding: isMobile ? "76px 20px max(60px, env(safe-area-inset-bottom))" : "32px 52px 80px", overflowY: "auto", height: "100dvh", minHeight: "100vh", paddingLeft: isMobile ? "max(20px, env(safe-area-inset-left))" : undefined, paddingRight: isMobile ? "max(20px, env(safe-area-inset-right))" : undefined }}>
 
         {/* Payment success/cancel banner */}
         {paymentBanner && (
@@ -501,7 +501,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       {/* Floating help widget */}
       <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", right: "max(24px, env(safe-area-inset-right))", zIndex: 80 }}>
         {helpOpen && (
-          <div style={{
+          <div role="dialog" aria-modal="true" aria-label="Help and support" style={{
             width: 320, maxHeight: 440, overflowY: "auto", marginBottom: 12,
             background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14,
             padding: "20px 20px 16px", boxShadow: shadow.modal,

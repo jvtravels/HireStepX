@@ -355,6 +355,18 @@ export default function DashboardHome() {
     );
   }, []);
 
+  const [celebrateMilestone, setCelebrateMilestone] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!realStreak) return;
+    const celebrated = Number(localStorage.getItem('hsx_last_celebrated_streak') ?? 0);
+    const crossed = [7, 14, 30].find(m => realStreak >= m && celebrated < m) ?? null;
+    if (crossed) {
+      setCelebrateMilestone(crossed);
+      localStorage.setItem('hsx_last_celebrated_streak', String(crossed));
+    }
+  }, [realStreak]);
+
   /* Demo gating. Only when NEXT_PUBLIC_DASHBOARD_DEMO=1 do unbacked
      sections render with sample numbers. Otherwise they render as
      honest "Coming soon" stubs so real users never see fake metrics.
@@ -510,6 +522,34 @@ export default function DashboardHome() {
               </div>
               {demoMode ? <DailyGoalRibbonInline /> : <DailyGoalStub />}
             </div>
+            {celebrateMilestone && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  background: T.warning100,
+                  border: `1px solid ${T.warningLine}`,
+                  borderRadius: 12,
+                  padding: '14px 20px',
+                  marginTop: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  cursor: 'pointer',
+                }}
+                onClick={() => setCelebrateMilestone(null)}
+              >
+                <span style={{ fontSize: 28 }}>🎉</span>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600, color: T.warningInk, fontSize: 15 }}>
+                    {celebrateMilestone}-day streak! You earned a free session.
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: T.copper }}>
+                    Tap to dismiss
+                  </p>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Next move, single emphasized card. No KPI grid above it; one focal point. */}

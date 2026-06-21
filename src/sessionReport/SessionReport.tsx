@@ -16,6 +16,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "../posthogClient";
+import { useToast } from "../Toast";
 import {
   evaluateSessionWithAI,
   EvaluateSessionError,
@@ -352,6 +353,7 @@ export const SessionReport = memo(function SessionReport({
 }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [report, setReport] = useState<SessionReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -793,7 +795,7 @@ export const SessionReport = memo(function SessionReport({
       );
       if (!res.ok || !res.data?.url) {
         const msg = res.error || res.data?.error || "Could not create share link";
-        if (typeof window !== "undefined") window.alert(msg);
+        toast(msg, "error");
         return;
       }
       const url = res.data.url;
@@ -802,24 +804,18 @@ export const SessionReport = memo(function SessionReport({
         : "in 14 days";
       try {
         await navigator.clipboard.writeText(url);
-        if (typeof window !== "undefined") {
-          window.alert(
-            `Share link copied! Anyone with this link can view your report until ${ttl}.\n\n${url}`
-          );
-        }
+        toast(`Share link copied! Valid until ${ttl}.`, "success");
       } catch {
-        if (typeof window !== "undefined") {
-          window.prompt(`Share link (expires ${ttl}). Copy this URL:`, url);
-        }
+        // Clipboard denied — show the URL truncated so the user can copy manually
+        const truncated = url.length > 40 ? url.slice(0, 40) + "…" : url;
+        toast(`Link: ${truncated}`, "info");
       }
     } catch (err) {
       console.error(
         "[sessionReport] share failed:",
         err instanceof Error ? err.message : err
       );
-      if (typeof window !== "undefined") {
-        window.alert("Could not create share link. Please try again.");
-      }
+      toast("Could not create share link. Please try again.", "error");
     }
   }, [session.id]);
 

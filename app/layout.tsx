@@ -242,7 +242,8 @@ export default function RootLayout({
         {/* Satoshi — primary UI font. Loaded from Fontshare CDN with a
             preconnect to eliminate DNS + TLS round-trip on the font request.
             Inter removed: Satoshi now owns --font-ui end-to-end. */}
-        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
           href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap"

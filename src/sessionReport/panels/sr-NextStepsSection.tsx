@@ -30,13 +30,11 @@ export function NextStepsSection({
    *  to connect interview coaching with resume quality. Max 3. */
   resumeImprovements?: string[];
 }) {
-  /* Drill weakest skill — bridges to drill mode. If the parent didn't
-   * provide a handler we fall back to a no-op so the CTA is never a
-   * dead button. Matches the no-op-default pattern used elsewhere in the
-   * report (e.g. onTryWeakestQuestion is left undefined and disabled;
-   * the drill CTA is the entry point for a new flow so we keep it live
-   * by default). */
-  const handleDrillSkill = onDrillSkill ?? (() => {});
+  /* Drill weakest skill — bridges to drill mode. When the parent doesn't
+   * provide a handler, handleDrillSkill is undefined and the disabled
+   * gate on the button (disabled={!c.onClick}) renders it inert visually,
+   * matching the pattern used by the first card (onTryWeakestQuestion). */
+  const handleDrillSkill = onDrillSkill;
 
   const hasScheduledInterview = typeof daysUntilInterview === "number" && daysUntilInterview > 0;
   const sessionsToFit = hasScheduledInterview

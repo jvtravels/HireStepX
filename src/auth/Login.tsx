@@ -538,7 +538,6 @@ export default function Login() {
               aria-labelledby="login-heading"
               aria-describedby={displayError ? "login-error" : undefined}
               className="hsx-login-form-fields"
-              autoComplete="off"
               style={{ display: "flex", flexDirection: "column", gap: 18 }}
             >
               <Field
