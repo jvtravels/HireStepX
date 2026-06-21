@@ -1176,7 +1176,7 @@ export interface SessionReport {
     noticeDays: number | null;
     noticeFlexibility: "buyout-possible" | "strict" | "not-stated";
     compExpected: string | null;
-    counterOfferRisk: "low" | "med" | "high";
+    counterOfferRisk: "low" | "med" | "high" | "not-assessed";
     bgvGaps: string[];
   };
   model: string;

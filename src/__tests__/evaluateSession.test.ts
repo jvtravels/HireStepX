@@ -18,6 +18,11 @@ import {
   normalizeCrossSessionInsights,
   normalizeFocusMetrics,
   resolveSkillAxes,
+  isStarShapedFocus,
+  deriveSkillWeightsFromRubric,
+  normalizeHrReport,
+  isGenericMotivation,
+  coerceNoticeDays,
   NEGOTIATION_SKILL_AXES,
   HR_ROUND_SKILL_AXES,
   ROLE_SKILLS,
@@ -425,6 +430,154 @@ describe("computeStructuralAnchor", () => {
     ];
     expect(computeStructuralAnchor(strong)).toBeGreaterThan(computeStructuralAnchor(weak));
     expect(computeStructuralAnchor(strong)).toBeGreaterThanOrEqual(70);
+  });
+});
+
+describe("isStarShapedFocus (P0 #2 — anchor gating)", () => {
+  it("excludes HR-round and salary-negotiation (non-STAR rubrics)", () => {
+    expect(isStarShapedFocus("hr-round")).toBe(false);
+    expect(isStarShapedFocus("salary-negotiation")).toBe(false);
+  });
+
+  it("includes behavioral / role-family / undefined focuses", () => {
+    for (const f of ["behavioral", "case-study", "system-design", "leadership", undefined]) {
+      expect(isStarShapedFocus(f)).toBe(true);
+    }
+  });
+});
+
+describe("deriveSkillWeightsFromRubric (P0 #1 — live HR overlay weights)", () => {
+  it("maps each rubric dimension to its weight", () => {
+    const w = deriveSkillWeightsFromRubric([
+      { dimension: "Comp transparency", weight: 0.25 },
+      { dimension: "Commitment signal", weight: 0.4 },
+    ]);
+    expect(w).toEqual({ "Comp transparency": 0.25, "Commitment signal": 0.4 });
+  });
+
+  it("returns {} for empty/undefined input (callers fall back to equal weights)", () => {
+    expect(deriveSkillWeightsFromRubric(undefined)).toEqual({});
+    expect(deriveSkillWeightsFromRubric([])).toEqual({});
+  });
+
+  it("drops non-positive / non-finite weights", () => {
+    const w = deriveSkillWeightsFromRubric([
+      { dimension: "A", weight: 0 },
+      { dimension: "B", weight: -0.2 },
+      { dimension: "C", weight: NaN },
+      { dimension: "D", weight: 0.3 },
+    ]);
+    expect(w).toEqual({ D: 0.3 });
+  });
+
+  it("derived HR weights actually move the composite (overlay no longer dead)", () => {
+    // Two axes: one strong, one weak. Up-weighting the strong axis must raise
+    // the composite vs. equal weighting — proving the overlay reaches the score.
+    const skills = [
+      { name: "Comp transparency", score: 80 },
+      { name: "Commitment signal", score: 40 },
+    ];
+    const equal = computeBlendedOverall(skills, {}, 60);
+    const weights = deriveSkillWeightsFromRubric([
+      { dimension: "Comp transparency", weight: 0.8 },
+      { dimension: "Commitment signal", weight: 0.2 },
+    ]);
+    const weighted = computeBlendedOverall(skills, weights, 60);
+    expect(weighted.overallScore).toBeGreaterThan(equal.overallScore);
+  });
+});
+
+describe("coerceNoticeDays (P1 #5 — verbal notice coercion)", () => {
+  it("passes a valid number of days through", () => {
+    expect(coerceNoticeDays(60)).toBe(60);
+    expect(coerceNoticeDays(90.4)).toBe(90);
+  });
+  it("coerces verbal strings to days", () => {
+    expect(coerceNoticeDays("2 months")).toBe(60);
+    expect(coerceNoticeDays("3 mo")).toBe(90);
+    expect(coerceNoticeDays("60 days")).toBe(60);
+    expect(coerceNoticeDays("2-month")).toBe(60);
+    expect(coerceNoticeDays("4 weeks")).toBe(28);
+    expect(coerceNoticeDays("45")).toBe(45);
+  });
+  it("returns null for out-of-range or unparseable values", () => {
+    expect(coerceNoticeDays(0)).toBeNull();
+    expect(coerceNoticeDays(400)).toBeNull();
+    expect(coerceNoticeDays("13 months")).toBeNull();
+    expect(coerceNoticeDays("soon")).toBeNull();
+    expect(coerceNoticeDays(null)).toBeNull();
+  });
+});
+
+describe("isGenericMotivation (P1 #8 — filler backstop)", () => {
+  it("flags résumé-padding clichés", () => {
+    expect(isGenericMotivation("This role will help me achieve my career goals")).toBe(true);
+    expect(isGenericMotivation("I love the great culture here")).toBe(true);
+    expect(isGenericMotivation("excited about the opportunity")).toBe(true);
+    expect(isGenericMotivation("I want to learn and grow")).toBe(true);
+  });
+  it("passes a concrete, company-specific rewrite", () => {
+    expect(
+      isGenericMotivation(
+        "Razorpay's move into lending with RazorpayX is exactly the kind of payments-infra problem I shipped at my last fintech.",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("normalizeHrReport (P0 #6 / P1 #7 / #8 grounding)", () => {
+  const base = {
+    motivationBefore: "I like the brand",
+    motivationAfter: "PhonePe's UPI-lending stack maps to the credit-risk models I built at Slice.",
+    noticeDays: 60,
+    noticeFlexibility: "buyout-possible",
+    compExpected: "35-42L",
+    counterOfferRisk: "low",
+    bgvGaps: ["Missing relieving letter from prior employer"],
+  };
+
+  it("defaults counterOfferRisk to not-assessed (never 'med') when invalid/absent", () => {
+    const r = normalizeHrReport({ ...base, counterOfferRisk: undefined });
+    expect(r?.counterOfferRisk).toBe("not-assessed");
+  });
+
+  it("forces counterOfferRisk to not-assessed when the topic never came up in the corpus", () => {
+    const corpus = "Tell me about your notice period. I serve 60 days. What's your expected CTC?";
+    const r = normalizeHrReport({ ...base, counterOfferRisk: "low" }, corpus);
+    expect(r?.counterOfferRisk).toBe("not-assessed");
+  });
+
+  it("keeps a graded counterOfferRisk when the topic WAS discussed", () => {
+    const corpus = "If your current employer makes a counter-offer, would you take it? No, I've decided.";
+    const r = normalizeHrReport({ ...base, counterOfferRisk: "low" }, corpus);
+    expect(r?.counterOfferRisk).toBe("low");
+  });
+
+  it("drops ungrounded bgvGaps when BGV/documents were never discussed", () => {
+    const corpus = "Why do you want this role? Because of the product. What is your notice period?";
+    const r = normalizeHrReport(base, corpus);
+    expect(r?.bgvGaps).toEqual([]);
+  });
+
+  it("keeps bgvGaps when the BGV/document topic was raised", () => {
+    const corpus = "Do you have your relieving letter from your last employer ready for BGV?";
+    const r = normalizeHrReport(base, corpus);
+    expect(r?.bgvGaps).toEqual(["Missing relieving letter from prior employer"]);
+  });
+
+  it("blanks a generic motivationAfter (filler backstop)", () => {
+    const r = normalizeHrReport({ ...base, motivationAfter: "I want to grow my career here" });
+    expect(r?.motivationAfter).toBe("");
+  });
+
+  it("coerces a verbal noticeDays string", () => {
+    const r = normalizeHrReport({ ...base, noticeDays: "2 months" });
+    expect(r?.noticeDays).toBe(60);
+  });
+
+  it("returns null when both motivation fields are empty after guards", () => {
+    const r = normalizeHrReport({ motivationBefore: "", motivationAfter: "I want to grow my career" });
+    expect(r).toBeNull();
   });
 });
 
