@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   applyBands,
   resolveCompanyProfile,
+  resolveCalibrationLabel,
   computeCoreMetrics,
   computeAdvancedDelivery,
   filterGroundedItems,
@@ -132,6 +133,40 @@ describe("resolveCompanyProfile", () => {
 
   it("returns null for unknown company", () => {
     expect(resolveCompanyProfile("acme-co-i-just-made-up")).toBeNull();
+  });
+});
+
+describe("resolveCalibrationLabel", () => {
+  it("uses the tuned profile's label/note when one exists", () => {
+    const profile = resolveCompanyProfile("Amazon")!;
+    const r = resolveCalibrationLabel("Amazon", profile, "none");
+    expect(r.companyLabel).toBe("Amazon");
+    expect(r.companyNote).toBe(profile.note);
+  });
+
+  it("keeps the generic prompt when no company is set", () => {
+    const r = resolveCalibrationLabel(null, null, "none");
+    expect(r.companyLabel).toBe("Generic");
+    expect(r.companyNote).toMatch(/set a target company/i);
+  });
+
+  it("shows the company back (not 'Generic') when one is set but untuned", () => {
+    const r = resolveCalibrationLabel("HDFC Bank", null, "bfsi");
+    expect(r.companyLabel).toBe("HDFC Bank");
+    expect(r.companyNote).toMatch(/BFSI/);
+    expect(r.companyNote).not.toMatch(/set a target company/i);
+  });
+
+  it("describes the sector calibration applied for each HR sector", () => {
+    expect(resolveCalibrationLabel("TCS", null, "services-tier1").companyNote).toMatch(/IT services/i);
+    expect(resolveCalibrationLabel("Razorpay", null, "product-unicorn").companyNote).toMatch(/unicorn/i);
+  });
+
+  it("falls back to a general-bar note for a named company with no sector", () => {
+    const r = resolveCalibrationLabel("Acme Corp", null, "none");
+    expect(r.companyLabel).toBe("Acme Corp");
+    expect(r.companyNote).toMatch(/general senior bar/i);
+    expect(r.companyNote).not.toMatch(/set a target company/i);
   });
 });
 

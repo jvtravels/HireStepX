@@ -3,14 +3,14 @@
 // Runtime + duration are authoritatively set on the route segment
 // (app/api/evaluate-session/route.ts): nodejs + maxDuration 60. App Router
 // ignores this `config` export, so it's kept only as accurate documentation.
-export const config = { runtime: "nodejs", maxDuration: 60 };
+export const config = { runtime: "nodejs", maxDuration: 90 };
 
 import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { formatScoringRubric, RECIPES } from "../data/focus-question-recipes";
-import { resolveHrRoundRecipe } from "./_hr-round-overlays";
+import { resolveHrRoundRecipe, resolveHrSectorOverlay } from "./_hr-round-overlays";
 import { detectStarPresence } from "../src/_star-detection";
 import { detectCulturalRegister, summarizeIndianRegister } from "../src/_cultural-register";
 import {
@@ -33,6 +33,7 @@ import {
   DEFAULT_BANDS,
   applyBands,
   resolveCompanyProfile,
+  resolveCalibrationLabel,
   computeCoreMetrics,
   computeAdvancedDelivery,
   filterGroundedItems,
@@ -511,8 +512,17 @@ export default async function handler(req: Request): Promise<Response> {
     // Resolve company calibration profile (falls back to default bands/weights).
     const companyProfile = resolveCompanyProfile(meta?.targetCompany);
     const bands = companyProfile?.bands ?? DEFAULT_BANDS;
-    const companyLabel = companyProfile?.label ?? "Generic";
-    const companyNote = companyProfile?.note ?? "Generic calibration — set a target company for role-specific scoring.";
+    // Sector-aware label/note so Indian employers (TCS, Razorpay, HDFC, …) —
+    // which aren't in the US-big-tech COMPANY_BANDS map — show the company the
+    // user set plus the sector calibration actually applied, instead of a
+    // misleading "Generic — set a target company" when one IS set.
+    const calibrationSector =
+      meta?.type === "hr-round" ? resolveHrSectorOverlay(meta?.targetCompany) : "none";
+    const { companyLabel, companyNote } = resolveCalibrationLabel(
+      meta?.targetCompany,
+      companyProfile,
+      calibrationSector,
+    );
 
     // Cross-session memory: fetch the user's last 3 reports (structured
     // coaching signal only — no transcripts) so the LLM can call out
@@ -941,11 +951,13 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     try {
       result = await callLLM(
         // Groq (primary) stays at 2500 — its tight free-tier TPM counts
-        // prompt+max_tokens and a complete report fits in ~2200. The fallbacks
-        // (Gemini/Cerebras) get a larger budget because gemini-2.5-flash is
-        // verbose enough to truncate the HR-round report at 2500 (observed:
-        // completions pinned at exactly the cap → empty skills/hrReport).
-        { prompt, temperature: 0.25, maxTokens: 2500, fallbackMaxTokens: 4000, jsonMode: true },
+        // prompt+max_tokens and a terse Groq report fits in ~2200. The fallbacks
+        // (Gemini/Cerebras) get a much larger budget: gemini-2.5-flash is far
+        // more verbose for the SAME schema and truncated the HR-round report at
+        // both 2500 AND 4000 (observed completions pinned at the cap → unparseable
+        // JSON → empty report). 8000 fits gemini-2.5-flash's 8192 output ceiling
+        // with headroom; the Node 60s runtime accommodates the longer generation.
+        { prompt, temperature: 0.25, maxTokens: 2500, fallbackMaxTokens: 8000, jsonMode: true },
         35000,
         { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
       );
@@ -966,8 +978,11 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       try {
         const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
         const retry = await callLLM(
-          { prompt: strictPrompt, temperature: 0, maxTokens: 2500, fallbackMaxTokens: 4000, jsonMode: true },
-          18000,
+          // Match the primary's fallback budget — when the retry is the real
+          // attempt (primary hit a fast outage/429), the verbose fallback needs
+          // the same 8000-token room and time to produce a complete report.
+          { prompt: strictPrompt, temperature: 0, maxTokens: 2500, fallbackMaxTokens: 8000, jsonMode: true },
+          30000,
           { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 12000 },
         );
         const retryParsed = extractJSON<Partial<SessionReport>>(retry.text);

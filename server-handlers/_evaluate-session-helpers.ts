@@ -292,6 +292,39 @@ export function resolveCompanyProfile(
   return null;
 }
 
+/** Sector-aware calibration copy for the report's `calibration` block.
+ * COMPANY_BANDS only covers US big-tech, so every Indian employer — the
+ * product's core audience — fell through to a "Generic — set a target company"
+ * note even when the user HAD set one (e.g. "HDFC Bank" → "Generic"). When no
+ * tuned profile exists but a company is named, show the company back and, for
+ * HR rounds, describe the sector calibration the overlay actually applied
+ * (weights still differ by sector via resolveHrSectorOverlay). Band thresholds
+ * stay at DEFAULT — we don't fabricate per-company numbers we haven't tuned. */
+export function resolveCalibrationLabel(
+  targetCompany: string | null | undefined,
+  profile: CompanyProfile | null,
+  hrSector: "services-tier1" | "product-unicorn" | "bfsi" | "none" = "none",
+): { companyLabel: string; companyNote: string } {
+  if (profile) return { companyLabel: profile.label, companyNote: profile.note };
+  const named = (targetCompany ?? "").trim();
+  if (!named) {
+    return {
+      companyLabel: "Generic",
+      companyNote: "Generic calibration — set a target company for role-specific scoring.",
+    };
+  }
+  const sectorNote: Record<Exclude<typeof hrSector, "none">, string> = {
+    "services-tier1": "Tier-1 IT services calibration — process discipline, documentation, and notice-period rigor weighted up.",
+    "bfsi": "BFSI calibration — compliance readiness, stability, and background-verification rigor weighted up.",
+    "product-unicorn": "Product-unicorn calibration — compensation transparency and switch-rationale clarity weighted up.",
+  };
+  const companyNote =
+    hrSector !== "none"
+      ? sectorNote[hrSector]
+      : `Calibrated to a general senior bar — ${named} isn't in our tuned profile set yet, so band thresholds use the default rubric.`;
+  return { companyLabel: named, companyNote };
+}
+
 export function computeCoreMetrics(
   transcript: TranscriptTurn[],
   durationSec: number,

@@ -6,7 +6,9 @@
 // segment exports — the handler's `config.maxDuration` was dead code — so the
 // duration MUST be declared here. The handler uses no edge-only APIs.
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// 90s headroom: worst case is primary fallback (~35s, 8000-token verbose
+// gemini-2.5-flash) + strict retry (~30s) when the Groq primary is rate-limited.
+export const maxDuration = 90;
 import handler from "../../../server-handlers/evaluate-session";
 
 export async function POST(req: Request) { return handler(req); }
