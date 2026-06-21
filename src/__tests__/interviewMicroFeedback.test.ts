@@ -243,6 +243,17 @@ describe("computeMicroFeedback", () => {
         );
         expect(r.feedback).toMatch(/Better.*actions are clear|fixed the action piece/i);
       });
+
+      it("does not tell a complete STAR arc to 'structure with STAR' — nudges metrics instead", () => {
+        // Full arc (Situation+Task+Action+Result) narrated with causal
+        // connectives, no literal first/then/finally signposts and no metric.
+        // hasStructure (keyword-based) reads false, but starCount is 4 — the
+        // generic "structuring with STAR" tip would be dismissive here.
+        const text = pad("When I was at my previous company the brief was to ship onboarding before quarter close and I led the design and I built the prototype and I coordinated reviews and it went live across the org and was widely adopted", 45);
+        const r = computeMicroFeedback(text, "behavioral", []);
+        expect(r.feedback).not.toMatch(/structuring with STAR|Situation→Action→Result/i);
+        expect(r.feedback).toMatch(/arc|quantify|number|how much/i);
+      });
     });
 
     /* Lift-A live cues: micro-feedback reads the originating question

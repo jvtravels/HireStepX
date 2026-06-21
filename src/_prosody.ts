@@ -53,6 +53,12 @@ export function stripProsodyMarkup(text: string): string {
     .replace(/\[pause\]/gi, " ")                  // short pause → whitespace
     .replace(/\[breath\]/gi, " ")                 // breath → whitespace
     .replace(/\[emotion:[^\]]*\]/gi, " ")         // any emotion directive
+    // Catch-all for stage directions the LLM invents beyond the known
+    // pause/breath/emotion vocabulary ([smile], [warmly], [clears throat],
+    // [laughs]). Drift past the prescribed set is observed live, so strip
+    // any bracketed token that is letters/spaces/'/- (optionally :modifier).
+    // Tokens containing digits or symbols ([L5], [0], [v2]) are left intact.
+    .replace(/\[[a-z][a-z' -]{0,24}(?::[a-z]+)?\]/gi, " ")
     .replace(/\*+/g, "")                          // any stray asterisks
     .replace(/\s+([,.!?;:])/g, "$1")              // tidy punctuation spacing
     .replace(/\s{2,}/g, " ")                      // collapse double-spaces

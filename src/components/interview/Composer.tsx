@@ -234,7 +234,7 @@ function paceRangeFor(interviewType?: string | null): { min: number; max: number
 /* Compact one-line live metrics — restores the WPM/filler/words signal
    that the canvas refactor dropped from view. Stays subtle (mono caps,
    stone color) so it doesn't compete with the editorial heading. */
-function CanvasLiveMetricsRow({ metrics }: {
+function CanvasLiveMetricsRow({ metrics, typed }: {
   metrics: {
     wordCount: number;
     wpm: number;
@@ -242,6 +242,12 @@ function CanvasLiveMetricsRow({ metrics }: {
     ownership?: "i-led" | "balanced" | "we-heavy" | null;
     specificityHits?: number;
   } | null;
+  /* WPM is a spoken-delivery pace metric (words ÷ time the answer was
+     open). For TYPED answers that ratio is meaningless — typing 120 words
+     in 12s reads as "1210 wpm" — and fillers ("um", "uh") are speech
+     artifacts a typist never produces. Suppress both when typing; word
+     count, ownership and specificity stay valid for written text. */
+  typed?: boolean;
 }) {
   if (!metrics || metrics.wordCount < 4) return null;
   const wpmTint = metrics.wpm > 180 ? e.error : metrics.wpm < 100 ? e.warning : e.success;
@@ -260,10 +266,14 @@ function CanvasLiveMetricsRow({ metrics }: {
       letterSpacing: 1.2, color: e.inkSoft,
     }}>
       <span><strong style={{ color: e.coal, fontWeight: 600 }}>{metrics.wordCount}</strong> words</span>
-      <span aria-hidden style={{ color: e.inkFaint }}>·</span>
-      <span><strong style={{ color: wpmTint, fontWeight: 600 }}>{metrics.wpm}</strong> wpm</span>
-      <span aria-hidden style={{ color: e.inkFaint }}>·</span>
-      <span><strong style={{ color: fillerTint, fontWeight: 600 }}>{metrics.fillerCount}</strong> fillers</span>
+      {!typed && (
+        <>
+          <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+          <span><strong style={{ color: wpmTint, fontWeight: 600 }}>{metrics.wpm}</strong> wpm</span>
+          <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+          <span><strong style={{ color: fillerTint, fontWeight: 600 }}>{metrics.fillerCount}</strong> fillers</span>
+        </>
+      )}
       {metrics.ownership && (
         <>
           <span aria-hidden style={{ color: e.inkFaint }}>·</span>
@@ -474,10 +484,14 @@ export function Composer({
       {/* Live metrics + pace meter — only when actually answering */}
       {currentTranscript.trim().length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", maxWidth: 320 }}>
-          <CanvasLiveMetricsRow metrics={liveMetrics} />
-          <div style={{ width: "100%", maxWidth: 280 }}>
-            <PaceMeter seconds={answerSeconds} ideal={{ min: paceRange.min, max: paceRange.max }} ceiling={paceRange.ceiling} />
-          </div>
+          <CanvasLiveMetricsRow metrics={liveMetrics} typed={showTyping} />
+          {/* PaceMeter charts seconds *spoken* against a delivery sweet-spot;
+              it's meaningless for a typed answer, so hide it when typing. */}
+          {!showTyping && (
+            <div style={{ width: "100%", maxWidth: 280 }}>
+              <PaceMeter seconds={answerSeconds} ideal={{ min: paceRange.min, max: paceRange.max }} ceiling={paceRange.ceiling} />
+            </div>
+          )}
         </div>
       )}
 

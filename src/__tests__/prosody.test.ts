@@ -23,6 +23,19 @@ describe("stripProsodyMarkup", () => {
   it("handles empty input", () => {
     expect(stripProsodyMarkup("")).toBe("");
   });
+  it("strips unknown stage directions the LLM invents", () => {
+    const r = stripProsodyMarkup("Welcome [smile] take a seat [warmly] and relax [clears throat].");
+    expect(r).not.toContain("[smile]");
+    expect(r).not.toContain("[warmly]");
+    expect(r).not.toContain("[clears throat]");
+    expect(r).not.toMatch(/\s{2,}/);
+  });
+  it("strips a stage direction with a modifier ([laughs:soft])", () => {
+    expect(stripProsodyMarkup("That's funny [laughs:soft].")).toBe("That's funny.");
+  });
+  it("preserves bracketed tokens containing digits or symbols", () => {
+    expect(stripProsodyMarkup("Targeting an [L5] role at [0] cost.")).toBe("Targeting an [L5] role at [0] cost.");
+  });
 });
 
 describe("renderForCartesia", () => {

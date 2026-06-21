@@ -554,6 +554,16 @@ function behavioralFeedback(text: string, wordCount: number, runningScores: numb
         "Jumped straight to the action — set the scene first (when/where/why).",
         "Strong on what you did — anchor it with the situation and the goal.",
       ]);
+    } else if (starCount >= 3) {
+      /* Full STAR arc already present (≥3 of Situation/Task/Action/Result,
+         per the shared detector) — it just narrates with causal connectives
+         instead of literal "first/then/finally" signposts, so hasStructure
+         read false. Telling a complete arc to "structure with STAR" reads as
+         dismissive; the only thing actually missing is quantification. */
+      feedback = pick([
+        "Strong arc, start to finish — now quantify it. Add 'who, how many, by how much'.",
+        "Clean story end to end. Pin the impact with a number to make it land harder.",
+      ]);
     } else {
       feedback = isExcelling
         ? pick([
