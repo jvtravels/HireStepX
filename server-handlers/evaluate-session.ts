@@ -37,6 +37,8 @@ import {
   validateReportShape,
   computeBlendedOverall,
   computeStructuralAnchor,
+  isStarShapedFocus,
+  deriveSkillWeightsFromRubric,
   normalizeThoughtBubble,
   normalizeScoreConfidence,
   normalizeStoryReuse,
@@ -431,7 +433,7 @@ interface SessionReport {
     noticeDays: number | null;
     noticeFlexibility: "buyout-possible" | "strict" | "not-stated";
     compExpected: string | null;
-    counterOfferRisk: "low" | "med" | "high";
+    counterOfferRisk: "low" | "med" | "high" | "not-assessed";
     bgvGaps: string[];
   };
   model: string;
@@ -560,6 +562,11 @@ export default async function handler(req: Request): Promise<Response> {
        case-study answer can no longer get a high overall score on
        behavioural-style "STAR completeness" alone. */
     let focusRubric = meta?.type ? formatScoringRubric(meta.type) : "";
+    /* HR-round per-axis weights resolved from the sector/seniority overlay.
+       Captured here so the SAME weights that shape the LLM prompt also weight
+       the displayed composite score (see computeBlendedOverall below) — without
+       this, the overlay was prompt-only decoration and every axis scored 1.0. */
+    let hrSkillWeights: Record<string, number> = {};
     if (meta?.type === "hr-round") {
       const base = RECIPES["hr-round"];
       if (base?.scoringRubric) {
@@ -568,6 +575,7 @@ export default async function handler(req: Request): Promise<Response> {
           expLevel: meta.level,
         });
         if (recipe.scoringRubric) {
+          hrSkillWeights = deriveSkillWeightsFromRubric(recipe.scoringRubric);
           focusRubric = formatScoringRubric("hr-round", {
             dimensions: recipe.scoringRubric,
             sector: context.sector,
@@ -894,14 +902,14 @@ Return a JSON object with EXACTLY this shape:
     // noticeDays: integer days the candidate stated as their notice period (e.g. 60, 90), or null if not stated.
     // noticeFlexibility: "buyout-possible" if they said they could buy out / discussed a signing bonus offset; "strict" if they said they must serve the full period; "not-stated" if the topic came up but they didn't clarify.
     // compExpected: what they said as their target CTC or hike — short string like "35–42L" or "20% hike" or null if not stated.
-    // counterOfferRisk: "low" if they were clear and definitive they won't take a counter-offer; "high" if they were vague, non-committal, or implied they might entertain one; "med" otherwise.
-    // bgvGaps: an array of doc gaps the candidate explicitly admitted during the BGV discussion (e.g. ["Missing relieving letter from prior employer", "Form-16 FY24 not yet downloaded"]). Empty array [] if no gaps were mentioned or BGV wasn't covered.
+    // counterOfferRisk: ONLY judge this if the interviewer actually probed commitment / other-offers / counter-offers. "low" if they were clear and definitive they won't take a counter-offer; "high" if they were vague, non-committal, or implied they might entertain one; "med" if probed but genuinely ambiguous. Use "not-assessed" when the topic never came up in the conversation — do NOT guess a risk level from silence.
+    // bgvGaps: an array of doc gaps the candidate EXPLICITLY admitted during the BGV discussion (e.g. ["Missing relieving letter from prior employer", "Form-16 FY24 not yet downloaded"]). Never infer or invent a gap. Empty array [] if no gaps were admitted or BGV wasn't covered.
     "motivationBefore": "<their actual words, ≤120 chars>",
     "motivationAfter": "<stronger rewrite, sounds like a candidate, ≤150 chars>",
-    "noticeDays": <integer or null>,
+    "noticeDays": <integer days or null>,
     "noticeFlexibility": "<buyout-possible|strict|not-stated>",
     "compExpected": "<string like '35-42L' or null>",
-    "counterOfferRisk": "<low|med|high>",
+    "counterOfferRisk": "<low|med|high|not-assessed>",
     "bgvGaps": ["<gap 1>", "<gap 2>"]
   }` : ""}
 }
@@ -975,11 +983,21 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     // Build final report — merge deterministic metrics with LLM output.
     // Apply company calibration: re-weight skills + use company-specific bands.
     const rawSkills = Array.isArray(parsed.skills) ? parsed.skills.slice(0, 8) : [];
-    const skillWeights = companyProfile?.skillWeights ?? {};
+    /* HR rounds weight the displayed composite by the resolved rubric (sector/
+       seniority overlay); everything else uses the company role-family weights.
+       Falling back to {} = equal 1.0 weighting. */
+    const skillWeights = meta?.type === "hr-round"
+      ? hrSkillWeights
+      : (companyProfile?.skillWeights ?? {});
     const llmOverall = typeof parsed.overallScore === "number" ? parsed.overallScore : 50;
     // Deterministic structural anchor stabilizes the score run-to-run on
     // identical transcripts (see computeStructuralAnchor / computeBlendedOverall).
-    const structuralAnchor = computeStructuralAnchor(transcript);
+    // It measures STAR-pillar presence, so it only applies to STAR-shaped
+    // focuses — HR/negotiation answers aren't STAR and the anchor would
+    // systematically under-score them (see isStarShapedFocus).
+    const structuralAnchor = isStarShapedFocus(meta?.type)
+      ? computeStructuralAnchor(transcript)
+      : undefined;
     const { weightedSkills, overallScore, anchorClamped, anchorDelta } = computeBlendedOverall(
       rawSkills,
       skillWeights,
@@ -1128,7 +1146,10 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
          null when either the LLM omitted the block or both motivation fields
          are empty (i.e. nothing useful to show). Non-HR sessions get undefined. */
       hrReport: meta?.type === "hr-round"
-        ? normalizeHrReport((parsed as Record<string, unknown>).hrReport) ?? undefined
+        ? normalizeHrReport(
+            (parsed as Record<string, unknown>).hrReport,
+            transcript.map((t) => t.text || "").join("\n"),
+          ) ?? undefined
         : undefined,
       model: result.model,
     };

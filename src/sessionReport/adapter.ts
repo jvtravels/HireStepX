@@ -285,7 +285,7 @@ function buildHrReport(report: SessionReport): HrReportData | undefined {
     noticeDays: typeof raw.noticeDays === "number" ? raw.noticeDays : null,
     noticeFlexibility: raw.noticeFlexibility ?? "not-stated",
     compExpected: raw.compExpected ?? null,
-    counterOfferRisk: raw.counterOfferRisk ?? "med",
+    counterOfferRisk: raw.counterOfferRisk ?? "not-assessed",
     bgvGaps: Array.isArray(raw.bgvGaps) ? raw.bgvGaps : [],
   };
 }

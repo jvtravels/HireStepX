@@ -189,6 +189,36 @@ export function resolveSkillAxes(
   return [...(ROLE_SKILLS[family] || ROLE_SKILLS.behavioral)];
 }
 
+/* Focuses graded on their own non-behavioral rubric (HR logistics, negotiation
+   craft) whose answers are NOT STAR-shaped. The deterministic structural anchor
+   (computeStructuralAnchor) measures STAR-pillar presence, so applying it to a
+   notice-period / CTC / why-leaving answer systematically under-scores these
+   rounds. For these focuses we skip the anchor and let the rubric-weighted LLM
+   blend stand on its own (the per-axis weights already brake the score). */
+export function isStarShapedFocus(metaType: string | undefined): boolean {
+  return metaType !== "hr-round" && metaType !== "salary-negotiation";
+}
+
+/* Build a skillWeights map (axis-name -> weight) from a resolved focus recipe's
+   scoringRubric. The HR/negotiation rubric dimension names match the report's
+   skill-axis names verbatim (see HR_ROUND_SKILL_AXES), so these weights flow
+   straight into computeBlendedOverall — making the sector/seniority overlay
+   (_hr-round-overlays.ts) actually move the displayed score instead of being
+   prompt-only decoration. Returns {} when there is no rubric (callers then fall
+   back to equal 1.0 weighting). */
+export function deriveSkillWeightsFromRubric(
+  scoringRubric: ReadonlyArray<{ dimension: string; weight: number }> | undefined,
+): Record<string, number> {
+  if (!scoringRubric || scoringRubric.length === 0) return {};
+  const out: Record<string, number> = {};
+  for (const r of scoringRubric) {
+    if (typeof r.weight === "number" && isFinite(r.weight) && r.weight > 0) {
+      out[r.dimension] = r.weight;
+    }
+  }
+  return out;
+}
+
 export const DEFAULT_BANDS: BandThresholds = {
   strongHire: 85,
   hire: 70,
@@ -714,43 +744,110 @@ export interface HrReportData {
   noticeFlexibility: "buyout-possible" | "strict" | "not-stated";
   /** CTC expectation the candidate stated, e.g. "35–40L" or "10% hike", or null. */
   compExpected: string | null;
-  /** How likely the candidate is to take a counter-offer from their current employer. */
-  counterOfferRisk: "low" | "med" | "high";
+  /** How likely the candidate is to take a counter-offer from their current
+   *  employer. "not-assessed" when the topic never came up in the conversation —
+   *  the report must NOT invent a counter-offer script for a candidate who was
+   *  never asked about competing/retention offers. */
+  counterOfferRisk: "low" | "med" | "high" | "not-assessed";
   /** Document gaps the candidate explicitly admitted in the BGV discussion. */
   bgvGaps: string[];
 }
 
-export function normalizeHrReport(raw: unknown): HrReportData | null {
+/* Generic-filler detector for the coached "motivationAfter" rewrite. The prompt
+   bans these phrases, but a prompt ban is best-effort — this is the deterministic
+   backstop. A rewrite that still leans on résumé-padding clichés ("achieve my
+   career goals", "great culture", "grow professionally") is worse than no
+   rewrite: it teaches the candidate to parrot filler. When matched we blank the
+   field rather than ship the cliché. */
+const GENERIC_MOTIVATION_RE =
+  /\b(?:achieve\s+my\s+career\s+goals?|career\s+growth|grow(?:th)?\s+(?:professionally|my\s+career|opportunit)|take\s+my\s+career\s+to\s+the\s+next\s+level|learn\s+and\s+grow|great\s+(?:culture|brand|company|work\s+culture|place\s+to\s+work)|excited\s+about\s+the\s+(?:opportunity|journey|digital\s+transformation)|passionate\s+about\s+(?:technology|the\s+industry)|work[-\s]life\s+balance|aligns?\s+with\s+my\s+(?:values|career\s+goals)|make\s+a\s+(?:real\s+)?(?:difference|impact)\b(?!\s+(?:on|to|in|by|through)\s))/i;
+
+export function isGenericMotivation(text: string): boolean {
+  return GENERIC_MOTIVATION_RE.test(text || "");
+}
+
+/* Coerce a notice-period value to integer days. Accepts a number (already days),
+   or a verbal string the LLM may echo from speech — "2 months", "60 days",
+   "3 mo", "2-month". Returns null when unparseable or outside (0, 365]. */
+export function coerceNoticeDays(raw: unknown): number | null {
+  if (typeof raw === "number" && isFinite(raw) && raw > 0 && raw <= 365) {
+    return Math.round(raw);
+  }
+  if (typeof raw === "string") {
+    const m = raw.toLowerCase().match(/(\d+(?:\.\d+)?)[\s-]*(months?|mos?|weeks?|wks?|days?)?/);
+    if (m) {
+      const n = parseFloat(m[1]);
+      const unit = m[2] || "day";
+      let days = n;
+      if (/^mo|^month/.test(unit)) days = n * 30;
+      else if (/^w/.test(unit)) days = n * 7;
+      days = Math.round(days);
+      if (days > 0 && days <= 365) return days;
+    }
+  }
+  return null;
+}
+
+/* Topics that must actually appear in the conversation before the report is
+   allowed to assert anything about them — prevents the LLM inventing BGV gaps
+   or a counter-offer risk for a candidate who was never probed on them. */
+const BGV_TOPIC_RE =
+  /\b(?:bgv|background\s+(?:check|verification)|relieving\s+letter|reliev|pay\s*slip|payslip|form\s*16|marksheet|mark\s+sheet|uan|epf|offer\s+letter|experience\s+letter|reference\s+check|document|verification|gap\s+in\s+(?:employment|career))\b/i;
+const COUNTER_OFFER_TOPIC_RE =
+  /\b(?:counter[-\s]?offer|other\s+offers?|competing\s+offer|retention|current\s+employer\s+(?:match|retain|counter)|are\s+you\s+(?:interviewing|considering)|in\s+the\s+market)\b/i;
+
+/**
+ * Normalize + ground the LLM's hrReport block. `conversationCorpus` (the full
+ * transcript text, interviewer + candidate) is optional for backward-compat,
+ * but when supplied it grounds the topic-dependent fields: BGV gaps and
+ * counter-offer risk are only asserted if those topics actually surfaced in the
+ * conversation, so the report can't fabricate document failures or a retention
+ * script for a candidate who was never probed on them.
+ */
+export function normalizeHrReport(
+  raw: unknown,
+  conversationCorpus?: string,
+): HrReportData | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
+  const corpus = typeof conversationCorpus === "string" ? conversationCorpus : "";
+  const grounded = corpus.length > 0;
   const motivationBefore =
     typeof r.motivationBefore === "string" ? r.motivationBefore.trim().slice(0, 300) : "";
-  const motivationAfter =
+  let motivationAfter =
     typeof r.motivationAfter === "string" ? r.motivationAfter.trim().slice(0, 300) : "";
+  // P1 #8 — deterministic backstop: drop a rewrite that still leans on filler.
+  if (motivationAfter && isGenericMotivation(motivationAfter)) motivationAfter = "";
   if (!motivationBefore && !motivationAfter) return null;
-  const noticeDays =
-    typeof r.noticeDays === "number" &&
-    isFinite(r.noticeDays) &&
-    r.noticeDays > 0 &&
-    r.noticeDays <= 365
-      ? Math.round(r.noticeDays)
-      : null;
+  const noticeDays = coerceNoticeDays(r.noticeDays);
   const validFlex = ["buyout-possible", "strict", "not-stated"] as const;
   const noticeFlexibility = validFlex.includes(r.noticeFlexibility as typeof validFlex[number])
     ? (r.noticeFlexibility as typeof validFlex[number])
     : "not-stated";
   const compExpected =
     typeof r.compExpected === "string" ? r.compExpected.trim().slice(0, 40) || null : null;
-  const validRisk = ["low", "med", "high"] as const;
-  const counterOfferRisk = validRisk.includes(r.counterOfferRisk as typeof validRisk[number])
+  // P0 #6 — counter-offer risk defaults to "not-assessed", not "med". When we
+  // have the corpus and the topic never came up, force "not-assessed" so the
+  // report doesn't manufacture a retention script (re-introduces script-leak).
+  const validRisk = ["low", "med", "high", "not-assessed"] as const;
+  let counterOfferRisk: HrReportData["counterOfferRisk"] = validRisk.includes(
+    r.counterOfferRisk as typeof validRisk[number],
+  )
     ? (r.counterOfferRisk as typeof validRisk[number])
-    : "med";
-  const bgvGaps = Array.isArray(r.bgvGaps)
+    : "not-assessed";
+  if (grounded && counterOfferRisk !== "not-assessed" && !COUNTER_OFFER_TOPIC_RE.test(corpus)) {
+    counterOfferRisk = "not-assessed";
+  }
+  // P1 #7 — BGV gaps only survive if the BGV/document topic was actually
+  // discussed; otherwise they're ungrounded and would render as hard red
+  // document failures the candidate never admitted.
+  let bgvGaps = Array.isArray(r.bgvGaps)
     ? (r.bgvGaps as unknown[])
         .filter((g): g is string => typeof g === "string" && g.trim().length > 0)
         .map((g) => g.trim().slice(0, 80))
         .slice(0, 6)
     : [];
+  if (grounded && bgvGaps.length > 0 && !BGV_TOPIC_RE.test(corpus)) bgvGaps = [];
   return {
     motivationBefore,
     motivationAfter,

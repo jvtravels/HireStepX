@@ -574,8 +574,16 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
       body: "Your answers on the commitment / other-offers probes were vague or implied you might take a counter from your current employer. This is the single biggest HR red flag in India — it signals you might not join even if they issue the offer.",
       script: '"I\'ve already made my decision to move, and a counter-offer from my current employer wouldn\'t change it — the reason I\'m leaving isn\'t the salary, it\'s the growth and the work, which a raise doesn\'t fix. I\'m not using this process as leverage."',
     },
+    "not-assessed": {
+      tone: "warn",
+      headline: "Counter-offer commitment: not probed this round",
+      body: "The interviewer didn't ask how you'd respond to a counter-offer in this conversation, so we can't read your commitment from it. Don't mistake that for a pass — in a real Indian HR round this is almost always asked, and it's the single biggest reason offers fall through. Have the line below ready.",
+      script: '"I\'ve made my decision to move. Even if my current employer matches the comp, I\'d still join — what I\'m moving for is the scope of this role and where it takes my career, and that\'s not something a counter can give me."',
+    },
   };
   const c = copy[risk];
+  const pillLabel =
+    risk === "low" ? "Clean" : risk === "med" ? "Needs sharpening" : risk === "high" ? "Red flag" : "Not assessed";
   return (
     <Panel>
       <Eyebrow
@@ -584,7 +592,7 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
         sub="HR's biggest fear: you take their offer to your current employer for a raise. They probe for this — your script needs to be ready."
       />
       <div style={{ marginBottom: 16 }}>
-        <Pill tone={c.tone}>{risk === "low" ? "Clean" : risk === "med" ? "Needs sharpening" : "Red flag"}</Pill>
+        <Pill tone={c.tone}>{pillLabel}</Pill>
         <p style={{ fontFamily: SANS, fontSize: 13, color: INK_SOFT, lineHeight: 1.55, margin: "10px 0 0" }}>
           {c.body}
         </p>
@@ -608,7 +616,7 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
             marginBottom: 10,
           }}
         >
-          If HR asks "what happens if they counter?"
+          {risk === "not-assessed" ? 'Prep this — HR will ask "what if they counter?"' : 'If HR asks "what happens if they counter?"'}
         </div>
         <div
           style={{
