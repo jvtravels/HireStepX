@@ -975,6 +975,9 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const tLLM = Date.now() - tLLM0;
 
     let parsed = result ? extractJSON<Partial<SessionReport>>(result.text) : null;
+    // Strict-JSON variant of the prompt, reused by both the temperature-0 retry
+    // and the last-resort 8b tier below.
+    const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
     if (!isUsableEvalReport(parsed, meta?.type)) {
       // First attempt yielded no usable report — the provider chain threw
       // (outage), the model wrapped/truncated the JSON, OR it returned
@@ -984,7 +987,6 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       // interview the user can't easily replay.
       console.warn(`[evaluate-session] No usable report on first attempt (model: ${result?.model ?? "none"}); retrying strict.`);
       try {
-        const strictPrompt = prompt + "\n\nIMPORTANT: Return ONLY the JSON object. No prose before or after. Start with { and end with }.";
         const retry = await callLLM(
           // Match the primary's fallback budget — when the retry is the real
           // attempt (primary hit a fast outage/429), the verbose fallback needs
@@ -1009,7 +1011,35 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     }
 
     if (!parsed || !result || !isUsableEvalReport(parsed, meta?.type)) {
-      // Both attempts failed (provider outage, unparseable output, or a
+      // LAST RESORT — degrade MODEL QUALITY, not the whole report. The two
+      // attempts above run the 70b-class chain (groq-70b → gemini-flash →
+      // cerebras-70b). When that entire tier is down/quota'd but Groq's 8b is
+      // still serving (it powers negotiate-turn + /api/evaluate, so it's the
+      // most reliably-up provider), a terser 8b report that clears
+      // isUsableEvalReport beats a 503 dead-end on a 25-minute interview.
+      // Time-budget guarded against the 100s maxDuration so we never overrun.
+      const elapsedMs = Date.now() - t0;
+      if (elapsedMs < 70_000) {
+        console.warn(`[evaluate-session] 70b chain exhausted at ${elapsedMs}ms; last-resort 8b attempt.`);
+        try {
+          const fastRetry = await callLLM(
+            { prompt: strictPrompt, temperature: 0, maxTokens: 2500, fallbackMaxTokens: 8000, jsonMode: true, fast: true },
+            20000,
+            { userId: auth.userId, endpoint: "evaluate-session-fast", groqTimeoutMs: 12000 },
+          );
+          const fastParsed = extractJSON<Partial<SessionReport>>(fastRetry.text);
+          if (isUsableEvalReport(fastParsed, meta?.type)) {
+            parsed = fastParsed;
+            result = fastRetry;
+          }
+        } catch (fastErr) {
+          console.error(`[evaluate-session] Last-resort 8b attempt failed:`, fastErr);
+        }
+      }
+    }
+
+    if (!parsed || !result || !isUsableEvalReport(parsed, meta?.type)) {
+      // All attempts failed (provider outage, unparseable output, or a
       // syntactically-valid-but-empty report). Return 503 (not 500) with
       // transcript_saved so the client shows "Your session is saved — retry
       // evaluation" rather than implying data loss or showing a blank report.
