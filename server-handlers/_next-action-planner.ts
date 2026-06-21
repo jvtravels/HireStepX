@@ -1057,6 +1057,19 @@ export function planNextAction(state: NegotiationState): NextAction {
 export function nearOfferCloseNumber(state: NegotiationState): number {
   const offer = state.highestOfferMade;
   if (!(offer > 0)) return offer;
+  /* #127/#129 — a figure the candidate RESTATES inside the firm accept
+   * ("46 works, I'll sign", "fine 22 done") is the number they agreed to. It
+   * is bounded only by the band ceiling, NOT the trivial near-offer gap below:
+   * the gap gate exists to reject a far ASPIRATIONAL target leaking into a
+   * close, but an explicitly-stated settle figure is not aspirational — it is
+   * the close. Honoring it here (above offer, at/under ceiling) keeps every
+   * close path on one source of truth and prevents the stealth under-close
+   * that hands the candidate the bare standing offer. clampToCloseFloor only
+   * ever raises, so returning a figure above the offer is always safe. */
+  const agreed = acceptanceUtteranceFigure(state);
+  if (agreed != null && agreed > offer && agreed <= state.band.maxStretch) {
+    return agreed;
+  }
   /* #105 (2026-06-20, live-staging) — scope-aware close number. A
    * FIXED-scoped close signal ("if 17 fixed works, I'll sign") is NOT a
    * total: totalScopedCounter() returns null for it, and the legacy
@@ -1082,6 +1095,71 @@ export function nearOfferCloseNumber(state: NegotiationState): number {
     return cnum;
   }
   return offer;
+}
+
+/** #129 (2026-06-21, live-staging) — the in-band figure a candidate RESTATES
+ *  inside a firm acceptance ("46 works, I'll sign today", "fine 22 done"), or
+ *  null. The acceptance classifier clears the per-turn counter on a firm
+ *  accept, so totalScopedCounter/lastCandidateCounterLpa are null by the time
+ *  the close fires — which made the close land on the bare standing offer, a
+ *  stealth under-close that hands the candidate less than the number they just
+ *  agreed to (the #105 class, on the total path). We recover the agreed figure
+ *  from the acceptance utterance itself, but only when it CORROBORATES the
+ *  candidate's sticky target (within the trivial ±max(₹1L,6%) gap) — so a bare
+ *  "done"/"ok" (no figure) or an incidental number (a notice-day count, a
+ *  current-CTC restate that doesn't match the target) never lifts the close.
+ *  Tenure/percent figures are stripped first. Pure. */
+function acceptanceUtteranceFigure(state: NegotiationState): number | null {
+  const persisted = effectiveTargetCtcLpa(state) ?? state.candidateTarget ?? null;
+  if (persisted == null) return null;
+  const log = state.conversationLog ?? [];
+  let text = "";
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (e && e.speaker === "candidate") {
+      text = e.text || "";
+      break;
+    }
+  }
+  if (!text) return null;
+  /* Drop figures carrying an explicit time/tenure/percent unit — those are
+   * never the agreed cash number (notice "45 days", "3 months", "10%"). */
+  const cleaned = text.replace(
+    /\b\d+(?:\.\d+)?\s*(?:days?|months?|weeks?|yrs?|years?|%|percent)\b/gi,
+    " ",
+  );
+  const tol = Math.max(1, persisted * 0.06);
+  const re = /\b(\d+(?:\.\d+)?)\b/g;
+  let m: RegExpExecArray | null;
+  let best: number | null = null;
+  while ((m = re.exec(cleaned)) !== null) {
+    const v = parseFloat(m[1]);
+    if (!Number.isFinite(v)) continue;
+    if (Math.abs(v - persisted) <= tol) {
+      if (best == null || Math.abs(v - persisted) < Math.abs(best - persisted)) best = v;
+    }
+  }
+  if (best != null) return best;
+  /* #127 tier-B — explicit settle-at figure. When the candidate self-LOWERS
+   * inside the accept ("fine 22 done" off a 24 ask, settling at 22), tier-A's
+   * target-corroboration rejects it (22 ≠ the sticky 24), yet 22 IS the figure
+   * they just committed to. A number welded to a commit token ("22 done",
+   * "done at 22", "52 works") is an unambiguous settle figure regardless of the
+   * stale target, so we honor it directly. The caller bounds it to
+   * (offer, ceiling]; incidental numbers (a notice-day count, a CTC restate)
+   * are NOT adjacent to a commit token and so never match here. */
+  const settle =
+    /\b(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l)?\s*(?:done|deal|sold|works|final(?:ized)?)\b/i.exec(
+      cleaned,
+    ) ??
+    /\b(?:done|deal|sold|settled?|finalized?)\s+(?:at|for|on)\s+(\d+(?:\.\d+)?)\b/i.exec(
+      cleaned,
+    );
+  if (settle) {
+    const v = parseFloat(settle[1]);
+    if (Number.isFinite(v)) return v;
+  }
+  return null;
 }
 
 /** #105 — the FIXED figure the candidate has pinned a (conditional) close to,
@@ -2890,7 +2968,17 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       }
       /* else: undeliverable, or a real gap above the offer → fall through. */
     } else {
-      closeAt = offer;
+      /* #129 (2026-06-21, live-staging) — close-number fidelity. A firm accept
+       * that restates an in-band figure matching the candidate's sticky target
+       * ("46 works, I'll sign today" after asking for 46) commits to THAT
+       * number; closing at the bare standing offer shortchanges the agreed
+       * deal. Honored above the near-offer gap because this is an ACCEPT (the
+       * candidate has stopped bargaining at their stated number), not a fresh
+       * counter to haggle — capped at the band ceiling, never below the offer.
+       * A bare "done"/"ok" with no figure returns null → close at the offer. */
+      const agreed = acceptanceUtteranceFigure(state);
+      closeAt =
+        agreed != null && agreed > offer && agreed <= ceil ? agreed : offer;
     }
     if (closeAt != null) {
       const jb = state.lastJoiningBonusOffered;

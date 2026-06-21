@@ -174,6 +174,29 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
   /^\s*done\s*[.!?]?\s*$/i,
   /^\s*let'?s\s+go\s*[.!?]?\s*$/i,
   /^\s*works\s+for\s+me\s*[.!?]?\s*$/i,
+  /* #127 (2026-06-21, live-staging) — terse accept-WITH-number. An Indian
+   * candidate closing a haggle routinely answers a counter with the settle
+   * figure welded to a commit token: "fine 22 done", "22 done", "ok 22 deal",
+   * "done at 22", "52 works". The bare-token commits above require the WHOLE
+   * utterance to be "done"/"deal", so the embedded figure dropped these to
+   * no-match and the acceptance was lost — the turn read as a stray counter
+   * and fired an anchor instead of closing. The adjacent figure both names the
+   * settle number AND satisfies OFFER_REFERENCE_PATTERN, so this is a safe
+   * commitment idiom; the offer-on-table phase gate at step 5 still applies
+   * (you cannot "22 done" before a number exists). The close-number resolver
+   * (`acceptanceUtteranceFigure` tier-B in the planner) binds the same figure
+   * so the close lands AT it, not on the bare standing offer.
+   *
+   * Token discipline: only UNAMBIGUOUS settle tokens (done/deal/sold) qualify,
+   * and the token must sit at a clause boundary. "works" and "final" are
+   * deliberately excluded here — "36 works" / "26 final" are COUNTERS, not
+   * accepts ("Can you stretch to 38? Otherwise 36 works."), and this classifier
+   * runs on every turn with no close-context gate. The clause-boundary anchor
+   * also rejects "26 deal breaker" (rejection) while keeping "22 done."/"ok 22
+   * deal,". The planner's tier-B close resolver, which only fires once the
+   * candidate is already closing, keeps the looser "works" form safely. */
+  /\b\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l)?\s*(?:done|deal|sold)\s*(?:[.!?,]|$)/i,
+  /\b(?:done|deal|sold|settled?|finalized?)\s+(?:at|for|on)\s+\d+(?:\.\d+)?\b/i,
 ];
 
 /** Soft-alignment forms — language that affirms the offer

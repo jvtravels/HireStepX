@@ -109,6 +109,44 @@ describe("close-classifier acceptance guards (#124/#125/#126)", () => {
     expect(finalState.phase).toBe("accepted");
   });
 
+  it("#129 — firm accept restating the in-band figure closes AT that figure, not the bare offer", () => {
+    const { finalState } = runConversation({
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: { initialOffer: 32, maxStretch: 52, walkAway: 28, hasEquity: true },
+      initExtras: { applicableYoe: 8, experienceLevel: "senior", currentCtcLpa: 34 },
+      turns: [
+        "Currently 34 LPA.",
+        "I have a competing offer from Razorpay at 46.",
+        "Can you match it?",
+        "If you can do 46 I'm in.",
+        "46 works, I'll sign today.",
+      ],
+    });
+    expect(finalState.phase).toBe("accepted");
+    // The candidate agreed at 46 (in band, above the standing offer). The close
+    // must land at 46 — never stealth-close on the bare offer the planner had
+    // crept to (a #105-class under-close).
+    expect(finalState.highestOfferMade).toBe(46);
+  });
+
+  it("#127 — terse accept-with-number ('fine 22 done') is acceptance AND closes at the stated figure", () => {
+    const { finalState } = runConversation({
+      role: "Engineering Manager",
+      company: "Acme",
+      band: { initialOffer: 18, maxStretch: 26, walkAway: 14, hasEquity: false },
+      initExtras: { applicableYoe: 4, experienceLevel: "mid", currentCtcLpa: 16 },
+      turns: ["16 fixed.", "want 24", "that's too low", "fine 22 done"],
+    });
+    // "fine 22 done" self-lowers from the 24 ask and welds the settle figure to
+    // a commit token. It must (a) classify as acceptance — not fire another
+    // anchor/counter — and (b) close at 22 (in band, above the offer), the
+    // figure the candidate actually committed to, not the stale 24 ask nor the
+    // bare standing offer.
+    expect(finalState.phase).toBe("accepted");
+    expect(finalState.highestOfferMade).toBe(22);
+  });
+
   it("#126 — self-lowered ask is a concession, not a contradiction-callout", () => {
     const { transcript } = runConversation({
       role: "Engineering Manager",
