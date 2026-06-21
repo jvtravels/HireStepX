@@ -272,46 +272,6 @@ export async function checkSessionLimit(
   const consumeCredit = opts?.consumeCredit !== false;
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return { allowed: true }; // skip in dev
 
-  // Fast-path: when the caller already resolved the tier (e.g. from checkLLMQuota
-  // which ran getSubscriptionTier just moments earlier), skip the profile fetch for
-  // tiers whose limit logic requires no row data beyond the tier itself.
-  // "team" is always unlimited. "pro" only needs a session count for the current
-  // month — no profile fields beyond tier are needed, and the caller has already
-  // validated expiry when they resolved the tier. This eliminates the N+1 Supabase
-  // profile fetch for pro/team users on every session start.
-  // "starter" and "free" still need the profile row (subscription_end for expiry
-  // validation, sessions_started_lifetime for the monotonic free-tier counter), so
-  // they fall through to the fetch below.
-  if (opts?.tier === "team") return { allowed: true };
-  if (opts?.tier === "pro") {
-    // Skip profile fetch — go straight to monthly session count.
-    try {
-      const ac0 = new AbortController();
-      const timer0 = setTimeout(() => ac0.abort(), SUPABASE_TIMEOUT_MS);
-      const now0 = new Date();
-      const monthStart0 = new Date(Date.UTC(now0.getUTCFullYear(), now0.getUTCMonth(), 1));
-      const monthISO0 = monthStart0.toISOString();
-      const sessionsRes0 = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&created_at=gte.${encodeURIComponent(monthISO0)}&select=id`,
-        { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, Prefer: "count=exact" }, signal: ac0.signal },
-      );
-      clearTimeout(timer0);
-      if (!sessionsRes0.ok) {
-        console.error("Session limit check (pro fast-path): sessions fetch failed", sessionsRes0.status);
-        return { allowed: false, reason: "Could not verify session limit. Please try again." };
-      }
-      const range0 = sessionsRes0.headers.get("content-range");
-      const thisMonth0 = range0 ? parseInt(range0.split("/")[1] || "0", 10) : ((await sessionsRes0.json()) as unknown[]).length;
-      if (thisMonth0 >= PRO_MONTHLY_LIMIT) {
-        return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT}/month). Buy extra sessions or wait for next month.` };
-      }
-      return { allowed: true };
-    } catch (err) {
-      console.error("Session limit check (pro fast-path) error:", err);
-      return { allowed: false, reason: "Could not verify session limit. Please try again." };
-    }
-  }
-
   try {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
@@ -732,10 +692,41 @@ export function rateLimitResponse(headers: Record<string, string>, retryAfterSec
 
 /* ─── Request Body Size Check ─── */
 
-/** Check if the request body exceeds the maximum allowed size. */
+/**
+ * @deprecated Use readBodyWithSizeLimit() which checks actual bytes, not just Content-Length header.
+ * Check if the request body exceeds the maximum allowed size.
+ */
 export function checkBodySize(req: Request, maxBytes = 1048576): boolean {
   const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
   return contentLength > maxBytes;
+}
+
+/**
+ * Reads the request body as text while enforcing a hard byte cap.
+ * Unlike checkBodySize (which only reads the Content-Length header and can be
+ * bypassed with chunked transfer encoding), this reads the actual bytes.
+ * Throws a Response with status 413 when the body exceeds maxBytes.
+ */
+export async function readBodyWithSizeLimit(
+  req: Request,
+  maxBytes: number
+): Promise<string> {
+  // Fast path: trust Content-Length when present and over limit
+  const cl = parseInt(req.headers.get("content-length") || "0", 10);
+  if (cl > maxBytes) {
+    throw new Response(JSON.stringify({ error: "Request body too large" }), {
+      status: 413,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const blob = await req.blob();
+  if (blob.size > maxBytes) {
+    throw new Response(JSON.stringify({ error: "Request body too large" }), {
+      status: 413,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return blob.text();
 }
 
 /** Validate that the request has a JSON Content-Type. Returns error Response if invalid, null if ok. */
@@ -793,9 +784,7 @@ const DAILY_LLM_LIMITS: Record<string, number> = { free: 15, starter: 60, pro: 2
 
 /** Check if a user has exceeded their daily LLM API call quota for a specific endpoint. */
 export async function checkLLMQuota(userId: string, endpoint: string): Promise<{ allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string }> {
-  // Get user tier — resolved once here and threaded back to callers via the
-  // `tier` field so downstream checks (checkSessionLimit) can reuse it
-  // without a second profile fetch (eliminates N+1 on session start).
+  // Get user tier
   const tier = await getSubscriptionTier(userId);
   const dailyLimit = DAILY_LLM_LIMITS[tier] || DAILY_LLM_LIMITS.free;
 
@@ -805,9 +794,9 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
   // LLM spend when Redis is absent.
   if (!UPSTASH_URL || !UPSTASH_TOKEN) {
     if (process.env.QUOTA_FAIL_CLOSED === "1") {
-      return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true, tier };
+      return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true };
     }
-    return { allowed: true, tier };
+    return { allowed: true };
   }
 
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -827,14 +816,14 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
       // Redis recovers. The default stays fail-open to protect UX.
       console.error(`[quota] CRITICAL: Redis quota check failed (HTTP ${res.status}) — fail-${process.env.QUOTA_FAIL_CLOSED === "1" ? "closed" : "open"} for user ${userId.slice(0, 8)}`);
       if (process.env.QUOTA_FAIL_CLOSED === "1") {
-        return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true, tier };
+        return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true };
       }
-      return { allowed: true, warning: true, tier };
+      return { allowed: true, warning: true };
     }
     const results = await res.json();
     const count = results[0]?.result ?? 1;
     if (count > dailyLimit) {
-      return { allowed: false, reason: `Daily AI usage limit reached (${dailyLimit} calls/day for ${tier} plan). Upgrade for more, or try again tomorrow.`, count, limit: dailyLimit, tier };
+      return { allowed: false, reason: `Daily AI usage limit reached (${dailyLimit} calls/day for ${tier} plan). Upgrade for more, or try again tomorrow.`, count, limit: dailyLimit };
     }
     // 80% warning threshold — caller can surface to client
     const warning = count >= Math.floor(dailyLimit * 0.8);
@@ -843,9 +832,9 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[quota] CRITICAL: Redis quota check threw (${msg.slice(0, 80)}) — fail-${process.env.QUOTA_FAIL_CLOSED === "1" ? "closed" : "open"} for user ${userId.slice(0, 8)}`);
     if (process.env.QUOTA_FAIL_CLOSED === "1") {
-      return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true, tier };
+      return { allowed: false, reason: "Service temporarily unavailable. Please try again in a few minutes.", warning: true };
     }
-    return { allowed: true, warning: true, tier };
+    return { allowed: true, warning: true };
   }
 }
 
@@ -991,7 +980,7 @@ export async function withAuthAndRateLimit(
     return rateLimitResponse(headers);
   }
 
-  let quota: { allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean } | undefined;
+  let quota: { allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string } | undefined;
   if (opts.checkQuota && auth.userId) {
     quota = await checkLLMQuota(auth.userId, opts.endpoint);
     if (!quota.allowed) {

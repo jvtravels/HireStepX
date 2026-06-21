@@ -657,6 +657,34 @@ $$;
 revoke all on function consume_session_credit(uuid) from public, anon, authenticated;
 grant execute on function consume_session_credit(uuid) to service_role;
 
+-- ── Atomic promo code consumption ─────────────────────────────────────────────
+-- Increments current_uses only when uses < max_uses. Returns the code row id
+-- on success, null when the code doesn't exist or is already exhausted.
+-- Called by verify-payment.ts to eliminate the non-atomic read-then-patch race.
+create or replace function consume_promo_code(p_code text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+begin
+  update promo_codes
+  set current_uses = current_uses + 1
+  where code = p_code
+    and (max_uses is null or current_uses < max_uses)
+  returning id into v_id;
+  return v_id;
+end;
+$$;
+
+-- Restrict execution to service role only (anon/authenticated cannot call this)
+revoke all on function consume_promo_code(text) from public;
+revoke all on function consume_promo_code(text) from anon;
+revoke all on function consume_promo_code(text) from authenticated;
+grant execute on function consume_promo_code(text) to service_role;
+
 -- Re-engagement cron uses this to rate-limit emails per user (see re-engage-users.ts).
 alter table profiles add column if not exists re_engage_sent timestamptz;
 
