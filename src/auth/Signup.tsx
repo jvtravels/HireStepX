@@ -1009,7 +1009,7 @@ export default function Signup() {
                       </>
                     ) : (
                       <>
-                        Create your free account
+                        Start practising free
                         <svg
                           className="hsx-login-cta-arrow"
                           width="16"
@@ -1030,6 +1030,18 @@ export default function Signup() {
                   </button>
                 );
               })()}
+              {/* Trust strip — mirrors homepage social proof, sets expectation before first session */}
+              <p
+                style={{
+                  margin: "12px 0 0",
+                  textAlign: "center",
+                  fontSize: 12,
+                  color: t.inkFaint,
+                  letterSpacing: "0.01em",
+                }}
+              >
+                3 sessions free · No card needed · ₹9 per session after
+              </p>
             </form>
           </div>
         </main>

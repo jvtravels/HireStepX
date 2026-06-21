@@ -511,12 +511,16 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
               color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.copper : e.coal,
             }}>{formatTime(timeRemaining)}</span>
           </div>
+          {/* transform:scaleX instead of width so the browser composites on the
+              GPU rather than triggering a full layout reflow every tick.
+              origin:left means the bar shrinks from the right edge. */}
           <div style={{ width: "100%", height: 3, borderRadius: 2, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
             <div style={{
-              height: "100%", borderRadius: 2,
+              height: "100%", width: "100%", borderRadius: 2,
               background: timePercent >= 87.5 ? e.error : timePercent >= 75 ? e.copper : e.success,
-              width: `${100 - timePercent}%`,
-              transition: "width 1s linear, background 0.5s ease",
+              transform: `scaleX(${(100 - timePercent) / 100})`,
+              transformOrigin: "left center",
+              transition: "transform 1s linear, background 0.5s ease",
             }} />
           </div>
         </div>

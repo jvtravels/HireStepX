@@ -16,7 +16,7 @@ describe("design tokens", () => {
 
   it("exports font families", () => {
     expect(font.display).toContain("Instrument Serif");
-    expect(font.ui).toContain("Inter");
+    expect(font.ui).toContain("Satoshi");
     expect(font.mono).toContain("JetBrains Mono");
   });
 });

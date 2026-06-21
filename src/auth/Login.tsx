@@ -682,10 +682,13 @@ export default function Login() {
                       fontFamily: f.sans,
                       fontSize: 15,
                       fontWeight: 600,
-                      color: isGhost ? t.inkFaint : t.cream,
+                      color: isGhost ? t.inkSoft : t.cream,
                       background: isGhost ? t.creamSoft : t.indigo,
+                      /* lineStrong instead of line — more definition against
+                         the cream page background so the button reads as
+                         "waiting" rather than absent. */
                       border: isGhost
-                        ? `1px solid ${t.line}`
+                        ? `1px solid ${t.lineStrong}`
                         : "1px solid transparent",
                       borderRadius: 10,
                       padding: "16px 18px",

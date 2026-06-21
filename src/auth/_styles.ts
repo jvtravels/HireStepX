@@ -5,10 +5,11 @@
 
 export const AUTH_STYLES = `
   /* Webfont fallback — only loads if the host page hasn't already.
-     Production should self-host via @font-face declarations in styles.css
-     and remove these @imports for ~80ms faster first paint. */
+     Instrument Serif + JetBrains Mono: kept here as a guard for any
+     standalone render path. Satoshi is loaded globally via layout.tsx
+     <link rel="stylesheet"> so its @import is omitted here to avoid a
+     redundant CDN fetch on every auth page load. */
   @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-  @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
 
   /* ─── Animations ─── */
   @keyframes hsx-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

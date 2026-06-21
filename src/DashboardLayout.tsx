@@ -304,7 +304,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 background: activeNav === item.id ? c.creamSoft : "transparent",
                 color: activeNav === item.id ? c.ivory : c.stone,
                 fontFamily: font.ui, fontSize: 13, fontWeight: activeNav === item.id ? 600 : 500,
-                transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)", textAlign: "left", outline: "none",
+                transition: "background 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1)", textAlign: "left",
               }}
               onFocus={(e) => e.currentTarget.style.boxShadow = `0 0 0 2px ${c.gilt}40`}
               onBlur={(e) => e.currentTarget.style.boxShadow = "none"}

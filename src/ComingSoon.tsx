@@ -252,7 +252,7 @@ export default function ComingSoon() {
           transform: translateY(-200%);
           transition: transform 160ms ease;
         }
-        .cs-skip-link:focus { transform: translateY(0); outline: none; }
+        .cs-skip-link:focus { transform: translateY(0); outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.5); }
         .cs-sr-only {
           position: absolute; width: 1px; height: 1px;
           padding: 0; margin: -1px; overflow: hidden;

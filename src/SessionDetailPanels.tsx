@@ -154,7 +154,7 @@ export const SessionHeader = memo(function SessionHeader({ type, dateLabel, scor
       <div>
         <button onClick={onBack} style={{
           display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: c.stone,
-          background: "none", border: "none", cursor: "pointer", outline: "none", marginBottom: 16, padding: 0,
+          background: "none", border: "none", cursor: "pointer", marginBottom: 16, padding: 0,
         }}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back

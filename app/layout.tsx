@@ -248,6 +248,12 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap"
         />
         <link rel="preconnect" href="https://esluwqkqoofmquqdevap.supabase.co" crossOrigin="anonymous" />
+        {/* dns-prefetch (not preconnect) for LLM/TTS/STT origins — only
+            /interview needs a live TCP connection. Prefetch cuts the first-lookup
+            latency when the user eventually starts a session without burning a
+            TCP+TLS handshake on every page that never reaches the interview. */}
+        <link rel="dns-prefetch" href="https://api.groq.com" />
+        <link rel="dns-prefetch" href="https://api.sarvam.ai" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
 
         {/* Structured Data — server-rendered so SEO crawlers see it immediately,

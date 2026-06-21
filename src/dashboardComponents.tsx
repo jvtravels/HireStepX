@@ -770,7 +770,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: font.ui, fontSize: 13, color: c.stone, background: "none", border: "none", cursor: "pointer", padding: "0 0 20px", outline: "none" }}
+      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: font.ui, fontSize: 13, color: c.stone, background: "none", border: "none", cursor: "pointer", padding: "0 0 20px" }}
         onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; }}
       >
