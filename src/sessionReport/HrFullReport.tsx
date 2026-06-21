@@ -638,6 +638,11 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
 function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
   const { motivationBefore, motivationAfter } = hrReport;
   if (!motivationBefore && !motivationAfter) return null;
+  // Either side can be blank — motivationAfter is dropped server-side when the
+  // LLM's rewrite was itself generic filler (see normalizeHrReport). Adapt the
+  // grid so a single populated card spans the full width instead of leaving a
+  // broken empty column in a hardcoded 2-up layout.
+  const twoUp = Boolean(motivationBefore) && Boolean(motivationAfter);
   return (
     <Panel>
       <Eyebrow
@@ -645,7 +650,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
         title="Your 'why this company' — rewritten"
         sub="Generic answers ('great culture, great opportunity') signal you'll churn. This is the version that lands."
       />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: twoUp ? "1fr 1fr" : "1fr", gap: 14 }}>
         {motivationBefore && (
           <div
             style={{
@@ -889,7 +894,7 @@ export default function HrFullReport({
           <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
             Overall
           </div>
-          <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700 }}>
+          <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700 }}>
             {overallScore}
             <span style={{ fontSize: 14, color: "#B8B5D4", marginLeft: 2 }}>/100</span>
           </div>
@@ -901,7 +906,7 @@ export default function HrFullReport({
               <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
                 Failing dims
               </div>
-              <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: failingDims > 0 ? "#FCA5A5" : "#BBF7D0" }}>
+              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: failingDims > 0 ? "#FCA5A5" : "#BBF7D0" }}>
                 {failingDims}
                 <span style={{ fontSize: 14, color: "#B8B5D4", marginLeft: 2 }}>/{totalDims}</span>
               </div>
