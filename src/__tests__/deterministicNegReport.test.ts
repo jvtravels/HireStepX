@@ -12,7 +12,11 @@ import {
   NEG_AXES,
   type NegReportTurn,
 } from "../../server-handlers/_deterministic-neg-report";
-import { NEGOTIATION_SKILL_AXES } from "../../server-handlers/_evaluate-session-helpers";
+import {
+  NEGOTIATION_SKILL_AXES,
+  isUsableEvalReport,
+  validateReportShape,
+} from "../../server-handlers/_evaluate-session-helpers";
 
 function t(role: string, text: string): NegReportTurn {
   return { role, text };
@@ -102,5 +106,29 @@ describe("buildDeterministicNegotiationReport (#PRI-51)", () => {
     const r = buildDeterministicNegotiationReport([]);
     expect(r.skills.length).toBe(6);
     expect(r.overallScore).toBeGreaterThanOrEqual(35);
+  });
+
+  /* LOAD-BEARING: evaluate-session assigns parsed = buildDeterministic…() and
+     then re-runs the SAME 503 gate (isUsableEvalReport). If the synthesized
+     slice failed that gate, the handler would still 503 — defeating the whole
+     fix. This pins the contract so the fallback can never silently regress into
+     a dead-end. (#PRI-51) */
+  it("passes the exact isUsableEvalReport gate the handler re-checks (never 503)", () => {
+    for (const tr of [STRONG, SILENT, []]) {
+      const synth = buildDeterministicNegotiationReport(tr);
+      expect(isUsableEvalReport(synth, "salary-negotiation")).toBe(true);
+    }
+  });
+
+  it("yields a report shape the assembly's validateReportShape accepts", () => {
+    const synth = buildDeterministicNegotiationReport(STRONG);
+    // Mirror the minimal report the handler assembles from the synth slice:
+    // overallScore + a perQuestion array (the assembly defaults it to []).
+    const reportLike = {
+      overallScore: synth.overallScore,
+      perQuestion: [] as unknown[],
+    };
+    const transcript = STRONG.map((t) => ({ role: t.role, text: t.text }));
+    expect(validateReportShape(reportLike, transcript as never)).toBe(true);
   });
 });
