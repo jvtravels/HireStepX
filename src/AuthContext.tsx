@@ -1000,10 +1000,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // On the reset-password page, allow unverified users to maintain their session
         const isOnResetPage = window.location.pathname === "/reset-password";
         if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
-          // Block unverified email users from establishing a session
-          // (except on reset-password page). Accept either our custom
-          // flag or Supabase's native email_confirmed_at — see login()
-          // for rationale.
+          // Email verification guard — applies to both SIGNED_IN and TOKEN_REFRESHED.
           const isGoogleProvider = session.user.app_metadata?.provider === "google" || session.user.app_metadata?.providers?.includes("google");
           const customVerifiedEvent = session.user.user_metadata?.custom_email_verified === true;
           const supabaseConfirmedEvent = !!session.user.email_confirmed_at;
@@ -1014,12 +1011,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(false);
             return;
           }
+          // Persist Google provider token for Calendar API access (both events).
+          if (session.provider_token) {
+            try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
+          }
+
+          // ── TOKEN_REFRESHED: skip getProfile ──────────────────────────────────
+          // TOKEN_REFRESHED fires shortly after every SIGNED_IN AND again every ~1 hour
+          // as Supabase silently rotates the JWT. Calling getProfile on each rotation
+          // causes multiple DB round-trips in "a few seconds" right after login, and
+          // redundant fetches while the user is actively browsing.
+          //
+          // The user's tier is already loaded by the SIGNED_IN path below (or the
+          // initial restore path). Tier changes are handled by:
+          //   • payment: onPaymentSuccess callback updates state directly.
+          //   • expiry: profileToUser() downgrades locally when subscription_end < now.
+          //   • re-login: SIGNED_IN path below re-fetches the full profile.
+          //
+          // So TOKEN_REFRESHED just keeps the existing user state alive; no DB call needed.
+          if (event === "TOKEN_REFRESHED") {
+            setLoading(false);
+            return;
+          }
+
+          // ── SIGNED_IN: full profile fetch (real login / re-login) ─────────────
           // Single-device enforcement: mint a device token on a genuine new login
           // that didn't already rotate one (OAuth/email-verify callbacks land here,
           // not via login()). Skip session restores/refreshes (which also fire
           // SIGNED_IN but keep the existing token), and skip while login()'s own
           // rotation is mid-flight (grace open) so the two writers never race.
-          if (event === "SIGNED_IN" && !getStoredDeviceToken() && !isWithinDeviceGrace()) {
+          if (!getStoredDeviceToken() && !isWithinDeviceGrace()) {
             const newDeviceToken = generateDeviceToken();
             storeDeviceToken(newDeviceToken);
             // Open the durable grace window so the downstream/remounted check
@@ -1027,14 +1048,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             markDeviceGrace(DEVICE_GRACE_MS);
             client.auth.updateUser({ data: { active_device_token: newDeviceToken } }).catch(err => console.warn("[auth] updateUser(device_token) failed:", err?.message));
           }
-          // Persist Google provider token for Calendar API access
-          if (session.provider_token) {
-            try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
-          }
           // Close the referral loop: apply any code captured from a signup link.
-          // Fire-and-forget on genuine sign-in only (not token refreshes) so it
-          // never blocks profile load; the server is idempotent for re-applies.
-          if (event === "SIGNED_IN" && session.access_token) {
+          // Fire-and-forget; the server is idempotent for re-applies.
+          if (session.access_token) {
             void applyPendingReferral(session.access_token);
           }
           try {
@@ -1055,7 +1071,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               await ensureProfile(session);
             }
           } catch {
-            // Profile fetch hung or failed during TOKEN_REFRESHED.
+            // Profile fetch hung or failed on SIGNED_IN.
             // Priority order:
             //   1. Preserve current user if subscriptionTier is already set — avoids the
             //      "Loading plan…" flash while retryProfileInBackground catches up.
@@ -1084,6 +1100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             // Best-effort row creation in the background.
             ensureProfile(session).catch(() => { /* expected on hang */ });
+            // Retry with exponential backoff so a slow connection on login
+            // eventually hydrates the full profile (name, role, tier).
             retryProfileInBackground(session);
           }
           setLoading(false);
