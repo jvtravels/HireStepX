@@ -264,54 +264,9 @@ export const AUTH_STYLES = `
     .hsx-login-footer { padding: 12px 20px 16px !important; }
   }
 
-  /* Desktop two-column layout (≥1024px) — hero on left, form on right.
-     Eliminates the wide empty space on desktop where a centred single
-     column wastes ~900px of a 1440px viewport. */
-  @media (min-width: 1024px) {
-    .hsx-login-main {
-      flex-direction: row !important;
-      /* flex-start so the hero headline anchors to the form's top edge,
-         not its vertical midpoint — the hero is shorter than the form so
-         center would push it ~100px down, misaligning it from the primary CTA. */
-      align-items: flex-start !important;
-      justify-content: center !important;
-      gap: 72px !important;
-      padding: 40px 64px !important;
-      max-width: 1120px !important;
-      margin-left: auto !important;
-      margin-right: auto !important;
-    }
-    .hsx-login-hero {
-      flex: 1 1 auto !important;
-      text-align: left !important;
-      margin-bottom: 0 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      justify-content: center !important;
-    }
-    .hsx-login-hero h1 {
-      font-size: clamp(2.25rem, 3.5vw, 3.75rem) !important;
-      white-space: normal !important;
-    }
-    .hsx-login-subtitle {
-      text-align: left !important;
-    }
-    .hsx-login-form {
-      width: 440px !important;
-      max-width: 440px !important;
-      flex-shrink: 0 !important;
-    }
-  }
-
-  /* Tablet (≤960px) — content anchored near the top rather than centered
-     to avoid the large dead zone above the headline on portrait tablets.
-     Top padding uses 3.5vh (not 5vh) so a 1024px-tall iPad gets 36px,
-     not 51px, of breathing room before the first element. */
+  /* Tablet (≤960px) — modest tightening */
   @media (max-width: 960px) {
     .hsx-login-topbar { padding: 24px 32px !important; }
-    .hsx-login-main {
-      justify-content: flex-start !important;
-      padding: clamp(20px, 3.5vh, 40px) 24px clamp(20px, 3vh, 36px) !important;
-    }
+    .hsx-login-main   { padding: clamp(24px, 4vh, 48px) 24px !important; }
   }
 `;
