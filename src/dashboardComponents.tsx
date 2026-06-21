@@ -437,7 +437,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           </div>
         )}
 
-        <div className="upgrade-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, alignItems: "stretch" }}>
+        <div className="upgrade-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, alignItems: "stretch" }}>
           {PLANS.map((plan) => {
             const isCurrent = plan.tier === currentTier;
             const featured = plan.featured;
@@ -504,140 +504,149 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               </div>
             );
           })}
-        </div>
 
-        {/* Single-session top-up — quantity-aware: buy 1–10 credits at ₹9 each,
-            no subscription required. The backend enforces the 1–10 cap. */}
-        {creditSuccess !== null ? (
-          <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: "#E8F2EA", border: `1px solid #BFD9C3`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.sage }}>
-              {creditSuccess === 1 ? "1 session credit" : `${creditSuccess} session credits`} added. Close this to start your interview.
-            </span>
-          </div>
-        ) : (
-          <div style={{ marginTop: 16, padding: "16px", borderRadius: 12, background: c.carbon, border: `1px solid ${c.border}` }}>
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>
-                Pay per session
-              </span>
-              <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>
-                ₹{SINGLE_SESSION_PRICE} each · no expiry
-              </span>
-            </div>
-
-            {/* Stepper — free choice of any qty 1–10 */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              {/* Decrement */}
-              <button
-                onClick={() => setSingleQty(q => Math.max(1, q - 1))}
-                disabled={singleQty <= 1 || !!loading}
-                aria-label="Remove one session"
-                style={{
-                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                  border: `1.5px solid ${singleQty <= 1 ? c.border : c.borderHover}`,
-                  background: c.graphite,
-                  color: singleQty <= 1 ? c.stone : c.ivory,
-                  cursor: singleQty <= 1 || !!loading ? "default" : "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 20, fontWeight: 300,
-                  opacity: singleQty <= 1 ? 0.35 : 1,
-                  transition: "opacity 0.15s, border-color 0.15s",
-                }}
-              >−</button>
-
-              {/* Number display + label — centre column */}
-              <div style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ position: "relative", display: "inline-block" }}>
-                  {/* Invisible size anchor so the layout never jumps between 1 and 10 */}
-                  <span aria-hidden style={{ visibility: "hidden", fontFamily: font.ui, fontSize: 28, fontWeight: 700 }}>10</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={singleQty}
-                    onChange={e => {
-                      const raw = e.target.value.replace(/\D/g, "");
-                      if (raw === "") { setSingleQty(1); return; }
-                      const n = parseInt(raw, 10);
-                      if (!isNaN(n)) setSingleQty(Math.min(10, Math.max(1, n)));
-                    }}
-                    onBlur={e => {
-                      const n = parseInt(e.target.value, 10);
-                      setSingleQty(isNaN(n) || n < 1 ? 1 : Math.min(10, n));
-                    }}
-                    disabled={!!loading}
-                    aria-label="Number of sessions"
-                    style={{
-                      position: "absolute", inset: 0,
-                      width: "100%", height: "100%",
-                      textAlign: "center",
-                      fontFamily: font.ui, fontSize: 28, fontWeight: 700,
-                      color: c.gilt,
-                      background: "transparent",
-                      border: "none", outline: "none",
-                      /* hide native number spinners */
-                      MozAppearance: "textfield",
-                    }}
-                  />
+          {/* ── Per Session — 4th card ── */}
+          {/* Slider thumb styles — scoped to .upgrade-session-slider */}
+          <style>{`
+            .upgrade-session-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px; outline: none; cursor: pointer; }
+            .upgrade-session-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #B45309; border: 2.5px solid #1A1712; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; }
+            .upgrade-session-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #B45309; border: 2.5px solid #1A1712; cursor: pointer; }
+            .upgrade-session-slider:focus-visible::-webkit-slider-thumb { outline: 2px solid #B45309; outline-offset: 2px; }
+          `}</style>
+          <div style={{
+            position: "relative", padding: 22, borderRadius: 20,
+            background: c.graphite,
+            border: `1px solid ${c.border}`,
+            boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+            display: "flex", flexDirection: "column", gap: 16,
+          }}>
+            {creditSuccess !== null ? (
+              /* Success state — replaces card content inline */
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "32px 0" }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#E8F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: "2px 0 0" }}>
-                  {singleQty === 1 ? "session" : "sessions"}
+                <p style={{ margin: 0, fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, textAlign: "center" }}>
+                  {creditSuccess === 1 ? "1 session" : `${creditSuccess} sessions`} added
+                </p>
+                <p style={{ margin: 0, fontFamily: font.ui, fontSize: 13, color: c.stone, textAlign: "center" }}>
+                  Close this to start your interview.
                 </p>
               </div>
+            ) : (
+              <>
+                {/* Plan name + price */}
+                <div>
+                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: c.gilt }}>Per Session</p>
+                  <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                    &#x20B9;{SINGLE_SESSION_PRICE}
+                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone }}>/ session</span>
+                  </p>
+                  <p style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: c.stone }}>No subscription &#xB7; credits never expire</p>
+                </div>
 
-              {/* Increment */}
-              <button
-                onClick={() => setSingleQty(q => Math.min(10, q + 1))}
-                disabled={singleQty >= 10 || !!loading}
-                aria-label="Add one session"
-                style={{
-                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                  border: `1.5px solid ${singleQty >= 10 ? c.border : c.gilt}`,
-                  background: singleQty >= 10 ? c.graphite : `rgba(180,83,9,0.1)`,
-                  color: singleQty >= 10 ? c.stone : c.gilt,
-                  cursor: singleQty >= 10 || !!loading ? "default" : "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 20, fontWeight: 300,
-                  opacity: singleQty >= 10 ? 0.35 : 1,
-                  transition: "opacity 0.15s, border-color 0.15s, background 0.15s",
-                }}
-              >+</button>
-            </div>
+                {/* Feature list */}
+                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {["Voice in & out, all round types", "Full STAR score + coached answer", "Use anytime, no expiry"].map((f) => (
+                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: c.chalk }}>
+                      <span aria-hidden style={{ color: c.gilt, marginTop: 2, flexShrink: 0 }}>&#8594;</span>{f}
+                    </li>
+                  ))}
+                </ul>
 
-            {/* Total + cap note */}
-            <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center", marginBottom: 14 }}>
-              {singleQty >= 10
-                ? <span style={{ color: c.gilt }}>Max 10 per order · ₹{SINGLE_SESSION_PRICE * singleQty} total</span>
-                : `₹${SINGLE_SESSION_PRICE} × ${singleQty} = ₹${SINGLE_SESSION_PRICE * singleQty}`}
-            </p>
+                {/* Quantity selector — slider with flanking +/- buttons */}
+                <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone }}>How many?</span>
+                    <span style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, fontWeight: 600 }}>
+                      &#x20B9;{SINGLE_SESSION_PRICE * singleQty} total
+                    </span>
+                  </div>
 
-            {/* Buy button */}
-            <button
-              onClick={() => handleCheckout("single")}
-              disabled={!!loading}
-              style={{
-                width: "100%", padding: "10px 0", borderRadius: 9, border: "none",
-                background: c.gilt, color: "#FDFCF7",
-                fontFamily: font.ui, fontSize: 13, fontWeight: 700,
-                cursor: loading ? "wait" : "pointer",
-                opacity: loading && loading !== "single" ? 0.5 : 1,
-                transition: "filter 0.15s",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.filter = "brightness(0.9)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.filter = ""; }}
-            >
-              {loading === "single"
-                ? "Opening Razorpay..."
-                : loading === "verifying"
-                ? "Verifying..."
-                : <>Buy {singleQty === 1 ? "1 session" : `${singleQty} sessions`} · ₹{SINGLE_SESSION_PRICE * singleQty} <span style={{ fontSize: 15 }}>→</span></>
-              }
-            </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <button
+                      onClick={() => setSingleQty(q => Math.max(1, q - 1))}
+                      disabled={singleQty <= 1 || !!loading}
+                      aria-label="Remove one session"
+                      style={{
+                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                        border: `1.5px solid ${singleQty <= 1 ? c.border : c.borderHover}`,
+                        background: c.carbon, color: singleQty <= 1 ? c.stone : c.ivory,
+                        cursor: singleQty <= 1 || !!loading ? "default" : "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 18, fontWeight: 300,
+                        opacity: singleQty <= 1 ? 0.3 : 1,
+                        transition: "opacity 0.15s, border-color 0.15s",
+                      }}
+                    >&#8722;</button>
+
+                    <input
+                      type="range"
+                      min={1} max={10} step={1}
+                      value={singleQty}
+                      onChange={e => setSingleQty(Number(e.target.value))}
+                      disabled={!!loading}
+                      aria-label="Number of sessions"
+                      aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10}
+                      className="upgrade-session-slider"
+                      style={{
+                        flex: 1,
+                        background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)`,
+                      }}
+                    />
+
+                    <button
+                      onClick={() => setSingleQty(q => Math.min(10, q + 1))}
+                      disabled={singleQty >= 10 || !!loading}
+                      aria-label="Add one session"
+                      style={{
+                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                        border: `1.5px solid ${singleQty >= 10 ? c.border : c.gilt}`,
+                        background: singleQty >= 10 ? c.carbon : `rgba(180,83,9,0.10)`,
+                        color: singleQty >= 10 ? c.stone : c.gilt,
+                        cursor: singleQty >= 10 || !!loading ? "default" : "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 18, fontWeight: 300,
+                        opacity: singleQty >= 10 ? 0.3 : 1,
+                        transition: "opacity 0.15s, border-color 0.15s, background 0.15s",
+                      }}
+                    >&#43;</button>
+                  </div>
+
+                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center" }}>
+                    {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
+                    {singleQty >= 10 && <span style={{ color: c.gilt }}> &#xB7; max per order</span>}
+                  </p>
+                </div>
+
+                {/* Buy CTA */}
+                <button
+                  onClick={() => handleCheckout("single")}
+                  disabled={!!loading}
+                  style={{
+                    width: "100%", padding: "12px 18px", borderRadius: 10, border: "none",
+                    background: c.gilt, color: "#FDFCF7",
+                    fontFamily: font.ui, fontSize: 14, fontWeight: 600,
+                    cursor: loading ? "wait" : "pointer",
+                    opacity: loading && loading !== "single" ? 0.5 : 1,
+                    boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                    transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}
+                  onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+                >
+                  {loading === "single"
+                    ? "Opening Razorpay..."
+                    : loading === "verifying"
+                    ? "Verifying..."
+                    : <>{singleQty === 1 ? "Buy 1 session" : `Buy ${singleQty} sessions`} &#xB7; &#x20B9;{SINGLE_SESSION_PRICE * singleQty} <span style={{ fontSize: 16 }}>&#8594;</span></>
+                  }
+                </button>
+              </>
+            )}
           </div>
-        )}
+        </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
