@@ -116,7 +116,7 @@ const PLANS_ALL = [
 const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 
 
-export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void }) {
+export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: () => void }) {
   // Cream palette shadow — matches the marketing /pricing page and settings repaint.
   // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
   const c = {
@@ -179,6 +179,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               // can immediately start their interview (tier is unchanged).
               setCreditSuccess(typeof verifyData.credits === "number" ? verifyData.credits : null);
               setLoading(null);
+              // Refresh sidebar balance so it immediately shows the new credits
+              // without requiring a page reload.
+              onCreditPurchase?.();
               return;
             }
             captureClientEvent("plan_upgraded", {

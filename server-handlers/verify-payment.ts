@@ -74,6 +74,7 @@ async function sendPaymentEmail(
   paymentId: string,
   startDate: string,
   endDate: string,
+  amountOverride?: string,
 ) {
   if (!RESEND_API_KEY) return;
   // Basic email format validation
@@ -84,8 +85,8 @@ async function sendPaymentEmail(
   const planLabel = PLAN_LABEL[plan] || tier;
   const start = new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   const end = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-  const amountMap: Record<string, string> = { weekly: "₹49", monthly: "₹149" };
-  const amount = amountMap[plan] || "₹149";
+  const amountMap: Record<string, string> = { single: "₹9", weekly: "₹49", monthly: "₹149" };
+  const amount = amountOverride ?? amountMap[plan] ?? "₹49";
 
   try {
     const emailAc = new AbortController();
@@ -108,7 +109,7 @@ async function sendPaymentEmail(
           preview: `${planLabel} starts now. Valid until ${end}.`,
           body:
             title("You're", { accentWord: "in." }) +
-            para(`Hi ${escapeHtml(name || "there")}, your payment went through and ${b(planLabel)} is active. ${tier === "pro" ? "Unlimited interview sessions, full AI coaching feedback, salary negotiation mode and performance analytics, all unlocked." : "10 interview sessions per week, all question types, detailed feedback, and resume analysis, all unlocked."}`) +
+            para(`Hi ${escapeHtml(name || "there")}, your payment went through and ${b(planLabel)} is active. ${tier === "pro" ? "Unlimited interview sessions, full AI coaching feedback, salary negotiation mode and performance analytics, all unlocked." : plan === "single" ? "Your session credit is ready — head to your dashboard to start your mock interview." : "7 interview sessions per week, all question types, detailed feedback, and resume analysis, all unlocked."}`) +
             dataCard("Receipt", [
               ["Plan", planLabel],
               ["Amount paid", mono(amount)],
@@ -493,7 +494,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: JSON.stringify({ razorpay_payment_id }),
       }).catch(() => {});
       if (userEmail) {
-        try { await sendPaymentEmail(userEmail, userName || "Customer", "single", "free", razorpay_payment_id, nowSingle.toISOString(), nowSingle.toISOString()); } catch (e) { console.warn("[verify-payment] single email failed:", e); }
+        try { await sendPaymentEmail(userEmail, userName || "Customer", "single", "free", razorpay_payment_id, nowSingle.toISOString(), nowSingle.toISOString(), `₹${purchaseAmount / 100}`); } catch (e) { console.warn("[verify-payment] single email failed:", e); }
       }
       if (razorpay_order_id) await clearPaymentIntent(razorpay_order_id);
       await captureServerEvent("payment_completed", userId, {

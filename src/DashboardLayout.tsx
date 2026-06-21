@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     showUpgradeModal, setShowUpgradeModal,
     paymentBanner, setPaymentBanner,
     syncError, setSyncError,
-    toast,
+    toast, refreshCreditBalance,
   } = useDashboardUI();
 
   // Refetch sessions on mount (e.g. returning from interview)
@@ -474,7 +474,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <button onClick={() => setShowUpgradeModal(true)} title="See what's included in Pro — unlimited sessions, STAR coaching, skill tracking" style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.2s" }}
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.93)")}
               onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-            >{freeExhausted ? "Unlock sessions now" : "Upgrade to Pro"}</button>
+            >{freeExhausted && creditBalance > 0 ? "Buy more sessions" : freeExhausted ? "Unlock sessions now" : "Upgrade to Pro"}</button>
           )}
         </div>
 
@@ -564,6 +564,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             setTimeout(() => setPaymentBanner(null), 8000);
             authUpdateUser({ subscriptionTier: tier as "starter" | "pro", subscriptionStart: start, subscriptionEnd: end });
           }}
+          onCreditPurchase={refreshCreditBalance}
         />
       )}
 

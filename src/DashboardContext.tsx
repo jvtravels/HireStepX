@@ -80,6 +80,8 @@ interface UIContextValue {
   setSyncError: (v: string) => void;
   toast: string | null;
   showToast: (msg: string) => void;
+  /** Re-fetches purchased credit balance from DB. Call after a single-session purchase. */
+  refreshCreditBalance: () => void;
 }
 
 interface CoreContextValue {
@@ -206,7 +208,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(msg);
     toastTimer.current = setTimeout(() => setToast(null), 3000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const refreshCreditBalance = useCallback(() => {
+    if (!user?.id) return;
+    getCreditBalance(user.id).then(setCreditBalance).catch(() => {});
+  }, [user?.id]);
 
   // ─── Google Calendar sync state ───
   const [googleSyncStatus, setGoogleSyncStatus] = useState<"idle" | "syncing" | "done" | "error">("idle");
@@ -697,8 +705,8 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
     dataLoading, isMobile,
     paymentBanner, setPaymentBanner,
     syncError, setSyncError,
-    toast, showToast,
-  }), [showUpgradeModal, dataLoading, isMobile, paymentBanner, syncError, toast, showToast]);
+    toast, showToast, refreshCreditBalance,
+  }), [showUpgradeModal, dataLoading, isMobile, paymentBanner, syncError, toast, showToast, refreshCreditBalance]);
 
   const coreValue: CoreContextValue = useMemo(() => ({
     persisted, updatePersisted,
