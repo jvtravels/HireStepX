@@ -3013,14 +3013,14 @@ export function PricingV2() {
       name: "Per session",
       price: "₹9",
       unit: "/ session",
-      sub: "One mock, zero commitment",
+      sub: "No subscription · credits never expire",
       features: [
-        "1 mock session",
+        "Buy 1–10 sessions at ₹9 each",
         "Voice in & out, all round types",
         "Full STAR score + report",
-        "Credit never expires",
+        "Use them anytime, no expiry",
       ],
-      cta: "Buy one session",
+      cta: "Buy sessions",
       href: "/signup?plan=single",
       featured: false,
       studentDiscount: false,
@@ -3070,7 +3070,7 @@ export function PricingV2() {
             <span style={{ fontStyle: "italic", color: t.copper }}>one chai a day.</span>
           </h2>
           <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-            Free to start. Buy one session, a week, or a month, whichever matches your prep. UPI / cards / netbanking accepted at checkout.
+            Free to start. Buy sessions individually, by the week, or by the month — whichever matches your prep. UPI / cards / netbanking accepted at checkout.
           </p>
         </MotionReveal>
         <MotionReveal
