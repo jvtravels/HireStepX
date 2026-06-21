@@ -4829,7 +4829,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
        * also respects the PDF#31 BUG D min-counter-rounds floor: a premature
        * hold-firm here would stonewall before any real bargaining, whereas
        * the candidate genuinely has not bargained — they have said nothing. */
-      return wrapLeverExplore(pickLeverExploreMove(state), "no-aspiration-named");
+      return wrapLeverExplore(pickLeverExploreMove(state), "no-headroom");
     }
 
     /* Class-A (2026-06-15) — effectiveTargetCtcLpa folds in-hand→CTC and
