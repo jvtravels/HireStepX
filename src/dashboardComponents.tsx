@@ -407,20 +407,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 <p style={{ fontFamily: font.ui, fontSize: 11, color: "#92400E", margin: "0 0 12px", fontWeight: 500 }}>
                   ✓ No money was debited from your account.
                 </p>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button
-                    onClick={() => { setPaymentFailed(null); handleCheckout(paymentFailed.plan); }}
-                    style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: "#fff", background: "#D97706", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer" }}
-                  >
-                    Try again
-                  </button>
-                  <button
-                    onClick={() => setPaymentFailed(null)}
-                    style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: "#92400E", background: "none", border: "1px solid #FCD34D", borderRadius: 8, padding: "8px 16px", cursor: "pointer" }}
-                  >
-                    Choose different plan
-                  </button>
-                </div>
+                <button
+                  onClick={() => { setPaymentFailed(null); handleCheckout(paymentFailed.plan); }}
+                  style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: "#fff", background: "#D97706", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer" }}
+                >
+                  Try again
+                </button>
               </div>
             </div>
           </div>
