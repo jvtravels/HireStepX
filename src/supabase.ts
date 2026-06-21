@@ -518,55 +518,10 @@ export async function getCalendarEvents(userId: string): Promise<CalendarEvent[]
   return data || [];
 }
 
-export async function saveCalendarEvent(event: Omit<CalendarEvent, "created_at">) {
-  const client = await getSupabase();
-  const result = await client.from("calendar_events").insert(event);
-
-  // Push to Google Calendar if connected (best-effort, non-blocking)
-  const googleToken = getGoogleProviderToken();
-  if (googleToken && event.title && event.date) {
-    pushEventToGoogleCalendar(googleToken, event).catch(() => {});
-  }
-
-  return result;
-}
-
-/** Push a HireStepX event to Google Calendar (two-way sync) */
-async function pushEventToGoogleCalendar(
-  token: string,
-  event: { title: string; date: string; time?: string; notes?: string; company?: string },
-): Promise<void> {
-  const startDateTime = event.time
-    ? `${event.date}T${event.time}:00`
-    : `${event.date}T09:00:00`;
-  const endDate = new Date(startDateTime);
-  endDate.setHours(endDate.getHours() + 1);
-
-  const calEvent = {
-    summary: event.title + (event.company ? ` — ${event.company}` : ""),
-    description: (event.notes || "") + "\n\nCreated by HireStepX",
-    start: { dateTime: startDateTime, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-    end: { dateTime: endDate.toISOString().replace("Z", ""), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-  };
-
-  const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(calEvent),
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    clearGoogleProviderToken();
-  }
-  if (!res.ok) {
-    console.warn("[calendar] Failed to push event to Google Calendar:", res.status);
-  }
-}
-
-export async function deleteCalendarEvent(id: string, userId: string) {
-  const client = await getSupabase();
-  return client.from("calendar_events").delete().eq("id", id).eq("user_id", userId);
-}
+// Calendar writes now go exclusively through the DB-authoritative `/api/calendar/*`
+// handlers (see calendarAPI.ts). The old client-direct saveCalendarEvent /
+// deleteCalendarEvent + Google push helper were dead and violated the
+// no-client-direct-mutation rule, so they were removed.
 
 /* ─── Google Calendar Sync ─── */
 
@@ -676,4 +631,22 @@ export async function syncGoogleEvents(userId: string): Promise<{ synced: number
   if (error) return { synced: 0, error: error.message };
 
   return { synced: newEvents.length };
+}
+
+/** Read the user's purchased session-credit balance.
+ *  RLS allows the user to read their own row; writes are service-role-only.
+ *  Returns 0 when no row exists (never purchased) or on any error. */
+export async function getCreditBalance(userId: string): Promise<number> {
+  if (!userId) return 0;
+  try {
+    const client = await getSupabase();
+    const { data } = await client
+      .from("session_credits")
+      .select("balance")
+      .eq("user_id", userId)
+      .single();
+    return (data as { balance: number } | null)?.balance ?? 0;
+  } catch {
+    return 0;
+  }
 }

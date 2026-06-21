@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   // changes. Each sub-context only notifies when ITS slice changes.
   const { displayName, persisted } = useDashboardCore();
   const { calendarEvents, refreshSessions } = useDashboardSessions();
-  const { isFree, isStarter, isPro, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining } = useDashboardSubscription();
+  const { isFree, isStarter, isPro, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance } = useDashboardSubscription();
   // True when we have a session but profile fetch (tier-bearing) hasn't
   // returned yet. profileToUser always sets subscriptionTier; the JWT-only
   // fallback path leaves it undefined. Avoid rendering "Free Plan" in this
@@ -402,7 +402,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               : isStarter
                 ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions this week${starterRemaining <= 2 ? ", running low" : ""}`
               : sessionsRemaining > 0
-                ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? ", last one" : ""}`
+                ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} free session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? ", last one" : ""}`
+              : creditBalance > 0
+                ? `${creditBalance} purchased session${creditBalance !== 1 ? "s" : ""} ready to use`
               : "No sessions left. Upgrade to continue."}
           </p>
           {user?.subscriptionEnd && isStarter && (
@@ -417,15 +419,18 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               : isStarter
               ? Math.min(100, (sessionsThisWeek / STARTER_WEEKLY_LIMIT) * 100)
               : Math.min(100, (sessionsThisMonth / PRO_MONTHLY_LIMIT) * 100);
-            const fill = proExhausted || freeExhausted || starterExhausted
+            const fill = (proExhausted || starterExhausted || (freeExhausted && creditBalance === 0))
               ? c.gilt
               : isPro ? (proRemaining <= 5 ? c.ember : c.sage)
               : isStarter ? (starterRemaining <= 2 ? c.ember : c.gilt)
+              // Free tier exhausted but has credits → show healthy gilt, not depleted
+              : (freeExhausted && creditBalance > 0) ? c.gilt
               : (sessionsRemaining === 1 ? c.ember : c.gilt);
-            const ariaLabel = proExhausted || starterExhausted || freeExhausted
+            const ariaLabel = proExhausted || starterExhausted || (freeExhausted && creditBalance === 0)
               ? "All sessions used"
               : isPro ? `${sessionsThisMonth} of ${PRO_MONTHLY_LIMIT} sessions used this month`
               : isStarter ? `${sessionsThisWeek} of ${STARTER_WEEKLY_LIMIT} sessions used this week`
+              : creditBalance > 0 ? `${creditBalance} purchased session${creditBalance !== 1 ? "s" : ""} available`
               : `${sessionsUsed} of ${FREE_SESSION_LIMIT} sessions used`;
             return (
               <div

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
-import { getUserSessions, getCalendarEvents, syncGoogleEvents, getGoogleProviderToken, getLatestSessionInsightFlags } from "./supabase";
+import { getUserSessions, getCalendarEvents, syncGoogleEvents, getGoogleProviderToken, getLatestSessionInsightFlags, getCreditBalance } from "./supabase";
 import { scheduleEventNotifications } from "./interviewNotifications";
 import { type InterviewEvent, loadEvents } from "./dashboardHelpers";
 import {
@@ -64,6 +64,9 @@ interface SubscriptionContextValue {
   sessionsThisMonth: number;
   /** Sessions remaining for Pro this calendar month (max 0). Always 0 for non-Pro tiers. */
   proRemaining: number;
+  /** Purchased one-off session credits (₹9 each). Non-zero only for free-tier users
+   *  who topped up. Fetched lazily after auth; 0 until loaded. */
+  creditBalance: number;
 }
 
 interface UIContextValue {
@@ -196,6 +199,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   );
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [paymentBanner, setPaymentBanner] = useState<"success" | "cancelled" | null>(null);
+  const [creditBalance, setCreditBalance] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((msg: string) => {
@@ -343,6 +347,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setTopGaps(flags);
       }).catch(() => { /* silent — CTA degrades to skill-based */ }),
+      // Fetch purchased session-credit balance (free-tier users who bought ₹9
+      // top-ups). RLS allows owner-read; returns 0 on any error so the sidebar
+      // degrades gracefully to "No sessions left" without crashing.
+      getCreditBalance(user.id).then(bal => {
+        if (cancelled) return;
+        setCreditBalance(bal);
+      }).catch(() => { /* silent — balance defaults to 0 */ }),
       getCalendarEvents(user.id).then(events => {
         if (cancelled) return;
         const mapped = events.map(e => ({
@@ -587,7 +598,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; }
   }).length;
   const proRemaining = isPro ? Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth) : 0;
-  const atSessionLimit = (isFree && sessionsUsed >= FREE_SESSION_LIMIT)
+  // Free-tier users past their 2 free sessions are NOT at the limit if they
+  // hold purchased credits — the backend will consume one on session start.
+  const atSessionLimit = (isFree && sessionsUsed >= FREE_SESSION_LIMIT && creditBalance === 0)
     || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT)
     || (isPro && sessionsThisMonth >= PRO_MONTHLY_LIMIT);
 
@@ -676,8 +689,8 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, isPro, atSessionLimit,
     sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek,
-    sessionsThisMonth, proRemaining,
-  }), [isFree, isStarter, isPro, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining]);
+    sessionsThisMonth, proRemaining, creditBalance,
+  }), [isFree, isStarter, isPro, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance]);
 
   const uiValue: UIContextValue = useMemo(() => ({
     showUpgradeModal, setShowUpgradeModal,
