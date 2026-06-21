@@ -45,6 +45,7 @@ import {
   buildStaticFallback,
   buildSalaryNegotiationFallbackQuestions,
   flagOffRoleQuestions,
+  buildDisciplineFence,
   type RawQuestion,
 } from "./_generate-questions-helpers";
 import { fetchRecentQuestions } from "./_question-dedup";
@@ -575,7 +576,7 @@ INDIAN CONVERSATIONAL REGISTER (when writing the questions themselves):
     const avoidTopics = mergedPast.length > 0
       ? `ANTI-REPETITION (mandatory): the candidate has been asked these questions in past sessions: ${mergedPast.map((t) => `"${t}"`).join("; ")}. Do NOT generate questions that overlap with these — neither the same wording NOR the same underlying scenario. If a question would unavoidably touch one, phrase it from a fresh angle with different specifics. Variety across sessions is what makes practice work — repetition is what kills it.`
       : "";
-    const weakSkillsContext = Array.isArray(weakSkills) && weakSkills.length > 0 ? `ADAPTIVE FOCUS: The candidate previously scored low in these skills: ${weakSkills.slice(0, 5).map((s: unknown) => sanitizeForLLM(s, 50)).filter(Boolean).join(", ")}. Prioritize questions that test and develop these weak areas.` : "";
+    const weakSkillsContext = Array.isArray(weakSkills) && weakSkills.length > 0 ? `ADAPTIVE FOCUS: The candidate previously scored low in these skills: ${weakSkills.slice(0, 5).map((s: unknown) => sanitizeForLLM(s, 50)).filter(Boolean).join(", ")}. Prioritize questions that test and develop these weak areas — but interpret each label strictly within the candidate's role craft per the DISCIPLINE FENCE above (e.g. for a designer, "technical depth" is design-craft depth, not software architecture).` : "";
     const languageContext = "";
 
     const resumeIntelligence = (() => {
@@ -734,6 +735,12 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
       : "";
 
     const roleCompContext = await getRoleCompetencies(targetRole);
+
+    /* Discipline fence — keep abstract weak-skills (technicalDepth,
+       businessImpact…) inside THIS role's craft so a designer never gets a
+       software-architecture/scalability question. Skipped for salary
+       negotiation, where the "role" only frames comp, not question craft. */
+    const disciplineFence = !isSalaryType ? buildDisciplineFence(targetRole) : "";
 
     // Interview-type-specific guidance to ensure questions match the format
     // Salary-negotiation guidance is dynamically generated from structured data (~100 tokens vs ~2,000 tokens)
@@ -1192,7 +1199,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
       : "";
 
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
+${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${disciplineFence ? `\n${disciplineFence}\n` : ""}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${behavioralPriorCoverageContext ? `- ${behavioralPriorCoverageContext}\n` : ""}${hrPersonaContext ? `- ${hrPersonaContext}\n` : ""}${behavioralPersonaContext ? `- ${behavioralPersonaContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.

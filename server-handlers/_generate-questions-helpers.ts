@@ -484,3 +484,100 @@ export function buildStaticFallback(opts: {
   ];
   return questions;
 }
+
+/* ── Discipline fence ────────────────────────────────────────────────
+   Abstract weak-skill labels (technicalDepth, businessImpact,
+   specificity, adaptability…) are discipline-agnostic. Handed to the LLM
+   without a craft anchor, "technical depth" for a Senior Product Designer
+   was observed LIVE to produce a software-engineering question — "Walk me
+   through a system you designed that had to handle scalability issues.
+   What were the key architectural decisions you made, and how did you
+   validate them?" — a clear role-fit miss for a designer.
+
+   This fence pins every weak-skill interpretation to the candidate's
+   actual craft and forbids adjacent-discipline questions. It is keyed off
+   the role string, so it protects every role (a marketer shouldn't get
+   architecture questions either), not just designers. Conservative
+   keyword matching; an unrecognised role falls back to a generic fence
+   that still forbids cross-discipline drift. */
+
+export type Discipline =
+  | "design" | "product" | "data" | "engineering"
+  | "marketing" | "sales" | "ops" | "generic";
+
+/** Classify a free-text role title into a coarse discipline. Order
+ *  matters: more specific multi-word craft cues are tested before the
+ *  broad "engineer/developer" net so "Product Designer" → design, not a
+ *  miss. Returns "generic" when nothing matches confidently. */
+export function classifyDiscipline(role: string): Discipline {
+  const r = (role || "").toLowerCase();
+  if (!r.trim()) return "generic";
+  // Design first — "Product Designer" contains "product", so design must win.
+  // Each alternative carries its own boundary; a single \b(...)\b wrapper
+  // would wrongly require a word boundary mid-token (e.g. after "data scien").
+  if (/\bux\b|\bui\b|product design|visual design|interaction design|graphic design|motion design|design system|\bdesigner\b/.test(r)) return "design";
+  if (/product manager|product owner|product lead|group product|program manager|associate product|product management|\bpm\b|\bapm\b|\bgpm\b/.test(r)) return "product";
+  if (/data scientist|data science|data analy|\banalytics\b|machine learning|\bml\b|\bai engineer\b|data engineer|business intelligence|\bbi\b|statistician|quantitative/.test(r)) return "data";
+  if (/\bmarketing\b|\bgrowth\b|\bseo\b|\bsem\b|content strateg|\bbrand\b|social media|performance marketing|demand gen/.test(r)) return "marketing";
+  if (/\bsales\b|account executive|business development|\bbd\b|account manager|customer success|inside sales|pre[\s-]?sales|solutions consultant/.test(r)) return "sales";
+  if (/\boperations\b|\bops\b|supply chain|logistics|project manager|delivery manager|scrum master/.test(r)) return "ops";
+  // Broad engineering net last so it doesn't swallow "design engineer"-style titles.
+  if (/engineer|developer|programmer|\bsde\b|\bswe\b|architect|devops|\bsre\b|backend|back[\s-]?end|frontend|front[\s-]?end|full[\s-]?stack|\bmobile\b|android|\bios\b|\bqa\b|tester|platform/.test(r)) return "engineering";
+  return "generic";
+}
+
+const DISCIPLINE_CRAFT: Record<Exclude<Discipline, "generic">, { craft: string; technicalMeans: string; forbid: string }> = {
+  design: {
+    craft: "product / UX / visual design",
+    technicalMeans: "interaction design, design systems, prototyping fidelity, design–engineering feasibility trade-offs, accessibility, and usability-research rigor",
+    forbid: "software architecture, scalability, infrastructure, databases, backend/system-design, or writing/optimising code (a designer partners with engineers on constraints — they do not architect the system)",
+  },
+  product: {
+    craft: "product management",
+    technicalMeans: "product sense, metric definition, prioritisation, experimentation / A-B testing, discovery rigor, and technical fluency to partner with engineering",
+    forbid: "hand-writing production code, low-level system architecture, or executing visual / brand design",
+  },
+  data: {
+    craft: "data / analytics / ML",
+    technicalMeans: "analysis rigor, statistical reasoning, modelling choices, pipeline / SQL / data-quality work, and metric validity",
+    forbid: "front-end / visual design, brand strategy, or unrelated application-feature architecture",
+  },
+  engineering: {
+    craft: "software engineering",
+    technicalMeans: "the candidate's ACTUAL stack as signalled by the resume (do not ask a frontend engineer about Kubernetes or a backend engineer about rendering performance); system design and architecture ARE in-scope for senior engineers",
+    forbid: "brand / visual-design execution, marketing-funnel ownership, or sales-quota questions",
+  },
+  marketing: {
+    craft: "marketing / growth",
+    technicalMeans: "channel strategy, funnel / conversion analysis, positioning, campaign measurement, and growth experimentation",
+    forbid: "writing production code, low-level system architecture, or implementing UI components",
+  },
+  sales: {
+    craft: "sales / account management",
+    technicalMeans: "pipeline management, discovery, objection handling, negotiation, and quota / forecast ownership",
+    forbid: "writing code, system architecture, or executing visual design",
+  },
+  ops: {
+    craft: "operations / program management",
+    technicalMeans: "process design, cross-team coordination, risk / timeline management, and operational-metric ownership",
+    forbid: "writing production code or low-level system architecture",
+  },
+};
+
+/**
+ * Build a hard "stay in this role's craft" rule for the question
+ * generator's prompt. Returns "" only when role is blank (nothing to
+ * anchor to). For an unrecognised but non-empty role it still returns a
+ * generic fence so abstract weak-skills don't leak an adjacent
+ * discipline's questions.
+ */
+export function buildDisciplineFence(role: string): string {
+  const cleanRole = (role || "").trim();
+  if (!cleanRole) return "";
+  const discipline = classifyDiscipline(cleanRole);
+  if (discipline === "generic") {
+    return `DISCIPLINE FENCE (mandatory): the candidate's role is "${cleanRole}". Every question MUST stay inside the real day-to-day craft of THIS role. Interpret any abstract weak-skill (e.g. "technical depth", "business impact", "specificity") through the lens of this role's actual work — never an adjacent discipline's. Do NOT borrow a software-engineering, design, sales, or finance question unless that IS this role's craft.`;
+  }
+  const { craft, technicalMeans, forbid } = DISCIPLINE_CRAFT[discipline];
+  return `DISCIPLINE FENCE (mandatory): the candidate's role is "${cleanRole}", a ${craft} role. Every question MUST stay inside that craft. Interpret abstract weak-skills through this lens — for this role, "technical depth" means ${technicalMeans}. It does NOT mean ${forbid}. Never ask a question that belongs to a different discipline; resolve any ambiguous weak-skill label to this role's craft.`;
+}

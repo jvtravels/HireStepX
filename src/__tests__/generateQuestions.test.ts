@@ -7,6 +7,8 @@ import {
   computeStepCount,
   buildStaticFallback,
   flagOffRoleQuestions,
+  classifyDiscipline,
+  buildDisciplineFence,
   VALID_PERSONAS,
   type RawQuestion,
 } from "../../server-handlers/_generate-questions-helpers";
@@ -356,5 +358,73 @@ describe("flagOffRoleQuestions", () => {
       { type: "closing", aiText: "Thanks for the sharding chat." },
     ];
     expect(flagOffRoleQuestions(qs, "design")).toEqual([]);
+  });
+});
+
+describe("classifyDiscipline", () => {
+  it("maps 'Senior Product Designer' to design (not product)", () => {
+    expect(classifyDiscipline("Senior Product Designer")).toBe("design");
+  });
+  it("maps UX/UI titles to design", () => {
+    expect(classifyDiscipline("UX Designer")).toBe("design");
+    expect(classifyDiscipline("Lead Interaction Designer")).toBe("design");
+  });
+  it("maps PM titles to product", () => {
+    expect(classifyDiscipline("Senior Product Manager")).toBe("product");
+    expect(classifyDiscipline("Group PM")).toBe("product");
+  });
+  it("maps engineering titles to engineering", () => {
+    expect(classifyDiscipline("Backend Engineer")).toBe("engineering");
+    expect(classifyDiscipline("SDE II")).toBe("engineering");
+    expect(classifyDiscipline("Frontend Developer")).toBe("engineering");
+  });
+  it("maps data/analytics titles to data", () => {
+    expect(classifyDiscipline("Data Scientist")).toBe("data");
+    expect(classifyDiscipline("Senior Data Analyst")).toBe("data");
+  });
+  it("maps marketing and sales titles", () => {
+    expect(classifyDiscipline("Growth Marketing Manager")).toBe("marketing");
+    expect(classifyDiscipline("Account Executive")).toBe("sales");
+  });
+  it("falls back to generic for unknown or blank roles", () => {
+    expect(classifyDiscipline("")).toBe("generic");
+    expect(classifyDiscipline("Chief Vibes Officer")).toBe("generic");
+  });
+});
+
+describe("buildDisciplineFence", () => {
+  it("returns empty string for a blank role (nothing to anchor)", () => {
+    expect(buildDisciplineFence("")).toBe("");
+    expect(buildDisciplineFence("   ")).toBe("");
+  });
+
+  it("for a designer, forbids software-architecture framing of 'technical depth'", () => {
+    const fence = buildDisciplineFence("Senior Product Designer");
+    expect(fence).toContain("DISCIPLINE FENCE");
+    expect(fence).toContain("Senior Product Designer");
+    // The exact failure observed live: architecture/scalability framing.
+    expect(fence.toLowerCase()).toContain("software architecture");
+    expect(fence.toLowerCase()).toContain("does not mean");
+    // And it should affirm the design-craft reading of technical depth.
+    expect(fence.toLowerCase()).toContain("design systems");
+  });
+
+  it("for an engineer, keeps architecture in-scope but forbids brand/visual design", () => {
+    const fence = buildDisciplineFence("Backend Engineer");
+    expect(fence.toLowerCase()).toContain("system design and architecture are in-scope");
+    expect(fence.toLowerCase()).toContain("brand");
+  });
+
+  it("for an unrecognised role, still emits a generic cross-discipline fence", () => {
+    const fence = buildDisciplineFence("Chief Vibes Officer");
+    expect(fence).toContain("DISCIPLINE FENCE");
+    expect(fence).toContain("Chief Vibes Officer");
+    expect(fence.toLowerCase()).toContain("never an adjacent discipline");
+  });
+
+  it("names the right craft per discipline", () => {
+    expect(buildDisciplineFence("Product Manager").toLowerCase()).toContain("product management");
+    expect(buildDisciplineFence("Data Scientist").toLowerCase()).toContain("data");
+    expect(buildDisciplineFence("Account Executive").toLowerCase()).toContain("sales");
   });
 });
