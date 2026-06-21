@@ -105,7 +105,11 @@ export async function createDeepgramSTT(
     console.warn("[Deepgram] Detected non-standard sample rate:", sampleRate);
   }
 
-  const dgLang = "multi";
+  // "en" = Nova-3 monolingual English tier (~$0.0043/min vs ~$0.0059/min for "multi").
+  // HireStepX interviews are conducted in English/Hinglish — Nova-3 English handles
+  // Indian-accent English and code-switching well without needing the multilingual
+  // (higher-cost) model. Switch back to "multi" only if accuracy regresses.
+  const dgLang = "en";
   // utterance_end_ms=1000 lets us detect "user genuinely paused" via UtteranceEnd
   // events without raising endpointing (which would clip mid-sentence).
   // vad_events=true emits SpeechStarted for barge-in. filler_words=false strips
