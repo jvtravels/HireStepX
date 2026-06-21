@@ -135,6 +135,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   const PLANS = PLANS_MONTHLY;
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
+  /* Razorpay payment.failed — separate from network/API errors so we can
+     show a dedicated reassurance card (no redirect, inline retry). */
+  const [paymentFailed, setPaymentFailed] = useState<{ reason: string; plan: string } | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [promoResult, setPromoResult] = useState<{ valid: boolean; discount_percent?: number; discount_amount?: number; final_amount?: number; code?: string } | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
@@ -319,15 +322,15 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         const errDetail = (response as { error?: { code?: string; description?: string; reason?: string } })?.error;
         const reason = errDetail?.description || errDetail?.reason || "Unknown error";
         const code = errDetail?.code || "";
-        const msg = code === "BAD_REQUEST_ERROR" ? `Payment failed: ${reason}. Please try again.`
-          : code === "GATEWAY_ERROR" ? "Payment gateway error — please try again or use a different payment method."
-          : code === "SERVER_ERROR" ? "Payment server error — your money was not charged. Please retry."
-          : `Payment failed: ${reason}. Please try again or contact support@hirestepx.com`;
-        setError(msg);
+        const humanReason = code === "BAD_REQUEST_ERROR" ? reason
+          : code === "GATEWAY_ERROR" ? "Payment gateway error — try a different payment method."
+          : code === "SERVER_ERROR" ? "Temporary server error — your money was not charged."
+          : reason;
+        // Razorpay closes its sheet on payment.failed; our modal is still
+        // mounted. Show an inline reassurance card rather than redirecting
+        // the user out of the product to a dead-end /payment-failed page.
+        setPaymentFailed({ reason: humanReason, plan: planId });
         setLoading(null);
-        // Razorpay closes the modal after payment.failed — redirect to the
-        // dedicated recovery page so the user gets reassurance + retry path.
-        window.location.href = "/payment-failed";
       });
       captureClientEvent("checkout_opened", { plan: planId });
       rzp.open();
@@ -387,6 +390,41 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6 }}>Choose your plan</h2>
           <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>{currentTier !== "free" ? "Manage your plan" : "Cancel anytime · UPI, cards, netbanking"}</p>
         </div>
+
+        {/* Payment.failed inline card — keeps users in context with reassurance + retry */}
+        {paymentFailed && (
+          <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 12, padding: "20px 20px 16px", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", background: "#FEF3C7", border: "1px solid #FCD34D", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: "#92400E", margin: "0 0 2px" }}>Payment didn&apos;t go through</p>
+                <p style={{ fontFamily: font.ui, fontSize: 12, color: "#78350F", margin: "0 0 8px", lineHeight: 1.5 }}>{paymentFailed.reason}</p>
+                <p style={{ fontFamily: font.ui, fontSize: 11, color: "#92400E", margin: "0 0 12px", fontWeight: 500 }}>
+                  ✓ No money was debited from your account.
+                </p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => { setPaymentFailed(null); handleCheckout(paymentFailed.plan); }}
+                    style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: "#fff", background: "#D97706", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer" }}
+                  >
+                    Try again
+                  </button>
+                  <button
+                    onClick={() => setPaymentFailed(null)}
+                    style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: "#92400E", background: "none", border: "1px solid #FCD34D", borderRadius: 8, padding: "8px 16px", cursor: "pointer" }}
+                  >
+                    Choose different plan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div style={{ background: "#FBEAE7", border: `1px solid #F2C9C2`, borderRadius: 8, padding: "10px 14px", marginBottom: 16, textAlign: "center" }}>
