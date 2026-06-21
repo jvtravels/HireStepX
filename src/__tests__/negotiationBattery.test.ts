@@ -549,3 +549,87 @@ describe("negotiation battery — no post-anchor expectations re-probe (#122)", 
     }
   });
 });
+
+/* #123 (2026-06-21, live Flipkart EM) — post-anchor cash auto-escalation on a
+ * pure stonewall. After the #121 anchor stood at ₹32.7L and the #122 hold ran
+ * its course, the counter-offer-phase planner fell into counter-base with the
+ * candidate aspiration silently defaulted to the band ceiling (`?? maxStretch`)
+ * — so a content-free candidate who named NO target/counter got cash bumped
+ * ₹32.7L → ₹37.2L for free (the recruiter bidding against itself). Once an
+ * offer stands and the candidate has named no figure, the standing number must
+ * never rise. */
+describe("negotiation battery — no post-anchor cash escalation on pure stonewall (#123)", () => {
+  const STONEWALL_BAND: NegotiationBand = {
+    initialOffer: 32.7,
+    maxStretch: 56,
+    walkAway: 26.6,
+    hasEquity: true,
+  };
+
+  it("content-free stonewall: standing offer never escalates once it lands", () => {
+    const { transcript } = runConversation({
+      sessionId: "post-anchor-escalation-123",
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: STONEWALL_BAND,
+      initExtras: {
+        experienceLevel: "senior",
+        applicableYoe: 9,
+        totalYoe: 9,
+        primaryDomain: "engineering",
+      },
+      turns: [
+        "Hmm.",
+        "I see.",
+        "Not sure.",
+        "Okay.",
+        "Right.",
+        "Hmm.",
+        "I see.",
+        "Okay.",
+        "Sure.",
+        "Hmm.",
+        "I see.",
+        "Okay.",
+      ],
+      stopOnTerminal: false,
+    });
+
+    // An offer must land (the #121 anchor).
+    expect(
+      transcript.some((t) => t.highestOfferMade > 0),
+      "bot must anchor a concrete offer under a stonewall",
+    ).toBe(true);
+
+    // Once an offer stands, the highest offer must NEVER rise for a candidate
+    // who has named no figure — the recruiter must not bid against itself.
+    let peak = 0;
+    let offerSeen = false;
+    for (const t of transcript) {
+      if (t.highestOfferMade > 0) offerSeen = true;
+      if (!offerSeen) continue;
+      if (peak > 0) {
+        expect(
+          t.highestOfferMade,
+          `post-anchor cash escalation on pure stonewall (peak ${peak} → ${t.highestOfferMade}): ${t.aiText}`,
+        ).toBeLessThanOrEqual(peak);
+      }
+      peak = Math.max(peak, t.highestOfferMade);
+    }
+
+    // No turn may ship a cash-raising counter-base lever to the silent candidate.
+    for (const t of transcript) {
+      if (t.highestOfferMade <= 0 && !offerSeen) continue;
+      expect(
+        t.lever,
+        `counter-base lever fired against a content-free stonewall: ${t.aiText}`,
+      ).not.toBe("counter-base");
+    }
+
+    // Register + fluency stay clean throughout.
+    for (const t of transcript) {
+      expect(registerViolations(t.aiText), `register: ${t.aiText}`).toEqual([]);
+      expect(fluencyViolations(t.aiText), `fluency: ${t.aiText}`).toEqual([]);
+    }
+  });
+});

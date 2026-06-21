@@ -4803,6 +4803,35 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         break;
     }
 
+    /* #123 (2026-06-21, live Flipkart EM) — never bid against ourselves.
+     * The counter-base concession engine sizes a move from the GAP between a
+     * candidate aspiration and our standing offer. When the candidate has
+     * named NO aspiration of any kind (no total target, no fixed target, no
+     * total-scoped counter), the `?? state.band.maxStretch` default below
+     * silently invented an aspiration at the band ceiling — so a purely
+     * content-free / stonewalling candidate got cash auto-escalated toward
+     * maxStretch for free (live: ₹32.7L → ₹37.2L on a bare "Hmm."). Industry
+     * practice: hold the standing number and invite a figure rather than
+     * concede toward a target the candidate never stated. This guard mirrors
+     * the #122 offer-recap hold but on the counter-offer-phase side, where the
+     * #119 stonewall predicate doesn't reach. The branch re-arms the instant
+     * any real number lands (any of the three signals below goes non-null). */
+    const candidateNamedAspiration =
+      effectiveTargetCtcLpa(state) != null ||
+      totalScopedCounter(state) != null ||
+      state.lastCandidateCounterLpa != null;
+    if (!candidateNamedAspiration && (state.highestOfferMade ?? 0) > 0) {
+      /* Route to lever-explore, NOT hold-firm: the counter-base engine's
+       * phantom aspiration at maxStretch is what manufactures the headroom
+       * that ships a free cash bump. With no real aspiration there is no real
+       * gap — exactly the no-headroom case below — so we keep the standing
+       * number flat and rotate a non-cash lever. lever-explore (not hold-firm)
+       * also respects the PDF#31 BUG D min-counter-rounds floor: a premature
+       * hold-firm here would stonewall before any real bargaining, whereas
+       * the candidate genuinely has not bargained — they have said nothing. */
+      return wrapLeverExplore(pickLeverExploreMove(state), "no-aspiration-named");
+    }
+
     /* Class-A (2026-06-15) — effectiveTargetCtcLpa folds in-hand→CTC and
      * fixed-only→implied-total so the aspiration isn't computed in the wrong
      * frame (the in-hand under-quote / fixed-only fall-to-ceiling bugs). The
