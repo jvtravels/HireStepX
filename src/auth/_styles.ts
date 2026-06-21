@@ -264,9 +264,31 @@ export const AUTH_STYLES = `
     .hsx-login-footer { padding: 12px 20px 16px !important; }
   }
 
+  /* Short landscape desktop (≥901px wide, ≤780px tall — e.g. 1366×768).
+     Without this the hero heading + full form overflows the fold and the
+     primary CTA ends up hidden behind the cookie banner. Compact every
+     vertical dimension so the form fits without scrolling. */
+  @media (min-width: 901px) and (max-height: 780px) {
+    .hsx-login-topbar   { padding: 14px 32px !important; }
+    .hsx-login-main     { padding-top: 14px !important; padding-bottom: 14px !important; }
+    .hsx-login-hero     { margin-bottom: 14px !important; }
+    .hsx-login-hero h1  { font-size: clamp(1.5rem, 2.4vw, 1.875rem) !important; }
+    .hsx-login-subtitle { font-size: 13px !important; margin-top: 6px !important; margin-bottom: 0 !important; }
+    .hsx-login-divider  { margin: 10px 0 !important; }
+    .hsx-login-form-fields { gap: 10px !important; }
+    .hsx-login-google,
+    .hsx-login-cta      { padding: 10px 16px !important; font-size: 14px !important; }
+  }
+
   /* Tablet (≤960px) — modest tightening */
   @media (max-width: 960px) {
     .hsx-login-topbar { padding: 24px 32px !important; }
     .hsx-login-main   { padding: clamp(24px, 4vh, 48px) 24px !important; }
+  }
+
+  /* Portrait tablet (641–960px) — vertically centre the form so the dead
+     zone distributes evenly above and below instead of pooling below the CTA. */
+  @media (min-width: 641px) and (max-width: 960px) {
+    .hsx-login-main { justify-content: center !important; }
   }
 `;
