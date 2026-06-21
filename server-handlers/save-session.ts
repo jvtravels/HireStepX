@@ -24,6 +24,8 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
 import { resolveActiveResumeVersionId } from "./_resume-versioning";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
+import { getMilestoneHit } from "./_streak-reward";
+import { grantSessionCredits } from "./_session-credits";
 import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -298,6 +300,10 @@ export default async function handler(req: Request): Promise<Response> {
   //    completes one session at a time, so races aren't real here.
   const nowIso = new Date().toISOString();
   let practiceAppended = false;
+  // Streak-milestone reward outcome, surfaced in the response + analytics so the
+  // client can show a "you earned a free session!" toast.
+  let streakMilestone: number | null = null;
+  let streakRewardGranted = false;
   try {
     const getRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,started_session_ids`,
@@ -335,6 +341,28 @@ export default async function handler(req: Request): Promise<Response> {
       );
       if (patchRes.ok) {
         practiceAppended = true;
+        // ── Streak-milestone reward ──
+        // When this append lands the user exactly on a 7/14/30 milestone,
+        // grant one bonus session credit (service-role-only ledger). Gated on
+        // !alreadyCounted so a save retry — which skips the append — can't
+        // re-trigger; the exact-count match is itself idempotent because each
+        // append increments the streak by exactly one, so a given milestone
+        // count is reached at most once in the row's lifetime.
+        if (!alreadyCounted) {
+          const milestone = getMilestoneHit(next.length);
+          if (milestone) {
+            streakMilestone = milestone;
+            // retries=2: money-adjacent grant, must survive a transient Supabase blip.
+            const newBalance = await grantSessionCredits(
+              SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, 1, fetch, 2,
+            );
+            streakRewardGranted = newBalance !== null;
+            console.warn(
+              `[save-session] streak milestone ${milestone} user=${auth.userId.slice(0, 8)} ` +
+              `reward granted=${streakRewardGranted} balance=${newBalance ?? "fail"}`,
+            );
+          }
+        }
       } else {
         const t = await patchRes.text().catch(() => "");
         console.warn(`[save-session] practice_timestamps patch failed HTTP ${patchRes.status}: ${t.slice(0, 200)}`);
@@ -416,6 +444,8 @@ export default async function handler(req: Request): Promise<Response> {
   await captureServerEvent("interview_completed", distinctIdFrom(req, auth.userId), {
     session_id: sessionRow.id,
     practice_appended: practiceAppended,
+    streak_milestone: streakMilestone,
+    streak_reward_granted: streakRewardGranted,
   }, req);
 
   return new Response(JSON.stringify({
@@ -424,5 +454,9 @@ export default async function handler(req: Request): Promise<Response> {
     practiceAppended,
     timestamp: nowIso,
     strippedColumns: strippedSession,
+    // null when no milestone hit this save; the number (7/14/30) when one was,
+    // with streakRewardGranted reflecting whether the bonus credit landed.
+    streakMilestone,
+    streakRewardGranted,
   }), { status: 200, headers });
 }
