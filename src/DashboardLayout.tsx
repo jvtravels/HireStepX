@@ -189,6 +189,12 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     return match?.id || "dashboard";
   })();
 
+  /* Exhausted-quota states — used to switch the plan card from a
+     punitive "limit reached" framing to a calm "all done" achievement. */
+  const proExhausted = tierKnown && isPro && proRemaining === 0;
+  const starterExhausted = tierKnown && isStarter && starterRemaining === 0;
+  const freeExhausted = tierKnown && isFree && sessionsRemaining === 0;
+
   return (
     // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
     // 60-80px gap at the bottom when the bar collapses. The vh value
@@ -328,7 +334,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         <div style={{ flex: 1 }} />
 
         {/* Plan Status */}
-        <div style={{ margin: "0 8px 12px", padding: "14px", borderRadius: 12, background: isPro ? "rgba(21,128,61,0.11)" : (isFree && sessionsRemaining === 0) ? "rgba(180,83,9,0.14)" : "rgba(180,83,9,0.08)", border: `1px solid ${isPro ? "rgba(21,128,61,0.22)" : (isFree && sessionsRemaining === 0) ? "rgba(185,28,28,0.28)" : "rgba(180,83,9,0.2)"}`, flexShrink: 0 }}>
+        <div style={{ margin: "0 8px 12px", padding: "14px", borderRadius: 12,
+          background: isPro
+            ? proExhausted ? "rgba(180,83,9,0.06)" : "rgba(21,128,61,0.11)"
+            : freeExhausted ? "rgba(180,83,9,0.10)" : "rgba(180,83,9,0.08)",
+          border: `1px solid ${isPro
+            ? proExhausted ? "rgba(180,83,9,0.16)" : "rgba(21,128,61,0.22)"
+            : freeExhausted ? "rgba(180,83,9,0.22)" : "rgba(180,83,9,0.2)"}`,
+          flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
             {isPro ? (
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
@@ -358,14 +371,20 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </span>
             )}
           </div>
-          <p style={{ fontFamily: font.ui, fontSize: 11, color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? c.ember : c.stone, lineHeight: 1.4, marginBottom: (isStarter || isPro) && user?.subscriptionEnd ? 3 : 8, fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1) || (isStarter && starterRemaining <= 2) || (isPro && proRemaining <= 5)) ? 600 : 400 }}>
+          <p style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4,
+            marginBottom: (isStarter || isPro) && user?.subscriptionEnd ? 3 : 8,
+            color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? c.ember : c.stone,
+            fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1 && !proExhausted && !starterExhausted) || (isStarter && starterRemaining <= 2) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? 600 : 400,
+          }}>
             {!tierKnown ? "\u00a0"
+              : proExhausted
+                ? `All ${PRO_MONTHLY_LIMIT} sessions used this month.`
+              : starterExhausted
+                ? `All ${STARTER_WEEKLY_LIMIT} sessions used this week.`
               : isPro
-                ? proRemaining > 0
-                  ? `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions this month${proRemaining <= 5 ? ", running low" : ""}`
-                  : "Monthly limit reached. Resets next month."
+                ? `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions this month${proRemaining <= 5 ? ", running low" : ""}`
               : isStarter
-                ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions this week${starterRemaining <= 2 && starterRemaining > 0 ? ", running low" : ""}`
+                ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions this week${starterRemaining <= 2 ? ", running low" : ""}`
               : sessionsRemaining > 0
                 ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? ", last one" : ""}`
               : "No sessions left. Upgrade to continue."}
@@ -376,19 +395,47 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             </p>
           )}
           {tierKnown && (isFree || isStarter || isPro) && (
-            <div style={{ height: 3, borderRadius: 2, background: c.border, marginBottom: 12 }}>
-              {isFree ? (
-                <div style={{ height: "100%", borderRadius: 2, background: sessionsRemaining === 0 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsUsed / FREE_SESSION_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
-              ) : isStarter ? (
-                <div style={{ height: "100%", borderRadius: 2, background: starterRemaining === 0 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsThisWeek / STARTER_WEEKLY_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
-              ) : (
-                <div style={{ height: "100%", borderRadius: 2, background: proRemaining === 0 ? c.ember : c.sage, width: `${Math.min(100, (sessionsThisMonth / PRO_MONTHLY_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
-              )}
-            </div>
+            proExhausted || starterExhausted || freeExhausted
+              /* Achievement pips: all filled in copper = "you completed your sessions" */
+              ? <div style={{ display: "flex", gap: 3, marginBottom: 12 }}>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: c.gilt }} />
+                  ))}
+                </div>
+              /* Progress bar: partial fill for active-quota states */
+              : <div style={{ height: 3, borderRadius: 2, background: c.border, marginBottom: 12 }}>
+                  {isFree ? (
+                    <div style={{ height: "100%", borderRadius: 2, background: sessionsRemaining === 1 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsUsed / FREE_SESSION_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
+                  ) : isStarter ? (
+                    <div style={{ height: "100%", borderRadius: 2, background: starterRemaining <= 2 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsThisWeek / STARTER_WEEKLY_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
+                  ) : (
+                    <div style={{ height: "100%", borderRadius: 2, background: proRemaining <= 5 ? c.ember : c.sage, width: `${Math.min(100, (sessionsThisMonth / PRO_MONTHLY_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
+                  )}
+                </div>
           )}
           {!tierKnown ? (
             <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
+          ) : proExhausted ? (
+            /* Exhausted Pro: reframe as an opportunity, not a wall */
+            <>
+              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginBottom: 8, lineHeight: 1.5 }}>
+                Keep your prep streak going.
+              </p>
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                title="Add more sessions or upgrade your plan (⌘B)"
+                style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: c.gilt, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", transition: "filter 0.2s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
+                onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
+              >Upgrade plan →</button>
+              {user?.subscriptionEnd && (
+                <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginTop: 7, opacity: 0.65 }}>
+                  Resets {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                </p>
+              )}
+            </>
           ) : isPro ? (
+            /* Active Pro: neutral management actions */
             <>
               <button onClick={() => setShowUpgradeModal(true)} title="Billing, invoices, and plan changes (⌘B)" style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: "none", background: c.sage, color: "#fff", fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.01em", transition: "filter 0.2s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.87)")}
@@ -400,10 +447,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               >Cancel plan</button>
             </>
           ) : (
+            /* Free / Starter: upgrade prompt */
             <button onClick={() => setShowUpgradeModal(true)} title="See what's included in Pro — unlimited sessions, STAR coaching, skill tracking" style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.2s" }}
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.93)")}
               onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-            >{isFree && sessionsRemaining === 0 ? "Unlock sessions now" : "Upgrade to Pro"}</button>
+            >{freeExhausted ? "Unlock sessions now" : "Upgrade to Pro"}</button>
           )}
         </div>
 
