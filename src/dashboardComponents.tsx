@@ -505,7 +505,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                           </p>
                         </div>
                         <button onClick={() => handleCheckout("single")} disabled={!!loading}
-                          style={{ width: "100%", padding: "12px 18px", borderRadius: 10, border: "none", background: c.gilt, color: "#FDFCF7", fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== "single" ? 0.5 : 1, boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)", transition: "transform 0.18s ease, box-shadow 0.18s ease", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                          style={{ width: "100%", padding: "12px 18px", borderRadius: 10, border: "none", background: c.slate, color: "#FFFFFF", fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== "single" ? 0.5 : 1, boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)", transition: "transform 0.18s ease, box-shadow 0.18s ease", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                           onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
                           onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
                         >
