@@ -659,86 +659,112 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", right: "max(24px, env(safe-area-inset-right))", zIndex: 80 }}>
         {helpOpen && (
           <div role="dialog" aria-modal="true" aria-label="Help and support" style={{
-            width: 320, marginBottom: 12,
-            background: T.white, border: `1px solid ${c.border}`, borderRadius: 14,
-            padding: "20px 20px 18px", boxShadow: shadow.modal,
+            width: 340, marginBottom: 12,
+            background: T.white, border: `1px solid ${c.border}`, borderRadius: 16,
+            overflow: "hidden", boxShadow: shadow.modal,
             animation: "slideDown 0.2s ease",
           }}>
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-              <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, color: c.ivory, margin: 0, letterSpacing: "-0.01em" }}>Help & Support</h3>
-              <button onClick={() => setHelpOpen(false)} aria-label="Close help panel" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4, borderRadius: 6, transition: "color 0.15s", lineHeight: 0 }}
-                onMouseEnter={(e) => e.currentTarget.style.color = c.ivory}
-                onMouseLeave={(e) => e.currentTarget.style.color = c.stone}>
+            {/* Header strip — copper tint gives panel immediate identity */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "14px 18px",
+              background: T.copper100, borderBottom: `1px solid ${T.copperBorder}`,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                  background: T.copper, display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </div>
+                <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: T.copperDark, margin: 0, letterSpacing: "-0.01em" }}>Help & Support</h3>
+              </div>
+              <button onClick={() => setHelpOpen(false)} aria-label="Close help panel"
+                style={{ background: "none", border: "none", color: T.copper, cursor: "pointer", padding: 4, borderRadius: 6, lineHeight: 0, transition: "opacity 0.15s" }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.6"}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
-            {/* Contact row */}
-            <a href="mailto:support@hirestepx.com"
-              style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                borderRadius: 8, border: `1px solid ${T.copperBorder}`,
-                background: T.copper100, textDecoration: "none",
-                transition: "background 0.15s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget as HTMLAnchorElement).style.background = T.copperSoft}
-              onMouseLeave={(e) => (e.currentTarget as HTMLAnchorElement).style.background = T.copper100}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              <div>
-                <p style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: T.copper, margin: 0 }}>support@hirestepx.com</p>
-                <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: 0, marginTop: 1 }}>Typically within 24 hours</p>
-              </div>
-            </a>
+            {/* Body */}
+            <div style={{ padding: "18px 18px 16px" }}>
+              {/* Type label */}
+              <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, margin: "0 0 10px", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>
+                What&apos;s on your mind?
+              </p>
 
-            {/* Divider */}
-            <div style={{ height: 1, background: c.border, margin: "16px 0" }} />
-
-            {/* Feedback section */}
-            <div>
-              {/* Type pills */}
-              <div style={{ display: "flex", gap: 6, marginBottom: 10, marginTop: 12, flexWrap: "wrap" as const }}>
-                {(["Bug", "Feature", "Billing", "Other"] as const).map((t) => {
-                  const tKey = t.toLowerCase() as "bug" | "feature" | "billing" | "other";
-                  const active = helpType === tKey;
-                  const activeBg   = tKey === "bug" ? T.error100   : tKey === "feature" ? T.indigo100  : T.copper100;
-                  const activeColor= tKey === "bug" ? T.error      : tKey === "feature" ? T.indigo     : T.copper;
-                  const activeBdr  = tKey === "bug" ? `1px solid rgba(185,28,28,0.3)` : tKey === "feature" ? `1px solid ${T.indigoRing}` : `1px solid ${T.copperBorder}`;
+              {/* Type selector — 2×2 icon+label grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 14 }}>
+                {([
+                  {
+                    key: "bug" as const, label: "Bug report",
+                    icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2l1.5 1.5"/><path d="M14.5 3.5L16 2"/><path d="M9 7.5h6"/><path d="M12 7.5v13"/><path d="M7.5 10.5H4a2 2 0 0 0-2 2v1a6 6 0 0 0 6 6h8a6 6 0 0 0 6-6v-1a2 2 0 0 0-2-2h-3.5"/><path d="M4.5 7.5A3.5 3.5 0 0 1 8 4h8a3.5 3.5 0 0 1 3.5 3.5"/></svg>,
+                    activeBg: T.error100, activeColor: T.error, activeBdr: `1px solid rgba(185,28,28,0.25)`,
+                  },
+                  {
+                    key: "feature" as const, label: "Feature idea",
+                    icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+                    activeBg: T.indigo100, activeColor: T.indigo, activeBdr: `1px solid ${T.indigoRing}`,
+                  },
+                  {
+                    key: "billing" as const, label: "Billing",
+                    icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+                    activeBg: T.copper100, activeColor: T.copper, activeBdr: `1px solid ${T.copperBorder}`,
+                  },
+                  {
+                    key: "other" as const, label: "Other",
+                    icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+                    activeBg: T.copper100, activeColor: T.copper, activeBdr: `1px solid ${T.copperBorder}`,
+                  },
+                ]).map(({ key, label, icon, activeBg, activeColor, activeBdr }) => {
+                  const active = helpType === key;
                   return (
-                    <button
-                      key={t}
-                      onClick={() => setHelpType(tKey)}
-                      style={{
-                        padding: "4px 11px", borderRadius: 20, cursor: "pointer",
-                        fontFamily: font.ui, fontSize: 11, fontWeight: 600,
-                        transition: "all 0.15s", letterSpacing: "0.01em",
-                        background: active ? activeBg : "transparent",
-                        color: active ? activeColor : c.stone,
-                        border: active ? activeBdr : `1px solid ${c.border}`,
-                      }}
-                    >{t}</button>
+                    <button key={key} onClick={() => setHelpType(key)} style={{
+                      display: "flex", alignItems: "center", gap: 7,
+                      padding: "9px 11px", borderRadius: 8, cursor: "pointer",
+                      fontFamily: font.ui, fontSize: 12, fontWeight: active ? 600 : 500,
+                      transition: "all 0.15s", textAlign: "left" as const,
+                      background: active ? activeBg : T.creamSoft,
+                      color: active ? activeColor : c.stone,
+                      border: active ? activeBdr : `1px solid transparent`,
+                    }}>
+                      {icon}
+                      {label}
+                    </button>
                   );
                 })}
               </div>
+
+              {/* Textarea */}
               <textarea
                 rows={3}
-                placeholder={helpType === "bug" ? "Describe what went wrong..." : helpType === "feature" ? "Describe what you'd like..." : helpType === "billing" ? "Describe your billing question..." : "Describe your issue or suggestion..."}
+                placeholder={helpType === "bug" ? "What happened? What did you expect?" : helpType === "feature" ? "Describe the feature you'd like..." : helpType === "billing" ? "Describe your billing question..." : "How can we help?"}
                 value={helpFeedback}
                 onChange={(e) => { setHelpFeedback(e.target.value); if (helpSent) setHelpSent(false); }}
+                maxLength={500}
                 style={{
-                  width: "100%", boxSizing: "border-box", padding: "9px 11px", borderRadius: 8,
+                  width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 8,
                   background: T.creamSoft, border: `1px solid ${c.border}`,
                   color: c.ivory, fontFamily: font.ui, fontSize: 13, resize: "none",
-                  outline: "none", transition: "border-color 0.15s",
-                  lineHeight: 1.5,
+                  outline: "none", transition: "border-color 0.15s", lineHeight: 1.55,
+                  marginBottom: 10,
                 }}
                 onFocus={(e) => e.currentTarget.style.borderColor = T.copperBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = c.border}
               />
+
+              {/* Send / success */}
               {helpSent ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "10px 12px", borderRadius: 8,
+                  background: T.success100, border: `1px solid rgba(21,128,61,0.2)`,
+                }}>
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  <p style={{ fontFamily: font.ui, fontSize: 12, color: T.success, margin: 0, fontWeight: 500 }}>Sent! We'll get back to you soon.</p>
+                  <p style={{ fontFamily: font.ui, fontSize: 12, color: T.success, margin: 0, fontWeight: 500 }}>Sent! We&apos;ll get back to you soon.</p>
                 </div>
               ) : (
                 <button
@@ -769,18 +795,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     }
                   }}
                   style={{
-                    marginTop: 10, width: "100%", padding: "9px 0", borderRadius: 8,
+                    width: "100%", padding: "10px 0", borderRadius: 8,
                     cursor: helpSending || !helpFeedback.trim() ? "default" : "pointer",
-                    background: helpSending || !helpFeedback.trim()
-                      ? "transparent"
-                      : `linear-gradient(135deg, ${T.copper}, ${T.copperDark})`,
-                    border: helpSending || !helpFeedback.trim()
-                      ? `1px solid ${c.border}`
-                      : "none",
-                    color: helpSending || !helpFeedback.trim() ? c.stone : T.white,
+                    background: !helpFeedback.trim() ? T.creamSoft : `linear-gradient(135deg, ${T.copper}, ${T.copperDark})`,
+                    border: !helpFeedback.trim() ? `1px solid ${c.border}` : "none",
+                    color: !helpFeedback.trim() ? c.stone : T.white,
                     fontFamily: font.ui, fontSize: 13, fontWeight: 600,
-                    transition: "opacity 0.15s",
-                    opacity: helpSending ? 0.65 : 1,
+                    transition: "opacity 0.15s", opacity: helpSending ? 0.65 : 1,
                     letterSpacing: "0.01em",
                   }}
                   onMouseEnter={(e) => { if (!helpSending && helpFeedback.trim()) e.currentTarget.style.opacity = "0.88"; }}
@@ -788,6 +809,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   {helpSending ? "Sending..." : "Send Feedback"}
                 </button>
               )}
+
+              {/* Secondary email fallback */}
+              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center" as const, margin: "10px 0 0" }}>
+                Or email{" "}
+                <a href="mailto:support@hirestepx.com" style={{ color: T.copper, textDecoration: "none", fontWeight: 500 }}>
+                  support@hirestepx.com
+                </a>
+              </p>
             </div>
           </div>
         )}
