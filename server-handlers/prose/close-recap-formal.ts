@@ -26,7 +26,14 @@ export function proseCloseRecapFormal(
   }
   const parts: string[] = [];
   parts.push(`Fixed ₹${action.fixedLpa}L`);
-  parts.push(`variable target ₹${action.variableLpa}L`);
+  /* PRI-54b (2026-06-22) — only recap a variable component when the band
+   * actually carries one (deriveOfferFixedVariable returns variableLpa>0
+   * solely when band.variableMax>0). A pure-fixed offer must not show a
+   * fabricated "variable target ₹0L" line; the Fixed figure IS the full
+   * guaranteed cash. */
+  if (action.variableLpa > 0) {
+    parts.push(`variable target ₹${action.variableLpa}L`);
+  }
   if (action.joiningBonusLpa != null && action.joiningBonusLpa > 0) {
     /* Audit fix 2026-05-21: tier+amount-aware clawback. */
     const cb = clawbackForCompany(action.joiningBonusLpa, state.company);

@@ -1049,11 +1049,22 @@ const PROSE_ARMS: ProseArmRegistry = {
       jb != null && jb > 0
         ? ` On top of that, there's a one-time joining bonus of ₹${jb}L.`
         : "";
+    /* PRI-54b (2026-06-22) — only quote a variable split when the band
+     * actually carries one (variableLpa>0 ⟺ band.variableMax>0). For a
+     * pure-fixed offer, present the full figure as guaranteed cash rather
+     * than fabricating a "₹0L variable target" — keeps the breakdown
+     * consistent with the flat number quoted at anchor and at close. */
+    if (action.variableLpa > 0) {
+      return (
+        `Happy to break it down — the ₹${action.totalLpa}L is ₹${action.fixedLpa}L fixed, ` +
+        `which is your guaranteed monthly cash, plus a ₹${action.variableLpa}L variable target ` +
+        `paid on the annual performance rating. The fixed is contractual; the variable typically ` +
+        `pays out 80-100% on a meets-expectations rating.${jbPart}`
+      );
+    }
     return (
-      `Happy to break it down — the ₹${action.totalLpa}L is ₹${action.fixedLpa}L fixed, ` +
-      `which is your guaranteed monthly cash, plus a ₹${action.variableLpa}L variable target ` +
-      `paid on the annual performance rating. The fixed is contractual; the variable typically ` +
-      `pays out 80-100% on a meets-expectations rating.${jbPart}`
+      `Happy to break it down — the ₹${action.totalLpa}L is fully fixed cash, ` +
+      `guaranteed and contractual, with no variable component on this grade.${jbPart}`
     );
   },
 

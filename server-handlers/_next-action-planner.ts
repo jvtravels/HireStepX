@@ -6992,15 +6992,29 @@ export function deriveOfferFixedVariable(
   state: NegotiationState,
   total: number,
 ): { fixedLpa: number; variableLpa: number } {
-  const baseStretch = state.band.baseStretch ?? Math.round(total * 0.85 * 10) / 10;
-  const variableMax =
-    state.band.variableMax ?? Math.max(0, Math.round((total - baseStretch) * 10) / 10);
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  const variableMax = state.band.variableMax;
+  /* PRI-54b (2026-06-22) — honest split, no fabrication. A variable
+   * component is carved out ONLY when the band actually carries one
+   * (band.variableMax > 0) — the exact signal every OTHER prose path
+   * already keys off (anchor-with-offer.ts, the offer-recap, and
+   * info-disclosure.ts all gate on `variableMax > 0`). The previous
+   * default — baseStretch = total*0.85, variableMax = the remainder —
+   * fabricated an 85/15 split for EVERY offer. Since variableMax is
+   * never populated on today's bands, that meant the close-recap and the
+   * straight-fitment breakdown both invented a "Fixed ₹X + variable ₹Y"
+   * for pure-fixed offers, contradicting the flat figure the anchor
+   * prose (correctly) quoted. With no real variable bound the whole
+   * offer is fixed. When a band DOES carry variableMax (validated in the
+   * kernel and used by the anchor prose), the split returns automatically
+   * — so this is forward-compatible, not a feature removal. */
+  if (!(typeof variableMax === "number" && variableMax > 0)) {
+    return { fixedLpa: round1(total), variableLpa: 0 };
+  }
+  const baseStretch = state.band.baseStretch ?? Math.max(0, round1(total - variableMax));
   const fixedLpa = Math.min(total, baseStretch);
-  const variableLpa = Math.max(
-    0,
-    Math.min(variableMax, Math.round((total - fixedLpa) * 10) / 10),
-  );
-  return { fixedLpa, variableLpa };
+  const variableLpa = Math.max(0, Math.min(variableMax, round1(total - fixedLpa)));
+  return { fixedLpa: round1(fixedLpa), variableLpa };
 }
 
 function buildCloseRecapFormal(state: NegotiationState): PlannedAction {

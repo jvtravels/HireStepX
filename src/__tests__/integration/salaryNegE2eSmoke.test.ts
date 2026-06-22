@@ -358,9 +358,18 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
          * a terminal statement closer ("Let me recap the fitment before I
          * revert internally — ... circulate by EOD.") so the close
          * actually closes. The structural anchor is now that recap
-         * prefix, and the prose must NOT end in a question. */
+         * prefix, and the prose must NOT end in a question.
+         *
+         * PRI-54b (2026-06-22) — the recap shows a "variable target ₹XL"
+         * clause ONLY when the resolved band actually carries a variable
+         * component (band.variableMax > 0). Real bands from band
+         * resolution are pure-fixed, so this smoke run's recap is "Fixed
+         * ₹XL" with no variable line — asserting "variable" here would
+         * pin the old fabricated 85/15 split. The cash fitment (fixed) is
+         * the load-bearing token; variable is conditional, asserted
+         * separately in closeRecapFormal.test.ts on a variable-bearing
+         * band. */
         expect(lc).toContain("fixed");
-        expect(lc).toContain("variable");
         expect(lc).toContain("recap the fitment");
         expect(lc).not.toMatch(/\?\s*$/);
         sawRecap = true;

@@ -98,7 +98,12 @@ describe("close-recap-formal planner state (Fix 4)", () => {
   });
 
   it("canonical prose enumerates fitment + variable + JB + notice + BGV + OL and ends as a terminal statement (AUDIT-W02 BUG-1)", () => {
+    /* PRI-54b (2026-06-22) — the variable line renders ONLY when the band
+     * carries a real variable component. Seed band.variableMax so this
+     * test genuinely exercises the variable-enumeration path (it used to
+     * pass on the fabricated 85/15 split, which is the bug PRI-54b kills). */
     const s = init({
+      band: { ...BAND, baseStretch: 20, variableMax: 4 },
       phase: "closing-push",
       highestOfferMade: 24,
       verbalAcceptanceTurn: 6,
