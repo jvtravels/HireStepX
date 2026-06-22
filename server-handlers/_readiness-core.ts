@@ -564,17 +564,14 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
     pillars: [vectors[i].competence, vectors[i].consistency, vectors[i].coverage, vectors[i].currency, vectors[i].composure],
   }));
 
-  // The candidate's target company. Prefer the profile, but fall back to the
-  // company practiced in their most recent session — most users set a company
-  // when starting an interview but never fill the profile field, so the literal
-  // "Target company" placeholder otherwise leaks into the UI.
-  let resolvedCompany = profile.targetCompany || "";
-  if (!resolvedCompany) {
-    for (let i = n - 1; i >= 0; i--) {
-      const c = sessions[i].company?.trim();
-      if (c) { resolvedCompany = c; break; }
-    }
-  }
+  // The candidate's target company, taken ONLY from their profile. We do not
+  // borrow the company from a recent session: a single Flipkart mock would
+  // otherwise peg the whole readiness view to "Flipkart" even though the
+  // candidate's actual target is different, and the hire-bar threshold (which
+  // is profile-only) would silently disagree with the borrowed label. When the
+  // profile company is unset we fall back to a holistic, role-level framing
+  // instead of a company scenario.
+  const resolvedCompany = (profile.targetCompany || "").trim();
 
   return {
     ri, band: bandFromRi(ri, threshold), confidence, threshold, delta14d, sessions: n,

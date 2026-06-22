@@ -307,23 +307,23 @@ describe("target company resolution", () => {
     expect(p.target.company).toBe("Razorpay");
   });
 
-  it("falls back to the most recent session's company when the profile is blank", () => {
+  it("does NOT borrow a company from sessions when the profile is blank (holistic view)", () => {
     const sessions = [
       session({ id: "a", createdAt: daysAgo(3), company: "Flipkart" }),
       session({ id: "b", createdAt: daysAgo(1), company: "Razorpay" }),
     ];
     const p = computeReadiness(input(sessions, { targetCompany: "" }))!;
-    expect(p.target.company).toBe("Razorpay");
-    expect(p.cohort.label).toContain("Razorpay");
+    // No profile company → stay holistic, never peg the view to a session's company.
+    expect(p.target.company).toBe("your target company");
+    expect(p.cohort.label).not.toContain("Flipkart");
+    expect(p.cohort.label).not.toContain("Razorpay");
   });
 
-  it("skips empty session companies to find the most recent non-empty one", () => {
-    const sessions = [
-      session({ id: "a", createdAt: daysAgo(3), company: "Flipkart" }),
-      session({ id: "b", createdAt: daysAgo(1), company: "  " }),
-    ];
-    const p = computeReadiness(input(sessions, { targetCompany: "" }))!;
-    expect(p.target.company).toBe("Flipkart");
+  it("uses a role-level cohort label when the profile company is blank", () => {
+    const sessions = [session({ id: "a", company: "Flipkart" })];
+    const p = computeReadiness(input(sessions, { targetCompany: "", targetRole: "Senior PM" }))!;
+    expect(p.cohort.label).toBe("Senior PM hire bar");
+    expect(p.cohort.label).not.toContain("Flipkart");
   });
 
   it("never leaks the literal placeholder — uses generic copy when nothing is set", () => {
