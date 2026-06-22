@@ -426,28 +426,25 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   </span>
                 </div>
 
-                {/* ── Smooth progress bar ──
-                    Hidden when plan exhausted + credits exist. */}
-                {!(planExhausted && creditBalance > 0) && (
-                  <div
-                    role="progressbar"
-                    aria-label={planExhausted
-                      ? `All ${planTotal} sessions used ${periodLabel}`
-                      : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
-                    aria-valuenow={Math.round(pct)}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    style={{ height: 4, borderRadius: 2, background: c.border, marginBottom: 10, marginTop: 6, overflow: "hidden" }}
-                  >
-                    <div style={{
-                      height: "100%",
-                      width: `${pct}%`,
-                      borderRadius: 2,
-                      background: barFill,
-                      transition: "width 0.4s ease",
-                    }} />
-                  </div>
-                )}
+                {/* ── Smooth progress bar — always visible ── */}
+                <div
+                  role="progressbar"
+                  aria-label={planExhausted
+                    ? `All ${planTotal} sessions used ${periodLabel}`
+                    : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
+                  aria-valuenow={Math.round(pct)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  style={{ height: 4, borderRadius: 2, background: c.border, marginBottom: 10, marginTop: 6, overflow: "hidden" }}
+                >
+                  <div style={{
+                    height: "100%",
+                    width: `${pct}%`,
+                    borderRadius: 2,
+                    background: barFill,
+                    transition: "width 0.4s ease",
+                  }} />
+                </div>
 
                 {/* ── Extra sessions available — always visible ──
                     Green + bold when credits exist. Muted with 0 when none —
