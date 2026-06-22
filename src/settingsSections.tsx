@@ -578,11 +578,11 @@ function ExtraSessionsInfoBox() {
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "10px 14px", borderRadius: 8, marginTop: 4,
-      background: hasCredits ? c.success100 : c.creamSoft,
-      border: hasCredits ? `1px solid rgba(21,128,61,0.25)` : `1px solid ${c.border}`,
+      background: hasCredits ? c.success100 : "rgba(180,83,9,0.06)",
+      border: hasCredits ? `1px solid rgba(21,128,61,0.25)` : "1px solid rgba(180,83,9,0.18)",
     }}>
       <span style={{ fontFamily: font.ui, fontSize: 13, display: "flex", alignItems: "center", gap: 6,
-        color: hasCredits ? "#166534" : c.stone }}>
+        color: hasCredits ? "#166534" : c.gilt }}>
         {hasCredits ? (
           <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         ) : (
@@ -591,7 +591,7 @@ function ExtraSessionsInfoBox() {
         Extra sessions available
       </span>
       <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700,
-        color: hasCredits ? c.sage : c.stone, opacity: hasCredits ? 1 : 0.45 }}>
+        color: hasCredits ? c.sage : c.gilt, opacity: hasCredits ? 1 : 0.55 }}>
         {creditBalance}
       </span>
     </div>

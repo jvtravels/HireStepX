@@ -460,11 +460,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
                       marginBottom: 10, marginTop: planExhausted ? 6 : 2,
                       padding: "8px 11px",
-                      background: hasCredits ? T.success100 : "rgba(20,17,10,0.04)",
-                      border: hasCredits ? "1px solid rgba(21,128,61,0.22)" : `1px solid ${c.border}`,
+                      background: hasCredits ? T.success100 : "rgba(180,83,9,0.06)",
+                      border: hasCredits ? "1px solid rgba(21,128,61,0.22)" : "1px solid rgba(180,83,9,0.18)",
                       borderRadius: 8 }}>
                       <span style={{ fontFamily: font.ui, fontSize: 11, display: "flex", alignItems: "center", gap: 5,
-                        color: hasCredits ? "#166534" : c.stone }}>
+                        color: hasCredits ? "#166534" : c.gilt }}>
                         {hasCredits ? (
                           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         ) : (
@@ -473,7 +473,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                         Extra sessions available
                       </span>
                       <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 800, letterSpacing: "-0.01em",
-                        color: hasCredits ? c.sage : c.stone, opacity: hasCredits ? 1 : 0.4 }}>
+                        color: hasCredits ? c.sage : c.gilt, opacity: hasCredits ? 1 : 0.55 }}>
                         {creditBalance}
                       </span>
                     </div>
