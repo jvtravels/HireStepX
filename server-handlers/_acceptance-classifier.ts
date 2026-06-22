@@ -256,6 +256,24 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * gates. */
   /\bconsider\s+it\s+(?:accepted|done|a\s+deal|sealed|settled|signed|closed|final)\b/i,
   /\bsign\s+me\s+up\b/i,
+  /* PRI-63c (2026-06-22, offline recall sweep) — three more unambiguous
+   * same-turn consent idioms the bank missed (NO-CLOSE on a real accept). In
+   * CLOSE_CONSENT so BOTH gates fire (the PRI-56 lesson: medium-only leaves them
+   * in the soft-accept path whose trailing-non-counter gate drops the close).
+   *
+   * 12. "<n> it is" — the resign-to-a-figure idiom ("45 it is.", "30 it is").
+   *     Clause-TERMINAL so "45? it is what it is" (resigned shrug, not consent)
+   *     and "is 45 the final number" do NOT match. The planner's tier-B close
+   *     resolver binds the same figure, identical to the "<n> done" accept arm. */
+  /\b\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l)?\s+it\s+is\b\s*(?:[.!?,]|$)/i,
+  /* 13. "that's a yes (from me)" — a plain affirmative commit. The question
+   *     "is that a yes" has no apostrophe-s so `that.?s` cannot match it; the
+   *     conditional/NEGOTIATING_BUT vetoes (run first in both gates) own
+   *     "that's a yes only if base hits 40" / "that's a yes but I want more". */
+  /\bthat.?s\s+a\s+yes\b/i,
+  /* 14. "lock this/that in" — pronoun generalisation of the existing "lock it
+   *     in" commit. "lock in" is an unambiguous finalize verb. */
+  /\block\s+(?:it|this|that)\s+in\b/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -502,6 +520,17 @@ const MONEY_REJECTION_PATTERN =
 const SETTLE_NEGATION_PATTERN =
   /\b(?:not|never|no\s+longer)\s+(?:done|sold|settled?|finali[sz]ed?|closing|a\s+deal)\b/i;
 
+/* PRI-63c (2026-06-22) — "do it <redirect>" veto. The commitment idiom
+ * "let's do it" (COMMITMENT_IDIOM, SPLIT_CLAUSE, and the strict gate all carry
+ * a "do it" arm) matched "let's do it differently" / "let's do it your way" /
+ * "let's do it later" — a redirect or deferral of the approach, NOT consent to
+ * finalize (a FALSE-CLOSE: the bot finalized while the candidate was asking to
+ * change tack). Scoped to the unambiguous redirect/defer tails only; the present
+ * accept "let's do it now" / "let's do it at 45" is untouched (no tail token).
+ * Shared single-source so both gates reject in lockstep. */
+const DO_IT_REDIRECT_PATTERN =
+  /\bdo\s+it\s+(?:differently|in\s+a\s+different\s+way|a\s+different\s+way|another\s+way|some\s+other\s+way|some\s+other\s+time|your\s+way|later|instead)\b/i;
+
 /** All PRI-59/61/63 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
@@ -510,6 +539,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   IN_PRINCIPLE_PATTERN,
   MONEY_REJECTION_PATTERN,
   SETTLE_NEGATION_PATTERN,
+  DO_IT_REDIRECT_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
   ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];

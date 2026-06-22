@@ -215,3 +215,42 @@ describe("PRI-63b — negated settle-token (FALSE-CLOSE) + comma accept-with-num
     expect(classifyAcceptance("45, done deliberating", { offerOnTable: true }).accepted).toBe(false);
   });
 });
+
+describe("PRI-63c — 'do it <redirect>' FALSE-CLOSE + recall (it-is/that's-a-yes/lock-this-in)", () => {
+  it("does NOT accept 'let's do it <redirect>' (approach change/defer, not consent)", () => {
+    for (const p of [
+      "let's do it differently",
+      "let's do it your way",
+      "let's do it another way",
+      "let's do it later",
+      "let's do it instead",
+    ]) {
+      expect(detectExplicitAcceptance(p).accepted, `strict must NOT accept: ${p}`).toBe(false);
+      expect(
+        classifyAcceptance(p, { offerOnTable: true }).accepted,
+        `classify must NOT accept: ${p}`,
+      ).toBe(false);
+    }
+  });
+
+  it("still accepts the present-tense 'let's do it' / 'do it now'", () => {
+    expect(detectExplicitAcceptance("let's do it").accepted).toBe(true);
+    expect(detectExplicitAcceptance("let's do it now").accepted).toBe(true);
+  });
+
+  it("accepts the recall idioms '<n> it is' / \"that's a yes\" / 'lock this in'", () => {
+    for (const p of ["45 it is", "that's a yes from me", "yeah let's lock this in", "lock that in"]) {
+      expect(detectExplicitAcceptance(p).accepted, `expected accept: ${p}`).toBe(true);
+    }
+  });
+
+  it("'<n> it is' stays clause-terminal — resigned shrug / probe do NOT accept", () => {
+    expect(detectExplicitAcceptance("45? it is what it is").accepted).toBe(false);
+    expect(detectExplicitAcceptance("is 45 the final number").accepted).toBe(false);
+  });
+
+  it("\"that's a yes\" stays conditional/negotiation gated", () => {
+    expect(detectExplicitAcceptance("that's a yes only if base hits 40").accepted).toBe(false);
+    expect(classifyAcceptance("that's a yes but I want more", { offerOnTable: true }).accepted).toBe(false);
+  });
+});
