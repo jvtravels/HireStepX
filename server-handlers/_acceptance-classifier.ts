@@ -246,6 +246,16 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * to proceed once you fix X". */
   /\bi.?m\s+(?:fully\s+|totally\s+|completely\s+|absolutely\s+)?on\s+board\b\s*(?:[.!?]|$)/i,
   /\bhappy\s+to\s+proceed\b\s*(?:[.!?]|$)/i,
+  /* PRI-63 (2026-06-22, offline recall sweep) — "consider it accepted/done/a
+   * deal" and "sign me up", unambiguous same-turn consent over a standing offer
+   * the bank missed (NO-CLOSE on a real accept). In CLOSE_CONSENT so BOTH gates
+   * fire. "consider it" REQUIRES a settle-noun object so the hedge "I'll consider
+   * it" (think-it-over, owned by HEDGE_VETO) cannot match here. "sign me up" is
+   * the imperative analogue of the existing "where do I sign"; deferral-gated
+   * ("sign me up once you fix base") by CONDITIONAL_DEFERRAL_PATTERN in both
+   * gates. */
+  /\bconsider\s+it\s+(?:accepted|done|a\s+deal|sealed|settled|signed|closed|final)\b/i,
+  /\bsign\s+me\s+up\b/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -464,12 +474,26 @@ const PARTIAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
   /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\b(?:un(?:acceptable|workable|reasonable)|too\s+(?:low|little|less|small|tight))\b/i,
 ];
 
-/** All PRI-59/61 precision vetoes, shared by both gates. */
+/* PRI-63 (2026-06-22, offline hostile sweep) — BARE money-rejection veto. A
+ * close-consent idiom welded to an explicit price refusal in the SAME clause
+ * ("ok, deal? not at this number", "close it out? no way at 30") is a
+ * rejection, not consent (FALSE-CLOSE). NEGATION_PATTERN only fires on
+ * "not/no … accept|want|…" and PARTIAL_ACCEPT requires a but/except
+ * conjunction, so the conjunction-less "not AT this number" / "no way AT 30"
+ * forms slipped both. This scopes the refusal to a money/number OBJECT after
+ * at/for/on, so a genuine accept that happens to contain "at this number"
+ * without a leading negation ("yes, fine at this number") is NOT vetoed.
+ * Shared single-source so BOTH gates reject in lockstep. */
+const MONEY_REJECTION_PATTERN =
+  /\b(?:not|no\s+way|never|no\s+chance)\s+(?:at|for|on)\s+(?:this|that|these|those|the|such\s+a)?\s*(?:number|price|comp(?:ensation)?|figure|salary|rate|amount|level|money|ctc|package|pay|offer|\d)/i;
+
+/** All PRI-59/61/63 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
   IN_PRINCIPLE_PATTERN,
+  MONEY_REJECTION_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
   ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];
@@ -807,7 +831,14 @@ const STRICT_ACCEPTANCE_PATTERNS: RegExp[] = [
    * HEDGE_VETO_PATTERNS still runs first, so "let's go ahead if you can do X"
    * stays conditional and is NOT promoted. */
   /\blet'?s\s+(?:go\s+ahead|proceed|do\s+it)\b/i,
-  /\bgo\s+ahead\s+and\s+(?:close|send|finali[sz]e|draft|process|lock|roll)\b/i,
+  /* PRI-63 (2026-06-22, offline hostile sweep) — the close/lock arm must
+   * exclude a NEGOTIATION object the same way the "let's close" pattern above
+   * (#124) does. "go ahead and close the GAP / DIFFERENCE / SPREAD" is a push to
+   * shrink the spread, NOT consent to finalize — matching it here finalized a
+   * deal the candidate was still haggling (FALSE-CLOSE, the worst failure mode).
+   * The negative lookahead is scoped to the spread-nouns only, so "go ahead and
+   * close" (clause-end) / "go ahead and send/finalise/draft" are untouched. */
+  /\bgo\s+ahead\s+and\s+(?:close|send|finali[sz]e|draft|process|lock|roll)\b(?!\s+(?:the\s+|this\s+|that\s+)?(?:gap|difference|spread|distance|divide|delta)\b)/i,
   /* PRI-56 (2026-06-22) — terse spoken close-consent idioms ("ok, deal",
    * "deal, 40 works", "whatever you said works", "yes send it", "send it
    * over", "yes confirmed"). Shared single source with COMMITMENT_IDIOM_PATTERNS

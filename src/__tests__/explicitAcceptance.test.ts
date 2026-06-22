@@ -130,3 +130,55 @@ describe("detectExplicitAcceptance — PRI-56 terse close-consent idioms", () =>
     expect(detectExplicitAcceptance("send it over as long as it's 40 fixed").accepted).toBe(false);
   });
 });
+
+describe("detectExplicitAcceptance — PRI-63 hostile sweep (FALSE-CLOSE precision + recall)", () => {
+  it("does NOT accept 'go ahead and close the GAP/difference' (negotiation push, not consent)", () => {
+    for (const p of [
+      "go ahead and close the gap",
+      "go ahead and close the gap between our numbers",
+      "go ahead and close the difference",
+    ]) {
+      expect(detectExplicitAcceptance(p).accepted, `must NOT accept: ${p}`).toBe(false);
+    }
+  });
+
+  it("still accepts the bare 'go ahead and close/send/finalise' commit (no spread-noun)", () => {
+    for (const p of [
+      "go ahead and close it",
+      "go ahead and send the offer letter",
+      "go ahead and finalise",
+    ]) {
+      expect(detectExplicitAcceptance(p).accepted, `expected accept: ${p}`).toBe(true);
+    }
+  });
+
+  it("does NOT accept a close idiom welded to an explicit money rejection", () => {
+    for (const p of [
+      "deal? not at this number",
+      "close it out? no way at 30",
+      "ok deal, but not at this comp",
+    ]) {
+      expect(detectExplicitAcceptance(p).accepted, `must NOT accept: ${p}`).toBe(false);
+    }
+  });
+
+  it("accepts the recall idioms 'consider it accepted' / 'sign me up'", () => {
+    for (const p of [
+      "consider it accepted",
+      "consider it done",
+      "consider it a deal",
+      "sign me up",
+    ]) {
+      expect(detectExplicitAcceptance(p).accepted, `expected accept: ${p}`).toBe(true);
+    }
+  });
+
+  it("does NOT mistake the think-it-over 'I'll consider it' for a recall idiom", () => {
+    expect(detectExplicitAcceptance("I'll consider it").accepted).toBe(false);
+    expect(detectExplicitAcceptance("let me consider it over the weekend").accepted).toBe(false);
+  });
+
+  it("recall idioms stay deferral-gated", () => {
+    expect(detectExplicitAcceptance("sign me up once you fix the base").accepted).toBe(false);
+  });
+});
