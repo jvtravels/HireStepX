@@ -105,23 +105,28 @@ export default async function handler(req: Request): Promise<Response> {
     let reconciled = false;
 
     if (computedBalance !== currentBalance) {
-      // Primary path: atomic reconcile_session_credits RPC (writes audit ledger row).
-      // Fallback: direct service-role upsert when the SQL function isn't deployed yet.
+      // Use direct service-role upsert (reconcile_session_credits SQL RPC is the
+      // eventual target, but requires a Supabase migration; upsert works today).
+      // Prefer the RPC if it exists (it writes an audit ledger row), fall back
+      // immediately to upsert on any non-2xx.
       let writeOk = false;
-      const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/reconcile_session_credits`, {
-        method: "POST",
-        headers: serviceHeaders(SERVICE_ROLE_KEY),
-        body: JSON.stringify({
-          p_user_id: userId,
-          p_correct_balance: computedBalance,
-          p_note: `reconcile: granted=${grantedTotal} consumed=${consumedTotal} prev=${currentBalance}`,
-        }),
-      });
-      if (rpcRes.ok) {
-        writeOk = true;
-      } else if (rpcRes.status === 404 || rpcRes.status === 405) {
-        // SQL function not deployed yet — fall back to direct service-role upsert.
-        console.warn("[credit-reconcile] reconcile_session_credits RPC not found, using direct upsert fallback");
+
+      // Try the RPC first; any failure falls through to the upsert.
+      try {
+        const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/reconcile_session_credits`, {
+          method: "POST",
+          headers: serviceHeaders(SERVICE_ROLE_KEY),
+          body: JSON.stringify({
+            p_user_id: userId,
+            p_correct_balance: computedBalance,
+            p_note: `reconcile: granted=${grantedTotal} consumed=${consumedTotal} prev=${currentBalance}`,
+          }),
+        });
+        if (rpcRes.ok) writeOk = true;
+      } catch { /* RPC not available — fall through to direct upsert */ }
+
+      if (!writeOk) {
+        // Direct service-role upsert: INSERT … ON CONFLICT (user_id) DO UPDATE.
         const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/session_credits`, {
           method: "POST",
           headers: {
@@ -138,14 +143,11 @@ export default async function handler(req: Request): Promise<Response> {
           writeOk = true;
         } else {
           const errText = await upsertRes.text().catch(() => "");
-          console.error(`[credit-reconcile] upsert fallback failed (${upsertRes.status}): ${errText}`);
-          throw new Error(`reconcile upsert failed: ${upsertRes.status}`);
+          console.error(`[credit-reconcile] upsert failed (${upsertRes.status}): ${errText}`);
+          throw new Error(`reconcile write failed: ${upsertRes.status} — ${errText.slice(0, 200)}`);
         }
-      } else {
-        const errText = await rpcRes.text().catch(() => "");
-        console.error(`[credit-reconcile] RPC failed (${rpcRes.status}): ${errText}`);
-        throw new Error(`reconcile RPC failed: ${rpcRes.status}`);
       }
+
       if (writeOk) {
         finalBalance = computedBalance;
         reconciled = true;
