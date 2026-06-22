@@ -44,25 +44,8 @@ function SegControl({ range, onChange }: { range: RangeKey; onChange: (r: RangeK
   );
 }
 
-function ExportButtons() {
-  const copyLink = () => { try { void navigator.clipboard?.writeText(window.location.href); } catch { /* clipboard unavailable */ } };
-  const print = () => { try { window.print(); } catch { /* print unavailable */ } };
-  return (
-    <div style={{ display: "inline-flex", gap: 8 }}>
-      <button type="button" onClick={print} className="rix-btn rix-ghost rix-focus rix-tap"
-        style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 9, border: `1px solid ${t.line}`, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
-        <span aria-hidden="true">↓</span> Print / Save as PDF
-      </button>
-      <button type="button" onClick={copyLink} className="rix-btn rix-ghost rix-focus rix-tap"
-        style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 9, border: `1px solid ${t.line}`, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
-        <span aria-hidden="true">⎘</span> Copy link
-      </button>
-    </div>
-  );
-}
-
 /* Pinned header — RI summary that stays put as the page scrolls, plus the
-   range scrubber and export controls. The "always know your number" anchor. */
+   range scrubber. The "always know your number" anchor. */
 /* `stickTop` cancels the dashboard <main> scroll container's top padding
    (44px desktop / 20px mobile in DashboardLayout). A sticky child stuck at
    top:0 would pin to main's content edge — below its padding — leaving a
@@ -86,12 +69,7 @@ function StickyHeader({ d, range, onRange, showControls, stickTop = 0 }: { d: Fi
             {d.target.role} · {d.target.company} · bar <strong style={{ color: t.coal }}>{d.threshold}</strong>
           </span>
         </div>
-        {showControls && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <SegControl range={range} onChange={onRange} />
-            <ExportButtons />
-          </div>
-        )}
+        {showControls && <SegControl range={range} onChange={onRange} />}
       </div>
     </header>
   );
@@ -224,7 +202,7 @@ function LoadingState() {
 function EmptyAnalytics() {
   return (
     <CenterPane>
-      <h2 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: 0 }}>Your Readiness Index is waiting</h2>
+      <h2 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: 0 }}>Your Readiness Index is waiting</h2>
       <p style={{ fontFamily: f.sans, fontSize: 14.5, color: t.inkSoft, lineHeight: 1.6, margin: "12px 0 22px" }}>
         Complete your first evaluated mock interview and this page fills with your target-specific readiness score, five pillars, blind spots, and a refresh queue.
       </p>
