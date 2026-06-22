@@ -426,69 +426,73 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
             return (
               <>
-                {/* ── Row: usage label + remaining chip (hidden when exhausted+credits) ── */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                  <p
-                    aria-live="polite"
-                    style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
-                      color: planExhausted ? c.stone : isLow ? c.ember : c.stone,
-                      fontWeight: isLow ? 600 : 400,
-                      opacity: planExhausted ? 0.55 : 1 }}
+                {/* ── Row: usage label + remaining chip ──
+                    Hidden when plan is exhausted AND credits exist — showing "40/40 used"
+                    alongside a green "17 available" box creates contradictory signals.
+                    When credits cover the gap, skip the exhausted-plan counter entirely. */}
+                {!(planExhausted && creditBalance > 0) && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                    <p
+                      aria-live="polite"
+                      style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
+                        color: planExhausted ? c.stone : isLow ? c.ember : c.stone,
+                        fontWeight: isLow ? 600 : 400,
+                        opacity: planExhausted ? 0.55 : 1 }}
+                    >
+                      {planUsed}/{planTotal} used {periodLabel}
+                    </p>
+                    {!planExhausted && (
+                      <span style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                        <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, lineHeight: 1,
+                          color: isLow ? c.ember : (isPro ? c.sage : c.gilt) }}>
+                          {planLeft}
+                        </span>
+                        <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 500, color: c.stone,
+                          letterSpacing: "0.05em", textTransform: "uppercase" as const, opacity: 0.65 }}>
+                          left
+                        </span>
+                      </span>
+                    )}
+                    {planExhausted && creditBalance === 0 && (
+                      <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, opacity: 0.38 }}>
+                        0 left
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Progress bar — hidden when exhausted + credits exist (bar would be invisible
+                    on the green card bg and contradicts the positive credits row below) ── */}
+                {!(planExhausted && creditBalance > 0) && (
+                  <div
+                    role="progressbar"
+                    aria-label={planExhausted
+                      ? `All ${planTotal} sessions used ${periodLabel}`
+                      : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
+                    aria-valuenow={Math.round(pct)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    style={{ height: 4, borderRadius: 2,
+                      background: c.border,
+                      marginBottom: planExhausted ? 8 : creditBalance > 0 ? 6 : 12 }}
                   >
-                    {planUsed}/{planTotal} used {periodLabel}
-                  </p>
-                  {/* Right chip: remaining count — hidden when plan exhausted + credits exist
-                      (the credit card below is the hero number in that state) */}
-                  {!planExhausted && (
-                    <span style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                      <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, lineHeight: 1,
-                        color: isLow ? c.ember : (isPro ? c.sage : c.gilt) }}>
-                        {planLeft}
-                      </span>
-                      <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 500, color: c.stone,
-                        letterSpacing: "0.05em", textTransform: "uppercase" as const, opacity: 0.65 }}>
-                        left
-                      </span>
-                    </span>
-                  )}
-                  {planExhausted && creditBalance === 0 && (
-                    <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, opacity: 0.38 }}>
-                      0 left
-                    </span>
-                  )}
-                </div>
+                    <div style={{ height: "100%", borderRadius: 2, background: barFill,
+                      width: `${pct}%`, transition: "width 0.4s ease",
+                      opacity: planExhausted ? 0.45 : 1 }} />
+                  </div>
+                )}
 
-                {/* ── Progress bar ── */}
-                <div
-                  role="progressbar"
-                  aria-label={planExhausted
-                    ? (creditBalance > 0
-                      ? `All ${planTotal} plan sessions used · ${creditBalance} purchased credits available`
-                      : `All ${planTotal} sessions used ${periodLabel}`)
-                    : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
-                  aria-valuenow={Math.round(pct)}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  style={{ height: 4, borderRadius: 2,
-                    background: c.border,
-                    marginBottom: planExhausted ? 8 : creditBalance > 0 ? 6 : 12 }}
-                >
-                  <div style={{ height: "100%", borderRadius: 2, background: barFill,
-                    width: `${pct}%`, transition: "width 0.4s ease",
-                    opacity: planExhausted ? 0.45 : 1 }} />
-                </div>
-
-                {/* ── CASE A: plan exhausted + credits — green "you're good" row ── */}
+                {/* ── CASE A: plan exhausted + credits — credits are the ONLY signal shown ── */}
                 {planExhausted && creditBalance > 0 && (
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                    marginBottom: 12, padding: "7px 10px",
-                    background: T.success100, border: "1px solid rgba(21,128,61,0.22)", borderRadius: 7 }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "flex", alignItems: "center", gap: 5 }}>
-                      {/* Checkmark — "you're good to go" */}
+                    marginBottom: 12, padding: "9px 12px",
+                    background: T.success100, border: "1px solid rgba(21,128,61,0.22)", borderRadius: 8 }}>
+                    <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "flex", alignItems: "center", gap: 6 }}>
                       <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      Sessions available
+                      Purchased sessions
                     </span>
-                    <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.sage }}>
+                    {/* Hero number — this is the only count the user needs to see */}
+                    <span style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 800, color: c.sage, letterSpacing: "-0.01em" }}>
                       {creditBalance}
                     </span>
                   </div>
@@ -542,15 +546,19 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
                   onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
                 >Start session →</button>
-                <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  title="Buy additional session credits"
-                  style={{ display: "block", width: "100%", marginTop: 5, background: "none", border: "none",
-                    cursor: "pointer", fontFamily: font.ui, fontSize: 11, color: c.stone, opacity: 0.6,
-                    textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
-                >Buy more sessions</button>
+                {/* Only nudge to buy when credits are running low — showing "Buy more" with
+                    17 credits remaining creates doubt and distracts from the primary action */}
+                {creditBalance <= 3 && (
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    title="Buy additional session credits"
+                    style={{ display: "block", width: "100%", marginTop: 5, background: "none", border: "none",
+                      cursor: "pointer", fontFamily: font.ui, fontSize: 11, color: c.stone, opacity: 0.6,
+                      textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
+                  >Buy more sessions</button>
+                )}
               </>
             ) : (
               /* Exhausted Pro, no credits — buy is the right primary action */
