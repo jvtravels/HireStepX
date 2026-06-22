@@ -663,21 +663,56 @@ const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, 
 function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boolean }) {
   const d = new Date(payment.created_at);
   const dateLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-  const amount = `₹${Math.round(payment.amount / 100)}`;
+  const amountDisplay = `₹${Math.round(payment.amount / 100)}`;
   const paid = payment.status === "completed";
   const tone = paid
     ? { label: "Paid", bg: c.success100, fg: c.sage, border: "rgba(21,128,61,0.28)" }
     : { label: payment.status, bg: c.error100, fg: c.ember, border: "rgba(185,28,28,0.28)" };
-  const planLabel = payment.tier ? payment.tier.charAt(0).toUpperCase() + payment.tier.slice(1) : payment.plan;
+
+  // Derive a human-readable purchase title from plan + amount.
+  // payment.plan: "single" | "weekly" | "monthly"
+  // payment.tier: "free" | "starter" | "pro" (unreliable for single — always "free")
+  const isSingle = payment.plan === "single";
+  const isWeekly = payment.plan === "weekly";
+  // Single-session: ₹9 each (900 paise). Derive qty from total amount.
+  const sessionQty = isSingle ? Math.round(payment.amount / 900) : 0;
+
+  const purchaseTitle = isSingle
+    ? `${sessionQty} extra session${sessionQty !== 1 ? "s" : ""}`
+    : isWeekly ? "Starter Plan — Weekly"
+    : payment.plan === "monthly" ? "Pro Plan — Monthly"
+    : payment.tier
+      ? payment.tier.charAt(0).toUpperCase() + payment.tier.slice(1) + " Plan"
+      : payment.plan;
+
+  // Sub-line: period for subscriptions, credit note for single purchases.
+  let subLine = "";
+  if (isSingle) {
+    subLine = "Added to session credits · never expire";
+  } else if (payment.subscription_start && payment.subscription_end) {
+    const fmt = (s: string) => new Date(s).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    subLine = `${fmt(payment.subscription_start)} – ${fmt(payment.subscription_end)}`;
+  }
+
   return (
-    <div className="settings-payment-row" style={{
-      display: "grid", gap: 16, alignItems: "center",
+    <div style={{
       padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
+      display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16,
     }}>
-      <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>{dateLabel}</div>
-      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{planLabel}</div>
-      <div style={{ fontFamily: font.mono, fontSize: 13, color: c.ivory }}>{amount}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      {/* Left: date + purchase detail */}
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600, whiteSpace: "nowrap" }}>{dateLabel}</span>
+          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 500 }}>{purchaseTitle}</span>
+        </div>
+        {subLine && (
+          <p style={{ margin: "3px 0 0", fontFamily: font.ui, fontSize: 11, color: c.stone, lineHeight: 1.4 }}>{subLine}</p>
+        )}
+      </div>
+
+      {/* Right: amount + badge + receipt */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ivory }}>{amountDisplay}</span>
         <div style={{
           fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
           color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
@@ -688,7 +723,7 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
             style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, textDecoration: "none", whiteSpace: "nowrap" }}
             onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
             onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
-          >View receipt →</a>
+          >Receipt →</a>
         )}
       </div>
     </div>
