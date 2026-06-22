@@ -502,7 +502,7 @@ export function PricingPageV2() {
         eyebrow="Pricing"
         title="Costs less than"
         accent="one chai a day."
-        lead="Free to start. Buy one session, a week, or a month, whichever matches your prep. UPI, cards, and netbanking accepted. Cancel anytime, with a 7-day refund if unused."
+        lead="Free to start. Buy one session or a week, whichever matches your prep. UPI, cards, and netbanking accepted. 7-day refund if unused."
       />
 
       {/* Tier cards */}
@@ -512,7 +512,7 @@ export function PricingPageV2() {
             className="mv2p-pricing-row"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
+              gridTemplateColumns: `repeat(${tiers.length}, 1fr)`,
               gap: 16,
               alignItems: "stretch",
             }}

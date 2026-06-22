@@ -28,10 +28,9 @@ describe("UpgradeModal", () => {
 
     expect(screen.getByText("Free")).toBeInTheDocument();
     expect(screen.getByText("Weekly")).toBeInTheDocument();
-    // Annual billing was removed from the product — "Monthly" now appears only
-    // as the pro plan-card name, never as a billing-period toggle button.
-    const monthlyEls = screen.getAllByText("Monthly");
-    expect(monthlyEls.some((el) => el.tagName !== "BUTTON")).toBe(true);
+    // Per session is rendered as the interactive slider card (null slot),
+    // not as a named plan card. Monthly plan is hidden (hidden: true).
+    expect(screen.getByText("Per Session")).toBeInTheDocument();
   });
 
   it("shows current plan indicator for free tier", () => {
@@ -72,13 +71,13 @@ describe("UpgradeModal", () => {
   it("shows checkout buttons for non-current plans", () => {
     render(<UpgradeModal {...defaultProps} />);
     expect(screen.getByText(/Go weekly/)).toBeInTheDocument();
-    expect(screen.getByText(/Go monthly/)).toBeInTheDocument();
+    // Monthly plan is hidden (hidden: true) — no "Go monthly" button rendered.
   });
 
   it("offers a single-session (₹9) purchase option", () => {
     render(<UpgradeModal {...defaultProps} />);
-    // The moment-of-need top-up for a free user who hit their limit.
-    expect(screen.getByText(/Buy single/)).toBeInTheDocument();
+    // The interactive slider card shows "Buy 1 session" (for qty=1).
+    expect(screen.getByText(/Buy 1 session/)).toBeInTheDocument();
   });
 
   it("marks starter as current when user is on starter plan", () => {

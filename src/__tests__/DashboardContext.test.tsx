@@ -32,6 +32,7 @@ vi.mock("../supabase", () => ({
   authHeaders: vi.fn(() => Promise.resolve({ "Content-Type": "application/json" })),
   getGoogleProviderToken: vi.fn(() => null),
   getLatestSessionInsightFlags: vi.fn(() => Promise.resolve([])),
+  getCreditBalance: vi.fn(() => Promise.resolve(0)),
 }));
 
 // Mock dashboard helpers
@@ -86,24 +87,25 @@ describe("DashboardContext", () => {
     expect(screen.getByTestId("displayName").textContent).toBe("Test User");
   });
 
-  it("shows 3 sessions remaining for free tier with 0 sessions", async () => {
+  it("shows 2 sessions remaining for free tier with 0 sessions", async () => {
+    // FREE_SESSION_LIMIT = 2
     await act(async () => { renderWithProviders(); });
-    expect(screen.getByTestId("sessionsRemaining").textContent).toBe("3");
+    expect(screen.getByTestId("sessionsRemaining").textContent).toBe("2");
   });
 
   // ─── Regression: started-but-not-completed sessions count toward limit ───
   // Previously, sessionsUsed was derived from `recentSessions.length`
   // (rows in the sessions table — only set on completion). A user
-  // who started 2 interviews and abandoned both still saw "3 of 3
+  // who started 2 interviews and abandoned both still saw "2 of 2
   // remaining" because the rows never got written. Practice timestamps
   // are bumped on /api/record-session-start (interview start) so
   // they're the right signal — completed OR abandoned both count.
   it("counts STARTED sessions, not just completed (uses practiceTimestamps)", async () => {
     mockUser.practiceTimestamps = [
       "2026-05-04T10:00:00Z",
-      "2026-05-04T11:00:00Z",
     ];
     await act(async () => { renderWithProviders(); });
+    // 1 started, FREE_SESSION_LIMIT=2 → 1 remaining
     expect(screen.getByTestId("sessionsRemaining").textContent).toBe("1");
     mockUser.practiceTimestamps = []; // reset for other tests
   });
@@ -112,8 +114,7 @@ describe("DashboardContext", () => {
     mockUser.practiceTimestamps = [
       "2026-05-04T10:00:00Z",
       "2026-05-04T11:00:00Z",
-      "2026-05-04T12:00:00Z",
-      "2026-05-04T13:00:00Z", // 4 — over the 3-session cap
+      "2026-05-04T12:00:00Z", // 3 — over the 2-session cap
     ];
     await act(async () => { renderWithProviders(); });
     expect(screen.getByTestId("sessionsRemaining").textContent).toBe("0");

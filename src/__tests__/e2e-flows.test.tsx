@@ -35,6 +35,7 @@ vi.mock("../supabase", () => ({
   getGoogleProviderToken: vi.fn(() => null),
   getPaymentHistory: vi.fn(() => Promise.resolve([])),
   getLatestSessionInsightFlags: vi.fn(() => Promise.resolve([])),
+  getCreditBalance: vi.fn(() => Promise.resolve(0)),
 }));
 
 vi.mock("../tts", () => ({
@@ -176,21 +177,21 @@ describe("Flow 2: Dashboard Empty State", () => {
     expect(screen.getByText(/Jay/i)).toBeInTheDocument();
   });
 
-  it("shows free plan badge with 3 sessions", async () => {
+  it("shows free plan badge with 2 sessions", async () => {
     const { DashboardProvider } = await import("../DashboardContext");
     const DashboardHome = (await import("../DashboardHome")).default;
     await act(async () => {
       render(
-        
+
           <DashboardProvider>
             <DashboardHome />
           </DashboardProvider>
         ,
       );
     });
-    // Should show sessions remaining info somewhere
+    // Should show sessions remaining info somewhere (FREE_SESSION_LIMIT = 2)
     const text = document.body.textContent || "";
-    expect(text).toContain("3");
+    expect(text).toContain("2");
   });
 });
 
@@ -412,13 +413,13 @@ describe("Flow 6: Upgrade Modal", () => {
         ,
       );
     });
-    // Monthly billing cycle renders Free / Weekly / Monthly plan cards.
-    // "Monthly" also names the billing-period toggle button, so assert the
-    // plan-card name (non-button element).
+    // Visible plans: Free, Per Session (slider), Weekly. Monthly is hidden.
+    expect(screen.getByText("Free")).toBeInTheDocument();
     expect(screen.getByText("Weekly")).toBeInTheDocument();
-    expect(screen.getAllByText("Monthly").some((el) => el.tagName !== "BUTTON")).toBe(true);
+    expect(screen.getByText("Per Session")).toBeInTheDocument();
     expect(screen.getByText(/₹49/)).toBeInTheDocument();
-    expect(screen.getByText(/₹149/)).toBeInTheDocument();
+    // ₹9 per-session price appears on the slider card (may appear in multiple nodes)
+    expect(screen.getAllByText(/₹9/).length).toBeGreaterThan(0);
   });
 
   it("shows session limit warning", async () => {

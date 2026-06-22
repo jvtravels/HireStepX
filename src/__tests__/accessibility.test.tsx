@@ -49,6 +49,7 @@ vi.mock("../supabase", () => ({
   getGoogleProviderToken: vi.fn(() => null),
   getPaymentHistory: vi.fn(() => Promise.resolve([])),
   getLatestSessionInsightFlags: vi.fn(() => Promise.resolve([])),
+  getCreditBalance: vi.fn(() => Promise.resolve(0)),
 }));
 
 vi.mock("../tts", () => ({
