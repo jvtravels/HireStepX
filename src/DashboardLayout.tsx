@@ -412,7 +412,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               (isPro && planLeft <= 5) || (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
             const barFill = planExhausted
-              ? (creditBalance > 0 ? T.copperMid : c.border)
+              ? (creditBalance > 0 ? T.copper : c.border)
               : isPro ? (isLow ? c.ember : c.sage)
               : isLow ? c.ember : c.gilt;
 
@@ -462,7 +462,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   aria-valuemin={0}
                   aria-valuemax={100}
                   style={{ height: 4, borderRadius: 2,
-                    background: planExhausted && creditBalance > 0 ? T.copperMid : c.border,
+                    background: planExhausted && creditBalance > 0 ? T.copperTint : c.border,
                     marginBottom: planExhausted && creditBalance > 0 ? 8 : creditBalance > 0 ? 6 : 12 }}
                 >
                   <div style={{ height: "100%", borderRadius: 2, background: barFill,
