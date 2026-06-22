@@ -101,8 +101,38 @@ export async function consumeSessionCredit(
     headers: authHeaders(serviceKey, { "Content-Type": "application/json" }),
     body: JSON.stringify({ p_user_id: userId }),
   });
-  if (!res.ok) return false;
-  // The function returns a bare boolean; PostgREST serializes it as JSON `true`/`false`.
-  const consumed = await res.json().catch(() => false);
-  return consumed === true;
+
+  if (res.ok) {
+    // The function returns a bare boolean; PostgREST serializes it as JSON `true`/`false`.
+    // true = credit decremented. false = balance was already 0 (legitimate block).
+    const consumed = await res.json().catch(() => false);
+    return consumed === true;
+  }
+
+  // ── RPC call itself failed (function not found, permission denied, 5xx) ──
+  // This is distinct from "balance = 0": if the function were found and ran, it
+  // would always return 200 (the boolean return value encodes the balance check).
+  // A non-200 means the function is missing or misconfigured — not that the user
+  // is out of credits. Fall back to a direct read-then-PATCH so users with a
+  // real balance can still start sessions despite the RPC misconfiguration.
+  // Non-atomic (rare double-spend if two requests race), but better than
+  // hard-blocking users who legitimately paid.
+  console.error(
+    `consume_session_credit RPC failed (${res.status}) — falling back to direct PATCH for user ${userId}`,
+  );
+  const current = await getSessionCredits(baseUrl, serviceKey, userId, fetchImpl);
+  if (current <= 0) return false; // genuinely out of credits
+
+  const patchRes = await fetchImpl(
+    `${baseUrl}/rest/v1/session_credits?user_id=eq.${encodeURIComponent(userId)}`,
+    {
+      method: "PATCH",
+      headers: authHeaders(serviceKey, {
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      }),
+      body: JSON.stringify({ balance: current - 1, updated_at: new Date().toISOString() }),
+    },
+  );
+  return patchRes.ok;
 }

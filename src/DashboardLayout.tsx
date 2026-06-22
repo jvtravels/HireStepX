@@ -395,71 +395,111 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </span>
             )}
           </div>
-          <p
-            aria-live="polite"
-            style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4,
-              /* Exhausted states: full 8px gap \u2014 no subordinate date line below */
-              marginBottom: proExhausted || starterExhausted || freeExhausted ? 8 : (isStarter || isPro) && user?.subscriptionEnd ? 3 : 8,
-              color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? c.ember : c.stone,
-              fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1 && !proExhausted && !starterExhausted) || (isStarter && starterRemaining <= 2) || (isPro && proRemaining <= 5 && proRemaining > 0)) ? 600 : 400,
-            }}
-          >
-            {!tierKnown ? "\u00a0"
-              : proExhausted
-                /* Show credits when available \u2014 they unlock sessions beyond the monthly cap */
-                ? (creditBalance > 0
-                  ? `${creditBalance} purchased session${creditBalance !== 1 ? "s" : ""} ready to use`
-                  : `${PRO_MONTHLY_LIMIT}/${PRO_MONTHLY_LIMIT} sessions used this month`)
-              : starterExhausted
-                ? (creditBalance > 0
-                  ? `${creditBalance} purchased session${creditBalance !== 1 ? "s" : ""} ready to use`
-                  : `${STARTER_WEEKLY_LIMIT}/${STARTER_WEEKLY_LIMIT} sessions used this week`)
-              : isPro
-                ? `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions this month${proRemaining <= 5 ? ", running low" : ""}`
-              : isStarter
-                ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions this week${starterRemaining <= 2 ? ", running low" : ""}`
-              : sessionsRemaining > 0
-                ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} free session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? ", last one" : ""}`
-              : creditBalance > 0
-                ? `${creditBalance} purchased session${creditBalance !== 1 ? "s" : ""} ready to use`
-              : "No sessions left. Upgrade to continue."}
-          </p>
-          {user?.subscriptionEnd && isStarter && (
-            <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, marginBottom: 10 }}>
-              Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · sessions reset Sun
-            </p>
-          )}
-          {tierKnown && (isFree || isStarter || isPro) && (() => {
-            /* Single bar for all states: copper when exhausted, ember when low, sage/gilt when healthy */
-            const pct = isFree
-              ? Math.min(100, (sessionsUsed / FREE_SESSION_LIMIT) * 100)
-              : isStarter
-              ? Math.min(100, (sessionsThisWeek / STARTER_WEEKLY_LIMIT) * 100)
-              : Math.min(100, (sessionsThisMonth / PRO_MONTHLY_LIMIT) * 100);
-            const fill = ((proExhausted && creditBalance === 0) || (starterExhausted && creditBalance === 0) || (freeExhausted && creditBalance === 0))
+          {/* ── Session usage block — always shows plan consumption + credit balance ── */}
+          {!tierKnown ? (
+            <div aria-hidden="true" style={{ height: 52, marginBottom: 12 }} />
+          ) : (() => {
+            /* Derived quantities */
+            const planUsed    = isPro ? sessionsThisMonth : isStarter ? sessionsThisWeek : sessionsUsed;
+            const planTotal   = isPro ? PRO_MONTHLY_LIMIT : isStarter ? STARTER_WEEKLY_LIMIT : FREE_SESSION_LIMIT;
+            const planLeft    = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
+            const planExhausted = isPro ? proExhausted : isStarter ? starterExhausted : freeExhausted;
+            const periodLabel = isPro ? "this month" : isStarter ? "this week" : "total";
+            const pct = Math.min(100, (planUsed / planTotal) * 100);
+            const isLow = !planExhausted && (
+              (isPro && planLeft <= 5) || (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
+            );
+            /* Bar fill: ember when running low, sage for healthy Pro, gilt otherwise */
+            const barFill = planExhausted
               ? c.gilt
-              : isPro ? (proExhausted && creditBalance > 0 ? c.gilt : proRemaining <= 5 ? c.ember : c.sage)
-              : isStarter ? (starterExhausted && creditBalance > 0 ? c.gilt : starterRemaining <= 2 ? c.ember : c.gilt)
-              // Free tier exhausted but has credits → show healthy gilt, not depleted
-              : (freeExhausted && creditBalance > 0) ? c.gilt
-              : (sessionsRemaining === 1 ? c.ember : c.gilt);
-            const ariaLabel = (proExhausted && creditBalance === 0) || (starterExhausted && creditBalance === 0) || (freeExhausted && creditBalance === 0)
-              ? "All sessions used"
-              : isPro ? `${sessionsThisMonth} of ${PRO_MONTHLY_LIMIT} sessions used this month`
-              : isStarter ? `${sessionsThisWeek} of ${STARTER_WEEKLY_LIMIT} sessions used this week`
-              : creditBalance > 0 ? `${creditBalance} purchased session${creditBalance !== 1 ? "s" : ""} available`
-              : `${sessionsUsed} of ${FREE_SESSION_LIMIT} sessions used`;
+              : isPro ? (isLow ? c.ember : c.sage)
+              : isLow ? c.ember : c.gilt;
+
             return (
-              <div
-                role="progressbar"
-                aria-label={ariaLabel}
-                aria-valuenow={Math.round(pct)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                style={{ height: 3, borderRadius: 2, background: c.border, marginBottom: 12 }}
-              >
-                <div style={{ height: "100%", borderRadius: 2, background: fill, width: `${pct}%`, transition: "width 0.4s ease" }} />
-              </div>
+              <>
+                {/* Row: plan usage label + remaining-count chip */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                  <p
+                    aria-live="polite"
+                    style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
+                      color: isLow ? c.ember : c.stone, fontWeight: isLow ? 600 : 400 }}
+                  >
+                    {planExhausted
+                      ? `${planTotal}/${planTotal} used ${periodLabel}`
+                      : `${planUsed}/${planTotal} used ${periodLabel}`}
+                  </p>
+                  {/* Prominent remaining-count chip */}
+                  <span
+                    aria-label={planExhausted
+                      ? (creditBalance > 0 ? `${creditBalance} purchased credits available` : "Plan sessions exhausted")
+                      : `${planLeft} session${planLeft !== 1 ? "s" : ""} remaining`}
+                    style={{ display: "flex", alignItems: "baseline", gap: 2 }}
+                  >
+                    <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, lineHeight: 1,
+                      color: planExhausted
+                        ? (creditBalance > 0 ? c.gilt : c.stone)
+                        : isLow ? c.ember : (isPro ? c.sage : c.gilt),
+                      opacity: planExhausted && creditBalance === 0 ? 0.38 : 1 }}
+                    >
+                      {planExhausted ? (creditBalance > 0 ? creditBalance : 0) : planLeft}
+                    </span>
+                    <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 500, color: c.stone,
+                      letterSpacing: "0.05em", textTransform: "uppercase" as const,
+                      opacity: planExhausted && creditBalance === 0 ? 0.38 : 0.7 }}
+                    >
+                      {planExhausted && creditBalance > 0 ? "credits" : "left"}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Progress bar tracks plan quota */}
+                <div
+                  role="progressbar"
+                  aria-label={planExhausted && creditBalance === 0
+                    ? `All ${planTotal} sessions used ${periodLabel}`
+                    : planExhausted && creditBalance > 0
+                    ? `All ${planTotal} plan sessions used · ${creditBalance} purchased credits remaining`
+                    : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
+                  aria-valuenow={Math.round(pct)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  style={{ height: 4, borderRadius: 2, background: c.border, marginBottom: 6 }}
+                >
+                  <div style={{ height: "100%", borderRadius: 2, background: barFill,
+                    width: `${pct}%`, transition: "width 0.4s ease" }} />
+                </div>
+
+                {/* Credit sub-row: visible whenever the user has purchased credits */}
+                {creditBalance > 0 ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 12 }}>
+                    <svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill={c.gilt} stroke="none">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    <span style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt, fontWeight: 600 }}>
+                      {creditBalance} extra credit{creditBalance !== 1 ? "s" : ""} purchased
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 2, marginLeft: 2 }}>
+                      {Array.from({ length: Math.min(creditBalance, 8) }).map((_, i) => (
+                        <div key={i} style={{ width: 5, height: 5, borderRadius: "50%",
+                          background: c.gilt, flexShrink: 0 }} />
+                      ))}
+                      {creditBalance > 8 && (
+                        <span style={{ fontFamily: font.ui, fontSize: 9, color: c.gilt,
+                          fontWeight: 600, marginLeft: 1 }}>+{creditBalance - 8}</span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: 12 }} />
+                )}
+
+                {/* Starter renewal footnote */}
+                {user?.subscriptionEnd && isStarter && (
+                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, marginBottom: 10, marginTop: -8 }}>
+                    Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · sessions reset Sun
+                  </p>
+                )}
+              </>
             );
           })()}
           {!tierKnown ? (
