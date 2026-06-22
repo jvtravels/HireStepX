@@ -352,7 +352,7 @@ export async function checkSessionLimit(
         if (!consumeCredit) return { allowed: true };
         const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
         if (!consumed) {
-          return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT}/month). Buy extra sessions or wait for next month.` };
+          return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT} sessions/month). Buy session credits or wait for next month.` };
         }
         return { allowed: true };
       }
@@ -422,7 +422,7 @@ export async function checkSessionLimit(
         if (!consumeCredit) return { allowed: true };
         const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
         if (!consumed) {
-          return { allowed: false, reason: `Starter plan limit reached (${STARTER_WEEKLY_LIMIT}/week). Buy extra sessions or upgrade to Pro.` };
+          return { allowed: false, reason: `Starter plan limit reached (${STARTER_WEEKLY_LIMIT} sessions/week). Buy session credits or upgrade to Pro.` };
         }
         return { allowed: true };
       }

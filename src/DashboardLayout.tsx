@@ -97,8 +97,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     }
   }, [searchParams, pathname, setShowUpgradeModal, nav]);
 
-  // Refetch sessions on mount (e.g. returning from interview)
-  useEffect(() => { refreshSessions(); }, [refreshSessions]);
+  // Refetch sessions AND credit balance on mount (e.g. returning from interview).
+  // refreshCreditBalance keeps the sidebar accurate after a credit was consumed
+  // server-side during session start — the client state doesn't auto-decrement.
+  useEffect(() => { refreshSessions(); refreshCreditBalance(); }, [refreshSessions, refreshCreditBalance]);
 
   // Drain any interview-turn writes that failed during a previous session
   // (network blip mid-interview, browser tab closed before save, etc.).

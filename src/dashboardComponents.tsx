@@ -115,6 +115,11 @@ const PLANS_ALL = [
 ];
 const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 
+// Rank used to determine if a plan card is "below" the user's current subscription.
+// Cards at a lower rank show a non-interactive indicator instead of a checkout button
+// so a Pro user never sees "Start free →" or "Go weekly →" while managing their plan.
+const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, team: 3 };
+
 
 export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: (newBalance: number) => void }) {
   // Cream palette shadow — matches the marketing /pricing page and settings repaint.
@@ -411,7 +416,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6 }}>Choose your plan</h2>
-          <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>{currentTier !== "free" ? "Manage your plan" : "Cancel anytime · UPI, cards, netbanking"}</p>
+          <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>
+            {currentTier === "pro" || currentTier === "team"
+              ? "Top up sessions · your Pro plan continues unchanged"
+              : currentTier === "starter"
+              ? "Manage your plan"
+              : "Cancel anytime · UPI, cards, netbanking"}
+          </p>
         </div>
 
         {/* Payment.failed inline card — keeps users in context with reassurance + retry */}
@@ -578,6 +589,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               );
             }
             const isCurrent = plan.tier === currentTier;
+            // True when this card represents a lower tier than the user already has.
+            // e.g. Free and Weekly cards are "lower" for a Pro user.
+            const isLowerTier = (TIER_RANK[plan.tier] ?? 0) < (TIER_RANK[currentTier] ?? 0);
             const featured = plan.featured;
             const ribbonText = featured ? "Most loved" : null;
             return (
@@ -618,6 +632,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
                 {isCurrent ? (
                   <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? c.giltLight : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
+                ) : isLowerTier ? (
+                  /* User is already on a higher tier — suppress the downgrade CTA */
+                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${c.border}`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 400, color: c.stone, textAlign: "center", opacity: 0.55 }}>Not available on your plan</div>
                 ) : plan.id === "free" ? (
                   <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.stone, textAlign: "center" }}>
                     {currentTier === "free" ? "Your current plan" : plan.cta}
