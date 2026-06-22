@@ -453,38 +453,43 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   )}
                 </div>
 
-                {/* ── Segmented dash progress bar ── */}
-                <div
-                  role="progressbar"
-                  aria-label={planExhausted
-                    ? `All ${planTotal} sessions used ${periodLabel}`
-                    : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
-                  aria-valuenow={Math.round(pct)}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  style={{ display: "flex", gap: 3, marginBottom: planExhausted && creditBalance > 0 ? 8 : 12 }}
-                >
-                  {Array.from({ length: segCount }, (_, i) => {
-                    const filled = i < filledSegs;
-                    // Exhausted + no credits → muted amber so filled segs read as "all used"
-                    // Exhausted + credits    → dim green (quota full but credits cover)
-                    // Healthy               → barFill (green/amber/red by remaining count)
-                    const segColor = planExhausted
-                      ? (creditBalance > 0 ? "rgba(21,128,61,0.3)" : "rgba(180,83,9,0.38)")
-                      : filled ? barFill : c.border;
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          flex: 1, height: 4, borderRadius: 2,
-                          background: filled ? segColor : c.border,
-                          opacity: filled ? 1 : 0.35,
-                          transition: "background 0.3s ease",
-                        }}
-                      />
-                    );
-                  })}
-                </div>
+                {/* ── Segmented dash progress bar ──
+                    Hidden when plan exhausted + credits exist: the purchased-sessions
+                    row below is the only indicator that matters in that state.
+                    A dim-green bar on a green card background is invisible, and showing
+                    a "full" bar for plan exhaustion conflicts with the credits message. */}
+                {!(planExhausted && creditBalance > 0) && (
+                  <div
+                    role="progressbar"
+                    aria-label={planExhausted
+                      ? `All ${planTotal} sessions used ${periodLabel}`
+                      : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
+                    aria-valuenow={Math.round(pct)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    style={{ display: "flex", gap: 3, marginBottom: 12 }}
+                  >
+                    {Array.from({ length: segCount }, (_, i) => {
+                      const filled = i < filledSegs;
+                      // Exhausted + no credits → amber to signal "all used"
+                      // Healthy               → barFill (green/amber/red by remaining)
+                      const segColor = planExhausted
+                        ? "rgba(180,83,9,0.38)"
+                        : filled ? barFill : c.border;
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            flex: 1, height: 4, borderRadius: 2,
+                            background: filled ? segColor : c.border,
+                            opacity: filled ? 1 : 0.35,
+                            transition: "background 0.3s ease",
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* ── CASE A: plan exhausted + credits — credits are the ONLY signal shown ── */}
                 {planExhausted && creditBalance > 0 && (

@@ -602,30 +602,34 @@ function PlanQuotaRow({ tier: _tier }: { tier: string }) {
           {used} of {planTotal}
         </span>
       </div>
-      {/* Segmented dash bar */}
-      <div
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`${used} of ${planTotal} sessions used`}
-        style={{ display: "flex", gap: 3, marginBottom: creditBalance > 0 ? 10 : 0 }}
-      >
-        {Array.from({ length: segCount }, (_, i) => {
-          const filled = i < filledSegs;
-          return (
-            <div
-              key={i}
-              style={{
-                flex: 1, height: 4, borderRadius: 2,
-                background: filled ? segFill : c.border,
-                opacity: filled ? 1 : 0.35,
-                transition: "background 0.3s ease",
-              }}
-            />
-          );
-        })}
-      </div>
+      {/* Segmented dash bar — hidden when plan exhausted + credits exist.
+          Dim-green dashes on a green card are invisible; the credits row
+          below is the only indicator needed in that state. */}
+      {!(isExhausted && creditBalance > 0) && (
+        <div
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${used} of ${planTotal} sessions used`}
+          style={{ display: "flex", gap: 3, marginBottom: 0 }}
+        >
+          {Array.from({ length: segCount }, (_, i) => {
+            const filled = i < filledSegs;
+            return (
+              <div
+                key={i}
+                style={{
+                  flex: 1, height: 4, borderRadius: 2,
+                  background: filled ? segFill : c.border,
+                  opacity: filled ? 1 : 0.35,
+                  transition: "background 0.3s ease",
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
       {/* Purchased credits — shown for all tiers, not just free */}
       {creditBalance > 0 && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
