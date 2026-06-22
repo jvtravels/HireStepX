@@ -275,9 +275,17 @@ export default function SettingsPage() {
            On ≤1023px the dashboard main has paddingTop:76px (clearing the
            56px fixed nav header + 20px gap). The sticky header's -12px
            margin collapses that gap to 64px → flush with the nav.
-           Override to 0 so "Settings" heading gets the full 20px gap. */
+           Override to 0 so "Settings" heading gets the full 20px gap.
+           Also raise top to 56px so the sticky header sticks immediately
+           below the fixed mobile nav with no gap — without this, content
+           scrolls into the 20px gap between the nav (y=56) and the sticky
+           header's default top:0 anchor (y=76), making items visible above
+           the "Settings" heading while scrolling. */
         @media (max-width: 1023px) {
-          .settings-sticky-header { margin-top: 0 !important; }
+          .settings-sticky-header {
+            margin-top: 0 !important;
+            top: 56px !important;
+          }
         }
         /* ── Tab overflow fix at 375px ────────────────────────────────────
            Three tabs (Account | Plan & Data | Referral) plus keyboard-shortcut
