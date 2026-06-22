@@ -167,8 +167,14 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    deal". The bare-token arm required the WHOLE utterance to be "deal", so
    *    "ok, deal" / "deal, 40 works" fell through. Anchored to a clause start
    *    and excludes the rejection sense "deal[- ]breaker"; the walk-away veto
-   *    already owns "no deal". */
-  /(?:^|[,.!?]\s*)(?:ok(?:ay)?|alright|yes|yeah|yep|fine|sure)?[,\s]*deal\b(?!\s*[-\s]?breaker)/i,
+   *    already owns "no deal".
+   *    PRI-60 (2026-06-22, offline precision sweep) — the clause anchor matches
+   *    after ANY punctuation, so a leading rejection "No, deal's off." parsed the
+   *    "deal" after the comma as a CLOSE (FALSE-CLOSE — bot finalizes a deal the
+   *    candidate is walking away from). Two negative lookaheads exclude the
+   *    "deal('s)/(is) off|dead|over|done|cancelled|gone" walk-away continuations;
+   *    "ok, deal." / "deal, 40 works" / "deal is sealed" are untouched. */
+  /(?:^|[,.!?]\s*)(?:ok(?:ay)?|alright|yes|yeah|yep|fine|sure)?[,\s]*deal\b(?!\s*[-\s]?breaker)(?!'?s?\s+(?:off|dead|over\b|done\s+for|cancell?ed|gone))(?!\s+(?:is|was)\s+(?:off|dead|over|done|cancell?ed|gone))/i,
   /* 2. Defer-to-your-offer accept — "whatever you just said works", "whatever
    *    you offered is fine", "whatever works for me". The "whatever" head
    *    disambiguates from the bare "<n> works" COUNTER the bank deliberately
@@ -178,8 +184,16 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
   /* 3. "send it" family — a finalize-the-offer instruction over a standing
    *    offer ("yes send it", "send it over", "send across the letter"). The
    *    strict gate already owns "send the offer letter"; these are the terser
-   *    spoken forms. Negation ("don't send it") is vetoed at step 1. */
-  /\bsend\s+it(?:\s+(?:over|across|through))?\b/i,
+   *    spoken forms. Negation ("don't send it") is vetoed at step 1.
+   *    PRI-60 (2026-06-22, offline precision sweep) — the bare "send it" + ANY
+   *    tail matched the hostile redirect/defer forms "send it back (with a
+   *    revised base)", "send it to my email and I'll think about it", which are
+   *    NOT consent (FALSE-CLOSE). Require the verb phrase to END the clause,
+   *    optionally after an approving adverb (over/across/through/already/now/
+   *    please/right away). "send it." / "yes, send it over." still close; "send
+   *    it back" / "send it to X" / "send it later" no longer match (the latter is
+   *    also caught by the conditional-deferral veto). */
+  /\bsend\s+it\b(?:\s+(?:over|across|through|already|now|please|right\s+away))*\s*(?:[.!?,]|$)/i,
   /\bsend\s+(?:me\s+|it\s+|them\s+)?(?:(?:over|across)\s+)?(?:the\s+)?(?:offer\s+)?(?:letter|paperwork|paper\s*work|docs?|contract)\b/i,
   /* 4. "confirmed" / "yes confirmed" / "confirming" — a bare confirmation
    *    token closing the deal. Anchored to a clause boundary AND required to
@@ -220,6 +234,18 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *     anchored AND clause-terminal so the negotiation phrase "agreed terms"
    *     / "we agreed earlier" / "agreed on a higher number" does NOT match. */
   /(?:^|[,.!?]\s*)agreed\s*(?:[.!?,]|$)/i,
+  /* PRI-60 (2026-06-22, offline recall sweep) — "I'm on board" / "happy to
+   * proceed", unambiguous same-turn consent over a standing offer the bank
+   * missed (NO-CLOSE on a real accept). In CLOSE_CONSENT so BOTH the medium
+   * gate AND the strict close gate fire — medium-only would leave them in the
+   * soft-accept path whose trailing-non-counter gate drops the close (the PRI-56
+   * lesson). Anchored to a TERMINAL clause end (. ! ? or string end — NOT a
+   * comma) so a hedged comma-tail ("I'm on board, but let me think") does not
+   * match in the medium gate, which has no think-it-over veto; the strict gate's
+   * HEDGE_VETO owns the hedged tails regardless. The deferral veto owns "happy
+   * to proceed once you fix X". */
+  /\bi.?m\s+(?:fully\s+|totally\s+|completely\s+|absolutely\s+)?on\s+board\b\s*(?:[.!?]|$)/i,
+  /\bhappy\s+to\s+proceed\b\s*(?:[.!?]|$)/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -394,12 +420,36 @@ const ACCEPT_PROPOSITION_PATTERN =
  *  terminal close. */
 const IN_PRINCIPLE_PATTERN = /\b(?:in\s+principle|pending\b)/i;
 
+/* PRI-60 (2026-06-22, offline precision sweep) — RHETORICAL / INVERTED /
+ * NEGATED "accept". The performative bank matches the bare "I accept" / "I'd
+ * accept" substring, but an interrogative inversion ("why would I accept…",
+ * "would I accept…"), a disbelief frame ("do you really think I'd accept…",
+ * "you expect me to accept…"), or a negation-by-impossibility ("there's no way
+ * I accept…") flips the meaning into a rejection or a rhetorical question — the
+ * single worst FALSE-CLOSE class. Each arm is scoped to GOVERN the accept verb
+ * (the governor + "accept" within a short window) so a genuine "I accept" /
+ * "yes, I accept the offer" — which carries no such governor — is untouched.
+ * Shared single-source between the medium gate (classifyAcceptance step 1) and
+ * the strict gate (HEDGE_VETO_PATTERNS), like the PRI-59 vetoes. */
+const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
+  /* inverted interrogative: "why would/should I … accept" */
+  /\bwhy\s+(?:would|should|will|on\s+earth\s+(?:would|should))\s+i\b[^.!?]{0,30}\baccept\b/i,
+  /* subject-verb inversion: "would/should I (ever) accept" — never a genuine
+   * accept (that is "I would accept"); the inversion marks a question. */
+  /\b(?:would|should)\s+i\s+(?:ever\s+|really\s+|honestly\s+|seriously\s+)?accept\b/i,
+  /* disbelief frame: "(do) you (really) think/expect/believe … accept" */
+  /\byou\s+(?:really\s+|seriously\s+|honestly\s+|actually\s+)?(?:think|expect|believe|assume|reckon|suppose|imagine)\b[^.!?]{0,30}\baccept\b/i,
+  /* negation-by-impossibility: "(there's) no way I('d) accept" */
+  /\b(?:no\s+way|there'?s\s+no\s+way)\b[^.!?]{0,20}\baccept\b/i,
+];
+
 /** All PRI-59 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
   IN_PRINCIPLE_PATTERN,
+  ...RHETORICAL_ACCEPT_VETO_PATTERNS,
 ];
 
 /** Veto: hard conditional ("if/unless/provided"). Info-seeking

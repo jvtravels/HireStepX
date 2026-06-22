@@ -311,3 +311,70 @@ describe("PRI-59: FALSE-CLOSE precision — hostile substrings must NOT close", 
     });
   }
 });
+
+/* PRI-60 (2026-06-22, offline precision + recall sweep) — three new FALSE-CLOSE
+ * classes the recall idioms exposed, plus two missed genuine accepts:
+ *   1. RHETORICAL / INVERTED / NEGATED performative — "why would I accept",
+ *      "would I accept", "do you think I'd accept", "there's no way I accept".
+ *      The bare "I accept" / "I'd accept" substring matched; the governor flips
+ *      the meaning. The worst class: the bot finalizing a deal being rejected.
+ *   2. "send it" over-match — "send it back / to my email / later" is a redirect
+ *      or defer, not consent. Only clause-terminal "send it (over)." closes.
+ *   3. Bare "deal" hijack across a comma — "No, deal's off." is a walk-away.
+ * MUST_STILL_CLOSE re-locks the genuine forms each fix is scoped around. */
+describe("PRI-60: rhetorical/send-it/deal FALSE-CLOSE precision + recall", () => {
+  const MUST_NOT_CLOSE = [
+    // rhetorical / inverted / negated performative
+    "Why would I accept this?",
+    "Why on earth would I accept that number?",
+    "You expect me to accept that lowball?",
+    "Do you really think I'd accept this?",
+    "Would I accept this? Not a chance.",
+    "There's no way I accept this number.",
+    "No way I'd accept that.",
+    // send-it redirect / defer
+    "Can you send it back with a revised base?",
+    "Send it back to your team and let's revisit.",
+    "Send it to my email and I'll think about it.",
+    "Send it later once the variable is fixed.",
+    // bare-deal hijack across a comma
+    "No, deal's off.",
+    "Sorry, deal is dead at this number.",
+  ];
+  for (const text of MUST_NOT_CLOSE) {
+    it(`rejects (no false-close): '${text}'`, () => {
+      expect(detectExplicitAcceptance(text).accepted).toBe(false);
+      expect(classifyAcceptance(text, { offerOnTable: true }).accepted).toBe(false);
+    });
+  }
+
+  // The precision fixes must not regress the genuine commits they scope around.
+  const MUST_STILL_CLOSE = [
+    "I accept the offer.",
+    "Yes, I accept.",
+    "I'd accept the offer.",
+    "Send it over.",
+    "Yes, send it over.",
+    "ok, deal.",
+    "deal, 40 works for me",
+    "You've got a deal.",
+    // PRI-60 new recall idioms (must reach BOTH gates)
+    "I'm on board.",
+    "Happy to proceed.",
+  ];
+  for (const text of MUST_STILL_CLOSE) {
+    it(`still closes the genuine accept: '${text}'`, () => {
+      const strict = detectExplicitAcceptance(text).accepted;
+      const medium = classifyAcceptance(text, { offerOnTable: true }).accepted;
+      expect(strict || medium).toBe(true);
+    });
+  }
+
+  // The two new recall idioms must reach the STRICT gate (terminal close),
+  // not just medium — medium-only would be dropped by the soft-accept gate.
+  for (const text of ["I'm on board.", "Happy to proceed."]) {
+    it(`reaches the strict close gate: '${text}'`, () => {
+      expect(detectExplicitAcceptance(text).accepted).toBe(true);
+    });
+  }
+});
