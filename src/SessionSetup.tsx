@@ -18,6 +18,7 @@ import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
 
 import { useAuth } from "./AuthContext";
+import { getCreditBalance } from "./supabase";
 import { getAudioContextCtor } from "./_browser-api-guards";
 import { useToast } from "./Toast";
 import { unlockAudio, prefetchTTS } from "./tts";
@@ -813,9 +814,22 @@ export default function SessionSetup() {
   const sessionsThisMonth = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; } }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
   const proRemaining = Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth);
-  const atSessionLimit = (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT)
-    || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT)
-    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT);
+  // Purchased session credits — fetched on mount so users who bought ₹9
+  // top-ups aren't falsely blocked by the plan-exhausted check below.
+  // SessionSetup lives outside the DashboardProvider scope and can't use
+  // useDashboardSubscription, so it reads the balance independently.
+  const [creditBalance, setCreditBalance] = useState(0);
+  useEffect(() => {
+    if (!user?.id) return;
+    getCreditBalance(user.id).then(setCreditBalance).catch(() => {});
+  }, [user?.id]);
+
+  // A user past their plan limit is NOT blocked if they hold purchased credits —
+  // the server will consume one when the session actually starts. Mirror the
+  // same guard used in DashboardContext.atSessionLimit.
+  const atSessionLimit = (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT && creditBalance === 0)
+    || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0)
+    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0);
   const { toast } = useToast();
 
   /* Warn-flag bounce-back toast: useInterviewEngine sends users back
