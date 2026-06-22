@@ -7,6 +7,7 @@
    null/empty-safe against the real (sometimes sparse) payload. */
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
 import type { Fixture, Pillar, CrossInsight, TypedFlag, RangeKeyLocal as RangeKey, Attention } from "./types";
 import { rangeSlice, RANGE_LABEL } from "./types";
@@ -190,7 +191,7 @@ function PillarCard({ p, lever, active, onOpen, range }: { p: Pillar; lever: boo
 }
 
 export function PillarGrid({ d, narrow, activeKey, onOpen, range }: { d: Fixture; narrow: boolean; activeKey: Pillar["key"] | null; onOpen: (k: Pillar["key"]) => void; range: RangeKey }) {
-  const leverKey = [...d.pillars].sort((a, b) => a.score - b.score)[0].key;
+  const leverKey = d.pillars.length ? [...d.pillars].sort((a, b) => a.score - b.score)[0].key : null;
   return (
     <section aria-labelledby="rix-pillars" id="zone-pillars" style={{ scrollMarginTop: 88 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
@@ -359,7 +360,12 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
             <div style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, marginBottom: 8 }}>STAR completeness</div>
             <StarChips star={d.coverage.star} />
             <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft, marginTop: 9 }}>
-              {d.coverage.star.R ? "All five elements are landing." : "Result (R) is most often dropped. A coached fix is queued."}
+              {(() => {
+                const labels: Array<[keyof typeof d.coverage.star, string]> = [["S", "Situation"], ["T", "Task"], ["A", "Action"], ["R", "Result"], ["L", "Learning"]];
+                const missing = labels.filter(([k]) => !d.coverage.star[k]).map(([k, name]) => `${name} (${k})`);
+                if (!missing.length) return "All five elements are landing.";
+                return `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} most often dropped. A coached fix is queued.`;
+              })()}
             </div>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
@@ -374,6 +380,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
 }
 
 export function BlindSpots({ d }: { d: Fixture }) {
+  const router = useRouter();
   return (
     <Card as="section">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
@@ -392,10 +399,10 @@ export function BlindSpots({ d }: { d: Fixture }) {
                 <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{b.competency}</div>
                 <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
               </div>
-              <a href="/interview" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
-                style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>
+              <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
+                style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                 Practice
-              </a>
+              </button>
             </li>
           ))}
         </ul>
@@ -729,6 +736,7 @@ function FlagRow({ flag }: { flag: TypedFlag }) {
 }
 
 export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) {
+  const router = useRouter();
   return (
     <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16 }}>
       <Card as="section">
@@ -747,8 +755,8 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
                 <span style={{ flex: 1, minWidth: 0, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{r.days}d idle</span>
                 <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
-                <a href="/interview" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
-                  style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>Refresh</a>
+                <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
+                  style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Refresh</button>
               </li>
             ))}
           </ul>
@@ -778,6 +786,7 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
 
 /* Likely follow-ups — aggregated to a prep list. */
 export function FollowUpPrep({ d }: { d: Fixture }) {
+  const router = useRouter();
   if (!d.followUps.length) return null;
   return (
     <Card as="section">
@@ -796,8 +805,8 @@ export function FollowUpPrep({ d }: { d: Fixture }) {
               <div style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.45 }}>{q.question}</div>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 3 }}>Why you · {q.why}</div>
             </div>
-            <a href="/interview" className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
-              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0, textDecoration: "none", display: "inline-block" }}>Drill</a>
+            <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
+              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Drill</button>
           </li>
         ))}
       </ol>
@@ -935,6 +944,9 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
   const typeTotal = d.cadence.typeMix.reduce((a, x) => a + x.n, 0) || 1;
   const diff = d.cadence.difficulty;
   const diffTotal = diff.warmup + diff.standard + diff.hard || 1;
+  const heatActiveDays = d.cadence.heat.filter((x) => x > 0).length;
+  const heatPeak = d.cadence.heat.length ? Math.max(...d.cadence.heat) : 0;
+  const heatLabel = `Practice heatmap, last ${d.cadence.weeks} weeks. ${heatActiveDays} of ${d.cadence.weeks * 7} days had a session${heatPeak > 1 ? `, up to ${heatPeak} on the busiest day` : ""}.`;
   return (
     <Card as="section" id="zone-practice" style={{ scrollMarginTop: 88 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
@@ -951,7 +963,7 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "auto 1fr 1fr", gap: 22, alignItems: "start" }}>
         <div>
           <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 8 }}>Last {d.cadence.weeks} weeks</div>
-          <div role="img" aria-label={`Practice heatmap over the last ${d.cadence.weeks} weeks`} style={{ display: "grid", gridTemplateColumns: `14px repeat(${d.cadence.weeks}, 14px)`, gap: 4 }}>
+          <div role="img" aria-label={heatLabel} style={{ display: "grid", gridTemplateColumns: `14px repeat(${d.cadence.weeks}, 14px)`, gap: 4 }}>
             <span aria-hidden="true" />
             {Array.from({ length: d.cadence.weeks }).map((_, w) => (
               <span key={w} aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 8, color: t.inkFaint, textAlign: "center" }}>{w + 1}</span>
@@ -960,8 +972,9 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
               <React.Fragment key={r}>
                 <span aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 8, color: t.inkFaint, lineHeight: "14px" }}>{dy}</span>
                 {Array.from({ length: d.cadence.weeks }).map((_, w) => {
-                  const v = Math.min(3, d.cadence.heat[w * 7 + r] ?? 0);
-                  return <span key={w} style={{ width: 14, height: 14, borderRadius: 4, background: HEAT[v] }} />;
+                  const raw = d.cadence.heat[w * 7 + r] ?? 0;
+                  const v = Math.min(3, raw);
+                  return <span key={w} title={raw > 0 ? `${raw} session${raw === 1 ? "" : "s"}` : "no practice"} style={{ width: 14, height: 14, borderRadius: 4, background: HEAT[v] }} />;
                 })}
               </React.Fragment>
             ))}

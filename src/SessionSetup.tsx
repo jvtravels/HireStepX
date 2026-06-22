@@ -669,7 +669,7 @@ function PermissionCard({
 
 export default function SessionSetup() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateUser: authUpdateUser } = useAuth();
   const searchParams = useSearchParams();
   /* `type` is the canonical param; `focus` is the alias the dashboard
      "Your next move" engine emits (nextMove.ts). For gap CTAs that means
@@ -818,18 +818,23 @@ export default function SessionSetup() {
   // top-ups aren't falsely blocked by the plan-exhausted check below.
   // SessionSetup lives outside the DashboardProvider scope and can't use
   // useDashboardSubscription, so it reads the balance independently.
-  const [creditBalance, setCreditBalance] = useState(0);
+  // null = still fetching (prevents false upgrade-modal flash on mount).
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
   useEffect(() => {
     if (!user?.id) return;
-    getCreditBalance(user.id).then(setCreditBalance).catch(() => {});
+    getCreditBalance(user.id).then(b => setCreditBalance(b)).catch(() => setCreditBalance(0));
   }, [user?.id]);
 
   // A user past their plan limit is NOT blocked if they hold purchased credits —
   // the server will consume one when the session actually starts. Mirror the
   // same guard used in DashboardContext.atSessionLimit.
-  const atSessionLimit = (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT && creditBalance === 0)
+  // creditBalance===null means fetch still in-flight: don't block yet (prevents
+  // upgrade modal from flashing open on every mount before the fetch resolves).
+  const atSessionLimit = creditBalance !== null && (
+    (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT && creditBalance === 0)
     || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0)
-    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0);
+    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0)
+  );
   const { toast } = useToast();
 
   /* Warn-flag bounce-back toast: useInterviewEngine sends users back
@@ -2097,8 +2102,19 @@ export default function SessionSetup() {
           sessionsUsed={freeSessionCount}
           user={user}
           currentTier={user?.subscriptionTier || "free"}
-          onPaymentSuccess={(_tier: string, _start: string, _end: string) => {
+          onPaymentSuccess={(tier: string, _start: string, end: string) => {
             setShowUpgradeModal(false);
+            // Refresh credit balance so the gate clears immediately and the
+            // user can start a session without a full page reload.
+            if (user?.id) {
+              getCreditBalance(user.id).then(b => setCreditBalance(b)).catch(() => {});
+            }
+            // Sync tier change into in-memory user so the limit check updates.
+            // Subscription purchases return tier="starter"|"pro"; credit
+            // purchases return tier="free" (no tier change) — only upgrade.
+            if (tier && tier !== "free" && authUpdateUser) {
+              authUpdateUser({ subscriptionTier: tier as "starter" | "pro", subscriptionEnd: end || undefined });
+            }
           }}
         />
       )}

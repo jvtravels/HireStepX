@@ -590,7 +590,9 @@ export function useInterviewEngine() {
       // Don't fall back to static questions (that would let them bypass the
       // gate). Navigate back to the dashboard where they can buy credits or
       // upgrade. The ?upgrade=1 param tells the dashboard to open the modal.
-      if (msg.includes("session limit reached")) {
+      // Server sends: "Free plan limit reached", "Pro plan limit reached",
+      // "Starter plan limit reached" — all contain "limit reached".
+      if (msg.toLowerCase().includes("limit reached")) {
         toast("Session limit reached — redirecting to dashboard.", "info");
         setLlmLoading(false);
         router.replace("/dashboard?upgrade=1");

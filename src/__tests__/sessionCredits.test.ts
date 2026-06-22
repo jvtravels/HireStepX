@@ -40,46 +40,92 @@ describe("_session-credits", () => {
     expect(await getSessionCredits(BASE, KEY, USER, mockFetch({ rows: [{ balance: -2 }] }).fn)).toBe(0);
   });
 
-  it("grants credits on top of the existing balance and upserts the total", async () => {
-    const { fn, calls } = mockFetch({ rows: [{ balance: 2 }], writeOk: true });
-    const newBalance = await grantSessionCredits(BASE, KEY, USER, 3, fn);
-    expect(newBalance).toBe(5);
-    const write = calls.find(c => c.method === "POST");
-    expect(write).toBeTruthy();
-    expect((write!.body as { balance: number }).balance).toBe(5);
-    expect((write!.body as { user_id: string }).user_id).toBe(USER);
-  });
-
-  it("clamps the granted quantity to 1..10", async () => {
-    expect(await grantSessionCredits(BASE, KEY, USER, 99, mockFetch({ rows: [{ balance: 0 }] }).fn)).toBe(10);
-    expect(await grantSessionCredits(BASE, KEY, USER, 0, mockFetch({ rows: [{ balance: 0 }] }).fn)).toBe(1);
-    expect(await grantSessionCredits(BASE, KEY, USER, -5, mockFetch({ rows: [{ balance: 1 }] }).fn)).toBe(2);
-  });
-
-  it("returns null when the grant write fails", async () => {
-    const { fn } = mockFetch({ rows: [{ balance: 1 }], writeOk: false });
-    expect(await grantSessionCredits(BASE, KEY, USER, 1, fn)).toBeNull();
-  });
-
-  it("retries the grant on transient write failure and succeeds (money-critical path)", async () => {
+  /** Build a fetch mock for the atomic grant RPC + fallback upsert path.
+   *  Routes by URL so RPC calls and upsert calls can be controlled independently. */
+  function mockGrantFetch(opts: {
+    rpcOk?: boolean;
+    rpcBalance?: number | null;  // null = RPC missing (404), skip to fallback
+    rows?: unknown;
+    writeOk?: boolean;
+  }) {
     const calls: Call[] = [];
-    let writeAttempts = 0;
     const fn = vi.fn(async (url: string, init?: RequestInit) => {
       const method = (init?.method || "GET").toUpperCase();
       const body = init?.body ? JSON.parse(init.body as string) : undefined;
       calls.push({ url, method, body });
+      if (url.includes("/rpc/grant_session_credits")) {
+        // opts.rpcBalance===null means RPC not deployed (404)
+        if (opts.rpcBalance === null) return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+        return { ok: opts.rpcOk ?? true, status: 200, json: async () => opts.rpcBalance ?? 0 } as unknown as Response;
+      }
+      if (method === "GET") {
+        return { ok: true, json: async () => opts.rows ?? [] } as Response;
+      }
+      // Fallback upsert POST
+      return { ok: opts.writeOk ?? true, json: async () => ({}) } as Response;
+    });
+    return { fn: fn as unknown as typeof fetch, calls };
+  }
+
+  it("grants credits atomically via the RPC path (primary)", async () => {
+    // RPC returns the new balance directly — no fallback read needed
+    const { fn, calls } = mockGrantFetch({ rpcOk: true, rpcBalance: 5 });
+    const newBalance = await grantSessionCredits(BASE, KEY, USER, 3, fn);
+    expect(newBalance).toBe(5);
+    // Only one POST (to the RPC) — no GET + upsert fallback
+    const posts = calls.filter(c => c.method === "POST");
+    expect(posts).toHaveLength(1);
+    expect(posts[0].url).toContain("/rpc/grant_session_credits");
+    expect((posts[0].body as { p_user_id: string }).p_user_id).toBe(USER);
+    expect((posts[0].body as { p_qty: number }).p_qty).toBe(3);
+  });
+
+  it("falls back to read-then-upsert when RPC is not deployed", async () => {
+    // Simulate RPC missing (404) — should fall through to legacy path
+    const { fn, calls } = mockGrantFetch({ rpcBalance: null, rows: [{ balance: 2 }], writeOk: true });
+    const newBalance = await grantSessionCredits(BASE, KEY, USER, 3, fn);
+    expect(newBalance).toBe(5);
+    // Should have: RPC POST (404), GET for balance, upsert POST
+    const posts = calls.filter(c => c.method === "POST");
+    expect(posts).toHaveLength(2); // RPC attempt + upsert fallback
+    const upsert = posts.find(c => c.url.includes("/session_credits") && !c.url.includes("/rpc/"));
+    expect(upsert).toBeTruthy();
+    expect((upsert!.body as { balance: number }).balance).toBe(5);
+    expect((upsert!.body as { user_id: string }).user_id).toBe(USER);
+  });
+
+  it("clamps the granted quantity to 1..10", async () => {
+    expect(await grantSessionCredits(BASE, KEY, USER, 99, mockGrantFetch({ rpcOk: true, rpcBalance: 10 }).fn)).toBe(10);
+    expect(await grantSessionCredits(BASE, KEY, USER, 0, mockGrantFetch({ rpcOk: true, rpcBalance: 1 }).fn)).toBe(1);
+    expect(await grantSessionCredits(BASE, KEY, USER, -5, mockGrantFetch({ rpcOk: true, rpcBalance: 2 }).fn)).toBe(2);
+  });
+
+  it("returns null when the grant fails (RPC + all fallback retries exhausted)", async () => {
+    // RPC 404 and fallback upsert always fails
+    const { fn } = mockGrantFetch({ rpcBalance: null, rows: [{ balance: 1 }], writeOk: false });
+    expect(await grantSessionCredits(BASE, KEY, USER, 1, fn)).toBeNull();
+  });
+
+  it("retries the grant on transient write failure and succeeds (money-critical path)", async () => {
+    // RPC is not deployed (404). Fallback upsert fails twice then succeeds.
+    let upsertAttempts = 0;
+    const fn = vi.fn(async (url: string, init?: RequestInit) => {
+      const method = (init?.method || "GET").toUpperCase();
+      if (url.includes("/rpc/grant_session_credits")) {
+        return { ok: false, status: 404, json: async () => ({}) } as unknown as Response;
+      }
       if (method === "GET") return { ok: true, json: async () => [{ balance: 2 }] } as Response;
-      writeAttempts++;
-      // Fail the first two write attempts, succeed on the third.
-      return { ok: writeAttempts >= 3, json: async () => ({}) } as Response;
+      upsertAttempts++;
+      // Fail first two upsert attempts, succeed on the third.
+      return { ok: upsertAttempts >= 3, json: async () => ({}) } as Response;
     }) as unknown as typeof fetch;
     const newBalance = await grantSessionCredits(BASE, KEY, USER, 1, fn, 3);
     expect(newBalance).toBe(3);
-    expect(writeAttempts).toBe(3);
+    expect(upsertAttempts).toBe(3);
   });
 
   it("returns null after exhausting all retries", async () => {
-    const { fn } = mockFetch({ rows: [{ balance: 1 }], writeOk: false });
+    const { fn } = mockGrantFetch({ rpcBalance: null, rows: [{ balance: 1 }], writeOk: false });
     expect(await grantSessionCredits(BASE, KEY, USER, 1, fn, 2)).toBeNull();
   });
 

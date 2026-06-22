@@ -269,15 +269,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // Return profile snapshot so the client can render the upgraded
             // state instead of a bare idempotent flag.
             try {
-              const snapRes = await fetchWithTimeout(
-                `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end`,
-                { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
-              );
+              const [snapRes, creditsRes] = await Promise.all([
+                fetchWithTimeout(
+                  `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end`,
+                  { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+                ),
+                fetchWithTimeout(
+                  `${SUPABASE_URL}/rest/v1/session_credits?user_id=eq.${encodeURIComponent(userId)}&select=balance`,
+                  { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+                ),
+              ]);
               const rows = await snapRes.json();
               const snap = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+              const creditRows = await creditsRes.json();
+              const credits = Array.isArray(creditRows) && creditRows.length > 0 ? (creditRows[0].balance ?? 0) : 0;
               return res.status(200).json({
                 success: true,
                 idempotent: true,
+                credits,
                 subscriptionTier: snap?.subscription_tier ?? null,
                 subscriptionStart: snap?.subscription_start ?? null,
                 subscriptionEnd: snap?.subscription_end ?? null,
@@ -357,12 +366,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // browser is still redirecting back from the bank's auth page.
     const respondIdempotent = async (source: string): Promise<void> => {
       try {
-        const snapRes = await fetchWithTimeout(
-          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end`,
-          { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
-        );
+        const [snapRes, creditsRes] = await Promise.all([
+          fetchWithTimeout(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end`,
+            { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+          ),
+          // Include credit balance so single-plan idempotent responses still
+          // trigger onCreditPurchase on the client. Without this, the client
+          // gets success:true but no credits field, so the balance never updates.
+          fetchWithTimeout(
+            `${SUPABASE_URL}/rest/v1/session_credits?user_id=eq.${encodeURIComponent(userId)}&select=balance`,
+            { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
+          ),
+        ]);
         const rows = await snapRes.json();
         const snap = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+        const creditRows = await creditsRes.json();
+        const credits = Array.isArray(creditRows) && creditRows.length > 0 ? (creditRows[0].balance ?? 0) : 0;
         void captureServerEvent("verify_payment_idempotent", userId, {
           payment_id_hash: hashPaymentId(razorpay_payment_id),
           source,
@@ -370,6 +390,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.status(200).json({
           success: true,
           idempotent: true,
+          credits,
           subscriptionTier: snap?.subscription_tier ?? null,
           subscriptionStart: snap?.subscription_start ?? null,
           subscriptionEnd: snap?.subscription_end ?? null,

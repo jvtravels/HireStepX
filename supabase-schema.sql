@@ -669,6 +669,35 @@ $$;
 revoke all on function consume_session_credit(uuid) from public, anon, authenticated;
 grant execute on function consume_session_credit(uuid) to service_role;
 
+-- ── Atomic credit grant ────────────────────────────────────────────────────────
+-- Eliminates the read-then-write race in the old grantSessionCredits path where
+-- two concurrent purchases both read the same balance, both compute balance+qty,
+-- and the second write silently overwrites the first (one credit is lost).
+-- Uses INSERT ... ON CONFLICT DO UPDATE so the increment is a single statement
+-- and Postgres row-locking serializes concurrent calls.
+create or replace function grant_session_credits(p_user_id uuid, p_qty integer)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  new_balance integer;
+begin
+  insert into session_credits (user_id, balance, updated_at)
+  values (p_user_id, greatest(p_qty, 1), now())
+  on conflict (user_id)
+  do update set
+    balance = session_credits.balance + greatest(excluded.balance, 1),
+    updated_at = now()
+  returning balance into new_balance;
+  return new_balance;
+end;
+$$;
+
+revoke all on function grant_session_credits(uuid, integer) from public, anon, authenticated;
+grant execute on function grant_session_credits(uuid, integer) to service_role;
+
 -- ── Atomic promo code consumption ─────────────────────────────────────────────
 -- Increments current_uses only when uses < max_uses. Returns the code row id
 -- on success, null when the code doesn't exist or is already exhausted.

@@ -46,12 +46,18 @@ export async function getSessionCredits(
 /** Add `qty` (clamped 1–10) credits to a user's balance, creating the ledger
  *  row if absent. Returns the new balance, or null if the write failed.
  *
- *  `retries` re-attempts the read+upsert on transient failure with linear
- *  backoff. This is money-critical: the caller has already taken the user's
- *  payment, so a Supabase blip here must not silently drop the credit. Each
- *  attempt re-reads the balance, so a partial prior write is self-correcting
- *  (the merge-duplicates upsert is idempotent on the computed total).
- *  Default 0 keeps the call shape unchanged for existing unit tests. */
+ *  Primary path: calls the `grant_session_credits` SQL RPC, which is a single
+ *  INSERT ... ON CONFLICT DO UPDATE so the increment is atomic. Postgres row-
+ *  locking serializes concurrent payment calls — the old read-then-write race
+ *  where two concurrent purchases both read balance=3, both write balance=4
+ *  (one credit lost) is eliminated.
+ *
+ *  Fallback: if the RPC is unavailable (function not deployed, migration
+ *  pending), falls back to the read-then-upsert approach. Each retry re-reads
+ *  the balance so a partial prior write self-corrects.
+ *
+ *  `retries` covers transient Supabase blips. This is money-critical — the
+ *  caller has already taken payment.  Default 0 keeps unit tests unchanged. */
 export async function grantSessionCredits(
   baseUrl: string,
   serviceKey: string,
@@ -63,18 +69,36 @@ export async function grantSessionCredits(
   const safeQty = Math.min(Math.max(Math.trunc(Number(qty)) || 0, 1), 10);
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // ── Primary: atomic RPC ──────────────────────────────────────────
+      const rpcRes = await fetchImpl(`${baseUrl}/rest/v1/rpc/grant_session_credits`, {
+        method: "POST",
+        headers: authHeaders(serviceKey, { "Content-Type": "application/json" }),
+        body: JSON.stringify({ p_user_id: userId, p_qty: safeQty }),
+      });
+      if (rpcRes.ok) {
+        const newBalance = await rpcRes.json();
+        if (typeof newBalance === "number") return newBalance;
+      }
+      // ── Fallback: read-then-upsert (non-atomic, but safe under retries) ──
+      // Reached when the SQL function isn't deployed yet (404/405) or on
+      // unexpected RPC errors. Each attempt re-reads the balance so a
+      // partial prior write is self-correcting.
+      if (rpcRes.status !== 404 && rpcRes.status !== 405) {
+        console.error(`grant_session_credits RPC error (${rpcRes.status}) for ${userId}, falling back to upsert`);
+      }
+    } catch { /* transient — try fallback */ }
+    try {
       const current = await getSessionCredits(baseUrl, serviceKey, userId, fetchImpl);
       const next = current + safeQty;
-      const res = await fetchImpl(`${baseUrl}/rest/v1/session_credits`, {
+      const upsertRes = await fetchImpl(`${baseUrl}/rest/v1/session_credits`, {
         method: "POST",
         headers: authHeaders(serviceKey, {
           "Content-Type": "application/json",
-          // Upsert: insert the row, or overwrite balance with the computed total.
           Prefer: "resolution=merge-duplicates,return=minimal",
         }),
         body: JSON.stringify({ user_id: userId, balance: next, updated_at: new Date().toISOString() }),
       });
-      if (res.ok) return next;
+      if (upsertRes.ok) return next;
     } catch { /* transient — fall through to retry */ }
     if (attempt < retries) await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
   }

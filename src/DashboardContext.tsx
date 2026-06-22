@@ -606,9 +606,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const practiceTimestamps = user?.practiceTimestamps && Array.isArray(user.practiceTimestamps)
     ? user.practiceTimestamps
     : [];
-  const isFree = !user?.subscriptionTier || user.subscriptionTier === "free";
-  const isStarter = user?.subscriptionTier === "starter";
-  const isPro = user?.subscriptionTier === "pro";
+  // Belt-and-suspenders expiry check: AuthContext already downgrades expired
+  // tiers in profileToUser(), but a user whose subscription lapses WHILE the
+  // app is open won't get the downgrade until the next JWT refresh. Checking
+  // subscriptionEnd here ensures the UI gates reflect reality immediately.
+  const rawTier = user?.subscriptionTier || "free";
+  const subEnd = user?.subscriptionEnd;
+  const isTierExpired = rawTier !== "free" && subEnd ? new Date(subEnd) < new Date() : false;
+  const effectiveTier = isTierExpired ? "free" : rawTier;
+  const isFree = effectiveTier === "free";
+  const isStarter = effectiveTier === "starter";
+  const isPro = effectiveTier === "pro";
   const sessionsUsed = practiceTimestamps.length;
   const sessionsRemaining = Math.max(0, FREE_SESSION_LIMIT - sessionsUsed);
   const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);

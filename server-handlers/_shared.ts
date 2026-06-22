@@ -361,6 +361,14 @@ export async function checkSessionLimit(
         }
         return { allowed: true };
       }
+      // Atomic in-flight check: prevent race where two concurrent session starts
+      // both read thisMonth < PRO_MONTHLY_LIMIT and both slip through.
+      if (consumeCredit) {
+        const inFlight = await incrementInFlightCounter(userId, "pro", INFLIGHT_TTL_SEC);
+        if (inFlight !== null && thisMonth + inFlight > PRO_MONTHLY_LIMIT) {
+          return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT} sessions/month). Buy session credits or wait for next month.` };
+        }
+      }
       return { allowed: true };
     }
 
@@ -430,6 +438,14 @@ export async function checkSessionLimit(
           return { allowed: false, reason: `Starter plan limit reached (${STARTER_WEEKLY_LIMIT} sessions/week). Buy session credits or upgrade to Pro.` };
         }
         return { allowed: true };
+      }
+      // Atomic in-flight check: prevent race where two concurrent session starts
+      // both read thisWeek < STARTER_WEEKLY_LIMIT and both slip through.
+      if (consumeCredit) {
+        const inFlight = await incrementInFlightCounter(userId, "starter", INFLIGHT_TTL_SEC);
+        if (inFlight !== null && thisWeek + inFlight > STARTER_WEEKLY_LIMIT) {
+          return { allowed: false, reason: `Starter plan limit reached (${STARTER_WEEKLY_LIMIT} sessions/week). Buy session credits or upgrade to Pro.` };
+        }
       }
     } else {
       clearTimeout(timer);
