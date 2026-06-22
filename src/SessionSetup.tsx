@@ -819,10 +819,27 @@ export default function SessionSetup() {
   // SessionSetup lives outside the DashboardProvider scope and can't use
   // useDashboardSubscription, so it reads the balance independently.
   // null = still fetching (prevents false upgrade-modal flash on mount).
+  // On fetch FAILURE we leave it as null (fail-open): the server-side gate in
+  // checkSessionLimit will still enforce the real limit. Dropping to 0 here
+  // would hard-block users who have real credits whenever the endpoint has a
+  // transient error. With retries, we try twice before giving up.
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   useEffect(() => {
     if (!user?.id) return;
-    getCreditBalance(user.id).then(b => setCreditBalance(b)).catch(() => setCreditBalance(0));
+    let cancelled = false;
+    const fetchBalance = async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const b = await getCreditBalance(user.id);
+          if (!cancelled) { setCreditBalance(b); return; }
+        } catch { /* transient */ }
+        if (attempt < 2) await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+      }
+      // All attempts failed — fail-open (leave null so the gate doesn't trigger).
+      // The server will still enforce the real limit on session start.
+    };
+    void fetchBalance();
+    return () => { cancelled = true; };
   }, [user?.id]);
 
   // A user past their plan limit is NOT blocked if they hold purchased credits —
