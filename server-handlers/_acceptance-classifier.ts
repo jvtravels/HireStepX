@@ -397,9 +397,15 @@ const CONDITIONAL_DEFERRAL_PATTERN =
 
 /** Veto: "I'll take it ELSEWHERE / under advisement / or leave it / back / to
  *  my boss" — the take-it verb survives a walk-away or stall continuation. Bare
- *  "I'll take it" (the genuine accept) carries none of these and is untouched. */
+ *  "I'll take it" (the genuine accept) carries none of these and is untouched.
+ *  PRI-61 (2026-06-22, offline precision sweep) — more stall/defer continuations
+ *  the take-it verb hijacks: "under consideration/review" (defer), "from here"
+ *  (I'll handle it myself), "on board" (I'll note it), "as a maybe" (non-commit),
+ *  "slow" (slow down). All are "I'll think about it" in disguise, not consent.
+ *  "as a maybe" is scoped to the non-commit noun so "take it as a yes" — a
+ *  genuine (if rare) accept — is NOT vetoed. */
 const TAKE_IT_HEDGE_PATTERN =
-  /\btake\s+(?:it|the\s+offer)\s+(?:elsewhere|somewhere|under\s+advisement|or\s+leave\s+it|back\b|away\b|to\s+(?:my|the|another|a\s)|with\s+me\b|home\b)/i;
+  /\btake\s+(?:it|the\s+offer)\s+(?:elsewhere|somewhere|under\s+(?:advisement|consideration|review)|or\s+leave\s+it|back\b|away\b|from\s+here\b|on\s+board\b|as\s+a\s+maybe\b|slow\b|to\s+(?:my|the|another|a\s)|with\s+me\b|home\b)/i;
 
 /** Veto: "I'm in A / AN / TALKS / DISCUSSIONS / NO RUSH / THE MIDDLE / TWO
  *  MINDS …" — the "I'm in" commit hijacked by a hedge noun phrase. Plain
@@ -443,13 +449,29 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
   /\b(?:no\s+way|there'?s\s+no\s+way)\b[^.!?]{0,20}\baccept\b/i,
 ];
 
-/** All PRI-59 precision vetoes, shared by both gates. */
+/* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
+ * accepts the role/premise but rejects the MONEY in the same utterance ("I
+ * accept the role but not at this comp", "I'd accept, except the variable is
+ * unacceptable"). The performative "I accept" / "I'd accept" matches, but a
+ * contrastive conjunction governing a money-rejection makes it a counter, not a
+ * clean close. NEGATIVE_BUT (above) only fires on a re-open token (more/higher/
+ * …); these reject by NEGATING the money or calling it unacceptable, which that
+ * pattern misses. Shared single-source between both gates via FALSE_CLOSE. */
+const PARTIAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
+  /* "… but/except NOT <money noun>" — "but not at this comp", "except for the base" */
+  /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\bnot\s+(?:at\s+|for\s+|on\s+|with\s+)?(?:this|that|the|these|those|such\s+a)?\s*(?:comp(?:ensation)?|number|figure|salary|package|ctc|price|amount|level|rate|pay|money|base|terms?)\b/i,
+  /* "… but/except <too low / unacceptable / unworkable>" */
+  /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\b(?:un(?:acceptable|workable|reasonable)|too\s+(?:low|little|less|small|tight))\b/i,
+];
+
+/** All PRI-59/61 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
   IN_PRINCIPLE_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
+  ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];
 
 /** Veto: hard conditional ("if/unless/provided"). Info-seeking

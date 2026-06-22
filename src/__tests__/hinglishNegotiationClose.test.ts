@@ -378,3 +378,48 @@ describe("PRI-60: rhetorical/send-it/deal FALSE-CLOSE precision + recall", () =>
     });
   }
 });
+
+/* PRI-61 (2026-06-22, offline precision sweep) — two more FALSE-CLOSE classes:
+ *   1. "I'll take it" + a stall/defer continuation the PRI-59 take-it hedge list
+ *      missed — "under consideration/review", "from here", "on board", "as a
+ *      maybe", "slow". All are "I'll think about it" in disguise.
+ *   2. PARTIAL accept — accepts the role/premise but rejects the MONEY in the
+ *      same utterance ("I accept the role but not at this comp", "I'd accept,
+ *      except the variable is unacceptable"). A counter, not a clean close.
+ * MUST_STILL_CLOSE re-locks the bare commits each fix is scoped around — notably
+ * "I'll take it as a yes" must survive the "as a maybe"-only scoping. */
+describe("PRI-61: take-it hedge gaps + partial-accept FALSE-CLOSE precision", () => {
+  const MUST_NOT_CLOSE = [
+    "I'll take it under consideration.",
+    "I'll take it under review.",
+    "I'll take it from here and get back to you.",
+    "I'll take it on board and revert.",
+    "I'll take it as a maybe for now.",
+    "I'll take it slow and think it over.",
+    "I accept the role but not at this comp.",
+    "I'd accept, except the variable is unacceptable.",
+    "I accept the package but the base is too low.",
+  ];
+  for (const text of MUST_NOT_CLOSE) {
+    it(`rejects (no false-close): '${text}'`, () => {
+      expect(detectExplicitAcceptance(text).accepted).toBe(false);
+      expect(classifyAcceptance(text, { offerOnTable: true }).accepted).toBe(false);
+    });
+  }
+
+  const MUST_STILL_CLOSE = [
+    "I'll take it.",
+    "Yes, I'll take it.",
+    "I'll take the offer.",
+    "I accept the role.",
+    "I accept the role and the comp.",
+    "I'll take it as a yes.",
+  ];
+  for (const text of MUST_STILL_CLOSE) {
+    it(`still closes the genuine accept: '${text}'`, () => {
+      const strict = detectExplicitAcceptance(text).accepted;
+      const medium = classifyAcceptance(text, { offerOnTable: true }).accepted;
+      expect(strict || medium).toBe(true);
+    });
+  }
+});
