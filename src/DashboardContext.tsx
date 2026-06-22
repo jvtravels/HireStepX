@@ -69,6 +69,10 @@ interface SubscriptionContextValue {
    *  gate clears for all three tiers when creditBalance > 0. Fetched lazily after auth;
    *  0 until loaded. */
   creditBalance: number;
+  /** True once the credit balance DB fetch has resolved (success or error).
+   *  Use to suppress the "Buy sessions" CTA while the balance is still unknown —
+   *  avoids a flash of the exhausted state for users who have purchased credits. */
+  creditsLoaded: boolean;
 }
 
 interface UIContextValue {
@@ -211,6 +215,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [paymentBanner, setPaymentBanner] = useState<"success" | "cancelled" | null>(null);
   const [creditBalance, setCreditBalance] = useState(0);
+  const [creditsLoaded, setCreditsLoaded] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((msg: string) => {
@@ -391,7 +396,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       getCreditBalance(user.id).then(bal => {
         if (cancelled) return;
         setCreditBalance(bal);
-      }).catch(() => { /* silent — balance defaults to 0 */ }),
+        setCreditsLoaded(true);
+      }).catch(() => {
+        if (!cancelled) setCreditsLoaded(true); // mark loaded even on error — balance stays 0
+      }),
       getCalendarEvents(user.id).then(events => {
         if (cancelled) return;
         const mapped = events.map(e => ({
@@ -737,8 +745,8 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, isPro, atSessionLimit,
     sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek,
-    sessionsThisMonth, proRemaining, creditBalance,
-  }), [isFree, isStarter, isPro, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance]);
+    sessionsThisMonth, proRemaining, creditBalance, creditsLoaded,
+  }), [isFree, isStarter, isPro, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance, creditsLoaded]);
 
   const uiValue: UIContextValue = useMemo(() => ({
     showUpgradeModal, setShowUpgradeModal,

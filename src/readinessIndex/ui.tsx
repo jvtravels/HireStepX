@@ -202,6 +202,7 @@ export function RiGauge({ ri, threshold, band, cohort, size = 220 }: { ri: numbe
 }
 
 export function Trajectory({ points, projTarget, threshold, width = 200, height = 56 }: { points: number[]; projTarget: number; threshold: number; width?: number; height?: number }) {
+  if (!points.length) return <svg width={width} height={height} role="img" aria-label="Readiness trajectory unavailable" style={{ display: "block" }} />;
   const all = [...points, projTarget, threshold];
   const min = Math.min(...all) - 4, max = Math.max(...all) + 4;
   const nx = (i: number, n: number) => (n <= 1 ? 0 : (i / (n - 1)) * width);
@@ -224,6 +225,7 @@ export function Trajectory({ points, projTarget, threshold, width = 200, height 
 }
 
 export function Spark({ points, color = t.indigo, width = 96, height = 28 }: { points: number[]; color?: string; width?: number; height?: number }) {
+  if (!points.length) return <svg width={width} height={height} role="img" aria-label="trend unavailable" style={{ display: "block" }} />;
   const min = Math.min(...points) - 2, max = Math.max(...points) + 2;
   const nx = (i: number) => (points.length <= 1 ? 0 : (i / (points.length - 1)) * width);
   const ny = (v: number) => height - ((v - min) / (max - min)) * height;

@@ -919,6 +919,30 @@ function isEquityScopedSpan(text: string, span: SalarySpan): boolean {
   return EQUITY_SPAN_CUES.some((re) => re.test(window));
 }
 
+/* Cash-component override (live-staging Flipkart-EM, 2026-06-22). A number
+ * explicitly tagged as a CASH component — "48 fixed", "48 LPA base",
+ * "32 basic", "in-hand 40" — is the candidate's fixed pay, NOT equity, even
+ * when an equity keyword ("plus some ESOPs", "plus stock") trails within the
+ * equity window. The equity-scope guard's 30-char window was swallowing the
+ * fixed CTC of a perfectly natural disclosure ("Present CTC is 48 fixed plus
+ * some ESOPs" → currentCtc dropped to null → the kernel anchored at the raw
+ * band FLOOR, BELOW the candidate's own pay). The "plus ESOPs" is a separate,
+ * usually-unquantified component captured by extractEquityVesting; it must not
+ * poison the cash number. Tight, adjacency-scoped: the cash cue must sit
+ * immediately beside THIS number (optionally across an LPA/lakh unit), so a
+ * genuinely equity-framed span ("RSUs worth 3 LPA a year") has no adjacent
+ * cash tag and stays suppressed. */
+const CASH_COMPONENT_RIGHT =
+  /^[\s,]*(?:lpa|lpe|l|lakhs?|lacs?|k)?\s*(?:fixed|base|basic|cash|fixed\s+pay|in[-\s]?hand|take[-\s]?home)\b/i;
+const CASH_COMPONENT_LEFT =
+  /\b(?:fixed|base|basic|cash|fixed\s+pay|in[-\s]?hand|take[-\s]?home)\s+(?:pay\s+)?(?:of\s+|is\s+|at\s+|around\s+|roughly\s+|about\s+)?$/i;
+function isCashComponentScopedSpan(text: string, span: SalarySpan): boolean {
+  const right = text.slice(span.end, Math.min(text.length, span.end + 16));
+  if (CASH_COMPONENT_RIGHT.test(right)) return true;
+  const left = text.slice(Math.max(0, span.start - 16), span.start);
+  return CASH_COMPONENT_LEFT.test(left);
+}
+
 /* Stronger form: an equity keyword sitting IMMEDIATELY before the number
  * ("stock worth 5", "5 in RSUs" → "RSUs" right-adjacent is excluded here;
  * this is left-only) scopes the number to equity even when a current cue
@@ -1052,7 +1076,7 @@ export function classifyNumberRoles(
      * component, not a CTC — don't let it fall through pickRole's
      * bot-asked-current default and clobber the real currentCtc. */
     const cueMax = Math.max(scores.current, scores.target, scores.competing);
-    if (cueMax === 0 && isEquityScopedSpan(text, span)) continue;
+    if (cueMax === 0 && isEquityScopedSpan(text, span) && !isCashComponentScopedSpan(text, span)) continue;
     /* Walk-away-floor guard: an explicit floor ("my floor is 28", "can't go
      * below 28") with no role cue binds to NO role — it's captured as
      * candidateFloor by the kernel, distinct from current AND target. */

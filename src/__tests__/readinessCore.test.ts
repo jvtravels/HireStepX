@@ -227,7 +227,9 @@ describe("computeReadiness — aggregations", () => {
     expect(p.answerCraft.ownershipPct).toBe(70); // firstPersonRatio 0.7
     expect(p.answerCraft.verdictMix.find((v) => v.label === "Complete")!.n).toBe(1);
     expect(p.answerCraft.quantifiedPct).toBeGreaterThanOrEqual(0);
-    expect(p.meta.modelled).toContain("answerCraft.quantifiedPct");
+    // With real answers in hand, the quantified share is observed, not a
+    // modelled estimate, so it must NOT carry the caveat marker.
+    expect(p.meta.modelled).not.toContain("answerCraft.quantifiedPct");
   });
 
   it("maps the latest thoughtBubble to an attention timeline in percent", () => {
@@ -246,13 +248,20 @@ describe("computeReadiness — aggregations", () => {
   });
 
   it("reads negotiation metrics from a negotiation-focus session", () => {
+    // Producer (save-session.ts) persists `bandTraversal` on a 0-1 scale and
+    // never writes a free-text archetype, so the fixture mirrors that exactly.
     const p = computeReadiness(input([
       session({ id: "a" }),
-      session({ id: "n", focus: "salary-negotiation", type: "salary-negotiation", negotiationMetrics: { score: 72, outcome: "accepted", anchorTurn: 1, lpaGained: 6.5, bandTraversalPct: 68, leverDiversity: 4, archetype: "Early anchor." } }),
+      session({ id: "n", focus: "salary-negotiation", type: "salary-negotiation", negotiationMetrics: { score: 72, outcome: "accepted", anchorTurn: 1, lpaGained: 6.5, bandTraversal: 0.68, leverDiversity: 4 } }),
     ]))!;
     expect(p.negotiation).not.toBeNull();
     expect(p.negotiation!.outcome).toBe("accepted");
     expect(p.negotiation!.lpaGained).toBe(6.5);
+    // bandTraversal 0.68 → 68%, not the 0 it pinned to when reading a
+    // non-existent bandTraversalPct key.
+    expect(p.negotiation!.bandTraversalPct).toBe(68);
+    // archetype is derived: 4 levers crossing 68% of the band → multi-lever.
+    expect(p.negotiation!.archetype).toContain("Multi-lever");
   });
 
   it("returns null negotiation when no negotiation session exists", () => {
@@ -346,5 +355,21 @@ describe("rangeSlice helper", () => {
   it("exposes range labels", () => {
     expect(RANGE_LABEL["7d"]).toBe("7 days");
     expect(RANGE_LABEL.all).toBe("all time");
+  });
+});
+
+/* The client bundle re-implements rangeSlice/RANGE_LABEL in readinessIndex/
+   types.ts so it pulls no server-handler runtime. That duplication is only
+   safe while the two copies stay byte-for-byte equivalent in behaviour. */
+describe("rangeSlice / RANGE_LABEL core-vs-client parity", () => {
+  it("produces identical labels and slices across both copies", async () => {
+    const client = await import("../readinessIndex/types");
+    const ranges = ["7d", "1m", "all"] as const;
+    for (const r of ranges) expect(client.RANGE_LABEL[r]).toBe(RANGE_LABEL[r]);
+    const series = Array.from({ length: 40 }, (_, i) => i + 1);
+    const cases: number[][] = [[], [1], [1, 2], [1, 2, 3, 4, 5], series];
+    for (const s of cases) for (const r of ranges) {
+      expect(client.rangeSlice(s, r)).toEqual(rangeSlice(s, r));
+    }
   });
 });

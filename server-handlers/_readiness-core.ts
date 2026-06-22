@@ -451,15 +451,31 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
   const cutoff = nowMs - 14 * DAY_MS;
   let priorIdx = -1;
   for (let i = n - 1; i >= 0; i--) { if (Date.parse(sessions[i].createdAt) <= cutoff) { priorIdx = i; break; } }
-  const delta14d = priorIdx >= 0 ? ri - trajectory[priorIdx] : 0;
+  // Baseline RI is recomputed at the *current* clock (nowMs), not as the
+  // historical trajectory point. trajectory[priorIdx] dated its currency to
+  // that session's own day, so skills read fresh then; subtracting it would
+  // book 14 days of skill-decay as if it were practice progress. Recomputing
+  // the older window at nowMs isolates what the newer sessions actually added.
+  const delta14d = priorIdx >= 0
+    ? ri - composite(cumulativePillars(sessions.slice(0, priorIdx + 1), nowMs))
+    : 0;
 
   const pillars = buildPillars(sessions, vectors, nowMs);
+  const skillAgg = aggregateSkills(sessions);
+
+  // Honesty markers — a pillar running on a neutral default (no variance
+  // sample, no dated skills, no delivery metrics) is a modelled estimate,
+  // not an observed score. Tag it so the UI caveats it rather than passing
+  // the placeholder off as measured.
+  const scoredCount = sessions.map(sessionScore).filter((x) => x > 0).length;
+  if (scoredCount < 2) modelled.push("pillar.consistency");
+  if (!skillAgg.size) modelled.push("pillar.currency");
+  if (!sessions.slice(-3).some((s) => s.report?.coreMetrics)) modelled.push("pillar.composure");
 
   // Confidence grows with sample size, capped.
   const confidence = clamp(0.4 + 0.05 * n, 0.4, 0.95);
 
   // Skills (top-level).
-  const skillAgg = aggregateSkills(sessions);
   const skills: Skill[] = [...skillAgg.values()]
     .map((a) => {
       const pct = clamp(round(50 + (a.latest - cohortRi) * 2.4), 2, 99);
@@ -475,15 +491,23 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
   const bandMix = bandOrder.map((b) => ({ band: b, n: bandCounts[b] }));
   const hireBand: HireBand = latestReport?.band || riToHireBand(ri, latestReport);
 
-  // Percentile — modelled vs the typical-hire bar, shrunk toward 50 when sparse.
+  // Percentile — modelled vs the typical-hire bar, shrunk toward 50 when
+  // sparse. The shrink scales from ~0 at a single session up to 1, so a
+  // one-session read sits near the median instead of being thrown to an
+  // extreme by a 0.35 floor.
   const rawPct = 50 + (ri - cohortRi) * 2.6;
-  const shrink = clamp(n / 8, 0.35, 1);
+  const shrink = clamp(n / 8, 0, 1);
   const percentile = clamp(round(50 + (rawPct - 50) * shrink), 2, 99);
   modelled.push("percentile");
 
-  // Score spread.
+  // Score spread — derived from observed session scores only. Folding the
+  // composite RI into min/max widened the band with a value that is not a
+  // session score; an empty set (no scored sessions) collapses to zero
+  // rather than Math.min(±Infinity).
   const allScores = sessions.map(sessionScore).filter((x) => x > 0);
-  const scoreSpread = { min: round(Math.min(...allScores, ri)), max: round(Math.max(...allScores, ri)), sigma: round(stddev(allScores) * 10) / 10 };
+  const scoreSpread = allScores.length
+    ? { min: round(Math.min(...allScores)), max: round(Math.max(...allScores)), sigma: round(stddev(allScores) * 10) / 10 }
+    : { min: 0, max: 0, sigma: 0 };
 
   // Coverage detail.
   const star = aggregateStar(sessions);
@@ -497,7 +521,10 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
   const bsMap = new Map<string, BlindSpot>();
   for (const s of sessions) for (const b of s.report?.blindSpots || []) {
     if (!b?.competency) continue;
-    const f = typeof b.frequencyPct === "number" ? b.frequencyPct : 50;
+    // The UI renders frequencyPct as a hard "N%". An unranked blind spot has
+    // no measured frequency, so skip it rather than show a fabricated 50%.
+    if (typeof b.frequencyPct !== "number") continue;
+    const f = b.frequencyPct;
     const prev = bsMap.get(b.competency);
     if (!prev || f > prev.frequencyPct) bsMap.set(b.competency, { competency: b.competency, frequencyPct: f, note: b.note || "" });
   }
@@ -747,7 +774,9 @@ function buildAnswerCraft(sessions: RawSession[], modelled: string[]): Readiness
 
   const ownershipPct = fpN ? round((firstPersonSum / fpN) * 100) : 0;
   const quantifiedPct = totalAnswers ? clamp(round(100 - (missingResultFlags / totalAnswers) * 100), 0, 100) : 0;
-  modelled.push("answerCraft.quantifiedPct");
+  // Only a caveat when there is nothing to measure; with answers in hand this
+  // is an observed rate, not a modelled one, so it should not be flagged.
+  if (!totalAnswers) modelled.push("answerCraft.quantifiedPct");
 
   const verdictMix = (["strong", "complete", "partial", "weak", "skipped"] as const).map((v) => ({
     label: VERDICT_LABEL[v], n: vCount[v], tone: VERDICT_TONE[v],
@@ -869,6 +898,18 @@ function buildFollowUps(sessions: RawSession[]): FollowUp[] {
   return [...byQ.values()].sort((a, b) => b.freqPct - a.freqPct).slice(0, 3);
 }
 
+/** Summarise a negotiation round from its measured signals. The producer
+ *  (save-session.ts) never persists a free-text archetype, so this is
+ *  derived from the metrics it does write rather than a fixed placeholder. */
+function negotiationArchetype(a: { anchorTurn: number; leverDiversity: number; bandTraversalPct: number; outcome: string }): string {
+  if (a.leverDiversity >= 3 && a.bandTraversalPct >= 60) return "Multi-lever negotiator. You move the band with more than base salary.";
+  if (a.anchorTurn >= 1 && a.anchorTurn <= 2) return "Early anchor. You set the number before the recruiter frames the range.";
+  if (a.anchorTurn >= 5) return "Late anchor. Open with your number sooner to set the ceiling.";
+  if (a.bandTraversalPct > 0 && a.bandTraversalPct < 30) return "Conservative ask. There is room to push the band higher.";
+  if (a.outcome === "walked") return "Held the line. You were willing to walk rather than under-sell.";
+  return "Negotiation practiced. Review the round for anchor timing.";
+}
+
 function buildNegotiation(sessions: RawSession[]): ReadinessPayload["negotiation"] {
   for (let i = sessions.length - 1; i >= 0; i--) {
     const s = sessions[i];
@@ -876,17 +917,22 @@ function buildNegotiation(sessions: RawSession[]): ReadinessPayload["negotiation
     const m = s.negotiationMetrics;
     const num = (k: string, d: number): number => (m && typeof m[k] === "number" ? (m[k] as number) : d);
     const str = (k: string, d: string): string => (m && typeof m[k] === "string" ? (m[k] as string) : d);
+    const anchorTurn = num("anchorTurn", 0);
+    const leverDiversity = num("leverDiversity", 0);
+    const outcome = str("outcome", "completed");
+    // Producer (save-session.ts) writes `bandTraversal` on a 0-1 scale;
+    // the UI wants a percentage. Reading the non-existent `bandTraversalPct`
+    // pinned this to 0 for every negotiation session.
+    const bandTraversalPct = clamp(round(num("bandTraversal", 0) * 100), 0, 100);
     return {
       score: round(num("score", sessionScore(s))),
-      outcome: str("outcome", "completed"),
-      anchorTurn: num("anchorTurn", 0),
+      outcome,
+      anchorTurn,
       lpaGained: num("lpaGained", 0),
-      // Producer (save-session.ts) writes `bandTraversal` on a 0-1 scale;
-      // the UI wants a percentage. Reading the non-existent `bandTraversalPct`
-      // pinned this to 0 for every negotiation session.
-      bandTraversalPct: clamp(round(num("bandTraversal", 0) * 100), 0, 100),
-      leverDiversity: num("leverDiversity", 0),
-      archetype: str("archetype", "Negotiation practiced. Review the round for anchor timing."),
+      bandTraversalPct,
+      leverDiversity,
+      // Honour a producer-supplied archetype if one ever appears, else derive.
+      archetype: str("archetype", negotiationArchetype({ anchorTurn, leverDiversity, bandTraversalPct, outcome })),
     };
   }
   return null;
