@@ -569,22 +569,31 @@ const UsageThisMonth = memo(function UsageThisMonth({
   );
 });
 
-/* Reads creditBalance from DashboardContext and renders a standalone info box
-   for purchased extra sessions. Shown only when credits exist. */
+/* Always-visible extra sessions row. Green when credits exist, muted when zero.
+   Gives users a persistent anchor to know purchased credits are a thing. */
 function ExtraSessionsInfoBox() {
   const { creditBalance } = useDashboardSubscription();
-  if (creditBalance <= 0) return null;
+  const hasCredits = creditBalance > 0;
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "10px 14px", borderRadius: 8, marginTop: 4,
-      background: c.success100, border: `1px solid rgba(21,128,61,0.25)`,
+      background: hasCredits ? c.success100 : c.creamSoft,
+      border: hasCredits ? `1px solid rgba(21,128,61,0.25)` : `1px solid ${c.border}`,
     }}>
-      <span style={{ fontFamily: font.ui, fontSize: 13, color: "#166534", display: "flex", alignItems: "center", gap: 6 }}>
-        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span style={{ fontFamily: font.ui, fontSize: 13, display: "flex", alignItems: "center", gap: 6,
+        color: hasCredits ? "#166534" : c.stone }}>
+        {hasCredits ? (
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        ) : (
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        )}
         Extra sessions available
       </span>
-      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700, color: c.sage }}>{creditBalance}</span>
+      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700,
+        color: hasCredits ? c.sage : c.stone, opacity: hasCredits ? 1 : 0.45 }}>
+        {creditBalance}
+      </span>
     </div>
   );
 }

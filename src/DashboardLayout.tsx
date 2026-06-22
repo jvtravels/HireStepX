@@ -466,27 +466,34 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   </div>
                 )}
 
-                {/* ── Extra sessions available — shown whenever credits exist ──
-                    Replaces the old CASE A / B / C tri-state. One consistent
-                    green info row: prominent when plan is exhausted (only signal),
-                    reassuring when plan still has sessions remaining. */}
-                {creditBalance > 0 ? (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                    marginBottom: 10, marginTop: planExhausted ? 6 : 2,
-                    padding: "8px 11px",
-                    background: T.success100, border: "1px solid rgba(21,128,61,0.22)", borderRadius: 8 }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 11, color: "#166534", display: "flex", alignItems: "center", gap: 5 }}>
-                      <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      Extra sessions available
-                    </span>
-                    <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 800, color: c.sage, letterSpacing: "-0.01em" }}>
-                      {creditBalance}
-                    </span>
-                  </div>
-                ) : (
-                  /* No credits + exhausted — just spacing before the CTA */
-                  planExhausted ? <div style={{ marginBottom: 10 }} /> : <div style={{ marginBottom: 10 }} />
-                )}
+                {/* ── Extra sessions available — always visible ──
+                    Green + bold when credits exist. Muted with 0 when none —
+                    so users always see the row and know purchased credits are a thing. */}
+                {(() => {
+                  const hasCredits = creditBalance > 0;
+                  return (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                      marginBottom: 10, marginTop: planExhausted ? 6 : 2,
+                      padding: "8px 11px",
+                      background: hasCredits ? T.success100 : "rgba(20,17,10,0.04)",
+                      border: hasCredits ? "1px solid rgba(21,128,61,0.22)" : `1px solid ${c.border}`,
+                      borderRadius: 8 }}>
+                      <span style={{ fontFamily: font.ui, fontSize: 11, display: "flex", alignItems: "center", gap: 5,
+                        color: hasCredits ? "#166534" : c.stone }}>
+                        {hasCredits ? (
+                          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        ) : (
+                          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        )}
+                        Extra sessions available
+                      </span>
+                      <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 800, letterSpacing: "-0.01em",
+                        color: hasCredits ? c.sage : c.stone, opacity: hasCredits ? 1 : 0.4 }}>
+                        {creditBalance}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {/* Starter renewal footnote */}
                 {user?.subscriptionEnd && isStarter && (
