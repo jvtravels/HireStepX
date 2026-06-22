@@ -223,6 +223,16 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     getCreditBalance(user.id).then(setCreditBalance).catch(() => {});
   }, [user?.id]);
 
+  // Persist the balance to sessionStorage so /session/new (a different Next.js
+  // route group, outside this DashboardProvider) can read it immediately on mount
+  // without an independent API round-trip. Writes on every change — including the
+  // initial DB fetch AND the setCreditBalanceDirect call after a credit purchase —
+  // so the session/new page always has the freshest value we know about.
+  useEffect(() => {
+    if (!user?.id) return;
+    try { sessionStorage.setItem(`hsx_credit_${user.id}`, String(creditBalance)); } catch { /* private-browsing caps */ }
+  }, [creditBalance, user?.id]);
+
   // Auto-open upgrade modal when navigated back from /interview with ?upgrade=1
   // (the interview engine redirects here when the server returns 403 session-limit).
   useEffect(() => {

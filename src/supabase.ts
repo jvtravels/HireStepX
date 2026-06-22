@@ -643,16 +643,17 @@ export async function syncGoogleEvents(userId: string): Promise<{ synced: number
  * is authoritative. Falls back to 0 on any network or parse error. */
 export async function getCreditBalance(_userId: string): Promise<number> {
   if (!_userId) return 0;
-  try {
-    // Must send the JWT as a Bearer token — Supabase stores it in localStorage
-    // (not cookies), so `credentials: "include"` is useless here and the
-    // endpoint would always return 401. authHeaders() reads from localStorage.
-    const hdrs = await authHeaders();
-    const res = await fetch("/api/credit-balance", { headers: hdrs });
-    if (!res.ok) return 0;
-    const json = await res.json() as { balance?: number };
-    return typeof json.balance === "number" ? json.balance : 0;
-  } catch {
-    return 0;
-  }
+  // authHeaders() reads the JWT from localStorage — must be done before fetch.
+  // Callers use `credentials: "include"` style cookies; Supabase uses localStorage,
+  // so this explicit header is the only way the server receives the user's identity.
+  const hdrs = await authHeaders();
+  const res = await fetch("/api/credit-balance", { headers: hdrs });
+  // Throw on auth/server errors so callers can distinguish a genuine 0-balance
+  // (HTTP 200, balance: 0) from a failed read (4xx/5xx that returns no balance).
+  // SessionSetup retries 3× then fails open; DashboardContext silences via .catch().
+  if (!res.ok) throw new Error(`credit-balance ${res.status}`);
+  const json = await res.json() as { balance?: number };
+  // Treat missing or malformed balance as 0 — the server always returns the field
+  // on success, so this branch only fires for unexpected server responses.
+  return typeof json.balance === "number" ? Math.max(0, json.balance) : 0;
 }

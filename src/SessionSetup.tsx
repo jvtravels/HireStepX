@@ -823,7 +823,23 @@ export default function SessionSetup() {
   // checkSessionLimit will still enforce the real limit. Dropping to 0 here
   // would hard-block users who have real credits whenever the endpoint has a
   // transient error. With retries, we try twice before giving up.
-  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  // Seed from sessionStorage written by DashboardContext — this bridges the
+  // route-group gap (DashboardProvider lives under app/(app)/(dashboard)/layout.tsx;
+  // /session/new is under app/(app)/session/ and has no DashboardProvider).
+  // When the user navigates here from the dashboard the cache already holds the
+  // balance the server confirmed, so the gate is correct on the FIRST render with
+  // no network wait. The useEffect below still re-validates; on mismatch it wins.
+  const [creditBalance, setCreditBalance] = useState<number | null>(() => {
+    if (typeof window === "undefined" || !user?.id) return null;
+    try {
+      const raw = sessionStorage.getItem(`hsx_credit_${user.id}`);
+      if (raw !== null) {
+        const v = parseInt(raw, 10);
+        return isNaN(v) ? null : v;
+      }
+    } catch { /* sessionStorage unavailable */ }
+    return null;
+  });
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
@@ -831,12 +847,17 @@ export default function SessionSetup() {
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const b = await getCreditBalance(user.id);
-          if (!cancelled) { setCreditBalance(b); return; }
+          if (!cancelled) {
+            setCreditBalance(b);
+            // Keep the cache in sync with what the server actually says.
+            try { sessionStorage.setItem(`hsx_credit_${user.id}`, String(b)); } catch { /* ok */ }
+            return;
+          }
         } catch { /* transient */ }
         if (attempt < 2) await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
       }
-      // All attempts failed — fail-open (leave null so the gate doesn't trigger).
-      // The server will still enforce the real limit on session start.
+      // All attempts failed — leave the sessionStorage-seeded value (or null if
+      // there was none). Either way the server enforces the real limit on start.
     };
     void fetchBalance();
     return () => { cancelled = true; };
