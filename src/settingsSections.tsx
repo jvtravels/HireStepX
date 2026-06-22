@@ -5,7 +5,7 @@ import { authHeaders, type PaymentRecord } from "./supabase";
 import { useAuth, referralSignupUrl } from "./AuthContext";
 import { captureClientEvent } from "./posthogClient";
 import { useDashboardSubscription } from "./DashboardContext";
-import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
+
 
 /* Cream-mode local tokens — mirror tempo/designs/canvases/design-system/_tokens.ts
    and DashboardLayout. Same keys as the old dark `c` so JSX style values
@@ -534,8 +534,8 @@ function UsageBar({ label, row }: { label: string; row: UsageRow }) {
 }
 
 const UsageThisMonth = memo(function UsageThisMonth({
-  getAuthHeaders,
-}: { getAuthHeaders: () => Promise<Record<string, string>> }) {
+  getAuthHeaders, planName,
+}: { getAuthHeaders: () => Promise<Record<string, string>>; planName?: string }) {
   const [data, setData] = useState<UsageResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -559,89 +559,32 @@ const UsageThisMonth = memo(function UsageThisMonth({
   if (!data) {
     return <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Loading usage…</span>;
   }
+  // Label reflects the active plan so users see exactly what they're spending.
+  const mockLabel = planName ? `Sessions with ${planName}` : "Mock interviews completed";
   return (
     <div>
-      <UsageBar label="Mock interviews completed" row={data.mock} />
+      <UsageBar label={mockLabel} row={data.mock} />
       <UsageBar label="Resume parses" row={data.resume_parses} />
     </div>
   );
 });
 
-/* ─── Plan quota pill — reads live DashboardContext state ─── */
-function PlanQuotaRow({ tier: _tier }: { tier: string }) {
-  void _tier; // kept for API stability; tier booleans come from useDashboardSubscription
-  const {
-    sessionsUsed, sessionsRemaining, sessionsThisWeek, sessionsThisMonth,
-    starterRemaining, proRemaining, creditBalance,
-    isStarter, isPro,
-  } = useDashboardSubscription();
-
-  const planUsed    = isPro ? sessionsThisMonth : isStarter ? sessionsThisWeek : sessionsUsed;
-  const planTotal   = isPro ? PRO_MONTHLY_LIMIT : isStarter ? STARTER_WEEKLY_LIMIT : FREE_SESSION_LIMIT;
-  const planLeft    = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
-  const label       = isPro ? "Sessions this month" : isStarter ? "Sessions this week" : "Free sessions used";
-  const used        = Math.min(planUsed, planTotal);
-  const pct         = Math.min(100, Math.round((used / planTotal) * 100));
-  const isExhausted = planLeft <= 0;
-
-  // Segmented dashes: max 10 segments (Pro 40→10 dashes of 4, Starter 7→7 dashes, Free 2→2 dashes)
-  const segCount   = Math.min(planTotal, 10);
-  const filledSegs = Math.round((used / planTotal) * segCount);
-  // When exhausted: amber tint (all-used, no credits) or dim green (credits cover)
-  // When healthy: green (Pro), amber (Starter/Free) — red tint when ≥90% used
-  const segFill = isExhausted
-    ? (creditBalance > 0 ? "rgba(21,128,61,0.3)" : "rgba(180,83,9,0.4)")
-    : pct >= 90 ? c.ember : isPro ? c.sage : c.gilt;
-
+/* Reads creditBalance from DashboardContext and renders a standalone info box
+   for purchased extra sessions. Shown only when credits exist. */
+function ExtraSessionsInfoBox() {
+  const { creditBalance } = useDashboardSubscription();
+  if (creditBalance <= 0) return null;
   return (
-    <div style={{ marginBottom: 14 }}>
-      {/* Label row */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</span>
-        <span style={{ fontFamily: font.mono, fontSize: 12, color: isExhausted ? c.ember : c.stone }}>
-          {used} of {planTotal}
-        </span>
-      </div>
-      {/* Segmented dash bar — hidden when plan exhausted + credits exist.
-          Dim-green dashes on a green card are invisible; the credits row
-          below is the only indicator needed in that state. */}
-      {!(isExhausted && creditBalance > 0) && (
-        <div
-          role="progressbar"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`${used} of ${planTotal} sessions used`}
-          style={{ display: "flex", gap: 3, marginBottom: 0 }}
-        >
-          {Array.from({ length: segCount }, (_, i) => {
-            const filled = i < filledSegs;
-            return (
-              <div
-                key={i}
-                style={{
-                  flex: 1, height: 4, borderRadius: 2,
-                  background: filled ? segFill : c.border,
-                  opacity: filled ? 1 : 0.35,
-                  transition: "background 0.3s ease",
-                }}
-              />
-            );
-          })}
-        </div>
-      )}
-      {/* Purchased credits — shown for all tiers, not just free */}
-      {creditBalance > 0 && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "6px 10px", borderRadius: 7, marginTop: 6,
-          background: c.success100, border: `1px solid rgba(21,128,61,0.22)` }}>
-          <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "flex", alignItems: "center", gap: 5 }}>
-            <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Extra sessions
-          </span>
-          <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 700, color: c.sage }}>{creditBalance}</span>
-        </div>
-      )}
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "10px 14px", borderRadius: 8, marginTop: 4,
+      background: c.success100, border: `1px solid rgba(21,128,61,0.25)`,
+    }}>
+      <span style={{ fontFamily: font.ui, fontSize: 13, color: "#166534", display: "flex", alignItems: "center", gap: 6 }}>
+        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Extra sessions available
+      </span>
+      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700, color: c.sage }}>{creditBalance}</span>
     </div>
   );
 }
@@ -954,14 +897,17 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       )}
       {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, margin: 0 }}>{cancelMsg}</p>}
 
-      {/* This month — plan quota + API usage bars */}
+      {/* This period — plan usage bars (no session-quota row; extra credits shown inline) */}
       <div style={{ ...planCardOuter }}>
         <div style={{ marginBottom: 16 }}>
           <div style={subHeaderTitle}>This period</div>
           <div style={subHeaderHint}>Counted from sessions started (including abandoned). Resets on the 1st of every month (Pro), every Sunday (Starter). Free plan shows total lifetime sessions.</div>
         </div>
-        <PlanQuotaRow tier={tier} />
-        <UsageThisMonth getAuthHeaders={getAuthHeaders} />
+        <UsageThisMonth
+          getAuthHeaders={getAuthHeaders}
+          planName={tier.charAt(0).toUpperCase() + tier.slice(1)}
+        />
+        <ExtraSessionsInfoBox />
       </div>
 
       {/* Payment method — paid plans only */}
