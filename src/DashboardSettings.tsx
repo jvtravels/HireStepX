@@ -59,8 +59,6 @@ export default function SettingsPage() {
   const [editIndustry, setEditIndustry] = useState(authUser?.industry || "");
   const [editCity, setEditCity] = useState(authUser?.city || "");
   const [editExperience, setEditExperience] = useState(authUser?.experienceLevel || "");
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   // Danger zone
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -191,14 +189,6 @@ export default function SettingsPage() {
 
   if (dataLoading) return <DataLoadingSkeleton />;
 
-  const handleSave = async () => {
-    setSaving(true); setSaved(false);
-    onUpdate({ userName: editName, targetRole: editRole });
-    await authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry, city: editCity, experienceLevel: editExperience });
-    setSaving(false); setSaved(true);
-    showToast("Profile saved");
-    setTimeout(() => setSaved(false), 3000);
-  };
 
   const handlePasswordReset = async () => {
     if (!authUser?.email) return;
@@ -340,9 +330,6 @@ export default function SettingsPage() {
           editCity={editCity} setEditCity={setEditCity}
           editExperience={editExperience} setEditExperience={setEditExperience}
           userName={persisted.userName} email={authUser?.email || ""}
-          tierLabel={tierLabel} subscriptionTier={authUser?.subscriptionTier}
-          isDirty={isDirty} saving={saving} saved={saved}
-          handleSave={handleSave}
           resetLoading={resetLoading} resetSent={resetSent}
           handlePasswordReset={handlePasswordReset}
           isOAuthOnly={authUser?.signedInVia === "google"}

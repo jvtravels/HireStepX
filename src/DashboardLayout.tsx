@@ -347,34 +347,49 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         <div style={{ flex: 1 }} />
 
         {/* Plan Status */}
+        {/* Plan card — background/border shift to amber when exhausted without credits
+            (Pro: green → amber; Starter/Free: light amber → stronger amber) */}
         <div style={{ margin: "0 8px 12px", padding: "14px", borderRadius: 12,
           background: isPro
             ? (proExhausted && creditBalance === 0) ? "rgba(180,83,9,0.06)" : "rgba(21,128,61,0.11)"
-            : freeExhausted ? "rgba(180,83,9,0.10)" : "rgba(180,83,9,0.08)",
+            : isStarter
+              ? (starterExhausted && creditBalance === 0) ? "rgba(180,83,9,0.10)" : "rgba(180,83,9,0.07)"
+              : freeExhausted ? "rgba(180,83,9,0.10)" : "rgba(180,83,9,0.07)",
           border: `1px solid ${isPro
             ? (proExhausted && creditBalance === 0) ? "rgba(180,83,9,0.16)" : "rgba(21,128,61,0.22)"
-            : freeExhausted ? "rgba(180,83,9,0.22)" : "rgba(180,83,9,0.2)"}`,
+            : isStarter
+              ? (starterExhausted && creditBalance === 0) ? "rgba(180,83,9,0.22)" : "rgba(180,83,9,0.16)"
+              : freeExhausted ? "rgba(180,83,9,0.22)" : "rgba(180,83,9,0.16)"}`,
           flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
             {isPro ? (
-              /* Exhausted with no credits: copper shield. Exhausted with credits: still green — user can still practice. */
+              /* Pro: green shield when healthy/credits, amber when exhausted+no credits */
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={(proExhausted && creditBalance === 0) ? c.gilt : c.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
             ) : isStarter ? (
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              /* Starter: lightning bolt, dims to stone when week is exhausted */
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={(starterExhausted && creditBalance === 0) ? c.stone : c.gilt} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             ) : (
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
             )}
-            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: isPro ? ((proExhausted && creditBalance === 0) ? c.gilt : c.sage) : c.gilt, letterSpacing: "0.01em" }}>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, letterSpacing: "0.01em",
+              color: isPro
+                ? ((proExhausted && creditBalance === 0) ? c.gilt : c.sage)
+                : isStarter
+                  ? ((starterExhausted && creditBalance === 0) ? c.stone : c.gilt)
+                  : c.gilt }}>
               {!tierKnown ? "Loading plan…" : isPro ? "Pro Plan" : isStarter ? "Starter Plan" : "Free Plan"}
             </span>
-            {isPro && tierKnown && user?.subscriptionEnd && (
+            {/* Renewal / end date for Pro and Starter */}
+            {tierKnown && (isPro || isStarter) && user?.subscriptionEnd && (
               <span
                 aria-label={user.cancelAtPeriodEnd
                   ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — access until then`
                   : `Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
-                style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10,
-                  color: user.cancelAtPeriodEnd ? c.ember : (proExhausted && creditBalance === 0) ? c.stone : c.sage,
-                  opacity: user.cancelAtPeriodEnd ? 0.9 : 0.75, whiteSpace: "nowrap" }}
+                style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, whiteSpace: "nowrap",
+                  color: user.cancelAtPeriodEnd ? c.ember : isPro
+                    ? ((proExhausted && creditBalance === 0) ? c.stone : c.sage)
+                    : c.stone,
+                  opacity: user.cancelAtPeriodEnd ? 0.9 : 0.75 }}
               >
                 {user.cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
                 {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
@@ -397,13 +412,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             const isLow = !planExhausted && (
               (isPro && planLeft <= 5) || (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
-            // When plan is exhausted the bar is already full — the fill colour doesn't
-            // need to signal alarm. Use a muted neutral so the "Sessions available"
-            // green row reads as the primary positive signal, not competing copper.
-            const barFill = planExhausted
-              ? c.border
-              : isPro ? (isLow ? c.ember : c.sage)
-              : isLow ? c.ember : c.gilt;
+            // barFill: colour for filled segments when the plan still has sessions left.
+            // Exhausted case is handled directly in the segment loop (amber or green tint).
+            const barFill = isPro ? (isLow ? c.ember : c.sage) : isLow ? c.ember : c.gilt;
 
             // Segmented dash bar: 10 segments, each represents planTotal/10 sessions.
             // For Free plan (2 sessions) use 2 segments instead.

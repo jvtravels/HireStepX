@@ -139,13 +139,6 @@ export interface AccountSectionProps {
   // Derived
   userName: string;
   email: string;
-  tierLabel: string;
-  subscriptionTier: string | undefined;
-  isDirty: boolean;
-  // Save
-  saving: boolean;
-  saved: boolean;
-  handleSave: () => void;
   // Password
   resetLoading: boolean;
   resetSent: boolean;
@@ -322,7 +315,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     editIndustry, setEditIndustry,
     editCity, setEditCity,
     editExperience, setEditExperience,
-    userName, email, tierLabel, subscriptionTier,
+    userName, email,
     resetLoading, resetSent, handlePasswordReset, isOAuthOnly,
     signOutOthersLoading, signOutOthersDone, signOutOthersError,
     handleSignOutOtherDevices,
@@ -330,7 +323,6 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     focusOut,
     authUpdateUser,
   } = props;
-  void subscriptionTier; void tierLabel;
 
   const initial = (userName || email || "?").trim().charAt(0).toUpperCase();
 
@@ -349,7 +341,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName || "Your name"}</div>
             <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginTop: 4 }}>
-              {email}{tierLabel ? ` · ${tierLabel} tier` : ""}
+              {email}
             </div>
           </div>
         </div>
