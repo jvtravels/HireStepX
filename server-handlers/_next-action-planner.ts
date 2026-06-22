@@ -3167,11 +3167,28 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     if (isTerminalPhase(state.phase)) return false;
     if (!(state.highestOfferMade > 0)) return false;
     if (state.decisionDeadline?.conditionalAcceptance !== true) return false;
-    const tc = totalScopedCounter(state);
-    if (tc == null) return false;
-    if (tc > state.band.maxStretch) return false;
     const gap = Math.max(2, state.highestOfferMade * 0.06);
-    return tc - state.highestOfferMade > gap;
+    const tc = totalScopedCounter(state);
+    if (tc != null) {
+      return tc <= state.band.maxStretch && tc - state.highestOfferMade > gap;
+    }
+    /* PRI-55 (2026-06-22, product call) — a FIXED-scoped conditional
+     * acceptance ("34 fixed and I'll sign") is equally a convergence signal,
+     * but totalScopedCounter is null for it, so the original #128 gate ignored
+     * it: flow fell to the justify-probe and then closed at the bare ₹floor — a
+     * stealth under-close the candidate never agreed to (PRI-55 repro: 34-fixed
+     * ask vs ₹28L offer, ceiling ₹42L, closed ₹28L). When the band can deliver
+     * the implied total (fixedScopedCloseTotal != null) and it sits in-band but
+     * above the near-offer instant-close gap, route it through the SAME
+     * concession engine so the cash anchor steps UP toward the number and the
+     * near-offer close fires at the converged figure rather than the floor.
+     * Undeliverable or above-ceiling asks stay null → normal hold/walk-away. */
+    const deliveredFixed = fixedScopedCloseTotal(state);
+    if (deliveredFixed != null) {
+      return deliveredFixed <= state.band.maxStretch &&
+        deliveredFixed - state.highestOfferMade > gap;
+    }
+    return false;
   })();
 
   if (!isTerminalPhase(state.phase) && !inBandConditionalConverge) {
@@ -4570,7 +4587,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     !state.leversUsed.includes("probe-justification") &&
     !state.leversUsed.includes("counter-base") &&
     state.candidateCurrentCtc == null &&
-    !state.competingOfferDetail.hasAny;
+    !state.competingOfferDetail.hasAny &&
+    /* PRI-55 (2026-06-22, product call) — never interrogate a number the
+     * candidate has already committed to as an in-band conditional
+     * acceptance. inBandConditionalConverge is the convergence signal (a
+     * deliverable in-band total OR fixed conditional-accept above the
+     * near-offer gap); when it's live, yield this justify-probe so flow
+     * reaches the counter-base concession engine and the cash anchor steps
+     * UP toward the agreed figure instead of stalling at the floor. Mirrors
+     * the #128 reactive-probe yield above. */
+    !inBandConditionalConverge;
   if (shouldProbeJustification) {
     return {
       kind: "probe-justification",

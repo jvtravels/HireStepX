@@ -302,3 +302,48 @@ describe("#105 — trial-close gate declines an undeliverable fixed ask", () => 
     expect(actionToLever(action, s).newTotalLpa).toBe(34);
   });
 });
+
+/* PRI-55 (2026-06-22, product call: "concede toward it, then close") — a
+ * DELIVERABLE in-band fixed-scoped conditional acceptance that sits ABOVE the
+ * near-offer instant-close gap must route through the concession engine so the
+ * cash anchor steps UP toward the agreed figure, NOT stall at the standing
+ * floor. Before the fix the planner hit the justify-probe → acknowledge-recover
+ * → floor close (a ₹6L stealth under-close on a ₹28L floor vs a 34-fixed ask).
+ * Guard: the bot must visibly concede above its opening floor and close at the
+ * negotiated figure. The gate requires a genuine conditionalAcceptance, so a
+ * pure stonewall (no committed number) can never trip the concession (#123). */
+describe("PRI-55 — fixed-scoped conditional accept concedes above floor", () => {
+  it("steps the offer up toward the in-band fixed ask instead of closing at the floor", async () => {
+    const { runConversation } = await import("./_negotiationSim");
+    const wideBand: NegotiationBand = {
+      initialOffer: 28,
+      maxStretch: 42,
+      walkAway: 24,
+      hasEquity: false,
+    };
+    const { transcript, finalState } = runConversation({
+      band: wideBand,
+      role: "Engineering Manager",
+      company: "Flipkart",
+      turns: [
+        "30 fixed now, I want 34 fixed.",
+        "What can you do?",
+        "If you can do 34 fixed, I'll sign.",
+        "Yes, 34 fixed works for me.",
+        "I accept. Please send the letter.",
+        "Confirmed, I'll sign today.",
+      ],
+    });
+    /* The bot must concede: at least one counter-offer above the ₹28L floor. */
+    const conceded = transcript.some(
+      (t) => t.kind === "counter-offer" && t.highestOfferMade > 28,
+    );
+    expect(conceded).toBe(true);
+    /* And it must reach a real close ABOVE the floor — never the stealth
+     * floor-close the candidate never agreed to. */
+    expect(finalState.phase).toBe("accepted");
+    expect(finalState.highestOfferMade).toBeGreaterThan(28);
+    /* Never invents above the ceiling. */
+    expect(finalState.highestOfferMade).toBeLessThanOrEqual(42);
+  });
+});
