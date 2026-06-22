@@ -203,16 +203,12 @@ export default async function handler(req: Request): Promise<Response> {
   if (pre instanceof Response) return pre;
   const { headers, auth, quota } = pre;
 
-  // Server-side session limit enforcement (runs after quota, before LLM call).
-  // Pass the tier already resolved by checkLLMQuota (via withAuthAndRateLimit's
-  // quota result) to avoid a second profile fetch for pro/team users — the N+1
-  // that was firing on every session start.
-  if (auth.userId) {
-    const limit = await checkSessionLimit(auth.userId, { tier: quota?.tier });
-    if (!limit.allowed) {
-      return new Response(JSON.stringify({ error: limit.reason }), { status: 403, headers });
-    }
-  }
+  // Session limit enforcement is deferred to AFTER the Redis cache check below.
+  // Reason: the cache check requires the parsed request body (which is a stream
+  // that can only be read once), so the body must be parsed first. Moving the
+  // limit check after the cache avoids consuming a purchased session credit on
+  // every page refresh — a cache hit means the questions were already generated
+  // and paid for in the same 300-second window, so no new credit should be spent.
 
   // Hoisted so the catch block can read what the user asked for. We parse
   // optimistically with safe defaults — even a malformed body shouldn't crash
@@ -317,6 +313,19 @@ export default async function handler(req: Request): Promise<Response> {
         }, req);
         return new Response(JSON.stringify({ ...parsed, _cached: true }), { status: 200, headers });
       } catch { /* malformed cache entry — fall through to live path */ }
+    }
+
+    // Session limit enforcement — runs only on a cache MISS (a genuinely new
+    // LLM call). Cache hits return above without reaching this; the user already
+    // spent a credit when these questions were first generated within this TTL
+    // window, so re-serving them must not spend a second credit.
+    // Uses quota.tier resolved by withAuthAndRateLimit to skip the extra profile
+    // fetch that was causing an N+1 on every session start.
+    if (auth.userId) {
+      const limit = await checkSessionLimit(auth.userId, { tier: quota?.tier });
+      if (!limit.allowed) {
+        return new Response(JSON.stringify({ error: limit.reason }), { status: 403, headers });
+      }
     }
 
     const interviewType = sanitizeForLLM(type, 50) || "behavioral";
