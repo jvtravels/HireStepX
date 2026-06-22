@@ -451,14 +451,14 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
             No recent sign-ins recorded yet.
           </div>
         ) : (
-          recentDevices.map((d, idx) => {
+          recentDevices.slice(0, 2).map((d, idx, arr) => {
             const seen = d.at ? formatRelative(d.at) : "Unknown";
             const label = parseUserAgent(d.ua || "");
             return (
               <div key={d.id} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "12px 0", gap: 16, flexWrap: "wrap",
-                borderBottom: idx < recentDevices.length - 1 ? `1px solid ${c.border}` : "none",
+                borderBottom: idx < arr.length - 1 ? `1px solid ${c.border}` : "none",
               }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
                   <span aria-hidden style={{
