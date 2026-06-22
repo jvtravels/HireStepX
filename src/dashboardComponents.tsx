@@ -133,6 +133,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     mono: "'JetBrains Mono', 'SF Mono', monospace",
   };
   const PLANS = PLANS_MONTHLY;
+  // Exclude the "single" plan from the regular card loop — the null slot below
+  // renders it as the interactive slider card. Keeping it in would produce a
+  // duplicate "Per session" card alongside the slider.
+  const plansForGrid = PLANS.filter(p => p.id !== "single");
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   /* Razorpay payment.failed — separate from network/API errors so we can
@@ -145,6 +149,18 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   const [showPromo, setShowPromo] = useState(false);
   /* Quantity for single-session top-up: 1–10, backend enforces the cap. */
   const [singleQty, setSingleQty] = useState(1);
+  /* Live session-count social proof — fetched once on modal open from the
+   * cached /api/platform-stats endpoint (Redis 1 h TTL). Falls back to null
+   * so the display string shows the safe hardcoded "500+" instead. */
+  const [liveSessionCount, setLiveSessionCount] = useState<number | null>(null);
+  useEffect(() => {
+    fetch("/api/platform-stats")
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { sessionCount: number | null } | null) => {
+        if (typeof d?.sessionCount === "number") setLiveSessionCount(d.sessionCount);
+      })
+      .catch(() => { /* leave null — UI uses fallback */ });
+  }, []);
   // Store Razorpay response + plan in state so useEffect handles verification
   // (fetch inside Razorpay's handler callback doesn't work reliably)
   const [pendingVerification, setPendingVerification] = useState<{
@@ -480,8 +496,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           </div>
         )}
 
-        <div className="upgrade-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, alignItems: "stretch" }}>
-          {([PLANS[0], null, PLANS[1], PLANS[2]] as Array<typeof PLANS[0] | null>).map((plan, _idx) => {
+        <div className="upgrade-plans-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${plansForGrid.length + 1}, 1fr)`, gap: 16, alignItems: "stretch" }}>
+          {([plansForGrid[0], null, ...plansForGrid.slice(1)] as Array<typeof PLANS[0] | null>).map((plan, _idx) => {
             // null slot = Per Session card (rendered in position 2)
             if (plan === null) {
               return (
@@ -638,7 +654,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 </div>
               ))}
             </div>
-            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk }}>500+ interviews practiced</span>
+            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk }}>
+              {liveSessionCount !== null ? `${liveSessionCount}+` : "500+"} interviews practiced
+            </span>
           </div>
           <div style={{ width: 1, height: 16, background: c.border }} />
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
