@@ -576,36 +576,65 @@ const UsageThisMonth = memo(function UsageThisMonth({
 });
 
 /* ─── Plan quota pill — reads live DashboardContext state ─── */
-function PlanQuotaRow({ tier }: { tier: string }) {
+function PlanQuotaRow({ tier: _tier }: { tier: string }) {
+  void _tier; // kept for API stability; tier booleans come from useDashboardSubscription
   const {
     sessionsUsed, sessionsRemaining, sessionsThisWeek, sessionsThisMonth,
     starterRemaining, proRemaining, creditBalance,
     isStarter, isPro,
   } = useDashboardSubscription();
 
-  const planUsed   = isPro ? sessionsThisMonth : isStarter ? sessionsThisWeek : sessionsUsed;
-  const planTotal  = isPro ? PRO_MONTHLY_LIMIT : isStarter ? STARTER_WEEKLY_LIMIT : FREE_SESSION_LIMIT;
-  const planLeft   = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
-  const label      = isPro ? "Sessions this month" : isStarter ? "Sessions this week" : "Sessions used";
-  const used       = Math.min(planUsed, planTotal);
-  const pct        = Math.min(100, Math.round((used / planTotal) * 100));
+  const planUsed    = isPro ? sessionsThisMonth : isStarter ? sessionsThisWeek : sessionsUsed;
+  const planTotal   = isPro ? PRO_MONTHLY_LIMIT : isStarter ? STARTER_WEEKLY_LIMIT : FREE_SESSION_LIMIT;
+  const planLeft    = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
+  const label       = isPro ? "Sessions this month" : isStarter ? "Sessions this week" : "Free sessions used";
+  const used        = Math.min(planUsed, planTotal);
+  const pct         = Math.min(100, Math.round((used / planTotal) * 100));
   const isExhausted = planLeft <= 0;
-  const barColour  = pct >= 100 ? c.ember : pct >= 75 ? c.gilt : c.sage;
-  if (tier === "free") return null; // free-tier card already degrades gracefully without a bar
+
+  // Segmented dashes: max 10 segments (Pro 40→10 dashes of 4, Starter 7→7 dashes, Free 2→2 dashes)
+  const segCount   = Math.min(planTotal, 10);
+  const filledSegs = Math.round((used / planTotal) * segCount);
+  // When exhausted: amber tint (all-used, no credits) or dim green (credits cover)
+  // When healthy: green (Pro), amber (Starter/Free) — red tint when ≥90% used
+  const segFill = isExhausted
+    ? (creditBalance > 0 ? "rgba(21,128,61,0.3)" : "rgba(180,83,9,0.4)")
+    : pct >= 90 ? c.ember : isPro ? c.sage : c.gilt;
 
   return (
     <div style={{ marginBottom: 14 }}>
-      {/* Sessions used */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+      {/* Label row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
         <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</span>
         <span style={{ fontFamily: font.mono, fontSize: 12, color: isExhausted ? c.ember : c.stone }}>
           {used} of {planTotal}
         </span>
       </div>
-      <div style={{ height: 6, borderRadius: 999, background: c.border, overflow: "hidden", marginBottom: creditBalance > 0 ? 10 : 0 }}>
-        <div style={{ width: `${pct}%`, height: "100%", background: barColour, transition: "width 0.4s ease" }} />
+      {/* Segmented dash bar */}
+      <div
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${used} of ${planTotal} sessions used`}
+        style={{ display: "flex", gap: 3, marginBottom: creditBalance > 0 ? 10 : 0 }}
+      >
+        {Array.from({ length: segCount }, (_, i) => {
+          const filled = i < filledSegs;
+          return (
+            <div
+              key={i}
+              style={{
+                flex: 1, height: 4, borderRadius: 2,
+                background: filled ? segFill : c.border,
+                opacity: filled ? 1 : 0.35,
+                transition: "background 0.3s ease",
+              }}
+            />
+          );
+        })}
       </div>
-      {/* Purchased credits — only show when non-zero */}
+      {/* Purchased credits — shown for all tiers, not just free */}
       {creditBalance > 0 && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "6px 10px", borderRadius: 7, marginTop: 6,
@@ -918,13 +947,13 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
           </div>
         </div>
       )}
-      {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: cancelMsg.includes("ancelled") ? c.sage : c.ember, margin: 0 }}>{cancelMsg}</p>}
+      {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, margin: 0 }}>{cancelMsg}</p>}
 
       {/* This month — plan quota + API usage bars */}
       <div style={{ ...planCardOuter }}>
         <div style={{ marginBottom: 16 }}>
           <div style={subHeaderTitle}>This period</div>
-          <div style={subHeaderHint}>Counted from your sessions table. Resets on the first of every month (Pro) or every Sunday (Starter).</div>
+          <div style={subHeaderHint}>Counted from sessions started (including abandoned). Resets on the 1st of every month (Pro), every Sunday (Starter). Free plan shows total lifetime sessions.</div>
         </div>
         <PlanQuotaRow tier={tier} />
         <UsageThisMonth getAuthHeaders={getAuthHeaders} />

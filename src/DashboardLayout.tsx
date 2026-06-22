@@ -455,8 +455,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 >
                   {Array.from({ length: segCount }, (_, i) => {
                     const filled = i < filledSegs;
+                    // Exhausted + no credits → muted amber so filled segs read as "all used"
+                    // Exhausted + credits    → dim green (quota full but credits cover)
+                    // Healthy               → barFill (green/amber/red by remaining count)
                     const segColor = planExhausted
-                      ? (creditBalance > 0 ? "rgba(21,128,61,0.3)" : c.border)
+                      ? (creditBalance > 0 ? "rgba(21,128,61,0.3)" : "rgba(180,83,9,0.38)")
                       : filled ? barFill : c.border;
                     return (
                       <div
@@ -464,7 +467,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                         style={{
                           flex: 1, height: 4, borderRadius: 2,
                           background: filled ? segColor : c.border,
-                          opacity: filled ? (planExhausted && creditBalance === 0 ? 0.45 : 1) : 0.35,
+                          opacity: filled ? 1 : 0.35,
                           transition: "background 0.3s ease",
                         }}
                       />

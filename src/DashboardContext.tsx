@@ -64,8 +64,10 @@ interface SubscriptionContextValue {
   sessionsThisMonth: number;
   /** Sessions remaining for Pro this calendar month (max 0). Always 0 for non-Pro tiers. */
   proRemaining: number;
-  /** Purchased one-off session credits (₹9 each). Non-zero only for free-tier users
-   *  who topped up. Fetched lazily after auth; 0 until loaded. */
+  /** Purchased one-off session credits (₹9 each). Acts as a top-up for any tier
+   *  that has exhausted its plan allotment (free, starter, or pro). The `atSessionLimit`
+   *  gate clears for all three tiers when creditBalance > 0. Fetched lazily after auth;
+   *  0 until loaded. */
   creditBalance: number;
 }
 
