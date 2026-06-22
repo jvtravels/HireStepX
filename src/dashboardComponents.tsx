@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo, Fragment } from "react";
+import { useState, useEffect, useRef, memo, Fragment, useMemo } from "react";
 import { captureClientEvent } from "./posthogClient";
 import dynamic from "next/dynamic";
 import { c, font } from "./tokens";
@@ -154,6 +154,15 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   const [showPromo, setShowPromo] = useState(false);
   /* Quantity for single-session top-up: 1–10, backend enforces the cap. */
   const [singleQty, setSingleQty] = useState(1);
+
+  /* Days until Sunday reset for Starter users who've exhausted their week.
+     Sunday = day 0; if today IS Sunday, the next reset is 7 days away. */
+  const daysUntilReset = useMemo(() => {
+    if (currentTier !== "starter") return null;
+    const now = new Date();
+    const day = now.getUTCDay(); // 0 = Sun
+    return day === 0 ? 7 : 7 - day;
+  }, [currentTier]);
   /* Live session-count social proof — fetched once on modal open from the
    * cached /api/platform-stats endpoint (Redis 1 h TTL). Falls back to null
    * so the display string shows the safe hardcoded "500+" instead. */
@@ -420,10 +429,35 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             {currentTier === "pro" || currentTier === "team"
               ? "Top up sessions · your Pro plan continues unchanged"
               : currentTier === "starter"
-              ? "Manage your plan"
+              ? "Buy sessions now or wait for your free Sunday reset"
               : "Cancel anytime · UPI, cards, netbanking"}
           </p>
         </div>
+
+        {/* ── Starter reset banner — shown when weekly limit hit ─────────────
+            Tells users they have a free option (wait for Sunday) BEFORE
+            showing paid options. Without this they assume paying is the
+            only way out, which creates friction and erodes trust. */}
+        {currentTier === "starter" && daysUntilReset !== null && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12,
+            background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)",
+            borderRadius: 12, padding: "12px 16px", marginBottom: 20 }}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke={T.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600,
+                color: T.copper, margin: 0, lineHeight: 1.3 }}>
+                Your 7 sessions reset in {daysUntilReset === 1 ? "1 day" : `${daysUntilReset} days`} (Sunday)
+              </p>
+              <p style={{ fontFamily: font.ui, fontSize: 11, color: "#6B655C",
+                margin: "2px 0 0", lineHeight: 1.4 }}>
+                Free reset included with your Weekly plan. Buy below only if you need sessions sooner.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Payment.failed inline card — keeps users in context with reassurance + retry */}
         {paymentFailed && (
