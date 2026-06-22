@@ -926,7 +926,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 resumeFileName: null,
                 hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
                 emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
-                ...(cachedTierData ? { subscriptionTier: cachedTierData.tier, subscriptionEnd: cachedTierData.subscriptionEnd } : {}),
+                // Default to "free" so tierKnown is always true when user is set —
+                // prevents the "Loading plan…" stuck state that blocks the CTA buttons.
+                // retryProfileInBackground below will update to the real tier within seconds.
+                subscriptionTier: cachedTierData?.tier ?? "free",
+                ...(cachedTierData ? { subscriptionEnd: cachedTierData.subscriptionEnd, practiceTimestamps: cachedTierData.practiceTimestamps || [] } : {}),
               });
             }
             // Always retry — ensures full profile data (name, role, tier) eventually
@@ -1075,10 +1079,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Priority order:
             //   1. Preserve current user if subscriptionTier is already set — avoids the
             //      "Loading plan…" flash while retryProfileInBackground catches up.
-            //   2. If subscriptionTier is missing, seed it from the localStorage tier cache
-            //      (same cache the fast-render path uses on page load) so the Plan Status
-            //      widget shows the correct plan even when getProfile is temporarily unavailable.
-            //   3. Fall back to a minimal object only when there is genuinely nothing cached.
+            //   2. If subscriptionTier is missing, seed it from the localStorage tier cache.
+            //   3. Default to "free" when nothing is cached — tierKnown must never be false
+            //      for a set user, otherwise the plan widget CTA is permanently blocked
+            //      until retryProfileInBackground resolves.
             const meta = session.user.user_metadata || {};
             const cachedTierForRefresh = getCachedTier(session.user.id);
             setUser(current => {
@@ -1091,8 +1095,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 resumeFileName: null,
                 hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
                 emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
+                subscriptionTier: cachedTierForRefresh?.tier ?? "free",
                 ...(cachedTierForRefresh ? {
-                  subscriptionTier: cachedTierForRefresh.tier,
                   subscriptionEnd: cachedTierForRefresh.subscriptionEnd,
                   practiceTimestamps: cachedTierForRefresh.practiceTimestamps || [],
                 } : {}),
@@ -1494,9 +1498,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           meta.has_completed_onboarding || getLocalOnboardingDone(data.user.id) || false,
         emailVerified: true, // already passed the verification gate above
         signedInVia: "email",
+        // Always set subscriptionTier so tierKnown is true immediately after login —
+        // prevents "Loading plan…" blocking the plan widget before SIGNED_IN/getProfile lands.
+        subscriptionTier: cached?.tier ?? "free",
         ...(cached
           ? {
-              subscriptionTier: cached.tier,
               subscriptionEnd: cached.subscriptionEnd,
               practiceTimestamps: cached.practiceTimestamps || [],
             }

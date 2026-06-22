@@ -293,6 +293,38 @@ export default async function handler(req: Request): Promise<Response> {
     }), { status: 500, headers });
   }
 
+  // Fire-and-forget: attribute LLM cost to this session
+  // Queries llm_usage rows tagged with this session_id, computes INR cost,
+  // and patches the sessions row. Never delays the save-session response.
+  void (async () => {
+    try {
+      const { costBreakdown: computeCost, DEFAULT_COST_RATES } = await import("./_cost-helpers");
+      const usageRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/llm_usage?session_id=eq.${encodeURIComponent(sessionRow.id)}&select=total_tokens,prompt_tokens,completion_tokens,is_fallback`,
+        { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
+      );
+      if (!usageRes.ok) return;
+      const usageRows: Array<{ total_tokens: number; prompt_tokens: number; completion_tokens: number; is_fallback: boolean }> = await usageRes.json();
+      if (!Array.isArray(usageRows) || usageRows.length === 0) return;
+      let promptTok = 0, completionTok = 0, primaryTok = 0, fallbackTok = 0;
+      for (const r of usageRows) {
+        promptTok += r.prompt_tokens || 0;
+        completionTok += r.completion_tokens || 0;
+        if (r.is_fallback) fallbackTok += r.total_tokens || 0;
+        else primaryTok += r.total_tokens || 0;
+      }
+      const cost = computeCost({ llmTokensPrimary: primaryTok, llmTokensFallback: fallbackTok, ttsChars: 0, sttCalls: 0, sessions: 1 }, DEFAULT_COST_RATES);
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/sessions?id=eq.${encodeURIComponent(sessionRow.id)}`,
+        {
+          method: "PATCH",
+          headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ llm_cost_inr: cost.llmInr, prompt_tokens: promptTok, completion_tokens: completionTok }),
+        },
+      );
+    } catch { /* best effort — never block the user response */ }
+  })();
+
   // 2. Atomically append a timestamp to practice_timestamps. Read-modify-write
   //    with the service role — not ideal for high concurrency but a user only
   //    completes one session at a time, so races aren't real here.

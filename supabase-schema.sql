@@ -1279,3 +1279,16 @@ create index if not exists idx_service_usage_service
 create index if not exists idx_service_usage_user
   on service_usage(user_id, created_at desc);
 
+-- 2026-06-22: per-session cost attribution + STT duration tracking
+ALTER TABLE llm_usage ADD COLUMN IF NOT EXISTS session_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_llm_usage_session ON llm_usage(session_id) WHERE session_id IS NOT NULL;
+
+ALTER TABLE service_usage ADD COLUMN IF NOT EXISTS session_id TEXT;
+ALTER TABLE service_usage ADD COLUMN IF NOT EXISTS duration_ms INTEGER;
+
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS llm_cost_inr NUMERIC(10,4);
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS prompt_tokens INTEGER DEFAULT 0;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS completion_tokens INTEGER DEFAULT 0;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS tts_chars INTEGER DEFAULT 0;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS stt_calls INTEGER DEFAULT 0;
+

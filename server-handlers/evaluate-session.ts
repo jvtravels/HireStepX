@@ -968,7 +968,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
         // working calls. Groq stays capped at 15s (groqTimeoutMs) so a real
         // Groq incident still fails over fast. Bounded by the 100s maxDuration.
         50000,
-        { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000 },
+        { userId: auth.userId, endpoint: "evaluate-session", groqTimeoutMs: 15000, sessionId: body.sessionId },
       );
     } catch (primaryErr) {
       console.error(`[evaluate-session] Primary LLM call failed (all providers): ${primaryErr instanceof Error ? primaryErr.message.slice(0, 150) : String(primaryErr)}`);
@@ -997,7 +997,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
           // verbose fallback needs room to finish. primary(50) + retry(40) +
           // overhead stays under the 100s maxDuration.
           40000,
-          { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 12000 },
+          { userId: auth.userId, endpoint: "evaluate-session-retry", groqTimeoutMs: 12000, sessionId: body.sessionId },
         );
         const retryParsed = extractJSON<Partial<SessionReport>>(retry.text);
         // Only accept the retry if it cleared the same usability bar — a second
@@ -1026,7 +1026,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
           const fastRetry = await callLLM(
             { prompt: strictPrompt, temperature: 0, maxTokens: 2500, fallbackMaxTokens: 8000, jsonMode: true, fast: true },
             20000,
-            { userId: auth.userId, endpoint: "evaluate-session-fast", groqTimeoutMs: 12000 },
+            { userId: auth.userId, endpoint: "evaluate-session-fast", groqTimeoutMs: 12000, sessionId: body.sessionId },
           );
           const fastParsed = extractJSON<Partial<SessionReport>>(fastRetry.text);
           if (isUsableEvalReport(fastParsed, meta?.type)) {

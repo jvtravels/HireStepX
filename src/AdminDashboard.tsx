@@ -10,6 +10,17 @@ const TOKEN_KEY = "hirestepx_admin_token";
 
 /* ─── Types ─── */
 
+interface AnomalyHighSpendUser {
+  userId: string;
+  tokens: number;
+  zScore: number;
+}
+
+interface AnomaliesData {
+  highSpendUsers: AnomalyHighSpendUser[];
+  runawayCallsToday: number;
+}
+
 interface OverviewData {
   users: { total: number; today: number; thisWeek: number; activeLastWeek: number; tierBreakdown: Record<string, number> };
   sessions: { total: number; today: number; thisWeek: number; avgScore: number; perDay: Record<string, number> };
@@ -19,6 +30,7 @@ interface OverviewData {
     perSessionInr: number; todayInr: number; estimate: boolean;
     month: { totalInr: number; llmInr: number; ttsInr: number; sttInr: number; sessions: number };
   };
+  anomalies?: AnomaliesData;
 }
 
 interface UserRow {
@@ -55,6 +67,7 @@ interface LLMData {
   tokensPerDay: Record<string, number>;
   recentErrors: Array<{ endpoint: string; model: string; error: string | null; status?: string; date: string }>;
   services?: ServiceInfo[];
+  anomalies?: AnomaliesData;
 }
 
 interface SessionsData {
@@ -104,6 +117,12 @@ export interface UserDetailData {
   payments: Record<string, unknown>[];
   llmUsage: Record<string, unknown>[];
   feedback: Record<string, unknown>[];
+  costSummary?: {
+    totalLlmCostInr: number;
+    totalPromptTokens: number;
+    totalCompletionTokens: number;
+    top3ExpensiveSessions: Array<{ id: string; type: string; date: string; llmCostInr: number | null; promptTokens: number | null; completionTokens: number | null }>;
+  };
 }
 
 export interface ReferralsData {
@@ -152,7 +171,10 @@ export interface SessionDetailData {
   } | null;
   profile: { id: string; name: string | null; email: string } | null;
   qaPairs: Array<{ question: string; answer: string; questionTime?: string; answerTime?: string }>;
-  llmCalls: Array<{ endpoint: string; model: string; total_tokens: number; latency_ms: number; status: string; created_at: string }>;
+  llmCalls: Array<{ endpoint: string; model: string; total_tokens: number; prompt_tokens?: number; completion_tokens?: number; is_fallback?: boolean; latency_ms: number; status: string; created_at: string }>;
+  costInr?: number;
+  promptTokens?: number;
+  completionTokens?: number;
 }
 
 type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "quality";
@@ -751,9 +773,41 @@ export default function AdminDashboard() {
   const renderOverview = () => {
     if (!overview) return <EmptyState title="No overview data available" />;
     const { users: u, sessions: s, revenue: r, llm: l } = overview;
+    const anom = overview.anomalies;
+    const hasAnomalies = (anom?.highSpendUsers?.length ?? 0) > 0 || (anom?.runawayCallsToday ?? 0) > 0;
 
     return (
       <div>
+        {/* Anomaly banner */}
+        {hasAnomalies && anom && (
+          <div style={{
+            background: "rgba(180,83,9,0.12)",
+            border: "1px solid rgba(180,83,9,0.35)",
+            borderRadius: 8,
+            padding: "10px 16px",
+            marginBottom: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}>
+            <span style={{ fontSize: 14, color: "#B45309", fontWeight: 700 }}>⚠ Anomalies</span>
+            {anom.highSpendUsers.length > 0 && (
+              <span style={{ fontSize: 13, color: "#B45309" }}>
+                {anom.highSpendUsers.length} high-spend user{anom.highSpendUsers.length > 1 ? "s" : ""} (24h)
+              </span>
+            )}
+            {anom.runawayCallsToday > 0 && (
+              <span style={{ fontSize: 13, color: "#B45309" }}>
+                {anom.runawayCallsToday} runaway LLM call{anom.runawayCallsToday > 1 ? "s" : ""} (&gt;8K tokens)
+              </span>
+            )}
+            <span style={{ fontSize: 11, color: "rgba(180,83,9,0.7)", marginLeft: "auto" }}>
+              See AI / Services tab for details
+            </span>
+          </div>
+        )}
+
         {/* Stat Cards */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
           <div style={statCard}>
@@ -956,6 +1010,23 @@ export default function AdminDashboard() {
               <p style={{ fontFamily: font.mono, fontSize: 56, fontWeight: 700, lineHeight: 1, color: scoreColor(s.score), margin: "4px 0 0" }}>
                 {s.score}<span style={{ fontSize: 18, color: c.stone, fontWeight: 400 }}>/100</span>
               </p>
+              {sessionDetail.costInr != null && sessionDetail.costInr > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <span style={{
+                    display: "inline-block",
+                    background: "rgba(180,83,9,0.1)", border: "1px solid rgba(180,83,9,0.3)",
+                    borderRadius: 6, padding: "4px 10px",
+                    fontFamily: font.mono, fontSize: 12, color: "#B45309", fontWeight: 600,
+                  }}>
+                    ₹{sessionDetail.costInr.toFixed(3)} LLM
+                  </span>
+                  {sessionDetail.promptTokens != null && (
+                    <p style={{ margin: "4px 0 0", fontSize: 10, color: c.stone }}>
+                      {formatNum(sessionDetail.promptTokens)} prompt / {formatNum(sessionDetail.completionTokens ?? 0)} completion
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1126,7 +1197,36 @@ export default function AdminDashboard() {
             <p style={labelStyle}>Feedback</p>
             <p style={bigNum}>{userDetail.feedback.length}</p>
           </div>
+          {userDetail.costSummary && userDetail.costSummary.totalLlmCostInr > 0 && (
+            <div style={statCard}>
+              <p style={labelStyle}>Cost</p>
+              <p style={{ ...bigNum, fontSize: 20 }}>
+                LLM ₹{userDetail.costSummary.totalLlmCostInr.toFixed(2)}
+              </p>
+              <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
+                {formatNum(userDetail.costSummary.totalPromptTokens)} prompt / {formatNum(userDetail.costSummary.totalCompletionTokens)} completion tokens
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* Top expensive sessions */}
+        {userDetail.costSummary && userDetail.costSummary.top3ExpensiveSessions.length > 0 && (
+          <div style={{ ...card, marginBottom: 20 }}>
+            <p style={{ ...labelStyle, marginBottom: 12 }}>Top 3 Most Expensive Sessions</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {userDetail.costSummary.top3ExpensiveSessions.map((s, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "8px 0", borderBottom: `1px solid ${c.borderSubtle}` }}>
+                  <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone }}>{s.id.slice(0, 8)}…</span>
+                  <span style={{ fontSize: 12, color: c.chalk, flex: 1 }}>{s.type || "—"}</span>
+                  <span style={{ fontSize: 11, color: c.stone }}>{formatDateTime(s.date)}</span>
+                  <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.gilt }}>₹{(s.llmCostInr || 0).toFixed(3)}</span>
+                  <span style={{ fontSize: 11, color: c.stone }}>{formatNum((s.promptTokens || 0) + (s.completionTokens || 0))} tok</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Sessions Table */}
         {userDetail.sessions.length > 0 && (
@@ -1568,6 +1668,41 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Anomalies subsection */}
+        {llm.anomalies && ((llm.anomalies.highSpendUsers.length > 0) || llm.anomalies.runawayCallsToday > 0) && (
+          <div style={{ ...card, marginTop: 24, border: "1px solid rgba(180,83,9,0.35)", background: "rgba(180,83,9,0.06)" }}>
+            <p style={{ ...labelStyle, color: "#B45309", marginBottom: 16 }}>⚠ Anomalies (last 24h)</p>
+            {llm.anomalies.runawayCallsToday > 0 && (
+              <div style={{ marginBottom: 12, fontSize: 13, color: "#B45309" }}>
+                <strong>{llm.anomalies.runawayCallsToday}</strong> runaway LLM call{llm.anomalies.runawayCallsToday > 1 ? "s" : ""} with &gt;8,000 tokens each
+              </div>
+            )}
+            {llm.anomalies.highSpendUsers.length > 0 && (
+              <div style={{ overflow: "auto" }}>
+                <p style={{ ...labelStyle, marginBottom: 8 }}>High-spend users (24h)</p>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>User ID</th>
+                      <th style={thStyle}>Tokens (24h)</th>
+                      <th style={thStyle}>Z-Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {llm.anomalies.highSpendUsers.map((u, i) => (
+                      <tr key={i}>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{u.userId.slice(0, 16)}…</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, color: "#B45309", fontWeight: 600 }}>{formatNum(u.tokens)}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono }}>{u.zScore > 0 ? `+${u.zScore.toFixed(1)}σ` : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

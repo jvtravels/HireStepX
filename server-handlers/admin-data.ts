@@ -5,7 +5,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
-import { costBreakdown, kFactor } from "./_cost-helpers";
+import { costBreakdown, kFactor, DEFAULT_COST_RATES } from "./_cost-helpers";
 
 /* ─── Config ─── */
 
@@ -255,6 +255,8 @@ async function getOverview() {
     sessions: recentSessions.filter(s => s.created_at?.startsWith(today)).length,
   });
 
+  const anomalies = await getAnomalies();
+
   return {
     users: { total: totalUserCount, today: profiles.filter(() => false).length, thisWeek: weekUserCount, activeLastWeek, tierBreakdown },
     sessions: { total: totalSessionCount, today: recentSessions.filter(s => s.created_at?.startsWith(today)).length, thisWeek: weekSessionCount, avgScore, perDay: sessionsPerDay },
@@ -266,6 +268,7 @@ async function getOverview() {
       month: { totalInr: cost30d.totalInr, llmInr: cost30d.llmInr, ttsInr: cost30d.ttsInr, sttInr: cost30d.sttInr, sessions: cost30d.sessions },
       estimate: true,
     },
+    anomalies,
   };
 }
 
@@ -321,13 +324,37 @@ async function getUserDetail(userId: string) {
   const encoded = encodeURIComponent(userId);
   const [profile, sessions, payments, llmUsage, feedback] = await Promise.all([
     fetchJSON(`profiles?id=eq.${encoded}&select=id,name,email,subscription_tier,target_role,target_company,experience_level,industry,subscription_start,subscription_end,cancel_at_period_end,has_completed_onboarding,created_at&limit=1`),
-    fetchJSON(`sessions?user_id=eq.${encoded}&select=id,date,type,difficulty,duration,score,skill_scores,created_at&order=created_at.desc&limit=50`),
+    fetchJSON<{ id: string; date: string; type: string; difficulty: string; duration: number; score: number; skill_scores: Record<string, unknown> | null; created_at: string; llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null }>(`sessions?user_id=eq.${encoded}&select=id,date,type,difficulty,duration,score,skill_scores,created_at,llm_cost_inr,prompt_tokens,completion_tokens&order=created_at.desc&limit=50`),
     fetchJSON(`payments?user_id=eq.${encoded}&select=id,amount,currency,status,plan,tier,created_at&order=created_at.desc&limit=30`),
     fetchJSON(`llm_usage?user_id=eq.${encoded}&select=endpoint,model,total_tokens,latency_ms,status,created_at&order=created_at.desc&limit=100`),
     fetchJSON(`feedback?user_id=eq.${encoded}&select=id,rating,comment,session_score,session_type,created_at&order=created_at.desc&limit=20`),
   ]);
 
-  return { profile: profile[0] || null, sessions, payments, llmUsage, feedback };
+  // Compute total LLM cost across this user's sessions
+  const totalLlmCostInr = sessions.reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0);
+  const totalPromptTokens = sessions.reduce((sum, s) => sum + (s.prompt_tokens || 0), 0);
+  const totalCompletionTokens = sessions.reduce((sum, s) => sum + (s.completion_tokens || 0), 0);
+
+  // Top 3 most expensive sessions
+  const top3ExpensiveSessions = [...sessions]
+    .filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0)
+    .sort((a, b) => (b.llm_cost_inr || 0) - (a.llm_cost_inr || 0))
+    .slice(0, 3)
+    .map(s => ({ id: s.id, type: s.type, date: s.created_at, llmCostInr: s.llm_cost_inr, promptTokens: s.prompt_tokens, completionTokens: s.completion_tokens }));
+
+  return {
+    profile: profile[0] || null,
+    sessions,
+    payments,
+    llmUsage,
+    feedback,
+    costSummary: {
+      totalLlmCostInr: Math.round(totalLlmCostInr * 100) / 100,
+      totalPromptTokens,
+      totalCompletionTokens,
+      top3ExpensiveSessions,
+    },
+  };
 }
 
 /**
@@ -354,12 +381,12 @@ async function getSessionDetail(sessionId: string) {
     }>(
       `sessions?id=eq.${encoded}&select=*&limit=1`,
     ),
-    fetchJSON<{ endpoint: string; model: string; total_tokens: number; latency_ms: number; status: string; created_at: string }>(
-      `llm_usage?endpoint=ilike.evaluate*&select=endpoint,model,total_tokens,latency_ms,status,created_at&order=created_at.desc&limit=20`,
+    fetchJSON<{ endpoint: string; model: string; total_tokens: number; prompt_tokens: number; completion_tokens: number; is_fallback: boolean; latency_ms: number; status: string; created_at: string }>(
+      `llm_usage?session_id=eq.${encoded}&select=endpoint,model,total_tokens,prompt_tokens,completion_tokens,is_fallback,latency_ms,status,created_at&order=created_at.desc&limit=20`,
     ),
   ]);
   const session = sessionRows[0];
-  if (!session) return { session: null, profile: null, qaPairs: [], llmCalls: [] };
+  if (!session) return { session: null, profile: null, qaPairs: [], llmCalls: [], costInr: 0 };
 
   // Fetch the user's profile so admins can see who this session belongs to.
   const profileRows = await fetchJSON<{ id: string; name: string | null; email: string }>(
@@ -400,7 +427,20 @@ async function getSessionDetail(sessionId: string) {
     qaPairs.push({ question: pendingQuestion.text, answer: "(no answer)", questionTime: pendingQuestion.time });
   }
 
-  return { session, profile, qaPairs, llmCalls: llmUsage };
+  // Compute cost from session-scoped llm_usage rows
+  let primaryTok = 0, fallbackTok = 0, promptTok = 0, completionTok = 0;
+  for (const u of llmUsage) {
+    promptTok += u.prompt_tokens || 0;
+    completionTok += u.completion_tokens || 0;
+    if (u.is_fallback) fallbackTok += u.total_tokens || 0;
+    else primaryTok += u.total_tokens || 0;
+  }
+  const sessionCost = costBreakdown(
+    { llmTokensPrimary: primaryTok, llmTokensFallback: fallbackTok, ttsChars: 0, sttCalls: 0, sessions: 1 },
+    DEFAULT_COST_RATES,
+  );
+
+  return { session, profile, qaPairs, llmCalls: llmUsage, costInr: sessionCost.llmInr, promptTokens: promptTok, completionTokens: completionTok };
 }
 
 async function getFinancials() {
@@ -431,6 +471,65 @@ async function getFinancials() {
     recent: payments.slice(0, LIMIT_RECENT).map(p => ({
       id: p.id, amount: p.amount, currency: p.currency, status: p.status, plan: p.plan || p.tier, date: p.created_at,
     })),
+  };
+}
+
+interface AnomalyHighSpendUser {
+  userId: string;
+  tokens: number;
+  zScore: number;
+}
+
+interface AnomaliesResult {
+  highSpendUsers: AnomalyHighSpendUser[];
+  runawayCallsToday: number;
+}
+
+async function getAnomalies(): Promise<AnomaliesResult> {
+  const since = daysAgo(1);
+  const [recentRows, runawayRows] = await Promise.all([
+    fetchJSON<{ user_id: string; total_tokens: number; created_at: string }>(
+      `llm_usage?select=user_id,total_tokens,created_at&created_at=gte.${since}&limit=5000`,
+    ),
+    fetchJSON<{ id: string }>(
+      `llm_usage?select=id&total_tokens=gt.8000&created_at=gte.${since}&limit=1000`,
+    ),
+  ]);
+
+  // Sum tokens per user_id
+  const perUser = new Map<string, number>();
+  for (const row of recentRows) {
+    if (!row.user_id) continue;
+    perUser.set(row.user_id, (perUser.get(row.user_id) || 0) + (row.total_tokens || 0));
+  }
+
+  const values = Array.from(perUser.values()).filter(v => v > 0);
+  const highSpendUsers: AnomalyHighSpendUser[] = [];
+
+  if (values.length === 1) {
+    // Only one user — flag if over 10,000 tokens
+    const [userId, tokens] = Array.from(perUser.entries())[0];
+    if (tokens > 10000) {
+      highSpendUsers.push({ userId, tokens, zScore: 0 });
+    }
+  } else if (values.length > 1) {
+    const mean = values.reduce((s, v) => s + v, 0) / values.length;
+    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+    const stddev = Math.sqrt(variance);
+    const threshold = stddev > 0 ? mean + 2.5 * stddev : mean * 3;
+
+    for (const [userId, tokens] of perUser.entries()) {
+      if (tokens > threshold) {
+        const zScore = stddev > 0 ? Math.round(((tokens - mean) / stddev) * 100) / 100 : 0;
+        highSpendUsers.push({ userId, tokens, zScore });
+      }
+    }
+    highSpendUsers.sort((a, b) => b.tokens - a.tokens);
+  }
+
+  return {
+    highSpendUsers,
+    runawayCallsToday: runawayRows.length,
   };
 }
 
@@ -504,6 +603,7 @@ async function getLLMUsage() {
     })),
     // Service details for the enhanced Services view
     services: await buildServiceDetails(usage),
+    anomalies: await getAnomalies(),
   };
 }
 

@@ -28,6 +28,7 @@ async function logUsage(entry: {
   userId?: string; endpoint?: string; model: string; isFallback: boolean;
   promptTokens: number; completionTokens: number; totalTokens: number;
   latencyMs: number; status: "success" | "error" | "timeout"; errorMessage?: string;
+  sessionId?: string;
 }): Promise<void> {
   if (!USAGE_LOGGING_ENABLED) return;
   try {
@@ -50,6 +51,7 @@ async function logUsage(entry: {
         latency_ms: entry.latencyMs,
         status: entry.status,
         error_message: entry.errorMessage?.slice(0, 500) || null,
+        session_id: entry.sessionId || null,
       }),
     });
     if (!res.ok) {
@@ -197,7 +199,7 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
   return { text: data.choices?.[0]?.message?.content || "", model: `cerebras-${model}`, fallback: false, tokensUsed, latencyMs };
 }
 
-export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number }): Promise<LLMResult> {
+export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string }): Promise<LLMResult> {
   const providers: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }[] = [];
   if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
   if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
@@ -245,7 +247,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       attempt++;
       try {
         const result = await callOnce(provider);
-        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success" });
+        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId });
         return result;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "";
@@ -258,7 +260,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
           continue;
         }
         console.error(`[LLM] ${provider.name} failed (${isTimeout ? "timeout" : "error"}): ${msg.slice(0, 150)}`);
-        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: provider.name, isFallback, promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0, status: isTimeout ? "timeout" : "error", errorMessage: msg.slice(0, 200) });
+        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: provider.name, isFallback, promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0, status: isTimeout ? "timeout" : "error", errorMessage: msg.slice(0, 200), sessionId: meta?.sessionId });
         throw err;
       }
     }
