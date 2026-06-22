@@ -84,7 +84,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     showUpgradeModal, setShowUpgradeModal,
     paymentBanner, setPaymentBanner,
     syncError, setSyncError,
-    toast, setCreditBalanceDirect,
+    toast, setCreditBalanceDirect, refreshCreditBalance,
   } = useDashboardUI();
 
   // Auto-open upgrade modal when arriving from ?upgrade=1 (e.g. the
@@ -579,6 +579,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               // Directly apply the balance the server just reported — no DB
               // round-trip, no race condition between modal close and re-fetch.
               setCreditBalanceDirect(newBalance);
+              // Belt-and-suspenders: also re-read from DB shortly after so
+              // that a page refresh doesn't revert to 0 if the RLS SELECT
+              // policy wasn't warmed yet. The direct set above wins the race
+              // for the current session; the re-read corrects any mismatch.
+              setTimeout(() => refreshCreditBalance(), 1500);
             }}
         />
       )}
