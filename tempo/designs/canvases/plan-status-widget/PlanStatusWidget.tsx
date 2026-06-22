@@ -7,7 +7,7 @@ const stone = "#6E6759";
 const cream = "#FAF7F0";
 const border = "#EBE5D2";
 const ember = "#B91C1C";
-const fontUi = "'Inter', 'SF Pro Display', system-ui, sans-serif";
+const fontUi = "'Satoshi', system-ui, -apple-system, sans-serif";
 
 const FREE_SESSION_LIMIT = 3;
 const STARTER_WEEKLY_LIMIT = 10;

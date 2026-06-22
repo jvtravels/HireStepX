@@ -227,7 +227,7 @@ export function ReportsFeatureSection() {
       justifyContent: "flex-start",
       paddingTop: 52,
       overflow: "hidden",
-      fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif",
+      fontFamily: "'Satoshi', system-ui, -apple-system, sans-serif",
       boxSizing: "border-box",
     }}>
       {/* Instrument Serif — HireStepX brand display font (same as --font-display in layout.tsx) */}

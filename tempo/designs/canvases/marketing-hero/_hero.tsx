@@ -31,13 +31,13 @@ const t = {
 
 const f = {
   serif: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-  sans:  "Inter, system-ui, -apple-system, sans-serif",
+  sans:  "'Satoshi', system-ui, -apple-system, sans-serif",
   mono:  "'JetBrains Mono', 'Fira Code', monospace",
 };
 
 /* ─── CSS ─────────────────────────────────────────────────────── */
 const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap');
 @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
 
 @keyframes fadeUp {
@@ -401,7 +401,7 @@ export function HireStepXHero() {
           <div style={{
             position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)",
             textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none",
-            fontFamily: "'Satoshi', Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4,
+            fontFamily: "'Satoshi', system-ui, -apple-system, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4,
             opacity: hov !== null ? 0 : 1,
             transition: "opacity 0.30s ease",
           }}>
@@ -420,7 +420,7 @@ export function HireStepXHero() {
           <div style={{
             position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)",
             textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none",
-            fontFamily: "'Satoshi', Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4,
+            fontFamily: "'Satoshi', system-ui, -apple-system, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4,
             opacity: hov !== null ? 0 : 1,
             transition: "opacity 0.30s ease",
           }}>
@@ -439,7 +439,7 @@ export function HireStepXHero() {
           <div style={{
             position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)",
             textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none",
-            fontFamily: "'Satoshi', Inter, system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4,
+            fontFamily: "'Satoshi', system-ui, -apple-system, sans-serif", fontWeight: 400, fontSize: 12, color: "#9E9589", lineHeight: 1.4,
             opacity: hov !== null ? 0 : 1,
             transition: "opacity 0.30s ease",
           }}>
