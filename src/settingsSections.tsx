@@ -845,7 +845,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
-      <SectionHead kicker="Plan & Data" title={headline} desc={headlineDesc} />
+      <SectionHead title={headline} desc={headlineDesc} />
 
       {/* Status band for paid plans (inline, not a card) */}
       {isPaid && endDateLabel && (
@@ -1150,7 +1150,6 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
     <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHead
-        kicker="Referral"
         title="Bring a friend — you both get a free session"
         desc={`When a friend signs up with your link, you each get a free practice session, credited instantly. ${stats.rewarded} earned so far.`}
       />
