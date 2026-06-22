@@ -249,7 +249,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const refreshCreditBalance = useCallback(() => {
     if (!user?.id) return;
-    getCreditBalance(user.id).then(setCreditBalance).catch(() => {});
+    // getCreditBalance already retries 2× internally on 502/503. If all retries
+    // fail, log and leave the cached balance untouched rather than zeroing it out.
+    getCreditBalance(user.id)
+      .then(bal => { setCreditBalance(bal); setCreditsLoaded(true); })
+      .catch(err => {
+        console.warn("[credits] refreshCreditBalance failed — keeping cached value:", err?.message);
+      });
   }, [user?.id]);
 
   // Persist the balance to sessionStorage so /session/new (a different Next.js
@@ -413,14 +419,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         setTopGaps(flags);
       }).catch(() => { /* silent — CTA degrades to skill-based */ }),
       // Fetch purchased session-credit balance (free-tier users who bought ₹9
-      // top-ups). RLS allows owner-read; returns 0 on any error so the sidebar
-      // degrades gracefully to "No sessions left" without crashing.
+      // top-ups). getCreditBalance retries internally on 502/503. On persistent
+      // failure it throws — we mark loaded but leave the balance at the cached
+      // value (seeded from sessionStorage above) so we don't zero it out on a
+      // transient infra blip.
       getCreditBalance(user.id).then(bal => {
         if (cancelled) return;
         setCreditBalance(bal);
         setCreditsLoaded(true);
-      }).catch(() => {
-        if (!cancelled) setCreditsLoaded(true); // mark loaded even on error — balance stays 0
+      }).catch(err => {
+        if (cancelled) return;
+        console.warn("[credits] initial fetch failed:", err?.message);
+        // creditsLoaded must still flip true so the UI exits skeleton state.
+        // Balance stays at whatever sessionStorage seeded (or 0 if cold start).
+        setCreditsLoaded(true);
       }),
       getCalendarEvents(user.id).then(events => {
         if (cancelled) return;

@@ -634,6 +634,8 @@ export interface PlanSectionProps {
   exporting: boolean;
   setExporting: (v: boolean) => void;
   onExportCSV: () => void;
+  // Credit reconciliation
+  onReconcileCredits?: () => Promise<void>;
   // Billing
   payments: PaymentRecord[];
   paymentsLoading: boolean;
@@ -735,11 +737,13 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
     authUser, tierLabel,
     confirmCancel, setConfirmCancel, cancelLoading, setCancelLoading, cancelMsg, setCancelMsg,
     confirmDelete, setConfirmDelete, deleteEmailInput, setDeleteEmailInput, deleteLoading, setDeleteLoading, deleteMsg, setDeleteMsg,
-    exporting, setExporting, onExportCSV,
+    exporting, setExporting, onExportCSV, onReconcileCredits,
     payments, paymentsLoading,
     authUpdateUser, showToast, onLogout,
     authHeaders: getAuthHeaders,
   } = props;
+
+  const [reconciling, setReconciling] = useState(false);
 
   // Re-auth gate: password re-entry before destructive identity action.
   // Local state — not hoisted into the parent because no other section
@@ -985,6 +989,23 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             {exporting ? "Exporting…" : "Export CSV"}
           </button>
         </div>
+
+        {onReconcileCredits && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={keyValueLabel}>Sync session credits</div>
+              <div style={keyValueValue}>If your purchased session credits are not showing correctly, tap to reconcile your balance from payment records.</div>
+            </div>
+            <button type="button" disabled={reconciling}
+              onClick={async () => {
+                setReconciling(true);
+                try { await onReconcileCredits(); } finally { setReconciling(false); }
+              }}
+              style={{ ...accSubtleBtn, opacity: reconciling ? 0.6 : 1 }}>
+              {reconciling ? "Syncing…" : "Sync credits"}
+            </button>
+          </div>
+        )}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", flexWrap: "wrap" }}>
           <div style={{ minWidth: 0, flex: 1 }}>

@@ -698,6 +698,150 @@ $$;
 revoke all on function grant_session_credits(uuid, integer) from public, anon, authenticated;
 grant execute on function grant_session_credits(uuid, integer) to service_role;
 
+-- ── Credit ledger (immutable audit trail) ─────────────────────────────────────
+-- Every credit grant and consume writes a ledger row. balance_before/after let
+-- you reconstruct the full history of any user's balance even if the mutable
+-- session_credits row is ever corrupted or manually overwritten. Read-only for
+-- the owner; write is service_role only (via the functions below). No UPDATE or
+-- DELETE policy is intentional — ledger rows are immutable by design.
+create table if not exists credit_ledger (
+  id             uuid        primary key default gen_random_uuid(),
+  user_id        uuid        not null references profiles(id) on delete cascade,
+  operation      text        not null check (operation in ('grant', 'consume', 'adjust', 'reconcile')),
+  quantity       integer     not null,           -- positive for grant/adjust, negative for consume
+  balance_before integer     not null,
+  balance_after  integer     not null,
+  payment_id     text,                           -- razorpay_payment_id for grants
+  session_id     uuid,                           -- sessions.id for consumes
+  note           text,                           -- human-readable context
+  created_at     timestamptz not null default now()
+);
+alter table credit_ledger enable row level security;
+drop policy if exists "Users read own credit ledger" on credit_ledger;
+create policy "Users read own credit ledger" on credit_ledger
+  for select using ((auth.uid())::text = user_id::text);
+
+create index if not exists credit_ledger_user_id_idx on credit_ledger (user_id, created_at desc);
+
+-- ── Updated grant function — writes ledger row ────────────────────────────────
+create or replace function grant_session_credits(p_user_id uuid, p_qty integer, p_payment_id text default null, p_note text default null)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  safe_qty    integer;
+  prev_bal    integer;
+  new_balance integer;
+begin
+  safe_qty := greatest(p_qty, 1);
+  -- Read existing balance for ledger (0 if no row yet)
+  select coalesce(balance, 0) into prev_bal from session_credits where user_id = p_user_id;
+  prev_bal := coalesce(prev_bal, 0);
+
+  insert into session_credits (user_id, balance, updated_at)
+  values (p_user_id, safe_qty, now())
+  on conflict (user_id)
+  do update set
+    balance    = session_credits.balance + safe_qty,
+    updated_at = now()
+  returning balance into new_balance;
+
+  -- Immutable audit row
+  insert into credit_ledger (user_id, operation, quantity, balance_before, balance_after, payment_id, note)
+  values (p_user_id, 'grant', safe_qty, prev_bal, new_balance, p_payment_id, p_note);
+
+  return new_balance;
+end;
+$$;
+
+revoke all on function grant_session_credits(uuid, integer, text, text) from public, anon, authenticated;
+grant execute on function grant_session_credits(uuid, integer, text, text) to service_role;
+
+-- ── Updated consume function — writes ledger row ──────────────────────────────
+create or replace function consume_session_credit(p_user_id uuid, p_session_id uuid default null)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  affected    integer;
+  prev_bal    integer;
+  new_bal     integer;
+begin
+  select coalesce(balance, 0) into prev_bal from session_credits where user_id = p_user_id;
+  prev_bal := coalesce(prev_bal, 0);
+
+  update session_credits
+     set balance    = balance - 1,
+         updated_at = now()
+   where user_id = p_user_id
+     and balance > 0;
+  get diagnostics affected = row_count;
+
+  if affected > 0 then
+    new_bal := prev_bal - 1;
+    insert into credit_ledger (user_id, operation, quantity, balance_before, balance_after, session_id)
+    values (p_user_id, 'consume', -1, prev_bal, new_bal, p_session_id);
+  end if;
+
+  return affected > 0;
+end;
+$$;
+
+revoke all on function consume_session_credit(uuid, uuid) from public, anon, authenticated;
+grant execute on function consume_session_credit(uuid, uuid) to service_role;
+
+-- Keep old single-arg overload for backward compat with any undeployed callers
+-- (drop after next deploy confirms the new sig is live)
+create or replace function consume_session_credit(p_user_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return consume_session_credit(p_user_id, null::uuid);
+end;
+$$;
+revoke all on function consume_session_credit(uuid) from public, anon, authenticated;
+grant execute on function consume_session_credit(uuid) to service_role;
+
+-- ── Credit reconciliation helper ──────────────────────────────────────────────
+-- Rebuilds a user's balance from the payments table when the session_credits row
+-- is missing or shows 0 despite payments existing. Called by /api/credit-reconcile.
+-- Safe to call repeatedly — uses a compare-and-swap to avoid over-correcting.
+create or replace function reconcile_session_credits(p_user_id uuid, p_correct_balance integer, p_note text default 'reconcile')
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  prev_bal    integer;
+  new_balance integer;
+begin
+  select coalesce(balance, 0) into prev_bal from session_credits where user_id = p_user_id;
+  prev_bal := coalesce(prev_bal, 0);
+
+  insert into session_credits (user_id, balance, updated_at)
+  values (p_user_id, p_correct_balance, now())
+  on conflict (user_id)
+  do update set balance = p_correct_balance, updated_at = now()
+  returning balance into new_balance;
+
+  insert into credit_ledger (user_id, operation, quantity, balance_before, balance_after, note)
+  values (p_user_id, 'reconcile', p_correct_balance - prev_bal, prev_bal, new_balance, p_note);
+
+  return new_balance;
+end;
+$$;
+
+revoke all on function reconcile_session_credits(uuid, integer, text) from public, anon, authenticated;
+grant execute on function reconcile_session_credits(uuid, integer, text) to service_role;
+
 -- ── Atomic promo code consumption ─────────────────────────────────────────────
 -- Increments current_uses only when uses < max_uses. Returns the code row id
 -- on success, null when the code doesn't exist or is already exhausted.

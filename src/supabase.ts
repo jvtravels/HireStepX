@@ -641,20 +641,53 @@ export async function syncGoogleEvents(userId: string): Promise<{ synced: number
  * being resolved inside the RLS policy, which silently returned 0 in some
  * browser environments when the JWT wasn't propagated correctly to PostgREST.
  * The server endpoint uses the service role key, bypassing RLS entirely, and
- * is authoritative. Falls back to 0 on any network or parse error. */
-export async function getCreditBalance(_userId: string): Promise<number> {
+ * is authoritative.
+ *
+ * Returns the balance on success. Throws on network/auth/server errors so the
+ * caller can distinguish a genuine 0-balance (HTTP 200, balance: 0) from a
+ * failed read — avoiding the previous behaviour where a misconfigured env var
+ * silently showed every user as having 0 credits.
+ *
+ * Retries up to `maxRetries` times on 502/503 (transient infra errors) with
+ * exponential back-off before giving up. */
+export async function getCreditBalance(_userId: string, maxRetries = 2): Promise<number> {
   if (!_userId) return 0;
+
   // authHeaders() reads the JWT from localStorage — must be done before fetch.
-  // Callers use `credentials: "include"` style cookies; Supabase uses localStorage,
-  // so this explicit header is the only way the server receives the user's identity.
   const hdrs = await authHeaders();
-  const res = await fetch("/api/credit-balance", { headers: hdrs });
-  // Throw on auth/server errors so callers can distinguish a genuine 0-balance
-  // (HTTP 200, balance: 0) from a failed read (4xx/5xx that returns no balance).
-  // SessionSetup retries 3× then fails open; DashboardContext silences via .catch().
-  if (!res.ok) throw new Error(`credit-balance ${res.status}`);
-  const json = await res.json() as { balance?: number };
-  // Treat missing or malformed balance as 0 — the server always returns the field
-  // on success, so this branch only fires for unexpected server responses.
-  return typeof json.balance === "number" ? Math.max(0, json.balance) : 0;
+
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch("/api/credit-balance", { headers: hdrs });
+
+      // 200 → parse balance. balance:null means the server had a read error but
+      // returned a structured response; treat as transient and retry.
+      if (res.ok) {
+        const json = await res.json() as { balance?: number | null; error?: string };
+        if (typeof json.balance === "number") return Math.max(0, json.balance);
+        // balance: null → server-side read failure reported structurally; retry
+        throw new Error(`credit-balance read_failed: ${json.error ?? "unknown"}`);
+      }
+
+      // 401/403 → auth problem; no point retrying
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(`credit-balance auth ${res.status}`);
+      }
+
+      // 502/503 → transient infra error; retry
+      lastError = new Error(`credit-balance ${res.status}`);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      // Auth errors should not be retried
+      if (lastError.message.includes("auth 401") || lastError.message.includes("auth 403")) throw lastError;
+    }
+
+    if (attempt < maxRetries) {
+      // Exponential back-off: 300ms, 600ms
+      await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
+    }
+  }
+
+  throw lastError ?? new Error("credit-balance: max retries exceeded");
 }

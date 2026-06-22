@@ -49,8 +49,28 @@ export default function SettingsPage() {
   useDocTitle("Settings");
   const { user: authUser, logout: authLogout, updateUser: authUpdateUser, resetPassword } = useAuth();
   const { persisted, updatePersisted: onUpdate, handleExportCSV: onExportCSV } = useDashboardCore();
-  const { dataLoading, showToast, setShowUpgradeModal } = useDashboardUI();
+  const { dataLoading, showToast, setShowUpgradeModal, setCreditBalanceDirect } = useDashboardUI();
   const onLogout = () => { authLogout(); };
+
+  const onReconcileCredits = async () => {
+    try {
+      const hdrs = await authHeaders();
+      const res = await fetch("/api/credit-reconcile", { method: "POST", headers: hdrs });
+      const json = await res.json() as { ok?: boolean; balance?: number; before?: number; after?: number; reconciled?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        showToast(json.error === "service_unavailable" ? "Credit sync unavailable — try again shortly." : "Credit sync failed. Contact support@hirestepx.com.");
+        return;
+      }
+      setCreditBalanceDirect(json.balance ?? json.after ?? 0);
+      if (json.reconciled) {
+        showToast(`Credits synced: balance updated from ${json.before ?? 0} → ${json.after ?? 0}.`);
+      } else {
+        showToast(`Credits already correct — balance is ${json.balance ?? 0}.`);
+      }
+    } catch {
+      showToast("Credit sync failed. Check your connection and try again.");
+    }
+  };
 
   // Profile
   const [editName, setEditName] = useState(persisted.userName);
@@ -355,7 +375,7 @@ export default function SettingsPage() {
           deleteLoading={deleteLoading} setDeleteLoading={setDeleteLoading}
           deleteMsg={deleteMsg} setDeleteMsg={setDeleteMsg}
           exporting={exporting} setExporting={setExporting}
-          onExportCSV={onExportCSV}
+          onExportCSV={onExportCSV} onReconcileCredits={onReconcileCredits}
           payments={payments} paymentsLoading={paymentsLoading}
           authUpdateUser={authUpdateUser} showToast={showToast}
           setShowUpgradeModal={setShowUpgradeModal} onLogout={onLogout}
