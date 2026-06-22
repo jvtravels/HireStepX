@@ -482,7 +482,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     background: T.success100, border: "1px solid rgba(21,128,61,0.22)", borderRadius: 8 }}>
                     <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "flex", alignItems: "center", gap: 6 }}>
                       <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      Purchased sessions
+                      Extra sessions
                     </span>
                     {/* Hero number — this is the only count the user needs to see */}
                     <span style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 800, color: c.sage, letterSpacing: "-0.01em" }}>
@@ -501,7 +501,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     </svg>
                     <span style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt, fontWeight: 600,
                       letterSpacing: "0.01em" }}>
-                      +{creditBalance} extra credit{creditBalance !== 1 ? "s" : ""} loaded
+                      +{creditBalance} extra session{creditBalance !== 1 ? "s" : ""} available
                     </span>
                   </div>
                 )}

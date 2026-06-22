@@ -637,7 +637,7 @@ function PlanQuotaRow({ tier: _tier }: { tier: string }) {
           background: c.success100, border: `1px solid rgba(21,128,61,0.22)` }}>
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "flex", alignItems: "center", gap: 5 }}>
             <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Purchased credits available
+            Extra sessions
           </span>
           <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 700, color: c.sage }}>{creditBalance}</span>
         </div>
