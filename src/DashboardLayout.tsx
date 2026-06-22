@@ -397,8 +397,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             const planLeft      = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
             const planExhausted = isPro ? proExhausted : isStarter ? starterExhausted : freeExhausted;
             const periodLabel   = isPro ? "this month" : isStarter ? "this week" : "total";
-            // "Sessions with Pro / Starter / Free" — mirrors the Settings page label.
-            const planName      = isPro ? "Pro" : isStarter ? "Starter" : "Free";
+            // planName kept for potential future use (e.g. aria labels, tooltips).
             const pct  = Math.min(100, (planUsed / planTotal) * 100);
             const isLow = !planExhausted && (
               (isPro && planLeft <= 5) || (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
@@ -418,7 +417,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       fontWeight: isLow ? 600 : 400,
                       opacity: planExhausted ? 0.65 : 1 }}
                   >
-                    Sessions with {planName}
+                    Sessions used
                   </p>
                   <span style={{ fontFamily: font.mono, fontSize: 11,
                     color: planExhausted ? c.ember : isLow ? c.ember : c.stone,
