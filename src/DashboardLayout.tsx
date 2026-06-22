@@ -64,21 +64,21 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const nav = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { logout: authLogout, user, updateUser: authUpdateUser } = useAuth();
+  const { logout: authLogout, user, updateUser: authUpdateUser, loading: authLoading } = useAuth();
   // Use focused hooks instead of aggregate useDashboard() — prevents this
   // layout from re-rendering when unrelated state (e.g. recentSessions poll)
   // changes. Each sub-context only notifies when ITS slice changes.
   const { displayName, persisted } = useDashboardCore();
   const { calendarEvents, refreshSessions } = useDashboardSessions();
   const { isFree, isStarter, isPro, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance } = useDashboardSubscription();
-  // True when we have a session but profile fetch (tier-bearing) hasn't
-  // returned yet. profileToUser always sets subscriptionTier; the JWT-only
-  // fallback path leaves it undefined. Avoid rendering "Free Plan" in this
-  // window — it misleads Pro users until the background retry lands.
+  // True once auth has fully resolved AND the tier is set. Gating on
+  // !authLoading prevents the card from briefly showing the wrong colour
+  // (green → orange flicker) when practiceTimestamps are still stale from
+  // the localStorage cache and the DB profile hasn't arrived yet.
   // The localStorage tier cache (AuthContext cacheTier) seeds subscriptionTier
-  // into the fallback user object on every load after the first, so this is
-  // false only on the very first page load before any profile has been cached.
-  const tierKnown = !!user && user.subscriptionTier !== undefined;
+  // into the fallback user object on every load after the first, so the
+  // skeleton only shows for the brief window until authLoading goes false.
+  const tierKnown = !!user && user.subscriptionTier !== undefined && !authLoading;
   const {
     isMobile,
     showUpgradeModal, setShowUpgradeModal,
