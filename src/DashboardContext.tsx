@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "./AuthContext";
-import { getUserSessions, getCalendarEvents, syncGoogleEvents, getGoogleProviderToken, getLatestSessionInsightFlags, getCreditBalance } from "./supabase";
+import { getUserSessions, getCalendarEvents, syncGoogleEvents, getGoogleProviderToken, getLatestSessionInsightFlags, getCreditBalance, getSupabase, supabaseConfigured } from "./supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { scheduleEventNotifications } from "./interviewNotifications";
 import { type InterviewEvent, loadEvents } from "./dashboardHelpers";
 import {
@@ -267,6 +268,48 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (!user?.id) return;
     try { sessionStorage.setItem(`hsx_credit_${user.id}`, String(creditBalance)); } catch { /* private-browsing caps */ }
   }, [creditBalance, user?.id]);
+
+  // ── Supabase Realtime: live credit-balance sync ───────────────────────────
+  // Subscribes to row-level changes on session_credits for this user so the
+  // sidebar updates the moment credits are granted — including the webhook path
+  // (Razorpay → server → DB) where the browser never receives a direct response.
+  // Without this, a webhook grant only appears after the next page load.
+  // Cleanup unsubscribes when the user logs out or the provider unmounts.
+  useEffect(() => {
+    if (!user?.id || !supabaseConfigured) return;
+    let cancelled = false;
+    let channelRef: ReturnType<SupabaseClient["channel"]> | null = null;
+
+    getSupabase().then(sb => {
+      if (cancelled) return;
+      channelRef = sb
+        .channel(`credit-balance-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",           // INSERT or UPDATE
+            schema: "public",
+            table: "session_credits",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload: { new: { balance?: number } }) => {
+            const fresh = payload?.new?.balance;
+            if (typeof fresh === "number" && fresh >= 0) {
+              setCreditBalance(fresh);
+              setCreditsLoaded(true);
+            }
+          },
+        )
+        .subscribe();
+    }).catch(() => { /* Supabase unavailable — fall back to fetch-on-mount */ });
+
+    return () => {
+      cancelled = true;
+      if (channelRef) {
+        getSupabase().then(sb => sb.removeChannel(channelRef!)).catch(() => {});
+      }
+    };
+  }, [user?.id]);
 
   // Auto-open upgrade modal when navigated back from /interview with ?upgrade=1
   // (the interview engine redirects here when the server returns 403 session-limit).
