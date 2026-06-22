@@ -658,11 +658,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error("[auth] ensureProfile failed:", (error as { message?: string })?.message);
       }
+      const cachedTierForEnsure = getCachedTier(session.user.id);
       const newUser: User = {
         id: session.user.id,
         name: newProfile.name || "",
         email: newProfile.email || "",
-        targetRole: "",
+        targetRole: cachedTierForEnsure?.targetRole || "",
         resumeFileName: null,
         hasCompletedOnboarding: false,
         emailVerified:
@@ -673,6 +674,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // backfill email_confirmed_at on the first session restore.
       session.user.app_metadata?.provider === "google" ||
       session.user.app_metadata?.providers?.includes?.("google") === true,
+        // Always set subscriptionTier so tierKnown is never false for a set user.
+        // Seed from localStorage cache if available; otherwise "free" is the safe default.
+        subscriptionTier: cachedTierForEnsure?.tier ?? "free",
+        ...(cachedTierForEnsure ? { subscriptionEnd: cachedTierForEnsure.subscriptionEnd } : {}),
       };
       setUser(newUser);
     }
