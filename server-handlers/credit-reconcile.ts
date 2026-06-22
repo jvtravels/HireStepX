@@ -105,6 +105,9 @@ export default async function handler(req: Request): Promise<Response> {
     let reconciled = false;
 
     if (computedBalance !== currentBalance) {
+      // Primary path: atomic reconcile_session_credits RPC (writes audit ledger row).
+      // Fallback: direct service-role upsert when the SQL function isn't deployed yet.
+      let writeOk = false;
       const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/reconcile_session_credits`, {
         method: "POST",
         headers: serviceHeaders(SERVICE_ROLE_KEY),
@@ -115,12 +118,37 @@ export default async function handler(req: Request): Promise<Response> {
         }),
       });
       if (rpcRes.ok) {
-        finalBalance = computedBalance;
-        reconciled = true;
+        writeOk = true;
+      } else if (rpcRes.status === 404 || rpcRes.status === 405) {
+        // SQL function not deployed yet — fall back to direct service-role upsert.
+        console.warn("[credit-reconcile] reconcile_session_credits RPC not found, using direct upsert fallback");
+        const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/session_credits`, {
+          method: "POST",
+          headers: {
+            ...serviceHeaders(SERVICE_ROLE_KEY),
+            Prefer: "resolution=merge-duplicates,return=minimal",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            balance: computedBalance,
+            updated_at: new Date().toISOString(),
+          }),
+        });
+        if (upsertRes.ok) {
+          writeOk = true;
+        } else {
+          const errText = await upsertRes.text().catch(() => "");
+          console.error(`[credit-reconcile] upsert fallback failed (${upsertRes.status}): ${errText}`);
+          throw new Error(`reconcile upsert failed: ${upsertRes.status}`);
+        }
       } else {
         const errText = await rpcRes.text().catch(() => "");
         console.error(`[credit-reconcile] RPC failed (${rpcRes.status}): ${errText}`);
         throw new Error(`reconcile RPC failed: ${rpcRes.status}`);
+      }
+      if (writeOk) {
+        finalBalance = computedBalance;
+        reconciled = true;
       }
     }
 
