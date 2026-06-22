@@ -901,7 +901,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       <div style={{ ...planCardOuter }}>
         <div style={{ marginBottom: 16 }}>
           <div style={subHeaderTitle}>This period</div>
-          <div style={subHeaderHint}>Counted from sessions started (including abandoned). Resets on the 1st of every month (Pro), every Sunday (Starter). Free plan shows total lifetime sessions.</div>
+          <div style={subHeaderHint}>Completed interviews and resource usage for your active billing period.</div>
         </div>
         <UsageThisMonth
           getAuthHeaders={getAuthHeaders}
