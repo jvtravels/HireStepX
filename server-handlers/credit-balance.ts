@@ -8,7 +8,7 @@
  */
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders } from "./_shared";
 import { getSessionCredits } from "./_session-credits";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -27,15 +27,19 @@ export default async function handler(req: Request): Promise<Response> {
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
+  // Override headers to include GET in Allow-Methods (withAuthAndRateLimit returns
+  // headers from corsHeaders() which defaults to POST-only; this endpoint is GET).
+  const getHeaders = { ...headers, ...corsHeaders(req, { allowGet: true }) };
+
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     // Dev / test environment — return 0 gracefully
-    return new Response(JSON.stringify({ balance: 0 }), { status: 200, headers });
+    return new Response(JSON.stringify({ balance: 0 }), { status: 200, headers: getHeaders });
   }
 
   try {
     const balance = await getSessionCredits(SUPABASE_URL, SERVICE_ROLE_KEY, auth.userId ?? "");
-    return new Response(JSON.stringify({ balance }), { status: 200, headers });
+    return new Response(JSON.stringify({ balance }), { status: 200, headers: getHeaders });
   } catch {
-    return new Response(JSON.stringify({ balance: 0 }), { status: 200, headers });
+    return new Response(JSON.stringify({ balance: 0 }), { status: 200, headers: getHeaders });
   }
 }

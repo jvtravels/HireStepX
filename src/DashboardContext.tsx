@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { getUserSessions, getCalendarEvents, syncGoogleEvents, getGoogleProviderToken, getLatestSessionInsightFlags, getCreditBalance } from "./supabase";
 import { scheduleEventNotifications } from "./interviewNotifications";
@@ -164,6 +164,7 @@ export function useDashboard() {
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const nav = useRouter();
+  const searchParams = useSearchParams();
   const { user, updateUser: _authUpdateUser } = useAuth();
   const [persisted, setPersisted] = useState<PersistedState>(() => {
     const local = loadState();
@@ -221,6 +222,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (!user?.id) return;
     getCreditBalance(user.id).then(setCreditBalance).catch(() => {});
   }, [user?.id]);
+
+  // Auto-open upgrade modal when navigated back from /interview with ?upgrade=1
+  // (the interview engine redirects here when the server returns 403 session-limit).
+  useEffect(() => {
+    if (searchParams.get("upgrade") === "1") {
+      setShowUpgradeModal(true);
+      // Remove the param from the URL so a reload/back doesn't re-trigger it.
+      nav.replace("/dashboard");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // ─── Google Calendar sync state ───
   const [googleSyncStatus, setGoogleSyncStatus] = useState<"idle" | "syncing" | "done" | "error">("idle");

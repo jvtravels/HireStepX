@@ -644,7 +644,11 @@ export async function syncGoogleEvents(userId: string): Promise<{ synced: number
 export async function getCreditBalance(_userId: string): Promise<number> {
   if (!_userId) return 0;
   try {
-    const res = await fetch("/api/credit-balance", { credentials: "include" });
+    // Must send the JWT as a Bearer token — Supabase stores it in localStorage
+    // (not cookies), so `credentials: "include"` is useless here and the
+    // endpoint would always return 401. authHeaders() reads from localStorage.
+    const hdrs = await authHeaders();
+    const res = await fetch("/api/credit-balance", { headers: hdrs });
     if (!res.ok) return 0;
     const json = await res.json() as { balance?: number };
     return typeof json.balance === "number" ? json.balance : 0;

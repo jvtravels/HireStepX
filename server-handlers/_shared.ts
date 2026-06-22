@@ -33,14 +33,19 @@ export function getAllowedOrigin(req: Request): string {
   return getAllowedOriginFromString(origin);
 }
 
-/** Build CORS response headers for an Edge Function request. */
-export function corsHeaders(req: Request): Record<string, string> {
+/** Build CORS response headers for an Edge Function request.
+ *
+ * Pass `allowGet: true` for endpoints that accept GET requests (e.g. credit-
+ * balance) so the Allow-Methods header matches the actual method list.
+ * Omitting it (or passing false) keeps the default POST-only list. */
+export function corsHeaders(req: Request, opts?: { allowGet?: boolean }): Record<string, string> {
   const origin = getAllowedOrigin(req);
+  const methodList = opts?.allowGet ? "GET, POST, OPTIONS" : "POST, OPTIONS";
   if (!origin) return { "Content-Type": "application/json" };
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": methodList,
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Vary": "Origin",
   };

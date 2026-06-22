@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   // Use focused hooks instead of aggregate useDashboard() — prevents this
   // layout from re-rendering when unrelated state (e.g. recentSessions poll)
   // changes. Each sub-context only notifies when ITS slice changes.
-  const { displayName, persisted, handleStartSession } = useDashboardCore();
+  const { displayName, persisted } = useDashboardCore();
   const { calendarEvents, refreshSessions } = useDashboardSessions();
   const { isFree, isStarter, isPro, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance } = useDashboardSubscription();
   // True when we have a session but profile fetch (tier-bearing) hasn't
@@ -470,33 +470,17 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     opacity: planExhausted && creditBalance === 0 ? 0.3 : 1 }} />
                 </div>
 
-                {/* ── CASE A: plan exhausted + credits — hero credit card ── */}
+                {/* ── CASE A: plan exhausted + credits — simple count line ── */}
                 {planExhausted && creditBalance > 0 && (
-                  <div
-                    aria-label={`${creditBalance} purchased session credit${creditBalance !== 1 ? "s" : ""} available`}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      background: T.copperTint,
-                      border: `1px solid ${T.copperBorder}`,
-                      borderRadius: 8, padding: "8px 10px", marginBottom: 12,
-                    }}
-                  >
-                    {/* Big credit count */}
-                    <span style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 800, lineHeight: 1,
-                      color: c.gilt, letterSpacing: "-0.02em", flexShrink: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                    marginBottom: 12, padding: "7px 10px",
+                    background: T.copperTint, border: `1px solid ${T.copperBorder}`, borderRadius: 7 }}>
+                    <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
+                      Sessions available
+                    </span>
+                    <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.gilt }}>
                       {creditBalance}
                     </span>
-                    {/* Labels */}
-                    <div>
-                      <p style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt,
-                        margin: 0, lineHeight: 1.2 }}>
-                        session{creditBalance !== 1 ? "s" : ""} available
-                      </p>
-                      <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
-                        margin: 0, lineHeight: 1.3, marginTop: 1 }}>
-                        Purchased credits · plan resets next {isPro ? "month" : isStarter ? "week" : "upgrade"}
-                      </p>
-                    </div>
                   </div>
                 )}
 
@@ -534,46 +518,18 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           {!tierKnown ? (
             <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
           ) : proExhausted ? (
-            /* Exhausted Pro with credits: START is the primary action, Buy more is secondary */
-            creditBalance > 0 ? (
-              <>
-                <button
-                  onClick={handleStartSession}
-                  title="Start a mock interview using your purchased credits"
-                  aria-label="Start interview using purchased session credit"
-                  style={{ width: "100%", padding: "9px 0", borderRadius: 8, border: "none", cursor: "pointer",
-                    background: c.sage, color: "#fff",
-                    fontFamily: font.ui, fontSize: 13, fontWeight: 700, letterSpacing: "0.01em",
-                    transition: "filter 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-                  onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-                >
-                  Start Interview
-                  <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </button>
-                <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  title="Buy more session credits"
-                  style={{ display: "block", width: "100%", marginTop: 7, background: "none", border: "none",
-                    cursor: "pointer", fontFamily: font.ui, fontSize: 11, color: c.stone, opacity: 0.6,
-                    textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
-                >Buy more sessions</button>
-              </>
-            ) : (
-              /* Exhausted Pro, no credits: upgrade is the only path */
-              <button
-                onClick={() => setShowUpgradeModal(true)}
-                title="Add more sessions or wait for next month"
-                aria-label="Upgrade plan to get more sessions"
-                style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: c.gilt, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", transition: "filter 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
-                onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-              >Buy sessions →</button>
-            )
+            /* Exhausted Pro: buy sessions regardless of current credit balance */
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              title="Buy more session credits"
+              aria-label="Buy session credits"
+              style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer",
+                background: c.gilt, color: c.obsidian,
+                fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em",
+                transition: "filter 0.2s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
+              onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
+            >Buy sessions →</button>
           ) : isPro ? (
             /* Active Pro: neutral management actions */
             <>

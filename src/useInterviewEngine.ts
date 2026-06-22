@@ -585,6 +585,18 @@ export function useInterviewEngine() {
       if (llmFetchCancelRef.current) return;
       const msg = err.message || "Could not generate questions.";
       console.warn("[interview] LLM question generation error:", msg);
+
+      // Session limit 403 — the server explicitly blocked this session start.
+      // Don't fall back to static questions (that would let them bypass the
+      // gate). Navigate back to the dashboard where they can buy credits or
+      // upgrade. The ?upgrade=1 param tells the dashboard to open the modal.
+      if (msg.includes("session limit reached")) {
+        toast("Session limit reached — redirecting to dashboard.", "info");
+        setLlmLoading(false);
+        router.replace("/dashboard?upgrade=1");
+        return;
+      }
+
       setSaveWarning(`${msg} Tap retry for personalized questions.`);
       if (!isMiniMode) toast(`Using practice questions — ${msg.toLowerCase()}`, "info");
       setLlmLoading(false);
