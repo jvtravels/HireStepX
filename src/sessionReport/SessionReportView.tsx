@@ -83,6 +83,58 @@ export type {
   Verdict,
 };
 
+/* ─── Free-user upgrade nudge ──────────────────────────────────────── */
+/* Shown after the hero score on the report page — the highest-attention,
+   highest-curiosity moment in the product. Better here than at the
+   session-limit gate when the user is already frustrated and blocked. */
+
+function UpgradeNudgeStrip({ score, onUpgrade }: { score: number; onUpgrade?: () => void }) {
+  return (
+    <div
+      role="complementary"
+      aria-label="Upgrade to keep practising"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        flexWrap: "wrap",
+        background: t.indigoTint,
+        border: `1px solid ${t.indigoRing}`,
+        borderRadius: 12,
+        padding: "14px 20px",
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <p style={{ margin: 0, fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>
+          You scored {score}. Want to see if you can beat it?
+        </p>
+        <p style={{ margin: "3px 0 0", fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.45 }}>
+          Get 7 more sessions for ₹49 — track your improvement week by week.
+        </p>
+      </div>
+      <button
+        onClick={onUpgrade}
+        style={{
+          flexShrink: 0,
+          fontFamily: f.sans,
+          fontSize: 13,
+          fontWeight: 600,
+          padding: "9px 20px",
+          borderRadius: 8,
+          background: t.indigo ?? "#4f46e5",
+          color: "#fff",
+          border: 0,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Get Weekly Plan — ₹49
+      </button>
+    </div>
+  );
+}
+
 /* ─── Focus banner ─────────────────────────────────────────────────── */
 
 const TONE_VALUE_COLOR: Record<FocusBannerData["headlineMetric"]["tone"], string> = {
@@ -357,6 +409,13 @@ export interface SessionReportViewProps {
    *  + drill CTA) instead of the generic panel stack. Populated by the
    *  adapter for sessions where focus is "hr-round". */
   hrReportData?: HrReportData;
+  /** When true, shows a post-session upgrade nudge after the hero score.
+   *  The moment the score lands is the highest-attention, highest-curiosity
+   *  point in the product — better to pitch here than at the session-limit
+   *  gate when the user is already frustrated. */
+  isFreeUser?: boolean;
+  /** Called when the user clicks the upgrade CTA on the post-session nudge. */
+  onUpgrade?: () => void;
 }
 
 export default function SessionReportView({
@@ -378,6 +437,8 @@ export default function SessionReportView({
   progressTrends,
   behavioralFullReportData,
   hrReportData,
+  isFreeUser,
+  onUpgrade,
 }: SessionReportViewProps) {
   // Behavioral v2 dispatch — env-gated, opt-in. Renders the new
   // diagnostic-first report and skips the existing panel stack.
@@ -458,6 +519,9 @@ export default function SessionReportView({
           <JumpNav />
           {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
           <HeroSection data={data} />
+          {isFreeUser && (
+            <UpgradeNudgeStrip score={data.overallScore} onUpgrade={onUpgrade} />
+          )}
           {credibility && credibility.hasIssues && (
             <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
           )}

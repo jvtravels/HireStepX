@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
@@ -63,6 +63,7 @@ const navItems = [
 export default function DashboardLayout({ children }: { children?: React.ReactNode }) {
   const nav = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { logout: authLogout, user, updateUser: authUpdateUser } = useAuth();
   // Use focused hooks instead of aggregate useDashboard() — prevents this
   // layout from re-rendering when unrelated state (e.g. recentSessions poll)
@@ -85,6 +86,16 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     syncError, setSyncError,
     toast, refreshCreditBalance,
   } = useDashboardUI();
+
+  // Auto-open upgrade modal when arriving from ?upgrade=1 (e.g. the
+  // post-session report upgrade nudge navigates here). Strip the param
+  // from the URL immediately so a page refresh doesn't re-open it.
+  useEffect(() => {
+    if (searchParams?.get("upgrade") === "1") {
+      setShowUpgradeModal(true);
+      nav.replace(pathname ?? "/dashboard");
+    }
+  }, [searchParams, pathname, setShowUpgradeModal, nav]);
 
   // Refetch sessions on mount (e.g. returning from interview)
   useEffect(() => { refreshSessions(); }, [refreshSessions]);

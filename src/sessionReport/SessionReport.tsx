@@ -354,6 +354,15 @@ export const SessionReport = memo(function SessionReport({
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isFreeUser = (user?.subscriptionTier ?? "free") === "free";
+  /* Upgrade CTA on the report page navigates back to dashboard and opens
+     the upgrade modal. The ?upgrade=1 param is picked up by DashboardLayout
+     to auto-open UpgradeModal on mount — keeps the user in the product
+     rather than shipping them to a cold pricing page. */
+  const onUpgrade = useCallback(() => {
+    track("report_upgrade_nudge_clicked", { sessionId: session.id });
+    router.push("/dashboard?upgrade=1");
+  }, [router, session.id]);
   const [report, setReport] = useState<SessionReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -1067,6 +1076,8 @@ export const SessionReport = memo(function SessionReport({
       progressTrends={progressTrends}
       behavioralFullReportData={behavioralFullReportData}
       hrReportData={viewData?.hrReport}
+      isFreeUser={isFreeUser}
+      onUpgrade={onUpgrade}
     />
   );
 });

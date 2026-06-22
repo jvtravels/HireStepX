@@ -139,9 +139,9 @@ const structuredData = [
       "AI-powered mock interview platform with voice interviews, STAR method scoring, speech analytics, and company-specific question banks for TCS, Infosys, Google, Amazon & more.",
     url: "https://hirestepx.com",
     offers: [
-      { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "3 practice sessions" },
+      { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "2 practice sessions" },
       { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
-      { "@type": "Offer", price: "49", priceCurrency: "INR", name: "Weekly", description: "10 sessions over 7 days" },
+      { "@type": "Offer", price: "49", priceCurrency: "INR", name: "Weekly", description: "7 sessions over 7 days" },
       { "@type": "Offer", price: "149", priceCurrency: "INR", name: "Monthly", description: "40 sessions over 30 days" },
     ],
     applicationSubCategory: "Interview Preparation",
@@ -153,7 +153,7 @@ const structuredData = [
       {
         "@type": "Question",
         name: "Is HireStepX free to use?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. Start with 3 full AI mock interviews, complete with real-time feedback, scores, and detailed performance reports. No credit card required." },
+        acceptedAnswer: { "@type": "Answer", text: "Yes. Start with 2 full AI mock interviews, complete with real-time feedback, scores, and detailed performance reports. No credit card required." },
       },
       {
         "@type": "Question",
@@ -188,7 +188,7 @@ const structuredData = [
       {
         "@type": "Question",
         name: "How much does it cost compared to a career coach?",
-        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b99 per session, \u20b949/week for 10 sessions, or \u20b9149/month for 40 sessions with full AI coaching and analytics, available 24/7." },
+        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b99 per session or \u20b949/week for 7 sessions with full AI coaching and analytics, available 24/7." },
       },
     ],
   },
