@@ -778,7 +778,7 @@ function Shell({ active, onHelp, embedded, theme = "editorial", children }: { ac
         aria-label="Primary"
         style={{ borderRight: `1px solid ${tok.line}`, padding: "28px 20px", background: tok.creamSoft, display: "flex", flexDirection: "column" }}>
         <div className="hsx-rail-brand" style={{ display: "flex", alignItems: "center", marginBottom: 36 }}>
-          <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 22, width: "auto" }} />
+          <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 22, width: "auto" }} />
         </div>
         <nav className="hsx-rail-nav" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {tabs.map(t => {

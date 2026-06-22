@@ -371,7 +371,7 @@ export function NavV2() {
             aria-label="HireStepX home"
             style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
           >
-            <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 26, width: "auto" }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
           </a>
 
           <div
@@ -3240,7 +3240,7 @@ export function PricingV2() {
         >
           {[
             ["✓", "Cancel anytime · no lock-in"],
-            ["✓", "7-day refund on Monthly · 24h on Weekly"],
+            ["✓", "24h refund on Weekly sessions"],
           ].map(([k, v]) => (
             <span key={v} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <span
@@ -3498,7 +3498,7 @@ export function FAQV2() {
     {
       cat: "Pricing",
       q: "Do plans auto-renew?",
-      a: "No. Weekly and Monthly are one-time top-ups. They expire on day 7 or 30. You buy again when you want more. No surprise charges.",
+      a: "No. Weekly is a one-time top-up. It expires on day 7. You buy again when you want more. No surprise charges.",
     },
     {
       cat: "Pricing",
@@ -3508,7 +3508,7 @@ export function FAQV2() {
     {
       cat: "Pricing",
       q: "Do you have a student discount?",
-      a: "Verified .ac.in / .edu.in email = 30% off Weekly and Monthly. Apply once, lasts your degree.",
+      a: "Verified .ac.in / .edu.in email = 30% off Weekly. Apply once, lasts your degree.",
     },
     {
       cat: "Pricing",
@@ -3864,7 +3864,7 @@ export function FinalCTAFooterV2() {
           }}
         >
           <div>
-            <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 26, width: "auto", display: "block", marginBottom: 0 }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto", display: "block", marginBottom: 0 }} />
             <p
               style={{
                 fontFamily: fonts.sans,
@@ -3953,9 +3953,9 @@ export function FinalCTAFooterV2() {
 function StructuredData() {
   const faqs = [
     ["Is the free tier actually free?", "Yes. 3 full mock sessions, full scoring, full report. No card, no auto-charge after."],
-    ["Do plans auto-renew?", "No. Weekly and Monthly are one-time top-ups. They expire on day 7 or 30. You buy again when you want more."],
+    ["Do plans auto-renew?", "No. Weekly is a one-time top-up. It expires on day 7. You buy again when you want more. No surprise charges."],
     ["What if I just want to try it?", "Sign up free — 3 full sessions, no card needed."],
-    ["Do you have a student discount?", "Verified .ac.in / .edu.in email = 30% off Weekly and Monthly."],
+    ["Do you have a student discount?", "Verified .ac.in / .edu.in email = 30% off Weekly. Apply once, lasts your degree."],
     ["Which companies and roles do you cover?", "200+ Indian roles in our question bank (IT services, unicorns, PSUs, MNCs) across behavioural, campus placement, salary negotiation and HR rounds at launch."],
     ["How accurate is the AI score?", "Rubrics built from publicly aggregated interview reports, cross-checked against two sources per question. Every score shows the rubric (STAR breakdown), not just a number."],
     ["Where does my voice data go?", "Encrypted in transit and at rest. Auto-deleted after 90 days. Designed against DPDP Act 2023 from day one."],

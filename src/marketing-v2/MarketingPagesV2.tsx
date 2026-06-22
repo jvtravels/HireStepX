@@ -1745,7 +1745,7 @@ export function TermsV2() {
       <p>One account per person. Don't share login credentials. Don't scrape, reverse-engineer, or attempt to extract our scoring rubrics, question banks, or model outputs at scale. Don't use the platform to impersonate real candidates or train third-party AI systems.</p>
 
       <h2>Payment</h2>
-      <p>Billed in INR via Razorpay. Weekly and Monthly plans are one-time top-ups; nothing auto-renews. Per-session purchases are charged immediately and non-refundable once the session is started.</p>
+      <p>Billed in INR via Razorpay. Weekly plan is a one-time top-up; nothing auto-renews. Per-session purchases are charged immediately and non-refundable once the session is started.</p>
 
       <h2>Refunds</h2>
       <p>See our <a href="/refund">refund policy</a>. Short version: unused sessions within 7 days of purchase are refundable.</p>
@@ -1776,9 +1776,6 @@ export function RefundPolicyV2() {
 
       <h2>Weekly (₹49)</h2>
       <p>Full refund within 24 hours of purchase if zero sessions have been used. After that, pro-rated refund based on unused sessions, up to day 3. After day 3, no refund: the value is concentrated prep, not stockpiled credits.</p>
-
-      <h2>Monthly (₹149)</h2>
-      <p>Full refund within 7 days of purchase if fewer than 5 sessions have been used. After 7 days, pro-rated refund for unused sessions up to day 14. After day 14, no refund.</p>
 
       <h2>Student discount</h2>
       <p>Refunds on discounted plans are calculated against the discounted price, not the list price.</p>

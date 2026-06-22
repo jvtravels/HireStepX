@@ -142,7 +142,6 @@ const structuredData = [
       { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "2 practice sessions" },
       { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
       { "@type": "Offer", price: "49", priceCurrency: "INR", name: "Weekly", description: "7 sessions over 7 days" },
-      { "@type": "Offer", price: "149", priceCurrency: "INR", name: "Monthly", description: "40 sessions over 30 days" },
     ],
     applicationSubCategory: "Interview Preparation",
   },

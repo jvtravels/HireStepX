@@ -233,7 +233,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           zIndex: 18,
         }}>
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
-            <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 24, width: "auto" }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 24, width: "auto" }} />
           </Link>
           <button
             onClick={() => setSidebarOpen(true)}
@@ -309,13 +309,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               onClick={() => setSidebarOpen(false)}
               style={{ textDecoration: "none", display: "flex", alignItems: "center" }}
             >
-              <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 24, width: "auto" }} />
+              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 24, width: "auto" }} />
             </Link>
           </div>
         ) : (
           <div style={{ paddingBottom: 20, flexShrink: 0 }}>
             <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", paddingLeft: 14 }}>
-              <Image src="/wordmark.png" alt="HireStepX" width={3868} height={1080} style={{ height: 26, width: "auto" }} />
+              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
             </Link>
           </div>
         )}
@@ -445,7 +445,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       height: "100%",
                       width: `${pct}%`,
                       borderRadius: 2,
-                      background: planExhausted ? "rgba(180,83,9,0.55)" : barFill,
+                      background: barFill,
                       transition: "width 0.4s ease",
                     }} />
                   </div>
