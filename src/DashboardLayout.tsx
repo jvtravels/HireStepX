@@ -674,28 +674,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </button>
             </div>
 
-            {/* Quick links */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-              {/* Getting Started */}
-              <Link href="/how-it-works" style={{ textDecoration: "none" }} onClick={() => setHelpOpen(false)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: c.creamSoft, cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = T.copper100; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = c.creamSoft; e.currentTarget.style.borderColor = c.border; }}>
-                  <span style={{ color: c.gilt, flexShrink: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-                  Getting Started
-                </div>
-              </Link>
-              {/* FAQs */}
-              <Link href="/#faq" style={{ textDecoration: "none" }} onClick={() => setHelpOpen(false)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: c.creamSoft, cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = T.copper100; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = c.creamSoft; e.currentTarget.style.borderColor = c.border; }}>
-                  <span style={{ color: c.gilt, flexShrink: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-                  FAQs
-                </div>
-              </Link>
-            </div>
-
             {/* Contact section */}
             <div style={{ marginBottom: 16, padding: "12px", borderRadius: 8, background: c.creamSoft }}>
               <p style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.chalk, marginBottom: 8 }}>Need help?</p>
