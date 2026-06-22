@@ -395,108 +395,134 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               </span>
             )}
           </div>
-          {/* ── Session usage block — always shows plan consumption + credit balance ── */}
+          {/* ── Session usage block ── */}
           {!tierKnown ? (
-            <div aria-hidden="true" style={{ height: 52, marginBottom: 12 }} />
+            <div aria-hidden="true" style={{ height: 56, marginBottom: 12 }} />
           ) : (() => {
-            /* Derived quantities */
-            const planUsed    = isPro ? sessionsThisMonth : isStarter ? sessionsThisWeek : sessionsUsed;
-            const planTotal   = isPro ? PRO_MONTHLY_LIMIT : isStarter ? STARTER_WEEKLY_LIMIT : FREE_SESSION_LIMIT;
-            const planLeft    = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
+            const planUsed      = isPro ? sessionsThisMonth : isStarter ? sessionsThisWeek : sessionsUsed;
+            const planTotal     = isPro ? PRO_MONTHLY_LIMIT : isStarter ? STARTER_WEEKLY_LIMIT : FREE_SESSION_LIMIT;
+            const planLeft      = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
             const planExhausted = isPro ? proExhausted : isStarter ? starterExhausted : freeExhausted;
-            const periodLabel = isPro ? "this month" : isStarter ? "this week" : "total";
-            const pct = Math.min(100, (planUsed / planTotal) * 100);
+            const periodLabel   = isPro ? "this month" : isStarter ? "this week" : "total";
+            const pct  = Math.min(100, (planUsed / planTotal) * 100);
             const isLow = !planExhausted && (
               (isPro && planLeft <= 5) || (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
-            /* Bar fill: ember when running low, sage for healthy Pro, gilt otherwise */
             const barFill = planExhausted
-              ? c.gilt
+              ? (creditBalance > 0 ? T.copperMid : c.border)
               : isPro ? (isLow ? c.ember : c.sage)
               : isLow ? c.ember : c.gilt;
 
             return (
               <>
-                {/* Row: plan usage label + remaining-count chip */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                {/* ── Row: usage label + remaining chip (hidden when exhausted+credits) ── */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                   <p
                     aria-live="polite"
                     style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
-                      color: isLow ? c.ember : c.stone, fontWeight: isLow ? 600 : 400 }}
+                      color: planExhausted ? c.stone : isLow ? c.ember : c.stone,
+                      fontWeight: isLow ? 600 : 400,
+                      opacity: planExhausted ? 0.55 : 1 }}
                   >
-                    {planExhausted
-                      ? `${planTotal}/${planTotal} used ${periodLabel}`
-                      : `${planUsed}/${planTotal} used ${periodLabel}`}
+                    {planUsed}/{planTotal} used {periodLabel}
                   </p>
-                  {/* Prominent remaining-count chip */}
-                  <span
-                    aria-label={planExhausted
-                      ? (creditBalance > 0 ? `${creditBalance} purchased credits available` : "Plan sessions exhausted")
-                      : `${planLeft} session${planLeft !== 1 ? "s" : ""} remaining`}
-                    style={{ display: "flex", alignItems: "baseline", gap: 2 }}
-                  >
-                    <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, lineHeight: 1,
-                      color: planExhausted
-                        ? (creditBalance > 0 ? c.gilt : c.stone)
-                        : isLow ? c.ember : (isPro ? c.sage : c.gilt),
-                      opacity: planExhausted && creditBalance === 0 ? 0.38 : 1 }}
-                    >
-                      {planExhausted ? (creditBalance > 0 ? creditBalance : 0) : planLeft}
+                  {/* Right chip: remaining count — hidden when plan exhausted + credits exist
+                      (the credit card below is the hero number in that state) */}
+                  {!planExhausted && (
+                    <span style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                      <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, lineHeight: 1,
+                        color: isLow ? c.ember : (isPro ? c.sage : c.gilt) }}>
+                        {planLeft}
+                      </span>
+                      <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 500, color: c.stone,
+                        letterSpacing: "0.05em", textTransform: "uppercase" as const, opacity: 0.65 }}>
+                        left
+                      </span>
                     </span>
-                    <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 500, color: c.stone,
-                      letterSpacing: "0.05em", textTransform: "uppercase" as const,
-                      opacity: planExhausted && creditBalance === 0 ? 0.38 : 0.7 }}
-                    >
-                      {planExhausted && creditBalance > 0 ? "credits" : "left"}
+                  )}
+                  {planExhausted && creditBalance === 0 && (
+                    <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, opacity: 0.38 }}>
+                      0 left
                     </span>
-                  </span>
+                  )}
                 </div>
 
-                {/* Progress bar tracks plan quota */}
+                {/* ── Progress bar ── */}
                 <div
                   role="progressbar"
-                  aria-label={planExhausted && creditBalance === 0
-                    ? `All ${planTotal} sessions used ${periodLabel}`
-                    : planExhausted && creditBalance > 0
-                    ? `All ${planTotal} plan sessions used · ${creditBalance} purchased credits remaining`
+                  aria-label={planExhausted
+                    ? (creditBalance > 0
+                      ? `All ${planTotal} plan sessions used · ${creditBalance} purchased credits available`
+                      : `All ${planTotal} sessions used ${periodLabel}`)
                     : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
                   aria-valuenow={Math.round(pct)}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  style={{ height: 4, borderRadius: 2, background: c.border, marginBottom: 6 }}
+                  style={{ height: 4, borderRadius: 2,
+                    background: planExhausted && creditBalance > 0 ? T.copperMid : c.border,
+                    marginBottom: planExhausted && creditBalance > 0 ? 8 : creditBalance > 0 ? 6 : 12 }}
                 >
                   <div style={{ height: "100%", borderRadius: 2, background: barFill,
-                    width: `${pct}%`, transition: "width 0.4s ease" }} />
+                    width: `${pct}%`, transition: "width 0.4s ease",
+                    opacity: planExhausted && creditBalance === 0 ? 0.3 : 1 }} />
                 </div>
 
-                {/* Credit sub-row: visible whenever the user has purchased credits */}
-                {creditBalance > 0 ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 12 }}>
-                    <svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill={c.gilt} stroke="none">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                    </svg>
-                    <span style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt, fontWeight: 600 }}>
-                      {creditBalance} extra credit{creditBalance !== 1 ? "s" : ""} purchased
+                {/* ── CASE A: plan exhausted + credits — hero credit card ── */}
+                {planExhausted && creditBalance > 0 && (
+                  <div
+                    aria-label={`${creditBalance} purchased session credit${creditBalance !== 1 ? "s" : ""} available`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      background: T.copperTint,
+                      border: `1px solid ${T.copperBorder}`,
+                      borderRadius: 8, padding: "8px 10px", marginBottom: 12,
+                    }}
+                  >
+                    {/* Big credit count */}
+                    <span style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 800, lineHeight: 1,
+                      color: c.gilt, letterSpacing: "-0.02em", flexShrink: 0 }}>
+                      {creditBalance}
                     </span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 2, marginLeft: 2 }}>
-                      {Array.from({ length: Math.min(creditBalance, 8) }).map((_, i) => (
-                        <div key={i} style={{ width: 5, height: 5, borderRadius: "50%",
-                          background: c.gilt, flexShrink: 0 }} />
-                      ))}
-                      {creditBalance > 8 && (
-                        <span style={{ fontFamily: font.ui, fontSize: 9, color: c.gilt,
-                          fontWeight: 600, marginLeft: 1 }}>+{creditBalance - 8}</span>
-                      )}
+                    {/* Labels */}
+                    <div>
+                      <p style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt,
+                        margin: 0, lineHeight: 1.2 }}>
+                        session{creditBalance !== 1 ? "s" : ""} available
+                      </p>
+                      <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
+                        margin: 0, lineHeight: 1.3, marginTop: 1 }}>
+                        Purchased credits · plan resets next {isPro ? "month" : isStarter ? "week" : "upgrade"}
+                      </p>
                     </div>
                   </div>
-                ) : (
+                )}
+
+                {/* ── CASE B: plan healthy + credits — small pill tag ── */}
+                {!planExhausted && creditBalance > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5,
+                    marginBottom: 12, marginTop: -2 }}>
+                    <svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24"
+                      fill={c.gilt} stroke="none">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    <span style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt, fontWeight: 600,
+                      letterSpacing: "0.01em" }}>
+                      +{creditBalance} extra credit{creditBalance !== 1 ? "s" : ""} loaded
+                    </span>
+                  </div>
+                )}
+
+                {/* ── CASE C: no credits — just spacing ── */}
+                {creditBalance === 0 && planExhausted && (
                   <div style={{ marginBottom: 12 }} />
                 )}
 
                 {/* Starter renewal footnote */}
                 {user?.subscriptionEnd && isStarter && (
-                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, marginBottom: 10, marginTop: -8 }}>
-                    Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · sessions reset Sun
+                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
+                    marginBottom: 10, marginTop: -8 }}>
+                    Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN",
+                      { day: "numeric", month: "short" })} · sessions reset Sun
                   </p>
                 )}
               </>
