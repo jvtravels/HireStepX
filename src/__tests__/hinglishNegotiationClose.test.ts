@@ -198,3 +198,67 @@ describe("full Hinglish transcript reaches a real close", () => {
     expect(s.phase).toBe("accepted");
   });
 });
+
+/* PRI-58 (2026-06-22, offline hostile accept/close sweep). The adversarial
+ * battery surfaced more unambiguous same-turn close-consent idioms the bank
+ * missed — each a NO-CLOSE on a genuine acceptance (bot kept negotiating over
+ * an accepted offer). They split two ways:
+ *
+ *   - STRICT close-consent (terminal, ungated by min-turns): "where do I sign",
+ *     "count me in", "you've got a deal", "let's make it official", bare
+ *     "agreed", and start-the-paperwork instructions. Asking to sign / opting
+ *     in / declaring a deal struck IS consent — structurally identical to the
+ *     existing "send the offer letter" strict forms.
+ *   - MEDIUM commitment idioms (offer-on-table phase-gated): "I'm sold" and the
+ *     Hindi "aage badho / aage badhte hai" (let's move ahead).
+ *
+ * The load-bearing guard is the shared CONDITIONAL_DEFERRAL veto: a close idiom
+ * gated on a FUTURE settlement ("where do I sign once we sort the base", "count
+ * me in if you can do 40") must stay rejected by BOTH gates, so adding the new
+ * accept idioms can never false-close a deferred condition. */
+describe("PRI-58: hostile accept/close idioms", () => {
+  const STRICT_CLOSERS = [
+    "where do I sign",
+    "where do I sign up",
+    "count me in",
+    "you've got a deal",
+    "we've got a deal",
+    "let's make it official",
+    "let's get the paperwork going",
+    "yes, let's get started with the paperwork",
+    "agreed",
+    "great, agreed.",
+  ];
+  for (const text of STRICT_CLOSERS) {
+    it(`strict-closes: '${text}'`, () => {
+      expect(detectExplicitAcceptance(text).accepted).toBe(true);
+      expect(classifyAcceptance(text, { offerOnTable: true }).accepted).toBe(true);
+    });
+  }
+
+  const MEDIUM_CLOSERS = ["I'm sold", "done bhai, aage badho", "pakka, chalo aage badhte hai"];
+  for (const text of MEDIUM_CLOSERS) {
+    it(`medium-accepts over a standing offer: '${text}'`, () => {
+      expect(classifyAcceptance(text, { offerOnTable: true }).accepted).toBe(true);
+    });
+    it(`phase-gates '${text}' before any offer exists`, () => {
+      expect(classifyAcceptance(text, { offerOnTable: false }).accepted).toBe(false);
+    });
+  }
+
+  /* Deferral guard — the close idiom is real but gated on a future event, so it
+   * is NOT a same-turn commitment. Both gates must reject. Zero false-closes. */
+  const DEFERRED_REJECTS = [
+    "where do I sign once we sort the base",
+    "count me in if you can do 40",
+    "make it official after you bump the base",
+    "you've got a deal-breaker here",
+    "I'm sold on the role but the comp is light",
+  ];
+  for (const text of DEFERRED_REJECTS) {
+    it(`does NOT close (deferred/hedged): '${text}'`, () => {
+      expect(detectExplicitAcceptance(text).accepted).toBe(false);
+      expect(classifyAcceptance(text, { offerOnTable: true }).accepted).toBe(false);
+    });
+  }
+});

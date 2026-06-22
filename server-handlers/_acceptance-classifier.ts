@@ -195,6 +195,31 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    not a natural Hindi accept form and is covered by the walk-away veto. */
   /\bbhej\s+d(?:o|ijiye|ijye|ena)\s+(?:mujhe\s+|the\s+)?(?:offer\s+)?(?:letter|paperwork|paper\s*work|contract|docs?|kaagaz)\b/i,
   /\b(?:offer\s+)?(?:letter|paperwork|paper\s*work|contract|docs?|kaagaz)\s+bhej\s+d(?:o|ijiye|ijye|ena)\b/i,
+  /* PRI-58 (2026-06-22, offline hostile sweep — next accept/close batch) — more
+   * unambiguous same-turn close-consent idioms the bank missed, each a NO-CLOSE
+   * on a real acceptance. All are deferral-guarded: CONDITIONAL_DEFERRAL_PATTERN
+   * runs first in BOTH the medium gate (classifyAcceptance) and the strict gate
+   * (HEDGE_VETO_PATTERNS), so "where do I sign once we sort the base" / "count me
+   * in if you can do 40" stay rejected. */
+  /* 6. "where do I sign (up)" — asking to sign IS consent to sign. */
+  /\bwhere\s+do\s+i\s+sign(?:\s+up)?\b/i,
+  /* 7. "count me in" — unambiguous opt-in commit. */
+  /\bcount\s+me\s+in\b/i,
+  /* 8. "you've / we've got a deal" — the deal-struck idiom. Excludes the
+   *    rejection sense "deal[- ]breaker" (the bare-"deal" arm #1 owns the
+   *    walk-away). */
+  /\b(?:you'?ve|you|we'?ve|we)\s+(?:got|have)\s+(?:yourself\s+|ourselves\s+)?(?:a\s+)?deal\b(?!\s*[-\s]?breaker)/i,
+  /* 9. "(let's) make it official" — finalize-the-deal commit. */
+  /\bmake\s+it\s+official\b/i,
+  /* 10. Start-the-paperwork instruction — "let's get the paperwork going",
+   *     "get started with the paperwork/formalities". A finalize instruction
+   *     over a standing offer, like the "send the offer letter" arm above. */
+  /\bget\s+(?:the\s+)?(?:paperwork|paper\s*work|formalities|documentation)\s+(?:going|started|moving|rolling)\b/i,
+  /\bget\s+started\s+(?:with|on)\s+(?:the\s+)?(?:paperwork|paper\s*work|formalities|documentation|offer\s+letter)\b/i,
+  /* 11. Bare "agreed" closing the clause — "agreed.", "great, agreed". Clause-
+   *     anchored AND clause-terminal so the negotiation phrase "agreed terms"
+   *     / "we agreed earlier" / "agreed on a higher number" does NOT match. */
+  /(?:^|[,.!?]\s*)agreed\s*(?:[.!?,]|$)/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -229,6 +254,11 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
   /^\s*done\s*[.!?]?\s*$/i,
   /^\s*let'?s\s+go\s*[.!?]?\s*$/i,
   /^\s*works\s+for\s+me\s*[.!?]?\s*$/i,
+  /* PRI-58 (2026-06-22) — "I'm sold" as a settle commit. Clause-anchored to the
+   * end so the hedge "I'm sold on the role but the comp is light" (sold + "on …")
+   * does NOT match — only a terminal "I'm sold" / "I'm sold." commits. The bare
+   * "sold" token already lives above; this is the subject-led spoken form. */
+  /\bi.?m\s+sold\b\s*(?:[.!?,]|$)/i,
   /* #127 (2026-06-21, live-staging) — terse accept-WITH-number. An Indian
    * candidate closing a haggle routinely answers a counter with the settle
    * figure welded to a commit token: "fine 22 done", "22 done", "ok 22 deal",
@@ -302,6 +332,10 @@ const HINDI_MIX_PATTERNS: RegExp[] = [
   /\bkar\s+l(?:o|ijiye|ijye|ena)\b/i,
   /\bde\s+d(?:o|ijiye|ijye|ena)\b/i,
   /\bbhej\s+d(?:o|ijiye|ijye|ena)\b/i,
+  /* PRI-58 (2026-06-22) — "aage badho / aage badhte hai" (let's move ahead /
+   * proceed), the Hindi analogue of "let's go ahead". Medium commitment idiom;
+   * the offer-on-table phase gate still applies pre-offer. */
+  /\baage\s+badh(?:o|te|ate|ao|na|enge|aao|iye|na\s+hai|na\s+chahiye)\b/i,
 ];
 
 /** Offer reference — the candidate's text mentions the offer object
@@ -313,6 +347,17 @@ const OFFER_REFERENCE_PATTERN =
 /** Veto: walk-away or rejection. */
 const WALK_AWAY_PATTERN =
   /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta)|nahin\s+(?:chahiye|karna|chalega)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
+
+/** Veto: deferred-condition framing — "once we sort the base", "after you
+ *  confirm the split". A close-consent idiom ("where do I sign", "count me
+ *  in") gated on a future event is NOT a same-turn commitment. Scoped to a
+ *  follow-on settlement/adjust verb so the temporal "once" ("I worked there
+ *  once") and benign "after the call" don't false-veto. Shared by BOTH the
+ *  medium gate (classifyAcceptance, via HARD_CONDITIONAL) and the strict gate
+ *  (detectExplicitAcceptance, via HEDGE_VETO_PATTERNS) so the two stay in
+ *  lockstep — offline hostile sweep (2026-06-22). */
+const CONDITIONAL_DEFERRAL_PATTERN =
+  /\b(?:once|after|when|as\s+soon\s+as)\s+(?:we|you|i|they|it'?s|that'?s|the)\s+(?:can\s+|could\s+|finally\s+)?(?:sort|sorted|confirm|confirmed|finali[sz]e[sd]?|adjust|adjusted|revise[sd]?|fix|fixed|agree[sd]?|settle[sd]?|match|matched|increase[sd]?|bump|send|sent|update[sd]?|sign|signed|do|done)\b/i;
 
 /** Veto: hard conditional ("if/unless/provided"). Info-seeking
  *  conditionals are excepted ("if you could share the breakdown"). */
@@ -486,6 +531,9 @@ export function classifyAcceptance(
   const hasInfoSeeking = INFO_SEEKING_CONDITIONAL_PATTERN.test(a);
   if (hasAnyConditional && !hasInfoSeeking) {
     return { accepted: false, confidence: "none", reasons: ["hard-conditional"] };
+  }
+  if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) {
+    return { accepted: false, confidence: "none", reasons: ["conditional-deferral"] };
   }
   if (NEGOTIATING_BUT_PATTERN.test(a) && !INFO_SEEKING_BUT_PATTERN.test(a)) {
     return { accepted: false, confidence: "none", reasons: ["negotiating-but"] };
@@ -675,6 +723,11 @@ const HEDGE_VETO_PATTERNS: RegExp[] = [
   /\b(?:walk\s+me\s+through|break\s*down|breakdown|the\s+structure|the\s+split|how\s+does\s+(?:it|that)\s+(?:work|break)|what(?:'s|\s+is)\s+the\s+(?:split|structure|breakdown|fixed|variable))\b/i,
   /\bcan\s+you\s+(?:share|tell|show|explain|clarify|elaborate)\b/i,
   /\bcould\s+you\s+(?:share|tell|show|explain|clarify|elaborate)\b/i,
+  /* PRI-58 (2026-06-22) — deferred-condition framing. Shared single source with
+   * the medium gate so a close-consent idiom gated on a future settlement
+   * ("where do I sign once we sort the base", "make it official after you bump
+   * the base") is rejected by BOTH detectors in lockstep, not just one. */
+  CONDITIONAL_DEFERRAL_PATTERN,
 ];
 
 export interface ExplicitAcceptanceResult {
