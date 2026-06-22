@@ -262,3 +262,52 @@ describe("PRI-58: hostile accept/close idioms", () => {
     });
   }
 });
+
+/* PRI-59 (2026-06-22, offline PRECISION sweep). The recall-focused idioms
+ * (PRI-56/57/58) each carry a short substring a hostile NON-accept shares,
+ * risking the worst failure mode — a FALSE-CLOSE: the bot finalises a deal the
+ * candidate is actually rejecting, hedging, or deferring. The adversarial
+ * battery surfaced 12 such hijacks; all are now sealed by shared single-source
+ * vetoes (TAKE_IT_HEDGE / IM_IN_HEDGE / ACCEPT_PROPOSITION / IN_PRINCIPLE +
+ * a broadened CONDITIONAL_DEFERRAL that allows a noun phrase between the
+ * conditional head and the settle verb). The genuine bare commits MUST still
+ * close — these guards lock both directions. */
+describe("PRI-59: FALSE-CLOSE precision — hostile substrings must NOT close", () => {
+  const MUST_NOT_CLOSE = [
+    // "I'll take it" + walk-away / stall continuation
+    "I'll take it elsewhere",
+    "I'll take it to my current employer",
+    "I'll take it under advisement",
+    "I'll take it or leave it",
+    // "I accept <proposition>" — accepting a fact, not the offer
+    "I accept that this is your final number, but it's too low",
+    "I accept your position, however I can't move forward",
+    "I accept the reality that we're far apart",
+    // "I'm in <hedge noun>"
+    "I'm in a tough spot here",
+    "I'm in talks with another company",
+    "I'm in no rush to decide",
+    "I'm in the middle of other processes",
+    // incomplete-commitment markers
+    "I accept in principle, pending the revised base",
+    // close idiom gated on a future settlement (noun phrase between)
+    "where do I sign, assuming you fix the variable",
+    "count me in once the relocation is sorted",
+  ];
+  for (const text of MUST_NOT_CLOSE) {
+    it(`rejects (no false-close): '${text}'`, () => {
+      expect(detectExplicitAcceptance(text).accepted).toBe(false);
+      expect(classifyAcceptance(text, { offerOnTable: true }).accepted).toBe(false);
+    });
+  }
+
+  /* The veto scoping must not regress the bare commits. */
+  const MUST_STILL_CLOSE = ["I'll take it", "I accept", "I'm in", "where do I sign", "count me in"];
+  for (const text of MUST_STILL_CLOSE) {
+    it(`still closes the bare commit: '${text}'`, () => {
+      const strict = detectExplicitAcceptance(text).accepted;
+      const medium = classifyAcceptance(text, { offerOnTable: true }).accepted;
+      expect(strict || medium).toBe(true);
+    });
+  }
+});

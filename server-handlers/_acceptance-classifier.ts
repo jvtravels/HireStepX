@@ -357,7 +357,50 @@ const WALK_AWAY_PATTERN =
  *  (detectExplicitAcceptance, via HEDGE_VETO_PATTERNS) so the two stay in
  *  lockstep — offline hostile sweep (2026-06-22). */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as)\s+(?:we|you|i|they|it'?s|that'?s|the)\s+(?:can\s+|could\s+|finally\s+)?(?:sort|sorted|confirm|confirmed|finali[sz]e[sd]?|adjust|adjusted|revise[sd]?|fix|fixed|agree[sd]?|settle[sd]?|match|matched|increase[sd]?|bump|send|sent|update[sd]?|sign|signed|do|done)\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as)\s+(?:we|you|i|they|it'?s|that'?s|the|my)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revise[sd]?|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?)\b/i;
+
+/* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
+ * recall-focused accept idioms (PRI-56/57/58) each carry a short substring
+ * that hostile NON-accepts share, risking the worst failure mode: closing a
+ * deal the candidate is actually rejecting / hedging / deferring. Each veto
+ * below is shared single-source between the medium gate (classifyAcceptance
+ * step 1) and the strict gate (HEDGE_VETO_PATTERNS) so the two stay in
+ * lockstep. Every veto is scoped to a CONTINUATION that disambiguates the
+ * hedge from the bare commit — "I'll take it" still accepts, "I'll take it
+ * elsewhere" does not. */
+
+/** Veto: "I'll take it ELSEWHERE / under advisement / or leave it / back / to
+ *  my boss" — the take-it verb survives a walk-away or stall continuation. Bare
+ *  "I'll take it" (the genuine accept) carries none of these and is untouched. */
+const TAKE_IT_HEDGE_PATTERN =
+  /\btake\s+(?:it|the\s+offer)\s+(?:elsewhere|somewhere|under\s+advisement|or\s+leave\s+it|back\b|away\b|to\s+(?:my|the|another|a\s)|with\s+me\b|home\b)/i;
+
+/** Veto: "I'm in A / AN / TALKS / DISCUSSIONS / NO RUSH / THE MIDDLE / TWO
+ *  MINDS …" — the "I'm in" commit hijacked by a hedge noun phrase. Plain
+ *  "I'm in" / "I'm in!" / "I'm in for it" carry no hedge tail and still
+ *  accept. Offer-nouns ("I'm in the deal") are deliberately NOT vetoed. */
+const IM_IN_HEDGE_PATTERN =
+  /\bi.?m\s+in\s+(?:a\b|an\b|talks|discussions?|conversations?|negotiations?|no\s+rush|two\s+minds|touch\b|the\s+(?:middle|process|running|dark|weeds|loop)|another|other\s+(?:processes|rounds?))/i;
+
+/** Veto: "I accept THAT … / I accept YOUR position / I accept THE reality" —
+ *  performative "accept" applied to a proposition, stance, or fact rather than
+ *  the OFFER. "I accept" / "I accept the offer" / "I accept your offer" are not
+ *  matched (offer excluded from the noun list) and still accept. */
+const ACCEPT_PROPOSITION_PATTERN =
+  /\bi\s+accept\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern))/i;
+
+/** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
+ *  "I accept in principle" / "yes, pending board approval" are hedges, not a
+ *  terminal close. */
+const IN_PRINCIPLE_PATTERN = /\b(?:in\s+principle|pending\b)/i;
+
+/** All PRI-59 precision vetoes, shared by both gates. */
+const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
+  TAKE_IT_HEDGE_PATTERN,
+  IM_IN_HEDGE_PATTERN,
+  ACCEPT_PROPOSITION_PATTERN,
+  IN_PRINCIPLE_PATTERN,
+];
 
 /** Veto: hard conditional ("if/unless/provided"). Info-seeking
  *  conditionals are excepted ("if you could share the breakdown"). */
@@ -534,6 +577,12 @@ export function classifyAcceptance(
   }
   if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) {
     return { accepted: false, confidence: "none", reasons: ["conditional-deferral"] };
+  }
+  /* PRI-59 precision vetoes — a hostile NON-accept sharing a substring with a
+     real accept idiom ("I'll take it elsewhere", "I'm in talks", "I accept
+     that this is your final number", "I accept in principle"). */
+  if (anyMatch(a, FALSE_CLOSE_VETO_PATTERNS)) {
+    return { accepted: false, confidence: "none", reasons: ["false-close-veto"] };
   }
   if (NEGOTIATING_BUT_PATTERN.test(a) && !INFO_SEEKING_BUT_PATTERN.test(a)) {
     return { accepted: false, confidence: "none", reasons: ["negotiating-but"] };
@@ -728,6 +777,11 @@ const HEDGE_VETO_PATTERNS: RegExp[] = [
    * ("where do I sign once we sort the base", "make it official after you bump
    * the base") is rejected by BOTH detectors in lockstep, not just one. */
   CONDITIONAL_DEFERRAL_PATTERN,
+  /* PRI-59 (2026-06-22) — FALSE-CLOSE precision vetoes, shared single source
+   * with the medium gate (classifyAcceptance step 1). A strict close idiom
+   * hijacked by a hedge/deferral substring ("where do I sign assuming you fix
+   * the variable", "I accept in principle") must be rejected by BOTH gates. */
+  ...FALSE_CLOSE_VETO_PATTERNS,
 ];
 
 export interface ExplicitAcceptanceResult {
