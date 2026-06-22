@@ -833,27 +833,6 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
     } finally { setCancelLoading(false); }
   }
 
-  async function handleFullJsonExport() {
-    setExporting(true);
-    try {
-      const headers = await getAuthHeaders();
-      const res = await fetch("/api/export-user-data", { method: "GET", headers });
-      if (!res.ok) { showToast("Export failed. Try again."); return; }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `hirestepx-export-${new Date().toISOString().slice(0,10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast("Full data export downloaded.");
-    } catch (err) {
-      console.error("[settings] GDPR export failed:", err);
-      showToast("Export failed. Try again.");
-    } finally { setExporting(false); }
-  }
 
   async function handleConfirmDelete() {
     setDeleteLoading(true); setDeleteMsg("");
@@ -992,7 +971,7 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       <div style={{ ...planCardOuter }}>
         <div style={{ marginBottom: 16 }}>
           <div style={subHeaderTitle}>Data</div>
-          <div style={subHeaderHint}>Export sessions, take a full copy, or sign out on this device.</div>
+          <div style={subHeaderHint}>Export your session history or sign out on this device.</div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
@@ -1004,16 +983,6 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
             style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
             {exporting ? "Exporting…" : "Export CSV"}
-          </button>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={keyValueLabel}>Full data export</div>
-            <div style={keyValueValue}>Portable JSON of your account, sessions, payments, and preferences. Take it anywhere.</div>
-          </div>
-          <button type="button" disabled={exporting} onClick={handleFullJsonExport} style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
-            {exporting ? "Exporting…" : "Download JSON"}
           </button>
         </div>
 
