@@ -697,16 +697,17 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             {/* Feedback section */}
             <div>
               {/* Type pills */}
-              <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" as const }}>
-                {(["bug", "feature", "billing", "other"] as const).map((t) => {
-                  const active = helpType === t;
-                  const activeBg   = t === "bug" ? T.error100   : t === "feature" ? T.indigo100  : T.copper100;
-                  const activeColor= t === "bug" ? T.error      : t === "feature" ? T.indigo     : T.copper;
-                  const activeBdr  = t === "bug" ? `1px solid rgba(185,28,28,0.3)` : t === "feature" ? `1px solid ${T.indigoRing}` : `1px solid ${T.copperBorder}`;
+              <div style={{ display: "flex", gap: 6, marginBottom: 10, marginTop: 12, flexWrap: "wrap" as const }}>
+                {(["Bug", "Feature", "Billing", "Other"] as const).map((t) => {
+                  const tKey = t.toLowerCase() as "bug" | "feature" | "billing" | "other";
+                  const active = helpType === tKey;
+                  const activeBg   = tKey === "bug" ? T.error100   : tKey === "feature" ? T.indigo100  : T.copper100;
+                  const activeColor= tKey === "bug" ? T.error      : tKey === "feature" ? T.indigo     : T.copper;
+                  const activeBdr  = tKey === "bug" ? `1px solid rgba(185,28,28,0.3)` : tKey === "feature" ? `1px solid ${T.indigoRing}` : `1px solid ${T.copperBorder}`;
                   return (
                     <button
                       key={t}
-                      onClick={() => setHelpType(t)}
+                      onClick={() => setHelpType(tKey)}
                       style={{
                         padding: "4px 11px", borderRadius: 20, cursor: "pointer",
                         fontFamily: font.ui, fontSize: 11, fontWeight: 600,
@@ -769,11 +770,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   }}
                   style={{
                     marginTop: 10, width: "100%", padding: "9px 0", borderRadius: 8,
-                    border: "none",
                     cursor: helpSending || !helpFeedback.trim() ? "default" : "pointer",
                     background: helpSending || !helpFeedback.trim()
-                      ? T.creamSoft
+                      ? "transparent"
                       : `linear-gradient(135deg, ${T.copper}, ${T.copperDark})`,
+                    border: helpSending || !helpFeedback.trim()
+                      ? `1px solid ${c.border}`
+                      : "none",
                     color: helpSending || !helpFeedback.trim() ? c.stone : T.white,
                     fontFamily: font.ui, fontSize: 13, fontWeight: 600,
                     transition: "opacity 0.15s",
