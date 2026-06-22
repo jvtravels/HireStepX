@@ -1882,7 +1882,30 @@ export default function AdminDashboard() {
     if (!supportMessages) return <EmptyState title="No support messages available" />;
 
     const statusColors: Record<string, string> = {
-      new: c.gilt, seen: c.sage, resolved: c.stone,
+      new: c.gilt, seen: c.stone, resolved: c.sage,
+    };
+    const statusBg: Record<string, string> = {
+      new: "rgba(180,83,9,0.12)", seen: "rgba(100,100,100,0.12)", resolved: "rgba(21,128,61,0.12)",
+    };
+
+    const updateStatus = async (id: string, status: "seen" | "resolved") => {
+      const token = getToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["x-admin-token"] = token;
+      try {
+        const res = await fetch("/api/admin-data", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ action: "update-support-status", id, status }),
+        });
+        if (res.ok) {
+          const data = await res.json() as { _token?: string };
+          if (data._token) setToken(data._token);
+          // Re-fetch support messages to reflect the new status
+          const d = await fetchSection("support-messages", undefined, true) as SupportMessagesData | null;
+          if (d) setSupportMessages(d);
+        }
+      } catch { /* best-effort */ }
     };
 
     return (
@@ -1911,19 +1934,63 @@ export default function AdminDashboard() {
                 <tr>
                   <th style={thStyle}>Date</th>
                   <th style={thStyle}>Email</th>
+                  <th style={thStyle}>Status</th>
                   <th style={thStyle}>Message</th>
                   <th style={thStyle}>Page</th>
+                  <th style={thStyle}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {supportMessages.recent.map((m) => (
-                  <tr key={m.id}>
-                    <td style={{ ...tdStyle, fontSize: 12, whiteSpace: "nowrap" as const }}>{formatDateTime(m.created_at)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{m.email || "—"}</td>
-                    <td style={{ ...tdStyle, maxWidth: 460, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const }}>{m.message || "—"}</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{m.page || "—"}</td>
-                  </tr>
-                ))}
+                {supportMessages.recent.map((m) => {
+                  const st = m.status || "new";
+                  return (
+                    <tr key={m.id}>
+                      <td style={{ ...tdStyle, fontSize: 12, whiteSpace: "nowrap" as const }}>{formatDateTime(m.created_at)}</td>
+                      <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{m.email || "—"}</td>
+                      <td style={tdStyle}>
+                        <span style={{
+                          display: "inline-block",
+                          padding: "2px 8px", borderRadius: 10,
+                          fontSize: 11, fontWeight: 600, fontFamily: font.ui,
+                          background: statusBg[st] || "rgba(100,100,100,0.12)",
+                          color: statusColors[st] || c.stone,
+                        }}>
+                          {st}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, maxWidth: 460, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const }}>{m.message || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: 12 }}>{m.page || "—"}</td>
+                      <td style={{ ...tdStyle, whiteSpace: "nowrap" as const }}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {st === "new" && (
+                            <button
+                              onClick={() => updateStatus(m.id, "seen")}
+                              style={{
+                                padding: "3px 8px", borderRadius: 6, border: `1px solid ${c.border}`,
+                                background: "#1a1a1a", color: c.stone,
+                                fontSize: 11, fontFamily: font.ui, cursor: "pointer",
+                              }}
+                            >
+                              Mark seen
+                            </button>
+                          )}
+                          {(st === "new" || st === "seen") && (
+                            <button
+                              onClick={() => updateStatus(m.id, "resolved")}
+                              style={{
+                                padding: "3px 8px", borderRadius: 6, border: "1px solid rgba(21,128,61,0.3)",
+                                background: "#1a1a1a", color: c.sage,
+                                fontSize: 11, fontFamily: font.ui, cursor: "pointer",
+                              }}
+                            >
+                              Mark resolved
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

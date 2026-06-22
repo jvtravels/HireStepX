@@ -18,6 +18,26 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+
+/** Fire-and-forget: send email via Resend. Errors are swallowed so they never
+ *  block the API response — the DB insert is the durable record. */
+function sendResendEmail(payload: {
+  from: string;
+  to: string[];
+  subject: string;
+  html: string;
+}): void {
+  if (!RESEND_API_KEY) return;
+  fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  }).catch(() => { /* best-effort — don't surface Resend failures to users */ });
+}
 
 interface SupportBody {
   message?: unknown;
@@ -93,6 +113,40 @@ export default async function handler(req: Request): Promise<Response> {
       const errText = await res.text().catch(() => "");
       console.error(`[support-feedback] supabase error: HTTP ${res.status}: ${errText.slice(0, 200)}`);
       return new Response(JSON.stringify({ ok: false, persisted: false }), { status: 502, headers });
+    }
+
+    const timestamp = new Date().toISOString();
+
+    // Admin notification — fire and forget
+    sendResendEmail({
+      from: "HireStepX Support <noreply@hirestepx.com>",
+      to: ["support@hirestepx.com"],
+      subject: `[Support] New message from ${email || auth.userId}`,
+      html: `
+        <p><strong>User:</strong> ${email || "(no email)"} (ID: ${auth.userId})</p>
+        <p><strong>Page:</strong> ${page || "(unknown)"}</p>
+        <p><strong>Received:</strong> ${timestamp}</p>
+        <hr/>
+        <p><strong>Message:</strong></p>
+        <blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#444">${message.replace(/\n/g, "<br/>")}</blockquote>
+      `,
+    });
+
+    // Auto-reply to user — only when email is available
+    if (email) {
+      sendResendEmail({
+        from: "HireStepX Support <support@hirestepx.com>",
+        to: [email],
+        subject: "We received your message — HireStepX Support",
+        html: `
+          <p>Hi,</p>
+          <p>We've received your message and will get back to you within 24 hours.</p>
+          <p>Here's what you sent:</p>
+          <blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#444">${message.slice(0, 500).replace(/\n/g, "<br/>")}${message.length > 500 ? "…" : ""}</blockquote>
+          <p>Reply to this email or reach us at <a href="mailto:support@hirestepx.com">support@hirestepx.com</a>.</p>
+          <p>— The HireStepX Team</p>
+        `,
+      });
     }
 
     return new Response(JSON.stringify({ ok: true, persisted: true }), { status: 200, headers });

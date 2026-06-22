@@ -879,6 +879,34 @@ async function getFeedback() {
   return { total: totalCount, byRating, recent: feedback.slice(0, LIMIT_RECENT) };
 }
 
+export async function updateSupportStatus(
+  id: string,
+  status: "new" | "seen" | "resolved",
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/support_messages?id=eq.${encodeURIComponent(id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({ status }),
+      },
+    );
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return { ok: false, error: `HTTP ${res.status}: ${body.slice(0, 200)}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 async function getSupportMessages() {
   const [messages, totalCount] = await Promise.all([
     fetchJSON<{
@@ -1131,8 +1159,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: "Not configured" });
   }
 
-  const body = req.body as { section?: string; search?: string; offset?: number; userId?: string; sessionId?: string } | undefined;
-  const section = body?.section || "overview";
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string } | undefined;
+  const section = body?.section || body?.action || "overview";
 
   try {
     const data = await (async () => {
@@ -1154,6 +1182,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "promo-codes": return getPromoCodes();
         case "calendar": return getCalendar();
         case "outcomes": return getOutcomes();
+        case "update-support-status": {
+          if (!body?.id) throw new Error("id required");
+          const s = body.status;
+          if (s !== "new" && s !== "seen" && s !== "resolved") throw new Error("status must be new | seen | resolved");
+          return updateSupportStatus(body.id, s);
+        }
         default: throw new Error(`Unknown section: ${section}`);
       }
     })();
