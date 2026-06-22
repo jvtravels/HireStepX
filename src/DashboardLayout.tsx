@@ -84,7 +84,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     showUpgradeModal, setShowUpgradeModal,
     paymentBanner, setPaymentBanner,
     syncError, setSyncError,
-    toast, refreshCreditBalance,
+    toast, setCreditBalanceDirect,
   } = useDashboardUI();
 
   // Auto-open upgrade modal when arriving from ?upgrade=1 (e.g. the
@@ -575,7 +575,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             setTimeout(() => setPaymentBanner(null), 8000);
             authUpdateUser({ subscriptionTier: tier as "starter" | "pro", subscriptionStart: start, subscriptionEnd: end });
           }}
-          onCreditPurchase={refreshCreditBalance}
+          onCreditPurchase={(newBalance) => {
+              // Directly apply the balance the server just reported — no DB
+              // round-trip, no race condition between modal close and re-fetch.
+              setCreditBalanceDirect(newBalance);
+            }}
         />
       )}
 

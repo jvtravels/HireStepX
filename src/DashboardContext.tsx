@@ -80,8 +80,14 @@ interface UIContextValue {
   setSyncError: (v: string) => void;
   toast: string | null;
   showToast: (msg: string) => void;
-  /** Re-fetches purchased credit balance from DB. Call after a single-session purchase. */
+  /** Re-fetches purchased credit balance from DB. Prefer setCreditBalanceDirect
+   *  when the new balance is already known (e.g. from a verify-payment response)
+   *  to avoid a round-trip and eliminate the race-condition window. */
   refreshCreditBalance: () => void;
+  /** Immediately applies a known balance — use after a successful credit purchase
+   *  where the server returns the new total. Eliminates the async re-fetch race
+   *  where the user closes the modal before the DB read lands. */
+  setCreditBalanceDirect: (newBalance: number) => void;
 }
 
 interface CoreContextValue {
@@ -706,7 +712,8 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
     paymentBanner, setPaymentBanner,
     syncError, setSyncError,
     toast, showToast, refreshCreditBalance,
-  }), [showUpgradeModal, dataLoading, isMobile, paymentBanner, syncError, toast, showToast, refreshCreditBalance]);
+    setCreditBalanceDirect: setCreditBalance,
+  }), [showUpgradeModal, dataLoading, isMobile, paymentBanner, syncError, toast, showToast, refreshCreditBalance, setCreditBalance]);
 
   const coreValue: CoreContextValue = useMemo(() => ({
     persisted, updatePersisted,

@@ -116,7 +116,7 @@ const PLANS_ALL = [
 const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 
 
-export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: () => void }) {
+export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: (newBalance: number) => void }) {
   // Cream palette shadow — matches the marketing /pricing page and settings repaint.
   // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
   const c = {
@@ -180,11 +180,18 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             if (verifyData.plan === "single" || pendingVerification.plan === "single") {
               // Credit added — keep the modal open with a confirmation; the user
               // can immediately start their interview (tier is unchanged).
-              setCreditSuccess(typeof verifyData.credits === "number" ? verifyData.credits : null);
+              // Bug fix: show the number of sessions PURCHASED (quantity),
+              // not the new total balance (credits). If you had 2 and bought 10,
+              // the message should read "10 sessions added", not "12 sessions added".
+              const purchased = typeof verifyData.quantity === "number" ? verifyData.quantity : null;
+              setCreditSuccess(purchased);
               setLoading(null);
-              // Refresh sidebar balance so it immediately shows the new credits
-              // without requiring a page reload.
-              onCreditPurchase?.();
+              // Update sidebar balance immediately from the server's reported new
+              // total — avoids the async re-fetch race where the user closes the
+              // modal before the DB read lands and atSessionLimit stays true.
+              if (typeof verifyData.credits === "number") {
+                onCreditPurchase?.(verifyData.credits);
+              }
               return;
             }
             captureClientEvent("plan_upgraded", {
