@@ -7018,7 +7018,18 @@ export function deriveOfferFixedVariable(
 }
 
 function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
-  const total = state.highestOfferMade;
+  /* PRI-54c (2026-06-22) — the recap must enumerate the number the
+   * candidate actually CLOSED at, not the bare standing offer. When a
+   * candidate accepts by restating an in-band figure ABOVE the standing
+   * offer ("58 works, I'll sign" over a ₹50L offer), the mode:accept
+   * close path (line ~3344) already honors it via nearOfferCloseNumber;
+   * the structured recap used `highestOfferMade` directly and so reported
+   * the lower ₹50L — a recap that misreads which number closed. Both
+   * close artifacts now derive from the SAME source of truth
+   * (clampToCloseFloor∘nearOfferCloseNumber, which only ever raises the
+   * standing offer toward the agreed figure, never lowers it), so the
+   * recap and the decision-log close total can never disagree. */
+  const total = clampToCloseFloor(state, nearOfferCloseNumber(state));
   const { fixedLpa, variableLpa } = deriveOfferFixedVariable(state, total);
   /* PDF#45 B2 (2026-05-26) — recap-hallucination guard. Only emit
    * structural-fitment fields when the underlying state was actually

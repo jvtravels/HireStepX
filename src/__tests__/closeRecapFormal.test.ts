@@ -200,6 +200,39 @@ describe("close-recap-formal planner state (Fix 4)", () => {
     expect(prose).not.toMatch(/ESOP/i);
   });
 
+  /* PRI-54c (2026-06-22) — the recap must enumerate the number the
+   * candidate CLOSED at, not the bare standing offer. When a candidate
+   * accepts by restating an in-band figure above the offer ("58 works,
+   * I'll sign" over a ₹50L offer), nearOfferCloseNumber honors ₹58 — and
+   * so must the structured recap. Regression guard against the recap
+   * reading the lower standing offer. */
+  it("recap reads the accepted-above-offer figure, not the standing offer (PRI-54c)", () => {
+    const CLOSE_BAND: NegotiationBand = {
+      initialOffer: 45,
+      maxStretch: 60,
+      walkAway: 40,
+      hasEquity: false,
+    };
+    const s: NegotiationState = {
+      ...initState({ sessionId: "s-recap-54c", role: "swe", company: "acme", band: CLOSE_BAND }),
+      phase: "closing-push",
+      highestOfferMade: 50,
+      candidateTarget: 58,
+      verbalAcceptanceTurn: 6,
+      turnIndex: 6,
+      conversationLog: [
+        { speaker: "ai", text: "I can do ₹50L.", turn: 5 },
+        { speaker: "candidate", text: "58 works, I'll sign today.", turn: 6 },
+      ] as never,
+    };
+    const action = planNextAction(s);
+    if (action.kind !== "close-recap-formal") throw new Error("wrong kind");
+    expect(action.fixedLpa).toBe(58);
+    const prose = renderCanonicalProse(action, s);
+    expect(prose).toContain("Fixed ₹58L");
+    expect(prose).not.toContain("₹50L");
+  });
+
   it("no verbal accept → no close-recap-formal", () => {
     const s = init({
       phase: "closing-push",
