@@ -634,18 +634,20 @@ export async function syncGoogleEvents(userId: string): Promise<{ synced: number
 }
 
 /** Read the user's purchased session-credit balance.
- *  RLS allows the user to read their own row; writes are service-role-only.
- *  Returns 0 when no row exists (never purchased) or on any error. */
-export async function getCreditBalance(userId: string): Promise<number> {
-  if (!userId) return 0;
+ *
+ * Reads via the /api/credit-balance server endpoint (service-role auth) rather
+ * than supabase-js directly. The direct supabase-js path relied on auth.uid()
+ * being resolved inside the RLS policy, which silently returned 0 in some
+ * browser environments when the JWT wasn't propagated correctly to PostgREST.
+ * The server endpoint uses the service role key, bypassing RLS entirely, and
+ * is authoritative. Falls back to 0 on any network or parse error. */
+export async function getCreditBalance(_userId: string): Promise<number> {
+  if (!_userId) return 0;
   try {
-    const client = await getSupabase();
-    const { data } = await client
-      .from("session_credits")
-      .select("balance")
-      .eq("user_id", userId)
-      .single();
-    return (data as { balance: number } | null)?.balance ?? 0;
+    const res = await fetch("/api/credit-balance", { credentials: "include" });
+    if (!res.ok) return 0;
+    const json = await res.json() as { balance?: number };
+    return typeof json.balance === "number" ? json.balance : 0;
   } catch {
     return 0;
   }
