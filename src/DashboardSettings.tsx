@@ -284,9 +284,9 @@ export default function SettingsPage() {
         @media (max-width: 1023px) {
           .settings-sticky-header {
             margin-top: 0 !important;
-            /* <main> is the scroll container and spans the full viewport (y=0).
-               sticky top is therefore in viewport coordinates.
-               Mobile nav is fixed 56px tall → lock the header right below it. */
+            /* Mobile nav is 56px tall and fixed. main has paddingTop:76px.
+               sticky top is in viewport coords (main spans full viewport).
+               56px locks the header flush below the nav. */
             top: 56px !important;
           }
         }

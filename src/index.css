@@ -800,7 +800,11 @@ input[type="range"]::-moz-range-thumb {
   to { opacity: 1; transform: translateY(0); }
 }
 .dash-page-enter {
-  animation: dashPageEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  /* No 'forwards' fill-mode: after completion the element returns to its
+     natural state (opacity:1, transform:none). Keeping transform:translateY(0)
+     via 'forwards' creates a new containing block that breaks position:sticky
+     on all dashboard child pages (Settings, etc). */
+  animation: dashPageEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   .dash-page-enter { animation: none; }
