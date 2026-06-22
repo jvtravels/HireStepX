@@ -398,12 +398,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             const planLeft      = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
             const planExhausted = isPro ? proExhausted : isStarter ? starterExhausted : freeExhausted;
             const periodLabel   = isPro ? "this month" : isStarter ? "this week" : "total";
+            // "Sessions with Pro / Starter / Free" — mirrors the Settings page label.
+            const planName      = isPro ? "Pro" : isStarter ? "Starter" : "Free";
             const pct  = Math.min(100, (planUsed / planTotal) * 100);
             const isLow = !planExhausted && (
               (isPro && planLeft <= 5) || (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
-            // barFill: copper when healthy, ember (red) when low. Same for all tiers —
-            // no green even on Pro, because green is a success signal, not a brand color.
+            // barFill: copper when healthy, ember (red) when low.
             const barFill = isLow ? c.ember : c.gilt;
 
             // Segmented dash bar: 10 segments, each represents planTotal/10 sessions.
@@ -413,41 +414,27 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
             return (
               <>
-                {/* ── Row: usage label + remaining count ── Always visible */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                {/* ── Row 1: "Sessions with Pro" label + remaining count ── */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
                   <p
                     aria-live="polite"
                     style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
-                      color: planExhausted ? c.stone : isLow ? c.ember : c.stone,
+                      color: isLow ? c.ember : c.stone,
                       fontWeight: isLow ? 600 : 400,
-                      opacity: planExhausted ? 0.6 : 1 }}
+                      opacity: planExhausted ? 0.65 : 1 }}
                   >
-                    {planUsed}/{planTotal} used {periodLabel}
+                    Sessions with {planName}
                   </p>
-                  {!planExhausted && (
-                    <span style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                      <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, lineHeight: 1,
-                        color: isLow ? c.ember : c.gilt }}>
-                        {planLeft}
-                      </span>
-                      <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 500, color: c.stone,
-                        letterSpacing: "0.05em", textTransform: "uppercase" as const, opacity: 0.65 }}>
-                        left
-                      </span>
-                    </span>
-                  )}
-                  {planExhausted && (
-                    <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, opacity: 0.38 }}>
-                      0 left
-                    </span>
-                  )}
+                  <span style={{ fontFamily: font.mono, fontSize: 11,
+                    color: planExhausted ? c.ember : isLow ? c.ember : c.stone,
+                    opacity: planExhausted ? 0.75 : 1, fontWeight: planExhausted ? 600 : 400 }}>
+                    {planUsed} of {planTotal}
+                  </span>
                 </div>
 
                 {/* ── Segmented dash progress bar ──
-                    Hidden when plan exhausted + credits exist: the purchased-sessions
-                    row below is the only indicator that matters in that state.
-                    A dim-green bar on a green card background is invisible, and showing
-                    a "full" bar for plan exhaustion conflicts with the credits message. */}
+                    Hidden when plan exhausted + credits exist: the green card
+                    below is the primary signal in that state. */}
                 {!(planExhausted && creditBalance > 0) && (
                   <div
                     role="progressbar"
@@ -457,13 +444,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     aria-valuenow={Math.round(pct)}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    style={{ display: "flex", gap: 3, marginBottom: 12 }}
+                    style={{ display: "flex", gap: 3, marginBottom: 10, marginTop: 6 }}
                   >
                     {Array.from({ length: segCount }, (_, i) => {
                       const filled = i < filledSegs;
-                      // Exhausted + no credits → muted copper to signal "all used"
-                      // Low                   → ember (red) via barFill
-                      // Healthy               → gilt (copper) via barFill
                       const segColor = planExhausted
                         ? "rgba(180,83,9,0.38)"
                         : filled ? barFill : c.border;
@@ -482,51 +466,32 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   </div>
                 )}
 
-                {/* ── CASE A: plan exhausted + credits — credits are the ONLY signal shown ── */}
-                {planExhausted && creditBalance > 0 && (
+                {/* ── Extra sessions available — shown whenever credits exist ──
+                    Replaces the old CASE A / B / C tri-state. One consistent
+                    green info row: prominent when plan is exhausted (only signal),
+                    reassuring when plan still has sessions remaining. */}
+                {creditBalance > 0 ? (
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                    marginBottom: 12, padding: "9px 12px",
+                    marginBottom: 10, marginTop: planExhausted ? 6 : 2,
+                    padding: "8px 11px",
                     background: T.success100, border: "1px solid rgba(21,128,61,0.22)", borderRadius: 8 }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "flex", alignItems: "center", gap: 6 }}>
-                      <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      Extra sessions
+                    <span style={{ fontFamily: font.ui, fontSize: 11, color: "#166534", display: "flex", alignItems: "center", gap: 5 }}>
+                      <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Extra sessions available
                     </span>
-                    {/* Hero number — this is the only count the user needs to see */}
-                    <span style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 800, color: c.sage, letterSpacing: "-0.01em" }}>
+                    <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 800, color: c.sage, letterSpacing: "-0.01em" }}>
                       {creditBalance}
                     </span>
                   </div>
-                )}
-
-                {/* ── CASE B: low-on-plan + credits — small pill tag ──
-                    Only shown when the plan is running low (isLow) or the
-                    user is at/past the limit but still has credits to fall
-                    back on. When sessions are plentiful we suppress this —
-                    "you have backup credits" is noise when you have 30 sessions
-                    left, but it's useful signal when you're down to 2. */}
-                {!planExhausted && isLow && creditBalance > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 5,
-                    marginBottom: 12, marginTop: -2 }}>
-                    <svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24"
-                      fill={c.gilt} stroke="none">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                    </svg>
-                    <span style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt, fontWeight: 600,
-                      letterSpacing: "0.01em" }}>
-                      +{creditBalance} extra session{creditBalance !== 1 ? "s" : ""} available
-                    </span>
-                  </div>
-                )}
-
-                {/* ── CASE C: no credits — just spacing ── */}
-                {creditBalance === 0 && planExhausted && (
-                  <div style={{ marginBottom: 12 }} />
+                ) : (
+                  /* No credits + exhausted — just spacing before the CTA */
+                  planExhausted ? <div style={{ marginBottom: 10 }} /> : <div style={{ marginBottom: 10 }} />
                 )}
 
                 {/* Starter renewal footnote */}
                 {user?.subscriptionEnd && isStarter && (
                   <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
-                    marginBottom: 10, marginTop: -8 }}>
+                    marginBottom: 10, marginTop: -6 }}>
                     Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN",
                       { day: "numeric", month: "short" })} · sessions reset Sun
                   </p>
