@@ -53,6 +53,9 @@ const ResponsiveSheet = () => (
       .mv2-focus-grid { grid-template-columns: 1fr !important; }
       .mv2-feature-grid { grid-template-columns: 1fr !important; }
       .mv2-feature-span2 { grid-column: span 1 !important; }
+      .mv2-bento-grid { grid-template-columns: 1fr !important; }
+      .mv2-bento-large, .mv2-bento-small { grid-column: 1 / -1 !important; }
+      .mv2-bento-thought-inner { grid-template-columns: 1fr !important; gap: 20px !important; }
       .mv2-india-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
       .mv2-india-logos { justify-content: flex-start !important; }
       .mv2-footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
@@ -2324,274 +2327,214 @@ export function ProductStoryV2() {
   );
 }
 
-/* ─────────────────────────── 5. FEATURE GRID ─────────────────────────── */
-function FeatureCard({
-  icon,
-  title,
-  desc,
-  span2,
-  visual,
+/* ─────────────────────────── 5. FEATURE BENTO ─────────────────────────── */
+
+/* Voice Follow-up visual: transcript with a follow-up question surfacing */
+function VoiceFollowUpVisual() {
+  return (
+    <div
+      style={{
+        background: t.cream,
+        border: `1px solid ${t.line}`,
+        borderRadius: 12,
+        overflow: "hidden",
+        fontFamily: fonts.sans,
+        fontSize: 13,
+      }}
+    >
+      {/* Transcript lines */}
+      <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
+        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaintWeak }}>YOU</span>
+        <p style={{ margin: "4px 0 0", color: t.inkSoft, lineHeight: 1.45 }}>
+          "I improved team communication by setting up weekly syncs…"
+        </p>
+      </div>
+      {/* Follow-up highlight */}
+      <div
+        style={{
+          padding: "14px 16px",
+          background: `linear-gradient(135deg, ${t.indigoMist} 0%, transparent 100%)`,
+          borderLeft: `3px solid ${t.indigo}`,
+        }}
+      >
+        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.indigo, opacity: 0.7 }}>AI INTERVIEWER</span>
+        <p style={{ margin: "4px 0 0", color: t.coal, lineHeight: 1.45, fontWeight: 500 }}>
+          "What metric did you track to know the syncs were working?"
+        </p>
+      </div>
+      {/* Waveform row */}
+      <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderTop: `1px solid ${t.line}` }}>
+        <Waveform />
+        <span style={{ marginLeft: "auto", fontFamily: fonts.mono, fontSize: 11, color: t.success, fontWeight: 600 }}>listening…</span>
+      </div>
+    </div>
+  );
+}
+
+/* Salary negotiation visual: counter-offer exchange */
+function SalaryNegVisual() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* Company offer */}
+      <div
+        style={{
+          padding: "12px 14px",
+          background: t.cream,
+          border: `1px solid ${t.line}`,
+          borderRadius: 10,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>HR's offer</span>
+        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.coal }}>₹12 LPA</span>
+      </div>
+      {/* Your counter */}
+      <div
+        style={{
+          padding: "12px 14px",
+          background: t.indigoDeep,
+          borderRadius: 10,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.creamMuted }}>Your counter</span>
+        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.copper100 }}>₹14 LPA</span>
+      </div>
+      {/* Delta callout */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 2 }}>
+        <span style={{ fontFamily: fonts.mono, fontSize: 11, color: t.success, fontWeight: 700 }}>+₹2L/yr</span>
+        <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>recovered in 4 minutes of practice</span>
+      </div>
+    </div>
+  );
+}
+
+/* Resume-aware visual: personalized question chip */
+function ResumeAwareVisual() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div
+        style={{
+          padding: "10px 12px",
+          background: t.copper100,
+          borderRadius: 8,
+          fontFamily: fonts.sans,
+          fontSize: 12,
+          color: t.copperDark,
+          lineHeight: 1.4,
+        }}
+      >
+        <span style={{ fontWeight: 600 }}>From your resume →</span>
+        <p style={{ margin: "4px 0 0" }}>Python · Razorpay internship · Final year</p>
+      </div>
+      <div
+        style={{
+          padding: "10px 12px",
+          background: t.white,
+          border: `1px solid ${t.line}`,
+          borderRadius: 8,
+          fontFamily: fonts.sans,
+          fontSize: 12,
+          color: t.coal,
+          lineHeight: 1.4,
+        }}
+      >
+        "Walk me through the specific bug you fixed in the Razorpay payment gateway."
+      </div>
+    </div>
+  );
+}
+
+/* Interviewer persona visual: mode toggle */
+function PersonaVisual() {
+  const modes = [
+    { label: "Balanced", active: false },
+    { label: "Tough", active: true },
+    { label: "Friendly", active: false },
+    { label: "Time-pressed", active: false },
+  ];
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {modes.map(({ label, active }) => (
+        <span
+          key={label}
+          style={{
+            fontFamily: fonts.sans,
+            fontSize: 11,
+            fontWeight: active ? 600 : 400,
+            padding: "5px 10px",
+            borderRadius: 999,
+            background: active ? t.indigo : t.white,
+            color: active ? t.white : t.inkSoft,
+            border: `1px solid ${active ? t.indigo : t.line}`,
+          }}
+        >
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* Thought Bubble visual: engagement timeline */
+function ThoughtBubbleVisual() {
+  const states = [
+    { label: "Engaged", pct: 0, color: t.success },
+    { label: "Drifting", pct: 45, color: t.copper },
+    { label: "Concerned", pct: 78, color: "#DC2626" },
+  ];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Timeline bar */}
+      <div style={{ position: "relative", height: 6, background: t.line, borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "45%", background: t.success, opacity: 0.8 }} />
+        <div style={{ position: "absolute", left: "45%", top: 0, bottom: 0, width: "33%", background: t.copper, opacity: 0.8 }} />
+        <div style={{ position: "absolute", left: "78%", top: 0, bottom: 0, right: 0, background: "#DC2626", opacity: 0.8 }} />
+      </div>
+      {/* Labels */}
+      <div style={{ display: "flex", gap: 12 }}>
+        {states.map(({ label, color }) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
+            <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>{label}</span>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint, margin: 0, lineHeight: 1.4 }}>
+        At Q4 you lost the room. Here's exactly why.
+      </p>
+    </div>
+  );
+}
+
+function BentoCard({
+  children,
+  large,
+  style,
 }: {
-  icon: string;
-  title: string;
-  desc: string;
-  span2?: boolean;
-  visual?: React.ReactNode;
+  children: React.ReactNode;
+  large?: boolean;
+  style?: CSSProperties;
 }) {
   return (
     <div
-      className={`mv2-feature-card${span2 ? " mv2-feature-span2" : ""}`}
+      className={large ? "mv2-bento-large" : "mv2-bento-small"}
       style={{
-        gridColumn: span2 ? "span 2" : "span 1",
-        padding: 32,
+        padding: large ? 36 : 28,
         background: t.white,
         border: `1px solid ${t.line}`,
         borderRadius: 20,
         boxShadow: shadows.card,
-        minHeight: 240,
-      }}
-    >
-      <span
-        className="mv2-feature-icon"
-        style={{
-          width: 38,
-          height: 38,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: 10,
-          background: t.copperSoft,
-          color: t.copper,
-          fontSize: 18,
-          marginBottom: 20,
-        }}
-        aria-hidden
-      >
-        {icon}
-      </span>
-      <h3
-        style={{
-          fontFamily: fonts.serif,
-          fontSize: 24,
-          color: t.coal,
-          margin: 0,
-          marginBottom: 8,
-          letterSpacing: "-0.015em",
-          fontWeight: 400,
-        }}
-      >
-        {title}
-      </h3>
-      <p
-        style={{
-          fontFamily: fonts.sans,
-          fontSize: 14,
-          color: t.inkSoft,
-          lineHeight: 1.55,
-          margin: 0,
-          maxWidth: span2 ? 460 : "100%",
-        }}
-      >
-        {desc}
-      </p>
-      {visual ? <div style={{ marginTop: 24 }}>{visual}</div> : null}
-    </div>
-  );
-}
-
-function ScoredReportVisual() {
-  return (
-    <div
-      style={{
-        padding: 20,
-        background: t.cream,
-        border: `1px solid ${t.line}`,
-        borderRadius: 14,
-        display: "grid",
-        gridTemplateColumns: "120px 1fr",
-        gap: 24,
-        alignItems: "center",
-      }}
-    >
-      <div style={{ textAlign: "center" }}>
-        <p
-          style={{
-            fontFamily: fonts.serif,
-            fontSize: 56,
-            color: t.indigo,
-            margin: 0,
-            lineHeight: 1,
-          }}
-        >
-          7.9
-        </p>
-        <p
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 11,
-            color: t.inkFaint,
-            margin: 0,
-            marginTop: 4,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            fontWeight: 600,
-          }}
-        >
-          Session avg
-        </p>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {[
-          ["Clarity", 84],
-          ["Structure (STAR)", 76],
-          ["Confidence", 72],
-          ["Specificity", 68],
-        ].map(([k, v]) => (
-          <div key={k as string}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontFamily: fonts.sans,
-                fontSize: 12,
-                color: t.coal,
-                fontWeight: 500,
-                marginBottom: 3,
-              }}
-            >
-              <span>{k}</span>
-              <span style={{ color: t.inkFaint }}>{v}</span>
-            </div>
-            <div
-              style={{
-                height: 3,
-                background: t.copper100,
-                borderRadius: 2,
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  width: `${v}%`,
-                  height: "100%",
-                  background: t.indigo,
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LatencyVisual() {
-  return (
-    <div
-      style={{
-        padding: 14,
-        background: t.cream,
-        border: `1px solid ${t.line}`,
-        borderRadius: 10,
         display: "flex",
-        alignItems: "center",
-        gap: 12,
-        fontFamily: fonts.mono,
-        fontSize: 12,
-        color: t.coal,
+        flexDirection: "column",
+        ...style,
       }}
     >
-      <Waveform />
-      <span style={{ marginLeft: "auto", color: t.success, fontWeight: 600 }}>
-        312 ms
-      </span>
-    </div>
-  );
-}
-
-function RoundsVisual() {
-  const rounds = ["TCS Digital", "Razorpay SDE-2", "Zomato PM", "ISRO Sci-B"];
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-      {rounds.map((r, i) => (
-        <span
-          key={r}
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 11,
-            fontWeight: 500,
-            padding: "5px 10px",
-            borderRadius: 999,
-            background: i === 0 ? t.indigo : t.white,
-            color: i === 0 ? t.white : t.coal,
-            border: `1px solid ${i === 0 ? t.indigo : t.line}`,
-          }}
-        >
-          {r}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function DecayVisual() {
-  const days = [80, 62, 48, 74, 88, 71, 95];
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "flex-end",
-        gap: 4,
-        height: 56,
-        padding: 10,
-        background: t.cream,
-        border: `1px solid ${t.line}`,
-        borderRadius: 10,
-      }}
-    >
-      {days.map((d, i) => (
-        <span
-          key={i}
-          style={{
-            flex: 1,
-            height: `${d}%`,
-            background:
-              d < 60 ? t.copper : d > 85 ? t.success : t.indigo,
-            borderRadius: 2,
-            opacity: 0.85,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function PayVisual() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        gap: 6,
-        flexWrap: "wrap",
-      }}
-    >
-      {["UPI", "Visa", "GPay", "PhonePe", "Cards"].map((p, i) => (
-        <span
-          key={p}
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 11,
-            fontWeight: 600,
-            padding: "5px 9px",
-            borderRadius: 6,
-            background: i === 4 ? t.success100 : t.white,
-            color: i === 4 ? t.success : t.coal,
-            border: `1px solid ${i === 4 ? t.success100 : t.line}`,
-          }}
-        >
-          {p}
-        </span>
-      ))}
+      {children}
     </div>
   );
 }
@@ -2600,59 +2543,232 @@ export function FeatureGridV2() {
   return (
     <section aria-labelledby="hd-features" style={{ ...sectionBase, background: t.cream }}>
       <div style={container}>
-        <SectionMasthead n="05" label="What you get" right="At launch" style={{ marginBottom: 24 }} />
+        <SectionMasthead n="05" label="What sets it apart" right="Distinct mechanics" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ marginBottom: 56 }}>
           <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2, whiteSpace: "nowrap" }}>
-            Not another{" "}
+            What practice alone{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>
-              question bank.
+              never shows you.
             </span>
           </h2>
           <p style={{ ...body, marginTop: 16 }}>
-            Every session ends with a numbered breakdown of what to fix,
-            not a vague "great job, keep practicing".
+            Five mechanics no question bank has. Each one designed for the moment ChatGPT feedback runs out.
           </p>
         </MotionReveal>
 
+        {/* ── Bento grid: 2 large + 3 small ── */}
         <div
-          className="mv2-feature-grid"
+          className="mv2-bento-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 20,
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gridTemplateRows: "auto auto",
+            gap: 16,
           }}
         >
-          <FeatureCard
-            icon="◐"
-            title="Real voice. Real pressure."
-            desc="The AI speaks, listens, and interrupts. Sub-400ms latency on Indian 4G."
-            visual={<LatencyVisual />}
-          />
-          <FeatureCard
-            icon="◇"
-            title="STAR-scored, not vibes."
-            desc="Every answer broken into Situation · Task · Action · Result, with a coached model answer beside it."
-            span2
-            visual={<ScoredReportVisual />}
-          />
-          <FeatureCard
-            icon="❋"
-            title="Built for Indian rounds."
-            desc="TCS Digital, Infosys Mysore, Razorpay tech screens. Formats we're mapping panel by panel."
-            visual={<RoundsVisual />}
-          />
-          <FeatureCard
-            icon="↻"
-            title="Skill-decay tracking."
-            desc="We'll remember what you got wrong last Tuesday. Spaced repetition will resurface it."
-            visual={<DecayVisual />}
-          />
-          <FeatureCard
-            icon="₹"
-            title="UPI-first. ₹ pricing."
-            desc="Pay with UPI, cards, or netbanking. ₹ pricing throughout. No dollar surprises."
-            visual={<PayVisual />}
-          />
+          {/* LARGE 1 — Voice follow-up */}
+          <BentoCard large style={{ gridColumn: "1 / 2" }}>
+            <span
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: t.indigo,
+                opacity: 0.6,
+                marginBottom: 16,
+              }}
+            >
+              Real conversation
+            </span>
+            <h3
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: 26,
+                color: t.coal,
+                margin: 0,
+                marginBottom: 10,
+                letterSpacing: "-0.015em",
+                fontWeight: 400,
+                lineHeight: 1.25,
+              }}
+            >
+              The AI asks harder when{" "}
+              <span style={{ color: t.copper, fontStyle: "italic" }}>you can't prove it.</span>
+            </h3>
+            <p
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 14,
+                color: t.inkSoft,
+                lineHeight: 1.55,
+                margin: 0,
+                marginBottom: 24,
+                maxWidth: 360,
+              }}
+            >
+              Vague answers trigger follow-ups. Specific answers move on. Exactly how a real interviewer thinks.
+            </p>
+            <VoiceFollowUpVisual />
+          </BentoCard>
+
+          {/* LARGE 2 — Salary negotiation */}
+          <BentoCard large style={{ gridColumn: "2 / 3", background: t.indigoDeep }}>
+            <span
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: t.copper100,
+                opacity: 0.6,
+                marginBottom: 16,
+              }}
+            >
+              Salary negotiation
+            </span>
+            <h3
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: 26,
+                color: t.cream,
+                margin: 0,
+                marginBottom: 10,
+                letterSpacing: "-0.015em",
+                fontWeight: 400,
+                lineHeight: 1.25,
+              }}
+            >
+              You left{" "}
+              <span style={{ color: t.copper100, fontStyle: "italic" }}>₹2L on the table.</span>{" "}
+              Practice changing that.
+            </h3>
+            <p
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 14,
+                color: t.creamMuted,
+                lineHeight: 1.55,
+                margin: 0,
+                marginBottom: 24,
+                maxWidth: 360,
+              }}
+            >
+              The only mode that trains you to counter-offer, anchor high, and hold the silence.
+            </p>
+            <SalaryNegVisual />
+          </BentoCard>
+
+          {/* SMALL 3 — Resume-aware */}
+          <BentoCard style={{ gridColumn: "1 / 2" }}>
+            <span
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: t.copper,
+                opacity: 0.7,
+                marginBottom: 14,
+              }}
+            >
+              Personalized
+            </span>
+            <h3
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: 20,
+                color: t.coal,
+                margin: 0,
+                marginBottom: 8,
+                letterSpacing: "-0.01em",
+                fontWeight: 400,
+                lineHeight: 1.3,
+              }}
+            >
+              Questions from <em>your</em> resume, not a generic bank.
+            </h3>
+            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
+              Upload once. Every session asks about your actual projects, roles, and tech stack.
+            </p>
+            <ResumeAwareVisual />
+          </BentoCard>
+
+          {/* SMALL 4 — Interviewer personas */}
+          <BentoCard style={{ gridColumn: "2 / 3" }}>
+            <span
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: t.copper,
+                opacity: 0.7,
+                marginBottom: 14,
+              }}
+            >
+              Four modes
+            </span>
+            <h3
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: 20,
+                color: t.coal,
+                margin: 0,
+                marginBottom: 8,
+                letterSpacing: "-0.01em",
+                fontWeight: 400,
+                lineHeight: 1.3,
+              }}
+            >
+              Tough mode: the interviewer{" "}
+              <em>cuts you off</em> mid-sentence.
+            </h3>
+            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
+              Balanced, Tough, Friendly, Time-pressed. Rotate modes each session to build real range.
+            </p>
+            <PersonaVisual />
+          </BentoCard>
+
+          {/* SMALL 5 — Thought Bubble */}
+          <BentoCard style={{ gridColumn: "1 / 3" }}>
+            <span
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: t.copper,
+                opacity: 0.7,
+                marginBottom: 14,
+              }}
+            >
+              Thought bubble
+            </span>
+            <div className="mv2-bento-thought-inner" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }}>
+              <div>
+                <h3
+                  style={{
+                    fontFamily: fonts.serif,
+                    fontSize: 20,
+                    color: t.coal,
+                    margin: 0,
+                    marginBottom: 8,
+                    letterSpacing: "-0.01em",
+                    fontWeight: 400,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  See exactly when the interviewer started{" "}
+                  <em>losing interest.</em>
+                </h3>
+                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
+                  The AI's internal engagement score — shown as a timeline. You'll know which answer cost you the room.
+                </p>
+              </div>
+              <ThoughtBubbleVisual />
+            </div>
+          </BentoCard>
         </div>
       </div>
     </section>
