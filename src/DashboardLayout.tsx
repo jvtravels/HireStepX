@@ -546,15 +546,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
                   onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
                 >Buy more sessions →</button>
-                <button
-                  onClick={() => nav.push("/session/new")}
-                  title="Start a practice session using your available credits"
-                  style={{ display: "block", width: "100%", marginTop: 5, background: "none", border: "none",
-                    cursor: "pointer", fontFamily: font.ui, fontSize: 11, color: c.stone, opacity: 0.6,
-                    textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
-                >Start session</button>
               </>
             ) : (
               /* Exhausted Pro, no credits — buy is the right primary action */
