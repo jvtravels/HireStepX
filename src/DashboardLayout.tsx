@@ -367,25 +367,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, color: isPro ? ((proExhausted && creditBalance === 0) ? c.gilt : c.sage) : c.gilt, letterSpacing: "0.01em" }}>
               {!tierKnown ? "Loading plan…" : isPro ? "Pro Plan" : isStarter ? "Starter Plan" : "Free Plan"}
             </span>
-            {tierKnown && (
-              <span
-                role="img"
-                tabIndex={0}
-                aria-label={isPro
-                  ? `${PRO_MONTHLY_LIMIT} sessions/month, STAR coaching, skill decay tracking, PDF reports`
-                  : isStarter
-                  ? `${STARTER_WEEKLY_LIMIT} sessions/week, STAR coaching, PDF reports, ₹49/week`
-                  : "2 lifetime sessions, basic feedback, upgrade anytime"}
-                title={isPro
-                  ? `${PRO_MONTHLY_LIMIT} sessions/month · STAR coaching · skill decay tracking · PDF reports`
-                  : isStarter
-                  ? `${STARTER_WEEKLY_LIMIT} sessions/week · STAR coaching · PDF reports · ₹49/week`
-                  : "2 lifetime sessions · basic feedback · upgrade anytime"}
-                style={{ display: "inline-flex", alignItems: "center", cursor: "help", color: isPro ? ((proExhausted && creditBalance === 0) ? c.gilt : c.sage) : c.gilt, opacity: 0.45, flexShrink: 0 }}
-              >
-                <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              </span>
-            )}
             {isPro && tierKnown && user?.subscriptionEnd && (
               <span
                 aria-label={user.cancelAtPeriodEnd
@@ -424,63 +405,72 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               : isPro ? (isLow ? c.ember : c.sage)
               : isLow ? c.ember : c.gilt;
 
+            // Segmented dash bar: 10 segments, each represents planTotal/10 sessions.
+            // For Free plan (2 sessions) use 2 segments instead.
+            const segCount = Math.min(planTotal, 10);
+            const filledSegs = Math.round((planUsed / planTotal) * segCount);
+
             return (
               <>
-                {/* ── Row: usage label + remaining chip ──
-                    Hidden when plan is exhausted AND credits exist — showing "40/40 used"
-                    alongside a green "17 available" box creates contradictory signals.
-                    When credits cover the gap, skip the exhausted-plan counter entirely. */}
-                {!(planExhausted && creditBalance > 0) && (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                    <p
-                      aria-live="polite"
-                      style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
-                        color: planExhausted ? c.stone : isLow ? c.ember : c.stone,
-                        fontWeight: isLow ? 600 : 400,
-                        opacity: planExhausted ? 0.55 : 1 }}
-                    >
-                      {planUsed}/{planTotal} used {periodLabel}
-                    </p>
-                    {!planExhausted && (
-                      <span style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                        <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, lineHeight: 1,
-                          color: isLow ? c.ember : (isPro ? c.sage : c.gilt) }}>
-                          {planLeft}
-                        </span>
-                        <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 500, color: c.stone,
-                          letterSpacing: "0.05em", textTransform: "uppercase" as const, opacity: 0.65 }}>
-                          left
-                        </span>
-                      </span>
-                    )}
-                    {planExhausted && creditBalance === 0 && (
-                      <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, opacity: 0.38 }}>
-                        0 left
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* ── Progress bar — hidden when exhausted + credits exist (bar would be invisible
-                    on the green card bg and contradicts the positive credits row below) ── */}
-                {!(planExhausted && creditBalance > 0) && (
-                  <div
-                    role="progressbar"
-                    aria-label={planExhausted
-                      ? `All ${planTotal} sessions used ${periodLabel}`
-                      : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
-                    aria-valuenow={Math.round(pct)}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    style={{ height: 4, borderRadius: 2,
-                      background: c.border,
-                      marginBottom: planExhausted ? 8 : creditBalance > 0 ? 6 : 12 }}
+                {/* ── Row: usage label + remaining count ── Always visible */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <p
+                    aria-live="polite"
+                    style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
+                      color: planExhausted ? c.stone : isLow ? c.ember : c.stone,
+                      fontWeight: isLow ? 600 : 400,
+                      opacity: planExhausted ? 0.6 : 1 }}
                   >
-                    <div style={{ height: "100%", borderRadius: 2, background: barFill,
-                      width: `${pct}%`, transition: "width 0.4s ease",
-                      opacity: planExhausted ? 0.45 : 1 }} />
-                  </div>
-                )}
+                    {planUsed}/{planTotal} used {periodLabel}
+                  </p>
+                  {!planExhausted && (
+                    <span style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                      <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, lineHeight: 1,
+                        color: isLow ? c.ember : (isPro ? c.sage : c.gilt) }}>
+                        {planLeft}
+                      </span>
+                      <span style={{ fontFamily: font.ui, fontSize: 9, fontWeight: 500, color: c.stone,
+                        letterSpacing: "0.05em", textTransform: "uppercase" as const, opacity: 0.65 }}>
+                        left
+                      </span>
+                    </span>
+                  )}
+                  {planExhausted && (
+                    <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.stone, opacity: 0.38 }}>
+                      0 left
+                    </span>
+                  )}
+                </div>
+
+                {/* ── Segmented dash progress bar ── */}
+                <div
+                  role="progressbar"
+                  aria-label={planExhausted
+                    ? `All ${planTotal} sessions used ${periodLabel}`
+                    : `${planUsed} of ${planTotal} sessions used ${periodLabel}`}
+                  aria-valuenow={Math.round(pct)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  style={{ display: "flex", gap: 3, marginBottom: planExhausted && creditBalance > 0 ? 8 : 12 }}
+                >
+                  {Array.from({ length: segCount }, (_, i) => {
+                    const filled = i < filledSegs;
+                    const segColor = planExhausted
+                      ? (creditBalance > 0 ? "rgba(21,128,61,0.3)" : c.border)
+                      : filled ? barFill : c.border;
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          flex: 1, height: 4, borderRadius: 2,
+                          background: filled ? segColor : c.border,
+                          opacity: filled ? (planExhausted && creditBalance === 0 ? 0.45 : 1) : 0.35,
+                          transition: "background 0.3s ease",
+                        }}
+                      />
+                    );
+                  })}
+                </div>
 
                 {/* ── CASE A: plan exhausted + credits — credits are the ONLY signal shown ── */}
                 {planExhausted && creditBalance > 0 && (
