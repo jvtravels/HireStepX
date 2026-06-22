@@ -330,7 +330,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     <div style={{ display: "flex", flexDirection: "column", gap: 40, maxWidth: 880 }}>
       {/* ── Profile group ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <SectionHead kicker="Account" title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
+      <SectionHead title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
       <EditorialCard>
         <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
           <div aria-hidden="true" style={{
@@ -725,11 +725,20 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
       <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>{dateLabel}</div>
       <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{planLabel}</div>
       <div style={{ fontFamily: font.mono, fontSize: 13, color: c.ivory }}>{amount}</div>
-      <div style={{
-        fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-        color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
-        borderRadius: 6, padding: "4px 8px",
-      }}>{tone.label}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div style={{
+          fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+          color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
+          borderRadius: 6, padding: "4px 8px",
+        }}>{tone.label}</div>
+        {payment.receipt_url && (
+          <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer"
+            style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, textDecoration: "none", whiteSpace: "nowrap" }}
+            onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
+            onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
+          >View receipt →</a>
+        )}
+      </div>
     </div>
   );
 }

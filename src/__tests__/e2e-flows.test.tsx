@@ -417,7 +417,8 @@ describe("Flow 6: Upgrade Modal", () => {
     expect(screen.getByText("Free")).toBeInTheDocument();
     expect(screen.getByText("Weekly")).toBeInTheDocument();
     expect(screen.getByText("Per Session")).toBeInTheDocument();
-    expect(screen.getByText(/₹49/)).toBeInTheDocument();
+    // ₹49 appears in the price heading and the renewal disclosure — use getAllBy
+    expect(screen.getAllByText(/₹49/).length).toBeGreaterThan(0);
     // ₹9 per-session price appears on the slider card (may appear in multiple nodes)
     expect(screen.getAllByText(/₹9/).length).toBeGreaterThan(0);
   });

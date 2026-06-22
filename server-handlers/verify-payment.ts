@@ -39,6 +39,10 @@ const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>"
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
+// PAYMENT_ID_HASH_SECRET — used to HMAC-hash payment IDs before sending to analytics.
+// Falls back to a static default so existing deploys without the env var keep working,
+// but set this in Vercel env vars for proper key separation from source code.
+const PAYMENT_ID_HASH_SECRET = (process.env.PAYMENT_ID_HASH_SECRET || "hsx-payment-id-v1").trim();
 
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
@@ -49,7 +53,7 @@ import { emailShell, title, para, b, button, dataCard, mono } from "./_email-the
  * correlate events without being reversible. */
 function hashPaymentId(id: unknown): string {
   if (typeof id !== "string" || !id) return "";
-  return createHmac("sha256", "hsx-payment-id-v1").update(id).digest("hex").slice(0, 12);
+  return createHmac("sha256", PAYMENT_ID_HASH_SECRET).update(id).digest("hex").slice(0, 12);
 }
 
 /** Clear the payment-abandonment intent key so the cron doesn't email a paying user. */

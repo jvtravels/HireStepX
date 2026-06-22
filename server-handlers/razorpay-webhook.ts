@@ -204,6 +204,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const HANDLED_EVENTS = [
     "payment.captured",
+    "payment.failed",
+    "payment.dispute.created",
+    "payment.dispute.won",
+    "payment.dispute.lost",
+    "refund.created",
+    "refund.processed",
     "subscription.activated",
     "subscription.charged",
     "subscription.halted",
@@ -503,6 +509,238 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       return res.status(200).json({ received: true });
+    }
+
+    // ─── payment.failed ───────────────────────────────────────────────────────
+    // Fires when a payment attempt is declined at the bank / gateway.
+    // The client-side modal already shows an error, but we must clear the
+    // pay_intent Redis key so the abandonment-email cron doesn't email a user
+    // whose payment definitively failed (vs. simply abandoned).
+    if (eventType === "payment.failed") {
+      const failedPayment = event?.payload?.payment?.entity;
+      const failedOrderId = failedPayment?.order_id;
+      if (failedOrderId) await clearPaymentIntent(failedOrderId);
+      console.warn(`[webhook] payment.failed: cleared intent for order ${failedOrderId || "(none)"}`);
+      return res.status(200).json({ received: true, intent_cleared: !!failedOrderId });
+    }
+
+    // ─── Dispute events ───────────────────────────────────────────────────────
+    if (
+      eventType === "payment.dispute.created" ||
+      eventType === "payment.dispute.won" ||
+      eventType === "payment.dispute.lost"
+    ) {
+      const dispute = event?.payload?.dispute?.entity;
+      const disputePaymentId: string | undefined = dispute?.payment_id;
+      if (!disputePaymentId) {
+        console.warn("[webhook] dispute event missing payment_id");
+        return res.status(200).json({ received: true, skipped: "missing_payment_id" });
+      }
+
+      const dbHeaders = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` };
+
+      // Resolve user from our payments table
+      const pmtRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(disputePaymentId)}&select=user_id`,
+        { headers: dbHeaders },
+      );
+      const pmtRows = await pmtRes.json();
+      const disputeUserId: string | undefined = Array.isArray(pmtRows) && pmtRows[0]?.user_id ? pmtRows[0].user_id : undefined;
+
+      if (!disputeUserId) {
+        console.warn(`[webhook] dispute: no payment record for ${disputePaymentId.slice(0, 8)}`);
+        return res.status(200).json({ received: true, skipped: "payment_not_found" });
+      }
+
+      const profRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(disputeUserId)}&select=email,name,subscription_tier`,
+        { headers: dbHeaders },
+      );
+      const profRows = await profRes.json();
+      const prof = Array.isArray(profRows) && profRows[0];
+
+      if (eventType === "payment.dispute.created") {
+        // Chargeback filed — suspend access immediately to prevent ongoing abuse
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(disputeUserId)}`, {
+          method: "PATCH",
+          headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ subscription_tier: "free", cancel_at_period_end: true, razorpay_subscription_id: null }),
+        });
+        if (RESEND_API_KEY && prof?.email) {
+          const safeName = escapeHtml(prof.name || "there");
+          try {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                from: FROM_EMAIL, to: [prof.email], subject: "Dispute received on your account",
+                html: emailShell({
+                  preview: "We've received a payment dispute on your account.",
+                  body:
+                    title("Dispute", { accentWord: "received." }) +
+                    para(`Hi ${safeName}, we've been notified of a payment dispute on your HireStepX account. Your account has been moved to the free plan while it's under review. If this was a mistake or you'd like to resolve it, please reply to this email or contact us at support@hirestepx.com.`) +
+                    button("Contact support", "mailto:support@hirestepx.com"),
+                }),
+              }),
+            });
+          } catch { /* best effort */ }
+        }
+        await captureServerEvent("payment_dispute_created", disputeUserId, { payment_id: disputePaymentId.slice(0, 8) });
+        console.warn(`[webhook] payment.dispute.created: suspended user ${disputeUserId.slice(0, 8)}`);
+      }
+
+      if (eventType === "payment.dispute.won") {
+        // Dispute resolved in our favour — user was already suspended; notify so they can re-subscribe
+        if (RESEND_API_KEY && prof?.email) {
+          const safeName = escapeHtml(prof.name || "there");
+          try {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                from: FROM_EMAIL, to: [prof.email], subject: "Your dispute has been resolved",
+                html: emailShell({
+                  preview: "The dispute on your account has been closed.",
+                  body:
+                    title("Dispute", { accentWord: "resolved." }) +
+                    para(`Hi ${safeName}, the payment dispute on your account has been resolved in our favour. If you'd like to continue using HireStepX, you're welcome to re-subscribe from your dashboard.`) +
+                    button("View plans", `${APP_URL}/dashboard`),
+                }),
+              }),
+            });
+          } catch { /* best effort */ }
+        }
+        await captureServerEvent("payment_dispute_won", disputeUserId, { payment_id: disputePaymentId.slice(0, 8) });
+        console.warn(`[webhook] payment.dispute.won: notified user ${disputeUserId.slice(0, 8)}`);
+      }
+
+      if (eventType === "payment.dispute.lost") {
+        // Dispute resolved against us — keep account downgraded, send close notification
+        if (RESEND_API_KEY && prof?.email) {
+          const safeName = escapeHtml(prof.name || "there");
+          try {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                from: FROM_EMAIL, to: [prof.email], subject: "Update on your HireStepX account",
+                html: emailShell({
+                  preview: "Your account status update.",
+                  body:
+                    title("Account", { accentWord: "update." }) +
+                    para(`Hi ${safeName}, the payment dispute on your account has been closed. Your account is currently on the free plan. You're welcome to re-subscribe from your dashboard whenever you're ready.`) +
+                    button("View plans", `${APP_URL}/dashboard`),
+                }),
+              }),
+            });
+          } catch { /* best effort */ }
+        }
+        await captureServerEvent("payment_dispute_lost", disputeUserId, { payment_id: disputePaymentId.slice(0, 8) });
+        console.warn(`[webhook] payment.dispute.lost: user ${disputeUserId.slice(0, 8)} remains on free tier`);
+      }
+
+      return res.status(200).json({ received: true, dispute: eventType });
+    }
+
+    // ─── Refund events ────────────────────────────────────────────────────────
+    if (eventType === "refund.created" || eventType === "refund.processed") {
+      const refund = event?.payload?.refund?.entity;
+      const refundPaymentId: string | undefined = refund?.payment_id;
+      if (!refundPaymentId) {
+        console.warn("[webhook] refund event missing payment_id");
+        return res.status(200).json({ received: true, skipped: "missing_payment_id" });
+      }
+
+      const dbHeaders = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` };
+
+      const pmtRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(refundPaymentId)}&select=user_id`,
+        { headers: dbHeaders },
+      );
+      const pmtRows = await pmtRes.json();
+      const refundUserId: string | undefined = Array.isArray(pmtRows) && pmtRows[0]?.user_id ? pmtRows[0].user_id : undefined;
+
+      if (!refundUserId) {
+        console.warn(`[webhook] refund: no payment record for ${refundPaymentId.slice(0, 8)}`);
+        return res.status(200).json({ received: true, skipped: "payment_not_found" });
+      }
+
+      const profRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(refundUserId)}&select=email,name`,
+        { headers: dbHeaders },
+      );
+      const profRows = await profRes.json();
+      const prof = Array.isArray(profRows) && profRows[0];
+      const refundAmountStr = refund?.amount ? `₹${Math.round(refund.amount / 100)}` : "the amount";
+      const idempotencyKey = `refund-${eventType.replace(".", "-")}-${refund?.id || refundPaymentId}`;
+
+      if (eventType === "refund.created") {
+        // Mark the subscription as cancelling — user keeps access until subscription_end
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(refundUserId)}`, {
+          method: "PATCH",
+          headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ cancel_at_period_end: true }),
+        });
+        if (RESEND_API_KEY && prof?.email) {
+          const safeName = escapeHtml(prof.name || "there");
+          try {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+              body: JSON.stringify({
+                from: FROM_EMAIL, to: [prof.email], subject: "Refund initiated",
+                html: emailShell({
+                  preview: `Your refund of ${refundAmountStr} is being processed.`,
+                  body:
+                    title("Refund", { accentWord: "initiated." }) +
+                    para(`Hi ${safeName}, we've initiated a refund of ${b(refundAmountStr)} to your original payment method. Please allow 5–7 business days for it to appear. Your account access continues until your current billing period ends.`) +
+                    dataCard("Refund details", [
+                      ["Amount", refundAmountStr],
+                      ["Status", "Processing"],
+                      ["Timeline", "5–7 business days"],
+                    ]) +
+                    button("View account", `${APP_URL}/settings`),
+                }),
+              }),
+            });
+          } catch { /* best effort */ }
+        }
+        await captureServerEvent("refund_created", refundUserId, { payment_id: refundPaymentId.slice(0, 8), amount: refund?.amount });
+        console.warn(`[webhook] refund.created: ${refundAmountStr} for user ${refundUserId.slice(0, 8)}`);
+      }
+
+      if (eventType === "refund.processed") {
+        // Refund complete — downgrade to free
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(refundUserId)}`, {
+          method: "PATCH",
+          headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ subscription_tier: "free", cancel_at_period_end: true, razorpay_subscription_id: null }),
+        });
+        if (RESEND_API_KEY && prof?.email) {
+          const safeName = escapeHtml(prof.name || "there");
+          try {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+              body: JSON.stringify({
+                from: FROM_EMAIL, to: [prof.email], subject: "Refund processed",
+                html: emailShell({
+                  preview: `Your refund of ${refundAmountStr} has been processed.`,
+                  body:
+                    title("Refund", { accentWord: "processed." }) +
+                    para(`Hi ${safeName}, your refund of ${b(refundAmountStr)} has been successfully processed and should appear in your original payment method within 1–3 business days. Your account has been moved to the free plan. You're welcome to subscribe again whenever you're ready.`) +
+                    dataCard("Refund confirmed", [["Amount", refundAmountStr], ["Status", "Processed"]]) +
+                    button("View plans", `${APP_URL}/dashboard`),
+                }),
+              }),
+            });
+          } catch { /* best effort */ }
+        }
+        await captureServerEvent("refund_processed", refundUserId, { payment_id: refundPaymentId.slice(0, 8), amount: refund?.amount });
+        console.warn(`[webhook] refund.processed: ${refundAmountStr} refunded, user ${refundUserId.slice(0, 8)} → free`);
+      }
+
+      return res.status(200).json({ received: true, refund: eventType });
     }
 
     // ─── One-time payment.captured (backward compatibility) ───

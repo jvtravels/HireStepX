@@ -498,8 +498,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   </div>
                 )}
 
-                {/* ── CASE B: plan healthy + credits — small pill tag ── */}
-                {!planExhausted && creditBalance > 0 && (
+                {/* ── CASE B: low-on-plan + credits — small pill tag ──
+                    Only shown when the plan is running low (isLow) or the
+                    user is at/past the limit but still has credits to fall
+                    back on. When sessions are plentiful we suppress this —
+                    "you have backup credits" is noise when you have 30 sessions
+                    left, but it's useful signal when you're down to 2. */}
+                {!planExhausted && isLow && creditBalance > 0 && (
                   <div style={{ display: "flex", alignItems: "center", gap: 5,
                     marginBottom: 12, marginTop: -2 }}>
                     <svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24"

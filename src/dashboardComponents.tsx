@@ -518,7 +518,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               setPromoLoading(true); setPromoError("");
               try {
                 const hdrs = await import("./supabase").then(m => m.authHeaders());
-                const res = await fetch("/api/validate-promo", { method: "POST", headers: hdrs, body: JSON.stringify({ code: promoCode.trim(), plan: "weekly" }) });
+                // Validate against the primary subscription plan (featured, or first non-free).
+                // The actual discount is recalculated server-side at checkout — this is
+                // just a preview so the user sees the savings before choosing a plan.
+                const previewPlan = plansForGrid.find(p => p.featured)?.id
+                  || plansForGrid.find(p => p.id !== "free")?.id
+                  || "weekly";
+                const res = await fetch("/api/validate-promo", { method: "POST", headers: hdrs, body: JSON.stringify({ code: promoCode.trim(), plan: previewPlan }) });
                 const data = await res.json();
                 if (data.valid) { setPromoResult(data); } else { setPromoError(data.error || "Invalid code"); setPromoResult(null); }
               } catch { setPromoError("Could not validate code"); }
@@ -690,6 +696,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
                   </button>
                 )}
+                {/* Auto-renewal disclosure — RBI / Indian payment best practice.
+                    Free plan has no billing; single-session has no subscription. */}
+                {!isCurrent && !isLowerTier && plan.id !== "free" && (
+                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 10, color: featured ? "rgba(250,247,240,0.45)" : c.stone, textAlign: "center", lineHeight: 1.5 }}>
+                    Renews at {plan.price} {plan.unit.replace(/^\/\s*/, "every ")} · Cancel anytime from Settings
+                  </p>
+                )}
               </div>
             );
           })}
@@ -719,7 +732,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         </div>
 
         <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginTop: 8, opacity: 0.7 }}>
-          Secure checkout powered by Razorpay · UPI, Cards, Netbanking · Cancel anytime
+          Secure checkout powered by Razorpay · UPI, Cards, Netbanking · Cancel anytime from Settings
         </p>
       </div>
     </div>

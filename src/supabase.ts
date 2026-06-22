@@ -488,6 +488,7 @@ export interface PaymentRecord {
   subscription_start: string;
   subscription_end: string;
   created_at: string;
+  receipt_url?: string | null;
 }
 
 export async function getPaymentHistory(userId: string): Promise<PaymentRecord[]> {

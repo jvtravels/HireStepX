@@ -7,6 +7,9 @@ import {
   supabaseUrl,
   supabaseAnonKey,
   escapeHtml,
+  isRateLimited,
+  getClientIp,
+  rateLimitResponse,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, button, dataCard } from "./_email-theme";
@@ -25,6 +28,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const bodyLen = parseInt((req.headers["content-length"] as string) || "0", 10);
   if (bodyLen > 1048576) return res.status(413).json({ error: "Request too large" });
   if (!origin) return res.status(403).json({ error: "Forbidden" });
+
+  // Rate limit: 5 reactivation attempts per IP per minute
+  const clientIp = getClientIp(req as unknown as Request);
+  const corsHeaders = { "Access-Control-Allow-Origin": origin };
+  if (await isRateLimited(clientIp, "reactivate-subscription", 5, 60)) {
+    return rateLimitResponse(corsHeaders);
+  }
 
   const SUPABASE_URL = supabaseUrl();
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -76,24 +86,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (subscriptionId && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
       const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
       try {
-        // Razorpay: resume a cancelled subscription by creating a new one with same plan
-        // For subscriptions cancelled with cancel_at_cycle_end, we check status first
+        // Step 1: fetch current subscription status from Razorpay
         const statusRes = await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}`, {
           headers: { Authorization: `Basic ${auth}` },
         });
-        if (statusRes.ok) {
+
+        if (!statusRes.ok) {
+          const errText = await statusRes.text().catch(() => "");
+          console.warn(`[reactivate] Razorpay GET subscription failed (${statusRes.status}): ${errText}`);
+          // Non-blocking — still clear the DB flag so the user is unblocked.
+        } else {
           const subData = await statusRes.json();
-          // If subscription is still active (cancel_at_cycle_end was used), it can be resumed
+
           if (subData.status === "active") {
-            // Razorpay doesn't have a direct "un-cancel" API for cancel_at_cycle_end.
-            // The subscription will continue normally — we just clear our DB flag.
-            console.warn(`[reactivate] Razorpay subscription ${subscriptionId} is still active, clearing cancel flag`);
+            // Subscription is still active (cancel_at_cycle_end = 1 was set).
+            // Call PATCH with cancel_at_cycle_end: 0 to remove the scheduled cancellation,
+            // so Razorpay will auto-renew at period end as normal.
+            const patchRes = await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}`, {
+              method: "PATCH",
+              headers: {
+                Authorization: `Basic ${auth}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ cancel_at_cycle_end: 0 }),
+            });
+
+            if (patchRes.ok) {
+              console.info(`[reactivate] Razorpay subscription ${subscriptionId} un-cancelled successfully`);
+            } else {
+              // PATCH failed — Razorpay may not support this for the current plan type,
+              // or the subscription is in a non-patchable state. We still clear the DB
+              // flag (the subscription is active until period end either way), but log
+              // the failure so we can investigate whether Option B is needed.
+              const patchErr = await patchRes.text().catch(() => "");
+              console.warn(
+                `[reactivate] Razorpay PATCH cancel_at_cycle_end=0 failed (${patchRes.status}): ${patchErr}. ` +
+                `Subscription will still cancel at period end — consider notifying the user.`
+              );
+            }
           } else if (subData.status === "cancelled" || subData.status === "completed") {
-            console.warn(`[reactivate] Razorpay subscription ${subscriptionId} is ${subData.status} — user will need to re-subscribe at next period end`);
+            // Subscription is already terminated on Razorpay's side — reactivation is not
+            // possible. Return 400 so the client shows the correct message instead of
+            // misleading the user with "Reactivated" when auto-renewal will never resume.
+            console.warn(
+              `[reactivate] Razorpay subscription ${subscriptionId} is already '${subData.status}'. ` +
+              `Rejecting reactivation — user must purchase a new plan.`
+            );
+            return res.status(400).json({
+              error: "Your subscription has already ended on the payment provider's side. Please purchase a new plan to continue.",
+              code: "subscription_terminated",
+            });
+          } else {
+            // Unexpected status (e.g. 'halted', 'pending') — log and continue.
+            console.warn(`[reactivate] Razorpay subscription ${subscriptionId} has unexpected status '${subData.status}' — clearing DB flag only.`);
           }
         }
       } catch (err) {
-        console.warn("[reactivate] Razorpay API check failed (continuing with DB update):", err);
+        // Network error or JSON parse failure — non-blocking. DB flag still clears
+        // so the user sees the reactivation succeed on our side. The next Razorpay
+        // webhook will reconcile the real state.
+        console.warn("[reactivate] Razorpay API call failed (continuing with DB update):", err);
       }
     }
 

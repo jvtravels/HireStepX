@@ -216,6 +216,28 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [paymentBanner, setPaymentBanner] = useState<"success" | "cancelled" | null>(null);
   const [creditBalance, setCreditBalance] = useState(0);
   const [creditsLoaded, setCreditsLoaded] = useState(false);
+  // Seed credit balance from sessionStorage on mount so the CTA never
+  // flashes skeleton when the user navigates back from /interview.
+  // /interview lives outside the (dashboard) route group, so DashboardProvider
+  // unmounts on that transition and remounts on return — resetting creditBalance
+  // to 0 and creditsLoaded to false. The sessionStorage write at line ~240
+  // keeps a fresh copy; we read it here once so the sidebar is correct
+  // immediately, before the DB fetch resolves.
+  const creditSeedDoneRef = useRef(false);
+  useEffect(() => {
+    if (!user?.id || creditSeedDoneRef.current) return;
+    creditSeedDoneRef.current = true;
+    try {
+      const cached = sessionStorage.getItem(`hsx_credit_${user.id}`);
+      if (cached !== null) {
+        const val = parseInt(cached, 10);
+        if (!isNaN(val)) {
+          setCreditBalance(val);
+          setCreditsLoaded(true); // skip skeleton — DB fetch below will overwrite with fresh value
+        }
+      }
+    } catch { /* sessionStorage unavailable (private-browsing) — stay with defaults */ }
+  }, [user?.id]);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((msg: string) => {
