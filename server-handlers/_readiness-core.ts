@@ -124,7 +124,7 @@ export interface Pillar {
   trend: number[]; drivers: PillarDriver[]; hold: string; fix: string;
 }
 export interface Skill { name: string; score: number; delta: number; percentile: number }
-export interface TargetMeta { role: string; company: string; round: string; date: string }
+export interface TargetMeta { role: string; company: string; hasCompany: boolean; round: string; date: string }
 export interface RegisterSignal { key: string; label: string; ratePct: number; tone: "asset" | "watch"; note: string }
 export interface FocusRollup { type: string; sessions: number; metrics: { label: string; value: string; tone: Tone }[] }
 export interface CrossInsight { kind: "improvement" | "regression" | "persistent"; metric: string; delta?: number; text: string }
@@ -170,6 +170,11 @@ export interface ReadinessPayload {
   };
   focusMetrics: FocusRollup[];
   trajectory: number[];
+  // Epoch-ms timestamp per trajectory point (and per pillar trend point —
+  // both are one-per-session and share this index). Lets the client window
+  // the series by real date for the 7-day / 1-month / all toggle instead of
+  // slicing by raw item count.
+  trajectoryStamps: number[];
   projection: { sessions: number; hours: number; targetRi: number };
   refresh: { skill: string; days: number; decay: number }[];
   crossSession: CrossInsight[];
@@ -441,6 +446,7 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
     return cumulativePillars(window, asOf);
   });
   const trajectory = vectors.map(composite);
+  const trajectoryStamps = sessions.map((s) => Date.parse(s.createdAt));
   const ri = trajectory[n - 1];
   const baselineRi = trajectory[0];
 
@@ -607,12 +613,16 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
     baseline: { ri: baselineRi, label: `your first session, ${weeksAgoLabel(Date.parse(sessions[0].createdAt), nowMs)}` },
     target: {
       role: profile.targetRole || "Your role",
-      company: resolvedCompany || "your target company",
+      // Empty when the candidate has not named a target company. The UI reads
+      // hasCompany and switches to a holistic, role-level / strong-hire-bar
+      // framing rather than printing the placeholder "your target company".
+      company: resolvedCompany,
+      hasCompany: resolvedCompany.length > 0,
       round: focusLabel(focusKey(sessions[n - 1])) + " loop",
       date: fmtDate(profile.interviewDate),
     },
     pillars, pillarLabels: PILLAR_LABELS, snapshots, skills, scoreSpread, coverage, blindSpots,
-    composure, cultural, answerCraft, focusMetrics, trajectory, projection, refresh,
+    composure, cultural, answerCraft, focusMetrics, trajectory, trajectoryStamps, projection, refresh,
     crossSession, storyReuse, redFlags, reverse, resume, attention, followUps, coaching, negotiation, cadence,
     meta: { modelled: [...new Set(modelled)], sparse: n < SPARSE_BELOW, generatedAtMs: nowMs },
   };
@@ -982,4 +992,27 @@ export function rangeSlice<T>(series: T[], range: RangeKey): T[] {
   if (range === "all" || series.length <= 2) return series;
   const keep = range === "7d" ? Math.min(7, series.length) : Math.min(30, series.length);
   return series.slice(series.length - keep);
+}
+
+export const RANGE_DAYS: Record<RangeKey, number | null> = { "7d": 7, "1m": 30, all: null };
+
+/** Index of the first series point that falls inside the selected date range,
+ *  measured back from nowMs. Returns 0 for "all". When every point is older
+ *  than the window it keeps the most recent point so the chart never blanks. */
+export function rangeStartIndex(stamps: number[], range: RangeKey, nowMs: number): number {
+  const days = RANGE_DAYS[range];
+  if (days == null || stamps.length === 0) return 0;
+  const cutoff = nowMs - days * 86_400_000;
+  for (let i = 0; i < stamps.length; i++) if (stamps[i] >= cutoff) return i;
+  return Math.max(0, stamps.length - 1);
+}
+
+/** Window a per-session series to the selected date range using its aligned
+ *  timestamps. Falls back to the whole series if stamps are missing or do not
+ *  line up, so a partial payload never blanks the chart. This is the truthful
+ *  replacement for count-based rangeSlice: "7 days" means the last 7 days, not
+ *  the last 7 items. */
+export function rangeSliceDated<T>(series: T[], stamps: number[], range: RangeKey, nowMs: number): T[] {
+  if (range === "all" || stamps.length !== series.length || series.length === 0) return series;
+  return series.slice(rangeStartIndex(stamps, range, nowMs));
 }

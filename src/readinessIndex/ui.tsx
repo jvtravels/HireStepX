@@ -194,7 +194,7 @@ export function RiGauge({ ri, threshold, band, cohort, size = 220 }: { ri: numbe
       </svg>
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontFamily: f.serif, fontSize: 64, lineHeight: 1, color: t.coal, fontWeight: 500 }}>{ri}</span>
-        <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, marginTop: 2 }}>/ 100 · RI</span>
+        <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, marginTop: 2 }}>/ 100 · RI now</span>
         <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, marginTop: 8 }}>bar · <strong style={{ color: t.coal }}>{threshold}</strong></span>
       </div>
     </div>

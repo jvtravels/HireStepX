@@ -10,7 +10,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
 import type { Fixture, Pillar, CrossInsight, TypedFlag, RangeKeyLocal as RangeKey, Attention } from "./types";
-import { rangeSlice, RANGE_LABEL } from "./types";
+import { rangeSliceDated, rangeStartIndex, RANGE_LABEL } from "./types";
 import {
   Card, Eyebrow, Title, DeltaTag, MetricStat, StackBar,
   RiGauge, Trajectory, Spark, SkillBar, StarChips, EvidenceQuote,
@@ -44,13 +44,19 @@ function DisclosureBtn({ open, onClick, label }: { open: boolean; onClick: () =>
 
 export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; range: RangeKey }) {
   const band = BAND_META[d.band];
-  const traj = rangeSlice(d.trajectory, range);
+  const nowMs = d.meta.generatedAtMs;
+  const traj = rangeSliceDated(d.trajectory, d.trajectoryStamps, range, nowMs);
   const vsCohort = d.ri - d.cohort.ri;
   const vsBaseline = d.ri - d.baseline.ri;
+  /* Range-driven movement: RI now vs. RI at the start of the visible window.
+     For "all" this is lifetime change; for 7d / 1m it tracks the toggle so the
+     control visibly responds even when the trajectory line is short. */
+  const winStart = rangeStartIndex(d.trajectoryStamps, range, nowMs);
+  const rangeDelta = d.trajectory.length ? d.ri - d.trajectory[Math.min(winStart, d.trajectory.length - 1)] : 0;
   return (
     <Card as="section" pad={narrow ? 18 : 26} id="zone-readiness">
       <h1 style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>
-        Readiness Index for {d.target.role} at {d.target.company}, {d.target.round}
+        Readiness Index for {d.target.role}{d.target.hasCompany ? ` at ${d.target.company}` : ""}, {d.target.round}
       </h1>
       <div style={{ display: "flex", flexDirection: narrow ? "column" : "row", gap: narrow ? 18 : 30, alignItems: narrow ? "stretch" : "center" }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
@@ -60,11 +66,11 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
           <div>
             <Eyebrow>Readiness Index · target-specific</Eyebrow>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-              <Title as="h2" size={narrow ? 26 : 30}>{d.target.role} · {d.target.company}</Title>
+              <Title as="h2" size={narrow ? 26 : 30}>{d.target.role}{d.target.hasCompany ? ` · ${d.target.company}` : ""}</Title>
               <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, background: t.creamSoft, padding: "3px 10px", borderRadius: 999 }}>{d.target.round}</span>
             </div>
             <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 6 }}>
-              Interview {d.target.date}. Calibrated to {d.target.company}'s bar. Showing {RANGE_LABEL[range]}.
+              Interview {d.target.date}. Calibrated to {d.target.hasCompany ? `${d.target.company}'s` : "a strong-hire"} bar. Showing {RANGE_LABEL[range]}.
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -72,7 +78,7 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
               <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: band.fg }} />{band.label}
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 999, background: t.creamSoft, fontFamily: f.sans, fontSize: 13, color: t.coal }}>
-              <DeltaTag value={d.delta14d} /> <span style={{ color: t.inkSoft }}>last 14 days</span>
+              <DeltaTag value={rangeDelta} /> <span style={{ color: t.inkSoft }}>over {RANGE_LABEL[range]}</span>
             </span>
             <span style={{ padding: "7px 14px", borderRadius: 999, background: t.indigo100, fontFamily: f.sans, fontSize: 13, color: t.indigoDeep, fontWeight: 600 }}>
               {vsCohort >= 0 ? "+" : ""}{vsCohort} vs the {d.cohort.label}
@@ -110,11 +116,11 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
             <div style={{ flex: 1, minWidth: 220 }}>
               <p style={{ margin: 0, fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.5 }}>
                 {d.band === "ready" ? (
-                  <>You're <strong style={{ color: t.success }}>above {d.target.company}'s bar</strong> with margin to spare. About{" "}
+                  <>You're <strong style={{ color: t.success }}>above {d.target.hasCompany ? `${d.target.company}'s` : "the"} bar</strong> with margin to spare. About{" "}
                     <strong>{d.projection.sessions} more sessions</strong> lifts you to RI {d.projection.targetRi} and a comfortable margin.</>
                 ) : (
                   <>About <strong>{d.projection.sessions} focused sessions</strong> (~{d.projection.hours} hrs) puts you over{" "}
-                    {d.target.company}'s bar of <strong>{d.threshold}</strong>. The pillars below show where the points are.</>
+                    {d.target.hasCompany ? `${d.target.company}'s` : "the strong-hire"} bar of <strong>{d.threshold}</strong>. The pillars below show where the points are.</>
                 )}
               </p>
             </div>
@@ -155,13 +161,13 @@ const PILLAR_HINT: Record<Pillar["key"], string> = {
   competence: "skill scores", consistency: "variance", coverage: "breadth · STAR", currency: "skill-decay", composure: "fillers · pace",
 };
 
-function PillarCard({ p, lever, active, onOpen, range }: { p: Pillar; lever: boolean; active: boolean; onOpen: () => void; range: RangeKey }) {
+function PillarCard({ p, lever, active, onOpen, range, stamps, nowMs }: { p: Pillar; lever: boolean; active: boolean; onOpen: () => void; range: RangeKey; stamps: number[]; nowMs: number }) {
   return (
     <Card as="article" className="rix-pillar" pad={18}
       style={{
         display: "flex", flexDirection: "column", gap: 8, minHeight: 196,
         border: active ? `1px solid ${t.indigo}` : lever ? `1px solid ${COPPER_LINE}` : "none",
-        boxShadow: active ? `0 0 0 3px ${t.indigo100}, ${shadows.card}` : lever ? `0 0 0 3px ${t.copperSoft}, ${shadows.card}` : shadows.card,
+        boxShadow: active ? `0 0 0 3px ${t.indigo100}, ${shadows.card}` : shadows.card,
       }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
@@ -175,7 +181,7 @@ function PillarCard({ p, lever, active, onOpen, range }: { p: Pillar; lever: boo
           <span style={{ fontFamily: f.serif, fontSize: 38, lineHeight: 1, color: scoreColor(p.score) }}>{p.score}</span>
           <DeltaTag value={p.delta} suffix=" this fortnight" />
         </span>
-        <Spark points={rangeSlice(p.trend, range)} color={scoreColor(p.score)} width={70} height={26} />
+        <Spark points={rangeSliceDated(p.trend, stamps, range, nowMs)} color={scoreColor(p.score)} width={70} height={26} />
       </div>
       <div role="img" aria-label={`${p.label} pillar: ${p.score} out of 100`} style={{ height: 6, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
         <div style={{ width: `${p.score}%`, height: "100%", background: scoreColor(p.score), borderRadius: 999 }} />
@@ -200,7 +206,7 @@ export function PillarGrid({ d, narrow, activeKey, onOpen, range }: { d: Fixture
       </div>
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(5, 1fr)", gap: 14 }}>
         {d.pillars.map((p) => (
-          <PillarCard key={p.key} p={p} lever={p.key === leverKey} active={p.key === activeKey} onOpen={() => onOpen(p.key)} range={range} />
+          <PillarCard key={p.key} p={p} lever={p.key === leverKey} active={p.key === activeKey} onOpen={() => onOpen(p.key)} range={range} stamps={d.trajectoryStamps} nowMs={d.meta.generatedAtMs} />
         ))}
       </div>
     </section>
@@ -321,7 +327,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16, gap: 12 }}>
           <div>
             <Eyebrow as="h2">Competence</Eyebrow>
-            <Title as="h3" size={20}>Skill profile vs {d.target.company}</Title>
+            <Title as="h3" size={20}>Skill profile vs {d.target.hasCompany ? d.target.company : "the strong-hire bar"}</Title>
           </div>
           <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>score · percentile · delta</span>
         </div>
@@ -388,7 +394,7 @@ export function BlindSpots({ d }: { d: Fixture }) {
           <Eyebrow as="h2" tone="copper">Blind spots · commonly tested, untested by you</Eyebrow>
           <Title as="h3" size={20}>What the loop will ask that you haven't rehearsed</Title>
         </div>
-        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>% = frequency at {d.target.company}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>% = frequency {d.target.hasCompany ? `at ${d.target.company}` : "in this role"}</span>
       </div>
       {d.blindSpots.length ? (
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>

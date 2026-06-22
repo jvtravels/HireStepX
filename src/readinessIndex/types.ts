@@ -44,3 +44,20 @@ export function rangeSlice<T>(series: T[], range: RangeKeyLocal): T[] {
   const keep = range === "7d" ? Math.min(7, series.length) : Math.min(30, series.length);
   return series.slice(series.length - keep);
 }
+
+/* Date-based windowing — the truthful version for the 7-day / 1-month / all
+   toggle. Kept byte-identical in behaviour to the core's rangeSliceDated /
+   rangeStartIndex (a parity test guards the duplication) so the client pulls
+   no server-handler runtime. */
+export const RANGE_DAYS: Record<RangeKeyLocal, number | null> = { "7d": 7, "1m": 30, all: null };
+export function rangeStartIndex(stamps: number[], range: RangeKeyLocal, nowMs: number): number {
+  const days = RANGE_DAYS[range];
+  if (days == null || stamps.length === 0) return 0;
+  const cutoff = nowMs - days * 86_400_000;
+  for (let i = 0; i < stamps.length; i++) if (stamps[i] >= cutoff) return i;
+  return Math.max(0, stamps.length - 1);
+}
+export function rangeSliceDated<T>(series: T[], stamps: number[], range: RangeKeyLocal, nowMs: number): T[] {
+  if (range === "all" || stamps.length !== series.length || series.length === 0) return series;
+  return series.slice(rangeStartIndex(stamps, range, nowMs));
+}

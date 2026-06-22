@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   computeReadiness,
   rangeSlice,
+  rangeSliceDated,
+  rangeStartIndex,
   RANGE_LABEL,
   type RawSession,
   type RIReport,
@@ -314,6 +316,7 @@ describe("target company resolution", () => {
   it("uses the profile target company when set", () => {
     const p = computeReadiness(input([session({ id: "a", company: "Stripe" })], { targetCompany: "Razorpay" }))!;
     expect(p.target.company).toBe("Razorpay");
+    expect(p.target.hasCompany).toBe(true);
   });
 
   it("does NOT borrow a company from sessions when the profile is blank (holistic view)", () => {
@@ -323,7 +326,8 @@ describe("target company resolution", () => {
     ];
     const p = computeReadiness(input(sessions, { targetCompany: "" }))!;
     // No profile company → stay holistic, never peg the view to a session's company.
-    expect(p.target.company).toBe("your target company");
+    expect(p.target.company).toBe("");
+    expect(p.target.hasCompany).toBe(false);
     expect(p.cohort.label).not.toContain("Flipkart");
     expect(p.cohort.label).not.toContain("Razorpay");
   });
@@ -335,10 +339,12 @@ describe("target company resolution", () => {
     expect(p.cohort.label).not.toContain("Flipkart");
   });
 
-  it("never leaks the literal placeholder — uses generic copy when nothing is set", () => {
+  it("never leaks a placeholder company — stays empty and flags holistic when nothing is set", () => {
     const p = computeReadiness(input([session({ id: "a", company: undefined })], { targetCompany: "" }))!;
-    expect(p.target.company).toBe("your target company");
-    expect(p.target.company).not.toBe("Target company");
+    // Empty + hasCompany=false is the contract the UI keys on to drop the
+    // company chip and switch to strong-hire-bar / role-level phrasing.
+    expect(p.target.company).toBe("");
+    expect(p.target.hasCompany).toBe(false);
   });
 });
 
@@ -370,6 +376,47 @@ describe("rangeSlice / RANGE_LABEL core-vs-client parity", () => {
     const cases: number[][] = [[], [1], [1, 2], [1, 2, 3, 4, 5], series];
     for (const s of cases) for (const r of ranges) {
       expect(client.rangeSlice(s, r)).toEqual(rangeSlice(s, r));
+    }
+    // Dated variants must also stay byte-for-byte equivalent.
+    const day = 86_400_000;
+    const stampCases = series.map((_, i) => NOW - (series.length - 1 - i) * day);
+    for (const r of ranges) {
+      expect(client.rangeSliceDated(series, stampCases, r, NOW)).toEqual(rangeSliceDated(series, stampCases, r, NOW));
+      expect(client.rangeStartIndex(stampCases, r, NOW)).toBe(rangeStartIndex(stampCases, r, NOW));
+    }
+  });
+});
+
+describe("rangeSliceDated date-windowing", () => {
+  const day = 86_400_000;
+  it("returns the full series for 'all' regardless of stamps", () => {
+    const s = [1, 2, 3];
+    expect(rangeSliceDated(s, [NOW - 100 * day, NOW - 50 * day, NOW], "all", NOW)).toEqual(s);
+  });
+  it("drops points older than the window cutoff", () => {
+    const s = [10, 20, 30, 40];
+    const stamps = [NOW - 40 * day, NOW - 20 * day, NOW - 5 * day, NOW - day];
+    expect(rangeSliceDated(s, stamps, "7d", NOW)).toEqual([30, 40]);
+    expect(rangeSliceDated(s, stamps, "1m", NOW)).toEqual([20, 30, 40]);
+  });
+  it("falls back to the full series when stamps and series misalign", () => {
+    expect(rangeSliceDated([1, 2, 3], [NOW], "7d", NOW)).toEqual([1, 2, 3]);
+  });
+  it("keeps the last point when every stamp predates the window", () => {
+    const s = [1, 2, 3];
+    const stamps = [NOW - 100 * day, NOW - 90 * day, NOW - 80 * day];
+    expect(rangeSliceDated(s, stamps, "7d", NOW)).toEqual([3]);
+  });
+  it("emits one trajectory stamp per session, ascending", () => {
+    const r = computeReadiness(input([
+      session({ id: "a", createdAt: daysAgo(40) }),
+      session({ id: "b", createdAt: daysAgo(20) }),
+      session({ id: "c", createdAt: daysAgo(5) }),
+      session({ id: "d", createdAt: daysAgo(1) }),
+    ]))!;
+    expect(r.trajectoryStamps.length).toBe(r.trajectory.length);
+    for (let i = 1; i < r.trajectoryStamps.length; i++) {
+      expect(r.trajectoryStamps[i]).toBeGreaterThanOrEqual(r.trajectoryStamps[i - 1]);
     }
   });
 });
