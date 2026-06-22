@@ -702,34 +702,39 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   {
                     key: "bug" as const, label: "Bug report",
                     icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2l1.5 1.5"/><path d="M14.5 3.5L16 2"/><path d="M9 7.5h6"/><path d="M12 7.5v13"/><path d="M7.5 10.5H4a2 2 0 0 0-2 2v1a6 6 0 0 0 6 6h8a6 6 0 0 0 6-6v-1a2 2 0 0 0-2-2h-3.5"/><path d="M4.5 7.5A3.5 3.5 0 0 1 8 4h8a3.5 3.5 0 0 1 3.5 3.5"/></svg>,
-                    activeBg: T.error100, activeColor: T.error, activeBdr: `1px solid rgba(185,28,28,0.25)`,
+                    inactiveBg: "rgba(185,28,28,0.06)", inactiveColor: T.error,
+                    activeBg: T.error100, activeColor: T.error, activeBdr: `1px solid rgba(185,28,28,0.3)`,
                   },
                   {
                     key: "feature" as const, label: "Feature idea",
                     icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+                    inactiveBg: T.indigo100, inactiveColor: T.indigo,
                     activeBg: T.indigo100, activeColor: T.indigo, activeBdr: `1px solid ${T.indigoRing}`,
                   },
                   {
                     key: "billing" as const, label: "Billing",
                     icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+                    inactiveBg: T.copper100, inactiveColor: T.copper,
                     activeBg: T.copper100, activeColor: T.copper, activeBdr: `1px solid ${T.copperBorder}`,
                   },
                   {
                     key: "other" as const, label: "Other",
                     icon: <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+                    inactiveBg: T.creamSoft, inactiveColor: c.stone,
                     activeBg: T.copper100, activeColor: T.copper, activeBdr: `1px solid ${T.copperBorder}`,
                   },
-                ]).map(({ key, label, icon, activeBg, activeColor, activeBdr }) => {
+                ]).map(({ key, label, icon, inactiveBg, inactiveColor, activeBg, activeColor, activeBdr }) => {
                   const active = helpType === key;
                   return (
                     <button key={key} onClick={() => setHelpType(key)} style={{
                       display: "flex", alignItems: "center", gap: 7,
                       padding: "9px 11px", borderRadius: 8, cursor: "pointer",
-                      fontFamily: font.ui, fontSize: 12, fontWeight: active ? 600 : 500,
+                      fontFamily: font.ui, fontSize: 12, fontWeight: active ? 700 : 500,
                       transition: "all 0.15s", textAlign: "left" as const,
-                      background: active ? activeBg : T.creamSoft,
-                      color: active ? activeColor : c.stone,
+                      background: active ? activeBg : inactiveBg,
+                      color: active ? activeColor : inactiveColor,
                       border: active ? activeBdr : `1px solid transparent`,
+                      opacity: active ? 1 : 0.7,
                     }}>
                       {icon}
                       {label}
@@ -747,10 +752,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 maxLength={500}
                 style={{
                   width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 8,
-                  background: T.creamSoft, border: `1px solid ${c.border}`,
+                  background: T.white, border: `1px solid ${c.border}`,
                   color: c.ivory, fontFamily: font.ui, fontSize: 13, resize: "none",
                   outline: "none", transition: "border-color 0.15s", lineHeight: 1.55,
                   marginBottom: 10,
+                  boxShadow: "inset 0 1px 3px rgba(14,12,8,0.04)",
                 }}
                 onFocus={(e) => e.currentTarget.style.borderColor = T.copperBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = c.border}
