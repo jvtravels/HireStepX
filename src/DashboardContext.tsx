@@ -612,11 +612,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; }
   }).length;
   const proRemaining = isPro ? Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth) : 0;
-  // Free-tier users past their 2 free sessions are NOT at the limit if they
-  // hold purchased credits — the backend will consume one on session start.
+  // Users past their plan allotment are NOT at the limit if they hold purchased
+  // credits — the backend will consume one on session start. This applies to
+  // all tiers: free (past 2 free sessions), starter (past weekly cap), and
+  // pro (past monthly cap). Credits are a universal top-up, not free-only.
   const atSessionLimit = (isFree && sessionsUsed >= FREE_SESSION_LIMIT && creditBalance === 0)
-    || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT)
-    || (isPro && sessionsThisMonth >= PRO_MONTHLY_LIMIT);
+    || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0)
+    || (isPro && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0);
 
   const daysLeft = persisted.interviewDate ? daysUntil(persisted.interviewDate) : 0;
   const readinessScore = scoreTrend.length > 0 && skills.length > 0 ? computeReadiness(scoreTrend, skills) : 0;

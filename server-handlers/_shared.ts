@@ -345,7 +345,16 @@ export async function checkSessionLimit(
       const range = sessionsRes.headers.get("content-range");
       const thisMonth = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
       if (thisMonth >= PRO_MONTHLY_LIMIT) {
-        return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT}/month). Buy extra sessions or wait for next month.` };
+        // Exhausted Pro monthly allotment — allow only if the user holds a
+        // purchased session credit (same credit ledger as free-tier top-ups).
+        // End-of-session callers pass consumeCredit:false — the credit was
+        // already spent at session start, so scoring must not spend a second one.
+        if (!consumeCredit) return { allowed: true };
+        const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
+        if (!consumed) {
+          return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT}/month). Buy extra sessions or wait for next month.` };
+        }
+        return { allowed: true };
       }
       return { allowed: true };
     }
@@ -408,7 +417,14 @@ export async function checkSessionLimit(
       const range = sessionsRes.headers.get("content-range");
       const thisWeek = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
       if (thisWeek >= STARTER_WEEKLY_LIMIT) {
-        return { allowed: false, reason: `Starter plan limit reached (${STARTER_WEEKLY_LIMIT}/week). Upgrade to Pro for more sessions.` };
+        // Exhausted Starter weekly allotment — allow only if the user holds a
+        // purchased session credit. Same pattern as free and pro tiers.
+        if (!consumeCredit) return { allowed: true };
+        const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
+        if (!consumed) {
+          return { allowed: false, reason: `Starter plan limit reached (${STARTER_WEEKLY_LIMIT}/week). Buy extra sessions or upgrade to Pro.` };
+        }
+        return { allowed: true };
       }
     } else {
       clearTimeout(timer);

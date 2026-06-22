@@ -404,10 +404,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           >
             {!tierKnown ? "\u00a0"
               : proExhausted
-                /* Count format stays consistent with active-quota phrasing */
-                ? `${PRO_MONTHLY_LIMIT}/${PRO_MONTHLY_LIMIT} sessions used this month`
+                /* Show credits when available \u2014 they unlock sessions beyond the monthly cap */
+                ? (creditBalance > 0
+                  ? `${creditBalance} purchased session${creditBalance !== 1 ? "s" : ""} ready to use`
+                  : `${PRO_MONTHLY_LIMIT}/${PRO_MONTHLY_LIMIT} sessions used this month`)
               : starterExhausted
-                ? `${STARTER_WEEKLY_LIMIT}/${STARTER_WEEKLY_LIMIT} sessions used this week`
+                ? (creditBalance > 0
+                  ? `${creditBalance} purchased session${creditBalance !== 1 ? "s" : ""} ready to use`
+                  : `${STARTER_WEEKLY_LIMIT}/${STARTER_WEEKLY_LIMIT} sessions used this week`)
               : isPro
                 ? `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions this month${proRemaining <= 5 ? ", running low" : ""}`
               : isStarter
@@ -430,14 +434,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               : isStarter
               ? Math.min(100, (sessionsThisWeek / STARTER_WEEKLY_LIMIT) * 100)
               : Math.min(100, (sessionsThisMonth / PRO_MONTHLY_LIMIT) * 100);
-            const fill = (proExhausted || starterExhausted || (freeExhausted && creditBalance === 0))
+            const fill = ((proExhausted && creditBalance === 0) || (starterExhausted && creditBalance === 0) || (freeExhausted && creditBalance === 0))
               ? c.gilt
-              : isPro ? (proRemaining <= 5 ? c.ember : c.sage)
-              : isStarter ? (starterRemaining <= 2 ? c.ember : c.gilt)
+              : isPro ? (proExhausted && creditBalance > 0 ? c.gilt : proRemaining <= 5 ? c.ember : c.sage)
+              : isStarter ? (starterExhausted && creditBalance > 0 ? c.gilt : starterRemaining <= 2 ? c.ember : c.gilt)
               // Free tier exhausted but has credits → show healthy gilt, not depleted
               : (freeExhausted && creditBalance > 0) ? c.gilt
               : (sessionsRemaining === 1 ? c.ember : c.gilt);
-            const ariaLabel = proExhausted || starterExhausted || (freeExhausted && creditBalance === 0)
+            const ariaLabel = (proExhausted && creditBalance === 0) || (starterExhausted && creditBalance === 0) || (freeExhausted && creditBalance === 0)
               ? "All sessions used"
               : isPro ? `${sessionsThisMonth} of ${PRO_MONTHLY_LIMIT} sessions used this month`
               : isStarter ? `${sessionsThisWeek} of ${STARTER_WEEKLY_LIMIT} sessions used this week`
@@ -459,15 +463,15 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           {!tierKnown ? (
             <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
           ) : proExhausted ? (
-            /* Exhausted Pro: single focused CTA — date already shown in header */
+            /* Exhausted Pro: "Buy more" when credits exist (can start now), else upgrade */
             <button
               onClick={() => setShowUpgradeModal(true)}
-              title="Add more sessions or upgrade your plan (⌘B)"
-              aria-label="Upgrade your plan to get more sessions"
+              title={creditBalance > 0 ? "Buy more session credits (⌘B)" : "Add more sessions or upgrade your plan (⌘B)"}
+              aria-label={creditBalance > 0 ? "Buy more session credits" : "Upgrade your plan to get more sessions"}
               style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: c.gilt, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", transition: "filter 0.2s" }}
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
               onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-            >Upgrade plan →</button>
+            >{creditBalance > 0 ? "Buy more sessions" : "Upgrade plan →"}</button>
           ) : isPro ? (
             /* Active Pro: neutral management actions */
             <>

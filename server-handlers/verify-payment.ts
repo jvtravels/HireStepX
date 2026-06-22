@@ -498,7 +498,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (razorpay_order_id) await clearPaymentIntent(razorpay_order_id);
       await captureServerEvent("payment_completed", userId, {
-        plan: "single", tier: "free", amount: purchaseAmount, currency: "INR", payment_id: razorpay_payment_id, quantity: sessionQuantity, credits_after: newBalance,
+        // tier reflects the user's actual subscription at purchase time — credits
+        // are a universal top-up available to all tiers, not just free users.
+        plan: "single", tier: current?.subscription_tier || "free", amount: purchaseAmount, currency: "INR", payment_id: razorpay_payment_id, quantity: sessionQuantity, credits_after: newBalance,
       });
       return res.status(200).json({
         success: true,
