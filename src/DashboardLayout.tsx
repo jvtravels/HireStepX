@@ -659,74 +659,86 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", right: "max(24px, env(safe-area-inset-right))", zIndex: 80 }}>
         {helpOpen && (
           <div role="dialog" aria-modal="true" aria-label="Help and support" style={{
-            width: 320, maxHeight: 440, overflowY: "auto", marginBottom: 12,
-            background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14,
-            padding: "20px 20px 16px", boxShadow: shadow.modal,
+            width: 320, marginBottom: 12,
+            background: T.white, border: `1px solid ${c.border}`, borderRadius: 14,
+            padding: "20px 20px 18px", boxShadow: shadow.modal,
             animation: "slideDown 0.2s ease",
           }}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, margin: 0 }}>Help & Support</h3>
-              <button onClick={() => setHelpOpen(false)} aria-label="Close help panel" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4, borderRadius: 6, transition: "color 0.15s" }}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+              <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 700, color: c.ivory, margin: 0, letterSpacing: "-0.01em" }}>Help & Support</h3>
+              <button onClick={() => setHelpOpen(false)} aria-label="Close help panel" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4, borderRadius: 6, transition: "color 0.15s", lineHeight: 0 }}
                 onMouseEnter={(e) => e.currentTarget.style.color = c.ivory}
                 onMouseLeave={(e) => e.currentTarget.style.color = c.stone}>
                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
-            {/* Contact section */}
-            <div style={{ marginBottom: 16, padding: "12px", borderRadius: 8, background: c.creamSoft }}>
-              <p style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.chalk, marginBottom: 8 }}>Need help?</p>
-              <a href="mailto:support@hirestepx.com" style={{
-                display: "block", textAlign: "center", padding: "8px 0", borderRadius: 8,
-                background: c.creamSoft, border: `1px solid rgba(180,83,9,0.2)`,
-                color: c.gilt, fontFamily: font.ui, fontSize: 12, fontWeight: 600, textDecoration: "none",
+            {/* Contact row */}
+            <a href="mailto:support@hirestepx.com"
+              style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                borderRadius: 8, border: `1px solid ${T.copperBorder}`,
+                background: T.copper100, textDecoration: "none",
                 transition: "background 0.15s",
               }}
-                onMouseEnter={(e) => e.currentTarget.style.background = T.copper100}
-                onMouseLeave={(e) => e.currentTarget.style.background = c.creamSoft}>
-                support@hirestepx.com
-              </a>
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginTop: 6 }}>We typically respond within 24 hours</p>
-            </div>
+              onMouseEnter={(e) => (e.currentTarget as HTMLAnchorElement).style.background = T.copperSoft}
+              onMouseLeave={(e) => (e.currentTarget as HTMLAnchorElement).style.background = T.copper100}>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <div>
+                <p style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: T.copper, margin: 0 }}>support@hirestepx.com</p>
+                <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: 0, marginTop: 1 }}>Typically within 24 hours</p>
+              </div>
+            </a>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: c.border, margin: "16px 0" }} />
 
             {/* Feedback section */}
             <div>
-              {/* Type selector */}
-              <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" as const }}>
-                {(["bug", "feature", "billing", "other"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setHelpType(t)}
-                    style={{
-                      padding: "3px 10px", borderRadius: 20, border: "none", cursor: "pointer",
-                      fontFamily: font.ui, fontSize: 11, fontWeight: 600, transition: "all 0.15s",
-                      background: helpType === t
-                        ? (t === "bug" ? "rgba(239,68,68,0.2)" : t === "feature" ? "rgba(124,110,230,0.2)" : t === "billing" ? "rgba(180,83,9,0.2)" : "rgba(100,100,100,0.25)")
-                        : c.creamSoft,
-                      color: helpType === t
-                        ? (t === "bug" ? "#fca5a5" : t === "feature" ? "#c4b5fd" : t === "billing" ? c.gilt : c.stone)
-                        : c.stone,
-                    }}
-                  >{t}</button>
-                ))}
+              {/* Type pills */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" as const }}>
+                {(["bug", "feature", "billing", "other"] as const).map((t) => {
+                  const active = helpType === t;
+                  const activeBg   = t === "bug" ? T.error100   : t === "feature" ? T.indigo100  : T.copper100;
+                  const activeColor= t === "bug" ? T.error      : t === "feature" ? T.indigo     : T.copper;
+                  const activeBdr  = t === "bug" ? `1px solid rgba(185,28,28,0.3)` : t === "feature" ? `1px solid ${T.indigoRing}` : `1px solid ${T.copperBorder}`;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setHelpType(t)}
+                      style={{
+                        padding: "4px 11px", borderRadius: 20, cursor: "pointer",
+                        fontFamily: font.ui, fontSize: 11, fontWeight: 600,
+                        transition: "all 0.15s", letterSpacing: "0.01em",
+                        background: active ? activeBg : "transparent",
+                        color: active ? activeColor : c.stone,
+                        border: active ? activeBdr : `1px solid ${c.border}`,
+                      }}
+                    >{t}</button>
+                  );
+                })}
               </div>
               <textarea
-                rows={2}
+                rows={3}
                 placeholder={helpType === "bug" ? "Describe what went wrong..." : helpType === "feature" ? "Describe what you'd like..." : helpType === "billing" ? "Describe your billing question..." : "Describe your issue or suggestion..."}
                 value={helpFeedback}
                 onChange={(e) => { setHelpFeedback(e.target.value); if (helpSent) setHelpSent(false); }}
                 style={{
-                  width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 8,
-                  background: c.creamSoft, border: `1px solid ${c.border}`,
-                  color: c.ivory, fontFamily: font.ui, fontSize: 12, resize: "vertical",
+                  width: "100%", boxSizing: "border-box", padding: "9px 11px", borderRadius: 8,
+                  background: T.creamSoft, border: `1px solid ${c.border}`,
+                  color: c.ivory, fontFamily: font.ui, fontSize: 13, resize: "none",
                   outline: "none", transition: "border-color 0.15s",
+                  lineHeight: 1.5,
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "rgba(180,83,9,0.35)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = T.copperBorder}
                 onBlur={(e) => e.currentTarget.style.borderColor = c.border}
               />
               {helpSent ? (
-                <p style={{ fontFamily: font.ui, fontSize: 12, color: c.sage, marginTop: 8, fontWeight: 500 }}>Thanks! We'll look into it.</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <p style={{ fontFamily: font.ui, fontSize: 12, color: T.success, margin: 0, fontWeight: 500 }}>Sent! We'll get back to you soon.</p>
+                </div>
               ) : (
                 <button
                   disabled={helpSending || !helpFeedback.trim()}
@@ -756,14 +768,19 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     }
                   }}
                   style={{
-                    marginTop: 8, width: "100%", padding: "8px 0", borderRadius: 8,
-                    border: "none", cursor: helpSending || !helpFeedback.trim() ? "default" : "pointer",
-                    background: helpSending || !helpFeedback.trim() ? c.creamSoft : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-                    color: helpSending || !helpFeedback.trim() ? c.stone : c.obsidian,
-                    fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "opacity 0.15s",
-                    opacity: helpSending ? 0.7 : 1,
+                    marginTop: 10, width: "100%", padding: "9px 0", borderRadius: 8,
+                    border: "none",
+                    cursor: helpSending || !helpFeedback.trim() ? "default" : "pointer",
+                    background: helpSending || !helpFeedback.trim()
+                      ? T.creamSoft
+                      : `linear-gradient(135deg, ${T.copper}, ${T.copperDark})`,
+                    color: helpSending || !helpFeedback.trim() ? c.stone : T.white,
+                    fontFamily: font.ui, fontSize: 13, fontWeight: 600,
+                    transition: "opacity 0.15s",
+                    opacity: helpSending ? 0.65 : 1,
+                    letterSpacing: "0.01em",
                   }}
-                  onMouseEnter={(e) => { if (!helpSending && helpFeedback.trim()) e.currentTarget.style.opacity = "0.9"; }}
+                  onMouseEnter={(e) => { if (!helpSending && helpFeedback.trim()) e.currentTarget.style.opacity = "0.88"; }}
                   onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
                   {helpSending ? "Sending..." : "Send Feedback"}
                 </button>
