@@ -388,10 +388,15 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             )}
             {isPro && tierKnown && user?.subscriptionEnd && (
               <span
-                aria-label={`Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
-                style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, color: (proExhausted && creditBalance === 0) ? c.stone : c.sage, opacity: 0.75, whiteSpace: "nowrap" }}
+                aria-label={user.cancelAtPeriodEnd
+                  ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — access until then`
+                  : `Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10,
+                  color: user.cancelAtPeriodEnd ? c.ember : (proExhausted && creditBalance === 0) ? c.stone : c.sage,
+                  opacity: user.cancelAtPeriodEnd ? 0.9 : 0.75, whiteSpace: "nowrap" }}
               >
-                Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                {user.cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
+                {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </span>
             )}
           </div>
