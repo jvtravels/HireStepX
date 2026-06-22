@@ -186,6 +186,15 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    END the clause so the info-probe "can you confirm the split" (confirm
    *    + object) does NOT match. */
   /(?:^|[,.!?]\s*)(?:yes,?\s+|ok(?:ay)?,?\s+)?confirm(?:ed|ing)?\s*(?:[.!?,]|$)/i,
+  /* 5. Hindi "send the offer letter" — "bhej do offer letter", "offer letter
+   *    bhej dijiye", "letter bhej do". The Hindi analogue of the English
+   *    send-the-paperwork arm above (#3); unambiguous deal-close consent in
+   *    either word order. The paperwork noun is REQUIRED, so the bare medium
+   *    idiom "bhej do" (in HINDI_MIX_PATTERNS) stays phase-gated while the
+   *    explicit "send the letter" closes terminally. Negated "nahi bhej…" is
+   *    not a natural Hindi accept form and is covered by the walk-away veto. */
+  /\bbhej\s+d(?:o|ijiye|ijye|ena)\s+(?:mujhe\s+|the\s+)?(?:offer\s+)?(?:letter|paperwork|paper\s*work|contract|docs?|kaagaz)\b/i,
+  /\b(?:offer\s+)?(?:letter|paperwork|paper\s*work|contract|docs?|kaagaz)\s+bhej\s+d(?:o|ijiye|ijye|ena)\b/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -279,6 +288,20 @@ const HINDI_MIX_PATTERNS: RegExp[] = [
    * offered) — so this is safe to fire as a commitment idiom. */
   /^\s*(?:haan|hanji|han\s*ji|ha\s*ji|ji\s+haan|ji|bilkul)\s*[,.!]?\s*$/i,
   /^\s*(?:haan|hanji|han\s*ji|ha\s*ji|ji\s+haan|ji|bilkul)[,\s]+/i,
+  /* Offline hostile sweep S1 (2026-06-22) — common Hindi accept idioms the
+   * bank missed. "chalega" / "chal jayega" (it'll work / acceptable),
+   * "kar lo" / "kar lijiye" (go ahead, do it), "de do" / "de dijiye" (give
+   * it), and the terse "bhej do" / "bhej dijiye" (send it). Medium-confidence
+   * commitment idioms — the offer-on-table phase gate (step 5) still vetoes
+   * them before any number is on the table, so a pre-offer "chalega" can't
+   * force a close. The deal-close sense "bhej do offer letter" is ALSO routed
+   * through the strict gate via CLOSE_CONSENT_IDIOM_PATTERNS. Negated forms
+   * ("nahi chalega", "yeh nahi chalega") are owned by WALK_AWAY_PATTERN, which
+   * vetoes first in classifyAcceptance. */
+  /\bchal(?:ega|\s+jaa?yega|\s+jaega|\s+jayegi)\b/i,
+  /\bkar\s+l(?:o|ijiye|ijye|ena)\b/i,
+  /\bde\s+d(?:o|ijiye|ijye|ena)\b/i,
+  /\bbhej\s+d(?:o|ijiye|ijye|ena)\b/i,
 ];
 
 /** Offer reference — the candidate's text mentions the offer object
@@ -289,7 +312,7 @@ const OFFER_REFERENCE_PATTERN =
 
 /** Veto: walk-away or rejection. */
 const WALK_AWAY_PATTERN =
-  /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
+  /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta)|nahin\s+(?:chahiye|karna|chalega)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
 
 /** Veto: hard conditional ("if/unless/provided"). Info-seeking
  *  conditionals are excepted ("if you could share the breakdown"). */

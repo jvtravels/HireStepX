@@ -172,6 +172,22 @@ const CURRENT_CUES: CueTable = {
     /\bpe\s+h(?:oo?n|u|un)\b/i,
     /\bpar\s+h(?:oo?n|u|un)\b/i,
     /\ble\s+rah[ai]\s+h(?:oo?n|u|un)\b/i,
+    /* Hinglish present-earn frames (offline hostile sweep S1, 2026-06-22).
+     * "abhi 30 milta hai mujhe" (right now I GET 30), "30 lpa kama raha
+     * hu" (earning 30), "leta hu" (I take/draw). These present-tense earn
+     * verbs are unambiguous CURRENT-comp disclosures. Before this, the
+     * frame carried no CURRENT cue, so a trailing dative "mujhe" (a
+     * TARGET_CUES.left token) tripped the targetAnywhere guard in pickRole
+     * and BLOCKED the bot-asked-current Gricean default — currentCtc stayed
+     * null, discovery never completed, the bot never anchored, and every
+     * later Hindi accept was phase-gate-vetoed (no offer on the table).
+     * Recognising the earn verb makes CURRENT score >0 and win the
+     * current>target tiebreak outright. None of these overlap a genuine
+     * "mujhe … chahiye" TARGET ask (no earn verb), so target binds are
+     * untouched. */
+    /\bmil(?:t[aei]|\s+rah[aei])\s+h(?:ai|ain|oo?n|u|un|e|y)\b/i,
+    /\bkama(?:t[aei]|\s+rah[aei])\s+h(?:ai|oo?n|u|un|y|e)\b/i,
+    /\ble(?:t[aei])\s+h(?:ai|oo?n|u|un|y|e)\b/i,
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
     /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
     /* AUDIT-2 (2026-06-08): the "X LPA total." compact disclosure cue
@@ -644,6 +660,18 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
      * number; role assignment is left to scoreRolesForSpan, whose
      * clause-clipped windows keep an adjacent earlier number's cues out. */
     const viaTargetCueRight = TARGET_CUES.right.some((re) => re.test(rightTail));
+    /* Companion CURRENT right-cue (offline hostile sweep S1, 2026-06-22).
+     * Symmetric to viaTargetCueRight: the left-cue gate (CURRENT_CUE_PRESENCE)
+     * only fires when the current cue PRECEDES the number. The Hindi present-
+     * earn frame puts it AFTER, unit-less — "abhi 30 milta hai mujhe" (right
+     * now I get 30), "30 kama raha hu" (earning 30). Without a unit these
+     * never reached Pass 2, and with an empty bot-question context the Gricean
+     * gate didn't fire either, so the bare integer emitted no span — currentCtc
+     * stayed null, discovery never completed, the bot never anchored, and every
+     * later Hindi accept was phase-gate-vetoed. Reuses CURRENT_CUES.right (the
+     * new earn-verb patterns) as the single source so span-emission and role-
+     * scoring agree; scoreRolesForSpan then binds it to current. */
+    const viaCurrentCueRight = CURRENT_CUES.right.some((re) => re.test(rightTail));
     /* Companion: a COMPETING cue in the left window ("competing offer at
      * 42", "another offer at 42") with a UNIT-LESS amount. Pass 2 already
      * claims unitted competing numbers ("42 LPA"); the bare-integer case
@@ -656,7 +684,7 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
      * unit-less number in an otherwise-numberless reply binds. */
     const viaQuestionContext =
       spans.length === 0 && (aiAskedCurrentCtc || aiAskedTargetCtc || inProbeExpectations);
-    if (!viaTargetCue && !viaTargetCueRight && !viaCurrentCue && !viaCompetingCue && !viaQuestionContext) continue;
+    if (!viaTargetCue && !viaTargetCueRight && !viaCurrentCue && !viaCurrentCueRight && !viaCompetingCue && !viaQuestionContext) continue;
     spans.push({ value: n, start: digitStart, end: digitEnd, isRangeUpper: false });
   }
   spans.sort((a, b) => a.start - b.start);
