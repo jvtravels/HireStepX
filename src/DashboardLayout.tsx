@@ -404,8 +404,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             const isLow = !planExhausted && (
               (isPro && planLeft <= 5) || (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
-            // barFill: copper when healthy, ember (red) when low.
-            const barFill = isLow ? c.ember : c.gilt;
+            // barFill: matches the "N of N" text — ember when exhausted or low, copper when healthy.
+            const barFill = (planExhausted || isLow) ? c.ember : c.gilt;
 
 
             return (
