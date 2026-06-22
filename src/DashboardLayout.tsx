@@ -134,6 +134,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpFeedback, setHelpFeedback] = useState("");
+  const [helpType, setHelpType] = useState<"bug" | "feature" | "billing" | "other">("other");
   const [helpSending, setHelpSending] = useState(false);
   const [helpSent, setHelpSent] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -713,9 +714,28 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
             {/* Feedback section */}
             <div>
+              {/* Type selector */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" as const }}>
+                {(["bug", "feature", "billing", "other"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setHelpType(t)}
+                    style={{
+                      padding: "3px 10px", borderRadius: 20, border: "none", cursor: "pointer",
+                      fontFamily: font.ui, fontSize: 11, fontWeight: 600, transition: "all 0.15s",
+                      background: helpType === t
+                        ? (t === "bug" ? "rgba(239,68,68,0.2)" : t === "feature" ? "rgba(124,110,230,0.2)" : t === "billing" ? "rgba(180,83,9,0.2)" : "rgba(100,100,100,0.25)")
+                        : c.creamSoft,
+                      color: helpType === t
+                        ? (t === "bug" ? "#fca5a5" : t === "feature" ? "#c4b5fd" : t === "billing" ? c.gilt : c.stone)
+                        : c.stone,
+                    }}
+                  >{t}</button>
+                ))}
+              </div>
               <textarea
                 rows={2}
-                placeholder="Describe your issue or suggestion..."
+                placeholder={helpType === "bug" ? "Describe what went wrong..." : helpType === "feature" ? "Describe what you'd like..." : helpType === "billing" ? "Describe your billing question..." : "Describe your issue or suggestion..."}
                 value={helpFeedback}
                 onChange={(e) => { setHelpFeedback(e.target.value); if (helpSent) setHelpSent(false); }}
                 style={{
@@ -743,9 +763,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                         email: user?.email || null,
                         page: typeof window !== "undefined" ? window.location.pathname : null,
                         userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+                        type: helpType,
                       });
                       if (!res.ok) throw new Error(res.error || "send failed");
                       setHelpFeedback("");
+                      setHelpType("other");
                       setHelpSent(true);
                     } catch {
                       // Persisted path failed — fall back to the user's email client

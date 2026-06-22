@@ -883,9 +883,22 @@ export async function updateSupportStatus(
   id: string,
   status: "new" | "seen" | "resolved",
 ): Promise<{ ok: boolean; error?: string }> {
+  const now = new Date().toISOString();
+  // Set SLA timestamps: first_response_at on first acknowledgement, resolved_at on close.
+  // We use ?id=eq.X&first_response_at=is.null so the timestamp only stamps once.
+  const patch: Record<string, string | null> = { status };
+  if (status === "seen") {
+    // Stamp first_response_at only if not already set — done via a conditional filter below
+    patch["first_response_at"] = now;
+  } else if (status === "resolved") {
+    patch["resolved_at"] = now;
+  }
+
   try {
+    // For seen: only set first_response_at when it is currently null (first touch)
+    const filterSuffix = status === "seen" ? "&first_response_at=is.null" : "";
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/support_messages?id=eq.${encodeURIComponent(id)}`,
+      `${SUPABASE_URL}/rest/v1/support_messages?id=eq.${encodeURIComponent(id)}${filterSuffix}`,
       {
         method: "PATCH",
         headers: {
@@ -894,12 +907,29 @@ export async function updateSupportStatus(
           "Content-Type": "application/json",
           Prefer: "return=minimal",
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(patch),
       },
     );
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       return { ok: false, error: `HTTP ${res.status}: ${body.slice(0, 200)}` };
+    }
+    // If the conditional filter matched 0 rows (first_response_at already set),
+    // still update status without overwriting the timestamp
+    if (status === "seen") {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/support_messages?id=eq.${encodeURIComponent(id)}&first_response_at=not.is.null`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({ status }),
+        },
+      ).catch(() => { /* best-effort */ });
     }
     return { ok: true };
   } catch (err) {
@@ -908,18 +938,61 @@ export async function updateSupportStatus(
 }
 
 async function getSupportMessages() {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const [messages, totalCount] = await Promise.all([
     fetchJSON<{
       id: string; user_id: string | null; email: string | null; message: string;
       page: string | null; user_agent: string | null; status: string; created_at: string;
-    }>("support_messages?select=id,user_id,email,message,page,user_agent,status,created_at&order=created_at.desc&limit=200"),
+      type: string | null; plan_tier: string | null; session_count_30d: number | null;
+      first_response_at: string | null; resolved_at: string | null;
+    }>("support_messages?select=id,user_id,email,message,page,user_agent,status,created_at,type,plan_tier,session_count_30d,first_response_at,resolved_at&order=created_at.desc&limit=200"),
     fetchCount("support_messages"),
   ]);
 
   const byStatus: Record<string, number> = {};
-  for (const m of messages) { byStatus[m.status || "new"] = (byStatus[m.status || "new"] || 0) + 1; }
+  const byType: Record<string, number> = {};
+  let totalResponseMs = 0;
+  let respondedCount = 0;
+  let resolvedCount = 0;
+  let totalResolutionMs = 0;
 
-  return { total: totalCount, byStatus, recent: messages.slice(0, 100) };
+  // Volume by day (last 30 days)
+  const volumeByDay: Record<string, number> = {};
+  const cutoff = new Date(thirtyDaysAgo);
+
+  for (const m of messages) {
+    byStatus[m.status || "new"] = (byStatus[m.status || "new"] || 0) + 1;
+    const t = m.type || "other";
+    byType[t] = (byType[t] || 0) + 1;
+
+    const createdAt = new Date(m.created_at);
+    if (createdAt >= cutoff) {
+      const day = m.created_at.slice(0, 10);
+      volumeByDay[day] = (volumeByDay[day] || 0) + 1;
+    }
+
+    if (m.first_response_at) {
+      const responseMs = new Date(m.first_response_at).getTime() - new Date(m.created_at).getTime();
+      if (responseMs > 0) { totalResponseMs += responseMs; respondedCount++; }
+    }
+    if (m.resolved_at) {
+      const resMs = new Date(m.resolved_at).getTime() - new Date(m.created_at).getTime();
+      if (resMs > 0) { totalResolutionMs += resMs; resolvedCount++; }
+    }
+  }
+
+  const avgResponseHours = respondedCount > 0 ? Math.round((totalResponseMs / respondedCount) / 3_600_000 * 10) / 10 : null;
+  const avgResolutionHours = resolvedCount > 0 ? Math.round((totalResolutionMs / resolvedCount) / 3_600_000 * 10) / 10 : null;
+
+  return {
+    total: totalCount,
+    byStatus,
+    byType,
+    avgResponseHours,
+    avgResolutionHours,
+    volumeByDay,
+    recent: messages.slice(0, 100),
+  };
 }
 
 /* ─── New section handlers (referrals, promo codes, calendar) ─── */

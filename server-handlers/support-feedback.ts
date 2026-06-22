@@ -44,6 +44,7 @@ interface SupportBody {
   email?: unknown;
   page?: unknown;
   userAgent?: unknown;
+  type?: unknown;
 }
 
 function asString(v: unknown, max: number): string {
@@ -86,9 +87,41 @@ export default async function handler(req: Request): Promise<Response> {
   const email = asString(body.email, 254).trim() || null;
   const page = asString(body.page, 200) || null;
   const userAgent = asString(body.userAgent, 400) || null;
+  const rawType = asString(body.type, 20).toLowerCase();
+  const type = (["bug", "feature", "billing", "other"].includes(rawType) ? rawType : "other");
 
   if (!message) {
     return new Response(JSON.stringify({ error: "Message is required" }), { status: 400, headers });
+  }
+
+  // Fetch user context (plan tier + 30-day session count) concurrently — best-effort,
+  // never blocks or fails the submit if these queries flake.
+  const authHeaders = {
+    apikey: SUPABASE_SERVICE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+  };
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const [profileRes, sessionCountRes] = await Promise.allSettled([
+    fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=subscription_tier&limit=1`,
+      { headers: authHeaders },
+    ),
+    fetch(
+      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(auth.userId)}&created_at=gte.${encodeURIComponent(thirtyDaysAgo)}&select=id`,
+      { headers: authHeaders },
+    ),
+  ]);
+
+  let planTier: string | null = null;
+  if (profileRes.status === "fulfilled" && profileRes.value.ok) {
+    const rows = await profileRes.value.json().catch(() => []) as Array<{ subscription_tier?: string | null }>;
+    planTier = rows[0]?.subscription_tier ?? null;
+  }
+
+  let sessionCount30d = 0;
+  if (sessionCountRes.status === "fulfilled" && sessionCountRes.value.ok) {
+    const rows = await sessionCountRes.value.json().catch(() => []) as unknown[];
+    sessionCount30d = Array.isArray(rows) ? rows.length : 0;
   }
 
   try {
@@ -106,6 +139,9 @@ export default async function handler(req: Request): Promise<Response> {
         message,
         page,
         user_agent: userAgent,
+        type,
+        plan_tier: planTier,
+        session_count_30d: sessionCount30d,
       }),
     });
 
@@ -121,10 +157,11 @@ export default async function handler(req: Request): Promise<Response> {
     sendResendEmail({
       from: "HireStepX Support <noreply@hirestepx.com>",
       to: ["support@hirestepx.com"],
-      subject: `[Support] New message from ${email || auth.userId}`,
+      subject: `[Support][${type.toUpperCase()}] New message from ${email || auth.userId}`,
       html: `
         <p><strong>User:</strong> ${email || "(no email)"} (ID: ${auth.userId})</p>
-        <p><strong>Page:</strong> ${page || "(unknown)"}</p>
+        <p><strong>Plan:</strong> ${planTier || "unknown"} &nbsp;|&nbsp; <strong>Sessions (30d):</strong> ${sessionCount30d}</p>
+        <p><strong>Type:</strong> ${type} &nbsp;|&nbsp; <strong>Page:</strong> ${page || "(unknown)"}</p>
         <p><strong>Received:</strong> ${timestamp}</p>
         <hr/>
         <p><strong>Message:</strong></p>

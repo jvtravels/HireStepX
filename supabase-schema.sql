@@ -956,6 +956,15 @@ create table if not exists support_messages (
 alter table support_messages enable row level security;
 create index if not exists idx_support_messages_created on support_messages (created_at desc);
 
+-- Context enrichment: type tag, plan tier at submit time, session activity, SLA timestamps
+alter table support_messages add column if not exists type text default 'other' check (type in ('bug', 'feature', 'billing', 'other'));
+alter table support_messages add column if not exists plan_tier text;
+alter table support_messages add column if not exists session_count_30d integer default 0;
+alter table support_messages add column if not exists first_response_at timestamptz;
+alter table support_messages add column if not exists resolved_at timestamptz;
+create index if not exists idx_support_messages_type on support_messages (type) where type is not null;
+create index if not exists idx_support_messages_status_created on support_messages (status, created_at desc);
+
 drop policy if exists "Users read own support messages" on support_messages;
 create policy "Users read own support messages" on support_messages
   for select using ((auth.uid())::text = user_id::text);

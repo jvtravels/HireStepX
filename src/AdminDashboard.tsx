@@ -83,8 +83,18 @@ interface FeedbackData {
 }
 
 interface SupportMessagesData {
-  total: number; byStatus: Record<string, number>;
-  recent: Array<{ id: string; user_id: string | null; email: string | null; message: string; page: string | null; user_agent: string | null; status: string; created_at: string }>;
+  total: number;
+  byStatus: Record<string, number>;
+  byType: Record<string, number>;
+  avgResponseHours: number | null;
+  avgResolutionHours: number | null;
+  volumeByDay: Record<string, number>;
+  recent: Array<{
+    id: string; user_id: string | null; email: string | null; message: string;
+    page: string | null; user_agent: string | null; status: string; created_at: string;
+    type: string | null; plan_tier: string | null; session_count_30d: number | null;
+    first_response_at: string | null; resolved_at: string | null;
+  }>;
 }
 
 /**
@@ -1887,79 +1897,186 @@ export default function AdminDashboard() {
     const statusBg: Record<string, string> = {
       new: "rgba(180,83,9,0.12)", seen: "rgba(100,100,100,0.12)", resolved: "rgba(21,128,61,0.12)",
     };
+    const typeColors: Record<string, string> = {
+      bug: c.ember, feature: "#7c6ee6", billing: c.gilt, other: c.stone,
+    };
+    const typeBg: Record<string, string> = {
+      bug: "rgba(239,68,68,0.12)", feature: "rgba(124,110,230,0.12)",
+      billing: "rgba(180,83,9,0.12)", other: "rgba(100,100,100,0.12)",
+    };
 
     const updateStatus = async (id: string, status: "seen" | "resolved") => {
       const token = getToken();
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) headers["x-admin-token"] = token;
+      const reqHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) reqHeaders["x-admin-token"] = token;
       try {
         const res = await fetch("/api/admin-data", {
           method: "POST",
-          headers,
+          headers: reqHeaders,
           body: JSON.stringify({ action: "update-support-status", id, status }),
         });
         if (res.ok) {
           const data = await res.json() as { _token?: string };
           if (data._token) setToken(data._token);
-          // Re-fetch support messages to reflect the new status
           const d = await fetchSection("support-messages", undefined, true) as SupportMessagesData | null;
           if (d) setSupportMessages(d);
         }
       } catch { /* best-effort */ }
     };
 
+    const formatHours = (h: number | null) => {
+      if (h === null) return "—";
+      if (h < 1) return `${Math.round(h * 60)}m`;
+      return `${h}h`;
+    };
+
+    const last14Days = Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(Date.now() - (13 - i) * 86_400_000);
+      return d.toISOString().slice(0, 10);
+    });
+    const maxVol = Math.max(1, ...last14Days.map(d => supportMessages.volumeByDay[d] || 0));
+
     return (
       <div>
+        {/* KPI row */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
           <div style={statCard}>
-            <p style={labelStyle}>Total Messages</p>
+            <p style={labelStyle}>Total</p>
             <p style={bigNum}>{supportMessages.total}</p>
           </div>
-          {Object.entries(supportMessages.byStatus).map(([status, count]) => (
-            <div key={status} style={statCard}>
-              <p style={labelStyle}>{status}</p>
-              <p style={{ ...bigNum, color: statusColors[status] || c.ivory }}>{count}</p>
+          {Object.entries(supportMessages.byStatus).map(([st, count]) => (
+            <div key={st} style={statCard}>
+              <p style={labelStyle}>{st.charAt(0).toUpperCase() + st.slice(1)}</p>
+              <p style={{ ...bigNum, color: statusColors[st] || c.ivory }}>{count}</p>
             </div>
           ))}
+          <div style={statCard}>
+            <p style={labelStyle}>Avg First Response</p>
+            <p style={{ ...bigNum, color: supportMessages.avgResponseHours !== null && supportMessages.avgResponseHours < 24 ? c.sage : c.ivory }}>
+              {formatHours(supportMessages.avgResponseHours)}
+            </p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>Avg Resolution</p>
+            <p style={bigNum}>{formatHours(supportMessages.avgResolutionHours)}</p>
+          </div>
         </div>
 
+        {/* Analytics row: by-type + volume sparkline */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+          <div style={{ ...card, flex: "1 1 200px", minWidth: 200 }}>
+            <p style={{ ...labelStyle, marginBottom: 12 }}>By Type</p>
+            {Object.entries(supportMessages.byType).length > 0
+              ? Object.entries(supportMessages.byType).map(([t, count]) => (
+                  <div key={t} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{
+                      display: "inline-block", padding: "2px 8px", borderRadius: 10,
+                      fontSize: 11, fontWeight: 600, fontFamily: font.ui,
+                      background: typeBg[t] || typeBg.other, color: typeColors[t] || c.stone,
+                    }}>{t}</span>
+                    <span style={{ fontFamily: font.mono, fontSize: 13, color: c.ivory }}>{count}</span>
+                  </div>
+                ))
+              : <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>No data yet</p>
+            }
+          </div>
+          <div style={{ ...card, flex: "1 1 320px" }}>
+            <p style={{ ...labelStyle, marginBottom: 12 }}>Volume — Last 14 Days</p>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 48 }}>
+              {last14Days.map(day => {
+                const v = supportMessages.volumeByDay[day] || 0;
+                const pct = (v / maxVol) * 100;
+                return (
+                  <div key={day} style={{ flex: 1, display: "flex", flexDirection: "column" as const, alignItems: "center" }}>
+                    <div
+                      title={`${day}: ${v}`}
+                      style={{
+                        width: "100%", borderRadius: "3px 3px 0 0",
+                        background: v > 0 ? c.gilt : c.border,
+                        height: `${Math.max(pct, 4)}%`,
+                        minHeight: v > 0 ? 6 : 3,
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{last14Days[0]?.slice(5)}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{last14Days[13]?.slice(5)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Message table */}
         {supportMessages.recent.length > 0 ? (
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={labelStyle}>Recent Messages — Help &amp; Support widget</p>
+              <p style={labelStyle}>Messages — Help &amp; Support widget</p>
               <button onClick={() => exportCsv("support-messages.csv", supportMessages.recent)} style={exportBtn}>Export CSV</button>
             </div>
             <table style={tableStyle}>
               <thead>
                 <tr>
                   <th style={thStyle}>Date</th>
-                  <th style={thStyle}>Email</th>
+                  <th style={thStyle}>User</th>
+                  <th style={thStyle}>Context</th>
+                  <th style={thStyle}>Type</th>
                   <th style={thStyle}>Status</th>
                   <th style={thStyle}>Message</th>
                   <th style={thStyle}>Page</th>
+                  <th style={thStyle}>SLA</th>
                   <th style={thStyle}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {supportMessages.recent.map((m) => {
                   const st = m.status || "new";
+                  const tp = m.type || "other";
+                  const responseMs = m.first_response_at
+                    ? new Date(m.first_response_at).getTime() - new Date(m.created_at).getTime()
+                    : null;
+                  const responseHr = responseMs !== null ? responseMs / 3_600_000 : null;
                   return (
                     <tr key={m.id}>
                       <td style={{ ...tdStyle, fontSize: 12, whiteSpace: "nowrap" as const }}>{formatDateTime(m.created_at)}</td>
                       <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{m.email || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: 11, whiteSpace: "nowrap" as const }}>
+                        {m.plan_tier ? (
+                          <span style={{
+                            display: "inline-block", padding: "1px 6px", borderRadius: 8,
+                            fontSize: 10, fontWeight: 600, fontFamily: font.ui,
+                            background: m.plan_tier === "pro" ? "rgba(49,46,129,0.2)" : "rgba(100,100,100,0.12)",
+                            color: m.plan_tier === "pro" ? "#a5b4fc" : c.stone,
+                            marginRight: 4,
+                          }}>{m.plan_tier}</span>
+                        ) : null}
+                        {m.session_count_30d !== null && m.session_count_30d !== undefined
+                          ? <span style={{ color: c.stone, fontSize: 11 }}>{m.session_count_30d}s</span>
+                          : null}
+                      </td>
                       <td style={tdStyle}>
                         <span style={{
-                          display: "inline-block",
-                          padding: "2px 8px", borderRadius: 10,
+                          display: "inline-block", padding: "2px 7px", borderRadius: 10,
+                          fontSize: 11, fontWeight: 600, fontFamily: font.ui,
+                          background: typeBg[tp] || typeBg.other, color: typeColors[tp] || c.stone,
+                        }}>{tp}</span>
+                      </td>
+                      <td style={tdStyle}>
+                        <span style={{
+                          display: "inline-block", padding: "2px 8px", borderRadius: 10,
                           fontSize: 11, fontWeight: 600, fontFamily: font.ui,
                           background: statusBg[st] || "rgba(100,100,100,0.12)",
                           color: statusColors[st] || c.stone,
-                        }}>
-                          {st}
-                        </span>
+                        }}>{st}</span>
                       </td>
-                      <td style={{ ...tdStyle, maxWidth: 460, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const }}>{m.message || "—"}</td>
+                      <td style={{ ...tdStyle, maxWidth: 400, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const }}>{m.message || "—"}</td>
                       <td style={{ ...tdStyle, fontSize: 12 }}>{m.page || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: 11, whiteSpace: "nowrap" as const }}>
+                        {responseHr !== null
+                          ? <span style={{ color: responseHr < 24 ? c.sage : c.ember }}>{formatHours(Math.round(responseHr * 10) / 10)}</span>
+                          : st === "new" ? <span style={{ color: c.ember }}>pending</span> : "—"}
+                      </td>
                       <td style={{ ...tdStyle, whiteSpace: "nowrap" as const }}>
                         <div style={{ display: "flex", gap: 6 }}>
                           {st === "new" && (
@@ -1970,9 +2087,7 @@ export default function AdminDashboard() {
                                 background: "#1a1a1a", color: c.stone,
                                 fontSize: 11, fontFamily: font.ui, cursor: "pointer",
                               }}
-                            >
-                              Mark seen
-                            </button>
+                            >Mark seen</button>
                           )}
                           {(st === "new" || st === "seen") && (
                             <button
@@ -1982,9 +2097,7 @@ export default function AdminDashboard() {
                                 background: "#1a1a1a", color: c.sage,
                                 fontSize: 11, fontFamily: font.ui, cursor: "pointer",
                               }}
-                            >
-                              Mark resolved
-                            </button>
+                            >Resolve</button>
                           )}
                         </div>
                       </td>
