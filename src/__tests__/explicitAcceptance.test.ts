@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { detectExplicitAcceptance } from "../../server-handlers/_acceptance-classifier";
+import {
+  detectExplicitAcceptance,
+  classifyAcceptance,
+} from "../../server-handlers/_acceptance-classifier";
 
 describe("Bug 2: detectExplicitAcceptance — strong signals accept", () => {
   it("accepts 'I accept the offer'", () => {
@@ -180,5 +183,35 @@ describe("detectExplicitAcceptance — PRI-63 hostile sweep (FALSE-CLOSE precisi
 
   it("recall idioms stay deferral-gated", () => {
     expect(detectExplicitAcceptance("sign me up once you fix the base").accepted).toBe(false);
+  });
+});
+
+describe("PRI-63b — negated settle-token (FALSE-CLOSE) + comma accept-with-number", () => {
+  it("does NOT accept a NEGATED settle token (both gates)", () => {
+    for (const p of [
+      "not done at 45",
+      "this is not a deal at 45",
+      "I'm not sold",
+      "we're not settled",
+    ]) {
+      expect(detectExplicitAcceptance(p).accepted, `strict must NOT accept: ${p}`).toBe(false);
+      expect(
+        classifyAcceptance(p, { offerOnTable: true }).accepted,
+        `classify must NOT accept: ${p}`,
+      ).toBe(false);
+    }
+  });
+
+  it("still accepts the comma'd accept-with-number 'ok 45, done'", () => {
+    for (const p of ["ok 45, done", "45, deal", "fine, 52, sold"]) {
+      expect(
+        classifyAcceptance(p, { offerOnTable: true }).accepted,
+        `expected accept: ${p}`,
+      ).toBe(true);
+    }
+  });
+
+  it("comma variant keeps the clause-terminal guard ('45, done deliberating' is not an accept)", () => {
+    expect(classifyAcceptance("45, done deliberating", { offerOnTable: true }).accepted).toBe(false);
   });
 });

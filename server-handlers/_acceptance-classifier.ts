@@ -316,7 +316,11 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
    * also rejects "26 deal breaker" (rejection) while keeping "22 done."/"ok 22
    * deal,". The planner's tier-B close resolver, which only fires once the
    * candidate is already closing, keeps the looser "works" form safely. */
-  /\b\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l)?\s*(?:done|deal|sold)\s*(?:[.!?,]|$)/i,
+  /* PRI-63b (2026-06-22) — allow an optional comma between the figure and the
+   * settle token: "ok 45, done" / "45, deal" are the same accept-with-number as
+   * "45 done", just spoken with a beat. Clause-terminal guard unchanged, so
+   * "45, done deliberating" still does NOT match. */
+  /\b\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l)?\s*,?\s*(?:done|deal|sold)\s*(?:[.!?,]|$)/i,
   /\b(?:done|deal|sold|settled?|finalized?)\s+(?:at|for|on)\s+\d+(?:\.\d+)?\b/i,
   /* PRI-56 close-consent idioms — single source of truth (also strict). */
   ...CLOSE_CONSENT_IDIOM_PATTERNS,
@@ -487,6 +491,17 @@ const PARTIAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
 const MONEY_REJECTION_PATTERN =
   /\b(?:not|no\s+way|never|no\s+chance)\s+(?:at|for|on)\s+(?:this|that|these|those|the|such\s+a)?\s*(?:number|price|comp(?:ensation)?|figure|salary|rate|amount|level|money|ctc|package|pay|offer|\d)/i;
 
+/* PRI-63b (2026-06-22) — NEGATED settle-token veto. The accept-with-number
+ * idioms ("done at 45", "45 done", "it's a deal") match the bare settle token,
+ * but a leading negation flips it into a refusal: "not done at 45", "this is
+ * not a deal", "I'm not sold". NEGATION_PATTERN only governs accept/want/…, and
+ * MONEY_REJECTION requires at/for/on, so the "not + settle-token" form slipped
+ * both — a FALSE-CLOSE. Scoped to the UNAMBIGUOUS settle tokens the accept
+ * patterns key on; a genuine accept never negates its own settle token. Shared
+ * single-source so both gates reject in lockstep. */
+const SETTLE_NEGATION_PATTERN =
+  /\b(?:not|never|no\s+longer)\s+(?:done|sold|settled?|finali[sz]ed?|closing|a\s+deal)\b/i;
+
 /** All PRI-59/61/63 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
@@ -494,6 +509,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   ACCEPT_PROPOSITION_PATTERN,
   IN_PRINCIPLE_PATTERN,
   MONEY_REJECTION_PATTERN,
+  SETTLE_NEGATION_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
   ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];
