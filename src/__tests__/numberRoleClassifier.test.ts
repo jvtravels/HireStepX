@@ -444,6 +444,21 @@ const ROWS: Row[] = [
   { label: "ignores N days",             text: "I need 30 days to decide",              expect: { currentCtc: null, target: null } },
   { label: "ignores N years YOE",        text: "I have 8 years of experience",          expect: { currentCtc: null, target: null } },
   { label: "ignores N% hike",            text: "looking for 30% hike",                  expect: { target: null } },
+
+  /* ── PRI-62 (live-staging Flipkart-EM, 2026-06-22): a cash-tagged number
+   *    must bind to current even when an equity keyword trails inside the
+   *    equity-scope window. "48 fixed plus some ESOPs" was dropping currentCtc
+   *    to null → kernel anchored at the band FLOOR, below the candidate's pay.
+   *    The bot-asked-current Gricean default supplies the role; the cash tag
+   *    ("fixed"/"base"/"basic") overrides the equity-scope suppression. ──── */
+  { label: "PRI-62: '48 fixed plus some ESOPs' binds current (bot asked)", text: "Present CTC is 48 fixed plus some ESOPs.", ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: 48 } },
+  { label: "PRI-62: '48 fixed plus stock' binds current",                  text: "48 fixed plus stock",                       ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: 48 } },
+  { label: "PRI-62: '48 LPA base plus RSUs on top' binds current",         text: "I'm on 48 LPA base plus RSUs on top",       ctx: { lastAiText: "what's your current package?" }, expect: { currentCtc: 48 } },
+  { label: "PRI-62: '32 basic plus equity' binds current",                 text: "32 basic plus equity",                       ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: 32 } },
+  /* PRI-50 non-regression: a genuinely equity-framed number with NO adjacent
+   * cash tag stays suppressed (binds to nothing). */
+  { label: "PRI-62/PRI-50: equity-only 'stock worth 5 LPA' stays null",    text: "I get stock worth 5 LPA",                    ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: null } },
+  { label: "PRI-62/PRI-50: 'RSUs worth roughly 3 LPA' stays null",         text: "RSUs worth roughly 3 LPA a year.",           ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: null } },
 ];
 
 describe("number-role classifier — table-driven coverage", () => {
