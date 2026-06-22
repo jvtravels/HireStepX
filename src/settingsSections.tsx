@@ -997,17 +997,16 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
 
       {/* Danger zone */}
       <div style={{ ...planCardOuter, borderColor: "rgba(185,28,28,0.28)" }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: c.ember, textTransform: "uppercase" }}>Danger zone</div>
-          <div style={{ ...subHeaderTitle, color: c.ember, marginTop: 6 }}>Delete account</div>
-          <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
-        </div>
-
         {!confirmDelete ? (
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: c.ember, textTransform: "uppercase", marginBottom: 4 }}>Danger zone</div>
+              <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
+              <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
+            </div>
             <button type="button"
               onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
-              style={dangerSubtleBtn}>
+              style={{ ...dangerSubtleBtn, flexShrink: 0 }}>
               Begin deletion
             </button>
           </div>
