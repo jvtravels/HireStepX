@@ -97,15 +97,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     }
   }, [searchParams, pathname, setShowUpgradeModal, nav]);
 
-  // Refetch sessions AND credit balance on mount (e.g. returning from interview).
-  // refreshCreditBalance keeps the sidebar accurate after a credit was consumed
-  // server-side during session start — the client state doesn't auto-decrement.
-  // Skip refreshCreditBalance when credits haven't loaded yet — the main
-  // DashboardContext data effect already fetches the initial balance, and calling
-  // it here too creates a redundant double-fetch on first page load.
+  // Refetch sessions AND credit balance on every mount (returning from /interview,
+  // navigating back from session report, etc.).  Always fetch — don't gate on
+  // creditsLoaded: when the layout remounts after an interview the Context resets
+  // creditsLoaded→false and the old guard caused the refresh to silently skip,
+  // leaving a stale/consumed balance on screen until a full page reload.
   useEffect(() => {
     refreshSessions();
-    if (creditsLoaded) refreshCreditBalance();
+    refreshCreditBalance();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshSessions, refreshCreditBalance]);
 
