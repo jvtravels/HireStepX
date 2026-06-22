@@ -21,14 +21,14 @@ import {
   TECHNICAL_PARTIAL,
   CASE_STUDY_STRONG,
   SALARY_NEG_WEAK,
-  SALARY_NEG_STRONG,
   SYSTEM_DESIGN_PARTIAL,
   STRATEGIC_STRONG,
   CAMPUS_PLACEMENT_PARTIAL,
   PANEL_STRONG,
   GOVERNMENT_PARTIAL,
 } from "./_focus-data";
-import { SalaryDesignPanels, WEAK_PRESET, STRONG_PRESET, type SalaryDesignPreset } from "./_salary-design-panels";
+import { SalaryDesignPanels, WEAK_PRESET, type SalaryDesignPreset } from "./_salary-design-panels";
+import { SalaryNegStrongProd } from "./_salary-neg-strong-prod";
 /* Production HR component — no hooks / no "use client", safe to canvas-import. */
 import HrFullReport from "../../../../src/sessionReport/HrFullReport";
 import type {
@@ -209,18 +209,6 @@ const SALARY_NEG: FocusChrome = {
   accentSoft: "#FED7AA",
 };
 
-const SALARY_NEG_STRONG_CHROME: FocusChrome = {
-  ...SALARY_NEG,
-  /* Plain-English headline: countered 37% above their first offer, and the
-     base + ESOPs translate to ~₹62L extra income over a 4-year tenure. */
-  headlineMetric: {
-    label: "How well you negotiated",
-    value: "+37%",
-    caption: "above their first offer · ~₹62L extra over 4 years",
-  },
-  accent: "#15803D",
-  accentSoft: "#DCFCE7",
-};
 
 const SYSTEM_DESIGN: FocusChrome = {
   icon: "🏗",
@@ -399,7 +387,7 @@ export function BehavioralStrongDemo() {
 export function TechnicalPartialDemo() { return <FocusReport data={TECHNICAL_PARTIAL} chrome={TECHNICAL} />; }
 export function CaseStudyStrongDemo() { return <FocusReport data={CASE_STUDY_STRONG} chrome={CASE_STUDY} />; }
 export function SalaryNegWeakDemo() { return <FocusReport data={SALARY_NEG_WEAK} chrome={SALARY_NEG} salaryPanels={WEAK_PRESET} />; }
-export function SalaryNegStrongDemo() { return <FocusReport data={SALARY_NEG_STRONG} chrome={SALARY_NEG_STRONG_CHROME} salaryPanels={STRONG_PRESET} />; }
+export function SalaryNegStrongDemo() { return <SalaryNegStrongProd />; }
 export function SystemDesignPartialDemo() { return <FocusReport data={SYSTEM_DESIGN_PARTIAL} chrome={SYSTEM_DESIGN} />; }
 export function StrategicStrongDemo() { return <FocusReport data={STRATEGIC_STRONG} chrome={STRATEGIC} />; }
 export function CampusPlacementPartialDemo() { return <FocusReport data={CAMPUS_PLACEMENT_PARTIAL} chrome={CAMPUS_PLACEMENT} />; }

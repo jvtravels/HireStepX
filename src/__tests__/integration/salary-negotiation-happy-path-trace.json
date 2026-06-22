@@ -57,20 +57,20 @@
       "candidate": "Got it — could you share what the fitment looks like for this grade?",
       "phaseBefore": "range-disclosure",
       "phaseAfter": "range-disclosure",
-      "recruiterProse": "Got it. So for this grade, right, the fitment we're able to offer is ₹28 LPA — ₹20 LPA fixed plus a ₹8 LPA target on the performance cycle. The cash sits inside our band; ESOP grant follows the same level — I'll share the annual-value figure before the offer letter. Let me know your thoughts.",
-      "actionKind": "anchor-with-offer",
+      "recruiterProse": "As per the band for this grade, right, the fitment comes to ₹28 LPA. That's based on what the role demands and what others in the team at this level are at — not just one market reference.",
+      "actionKind": "band-anchor-with-rationale",
       "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 0
     },
     {
       "label": "T5 CANDIDATE-COUNTER — pushes for higher fixed (component-scoped target)",
       "candidate": "I've reviewed the breakup — the fixed is lower than I expected. Can we revisit it? My target is ₹26 LPA fixed at minimum.",
-      "phaseBefore": "counter-offer",
-      "phaseAfter": "counter-offer",
-      "recruiterProse": "Here's the structure on the ₹28L — base ₹19.6L fixed, target variable ₹8L at 100% performance, RSU grant ~₹0.4L/year vesting over 4 years. Standard benefits (medical, PF, gratuity) layered on top. Any specific component you want me to go deeper on?",
-      "actionKind": "info-disclosure",
+      "phaseBefore": "range-disclosure",
+      "phaseAfter": "range-disclosure",
+      "recruiterProse": "Actually. So for this grade, the fitment we're able to offer is ₹28 LPA — ₹20 LPA fixed plus a ₹8 LPA target on the performance cycle. The cash sits inside our band; ESOP grant follows the same level — I'll share the annual-value figure before the offer letter. Let me know your thoughts.",
+      "actionKind": "anchor-with-offer",
       "archetype": "P15_HARD_ANCHOR",
-      "highestOfferMade": 28
+      "highestOfferMade": 0
     },
     {
       "label": "T6 RECRUITER-COUNTER — candidate signals near-acceptance",
@@ -87,7 +87,7 @@
       "candidate": "Yes, that sounds good. The structure works for me overall — fixed at the level we discussed and the variable on top.",
       "phaseBefore": "counter-offer",
       "phaseAfter": "counter-offer",
-      "recruiterProse": "Actually, we're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "recruiterProse": "We're in the same range, then — let's lock it at ₹28L. Let me run this past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 28
@@ -97,8 +97,8 @@
       "candidate": "I'm aligned. Let's wrap this up.",
       "phaseBefore": "accepted",
       "phaseAfter": "accepted",
-      "recruiterProse": "Let me recap the fitment before I revert internally — Fixed ₹26L, variable target ₹2L, notice 9 weeks, offer letter in 2-3 business days. I'll get the offer letter prepared and circulate by EOD.",
-      "actionKind": "close-recap-formal",
+      "recruiterProse": "Happy to break it down — the ₹28L is ₹26L fixed, which is your guaranteed monthly cash, plus a ₹2L variable target paid on the annual performance rating. The fixed is contractual; the variable typically pays out 80-100% on a meets-expectations rating.",
+      "actionKind": "offer-breakdown",
       "archetype": null,
       "highestOfferMade": 28
     },
@@ -107,8 +107,8 @@
       "candidate": "Confirmed — I accept the offer. Please send the letter across; I'll align with my current employer on the LWD.",
       "phaseBefore": "accepted",
       "phaseAfter": "accepted",
-      "recruiterProse": "Congratulations! To get started with the offer letter, can you please share scanned copies of your PAN card and Aadhaar card on this email itself. Our BGV team will revert separately for the remaining documents.",
-      "actionKind": "post-acceptance-document-request",
+      "recruiterProse": "Let's not go round in circles. ₹28L is the number I can commit to today — shall I go ahead and start rolling out the offer letter?",
+      "actionKind": "offer-breakdown",
       "archetype": null,
       "highestOfferMade": 28
     }

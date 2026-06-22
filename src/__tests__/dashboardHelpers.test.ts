@@ -14,6 +14,8 @@ import {
   describeReminders,
   parseNaturalEvent,
   interviewTypeOptions,
+  canonicalTimezone,
+  timezoneLabel,
   type InterviewEvent,
 } from "../dashboardHelpers";
 
@@ -190,6 +192,46 @@ describe("generateGoogleCalendarURL", () => {
   it("includes action=TEMPLATE", () => {
     const url = generateGoogleCalendarURL(event);
     expect(url).toContain("action=TEMPLATE");
+  });
+
+  it("does not duplicate the company when the title already contains it", () => {
+    const url = generateGoogleCalendarURL({ ...event, title: "Amazon Phone Screen", company: "Amazon" });
+    const text = new URL(url).searchParams.get("text");
+    expect(text).toBe("Amazon Phone Screen");
+  });
+
+  it("appends the company when the title omits it", () => {
+    const url = generateGoogleCalendarURL({ ...event, title: "Phone Screen", company: "Amazon" });
+    const text = new URL(url).searchParams.get("text");
+    expect(text).toBe("Phone Screen (Amazon)");
+  });
+});
+
+describe("canonicalTimezone", () => {
+  it("maps the legacy Asia/Calcutta alias to Asia/Kolkata", () => {
+    expect(canonicalTimezone("Asia/Calcutta")).toBe("Asia/Kolkata");
+  });
+
+  it("leaves a canonical zone untouched", () => {
+    expect(canonicalTimezone("America/New_York")).toBe("America/New_York");
+  });
+
+  it("passes through unknown zones unchanged", () => {
+    expect(canonicalTimezone("Antarctica/Troll")).toBe("Antarctica/Troll");
+  });
+});
+
+describe("timezoneLabel", () => {
+  it("returns the friendly label for a known zone", () => {
+    expect(timezoneLabel("Asia/Kolkata")).toBe("India (IST)");
+  });
+
+  it("canonicalizes a legacy alias before labelling it", () => {
+    expect(timezoneLabel("Asia/Calcutta")).toBe("India (IST)");
+  });
+
+  it("falls back to the raw id for zones outside the curated list", () => {
+    expect(timezoneLabel("Antarctica/Troll")).toBe("Antarctica/Troll");
   });
 });
 

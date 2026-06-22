@@ -22,8 +22,8 @@ import {
 } from "./sections";
 
 const RANGES: { key: RangeKey; label: string }[] = [
-  { key: "4w", label: "4 wks" },
-  { key: "12w", label: "12 wks" },
+  { key: "7d", label: "7 days" },
+  { key: "1m", label: "1 month" },
   { key: "all", label: "All time" },
 ];
 
@@ -144,7 +144,7 @@ function AnalyticsBody({ d, narrow, range, activePillar, onPillar }: {
 }
 
 function DesktopShell({ d }: { d: Fixture }) {
-  const [range, setRange] = React.useState<RangeKey>("12w");
+  const [range, setRange] = React.useState<RangeKey>("1m");
   const [activePillar, setActivePillar] = React.useState<Pillar["key"] | null>(null);
   const onPillar = (k: Pillar["key"]) => setActivePillar((cur) => (cur === k ? null : k));
   return (
@@ -159,7 +159,7 @@ function DesktopShell({ d }: { d: Fixture }) {
 }
 
 function MobileShell({ d }: { d: Fixture }) {
-  const [range, setRange] = React.useState<RangeKey>("12w");
+  const [range, setRange] = React.useState<RangeKey>("1m");
   const [activePillar, setActivePillar] = React.useState<Pillar["key"] | null>(null);
   const onPillar = (k: Pillar["key"]) => setActivePillar((cur) => (cur === k ? null : k));
   return (

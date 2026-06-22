@@ -137,7 +137,7 @@ export function MetricStat({ label, value, unit, tone = "ink", hint, meter }: { 
     <div style={{ background: t.creamSoft, borderRadius: 12, padding: "12px 14px" }}>
       <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>{label}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 6 }}>
-        <span style={{ fontFamily: f.serif, fontSize: 26, color, lineHeight: 1 }}>{value}</span>
+        <span style={{ fontFamily: f.serif, fontSize: 28, color, lineHeight: 1 }}>{value}</span>
         {unit && <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>{unit}</span>}
       </div>
       {meter && <BandTick meter={meter} color={markerColor} />}

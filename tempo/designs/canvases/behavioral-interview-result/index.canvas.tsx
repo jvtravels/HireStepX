@@ -12,7 +12,7 @@ export default page;
 export const VariantA_DiagnosticFirst: TempoStoryboard = {
   render: () => <VariantADiagnosticFirst />,
   name: "A Diagnostic-first",
-  layout: { x: 0, y: 0, width: 1280, height: 2400 },
+  layout: { x: 0, y: 0, width: 1280, height: 2514 },
 };
 
 export const VariantB_HeroFirst: TempoStoryboard = {
@@ -24,5 +24,5 @@ export const VariantB_HeroFirst: TempoStoryboard = {
 export const VariantC_SequencedScroll: TempoStoryboard = {
   render: () => <VariantCSequencedScroll />,
   name: "C Sequenced scroll",
-  layout: { x: 0, y: 2450, width: 760, height: 3200 },
+  layout: { x: 0, y: 2450, width: 760, height: 3791 },
 };

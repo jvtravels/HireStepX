@@ -933,10 +933,10 @@ function buildCadence(sessions: RawSession[], profile: ReadinessProfile): Readin
 
 /* Range-scoping helpers — re-exported so the UI slices client-side without
    duplicating the logic. */
-export type RangeKey = "4w" | "12w" | "all";
-export const RANGE_LABEL: Record<RangeKey, string> = { "4w": "4 weeks", "12w": "12 weeks", all: "all time" };
+export type RangeKey = "7d" | "1m" | "all";
+export const RANGE_LABEL: Record<RangeKey, string> = { "7d": "7 days", "1m": "1 month", all: "all time" };
 export function rangeSlice<T>(series: T[], range: RangeKey): T[] {
   if (range === "all" || series.length <= 2) return series;
-  const keep = range === "4w" ? Math.min(4, series.length) : Math.min(8, series.length);
+  const keep = range === "7d" ? Math.min(7, series.length) : Math.min(30, series.length);
   return series.slice(series.length - keep);
 }

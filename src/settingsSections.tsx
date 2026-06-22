@@ -341,7 +341,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
         <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
           <div aria-hidden="true" style={{
             width: 64, height: 64, borderRadius: "50%",
-            background: c.indigoDeep, color: c.cream, fontFamily: font.display, fontSize: 26,
+            background: c.indigoDeep, color: c.cream, fontFamily: font.display, fontSize: 28,
             display: "flex", alignItems: "center", justifyContent: "center", letterSpacing: "0.02em", flexShrink: 0,
           }}>{initial}</div>
           <div style={{ minWidth: 0, flex: 1 }}>

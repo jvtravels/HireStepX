@@ -25,7 +25,7 @@ export const InterviewResultHire: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "1. Hire — score 72",
-  layout: { x: 0, y: 0, width: 1440, height: 3000 },
+  layout: { x: 0, y: 0, width: 1440, height: 3522 },
 };
 
 const LEAN_HIRE: InterviewResultData = {
@@ -67,7 +67,7 @@ export const InterviewResultLeanHire: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "2. Lean Hire — score 58",
-  layout: { x: 1490, y: 0, width: 1440, height: 3000 },
+  layout: { x: 1490, y: 0, width: 1440, height: 3351 },
 };
 
 const STRONG_HIRE: InterviewResultData = {
@@ -127,7 +127,7 @@ export const InterviewResultStrongHire: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "3. Strong Hire — score 89",
-  layout: { x: 0, y: 3050, width: 1440, height: 3000 },
+  layout: { x: 0, y: 3050, width: 1440, height: 3379 },
 };
 
 const NO_HIRE: InterviewResultData = {
@@ -173,7 +173,7 @@ export const InterviewResultNoHire: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "4. No Hire — score 38",
-  layout: { x: 1490, y: 3050, width: 1440, height: 3000 },
+  layout: { x: 1490, y: 3050, width: 1440, height: 3359 },
 };
 
 /* ── Salary-negotiation context ──────────────────────────────────────
@@ -233,7 +233,7 @@ export const InterviewResultNegotiation: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "5. Salary negotiation — score 64",
-  layout: { x: 0, y: 6100, width: 1440, height: 3000 },
+  layout: { x: 0, y: 6100, width: 1440, height: 3437 },
 };
 
 /* ── Graceful degradation: first-session, missing optional fields ──
@@ -325,5 +325,5 @@ export const InterviewResultLongSession: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "7. Long session — 10 questions (progressive disclosure)",
-  layout: { x: 0, y: 9150, width: 1440, height: 3000 },
+  layout: { x: 0, y: 9150, width: 1440, height: 3229 },
 };

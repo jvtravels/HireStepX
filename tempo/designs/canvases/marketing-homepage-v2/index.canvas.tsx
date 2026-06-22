@@ -51,13 +51,13 @@ export const HeroSection: TempoStoryboard = {
 export const LogoStripSection: TempoStoryboard = {
   render: () => <LogoStripV2 />,
   name: "Logo strip + stat",
-  layout: { x: 4234, y: 8891, width: 1440, height: 559 },
+  layout: { x: 4234, y: 8891, width: 100, height: 2406 },
 };
 
 export const ProductStorySection: TempoStoryboard = {
   render: () => <ProductStoryV2 />,
   name: "3-step product story",
-  layout: { x: 4234, y: 10885, width: 1440, height: 1760 },
+  layout: { x: 4234, y: 10885, width: 100, height: 2135 },
 };
 
 export const FeatureGridSection: TempoStoryboard = {
@@ -75,7 +75,7 @@ export const TestimonialsSection: TempoStoryboard = {
 export const PricingSection: TempoStoryboard = {
   render: () => <PricingV2 />,
   name: "Pricing",
-  layout: { x: 2664, y: 12120, width: 1440, height: 1049 },
+  layout: { x: 2664, y: 12120, width: 100, height: 2341 },
 };
 
 export const BuiltForIndiaSection: TempoStoryboard = {
@@ -93,7 +93,7 @@ export const SecurityComplianceSection: TempoStoryboard = {
 export const VideoCtaSection: TempoStoryboard = {
   render: () => <VideoCtaV2 />,
   name: "Video CTA",
-  layout: { x: -1653, y: 15400, width: 1440, height: 580 },
+  layout: { x: -1762, y: 16066, width: 1728, height: 580 },
 };
 
 export const TrustRowSection: TempoStoryboard = {

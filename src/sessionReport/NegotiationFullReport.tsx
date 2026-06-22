@@ -99,7 +99,7 @@ export function NegotiationFullReport({
         </div>
         <h2
           id="ir-section-negotiation"
-          style={{ fontFamily: f.serif, fontSize: 26, margin: "10px 0 6px", color: t.coal, letterSpacing: -0.4 }}
+          style={{ fontFamily: f.serif, fontSize: 28, margin: "10px 0 6px", color: t.coal, letterSpacing: -0.4 }}
         >
           The full breakdown of your negotiation
         </h2>

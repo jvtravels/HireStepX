@@ -8,6 +8,7 @@
  */
 
 import { apiFetch } from "./apiClient";
+import { canonicalTimezone } from "./dashboardHelpers";
 
 export type CalendarKind = "real" | "prep-session";
 export type CalendarStatus = "upcoming" | "completed" | "cancelled";
@@ -71,7 +72,7 @@ export interface CalendarEventInput {
 /** The caller's IANA timezone, defaulting to the Indian-candidate audience. */
 export function currentTimezone(): string {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
+    return canonicalTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata");
   } catch {
     return "Asia/Kolkata";
   }

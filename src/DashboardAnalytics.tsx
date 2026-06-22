@@ -339,7 +339,7 @@ export default function AnalyticsPage() {
               <div key={i} style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: 18 }}>
                 <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, display: "block", marginBottom: 8 }}>{card.label}</span>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontFamily: font.mono, fontSize: 26, fontWeight: 600, color: card.color, letterSpacing: "-0.02em" }}>{card.value}</span>
+                  <span style={{ fontFamily: font.mono, fontSize: 28, fontWeight: 600, color: card.color, letterSpacing: "-0.02em" }}>{card.value}</span>
                   {card.delta !== null && card.delta !== 0 && (
                     <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: card.delta > 0 ? c.sage : c.ember }}>
                       {card.delta > 0 ? "+" : ""}{card.delta}

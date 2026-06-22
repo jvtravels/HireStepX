@@ -37,10 +37,10 @@ export type Fixture = ReadinessPayload;
 /* Range-scoping for client-side series slices. Re-implemented here (rather
    than imported from the core) so the client bundle stays free of any
    server-handler runtime code. Kept identical to the core's helper. */
-export type RangeKeyLocal = "4w" | "12w" | "all";
-export const RANGE_LABEL: Record<RangeKeyLocal, string> = { "4w": "4 weeks", "12w": "12 weeks", all: "all time" };
+export type RangeKeyLocal = "7d" | "1m" | "all";
+export const RANGE_LABEL: Record<RangeKeyLocal, string> = { "7d": "7 days", "1m": "1 month", all: "all time" };
 export function rangeSlice<T>(series: T[], range: RangeKeyLocal): T[] {
   if (range === "all" || series.length <= 2) return series;
-  const keep = range === "4w" ? Math.min(4, series.length) : Math.min(8, series.length);
+  const keep = range === "7d" ? Math.min(7, series.length) : Math.min(30, series.length);
   return series.slice(series.length - keep);
 }

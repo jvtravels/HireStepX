@@ -335,16 +335,16 @@ describe("target company resolution", () => {
 
 describe("rangeSlice helper", () => {
   it("returns all for 'all' or short series", () => {
-    expect(rangeSlice([1, 2], "4w")).toEqual([1, 2]);
+    expect(rangeSlice([1, 2], "7d")).toEqual([1, 2]);
     expect(rangeSlice([1, 2, 3, 4, 5], "all")).toEqual([1, 2, 3, 4, 5]);
   });
-  it("keeps the last 4 for '4w' and last 8 for '12w'", () => {
-    const s = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    expect(rangeSlice(s, "4w")).toEqual([7, 8, 9, 10]);
-    expect(rangeSlice(s, "12w")).toEqual([3, 4, 5, 6, 7, 8, 9, 10]);
+  it("keeps the last 7 for '7d' and last 30 for '1m'", () => {
+    const s = Array.from({ length: 40 }, (_, i) => i + 1);
+    expect(rangeSlice(s, "7d")).toEqual([34, 35, 36, 37, 38, 39, 40]);
+    expect(rangeSlice(s, "1m")).toEqual(s.slice(10));
   });
   it("exposes range labels", () => {
-    expect(RANGE_LABEL["4w"]).toBe("4 weeks");
+    expect(RANGE_LABEL["7d"]).toBe("7 days");
     expect(RANGE_LABEL.all).toBe("all time");
   });
 });
