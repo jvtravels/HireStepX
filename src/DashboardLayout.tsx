@@ -407,10 +407,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             // barFill: copper when healthy, ember (red) when low.
             const barFill = isLow ? c.ember : c.gilt;
 
-            // Segmented dash bar: 10 segments, each represents planTotal/10 sessions.
-            // For Free plan (2 sessions) use 2 segments instead.
-            const segCount = Math.min(planTotal, 10);
-            const filledSegs = Math.round((planUsed / planTotal) * segCount);
 
             return (
               <>
@@ -432,9 +428,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   </span>
                 </div>
 
-                {/* ── Segmented dash progress bar ──
-                    Hidden when plan exhausted + credits exist: the green card
-                    below is the primary signal in that state. */}
+                {/* ── Smooth progress bar ──
+                    Hidden when plan exhausted + credits exist. */}
                 {!(planExhausted && creditBalance > 0) && (
                   <div
                     role="progressbar"
@@ -444,25 +439,15 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     aria-valuenow={Math.round(pct)}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    style={{ display: "flex", gap: 3, marginBottom: 10, marginTop: 6 }}
+                    style={{ height: 4, borderRadius: 2, background: c.border, marginBottom: 10, marginTop: 6, overflow: "hidden" }}
                   >
-                    {Array.from({ length: segCount }, (_, i) => {
-                      const filled = i < filledSegs;
-                      const segColor = planExhausted
-                        ? "rgba(180,83,9,0.38)"
-                        : filled ? barFill : c.border;
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            flex: 1, height: 4, borderRadius: 2,
-                            background: filled ? segColor : c.border,
-                            opacity: filled ? 1 : 0.35,
-                            transition: "background 0.3s ease",
-                          }}
-                        />
-                      );
-                    })}
+                    <div style={{
+                      height: "100%",
+                      width: `${pct}%`,
+                      borderRadius: 2,
+                      background: planExhausted ? "rgba(180,83,9,0.55)" : barFill,
+                      transition: "width 0.4s ease",
+                    }} />
                   </div>
                 )}
 
