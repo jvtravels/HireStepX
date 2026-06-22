@@ -1964,6 +1964,11 @@ export default function SessionSetup() {
             const showPro = isProUser && proRemaining <= 5;
             if (!showFree && !showStarter && !showPro) return null;
             const isUrgent = (isFreeUser && freeLeft <= 1) || (isStarterUser && starterRemaining === 0) || (isProUser && proRemaining === 0);
+            // Don't show the alarming "limit reached" banner when purchased credits
+            // cover the shortfall — the plan limit is a soft ceiling, not a hard wall.
+            // The non-urgent "N sessions left" nudge is still useful, so only hide
+            // the urgent "limit reached" variant when credits are available.
+            if (isUrgent && creditBalance !== null && creditBalance > 0) return null;
             const message = showPro
               ? proRemaining === 0
                 ? 'Monthly session limit reached — resets 1st of next month.'
