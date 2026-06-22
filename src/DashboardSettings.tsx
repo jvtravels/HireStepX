@@ -284,10 +284,10 @@ export default function SettingsPage() {
         @media (max-width: 1023px) {
           .settings-sticky-header {
             margin-top: 0 !important;
-            /* sticky top is relative to the scroll container's padding edge.
-               main has paddingTop:76px, mobile nav height is 56px.
-               To stick at y=56 (nav bottom): top = 56 - 76 = -20px. */
-            top: -20px !important;
+            /* <main> is the scroll container and spans the full viewport (y=0).
+               sticky top is therefore in viewport coordinates.
+               Mobile nav is fixed 56px tall → lock the header right below it. */
+            top: 56px !important;
           }
         }
         /* ── Tab overflow fix at 375px ────────────────────────────────────
