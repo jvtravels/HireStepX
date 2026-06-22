@@ -533,32 +533,28 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
           ) : proExhausted ? (
             creditBalance > 0 ? (
-              /* Exhausted Pro with credits — primary action is to USE a session, not buy */
+              /* Exhausted Pro with credits — show both actions; buy is primary */
               <>
                 <button
-                  onClick={() => nav.push("/session/new")}
-                  title="Start a practice session using your available credits"
-                  aria-label="Start a practice session"
+                  onClick={() => setShowUpgradeModal(true)}
+                  title="Buy more session credits"
+                  aria-label="Buy more sessions"
                   style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer",
-                    background: c.sage, color: "#fff",
+                    background: c.gilt, color: c.obsidian,
                     fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.01em",
                     transition: "filter 0.2s" }}
                   onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.88)")}
                   onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-                >Start session →</button>
-                {/* Only nudge to buy when credits are running low — showing "Buy more" with
-                    17 credits remaining creates doubt and distracts from the primary action */}
-                {creditBalance <= 3 && (
-                  <button
-                    onClick={() => setShowUpgradeModal(true)}
-                    title="Buy additional session credits"
-                    style={{ display: "block", width: "100%", marginTop: 5, background: "none", border: "none",
-                      cursor: "pointer", fontFamily: font.ui, fontSize: 11, color: c.stone, opacity: 0.6,
-                      textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
-                  >Buy more sessions</button>
-                )}
+                >Buy more sessions →</button>
+                <button
+                  onClick={() => nav.push("/session/new")}
+                  title="Start a practice session using your available credits"
+                  style={{ display: "block", width: "100%", marginTop: 5, background: "none", border: "none",
+                    cursor: "pointer", fontFamily: font.ui, fontSize: 11, color: c.stone, opacity: 0.6,
+                    textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
+                >Start session</button>
               </>
             ) : (
               /* Exhausted Pro, no credits — buy is the right primary action */
