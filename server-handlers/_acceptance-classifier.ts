@@ -142,6 +142,52 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   /(?:^|[.!?,]\s*)(?:(?:yes|yeah|yep|yup|ok|okay|sure|alright|fine)[,\s]+)?accept(?:ed|ing|s)?\b(?:\s+(?:it|this|the\s+offer))?\s*(?:[.!?,]|$)/i,
 ];
 
+/* PRI-56 (2026-06-22, offline hostile sweep S2/S4) — unambiguous close-consent
+ * idioms the bank missed, each producing a NO-CLOSE on an unambiguous
+ * acceptance (bot kept countering / piling levers over an accepted offer).
+ *
+ * SINGLE SOURCE OF TRUTH. These forms are referenced in TWO places:
+ *   1. COMMITMENT_IDIOM_PATTERNS (below) — so classifyAcceptance returns
+ *      signalsAcceptance=true and the offer-on-table phase gate (step 5)
+ *      still vetoes them before any number is quoted (medium confidence).
+ *   2. STRICT_ACCEPTANCE_PATTERNS (detectExplicitAcceptance) — so the kernel
+ *      routes them through closeReason="accept" (terminal, ungated by
+ *      minTurnsBeforeClose) instead of the soft-accept path, whose
+ *      trailing-non-counter gate dropped the close on a genuine acceptance.
+ *      HEDGE_VETO_PATTERNS still runs first in the strict gate, and both
+ *      kernel call sites consult it ONLY post-offer (strictBoost gated on
+ *      highestOfferMade>0; the other sits inside the signalsAcceptance
+ *      branch), so these cannot fire pre-offer.
+ *
+ * They are unambiguous same-turn consent over a standing offer — structurally
+ * identical to the existing "let's move forward with this offer" / "send the
+ * offer letter" strict forms, just the terser spoken variants. */
+const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
+  /* 1. "deal" at a clause boundary — "ok, deal", "deal, 40 works", "alright
+   *    deal". The bare-token arm required the WHOLE utterance to be "deal", so
+   *    "ok, deal" / "deal, 40 works" fell through. Anchored to a clause start
+   *    and excludes the rejection sense "deal[- ]breaker"; the walk-away veto
+   *    already owns "no deal". */
+  /(?:^|[,.!?]\s*)(?:ok(?:ay)?|alright|yes|yeah|yep|fine|sure)?[,\s]*deal\b(?!\s*[-\s]?breaker)/i,
+  /* 2. Defer-to-your-offer accept — "whatever you just said works", "whatever
+   *    you offered is fine", "whatever works for me". The "whatever" head
+   *    disambiguates from the bare "<n> works" COUNTER the bank deliberately
+   *    excludes. */
+  /\bwhatever\s+you\s+(?:just\s+)?(?:said|offered|quoted|proposed|mentioned)\s+(?:works|is\s+(?:fine|good|ok(?:ay)?)|sounds\s+good)\b/i,
+  /\bwhatever\s+works\b/i,
+  /* 3. "send it" family — a finalize-the-offer instruction over a standing
+   *    offer ("yes send it", "send it over", "send across the letter"). The
+   *    strict gate already owns "send the offer letter"; these are the terser
+   *    spoken forms. Negation ("don't send it") is vetoed at step 1. */
+  /\bsend\s+it(?:\s+(?:over|across|through))?\b/i,
+  /\bsend\s+(?:me\s+|it\s+|them\s+)?(?:(?:over|across)\s+)?(?:the\s+)?(?:offer\s+)?(?:letter|paperwork|paper\s*work|docs?|contract)\b/i,
+  /* 4. "confirmed" / "yes confirmed" / "confirming" — a bare confirmation
+   *    token closing the deal. Anchored to a clause boundary AND required to
+   *    END the clause so the info-probe "can you confirm the split" (confirm
+   *    + object) does NOT match. */
+  /(?:^|[,.!?]\s*)(?:yes,?\s+|ok(?:ay)?,?\s+)?confirm(?:ed|ing)?\s*(?:[.!?,]|$)/i,
+];
+
 /** Commitment idioms — informal acceptance markers. Weaker than
  *  performative verbs. Caller must combine with offer reference or
  *  accept on medium confidence with no other vetoes. */
@@ -197,6 +243,8 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
    * candidate is already closing, keeps the looser "works" form safely. */
   /\b\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l)?\s*(?:done|deal|sold)\s*(?:[.!?,]|$)/i,
   /\b(?:done|deal|sold|settled?|finalized?)\s+(?:at|for|on)\s+\d+(?:\.\d+)?\b/i,
+  /* PRI-56 close-consent idioms — single source of truth (also strict). */
+  ...CLOSE_CONSENT_IDIOM_PATTERNS,
 ];
 
 /** Soft-alignment forms — language that affirms the offer
@@ -568,6 +616,16 @@ const STRICT_ACCEPTANCE_PATTERNS: RegExp[] = [
    * stays conditional and is NOT promoted. */
   /\blet'?s\s+(?:go\s+ahead|proceed|do\s+it)\b/i,
   /\bgo\s+ahead\s+and\s+(?:close|send|finali[sz]e|draft|process|lock|roll)\b/i,
+  /* PRI-56 (2026-06-22) — terse spoken close-consent idioms ("ok, deal",
+   * "deal, 40 works", "whatever you said works", "yes send it", "send it
+   * over", "yes confirmed"). Shared single source with COMMITMENT_IDIOM_PATTERNS
+   * so classification (medium) and the strict close gate stay in lockstep.
+   * Routed strict because, like the #124 forward-commitment idioms above, they
+   * are unambiguous same-turn consent over a standing offer; medium-only status
+   * left them in the soft-accept path, whose trailing-non-counter gate dropped
+   * the close. HEDGE_VETO_PATTERNS runs first; both kernel call sites are
+   * post-offer-only, so no pre-offer false close. */
+  ...CLOSE_CONSENT_IDIOM_PATTERNS,
 ];
 
 /** Hedged-language vetoes — when ANY of these fire, accepted=false

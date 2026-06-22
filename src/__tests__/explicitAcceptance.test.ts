@@ -84,3 +84,49 @@ describe("detectExplicitAcceptance — explicit deal-close commitment idioms", (
     expect(detectExplicitAcceptance("Let's close it if you can match 40.").accepted).toBe(false);
   });
 });
+
+/* PRI-56 (2026-06-22, offline hostile sweep S2/S4) — terse spoken close-consent
+ * idioms the strict gate missed, so the kernel routed them to the soft-accept
+ * path whose trailing-non-counter / min-turns gate DROPPED the close: the bot
+ * kept countering / piling levers over an unambiguous acceptance ("deal, 40
+ * works", "whatever you just said works", "yes send it", "yes confirmed").
+ * Promoted to STRICT (shared CLOSE_CONSENT_IDIOM_PATTERNS, single source with
+ * the medium-confidence commitment-idiom path), so canCloseSession passes on
+ * reason="accept" and the deal closes — identical to the #124 forward-
+ * commitment idioms. HEDGE_VETO still runs first; the kernel consults the
+ * strict gate ONLY post-offer, so these cannot force a pre-offer close. */
+describe("detectExplicitAcceptance — PRI-56 terse close-consent idioms", () => {
+  it("accepts the offline-reproduced terse close idioms", () => {
+    for (const p of [
+      "ok, deal",
+      "deal, 40 works",
+      "alright deal",
+      "ok fine, whatever you just said works",
+      "whatever you offered is fine",
+      "whatever works for me",
+      "yes send it",
+      "send it over",
+      "send across the offer letter",
+      "yes confirmed",
+      "confirmed",
+      "ok, confirming",
+    ]) {
+      expect(detectExplicitAcceptance(p).accepted, `expected accept: ${p}`).toBe(true);
+    }
+  });
+
+  it("does NOT accept the rejection sense 'deal-breaker' / 'no deal'", () => {
+    expect(detectExplicitAcceptance("that's a deal-breaker for me").accepted).toBe(false);
+    expect(detectExplicitAcceptance("that's a deal breaker").accepted).toBe(false);
+  });
+
+  it("does NOT accept the info-probe 'can you confirm the split'", () => {
+    expect(detectExplicitAcceptance("can you confirm the split").accepted).toBe(false);
+    expect(detectExplicitAcceptance("could you confirm the breakdown").accepted).toBe(false);
+  });
+
+  it("does NOT accept a conditional close-consent (hedge veto)", () => {
+    expect(detectExplicitAcceptance("deal, if you can do 40").accepted).toBe(false);
+    expect(detectExplicitAcceptance("send it over as long as it's 40 fixed").accepted).toBe(false);
+  });
+});

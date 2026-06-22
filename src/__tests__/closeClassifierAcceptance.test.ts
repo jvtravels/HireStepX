@@ -211,4 +211,70 @@ describe("close-classifier acceptance guards (#124/#125/#126)", () => {
     const botLines = transcript.map((t) => t.aiText.trim()).filter(Boolean);
     expect(new Set(botLines).size).toBe(botLines.length);
   });
+
+  /* PRI-56 (2026-06-22, offline hostile sweep S2/S4) — terse spoken
+   * close-consent idioms ("deal, 40 works", "whatever you just said works",
+   * "yes send it", "yes confirmed") were only reaching the medium-confidence
+   * commitment-idiom path, so the kernel's soft-accept trailing-non-counter /
+   * min-turns gate DROPPED the close and the bot kept countering / piling
+   * levers over an unambiguous acceptance. Promoting them to the strict gate
+   * (shared CLOSE_CONSENT_IDIOM_PATTERNS) routes them through
+   * closeReason="accept", which canCloseSession passes unconditionally. */
+  const PRI56_BAND: NegotiationBand = {
+    initialOffer: 28,
+    maxStretch: 42,
+    walkAway: 24,
+    hasEquity: true,
+  };
+
+  it("PRI-56 S2 — 'whatever you just said works' over a standing offer closes", () => {
+    const { transcript, finalState } = runConversation({
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: PRI56_BAND,
+      turns: [
+        "I'm at 30 fixed currently",
+        "I was hoping for 38",
+        "ok fine, whatever you just said works",
+      ],
+    });
+    expect(finalState.phase).toBe("accepted");
+    expect(transcript[transcript.length - 1].terminal).toBe(true);
+    // Closes on a committed in-band figure (the standing offer or the honoured
+    // in-band target ≤ ceiling), never ₹0 and never above the ceiling.
+    expect(finalState.highestOfferMade).toBeGreaterThan(0);
+    expect(finalState.highestOfferMade).toBeLessThanOrEqual(PRI56_BAND.maxStretch);
+  });
+
+  it("PRI-56 S4 — 'deal, 40 works' after an in-band anchor closes (capped at ceiling)", () => {
+    const { transcript, finalState } = runConversation({
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: PRI56_BAND,
+      turns: [
+        "I have a competing offer at 55 fixed",
+        "I need at least 50",
+        "ok, what about 40 fixed",
+        "deal, 40 works",
+      ],
+    });
+    expect(finalState.phase).toBe("accepted");
+    expect(transcript[transcript.length - 1].terminal).toBe(true);
+    expect(finalState.highestOfferMade).toBeGreaterThan(0);
+    expect(finalState.highestOfferMade).toBeLessThanOrEqual(PRI56_BAND.maxStretch);
+  });
+
+  it("PRI-56 — pre-offer 'whatever works' / 'send it' must NOT force a ₹0 close", () => {
+    // The strict gate is consulted post-offer only; verify the guard holds end
+    // to end — a close-consent idiom uttered before any offer exists must not
+    // dead-end the session at a phantom ₹0 acceptance.
+    const { finalState } = runConversation({
+      role: "Engineering Manager",
+      company: "Flipkart",
+      band: PRI56_BAND,
+      turns: ["whatever works", "send it"],
+      stopOnTerminal: false,
+    });
+    expect(finalState.highestOfferMade === 0 ? finalState.phase : "ok").not.toBe("accepted");
+  });
 });
