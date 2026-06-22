@@ -132,6 +132,69 @@ describe("close-recap-formal planner state (Fix 4)", () => {
     expect(prose.toLowerCase()).not.toContain("sounds good");
   });
 
+  /* PRI-54a (2026-06-22) — ESOP recap. When the equity-grant lever fired
+   * during the session and the band carries equity, the accepted package
+   * includes an ESOP grant; the recap must enumerate it instead of
+   * silently dropping it. Gated so it can never fabricate equity. */
+  const EQUITY_BAND: NegotiationBand = {
+    initialOffer: 20,
+    maxStretch: 28,
+    walkAway: 16,
+    hasEquity: true,
+  };
+  const initEquity = (overrides: Partial<NegotiationState> = {}): NegotiationState => ({
+    ...initState({ sessionId: "s-recap-eq", role: "swe", company: "mnc", band: EQUITY_BAND }),
+    ...overrides,
+  });
+
+  it("recap carries ESOP when equity-grant fired + band.hasEquity (PRI-54a)", () => {
+    const s = initEquity({
+      phase: "closing-push",
+      highestOfferMade: 24,
+      verbalAcceptanceTurn: 6,
+      turnIndex: 6,
+      leversUsed: ["equity-grant"],
+    });
+    const action = planNextAction(s);
+    if (action.kind !== "close-recap-formal") throw new Error("wrong kind");
+    expect(action.equityGranted).toBe(true);
+    const prose = renderCanonicalProse(action, s);
+    expect(prose).toMatch(/ESOP|equity/i);
+    expect(prose).toMatch(/vesting|vest/i);
+  });
+
+  it("recap OMITS ESOP when equity-grant never fired, even on an equity band (PRI-54a)", () => {
+    const s = initEquity({
+      phase: "closing-push",
+      highestOfferMade: 24,
+      verbalAcceptanceTurn: 6,
+      turnIndex: 6,
+      leversUsed: [],
+    });
+    const action = planNextAction(s);
+    if (action.kind !== "close-recap-formal") throw new Error("wrong kind");
+    expect(action.equityGranted).toBeUndefined();
+    const prose = renderCanonicalProse(action, s);
+    expect(prose).not.toMatch(/ESOP/i);
+  });
+
+  it("recap OMITS ESOP on a no-equity band even if the lever is recorded (no fabrication, PRI-54a)", () => {
+    /* Defensive: band.hasEquity=false (e.g. TCS) must suppress the ESOP
+     * line regardless of a stray lever entry — equity was never real. */
+    const s = init({
+      phase: "closing-push",
+      highestOfferMade: 24,
+      verbalAcceptanceTurn: 6,
+      turnIndex: 6,
+      leversUsed: ["equity-grant"],
+    });
+    const action = planNextAction(s);
+    if (action.kind !== "close-recap-formal") throw new Error("wrong kind");
+    expect(action.equityGranted).toBeUndefined();
+    const prose = renderCanonicalProse(action, s);
+    expect(prose).not.toMatch(/ESOP/i);
+  });
+
   it("no verbal accept → no close-recap-formal", () => {
     const s = init({
       phase: "closing-push",

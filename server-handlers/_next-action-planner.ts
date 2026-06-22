@@ -425,6 +425,15 @@ export type NextAction =
       proposedJoiningDate?: string;
       bgvStartTrigger?: string;
       offerLetterEta?: string;
+      /* PRI-54a (2026-06-22) — ESOP recap fix. When the equity-grant
+       * lever actually fired during the session (RSU/ESOP top-up offered
+       * "over and above the cash fitment"), the accepted package includes
+       * equity — but the recap previously enumerated only cash components
+       * and silently dropped it, recording an incomplete fitment. Set ONLY
+       * when state.leversUsed.includes("equity-grant") && band.hasEquity,
+       * so it can never fabricate equity the recruiter never put on the
+       * table (mirrors the recap-hallucination guard above). */
+      equityGranted?: boolean;
       satisfiesTopic: SatisfiesTopic;
     }
   /* Fix 1 (2026-05-16) — Real Indian-context negotiation levers. Each
@@ -7026,6 +7035,12 @@ function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
     : undefined;
   const bgvStartTrigger = bgvDiscussed ? "post-acceptance, on signed offer letter" : undefined;
   const offerLetterEta = (noticeDiscussed || bgvDiscussed) ? "2-3 business days" : undefined;
+  /* PRI-54a (2026-06-22) — recap the ESOP grant only when the equity-grant
+   * lever genuinely fired AND the band carries equity. Both conditions are
+   * required: leversUsed proves we offered it this session; band.hasEquity
+   * guards against a stray lever entry on a no-equity band (e.g. TCS). */
+  const equityGranted =
+    state.band.hasEquity === true && state.leversUsed.includes("equity-grant");
   return {
     kind: "close-recap-formal",
     fixedLpa,
@@ -7036,6 +7051,7 @@ function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
     proposedJoiningDate: undefined,
     bgvStartTrigger,
     offerLetterEta,
+    equityGranted: equityGranted ? true : undefined,
     satisfiesTopic: "close-recap-formal",
     _move: {
       lever: "close-acceptance",

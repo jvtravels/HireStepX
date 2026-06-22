@@ -32,6 +32,16 @@ export function proseCloseRecapFormal(
     const cb = clawbackForCompany(action.joiningBonusLpa, state.company);
     parts.push(`joining bonus ₹${action.joiningBonusLpa}L with a ${cb.months}-month ${cb.structure === "it-services-service-bond" ? "service bond" : "clawback"}`);
   }
+  /* PRI-54a (2026-06-22) — ESOP recap. The equity-grant lever offers an
+   * ESOP/RSU grant "over and above the cash fitment" during the
+   * negotiation; the recap must carry it through so the accepted fitment
+   * the candidate reconfirms is complete. Gated upstream on the lever
+   * having actually fired (action.equityGranted), so this never invents
+   * equity. Quoted as a component, not a rupee figure — the annual value
+   * is shared separately with the offer letter (see canonical prose). */
+  if (action.equityGranted) {
+    parts.push("an ESOP grant vesting over four years, over and above the cash fitment");
+  }
   if (action.retentionBonusLpa != null && action.retentionBonusLpa > 0) {
     parts.push(`retention bonus ₹${action.retentionBonusLpa}L split across the retention window`);
   }
