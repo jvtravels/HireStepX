@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { tokens as t, fonts } from "./auth/_tokens";
-import { NavV2, FinalCTAFooterV2, MobileStickyCTA } from "./marketing-v2/HomepageV2";
+import { NavV2, MobileStickyCTA } from "./marketing-v2/HomepageV2";
+import { FooterDome as FinalCTAFooterV2 } from "./marketing-v2/FooterDome";
 import { useSEO, articleJsonLd, faqJsonLd } from "./useSEO";
 
 /* PageShell — mirrors marketing-v2 chrome so the blog inherits the

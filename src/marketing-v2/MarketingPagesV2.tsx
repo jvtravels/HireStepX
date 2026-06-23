@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
-import { NavV2, FinalCTAFooterV2, MobileStickyCTA } from "./HomepageV2";
+import { NavV2, MobileStickyCTA } from "./HomepageV2";
+import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { captureClientEvent } from "../posthogClient";
 
 /* ════════════════════════════════════════════════════════════════════

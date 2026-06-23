@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
 import { useAuth, hasStoredSession } from "../AuthContext";
 import { captureClientEvent } from "../posthogClient";
+import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
+export { FinalCTAFooterV2 };
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing Homepage v2 (brand-aligned)
@@ -4064,158 +4066,7 @@ export function ChangelogTeaseV2() {
 }
 
 /* ─────────────────────────── 7. FINAL CTA + FOOTER ─────────────────────────── */
-export function FinalCTAFooterV2() {
-  const footerCols: Array<{ title: string; links: Array<[string, string]> }> = [
-    /* Footer columns are intentionally narrow: every link below points
-     * to a route that exists in app/(marketing). When adding a new
-     * column entry, confirm the page ships before merging — dead links
-     * tank the trust signal on the most-scrolled section of the site. */
-    {
-      title: "Product",
-      links: [
-        ["How it works", "/how-it-works"],
-        ["Pricing", "/pricing"],
-      ],
-    },
-    {
-      title: "For you",
-      links: [
-        ["Students & freshers", "/for-students"],
-      ],
-    },
-    {
-      title: "Resources",
-      links: [
-        ["Blog", "/blog"],
-        ["Contact", "/contact"],
-      ],
-    },
-    {
-      title: "Company",
-      links: [
-        ["About", "/about"],
-        ["Privacy", "/privacy"],
-        ["Terms", "/terms"],
-        ["Refund policy", "/refund"],
-      ],
-    },
-  ];
-  return (
-    <footer aria-labelledby="hd-cta" style={{ background: t.cream, position: "relative" }}>
-      {/* Self-contained responsive collapse: this footer is rendered both by
-          HomepageV2 (whose ResponsiveSheet has the .mv2-footer-grid rule) AND
-          standalone on sub-pages via MarketingPagesV2 (whose sheet does NOT).
-          Without this, the 5-column grid never collapses on sub-pages and
-          overflows the viewport at mobile widths. Mirror the nav fix in NavV2. */}
-      <style>{`
-        @media (max-width: 880px) {
-          .mv2-footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
-        }
-      `}</style>
-
-      {/* Compact footer */}
-      <div
-        style={{
-          borderTop: `1px solid ${t.line}`,
-          paddingTop: 56,
-          paddingBottom: 28,
-          background: t.creamSoft,
-        }}
-      >
-        <div
-          className="mv2-footer-grid"
-          style={{
-            ...container,
-            display: "grid",
-            gridTemplateColumns: "1.5fr repeat(4, 1fr)",
-            gap: 36,
-          }}
-        >
-          <div>
-            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto", display: "block", marginBottom: 0 }} />
-            <p
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 13,
-                color: t.inkSoft,
-                marginTop: 12,
-                maxWidth: 240,
-                lineHeight: 1.55,
-              }}
-            >
-              The AI mock interviewer for India. Built in Bengaluru.
-            </p>
-          </div>
-          {footerCols.map((col) => (
-            <div key={col.title}>
-              <p
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: t.inkFaint,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  margin: 0,
-                  marginBottom: 16,
-                }}
-              >
-                {col.title}
-              </p>
-              {col.links.map(([label, href]) => (
-                <a
-                  key={label}
-                  href={href}
-                  style={{
-                    display: "block",
-                    fontFamily: fonts.sans,
-                    fontSize: 14,
-                    color: t.inkSoft,
-                    textDecoration: "none",
-                    marginBottom: 10,
-                  }}
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <div
-          style={{
-            ...container,
-            marginTop: 36,
-            paddingTop: 20,
-            borderTop: `1px solid ${t.line}`,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 12,
-            fontFamily: fonts.sans,
-            fontSize: 12,
-            color: t.inkFaint,
-          }}
-        >
-          <span>© 2026 HireStepX Labs Pvt Ltd</span>
-          <span style={{ display: "flex", gap: 20 }}>
-            {[
-              ["Privacy", "/privacy"],
-              ["Terms", "/terms"],
-              ["Refund", "/refund"],
-              ["Status", "https://status.hirestepx.com"],
-            ].map(([label, href]) => (
-              <a key={label} href={href} style={{ color: t.inkFaint, textDecoration: "none" }}>
-                {label}
-              </a>
-            ))}
-          </span>
-        </div>
-      </div>
-    </footer>
-  );
-}
+/* FinalCTAFooterV2 now points to FooterDome (imported at the top of this file). */
 
 /* ─────────────────────────── STRUCTURED DATA (JSON-LD) ─────────────────────────── */
 function StructuredData() {
