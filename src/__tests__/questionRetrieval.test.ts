@@ -130,6 +130,16 @@ describe("normaliseFocus", () => {
     expect(normaliseFocus("mystery-focus")).toBeNull();
     expect(normaliseFocus(undefined)).toBeNull();
   });
+
+  it("A1: aliases the 'hr-round' type/focus string to the 'hr' bank bucket", () => {
+    /* The interview surface emits ?focus=hr-round (the type), but the bank's
+       FocusArea is "hr". Without the alias normaliseFocus returns null and HR
+       rounds lose their company-specific reference questions. */
+    expect(normaliseFocus("hr-round")).toBe("hr");
+    expect(normaliseFocus("hr")).toBe("hr");
+    // case-insensitive, consistent with the other entries
+    expect(normaliseFocus("HR-Round")).toBe("hr");
+  });
 });
 
 /* ─── Hierarchical retrieval ─────────────────────────────────────── */

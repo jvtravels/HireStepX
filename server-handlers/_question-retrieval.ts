@@ -268,7 +268,11 @@ const FOCUS_MAP: Record<string, FocusArea> = {
   behavioral: "behavioral", general: "general",
   technical: "technical", "system-design": "system-design",
   "case-study": "case-study", "campus-placement": "campus-placement",
-  hr: "hr", panel: "panel", "salary-negotiation": "salary-negotiation",
+  /* "hr" is the bank's FocusArea; "hr-round" is the type/focus string the
+     interview surface emits (SessionSetup forwards ?focus=hr-round). Alias it
+     so HR rounds retrieve the company-specific HR reference questions (tcs,
+     infosys, wipro, paytm) instead of falling through to the generic pool. */
+  hr: "hr", "hr-round": "hr", panel: "panel", "salary-negotiation": "salary-negotiation",
   leadership: "leadership",
   /* Strategic now has its own retrieval bucket (was aliased to
      case-study). Strategic = defending a position to senior

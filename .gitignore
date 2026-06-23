@@ -44,3 +44,13 @@ docs/coverage-gaps.md
 # Raw HTML cache from scripts/scrape-ambitionbox.mts (re-fetchable).
 data/.cache/
 data/.cache-levels-fyi/
+
+# Local QA / audit scratch scripts — never meant to ship. Kept out of the
+# tree so they can't be swept into a commit again or break `eslint .`
+# (they use Node `console`, which the browser/edge lint config rejects).
+# (audit-full.mjs was committed by accident in c0f15d2 and removed since.)
+audit-full.mjs
+audit-*.mjs
+qa-*.cjs
+qa-*.mjs
+do_commit.sh

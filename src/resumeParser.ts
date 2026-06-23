@@ -117,8 +117,9 @@ async function readPdf(file: File): Promise<string> {
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
   // Move PDF parsing off the main thread — FakeWorker path causes 200-800ms UI freeze
   // on mid-range Indian devices. workerSrc must be set before any getDocument() call.
-  (pdfjsLib as any).GlobalWorkerOptions = (pdfjsLib as any).GlobalWorkerOptions ?? {};
-  (pdfjsLib as any).GlobalWorkerOptions.workerSrc =
+  // GlobalWorkerOptions is a typed named export (GlobalWorkerOptionsType) whose
+  // workerSrc field is mutable — set it directly, no cast needed.
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
     '/pdf.worker.min.js'; // served from public/ — copy pdfjs-dist/legacy/build/pdf.worker.min.js there
   // Legacy worker entry kept as fallback for environments where workerSrc fails to load
   // @ts-expect-error no type declarations for worker entry

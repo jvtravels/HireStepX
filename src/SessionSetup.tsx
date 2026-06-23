@@ -1389,7 +1389,16 @@ export default function SessionSetup() {
       // Forward drill key when present + recognized. Unknown keys are
       // dropped so /interview doesn't receive an unrecognized directive.
       const drillParam = drillCta ? `&drill=${encodeURIComponent(drillKey)}` : "";
-      router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}`);
+      /* HR rounds carry their type forward as the focus so useInterviewEngine
+         resolves interviewFocus="hr-round" instead of the "general" default.
+         The whole HR pipeline is already keyed on "hr-round": the personalization
+         prebias gate, the session_insights read bucket (analyze-sessions writes
+         focus = session.type), and HR-specific reference-question retrieval
+         (FOCUS_MAP "hr-round" -> "hr"). Without this the prebias never fires and
+         the insight read queries the wrong bucket. Scoped to hr-round only so
+         every other interview type's focus handling stays unchanged. */
+      const focusParam = focusType === "hr-round" ? "&focus=hr-round" : "";
+      router.push(`/interview?type=${focusType}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}`);
     }, 1900);
   };
 
