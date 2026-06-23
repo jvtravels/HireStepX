@@ -101,7 +101,7 @@ function FooterDomeDesktop() {
         borderRadius: "50%",
         overflow: "hidden",
         transform: "translateX(-50%)",
-        background: "#BC551C",
+        background: "#B45309",
       }}>
         {/* src on the element directly (not via <source>) forces Chrome to
             use the simpler resource selection algorithm and keeps networkState
