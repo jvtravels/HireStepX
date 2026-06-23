@@ -242,7 +242,7 @@ function FooterDomeDesktop() {
         borderRadius: "50%",
         overflow: "hidden",
         transform: "translateX(-50%)",
-        background: t.copperDark,
+        background: "#BC551C",
       }}>
         <video
           ref={videoRef}
