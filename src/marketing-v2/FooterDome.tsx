@@ -266,22 +266,7 @@ function FooterDomeDesktop() {
         />
       </div>
 
-      {/* Wordmark on dome */}
-      <div style={{
-        position: "absolute",
-        left: "50%",
-        top: 368,
-        transform: "translateX(-50%)",
-        fontFamily: fonts.sans,
-        fontSize: 46,
-        fontWeight: 700,
-        letterSpacing: "-0.02em",
-        color: "#FFFFFF",
-        whiteSpace: "nowrap",
-        pointerEvents: "none",
-      }}>
-        HireStepX
-      </div>
+      {/* Wordmark is part of the HX.mp4 video — no separate text needed */}
     </div>
   );
 }
