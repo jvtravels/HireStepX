@@ -172,6 +172,61 @@ describe("acceptance classifier — HINDI_MIX precision (phase-gate + negation m
   });
 });
 
+/* Offline hostile sweep (2026-06-23) — two findings from the adversarial
+ * accept/close probe, locked as permanent guards:
+ *  1. FALSE-CLOSE: "not a chance I sign today" — the "sign today" performative
+ *     arm fired because WALK_AWAY_PATTERN lacked "no chance"/"not a chance".
+ *     Worst failure mode (finalizing a rejected deal); now vetoed at step 1.
+ *  2. MISSED-CLOSE: "let's finalize it" — a deal-referent finalize commit the
+ *     CLOSE_CONSENT bank missed; now closes through both gates, while the
+ *     negotiating "finalize the base/numbers" forms stay open. */
+describe("acceptance classifier — walk-away 'no chance' must NOT false-close", () => {
+  const cases = [
+    "not a chance I sign today",
+    "no chance I'm signing this",
+    "not a chance",
+    "no chance at this number",
+  ];
+  for (const input of cases) {
+    it(`"${input}" → NOT accepted (walk-away)`, () => {
+      const m = classifyAcceptance(input, onTable);
+      const s = detectExplicitAcceptance(input);
+      expect(m.accepted, `medium reasons=${m.reasons.join(",")}`).toBe(false);
+      expect(s.accepted, "strict must also reject").toBe(false);
+    });
+  }
+});
+
+describe("acceptance classifier — 'finalize it' close idiom (both gates)", () => {
+  it("deal-referent finalize commits close through both gates", () => {
+    for (const input of [
+      "let's finalize it",
+      "let's finalize this",
+      "let us finalize the deal",
+      "happy to finalize the offer",
+    ]) {
+      const m = classifyAcceptance(input, onTable);
+      const s = detectExplicitAcceptance(input);
+      expect(m.accepted, `medium reasons=${m.reasons.join(",")}`).toBe(true);
+      expect(s.accepted, `strict must also accept: ${input}`).toBe(true);
+    }
+  });
+  it("negotiating 'finalize the <component>' forms stay open (no false-close)", () => {
+    for (const input of [
+      "let's finalize the base first",
+      "can we finalize the numbers",
+      "let's finalize the split",
+    ]) {
+      const m = classifyAcceptance(input, onTable);
+      expect(m.accepted, `must NOT close: ${input} (${m.reasons.join(",")})`).toBe(false);
+    }
+  });
+  it("deferral-gated finalize stays vetoed", () => {
+    const m = classifyAcceptance("let's finalize it once you confirm the base", onTable);
+    expect(m.accepted, `reasons=${m.reasons.join(",")}`).toBe(false);
+  });
+});
+
 describe("strict gate — Hindi deal-close idiom routes through detectExplicitAcceptance", () => {
   /* "bhej do offer letter" carries the unambiguous deal-close sense and
    * is shared into the strict gate via CLOSE_CONSENT_IDIOM_PATTERNS, so

@@ -274,6 +274,15 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
   /* 14. "lock this/that in" — pronoun generalisation of the existing "lock it
    *     in" commit. "lock in" is an unambiguous finalize verb. */
   /\block\s+(?:it|this|that)\s+in\b/i,
+  /* 15. "(let's) finalize it/this/the deal/the offer" — finalize-the-deal
+   *     commit, sibling of arm 9 (make it official) and arm 14 (lock it in).
+   *     The object is REQUIRED and scoped to a deal-referent (it/this/that/the
+   *     deal/offer) so "let's finalize the base/numbers/split/details" — still
+   *     negotiating the breakdown, NOT consent — does NOT false-close.
+   *     CONDITIONAL_DEFERRAL_PATTERN already owns "finalize" as a settle-verb,
+   *     so "let's finalize it once you confirm base" stays vetoed in both gates.
+   *     Offline hostile sweep (2026-06-23). */
+  /\b(?:let'?s\s+|let\s+us\s+|we\s+can\s+|happy\s+to\s+)?finali[sz]e\s+(?:it|this|that|the\s+(?:deal|offer))\b/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -409,7 +418,7 @@ const OFFER_REFERENCE_PATTERN =
 
 /** Veto: walk-away or rejection. */
 const WALK_AWAY_PATTERN =
-  /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta)|nahin\s+(?:chahiye|karna|chalega)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
+  /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|no chance|not a chance|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta)|nahin\s+(?:chahiye|karna|chalega)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
 
 /** Veto: deferred-condition framing — "once we sort the base", "after you
  *  confirm the split". A close-consent idiom ("where do I sign", "count me
