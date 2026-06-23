@@ -287,6 +287,7 @@ function buildHrReport(report: SessionReport): HrReportData | undefined {
     compExpected: raw.compExpected ?? null,
     counterOfferRisk: raw.counterOfferRisk ?? "not-assessed",
     bgvGaps: Array.isArray(raw.bgvGaps) ? raw.bgvGaps : [],
+    companyNorms: raw.companyNorms ?? null,
   };
 }
 

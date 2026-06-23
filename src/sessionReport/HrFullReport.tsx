@@ -404,14 +404,67 @@ function ProbeRow({
 
 /* ─── Notice logistics ──────────────────────────────────────────────── */
 
+/* Sector-grounded norm strip. Renders real India notice/comp facts for the
+   target company's employer-type when known; renders nothing when norms are
+   absent so the surrounding generic copy stands on its own. */
+function SectorNormStrip({
+  norms,
+  lines,
+}: {
+  norms: HrReportData["companyNorms"];
+  lines: Array<{ label: string; value: string }>;
+}) {
+  if (!norms) return null;
+  const visible = lines.filter((l) => l.value);
+  if (visible.length === 0) return null;
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        background: CREAM_SOFT,
+        border: `1px solid ${LINE}`,
+        borderRadius: 12,
+        padding: 16,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: MONO,
+          fontSize: 10,
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          color: COPPER,
+          marginBottom: 10,
+        }}
+      >
+        {norms.sectorLabel} · sector norm
+      </div>
+      <div style={{ display: "grid", gap: 8 }}>
+        {visible.map((l, i) => (
+          <div key={i} style={{ fontFamily: SANS, fontSize: 12.5, color: INK_SOFT, lineHeight: 1.5 }}>
+            <span style={{ fontWeight: 600, color: COAL }}>{l.label}: </span>
+            {l.value}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
-  const { noticeDays, noticeFlexibility, compExpected } = hrReport;
+  const { noticeDays, noticeFlexibility, compExpected, companyNorms } = hrReport;
+  const normLines = [
+    { label: "Typical notice", value: companyNorms?.noticeNorm ?? "" },
+    { label: "Buyouts", value: companyNorms?.buyoutNote ?? "" },
+    { label: "Comp reality", value: companyNorms?.compNote ?? "" },
+  ];
   const hasData = noticeDays !== null || compExpected;
   if (!hasData) {
     return (
       <Panel>
         <Eyebrow kicker="LOGISTICS · NOTICE & COMP" title="What you said about notice and salary" />
         <EmptyState message="Notice period and comp expectation weren't discussed clearly in this session. In your real round, anchor your notice days first, then give a CTC range with a brief rationale." />
+        <SectorNormStrip norms={companyNorms} lines={normLines} />
       </Panel>
     );
   }
@@ -494,18 +547,32 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
           </div>
         )}
       </div>
+      <SectorNormStrip norms={companyNorms} lines={normLines} />
     </Panel>
   );
 }
 
 /* ─── BGV gaps panel ────────────────────────────────────────────────── */
 
-function BgvPanel({ bgvGaps }: { bgvGaps: string[] }) {
+function BgvPanel({ bgvGaps, companyNorms }: { bgvGaps: string[]; companyNorms: HrReportData["companyNorms"] }) {
+  // Sector-specific BGV facts when known; generic fallback otherwise.
+  const firms = companyNorms?.bgvFirms?.length ? companyNorms.bgvFirms.join(", ") : "AuthBridge, FirstAdvantage, OnGrid";
+  const docList = companyNorms?.bgvDocs?.length
+    ? companyNorms.bgvDocs.join(", ")
+    : "last-3-employer payslips, Form-16, relieving letters, PAN/Aadhaar/UAN passbook, and education marksheets";
+  const sub = `Indian BGV firms (${firms}) almost always pull these. A single missing doc can stall the joining date by 2–4 weeks.`;
   if (bgvGaps.length === 0) {
     return (
       <Panel>
         <Eyebrow kicker="COMPLIANCE · BGV READINESS" title="Background verification gaps" />
-        <EmptyState message="No BGV gaps were mentioned in this session. In the real round, proactively confirm you have: last-3-employer payslips, Form-16, relieving letters, PAN/Aadhaar/UAN passbook, and education marksheets." />
+        <EmptyState message={`No BGV gaps were mentioned in this session. In the real round, proactively confirm you have: ${docList}.`} />
+        <SectorNormStrip
+          norms={companyNorms}
+          lines={[
+            { label: "BGV vendors", value: companyNorms?.bgvFirms?.join(", ") ?? "" },
+            { label: "Dual employment", value: companyNorms?.dualEmploymentNote ?? "" },
+          ]}
+        />
       </Panel>
     );
   }
@@ -514,7 +581,7 @@ function BgvPanel({ bgvGaps }: { bgvGaps: string[] }) {
       <Eyebrow
         kicker="COMPLIANCE · BGV READINESS"
         title="Document gaps you admitted"
-        sub="Indian BGV firms (AuthBridge, FirstAdvantage, OnGrid) almost always pull these. A single missing doc can stall the joining date by 2–4 weeks."
+        sub={sub}
       />
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         <Pill tone="bad">{bgvGaps.length} gap{bgvGaps.length > 1 ? "s" : ""}</Pill>
@@ -548,6 +615,13 @@ function BgvPanel({ bgvGaps }: { bgvGaps: string[] }) {
           </div>
         ))}
       </div>
+      <SectorNormStrip
+        norms={companyNorms}
+        lines={[
+          { label: "BGV vendors", value: companyNorms?.bgvFirms?.join(", ") ?? "" },
+          { label: "Dual employment", value: companyNorms?.dualEmploymentNote ?? "" },
+        ]}
+      />
     </Panel>
   );
 }
@@ -963,7 +1037,7 @@ export default function HrFullReport({
       {hrReport ? (
         <>
           <NoticePanel hrReport={hrReport} />
-          <BgvPanel bgvGaps={hrReport.bgvGaps} />
+          <BgvPanel bgvGaps={hrReport.bgvGaps} companyNorms={hrReport.companyNorms ?? null} />
           <CounterOfferPanel risk={hrReport.counterOfferRisk} />
         </>
       ) : (

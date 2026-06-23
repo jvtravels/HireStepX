@@ -10,7 +10,8 @@ import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { formatScoringRubric, RECIPES } from "../data/focus-question-recipes";
-import { resolveHrRoundRecipe, resolveHrSectorOverlay } from "./_hr-round-overlays";
+import { resolveHrRoundRecipe, resolveHrSectorOverlay, resolveHrCompanyNorms } from "./_hr-round-overlays";
+import type { HrCompanyNorms } from "../data/hr-company-norms";
 import { detectStarPresence } from "../src/_star-detection";
 import { detectCulturalRegister, summarizeIndianRegister } from "../src/_cultural-register";
 import {
@@ -443,6 +444,7 @@ interface SessionReport {
     compExpected: string | null;
     counterOfferRisk: "low" | "med" | "high" | "not-assessed";
     bgvGaps: string[];
+    companyNorms: HrCompanyNorms | null;
   };
   model: string;
 }
@@ -521,6 +523,12 @@ export default async function handler(req: Request): Promise<Response> {
     // misleading "Generic — set a target company" when one IS set.
     const calibrationSector =
       meta?.type === "hr-round" ? resolveHrSectorOverlay(meta?.targetCompany) : "none";
+    // Sector-grounded India HR norms (notice/BGV/comp/dual-employment). Resolved
+    // deterministically from the company — fed to the prompt as grounding AND
+    // attached to the report so the render cites real sector facts instead of
+    // one generic paragraph. null when no company / unknown sector.
+    const hrNorms: HrCompanyNorms | null =
+      meta?.type === "hr-round" ? resolveHrCompanyNorms(meta?.targetCompany) : null;
     const { companyLabel, companyNote } = resolveCalibrationLabel(
       meta?.targetCompany,
       companyProfile,
@@ -607,6 +615,17 @@ export default async function handler(req: Request): Promise<Response> {
        dynamic section after the rubric so it doesn't break prompt caching. */
     const signatureMetricsPrompt = formatSignatureMetricsPrompt(meta?.type);
     const perQuestionMetricsPrompt = formatPerQuestionMetricsPrompt(meta?.type);
+    /* Sector-grounded HR norms for the prompt. Dynamic (per-company) so it lands
+       after the static blocks — keeps prompt caching intact. Gives the LLM real
+       sector facts so its motivationAfter / bgvGaps guidance is company-true and
+       doesn't contradict what the report will render deterministically. */
+    const hrNormsPrompt = hrNorms
+      ? `\n\nCOMPANY HR NORMS (${hrNorms.sectorLabel} — ground your notice/BGV/comp guidance in these; do NOT contradict them):
+- Typical notice period: ${hrNorms.noticeNorm}. ${hrNorms.buyoutNote}
+- BGV usually pulls: ${hrNorms.bgvDocs.join(", ")} (vendors: ${hrNorms.bgvFirms.join(", ")}).
+- Comp reality: ${hrNorms.compNote}
+- Dual employment: ${hrNorms.dualEmploymentNote}`
+      : "";
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
     // lets Groq's automatic prompt caching (which keys on the longest shared
@@ -744,7 +763,7 @@ TRANSCRIPT (numbered turns):
 """
 ${transcriptBlock}
 """
-${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}
+${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}${hrNormsPrompt}
 
 RUBRIC — score each skill 0-100:
 ${skillAxes.map((s) => `- ${s}`).join("\n")}
@@ -1258,6 +1277,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
         ? normalizeHrReport(
             (parsed as Record<string, unknown>).hrReport,
             transcript.map((t) => t.text || "").join("\n"),
+            hrNorms,
           ) ?? undefined
         : undefined,
       model: result.model,
@@ -1292,6 +1312,26 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       interview_focus: typeof meta?.type === "string" ? meta.type : "",
       role: typeof meta?.role === "string" ? meta.role.slice(0, 100) : "",
       company: typeof meta?.targetCompany === "string" ? meta.targetCompany.slice(0, 60) : "",
+      // Token counts for LLM COGS tracking. Populated from provider usage
+      // metadata — null when the provider didn't return usage (rare).
+      prompt_tokens: result.tokensUsed?.prompt ?? null,
+      completion_tokens: result.tokensUsed?.completion ?? null,
+      total_tokens: result.tokensUsed?.total ?? null,
+      // Derived COGS estimate in INR at current Groq rates.
+      // Groq llama-3.3-70b: ~$0.59/1M input + $0.79/1M output tokens @ ₹84.
+      // Gemini 2.5 flash: ~$0.30/1M input + $2.50/1M output @ ₹84 (free up to quota).
+      // This is a point-in-time approximation for trending, not billing.
+      llm_cost_inr_est: (() => {
+        const p = result.tokensUsed?.prompt ?? 0;
+        const c = result.tokensUsed?.completion ?? 0;
+        if (!p && !c) return null;
+        const model = result.model ?? "";
+        if (model.includes("gemini")) {
+          return Math.round(((p / 1_000_000) * 0.30 + (c / 1_000_000) * 2.50) * 84 * 100) / 100;
+        }
+        // Groq Llama 3.3 70B / Cerebras
+        return Math.round(((p / 1_000_000) * 0.59 + (c / 1_000_000) * 0.79) * 84 * 100) / 100;
+      })(),
     }, req);
 
     // PRI-36 — measure how often the deterministic structural anchor has to

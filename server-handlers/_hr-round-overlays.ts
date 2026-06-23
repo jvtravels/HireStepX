@@ -27,6 +27,7 @@
  */
 
 import type { FocusRecipe } from "../data/focus-question-recipes";
+import { hrCompanyNorms, type HrCompanyNorms } from "../data/hr-company-norms";
 
 export type HrSectorOverlay = "services-tier1" | "product-unicorn" | "bfsi" | "none";
 export type HrSeniorityOverlay = "fresher" | "mid" | "senior" | "executive";
@@ -42,6 +43,15 @@ export function resolveHrSectorOverlay(companyName: string | null | undefined): 
   if (BFSI.test(c)) return "bfsi";
   if (PRODUCT_UNICORN.test(c)) return "product-unicorn";
   return "none";
+}
+
+/* Resolve the India HR norms (notice/BGV/comp/dual-employment) for a company by
+   mapping it through the same sector taxonomy used for rubric weights. Returns
+   null when no company is set or the sector is unrecognised, so callers fall
+   back to generic guidance. HrSectorOverlay and HrNormSector share string keys
+   by construction (see data/hr-company-norms.ts). */
+export function resolveHrCompanyNorms(companyName: string | null | undefined): HrCompanyNorms | null {
+  return hrCompanyNorms(resolveHrSectorOverlay(companyName));
 }
 
 export function resolveHrSeniorityOverlay(expLevel: string | null | undefined, yoe?: number | null): HrSeniorityOverlay {

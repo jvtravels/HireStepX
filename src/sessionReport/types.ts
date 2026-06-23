@@ -4,6 +4,8 @@
    evolve without forcing a server-side schema bump. The adapter
    (`adapter.ts`) is the only thing that translates between them. */
 
+import type { HrCompanyNorms } from "../../data/hr-company-norms";
+
 export type Verdict =
   | "strongHire"
   | "hire"
@@ -188,6 +190,10 @@ export interface HrReportData {
   compExpected: string | null;
   counterOfferRisk: "low" | "med" | "high" | "not-assessed";
   bgvGaps: string[];
+  /** Sector-grounded India HR norms (notice/BGV/comp/dual-employment) for the
+   *  target company's employer-type. Null when no company / unknown sector —
+   *  the report falls back to generic guidance. */
+  companyNorms?: HrCompanyNorms | null;
 }
 
 export interface InterviewResultData {

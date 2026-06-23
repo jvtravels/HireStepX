@@ -8,6 +8,7 @@ import {
   type FocusMetricTone,
 } from "../data/focus-signature-metrics";
 import { detectStarPresence } from "../src/_star-detection";
+import type { HrCompanyNorms } from "../data/hr-company-norms";
 
 export type { FocusMetric } from "../data/focus-signature-metrics";
 
@@ -908,6 +909,12 @@ export interface HrReportData {
   counterOfferRisk: "low" | "med" | "high" | "not-assessed";
   /** Document gaps the candidate explicitly admitted in the BGV discussion. */
   bgvGaps: string[];
+  /** Sector-grounded India HR norms (notice/BGV/comp/dual-employment) resolved
+   *  deterministically from the target company — NOT LLM output. null when no
+   *  company is set or the sector is unrecognised (render falls back to generic
+   *  copy). Lets the report cite "TCS → IT services → 60–90 day notice, buyouts
+   *  rare" instead of one generic paragraph for every employer. */
+  companyNorms: HrCompanyNorms | null;
 }
 
 /* Generic-filler detector for the coached "motivationAfter" rewrite. The prompt
@@ -973,6 +980,7 @@ const COMP_TOPIC_RE =
 export function normalizeHrReport(
   raw: unknown,
   conversationCorpus?: string,
+  companyNorms?: HrCompanyNorms | null,
 ): HrReportData | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
@@ -1031,5 +1039,6 @@ export function normalizeHrReport(
     compExpected,
     counterOfferRisk,
     bgvGaps,
+    companyNorms: companyNorms ?? null,
   };
 }

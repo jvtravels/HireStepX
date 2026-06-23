@@ -5,6 +5,7 @@ import type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedSta
 import { scoreLabel } from "./dashboardTypes";
 import { strengthCopy, gapCopy } from "./skillCopy";
 import type { SkillTrend } from "./sessionReport/progressTracking";
+import type { HrCompanyNorms } from "../data/hr-company-norms";
 
 /** Retry a fetch-based async function on network errors (not on 4xx/5xx) */
 async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1000): Promise<T> {
@@ -1177,6 +1178,7 @@ export interface SessionReport {
     compExpected: string | null;
     counterOfferRisk: "low" | "med" | "high" | "not-assessed";
     bgvGaps: string[];
+    companyNorms?: HrCompanyNorms | null;
   };
   model: string;
 }
