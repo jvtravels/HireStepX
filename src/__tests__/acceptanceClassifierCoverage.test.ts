@@ -227,6 +227,49 @@ describe("acceptance classifier — 'finalize it' close idiom (both gates)", () 
   });
 });
 
+/* Offline hostile sweep batch 2 (2026-06-23) — seven FALSE-CLOSE classes from
+ * the second adversarial probe, each a close/accept idiom flipped by a
+ * continuation the prior vetoes missed. All now rejected through BOTH gates;
+ * the matching genuine accepts (no hostile tail) must still close. */
+describe("acceptance classifier — batch-2 FALSE-CLOSE vetoes (must NOT accept, both gates)", () => {
+  const cases = [
+    "I accept the challenge, not the offer", // accept-proposition (challenge)
+    "I'm in agreement that it's below market", // i'm-in hedge (agreement)
+    "where do I sign up for a better offer", // negotiation-redirect
+    "count me in for another round of talks", // negotiation-redirect
+    "make it official only after the revision", // deferred-settle-noun
+    "lock it in once the bump comes through", // deferred-settle-noun
+    "deal — just kidding, that's way too low", // retraction
+    "oh sure, like I'd accept that", // sarcastic counterfactual
+  ];
+  for (const input of cases) {
+    it(`"${input}" → NOT accepted`, () => {
+      const m = classifyAcceptance(input, onTable);
+      const s = detectExplicitAcceptance(input);
+      expect(m.accepted, `medium reasons=${m.reasons.join(",")}`).toBe(false);
+      expect(s.accepted, "strict must also reject").toBe(false);
+    });
+  }
+});
+
+describe("acceptance classifier — batch-2 precision (genuine accepts still close)", () => {
+  /* The new vetoes must NOT swallow the bare idioms they disambiguate. */
+  const cases = [
+    "I accept the offer", // not accept-the-challenge
+    "I'm in", // not i'm-in-agreement
+    "where do I sign up", // not sign-up-for-a-better-offer
+    "count me in", // not count-me-in-for-another-round
+    "let's make it official", // not deferred
+    "let's lock it in", // not deferred
+  ];
+  for (const input of cases) {
+    it(`"${input}" → accepted`, () => {
+      const r = classifyAcceptance(input, onTable);
+      expect(r.accepted, `reasons=${r.reasons.join(",")}`).toBe(true);
+    });
+  }
+});
+
 describe("strict gate — Hindi deal-close idiom routes through detectExplicitAcceptance", () => {
   /* "bhej do offer letter" carries the unambiguous deal-close sense and
    * is shared into the strict gate via CLOSE_CONSENT_IDIOM_PATTERNS, so

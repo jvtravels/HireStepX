@@ -458,14 +458,14 @@ const TAKE_IT_HEDGE_PATTERN =
  *  "I'm in" / "I'm in!" / "I'm in for it" carry no hedge tail and still
  *  accept. Offer-nouns ("I'm in the deal") are deliberately NOT vetoed. */
 const IM_IN_HEDGE_PATTERN =
-  /\bi.?m\s+in\s+(?:a\b|an\b|talks|discussions?|conversations?|negotiations?|no\s+rush|two\s+minds|touch\b|the\s+(?:middle|process|running|dark|weeds|loop)|another|other\s+(?:processes|rounds?))/i;
+  /\bi.?m\s+in\s+(?:a\b|an\b|talks|discussions?|conversations?|negotiations?|no\s+rush|two\s+minds|touch\b|agreement\b|agreeing\b|the\s+(?:middle|process|running|dark|weeds|loop)|another|other\s+(?:processes|rounds?))/i;
 
 /** Veto: "I accept THAT … / I accept YOUR position / I accept THE reality" —
  *  performative "accept" applied to a proposition, stance, or fact rather than
  *  the OFFER. "I accept" / "I accept the offer" / "I accept your offer" are not
  *  matched (offer excluded from the noun list) and still accept. */
 const ACCEPT_PROPOSITION_PATTERN =
-  /\bi\s+accept\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern))/i;
+  /\bi\s+accept\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern))/i;
 
 /** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
@@ -493,6 +493,11 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
   /\byou\s+(?:really\s+|seriously\s+|honestly\s+|actually\s+)?(?:think|expect|believe|assume|reckon|suppose|imagine)\b[^.!?]{0,30}\baccept\b/i,
   /* negation-by-impossibility: "(there's) no way I('d) accept" */
   /\b(?:no\s+way|there'?s\s+no\s+way)\b[^.!?]{0,20}\baccept\b/i,
+  /* sarcastic counterfactual: "(as if / like) I'd accept that" — the
+   * conditional "I'd accept" under an "as if"/"like" frame is a refusal, never
+   * a genuine accept (which is "I accept" / "I'll accept"). Offline sweep
+   * batch 2 (2026-06-23). */
+  /\b(?:as\s+if|like)\s+i.?d\s+(?:ever\s+|really\s+|actually\s+)?accept\b/i,
 ];
 
 /* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
@@ -545,7 +550,36 @@ const SETTLE_NEGATION_PATTERN =
 const DO_IT_REDIRECT_PATTERN =
   /\bdo\s+it\s+(?:differently|in\s+a\s+different\s+way|a\s+different\s+way|another\s+way|some\s+other\s+way|some\s+other\s+time|your\s+way|later|instead)\b/i;
 
-/** All PRI-59/61/63 precision vetoes, shared by both gates. */
+/* Offline hostile sweep batch 2 (2026-06-23) — three more FALSE-CLOSE classes
+ * surfaced by the adversarial probe, each a close idiom whose meaning is flipped
+ * by a continuation the prior vetoes missed. All shared single-source so BOTH
+ * gates reject in lockstep. */
+
+/** Veto: a finalize/close idiom DEFERRED on a settlement noun — "make it
+ *  official only after the revision", "lock it in once the bump comes through",
+ *  "sign after the approval". CONDITIONAL_DEFERRAL_PATTERN only fires on a
+ *  deferral VERB ("after you confirm"); this owns the NOUN-object form. Scoped
+ *  to settlement nouns (revision/approval/sign-off/correction/bump/…) so a
+ *  benign temporal tail ("send it after the call", "I'll sign after lunch")
+ *  does NOT false-veto a genuine accept. */
+const DEFERRED_SETTLE_NOUN_PATTERN =
+  /\b(?:only\s+)?(?:after|once|upon|pending|following|subject\s+to)\s+(?:the\s+|your\s+|a\s+|their\s+)?(?:revisions?|re-?vise[sd]?|adjustments?|corrections?|amendments?|sign-?offs?|approvals?|confirmations?|bumps?|increases?|raises?|hikes?|revaluations?)\b/i;
+
+/** Veto: a close idiom REDIRECTED to more negotiation — "where do I sign up for
+ *  a better offer", "count me in for another round of talks", "lock it in for a
+ *  higher number". The accept idiom matches, but "for a {better/another/more}
+ *  {offer/round/talks/…}" reopens the negotiation rather than closing it.
+ *  Scoped to a qualifier + negotiation noun so a benign "thanks for the offer"
+ *  (no qualifier) is untouched. */
+const NEGOTIATION_REDIRECT_PATTERN =
+  /\bfor\s+(?:a\s+|an\s+|the\s+|some\s+)?(?:better|higher|bigger|revised|improved|stronger|another|more|further|second|next)\s+(?:offer|number|figure|package|comp(?:ensation)?|ctc|round|talks?|discussions?|negotiations?)\b/i;
+
+/** Veto: explicit retraction / sarcasm tokens that void a preceding consent —
+ *  "deal — just kidding", "yes, only kidding". No genuine accept contains a
+ *  kidding/sarcasm token. */
+const RETRACTION_PATTERN = /\b(?:just\s+|only\s+)?kidding\b|\bjk\b/i;
+
+/** All PRI-59/61/63 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
@@ -554,6 +588,9 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   MONEY_REJECTION_PATTERN,
   SETTLE_NEGATION_PATTERN,
   DO_IT_REDIRECT_PATTERN,
+  DEFERRED_SETTLE_NOUN_PATTERN,
+  NEGOTIATION_REDIRECT_PATTERN,
+  RETRACTION_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
   ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];
