@@ -3242,6 +3242,9 @@ export function PricingV2() {
      view we capture pricing_section_viewed once per session — feeds the
      PostHog landing-page funnel (hero → pricing → CTA click → signup). */
   const sectionRef = useRef<HTMLElement | null>(null);
+  /* Per-session quantity picker — mirrors the dashboard upgrade modal slider */
+  const [singleQty, setSingleQty] = useState(1);
+  const SINGLE_PRICE = 9;
   useEffect(() => {
     const el = sectionRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
@@ -3470,12 +3473,57 @@ export function PricingV2() {
                   </li>
                 ))}
               </ul>
+              {/* Quantity picker — only on the Per Session card */}
+              {tier.price === "₹9" && (
+                <>
+                  <style>{`
+                    .pricing-session-slider{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;outline:none;cursor:pointer;}
+                    .pricing-session-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);cursor:pointer;}
+                    .pricing-session-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;cursor:pointer;}
+                    .pricing-session-slider:focus-visible::-webkit-slider-thumb{outline:2px solid #B45309;outline-offset:2px;}
+                  `}</style>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.inkSoft }}>How many?</span>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, fontWeight: 600 }}>₹{SINGLE_PRICE * singleQty} total</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <button
+                        onClick={() => setSingleQty(q => Math.max(1, q - 1))}
+                        disabled={singleQty <= 1}
+                        aria-label="Remove one session"
+                        style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty <= 1 ? t.line : t.lineStrong}`, background: "transparent", color: singleQty <= 1 ? t.inkFaint : t.coal, cursor: singleQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty <= 1 ? 0.3 : 1, transition: "opacity 0.15s" }}
+                      >−</button>
+                      <input
+                        type="range" min={1} max={10} step={1}
+                        value={singleQty}
+                        onChange={e => setSingleQty(Number(e.target.value))}
+                        aria-label="Number of sessions"
+                        aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10}
+                        className="pricing-session-slider"
+                        style={{ flex: 1, background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${t.line} ${((singleQty - 1) / 9) * 100}%, ${t.line} 100%)` }}
+                      />
+                      <button
+                        onClick={() => setSingleQty(q => Math.min(10, q + 1))}
+                        disabled={singleQty >= 10}
+                        aria-label="Add one session"
+                        style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty >= 10 ? t.line : t.copper}`, background: singleQty >= 10 ? "transparent" : "rgba(180,83,9,0.08)", color: singleQty >= 10 ? t.inkFaint : t.copper, cursor: singleQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty >= 10 ? 0.3 : 1, transition: "opacity 0.15s, border-color 0.15s, background 0.15s" }}
+                      >+</button>
+                    </div>
+                    <p style={{ margin: 0, fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, textAlign: "center" }}>
+                      {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
+                      {singleQty >= 10 && <span style={{ color: t.copper }}> · max per order</span>}
+                    </p>
+                  </div>
+                </>
+              )}
+
               {/* CTA hierarchy:
                   Free        → ghost/outline — discovery tier, lowest weight
                   Per Session → indigo filled — transactional, mid-weight
                   Weekly      → cream on coal — primary conversion driver */}
               <a
-                href={tier.href}
+                href={tier.price === "₹9" ? `${tier.href}&qty=${singleQty}` : tier.href}
                 className="mv2-tap-44"
                 style={{
                   marginTop: "auto",
@@ -3495,7 +3543,10 @@ export function PricingV2() {
                   boxShadow: tier.featured || tier.price === "₹0" ? "none" : shadows.cta,
                 }}
               >
-                {tier.cta} <span style={{ fontSize: 16 }}>→</span>
+                {tier.price === "₹9"
+                  ? <>{singleQty === 1 ? "Buy 1 session" : `Buy ${singleQty} sessions`} · ₹{SINGLE_PRICE * singleQty} <span style={{ fontSize: 16 }}>→</span></>
+                  : <>{tier.cta} <span style={{ fontSize: 16 }}>→</span></>
+                }
               </a>
             </MotionReveal>
           ))}
