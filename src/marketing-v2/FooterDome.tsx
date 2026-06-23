@@ -107,6 +107,12 @@ function FooterDomeDesktop() {
             use the simpler resource selection algorithm and keeps networkState
             in NETWORK_LOADING until the buffer fills. Using <source> child
             lets Chrome stop at HAVE_METADATA without loading frame data. */}
+        {/* Width 100% scales the 1920×500 video to fill the 900px dome width
+            → rendered at 900×234px. The visible dome window is the top 144px
+            of the 900px circle, which shows the top 144px of this 234px frame
+            — the wordmark (centered vertically in the original ~y=117px scaled)
+            sits inside that window. objectFit:cover was filling the full 900px
+            height, pushing all video content far below the visible arc. */}
         <video
           ref={videoRef}
           src="/HX.mp4"
@@ -117,32 +123,10 @@ function FooterDomeDesktop() {
           preload="auto"
           style={{
             width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center top",
+            height: "auto",
             display: "block",
           }}
         />
-        {/* Wordmark overlaid on the video — the visible dome window is only
-            the top ~144px of the 900px circle, so the video's own wordmark
-            (centered in the 500px frame) is never in view. CSS text ensures
-            the brand always shows regardless of playback state. */}
-        <div style={{
-          position: "absolute",
-          top: 48,
-          left: 0,
-          width: "100%",
-          textAlign: "center",
-          fontFamily: fonts.sans,
-          fontSize: 40,
-          fontWeight: 700,
-          letterSpacing: "-0.02em",
-          color: "#FFFFFF",
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-        }}>
-          HireStep<span style={{ fontWeight: 700 }}>X</span>
-        </div>
       </div>
 
       {/* Left column */}
