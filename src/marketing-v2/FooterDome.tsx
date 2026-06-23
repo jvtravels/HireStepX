@@ -13,6 +13,7 @@
  * Replaces: FinalCTAFooterV2 (HomepageV2, MarketingPagesV2, BlogPage).
  */
 
+import { useEffect, useRef } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
 
 /* ── Nav link data ── */
@@ -63,6 +64,20 @@ function InIcon() {
 
 /* ── Desktop dome footer (≥880px) ── */
 function FooterDomeDesktop() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    // Programmatic play is more reliable than the autoPlay attribute alone —
+    // some browsers silently block the attribute even on muted videos.
+    video.muted = true;
+    video.play().catch(() => {
+      // Autoplay still blocked (very restricted browser policy). The copper
+      // fallback background-color on the dome div remains visible in that case.
+    });
+  }, []);
+
   return (
     <div
       style={{
@@ -231,10 +246,12 @@ function FooterDomeDesktop() {
         background: t.copperDark,
       }}>
         <video
+          ref={videoRef}
           autoPlay
           loop
           muted
           playsInline
+          preload="auto"
           style={{
             width: "100%",
             height: "100%",
