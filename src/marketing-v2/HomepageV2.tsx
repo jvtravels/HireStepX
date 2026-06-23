@@ -3308,7 +3308,7 @@ export function PricingV2() {
       ],
       cta: "Go weekly",
       href: "/signup?plan=weekly",
-      featured: false,
+      featured: true,
       studentDiscount: true,
     },
     // Monthly plan temporarily hidden — re-enable by removing hidden:true
@@ -3334,7 +3334,7 @@ export function PricingV2() {
           className="mv2-pricing-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: 16,
             alignItems: "stretch",
           }}
