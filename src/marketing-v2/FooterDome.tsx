@@ -199,7 +199,7 @@ function FooterDomeDesktop() {
         </h2>
         <p style={{
           margin: "18px 0 0",
-          width: 480,
+          maxWidth: 400,
           fontFamily: fonts.sans,
           fontSize: 14.5,
           fontWeight: 400,
