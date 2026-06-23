@@ -318,7 +318,7 @@ export function computeQuestionCount(opts: { mini: boolean; isSalaryType: boolea
  * generic warmup mix. Always returns at least 5 questions; never throws. */
 
 import { QUESTION_BANK, type FocusArea, type RoleFamily } from "../data/interview-question-bank";
-import { sampleBehavioralQuestions, type BehavioralRole } from "../data/behavioral-question-bank";
+import { sampleBehavioralQuestions, BEHAVIORAL_COMPETENCIES, COMPETENCY_LABELS, type BehavioralRole, type BehavioralCompetency } from "../data/behavioral-question-bank";
 import { sampleHrQuestions } from "../data/hr-round-question-bank";
 
 /* Map the broad interview-bank RoleFamily onto the behavioural bank's
@@ -357,6 +357,63 @@ function toYoe(experienceLevel: string | undefined): number | undefined {
     case "executive": return 12;
     default: return undefined;
   }
+}
+
+/* Focus → competency steering for the behavioural static fallback.
+ *
+ * A focused behavioural round arrives with a `focus` param that is either
+ * a competency-ish skill name (the "practice this weak skill" CTA kebab-
+ * cases a skill label — DashboardHomePanels.tsx) or a setup-screen focus.
+ * On the LLM-up path that focus tilts the prompt; on the LLM-DOWN path the
+ * static sampler ignored it entirely, so a "decision-making" focused round
+ * could fall back to a generic competency-deduped mix with at most one
+ * decision-making question. This maps the focus onto the behavioural
+ * taxonomy so the sampler fills those competencies first (its `prioritise`
+ * contract). Returns [] for a generic/unrecognised focus → sampler keeps
+ * its neutral deduped mix (correct no-op, never worse than before). */
+const FOCUS_SYNONYMS: Record<string, BehavioralCompetency[]> = {
+  leadership: ["mentorship-team", "influence"],
+  teamwork: ["mentorship-team", "conflict"],
+  collaboration: ["mentorship-team", "conflict"],
+  stakeholder: ["influence"],
+  stakeholders: ["influence"],
+  persuasion: ["influence"],
+  buyin: ["influence"],
+  prioritization: ["decision-making", "execution-rigor"],
+  prioritisation: ["decision-making", "execution-rigor"],
+  resilience: ["failure"],
+  deadline: ["pressure-deadlines"],
+  deadlines: ["pressure-deadlines"],
+  delivery: ["execution-rigor"],
+  accountability: ["ownership"],
+  flexibility: ["adaptability"],
+  mentoring: ["mentorship-team"],
+  disagreement: ["conflict"],
+};
+
+export function focusToCompetencies(focus: string): BehavioralCompetency[] {
+  const norm = (focus || "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
+  if (!norm) return [];
+  const tokens = new Set(norm.split(/\s+/).filter(t => t.length >= 3));
+  if (tokens.size === 0) return [];
+  const out = new Set<BehavioralCompetency>();
+  // 1) Direct match against each competency's own key + human label tokens
+  //    (auto-derived so it can't drift from the taxonomy). e.g. focus
+  //    "decision-making" → key tokens {decision, making}; "resilience"
+  //    → label "Failure & resilience".
+  for (const c of BEHAVIORAL_COMPETENCIES) {
+    const candidateTokens = [
+      ...c.split(/[^a-z]+/),
+      ...(COMPETENCY_LABELS[c] || "").toLowerCase().split(/[^a-z]+/),
+    ];
+    if (candidateTokens.some(t => t.length >= 4 && tokens.has(t))) out.add(c);
+  }
+  // 2) Synonyms for focus words that don't literally appear in a label.
+  for (const t of tokens) {
+    const syn = FOCUS_SYNONYMS[t];
+    if (syn) for (const c of syn) out.add(c);
+  }
+  return [...out];
 }
 
 export interface FallbackQuestion {
@@ -410,6 +467,11 @@ export function buildStaticFallback(opts: {
       // probes (live QA, 2026-06).
       role: toBehavioralRole(roleFamily),
       yoe: toYoe(opts.experienceLevel),
+      // Focus steering (W5): a focused round (e.g. ?focus=decision-making)
+      // fills the matched competencies first so the LLM-down fallback still
+      // reflects what the candidate chose to practise. Empty for a generic
+      // focus → no-op, neutral deduped mix as before.
+      prioritise: focusToCompetencies(focus),
     });
     if (sampled.length > 0) {
       return [

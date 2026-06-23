@@ -10,9 +10,11 @@ import {
   classifyDiscipline,
   buildDisciplineFence,
   buildFollowUpDisciplineFence,
+  focusToCompetencies,
   VALID_PERSONAS,
   type RawQuestion,
 } from "../../server-handlers/_generate-questions-helpers";
+import { BEHAVIORAL_COMPETENCIES } from "../../data/behavioral-question-bank";
 
 /**
  * generate-questions is the LLM contract for the interview UI. A shape
@@ -312,8 +314,95 @@ describe("buildStaticFallback", () => {
     expect(body.length).toBeGreaterThan(0);
     expect(body.every((q) => (q.scoreNote || "").startsWith("HR dimension:"))).toBe(true);
   });
+
+  /* W5: a focused behavioural round (e.g. ?focus=decision-making) on the
+     LLM-DOWN path must bias the curated sample toward that competency, not
+     just fall back to the neutral deduped mix. The competency note proves
+     which question got pulled, so we can assert the focus competency leads. */
+  it("biases the curated fallback toward the requested focus competency", () => {
+    const qs = buildStaticFallback({
+      type: "behavioral",
+      focus: "decision-making",
+      difficulty: "standard",
+      roleFamily: "pm",
+      count: 5,
+    });
+    const body = qs.filter((q) => q.type === "question");
+    expect(body.length).toBeGreaterThan(0);
+    // The prioritise contract fills matched competencies first, so the very
+    // first body question must be the focus competency.
+    expect(body[0].scoreNote).toMatch(/Competency: decision-making/);
+  });
+
+  it("a 'conflict' focus surfaces a conflict question ahead of the generic mix", () => {
+    const qs = buildStaticFallback({
+      type: "behavioral",
+      focus: "conflict",
+      difficulty: "standard",
+      roleFamily: "engineer",
+      count: 5,
+    });
+    const body = qs.filter((q) => q.type === "question");
+    expect(body[0].scoreNote).toMatch(/Competency: conflict/);
+  });
+
+  it("a generic focus is a no-op — still a valid, non-empty curated set", () => {
+    // Regression guard: focusToCompetencies("general") must be [], so the
+    // sampler keeps its neutral deduped mix and nothing breaks.
+    const qs = buildStaticFallback({
+      type: "behavioral",
+      focus: "general",
+      difficulty: "standard",
+      roleFamily: "pm",
+      count: 5,
+    });
+    const body = qs.filter((q) => q.type === "question");
+    expect(body.length).toBeGreaterThan(0);
+    expect(validateQuestionShape(qs as unknown[])).toBe(true);
+  });
 });
 
+describe("focusToCompetencies (W5 focus → competency steering)", () => {
+  it("maps a competency-keyed focus straight through", () => {
+    expect(focusToCompetencies("decision-making")).toContain("decision-making");
+    expect(focusToCompetencies("conflict")).toContain("conflict");
+    expect(focusToCompetencies("ownership")).toContain("ownership");
+  });
+
+  it("maps a human-label-derived kebab focus (the CTA shape) via label tokens", () => {
+    // DashboardHomePanels kebab-cases a skill label: "Failure & resilience"
+    // → "failure-&-resilience". Both the key token and the label synonym
+    // must resolve to the failure competency.
+    expect(focusToCompetencies("failure-resilience")).toContain("failure");
+    expect(focusToCompetencies("resilience")).toContain("failure");
+    expect(focusToCompetencies("pressure-deadlines")).toContain("pressure-deadlines");
+  });
+
+  it("resolves synonyms that don't literally appear in any label", () => {
+    expect(focusToCompetencies("leadership")).toEqual(
+      expect.arrayContaining(["mentorship-team", "influence"]),
+    );
+    expect(focusToCompetencies("teamwork")).toContain("mentorship-team");
+    expect(focusToCompetencies("stakeholder")).toContain("influence");
+    expect(focusToCompetencies("accountability")).toContain("ownership");
+  });
+
+  it("returns [] for a generic / unrecognised / empty focus (sampler no-op)", () => {
+    expect(focusToCompetencies("general")).toEqual([]);
+    expect(focusToCompetencies("")).toEqual([]);
+    expect(focusToCompetencies("behavioral")).toEqual([]);
+    expect(focusToCompetencies("xyzzy")).toEqual([]);
+  });
+
+  it("only ever returns valid competency strings", () => {
+    const valid = new Set<string>(BEHAVIORAL_COMPETENCIES);
+    for (const f of ["decision-making", "leadership", "conflict", "communication", "adaptability", "execution-rigor"]) {
+      for (const c of focusToCompetencies(f)) {
+        expect(valid.has(c)).toBe(true);
+      }
+    }
+  });
+});
 
 describe("flagOffRoleQuestions", () => {
   it("returns empty when roleFamily is undefined", () => {
