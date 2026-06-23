@@ -122,7 +122,7 @@ function FooterDomeDesktop() {
           playsInline
           preload="auto"
           style={{
-            width: "35%",
+            width: "25%",
             height: "auto",
             display: "block",
             margin: "24px auto 0",
