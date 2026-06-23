@@ -9,13 +9,15 @@ import {
 } from "../../data/behavioral-question-bank";
 
 describe("BEHAVIORAL_50 — shape & coverage", () => {
-  it("has exactly 61 entries (50 original + 6 adaptability/execution-rigor + 5 designer-affinity)", () => {
+  it("has exactly 73 entries (61 + 12 W4 data/ops/marketing/sales affinity)", () => {
     /* The export is named `BEHAVIORAL_50` for historical reasons; the bank
        grew when `adaptability` + `execution-rigor` were split out from
        `ambiguity` / `ownership` (→ 56), then again when Phase-6.6 added
-       designer-affinity entries (cnf-06, amb-05, dec-06, fdb-04, mnt-05).
+       designer-affinity entries (cnf-06, amb-05, dec-06, fdb-04, mnt-05) → 61,
+       then again when W4 (2026-06) closed the taxonomy gap by adding three
+       affinity questions each for data, ops, marketing, sales → 73.
        The constant length is the source of truth, not the name. */
-    expect(BEHAVIORAL_50).toHaveLength(61);
+    expect(BEHAVIORAL_50).toHaveLength(73);
   });
 
   it("every entry has a valid competency", () => {
@@ -202,11 +204,11 @@ describe("sampleBehavioralQuestions — role/yoe tilt", () => {
        protects is: same seed + same bank → same output. */
     const out = sampleBehavioralQuestions({ count: 5, seed: 42 });
     expect(out.map(q => q.text)).toEqual([
-      "Tell me about a time you had to work with someone whose style clashed with yours.",
-      "Tell me about a time you got buy-in from a senior leader.",
-      "Tell me about a time you onboarded a new joiner onto a complex codebase.",
-      "Tell me about a time you had to choose between two reasonable options.",
-      "Tell me about a time you found a creative solution to a constraint.",
+      "Tell me about a time you had to revive a stalled deal or pipeline late in the quarter.",
+      "Tell me about a time you took credit for less than you contributed.",
+      "Tell me about a time the problem statement was unclear and you had to create clarity for the team through design.",
+      "Tell me about a time you helped a struggling teammate.",
+      "Tell me about a time you received tough feedback.",
     ]);
   });
 });
@@ -271,6 +273,69 @@ describe("Phase 6.6 — designer-affinity coverage for SPD loops", () => {
   });
 });
 
+describe("W4 — data/ops/marketing/sales affinity coverage", () => {
+  /* Pre-W4 the bank had affinity-tagged questions only for engineer +
+     designer; data, ops, marketing, and sales fell through entirely to
+     universal questions and never got role-specific shape (messy-data
+     recommendations for analysts, live-incident command for ops, a
+     campaign that missed for marketers, a lost deal for sales). W4 added
+     three affinity questions per role. These tests pin that coverage. */
+  const W4_ROLES = ["data", "ops", "marketing", "sales"] as const;
+
+  it("each of the 4 roles now carries ≥3 own-affinity questions", () => {
+    for (const role of W4_ROLES) {
+      const hits = BEHAVIORAL_50.filter(q => q.roleAffinity?.includes(role));
+      expect(hits.length, `role=${role} must have ≥3 affinity entries`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("the canonical W4 ids exist with role-appropriate text + affinity", () => {
+    const expected: Array<{ id: string; role: typeof W4_ROLES[number]; matches: RegExp }> = [
+      { id: "data-01", role: "data",      matches: /messy, incomplete, or contradictory data/i },
+      { id: "ops-01",  role: "ops",       matches: /operational incident or crisis/i },
+      { id: "mkt-01",  role: "marketing", matches: /campaign or growth bet/i },
+      { id: "sal-01",  role: "sales",     matches: /you lost a deal/i },
+    ];
+    for (const { id, role, matches } of expected) {
+      const q = BEHAVIORAL_50.find(x => x.id === id);
+      expect(q, `${id} must exist`).toBeDefined();
+      expect(q!.text).toMatch(matches);
+      expect(q!.roleAffinity).toContain(role);
+    }
+  });
+
+  it("sampling each W4 role surfaces ≥1 own-affinity question across seeds", () => {
+    /* Same statistical guard as the designer test: universal questions are
+       equally eligible, so a single seed isn't guaranteed to surface an
+       affinity entry — but across 20 seeds at least one run must. Catches
+       the regression where the role filter accidentally EXCLUDES the new
+       role-locked entries (i.e. they become unreachable). */
+    for (const role of W4_ROLES) {
+      let hit = false;
+      for (let s = 0; s < 20; s++) {
+        const out = sampleBehavioralQuestions({ count: 12, seed: s, role });
+        if (out.some(q => q.roleAffinity?.includes(role))) { hit = true; break; }
+      }
+      expect(hit, `role=${role} should surface an affinity question within 20 seeds`).toBe(true);
+    }
+  });
+
+  it("W4 role-locked questions never leak to a non-matching role", () => {
+    /* A data-affinity question must not appear for a marketer, etc. The
+       sampler partitions matches-or-universal first; any role-locked entry
+       that survives MUST list the requested role. */
+    const w4Ids = new Set(["data-01","data-02","data-03","ops-01","ops-02","ops-03","mkt-01","mkt-02","mkt-03","sal-01","sal-02","sal-03"]);
+    for (const role of W4_ROLES) {
+      const out = sampleBehavioralQuestions({ count: 20, seed: 4, role });
+      for (const q of out) {
+        if (w4Ids.has(q.id)) {
+          expect(q.roleAffinity?.includes(role), `${q.id} leaked to role=${role}`).toBe(true);
+        }
+      }
+    }
+  });
+});
+
 describe("BEHAVIORAL_BANK — canonical alias for BEHAVIORAL_50", () => {
   it("points at the same array reference", () => {
     /* Same-identity check: any consumer importing the new name gets
@@ -308,7 +373,7 @@ describe("sampleBehavioralQuestions — weightByFrequency", () => {
     // doesn't accidentally leak into the default path.
     const out = sampleBehavioralQuestions({ count: 5, seed: 42 });
     expect(out[0].text).toBe(
-      "Tell me about a time you had to work with someone whose style clashed with yours.",
+      "Tell me about a time you had to revive a stalled deal or pipeline late in the quarter.",
     );
   });
 });

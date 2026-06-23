@@ -97,13 +97,12 @@ export const BEHAVIORAL_ROLES: ReadonlyArray<BehavioralRole> = [
   "manager",
   "data",
   "ops",
-  // marketing + sales carry no affinity-tagged questions of their own yet —
-  // they exist so the sampler can STEER these candidates away from
-  // discipline-locked questions (e.g. an engineer's "complex codebase"
-  // probe) into the universal pool, instead of role:undefined → no steering.
   "marketing",
   "sales",
 ] as const;
+// As of W4 (2026-06) all eight roles carry affinity-tagged questions
+// (data-/ops-/mkt-/sal-* added). The sampler both steers candidates away
+// from other-discipline-locked probes AND toward their own craft.
 
 export interface BehavioralQuestion {
   /** Stable id — used for analytics + dedupe across sessions. */
@@ -124,8 +123,9 @@ export interface BehavioralQuestion {
 }
 
 /** The bank (originally 50, grew to 56 with adaptability + execution-rigor
- *  split-out in 2026-05, then to 61 with Phase-6.6 designer-affinity
- *  additions in 2026-05). Curated from real loops at: Razorpay, Flipkart,
+ *  split-out in 2026-05, to 61 with Phase-6.6 designer-affinity additions
+ *  in 2026-05, then to 73 with W4 data/ops/marketing/sales affinity
+ *  additions in 2026-06). Curated from real loops at: Razorpay, Flipkart,
  *  Swiggy, Zomato, CRED, Atlassian-IN, Microsoft IDC, Amazon-IN,
  *  Google-IN, Uber-IN, Walmart-Labs, ThoughtSpot, Postman, Freshworks.
  *  Export name kept as `BEHAVIORAL_50` (historical brand — `.length` is
@@ -228,6 +228,32 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   { id: "exr-01", text: "Tell me about a time you caught a bug or issue in your own work before it shipped.",                  competency: "execution-rigor",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 60 },
   { id: "exr-02", text: "Tell me about a time a missed detail came back to bite you.",                                         competency: "execution-rigor",    starFocus: "result",          difficulty: "standard", frequencyPct: 55 },
   { id: "exr-03", text: "Tell me about a time you traded thoroughness for speed and had to defend the call later.",            competency: "execution-rigor",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 48, seniorityFloor: 3 },
+
+  /* Discipline-affinity additions (W4, 2026-06) — data / ops / marketing / sales.
+     Pre-W4 these four roles had ZERO affinity-tagged questions: the sampler
+     could only STEER them away from engineer/designer-locked probes into the
+     universal pool, never toward a question that exercises their own craft.
+     Each entry below maps to a real loop-question pattern for that discipline
+     and slots into an existing competency (no new competency needed). Tagged
+     with roleAffinity so a matching candidate sees them, and seniorityFloor
+     where the scenario assumes some tenure. These keep the universal pool
+     intact (they're additive) while giving the four roles real coverage. */
+  // data / analytics / ML
+  { id: "data-01", text: "Tell me about a time you had to make a recommendation from messy, incomplete, or contradictory data.", competency: "ambiguity",        starFocus: "action",          difficulty: "standard", frequencyPct: 64, roleAffinity: ["data"] },
+  { id: "data-02", text: "Tell me about a time stakeholders pushed back on what your analysis showed. How did you handle it?",     competency: "influence",        starFocus: "action+result",   difficulty: "hard",     frequencyPct: 58, roleAffinity: ["data"], seniorityFloor: 2 },
+  { id: "data-03", text: "Tell me about a time you had to trade analytical rigor or model accuracy against shipping on time.",     competency: "decision-making",  starFocus: "action+result",   difficulty: "standard", frequencyPct: 55, roleAffinity: ["data"], seniorityFloor: 2 },
+  // operations / program management
+  { id: "ops-01",  text: "Tell me about a time you managed a live operational incident or crisis end to end.",                    competency: "pressure-deadlines", starFocus: "action+result", difficulty: "hard",     frequencyPct: 62, roleAffinity: ["ops"] },
+  { id: "ops-02",  text: "Tell me about a time two teams had conflicting priorities and you had to keep a program on track.",      competency: "conflict",         starFocus: "action",          difficulty: "standard", frequencyPct: 58, roleAffinity: ["ops"], seniorityFloor: 3 },
+  { id: "ops-03",  text: "Tell me about a time you traded process rigor for speed to hit an operational deadline.",               competency: "decision-making",  starFocus: "action",          difficulty: "standard", frequencyPct: 52, roleAffinity: ["ops"], seniorityFloor: 2 },
+  // marketing / growth
+  { id: "mkt-01",  text: "Tell me about a time a campaign or growth bet didn't deliver the numbers you expected.",                 competency: "failure",          starFocus: "action+result",   difficulty: "standard", frequencyPct: 62, roleAffinity: ["marketing"] },
+  { id: "mkt-02",  text: "Tell me about a time you had to choose between brand-building and short-term performance metrics.",      competency: "decision-making",  starFocus: "action+result",   difficulty: "hard",     frequencyPct: 55, roleAffinity: ["marketing"], seniorityFloor: 3 },
+  { id: "mkt-03",  text: "Tell me about a time you had to hit a growth target after your budget or a key channel was cut.",        competency: "problem-solving",  starFocus: "action",          difficulty: "standard", frequencyPct: 58, roleAffinity: ["marketing"] },
+  // sales / account management
+  { id: "sal-01",  text: "Tell me about a time you lost a deal and what you took away from it.",                                  competency: "failure",          starFocus: "action+result",   difficulty: "standard", frequencyPct: 64, roleAffinity: ["sales"] },
+  { id: "sal-02",  text: "Tell me about a time a customer's demands conflicted with what your company could actually deliver.",   competency: "conflict",         starFocus: "action",          difficulty: "standard", frequencyPct: 58, roleAffinity: ["sales"] },
+  { id: "sal-03",  text: "Tell me about a time you had to revive a stalled deal or pipeline late in the quarter.",               competency: "pressure-deadlines", starFocus: "action+result", difficulty: "hard",     frequencyPct: 55, roleAffinity: ["sales"], seniorityFloor: 2 },
 ];
 
 /** Canonical export name. `BEHAVIORAL_50` is the legacy alias kept for
@@ -308,9 +334,9 @@ export interface SampleOpts {
 }
 
 /** Deterministic sampler. Behaviour:
- *  - When `count` ≤ competency count (12), every returned question
+ *  - When `count` ≤ competency count (14), every returned question
  *    has a unique competency — interview coverage > question count.
- *  - When `count` > 12, falls through to second-pass fill from the
+ *  - When `count` > 14, falls through to second-pass fill from the
  *    remaining pool (now duplicates of competency are allowed).
  *  - Hard cap = bank size; oversize requests truncate silently. */
 export function sampleBehavioralQuestions(opts: SampleOpts): BehavioralQuestion[] {
