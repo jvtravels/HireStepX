@@ -3433,28 +3433,6 @@ export function PricingV2() {
                 >
                   {tier.sub}
                 </p>
-                {/* Surface the student-discount flag as a visible chip.
-                    Only the Weekly (featured) card carries this today. */}
-                {tier.studentDiscount && (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                      marginTop: 10,
-                      fontFamily: fonts.sans,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: t.copper100,
-                      background: "rgba(180,83,9,0.18)",
-                      padding: "3px 9px",
-                      borderRadius: 999,
-                      letterSpacing: "0.03em",
-                    }}
-                  >
-                    ✦ Student discount available
-                  </span>
-                )}
               </div>
               <ul
                 style={{
