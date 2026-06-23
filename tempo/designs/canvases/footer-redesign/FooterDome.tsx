@@ -147,21 +147,20 @@ export default function FooterDome() {
             fontFamily: SERIF,
             fontSize: 36,
             fontWeight: 400,
-            lineHeight: 1.12,
+            lineHeight: 1.2,
             letterSpacing: "-0.005em",
-            whiteSpace: "nowrap",
             color: COAL,
             textAlign: "center",
+            maxWidth: 560,
           }}
         >
-          People who have sat on{" "}
-          <em style={{ fontStyle: "italic", color: COPPER }}>both</em> sides of the
-          table.
+          You've done the work.{" "}
+          <em style={{ fontStyle: "italic", color: COPPER }}>Now just talk it through.</em>
         </h2>
         <p
           style={{
             margin: "18px 0 0",
-            width: 520,
+            width: 480,
             fontFamily: SANS,
             fontSize: 14.5,
             fontWeight: 400,
@@ -171,9 +170,8 @@ export default function FooterDome() {
             textAlign: "center",
           }}
         >
-          Built by someone who sat through enough Indian-tech interview cycles services,
-          GCC, product, to know where the prep most students do actually breaks. The
-          product reflects that frustration, not a placement-cell pitch deck.
+          Knowing the answer and saying it under pressure aren't the same thing.
+          We learned that the hard way too.
         </p>
       </div>
 
