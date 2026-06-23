@@ -270,6 +270,46 @@ describe("acceptance classifier — batch-2 precision (genuine accepts still clo
   }
 });
 
+/* Offline hostile sweep batch 3 (2026-06-23) — conditional-RAISE-demand welded
+ * to a close idiom ("make it 45 and we have a deal") was a strict-gate
+ * FALSE-CLOSE: the close idiom matched while the candidate was still demanding
+ * a raise. Now vetoed through both gates via CONDITIONAL_DEMAND_PATTERN, plus
+ * two deferred-accept forms the CONDITIONAL_DEFERRAL extension now catches. The
+ * genuine "I'll do 45 and sign today" (no raise verb) must still close. */
+describe("acceptance classifier — batch-3 conditional-demand FALSE-CLOSE (both gates)", () => {
+  const cases = [
+    "make it 45 and we have a deal",
+    "raise it to 50 and I'll sign",
+    "bump it to 48 then we're done",
+    "get it to 52 and count me in",
+    "let's close it the day you revise the base",
+    "deal once you bump my number",
+  ];
+  for (const input of cases) {
+    it(`"${input}" → NOT accepted`, () => {
+      const m = classifyAcceptance(input, onTable);
+      const s = detectExplicitAcceptance(input);
+      expect(m.accepted, `medium reasons=${m.reasons.join(",")}`).toBe(false);
+      expect(s.accepted, "strict must also reject").toBe(false);
+    });
+  }
+});
+
+describe("acceptance classifier — batch-3 precision (genuine accepts still close)", () => {
+  /* No raise verb → genuine accept; "do 45" is a commitment, not a demand. */
+  const cases = [
+    "I'll do 45 and sign today",
+    "let's make it official",
+    "deal, send the paperwork",
+  ];
+  for (const input of cases) {
+    it(`"${input}" → accepted`, () => {
+      const r = classifyAcceptance(input, onTable);
+      expect(r.accepted, `reasons=${r.reasons.join(",")}`).toBe(true);
+    });
+  }
+});
+
 describe("strict gate — Hindi deal-close idiom routes through detectExplicitAcceptance", () => {
   /* "bhej do offer letter" carries the unambiguous deal-close sense and
    * is shared into the strict gate via CLOSE_CONSENT_IDIOM_PATTERNS, so

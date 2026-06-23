@@ -429,7 +429,7 @@ const WALK_AWAY_PATTERN =
  *  (detectExplicitAcceptance, via HEDGE_VETO_PATTERNS) so the two stay in
  *  lockstep — offline hostile sweep (2026-06-22). */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as)\s+(?:we|you|i|they|it'?s|that'?s|the|my)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revise[sd]?|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?)\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?)\b/i;
 
 /* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
  * recall-focused accept idioms (PRI-56/57/58) each carry a short substring
@@ -579,6 +579,18 @@ const NEGOTIATION_REDIRECT_PATTERN =
  *  kidding/sarcasm token. */
 const RETRACTION_PATTERN = /\b(?:just\s+|only\s+)?kidding\b|\bjk\b/i;
 
+/** Veto: conditional RAISE demand welded to a close idiom — "make it 45 and we
+ *  have a deal", "raise it to 50 and I'll sign", "bump it to 48 then we're
+ *  done". The close idiom ("we have a deal", "I'll sign") matches, but it is
+ *  CONTINGENT on the company first agreeing to the demanded figure — a counter,
+ *  not an unconditional accept (FALSE-CLOSE: the bot finalizes at the current
+ *  offer while the candidate is demanding a raise). Scoped to an unambiguous
+ *  raise verb + number + and/then continuation; "make it official", "I'll do
+ *  45 and sign" (no raise verb) are untouched. Offline sweep batch 3
+ *  (2026-06-23). */
+const CONDITIONAL_DEMAND_PATTERN =
+  /\b(?:make\s+it|get\s+(?:it\s+)?to|bump\s+(?:it\s+)?to|push\s+(?:it\s+)?to|raise\s+(?:it\s+)?to|take\s+it\s+to|bring\s+it\s+to|come\s+up\s+to)\s+\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|k|cr|crores?)?\b[^.!?]{0,25}\b(?:and|then|&)\b/i;
+
 /** All PRI-59/61/63 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
@@ -591,6 +603,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   DEFERRED_SETTLE_NOUN_PATTERN,
   NEGOTIATION_REDIRECT_PATTERN,
   RETRACTION_PATTERN,
+  CONDITIONAL_DEMAND_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
   ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];
