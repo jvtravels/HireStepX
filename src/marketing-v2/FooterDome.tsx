@@ -188,7 +188,8 @@ function FooterDomeDesktop() {
           pointerEvents: "auto",
           maxWidth: 560,
         }}>
-          You've done the work.{" "}
+          You've done the work.
+          <br />
           <em style={{ fontStyle: "italic", color: t.copper }}>Now just talk it through.</em>
         </h2>
         <p style={{
