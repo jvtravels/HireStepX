@@ -178,6 +178,21 @@ describe("computeStepCount", () => {
     expect(computeStepCount({ mini: true, isSalaryType: true })).toBe(3);
     expect(computeStepCount({ mini: false, isSalaryType: true })).toBe(3);
   });
+
+  it("hr-round gets a longer flow (9 steps = 7 body + intro/closing)", () => {
+    expect(computeStepCount({ mini: false, isSalaryType: false, interviewType: "hr-round" })).toBe(9);
+  });
+
+  it("A3: hr-round LLM-down fallback still ships its full length, not the behavioral default", () => {
+    // The catch-block static fallback derives its count from
+    // Math.max(3, computeStepCount(...) - 2). For hr-round that must be 7 body
+    // questions (9 - 2), NOT the behavioral 5 (7 - 2) it produced before A3.
+    const hr = Math.max(3, computeStepCount({ mini: false, isSalaryType: false, interviewType: "hr-round" }) - 2);
+    const behavioral = Math.max(3, computeStepCount({ mini: false, isSalaryType: false, interviewType: "behavioral" }) - 2);
+    expect(hr).toBe(7);
+    expect(behavioral).toBe(5);
+    expect(hr).toBeGreaterThan(behavioral);
+  });
 });
 
 /* buildStaticFallback is what users get when both LLM providers fail. The

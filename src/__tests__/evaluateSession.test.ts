@@ -23,6 +23,7 @@ import {
   deriveSkillWeightsFromRubric,
   canonicalizeAxisName,
   reconcileSkillAxisNames,
+  selectCanonicalHrSkills,
   skillsCoverAxes,
   isUsableEvalReport,
   normalizeHrReport,
@@ -643,6 +644,62 @@ describe("skill-name reconciliation (P1 — overlay weights survive LLM name dri
     expect(skillsCoverAxes(partial, HR_ROUND_SKILL_AXES)).toBe(false);
     // non-string names are ignored, not crashed on
     expect(skillsCoverAxes([{ name: 123 as unknown }], HR_ROUND_SKILL_AXES)).toBe(false);
+  });
+});
+
+describe("selectCanonicalHrSkills (A2 — project onto axes before slice, no axis drop)", () => {
+  it("keeps all 8 canonical axes when a junk row precedes a real axis at index >= 8", () => {
+    // LLM disobeyed the prompt: 4 junk rows first, then the 8 canonical axes.
+    // A blind slice(0,8) would keep the junk and drop the last 4 real axes —
+    // even though coverage validated on the full array. Projection keeps all 8.
+    const junk = [
+      { name: "Filler A", score: 10 },
+      { name: "Filler B", score: 20 },
+      { name: "Filler C", score: 30 },
+      { name: "Filler D", score: 40 },
+    ];
+    const real = HR_ROUND_SKILL_AXES.map((name, i) => ({ name, score: 50 + i }));
+    const out = selectCanonicalHrSkills([...junk, ...real], HR_ROUND_SKILL_AXES);
+    expect(out.map((s) => s.name)).toEqual([...HR_ROUND_SKILL_AXES]);
+    // scores carried from the real rows, not the junk
+    expect(out[0].score).toBe(50);
+  });
+
+  it("emits axes in canonical rubric order regardless of LLM order", () => {
+    const shuffled = [...HR_ROUND_SKILL_AXES]
+      .slice()
+      .reverse()
+      .map((name) => ({ name, score: 60 }));
+    const out = selectCanonicalHrSkills(shuffled, HR_ROUND_SKILL_AXES);
+    expect(out.map((s) => s.name)).toEqual([...HR_ROUND_SKILL_AXES]);
+  });
+
+  it("reconciles drifted spellings before projecting", () => {
+    const drifted = HR_ROUND_SKILL_AXES.map((name) => ({
+      name: name.toLowerCase().replace(/\s+/g, "-"),
+      score: 70,
+    }));
+    const out = selectCanonicalHrSkills(drifted, HR_ROUND_SKILL_AXES);
+    expect(out.map((s) => s.name)).toEqual([...HR_ROUND_SKILL_AXES]);
+  });
+
+  it("dedupes a duplicated axis, keeping the first occurrence", () => {
+    const dup = [
+      { name: "Logistics clarity", score: 80 },
+      { name: "logistics-clarity", score: 99 },
+      ...HR_ROUND_SKILL_AXES.slice(1).map((name) => ({ name, score: 60 })),
+    ];
+    const out = selectCanonicalHrSkills(dup, HR_ROUND_SKILL_AXES);
+    expect(out).toHaveLength(HR_ROUND_SKILL_AXES.length);
+    expect(out[0].score).toBe(80); // first wins
+  });
+
+  it("drops non-canonical rows entirely", () => {
+    const out = selectCanonicalHrSkills(
+      [{ name: "Logistics clarity", score: 70 }, { name: "Totally made up", score: 90 }],
+      HR_ROUND_SKILL_AXES,
+    );
+    expect(out.map((s) => s.name)).toEqual(["Logistics clarity"]);
   });
 });
 
