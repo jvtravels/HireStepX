@@ -498,6 +498,12 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * a genuine accept (which is "I accept" / "I'll accept"). Offline sweep
    * batch 2 (2026-06-23). */
   /\b(?:as\s+if|like)\s+i.?d\s+(?:ever\s+|really\s+|actually\s+)?accept\b/i,
+  /* sarcasm prefix: "yeah right, I'll take it" / "yeah right, deal". "yeah
+   * right" is a stock dismissive in a negotiation; the accept idiom after it is
+   * sarcastic, not a commitment. Negative-lookahead exempts the genuinely eager
+   * "yeah, right away / right now" so an enthusiastic accept still closes.
+   * Offline sweep batch 4 (2026-06-23). */
+  /\byeah,?\s+right\b(?!\s+(?:away|now|here|on\s+it|then))/i,
 ];
 
 /* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
@@ -591,6 +597,46 @@ const RETRACTION_PATTERN = /\b(?:just\s+|only\s+)?kidding\b|\bjk\b/i;
 const CONDITIONAL_DEMAND_PATTERN =
   /\b(?:make\s+it|get\s+(?:it\s+)?to|bump\s+(?:it\s+)?to|push\s+(?:it\s+)?to|raise\s+(?:it\s+)?to|take\s+it\s+to|bring\s+it\s+to|come\s+up\s+to)\s+\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|k|cr|crores?)?\b[^.!?]{0,25}\b(?:and|then|&)\b/i;
 
+/** Veto: NON-numeric counter-demand welded to a close idiom — "beat their
+ *  number and you've got a deal", "match it and we're done". Sibling to
+ *  CONDITIONAL_DEMAND but the demand is a comparative beat/match of a competing
+ *  figure rather than an explicit number. The close idiom is contingent on the
+ *  company first improving, so it is a counter, not an accept (FALSE-CLOSE).
+ *  Object scoped to money referents so "match the role and start" is untouched.
+ *  Offline sweep batch 4 (2026-06-23). */
+const COUNTER_THEN_CLOSE_PATTERN =
+  /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc))\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
+
+/** Veto: leading conditional governing a close idiom — "if you beat Google's
+ *  offer I'm in", "if my manager approves then deal", "unless you fix the base,
+ *  no deal". The close idiom ("I'm in"/"deal"/"I'll sign") is the CONSEQUENT of
+ *  an unmet condition, so the candidate has not committed (FALSE-CLOSE). The
+ *  medium gate already vetoes via HARD_CONDITIONAL; this shared veto closes the
+ *  same gap in the STRICT gate, where the bare idiom would otherwise finalize.
+ *  Consequent list is tight (explicit accept idioms only) so a benign "if the
+ *  base is low this deal is weak" does not match. Offline sweep batch 4. */
+const CONDITIONAL_ACCEPT_PATTERN =
+  /\b(?:if|unless|provided|contingent\s+on|only\s+if|as\s+long\s+as)\b[^.!?\n]{0,40}?\b(?:i'?m\s+in\b|count\s+me\s+in\b|you'?ve\s+got\s+(?:a\s+|yourself\s+a\s+)?deal\b|we\s+(?:have|have\s+got|got)\s+a\s+deal\b|it'?s\s+a\s+deal\b|then\s+deal\b|i'?ll\s+(?:take\s+it|sign|join)\b)/i;
+
+/** Veto: accept idiom trailed by a review/deliberation tail — "send the offer
+ *  letter and I'll review it", "share the paperwork and I'll think it over".
+ *  The "send the offer letter" close idiom matches, but "I'll review/think it
+ *  over" means the candidate is deferring the decision to read it, not
+ *  accepting. Verb list excludes commit verbs (take/sign/accept) so a genuine
+ *  "yes send me the offer letter" still closes. Offline sweep batch 4. */
+const REVIEW_TAIL_PATTERN =
+  /\bi'?ll\s+(?:review|look\s+(?:it|that|them)?\s*over|think\s+(?:it|that|this)\s+over|go\s+over\s+(?:it|that|them)|read\s+(?:it|through|over)|consider\s+(?:it|that|this)|mull\s+(?:it|that)\s+over|run\s+(?:it|that)\s+by)\b/i;
+
+/** Veto: commitment deferred to a personal consultation / future return —
+ *  "I'll sign after I talk to my wife", "I'll accept once I see it in writing",
+ *  "let me confirm tomorrow once I'm back". The performative verb fires but the
+ *  commitment is gated on the candidate first consulting someone or reviewing
+ *  later, so it is not a present accept. Scoped to consult/return verbs so
+ *  "once you confirm the base I'll sign" (owned by CONDITIONAL_DEFERRAL) and
+ *  genuine accepts are untouched. Offline sweep batch 4. */
+const CONSULT_DEFERRAL_PATTERN =
+  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)\s+(?:talk|speak|consult|discuss|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+by|get\s+back|am\s+back))/i;
+
 /** All PRI-59/61/63 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
@@ -604,6 +650,10 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   NEGOTIATION_REDIRECT_PATTERN,
   RETRACTION_PATTERN,
   CONDITIONAL_DEMAND_PATTERN,
+  COUNTER_THEN_CLOSE_PATTERN,
+  CONDITIONAL_ACCEPT_PATTERN,
+  REVIEW_TAIL_PATTERN,
+  CONSULT_DEFERRAL_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
   ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];

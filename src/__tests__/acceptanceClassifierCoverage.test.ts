@@ -310,6 +310,56 @@ describe("acceptance classifier — batch-3 precision (genuine accepts still clo
   }
 });
 
+/* Offline hostile sweep batch 4 (2026-06-23) — four strict-gate FALSE-CLOSE
+ * classes where a close idiom survived the strict gate despite a governing
+ * condition, sarcasm, or review-deferral the prior vetoes missed:
+ *  1. CONDITIONAL_ACCEPT — "if you beat X I'm in" (strict gate lacked the
+ *     leading-conditional veto the medium gate had via HARD_CONDITIONAL).
+ *  2. COUNTER_THEN_CLOSE — "beat their number and you've got a deal" (non-
+ *     numeric sibling of CONDITIONAL_DEMAND).
+ *  3. yeah-right sarcasm prefix on a generic accept idiom.
+ *  4. REVIEW_TAIL / CONSULT_DEFERRAL — "send the offer letter and I'll review
+ *     it", "I'll sign after I talk to my wife".
+ * All now rejected through BOTH gates; the matching genuine accepts must close. */
+describe("acceptance classifier — batch-4 FALSE-CLOSE vetoes (must NOT accept, both gates)", () => {
+  const cases = [
+    "if you beat Google's offer I'm in", // conditional-accept
+    "if my manager approves then deal", // conditional-accept
+    "pending my spouse's ok I'm in", // hard-conditional (pending)
+    "beat their number and you've got a deal", // counter-then-close
+    "match it and we're done", // counter-then-close
+    "yeah right, I'll take it", // sarcasm prefix
+    "send me the offer letter and I'll review it", // review-tail
+    "share the paperwork and I'll think it over", // review-tail
+    "I'll sign after I talk to my wife", // consult-deferral
+    "I'll accept once I see it in writing", // consult-deferral
+    "let me sleep on it and I'll confirm tomorrow", // sleep-on-it hedge
+  ];
+  for (const input of cases) {
+    it(`"${input}" → NOT accepted`, () => {
+      const m = classifyAcceptance(input, onTable);
+      const s = detectExplicitAcceptance(input);
+      expect(m.accepted, `medium reasons=${m.reasons.join(",")}`).toBe(false);
+      expect(s.accepted, "strict must also reject").toBe(false);
+    });
+  }
+});
+
+describe("acceptance classifier — batch-4 precision (genuine accepts still close)", () => {
+  const cases = [
+    "yes send me the offer letter", // not review-tail (no "I'll review")
+    "deal, let's do it right now", // not consult-deferral; "right now" exempt
+    "yeah, right away — I'll sign", // sarcasm lookahead exempts "right away"
+    "I accept, send the paperwork", // plain accept
+  ];
+  for (const input of cases) {
+    it(`"${input}" → accepted`, () => {
+      const r = classifyAcceptance(input, onTable);
+      expect(r.accepted, `reasons=${r.reasons.join(",")}`).toBe(true);
+    });
+  }
+});
+
 describe("strict gate — Hindi deal-close idiom routes through detectExplicitAcceptance", () => {
   /* "bhej do offer letter" carries the unambiguous deal-close sense and
    * is shared into the strict gate via CLOSE_CONSENT_IDIOM_PATTERNS, so
