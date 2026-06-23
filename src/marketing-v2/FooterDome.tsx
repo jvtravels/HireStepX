@@ -115,7 +115,7 @@ function FooterDomeDesktop() {
             height, pushing all video content far below the visible arc. */}
         <video
           ref={videoRef}
-          src="/HX.mp4"
+          src="/HX.webm"
           autoPlay
           loop
           muted
