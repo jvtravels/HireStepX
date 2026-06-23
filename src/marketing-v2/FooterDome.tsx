@@ -125,7 +125,7 @@ function FooterDomeDesktop() {
             width: "25%",
             height: "auto",
             display: "block",
-            margin: "40px auto 0",
+            margin: "48px auto 0",
           }}
         />
       </div>
