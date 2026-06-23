@@ -216,6 +216,46 @@ describe("PRI-63b — negated settle-token (FALSE-CLOSE) + comma accept-with-num
   });
 });
 
+/* 10/10-plan A1 (2026-06-23) — permanent per-arm guard for the shared
+ * CLOSE_CONSENT_IDIOM bank. A silent break in any arm is a FALSE-CLOSE
+ * or a missed-close (the two worst failure modes), and a thin-coverage
+ * regex edit silently broke a sibling bank (SOFT_ALIGNMENT "we've"). One
+ * representative phrase per arm, asserted through BOTH gates, so the
+ * single-source bank stays wired to strict-close and medium accept. */
+describe("CLOSE_CONSENT_IDIOM — every arm closes through both gates (permanent guard)", () => {
+  const onTable = { offerOnTable: true };
+  const arms: Array<[string, string]> = [
+    ["1 deal", "ok, deal."],
+    ["2 whatever-said", "whatever you just said works"],
+    ["2 whatever-works", "whatever works"],
+    ["3 send-it", "send it over."],
+    ["3 send-letter", "send the offer letter"],
+    ["4 confirmed", "yes confirmed."],
+    ["5 bhej-do-letter", "bhej do offer letter"],
+    ["5 letter-bhej-do", "offer letter bhej do"],
+    ["6 where-sign", "where do I sign"],
+    ["7 count-me-in", "count me in"],
+    ["8 got-a-deal", "we've got a deal"],
+    ["9 make-official", "let's make it official"],
+    ["10 paperwork-going", "let's get the paperwork going"],
+    ["10 get-started-letter", "get started with the offer letter"],
+    ["11 agreed", "great, agreed."],
+    ["12 on-board", "I'm on board."],
+    ["12 happy-proceed", "happy to proceed."],
+    ["13 consider-accepted", "consider it accepted"],
+    ["13 sign-me-up", "sign me up"],
+    ["14 n-it-is", "45 it is."],
+    ["15 thats-a-yes", "that's a yes from me"],
+    ["16 lock-this-in", "lock this in"],
+  ];
+  for (const [name, phrase] of arms) {
+    it(`arm ${name}: "${phrase}" closes via strict + medium`, () => {
+      expect(detectExplicitAcceptance(phrase).accepted, `strict: ${phrase}`).toBe(true);
+      expect(classifyAcceptance(phrase, onTable).accepted, `medium: ${phrase}`).toBe(true);
+    });
+  }
+});
+
 describe("PRI-63c — 'do it <redirect>' FALSE-CLOSE + recall (it-is/that's-a-yes/lock-this-in)", () => {
   it("does NOT accept 'let's do it <redirect>' (approach change/defer, not consent)", () => {
     for (const p of [
