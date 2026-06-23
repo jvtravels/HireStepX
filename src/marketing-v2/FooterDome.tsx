@@ -123,6 +123,26 @@ function FooterDomeDesktop() {
             display: "block",
           }}
         />
+        {/* Wordmark overlaid on the video — the visible dome window is only
+            the top ~144px of the 900px circle, so the video's own wordmark
+            (centered in the 500px frame) is never in view. CSS text ensures
+            the brand always shows regardless of playback state. */}
+        <div style={{
+          position: "absolute",
+          top: 48,
+          left: 0,
+          width: "100%",
+          textAlign: "center",
+          fontFamily: fonts.sans,
+          fontSize: 40,
+          fontWeight: 700,
+          letterSpacing: "-0.02em",
+          color: "#FFFFFF",
+          whiteSpace: "nowrap",
+          pointerEvents: "none",
+        }}>
+          HireStep<span style={{ fontWeight: 700 }}>X</span>
+        </div>
       </div>
 
       {/* Left column */}
