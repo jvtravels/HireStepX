@@ -88,6 +88,43 @@ function FooterDomeDesktop() {
         overflow: "hidden",
       }}
     >
+      {/* Video dome — rendered FIRST so it sits behind all text/nav elements
+          in natural DOM stacking order. On narrow desktop viewports (~880–950px)
+          the dome arc's horizontal extent can reach the social-icons; rendering
+          it first means those elements always paint on top with no z-index needed. */}
+      <div style={{
+        position: "absolute",
+        left: "50%",
+        top: 316,
+        width: 900,
+        height: 900,
+        borderRadius: "50%",
+        overflow: "hidden",
+        transform: "translateX(-50%)",
+        background: "#BC551C",
+      }}>
+        {/* src on the element directly (not via <source>) forces Chrome to
+            use the simpler resource selection algorithm and keeps networkState
+            in NETWORK_LOADING until the buffer fills. Using <source> child
+            lets Chrome stop at HAVE_METADATA without loading frame data. */}
+        <video
+          ref={videoRef}
+          src="/HX.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center top",
+            display: "block",
+          }}
+        />
+      </div>
+
       {/* Left column */}
       <div style={{ position: "absolute", left: 96, top: 76 }}>
         <p style={{
@@ -232,41 +269,6 @@ function FooterDomeDesktop() {
         ))}
       </div>
 
-      {/* Video dome */}
-      <div style={{
-        position: "absolute",
-        left: "50%",
-        top: 316,
-        width: 900,
-        height: 900,
-        borderRadius: "50%",
-        overflow: "hidden",
-        transform: "translateX(-50%)",
-        background: "#BC551C",
-      }}>
-        {/* src on the element directly (not via <source>) forces Chrome to
-            use the simpler resource selection algorithm and keeps networkState
-            in NETWORK_LOADING until the buffer fills. Using <source> child
-            lets Chrome stop at HAVE_METADATA without loading frame data. */}
-        <video
-          ref={videoRef}
-          src="/HX.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center top",
-            display: "block",
-          }}
-        />
-      </div>
-
-      {/* Wordmark is part of the HX.mp4 video — no separate text needed */}
     </div>
   );
 }
