@@ -3323,16 +3323,22 @@ export function PricingV2() {
   return (
     <section ref={sectionRef} className="mv2-section" aria-labelledby="hd-pricing" style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
-        <MotionReveal style={{ textAlign: "center", marginBottom: 56 }}>
-          <SectionMasthead n="07" label="Pricing" right="From ₹9 / session" style={{ marginBottom: 16 }} />
-          <h2 id="hd-pricing" style={h2}>
-            Costs less than{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>one chai a day.</span>
-          </h2>
-          <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-            Free to start. Buy sessions individually, by the week, or by the month — whichever matches your prep. UPI / cards / netbanking accepted at checkout.
-          </p>
-        </MotionReveal>
+        <div style={{ textAlign: "center", marginBottom: 56 }}>
+          <MotionReveal>
+            <SectionMasthead n="07" label="Pricing" right="From ₹9 / session" style={{ marginBottom: 16 }} />
+          </MotionReveal>
+          <MotionReveal delay={80}>
+            <h2 id="hd-pricing" style={h2}>
+              Costs less than{" "}
+              <span style={{ fontStyle: "italic", color: t.copper }}>one chai a day.</span>
+            </h2>
+          </MotionReveal>
+          <MotionReveal delay={160}>
+            <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
+              Free to start. Buy sessions individually, by the week, or by the month — whichever matches your prep. UPI / cards / netbanking accepted at checkout.
+            </p>
+          </MotionReveal>
+        </div>
         {/* Cards — each card gets its own MotionReveal so they cascade
             left-to-right (0 / 110 / 220 ms) instead of popping in together */}
         <div
@@ -3555,6 +3561,7 @@ export function PricingV2() {
         {/* Trust anchors — copper palette matches the section; green success
             tokens were off-brand here. Third badge surfaces the payment
             methods already called out in the section sub-copy above. */}
+        <MotionReveal delay={350}>
         <div
           style={{
             marginTop: 36,
@@ -3595,6 +3602,7 @@ export function PricingV2() {
             </span>
           ))}
         </div>
+        </MotionReveal>
       </div>
     </section>
   );
