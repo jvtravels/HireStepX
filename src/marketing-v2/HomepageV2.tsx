@@ -3330,7 +3330,9 @@ export function PricingV2() {
             Free to start. Buy sessions individually, by the week, or by the month — whichever matches your prep. UPI / cards / netbanking accepted at checkout.
           </p>
         </MotionReveal>
-        <MotionReveal
+        {/* Cards — each card gets its own MotionReveal so they cascade
+            left-to-right (0 / 110 / 220 ms) instead of popping in together */}
+        <div
           className="mv2-pricing-grid"
           style={{
             display: "grid",
@@ -3339,9 +3341,10 @@ export function PricingV2() {
             alignItems: "stretch",
           }}
         >
-          {tiers.map((tier) => (
-            <div
+          {tiers.map((tier, i) => (
+            <MotionReveal
               key={tier.name}
+              delay={i * 110}
               className="mv2-price-card"
               style={{
                 position: "relative",
@@ -3351,9 +3354,7 @@ export function PricingV2() {
                 border: `1px solid ${tier.featured ? t.coal : t.line}`,
                 borderRadius: 20,
                 /* Lift the "Most loved" card: tiny translateY + stronger
-                   shadow so it visually leads without breaking the grid.
-                   Subtle on purpose — a real scale bump fights the
-                   editorial restraint. */
+                   shadow so it visually leads without breaking the grid. */
                 boxShadow: tier.featured ? shadows.featured : shadows.card,
                 transform: tier.featured ? "translateY(-8px)" : "none",
                 display: "flex",
@@ -3432,6 +3433,28 @@ export function PricingV2() {
                 >
                   {tier.sub}
                 </p>
+                {/* Surface the student-discount flag as a visible chip.
+                    Only the Weekly (featured) card carries this today. */}
+                {tier.studentDiscount && (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      marginTop: 10,
+                      fontFamily: fonts.sans,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: t.copper100,
+                      background: "rgba(180,83,9,0.18)",
+                      padding: "3px 9px",
+                      borderRadius: 999,
+                      letterSpacing: "0.03em",
+                    }}
+                  >
+                    ✦ Student discount available
+                  </span>
+                )}
               </div>
               <ul
                 style={{
@@ -3469,6 +3492,10 @@ export function PricingV2() {
                   </li>
                 ))}
               </ul>
+              {/* CTA hierarchy:
+                  Free        → ghost/outline — discovery tier, lowest weight
+                  Per Session → indigo filled — transactional, mid-weight
+                  Weekly      → cream on coal — primary conversion driver */}
               <a
                 href={tier.href}
                 className="mv2-tap-44"
@@ -3484,24 +3511,27 @@ export function PricingV2() {
                   padding: "12px 18px",
                   borderRadius: 999,
                   textDecoration: "none",
-                  color: tier.featured ? t.coal : t.white,
-                  background: tier.featured ? t.cream : t.indigo,
-                  boxShadow: tier.featured ? "none" : shadows.cta,
+                  color: tier.featured ? t.coal : tier.price === "₹0" ? t.coal : t.white,
+                  background: tier.featured ? t.cream : tier.price === "₹0" ? "transparent" : t.indigo,
+                  border: !tier.featured && tier.price === "₹0" ? `1px solid ${t.line}` : "none",
+                  boxShadow: tier.featured || tier.price === "₹0" ? "none" : shadows.cta,
                 }}
               >
                 {tier.cta} <span style={{ fontSize: 16 }}>→</span>
               </a>
-            </div>
+            </MotionReveal>
           ))}
-        </MotionReveal>
+        </div>
 
-        {/* No-renew anchor */}
+        {/* Trust anchors — copper palette matches the section; green success
+            tokens were off-brand here. Third badge surfaces the payment
+            methods already called out in the section sub-copy above. */}
         <div
           style={{
-            marginTop: 32,
+            marginTop: 36,
             display: "flex",
             justifyContent: "center",
-            gap: 24,
+            gap: 28,
             flexWrap: "wrap",
             fontFamily: fonts.sans,
             fontSize: 13,
@@ -3509,9 +3539,10 @@ export function PricingV2() {
           }}
         >
           {[
-            ["✓", "Cancel anytime · no lock-in"],
-            ["✓", "24h refund on Weekly sessions"],
-          ].map(([k, v]) => (
+            "Cancel anytime · no lock-in",
+            "24h refund on Weekly sessions",
+            "UPI · cards · netbanking",
+          ].map((v) => (
             <span key={v} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <span
                 aria-hidden
@@ -3519,16 +3550,17 @@ export function PricingV2() {
                   width: 16,
                   height: 16,
                   borderRadius: "50%",
-                  background: t.success100,
-                  color: t.success,
+                  background: t.copper100,
+                  color: t.copper,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 10,
                   fontWeight: 700,
+                  flexShrink: 0,
                 }}
               >
-                {k}
+                ✓
               </span>
               {v}
             </span>
