@@ -4775,7 +4775,6 @@ export default function HomepageV2() {
               theory; standard B2C arc (build belief, then show cost) wins. */}
       <main id="main">
         <HeroV2 />
-        <LogoStripV2 />
         <ProductStoryV2 />
         <InterviewFocusV2 />
         <PersonalizedReportsV2 />
