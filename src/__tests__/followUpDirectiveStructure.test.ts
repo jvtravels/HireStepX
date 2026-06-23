@@ -96,3 +96,32 @@ describe("follow-up directive structure", () => {
     expect(ramblingIdx).toBeGreaterThan(lowConvIdx);
   });
 });
+
+describe("discipline fence + focus tilt wiring (W1 + W2)", () => {
+  /* W1: the follow-up fence must come from the SHARED builder, not a
+     second hand-written copy. The old inline fence (SEO-writer / SWE /
+     designer hardcoded examples) must be gone, replaced by the shared
+     buildFollowUpDisciplineFence import. */
+  it("imports the shared fence builder and does not re-hardcode the old example fence", () => {
+    expect(src).toMatch(/import \{ buildFollowUpDisciplineFence \} from "\.\/_generate-questions-helpers"/);
+    expect(src).toMatch(/buildFollowUpDisciplineFence\(/);
+    // The old divergent copy is gone — these illustrative lines must not
+    // re-appear inline (they now live, unified, in the shared builder).
+    expect(src).not.toMatch(/An SEO Content Writer is NOT graded on user-research metrics/);
+  });
+
+  it("suppresses the craft fence on salary-negotiation turns (hiring-manager persona owns its own)", () => {
+    expect(src).toMatch(/followUpDisciplineFence = type === "salary-negotiation"\s*\n?\s*\?\s*""/);
+  });
+
+  it("W2: threads a focus tilt that fires only for a narrower, non-generic focus", () => {
+    expect(src).toMatch(/const focusTilt =/);
+    expect(src).toMatch(/cleanFocus !== "general"/);
+    expect(src).toMatch(/cleanFocus !== type/);
+    expect(src).toMatch(/FOCUS TILT:/);
+  });
+
+  it("destructures focus from the request body", () => {
+    expect(src).toMatch(/const \{ question, answer, type, focus,/);
+  });
+});

@@ -43,7 +43,7 @@ import {
   computeStructuralAnchor,
   isStarShapedFocus,
   deriveSkillWeightsFromRubric,
-  reconcileSkillAxisNames,
+  selectCanonicalHrSkills,
   HR_ROUND_SKILL_AXES,
   isUsableEvalReport,
   normalizeThoughtBubble,
@@ -1078,10 +1078,17 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     // undefined -> 1.0, discarding the sector/seniority calibration) and render
     // a mislabeled dimension. isUsableEvalReport already guaranteed all 8 axes
     // are present (tolerant match), so this only normalizes spelling.
-    const slicedSkills = Array.isArray(parsed.skills) ? parsed.skills.slice(0, 8) : [];
+    const allSkills = Array.isArray(parsed.skills) ? parsed.skills : [];
+    // For HR rounds, reconcile drifted names on the FULL array first, then
+    // PROJECT onto the canonical axis order (see selectCanonicalHrSkills). A blind
+    // slice(0,8) before reconcile could drop a canonical axis (rendering 7 weighted
+    // dims) if the LLM ignored the prompt and returned a junk entry inside the
+    // first 8 with a real axis at index >= 8 — even though isUsableEvalReport
+    // validated coverage on the full array. Non-HR focuses keep the historical
+    // first-8 behaviour.
     const rawSkills = meta?.type === "hr-round"
-      ? reconcileSkillAxisNames(slicedSkills, HR_ROUND_SKILL_AXES)
-      : slicedSkills;
+      ? selectCanonicalHrSkills(allSkills, HR_ROUND_SKILL_AXES)
+      : allSkills.slice(0, 8);
     /* HR rounds weight the displayed composite by the resolved rubric (sector/
        seniority overlay); everything else uses the company role-family weights.
        Falling back to {} = equal 1.0 weighting. */

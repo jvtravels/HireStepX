@@ -744,7 +744,9 @@ REALISTIC EXPECTATIONS: Should demonstrate leadership beyond direct reports, str
 QUESTION DEPTH: Ask about company-wide vision, board-level decisions, organizational transformation, market strategy, and culture building. Expect enterprise-scale impact.
 WHAT TO PROBE: "How did you build an engineering/product/design org?", "Describe a bet you took that defined the company's direction", "How do you manage up to the board?", "Walk me through a company-wide transformation you led."
 REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, investor/board communication, multi-year strategic planning.${salaryCtx}`
-      : "";
+      // Unknown/blank experience level: still emit the HR salary context so the
+      // CTC-discovery questions keep a market anchor (salaryCtx is "" for non-HR).
+      : salaryCtx;
 
     const roleCompContext = await getRoleCompetencies(targetRole);
 
@@ -1817,7 +1819,14 @@ Requirements:
       }, req);
       // Fall through to the regular error response below.
     } else try {
-      const stepCount = computeStepCount({ mini: false, isSalaryType: false });
+      // Pass interviewType so the HR fallback keeps its 7-question sizing — the
+      // 8-dimension Indian HR gate can't be covered in 5 turns. Omitting it here
+      // silently degraded the LLM-down path to 5 questions.
+      const stepCount = computeStepCount({
+        mini: false,
+        isSalaryType: requestType === "salary-negotiation",
+        interviewType: requestType,
+      });
       const fallbackQuestions = buildStaticFallback({
         type: requestType,
         focus: requestFocus,

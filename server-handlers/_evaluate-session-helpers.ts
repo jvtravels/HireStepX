@@ -245,6 +245,35 @@ export function reconcileSkillAxisNames<T extends { name: string }>(
   });
 }
 
+/* Project an LLM-returned skills array onto the canonical HR axis set.
+
+   Two bugs this closes, both silent:
+   1. Axis drop on overflow — the LLM occasionally emits >8 skills (extra
+      free-form rows, or a canonical axis duplicated). A naive `slice(0, 8)`
+      *before* reconciliation can drop a genuine rubric axis that happened to
+      land at index ≥8 while keeping a junk row at index <8, leaving the
+      report missing a weighted dimension.
+   2. Ordering drift — even within 8 rows, the LLM's order need not match the
+      rubric order, so the rendered breakdown wouldn't line up with the
+      overlay-derived weights.
+
+   Fix: reconcile names first (so tolerant matches canonicalize), then select
+   exactly the canonical axes in rubric order, deduping by name. Non-canonical
+   rows are dropped. Returns ≤ canonicalAxes.length rows. Coverage is still
+   enforced separately by skillsCoverAxes — this only guarantees we never lose
+   an axis the LLM actually provided. */
+export function selectCanonicalHrSkills<T extends { name: string }>(
+  rawSkills: readonly T[],
+  canonicalAxes: readonly string[],
+): T[] {
+  const reconciled = reconcileSkillAxisNames(rawSkills, canonicalAxes);
+  const byName = new Map<string, T>();
+  for (const s of reconciled) if (!byName.has(s.name)) byName.set(s.name, s);
+  return canonicalAxes
+    .map((axis) => byName.get(axis))
+    .filter((s): s is T => Boolean(s));
+}
+
 /* True when `skills` (matched tolerantly by normalized name) covers every
    canonical axis. Used to reject an HR report that omitted a rubric dimension
    (e.g. a BFSI round missing "Compliance readiness", the most-weighted axis) so

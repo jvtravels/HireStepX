@@ -11,6 +11,7 @@ import { detectAllFailures } from "./_negotiation-failures";
 import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens, sanitizeBehaviouralRegister } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
+import { buildFollowUpDisciplineFence } from "./_generate-questions-helpers";
 import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, generateNegotiationBand, type NegotiationStyle } from "../data/salary-lookup";
 import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor } from "../src/_question-category";
 import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-register";
@@ -83,8 +84,8 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, resumeProjects, resumeExperiences, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy, vagueness, crispness, selfAwarenessShown, defensiveness } = await req.json() as {
-      question: string; answer: string; type: string; role: string;
+    const { question, answer, type, focus, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, resumeProjects, resumeExperiences, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy, vagueness, crispness, selfAwarenessShown, defensiveness } = await req.json() as {
+      question: string; answer: string; type: string; focus?: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
       followUpDepth?: number; adaptiveDifficulty?: "escalate" | "ease" | "hold"; previousFollowUps?: string[];
@@ -1333,6 +1334,24 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
+    /* Craft fence — shared with the question generator via
+     * buildFollowUpDisciplineFence so the initial-question fence and the
+     * follow-up fence can never drift apart. Suppressed for salary turns,
+     * which run the hiring-manager persona (its own fence lives in
+     * salaryFollowUpCtx). */
+    const followUpDisciplineFence = type === "salary-negotiation"
+      ? ""
+      : buildFollowUpDisciplineFence(sanitizeForLLM(role, 100) || "");
+
+    /* Focus tilt — when the candidate picked a sub-discipline focus that
+     * is narrower than the round type (e.g. "leadership"/"conflict" on a
+     * behavioral round), bias this probe toward that focus. Empty when
+     * focus is absent, generic, or just echoes the round type. */
+    const cleanFocus = sanitizeForLLM(typeof focus === "string" ? focus : "", 50);
+    const focusTilt = (cleanFocus && cleanFocus !== "general" && cleanFocus !== type && type !== "salary-negotiation")
+      ? `\nFOCUS TILT: this is a ${cleanFocus.replace(/-/g, " ")}-focused round — when a follow-up is warranted, bias it toward eliciting deeper ${cleanFocus.replace(/-/g, " ")} signal, without leaving this role's craft.`
+      : "";
+
     /* Prompt assembly is ORDERED for Groq prefix-cache wins. Layers
      *  from most-static (top, longest shared across calls) to most-
      *  dynamic (bottom, varies per turn). See FOLLOW_UP_STATIC_RULES
@@ -1347,11 +1366,7 @@ ${panelContext}${behavioralModeGuard}${culturalRegisterHint}${reverseInterviewDi
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
 Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}
 
-ROLE FENCE (mandatory): The candidate is interviewing for "${sanitizeForLLM(role, 100) || "this role"}". Your follow-up MUST stay within the discipline that role would actually be evaluated on. Specifically:
-  • An SEO Content Writer is NOT graded on user-research metrics, product roadmaps, or PM-style hypotheses. Stay on writing craft, content strategy, search intent, brand voice, editorial workflow.
-  • A Software Engineer is NOT graded on go-to-market strategy. Stay on system design, code, debugging, trade-offs.
-  • A Designer is NOT graded on quarterly OKRs. Stay on craft, user research, design systems, hand-off.
-  • If the candidate's answer drifted off-role (e.g. they talked about product strategy in a content-writer round), gently bring it back: "That's interesting — bringing it back to the writing craft itself, what was your editorial process for…"
+${followUpDisciplineFence}${focusTilt}
 NEVER ask a follow-up that would only make sense for a different role. If you're tempted to ask about "user metrics" or "scale" for a writing role, stop and reframe.
 
 CANDIDATE-ASKS-BACK DETECTION (reverse interview):

@@ -587,3 +587,23 @@ export function buildDisciplineFence(role: string): string {
   const { craft, technicalMeans, forbid } = DISCIPLINE_CRAFT[discipline];
   return `DISCIPLINE FENCE (mandatory): the candidate's role is "${cleanRole}", a ${craft} role. Every question MUST stay inside that craft. Interpret abstract weak-skills through this lens — for this role, "technical depth" means ${technicalMeans}. It does NOT mean ${forbid}. Never ask a question that belongs to a different discipline; resolve any ambiguous weak-skill label to this role's craft.`;
 }
+
+/**
+ * Build the same craft-anchored fence for the FOLLOW-UP generator. A
+ * follow-up is a single in-the-moment probe (not a full question set), so
+ * the copy is tighter and adds the "drifted answer → steer back" beat the
+ * follow-up handler needs. It shares classifyDiscipline + DISCIPLINE_CRAFT
+ * with buildDisciplineFence so the two paths can never drift apart — the
+ * exact divergence this consolidates. Returns a generic fence for an
+ * unrecognised non-empty role, and a minimal one for a blank role (the
+ * follow-up prompt always wants *some* fence, unlike the generator).
+ */
+export function buildFollowUpDisciplineFence(role: string): string {
+  const cleanRole = (role || "").trim() || "this role";
+  const discipline = classifyDiscipline(cleanRole);
+  if (discipline === "generic") {
+    return `ROLE FENCE (mandatory): the candidate is interviewing for "${cleanRole}". Your follow-up MUST stay within the real day-to-day craft of THIS role — never borrow a question that would only make sense for a different discipline (e.g. system-design depth for a non-engineer, go-to-market strategy for an engineer). If the candidate's answer drifted off-role, gently steer it back to this role's actual craft.`;
+  }
+  const { craft, technicalMeans, forbid } = DISCIPLINE_CRAFT[discipline];
+  return `ROLE FENCE (mandatory): the candidate is interviewing for "${cleanRole}", a ${craft} role. Your follow-up MUST stay inside that craft — its real substance is ${technicalMeans}. Do NOT probe ${forbid}. If the candidate's answer drifted into another discipline, gently steer it back: acknowledge briefly, then re-anchor the follow-up on the ${craft} dimension of what they described.`;
+}

@@ -740,7 +740,7 @@ export async function fetchLLMEvaluation(params: {
 
 /** Fetch a dynamic follow-up question based on the candidate's answer */
 export async function fetchFollowUp(params: {
-  question: string; answer: string; type: string; role: string;
+  question: string; answer: string; type: string; focus?: string; role: string;
   jobDescription?: string; company?: string;
   currentCity?: string; jobCity?: string;
   followUpDepth?: number;

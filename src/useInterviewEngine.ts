@@ -2970,6 +2970,7 @@ export function useInterviewEngine() {
           question: currentStepObj!.aiText,
           answer: answerText,
           type: interviewType,
+          focus: interviewFocus,
           role: targetRole || user?.targetRole || "senior role",
           jobDescription: jobDescription || undefined,
           company: targetCompany || user?.targetCompany,

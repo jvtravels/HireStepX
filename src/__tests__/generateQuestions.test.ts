@@ -9,6 +9,7 @@ import {
   flagOffRoleQuestions,
   classifyDiscipline,
   buildDisciplineFence,
+  buildFollowUpDisciplineFence,
   VALID_PERSONAS,
   type RawQuestion,
 } from "../../server-handlers/_generate-questions-helpers";
@@ -426,5 +427,42 @@ describe("buildDisciplineFence", () => {
     expect(buildDisciplineFence("Product Manager").toLowerCase()).toContain("product management");
     expect(buildDisciplineFence("Data Scientist").toLowerCase()).toContain("data");
     expect(buildDisciplineFence("Account Executive").toLowerCase()).toContain("sales");
+  });
+});
+
+describe("buildFollowUpDisciplineFence (shared with the follow-up handler)", () => {
+  it("always emits a ROLE FENCE — even for a blank role (the follow-up prompt wants one)", () => {
+    const fence = buildFollowUpDisciplineFence("");
+    expect(fence).toContain("ROLE FENCE");
+    expect(fence).toContain("this role");
+  });
+
+  it("reuses the SAME craft taxonomy as the generator — a Data Scientist gets the data craft, not a generic fence", () => {
+    const fence = buildFollowUpDisciplineFence("Data Scientist");
+    expect(fence).toContain("ROLE FENCE");
+    expect(fence).toContain("Data Scientist");
+    expect(fence.toLowerCase()).toContain("data / analytics / ml");
+    // The drift this consolidation prevents: a data role must not be
+    // probed on GTM/brand/front-end the way the old hand-written fence
+    // (SEO-writer / SWE / designer examples only) implicitly allowed.
+    expect(fence.toLowerCase()).toContain("do not probe");
+  });
+
+  it("for a designer, forbids system-design probing in the follow-up", () => {
+    const fence = buildFollowUpDisciplineFence("Senior Product Designer");
+    expect(fence.toLowerCase()).toContain("software architecture");
+  });
+
+  it("includes the drifted-answer steer-back beat", () => {
+    const fence = buildFollowUpDisciplineFence("Backend Engineer");
+    expect(fence.toLowerCase()).toContain("drifted");
+    expect(fence.toLowerCase()).toContain("steer it back");
+  });
+
+  it("falls back to a generic cross-discipline fence for an unrecognised role", () => {
+    const fence = buildFollowUpDisciplineFence("Chief Vibes Officer");
+    expect(fence).toContain("ROLE FENCE");
+    expect(fence).toContain("Chief Vibes Officer");
+    expect(fence.toLowerCase()).toContain("different discipline");
   });
 });
