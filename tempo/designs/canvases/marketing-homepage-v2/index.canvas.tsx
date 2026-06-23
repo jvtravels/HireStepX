@@ -63,7 +63,7 @@ export const ProductStorySection: TempoStoryboard = {
 export const FeatureGridSection: TempoStoryboard = {
   render: () => <FeatureGridV2 />,
   name: "Feature grid",
-  layout: { x: 2457, y: 8091, width: 1440, height: 1213 },
+  layout: { x: 2457, y: 8091, width: 1440, height: 1252 },
 };
 
 export const TestimonialsSection: TempoStoryboard = {
@@ -81,7 +81,7 @@ export const PricingSection: TempoStoryboard = {
 export const BuiltForIndiaSection: TempoStoryboard = {
   render: () => <BuiltForIndiaV2 />,
   name: "Built for India",
-  layout: { x: 0, y: 12970, width: 100, height: 1204 },
+  layout: { x: 0, y: 12970, width: 100, height: 1168 },
 };
 
 export const SecurityComplianceSection: TempoStoryboard = {
@@ -111,26 +111,38 @@ export const ChangelogTeaseSection: TempoStoryboard = {
 export const ComparisonSection: TempoStoryboard = {
   render: () => <ComparisonV2 />,
   name: "Comparison vs ChatGPT / question banks",
-  layout: { x: 1490, y: 360, width: 100, height: 1616 },
+  layout: { x: 1490, y: 360, width: 100, height: 1586 },
 };
 
 export const FAQSection: TempoStoryboard = {
   render: () => <FAQV2 />,
   name: "Pricing FAQ",
-  layout: { x: 1490, y: 1310, width: 100, height: 2103 },
+  layout: { x: 1490, y: 1310, width: 100, height: 2028 },
 };
 
 
 export const FinalCTAFooterSection: TempoStoryboard = {
   render: () => <FinalCTAFooterV2 />,
   name: "Final CTA + footer",
-  layout: { x: 1944, y: 13813, width: 100, height: 1965 },
+  layout: { x: 1944, y: 13813, width: 100, height: 856 },
 };
 
 export const InterviewFocusSection: TempoStoryboard = {
   render: () => <InterviewFocusV2 />,
   name: "Interview focus (roles × companies)",
   layout: { x: 1490, y: 2260, width: 100, height: 2754 },
+};
+
+export const FeatureBentoDesktop: TempoStoryboard = {
+  render: () => <FeatureGridV2 />,
+  name: "Feature bento — desktop 1440",
+  layout: { x: 770, y: 16356, width: 1440, height: 1252 },
+};
+
+export const FeatureBentoMobile: TempoStoryboard = {
+  render: () => <FeatureGridV2 />,
+  name: "Feature bento — mobile 390",
+  layout: { x: 0, y: 17846, width: 390, height: 1949 },
 };
 
 export const LivePreviewRoute: TempoRouteStoryboard = {
