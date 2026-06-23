@@ -205,9 +205,9 @@ export default function FooterDome() {
         style={{
           position: "absolute",
           left: "50%",
-          top: 286,
-          width: 1200,
-          height: 1200,
+          top: 316,
+          width: 900,
+          height: 900,
           borderRadius: "50%",
           overflow: "hidden",
           transform: "translateX(-50%)",
