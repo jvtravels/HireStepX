@@ -244,8 +244,13 @@ function FooterDomeDesktop() {
         transform: "translateX(-50%)",
         background: "#BC551C",
       }}>
+        {/* src on the element directly (not via <source>) forces Chrome to
+            use the simpler resource selection algorithm and keeps networkState
+            in NETWORK_LOADING until the buffer fills. Using <source> child
+            lets Chrome stop at HAVE_METADATA without loading frame data. */}
         <video
           ref={videoRef}
+          src="/HX.mp4"
           autoPlay
           loop
           muted
@@ -258,9 +263,7 @@ function FooterDomeDesktop() {
             objectPosition: "center top",
             display: "block",
           }}
-        >
-          <source src="/HX.mp4" type="video/mp4" />
-        </video>
+        />
       </div>
 
       {/* Wordmark on dome */}
