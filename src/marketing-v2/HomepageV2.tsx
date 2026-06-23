@@ -4563,41 +4563,46 @@ export function SecurityComplianceV2() {
     <section style={{ background: t.cream, padding: "96px 0 80px", overflowX: "hidden" }}>
       <div className="mv2-container" style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px" }}>
         {/* Headline */}
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 56, fontWeight: 400, lineHeight: 1.05, color: t.coal, textAlign: "center", margin: "0 auto 16px", letterSpacing: -1.5, maxWidth: 640 }}>
-          Your data stays <span style={{ fontStyle: "italic", color: t.copper }}>yours</span>
-        </h2>
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: "0 auto 64px", maxWidth: 480, fontFamily: fonts.sans }}>
-          Built for India's regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.
-        </p>
+        <MotionReveal style={{ textAlign: "center", margin: "0 auto 16px", maxWidth: 640 }}>
+          <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 56, fontWeight: 400, lineHeight: 1.05, color: t.coal, margin: 0, letterSpacing: -1.5 }}>
+            Your data stays <span style={{ fontStyle: "italic", color: t.copper }}>yours</span>
+          </h2>
+        </MotionReveal>
+        <MotionReveal delay={100} style={{ textAlign: "center", margin: "0 auto 64px", maxWidth: 480 }}>
+          <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", margin: 0, fontFamily: fonts.sans }}>
+            Built for India's regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.
+          </p>
+        </MotionReveal>
 
         {/* Cards grid — collapses to 2-col at ≤880px via .mv2-security-grid */}
         <div className="mv2-security-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          {cards.map((c) => (
-            <div
-              key={c.title}
-              style={{
-                background: "#FEFDF8",
-                border: "1px solid rgba(180,83,9,0.1)",
-                borderRadius: 14,
-                padding: "28px 24px 28px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 260,
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: t.coal, marginBottom: 10, fontFamily: fonts.sans }}>
-                  {c.title}
+          {cards.map((c, i) => (
+            <MotionReveal key={c.title} delay={i * 90}>
+              <div
+                style={{
+                  background: "#FEFDF8",
+                  border: "1px solid rgba(180,83,9,0.1)",
+                  borderRadius: 14,
+                  padding: "28px 24px 28px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  minHeight: 260,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: t.coal, marginBottom: 10, fontFamily: fonts.sans }}>
+                    {c.title}
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "#4A4540", margin: 0, fontFamily: fonts.sans }}>
+                    {c.desc}
+                  </p>
                 </div>
-                <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "#4A4540", margin: 0, fontFamily: fonts.sans }}>
-                  {c.desc}
-                </p>
+                <div style={{ marginTop: 32 }}>
+                  {c.icon}
+                </div>
               </div>
-              <div style={{ marginTop: 32 }}>
-                {c.icon}
-              </div>
-            </div>
+            </MotionReveal>
           ))}
         </div>
       </div>
