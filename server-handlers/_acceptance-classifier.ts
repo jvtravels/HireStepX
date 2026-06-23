@@ -351,7 +351,12 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
 const SOFT_ALIGNMENT_PATTERNS: RegExp[] = [
   /\bi\s+(?:really\s+|truly\s+)?like\s+(?:the|this|your)\s+(?:initial\s+)?offer\b/i,
   /\b(?:i'?m|i\s+am|we'?re|we\s+are)\s+aligned\s+(?:with|on)\s+(?:the|this|your)\s+(?:initial\s+)?offer\b/i,
-  /\b(?:we|i)\s+(?:'?ve|have)\s+(?:already\s+)?aligned\s+(?:on|with)\s+(?:the|this|your)\s+(?:initial\s+)?offer\b/i,
+  /* Contraction-tolerant: "we've"/"I've" carry no space between the
+   * pronoun and "'ve", so the old \s+ form only matched the rarer
+   * "we have aligned" and silently dropped the common spoken "we've
+   * aligned" (10/10-plan A1, 2026-06-23). \s* + optional apostrophe
+   * accepts we've / I've / we have / I have. */
+  /\b(?:we|i)\s*(?:'?ve|\s+have)\s+(?:already\s+)?aligned\s+(?:on|with)\s+(?:the|this|your)\s+(?:initial\s+)?offer\b/i,
   /\b(?:the|this|your)\s+(?:initial\s+)?offer\s+aligns?\s+with\b/i,
   /\bi'?m\s+fine\s+with\s+(?:the|this|your)\s+offer\b/i,
   /\bi'?m\s+good\s+with\s+(?:the|this|your)\s+offer\b/i,

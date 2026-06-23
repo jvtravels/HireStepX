@@ -130,11 +130,14 @@ canonical example.
 
 ## Coverage gate
 
-`vitest.config.ts` enforces lines ≥19%, statements ≥18%, functions
-≥16%, branches ≥15%. Low absolute numbers reflect that ~60% of the
-codebase is React JSX we don't unit-test. Real regressions (drops in
-branch coverage of pure logic) do trip the gate. Raise thresholds
-when new test batches clear them.
+`vitest.config.ts` enforces a global gate (lines ≥47%, statements
+≥45%, functions ≥39%, branches ≥41%) plus a stricter per-folder gate
+for `server-handlers/**` (lines ≥59%, statements ≥58%, functions
+≥67%, branches ≥54%) since that tree is pure server-side logic with no
+JSX. The global numbers stay moderate because ~60% of the codebase is
+React JSX we don't unit-test. Floors are set ~2pt below current actuals
+so CI turns red on any regression; raise them each time a new test
+batch lifts the measured numbers.
 
 ## Coding conventions
 
