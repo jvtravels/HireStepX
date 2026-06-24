@@ -246,7 +246,7 @@ export function SkillBar({ s }: { s: Skill }) {
         <div style={{ width: `${s.score}%`, height: "100%", background: scoreColor(s.score), borderRadius: 999 }} />
       </div>
       <span style={{ fontFamily: f.mono, fontSize: 12, color: t.coal, width: 26, textAlign: "right" }}>{s.score}</span>
-      <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, width: 44, textAlign: "right" }} title="percentile vs target cohort">p{s.percentile}</span>
+      <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, width: 44, textAlign: "right" }} title={`Better than ${s.percentile}% of candidates targeting this role`}>p{s.percentile}</span>
       <span style={{ width: 30, textAlign: "right" }}><DeltaTag value={s.delta} /></span>
     </div>
   );

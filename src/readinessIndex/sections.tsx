@@ -147,7 +147,29 @@ export function BandMix({ d }: { d: Fixture }) {
         </span>
       </div>
       {hasBands ? (
-        <StackBar segments={segs} label="Hiring verdict across sessions" />
+        <>
+          <StackBar segments={segs} label="Hiring verdict across sessions" />
+          {(() => {
+            const noHire = (d.bandMix.find((b) => b.band === "noHire")?.n ?? 0) + (d.bandMix.find((b) => b.band === "strongNoHire")?.n ?? 0);
+            const strongHire = (d.bandMix.find((b) => b.band === "strongHire")?.n ?? 0) + (d.bandMix.find((b) => b.band === "hire")?.n ?? 0);
+            const total = d.sessions || 1;
+            if (noHire / total > 0.3) {
+              return (
+                <p style={{ margin: "14px 0 0", padding: "10px 14px", background: t.copperSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.coal, lineHeight: 1.5 }}>
+                  {noHire} of your {total} sessions fell below the hiring bar. This is usually a <strong>Consistency</strong> problem — your peak score is fine, but your floor is too low. Reducing variance moves the RI faster than chasing higher peaks.
+                </p>
+              );
+            }
+            if (strongHire / total > 0.5) {
+              return (
+                <p style={{ margin: "14px 0 0", padding: "10px 14px", background: t.success100, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.coal, lineHeight: 1.5 }}>
+                  More than half your sessions are at the strong-hire level. Your floor is solid. Focus on converting Hire sessions to Strong hire by adding specific metrics to your answers.
+                </p>
+              );
+            }
+            return null;
+          })()}
+        </>
       ) : (
         <EmptyState title="No graded sessions yet" need="Complete one evaluated session to see how your answers would be called." />
       )}
@@ -158,7 +180,11 @@ export function BandMix({ d }: { d: Fixture }) {
 /* ── Zone 2 — pillars (with per-pillar sparkline + open evidence) ── */
 
 const PILLAR_HINT: Record<Pillar["key"], string> = {
-  competence: "skill scores", consistency: "variance", coverage: "breadth · STAR", currency: "skill-decay", composure: "fillers · pace",
+  competence: "how deep your knowledge goes",
+  consistency: "how stable your scores are (not how often you practice)",
+  coverage: "round types practiced and STAR completeness",
+  currency: "how fresh each skill is — idle skills decay",
+  composure: "filler words, pace, energy under pressure",
 };
 
 function PillarCard({ p, lever, active, onOpen, range, stamps, nowMs }: { p: Pillar; lever: boolean; active: boolean; onOpen: () => void; range: RangeKey; stamps: number[]; nowMs: number }) {
@@ -329,7 +355,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
             <Eyebrow as="h2">Competence</Eyebrow>
             <Title as="h3" size={20}>Skill profile vs {d.target.hasCompany ? d.target.company : "the strong-hire bar"}</Title>
           </div>
-          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>score · percentile · delta</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>score · vs peers · change</span>
         </div>
         {d.skills.length ? (
           <>
@@ -376,7 +402,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
           </div>
           <div style={{ display: "flex", gap: 12 }}>
             <div style={{ flex: 1 }}><MetricStat label="Common-Q coverage" value={`${d.coverage.commonPct}`} unit="%" tone={d.coverage.commonPct >= 70 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 70, hi: 100, value: d.coverage.commonPct }} hint="freq-weighted pool" /></div>
-            <div style={{ flex: 1 }}><MetricStat label="Score spread σ" value={`${d.scoreSpread.sigma}`} tone={d.scoreSpread.sigma <= 8 ? "good" : "warn"} meter={{ min: 0, max: 20, lo: 0, hi: 8, value: d.scoreSpread.sigma, lowerBetter: true }} hint={`range ${d.scoreSpread.min}–${d.scoreSpread.max}`} /></div>
+            <div style={{ flex: 1 }}><MetricStat label="Score consistency" value={`${d.scoreSpread.sigma}`} tone={d.scoreSpread.sigma <= 8 ? "good" : "warn"} meter={{ min: 0, max: 20, lo: 0, hi: 8, value: d.scoreSpread.sigma, lowerBetter: true }} hint={`scores ranged ${d.scoreSpread.min}–${d.scoreSpread.max} (lower = more consistent)`} /></div>
           </div>
           {lowSample && <EmptyState title="Consistency is still an estimate" need={`Based on ${d.sessions} sessions. The σ stabilises at 8 or more.`} />}
         </div>
@@ -388,7 +414,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
 export function BlindSpots({ d }: { d: Fixture }) {
   const router = useRouter();
   return (
-    <Card as="section">
+    <Card as="section" id="zone-actions" style={{ scrollMarginTop: 88 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div>
           <Eyebrow as="h2" tone="copper">Blind spots · commonly tested, untested by you</Eyebrow>
@@ -472,7 +498,7 @@ export function AttentionTimeline({ d }: { d: Fixture }) {
     return (
       <Card as="section">
         <Eyebrow as="h2" tone="indigo">Interviewer attention</Eyebrow>
-        <div style={{ marginTop: 12 }}><EmptyState title="No attention read yet" need="The interviewer-attention model needs one full voice session to populate." /></div>
+        <div style={{ marginTop: 12 }}><EmptyState title="Where sessions go wrong — unlocks after 1 voice session" need="Run one session in voice mode to see where you hold the interviewer's attention and where you lose it." /></div>
       </Card>
     );
   }
@@ -512,7 +538,7 @@ export function CulturalRegister({ d }: { d: Fixture }) {
     <Card as="section">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div>
-          <Eyebrow as="h2" tone="indigo">Cultural register · India-calibrated</Eyebrow>
+          <Eyebrow as="h2" tone="indigo">Communication style · India-calibrated</Eyebrow>
           <Title as="h3" size={20}>How your style reads to the panel</Title>
         </div>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, maxWidth: 320, textAlign: "right" }}>
@@ -645,7 +671,10 @@ export function FocusMetrics({ d, narrow }: { d: Fixture; narrow: boolean }) {
         ))}
         {d.coverage.focusTotal - d.coverage.focusDone > 0 && (
           <div style={{ gridColumn: narrow ? "auto" : "1 / -1" }}>
-            <EmptyState title={`${d.coverage.focusTotal - d.coverage.focusDone} round types not yet practiced`} need="Each unpracticed type unlocks its own signature metrics once you run one session." />
+            <EmptyState
+              title={`${d.coverage.focusTotal - d.coverage.focusDone} round ${d.coverage.focusTotal - d.coverage.focusDone === 1 ? "type" : "types"} not yet practiced`}
+              need="Run one session in each type to unlock its performance data. Unpracticed types are also your highest-risk gaps — the real interview can probe any of them."
+            />
           </div>
         )}
       </div>
@@ -687,7 +716,7 @@ export function PatternsOverTime({ d, narrow }: { d: Fixture; narrow: boolean })
             })}
           </ul>
         ) : (
-          <div style={{ marginTop: 16 }}><EmptyState title="No cross-session patterns yet" need="Complete a few more sessions and recurring trends in your delivery and craft appear here." /></div>
+          <div style={{ marginTop: 16 }}><EmptyState title="No patterns detected yet" need="Patterns appear after 5 sessions across at least 2 interview types. Keep going — the data is building." /></div>
         )}
       </Card>
       <Card as="section">
@@ -748,7 +777,7 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
       <Card as="section">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div>
-            <Eyebrow as="h2" tone="copper">Currency · refresh queue</Eyebrow>
+            <Eyebrow as="h2" tone="copper">Skills going cold · refresh queue</Eyebrow>
             <Title as="h3" size={20}>Skills going cold</Title>
           </div>
           <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>spaced-repetition</span>
@@ -778,9 +807,15 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
             <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
               {d.redFlags.map((flag) => <FlagRow key={flag.title} flag={flag} />)}
             </div>
-            <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: t.indigo100, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep }}>
-              Clearing the top flag is your fastest RI gain: it shows up in {d.redFlags[0].hits} of your last {d.redFlags[0].of} sessions.
-            </p>
+            <div style={{ marginTop: 16, padding: "10px 14px", background: t.indigo100, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <p style={{ margin: 0, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, lineHeight: 1.5, flex: 1 }}>
+                Fixing this one flag is your fastest RI gain. It appeared in {d.redFlags[0].hits} of your last {d.redFlags[0].of} sessions.
+              </p>
+              <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap"
+                style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${t.indigo}`, background: t.white, color: t.indigoDeep, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+                Practice now →
+              </button>
+            </div>
           </>
         ) : (
           <div style={{ marginTop: 16 }}><EmptyState title="No recurring red flags" need="Nothing rejection-grade is repeating across your sessions. Keep it that way." /></div>
@@ -1019,6 +1054,17 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
           {diff.hard === 0 && d.cadence.totalSessions > 0 && <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 11.5, color: t.warning }}>No hard sessions yet. The loop will be hard; practice at that level.</p>}
         </div>
       </div>
+      {d.cadence.totalSessions > 0 && d.cadence.weeks > 0 && (
+        <p style={{ margin: "18px 0 0", padding: "10px 14px", background: t.creamSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.coal, lineHeight: 1.5 }}>
+          {(() => {
+            const avg = d.cadence.totalSessions / d.cadence.weeks;
+            const weeklyAvg = avg.toFixed(1);
+            const needed = 3;
+            if (avg >= needed) return `You averaged ${weeklyAvg} sessions per week. That cadence is enough to keep your RI moving.`;
+            return `You averaged ${weeklyAvg} sessions per week. Aim for ${needed} per week — at your current pace, progress will stall.`;
+          })()}
+        </p>
+      )}
     </Card>
   );
 }

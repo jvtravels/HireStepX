@@ -52,10 +52,11 @@ function SegControl({ range, onChange }: { range: RangeKey; onChange: (r: RangeK
 const NAV: { id: string; label: string }[] = [
   { id: "zone-readiness", label: "Readiness" },
   { id: "zone-pillars", label: "Pillars" },
+  { id: "zone-actions", label: "What to practice" },
   { id: "zone-competence", label: "Competence" },
   { id: "zone-delivery", label: "Delivery" },
   { id: "zone-craft", label: "Answer craft" },
-  { id: "zone-signature", label: "Signature" },
+  { id: "zone-signature", label: "By round type" },
   { id: "zone-patterns", label: "Patterns" },
   { id: "zone-closing", label: "Closing" },
   { id: "zone-negotiation", label: "Negotiation" },
@@ -124,6 +125,7 @@ function StickyHeader({ d, range, onRange, showControls, stickTop = 0 }: { d: Fi
           </span>
           <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
             {d.target.role}{d.target.hasCompany ? ` · ${d.target.company}` : ""} · bar <strong style={{ color: t.coal }}>{d.threshold}</strong>
+            {d.ri < d.threshold && <> · <span style={{ color: t.copper, fontWeight: 600 }}>need {d.threshold - d.ri} more</span></>}
           </span>
         </div>
         {showControls && <SegControl range={range} onChange={onRange} />}
@@ -171,13 +173,22 @@ function AnalyticsBody({ d, narrow, range, activePillar, onPillar }: {
   return (
     <Stack>
       {d.meta.sparse && <SparseNote sessions={d.sessions} />}
+      {/* 1. Am I ready? */}
       <HeroRow d={d} narrow={narrow} range={range} />
-      <BandMix d={d} />
+      {/* 2. Why this score? — pillars before verdict mix so the "why" comes before the "what" */}
       <PillarGrid d={d} narrow={narrow} activeKey={activePillar} onOpen={onPillar} range={range} />
       {active && <PillarEvidence p={active} />}
-      <SessionDiff d={d} narrow={narrow} />
-      <CompetenceCoverage d={d} narrow={narrow} />
+      {/* 3. What do I do today? — highest-ROI actions surfaced immediately after the score */}
       <BlindSpots d={d} />
+      <RefreshAndFlags d={d} narrow={narrow} />
+      {/* 4. What will they ask me? — most valuable section for a candidate days before their interview */}
+      <FollowUpPrep d={d} />
+      {/* 5. How are my sessions being scored? */}
+      <BandMix d={d} />
+      <SessionDiff d={d} narrow={narrow} />
+      {/* 6. Detailed competence breakdown */}
+      <CompetenceCoverage d={d} narrow={narrow} />
+      {/* 7. Delivery and communication style */}
       <DeliveryPanel d={d} narrow={narrow} />
       {d.cultural.length ? (
         <Row narrow={narrow}>
@@ -187,14 +198,16 @@ function AnalyticsBody({ d, narrow, range, activePillar, onPillar }: {
       ) : (
         <AttentionTimeline d={d} />
       )}
+      {/* 8. Answer quality and substance signals */}
       <AnswerCraft d={d} narrow={narrow} />
       <FocusMetrics d={d} narrow={narrow} />
+      {/* 9. Trends */}
       <PatternsOverTime d={d} narrow={narrow} />
-      <RefreshAndFlags d={d} narrow={narrow} />
-      <FollowUpPrep d={d} />
+      {/* 10. Closing + coaching + negotiation */}
       <ClosingAndResume d={d} narrow={narrow} />
       <Coaching d={d} narrow={narrow} />
       <NegotiationCard d={d} narrow={narrow} />
+      {/* 11. Practice history */}
       <PracticeCadence d={d} narrow={narrow} />
     </Stack>
   );
