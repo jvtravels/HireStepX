@@ -1474,3 +1474,19 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS completion_tokens INTEGER DEFAULT 
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS tts_chars INTEGER DEFAULT 0;
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS stt_calls INTEGER DEFAULT 0;
 
+-- ═══════════════════════════════════════════════════════
+-- Security hardening migrations (2026-06-24)
+-- ═══════════════════════════════════════════════════════
+
+-- M-2: Column-level privilege restriction on google_calendar_sync.
+-- The existing RLS policy gates by row ownership but allows SELECT * —
+-- including refresh_token and access_token. A stored XSS could execute a
+-- Supabase client query and exfiltrate Google OAuth tokens. We keep the row-
+-- level RLS policy for ownership scoping, but strip column-level SELECT
+-- privilege on the sensitive token columns from the authenticated role.
+-- Server-side handlers use the service key (bypasses RLS and col grants);
+-- the client only needs the status/metadata columns to show "connected" state.
+-- Idempotent: re-running is safe.
+revoke select (refresh_token, access_token) on google_calendar_sync from authenticated;
+revoke select (refresh_token, access_token) on google_calendar_sync from anon;
+

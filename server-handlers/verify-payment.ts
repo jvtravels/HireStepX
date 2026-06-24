@@ -575,7 +575,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         razorpay_order_id,
         plan,
         tier,
-        amount: PLAN_AMOUNT[plan],
+        // M-3: store the actual charged amount, not the list price. promoDiscount
+        // is server-derived from Razorpay order notes (set by create-order.ts)
+        // so this matches what Razorpay captured and enables correct GST reconciliation.
+        amount: Math.max(0, PLAN_AMOUNT[plan] - promoDiscount),
         currency: "INR",
         status: "completed",
         subscription_start: now.toISOString(),

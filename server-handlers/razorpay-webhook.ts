@@ -253,6 +253,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const dbHeaders = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` };
 
       if (eventType === "subscription.activated") {
+        // H-3: DB-level dedup for subscription.activated. The in-memory Set resets
+        // on every Lambda cold start, so a Razorpay retry on a cold instance bypasses
+        // it. We reuse the payment_dedup table with a synthetic key
+        // "${subscriptionId}:activated" — the unique constraint turns a retry into a
+        // conflict that we treat as "already processed", exactly like payment.captured.
+        const dedupKey = `${subscriptionId}:activated`;
+        const dedupRes = await fetch(`${SUPABASE_URL}/rest/v1/payment_dedup`, {
+          method: "POST",
+          headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+          body: JSON.stringify({ razorpay_payment_id: dedupKey, user_id: userId }),
+        });
+        if (dedupRes.status === 409 || (dedupRes.ok && dedupRes.status === 200 && (await dedupRes.text()) === "")) {
+          // Conflict = already processed by a prior delivery of this webhook event
+          return res.status(200).json({ received: true, already_processed: true });
+        }
+        // A non-conflict 2xx means we own it; a 4xx/5xx means Redis-fallback below.
+        // Either way we proceed — failing to write dedup never blocks a first delivery.
+
         // First activation — save subscription ID and activate tier
         const tier = PLAN_TIER[plan] || "starter";
         const now = new Date();

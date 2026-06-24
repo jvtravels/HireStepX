@@ -80,9 +80,14 @@ export function computeSubscriptionEnd(args: {
   const upgrade = isUpgrade({ currentTier, currentEndMs: endMs, nowMs, newPlan: plan });
 
   if (upgrade && endMs !== null) {
-    const proratedDays = computeProratedDays({
+    // M-7: avoid NaN propagation when subscription_start is missing.
+    // If currentStartMs is absent, pass 0 and let computeProratedDays return 0
+    // via its own Number.isFinite guard — explicit null coalesce rather than
+    // NaN which silently poisons downstream arithmetic.
+    const safeStartMs = typeof currentStartMs === "number" && Number.isFinite(currentStartMs) ? currentStartMs : 0;
+    const proratedDays = safeStartMs === 0 ? 0 : computeProratedDays({
       nowMs,
-      currentStartMs: currentStartMs ?? NaN,
+      currentStartMs: safeStartMs,
       currentEndMs: endMs,
       currentTier: currentTier as string,
       newPlan: plan,

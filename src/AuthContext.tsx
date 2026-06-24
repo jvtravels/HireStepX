@@ -282,10 +282,17 @@ async function applyPendingReferral(accessToken: string): Promise<void> {
 /* ─── Audit Logging (persists security events to audit_log table + function logs) ─── */
 function logAuditEvent(event: string, details?: Record<string, unknown>) {
   try {
+    // H-4: include the session bearer token so /api/audit-log can authenticate
+    // the caller. readSessionFromLocalStorage() is already used for fast-render
+    // and is safe here — audit events only fire when we have an active session.
+    const session = readSessionFromLocalStorage();
+    const authHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    if (session?.access_token) authHeaders["Authorization"] = `Bearer ${session.access_token}`;
+
     // 1. Server-side persistence (queryable audit table)
     fetch("/api/audit-log", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders,
       body: JSON.stringify({ event, details: { ...details, path: window.location.pathname } }),
       keepalive: true,
     }).catch(() => {});
