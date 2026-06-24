@@ -27,7 +27,7 @@ describe("UpgradeModal", () => {
     render(<UpgradeModal {...defaultProps} />);
 
     expect(screen.getByText("Free")).toBeInTheDocument();
-    expect(screen.getByText("Weekly")).toBeInTheDocument();
+    expect(screen.getByText("Sprint Pack")).toBeInTheDocument();
     // Per session is rendered as the interactive slider card (null slot),
     // not as a named plan card. Monthly plan is hidden (hidden: true).
     expect(screen.getByText("Per Session")).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("UpgradeModal", () => {
 
   it("shows checkout buttons for non-current plans", () => {
     render(<UpgradeModal {...defaultProps} />);
-    expect(screen.getByText(/Go weekly/)).toBeInTheDocument();
+    expect(screen.getByText(/Get Sprint Pack/)).toBeInTheDocument();
     // Monthly plan is hidden (hidden: true) — no "Go monthly" button rendered.
   });
 
@@ -82,8 +82,8 @@ describe("UpgradeModal", () => {
 
   it("marks starter as current when user is on starter plan", () => {
     render(<UpgradeModal {...defaultProps} currentTier="starter" />);
-    // Should show "Active" on the starter card, "Manage your plan" in header
-    expect(screen.getByText(/Manage your plan/)).toBeInTheDocument();
+    // Sprint Pack header copy switches to top-up messaging for starter users
+    expect(screen.getByText(/Top up sessions/)).toBeInTheDocument();
   });
 
   it("shows Razorpay footer text", () => {

@@ -8,7 +8,7 @@ declare const process: { env: Record<string, string | undefined> };
 
 /* ─── Plan Limits (single source of truth for backend) ─── */
 const FREE_SESSION_LIMIT = 2;
-const STARTER_WEEKLY_LIMIT = 7;
+const STARTER_WEEKLY_LIMIT = 5; // Sprint Pack: 5 sessions per 30-day pack
 const PRO_MONTHLY_LIMIT = 40;
 
 /** Timeout for Supabase auth/profile verification requests (ms) */
@@ -282,7 +282,7 @@ export async function checkSessionLimit(
     const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
     // Get user's subscription tier and expiry
     const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end,sessions_started_lifetime`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end,sessions_started_lifetime`,
       { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` }, signal: ac.signal },
     );
     if (!profileRes.ok) {
@@ -416,35 +416,35 @@ export async function checkSessionLimit(
         }
       }
     } else if (tier === "starter") {
-      // Count sessions this week at DB level (UTC-based)
-      const now2 = new Date();
-      const weekStart = new Date(now2.getTime() - now2.getUTCDay() * 86400000);
-      weekStart.setUTCHours(0, 0, 0, 0);
-      const weekISO = weekStart.toISOString();
+      // Count sessions since pack purchase (subscription_start) at DB level.
+      // Sprint Pack grants 5 sessions within a 30-day validity window —
+      // no weekly reset; the counter runs from the day the pack was bought.
+      const packStart = profiles[0].subscription_start;
+      const packStartISO = packStart ? new Date(packStart).toISOString() : new Date(0).toISOString();
       const sessionsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&created_at=gte.${encodeURIComponent(weekISO)}&select=id`,
+        `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&created_at=gte.${encodeURIComponent(packStartISO)}&select=id`,
         { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, Prefer: "count=exact" }, signal: ac.signal },
       );
       clearTimeout(timer);
       if (!sessionsRes.ok) { console.error("Session limit check: sessions fetch failed", sessionsRes.status); return { allowed: false, reason: "Could not verify session limit. Please try again." }; }
       const range = sessionsRes.headers.get("content-range");
-      const thisWeek = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
-      if (thisWeek >= STARTER_WEEKLY_LIMIT) {
-        // Exhausted Starter weekly allotment — allow only if the user holds a
+      const thisPack = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
+      if (thisPack >= STARTER_WEEKLY_LIMIT) {
+        // Exhausted Sprint Pack allotment — allow only if the user holds a
         // purchased session credit. Same pattern as free and pro tiers.
         if (!consumeCredit) return { allowed: true };
         const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
         if (!consumed) {
-          return { allowed: false, reason: `Starter plan limit reached (${STARTER_WEEKLY_LIMIT} sessions/week). Buy session credits or upgrade to Pro.` };
+          return { allowed: false, reason: `Sprint Pack limit reached (${STARTER_WEEKLY_LIMIT} sessions). Buy more session credits to continue.` };
         }
         return { allowed: true };
       }
       // Atomic in-flight check: prevent race where two concurrent session starts
-      // both read thisWeek < STARTER_WEEKLY_LIMIT and both slip through.
+      // both read thisPack < STARTER_WEEKLY_LIMIT and both slip through.
       if (consumeCredit) {
         const inFlight = await incrementInFlightCounter(userId, "starter", INFLIGHT_TTL_SEC);
-        if (inFlight !== null && thisWeek + inFlight > STARTER_WEEKLY_LIMIT) {
-          return { allowed: false, reason: `Starter plan limit reached (${STARTER_WEEKLY_LIMIT} sessions/week). Buy session credits or upgrade to Pro.` };
+        if (inFlight !== null && thisPack + inFlight > STARTER_WEEKLY_LIMIT) {
+          return { allowed: false, reason: `Sprint Pack limit reached (${STARTER_WEEKLY_LIMIT} sessions). Buy more session credits to continue.` };
         }
       }
     } else {

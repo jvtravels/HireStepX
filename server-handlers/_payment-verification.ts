@@ -15,13 +15,13 @@ import { computeProratedDays } from "./_proration-helpers";
  * _proration-helpers keeps the yearly amounts/durations for its measured-date
  * math. "single" is a one-off credit top-up (free tier), not a term plan. */
 export const PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro" };
-export const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 4900, monthly: 14900 };
-export const PLAN_LABEL: Record<string, string> = { single: "Per Session (₹9)", weekly: "Starter (₹49/week)", monthly: "Pro (₹149/month)" };
+export const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900, monthly: 14900 };
+export const PLAN_LABEL: Record<string, string> = { single: "Per Session (₹9)", weekly: "Interview Sprint Pack (₹39 · 5 sessions)", monthly: "Pro (₹149/month)" };
 
 /** Subscription term length, in days, for the NEW plan. "single" has no term
  *  (it grants credits, not a tier), so it is absent — callers treat an absent
  *  entry as "not a term purchase". */
-export const PLAN_DAYS: Record<string, number> = { weekly: 7, monthly: 30 };
+export const PLAN_DAYS: Record<string, number> = { weekly: 30, monthly: 30 };
 
 export const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2 };
 

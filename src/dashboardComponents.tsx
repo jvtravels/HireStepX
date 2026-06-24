@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo, Fragment, useMemo } from "react";
+import { useState, useEffect, useRef, memo, Fragment } from "react";
 import { captureClientEvent } from "./posthogClient";
 import dynamic from "next/dynamic";
 import { c, font } from "./tokens";
@@ -109,7 +109,7 @@ export function DataLoadingSkeleton() {
 const PLANS_ALL = [
   { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false, hidden: false },
   { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false, hidden: false },
-  { id: "weekly",  tier: "starter", name: "Weekly",      price: "\u20B949",  unit: "/ 7 days",  sub: "Sprint before placement week",       cta: "Go weekly",        features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7 days`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"],                                                                                                        featured: true,  hidden: false },
+  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"],                                                                                                featured: true,  hidden: false },
   /* Monthly plan \u2014 hidden until re-enabled. Keep all data intact so re-enabling is a one-line change. */
   { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",       features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"],                                                    featured: false, hidden: true  },
 ];
@@ -155,14 +155,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   /* Quantity for single-session top-up: 1–10, backend enforces the cap. */
   const [singleQty, setSingleQty] = useState(1);
 
-  /* Days until Sunday reset for Starter users who've exhausted their week.
-     Sunday = day 0; if today IS Sunday, the next reset is 7 days away. */
-  const daysUntilReset = useMemo(() => {
-    if (currentTier !== "starter") return null;
-    const now = new Date();
-    const day = now.getUTCDay(); // 0 = Sun
-    return day === 0 ? 7 : 7 - day;
-  }, [currentTier]);
+  /* Sprint Pack has no weekly reset — removed. */
   /* Live session-count social proof — fetched once on modal open from the
    * cached /api/platform-stats endpoint (Redis 1 h TTL). Falls back to null
    * so the display string shows the safe hardcoded "500+" instead. */
@@ -429,16 +422,14 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             {currentTier === "pro" || currentTier === "team"
               ? "Top up sessions · your Pro plan continues unchanged"
               : currentTier === "starter"
-              ? "Buy sessions now or wait for your free Sunday reset"
+              ? "Top up sessions — Sprint Pack sessions don't roll over once used"
               : "Cancel anytime · UPI, cards, netbanking"}
           </p>
         </div>
 
-        {/* ── Starter reset banner — shown when weekly limit hit ─────────────
-            Tells users they have a free option (wait for Sunday) BEFORE
-            showing paid options. Without this they assume paying is the
-            only way out, which creates friction and erodes trust. */}
-        {currentTier === "starter" && daysUntilReset !== null && (
+        {/* ── Sprint Pack top-up banner — shown to starter users ──────────────
+            Explains that the pack has no reset; buy more sessions below. */}
+        {currentTier === "starter" && (
           <div style={{ display: "flex", alignItems: "center", gap: 12,
             background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)",
             borderRadius: 12, padding: "12px 16px", marginBottom: 20 }}>
@@ -449,11 +440,11 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600,
                 color: T.copper, margin: 0, lineHeight: 1.3 }}>
-                Your 7 sessions reset in {daysUntilReset === 1 ? "1 day" : `${daysUntilReset} days`} (Sunday)
+                You&apos;ve used all sessions in your Sprint Pack
               </p>
               <p style={{ fontFamily: font.ui, fontSize: 11, color: "#6B655C",
                 margin: "2px 0 0", lineHeight: 1.4 }}>
-                Free reset included with your Weekly plan. Buy below only if you need sessions sooner.
+                Get another Sprint Pack (₹39 · 5 sessions) or buy individual sessions below.
               </p>
             </div>
           </div>

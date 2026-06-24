@@ -23,7 +23,7 @@ const INTENT_KEY_TTL_SEC = 86_400;
 
 const PRICE_MAP: Record<string, { amount: number; name: string; description: string }> = {
   single:           { amount: 900,    name: "HireStepX Single Session",   description: "Single mock interview session — ₹9" },
-  weekly:           { amount: 4900,   name: "HireStepX Weekly",           description: "Weekly Plan — ₹49 · 7 sessions over 7 days" },
+  weekly:           { amount: 3900,   name: "HireStepX Sprint Pack",      description: "Interview Sprint Pack — ₹39 · 5 sessions · 30-day validity" },
   monthly:          { amount: 14900,  name: "HireStepX Monthly",          description: "Monthly Plan — ₹149 · 40 sessions over 30 days" },
 };
 

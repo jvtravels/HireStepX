@@ -419,17 +419,17 @@ export function PricingPageV2() {
       hidden: false,
     },
     {
-      name: "Weekly",
-      price: "₹49",
-      unit: "/ 7 days",
-      sub: "Sprint before placement week",
+      name: "Sprint Pack",
+      price: "₹39",
+      unit: "/ 5 sessions",
+      sub: "Prep for your next interview",
       features: [
-        "7 sessions · 7 days",
+        "5 sessions · 30-day validity",
         "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
       ],
-      cta: "Go weekly",
+      cta: "Get Sprint Pack",
       href: "/signup?plan=weekly",
       featured: true,
       studentDiscount: true,
@@ -459,9 +459,9 @@ export function PricingPageV2() {
 
   const tiers = tiersMonthly.filter(t => !t.hidden);
 
-  // Monthly column hidden — 3 visible tiers: Free, Per session, Weekly
+  // Monthly column hidden — 3 visible tiers: Free, Per session, Sprint Pack
   const compareRows: Array<[string, string, string, string]> = [
-    ["Mock sessions included", "2 (one-time)", "1 (one-time)", "7 / week"],
+    ["Mock sessions included", "2 (one-time)", "1 (one-time)", "5 / pack (30 days)"],
     ["Voice in & out", "Yes", "Yes", "Yes"],
     ["STAR scoring", "Yes", "Yes", "Yes"],
     ["Company-specific rounds", "Limited", "Yes", "Yes"],
@@ -473,15 +473,15 @@ export function PricingPageV2() {
   const faqs: Array<[string, string]> = [
     [
       "Do plans auto-renew?",
-      "No. Per-session credits never expire. Weekly is a one-time top-up that expires after 7 days. You buy again when you want more. No surprise charges.",
+      "No. Nothing auto-renews. Per-session credits never expire. The Sprint Pack gives you 5 sessions to use within 30 days — you buy again when you want more. No surprise charges.",
     ],
     [
-      "What happens to unused weekly sessions?",
-      "Weekly sessions reset after 7 days. We don't roll them over because the value is concentrated prep, not stockpiling. If you bought less than a week ago and haven't used any, ping support for a refund. Per-session credits never expire.",
+      "What happens to unused Sprint Pack sessions?",
+      "Sessions in your Sprint Pack are valid for 30 days from purchase. Unused sessions expire after that window. If you bought and haven't used any sessions, ping support within 7 days for a refund. Per-session credits never expire.",
     ],
     [
       "Do you have a student discount?",
-      "Verified .ac.in / .edu.in email = 30% off Weekly. Apply once, lasts your degree. No re-verification each semester.",
+      "Verified .ac.in / .edu.in email = 30% off the Sprint Pack. Apply once, lasts your degree. No re-verification each semester.",
     ],
     [
       "Can I switch plans?",
@@ -503,7 +503,7 @@ export function PricingPageV2() {
         eyebrow="Pricing"
         title="Costs less than"
         accent="one chai a day."
-        lead="Free to start. Buy one session or a week, whichever matches your prep. UPI, cards, and netbanking accepted. 7-day refund if unused."
+        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. UPI, cards, and netbanking accepted. 7-day refund if unused."
       />
 
       {/* Tier cards */}
@@ -1414,11 +1414,11 @@ export function ForStudentsV2() {
           <div style={{ textAlign: "center" }}>
             <p style={{ ...eyebrow, marginBottom: 16 }}>Student pricing</p>
             <h2 style={h2}>
-              30% off Weekly with{" "}
+              30% off Sprint Pack with{" "}
               <span style={{ fontStyle: "italic", color: t.copper }}>.ac.in / .edu.in</span>
             </h2>
             <p style={{ ...lead, marginTop: 24, marginLeft: "auto", marginRight: "auto" }}>
-              Verify your college email once. Discount lasts your full degree; no re-verification each semester. Weekly drops from ₹49 to ₹34. That's 7 scored mocks for less than a coffee.
+              Verify your college email once. Discount lasts your full degree; no re-verification each semester. Sprint Pack drops from ₹39 to ₹27. That&apos;s 5 scored mocks for less than a coffee.
             </p>
             <div style={{ marginTop: 32 }}>
               <a href="/signup?plan=weekly&edu" style={ctaPrimary("lg")} className="mv2-tap-44">

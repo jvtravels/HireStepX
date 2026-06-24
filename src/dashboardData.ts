@@ -34,10 +34,10 @@ function extractScore(raw: unknown): number {
 /* ─── Constants ─── */
 export const FREE_SESSION_LIMIT = 2;
 /* Marketing surfaces (HomepageV2, PricingV2, MarketingPagesV2) promise
-   2 free sessions, 7 sessions/week, ₹9/session.
+   2 free sessions, 5 sessions per Sprint Pack, ₹9/session.
    Keep these constants aligned with the customer-facing promise —
    server-handlers/_shared.ts mirrors the limits for quota enforcement. */
-export const STARTER_WEEKLY_LIMIT = 7;
+export const STARTER_WEEKLY_LIMIT = 5; // Sprint Pack: 5 sessions per 30-day pack
 export const PRO_MONTHLY_LIMIT = 40;
 export const SINGLE_SESSION_PRICE = 9; // ₹9 per session
 export const STORAGE_KEY = "hirestepx_dashboard";
@@ -1159,6 +1159,13 @@ export interface SessionReport {
     classifications: Array<{ bucket: "green" | "yellow" | "red"; reason: string }>;
     counts: { green: number; yellow: number; red: number };
     verdict: "strong" | "neutral" | "weak" | "red_flag";
+    closing?: {
+      thanked: boolean;
+      affirmedInterest: boolean;
+      confirmedNextSteps: boolean;
+      performed: number;
+      verdict: "polished" | "adequate" | "abrupt";
+    };
   } | null;
   /** Per-focus signature strip — populated by evaluate-session (mvp-9+).
    *  Empty array for focuses without a spec or when the model omitted them.
