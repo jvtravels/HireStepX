@@ -336,7 +336,6 @@ function loadBandOverrides(): Record<string, BandOverride> {
       out[key] = val;
     } else if (process.env.NODE_ENV !== "test") {
       /* One-line warn — never throw, never spam. The brain stays up. */
-      // eslint-disable-next-line no-console
       console.warn(`[v2-band-overrides] skipping malformed entry for key=${key}`);
     }
   }

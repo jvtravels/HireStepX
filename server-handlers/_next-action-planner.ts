@@ -1364,7 +1364,6 @@ function buildSkipRecord(
   if (tail.length === 2 && tail[0].topic === tail[1].topic) {
     const stuckTopic = tail[0].topic;
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.warn(
         `[planner] discovery topic "${stuckTopic}" has fired twice in a row at turns ` +
           `${tail[0].atTurn},${tail[1].atTurn}; force-advancing past it on turn ${state.turnIndex}.`,
@@ -1385,7 +1384,6 @@ function buildSkipRecord(
     const lastAsked = topics[topics.length - 1].topic;
     recentlyAsked[lastAsked] = true;
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.warn(
         `[planner] repetition-complaint at turn ${state.repetitionComplaintAtTurn}; ` +
           `force-advancing past last-asked topic "${lastAsked}" on turn ${state.turnIndex}.`,
@@ -1406,7 +1404,6 @@ function buildSkipRecord(
     const lastAsked = topics[topics.length - 1].topic;
     recentlyAsked[lastAsked] = true;
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.warn(
         `[planner] post-recovery force-advance: skipping last-asked topic "${lastAsked}" on turn ${state.turnIndex}.`,
       );

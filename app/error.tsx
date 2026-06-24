@@ -27,7 +27,6 @@ export default function GlobalRouteError({
     // Best-effort error reporting — don't block the surface on it.
     // Sentry / errorReporter will pick it up if configured.
     try {
-      // eslint-disable-next-line no-console
       console.error("[app/error] unhandled:", error.message, error.digest);
     } catch {
       /* noop */

@@ -21,7 +21,6 @@ export default function GlobalLayoutError({
 }) {
   useEffect(() => {
     try {
-      // eslint-disable-next-line no-console
       console.error("[app/global-error] layout crashed:", error.message, error.digest);
     } catch {
       /* noop */

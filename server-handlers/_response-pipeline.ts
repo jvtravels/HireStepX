@@ -259,7 +259,6 @@ async function generateBotReplyInner(
      * returns malformed actions in prod is silently degraded to
      * terminal-restate with zero signal. Fire-and-forget to PostHog so
      * ops can alert on count > 0. */
-    // eslint-disable-next-line no-console
     console.warn("[planner-shape-guard] degraded malformed action", {
       raw_kind: (rawAction as { kind?: unknown } | null)?.kind ?? null,
       phase: (state as { phase?: string }).phase ?? null,
@@ -295,7 +294,6 @@ async function generateBotReplyInner(
     "close-recap-formal",
   ]);
   if (isTerminalPhase((state as { phase: NegotiationPhase }).phase) && !TERMINAL_KINDS.has(action.kind)) {
-    // eslint-disable-next-line no-console
     console.warn("[terminal-phase-guard] forcing terminal-restate", {
       planned_kind: action.kind,
       phase: (state as { phase?: string }).phase ?? null,
@@ -3089,7 +3087,6 @@ function pushCoherenceWarning(w: CoherenceWarning): void {
   if (COHERENCE_BUFFER.length > COHERENCE_BUFFER_MAX) {
     COHERENCE_BUFFER.shift();
   }
-  // eslint-disable-next-line no-console
   console.warn(`[turn-coherence] ${w.kind}: ${w.message}`);
 }
 

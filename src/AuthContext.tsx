@@ -1282,7 +1282,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         !!userObj?.identities &&
         userObj.identities.length > 0;
       if (looksAutoConfirmed) {
-        // eslint-disable-next-line no-console
         console.error(
           "[CRITICAL] Supabase auto-confirm appears enabled — new signup " +
           "arrived with email_confirmed_at already set. Verification flow " +
