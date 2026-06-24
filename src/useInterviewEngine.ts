@@ -1247,6 +1247,15 @@ export function useInterviewEngine() {
   const introStartedRef = useRef<string | false>(false);
   const introAnalyticsFiredRef = useRef(false);
   const lastEffectStepRef = useRef(-1);
+  // COGS instrumentation: accumulate TTS chars + STT audio seconds across the
+  // session so we can emit real per-session cost data at session end.
+  // TTS is currently disabled (TTS_DISABLED=true in tts.ts) so ttsCharsRef
+  // stays 0 until voice is re-enabled — the event will show 0 until then,
+  // which is exactly the right signal (confirms voice was off for that session).
+  const ttsCharsRef = useRef(0);
+  const sttAudioSecondsRef = useRef(0);
+  // Track STT call start time so we can measure duration per utterance.
+  const sttCallStartRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (phase === "done") return;
@@ -1599,6 +1608,8 @@ export function useInterviewEngine() {
         setIsRecording(false);
         if (step.waitForUser) {
           setPhase("listening");
+          // Mark STT listen window start so we can measure billable audio duration.
+          sttCallStartRef.current = Date.now();
           // Reset silence nudge for the new listening phase
           resetSilenceNudge();
           const nextStep = interviewScript[currentStep + 1];
@@ -1674,6 +1685,8 @@ export function useInterviewEngine() {
             setTtsFailed(true);
             onSpeechEnd();
           };
+          // Accumulate TTS chars for per-session COGS tracking.
+          ttsCharsRef.current += (step.aiText ?? "").length;
           return panelVoiceId
             ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onAllTtsProvidersFailed, panelGender, onDurationKnown, revealTranscript)
             : speak(step.aiText, onSpeechEnd, onAllTtsProvidersFailed, fallbackGender, onDurationKnown, revealTranscript);
@@ -2330,6 +2343,12 @@ export function useInterviewEngine() {
 
     try { ttsCancelRef.current?.(); } catch { /* ignore TTS cleanup errors */ }
     try { recognitionRef.current?.stop(); } catch { /* ignore STT cleanup errors */ }
+
+    // Close STT listen window and accumulate billable audio seconds.
+    if (sttCallStartRef.current !== null) {
+      sttAudioSecondsRef.current += (Date.now() - sttCallStartRef.current) / 1000;
+      sttCallStartRef.current = null;
+    }
 
     const rawTranscript = currentTranscript.trim();
     // Salary-negotiation interviews routinely capture STT mishears for
@@ -3751,6 +3770,14 @@ export function useInterviewEngine() {
     // selected → started → completed funnel. Score / duration / question
     // count let the dashboard build "Pro plan engagement by focus" or
     // "fallback rate by focus" insights without joining elsewhere.
+    // Snapshot COGS accumulators before any cleanup resets them.
+    const sessionTtsChars = ttsCharsRef.current;
+    const sessionSttSeconds = Math.round(sttAudioSecondsRef.current * 10) / 10;
+    // Estimated TTS cost: Sarvam Bulbul v2 = ₹15/10K chars.
+    // Estimated STT cost: Sarvam Saarika = ₹30/hr → ₹0.00833/sec; Deepgram = $0.0077/min → ₹0.0108/sec.
+    // Using Deepgram rate as current provider. Switch constant when migrating to Sarvam.
+    const ttsCostInr = Math.round((sessionTtsChars / 10_000) * 15 * 100) / 100;
+    const sttCostInr = Math.round(sessionSttSeconds * (0.0077 / 60) * 84 * 100) / 100;
     captureClientEvent("interview_session_completed", {
       focus: interviewType,
       score,
@@ -3761,6 +3788,15 @@ export function useInterviewEngine() {
       used_fallback: !!(usedFallbackScore || evalTimedOut),
       has_skill_scores: !!skillScores,
       has_feedback: !!aiFeedback,
+      // COGS instrumentation — real per-session cost signals.
+      // tts_chars = 0 while TTS_DISABLED=true in tts.ts; will show real
+      // values once voice is re-enabled. stt_audio_seconds measures the
+      // wall-clock listening window from STT start to user submission —
+      // includes silence (Deepgram charges for connection time).
+      tts_chars: sessionTtsChars,
+      stt_audio_seconds: sessionSttSeconds,
+      tts_cost_inr_est: ttsCostInr,
+      stt_cost_inr_est: sttCostInr,
     });
 
     try { localStorage.removeItem(draftKey); } catch { /* expected: localStorage cleanup is non-critical */ }

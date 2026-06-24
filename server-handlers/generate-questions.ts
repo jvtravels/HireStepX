@@ -1680,8 +1680,23 @@ Requirements:
       }
     } catch { /* telemetry must never break a real request */ }
 
+    // Total char count across all aiText fields — the TTS billing unit.
+    const totalAiTextChars = Array.isArray(responseBody?.questions)
+      ? (responseBody.questions as Array<{ aiText?: string }>)
+          .reduce((sum, q) => sum + (q.aiText ?? "").length, 0)
+      : 0;
+
     await captureServerEvent("interview_started", distinctIdFrom(req, auth.userId), {
       question_count: Array.isArray(responseBody?.questions) ? responseBody.questions.length : undefined,
+      // LLM token counts for generate-questions call COGS tracking.
+      gq_prompt_tokens: result.tokensUsed?.prompt ?? null,
+      gq_completion_tokens: result.tokensUsed?.completion ?? null,
+      gq_total_tokens: result.tokensUsed?.total ?? null,
+      gq_model: result.model,
+      // Total aiText chars across all steps — the TTS billing unit.
+      // At Sarvam Bulbul v2 (₹15/10K chars), multiply by 0.0015 to get ₹ cost.
+      gq_ai_text_chars: totalAiTextChars,
+      gq_ai_text_cost_inr_est: Math.round((totalAiTextChars / 10_000) * 15 * 100) / 100,
       grounding_verified: groundingVerified,
       grounding_generic: groundingGeneric,
       grounding_hypothetical: groundingHypothetical,

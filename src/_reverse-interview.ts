@@ -99,6 +99,56 @@ export function classifyReverseQuestion(text: string): ReverseQuestionClassifica
   return { bucket: "yellow", reason: "unclassified" };
 }
 
+/* Closing-ritual detection — separate lens from the question-quality
+   buckets above. The reverse-interview turn is also where a candidate
+   either lands the close gracefully or ends it flat. In Indian HR/behavioural
+   loops the polished close has three moves, in roughly this order:
+
+     1. courtesy / gratitude  — "thank you for your time / the conversation"
+     2. interest affirmation  — restating genuine enthusiasm for the role
+     3. next-steps confirmation — "what are the next steps / when do I hear back"
+
+   These are NOT scored as reverse questions (asking next-steps is yellow as a
+   *question*, but as a *closing move* it's a positive courtesy signal — the
+   lenses genuinely differ), so we detect them independently and surface them
+   as a small closing-ritual readout. Pure regex, conservative: a move only
+   counts when it matches a specific shape. */
+const CLOSING_THANKS_RE =
+  /\b(?:thank\s*(?:you|u)|thanks|thankyou|(?:really|truly|so)?\s*appreciate\s+(?:your|the|you|this)|grateful\s+for\s+(?:your|the|this))\b/i;
+const CLOSING_INTEREST_RE =
+  /\b(?:(?:i'?m|i\s+am|really|very|genuinely|so)\s+(?:excited|interested|keen|enthusiastic|thrilled|pumped)|look(?:ing)?\s+forward\s+to|would\s+(?:love|be\s+(?:happy|glad|thrilled|excited))\s+to\s+(?:join|work|contribute|be\s+(?:a\s+)?part)|(?:really\s+)?(?:excited|keen|enthusiastic)\s+about\s+(?:this|the)\s+(?:role|opportunity|team|mission|company|position))\b/i;
+const CLOSING_NEXT_STEPS_RE =
+  /\b(?:next\s+steps?|what(?:'?s|\s+is|\s+are|\s+would\s+be)?\s+(?:the\s+)?(?:next|further\s+steps?)|what\s+(?:happens|comes)\s+(?:next|after\s+this|from\s+here)|when\s+(?:can|should|will|might|do)\s+i\s+(?:expect|hear|know)|hear\s+back|timeline\s+for\s+(?:a\s+)?(?:decision|the\s+(?:process|next\s+round))|process\s+from\s+here|how\s+(?:soon|long)\s+(?:will|until|before|does))\b/i;
+
+export type ClosingRitualVerdict = "polished" | "adequate" | "abrupt";
+
+export interface ClosingRitualSignals {
+  /** Candidate thanked the interviewer / expressed courtesy. */
+  thanked: boolean;
+  /** Candidate restated genuine interest in the role. */
+  affirmedInterest: boolean;
+  /** Candidate confirmed next steps / decision timeline. */
+  confirmedNextSteps: boolean;
+  /** Count of the three closing moves performed (0–3). */
+  performed: number;
+  /** Heuristic verdict: all three = polished, at least one = adequate,
+   *  none = abrupt. */
+  verdict: ClosingRitualVerdict;
+}
+
+/** Detect the closing-ritual moves in a candidate's closing turn. Runs over
+ *  the whole answer (not the per-question split) since courtesy / interest
+ *  statements rarely end in "?". */
+export function detectClosingRitual(text: string): ClosingRitualSignals {
+  const t = (text || "").trim();
+  const thanked = t.length > 0 && CLOSING_THANKS_RE.test(t);
+  const affirmedInterest = t.length > 0 && CLOSING_INTEREST_RE.test(t);
+  const confirmedNextSteps = t.length > 0 && CLOSING_NEXT_STEPS_RE.test(t);
+  const performed = (thanked ? 1 : 0) + (affirmedInterest ? 1 : 0) + (confirmedNextSteps ? 1 : 0);
+  const verdict: ClosingRitualVerdict = performed >= 3 ? "polished" : performed >= 1 ? "adequate" : "abrupt";
+  return { thanked, affirmedInterest, confirmedNextSteps, performed, verdict };
+}
+
 export interface ReverseInterviewSummary {
   /** Per-question classifications, in the order the candidate asked them. */
   classifications: ReverseQuestionClassification[];
@@ -109,6 +159,10 @@ export interface ReverseInterviewSummary {
    *  turn; any red is a real signal worth flagging; only-yellow reads as
    *  low engagement. */
   verdict: "strong" | "neutral" | "weak" | "red_flag";
+  /** Closing-ritual readout (courtesy / interest / next-steps). Independent
+   *  of the question-quality buckets — a turn can have strong questions but
+   *  an abrupt close, or vice-versa. */
+  closing: ClosingRitualSignals;
 }
 
 /** Classify the whole reverse-interview turn — multiple questions in
@@ -120,6 +174,7 @@ export function summarizeReverseInterview(answerText: string): ReverseInterviewS
       classifications: [],
       counts: { green: 0, yellow: 0, red: 0 },
       verdict: "weak", // no question asked when invited = low engagement
+      closing: detectClosingRitual(""),
     };
   }
   // Split into individual questions. Conservative: only split on "?"
@@ -142,5 +197,5 @@ export function summarizeReverseInterview(answerText: string): ReverseInterviewS
   else if (counts.yellow >= 1) verdict = "neutral";
   else verdict = "weak";
 
-  return { classifications, counts, verdict };
+  return { classifications, counts, verdict, closing: detectClosingRitual(t) };
 }
