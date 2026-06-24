@@ -109,7 +109,7 @@ export function DataLoadingSkeleton() {
 const PLANS_ALL = [
   { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false, hidden: false },
   { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false, hidden: false },
-  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"],                                                                                                featured: true,  hidden: false },
+  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"],                                                                                                featured: true,  hidden: false },
   /* Monthly plan \u2014 hidden until re-enabled. Keep all data intact so re-enabling is a one-line change. */
   { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",       features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"],                                                    featured: false, hidden: true  },
 ];
@@ -644,7 +644,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 )}
                 <div>
                   <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? c.giltLight : c.gilt }}>{plan.name}</p>
-                  <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? c.obsidian : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                  {"compareAt" in plan && plan.compareAt && (
+                    <p style={{ margin: "6px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(250,247,240,0.45)" : c.stone, textDecoration: "line-through" }}>
+                      {plan.compareAt}
+                    </p>
+                  )}
+                  <p style={{ margin: "compareAt" in plan && plan.compareAt ? "2px 0 0" : "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? c.obsidian : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                     {plan.price}
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(250,247,240,0.7)" : c.stone }}>
                       {plan.unit}

@@ -3301,6 +3301,7 @@ export function PricingV2() {
     {
       name: "Sprint Pack",
       price: "₹39",
+      compareAt: "₹45",
       unit: "/ 5 sessions",
       sub: "Prep for your next interview",
       features: [
@@ -3406,9 +3407,14 @@ export function PricingV2() {
                 >
                   {tier.name}
                 </p>
+                {"compareAt" in tier && tier.compareAt && (
+                  <p style={{ margin: "6px 0 0", fontFamily: fonts.sans, fontSize: 13, color: tier.featured ? t.creamFaded : t.inkSoft, textDecoration: "line-through" }}>
+                    {tier.compareAt}
+                  </p>
+                )}
                 <p
                   style={{
-                    margin: "10px 0 0",
+                    margin: "compareAt" in tier && tier.compareAt ? "2px 0 0" : "10px 0 0",
                     fontFamily: fonts.serif,
                     fontSize: 42,
                     lineHeight: 1,
