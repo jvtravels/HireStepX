@@ -219,12 +219,21 @@ import { OfflineBanner } from "./OfflineBanner";
 import CookieConsent from "./CookieConsent";
 import ConsentGatedAnalytics from "./ConsentGatedAnalytics";
 import { RouteFocusManager } from "./RouteFocusManager";
+import { headers } from "next/headers";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Read the nonce injected by middleware.ts so we can attach it to every
+  // <script> tag in this server component. This allows the per-request CSP
+  // (which includes 'nonce-{nonce}' in script-src) to greenlight these scripts
+  // in browsers that enforce CSP Level 2+, which ignores 'unsafe-inline' when
+  // a nonce is present. Falls back to empty string — the page still renders
+  // correctly; only the nonce-based enforcement degrades to 'unsafe-inline'.
+  const nonce = (await headers()).get("x-nonce") ?? "";
+
   return (
     <html
       lang="en"
@@ -262,6 +271,7 @@ export default function RootLayout({
           <script
             key={i}
             type="application/ld+json"
+            nonce={nonce || undefined}
             dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
           />
         ))}
