@@ -4146,9 +4146,9 @@ export function ChangelogTeaseV2() {
 /* ─────────────────────────── STRUCTURED DATA (JSON-LD) ─────────────────────────── */
 function StructuredData() {
   const faqs = [
-    ["Is the free tier actually free?", "Yes. 3 full mock sessions, full scoring, full report. No card, no auto-charge after."],
-    ["Do plans auto-renew?", "No. Weekly is a one-time top-up. It expires on day 7. You buy again when you want more. No surprise charges."],
-    ["What if I just want to try it?", "Sign up free — 3 full sessions, no card needed."],
+    ["Is the free tier actually free?", "Yes. 2 full mock sessions, one-time. Full scoring, full report, no card required — ever. They don't renew."],
+    ["Do plans auto-renew?", "No. The Sprint Pack is a one-time purchase — 5 sessions, 30-day validity. You buy again when you want more. No surprise charges."],
+    ["What if I just want to try it?", "Sign up free — 2 sessions to try it, no card needed. They're yours to keep, one-time."],
     ["Do you have a student discount?", "Verified .ac.in / .edu.in email = 30% off Weekly. Apply once, lasts your degree."],
     ["Which companies and roles do you cover?", "200+ Indian roles in our question bank (IT services, unicorns, PSUs, MNCs) across behavioural, campus placement, salary negotiation and HR rounds at launch."],
     ["How accurate is the AI score?", "Rubrics built from publicly aggregated interview reports, cross-checked against two sources per question. Every score shows the rubric (STAR breakdown), not just a number."],

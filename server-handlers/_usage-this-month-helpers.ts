@@ -3,7 +3,7 @@
    month boundary / cap mapping is unit-testable. */
 
 export const PLAN_CAPS = {
-  free: { mock: 3, resumeParses: 5 },
+  free: { mock: 2, resumeParses: 5 }, // 2 sessions lifetime, one-time (no monthly renewal)
   starter: { mock: 40, resumeParses: 5 },
   pro: { mock: 40, resumeParses: 5 },
   team: { mock: Infinity, resumeParses: 5 },

@@ -821,9 +821,9 @@ export function sanitizeForLLM(s: unknown, maxLen = 200): string {
 
 /* ─── Per-User Daily LLM Quota ─── */
 
-// Free tier is capped tight: the lifetime free-session cap is already 3, so a
-// generous daily LLM-call budget only widens the abuse window without helping a
-// genuine free user. 15 covers ~2 full sessions of retries comfortably. Paid
+// Free tier is capped tight: the lifetime free-session cap is 2 (one-time, no renewal),
+// so a generous daily LLM-call budget only widens the abuse window without helping a
+// genuine free user. 15 covers 2 full sessions of retries comfortably. Paid
 // tiers stay generous.
 const DAILY_LLM_LIMITS: Record<string, number> = { free: 15, starter: 60, pro: 200, team: 500 };
 

@@ -5,6 +5,7 @@ import { font } from "./tokens";
 import { useAuth } from "./AuthContext";
 import type { ParsedResume } from "./resumeParser";
 import type { ResumeProfile } from "./dashboardData";
+import { FREE_SESSION_LIMIT } from "./dashboardData";
 import { track } from "@vercel/analytics";
 import { EmailVerificationBanner } from "./onboarding/EmailVerificationBanner";
 import {
@@ -945,7 +946,7 @@ export default function Onboarding() {
             // the hint is empty (NavigationFooter hides it).
             quotaHint={
               user && (!user.subscriptionTier || user.subscriptionTier === "free")
-                ? `${Math.max(0, 3 - (user.practiceTimestamps?.length || 0))} free interviews included`
+                ? `${Math.max(0, FREE_SESSION_LIMIT - (user.practiceTimestamps?.length || 0))} free interview${FREE_SESSION_LIMIT - (user.practiceTimestamps?.length || 0) === 1 ? "" : "s"} left (one-time)`
                 : null
             }
           />
