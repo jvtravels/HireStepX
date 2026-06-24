@@ -417,13 +417,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         </button>
 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6 }}>Choose your plan</h2>
+          <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More reps. More offers.</h2>
           <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>
             {currentTier === "pro" || currentTier === "team"
-              ? "Top up sessions · your Pro plan continues unchanged"
+              ? "Add sessions — your Pro plan stays active."
               : currentTier === "starter"
-              ? "Top up sessions — Sprint Pack sessions don't roll over once used"
-              : "Cancel anytime · UPI, cards, netbanking"}
+              ? "Sprint Pack sessions expire with the pack. Grab another to keep going."
+              : "No subscription — pay for one session or a five-session pack."}
           </p>
         </div>
 
