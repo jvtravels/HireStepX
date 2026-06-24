@@ -54,7 +54,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: "Payments not configured. Please contact support@hirestepx.com" });
   }
 
-  // Verify auth
+  // Verify auth — always required. Never fall back to a client-supplied userId;
+  // if Supabase is unreachable or misconfigured, fail hard so an attacker
+  // cannot forge orders under another user's identity by supplying their UUID
+  // in the request body (C-1 fix).
   const SUPABASE_URL = supabaseUrl();
   const SUPABASE_ANON_KEY = supabaseAnonKey();
   let authenticatedUserId: string | undefined;
@@ -70,12 +73,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch {
       return res.status(401).json({ error: "Auth verification failed" });
     }
-  } else if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  }
+  // Guard: reject if auth was not satisfied — covers missing token, missing env
+  // vars, or any soft-failure path above. No fallback to req.body.userId.
+  if (!authenticatedUserId) {
     return res.status(401).json({ error: "Authentication required" });
   }
 
   try {
-    const { plan, userId, email, quantity: rawQty, promoCode: rawPromo } = req.body;
+    // userId is intentionally omitted — we use authenticatedUserId (server-verified)
+    // and never trust a client-supplied userId field (C-1 fix).
+    const { plan, email, quantity: rawQty, promoCode: rawPromo } = req.body;
     if (typeof plan !== "string" || !PRICE_MAP[plan]) {
       return res.status(400).json({ error: "Invalid plan" });
     }
@@ -131,7 +139,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // order_id that Razorpay marks non-attemptable. 90s threads that
     // needle. See PostHog `checkout_cache_hit`.
     const DEDUP_TTL = 90;
-    const resolvedUserId = authenticatedUserId || (typeof userId === "string" ? userId : "");
+    // authenticatedUserId is guaranteed non-undefined here (guard above).
+    const resolvedUserId = authenticatedUserId;
     const idempotencyKey = `order:${resolvedUserId}:${plan}${plan === "single" ? `:${quantity}` : ""}${promoCode ? `:${promoCode}` : ""}`;
     if (UPSTASH_URL && UPSTASH_TOKEN && resolvedUserId) {
       try {

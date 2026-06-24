@@ -161,10 +161,18 @@ async function resolveJwksKey(kid: string): Promise<CryptoKey | null> {
  * Without this distinction, a single Supabase Auth blip cascades into 401s
  * across the whole app and users lose interviews mid-flow. */
 export async function verifyAuth(req: Request): Promise<{ authenticated: boolean; userId?: string }> {
-  // Fail closed in production — only skip auth in local dev
+  // Fail closed in production — only skip auth in local dev.
+  // M-1: gate the localhost fast-path on NODE_ENV so a misconfigured prod
+  // deploy with missing Supabase env vars can't be bypassed by spoofing an
+  // Origin: http://localhost:XXXX header (valid in curl, scripts, non-browser
+  // contexts where the browser enforces no Origin-forgery restrictions).
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     const isLocal = (req.headers.get("origin") || "").startsWith("http://localhost:");
-    if (isLocal) return { authenticated: true };
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore — process.env available in both Node and edge (WinterCG)
+    if (isLocal && (typeof process === "undefined" || process.env.NODE_ENV !== "production")) {
+      return { authenticated: true };
+    }
     return { authenticated: false };
   }
 

@@ -242,6 +242,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error("[webhook] Missing userId in subscription notes:", { subscriptionId });
         return res.status(200).json({ received: true, skipped: "missing_userId" });
       }
+      // H-2: validate userId is a well-formed UUID before using it in a
+      // Supabase PATCH query — an attacker-controlled string in notes could
+      // otherwise cause unexpected PostgREST behaviour.
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+        console.error("[webhook] Invalid userId format in subscription notes:", { subscriptionId, userId: String(userId).slice(0, 20) });
+        return res.status(200).json({ received: true, skipped: "invalid_userId_format" });
+      }
 
       const dbHeaders = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` };
 
@@ -763,6 +770,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (typeof userId !== "string" || !userId) {
       console.error("[webhook] Missing userId in notes:", { plan });
       return res.status(200).json({ received: true, skipped: "missing_notes" });
+    }
+    // H-2: reject non-UUID userId values before they reach any Supabase query.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+      console.error("[webhook] Invalid userId format in payment notes:", { plan, userId: userId.slice(0, 20) });
+      return res.status(200).json({ received: true, skipped: "invalid_userId_format" });
     }
 
     // Decide what this captured payment grants, validating the amount against
