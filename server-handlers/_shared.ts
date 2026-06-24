@@ -420,7 +420,15 @@ export async function checkSessionLimit(
       // Sprint Pack grants 5 sessions within a 30-day validity window —
       // no weekly reset; the counter runs from the day the pack was bought.
       const packStart = profiles[0].subscription_start;
-      const packStartISO = packStart ? new Date(packStart).toISOString() : new Date(0).toISOString();
+      if (!packStart) {
+        // subscription_start missing for a starter user — data integrity gap (partial
+        // webhook failure, manual account creation). Fail-open so the user isn't
+        // blocked from the sessions they paid for; log for investigation.
+        console.error("[checkSessionLimit] starter profile missing subscription_start", { userId });
+        clearTimeout(timer);
+        return { allowed: true };
+      }
+      const packStartISO = new Date(packStart).toISOString();
       const sessionsRes = await fetch(
         `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&created_at=gte.${encodeURIComponent(packStartISO)}&select=id`,
         { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, Prefer: "count=exact" }, signal: ac.signal },

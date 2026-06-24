@@ -19,9 +19,9 @@ const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
-const PLAN_DURATION: Record<string, number> = { weekly: 7, monthly: 30 };
+const PLAN_DURATION: Record<string, number> = { weekly: 30, monthly: 30 }; // weekly = Sprint Pack 30-day validity
 const PLAN_TIER: Record<string, string> = { weekly: "starter", monthly: "pro" };
-const PLAN_AMOUNT: Record<string, number> = { weekly: 4900, monthly: 14900 };
+const PLAN_AMOUNT: Record<string, number> = { weekly: 3900, monthly: 14900 }; // weekly = Sprint Pack ₹39
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();

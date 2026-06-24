@@ -14,9 +14,9 @@
  */
 
 export const WEBHOOK_PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro" };
-export const WEBHOOK_PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 4900, monthly: 14900 };
+export const WEBHOOK_PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900, monthly: 14900 }; // weekly = Sprint Pack ₹39
 /** Term length in days for the tier plans. "single" has no term (credits). */
-export const WEBHOOK_PLAN_DURATION: Record<string, number> = { weekly: 7, monthly: 30 };
+export const WEBHOOK_PLAN_DURATION: Record<string, number> = { weekly: 30, monthly: 30 }; // weekly = Sprint Pack 30-day validity
 
 /** Parse a server-written note that should be a non-negative integer (paise
  *  discount, quantity). Notes arrive as strings on the Razorpay entity; anything

@@ -10,14 +10,14 @@
  */
 
 export const PLAN_AMOUNT_PAISE: Record<string, number> = {
-  weekly: 4900,
+  weekly: 3900, // Sprint Pack ₹39
   monthly: 14900,
   "yearly-starter": 203900,
   "yearly-pro": 143000,
 };
 
 export const PLAN_DAYS: Record<string, number> = {
-  weekly: 7,
+  weekly: 30, // Sprint Pack 30-day validity
   monthly: 30,
   "yearly-starter": 365,
   "yearly-pro": 365,
@@ -79,7 +79,7 @@ export function computeProratedDays(args: {
   if (!newPlanAmount || !newPlanDays) return 0;
   const measured = measuredDurationDays(currentStartMs, currentEndMs);
   const isStarter = currentTier === "starter";
-  const duration = Number.isFinite(measured) ? measured : (isStarter ? 7 : 30);
+  const duration = Number.isFinite(measured) ? measured : (isStarter ? 30 : 30); // Sprint Pack is 30 days
   return proratedBonusDays({
     remainingDays: remainingDays(currentEndMs, nowMs),
     currentPlanDuration: duration,
