@@ -517,6 +517,7 @@ export function PricingPageV2() {
               gridTemplateColumns: `repeat(${tiers.length}, 1fr)`,
               gap: 16,
               alignItems: "stretch",
+              paddingTop: 20, /* room for "Most loved" chip (position:absolute, top:-12) */
             }}
           >
             {tiers.map((tier) => (

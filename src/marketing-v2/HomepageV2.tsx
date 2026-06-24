@@ -3342,6 +3342,8 @@ export function PricingV2() {
         </div>
         {/* Cards — each card gets its own MotionReveal so they cascade
             left-to-right (0 / 110 / 220 ms) instead of popping in together */}
+        {/* paddingTop reserves space for the "Most loved" chip (position:absolute, top:-12)
+            so it doesn't clip against the section background. Cards align flush. */}
         <div
           className="mv2-pricing-grid"
           style={{
@@ -3349,6 +3351,7 @@ export function PricingV2() {
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: 16,
             alignItems: "stretch",
+            paddingTop: 20,
           }}
         >
           {tiers.map((tier, i) => (
@@ -3363,10 +3366,7 @@ export function PricingV2() {
                 color: tier.featured ? t.cream : t.coal,
                 border: `1px solid ${tier.featured ? t.coal : t.line}`,
                 borderRadius: 20,
-                /* Lift the "Most loved" card: tiny translateY + stronger
-                   shadow so it visually leads without breaking the grid. */
                 boxShadow: tier.featured ? shadows.featured : shadows.card,
-                transform: tier.featured ? "translateY(-8px)" : "none",
                 display: "flex",
                 flexDirection: "column",
                 gap: 18,
