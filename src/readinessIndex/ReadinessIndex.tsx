@@ -69,9 +69,13 @@ function NavRail({ active }: { active: string }) {
       {NAV.map((n) => {
         const on = n.id === active;
         return (
+          /* Matches the sidebar nav pattern used in the interview result screen:
+             coal dot + weight shift on active, no fill, no border-left accent.
+             Border-left / background-chip variants are reserved for filter pills. */
           <a key={n.id} href={`#${n.id}`} className="rix-nav-link rix-focus"
-            style={{ display: "block", padding: "6px 12px", borderLeft: `2px solid ${on ? t.indigo : t.line}`, fontFamily: f.sans, fontSize: 13, fontWeight: on ? 600 : 400, color: on ? t.coal : t.inkSoft, textDecoration: "none" }}>
-            {n.label}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 12px", textDecoration: "none", background: "transparent", borderRadius: 6 }}>
+            <span style={{ width: 5, height: 5, borderRadius: 999, background: on ? t.coal : "transparent", flexShrink: 0, display: "inline-block" }} />
+            <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: on ? 700 : 500, color: on ? t.coal : t.inkSoft }}>{n.label}</span>
           </a>
         );
       })}
@@ -109,7 +113,7 @@ function StickyHeader({ d, range, onRange, showControls, stickTop = 0 }: { d: Fi
   const band = BAND_META[d.band];
   return (
     <header style={{ position: "sticky", top: stickTop, zIndex: 10, background: t.cream, borderBottom: `1px solid ${t.line}` }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 22px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "20px 22px 16px", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
             <span style={{ fontFamily: f.serif, fontSize: 30, lineHeight: 1, color: t.coal }}>{d.ri}</span>
