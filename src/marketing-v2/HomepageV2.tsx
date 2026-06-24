@@ -3834,6 +3834,7 @@ export function ComparisonV2() {
 
 /* ─────────────────────────── 6f. FAQ ─────────────────────────── */
 export function FAQV2() {
+  const [openIdx, setOpenIdx] = useState<number | null>(0);
   const qs: Array<{ q: string; a: string }> = [
     {
       q: "What exactly is free? Do I need a card to start?",
@@ -3899,13 +3900,23 @@ export function FAQV2() {
             <details
               key={q}
               className="mv2p-faq"
-              open={i === 0}
+              open={openIdx === i}
+              onToggle={(e) => {
+                // Prevent the browser's native toggle so React state is the source of truth.
+                // Without this the browser and React state diverge when another item opens.
+                e.preventDefault();
+              }}
               style={{
                 borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
                 padding: "20px 24px",
               }}
             >
               <summary
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Toggle this item; close it if already open (allow collapse).
+                  setOpenIdx((prev) => (prev === i ? null : i));
+                }}
                 style={{
                   cursor: "pointer",
                   fontFamily: fonts.serif,
