@@ -3834,15 +3834,15 @@ export function FAQV2() {
   const qs: Array<{ q: string; a: string }> = [
     {
       q: "What exactly is free? Do I need a card to start?",
-      a: "Your first session is completely free — no account needed, no card required. You get the full interview experience and the full report. After that, ₹49/week if you want to keep going. You decide when.",
+      a: "2 sessions completely free — no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session or ₹39 for a Sprint Pack of 5. You decide when and how much.",
     },
     {
       q: "Will the AI understand my Indian English accent?",
       a: "Yes — built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX.",
     },
     {
-      q: "Is ₹49/week really it? What's the catch?",
-      a: "That's the real price. We built on Indian infrastructure at Indian costs — not a US SaaS tool repriced in rupees. No session limits on the weekly plan, no auto-renew surprises. You buy when you want more.",
+      q: "Is ₹9 per session really it? What's the catch?",
+      a: "That's the real price. ₹9 per session with no expiry, or ₹39 for 5 sessions if you have an interview coming up. We built on Indian infrastructure at Indian costs. No subscription, no auto-renew, no surprise charges.",
     },
     {
       q: "Will my current company know I'm practicing?",
@@ -4070,9 +4070,9 @@ export function ChangelogTeaseV2() {
 /* ─────────────────────────── STRUCTURED DATA (JSON-LD) ─────────────────────────── */
 function StructuredData() {
   const faqs = [
-    ["What exactly is free? Do I need a card to start?", "Your first session is completely free — no account needed, no card required. You get the full interview experience and the full report. After that, ₹49/week if you want to keep going."],
+    ["What exactly is free? Do I need a card to start?", "2 sessions completely free — no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session or ₹39 for a Sprint Pack of 5."],
     ["Will the AI understand my Indian English accent?", "Yes — built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX."],
-    ["Is ₹49/week really it? What's the catch?", "That's the real price. Built on Indian infrastructure at Indian costs — not a US SaaS tool repriced in rupees. No session limits on the weekly plan, no auto-renew surprises."],
+    ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry, or ₹39 for 5 sessions. Built on Indian infrastructure at Indian costs. No subscription, no auto-renew, no surprise charges."],
     ["Will my current company know I'm practicing?", "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you."],
     ["How long does a session take?", "18 minutes on average — one focused interview topic, real-time scoring, full report ready immediately after."],
     ["Does this work on mobile?", "Yes. Works on any modern Chrome or Safari — phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs."],
