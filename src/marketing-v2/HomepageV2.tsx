@@ -3834,71 +3834,40 @@ export function ComparisonV2() {
 
 /* ─────────────────────────── 6f. FAQ ─────────────────────────── */
 export function FAQV2() {
-  const qs: Array<{ cat: string; q: string; a: string }> = [
+  const qs: Array<{ q: string; a: string }> = [
     {
-      cat: "Pricing",
-      q: "Is the free tier actually free?",
-      a: "Yes. 3 full mock sessions, full scoring, full report. No card, no auto-charge after.",
+      q: "What exactly is free? Do I need a card to start?",
+      a: "Your first session is completely free — no account needed, no card required. You get the full interview experience and the full report. After that, ₹49/week if you want to keep going. You decide when.",
     },
     {
-      cat: "Pricing",
-      q: "Do plans auto-renew?",
-      a: "No. Weekly is a one-time top-up. It expires on day 7. You buy again when you want more. No surprise charges.",
+      q: "Will the AI understand my Indian English accent?",
+      a: "Yes — built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX.",
     },
     {
-      cat: "Pricing",
-      q: "What if I just want to try it?",
-      a: "Sign up free and get 2 full mock sessions — no card needed. If you have an interview tomorrow, that's enough to practice once and review the report.",
+      q: "Is ₹49/week really it? What's the catch?",
+      a: "That's the real price. We built on Indian infrastructure at Indian costs — not a US SaaS tool repriced in rupees. No session limits on the weekly plan, no auto-renew surprises. You buy when you want more.",
     },
     {
-      cat: "Pricing",
-      q: "Do you have a student discount?",
-      a: "Verified .ac.in / .edu.in email = 30% off Weekly. Apply once, lasts your degree.",
+      q: "Will my current company know I'm practicing?",
+      a: "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you.",
     },
     {
-      cat: "Pricing",
-      q: "Do I get a receipt for each order?",
-      a: "Yes. Auto-emailed and downloadable from your dashboard. Tax invoicing rolls out post-launch once we've registered for GST.",
+      q: "How long does a session take?",
+      a: "18 minutes on average — one focused interview topic, real-time scoring, full report ready immediately after. You don't need an afternoon. You need 20 minutes and headphones.",
     },
     {
-      cat: "Product",
-      q: "Why not just use ChatGPT?",
-      a: "ChatGPT can roleplay an interviewer, but it can't listen to your voice, can't score delivery, and doesn't know what TCS Digital or Razorpay's tech round actually asks. HireStepX is voice in / voice out, scored against real Indian hiring rubrics, with company-specific question banks. ChatGPT also agrees with whatever you say; we tell you where you fell short.",
+      q: "Does this work on mobile?",
+      a: "Yes. Works on any modern Chrome or Safari — phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs.",
     },
     {
-      cat: "Product",
-      q: "Which companies and roles do you cover?",
-      a: "200+ Indian roles in the question bank — IT services, unicorns, PSUs, MNCs — across behavioural, campus placement, salary negotiation and HR rounds at launch. New focus types ship month by month after public beta.",
+      q: "What if I cancel — do I lose my reports?",
+      a: "Your reports are yours. We keep them for 90 days after cancellation so you can export or reference them before your next interview. Nothing gets deleted without warning.",
     },
     {
-      cat: "Product",
-      q: "How accurate is the AI score?",
-      a: "Rubrics are built from publicly aggregated interview reports (Glassdoor, Levels.fyi, AmbitionBox), cross-checked against two independent sources per question. Every score shows the rubric (STAR breakdown, what worked, what didn't), not just a number. Disagree? Hit Dispute.",
-    },
-    {
-      cat: "Product",
-      q: "What if the AI scores me unfairly?",
-      a: "Every session has a 'Dispute score' link. Our coach team reviews within 24h and refunds the session credit if we agree.",
-    },
-    {
-      cat: "Product",
-      q: "Which languages do you support?",
-      a: "English at launch, with voice models tuned for Indian, American and British accents. Hindi and other Indian languages are on the post-launch roadmap.",
-    },
-    {
-      cat: "Privacy",
-      q: "Where does my voice data go?",
-      a: "Encrypted in transit (TLS 1.3) and at rest. Auto-deleted after 90 days unless you save the session. Designed against DPDP Act 2023 from day one.",
-    },
-    {
-      cat: "Support",
-      q: "Can I use it on my phone?",
-      a: "Works on any modern Chrome / Safari: phone, tablet, laptop. Optimised for Realme/Redmi-class Android on Indian 4G.",
+      q: "Do you share my data with my employer or target company?",
+      a: "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant.",
     },
   ];
-  const cats = ["Pricing", "Product", "Privacy", "Support"];
-  const [activeCat, setActiveCat] = useState("Pricing");
-  const visible = qs.filter((q) => q.cat === activeCat);
   return (
     <section
       id="faq"
@@ -3916,58 +3885,6 @@ export function FAQV2() {
         </MotionReveal>
 
         <div
-          role="tablist"
-          aria-label="FAQ categories"
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 8,
-            flexWrap: "wrap",
-            marginBottom: 32,
-          }}
-        >
-          {cats.map((c) => {
-            const active = c === activeCat;
-            const count = qs.filter((q) => q.cat === c).length;
-            return (
-              <button
-                key={c}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveCat(c)}
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: active ? t.white : t.coal,
-                  background: active ? t.coal : t.white,
-                  border: `1px solid ${active ? t.coal : t.line}`,
-                  padding: "8px 16px",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  boxShadow: active ? shadows.card : "none",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                {c}
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 500,
-                    color: active ? t.copper100 : t.inkFaint,
-                  }}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div
           style={{
             maxWidth: 760,
             margin: "0 auto",
@@ -3978,7 +3895,7 @@ export function FAQV2() {
             overflow: "hidden",
           }}
         >
-          {visible.map(({ q, a }, i) => (
+          {qs.map(({ q, a }, i) => (
             <details
               key={q}
               className="mv2p-faq"
@@ -4146,14 +4063,14 @@ export function ChangelogTeaseV2() {
 /* ─────────────────────────── STRUCTURED DATA (JSON-LD) ─────────────────────────── */
 function StructuredData() {
   const faqs = [
-    ["Is the free tier actually free?", "Yes. 2 full mock sessions, one-time. Full scoring, full report, no card required — ever. They don't renew."],
-    ["Do plans auto-renew?", "No. The Sprint Pack is a one-time purchase — 5 sessions, 30-day validity. You buy again when you want more. No surprise charges."],
-    ["What if I just want to try it?", "Sign up free — 2 sessions to try it, no card needed. They're yours to keep, one-time."],
-    ["Do you have a student discount?", "Verified .ac.in / .edu.in email = 30% off Weekly. Apply once, lasts your degree."],
-    ["Which companies and roles do you cover?", "200+ Indian roles in our question bank (IT services, unicorns, PSUs, MNCs) across behavioural, campus placement, salary negotiation and HR rounds at launch."],
-    ["How accurate is the AI score?", "Rubrics built from publicly aggregated interview reports, cross-checked against two sources per question. Every score shows the rubric (STAR breakdown), not just a number."],
-    ["Where does my voice data go?", "Encrypted in transit and at rest. Auto-deleted after 90 days. Designed against DPDP Act 2023 from day one."],
-    ["Which languages do you support?", "English at launch. Hindi and other Indian languages are on the post-launch roadmap."],
+    ["What exactly is free? Do I need a card to start?", "Your first session is completely free — no account needed, no card required. You get the full interview experience and the full report. After that, ₹49/week if you want to keep going."],
+    ["Will the AI understand my Indian English accent?", "Yes — built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX."],
+    ["Is ₹49/week really it? What's the catch?", "That's the real price. Built on Indian infrastructure at Indian costs — not a US SaaS tool repriced in rupees. No session limits on the weekly plan, no auto-renew surprises."],
+    ["Will my current company know I'm practicing?", "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you."],
+    ["How long does a session take?", "18 minutes on average — one focused interview topic, real-time scoring, full report ready immediately after."],
+    ["Does this work on mobile?", "Yes. Works on any modern Chrome or Safari — phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs."],
+    ["What if I cancel — do I lose my reports?", "Your reports are yours for 90 days after cancellation so you can export or reference them before your next interview. Nothing gets deleted without warning."],
+    ["Do you share my data with my employer or target company?", "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant."],
   ];
   const org = {
     "@context": "https://schema.org",
