@@ -33,6 +33,16 @@ function fetchWithTimeout(url: string, opts: RequestInit & { timeout?: number } 
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
+// Razorpay plan IDs — used to validate that the subscription_id returned by the
+// client actually belongs to the plan they claim. An attacker could otherwise
+// submit a weekly subscription_id with plan:"monthly" and get Pro for free.
+const RAZORPAY_PLAN_WEEKLY  = (process.env.RAZORPAY_PLAN_WEEKLY  || "").trim();
+const RAZORPAY_PLAN_MONTHLY = (process.env.RAZORPAY_PLAN_MONTHLY || "").trim();
+// Map internal plan keys → Razorpay plan IDs for cross-validation
+const RAZORPAY_PLAN_ID_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries({ weekly: RAZORPAY_PLAN_WEEKLY, monthly: RAZORPAY_PLAN_MONTHLY })
+    .filter(([, v]) => v !== ""),
+);
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
@@ -357,6 +367,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!["active", "authenticated", "created"].includes(subData.status)) {
         return res.status(400).json({ error: "Subscription is not active", code: "SUBSCRIPTION_INACTIVE" });
       }
+      // C-3 (prior audit): Cross-validate that the subscription's Razorpay plan_id
+      // matches the plan key the client claims. Without this check, an attacker
+      // could submit a weekly (Sprint Pack ₹39) subscription_id with plan:"monthly"
+      // and get upgraded to Pro tier without paying for it.
+      // Only enforce when the env vars are configured — skip gracefully in envs
+      // that haven't set RAZORPAY_PLAN_WEEKLY/MONTHLY to avoid false 403s on
+      // existing deploys that aren't using subscription billing yet.
+      const expectedRzpPlanId = RAZORPAY_PLAN_ID_MAP[plan];
+      if (expectedRzpPlanId && subData.plan_id && subData.plan_id !== expectedRzpPlanId) {
+        console.error("[verify-payment] Subscription plan_id mismatch — possible forgery:", {
+          claimed_plan: plan,
+          expected_plan_id: expectedRzpPlanId,
+          actual_plan_id: subData.plan_id,
+          subscription_id: razorpay_subscription_id.slice(0, 12),
+        });
+        return res.status(400).json({ error: "Subscription plan mismatch", code: "PLAN_ID_MISMATCH" });
+      }
     }
     } catch (rzpErr) {
       if (rzpErr instanceof DOMException && rzpErr.name === "AbortError") {
@@ -637,7 +664,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ p_code: promoCodeUsed }),
+            // Pass p_user_id so the updated RPC records a per-user redemption row
+            // in promo_redemptions and enforces max_uses_per_user if set.
+            body: JSON.stringify({ p_code: promoCodeUsed, p_user_id: userId }),
           },
         );
         const promoResult = await promoRpcRes.json().catch(() => null);
