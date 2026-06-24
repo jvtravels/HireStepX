@@ -3329,7 +3329,7 @@ export function PricingV2() {
           </MotionReveal>
           <MotionReveal delay={160}>
             <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-              Free to start. Buy sessions individually, by the week, or by the month — whichever matches your prep. UPI / cards / netbanking accepted at checkout.
+              Start with 2 free sessions, no card needed. After that, ₹9 per session or ₹39 for 5. Pay only when you want more.
             </p>
           </MotionReveal>
         </div>
