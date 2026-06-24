@@ -1,5 +1,5 @@
 /* Next.js Edge Proxy (the `proxy` convention that replaced `middleware` in
- * Next.js 16) — Domain-based routing + pre-launch gate
+ * Next.js 16) — Domain-based routing + pre-launch gate + CSP nonce injection
  *
  * hirestepx.com         → marketing pages (/, /blog, /terms, /privacy, /page/*)
  * www.hirestepx.com     → marketing pages (currently pre-launch gated)
@@ -18,11 +18,46 @@
  * (HMAC-signed via _admin-auth.ts). Unauthenticated requests are redirected
  * to /admin-login. API routes under /api/ are exempt (they carry their own
  * x-admin-token header auth).
+ *
+ * CSP nonce: a cryptographically random nonce is generated per request and
+ * injected into both the x-nonce request header (read by app/layout.tsx via
+ * `headers()`) and the Content-Security-Policy response header. CSP Level 2+
+ * browsers enforce the nonce and silently ignore 'unsafe-inline'; Level 1
+ * browsers fall back to 'unsafe-inline' (existing behaviour, no regression).
  */
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAllowedOnGate } from "./src/middlewareGate";
+
+/* ── Per-request CSP nonce ──────────────────────────────────────────────────
+ *
+ * Keep 'unsafe-inline' alongside the nonce during the transition period.
+ * CSP L2+ ignores 'unsafe-inline' when a nonce or hash is present, so modern
+ * browsers get nonce-enforced protection. Legacy browsers (CSP L1) fall back
+ * to 'unsafe-inline' — same as before. Once staging confirms nonce propagation
+ * across all surfaces, remove 'unsafe-inline' from script-src.
+ */
+function buildCsp(nonce: string): string {
+  const n = `'nonce-${nonce}'`;
+  return [
+    "default-src 'self'",
+    `script-src 'self' ${n} 'unsafe-inline' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com`,
+    `script-src-elem 'self' ${n} 'unsafe-inline' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://us-assets.i.posthog.com`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com https://api.fontshare.com",
+    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com https://api.fontshare.com",
+    "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com",
+    "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.razorpay.com https://cdn.simpleicons.org",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://generativelanguage.googleapis.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.razorpay.com https://lumberjack.razorpay.com https://*.upstash.io https://vitals.vercel-insights.com https://va.vercel-scripts.com wss://api.cartesia.ai https://api.cartesia.ai wss://api.deepgram.com https://api.deepgram.com wss://api.sarvam.ai https://api.sarvam.ai https://*.tts.speech.microsoft.com https://api.resend.com https://*.sentry.io https://us.i.posthog.com https://us-assets.i.posthog.com https://*.i.posthog.com https://api.pwnedpasswords.com",
+    "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+    "media-src 'self' blob: data:",
+    "worker-src 'self' blob:",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+}
 
 const APP_HOST = "app.hirestepx.com";
 const MARKETING_HOST = "hirestepx.com";
@@ -143,9 +178,27 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.nextUrl.hostname;
 
-  // Skip in development
+  // Generate a per-request nonce and forward it to server components via
+  // x-nonce so app/layout.tsx can attach it to JSON-LD <script> tags.
+  // crypto.randomUUID() is available on all WinterCG-compliant runtimes.
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = buildCsp(nonce);
+
+  // Helper: attach nonce to request headers so server components can read it,
+  // and set the CSP response header on the final response.
+  function withCsp(response: NextResponse): NextResponse {
+    response.headers.set("Content-Security-Policy", csp);
+    return response;
+  }
+  function nextWithNonce(): NextResponse {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-nonce", nonce);
+    return withCsp(NextResponse.next({ request: { headers: requestHeaders } }));
+  }
+
+  // Skip routing logic in development — still inject CSP so local dev matches prod.
   if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return NextResponse.next();
+    return nextWithNonce();
   }
 
   // ─── Pre-launch gate ─────────────────────────────────────────────
@@ -158,7 +211,9 @@ export async function proxy(request: NextRequest) {
     // the Coming Soon page rendered by app/(marketing)/page.tsx.
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.rewrite(url);
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-nonce", nonce);
+    return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeaders } }));
   }
 
   // Admin subdomain — gate page routes behind admin_token cookie, then rewrite
@@ -166,12 +221,12 @@ export async function proxy(request: NextRequest) {
     // API routes and auth callback carry their own auth (x-admin-token header);
     // don't add a cookie gate here — that would break the existing API flow.
     if (pathname.startsWith("/api/") || pathname.startsWith("/auth/")) {
-      return NextResponse.next();
+      return nextWithNonce();
     }
 
     // /admin-login is the unauthenticated entry point — let it through always.
     if (pathname === "/admin-login") {
-      return NextResponse.next();
+      return nextWithNonce();
     }
 
     // Verify the admin_token cookie.
@@ -182,16 +237,18 @@ export async function proxy(request: NextRequest) {
       // Redirect to the login page (on the same subdomain).
       const url = request.nextUrl.clone();
       url.pathname = "/admin-login";
-      return NextResponse.redirect(url);
+      return withCsp(NextResponse.redirect(url));
     }
 
     // Authenticated — rewrite root and non-/admin paths to /admin.
     if (pathname === "/" || !pathname.startsWith("/admin")) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin";
-      return NextResponse.rewrite(url);
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set("x-nonce", nonce);
+      return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeaders } }));
     }
-    return NextResponse.next();
+    return nextWithNonce();
   }
 
   // On marketing domain → redirect app paths to app subdomain
@@ -200,7 +257,7 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.hostname = APP_HOST;
       url.port = "";
-      return NextResponse.redirect(url, 307);
+      return withCsp(NextResponse.redirect(url, 307));
     }
     // Redirect /admin to admin subdomain
     if (pathname.startsWith("/admin")) {
@@ -208,7 +265,7 @@ export async function proxy(request: NextRequest) {
       url.hostname = ADMIN_HOST;
       url.pathname = "/";
       url.port = "";
-      return NextResponse.redirect(url, 307);
+      return withCsp(NextResponse.redirect(url, 307));
     }
   }
 
@@ -218,7 +275,7 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.hostname = MARKETING_HOST;
       url.port = "";
-      return NextResponse.redirect(url, 307);
+      return withCsp(NextResponse.redirect(url, 307));
     }
     // Redirect /admin to admin subdomain
     if (pathname.startsWith("/admin")) {
@@ -226,13 +283,21 @@ export async function proxy(request: NextRequest) {
       url.hostname = ADMIN_HOST;
       url.pathname = "/";
       url.port = "";
-      return NextResponse.redirect(url, 307);
+      return withCsp(NextResponse.redirect(url, 307));
     }
   }
 
-  return NextResponse.next();
+  return nextWithNonce();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon\\.ico|api/).*)"],
+  matcher: [
+    {
+      source: "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|robots\\.txt|sitemap.*\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?|ico)$).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+  ],
 };
