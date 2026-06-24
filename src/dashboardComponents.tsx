@@ -621,8 +621,11 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             }
             const isCurrent = plan.tier === currentTier;
             // True when this card represents a lower tier than the user already has.
-            // e.g. Free and Weekly cards are "lower" for a Pro user.
-            const isLowerTier = (TIER_RANK[plan.tier] ?? 0) < (TIER_RANK[currentTier] ?? 0);
+            // e.g. Free cards are "lower" for a Pro user.
+            // Sprint Pack (weekly) is ALWAYS repurchasable — it's a consumable top-up,
+            // not a subscription step, so we bypass isCurrent and isLowerTier for it.
+            const isRepurchasable = plan.id === "weekly";
+            const isLowerTier = !isRepurchasable && (TIER_RANK[plan.tier] ?? 0) < (TIER_RANK[currentTier] ?? 0);
             const featured = plan.featured;
             const ribbonText = featured ? "Most loved" : null;
             return (
@@ -666,7 +669,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   ))}
                 </ul>
 
-                {isCurrent ? (
+                {isCurrent && !isRepurchasable ? (
                   <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? c.giltLight : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
                 ) : isLowerTier ? (
                   /* User is already on a higher tier — suppress the downgrade CTA */
@@ -689,12 +692,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
                   >
-                    {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
+                    {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{isRepurchasable && isCurrent ? "Get another Sprint Pack" : plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
                   </button>
                 )}
                 {/* Auto-renewal disclosure — RBI / Indian payment best practice.
                     Free plan has no billing; single-session has no subscription. */}
-                {!isCurrent && !isLowerTier && plan.id !== "free" && (
+                {/* Sprint Pack doesn't auto-renew — suppress the renewal disclosure for it */}
+                {!(isCurrent && !isRepurchasable) && !isLowerTier && plan.id !== "free" && !isRepurchasable && (
                   <p style={{ margin: 0, fontFamily: font.ui, fontSize: 10, color: featured ? "rgba(250,247,240,0.45)" : c.stone, textAlign: "center", lineHeight: 1.5 }}>
                     Renews at {plan.price} {plan.unit.replace(/^\/\s*/, "every ")} · Cancel anytime from Settings
                   </p>
