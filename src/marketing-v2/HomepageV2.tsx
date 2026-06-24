@@ -292,12 +292,8 @@ const body: CSSProperties = {
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
-    ["How it works", "/how-it-works"],
+    ["How it works", "/#how-it-works"],
     ["Pricing", "/pricing"],
-    ["For students", "/for-students"],
-    ["About", "/about"],
-    ["Help", "/#faq"],
-    ["Contact", "/contact"],
   ];
   /* Auth-aware CTA pair. Supabase session restore is async, so
      useAuth().isLoggedIn starts `false` and flips after restore — which
