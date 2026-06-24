@@ -607,13 +607,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (sessionStorage.getItem("hirestepx_ephemeral") === "1") {
           // Clear auth data so session doesn't persist
           clearLastRoute();
-          // Remove Supabase session tokens from localStorage
-          for (let i = localStorage.length - 1; i >= 0; i--) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
-              localStorage.removeItem(key);
-            }
-          }
+          // Remove Supabase session tokens from localStorage.
+          // Collect keys first — iterating by index while removing items is
+          // browser-implementation-specific and can skip entries on some engines
+          // when indices shift mid-loop. Snapshot the list, then remove.
+          const sbKeys = Object.keys(localStorage).filter(
+            k => k.startsWith("sb-") && k.endsWith("-auth-token"),
+          );
+          sbKeys.forEach(k => localStorage.removeItem(k));
         }
       } catch { /* expected: localStorage cleanup errors are non-critical */ }
     };
@@ -1415,7 +1416,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLockout();
           return { success: false, error: "Too many failed attempts. Please try again in 5 minutes." };
         }
-      } catch { /* server report failed, fall through to client-side logic */ }
+      } catch {
+        // H-7: fail report threw (network error / blocked request). The server
+        // counter didn't increment. Apply client-side lockout immediately when
+        // at the threshold so a blocked fail-report can't enable unlimited attempts.
+        if (attempts >= MAX_LOGIN_ATTEMPTS) {
+          setLockout();
+          logAuditEvent("login_locked", { email, attempts });
+          track("login_locked", { attempts });
+          return { success: false, error: "Too many failed attempts. Please try again in 5 minutes." };
+        }
+      }
 
       if (attempts >= MAX_LOGIN_ATTEMPTS) {
         setLockout();

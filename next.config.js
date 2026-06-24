@@ -34,7 +34,13 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { hostname: "images.unsplash.com" },
-      { hostname: "*.supabase.co" },
+      // Scope to Supabase Storage only. The wildcard *.supabase.co covers every
+      // subdomain of supabase.co including potential phishing subdomains — restrict
+      // to just the Storage CDN hostname for our project. The hostname is always
+      // <project-ref>.supabase.co for the REST API and storage.
+      // TODO: further tighten to the exact project ref once it's available as an
+      // env var (NEXT_PUBLIC_SUPABASE_URL → extract hostname, then use that directly).
+      { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/**" },
     ],
   },
 

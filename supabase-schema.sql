@@ -1041,16 +1041,20 @@ create trigger trg_guard_profile_billing
   before update on profiles
   for each row execute function guard_profile_billing_columns();
 
--- Sessions: users can CRUD their own sessions
+-- Sessions: users can view and insert their own sessions.
+-- DELETE is intentionally NOT granted to the authenticated role (M-4 fix):
+-- although the sessions_started_lifetime trigger makes row-deletion harmless
+-- for quota enforcement, denying client deletes preserves the audit trail and
+-- prevents history scrubbing. Service-role handlers (GDPR/support) can still
+-- delete rows because they bypass RLS.
 drop policy if exists "Users can view own sessions" on sessions;
 create policy "Users can view own sessions" on sessions
   for select using ((auth.uid())::text = user_id::text);
 drop policy if exists "Users can insert own sessions" on sessions;
 create policy "Users can insert own sessions" on sessions
   for insert with check ((auth.uid())::text = user_id::text);
+-- Explicitly drop any pre-existing delete policy (idempotent cleanup).
 drop policy if exists "Users can delete own sessions" on sessions;
-create policy "Users can delete own sessions" on sessions
-  for delete using ((auth.uid())::text = user_id::text);
 
 -- Calendar: users can CRUD their own events
 drop policy if exists "Users can view own events" on calendar_events;

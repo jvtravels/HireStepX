@@ -667,18 +667,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Fetch receipt/invoice URL from Razorpay payment (best-effort)
-    // Razorpay provides a short_url on invoices that is customer-facing (no auth needed)
+    // Fetch receipt/invoice URL from Razorpay payment (best-effort).
+    // Low-severity nitpick: these two sequential calls had no timeout, unlike
+    // the earlier rzpAc-guarded calls. Wrap in a shared AbortController so a
+    // slow Razorpay response can't stall the verify-payment reply indefinitely.
     let receiptUrl: string | null = null;
     try {
+      const receiptAc = new AbortController();
+      const receiptTimer = setTimeout(() => receiptAc.abort(), 6000);
       const paymentRes = await fetch(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
         headers: { Authorization: `Basic ${rzpAuth}` },
+        signal: receiptAc.signal,
       });
       if (paymentRes.ok) {
         const paymentData = await paymentRes.json();
         if (paymentData.invoice_id) {
           const invoiceRes = await fetch(`https://api.razorpay.com/v1/invoices/${paymentData.invoice_id}`, {
             headers: { Authorization: `Basic ${rzpAuth}` },
+            signal: receiptAc.signal,
           });
           if (invoiceRes.ok) {
             const invoiceData = await invoiceRes.json();
@@ -686,6 +692,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
       }
+      clearTimeout(receiptTimer);
     } catch (receiptErr) { console.warn("[verify-payment] Receipt fetch failed:", receiptErr); }
 
     // Persist receipt URL to payment record (best-effort)
