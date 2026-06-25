@@ -95,28 +95,59 @@ function asNumber(v: unknown): number {
 }
 
 /** Validate and sanitize a raw transcript array before persisting.
+ *
+ *  The CANONICAL transcript shape across the entire app is
+ *  `{ speaker: "ai" | "user"; text: string; time?: string }` — the
+ *  interview engine, the session-detail / dashboard render, and the
+ *  SessionReport → evaluate-session boundary (which maps speaker→role)
+ *  all read `speaker`. Persisting any other shape silently breaks every
+ *  downstream reader. (An earlier version validated against an invented
+ *  `{ role: "interviewer" | "candidate" }` shape that nothing in the app
+ *  ever produces, so EVERY entry was filtered out and every session
+ *  persisted an empty transcript — see PRI-61.)
+ *
  *  (a) Limits total entries to 200 to prevent oversized payloads reaching the DB.
- *  (b) Each entry must have role === "interviewer" or role === "candidate" —
- *      any other value (injection attempts, unknown roles) is dropped.
- *  (c) Caps text at 3000 chars per entry so a single turn can't balloon the row.
+ *  (b) Each entry must have speaker === "ai" or speaker === "user" — any other
+ *      value (injection attempts, unknown speakers) is dropped.
+ *  (c) Caps text at 3000 chars per entry so a single turn can't balloon the row,
+ *      and time at 16 chars (it's a "mm:ss" display stamp).
  *  Returns an empty array when the input is not an array. */
-function sanitizeTranscript(raw: unknown): Array<{ role: string; text: string }> {
+export function sanitizeTranscript(raw: unknown): Array<{ speaker: string; text: string; time?: string }> {
   if (!Array.isArray(raw)) return [];
-  const VALID_ROLES = new Set(["interviewer", "candidate"]);
+  const VALID_SPEAKERS = new Set(["ai", "user"]);
   return raw
     .slice(0, 200)
     .filter(
-      (entry): entry is { role: string; text: string } =>
+      (entry): entry is { speaker: string; text: string; time?: unknown } =>
         entry !== null &&
         typeof entry === "object" &&
-        typeof (entry as Record<string, unknown>).role === "string" &&
-        VALID_ROLES.has((entry as Record<string, unknown>).role as string) &&
+        typeof (entry as Record<string, unknown>).speaker === "string" &&
+        VALID_SPEAKERS.has((entry as Record<string, unknown>).speaker as string) &&
         typeof (entry as Record<string, unknown>).text === "string",
     )
-    .map(entry => ({
-      role: entry.role,
-      text: entry.text.slice(0, 3000),
-    }));
+    .map(entry => {
+      const time = (entry as Record<string, unknown>).time;
+      return {
+        speaker: entry.speaker,
+        text: entry.text.slice(0, 3000),
+        ...(typeof time === "string" ? { time: time.slice(0, 16) } : {}),
+      };
+    });
+}
+
+/** Map the canonical speaker-shaped transcript to the role-shaped input
+ *  evaluate-session expects. Single boundary conversion — mirrors
+ *  src/sessionReport/SessionReport.tsx so the eager (save-time) grade and
+ *  the user-initiated (report-view) grade feed evaluate-session identical
+ *  data. Without this, eager grading saw every turn as `role: undefined`
+ *  and labelled the whole transcript CANDIDATE. */
+export function toRoleTranscript(
+  rows: Array<{ speaker: string; text: string }>,
+): Array<{ role: string; text: string }> {
+  return rows.map(t => ({
+    role: t.speaker === "ai" ? "interviewer" : "candidate",
+    text: t.text,
+  }));
 }
 
 /* ── Session-report email ── */
@@ -397,15 +428,16 @@ export default async function handler(req: Request): Promise<Response> {
   //   - resolveBaseUrl returns null (no APP_URL + unparseable req.url)
   const authHeader = req.headers.get("authorization");
   const baseUrl = resolveBaseUrl(req.url);
-  const transcript = Array.isArray(body.transcript)
-    ? (body.transcript as Array<{ role: string; text: string }>)
-    : [];
-  if (authHeader && baseUrl && transcript.length > 0) {
+  // Reuse the already-sanitized canonical transcript and convert to the
+  // role shape at this single boundary — never re-read the raw body here
+  // (that's how the shape drift in PRI-61 went unnoticed).
+  const gradeTranscript = toRoleTranscript(sessionRow.transcript);
+  if (authHeader && baseUrl && gradeTranscript.length > 0) {
     kickoffEagerGrade({
       baseUrl,
       authorization: authHeader,
       sessionId: sessionRow.id,
-      transcript,
+      transcript: gradeTranscript,
       meta: {
         type: sessionRow.type,
         focus: sessionRow.focus,
