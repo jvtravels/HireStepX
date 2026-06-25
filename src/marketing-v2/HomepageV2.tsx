@@ -66,6 +66,9 @@ const ResponsiveSheet = () => (
       .mv2-mobile-cta { display: flex !important; }
       /* Security & Compliance: collapse 4-col to 2-col at tablet */
       .mv2-security-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      /* Comparison: competitor cards side by side, HireStepX spans full width */
+      .mv2-cmp-cards { grid-template-columns: 1fr 1fr !important; }
+      .mv2-cmp-hsx { grid-column: 1 / -1 !important; }
       /* Objections: collapse 3-col (72px 1fr 1fr) → 2-col (number + content).
          The response <p> is forced into col 2 so it stacks under the quote,
          not under the number. Same pattern as the 881-1100px breakpoint. */
@@ -2888,6 +2891,251 @@ export function FeatureGridV2() {
   );
 }
 
+/* ─────────────────────────── COMPARISON ─────────────────────────── */
+export function ComparisonV2() {
+  const COAL_BG = t.coal;
+  const mono = fonts.mono;
+
+  const STAR = [
+    { label: "Situation", pass: true,  note: "stated clearly" },
+    { label: "Task",      pass: false, note: "context missing" },
+    { label: "Action",    pass: false, note: "3 steps, 2 explained" },
+    { label: "Result",    pass: false, note: "no number, no baseline" },
+  ] as const;
+
+  return (
+    <section
+      className="mv2-cv-auto"
+      style={{ background: t.cream, padding: "96px 24px 110px", display: "flex", flexDirection: "column", alignItems: "center" }}
+    >
+      {/* Headline */}
+      <h2
+        className="mv2-reveal"
+        style={{
+          fontFamily: fonts.serif,
+          fontSize: "clamp(36px, 5vw, 58px)",
+          fontWeight: 400,
+          color: t.coal,
+          margin: "0 0 20px",
+          letterSpacing: "-0.02em",
+          lineHeight: 1.1,
+          textAlign: "center",
+          maxWidth: 760,
+        }}
+      >
+        Practice that can&rsquo;t score you{" "}
+        <em style={{ fontStyle: "italic", color: t.copper }}>isn&rsquo;t practice.</em>
+      </h2>
+
+      {/* Subhead */}
+      <p style={{
+        fontFamily: fonts.sans,
+        fontSize: 17,
+        lineHeight: 1.65,
+        color: t.inkSoft,
+        textAlign: "center",
+        maxWidth: 520,
+        margin: "0 0 60px",
+      }}>
+        A senior&rsquo;s mock is hard to arrange. An AI session agrees with everything.
+        Neither tells you where you lost the HR panel.
+      </p>
+
+      {/* Three cards — 3-col grid on desktop, 2-col on tablet (HireStepX full-width), 1-col on phone */}
+      <div
+        className="mv2-cmp-cards"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 20,
+          width: "100%",
+          maxWidth: 1120,
+        }}
+      >
+
+        {/* Card 1 — Senior mock */}
+        <div style={{
+          background: t.white,
+          border: `1px solid ${t.line}`,
+          borderRadius: 16,
+          padding: "28px 28px 32px",
+          display: "flex",
+          flexDirection: "column",
+        }}>
+          <span style={{
+            fontFamily: fonts.sans, fontSize: 10, fontWeight: 700,
+            letterSpacing: "0.14em", textTransform: "uppercase" as const,
+            color: t.inkFaint, marginBottom: 20, display: "block",
+          }}>Mock with a senior</span>
+
+          <div style={{ marginBottom: 24, flex: 1 }}>
+            <span style={{
+              fontFamily: fonts.sans, fontSize: 10, fontWeight: 600,
+              letterSpacing: "0.10em", textTransform: "uppercase" as const,
+              color: t.inkFaint, display: "block", marginBottom: 10,
+            }}>What it said</span>
+            <p style={{ fontFamily: fonts.serif, fontSize: 20, lineHeight: 1.45, color: t.inkSoft, margin: 0, fontStyle: "italic" }}>
+              &ldquo;That was pretty good. Work on your communication a bit.&rdquo;
+            </p>
+          </div>
+
+          <div style={{ height: "0.5px", background: t.line, marginBottom: 24 }} />
+
+          <div>
+            <span style={{
+              fontFamily: fonts.sans, fontSize: 10, fontWeight: 600,
+              letterSpacing: "0.10em", textTransform: "uppercase" as const,
+              color: t.copper, display: "block", marginBottom: 10, opacity: 0.8,
+            }}>What you needed</span>
+            <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0 }}>
+              Q3: You dropped the STAR structure and never recovered the impact statement.
+              The interviewer has no idea what the business outcome was.
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2 — AI chatbot */}
+        <div style={{
+          background: t.white,
+          border: `1px solid ${t.line}`,
+          borderRadius: 16,
+          padding: "28px 28px 32px",
+          display: "flex",
+          flexDirection: "column",
+        }}>
+          <span style={{
+            fontFamily: fonts.sans, fontSize: 10, fontWeight: 700,
+            letterSpacing: "0.14em", textTransform: "uppercase" as const,
+            color: t.inkFaint, marginBottom: 20, display: "block",
+          }}>Any AI chatbot</span>
+
+          <div style={{ marginBottom: 24, flex: 1 }}>
+            <span style={{
+              fontFamily: fonts.sans, fontSize: 10, fontWeight: 600,
+              letterSpacing: "0.10em", textTransform: "uppercase" as const,
+              color: t.inkFaint, display: "block", marginBottom: 10,
+            }}>What it said</span>
+            <p style={{ fontFamily: fonts.serif, fontSize: 20, lineHeight: 1.45, color: t.inkSoft, margin: 0, fontStyle: "italic" }}>
+              &ldquo;Excellent response! 9/10. You&rsquo;re ready for this interview.&rdquo;
+            </p>
+          </div>
+
+          <div style={{ height: "0.5px", background: t.line, marginBottom: 24 }} />
+
+          <div>
+            <span style={{
+              fontFamily: fonts.sans, fontSize: 10, fontWeight: 600,
+              letterSpacing: "0.10em", textTransform: "uppercase" as const,
+              color: t.copper, display: "block", marginBottom: 10, opacity: 0.8,
+            }}>What you needed</span>
+            <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0 }}>
+              You gave the same answer to Q2 and Q4. The AI didn&rsquo;t catch it.
+              A real panel would have. That&rsquo;s a red flag for shortlisting.
+            </p>
+          </div>
+        </div>
+
+        {/* Card 3 — HireStepX (coal, STAR report) */}
+        <div
+          className="mv2-cmp-hsx"
+          style={{
+            background: COAL_BG,
+            borderRadius: 16,
+            padding: "28px 28px 32px",
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "0 16px 48px rgba(14,12,8,0.22), 0 4px 16px rgba(14,12,8,0.14)",
+          }}
+        >
+          <span style={{
+            fontFamily: fonts.sans, fontSize: 10, fontWeight: 700,
+            letterSpacing: "0.14em", textTransform: "uppercase" as const,
+            color: t.copper, marginBottom: 20, display: "block",
+          }}>HireStepX</span>
+
+          {/* Report panel */}
+          <div style={{
+            background: "rgba(254,252,248,0.05)",
+            borderRadius: 10,
+            padding: "20px 20px 22px",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+          }}>
+            {/* Q label */}
+            <span style={{
+              fontFamily: mono, fontSize: 10, fontWeight: 400,
+              color: "rgba(254,252,248,0.4)", letterSpacing: "0.08em",
+              textTransform: "uppercase" as const, display: "block", marginBottom: 16,
+            }}>
+              Q3 — Behaviour question
+            </span>
+
+            {/* Score row */}
+            <div style={{
+              display: "flex", alignItems: "baseline", justifyContent: "space-between",
+              marginBottom: 16, paddingBottom: 16,
+              borderBottom: "0.5px solid rgba(254,252,248,0.1)",
+            }}>
+              <span style={{ fontFamily: mono, fontSize: 12, color: "rgba(254,252,248,0.45)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>Score</span>
+              <span style={{ fontFamily: fonts.serif, fontSize: 28, color: t.copper, fontStyle: "italic", lineHeight: 1 }}>
+                4 <span style={{ fontSize: 16, color: "rgba(254,252,248,0.3)" }}>/ 10</span>
+              </span>
+            </div>
+
+            {/* STAR breakdown */}
+            {STAR.map(({ label, pass, note }) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <span style={{ fontFamily: mono, fontSize: 11, color: pass ? "#6EBF8B" : "rgba(254,252,248,0.25)", width: 14, flexShrink: 0 }}>
+                  {pass ? "✓" : "✗"}
+                </span>
+                <span style={{ fontFamily: mono, fontSize: 11, color: "rgba(254,252,248,0.55)", width: 64, flexShrink: 0 }}>
+                  {label}
+                </span>
+                <span style={{ fontFamily: mono, fontSize: 11, color: pass ? "rgba(254,252,248,0.55)" : "rgba(254,252,248,0.4)" }}>
+                  {note}
+                </span>
+              </div>
+            ))}
+
+            {/* Fix */}
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "0.5px solid rgba(254,252,248,0.1)" }}>
+              <span style={{
+                fontFamily: mono, fontSize: 10, color: t.copper,
+                display: "block", marginBottom: 6,
+                textTransform: "uppercase" as const, letterSpacing: "0.08em",
+              }}>Fix</span>
+              <span style={{ fontFamily: mono, fontSize: 12, lineHeight: 1.55, color: t.white }}>
+                Add &ldquo;...which cut onboarding time by 40%&rdquo; after step 3.
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* CTA */}
+      <div style={{ marginTop: 44 }}>
+        <a
+          href="/signup"
+          className="mv2-cta-primary"
+          style={{
+            fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
+            color: t.white, background: t.coal,
+            padding: "14px 30px", borderRadius: 999,
+            textDecoration: "none",
+            display: "inline-flex", alignItems: "center", gap: 8,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Start free, no card needed
+          <span className="mv2-cta-arrow" aria-hidden="true" style={{ fontSize: 16 }}>→</span>
+        </a>
+      </div>
+    </section>
+  );
+}
+
 /* ─────────────────────────── 6. BUILT FOR INDIA BAND ─────────────────────────── */
 export function BuiltForIndiaV2() {
   const companies = [
@@ -4359,21 +4607,18 @@ export default function HomepageV2() {
       <StructuredData />
       <a href="#main" className="mv2-skip">Skip to content</a>
       <NavV2 />
-      {/* Composition compressed from 11 → 9 sections:
-            - TrustRowV2 cut (security badges fold into FAQ + footer)
-            - ComparisonV2 cut (folded into single FAQ entry on ChatGPT)
-            - PricingV2 sits at slot 6, after objections are handled.
-              Earlier draft placed it at slot 3 on a weak "price upfront"
-              theory; standard B2C arc (build belief, then show cost) wins. */}
+      {/* 12-section composition (matches the planned section list):
+            1. NavV2  2. HeroV2  3. InterviewFocusV2  4. PersonalizedReportsV2
+            5. FeatureGridV2  6. ProductStoryV2  7. ComparisonV2
+            8. PricingV2  9. SecurityComplianceV2  10. FAQV2  11. VideoCtaV2  12. FooterDome */}
       <main id="main">
         <HeroV2 />
         <ProductStoryV2 />
         <InterviewFocusV2 />
         <PersonalizedReportsV2 />
         <FeatureGridV2 />
-        <TestimonialsV2 />
+        <ComparisonV2 />
         <PricingV2 />
-        <BuiltForIndiaV2 />
         <SecurityComplianceV2 />
         <FAQV2 />
         <VideoCtaV2 />
