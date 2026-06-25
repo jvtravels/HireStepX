@@ -290,7 +290,17 @@ export type SatisfiesTopic = DiscoveryTopic | readonly DiscoveryTopic[];
 
 export type NextAction =
   | { kind: "terminal-restate" }
-  | { kind: "close"; mode: "accept" | "walkaway" | "stalemate" }
+  | {
+      kind: "close";
+      mode: "accept" | "walkaway" | "stalemate";
+      /* PRI-63 (2026-06-25) — one-time joining bonus (LPA) granted to
+       * satisfy a conditional acceptance ("if you throw in a joining
+       * bonus I can make it work"). Carried at the action level (not just
+       * on _move) so the close prose can verbally confirm the sweetener
+       * at close time — the prose renders BEFORE applyAiMove stamps
+       * lastJoiningBonusOffered, so reading it off state would be null. */
+      joiningBonusGranted?: number;
+    }
   | { kind: "auto-accept" }
   /* PDF#34 Fix 3 (2026-05-18) — clarification response.
    *
@@ -3007,15 +3017,38 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         agreed != null && agreed > offer && agreed <= ceil ? agreed : offer;
     }
     if (closeAt != null) {
-      const jb = state.lastJoiningBonusOffered;
+      /* PRI-63 (2026-06-25, real prod salary-negotiation audit, session
+       * f22e215b — Flipkart EM). The conditional acceptance can rest on an
+       * UNMET non-cash sweetener the candidate explicitly named as their
+       * closing condition ("if you throw in a joining bonus I can make it
+       * work" → wantsJoiningBonus=true, lastJoiningBonusOffered=null). The
+       * legacy gate closed at the standing offer with no JB — silently
+       * DROPPING the condition. The recap then enumerated a deal (₹offer flat)
+       * the candidate never agreed to: a soft FALSE-CLOSE, the worst failure
+       * mode. Honor the condition in-place — size a one-time joining bonus via
+       * the single-source computeJoiningBonusAmount and carry it on the close,
+       * so buildCloseRecapFormal enumerates it ("joining bonus ₹XL with an
+       * N-month clawback") and the report reflects it. The JB is one-time and
+       * never folded into the LPA total (deriveOfferFixedVariable ignores it),
+       * so the close FIGURE is unchanged — no cash over-concession, just the
+       * sweetener the candidate asked for actually granted. */
+      const unmetJoiningBonus =
+        state.candidateProfile?.wantsJoiningBonus === true &&
+        state.lastJoiningBonusOffered == null;
+      const jb = unmetJoiningBonus
+        ? computeJoiningBonusAmount(state)
+        : state.lastJoiningBonusOffered;
       return {
         kind: "close",
         mode: "accept",
+        joiningBonusGranted: unmetJoiningBonus && jb != null ? jb : undefined,
         _move: {
           lever: "close-acceptance",
           newTotalLpa: clampToCloseFloor(state, closeAt),
           joiningBonusAmount: jb != null ? jb : undefined,
-          rationale: `Near-offer conditional acceptance: deliverable close at ₹${closeAt}L (offer ₹${offer}L, ceiling ₹${ceil}L); converge and close rather than divert.`,
+          rationale: unmetJoiningBonus
+            ? `Near-offer conditional acceptance on an UNMET joining-bonus ask — grant one-time ₹${jb}L JB and close at ₹${closeAt}L (offer ₹${offer}L, ceiling ₹${ceil}L) so the recorded deal honors the condition rather than silently dropping it.`
+            : `Near-offer conditional acceptance: deliverable close at ₹${closeAt}L (offer ₹${offer}L, ceiling ₹${ceil}L); converge and close rather than divert.`,
           askedTopic: "close-confirmation",
         },
       };

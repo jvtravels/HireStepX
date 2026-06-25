@@ -7226,7 +7226,20 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      fires so close-acceptance can include it in the recap. Sticky:
      once set, only an upward replacement clobbers it (a subsequent JB
      lever would re-compute against the new highestOfferMade). */
-  if (move.lever === "joining-bonus" && typeof move.joiningBonusAmount === "number") {
+  /* PRI-63 (2026-06-25) — honor the documented contract on
+   * joiningBonusAmount (see the AiMove field doc): it is carried on
+   * BOTH `joining-bonus` levers AND `close-acceptance` moves that grant
+   * a JB to satisfy a conditional acceptance ("if you throw in a
+   * joining bonus I can make it work"). Previously only the
+   * `joining-bonus` lever stamped lastJoiningBonusOffered, so a
+   * close-acceptance that granted a fresh JB closed FLAT — the recap
+   * read null and silently dropped the candidate's condition (a
+   * false-close). Stamping here makes proseCloseRecapFormal enumerate
+   * the JB so the recorded deal honors the condition. */
+  if (
+    typeof move.joiningBonusAmount === "number" &&
+    (move.lever === "joining-bonus" || move.lever === "close-acceptance")
+  ) {
     next.lastJoiningBonusOffered = move.joiningBonusAmount;
   }
   /* AUDIT-W02 BUG-4 (2026-06-08) — when a hold-firm move ships final-

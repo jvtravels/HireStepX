@@ -536,11 +536,23 @@ export function selectEscalationAnchor(
 export function closeAcceptProse(
   state: NegotiationState,
   anchor: string,
+  /* PRI-63 (2026-06-25) — when the close grants a one-time joining
+   * bonus to satisfy a conditional acceptance ("if you throw in a
+   * joining bonus I can make it work"), name it verbally at close time
+   * so the candidate's condition is explicitly honored, not silently
+   * deferred to the formal letter (which would read as a false-close).
+   * Passed from the action because prose renders BEFORE applyAiMove
+   * stamps lastJoiningBonusOffered. */
+  joiningBonusGranted?: number,
 ): string {
   const fig = state.highestOfferMade > 0 ? `₹${state.highestOfferMade}L` : null;
+  const jbClause =
+    typeof joiningBonusGranted === "number" && joiningBonusGranted > 0
+      ? ` We'll add a one-time joining bonus of ₹${joiningBonusGranted}L to make it work — that'll be in the offer letter with the standard clawback.`
+      : "";
   return fig
-    ? `We're in the same range, then — let's lock it at ${fig}. Let me run this past ${anchor} once and revert with the formal offer letter.`
-    : `We're in the same range, then. Let me run this past ${anchor} once and revert with the formal offer letter.`;
+    ? `We're in the same range, then — let's lock it at ${fig}.${jbClause} Let me run this past ${anchor} once and revert with the formal offer letter.`
+    : `We're in the same range, then.${jbClause} Let me run this past ${anchor} once and revert with the formal offer letter.`;
 }
 
 /** Perfect 2 (2026-05-16) — emotional acknowledgement prefix.
@@ -841,7 +853,7 @@ const PROSE_ARMS: ProseArmRegistry = {
   "close": (action, state) => {
     if (action.mode === "accept") {
       const anchor = selectEscalationAnchor(action, state);
-      return closeAcceptProse(state, anchor);
+      return closeAcceptProse(state, anchor, action.joiningBonusGranted);
     }
     if (action.mode === "walkaway") {
       return "Looking at where your expectations are versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Thanks for taking the time to speak with us.";

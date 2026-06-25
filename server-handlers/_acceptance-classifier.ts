@@ -1018,6 +1018,25 @@ const HEDGE_VETO_PATTERNS: RegExp[] = [
   /\bif\s+we\s+can\b/i,
   /\bif\s+the\b/i,
   /\bonly\s+if\b/i,
+  /* PRI-63 (2026-06-25, real prod salary-negotiation audit, session f22e215b
+   * — Flipkart EM). Conditional acceptance gated on an UNMET sweetener GRANT:
+   * "Okay, if you throw in a joining bonus I can make it work", "if you add a
+   * signing bonus, I'm in". The medium gate (classifyAcceptance) already
+   * vetoes this via the broad HARD_CONDITIONAL "if"; the strict gate's narrow
+   * conditional list above ("if you can" / "only if") let the bare grant-verb
+   * form through. detectExplicitAcceptance therefore returned accepted=true,
+   * and the kernel's escalation-boost (_negotiation-kernel.ts ~5955:
+   * `!parsed.signalsAcceptance` → detectExplicitAcceptance → markAccepted)
+   * locked terminal `accepted` at the standing offer with NO joining bonus —
+   * SILENTLY DROPPING the candidate's stated condition. The recap then
+   * enumerated a deal the candidate never agreed to: a soft FALSE-CLOSE, the
+   * worst failure mode. Veto the grant-conditional in the strict gate too so
+   * both detectors agree; the turn routes to the joining-bonus lever instead,
+   * and the eventual close carries the bonus (see _next-action-planner.ts
+   * conditional-close gate, same PRI-63). Scoped to grant verbs so a benign
+   * info-conditional ("if you need anything from me, let me know") is
+   * untouched. */
+  /\b(?:if|when|once|provided|as\s+long\s+as)\s+(?:you|we|they)\s+(?:can\s+|could\s+|would\s+|will\s+)?(?:throw\s+in|add|include|cover|sweeten|bump|match|chip\s+in|give\s+me|toss\s+in)\b/i,
   /\bas\s+long\s+as\b/i,
   /\bprovided\s+that\b/i,
   /\bsubject\s+to\b/i,
