@@ -1037,6 +1037,22 @@ const HEDGE_VETO_PATTERNS: RegExp[] = [
    * info-conditional ("if you need anything from me, let me know") is
    * untouched. */
   /\b(?:if|when|once|provided|as\s+long\s+as)\s+(?:you|we|they)\s+(?:can\s+|could\s+|would\s+|will\s+)?(?:throw\s+in|add|include|cover|sweeten|bump|match|chip\s+in|give\s+me|toss\s+in)\b/i,
+  /* PRI-63b (2026-06-25, pre-launch audit CRIT-2) — POST-POSITIVE imperative
+   * requirement on an unmet sweetener. The PRI-63 pattern above catches the
+   * fronted "if you throw in …" form; this catches the trailing demand form a
+   * candidate appends to an otherwise-positive close idiom:
+   *   "Yes, send the offer letter — just make sure the joining bonus is in there."
+   *   "Sure, send it across, but I'll need that joining bonus included."
+   * These read as a bare accept to the strict gate (the close idiom matches
+   * STRICT_ACCEPTANCE_PATTERNS) yet carry an OUTSTANDING condition the bot has
+   * not granted — force-closing flat silently drops it (soft FALSE-CLOSE, the
+   * worst failure mode). Veto so the turn routes to the joining-bonus lever /
+   * conditional-close gate, which grants + names the bonus at close (PRI-63).
+   * Scoped to a requirement VERB (make sure / ensure / I('ll) need / I want /
+   * need to see) within the same clause as a genuine SWEETENER noun (joining /
+   * signing / sign-on / retention bonus, equity / ESOP / RSU, relocation) — NOT
+   * bare "bonus", so confirming a GRANTED variable/perf bonus is untouched. */
+  /\b(?:make\s+sure|ensure|i'?ll\s+need|i\s+need|i'?d\s+need|i\s+want|i'?ll\s+want|need\s+to\s+see)\b[^.?!]{0,40}?\b(?:joining\s+bonus|signing\s+bonus|sign[-\s]?on\s+bonus|retention\s+bonus|esops?|rsus?|equity|relocation)\b/i,
   /\bas\s+long\s+as\b/i,
   /\bprovided\s+that\b/i,
   /\bsubject\s+to\b/i,

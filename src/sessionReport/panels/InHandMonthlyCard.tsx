@@ -22,6 +22,13 @@ export function InHandMonthlyCard({
       : "—";
   const fmtTaxLpa = (v: number | null | undefined) =>
     typeof v === "number" && v >= 0 ? `₹${v.toFixed(1)} LPA tax/yr` : "";
+  /* Optional chaining alone leaks "₹ LPA" / "₹undefined" into the eyebrow
+   * when closingTotalLpa is null/undefined. Only append the figure when it
+   * is a real positive number; otherwise show the label bare. */
+  const closingLpaLabel =
+    typeof salaryMeta.closingTotalLpa === "number" && salaryMeta.closingTotalLpa > 0
+      ? ` · ₹${salaryMeta.closingTotalLpa.toFixed(1)} LPA`
+      : "";
   return (
     <div
       style={{
@@ -33,7 +40,7 @@ export function InHandMonthlyCard({
       }}
     >
       <EyebrowLabel marginBottom={8}>
-        Take-home on closing offer · ₹{salaryMeta.closingTotalLpa?.toFixed(1)} LPA
+        Take-home on closing offer{closingLpaLabel}
       </EyebrowLabel>
       <div
         style={{

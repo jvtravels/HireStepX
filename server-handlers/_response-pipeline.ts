@@ -2674,7 +2674,24 @@ export function validateRestyle(
    * longer binds them to the structured terms. */
   if (action != null && action.kind === "close-recap-formal") {
     const lc = restyled.toLowerCase();
-    const required = ["fixed", "variable", "notice", "bgv"] as const;
+    const canonicalLc = canonical.toLowerCase();
+    /* The four structured terms the formal recap ALWAYS enumerates. */
+    const required: string[] = ["fixed", "variable", "notice", "bgv"];
+    /* Pre-launch audit (2026-06-25) — sweetener-drop guard. The static
+     * list above does NOT include the joining bonus or equity/ESOP, so an
+     * LLM restyle could silently smooth those OUT of the recap even when
+     * the canonical recap granted them — the candidate's "yes" would then
+     * bind a deal missing the very sweetener they closed on (a soft FALSE-
+     * CLOSE). Single source of truth: require in the restyle whatever the
+     * CANONICAL recap actually contains, derived per-call — not a fixed
+     * list. If canonical names a joining bonus, the restyle must too; same
+     * for equity/ESOP. */
+    if (/joining bonus/.test(canonicalLc) && !lc.includes("joining bonus")) {
+      return { valid: false, reason: "close-recap-dropped-joining-bonus" };
+    }
+    if (/\b(?:esops?|rsus?|equity)\b/.test(canonicalLc) && !/\b(?:esops?|rsus?|equity)\b/.test(lc)) {
+      return { valid: false, reason: "close-recap-dropped-equity" };
+    }
     for (const term of required) {
       if (!lc.includes(term)) {
         return { valid: false, reason: "close-recap-incomplete" };
