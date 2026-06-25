@@ -1799,12 +1799,14 @@ export function InterviewFocusV2() {
 
         <MotionReveal style={{ textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
           <h2 id="hd-focus" style={h2}>
-            Ten interview types.{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>One coach.</span>
+            Walk into any round{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it's testing.</span>
           </h2>
           <p style={{ ...body, marginTop: 16, fontSize: 17 }}>
-            Four go live at launch: behavioral, campus placement, salary
-            negotiation, HR round. Six more land month-by-month after public beta.
+            HR rounds test culture, not qualifications. Campus drives filter on
+            communication, not marks. Salary rounds expect you to negotiate —
+            even when nobody says so. Ten formats. One coach that shows you the
+            rules before you walk in.
           </p>
         </MotionReveal>
 
