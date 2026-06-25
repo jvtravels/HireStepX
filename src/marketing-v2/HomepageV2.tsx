@@ -449,15 +449,29 @@ export function NavV2() {
             aria-label="HireStepX home"
             style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
           >
-            {/* Swap wordmark ↔ X mark based on scroll state.
-                Instant conditional render — the border-radius/shadow
-                transition draws attention so the logo swap feels part of
-                the same motion without a separate cross-fade. */}
+            {/* Swap wordmark ↔ animated X mark based on scroll state.
+                The video mounts fresh each time scrolled flips true, so
+                autoPlay always replays the animation from the start. No
+                loop — it plays once and holds on the final frame.
+                Drop logo-x.webm into /public/ to activate; the static
+                favicon.svg fallback renders until the file is present. */}
             {scrolled ? (
-              <img
-                src="/favicon.svg"
-                alt="HireStepX"
+              <video
+                src="/logo-x.webm"
+                autoPlay
+                muted
+                playsInline
                 style={{ width: 28, height: 28, borderRadius: 6, display: "block" }}
+                onError={(e) => {
+                  // Fallback to static SVG if the webm hasn't been added yet
+                  const el = e.currentTarget;
+                  el.style.display = "none";
+                  const img = document.createElement("img");
+                  img.src = "/favicon.svg";
+                  img.alt = "HireStepX";
+                  img.style.cssText = "width:28px;height:28px;border-radius:6px;display:block";
+                  el.parentNode?.insertBefore(img, el);
+                }}
               />
             ) : (
               <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
