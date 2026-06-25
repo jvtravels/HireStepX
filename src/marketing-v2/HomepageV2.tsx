@@ -37,8 +37,9 @@ const ResponsiveSheet = () => (
       .mv2-tap-44 { min-height: 44px !important; }
       .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
       .mv2-hero-section { min-height: 0 !important; display: block !important; }
-      /* Focus type icon grid: 2 cols on phone */
-      .mv2-focus-type-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      /* Focus type icon grids: 2 cols on phone */
+      .mv2-focus-live-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .mv2-focus-soon-grid { grid-template-columns: repeat(2, 1fr) !important; }
     }
     /* ── Tablets (md) ── */
     @media (max-width: 880px) {
@@ -71,8 +72,9 @@ const ResponsiveSheet = () => (
       /* Comparison: competitor cards side by side, HireStepX spans full width */
       .mv2-cmp-cards { grid-template-columns: 1fr 1fr !important; }
       .mv2-cmp-hsx { grid-column: 1 / -1 !important; }
-      /* Focus type icon grid: 3 cols on tablet */
-      .mv2-focus-type-grid { grid-template-columns: repeat(3, 1fr) !important; }
+      /* Focus type icon grids: 2 cols live, 3 cols soon on tablet */
+      .mv2-focus-live-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .mv2-focus-soon-grid { grid-template-columns: repeat(3, 1fr) !important; }
       /* Objections: collapse 3-col (72px 1fr 1fr) → 2-col (number + content).
          The response <p> is forced into col 2 so it stacks under the quote,
          not under the number. Same pattern as the 881-1100px breakpoint. */
@@ -1571,210 +1573,186 @@ export function HeroV2() {
 
 /* ─────────────────────────── 3.5. INTERVIEW FOCUS ─────────────────────────── */
 export function InterviewFocusV2() {
-  /* Copper gradient shorthand — references the shared <defs> below */
-  const G = "url(#hsx-cg)";
-  const sw = 1.6;
-  const rp = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  /* Copper gradient — references the shared <defs> below */
+  const G   = "url(#hsx-cg)";
+  const nsw = 2.5;  /* uniform stroke weight across all icons */
+  const rp  = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
-  const TYPES = [
+  /* ── Live interview types (4 available now) ─────────────────────── */
+  const LIVE_TYPES = [
     {
       label: "Behavioral",
       desc: "STAR stories · leadership · decisions",
-      live: true,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* speech bubble with tail */}
-          <path d="M8 8h38a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6H26L14 50l2-10H8a6 6 0 0 1-6-6V14a6 6 0 0 1 6-6z"
-            stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
-          {/* star */}
-          <polygon points="27,14 29.1,19.5 35,19.5 30.5,23 32.1,28.5 27,25.2 21.9,28.5 23.5,23 19,19.5 24.9,19.5"
-            stroke={G} strokeWidth="1.4" {...rp} fill={G} fillOpacity="0.22"/>
+          <path className="d" d="M9 8h46a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H28L16 50l2-12H9a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z"
+            stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.09"/>
+          <polygon className="d"
+            points="32,13 34.8,21 43,21 36.6,25.8 39,34 32,29 25,34 27.4,25.8 21,21 29.2,21"
+            stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.22"/>
         </svg>
       ),
     },
     {
       label: "Campus Placement",
       desc: "TCS · Infosys · Wipro · Cognizant",
-      live: true,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* mortarboard top (diamond) */}
-          <path d="M32 8L58 22L32 36L6 22z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.12"/>
-          {/* cap body beneath */}
-          <path d="M16 26v10c0 9 32 9 32 0V26" stroke={G} strokeWidth={sw} {...rp}/>
-          {/* tassel string */}
-          <line x1="58" y1="22" x2="58" y2="40" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* tassel bundle */}
-          <line x1="52" y1="40" x2="64" y2="40" stroke={G} strokeWidth="1.8" strokeLinecap="round"/>
-          <line x1="53" y1="40" x2="51" y2="48" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="58" y1="40" x2="56" y2="49" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="63" y1="40" x2="61" y2="48" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <path className="d" d="M32 10L54 21L32 32L10 21z"
+            stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.12"/>
+          <path className="d" d="M18 25v9c0 7 28 7 28 0v-9"
+            stroke={G} strokeWidth={nsw} {...rp}/>
+          <line className="d" x1="54" y1="21" x2="54" y2="40"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line className="d" x1="49" y1="40" x2="59" y2="40"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line className="d" x1="50" y1="40" x2="49" y2="49"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line className="d" x1="54" y1="40" x2="53" y2="50"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line className="d" x1="58" y1="40" x2="57" y2="49"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
         </svg>
       ),
     },
     {
       label: "Salary Negotiation",
       desc: "Counter-offers · levelling · benefits",
-      live: true,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* center post */}
-          <line x1="32" y1="8" x2="32" y2="56" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* beam */}
-          <line x1="8" y1="20" x2="56" y2="20" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* left pan strings */}
-          <line x1="14" y1="20" x2="10" y2="36" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="14" y1="20" x2="18" y2="36" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* left pan */}
-          <path d="M8 36a8 4 0 0 0 16 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.12"/>
-          {/* right pan strings */}
-          <line x1="50" y1="20" x2="46" y2="36" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="50" y1="20" x2="54" y2="36" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* right pan */}
-          <path d="M44 36a8 4 0 0 0 16 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.12"/>
-          {/* base */}
-          <rect x="28" y="50" width="8" height="6" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.1"/>
-          <line x1="22" y1="56" x2="42" y2="56" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line className="d" x1="32" y1="10" x2="32" y2="54"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          {/* tilted beam — left side lower (heavier) */}
+          <line className="d" x1="10" y1="23" x2="54" y2="19"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line className="d" x1="14" y1="23" x2="11" y2="37"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line className="d" x1="14" y1="23" x2="17" y2="37"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <path className="d" d="M9 37a6 3 0 0 0 12 0"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round" fill={G} fillOpacity="0.15"/>
+          <line className="d" x1="50" y1="19" x2="47" y2="31"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line className="d" x1="50" y1="19" x2="53" y2="31"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <path className="d" d="M45 31a6 3 0 0 0 12 0"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round" fill={G} fillOpacity="0.15"/>
+          <rect className="d" x="28" y="48" width="8" height="6" rx="2"
+            stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.1"/>
+          <line className="d" x1="22" y1="54" x2="42" y2="54"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
         </svg>
       ),
     },
     {
       label: "HR Round",
       desc: "Culture fit · motivation · expectations",
-      live: true,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* left person */}
-          <circle cx="18" cy="16" r="8" stroke={G} strokeWidth={sw}/>
-          <path d="M2 48c0-12 32-12 32 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
-          {/* right person */}
-          <circle cx="46" cy="16" r="8" stroke={G} strokeWidth={sw}/>
-          <path d="M30 48c0-12 32-12 32 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
-          {/* handshake */}
-          <path d="M26 34l6 4 6-4" stroke={G} strokeWidth={sw} {...rp}/>
+          <circle className="d" cx="17" cy="16" r="7"
+            stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.09"/>
+          <path className="d" d="M4 47c0-11 26-11 26 0"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
+          <circle className="d" cx="47" cy="16" r="7"
+            stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.09"/>
+          <path className="d" d="M34 47c0-11 26-11 26 0"
+            stroke={G} strokeWidth={nsw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
+          <path className="d" d="M24 33l4 3h8l4-3"
+            stroke={G} strokeWidth={nsw} {...rp}/>
         </svg>
       ),
     },
+  ];
+
+  /* ── Coming-soon interview types (6 on the roadmap) ─────────────── */
+  const SOON_TYPES = [
     {
       label: "Leadership Round",
-      desc: "Vision · stakeholders · long-range thinking",
-      live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* bullseye */}
-          <circle cx="28" cy="32" r="22" stroke={G} strokeWidth={sw}/>
-          <circle cx="28" cy="32" r="14" stroke={G} strokeWidth={sw}/>
-          <circle cx="28" cy="32" r="5" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.22"/>
-          {/* arrow from top-right into target */}
-          <line x1="52" y1="10" x2="33" y2="27" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <path d="M40 10h12v12" stroke={G} strokeWidth={sw} {...rp}/>
+          <circle cx="30" cy="32" r="20" stroke={G} strokeWidth={nsw}/>
+          <circle cx="30" cy="32" r="12" stroke={G} strokeWidth={nsw}/>
+          <circle cx="30" cy="32" r="5"  stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.24"/>
+          <line x1="52" y1="10" x2="35" y2="27" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <path d="M40 10h12v12" stroke={G} strokeWidth={nsw} {...rp}/>
         </svg>
       ),
     },
     {
       label: "Technical Leadership",
-      desc: "System design · coding · architecture",
-      live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* monitor */}
-          <rect x="6" y="8" width="52" height="38" rx="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
-          {/* screen */}
-          <rect x="10" y="12" width="44" height="30" rx="2" stroke={G} strokeWidth={sw} {...rp}/>
-          {/* </> */}
-          <path d="M22 22l-8 5 8 5" stroke={G} strokeWidth={sw} {...rp}/>
-          <path d="M42 22l8 5-8 5" stroke={G} strokeWidth={sw} {...rp}/>
-          <line x1="35" y1="19" x2="29" y2="37" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* stand */}
-          <path d="M28 46l-4 10h16l-4-10" stroke={G} strokeWidth={sw} {...rp}/>
-          <line x1="20" y1="56" x2="44" y2="56" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <rect x="8"  y="10" width="48" height="34" rx="4" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
+          <rect x="12" y="14" width="40" height="26" rx="2" stroke={G} strokeWidth={nsw} {...rp}/>
+          <path d="M22 23l-7 4 7 4" stroke={G} strokeWidth={nsw} {...rp}/>
+          <path d="M42 23l7 4-7 4" stroke={G} strokeWidth={nsw} {...rp}/>
+          <line x1="34" y1="20" x2="30" y2="36" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <path d="M29 44l-4 9h14l-4-9" stroke={G} strokeWidth={nsw} {...rp}/>
+          <line x1="22" y1="53" x2="42" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
         </svg>
       ),
     },
     {
       label: "Case Study",
-      desc: "Analysis · frameworks · presentation",
-      live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* document */}
-          <path d="M10 6h28l12 12v40H10z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
-          {/* folded corner */}
-          <path d="M38 6v12h12" stroke={G} strokeWidth={sw} {...rp}/>
-          {/* text lines */}
-          <line x1="16" y1="26" x2="36" y2="26" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="16" y1="33" x2="34" y2="33" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="16" y1="40" x2="28" y2="40" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* magnifying glass */}
-          <circle cx="44" cy="46" r="10" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.1"/>
-          <line x1="51" y1="53" x2="58" y2="60" stroke={G} strokeWidth="2.2" strokeLinecap="round"/>
+          <path d="M10 8h24l12 12v36H10z" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
+          <path d="M34 8v12h12"          stroke={G} strokeWidth={nsw} {...rp}/>
+          <line x1="16" y1="28" x2="34" y2="28" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="16" y1="35" x2="30" y2="35" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="16" y1="42" x2="24" y2="42" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <circle cx="43" cy="45" r="9"  stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.1"/>
+          <line x1="49" y1="52" x2="55" y2="58" stroke={G} strokeWidth={nsw + 0.5} strokeLinecap="round"/>
         </svg>
       ),
     },
     {
       label: "Panel Interview",
-      desc: "Multiple interviewers · group dynamics",
-      live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* 3 interviewers */}
-          <circle cx="12" cy="13" r="7" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.07"/>
-          <circle cx="32" cy="10" r="9" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.12"/>
-          <circle cx="52" cy="13" r="7" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.07"/>
-          {/* interviewer desk — solid bar */}
-          <rect x="2" y="36" width="60" height="7" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.12"/>
-          {/* 3 name placards */}
-          <rect x="6" y="38" width="14" height="3" rx="1" fill={G} fillOpacity="0.25"/>
-          <rect x="25" y="38" width="14" height="3" rx="1" fill={G} fillOpacity="0.25"/>
-          <rect x="44" y="38" width="14" height="3" rx="1" fill={G} fillOpacity="0.25"/>
-          {/* candidate (you) below desk */}
-          <circle cx="32" cy="56" r="5" stroke={G} strokeWidth="1.6" fill={G} fillOpacity="0.06"/>
+          <circle cx="13" cy="14" r="6" stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.07"/>
+          <circle cx="32" cy="11" r="8" stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.13"/>
+          <circle cx="51" cy="14" r="6" stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.07"/>
+          <rect x="8" y="36" width="48" height="7" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.13"/>
+          <rect x="11" y="38.5" width="11" height="2.5" rx="1" fill={G} fillOpacity="0.32"/>
+          <rect x="27" y="38.5" width="11" height="2.5" rx="1" fill={G} fillOpacity="0.32"/>
+          <rect x="43" y="38.5" width="11" height="2.5" rx="1" fill={G} fillOpacity="0.32"/>
+          <circle cx="32" cy="56" r="5" stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.06"/>
         </svg>
       ),
     },
     {
       label: "Management",
-      desc: "People · process · performance reviews",
-      live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* top node */}
-          <rect x="22" y="6" width="20" height="12" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.14"/>
-          <circle cx="32" cy="12" r="2.5" fill={G} fillOpacity="0.55"/>
-          {/* connector lines */}
-          <line x1="32" y1="18" x2="32" y2="28" stroke={G} strokeWidth={sw}/>
-          <line x1="12" y1="28" x2="52" y2="28" stroke={G} strokeWidth={sw}/>
-          <line x1="12" y1="28" x2="12" y2="38" stroke={G} strokeWidth={sw}/>
-          <line x1="32" y1="28" x2="32" y2="38" stroke={G} strokeWidth={sw}/>
-          <line x1="52" y1="28" x2="52" y2="38" stroke={G} strokeWidth={sw}/>
-          {/* bottom 3 nodes */}
-          <rect x="2" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
-          <rect x="22" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
-          <rect x="42" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
+          <rect x="22" y="8"  width="20" height="12" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.15"/>
+          <line x1="32" y1="20" x2="32" y2="30" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="12" y1="30" x2="52" y2="30" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="12" y1="30" x2="12" y2="38" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="32" y1="30" x2="32" y2="38" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="52" y1="30" x2="52" y2="38" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <rect x="2"  y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
+          <rect x="22" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
+          <rect x="42" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
         </svg>
       ),
     },
     {
       label: "Govt / PSU",
-      desc: "UPSC · banking · PSU interviews",
-      live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* pediment */}
-          <path d="M8 26L32 8l24 18H8z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.1"/>
-          {/* official seal / emblem in pediment */}
-          <circle cx="32" cy="19" r="5" stroke={G} strokeWidth="1.4" fill={G} fillOpacity="0.2"/>
-          <circle cx="32" cy="19" r="2" fill={G} fillOpacity="0.5"/>
-          {/* entablature */}
-          <rect x="8" y="26" width="48" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
-          {/* 4 columns */}
-          <line x1="16" y1="30" x2="16" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="26" y1="30" x2="26" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="38" y1="30" x2="38" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="48" y1="30" x2="48" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* steps */}
-          <rect x="6" y="52" width="52" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
-          <rect x="4" y="56" width="56" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+          {/* taller pediment — reads as a roof, not a wedge */}
+          <path d="M8 26L32 6l24 20H8z" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.1"/>
+          <circle cx="32" cy="18" r="5" stroke={G} strokeWidth="1.8" fill={G} fillOpacity="0.22"/>
+          <circle cx="32" cy="18" r="2" fill={G} fillOpacity="0.6"/>
+          <rect x="8"  y="26" width="48" height="5" rx="1" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.1"/>
+          <line x1="14" y1="31" x2="14" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="22" y1="31" x2="22" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="32" y1="31" x2="32" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="42" y1="31" x2="42" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <line x1="50" y1="31" x2="50" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <rect x="6"  y="53" width="52" height="4" rx="1" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.09"/>
+          <rect x="4"  y="57" width="56" height="4" rx="1" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.09"/>
         </svg>
       ),
     },
@@ -1786,76 +1764,171 @@ export function InterviewFocusV2() {
       aria-labelledby="hd-focus"
       style={{ ...sectionBase, background: t.cream }}
     >
-      {/* Shared SVG gradient — referenced by all icons as url(#hsx-cg).
-          Defined once here; modern browsers resolve paint-server IDs document-wide. */}
+      {/* Draw-on loop animation for live icons only */}
+      <style>{`
+        .hsx-focus-icon svg .d {
+          stroke-dasharray: 1000;
+          stroke-dashoffset: 1000;
+          animation: hsx-focus-draw 4.5s cubic-bezier(0.4,0,0.2,1) infinite;
+        }
+        .hsx-focus-icon svg .d:nth-child(1) { animation-delay: 0.00s; }
+        .hsx-focus-icon svg .d:nth-child(2) { animation-delay: 0.08s; }
+        .hsx-focus-icon svg .d:nth-child(3) { animation-delay: 0.16s; }
+        .hsx-focus-icon svg .d:nth-child(4) { animation-delay: 0.24s; }
+        .hsx-focus-icon svg .d:nth-child(5) { animation-delay: 0.32s; }
+        .hsx-focus-icon svg .d:nth-child(6) { animation-delay: 0.40s; }
+        .hsx-focus-icon svg .d:nth-child(7) { animation-delay: 0.48s; }
+        .hsx-focus-icon svg .d:nth-child(8) { animation-delay: 0.56s; }
+        @keyframes hsx-focus-draw {
+          0%   { stroke-dashoffset: 1000; opacity: 0; }
+          6%   { opacity: 1; }
+          38%  { stroke-dashoffset: 0; opacity: 1; }
+          82%  { stroke-dashoffset: 0; opacity: 1; }
+          97%  { stroke-dashoffset: 0; opacity: 0; }
+          100% { stroke-dashoffset: 1000; opacity: 0; }
+        }
+        .hsx-focus-live-dot {
+          width: 6px; height: 6px; border-radius: 50%;
+          background: #B45309; display: inline-block; flex-shrink: 0;
+          animation: hsx-focus-pulse 2s ease-in-out infinite;
+        }
+        @keyframes hsx-focus-pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.25; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .hsx-focus-icon svg .d { animation: none !important; stroke-dashoffset: 0 !important; opacity: 1 !important; }
+          .hsx-focus-live-dot    { animation: none !important; }
+        }
+      `}</style>
+
+      {/* Copper gradient — referenced by all icons as url(#hsx-cg) */}
       <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute", overflow: "hidden" }}>
         <defs>
           <linearGradient id="hsx-cg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#E8C4A0" />
+            <stop offset="0%"   stopColor="#E8C4A0" />
             <stop offset="100%" stopColor="#B45309" />
           </linearGradient>
         </defs>
       </svg>
 
       <div style={{ ...container }}>
-        <SectionMasthead n="03" label="Focus" right="Roles × companies" style={{ marginBottom: 24 }} />
+        <SectionMasthead n="03" label="Interview formats" right="10 types · 4 live now" style={{ marginBottom: 44 }} />
 
         <MotionReveal style={{ textAlign: "center", maxWidth: 860, margin: "0 auto" }}>
           <h2 id="hd-focus" style={{ ...h2, fontSize: 64 }}>
             Walk into any round<br />
-            <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it's testing.</span>
+            <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it&rsquo;s testing.</span>
           </h2>
-          <p style={{ ...body, marginTop: 16, fontSize: 16, color: "#4a4540" }}>
-            HR rounds test culture, not qualifications. Campus drives filter on
-            communication, not marks. Salary rounds expect you to negotiate —
-            even when nobody says so. Ten formats. One coach that shows you the
-            rules before you walk in.
+          <p style={{ ...body, fontSize: 16, color: "#4a4540", maxWidth: 620, margin: "16px auto 0" }}>
+            Every format has hidden rules. HR tests culture, not qualifications.
+            Campus filters on communication, not marks. Salary expects you to negotiate,
+            even when nobody says so. Ten formats. One coach.
           </p>
         </MotionReveal>
 
-        {/* 5 × 2 icon grid — matches the editorial "icon + label + blurb" pattern */}
+        {/* ── "Available now" divider ── */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 14,
+          maxWidth: 920, margin: "64px auto 52px",
+        }}>
+          <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+            <span className="hsx-focus-live-dot" />
+            <span style={{
+              fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700,
+              letterSpacing: "0.12em", textTransform: "uppercase" as const,
+              color: t.copper, whiteSpace: "nowrap" as const,
+            }}>
+              Available now
+            </span>
+          </div>
+          <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
+        </div>
+
+        {/* Live types — 4 items in a centred 4-column grid */}
         <div
-          className="mv2-focus-type-grid"
+          className="mv2-focus-live-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
-            gap: "80px 32px",
-            marginTop: 80,
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "0 52px",
+            maxWidth: 920,
+            margin: "0 auto",
           }}
         >
-          {TYPES.map((type) => (
+          {LIVE_TYPES.map((type) => (
             <div
               key={type.label}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                textAlign: "center",
-                opacity: type.live ? 1 : 0.48,
-              }}
+              className="hsx-focus-icon"
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
             >
-              <div style={{ width: 64, height: 64, marginBottom: 20 }}>
-                {type.icon}
-              </div>
+              <div style={{ width: 80, height: 80, marginBottom: 22 }}>{type.icon}</div>
               <h3 style={{
-                fontFamily: fonts.sans,
-                fontSize: 15,
-                fontWeight: 600,
-                color: t.coal,
-                margin: "0 0 6px",
-                letterSpacing: "-0.01em",
-                lineHeight: 1.3,
+                fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
+                color: t.coal, margin: "0 0 7px",
+                letterSpacing: "-0.015em", lineHeight: 1.3,
               }}>
                 {type.label}
               </h3>
               <p style={{
-                fontFamily: fonts.sans,
-                fontSize: 13,
-                color: type.live ? t.inkSoft : t.inkFaint,
-                margin: 0,
-                lineHeight: 1.55,
+                fontFamily: fonts.sans, fontSize: 13,
+                color: t.inkSoft, margin: 0, lineHeight: 1.6, maxWidth: 160,
               }}>
-                {type.live ? type.desc : "Coming soon"}
+                {type.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── "Coming soon" divider ── */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 14,
+          maxWidth: 920, margin: "80px auto 52px",
+        }}>
+          <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
+          <span style={{
+            fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase" as const,
+            color: t.inkFaint, whiteSpace: "nowrap" as const,
+          }}>
+            Coming soon · {SOON_TYPES.length} more formats
+          </span>
+          <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
+        </div>
+
+        {/* Coming-soon types — 6 items in a 3-column grid */}
+        <div
+          className="mv2-focus-soon-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "52px 52px",
+            maxWidth: 920,
+            margin: "0 auto",
+          }}
+        >
+          {SOON_TYPES.map((type) => (
+            <div
+              key={type.label}
+              style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                textAlign: "center", opacity: 0.3, filter: "saturate(0.45)",
+              }}
+            >
+              <div style={{ width: 80, height: 80, marginBottom: 22 }}>{type.icon}</div>
+              <h3 style={{
+                fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
+                color: t.coal, margin: "0 0 7px",
+                letterSpacing: "-0.015em", lineHeight: 1.3,
+              }}>
+                {type.label}
+              </h3>
+              <p style={{
+                fontFamily: fonts.sans, fontSize: 13,
+                color: t.inkFaint, margin: 0, lineHeight: 1.6,
+              }}>
+                Coming soon
               </p>
             </div>
           ))}
