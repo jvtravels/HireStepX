@@ -474,11 +474,11 @@ export function PricingPageV2() {
   const faqs: Array<[string, string]> = [
     [
       "Do plans auto-renew?",
-      "No. Nothing auto-renews. Per-session credits never expire. The Sprint Pack gives you 5 sessions to use within 30 days — you buy again when you want more. No surprise charges.",
+      "The Sprint Pack (₹39 for 5 sessions) renews automatically each month. Cancel any time from Settings before the next billing date and you won't be charged again. Per-session credits (₹9) never expire and never auto-renew — buy one and use it whenever.",
     ],
     [
       "What happens to unused Sprint Pack sessions?",
-      "Sessions in your Sprint Pack are valid for 30 days from purchase. Unused sessions expire after that window. If you bought and haven't used any sessions, ping support within 7 days for a refund. Per-session credits never expire.",
+      "Unused sessions carry forward within your active cycle. If you cancel before renewal, you keep access until the cycle ends. If you haven't started any sessions, you can request a full refund within 24 hours of purchase.",
     ],
     [
       "Do you have a student discount?",

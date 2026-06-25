@@ -43,9 +43,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/refund`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  /* The programmatic SEO pages. Each gets its sitemapPriority from
-     the seo-pages config (0.4–0.95) so high-intent combos rank above
-     niche ones in Google's crawl queue. */
+  /* The programmatic SEO pages (/companies/[slug]).
+     Each gets its sitemapPriority from the seo-pages config (0.4–0.95)
+     so high-intent combos rank above niche ones in Google's crawl queue. */
   const seoEntries: MetadataRoute.Sitemap = SEO_PAGES.map((p) => ({
     url: `${baseUrl}/companies/${p.slug}`,
     lastModified: seoPagesLastModified,
@@ -53,5 +53,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: p.sitemapPriority ?? 0.7,
   }));
 
-  return [...staticEntries, ...seoEntries];
+  /* /questions index + /questions/[slug] — mirrors the /companies tree.
+     Same SEO_PAGES data, different URL prefix. Submitting both helps
+     Google discover all long-tail question sets quickly. */
+  const questionsIndex: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/questions`,
+      lastModified: seoPagesLastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.75,
+    },
+  ];
+  const questionEntries: MetadataRoute.Sitemap = SEO_PAGES.map((p) => ({
+    url: `${baseUrl}/questions/${p.slug}`,
+    lastModified: seoPagesLastModified,
+    changeFrequency: "monthly" as const,
+    priority: p.sitemapPriority ?? 0.7,
+  }));
+
+  return [...staticEntries, ...questionsIndex, ...questionEntries, ...seoEntries];
 }
