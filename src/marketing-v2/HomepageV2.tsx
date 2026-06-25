@@ -363,6 +363,38 @@ export function NavV2() {
           correctly wherever it mounts. On mobile (≤880px) the pill is
           suppressed: full-width sticky bar always, no floating effect. */}
       <style>{`
+        /* ── Nav link hover: copper underline slides in from left ── */
+        .mv2-nav-link {
+          color: #6E6759;
+          font-weight: 500;
+          padding-bottom: 4px;
+          transition: color 180ms ease-out;
+        }
+        .mv2-nav-link[aria-current="page"] {
+          color: #0E0C08;
+          font-weight: 600;
+        }
+        .mv2-nav-link:hover:not([aria-current="page"]) {
+          color: #0E0C08;
+        }
+        .mv2-nav-link::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          height: 1.5px;
+          width: 0;
+          background: #B45309;
+          transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .mv2-nav-link[aria-current="page"]::after {
+          width: 100%;
+          transition: none;
+        }
+        .mv2-nav-link:hover:not([aria-current="page"])::after {
+          width: 100%;
+        }
+
         @media (max-width: 880px) {
           .mv2-nav-links { display: none !important; }
           .mv2-nav-cta-label { display: none !important; }
@@ -449,15 +481,8 @@ export function NavV2() {
                   key={label}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  style={{
-                    color: active ? t.coal : t.inkSoft,
-                    textDecoration: "none",
-                    fontWeight: active ? 600 : 500,
-                    transition: `color 0.2s ${ease}`,
-                    position: "relative",
-                    paddingBottom: 4,
-                    borderBottom: active ? `1.5px solid ${t.copper}` : "1.5px solid transparent",
-                  }}
+                  className="mv2-nav-link"
+                  style={{ textDecoration: "none", position: "relative" }}
                 >
                   {label}
                 </a>
