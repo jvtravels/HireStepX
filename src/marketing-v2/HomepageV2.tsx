@@ -328,6 +328,7 @@ export function NavV2() {
      animation from toggling rapidly when the user hovers near a single
      boundary — which is the main cause of the "jerk" feeling. */
   const [scrolled, setScrolled] = useState(false);
+  const [logoVideoError, setLogoVideoError] = useState(false);
   useEffect(() => {
     let current = window.scrollY > 80;
     setScrolled(current);
@@ -453,26 +454,22 @@ export function NavV2() {
                 The video mounts fresh each time scrolled flips true, so
                 autoPlay always replays the animation from the start. No
                 loop — it plays once and holds on the final frame.
-                Drop logo-x.webm into /public/ to activate; the static
-                favicon.svg fallback renders until the file is present. */}
+                logoVideoError uses React state so the fallback is managed
+                by React — a raw DOM insertion would persist as a stale
+                node when the video unmounts and cause a double-logo. */}
             {scrolled ? (
-              <video
-                src="/logo-x.webm"
-                autoPlay
-                muted
-                playsInline
-                style={{ width: 28, height: 28, borderRadius: 6, display: "block" }}
-                onError={(e) => {
-                  // Fallback to static SVG if the webm hasn't been added yet
-                  const el = e.currentTarget;
-                  el.style.display = "none";
-                  const img = document.createElement("img");
-                  img.src = "/favicon.svg";
-                  img.alt = "HireStepX";
-                  img.style.cssText = "width:28px;height:28px;border-radius:6px;display:block";
-                  el.parentNode?.insertBefore(img, el);
-                }}
-              />
+              logoVideoError ? (
+                <img src="/favicon.svg" alt="HireStepX" style={{ width: 28, height: 28, borderRadius: 6, display: "block" }} />
+              ) : (
+                <video
+                  src="/logo-x.webm"
+                  autoPlay
+                  muted
+                  playsInline
+                  style={{ width: 28, height: 28, borderRadius: 6, display: "block" }}
+                  onError={() => setLogoVideoError(true)}
+                />
+              )
             ) : (
               <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
             )}
