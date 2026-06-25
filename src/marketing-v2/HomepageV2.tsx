@@ -375,14 +375,15 @@ export function NavV2() {
         className="mv2-nav-pill"
         style={{
           background: t.cream,
-          /* Geometry snaps (no transition) — only composited visual props animate */
           maxWidth: scrolled ? 760 : "100%",
           margin: scrolled ? "8px auto" : "0",
           borderRadius: scrolled ? 14 : 0,
           border: scrolled ? `1px solid ${t.line}` : "none",
           boxShadow: scrolled ? "0 4px 24px rgba(14,12,8,0.09), 0 1px 4px rgba(14,12,8,0.04)" : "none",
           overflow: "hidden",
-          transition: "border-radius 300ms ease-out, box-shadow 300ms ease-out",
+          /* Animate all shrink properties together for a smooth pill-in feel.
+             cubic-bezier(0.16,1,0.3,1) = expo ease-out: fast start, gentle finish */
+          transition: "max-width 400ms cubic-bezier(0.16,1,0.3,1), margin 400ms cubic-bezier(0.16,1,0.3,1), border-radius 400ms cubic-bezier(0.16,1,0.3,1), box-shadow 400ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
         <div
