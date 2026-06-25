@@ -504,7 +504,7 @@ export function PricingPageV2() {
         eyebrow="Pricing"
         title="Costs less than"
         accent="one chai a day."
-        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. UPI, cards, and netbanking accepted. 7-day refund if unused."
+        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. UPI, cards, and netbanking accepted. 24h refund if unused."
       />
 
       {/* Tier cards */}
@@ -678,6 +678,48 @@ export function PricingPageV2() {
                   {tier.cta} <span style={{ fontSize: 16 }}>→</span>
                 </a>
               </div>
+            ))}
+          </div>
+
+          {/* Trust strip — same copy as homepage PricingV2 */}
+          <div
+            style={{
+              marginTop: 36,
+              display: "flex",
+              justifyContent: "center",
+              gap: 28,
+              flexWrap: "wrap",
+              fontFamily: fonts.sans,
+              fontSize: 13,
+              color: t.inkSoft,
+            }}
+          >
+            {[
+              "2 free sessions — no card needed",
+              "₹9 sessions never expire",
+              "Cancel Sprint Pack any time · UPI · cards",
+            ].map((v) => (
+              <span key={v} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span
+                  aria-hidden
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: "50%",
+                    background: t.copper100,
+                    color: t.copper,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  ✓
+                </span>
+                {v}
+              </span>
             ))}
           </div>
         </div>
