@@ -37,9 +37,9 @@ const ResponsiveSheet = () => (
       .mv2-tap-44 { min-height: 44px !important; }
       .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
       .mv2-hero-section { min-height: 0 !important; display: block !important; }
-      /* Focus type icon grids: 2 cols on phone */
+      /* Focus type icon grids: phone */
       .mv2-focus-live-grid { grid-template-columns: repeat(2, 1fr) !important; }
-      .mv2-focus-soon-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .mv2-focus-soon-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 24px 16px !important; }
     }
     /* ── Tablets (md) ── */
     @media (max-width: 880px) {
@@ -72,9 +72,9 @@ const ResponsiveSheet = () => (
       /* Comparison: competitor cards side by side, HireStepX spans full width */
       .mv2-cmp-cards { grid-template-columns: 1fr 1fr !important; }
       .mv2-cmp-hsx { grid-column: 1 / -1 !important; }
-      /* Focus type icon grids: 2 cols live, 3 cols soon on tablet */
+      /* Focus type icon grids: tablet */
       .mv2-focus-live-grid { grid-template-columns: repeat(2, 1fr) !important; }
-      .mv2-focus-soon-grid { grid-template-columns: repeat(3, 1fr) !important; }
+      .mv2-focus-soon-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 32px 20px !important; }
       /* Objections: collapse 3-col (72px 1fr 1fr) → 2-col (number + content).
          The response <p> is forced into col 2 so it stacks under the quote,
          not under the number. Same pattern as the 881-1100px breakpoint. */
@@ -1827,10 +1827,12 @@ export function InterviewFocusV2() {
           </p>
         </MotionReveal>
 
-        {/* ── "Available now" divider ── */}
+        {/* ── Row 1: Live types — 4 items, 80px icons, animated ── */}
+
+        {/* "Available now" label */}
         <div style={{
           display: "flex", alignItems: "center", gap: 14,
-          maxWidth: 920, margin: "64px auto 52px",
+          margin: "56px 0 36px",
         }}>
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
@@ -1839,22 +1841,17 @@ export function InterviewFocusV2() {
               fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700,
               letterSpacing: "0.12em", textTransform: "uppercase" as const,
               color: t.copper, whiteSpace: "nowrap" as const,
-            }}>
-              Available now
-            </span>
+            }}>Available now</span>
           </div>
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
         </div>
 
-        {/* Live types — 4 items in a centred 4-column grid */}
         <div
           className="mv2-focus-live-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "0 52px",
-            maxWidth: 920,
-            margin: "0 auto",
+            gap: "0 32px",
           }}
         >
           {LIVE_TYPES.map((type) => (
@@ -1863,73 +1860,58 @@ export function InterviewFocusV2() {
               className="hsx-focus-icon"
               style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
             >
-              <div style={{ width: 80, height: 80, marginBottom: 22 }}>{type.icon}</div>
+              <div style={{ width: 80, height: 80, marginBottom: 20 }}>{type.icon}</div>
               <h3 style={{
                 fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
-                color: t.coal, margin: "0 0 7px",
+                color: t.coal, margin: "0 0 6px",
                 letterSpacing: "-0.015em", lineHeight: 1.3,
-              }}>
-                {type.label}
-              </h3>
+              }}>{type.label}</h3>
               <p style={{
                 fontFamily: fonts.sans, fontSize: 13,
-                color: t.inkSoft, margin: 0, lineHeight: 1.6, maxWidth: 160,
-              }}>
-                {type.desc}
-              </p>
+                color: t.inkSoft, margin: 0, lineHeight: 1.55, maxWidth: 150,
+              }}>{type.desc}</p>
             </div>
           ))}
         </div>
 
-        {/* ── "Coming soon" divider ── */}
+        {/* ── Row 2: Coming-soon types — 6 items compact, single row, 60px icons ── */}
+
+        {/* "Coming soon" label */}
         <div style={{
           display: "flex", alignItems: "center", gap: 14,
-          maxWidth: 920, margin: "80px auto 52px",
+          margin: "52px 0 32px",
         }}>
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
           <span style={{
             fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700,
             letterSpacing: "0.12em", textTransform: "uppercase" as const,
             color: t.inkFaint, whiteSpace: "nowrap" as const,
-          }}>
-            Coming soon · {SOON_TYPES.length} more formats
-          </span>
+          }}>Coming soon · {SOON_TYPES.length} more formats</span>
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
         </div>
 
-        {/* Coming-soon types — 6 items in a 3-column grid */}
+        {/* 6-col single row — compact, label only, no description */}
         <div
           className="mv2-focus-soon-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "52px 52px",
-            maxWidth: 920,
-            margin: "0 auto",
+            gridTemplateColumns: "repeat(6, 1fr)",
+            gap: "0 20px",
+            opacity: 0.3,
+            filter: "saturate(0.45)",
           }}
         >
           {SOON_TYPES.map((type) => (
             <div
               key={type.label}
-              style={{
-                display: "flex", flexDirection: "column", alignItems: "center",
-                textAlign: "center", opacity: 0.3, filter: "saturate(0.45)",
-              }}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
             >
-              <div style={{ width: 80, height: 80, marginBottom: 22 }}>{type.icon}</div>
-              <h3 style={{
-                fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
-                color: t.coal, margin: "0 0 7px",
-                letterSpacing: "-0.015em", lineHeight: 1.3,
-              }}>
-                {type.label}
-              </h3>
+              <div style={{ width: 60, height: 60, marginBottom: 16 }}>{type.icon}</div>
               <p style={{
-                fontFamily: fonts.sans, fontSize: 13,
-                color: t.inkFaint, margin: 0, lineHeight: 1.6,
-              }}>
-                Coming soon
-              </p>
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.coal, margin: 0, lineHeight: 1.3,
+                letterSpacing: "-0.01em",
+              }}>{type.label}</p>
             </div>
           ))}
         </div>

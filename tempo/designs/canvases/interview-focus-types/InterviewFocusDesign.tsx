@@ -506,3 +506,508 @@ export function HeadingOptions() {
     </div>
   );
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   REDESIGN — Icon grid v2
+   Research findings applied:
+   • Stroke locked at 2.5px across all 10 icons (was mixed 1.4–2.2)
+   • Live area 8–56 inside 64×64 viewBox (8px padding each side)
+   • Two-layer duotone: stroke at copper gradient, fill at 12–15% opacity
+   • Draw-on hover animation: CSS stroke-dashoffset 1000→0
+   • Stagger via nth-child delays (0.05s per element)
+   • Coming-soon: opacity 0.32 + filter saturate(0.55) — not 0.46
+   • Icons redesigned: Campus = mortarboard, Panel = desk+placards,
+     Salary = tilted scales, Govt = building+emblem
+══════════════════════════════════════════════════════════════════ */
+
+/* ── Gradient for redesign (separate ID to avoid collision) ─────── */
+const GRAD2_ID = "hsx-cg-v2";
+const G2       = `url(#${GRAD2_ID})`;
+const nsw      = 2.5;  /* new uniform stroke weight */
+
+function GradientDef2() {
+  return (
+    <svg width="0" height="0" aria-hidden style={{ position: "absolute", overflow: "hidden" }}>
+      <defs>
+        <linearGradient id={GRAD2_ID} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#E8C4A0" />
+          <stop offset="100%" stopColor="#B45309" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+/* ── CSS draw-on animation — loops continuously ────────────────── */
+function DrawOnStyles() {
+  return (
+    <style>{`
+      /* 4.5s cycle: fade-in draw → long hold → fade out → reset */
+      .hsx-v2-icon svg .d {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: hsx-v2-draw 4.5s cubic-bezier(0.4,0,0.2,1) infinite;
+      }
+      .hsx-v2-icon svg .d:nth-child(1)  { animation-delay: 0.00s; }
+      .hsx-v2-icon svg .d:nth-child(2)  { animation-delay: 0.08s; }
+      .hsx-v2-icon svg .d:nth-child(3)  { animation-delay: 0.16s; }
+      .hsx-v2-icon svg .d:nth-child(4)  { animation-delay: 0.24s; }
+      .hsx-v2-icon svg .d:nth-child(5)  { animation-delay: 0.32s; }
+      .hsx-v2-icon svg .d:nth-child(6)  { animation-delay: 0.40s; }
+      .hsx-v2-icon svg .d:nth-child(7)  { animation-delay: 0.48s; }
+      .hsx-v2-icon svg .d:nth-child(8)  { animation-delay: 0.56s; }
+
+      @keyframes hsx-v2-draw {
+        0%   { stroke-dashoffset: 1000; opacity: 0; }
+        6%   { opacity: 1; }
+        38%  { stroke-dashoffset: 0; opacity: 1; }
+        82%  { stroke-dashoffset: 0; opacity: 1; }
+        97%  { stroke-dashoffset: 0; opacity: 0; }
+        100% { stroke-dashoffset: 1000; opacity: 0; }
+      }
+
+      /* pulsing live dot */
+      .hsx-live-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #B45309; display: inline-block; flex-shrink: 0;
+        animation: hsx-pulse 2s ease-in-out infinite;
+      }
+      @keyframes hsx-pulse {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.25; }
+      }
+    `}</style>
+  );
+}
+
+/* ── Redesigned icon set ────────────────────────────────────────── */
+const NewIcons = {
+  Behavioral: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* speech bubble body — tall enough for star + room to breathe */}
+      <path className="d" d="M9 8h46a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H28L16 50l2-12H9a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round" fill={G2} fillOpacity="0.09"/>
+      {/* star — bigger, centred in the bubble */}
+      <polygon className="d"
+        points="32,13 34.8,21 43,21 36.6,25.8 39,34 32,29 25,34 27.4,25.8 21,21 29.2,21"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round" fill={G2} fillOpacity="0.22"/>
+    </svg>
+  ),
+
+  Campus: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* mortarboard diamond top */}
+      <path className="d" d="M32 10L54 21L32 32L10 21z"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round" fill={G2} fillOpacity="0.12"/>
+      {/* cap body */}
+      <path className="d" d="M18 25v9c0 7 28 7 28 0v-9"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round"/>
+      {/* tassel string from right corner */}
+      <line className="d" x1="54" y1="21" x2="54" y2="40"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* tassel bundle */}
+      <line className="d" x1="49" y1="40" x2="59" y2="40"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* tassel strands */}
+      <line className="d" x1="50" y1="40" x2="49" y2="49"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="54" y1="40" x2="53" y2="50"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="58" y1="40" x2="57" y2="49"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+    </svg>
+  ),
+
+  Salary: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* center post */}
+      <line className="d" x1="32" y1="10" x2="32" y2="54"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* beam — tilted left-down, right-up to show negotiation tension */}
+      <line className="d" x1="10" y1="23" x2="54" y2="19"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* left pan strings */}
+      <line className="d" x1="14" y1="23" x2="11" y2="37"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="14" y1="23" x2="17" y2="37"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* left pan (lower — heavier) */}
+      <path className="d" d="M9 37a6 3 0 0 0 12 0"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" fill={G2} fillOpacity="0.15"/>
+      {/* right pan strings */}
+      <line className="d" x1="50" y1="19" x2="47" y2="31"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="50" y1="19" x2="53" y2="31"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* right pan (higher — lighter) */}
+      <path className="d" d="M45 31a6 3 0 0 0 12 0"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" fill={G2} fillOpacity="0.15"/>
+      {/* base pedestal */}
+      <rect className="d" x="28" y="48" width="8" height="6" rx="2"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round" fill={G2} fillOpacity="0.1"/>
+      {/* base line */}
+      <line className="d" x1="22" y1="54" x2="42" y2="54"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+    </svg>
+  ),
+
+  HR: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* left person — head */}
+      <circle className="d" cx="17" cy="16" r="7"
+        stroke={G2} strokeWidth={nsw} fill={G2} fillOpacity="0.09"/>
+      {/* left person — body arc */}
+      <path className="d" d="M4 47c0-11 26-11 26 0"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" fill={G2} fillOpacity="0.07"/>
+      {/* right person — head */}
+      <circle className="d" cx="47" cy="16" r="7"
+        stroke={G2} strokeWidth={nsw} fill={G2} fillOpacity="0.09"/>
+      {/* right person — body arc */}
+      <path className="d" d="M34 47c0-11 26-11 26 0"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" fill={G2} fillOpacity="0.07"/>
+      {/* handshake — two clasped hands */}
+      <path className="d" d="M24 33l4 3h8l4-3"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+
+  Leadership: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* outer ring */}
+      <circle className="d" cx="30" cy="32" r="20"
+        stroke={G2} strokeWidth={nsw}/>
+      {/* middle ring */}
+      <circle className="d" cx="30" cy="32" r="12"
+        stroke={G2} strokeWidth={nsw}/>
+      {/* bullseye */}
+      <circle className="d" cx="30" cy="32" r="5"
+        stroke={G2} strokeWidth={nsw} fill={G2} fillOpacity="0.24"/>
+      {/* arrow shaft from top-right */}
+      <line className="d" x1="52" y1="10" x2="35" y2="27"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* arrow head */}
+      <path className="d" d="M40 10h12v12"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+
+  TechLead: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* monitor frame */}
+      <rect className="d" x="8" y="10" width="48" height="34" rx="4"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.07"/>
+      {/* screen bezel */}
+      <rect className="d" x="12" y="14" width="40" height="26" rx="2"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round"/>
+      {/* < bracket */}
+      <path className="d" d="M22 23l-7 4 7 4"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round"/>
+      {/* > bracket */}
+      <path className="d" d="M42 23l7 4-7 4"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round"/>
+      {/* / slash */}
+      <line className="d" x1="34" y1="20" x2="30" y2="36"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* stand neck */}
+      <path className="d" d="M29 44l-4 9h14l-4-9"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round"/>
+      {/* stand base */}
+      <line className="d" x1="22" y1="53" x2="42" y2="53"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+    </svg>
+  ),
+
+  CaseStudy: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* document body */}
+      <path className="d" d="M10 8h24l12 12v36H10z"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round" fill={G2} fillOpacity="0.07"/>
+      {/* folded corner */}
+      <path className="d" d="M34 8v12h12"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round"/>
+      {/* text lines */}
+      <line className="d" x1="16" y1="28" x2="34" y2="28"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="16" y1="35" x2="30" y2="35"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="16" y1="42" x2="24" y2="42"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* magnifying glass circle */}
+      <circle className="d" cx="43" cy="45" r="9"
+        stroke={G2} strokeWidth={nsw} fill={G2} fillOpacity="0.1"/>
+      {/* magnifying glass handle */}
+      <line className="d" x1="49" y1="52" x2="55" y2="58"
+        stroke={G2} strokeWidth={nsw + 0.5} strokeLinecap="round"/>
+    </svg>
+  ),
+
+  Panel: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* 3 interviewer heads — left, center (lead), right */}
+      <circle className="d" cx="13" cy="14" r="6"
+        stroke={G2} strokeWidth={nsw} fill={G2} fillOpacity="0.07"/>
+      <circle className="d" cx="32" cy="11" r="8"
+        stroke={G2} strokeWidth={nsw} fill={G2} fillOpacity="0.13"/>
+      <circle className="d" cx="51" cy="14" r="6"
+        stroke={G2} strokeWidth={nsw} fill={G2} fillOpacity="0.07"/>
+      {/* interviewer desk — solid bar */}
+      <rect className="d" x="8" y="36" width="48" height="7" rx="3"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.13"/>
+      {/* 3 name placards (static fill, no animation) */}
+      <rect x="11" y="38.5" width="11" height="2.5" rx="1" fill={G2} fillOpacity="0.32"/>
+      <rect x="27" y="38.5" width="11" height="2.5" rx="1" fill={G2} fillOpacity="0.32"/>
+      <rect x="43" y="38.5" width="11" height="2.5" rx="1" fill={G2} fillOpacity="0.32"/>
+      {/* candidate (you) — circle below desk */}
+      <circle className="d" cx="32" cy="56" r="5"
+        stroke={G2} strokeWidth={nsw} fill={G2} fillOpacity="0.06"/>
+    </svg>
+  ),
+
+  Management: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* top node */}
+      <rect className="d" x="22" y="8" width="20" height="12" rx="3"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.15"/>
+      {/* stem */}
+      <line className="d" x1="32" y1="20" x2="32" y2="30"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* horizontal bar */}
+      <line className="d" x1="12" y1="30" x2="52" y2="30"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* 3 drops */}
+      <line className="d" x1="12" y1="30" x2="12" y2="38"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="32" y1="30" x2="32" y2="38"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="52" y1="30" x2="52" y2="38"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* 3 bottom nodes */}
+      <rect className="d" x="2"  y="38" width="20" height="12" rx="3"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.07"/>
+      <rect className="d" x="22" y="38" width="20" height="12" rx="3"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.07"/>
+      <rect className="d" x="42" y="38" width="20" height="12" rx="3"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.07"/>
+    </svg>
+  ),
+
+  GovPSU: (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+      {/* pediment — taller triangle, clearly a roof */}
+      <path className="d" d="M8 26L32 6l24 20H8z"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round" strokeLinejoin="round" fill={G2} fillOpacity="0.1"/>
+      {/* official emblem circle in pediment */}
+      <circle className="d" cx="32" cy="18" r="5"
+        stroke={G2} strokeWidth="1.8" fill={G2} fillOpacity="0.22"/>
+      <circle cx="32" cy="18" r="2" fill={G2} fillOpacity="0.6"/>
+      {/* entablature bar */}
+      <rect className="d" x="8" y="26" width="48" height="5" rx="1"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.1"/>
+      {/* 5 columns — taller, more imposing */}
+      <line className="d" x1="14" y1="31" x2="14" y2="53"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="22" y1="31" x2="22" y2="53"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="32" y1="31" x2="32" y2="53"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="42" y1="31" x2="42" y2="53"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      <line className="d" x1="50" y1="31" x2="50" y2="53"
+        stroke={G2} strokeWidth={nsw} strokeLinecap="round"/>
+      {/* base steps */}
+      <rect className="d" x="6"  y="53" width="52" height="4" rx="1"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.09"/>
+      <rect className="d" x="4"  y="57" width="56" height="4" rx="1"
+        stroke={G2} strokeWidth={nsw} strokeLinejoin="round" fill={G2} fillOpacity="0.09"/>
+    </svg>
+  ),
+};
+
+const NEW_TYPES = [
+  { label: "Behavioral",           desc: "STAR stories · leadership · decisions",      live: true,  icon: NewIcons.Behavioral },
+  { label: "Campus Placement",     desc: "TCS · Infosys · Wipro · Cognizant",          live: true,  icon: NewIcons.Campus     },
+  { label: "Salary Negotiation",   desc: "Counter-offers · levelling · benefits",      live: true,  icon: NewIcons.Salary     },
+  { label: "HR Round",             desc: "Culture fit · motivation · expectations",    live: true,  icon: NewIcons.HR         },
+  { label: "Leadership Round",     desc: "Vision · stakeholders · long-range thinking",live: false, icon: NewIcons.Leadership },
+  { label: "Technical Leadership", desc: "System design · coding · architecture",      live: false, icon: NewIcons.TechLead   },
+  { label: "Case Study",           desc: "Analysis · frameworks · presentation",       live: false, icon: NewIcons.CaseStudy  },
+  { label: "Panel Interview",      desc: "Multiple interviewers · group dynamics",     live: false, icon: NewIcons.Panel      },
+  { label: "Management",           desc: "People · process · performance reviews",     live: false, icon: NewIcons.Management },
+  { label: "Govt / PSU",           desc: "UPSC · banking · PSU interviews",            live: false, icon: NewIcons.GovPSU     },
+];
+
+function IconCell({ type }: { type: typeof NEW_TYPES[0] }) {
+  return (
+    <div
+      className={type.live ? "hsx-v2-icon" : undefined}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        opacity: type.live ? 1 : 0.3,
+        filter: type.live ? "none" : "saturate(0.45)",
+        cursor: "default",
+      }}
+    >
+      <div style={{ width: 80, height: 80, marginBottom: 22 }}>{type.icon}</div>
+      <h3 style={{
+        fontFamily: SANS, fontSize: 15, fontWeight: 600,
+        color: COAL, margin: "0 0 7px",
+        letterSpacing: "-0.015em", lineHeight: 1.3,
+      }}>
+        {type.label}
+      </h3>
+      <p style={{
+        fontFamily: SANS, fontSize: 13,
+        color: type.live ? INK : FAINT,
+        margin: 0, lineHeight: 1.6,
+        maxWidth: 160,
+      }}>
+        {type.live ? type.desc : "Coming soon"}
+      </p>
+    </div>
+  );
+}
+
+function SectionDivider({ label, sub, live = false }: { label: string; sub?: string; live?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ flex: 1, height: 1, background: LINE }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+        {live && <span className="hsx-live-dot" />}
+        <span style={{
+          fontFamily: SANS, fontSize: 10.5, fontWeight: 700,
+          letterSpacing: "0.12em", textTransform: "uppercase" as const,
+          color: live ? COPPER : FAINT,
+          whiteSpace: "nowrap" as const,
+        }}>
+          {label}
+        </span>
+        {sub && (
+          <span style={{
+            fontFamily: SANS, fontSize: 10.5, fontWeight: 400,
+            color: FAINT, whiteSpace: "nowrap" as const,
+          }}>
+            {sub}
+          </span>
+        )}
+      </div>
+      <div style={{ flex: 1, height: 1, background: LINE }} />
+    </div>
+  );
+}
+
+function NewIconGrid() {
+  const live = NEW_TYPES.filter(t => t.live);
+  const soon = NEW_TYPES.filter(t => !t.live);
+
+  return (
+    <div style={{ marginTop: 56 }}>
+      {/* "Available now" label */}
+      <div style={{ margin: "0 0 36px" }}>
+        <SectionDivider label="Available now" live />
+      </div>
+
+      {/* Live types — 4 items, 80px icons */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gap: "0 32px",
+      }}>
+        {live.map(type => <IconCell key={type.label} type={type} />)}
+      </div>
+
+      {/* "Coming soon" label */}
+      <div style={{ margin: "52px 0 32px" }}>
+        <SectionDivider label="Coming soon" sub={`· ${soon.length} more formats`} />
+      </div>
+
+      {/* Coming-soon types — 6 items in a single compact row, 60px icons, no desc */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(6, 1fr)",
+        gap: "0 20px",
+        opacity: 0.3,
+        filter: "saturate(0.45)",
+      }}>
+        {soon.map(type => (
+          <div
+            key={type.label}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
+          >
+            <div style={{ width: 60, height: 60, marginBottom: 16 }}>{type.icon}</div>
+            <p style={{
+              fontFamily: SANS, fontSize: 13, fontWeight: 600,
+              color: COAL, margin: 0, lineHeight: 1.3, letterSpacing: "-0.01em",
+            }}>{type.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function DesktopRedesign() {
+  return (
+    <div style={{
+      width: 1440, background: CREAM,
+      padding: "96px 0 120px",
+      fontFamily: SANS, position: "relative",
+    }}>
+      <DrawOnStyles />
+      <GradientDef2 />
+
+      <div style={{ maxWidth: 1160, margin: "0 auto", padding: "0 40px" }}>
+
+        {/* Section eyebrow */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12, marginBottom: 44,
+        }}>
+          <span style={{
+            fontFamily: SANS, fontSize: 11, fontWeight: 700,
+            letterSpacing: "0.13em", textTransform: "uppercase" as const,
+            color: FAINT,
+          }}>03</span>
+          <div style={{ width: 20, height: 1, background: LINE }} />
+          <span style={{
+            fontFamily: SANS, fontSize: 11, fontWeight: 700,
+            letterSpacing: "0.13em", textTransform: "uppercase" as const,
+            color: FAINT,
+          }}>Interview formats</span>
+          <div style={{ flex: 1, height: 1, background: LINE }} />
+          <span style={{
+            fontFamily: SANS, fontSize: 11, fontWeight: 600,
+            letterSpacing: "0.08em", textTransform: "uppercase" as const,
+            color: FAINT,
+          }}>10 types · 4 live now</span>
+        </div>
+
+        {/* Heading */}
+        <div style={{ textAlign: "center", maxWidth: 860, margin: "0 auto" }}>
+          <h2 style={{
+            fontFamily: SERIF, fontSize: 64, fontWeight: 400,
+            color: COAL, margin: "0 0 24px",
+            letterSpacing: "-0.025em", lineHeight: 1.1,
+          }}>
+            Walk into any round<br />
+            <em style={{ fontStyle: "italic", color: COPPER }}>knowing exactly what it&rsquo;s testing.</em>
+          </h2>
+          <p style={{
+            fontFamily: SANS, fontSize: 16, color: "#4a4540",
+            lineHeight: 1.75, margin: "0 auto",
+            maxWidth: 620,
+          }}>
+            Every format has hidden rules. HR tests culture, not qualifications.
+            Campus filters on communication, not marks. Salary expects you to negotiate,
+            even when nobody says so. Ten formats. One coach.
+          </p>
+        </div>
+
+        {/* Redesigned icon grid */}
+        <NewIconGrid />
+      </div>
+
+    </div>
+  );
+}
