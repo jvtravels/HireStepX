@@ -328,7 +328,6 @@ export function NavV2() {
      animation from toggling rapidly when the user hovers near a single
      boundary — which is the main cause of the "jerk" feeling. */
   const [scrolled, setScrolled] = useState(false);
-  const [logoVideoError, setLogoVideoError] = useState(false);
   useEffect(() => {
     let current = window.scrollY > 80;
     setScrolled(current);
@@ -450,32 +449,9 @@ export function NavV2() {
             aria-label="HireStepX home"
             style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
           >
-            {/* Swap wordmark ↔ animated X mark based on scroll state.
-                The video mounts fresh each time scrolled flips true, so
-                autoPlay always replays the animation from the start. No
-                loop — it plays once and holds on the final frame.
-                logoVideoError uses React state so the fallback is managed
-                by React — a raw DOM insertion would persist as a stale
-                node when the video unmounts and cause a double-logo. */}
+            {/* Swap wordmark ↔ X mark based on scroll state. */}
             {scrolled ? (
-              logoVideoError ? (
-                <img src="/favicon.svg" alt="HireStepX" style={{ width: 28, height: 28, borderRadius: 6, display: "block", flexShrink: 0 }} />
-              ) : (
-                /* Container clips the video to 28×28 — the webm is likely
-                   rendered at a large native resolution (e.g. 1080×1080).
-                   CSS width/height alone don't clip overflow on <video>;
-                   the parent div + overflow:hidden does. */
-                <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
-                  <video
-                    src="/logo-x.webm"
-                    autoPlay
-                    muted
-                    playsInline
-                    style={{ width: "100%", height: "100%", display: "block", objectFit: "contain" }}
-                    onError={() => setLogoVideoError(true)}
-                  />
-                </div>
-              )
+              <img src="/favicon.svg" alt="HireStepX" style={{ width: 28, height: 28, borderRadius: 6, display: "block" }} />
             ) : (
               <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
             )}
