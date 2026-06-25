@@ -1599,9 +1599,9 @@ export function InterviewFocusV2() {
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
           {/* mortarboard top (diamond) */}
-          <path d="M32 8L58 22L32 36L6 22z" stroke={G} strokeWidth={sw} strokeLinejoin="round" {...rp} fill={G} fillOpacity="0.12"/>
+          <path d="M32 8L58 22L32 36L6 22z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.12"/>
           {/* cap body beneath */}
-          <path d="M16 26v10c0 9 32 9 32 0V26" stroke={G} strokeWidth={sw} strokeLinecap="round" {...rp}/>
+          <path d="M16 26v10c0 9 32 9 32 0V26" stroke={G} strokeWidth={sw} {...rp}/>
           {/* tassel string */}
           <line x1="58" y1="22" x2="58" y2="40" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
           {/* tassel bundle */}
