@@ -79,11 +79,11 @@ export default function PublicProfile() {
 
         {/* Stats Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28 }}>
-          <div style={{ padding: "24px 20px", borderRadius: 14, background: "rgba(6,6,7,0.6)", border: `1px solid ${c.border}`, textAlign: "center" }}>
+          <div style={{ padding: "24px 20px", borderRadius: 14, background: c.carbon, border: `1px solid ${c.border}`, textAlign: "center" }}>
             <span style={{ fontFamily: font.mono, fontSize: 32, fontWeight: 700, color: c.gilt, display: "block" }}>{profile.stats.totalSessions}</span>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Sessions Completed</span>
           </div>
-          <div style={{ padding: "24px 20px", borderRadius: 14, background: "rgba(6,6,7,0.6)", border: `1px solid ${c.border}`, textAlign: "center" }}>
+          <div style={{ padding: "24px 20px", borderRadius: 14, background: c.carbon, border: `1px solid ${c.border}`, textAlign: "center" }}>
             <span style={{ fontFamily: font.mono, fontSize: 32, fontWeight: 700, color: c.sage, display: "block" }}>{profile.stats.avgScore}</span>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Average Score</span>
           </div>
@@ -91,7 +91,7 @@ export default function PublicProfile() {
 
         {/* Skills */}
         {profile.stats.skills.length > 0 && (
-          <div style={{ padding: "24px", borderRadius: 14, background: "rgba(6,6,7,0.6)", border: `1px solid ${c.border}`, marginBottom: 28 }}>
+          <div style={{ padding: "24px", borderRadius: 14, background: c.carbon, border: `1px solid ${c.border}`, marginBottom: 28 }}>
             <h3 style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, margin: "0 0 16px", letterSpacing: "0.02em" }}>Skill Breakdown</h3>
             {profile.stats.skills.map(skill => (
               <div key={skill.name} style={{ marginBottom: 12 }}>
@@ -109,7 +109,7 @@ export default function PublicProfile() {
 
         {/* Session Types */}
         {Object.keys(profile.stats.sessionTypes).length > 0 && (
-          <div style={{ padding: "24px", borderRadius: 14, background: "rgba(6,6,7,0.6)", border: `1px solid ${c.border}`, marginBottom: 28 }}>
+          <div style={{ padding: "24px", borderRadius: 14, background: c.carbon, border: `1px solid ${c.border}`, marginBottom: 28 }}>
             <h3 style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, margin: "0 0 16px", letterSpacing: "0.02em" }}>Practice Focus</h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {Object.entries(profile.stats.sessionTypes).map(([type, count]) => (

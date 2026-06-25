@@ -34,7 +34,6 @@ const LEGAL_LINKS: Array<[string, string]> = [
   ["Privacy", "/privacy"],
   ["Terms", "/terms"],
   ["Refund", "/refund"],
-  ["Status", "https://status.hirestepx.com"],
 ];
 
 /* ── Icon SVGs ── */
