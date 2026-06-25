@@ -4609,14 +4609,15 @@ export default function HomepageV2() {
       <NavV2 />
       {/* 12-section composition (matches the planned section list):
             1. NavV2  2. HeroV2  3. InterviewFocusV2  4. PersonalizedReportsV2
-            5. FeatureGridV2  6. ProductStoryV2  7. ComparisonV2
-            8. PricingV2  9. SecurityComplianceV2  10. FAQV2  11. VideoCtaV2  12. FooterDome */}
+            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. ComparisonV2
+            8. PricingV2  9. SecurityComplianceV2  10. FAQV2  11. VideoCtaV2  12. FooterDome
+            Arc: hook → focus proof → report proof → features → how-it-works → vs-alternatives → buy */}
       <main id="main">
         <HeroV2 />
-        <ProductStoryV2 />
         <InterviewFocusV2 />
         <PersonalizedReportsV2 />
         <FeatureGridV2 />
+        <ProductStoryV2 />
         <ComparisonV2 />
         <PricingV2 />
         <SecurityComplianceV2 />
