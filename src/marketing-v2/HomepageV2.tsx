@@ -1798,11 +1798,11 @@ export function InterviewFocusV2() {
         <SectionMasthead n="03" label="Focus" right="Roles × companies" style={{ marginBottom: 24 }} />
 
         <MotionReveal style={{ textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
-          <h2 id="hd-focus" style={h2}>
-            Walk into any round{" "}
+          <h2 id="hd-focus" style={{ ...h2, fontSize: 64 }}>
+            Walk into any round<br />
             <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it's testing.</span>
           </h2>
-          <p style={{ ...body, marginTop: 16, fontSize: 17 }}>
+          <p style={{ ...body, marginTop: 16, fontSize: 16, color: "#4a4540" }}>
             HR rounds test culture, not qualifications. Campus drives filter on
             communication, not marks. Salary rounds expect you to negotiate —
             even when nobody says so. Ten formats. One coach that shows you the
