@@ -927,19 +927,61 @@ export async function negotiationKernelTurn(params: {
   return postKernel({ action: "turn", ...params });
 }
 
+/* Pre-launch audit BLOCKER #1 (2026-06-25) — 429/transient must NOT collapse
+ * to a silent salvage-close.
+ *
+ * The old body returned `null` on ANY non-2xx (and on the client-side rate-
+ * limit refusal). The engine reads that null, retries once after 600ms, and on
+ * a second null ships the scripted CLOSING — ending the negotiation. A rate-
+ * limit (HTTP 429, or the client-side 30/60s throttle for a fast user) is NOT a
+ * reason to end a session; it's transient back-pressure. So a throttled-but-
+ * otherwise-fine candidate got force-closed mid-negotiation, and the salvage
+ * closing is indistinguishable from a real close — they think they reached a
+ * deal they never did.
+ *
+ * Fix, contained to this single source: classify the failure and absorb the
+ * RETRYABLE classes (429 / 5xx / network-or-abort / client throttle) with an
+ * internal back-off + one retry, BEFORE returning null. Only a genuine
+ * permanent failure (4xx other than 429) or a still-failing transient reaches
+ * the engine as null. This stacks under the engine's existing 600ms outer
+ * retry, so a brief 429 spike now survives instead of false-closing. */
+export function isRetryableKernelStatus(status: number): boolean {
+  // 0 = network error / abort (apiClient settles these as status 0).
+  // 429 = rate-limited. 5xx = server/LLM transient. All worth one more try.
+  return status === 0 || status === 429 || status >= 500;
+}
+
 async function postKernel(body: Record<string, unknown>): Promise<NegotiationKernelResponse | null> {
-  if (!checkRateLimit("negotiate-turn", 30, 60_000)) return null;
-  try {
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 14_000);
-    // XHR transport (apiFetch) — see apiClient.ts for the extension-hang rationale.
-    const res = await apiFetch<NegotiationKernelResponse>("/api/negotiate-turn", body, { signal: ac.signal });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    return res.data;
-  } catch {
-    return null;
+  if (!checkRateLimit("negotiate-turn", 30, 60_000)) {
+    /* Client-side throttle tripped (≥30 turns/60s — abnormal for a human, but
+     * a retry storm or impatient double-submit can hit it). Honor the throttle
+     * with a brief wait rather than failing the turn into a salvage-close; only
+     * give up if the window still hasn't cleared. */
+    await new Promise(r => setTimeout(r, 1200));
+    if (!checkRateLimit("negotiate-turn", 30, 60_000)) return null;
   }
+  const attempt = async (): Promise<{ data: NegotiationKernelResponse | null; retryable: boolean }> => {
+    try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 14_000);
+      // XHR transport (apiFetch) — see apiClient.ts for the extension-hang rationale.
+      const res = await apiFetch<NegotiationKernelResponse>("/api/negotiate-turn", body, { signal: ac.signal });
+      clearTimeout(timer);
+      if (res.ok) return { data: res.data, retryable: false };
+      return { data: null, retryable: isRetryableKernelStatus(res.status) };
+    } catch {
+      // Threw before settling (e.g. AbortController) — treat as transient.
+      return { data: null, retryable: true };
+    }
+  };
+  const first = await attempt();
+  if (first.data) return first.data;
+  if (!first.retryable) return null; // permanent (4xx ≠ 429) — don't burn a retry.
+  /* Transient (429 / 5xx / network). Back off once and retry inside this call so
+   * the failure never surfaces to the engine's salvage path on a brief blip. */
+  await new Promise(r => setTimeout(r, 1500));
+  const second = await attempt();
+  return second.data;
 }
 
 /** Retry queued offline evaluations */
