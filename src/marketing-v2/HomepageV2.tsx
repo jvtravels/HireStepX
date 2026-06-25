@@ -328,6 +328,7 @@ export function NavV2() {
      animation from toggling rapidly when the user hovers near a single
      boundary — which is the main cause of the "jerk" feeling. */
   const [scrolled, setScrolled] = useState(false);
+  const [logoVideoError, setLogoVideoError] = useState(false);
   useEffect(() => {
     let current = window.scrollY > 80;
     setScrolled(current);
@@ -338,43 +339,6 @@ export function NavV2() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  /* Scroll-linked logo animation: scrubs video.currentTime proportionally
-     to scrollY so the wordmark→X animation plays forward on scroll-down
-     and in reverse on scroll-up. Both elements are always rendered and
-     their opacity is set directly on the DOM nodes — no React re-renders
-     fire per scroll tick. SCROLL_END matches the pill-shrink threshold
-     so the logo and pill transitions complete at the same scroll position. */
-  const logoVideoRef = useRef<HTMLVideoElement>(null);
-  const logoWordmarkRef = useRef<HTMLDivElement>(null);
-  const logoXRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const video = logoVideoRef.current;
-    const wordmark = logoWordmarkRef.current;
-    const xWrap = logoXRef.current;
-    const SCROLL_END = 80;
-    let dur = 0;
-
-    const onMeta = () => { if (video) dur = video.duration; };
-    if (video) {
-      video.addEventListener("loadedmetadata", onMeta);
-      if (video.readyState >= 1) dur = video.duration;
-    }
-
-    const update = () => {
-      const p = Math.max(0, Math.min(1, window.scrollY / SCROLL_END));
-      if (wordmark) wordmark.style.opacity = String(1 - p);
-      if (xWrap)    xWrap.style.opacity    = String(p);
-      if (video && dur > 0) video.currentTime = p * dur;
-    };
-
-    window.addEventListener("scroll", update, { passive: true });
-    update(); // set initial state on mount
-    return () => {
-      window.removeEventListener("scroll", update);
-      if (video) video.removeEventListener("loadedmetadata", onMeta);
-    };
   }, []);
 
   return (
@@ -486,41 +450,35 @@ export function NavV2() {
             aria-label="HireStepX home"
             style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
           >
-            {/* Scroll-driven logo crossfade. Both elements always in the DOM;
-                opacity + video.currentTime are driven by the scroll effect above.
-                The wordmark fills layout width; the X mark sits absolute on top
-                of its left edge so no layout shift occurs during the transition. */}
-            <div style={{ position: "relative", display: "inline-flex", alignItems: "center", height: 28 }}>
-              {/* Wordmark — opacity 1 at rest → 0 at scrollY ≥ 80 */}
-              <div ref={logoWordmarkRef} style={{ display: "flex", alignItems: "center" }}>
-                <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto", display: "block" }} />
-              </div>
-              {/* X mark — opacity 0 at rest → 1 at scrollY ≥ 80, absolutely
-                  overlaid on the left so it aligns with the pill's tight layout */}
-              <div
-                ref={logoXRef}
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  width: 28,
-                  height: 28,
-                  borderRadius: 6,
-                  overflow: "hidden",
-                  opacity: 0,
-                }}
-              >
-                <video
-                  ref={logoVideoRef}
-                  src="/logo-x.webm"
-                  muted
-                  playsInline
-                  preload="auto"
-                  style={{ width: "100%", height: "100%", display: "block", objectFit: "contain" }}
-                />
-              </div>
-            </div>
+            {/* Swap wordmark ↔ animated X mark based on scroll state.
+                The video mounts fresh each time scrolled flips true, so
+                autoPlay always replays the animation from the start. No
+                loop — it plays once and holds on the final frame.
+                logoVideoError uses React state so the fallback is managed
+                by React — a raw DOM insertion would persist as a stale
+                node when the video unmounts and cause a double-logo. */}
+            {scrolled ? (
+              logoVideoError ? (
+                <img src="/favicon.svg" alt="HireStepX" style={{ width: 28, height: 28, borderRadius: 6, display: "block", flexShrink: 0 }} />
+              ) : (
+                /* Container clips the video to 28×28 — the webm is likely
+                   rendered at a large native resolution (e.g. 1080×1080).
+                   CSS width/height alone don't clip overflow on <video>;
+                   the parent div + overflow:hidden does. */
+                <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
+                  <video
+                    src="/logo-x.webm"
+                    autoPlay
+                    muted
+                    playsInline
+                    style={{ width: "100%", height: "100%", display: "block", objectFit: "contain" }}
+                    onError={() => setLogoVideoError(true)}
+                  />
+                </div>
+              )
+            ) : (
+              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
+            )}
           </a>
 
           <div
