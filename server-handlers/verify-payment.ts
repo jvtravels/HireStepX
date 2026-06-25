@@ -102,7 +102,7 @@ async function sendPaymentEmail(
   const planLabel = PLAN_LABEL[plan] || tier;
   const start = new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   const end = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-  const amountMap: Record<string, string> = { single: "₹9", weekly: "₹49", monthly: "₹149" };
+  const amountMap: Record<string, string> = { single: "₹9", weekly: "₹39", monthly: "₹149" };
   const amount = amountOverride ?? amountMap[plan] ?? "₹49";
 
   try {

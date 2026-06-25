@@ -17,8 +17,8 @@ const RAZORPAY_PLAN_WEEKLY = (process.env.RAZORPAY_PLAN_WEEKLY || "").trim();
 const RAZORPAY_PLAN_MONTHLY = (process.env.RAZORPAY_PLAN_MONTHLY || "").trim();
 
 const PLAN_MAP: Record<string, { planId: string; name: string; description: string; amount: number }> = {
-  weekly:  { planId: RAZORPAY_PLAN_WEEKLY,  name: "HireStepX Starter", description: "Weekly Plan — ₹49/week · 7 sessions · Auto-renews",  amount: 4900 },
-  monthly: { planId: RAZORPAY_PLAN_MONTHLY, name: "HireStepX Pro",     description: "Monthly Plan — ₹149/month · 30 sessions · Auto-renews", amount: 14900 },
+  weekly:  { planId: RAZORPAY_PLAN_WEEKLY,  name: "HireStepX Sprint Pack", description: "Sprint Pack — ₹39/month · 5 sessions · Auto-renews monthly", amount: 3900 },
+  monthly: { planId: RAZORPAY_PLAN_MONTHLY, name: "HireStepX Pro",         description: "Monthly Plan — ₹149/month · 30 sessions · Auto-renews",      amount: 14900 },
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -95,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const subscriptionPayload: Record<string, unknown> = {
       plan_id: planConfig.planId,
-      total_count: plan === "weekly" ? 52 : 12, // 1 year of renewals
+      total_count: 12, // 12 billing cycles = 1 year (monthly for Sprint Pack, monthly for Pro)
       customer_notify: 1,
       notes: {
         plan,
