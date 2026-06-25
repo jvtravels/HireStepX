@@ -323,15 +323,19 @@ export function NavV2() {
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
-  /* Floating pill: once the user scrolls 72px (past the hero's first fold
-     visual), the nav lifts off the edge and becomes a centered pill.
-     Passive listener — no scroll jank. Geometry (maxWidth/margin) snaps
-     instantly; only visual-composite properties (border-radius, shadow,
-     border-color) animate so we never trigger a layout recalculation. */
+  /* Floating pill with hysteresis: shrinks at >80px, expands only when
+     scrollY drops back below 40px. The asymmetric thresholds prevent the
+     animation from toggling rapidly when the user hovers near a single
+     boundary — which is the main cause of the "jerk" feeling. */
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 72);
-    onScroll(); // sync immediately on mount (e.g. page refresh mid-scroll)
+    let current = window.scrollY > 80;
+    setScrolled(current);
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (!current && y > 80) { current = true; setScrolled(true); }
+      else if (current && y < 40) { current = false; setScrolled(false); }
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -367,7 +371,7 @@ export function NavV2() {
           .mv2-nav-sign-in { display: none !important; }
           /* Always full-width sticky on mobile, never a floating pill */
           .mv2-nav-header { background: #FAF7F0 !important; border-bottom: 1px solid #EBE5D2 !important; transition: none !important; }
-          .mv2-nav-pill { max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
+          .mv2-nav-pill { max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border-color: transparent !important; box-shadow: none !important; }
         }
       `}</style>
       <nav
@@ -378,12 +382,12 @@ export function NavV2() {
           maxWidth: scrolled ? 760 : "100%",
           margin: scrolled ? "16px auto" : "0",
           borderRadius: scrolled ? 14 : 0,
-          border: scrolled ? `1px solid ${t.line}` : "none",
+          /* Border stays 1px always — toggling between transparent and colored
+             avoids the 1px content-box shift that border:none → border:1px causes */
+          border: `1px solid ${scrolled ? t.line : "transparent"}`,
           boxShadow: scrolled ? "0 4px 24px rgba(14,12,8,0.09), 0 1px 4px rgba(14,12,8,0.04)" : "none",
           overflow: "hidden",
-          /* Animate all shrink properties together for a smooth pill-in feel.
-             cubic-bezier(0.16,1,0.3,1) = expo ease-out: fast start, gentle finish */
-          transition: "max-width 400ms cubic-bezier(0.16,1,0.3,1), margin 400ms cubic-bezier(0.16,1,0.3,1), border-radius 400ms cubic-bezier(0.16,1,0.3,1), box-shadow 400ms cubic-bezier(0.16,1,0.3,1)",
+          transition: "max-width 400ms cubic-bezier(0.16,1,0.3,1), margin 400ms cubic-bezier(0.16,1,0.3,1), border-radius 400ms cubic-bezier(0.16,1,0.3,1), box-shadow 400ms cubic-bezier(0.16,1,0.3,1), border-color 400ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
         <div
