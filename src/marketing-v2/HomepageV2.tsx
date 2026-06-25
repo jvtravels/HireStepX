@@ -459,16 +459,22 @@ export function NavV2() {
                 node when the video unmounts and cause a double-logo. */}
             {scrolled ? (
               logoVideoError ? (
-                <img src="/favicon.svg" alt="HireStepX" style={{ width: 28, height: 28, borderRadius: 6, display: "block" }} />
+                <img src="/favicon.svg" alt="HireStepX" style={{ width: 28, height: 28, borderRadius: 6, display: "block", flexShrink: 0 }} />
               ) : (
-                <video
-                  src="/logo-x.webm"
-                  autoPlay
-                  muted
-                  playsInline
-                  style={{ width: 28, height: 28, borderRadius: 6, display: "block" }}
-                  onError={() => setLogoVideoError(true)}
-                />
+                /* Container clips the video to 28×28 — the webm is likely
+                   rendered at a large native resolution (e.g. 1080×1080).
+                   CSS width/height alone don't clip overflow on <video>;
+                   the parent div + overflow:hidden does. */
+                <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
+                  <video
+                    src="/logo-x.webm"
+                    autoPlay
+                    muted
+                    playsInline
+                    style={{ width: "100%", height: "100%", display: "block", objectFit: "contain" }}
+                    onError={() => setLogoVideoError(true)}
+                  />
+                </div>
               )
             ) : (
               <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
