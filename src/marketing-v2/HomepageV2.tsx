@@ -3547,9 +3547,9 @@ export function PricingV2() {
           }}
         >
           {[
-            "Cancel anytime · no lock-in",
-            "24h refund on Weekly sessions",
-            "UPI · cards · netbanking",
+            "2 free sessions — no card needed",
+            "₹9 sessions never expire",
+            "Cancel Sprint Pack any time · UPI · cards",
           ].map((v) => (
             <span key={v} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <span
