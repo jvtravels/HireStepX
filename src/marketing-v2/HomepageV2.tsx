@@ -37,6 +37,8 @@ const ResponsiveSheet = () => (
       .mv2-tap-44 { min-height: 44px !important; }
       .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
       .mv2-hero-section { min-height: 0 !important; display: block !important; }
+      /* Focus type icon grid: 2 cols on phone */
+      .mv2-focus-type-grid { grid-template-columns: repeat(2, 1fr) !important; }
     }
     /* ── Tablets (md) ── */
     @media (max-width: 880px) {
@@ -69,6 +71,8 @@ const ResponsiveSheet = () => (
       /* Comparison: competitor cards side by side, HireStepX spans full width */
       .mv2-cmp-cards { grid-template-columns: 1fr 1fr !important; }
       .mv2-cmp-hsx { grid-column: 1 / -1 !important; }
+      /* Focus type icon grid: 3 cols on tablet */
+      .mv2-focus-type-grid { grid-template-columns: repeat(3, 1fr) !important; }
       /* Objections: collapse 3-col (72px 1fr 1fr) → 2-col (number + content).
          The response <p> is forced into col 2 so it stacks under the quote,
          not under the number. Same pattern as the 881-1100px breakpoint. */
@@ -1567,281 +1571,302 @@ export function HeroV2() {
 
 /* ─────────────────────────── 3.5. INTERVIEW FOCUS ─────────────────────────── */
 export function InterviewFocusV2() {
-  const flagship = {
-    role: "Behavioral",
-    tag: "Leadership · Conflict · Decision-making",
-    sample: "Tell me about a time you disagreed with a senior and turned out to be right.",
-    loops: ["STAR scoring", "Tell me about…", "Why this role", "Failure stories", "Conflict resolution", "Ownership"],
-  };
-  const tracks: Array<{ role: string; loops: string[]; tag: string }> = [
+  /* Copper gradient shorthand — references the shared <defs> below */
+  const G = "url(#hsx-cg)";
+  const sw = 1.6;
+  const rp = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+
+  const TYPES = [
     {
-      role: "Campus Placement",
-      tag: "Aptitude · HR · Role-fit",
-      loops: ["TCS Digital", "Infosys SP", "Wipro Elite", "Cognizant GenC"],
+      label: "Behavioral",
+      desc: "STAR stories · leadership · decisions",
+      live: true,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* speech bubble with tail */}
+          <path d="M8 8h38a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6H26L14 50l2-10H8a6 6 0 0 1-6-6V14a6 6 0 0 1 6-6z"
+            stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
+          {/* star */}
+          <polygon points="27,14 29.1,19.5 35,19.5 30.5,23 32.1,28.5 27,25.2 21.9,28.5 23.5,23 19,19.5 24.9,19.5"
+            stroke={G} strokeWidth="1.4" {...rp} fill={G} fillOpacity="0.22"/>
+        </svg>
+      ),
     },
     {
-      role: "Salary Negotiation",
-      tag: "Counter-offers · Levelling · Benefits",
-      loops: ["Razorpay", "Zomato", "Flipkart", "Swiggy", "Cred"],
+      label: "Campus Placement",
+      desc: "TCS · Infosys · Wipro · Cognizant",
+      live: true,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* pediment / triangle */}
+          <path d="M8 26L32 8l24 18H8z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.1"/>
+          {/* entablature bar */}
+          <rect x="8" y="24" width="48" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+          {/* columns */}
+          <line x1="16" y1="28" x2="16" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="26" y1="28" x2="26" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="38" y1="28" x2="38" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="48" y1="28" x2="48" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* steps */}
+          <rect x="6" y="52" width="52" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+          <rect x="4" y="56" width="56" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+        </svg>
+      ),
     },
     {
-      role: "HR Round",
-      tag: "Culture fit · Motivation · Expectations",
-      loops: ["Behavioral fit", "Salary expectations", "Notice period", "Why leaving"],
+      label: "Salary Negotiation",
+      desc: "Counter-offers · levelling · benefits",
+      live: true,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* center post */}
+          <line x1="32" y1="8" x2="32" y2="56" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* beam */}
+          <line x1="8" y1="20" x2="56" y2="20" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* left pan strings */}
+          <line x1="14" y1="20" x2="10" y2="36" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="14" y1="20" x2="18" y2="36" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* left pan */}
+          <path d="M8 36a8 4 0 0 0 16 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.12"/>
+          {/* right pan strings */}
+          <line x1="50" y1="20" x2="46" y2="36" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="50" y1="20" x2="54" y2="36" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* right pan */}
+          <path d="M44 36a8 4 0 0 0 16 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.12"/>
+          {/* base */}
+          <rect x="28" y="50" width="8" height="6" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.1"/>
+          <line x1="22" y1="56" x2="42" y2="56" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      label: "HR Round",
+      desc: "Culture fit · motivation · expectations",
+      live: true,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* left person */}
+          <circle cx="18" cy="16" r="8" stroke={G} strokeWidth={sw}/>
+          <path d="M2 48c0-12 32-12 32 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
+          {/* right person */}
+          <circle cx="46" cy="16" r="8" stroke={G} strokeWidth={sw}/>
+          <path d="M30 48c0-12 32-12 32 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
+          {/* handshake */}
+          <path d="M26 34l6 4 6-4" stroke={G} strokeWidth={sw} {...rp}/>
+        </svg>
+      ),
+    },
+    {
+      label: "Strategic",
+      desc: "Roadmaps · vision · long-range thinking",
+      live: false,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* bullseye */}
+          <circle cx="28" cy="32" r="22" stroke={G} strokeWidth={sw}/>
+          <circle cx="28" cy="32" r="14" stroke={G} strokeWidth={sw}/>
+          <circle cx="28" cy="32" r="5" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.22"/>
+          {/* arrow from top-right into target */}
+          <line x1="52" y1="10" x2="33" y2="27" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <path d="M40 10h12v12" stroke={G} strokeWidth={sw} {...rp}/>
+        </svg>
+      ),
+    },
+    {
+      label: "Technical Leadership",
+      desc: "System design · coding · architecture",
+      live: false,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* monitor */}
+          <rect x="6" y="8" width="52" height="38" rx="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
+          {/* screen */}
+          <rect x="10" y="12" width="44" height="30" rx="2" stroke={G} strokeWidth={sw} {...rp}/>
+          {/* </> */}
+          <path d="M22 22l-8 5 8 5" stroke={G} strokeWidth={sw} {...rp}/>
+          <path d="M42 22l8 5-8 5" stroke={G} strokeWidth={sw} {...rp}/>
+          <line x1="35" y1="19" x2="29" y2="37" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* stand */}
+          <path d="M28 46l-4 10h16l-4-10" stroke={G} strokeWidth={sw} {...rp}/>
+          <line x1="20" y1="56" x2="44" y2="56" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      label: "Case Study",
+      desc: "Analysis · frameworks · presentation",
+      live: false,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* document */}
+          <path d="M10 6h28l12 12v40H10z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
+          {/* folded corner */}
+          <path d="M38 6v12h12" stroke={G} strokeWidth={sw} {...rp}/>
+          {/* text lines */}
+          <line x1="16" y1="26" x2="36" y2="26" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="16" y1="33" x2="34" y2="33" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="16" y1="40" x2="28" y2="40" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* magnifying glass */}
+          <circle cx="44" cy="46" r="10" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.1"/>
+          <line x1="51" y1="53" x2="58" y2="60" stroke={G} strokeWidth="2.2" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      label: "Panel Interview",
+      desc: "Multiple interviewers · group dynamics",
+      live: false,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* left panel member */}
+          <circle cx="12" cy="16" r="7" stroke={G} strokeWidth={sw}/>
+          <path d="M0 44c0-10 24-10 24 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
+          {/* center — lead interviewer, slightly prominent */}
+          <circle cx="32" cy="13" r="9" stroke={G} strokeWidth={sw}/>
+          <path d="M16 44c0-12 32-12 32 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.1"/>
+          {/* right panel member */}
+          <circle cx="52" cy="16" r="7" stroke={G} strokeWidth={sw}/>
+          <path d="M40 44c0-10 24-10 24 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
+          {/* table line */}
+          <line x1="2" y1="44" x2="62" y2="44" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      label: "Management",
+      desc: "People · process · performance reviews",
+      live: false,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* top node */}
+          <rect x="22" y="6" width="20" height="12" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.14"/>
+          <circle cx="32" cy="12" r="2.5" fill={G} fillOpacity="0.55"/>
+          {/* connector lines */}
+          <line x1="32" y1="18" x2="32" y2="28" stroke={G} strokeWidth={sw}/>
+          <line x1="12" y1="28" x2="52" y2="28" stroke={G} strokeWidth={sw}/>
+          <line x1="12" y1="28" x2="12" y2="38" stroke={G} strokeWidth={sw}/>
+          <line x1="32" y1="28" x2="32" y2="38" stroke={G} strokeWidth={sw}/>
+          <line x1="52" y1="28" x2="52" y2="38" stroke={G} strokeWidth={sw}/>
+          {/* bottom 3 nodes */}
+          <rect x="2" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
+          <rect x="22" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
+          <rect x="42" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.07"/>
+        </svg>
+      ),
+    },
+    {
+      label: "Government / PSU",
+      desc: "UPSC · banking · PSU interviews",
+      live: false,
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          {/* pediment */}
+          <path d="M8 26L32 8l24 18H8z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.1"/>
+          {/* entablature */}
+          <rect x="8" y="24" width="48" height="5" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+          {/* 4 columns */}
+          <line x1="16" y1="29" x2="16" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="26" y1="29" x2="26" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="38" y1="29" x2="38" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="48" y1="29" x2="48" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* steps */}
+          <rect x="6" y="52" width="52" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+          <rect x="4" y="56" width="56" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+        </svg>
+      ),
     },
   ];
-  const comingSoon = [
-    "Strategic",
-    "Technical Leadership",
-    "Case Study",
-    "Panel Interview",
-    "Management",
-    "Government / PSU",
-  ];
+
   return (
     <section
       className="mv2-section"
       aria-labelledby="hd-focus"
-      style={{
-        ...sectionBase,
-        background: t.cream,
-      }}
+      style={{ ...sectionBase, background: t.cream }}
     >
+      {/* Shared SVG gradient — referenced by all icons as url(#hsx-cg).
+          Defined once here; modern browsers resolve paint-server IDs document-wide. */}
+      <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute", overflow: "hidden" }}>
+        <defs>
+          <linearGradient id="hsx-cg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#E8C4A0" />
+            <stop offset="100%" stopColor="#B45309" />
+          </linearGradient>
+        </defs>
+      </svg>
+
       <div style={{ ...container }}>
         <SectionMasthead n="03" label="Focus" right="Roles × companies" style={{ marginBottom: 24 }} />
+
         <MotionReveal style={{ textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
           <h2 id="hd-focus" style={h2}>
             Ten interview types.{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>
-              One coach.
-            </span>
+            <span style={{ fontStyle: "italic", color: t.copper }}>One coach.</span>
           </h2>
-          <p style={{ ...body, marginTop: 16 }}>
+          <p style={{ ...body, marginTop: 16, fontSize: 17 }}>
             Four go live at launch: behavioral, campus placement, salary
-            negotiation, HR round. Six more land month-by-month after public
-            beta.
+            negotiation, HR round. Six more land month-by-month after public beta.
           </p>
         </MotionReveal>
 
-        {/* Flagship — Behavioral gets full width + sample question pull-quote */}
-        <article
-          className="mv2-focus-flagship"
-          style={{
-            marginTop: 56,
-            background: t.white,
-            border: `1px solid ${t.line}`,
-            borderRadius: 18,
-            padding: "40px 44px",
-            display: "grid",
-            gridTemplateColumns: "minmax(220px, 280px) 1fr",
-            gap: 56,
-            alignItems: "center",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 11,
-                color: t.copper,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                fontWeight: 600,
-                marginBottom: 10,
-              }}
-            >
-              Flagship track
-            </div>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 36,
-                letterSpacing: "-0.02em",
-                color: t.coal,
-                margin: 0,
-                fontWeight: 400,
-                lineHeight: 1.05,
-              }}
-            >
-              {flagship.role}
-            </h3>
-            <p
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 13,
-                color: t.inkSoft,
-                margin: "10px 0 0",
-              }}
-            >
-              {flagship.tag}
-            </p>
-          </div>
-
-          <div>
-            <p
-              style={{
-                fontFamily: fonts.serif,
-                fontStyle: "italic",
-                fontSize: 22,
-                color: t.copper,
-                letterSpacing: "-0.01em",
-                lineHeight: 1.3,
-                margin: 0,
-                textWrap: "balance" as const,
-              }}
-            >
-              "{flagship.sample}"
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 24 }}>
-              {flagship.loops.map((c) => (
-                <span
-                  key={c}
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: t.coal,
-                    padding: "5px 10px",
-                    background: t.creamSoft,
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 999,
-                  }}
-                >
-                  {c}
-                </span>
-              ))}
-            </div>
-          </div>
-        </article>
-
-        {/* Other 3 tracks — compact row */}
+        {/* 5 × 2 icon grid — matches the editorial "icon + label + blurb" pattern */}
         <div
-          className="mv2-focus-grid"
+          className="mv2-focus-type-grid"
           style={{
-            marginTop: 20,
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 20,
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: "56px 32px",
+            marginTop: 80,
           }}
         >
-          {tracks.map((track) => (
-            <article
-              key={track.role}
+          {TYPES.map((type) => (
+            <div
+              key={type.label}
               style={{
-                background: t.white,
-                border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: 24,
                 display: "flex",
                 flexDirection: "column",
-                gap: 18,
+                alignItems: "center",
+                textAlign: "center",
+                opacity: type.live ? 1 : 0.48,
               }}
             >
-              <div>
-                <h3
-                  style={{
-                    fontFamily: fonts.serif,
-                    fontSize: 22,
-                    letterSpacing: "-0.015em",
-                    color: t.coal,
-                    margin: 0,
-                    fontWeight: 400,
-                  }}
-                >
-                  {track.role}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 12,
-                    color: t.inkSoft,
-                    margin: "6px 0 0",
-                  }}
-                >
-                  {track.tag}
-                </p>
+              <div style={{ width: 64, height: 64, marginBottom: 20 }}>
+                {type.icon}
               </div>
-
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {track.loops.map((c) => (
-                  <span
-                    key={c}
-                    style={{
-                      fontFamily: fonts.sans,
-                      fontSize: 11,
-                      fontWeight: 500,
-                      color: t.inkSoft,
-                      padding: "4px 9px",
-                      background: t.creamSoft,
-                      border: `1px solid ${t.line}`,
-                      borderRadius: 999,
-                    }}
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <div
-          style={{
-            marginTop: 36,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: t.copper,
-              padding: "4px 10px",
-              background: t.copperSoft,
-              borderRadius: 999,
-            }}
-          >
-            Coming soon
-          </span>
-          {comingSoon.map((label) => (
-            <span
-              key={label}
-              style={{
+              <h3 style={{
+                fontFamily: fonts.sans,
+                fontSize: 15,
+                fontWeight: 600,
+                color: t.coal,
+                margin: "0 0 6px",
+                letterSpacing: "-0.01em",
+                lineHeight: 1.3,
+              }}>
+                {type.label}
+              </h3>
+              <p style={{
                 fontFamily: fonts.sans,
                 fontSize: 13,
-                fontWeight: 500,
-                color: t.inkSoft,
-                padding: "8px 14px",
-                background: t.creamSoft,
-                border: `1px dashed ${t.lineStrong}`,
-                borderRadius: 999,
-              }}
-            >
-              {label}
-            </span>
+                color: type.live ? t.inkSoft : t.inkFaint,
+                margin: 0,
+                lineHeight: 1.55,
+              }}>
+                {type.live ? type.desc : "Coming soon"}
+              </p>
+            </div>
           ))}
         </div>
 
-        <p
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 13,
-            color: t.inkFaint,
-            textAlign: "center",
-            marginTop: 24,
-          }}
-        >
-          Don't see your target?{" "}
+        <p style={{
+          fontFamily: fonts.sans,
+          fontSize: 13,
+          color: t.inkFaint,
+          textAlign: "center",
+          marginTop: 56,
+        }}>
+          Don&rsquo;t see your target?{" "}
           <button
             type="button"
-            style={{ color: t.indigo, fontWeight: 600, textDecoration: "none", background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer" }}
+            style={{ color: t.indigo, fontWeight: 600, background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer" }}
           >
             Vote on the next type →
           </button>
