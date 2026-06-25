@@ -4296,8 +4296,24 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * that names the cash anchor. */
   const cashPushSuppressesInfo =
     state.highestOfferMade > 0 && isSalaryPush(latestCandidateText(state));
+  /* PRI-60 (2026-06-25, real prod session) — total-vs-fixed scope mismatch at
+   * the close. A candidate who pins a conditional close to a FIXED number the
+   * standing TOTAL offer cannot deliver as cash ("if you can close at ₹52.3L
+   * fixed, that works for me" — where ₹52.3L is the total of ₹46.3L fixed +
+   * ₹6L variable) is making a CLOSE signal, not asking for a comp-structure
+   * tour. But an earlier breakdown ask leaves `compensation-breakdown` /
+   * `package-breakdown` sticky in the cumulative `infoAsked`, so the info
+   * override here hijacked the turn and shipped a generic structure recap —
+   * silently ducking the scope conflict instead of reconciling it. When an
+   * undeliverable fixed close-ask is pending over a standing offer, suppress
+   * the info overrides and defer to the counter/close engine, the single place
+   * that names the fixed cap and the total→fixed conversion. */
+  const fixedCloseScopeSuppressesInfo =
+    state.highestOfferMade > 0 && undeliverableFixedConditionAsk(state) != null;
+  const suppressInfoForCashOrClose =
+    cashPushSuppressesInfo || fixedCloseScopeSuppressesInfo;
   const wantsBreakdown =
-    !cashPushSuppressesInfo &&
+    !suppressInfoForCashOrClose &&
     state.highestOfferMade > 0 &&
     !state.leversUsed.includes("benefits-summary") &&
     (state.infoAsked.includes("package-breakdown") ||
@@ -4328,7 +4344,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * through to the counter/close logic (which asserts the ceiling and
    * invites the close) rather than looping the explainer. */
   const wantsBenefits =
-    !cashPushSuppressesInfo &&
+    !suppressInfoForCashOrClose &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("benefits-summary") &&
     state.infoAsked.includes("benefits-overview");
@@ -4345,7 +4361,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsCompStructure =
-    !cashPushSuppressesInfo &&
+    !suppressInfoForCashOrClose &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("compensation-summary") &&
     state.infoAsked.includes("compensation-breakdown");
@@ -4362,7 +4378,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsNoticePolicy =
-    !cashPushSuppressesInfo &&
+    !suppressInfoForCashOrClose &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("notice-period-summary") &&
     state.infoAsked.includes("notice-period-ask");
@@ -4379,7 +4395,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsHikeContext =
-    !cashPushSuppressesInfo &&
+    !suppressInfoForCashOrClose &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("hike-context-summary") &&
     state.infoAsked.includes("hike-percentage-ask");
