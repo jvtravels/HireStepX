@@ -168,7 +168,12 @@ describe("humanizeRecruiterProse — mood layer", () => {
     expect(out.toLowerCase()).not.toContain("let me know if that helps");
   });
 
-  it("frantic: adds pause tics and occasional self-interruptions without altering numbers", () => {
+  it("frantic: adds pause tics but NEVER a self-correction filler (PRI-62)", () => {
+    /* PRI-62 (2026-06-25) — the frantic self-interruption decoration was
+     * removed because in real prod transcripts it spliced "Wait, sorry —
+     * what I meant was …" in front of UNRELATED factual content, reading as
+     * the recruiter retracting an offer term. Pause tic stays; repair-filler
+     * must never appear, even under forced mood. */
     let fillerHit = 0;
     let interruptHit = 0;
     const N = 400;
@@ -180,43 +185,35 @@ describe("humanizeRecruiterProse — mood layer", () => {
         mood: "frantic",
       });
       expect(out).toContain("28 to 34 LPA");
+      /* PRI-62: repair-filler is removed for good and must never appear. */
+      expect(out.toLowerCase()).not.toMatch(/what i meant was|let me rephrase|sorry —/);
       if (/^(?:Uh|Umm),\s/i.test(out)) fillerHit++;
       if (/wait, sorry —|actually, sorry —/i.test(out)) interruptHit++;
     }
-    /* Pause tic ~22%; self-interruption ~15% — wide bands. */
+    /* Pause tic still fires (~22% under force); the repair-filler never does. */
     expect(fillerHit / N).toBeGreaterThan(0.10);
     expect(fillerHit / N).toBeLessThan(0.40);
-    expect(interruptHit / N).toBeGreaterThan(0.05);
-    expect(interruptHit / N).toBeLessThan(0.30);
+    expect(interruptHit).toBe(0);
   });
 
-  it("frantic: self-interruption never glues a redundant discourse filler onto the resumed clause", () => {
-    /* Live-staging (2026-06-19) — the frantic self-interruption
-     * ("…what I meant was") landed in front of a sentence that itself
-     * opened with a discourse filler, shipping the awkward seam
-     * "…what I meant was so for this grade…". The interruption phrase
-     * already supplies the pivot, so the leading filler on the resumed
-     * clause is stripped. Drive the mood layer deterministically and
-     * assert the garble never appears while the anchor stays intact. */
+  it("frantic: never emits a repair-filler across a wide forced sweep, anchor intact (PRI-62)", () => {
+    /* The exact prose shape that used to trigger the self-correction splice
+     * (a numeric anchor sentence followed by a discourse-filler-led clause).
+     * Post-removal it must ship clean every time, anchor untouched. */
     const PROSE =
       "For this grade the fitment is fixed at ₹30 LPA. So the variable sits on top of that.";
-    let interruptHit = 0;
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 200; i++) {
       const out = humanizeRecruiterProse(PROSE, {
         sessionId: `frantic-resume-${i}`,
-        turnIndex: 0,
+        turnIndex: i % 7,
         mood: "frantic",
         __forceLayer: { mood: true },
       });
       // The numeric anchor is never mutated by the realism chain.
       expect(out).toContain("₹30 LPA");
-      // The redundant-filler seam must never ship.
-      expect(out.toLowerCase()).not.toMatch(/what i meant was so\b/);
-      expect(out.toLowerCase()).not.toMatch(/rephrase — so\b/);
-      if (/wait, sorry —|actually, sorry —/i.test(out)) interruptHit++;
+      // No self-correction filler in any form.
+      expect(out.toLowerCase()).not.toMatch(/what i meant was|let me rephrase|wait, sorry —|actually, sorry —/);
     }
-    // Sanity: the forced mood layer actually exercises the interruption.
-    expect(interruptHit).toBeGreaterThan(0);
   });
 
   it("deriveRecruiterMood: deterministic per sessionId, spreads across the three buckets", () => {
@@ -233,21 +230,19 @@ describe("humanizeRecruiterProse — mood layer", () => {
   });
 });
 
-/* Frantic-mood interruption × clause-joiner collision (live-staging
- * 2026-06-20). Two independent rushed-cadence tics — the self-interruption
- * ("…. Wait, sorry — what I meant was …") and the short-clause joiner
- * (". " → " and ") — both target the FIRST sentence boundary. When both
- * fired, the joiner glued " and " in front of the self-correction, shipping
- * the broken "…let me see what I can structure and wait, sorry — what I
- * meant was…". A self-correction cannot be coordinated with "and"; the two
- * are now mutually exclusive (interruption wins, joiner skips). */
-describe("frantic mood — interruption and clause-joiner never collide", () => {
+/* PRI-62 (2026-06-25) — the frantic self-interruption was removed at the
+ * source, so the old interruption × clause-joiner collision ("…structure and
+ * wait, sorry — what I meant was…") can no longer arise. These tests now lock
+ * that BOTH the repair-filler and the broken join stay gone, while the
+ * short-clause joiner itself keeps working. */
+describe("frantic mood — repair-filler removed, joiner still clean (PRI-62)", () => {
   /* ≥3 sentences so the joiner regex (which needs two terminators in the
    * tail) is eligible, and a lowercase-ending first clause so it can match. */
   const THREE = "Hearing you out, let me see what I can structure. So for this grade we can do 35 LPA. And here is where we land finally.";
   const BROKEN = /\band\s+(?:wait|actually),\s+sorry/i;
+  const REPAIR = /what i meant was|let me rephrase|wait, sorry —|actually, sorry —/i;
 
-  it("forced frantic: no ' and wait/actually, sorry' artifact, interruption still present", () => {
+  it("forced frantic: no broken join, no repair-filler", () => {
     const out = humanizeRecruiterProse(THREE, {
       sector: "early-startup",
       sessionId: "frantic-collide",
@@ -256,11 +251,11 @@ describe("frantic mood — interruption and clause-joiner never collide", () => 
       __forceLayer: { mood: true },
     });
     expect(out).not.toMatch(BROKEN);
-    /* The interruption (the higher-priority tic) must still fire. */
-    expect(/what i meant was|let me rephrase/i.test(out)).toBe(true);
+    /* The repair-filler is gone for good. */
+    expect(out).not.toMatch(REPAIR);
   });
 
-  it("never emits the broken join across a wide seed sweep", () => {
+  it("never emits the broken join or repair-filler across a wide seed sweep", () => {
     for (let i = 0; i < 1500; i++) {
       const out = humanizeRecruiterProse(THREE, {
         sector: "indian-unicorn",
@@ -269,6 +264,7 @@ describe("frantic mood — interruption and clause-joiner never collide", () => 
         mood: "frantic",
       });
       expect(out).not.toMatch(BROKEN);
+      expect(out).not.toMatch(REPAIR);
     }
   });
 

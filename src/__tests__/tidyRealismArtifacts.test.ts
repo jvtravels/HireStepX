@@ -306,3 +306,23 @@ describe("tidyRealismArtifacts — invariants", () => {
     expect(tidyRealismArtifacts("")).toBe("");
   });
 });
+
+/* PRI-62 (real prod transcripts, 2026-06-08) — doubled leading discourse
+ * markers ("Honestly, Honestly, …", repeated "Uh, Uh, …") are exactly the
+ * stacked-opener shape the contract layer collapses. These pin the specific
+ * artifacts observed in the DB audit so they can't regress. */
+describe("tidyRealismArtifacts — doubled-opener artifacts (PRI-62)", () => {
+  it("collapses 'Honestly, Honestly,' to a single opener", () => {
+    expect(
+      tidyRealismArtifacts("Honestly, Honestly, anything further on this will need panel approval."),
+    ).toBe("Honestly, anything further on this will need panel approval.");
+  });
+
+  it("collapses a doubled pause tic 'Uh, Uh,' to one", () => {
+    expect(tidyRealismArtifacts("Uh, Uh, right.")).toBe("Uh, right.");
+  });
+
+  it("leaves a single leading tic untouched", () => {
+    expect(tidyRealismArtifacts("Uh, right.")).toBe("Uh, right.");
+  });
+});

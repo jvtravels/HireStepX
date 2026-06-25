@@ -41,9 +41,9 @@ import type { CandidateRegister } from "./_candidate-register";
  *   brusque — drops greetings, removes hedge softeners ("just",
  *             "maybe"), trims closing pleasantries. ~15% of softeners
  *             stripped (probabilistic per-turn).
- *   frantic — extra pause tics ("uh", "umm"), occasional self-
- *             interruption ("wait, sorry — what I meant was"), short
- *             clauses joined by "and". Subtle, not parodic. */
+ *   frantic — extra pause tics ("uh", "umm") and short clauses joined
+ *             by "and". Subtle, not parodic. (The self-interruption tic
+ *             was removed 2026-06-25, PRI-62 — see the FRANTIC_TICS note.) */
 export type RecruiterMood = "warm" | "brusque" | "frantic";
 
 /* 2026-05-29 mood-shift-pass — DYNAMIC mood overlay layered on top of
@@ -158,21 +158,20 @@ export interface HumanizeContext {
  * and so tests can reason about them. */
 const WARM_PREFIXES = ["Sure,", "Yeah,", "Right,"];
 const FRANTIC_TICS = ["Uh,", "Umm,"];
-const FRANTIC_INTERRUPTIONS = [
-  "wait, sorry — what I meant was",
-  "actually, sorry — let me rephrase —",
-];
-/* The self-interruption is glued in front of the resumed clause. When
- * that clause itself opens with a discourse filler ("So for this grade…",
- * "Basically, the cash sits…") the seam reads awkwardly —
- * "…what I meant was so for this grade" (surfaced live on staging,
- * 2026-06-19). The interruption phrase already supplies the conversational
- * pivot, so a leading filler on the resumed clause is redundant: strip a
- * single one. Restricted to unambiguous discourse fillers that cannot
- * double as content after "was" — deliberately NOT "now"/"then" (temporal),
- * "look"/"right" (verb/adjective), or "see" (verb). */
-const REDUNDANT_RESUME_OPENER_RE =
-  /^(?:so|basically|well|honestly|anyway|okay),?\s+/i;
+/* 2026-06-25 (PRI-62) — the frantic "self-interruption" decoration
+ * ("Wait, sorry — what I meant was …" / "Actually, sorry — let me
+ * rephrase —") was REMOVED. It was spliced between two clauses the
+ * humanizer never checked were actually corrections of each other, so in
+ * real prod transcripts it glued a self-correction in front of UNRELATED
+ * factual content — "…joiners come in pro-rated. Wait, sorry — what I meant
+ * was I'll have the dates written into the offer", "…what's it bridging.
+ * Wait, sorry — what I meant was the clawback is 12 months pro-rata". In a
+ * negotiation where the numbers are load-bearing, a fabricated "what I meant
+ * was" reads as the recruiter RETRACTING an offer term, not as subtle
+ * realism. The module's own design rule ("NEVER alters the topical anchor")
+ * makes this decoration unsafe by construction, so it is deleted at the
+ * source rather than scrubbed downstream. The frantic mood keeps its pause
+ * tic ("Uh," / "Umm,") and the short-clause joiner. */
 /* Brusque softener-strippers. Drops the standalone word with its
  * trailing space; the regex is anchored to word boundaries so we don't
  * mangle "justify" or "maybely" (not a word, but the regex is the
@@ -608,8 +607,8 @@ export function humanizeRecruiterProse(
    *             warmth prefix ~10% of turns (only when no tic already
    *             fired, to avoid stacking "Look, Sure, ...").
    *   brusque — drops greetings/softeners, trims trailing pleasantries.
-   *   frantic — extra pause tic + occasional self-interruption +
-   *             short-clause joiner. Subtle, not parodic. */
+   *   frantic — extra pause tic + short-clause joiner. Subtle, not
+   *             parodic. (Self-interruption removed 2026-06-25, PRI-62.) */
   /* 2026-05-29 mood-shift-pass — apply dynamic mood overlay BEFORE the
    * baseline mood branches. `cooled` masquerades as brusque-like;
    * `rewarmed` as warm-like. `baseline` (default) is a no-op so
@@ -683,45 +682,14 @@ export function humanizeRecruiterProse(
       const pick = FRANTIC_TICS[Math.floor(rand01(ctx, "mood-frantic-tic-pick") * FRANTIC_TICS.length)];
       out = `${pick} ${lowercaseFirst(out, ctx.candidateFirstName)}`;
     }
-    /* Self-interruption — fires ~15% on prose with at least two
-     * sentences. Inserts after the first sentence boundary. Subtle,
-     * not parodic. */
-    let interruptionInserted = false;
-    const firstSentenceBoundary = out.search(/[.!?]\s+[A-Z]/);
-    if (
-      firstSentenceBoundary > 12 &&
-      (ctx.__forceLayer?.mood || diceHit(ctx, "mood-frantic-interrupt-fire", 0.15))
-    ) {
-      const pick =
-        FRANTIC_INTERRUPTIONS[
-          Math.floor(rand01(ctx, "mood-frantic-interrupt-pick") * FRANTIC_INTERRUPTIONS.length)
-        ];
-      const head = out.slice(0, firstSentenceBoundary + 1);
-      const tail = out
-        .slice(firstSentenceBoundary + 2)
-        .replace(REDUNDANT_RESUME_OPENER_RE, "");
-      /* Adversarial-sweep fix (2026-06-19) — the interruption is inserted
-       * AFTER a sentence-final boundary (firstSentenceBoundary matches
-       * [.!?]\s+[A-Z]), so it opens a new sentence and must be capitalized.
-       * Shipping it lowercase ("…for that city. wait, sorry —…") trips the
-       * lowercase-after-period fluency check. */
-      const pickCapped = pick.charAt(0).toUpperCase() + pick.slice(1);
-      out = `${head} ${pickCapped} ${lowercaseFirst(tail, ctx.candidateFirstName)}`;
-      interruptionInserted = true;
-    }
+    /* Self-interruption decoration removed 2026-06-25 (PRI-62) — see the
+     * note at FRANTIC_TICS. It garbled load-bearing offer terms in prod, so
+     * it is gone at the source; the short-clause joiner below is now the
+     * frantic mood's only cadence tic past the pause prefix. */
     /* Short-clause joiner — replaces one ". " with " and " ~12% so the
      * cadence sounds rushed. Only the first match, never the last
-     * sentence (so the prose still ends cleanly).
-     *
-     * MUTUAL EXCLUSION (live-staging 2026-06-20) — the joiner's regex is
-     * anchored to the FIRST ". " boundary, which is exactly the seam the
-     * self-interruption just created. When both fired, the joiner glued
-     * " and " in front of the self-correction phrase, producing the broken
-     * "…let me see what I can structure and wait, sorry — what I meant
-     * was…" — a self-correction can't be coordinated with "and". They are
-     * two competing rushed-cadence tics on the same boundary, so at most
-     * one may fire per turn. Skip the joiner whenever the interruption ran. */
-    if (!interruptionInserted && (ctx.__forceLayer?.mood || diceHit(ctx, "mood-frantic-join-fire", 0.12))) {
+     * sentence (so the prose still ends cleanly). */
+    if (ctx.__forceLayer?.mood || diceHit(ctx, "mood-frantic-join-fire", 0.12)) {
       const m = out.match(/^(.*?[a-z])\.\s+([A-Z].*[.!?])\s*([A-Z][^.!?]*[.!?])\s*$/);
       if (m) {
         out = `${m[1]} and ${lowercaseFirst(m[2], ctx.candidateFirstName)} ${m[3]}`;
