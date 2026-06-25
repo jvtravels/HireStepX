@@ -3547,7 +3547,7 @@ export function PricingV2() {
           }}
         >
           {[
-            "2 free sessions — no card needed",
+            "2 free sessions, no card needed",
             "₹9 sessions never expire",
             "Cancel Sprint Pack any time · UPI · cards",
           ].map((v) => (
