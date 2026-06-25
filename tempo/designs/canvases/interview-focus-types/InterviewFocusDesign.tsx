@@ -538,35 +538,10 @@ function GradientDef2() {
   );
 }
 
-/* ── CSS draw-on animation — loops continuously ────────────────── */
+/* ── Pulsing live dot only ──────────────────────────────────────── */
 function DrawOnStyles() {
   return (
     <style>{`
-      /* 4.5s cycle: fade-in draw → long hold → fade out → reset */
-      .hsx-v2-icon svg .d {
-        stroke-dasharray: 1000;
-        stroke-dashoffset: 1000;
-        animation: hsx-v2-draw 4.5s cubic-bezier(0.4,0,0.2,1) infinite;
-      }
-      .hsx-v2-icon svg .d:nth-child(1)  { animation-delay: 0.00s; }
-      .hsx-v2-icon svg .d:nth-child(2)  { animation-delay: 0.08s; }
-      .hsx-v2-icon svg .d:nth-child(3)  { animation-delay: 0.16s; }
-      .hsx-v2-icon svg .d:nth-child(4)  { animation-delay: 0.24s; }
-      .hsx-v2-icon svg .d:nth-child(5)  { animation-delay: 0.32s; }
-      .hsx-v2-icon svg .d:nth-child(6)  { animation-delay: 0.40s; }
-      .hsx-v2-icon svg .d:nth-child(7)  { animation-delay: 0.48s; }
-      .hsx-v2-icon svg .d:nth-child(8)  { animation-delay: 0.56s; }
-
-      @keyframes hsx-v2-draw {
-        0%   { stroke-dashoffset: 1000; opacity: 0; }
-        6%   { opacity: 1; }
-        38%  { stroke-dashoffset: 0; opacity: 1; }
-        82%  { stroke-dashoffset: 0; opacity: 1; }
-        97%  { stroke-dashoffset: 0; opacity: 0; }
-        100% { stroke-dashoffset: 1000; opacity: 0; }
-      }
-
-      /* pulsing live dot */
       .hsx-live-dot {
         width: 6px; height: 6px; border-radius: 50%;
         background: #B45309; display: inline-block; flex-shrink: 0;
@@ -839,7 +814,6 @@ const NEW_TYPES = [
 function IconCell({ type }: { type: typeof NEW_TYPES[0] }) {
   return (
     <div
-      className={type.live ? "hsx-v2-icon" : undefined}
       style={{
         display: "flex",
         flexDirection: "column",

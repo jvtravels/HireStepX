@@ -1764,29 +1764,8 @@ export function InterviewFocusV2() {
       aria-labelledby="hd-focus"
       style={{ ...sectionBase, background: t.cream }}
     >
-      {/* Draw-on loop animation for live icons only */}
+      {/* Pulsing live dot for "Available now" indicator */}
       <style>{`
-        .hsx-focus-icon svg .d {
-          stroke-dasharray: 1000;
-          stroke-dashoffset: 1000;
-          animation: hsx-focus-draw 4.5s cubic-bezier(0.4,0,0.2,1) infinite;
-        }
-        .hsx-focus-icon svg .d:nth-child(1) { animation-delay: 0.00s; }
-        .hsx-focus-icon svg .d:nth-child(2) { animation-delay: 0.08s; }
-        .hsx-focus-icon svg .d:nth-child(3) { animation-delay: 0.16s; }
-        .hsx-focus-icon svg .d:nth-child(4) { animation-delay: 0.24s; }
-        .hsx-focus-icon svg .d:nth-child(5) { animation-delay: 0.32s; }
-        .hsx-focus-icon svg .d:nth-child(6) { animation-delay: 0.40s; }
-        .hsx-focus-icon svg .d:nth-child(7) { animation-delay: 0.48s; }
-        .hsx-focus-icon svg .d:nth-child(8) { animation-delay: 0.56s; }
-        @keyframes hsx-focus-draw {
-          0%   { stroke-dashoffset: 1000; opacity: 0; }
-          6%   { opacity: 1; }
-          38%  { stroke-dashoffset: 0; opacity: 1; }
-          82%  { stroke-dashoffset: 0; opacity: 1; }
-          97%  { stroke-dashoffset: 0; opacity: 0; }
-          100% { stroke-dashoffset: 1000; opacity: 0; }
-        }
         .hsx-focus-live-dot {
           width: 6px; height: 6px; border-radius: 50%;
           background: #B45309; display: inline-block; flex-shrink: 0;
@@ -1797,8 +1776,7 @@ export function InterviewFocusV2() {
           50%       { opacity: 0.25; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .hsx-focus-icon svg .d { animation: none !important; stroke-dashoffset: 0 !important; opacity: 1 !important; }
-          .hsx-focus-live-dot    { animation: none !important; }
+          .hsx-focus-live-dot { animation: none !important; }
         }
       `}</style>
 
@@ -1857,7 +1835,6 @@ export function InterviewFocusV2() {
           {LIVE_TYPES.map((type) => (
             <div
               key={type.label}
-              className="hsx-focus-icon"
               style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
             >
               <div style={{ width: 80, height: 80, marginBottom: 20 }}>{type.icon}</div>
