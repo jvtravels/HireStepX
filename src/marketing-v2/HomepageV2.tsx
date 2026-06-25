@@ -340,12 +340,18 @@ export function NavV2() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  /* Scroll-linked logo animation: scrubs video.currentTime proportionally
-     to scrollY so the wordmark→X animation plays forward on scroll-down
-     and in reverse on scroll-up. Both elements are always rendered and
-     their opacity is set directly on the DOM nodes — no React re-renders
-     fire per scroll tick. SCROLL_END matches the pill-shrink threshold
-     so the logo and pill transitions complete at the same scroll position. */
+  /* Scroll-linked logo animation.
+     Two independent mappings from scrollY:
+
+     1. Opacity crossfade (0→80px): wordmark fades out, X fades in. This
+        range matches the pill-shrink threshold so both transitions finish
+        at the same scroll position.
+
+     2. Video scrubbing (0→page bottom): video.currentTime maps to the
+        full scrollable height so the animation plays across the entire
+        homepage — forward on scroll-down, backward on scroll-up.
+
+     Both driven by direct DOM writes; no React re-renders per scroll tick. */
   const logoVideoRef = useRef<HTMLVideoElement>(null);
   const logoWordmarkRef = useRef<HTMLDivElement>(null);
   const logoXRef = useRef<HTMLDivElement>(null);
@@ -353,7 +359,7 @@ export function NavV2() {
     const video = logoVideoRef.current;
     const wordmark = logoWordmarkRef.current;
     const xWrap = logoXRef.current;
-    const SCROLL_END = 80;
+    const FADE_RANGE = 80; // px for the wordmark↔X crossfade
     let dur = 0;
 
     const onMeta = () => { if (video) dur = video.duration; };
@@ -363,10 +369,18 @@ export function NavV2() {
     }
 
     const update = () => {
-      const p = Math.max(0, Math.min(1, window.scrollY / SCROLL_END));
-      if (wordmark) wordmark.style.opacity = String(1 - p);
-      if (xWrap)    xWrap.style.opacity    = String(p);
-      if (video && dur > 0) video.currentTime = p * dur;
+      const y = window.scrollY;
+
+      // 1. Opacity: crossfade in first 80px
+      const fadeP = Math.max(0, Math.min(1, y / FADE_RANGE));
+      if (wordmark) wordmark.style.opacity = String(1 - fadeP);
+      if (xWrap)    xWrap.style.opacity    = String(fadeP);
+
+      // 2. Video scrub: map to full page scroll range
+      if (video && dur > 0) {
+        const totalScrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        video.currentTime = Math.max(0, Math.min(dur, (y / totalScrollable) * dur));
+      }
     };
 
     window.addEventListener("scroll", update, { passive: true });
