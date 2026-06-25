@@ -264,11 +264,6 @@ const sectionBase: CSSProperties = {
   paddingBottom: 120,
 };
 
-const sectionTight: CSSProperties = {
-  position: "relative",
-  paddingTop: 80,
-  paddingBottom: 80,
-};
 
 const h2: CSSProperties = {
   fontFamily: fonts.serif,
@@ -1477,119 +1472,6 @@ export function HeroV2() {
               </span>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────── 3. LOGO STRIP + STAT ─────────────────────────── */
-function LogoMark({ label }: { label: string }) {
-  /* Uniform serif wordmark — NO external logo CDN.
-     We used to pull glyphs from cdn.simpleicons.org with an onError →
-     wordmark fallback, but simpleicons drops brands for trademark reasons
-     (Flipkart, Deloitte, Microsoft, Amazon, Adobe, Salesforce all 404'd in
-     prod), which produced console 404 noise, a fallback race that briefly
-     left 0-width broken <img>s, and an inconsistent strip where some brands
-     showed icons and others text. Rendering every brand as a wordmark is
-     visually consistent, zero-dependency, and can never 404 — the strip's
-     reliability no longer rides on a third-party CDN. */
-  return (
-    <span
-      title={label}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: 40,
-        padding: "0 24px",
-        flexShrink: 0,
-        fontFamily: fonts.serif,
-        fontSize: 22,
-        color: t.coal,
-        opacity: 0.72,
-        letterSpacing: "-0.01em",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
-export function LogoStripV2() {
-  const logos: string[] = [
-    "Razorpay",
-    "Zomato",
-    "Flipkart",
-    "Swiggy",
-    "Paytm",
-    "PhonePe",
-    "Infosys",
-    "Wipro",
-    "HDFC Bank",
-    "Deloitte",
-    "Accenture",
-    "Google",
-    "Microsoft",
-    "Amazon",
-    "Adobe",
-    "Salesforce",
-  ];
-  return (
-    <section
-      aria-label="Companies our question bank covers"
-      className="mv2-cv-auto"
-      style={{
-        ...sectionTight,
-        background: t.creamSoft,
-        borderTop: `1px solid ${t.line}`,
-        borderBottom: `1px solid ${t.line}`,
-      }}
-    >
-      <div style={container}>
-        <SectionMasthead n="02" label="Question bank covers" right="200+ Indian roles" style={{ marginBottom: 32 }} />
-        <p
-          style={{
-            fontFamily: fonts.serif,
-            fontSize: "clamp(40px, 5vw, 56px)",
-            color: t.coal,
-            margin: 0,
-            letterSpacing: "-0.02em",
-            fontWeight: 400,
-            textAlign: "center",
-          }}
-        >
-          Every name{" "}
-          <span style={{ fontStyle: "italic", color: t.copper }}>
-            you're targeting.
-          </span>
-        </p>
-        <p
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 12,
-            fontWeight: 600,
-            color: t.inkFaint,
-            marginTop: 8,
-            marginBottom: 36,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            textAlign: "center",
-          }}
-        >
-          IT services · Unicorns · PSUs · MNCs · All four covered
-        </p>
-
-        <div className="mv2-logo-strip mv2-marquee-mask">
-          <div className="mv2-marquee-track" aria-hidden>
-            {[...logos, ...logos].map((label, i) => (
-              <LogoMark key={`${label}-${i}`} label={label} />
-            ))}
-          </div>
-          <span className="mv2-skip" aria-live="off">
-            Practiced for {logos.join(", ")}
-          </span>
         </div>
       </div>
     </section>

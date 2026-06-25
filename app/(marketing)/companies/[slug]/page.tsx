@@ -168,7 +168,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
           {/* Hand-written intro */}
           <p style={{
             fontFamily: "var(--font-display), Georgia, serif", fontStyle: "italic",
-            fontSize: 18, lineHeight: 1.55, color: "#3E3A6E", marginTop: 20, textWrap: "balance",
+            fontSize: 18, lineHeight: 1.55, color: "#6E6759", marginTop: 20, textWrap: "balance",
           }}>
             {page.intro}
           </p>
@@ -177,7 +177,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
           <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
             <Link href={practiceHref} style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#312E81", color: "#FAF7F0", textDecoration: "none",
+              background: "#B45309", color: "#FAF7F0", textDecoration: "none",
               padding: "14px 24px", borderRadius: 999,
               fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 500,
             }}>
@@ -185,7 +185,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             </Link>
             <Link href="/pricing" style={{
               display: "inline-flex", alignItems: "center",
-              color: "#312E81", textDecoration: "none",
+              color: "#B45309", textDecoration: "none",
               padding: "14px 16px",
               fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 500,
             }}>
@@ -195,7 +195,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
 
           {/* Framework callout */}
           <section style={{
-            background: "#FFFFFF", border: "1px solid rgba(20,17,10,0.08)",
+            background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.08)",
             borderRadius: 12, padding: "20px 24px", marginTop: 36,
           }}>
             <div style={{
@@ -210,7 +210,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             }}>
               {page.framework.name}
             </h2>
-            <p style={{ fontSize: 14, lineHeight: 1.6, color: "#3E3A6E", margin: 0 }}>
+            <p style={{ fontSize: 14, lineHeight: 1.6, color: "#6E6759", margin: 0 }}>
               {page.framework.summary}
             </p>
           </section>
@@ -232,7 +232,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
               {questions.map((q, i) => (
                 <li key={i} style={{
-                  background: "#FFFFFF", border: "1px solid rgba(20,17,10,0.08)",
+                  background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.08)",
                   borderRadius: 10, padding: "16px 20px",
                   display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16,
                   flexWrap: "wrap",
@@ -257,7 +257,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
                     )}
                   </div>
                   <Link href={practiceHref} style={{
-                    color: "#312E81", textDecoration: "none", fontSize: 13, fontWeight: 500,
+                    color: "#B45309", textDecoration: "none", fontSize: 13, fontWeight: 500,
                     fontFamily: "var(--font-ui)", whiteSpace: "nowrap", padding: "6px 0",
                   }}>
                     Practice →
@@ -278,13 +278,13 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             }}>
               Ready to practice {companyLabel}-style questions?
             </h2>
-            <p style={{ fontSize: 14, color: "#3E3A6E", margin: "10px 0 18px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 14, color: "#6E6759", margin: "10px 0 18px", lineHeight: 1.5 }}>
               The AI interviewer asks {companyLabel}-style questions, listens to your voice answer,
               and gives you scored feedback in 2 minutes. 2 sessions free.
             </p>
             <Link href={practiceHref} style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#312E81", color: "#FAF7F0", textDecoration: "none",
+              background: "#B45309", color: "#FAF7F0", textDecoration: "none",
               padding: "14px 28px", borderRadius: 999,
               fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 500,
             }}>
@@ -329,7 +329,7 @@ function RelatedLinks({ currentSlug }: { currentSlug: string }) {
       {related.map((p: SeoPage) => (
         <li key={p.slug}>
           <Link href={`/companies/${p.slug}`} style={{
-            color: "#312E81", textDecoration: "none", fontSize: 14,
+            color: "#B45309", textDecoration: "none", fontSize: 14,
             fontFamily: "var(--font-ui)", fontWeight: 500,
           }}>
             → {p.searchPhrase}

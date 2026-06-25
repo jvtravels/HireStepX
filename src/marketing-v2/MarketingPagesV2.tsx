@@ -1465,130 +1465,6 @@ export function ForStudentsV2() {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   COMPARE vs ChatGPT
-   ════════════════════════════════════════════════════════════════════ */
-export function CompareChatGPTV2() {
-  const rows: Array<[string, string, string]> = [
-    ["Voice in / voice out", "Yes: Indian, US, UK accents tuned", "Text only by default; voice is half-cooked, no scoring"],
-    ["Interviewer asks follow-ups", "Yes: pushes back when you're shallow", "Only if you prompt it. Stops on first answer otherwise"],
-    ["Scoring rubric", "STAR + communication + technical depth, 1–10", "No score. 'That was great' on every answer"],
-    ["Company-specific questions", "3,000+ companies, actual recent patterns", "Generic FAANG examples scraped from 2021 forums"],
-    ["Resume integration", "Parses your resume; asks about your projects", "You paste resume each time; forgets next session"],
-    ["Skill-decay tracking", "Knows when you're slipping; queues spaced reps", "No memory between conversations"],
-    ["Indian context", "TCS Digital, Razorpay, Infosys SP/PP, RBI Grade B", "Knows India exists; knows little about Indian hiring"],
-    ["Cost per scored mock", "₹7.00 on Weekly · ₹9 per session", "$20/mo for Plus, no scoring included"],
-    ["Privacy", "Encrypted; auto-delete in 90 days; never shared", "Used to train OpenAI models unless you flip the toggle"],
-  ];
-
-  return (
-    <PageShell>
-      <PageHero
-        eyebrow="Comparison"
-        title="ChatGPT vs"
-        accent="HireStepX."
-        lead="ChatGPT can roleplay an interviewer. It can't score one. Here's the honest breakdown of what each is actually built for, and why a purpose-built tool wins for prep."
-      />
-
-      <section className="mv2p-section" aria-label="HireStepX vs ChatGPT comparison" style={{ ...sectionBase, paddingTop: 56 }}>
-        <div className="mv2-container" style={container}>
-          <div
-            style={{
-              overflowX: "auto",
-              border: `1px solid ${t.line}`,
-              borderRadius: 16,
-              background: t.white,
-              boxShadow: shadows.card,
-            }}
-          >
-            <table
-              className="mv2p-compare-table"
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                minWidth: 720,
-              }}
-            >
-              <thead>
-                <tr style={{ background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
-                  <th scope="col" style={{ padding: "16px 20px", textAlign: "left", fontWeight: 600, color: t.inkSoft }}>
-                    Feature
-                  </th>
-                  <th
-                    scope="col"
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "left",
-                      fontWeight: 700,
-                      color: t.indigo,
-                      borderLeft: `1px solid ${t.line}`,
-                      background: t.indigoMist,
-                    }}
-                  >
-                    HireStepX
-                  </th>
-                  <th
-                    scope="col"
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "left",
-                      fontWeight: 600,
-                      color: t.coal,
-                      borderLeft: `1px solid ${t.line}`,
-                    }}
-                  >
-                    ChatGPT
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(([feature, us, them], i) => (
-                  <tr key={feature} style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
-                    <th scope="row" style={{ padding: "14px 20px", color: t.coal, fontWeight: 500, textAlign: "left", fontFamily: fonts.sans, fontSize: 14 }}>{feature}</th>
-                    <td
-                      style={{
-                        padding: "14px 20px",
-                        color: t.coal,
-                        fontWeight: 500,
-                        borderLeft: `1px solid ${t.line}`,
-                        background: t.indigoMist3,
-                      }}
-                    >
-                      {us}
-                    </td>
-                    <td style={{ padding: "14px 20px", color: t.inkSoft, borderLeft: `1px solid ${t.line}` }}>{them}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Honest summary */}
-          <div
-            style={{
-              marginTop: 56,
-              padding: 32,
-              background: t.creamSoft,
-              border: `1px solid ${t.line}`,
-              borderRadius: 16,
-            }}
-          >
-            <p style={{ ...eyebrow, marginBottom: 12 }}>The honest take</p>
-            <p style={{ ...lead, marginBottom: 12 }}>
-              ChatGPT is a great general assistant. For interview prep specifically, it has three structural gaps: <strong style={{ color: t.coal }}>no scoring</strong> (it agrees with whatever you say), <strong style={{ color: t.coal }}>no voice fidelity</strong> (the round is a speaking medium), and <strong style={{ color: t.coal }}>no Indian hiring context</strong> (it doesn't know what TCS Digital actually asks).
-            </p>
-            <p style={{ ...body }}>
-              We're not better than ChatGPT at everything. We're better at this one thing, by design, because it's the only thing we do.
-            </p>
-          </div>
-        </div>
-      </section>
-    </PageShell>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════════════
    404 + 500
    ════════════════════════════════════════════════════════════════════ */
 export function NotFoundV2() {
@@ -1753,10 +1629,10 @@ export function TermsV2() {
       <p>One account per person. Don't share login credentials. Don't scrape, reverse-engineer, or attempt to extract our scoring rubrics, question banks, or model outputs at scale. Don't use the platform to impersonate real candidates or train third-party AI systems.</p>
 
       <h2>Payment</h2>
-      <p>Billed in INR via Razorpay. Weekly plan is a one-time top-up; nothing auto-renews. Per-session purchases are charged immediately and non-refundable once the session is started.</p>
+      <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) renews automatically each month; cancel any time before the next billing cycle to stop renewal. No other plan auto-renews.</p>
 
       <h2>Refunds</h2>
-      <p>See our <a href="/refund">refund policy</a>. Short version: unused sessions within 7 days of purchase are refundable.</p>
+      <p>See our <a href="/refund">refund policy</a>. Short version: per-session credits are refundable within 24 hours of purchase if the session has not started. Sprint Pack refunds depend on usage; cancel before the next cycle to avoid the next charge.</p>
 
       <h2>Acceptable use</h2>
       <p>Don't upload illegal content. Don't use the platform to harass, defame, or harm others. Don't attempt to break our security controls. We may suspend or terminate accounts for serious or repeated violations.</p>
@@ -1782,8 +1658,8 @@ export function RefundPolicyV2() {
       <h2>Per-session purchase (₹9)</h2>
       <p>Refundable up to 24 hours after purchase, as long as the session hasn't started. Once you begin a session, the AI has done the work; the credit is consumed.</p>
 
-      <h2>Weekly (₹49)</h2>
-      <p>Full refund within 24 hours of purchase if zero sessions have been used. After that, pro-rated refund based on unused sessions, up to day 3. After day 3, no refund: the value is concentrated prep, not stockpiled credits.</p>
+      <h2>Sprint Pack (₹39 / month)</h2>
+      <p>Full refund within 24 hours of purchase if zero sessions from that cycle have been used. After that, no refund for the current month's charge — your remaining sessions stay active until the cycle ends. Cancel any time from Settings before the next billing date to stop the next renewal; cancellation takes effect at the end of the current cycle.</p>
 
       <h2>Student discount</h2>
       <p>Refunds on discounted plans are calculated against the discounted price, not the list price.</p>
