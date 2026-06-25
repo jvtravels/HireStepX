@@ -71,6 +71,7 @@ import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
 import { selectPromptVariant, type PromptVariant } from "./_prompt-variants";
 import { inferCompanyMode } from "./_market-mode";
 import { generateBotReply, type GenerateAiTextFn } from "./_response-pipeline";
+import { normalizeDashes } from "./_text-normalize";
 import { deriveMoveTag, type MoveTag } from "./_move-tag";
 import type { NextAction } from "./_next-action-planner";
 import { renderCanonicalProse } from "./_canonical-prose";
@@ -222,7 +223,7 @@ export async function generateAiText(
       ? "llm"
       : "fallback";
   return {
-    text: enforceRoleLabel(result.text, state.role || ""),
+    text: normalizeDashes(enforceRoleLabel(result.text, state.role || "")),
     source: adaptedSource,
     failureKinds: result.rejectReason ? [result.rejectReason] : [],
     envelopeMissingAttempts: 0,

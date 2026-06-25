@@ -18,7 +18,14 @@
  *     candidate may have actually used; mechanically rewriting could misquote.
  * Only tells with a safe 1:1 plain swap and no legitimate use here are handled
  * mechanically. Everything else stays the prompt's job.
+ *
+ * Em/en dashes are the most recognisable typographic AI tell. They are scrubbed
+ * here too (via the shared normalizeDashes, single source of truth) so the
+ * post-session report reads in HR register — commas for clause separators,
+ * hyphens for number ranges. Same emit-boundary guarantee as the word swaps.
  */
+
+import { normalizeDashes } from "./_text-normalize";
 
 /** Preserve the casing of the matched token on its replacement (only the
  * first character matters for our word-level swaps). */
@@ -76,7 +83,7 @@ export function sanitizeVoice(text: string): string {
   for (const [re, replacement] of RULES) {
     out = out.replace(re, (m) => preserveCase(m, replacement));
   }
-  return out;
+  return normalizeDashes(out);
 }
 
 /** Deep-walk any JSON-shaped value, applying sanitizeVoice to every string.

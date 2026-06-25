@@ -91,6 +91,22 @@ describe("sanitizeVoice — deliberately conservative (domain words untouched)",
   });
 });
 
+describe("sanitizeVoice — em/en dashes become HR-register punctuation", () => {
+  it("turns a clause-separator em dash into a comma", () => {
+    expect(sanitizeVoice("You anchored well — then conceded too fast.")).toBe(
+      "You anchored well, then conceded too fast.",
+    );
+  });
+  it("keeps a number range as a hyphen, not a comma", () => {
+    expect(sanitizeVoice("The band was 53–58 LPA for this grade.")).toBe(
+      "The band was 53-58 LPA for this grade.",
+    );
+  });
+  it("composes with a word swap on the same string", () => {
+    expect(sanitizeVoice("Delve deeper — utilize the data.")).toBe("Dig deeper, use the data.");
+  });
+});
+
 describe("sanitizeVoiceValue — deep walk over evaluation/report shapes", () => {
   it("sanitizes strings at any depth, preserving structure and non-strings", () => {
     const report = {
