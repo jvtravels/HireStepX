@@ -379,15 +379,28 @@ export function NavV2() {
         className="mv2-nav-pill"
         style={{
           background: t.cream,
-          maxWidth: scrolled ? 760 : "100%",
-          margin: scrolled ? "16px auto" : "0",
+          /* Use a large px value instead of "100%" — px→px transitions are
+             always smooth; % requires mid-animation unit conversion which
+             causes the expand to stutter. 1600 exceeds all common viewports
+             so it reads as full-width while staying interpolatable. */
+          maxWidth: scrolled ? 760 : 1600,
+          /* Keep "auto" on both sides so only the numeric part (16→0) animates;
+             if we toggle between "16px auto" and "0" the browser has to
+             interpolate through the auto keyword which can't be eased smoothly. */
+          margin: scrolled ? "16px auto" : "0px auto",
           borderRadius: scrolled ? 14 : 0,
           /* Border stays 1px always — toggling between transparent and colored
              avoids the 1px content-box shift that border:none → border:1px causes */
           border: `1px solid ${scrolled ? t.line : "transparent"}`,
           boxShadow: scrolled ? "0 4px 24px rgba(14,12,8,0.09), 0 1px 4px rgba(14,12,8,0.04)" : "none",
           overflow: "hidden",
-          transition: "max-width 400ms cubic-bezier(0.16,1,0.3,1), margin 400ms cubic-bezier(0.16,1,0.3,1), border-radius 400ms cubic-bezier(0.16,1,0.3,1), box-shadow 400ms cubic-bezier(0.16,1,0.3,1), border-color 400ms cubic-bezier(0.16,1,0.3,1)",
+          /* Different easing per direction: the CSS transition on the destination
+             state is what the browser uses. Shrink → snappy expo ease-out (400ms).
+             Expand → relaxed standard ease (550ms) so the nav opens gracefully
+             rather than springing back. */
+          transition: scrolled
+            ? "max-width 400ms cubic-bezier(0.16,1,0.3,1), margin 400ms cubic-bezier(0.16,1,0.3,1), border-radius 400ms cubic-bezier(0.16,1,0.3,1), box-shadow 400ms cubic-bezier(0.16,1,0.3,1), border-color 400ms cubic-bezier(0.16,1,0.3,1)"
+            : "max-width 550ms cubic-bezier(0.4,0,0.2,1), margin 550ms cubic-bezier(0.4,0,0.2,1), border-radius 550ms cubic-bezier(0.4,0,0.2,1), box-shadow 550ms cubic-bezier(0.4,0,0.2,1), border-color 550ms cubic-bezier(0.4,0,0.2,1)",
         }}
       >
         <div
