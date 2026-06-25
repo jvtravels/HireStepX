@@ -388,7 +388,7 @@ export function NavV2() {
              if we toggle between "16px auto" and "0" the browser has to
              interpolate through the auto keyword which can't be eased smoothly. */
           margin: scrolled ? "16px auto" : "0px auto",
-          borderRadius: scrolled ? 14 : 0,
+          borderRadius: scrolled ? "0 0 14px 14px" : 0,
           /* Border stays 1px always — toggling between transparent and colored
              avoids the 1px content-box shift that border:none → border:1px causes */
           border: `1px solid ${scrolled ? t.line : "transparent"}`,
