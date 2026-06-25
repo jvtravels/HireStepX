@@ -14,6 +14,7 @@
 
 import { initState, type MarketMode } from "./_negotiation-kernel";
 import { renderCanonicalProse } from "./_canonical-prose";
+import { normalizeDashes } from "./_text-normalize";
 
 export type Persona = "Hiring Manager" | "Technical Lead" | "HR Partner";
 
@@ -81,6 +82,10 @@ export function sanitizeQuestionText(questions: RawQuestion[]): void {
   for (const q of questions) {
     if (typeof q.aiText !== "string" || q.aiText.length === 0) continue;
     let t = q.aiText;
+    // Em/en dashes read as AI-generated to an Indian-HR audience — convert to
+    // commas (clause separators) / hyphens (number ranges) before the rest of
+    // the punctuation cleanup. Single source: _text-normalize.ts.
+    t = normalizeDashes(t);
     // Collapse "., " / ",." / ".." into ". "
     t = t.replace(/\.,\s+/g, ". ").replace(/,\.\s*/g, ". ").replace(/\.\.\s+/g, ". ");
     // Drop a stray comma before a sentence terminator ("retention,.")
@@ -296,7 +301,10 @@ export function buildSalaryNegotiationFallbackQuestions(opts: {
   }
   const introText = "Thanks for making time today — let's keep this conversational. Take your time, and feel free to type if that's easier.";
   const closingText = "Thanks for talking it through with me today. We'll follow up with the next steps from here.";
-  const mk = (type: string, t: string): SalaryFallbackStep => ({ type, aiText: t, aiTextDisplay: t, question: t, text: t });
+  const mk = (type: string, t: string): SalaryFallbackStep => {
+    const n = normalizeDashes(t); // HR-register punctuation (em/en dash → comma/hyphen)
+    return { type, aiText: n, aiTextDisplay: n, question: n, text: n };
+  };
   return [mk("intro", introText), mk("question", opener), mk("closing", closingText)];
 }
 
@@ -422,8 +430,25 @@ export interface FallbackQuestion {
   scoreNote?: string;
 }
 
-/** Pick N curated questions matching the requested signature. Best-effort. */
+/** Pick N curated questions matching the requested signature. Best-effort.
+ * Wraps the raw bank-sampling logic so every branch's output gets the same
+ * HR-register dash normalization (curated banks contain literal em dashes). */
 export function buildStaticFallback(opts: {
+  type: string;
+  focus?: string;
+  difficulty?: string;
+  roleFamily?: string;
+  experienceLevel?: string;
+  count: number;
+}): FallbackQuestion[] {
+  return buildStaticFallbackRaw(opts).map((q) => ({
+    ...q,
+    aiText: normalizeDashes(q.aiText),
+    ...(q.scoreNote ? { scoreNote: normalizeDashes(q.scoreNote) } : {}),
+  }));
+}
+
+function buildStaticFallbackRaw(opts: {
   type: string;
   focus?: string;
   difficulty?: string;
