@@ -1800,7 +1800,7 @@ export function InterviewFocusV2() {
       <div style={{ ...container }}>
         <SectionMasthead n="03" label="Focus" right="Roles × companies" style={{ marginBottom: 24 }} />
 
-        <MotionReveal style={{ textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
+        <MotionReveal style={{ textAlign: "center", maxWidth: 860, margin: "0 auto" }}>
           <h2 id="hd-focus" style={{ ...h2, fontSize: 64 }}>
             Walk into any round<br />
             <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it's testing.</span>
