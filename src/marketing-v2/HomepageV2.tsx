@@ -1858,21 +1858,6 @@ export function InterviewFocusV2() {
           ))}
         </div>
 
-        <p style={{
-          fontFamily: fonts.sans,
-          fontSize: 13,
-          color: t.inkFaint,
-          textAlign: "center",
-          marginTop: 56,
-        }}>
-          Don&rsquo;t see your target?{" "}
-          <button
-            type="button"
-            style={{ color: t.indigo, fontWeight: 600, background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer" }}
-          >
-            Vote on the next type →
-          </button>
-        </p>
       </div>
     </section>
   );

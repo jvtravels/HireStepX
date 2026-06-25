@@ -1,20 +1,17 @@
 import type { TempoPage, TempoStoryboard, TempoRouteStoryboard } from 'tempo-sdk';
 import Homepagev2, {
   BuiltForIndiaV2,
-  ChangelogTeaseV2,
   ComparisonV2,
   FAQV2,
   FeatureGridV2,
   FinalCTAFooterV2,
   HeroV2,
   InterviewFocusV2,
-  LogoStripV2,
   NavV2,
   PricingV2,
   ProductStoryV2,
   SecurityComplianceV2,
   TestimonialsV2,
-  TrustRowV2,
   VideoCtaV2,
 } from '../../../../src/marketing-v2/HomepageV2';
 
@@ -48,11 +45,7 @@ export const HeroSection: TempoStoryboard = {
   layout: { x: -4574, y: 11370, width: 1440, height: 657 },
 };
 
-export const LogoStripSection: TempoStoryboard = {
-  render: () => <LogoStripV2 />,
-  name: "Logo strip + stat",
-  layout: { x: 4234, y: 8891, width: 100, height: 2406 },
-};
+// LogoStripV2 removed from HomepageV2 — storyboard retired
 
 export const ProductStorySection: TempoStoryboard = {
   render: () => <ProductStoryV2 />,
@@ -96,17 +89,7 @@ export const VideoCtaSection: TempoStoryboard = {
   layout: { x: -1762, y: 16066, width: 1728, height: 580 },
 };
 
-export const TrustRowSection: TempoStoryboard = {
-  render: () => <TrustRowV2 />,
-  name: "Trust row",
-  layout: { x: 0, y: 13720, width: 1440, height: 93 },
-};
-
-export const ChangelogTeaseSection: TempoStoryboard = {
-  render: () => <ChangelogTeaseV2 />,
-  name: "Changelog tease",
-  layout: { x: 1490, y: 170, width: 100, height: 377 },
-};
+// TrustRowV2 and ChangelogTeaseV2 removed from HomepageV2 — storyboards retired
 
 export const ComparisonSection: TempoStoryboard = {
   render: () => <ComparisonV2 />,
