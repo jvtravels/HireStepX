@@ -201,6 +201,26 @@ export const SALARY_PUSH_RE = new RegExp(
     "(?:a\\s+(?:bit|little)\\s+)?more\\s+(?:cash|money|comp|compensation|salary|pay)\\b",
     // come up (on the base/number)
     "come\\s+up\\s+(?:a\\s+(?:bit|little)|on\\s+(?:the\\s+)?(?:base|number|offer))",
+    /* PRI-59 (2026-06-25, real prod session) — an explicit, demand-form cash
+     * push that names the FIXED/BASE component went undetected, so the planner
+     * answered "Put your best fixed number on the table" / "what's your best
+     * fixed, final answer?" with a vague-promise WFH divert and a benefits
+     * recap instead of engaging the cash. These arms pin the demand-form push
+     * on the cash/fixed component (the bare-number "best" arm above misses
+     * "best fixed" because the component noun sits between "best" and
+     * "number"). */
+    // "(your/the) best fixed / best base / best cash"
+    "(?:your|the)\\s+best\\s+(?:fixed|base|cash)\\b",
+    // "what's / what is your best (…)" — open demand for the top number
+    "what(?:'s|\\s+is)\\s+(?:your|the)\\s+best\\b",
+    // "(a/your) number on the table" / "put a number on the table"
+    "number\\s+on\\s+the\\s+table",
+    // "forget the perks/benefits/equity — …" — explicit rejection of non-cash
+    // levers IS a cash push: the candidate wants the base, not the structure.
+    "forget\\s+(?:the\\s+)?(?:perks?|benefits?|equity|esop|variable|extras?)",
+    // "cash only" / "fixed only" / "just the base" — cash-component insistence
+    "(?:cash|fixed|base)\\s+only\\b",
+    "just\\s+(?:the\\s+)?(?:cash|fixed|base)\\b",
   ].join("|"),
   "i",
 );

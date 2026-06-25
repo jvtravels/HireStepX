@@ -920,10 +920,23 @@ const PROSE_ARMS: ProseArmRegistry = {
      * filler. Real recruiters acknowledge what was just put on the
      * table before pivoting to non-cash levers. */
     const counter = state.lastCandidateCounterLpa;
+    /* PRI-59 (2026-06-25) — name the cash anchor when answering an explicit,
+     * numberless cash/fixed demand ("put your best fixed on the table",
+     * "what's your best fixed, final answer?"). Without this, a candidate who
+     * pushed hard on cash got a silent perk rotation (WFH / benefits recap)
+     * and never heard where the fixed actually stands — reading as evasion.
+     * Lead with the standing fixed figure and that the base is at the band
+     * edge, THEN pivot to the non-cash lever. The numbered-push case is
+     * handled by counterAck; the two are mutually exclusive (the flag is set
+     * by wrapLeverExplore only when lastCandidateCounterLpa is null). */
+    const cashCeilingAck =
+      action.cashPushNamesCeiling === true && state.highestOfferMade > 0
+        ? `On the fixed — ₹${state.highestOfferMade}L is where the base sits for this grade, and I've taken it as far as the band allows on cash. `
+        : "";
     const counterAck =
       typeof counter === "number" && counter > 0
         ? `On the ₹${counter}L ask — that's above the cash band I can structure on this grade. `
-        : "";
+        : cashCeilingAck;
 
     /* Anti-teaser-loop (live-staging 2026-06-19). pickLeverExploreMove
      * rotates a DISTINCT concrete lever every round (equity → joining

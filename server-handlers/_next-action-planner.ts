@@ -397,6 +397,14 @@ export type NextAction =
       from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default";
       leverKind?: NegotiationLever;
       joiningBonusLpa?: number;
+      /* PRI-59 (2026-06-25) — set when this lever-explore is the response to
+       * an explicit cash/fixed PUSH that named NO number (the numbered case is
+       * already engaged by canonical-prose's counterAck). Tells the renderer
+       * to LEAD with a named cash-ceiling acknowledgment (the standing fixed
+       * figure + that the base is at the band edge) before pivoting to the
+       * non-cash lever, so a direct cash demand never gets a silent perk
+       * rotation. */
+      cashPushNamesCeiling?: boolean;
     }
   | { kind: "hold-firm"; mode: "verbal-accept" | "lever-loop" }
   | { kind: "rescission" }
@@ -4276,7 +4284,20 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * prose/info-disclosure.ts — the FIRST disclosure is now informative
    * enough that a re-ask is rare; the loop-breaker escalation at the
    * pipeline boundary catches the residual case. */
+  /* PRI-59 (2026-06-25, real prod session) — an explicit cash/fixed PUSH over a
+   * standing offer ("forget the perks — what's your best fixed?") must never be
+   * answered with an info-disclosure benefits/comp enumeration. The kernel
+   * stamps infoAsked topics from keyword presence, so a NEGATED mention
+   * ("forget the PERKS") spuriously sets `benefits-overview` and the wantsBenefits
+   * override served an insurance recap to a candidate demanding the base number —
+   * pure deflection. When the latest utterance is a salary push over a standing
+   * offer, suppress every info-disclosure override here and defer to the cash
+   * engine (counter-base / lever-explore cash-ceiling ack), the single place
+   * that names the cash anchor. */
+  const cashPushSuppressesInfo =
+    state.highestOfferMade > 0 && isSalaryPush(latestCandidateText(state));
   const wantsBreakdown =
+    !cashPushSuppressesInfo &&
     state.highestOfferMade > 0 &&
     !state.leversUsed.includes("benefits-summary") &&
     (state.infoAsked.includes("package-breakdown") ||
@@ -4307,6 +4328,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * through to the counter/close logic (which asserts the ceiling and
    * invites the close) rather than looping the explainer. */
   const wantsBenefits =
+    !cashPushSuppressesInfo &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("benefits-summary") &&
     state.infoAsked.includes("benefits-overview");
@@ -4323,6 +4345,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsCompStructure =
+    !cashPushSuppressesInfo &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("compensation-summary") &&
     state.infoAsked.includes("compensation-breakdown");
@@ -4339,6 +4362,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsNoticePolicy =
+    !cashPushSuppressesInfo &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("notice-period-summary") &&
     state.infoAsked.includes("notice-period-ask");
@@ -4355,6 +4379,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsHikeContext =
+    !cashPushSuppressesInfo &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("hike-context-summary") &&
     state.infoAsked.includes("hike-percentage-ask");
@@ -4863,7 +4888,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   /* counter-offer: split with stiffening / market / risk / boost. */
   if (state.phase === "counter-offer") {
     if (state.hardBandCap) {
-      return wrapLeverExplore(pickLeverExploreMove(state), "hard-band-cap");
+      return wrapLeverExplore(pickLeverExploreMove(state), "hard-band-cap", state);
     }
     if (state.verbalAcceptanceTurn != null) {
       if (state.postVerbalRenegotiationCount >= 2) {
@@ -4997,7 +5022,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
        * also respects the PDF#31 BUG D min-counter-rounds floor: a premature
        * hold-firm here would stonewall before any real bargaining, whereas
        * the candidate genuinely has not bargained — they have said nothing. */
-      return wrapLeverExplore(pickLeverExploreMove(state), "no-headroom");
+      return wrapLeverExplore(pickLeverExploreMove(state), "no-headroom", state);
     }
 
     /* Class-A (2026-06-15) — effectiveTargetCtcLpa folds in-hand→CTC and
@@ -5096,7 +5121,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const floor = Math.max(baseFloor, competingFloor);
 
     if (aspiration <= floor + 0.1) {
-      return wrapLeverExplore(pickLeverExploreMove(state), "no-headroom");
+      return wrapLeverExplore(pickLeverExploreMove(state), "no-headroom", state);
     }
 
     /* perfect 1 (2026-05-16) — multi-turn negotiation spiral.
@@ -5245,7 +5270,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
 
     const constraint = validateComponentConstraints(state.band, newTotal);
     if (!constraint.ok) {
-      return wrapLeverExplore(pickLeverExploreMove(state), "constraint-violation");
+      return wrapLeverExplore(pickLeverExploreMove(state), "constraint-violation", state);
     }
     /* Kernel-first cleanup (2026-05-16) — populate typed counter-offer
      * fields from band component metadata when present, so canonical
@@ -5334,7 +5359,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   /* lever-explore / closing-push: rotate non-cash levers. */
-  return wrapLeverExplore(legacyMove, "default");
+  return wrapLeverExplore(legacyMove, "default", state);
 }
 
 /** Prior-context feature (2026-05-29) — emits a high-priority action
@@ -6043,12 +6068,24 @@ function makeStructuralLeverAction(
 function wrapLeverExplore(
   move: AiMove,
   from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default",
+  state: NegotiationState,
 ): PlannedAction {
+  /* PRI-59 — when this rotation is the answer to an explicit, numberless cash
+   * push over a standing offer, flag the renderer to name the cash ceiling
+   * first. The numbered-push case is handled by canonical-prose's counterAck
+   * (lastCandidateCounterLpa), so this only covers the numberless demand
+   * ("put your best fixed on the table") that would otherwise get a silent
+   * perk pivot. */
+  const cashPushNamesCeiling =
+    state.highestOfferMade > 0 &&
+    state.lastCandidateCounterLpa == null &&
+    isSalaryPush(latestCandidateText(state));
   return {
     kind: "lever-explore",
     from,
     leverKind: move.lever,
     joiningBonusLpa: move.joiningBonusAmount,
+    cashPushNamesCeiling,
     _move: move,
   };
 }
@@ -6204,7 +6241,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
      * path is substantive — the counter-offer concession engine, the
      * defensive ladder, lever rotation (pickLeverExploreMove always
      * returns a real lever), hold-firm, and the terminal
-     * `wrapLeverExplore(legacyMove, "default")` fallback. So the
+     * `wrapLeverExplore(legacyMove, "default", state)` fallback. So the
      * "let me come back to where we were." deflection is only ever the
      * correct terminal move when there is genuinely no negotiation to
      * advance — i.e. BEFORE any offer is on the table (opening /
@@ -6231,10 +6268,23 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
      * Use the canonical literal topic; dedup against
      * reactiveFollowupsFired works as documented now that the key
      * matches across turns. */
+    /* PRI-59 (2026-06-25, real prod session) — an explicit cash/fixed PUSH
+     * over a standing offer ("what's your best fixed, final answer?", "put a
+     * number on the table") is a negotiation move, NOT a topic question. The
+     * unified router happily resolves it to a curated `fixed-variable-split` /
+     * benefits answer-direct that recaps structure WITHOUT naming a cash
+     * anchor — reading as evasion of the candidate's direct cash demand. Skip
+     * answer-direct for a salary push over a standing offer so the turn defers
+     * to the negotiation engine (counter-base when headroom remains, else the
+     * lever-explore cash-ceiling acknowledgment which DOES name the number).
+     * Mirrors the offerAskedThisTurn / wiredProfileTopicMatches skips. */
+    const salaryPushOverOffer =
+      hasStandingOffer && isSalaryPush(latestCandidateText(state));
     if (
       !hasFired("answer-direct") &&
       !offerAskedThisTurn &&
-      !wiredProfileTopicMatches
+      !wiredProfileTopicMatches &&
+      !salaryPushOverOffer
     ) {
       /* PDF#51 (2026-05-28) — deterministic-prose preempt.
        *
