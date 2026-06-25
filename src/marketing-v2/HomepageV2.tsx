@@ -1598,18 +1598,17 @@ export function InterviewFocusV2() {
       live: true,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* pediment / triangle */}
-          <path d="M8 26L32 8l24 18H8z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.1"/>
-          {/* entablature bar */}
-          <rect x="8" y="24" width="48" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
-          {/* columns */}
-          <line x1="16" y1="28" x2="16" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="26" y1="28" x2="26" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="38" y1="28" x2="38" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="48" y1="28" x2="48" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          {/* steps */}
-          <rect x="6" y="52" width="52" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
-          <rect x="4" y="56" width="56" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+          {/* mortarboard top (diamond) */}
+          <path d="M32 8L58 22L32 36L6 22z" stroke={G} strokeWidth={sw} strokeLinejoin="round" {...rp} fill={G} fillOpacity="0.12"/>
+          {/* cap body beneath */}
+          <path d="M16 26v10c0 9 32 9 32 0V26" stroke={G} strokeWidth={sw} strokeLinecap="round" {...rp}/>
+          {/* tassel string */}
+          <line x1="58" y1="22" x2="58" y2="40" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* tassel bundle */}
+          <line x1="52" y1="40" x2="64" y2="40" stroke={G} strokeWidth="1.8" strokeLinecap="round"/>
+          <line x1="53" y1="40" x2="51" y2="48" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="58" y1="40" x2="56" y2="49" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="63" y1="40" x2="61" y2="48" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -1657,8 +1656,8 @@ export function InterviewFocusV2() {
       ),
     },
     {
-      label: "Strategic",
-      desc: "Roadmaps · vision · long-range thinking",
+      label: "Leadership Round",
+      desc: "Vision · stakeholders · long-range thinking",
       live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
@@ -1718,17 +1717,18 @@ export function InterviewFocusV2() {
       live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* left panel member */}
-          <circle cx="12" cy="16" r="7" stroke={G} strokeWidth={sw}/>
-          <path d="M0 44c0-10 24-10 24 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
-          {/* center — lead interviewer, slightly prominent */}
-          <circle cx="32" cy="13" r="9" stroke={G} strokeWidth={sw}/>
-          <path d="M16 44c0-12 32-12 32 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.1"/>
-          {/* right panel member */}
-          <circle cx="52" cy="16" r="7" stroke={G} strokeWidth={sw}/>
-          <path d="M40 44c0-10 24-10 24 0" stroke={G} strokeWidth={sw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
-          {/* table line */}
-          <line x1="2" y1="44" x2="62" y2="44" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          {/* 3 interviewers */}
+          <circle cx="12" cy="13" r="7" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.07"/>
+          <circle cx="32" cy="10" r="9" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.12"/>
+          <circle cx="52" cy="13" r="7" stroke={G} strokeWidth={sw} fill={G} fillOpacity="0.07"/>
+          {/* interviewer desk — solid bar */}
+          <rect x="2" y="36" width="60" height="7" rx="3" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.12"/>
+          {/* 3 name placards */}
+          <rect x="6" y="38" width="14" height="3" rx="1" fill={G} fillOpacity="0.25"/>
+          <rect x="25" y="38" width="14" height="3" rx="1" fill={G} fillOpacity="0.25"/>
+          <rect x="44" y="38" width="14" height="3" rx="1" fill={G} fillOpacity="0.25"/>
+          {/* candidate (you) below desk */}
+          <circle cx="32" cy="56" r="5" stroke={G} strokeWidth="1.6" fill={G} fillOpacity="0.06"/>
         </svg>
       ),
     },
@@ -1755,20 +1755,23 @@ export function InterviewFocusV2() {
       ),
     },
     {
-      label: "Government / PSU",
+      label: "Govt / PSU",
       desc: "UPSC · banking · PSU interviews",
       live: false,
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
           {/* pediment */}
           <path d="M8 26L32 8l24 18H8z" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.1"/>
+          {/* official seal / emblem in pediment */}
+          <circle cx="32" cy="19" r="5" stroke={G} strokeWidth="1.4" fill={G} fillOpacity="0.2"/>
+          <circle cx="32" cy="19" r="2" fill={G} fillOpacity="0.5"/>
           {/* entablature */}
-          <rect x="8" y="24" width="48" height="5" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
+          <rect x="8" y="26" width="48" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
           {/* 4 columns */}
-          <line x1="16" y1="29" x2="16" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="26" y1="29" x2="26" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="38" y1="29" x2="38" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
-          <line x1="48" y1="29" x2="48" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="16" y1="30" x2="16" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="26" y1="30" x2="26" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="38" y1="30" x2="38" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="48" y1="30" x2="48" y2="52" stroke={G} strokeWidth={sw} strokeLinecap="round"/>
           {/* steps */}
           <rect x="6" y="52" width="52" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
           <rect x="4" y="56" width="56" height="4" stroke={G} strokeWidth={sw} {...rp} fill={G} fillOpacity="0.08"/>
@@ -1816,7 +1819,7 @@ export function InterviewFocusV2() {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(5, 1fr)",
-            gap: "56px 32px",
+            gap: "80px 32px",
             marginTop: 80,
           }}
         >
