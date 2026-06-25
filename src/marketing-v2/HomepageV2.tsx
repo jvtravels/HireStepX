@@ -376,7 +376,7 @@ export function NavV2() {
         style={{
           background: t.cream,
           maxWidth: scrolled ? 760 : "100%",
-          margin: scrolled ? "8px auto" : "0",
+          margin: scrolled ? "16px auto" : "0",
           borderRadius: scrolled ? 14 : 0,
           border: scrolled ? `1px solid ${t.line}` : "none",
           boxShadow: scrolled ? "0 4px 24px rgba(14,12,8,0.09), 0 1px 4px rgba(14,12,8,0.04)" : "none",
