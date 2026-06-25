@@ -933,10 +933,27 @@ const PROSE_ARMS: ProseArmRegistry = {
       action.cashPushNamesCeiling === true && state.highestOfferMade > 0
         ? `On the fixed — ₹${state.highestOfferMade}L is where the base sits for this grade, and I've taken it as far as the band allows on cash. `
         : "";
+    /* PRI-60 (2026-06-25) — total-vs-fixed scope reconciliation. When the
+     * candidate pins a conditional close to a FIXED figure equal to the
+     * standing TOTAL offer ("close at ₹52.3L fixed" where ₹52.3L is cash +
+     * variable + ESOP), state the conversion OUT LOUD: the standing number is
+     * total, not all fixed, so the asked figure sits above the cash band. This
+     * is the structural antidote to the prod false-concession where the bot
+     * silently locked the total as fixed. Takes precedence over the generic
+     * counter/cash-ceiling acks because it carries the scope correction.
+     * `fixedAskAboveBand` is the single-source figure stamped by
+     * wrapLeverExplore (undeliverableFixedConditionAsk). */
+    const scopeReconcileAck =
+      action.fixedAskAboveBand != null &&
+      action.fixedAskAboveBand > 0 &&
+      state.highestOfferMade > 0
+        ? `On closing at ₹${action.fixedAskAboveBand}L fixed — to be straight with you, ₹${state.highestOfferMade}L is the total fitment, not all fixed, so ₹${action.fixedAskAboveBand}L as pure base is above the cash band I can structure on this grade. `
+        : "";
     const counterAck =
-      typeof counter === "number" && counter > 0
+      scopeReconcileAck ||
+      (typeof counter === "number" && counter > 0
         ? `On the ₹${counter}L ask — that's above the cash band I can structure on this grade. `
-        : cashCeilingAck;
+        : cashCeilingAck);
 
     /* Anti-teaser-loop (live-staging 2026-06-19). pickLeverExploreMove
      * rotates a DISTINCT concrete lever every round (equity → joining

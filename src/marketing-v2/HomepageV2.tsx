@@ -286,7 +286,11 @@ const body: CSSProperties = {
 
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
-  const navLinks: Array<[string, string]> = [];
+  const navLinks: Array<[string, string]> = [
+    ["How it works", "/how-it-works"],
+    ["Pricing", "/pricing"],
+    ["FAQs", "/#faq"],
+  ];
   /* Auth-aware CTA pair. Supabase session restore is async, so
      useAuth().isLoggedIn starts `false` and flips after restore — which
      leaves logged-in users staring at "Sign in / Start free" for the
@@ -318,15 +322,42 @@ export function NavV2() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
+
+  /* Floating pill: once the user scrolls 72px (past the hero's first fold
+     visual), the nav lifts off the edge and becomes a centered pill.
+     Passive listener — no scroll jank. Geometry (maxWidth/margin) snaps
+     instantly; only visual-composite properties (border-radius, shadow,
+     border-color) animate so we never trigger a layout recalculation. */
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 72);
+    onScroll(); // sync immediately on mount (e.g. page refresh mid-scroll)
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header role="banner">
-      {/* Self-contained nav responsive rules. NavV2 is rendered both by the
-          homepage and standalone by every marketing sub-page (via
-          MarketingPagesV2). The homepage ResponsiveSheet used to be the only
-          place these lived, so sub-pages shipped the desktop link row with no
-          way to collapse it — on a phone that forced a ~657px layout viewport
-          and zoomed the whole page out. Keeping the rules here means the nav
-          collapses correctly wherever it mounts. */}
+    <header
+      role="banner"
+      className="mv2-nav-header"
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        /* When scrolled, header becomes transparent so page content shows
+           through the gap around the pill. When not scrolled, cream matches
+           the hero surface seamlessly. Transition background only — not
+           border — to avoid a jarring line appearing mid-animation. */
+        background: scrolled ? "transparent" : t.cream,
+        borderBottom: scrolled ? "none" : `1px solid ${t.line}`,
+        transition: "background 250ms ease-out",
+      }}
+    >
+      {/* Self-contained responsive + pill rules. NavV2 is rendered both by
+          the homepage and standalone by every marketing sub-page (via
+          MarketingPagesV2). Keeping the rules here means the nav collapses
+          correctly wherever it mounts. On mobile (≤880px) the pill is
+          suppressed: full-width sticky bar always, no floating effect. */}
       <style>{`
         @media (max-width: 880px) {
           .mv2-nav-links { display: none !important; }
@@ -334,20 +365,24 @@ export function NavV2() {
           .mv2-nav-burger { display: inline-flex !important; }
           /* Hide the "Sign in" text link — it's in the mobile drawer */
           .mv2-nav-sign-in { display: none !important; }
+          /* Always full-width sticky on mobile, never a floating pill */
+          .mv2-nav-header { background: #FAF7F0 !important; border-bottom: 1px solid #EBE5D2 !important; transition: none !important; }
+          .mv2-nav-pill { max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
         }
       `}</style>
       <nav
         aria-label="Primary"
+        className="mv2-nav-pill"
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          /* Opaque sticky nav. We tried translucent + blur; the visual gain
-             against a cream surface was nil and the compositor cost on every
-             scroll frame was real on low-end Android. Fully opaque + hairline
-             border reads exactly the same and costs nothing. */
           background: t.cream,
-          borderBottom: `1px solid ${t.line}`,
+          /* Geometry snaps (no transition) — only composited visual props animate */
+          maxWidth: scrolled ? 760 : "100%",
+          margin: scrolled ? "8px auto" : "0",
+          borderRadius: scrolled ? 14 : 0,
+          border: scrolled ? `1px solid ${t.line}` : "none",
+          boxShadow: scrolled ? "0 4px 24px rgba(14,12,8,0.09), 0 1px 4px rgba(14,12,8,0.04)" : "none",
+          overflow: "hidden",
+          transition: "border-radius 300ms ease-out, box-shadow 300ms ease-out",
         }}
       >
         <div
@@ -364,7 +399,19 @@ export function NavV2() {
             aria-label="HireStepX home"
             style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
           >
-            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
+            {/* Swap wordmark ↔ X mark based on scroll state.
+                Instant conditional render — the border-radius/shadow
+                transition draws attention so the logo swap feels part of
+                the same motion without a separate cross-fade. */}
+            {scrolled ? (
+              <img
+                src="/favicon.svg"
+                alt="HireStepX"
+                style={{ width: 28, height: 28, borderRadius: 6, display: "block" }}
+              />
+            ) : (
+              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
+            )}
           </a>
 
           <div
@@ -599,6 +646,7 @@ export function NavV2() {
     </header>
   );
 }
+
 
 /* ─────────────────────────── 2. HERO ─────────────────────────── */
 function Waveform({ accent }: { accent?: string }) {

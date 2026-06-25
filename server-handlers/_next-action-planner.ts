@@ -405,6 +405,14 @@ export type NextAction =
        * non-cash lever, so a direct cash demand never gets a silent perk
        * rotation. */
       cashPushNamesCeiling?: boolean;
+      /* PRI-60 (2026-06-25) — set to the candidate's pinned FIXED close-ask
+       * figure when that figure is undeliverable as pure cash over the standing
+       * TOTAL offer (an equity/variable-inclusive total being asked as fixed —
+       * `undeliverableFixedConditionAsk`). Tells the renderer to RECONCILE the
+       * scope out loud: name that the standing figure is total (not all fixed)
+       * so the asked number sits above the cash band, before pivoting to a
+       * non-cash lever. Prevents the silent total→fixed over-concession. */
+      fixedAskAboveBand?: number;
     }
   | { kind: "hold-firm"; mode: "verbal-accept" | "lever-loop" }
   | { kind: "rescission" }
@@ -4301,19 +4309,30 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * standing TOTAL offer cannot deliver as cash ("if you can close at ₹52.3L
    * fixed, that works for me" — where ₹52.3L is the total of ₹46.3L fixed +
    * ₹6L variable) is making a CLOSE signal, not asking for a comp-structure
-   * tour. But an earlier breakdown ask leaves `compensation-breakdown` /
-   * `package-breakdown` sticky in the cumulative `infoAsked`, so the info
-   * override here hijacked the turn and shipped a generic structure recap —
-   * silently ducking the scope conflict instead of reconciling it. When an
-   * undeliverable fixed close-ask is pending over a standing offer, suppress
-   * the info overrides and defer to the counter/close engine, the single place
-   * that names the fixed cap and the total→fixed conversion. */
-  const fixedCloseScopeSuppressesInfo =
-    state.highestOfferMade > 0 && undeliverableFixedConditionAsk(state) != null;
-  const suppressInfoForCashOrClose =
-    cashPushSuppressesInfo || fixedCloseScopeSuppressesInfo;
+   * tour. In production the bot silently agreed ("let's lock it at ₹52.3L"),
+   * converting an equity/variable-inclusive total into fixed cash; in the
+   * deterministic path an earlier breakdown ask left `compensation-breakdown`
+   * sticky in the cumulative `infoAsked`, so the info override below hijacked
+   * the turn and shipped a generic structure recap — both DUCK the scope
+   * conflict instead of reconciling it.
+   *
+   * The close gates above have already DECLINED to close (the conditional-close
+   * gate returns null for an undeliverable fixed ask — `fixedScopedCloseTotal`
+   * is null), so no false-close can happen. What's missing is naming the
+   * conflict OUT LOUD. Reconcile it deterministically here: route to a
+   * lever-explore that states the total→fixed conversion (stamped via
+   * `undeliverableFixedConditionAsk` → `fixedAskAboveBand` in wrapLeverExplore)
+   * and pivots to a concrete non-cash lever, rather than the comp-structure
+   * duck OR the defensive ladder stealing the turn. "hard-band-cap" because the
+   * fixed ask sits structurally above the cash band the grade can deliver. */
+  if (
+    state.highestOfferMade > 0 &&
+    undeliverableFixedConditionAsk(state) != null
+  ) {
+    return wrapLeverExplore(pickLeverExploreMove(state), "hard-band-cap", state);
+  }
   const wantsBreakdown =
-    !suppressInfoForCashOrClose &&
+    !cashPushSuppressesInfo &&
     state.highestOfferMade > 0 &&
     !state.leversUsed.includes("benefits-summary") &&
     (state.infoAsked.includes("package-breakdown") ||
@@ -4344,7 +4363,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * through to the counter/close logic (which asserts the ceiling and
    * invites the close) rather than looping the explainer. */
   const wantsBenefits =
-    !suppressInfoForCashOrClose &&
+    !cashPushSuppressesInfo &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("benefits-summary") &&
     state.infoAsked.includes("benefits-overview");
@@ -4361,7 +4380,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsCompStructure =
-    !suppressInfoForCashOrClose &&
+    !cashPushSuppressesInfo &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("compensation-summary") &&
     state.infoAsked.includes("compensation-breakdown");
@@ -4378,7 +4397,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsNoticePolicy =
-    !suppressInfoForCashOrClose &&
+    !cashPushSuppressesInfo &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("notice-period-summary") &&
     state.infoAsked.includes("notice-period-ask");
@@ -4395,7 +4414,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   }
 
   const wantsHikeContext =
-    !suppressInfoForCashOrClose &&
+    !cashPushSuppressesInfo &&
     !isTerminalPhase(state.phase) &&
     !state.leversUsed.includes("hike-context-summary") &&
     state.infoAsked.includes("hike-percentage-ask");
@@ -6096,12 +6115,20 @@ function wrapLeverExplore(
     state.highestOfferMade > 0 &&
     state.lastCandidateCounterLpa == null &&
     isSalaryPush(latestCandidateText(state));
+  /* PRI-60 — single source for the total-vs-fixed scope reconciliation figure.
+   * Non-null only when the candidate's pinned fixed close-ask cannot be
+   * delivered as cash over the standing total offer. */
+  const fixedAskAboveBand =
+    state.highestOfferMade > 0
+      ? (undeliverableFixedConditionAsk(state) ?? undefined)
+      : undefined;
   return {
     kind: "lever-explore",
     from,
     leverKind: move.lever,
     joiningBonusLpa: move.joiningBonusAmount,
     cashPushNamesCeiling,
+    fixedAskAboveBand,
     _move: move,
   };
 }
