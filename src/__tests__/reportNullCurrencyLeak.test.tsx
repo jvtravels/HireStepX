@@ -63,6 +63,52 @@ describe("report currency leaks (pre-launch audit)", () => {
     expect(container.textContent || "").not.toMatch(NO_CURRENCY_LEAK);
   });
 
+  /* Coherence (2026-06-27, live staging audit) — a Flipkart-EM report
+   * accepted at ₹51 (opening = closing, delta 0) where the candidate DID
+   * counter at ₹65 was printing self-contradictory copy: the verdict said
+   * "No counter, no movement" and a stat hinted "no counter named", while
+   * the SAME hero showed "+27% pushback" and the stage tracker showed
+   * "named a counter ✓ Asked ₹65". Root cause: the delta===0 branch
+   * conflated "the offer didn't move" with "the candidate never countered".
+   * Pinned: when candidateAsk > opening, the hero must NOT claim no counter. */
+  it("TLDRHero does not claim 'no counter' on a flat-offer accept where the candidate countered", () => {
+    const outcome = baseOutcome({
+      outcome: "accepted",
+      finalTotal: 51,
+      offers: [{ turn: 1, total: 51, question: "" }],
+      candidateAsk: 65,
+    });
+    const { container } = render(
+      // `role` is TLDRHero's domain prop (the job title), not a DOM ARIA role.
+      // eslint-disable-next-line jsx-a11y/aria-role
+      <TLDRHero outcome={outcome} role="Engineering Manager" company="Flipkart" />,
+    );
+    const text = (container.textContent || "").toLowerCase();
+    // The contradiction strings must be gone.
+    expect(text).not.toContain("no counter, no movement");
+    expect(text).not.toContain("no counter named");
+    // It must acknowledge the counter that was actually named.
+    expect(container.textContent || "").toContain("₹65");
+    expect(text).toContain("countered");
+  });
+
+  it("TLDRHero keeps the 'no counter' framing on a flat-offer accept with no candidate ask", () => {
+    const outcome = baseOutcome({
+      outcome: "accepted",
+      finalTotal: 51,
+      offers: [{ turn: 1, total: 51, question: "" }],
+      candidateAsk: null,
+    });
+    const { container } = render(
+      // `role` is TLDRHero's domain prop (the job title), not a DOM ARIA role.
+      // eslint-disable-next-line jsx-a11y/aria-role
+      <TLDRHero outcome={outcome} role="Engineering Manager" company="Flipkart" />,
+    );
+    const text = (container.textContent || "").toLowerCase();
+    // No counter was named here, so the original framing is correct.
+    expect(text).toContain("no counter");
+  });
+
   it("InHandMonthlyCard does not render '₹ LPA' when closingTotalLpa is null", () => {
     const { container } = render(
       <InHandMonthlyCard

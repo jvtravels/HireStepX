@@ -14,11 +14,22 @@ export function TLDRHero({
   const phaseCount = derivePhases(outcome).filter(p => p.reached).length;
   const TOTAL_PHASES = 5;
 
+  /* A counter was named iff the candidate stated an ask above the opening —
+   * the same single source the stage tracker uses (derivePhases →
+   * reachedCounter = candidateAsk !== null). "The offer didn't move"
+   * (delta === 0) is NOT the same as "the candidate never countered": the
+   * recruiter can hold firm against a real counter. Conflating the two made
+   * the hero print "no counter named" while the very same hero showed a
+   * "+X% pushback" stat and the stage tracker showed "named a counter ✓". */
+  const counterNamed = outcome.candidateAsk !== null && opening !== null && outcome.candidateAsk > opening;
+
   let verdict: string;
   if (outcome.outcome === "accepted" && delta !== null && delta > 0) {
     verdict = `You moved the offer from ₹${opening} LPA up to ₹${closing} LPA, ₹${delta * 4}L extra over four years before tax.${askGap !== null ? ` You closed ${askGap}% of the gap to your stated ask.` : ""}`;
   } else if (outcome.outcome === "accepted" && delta === 0) {
-    verdict = `You accepted at ₹${closing} LPA, the same as their first offer. No counter, no movement. Comparable candidates typically push 15 to 35% above the opening number.`;
+    verdict = counterNamed
+      ? `You countered at ₹${outcome.candidateAsk} LPA but accepted their opening ₹${closing} LPA — they held firm and you took it without further movement. Comparable candidates keep pushing 15 to 35% above the opening before accepting.`
+      : `You accepted at ₹${closing} LPA, the same as their first offer. No counter, no movement. Comparable candidates typically push 15 to 35% above the opening number.`;
   } else if (outcome.outcome === "walked_away") {
     /* `closing` can be null when the candidate walked before any offer
      * number landed — never interpolate it raw (that renders "₹null LPA"
@@ -65,7 +76,9 @@ export function TLDRHero({
       stats.push({
         label: "Money you left on the table",
         value: "—",
-        hint: "you accepted at the first number; no counter named",
+        hint: counterNamed
+          ? `you countered at ₹${outcome.candidateAsk} but accepted their opening; the recruiter didn't move`
+          : "you accepted at the first number; no counter named",
         tone: "bad",
       });
     }
