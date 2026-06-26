@@ -6,6 +6,7 @@
  * Pure presentation. */
 
 import { t, f, radius } from "../tokens";
+import { formatRoleWithLevel } from "../roleLabel";
 import type { DeliveryMetric, InterviewResultData, Verdict } from "../types";
 import { ReportCardShell } from "./_primitives";
 import {
@@ -156,7 +157,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
           {typeof data.percentile === "number" && (
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "12px 0 0" }}>
               <span style={{ color: t.coal, fontWeight: 600, fontFamily: f.serif, fontSize: 16 }}>Top {100 - data.percentile}%</span>{" "}
-              of {[data.level, data.role.split(" ").slice(0, 2).join(" ")].filter(Boolean).join(" ")} candidates targeting {data.company}.
+              of {formatRoleWithLevel(data.level, data.role.split(" ").slice(0, 2).join(" "))} candidates targeting {data.company}.
             </p>
           )}
         </div>
