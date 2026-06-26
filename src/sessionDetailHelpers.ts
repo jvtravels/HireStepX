@@ -1,4 +1,5 @@
 import { c } from "./tokens";
+import type { DashboardSession } from "./dashboardTypes";
 
 export const RESULTS_KEY = "hirestepx_sessions";
 
@@ -211,6 +212,12 @@ export interface LocalSession {
   transcript?: { speaker: string; text: string; time?: string }[];
   ai_feedback?: string;
   skill_scores?: Record<string, number | { score: number; reason?: string }> | null;
+  /* Kernel-aware negotiation metrics (salary-neg). Carried through so the
+     report adapter can adopt the kernel's authoritative offer trajectory +
+     close/stage detection instead of re-parsing the transcript. Without it
+     a cleanly-closed negotiation renders "0 of 5 stages / no counter named"
+     because the heuristic fallback reads a near-empty perQuestion list. */
+  negotiationMetrics?: DashboardSession["negotiationMetrics"];
   ideal_answers?: IdealAnswer[];
   starAnalysis?: { overall: number; breakdown: Record<string, number>; tip: string };
   strengths?: string[];

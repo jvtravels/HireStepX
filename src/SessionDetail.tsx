@@ -183,6 +183,12 @@ export function localSessionToDashboardSession(local: LocalSession): DashboardSe
        interview ended) or the version is stale. */
     cachedReport: local.report_json ?? undefined,
     cachedReportVersion: local.report_version ?? undefined,
+    /* Kernel-aware negotiation metrics — the report adapter's
+       adoptKernelOutcome reads the authoritative offer trajectory,
+       candidate ask, and close outcome from here. Dropping it forced the
+       adapter onto its transcript-regex heuristic, which rendered a
+       cleanly-closed negotiation as "0 of 5 stages / NO COUNTER NAMED". */
+    negotiationMetrics: local.negotiationMetrics,
     /* Extract focusMetrics from report_json so buildFocusBanner in the
        adapter gets the real LLM-scored metric values instead of "—".
        report_json is typed as Record<string,unknown>; narrow before use. */
@@ -247,6 +253,13 @@ export default function SessionDetail() {
                  row is on the current schema version. */
               report_json: record.report_json ?? null,
               report_version: record.report_version ?? null,
+              /* Carry the kernel negotiation metrics through the cross-device
+                 / post-clear load path too (mirrors DashboardContext). The
+                 column is JSON; narrow to unknown before the typed cast so we
+                 avoid an `as unknown as` double-cast. */
+              negotiationMetrics:
+                (record as { negotiation_metrics?: unknown }).negotiation_metrics as
+                  LocalSession["negotiationMetrics"],
             });
             track("session_result_viewed", { score: record.score || 0 });
           }
