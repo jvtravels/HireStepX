@@ -505,6 +505,20 @@ function adoptKernelOutcome(
   };
 }
 
+/** Which derivation path `buildNegotiationOutcome` will take for a given
+ *  row: "kernel" when the authoritative persisted trajectory is present and
+ *  adoptable, "heuristic" otherwise (legacy / dropped-metrics rows that fall
+ *  back to the transcript regex). Pure mirror of the branch in
+ *  `buildNegotiationOutcome` so the report layer can emit a production canary
+ *  on the heuristic rate WITHOUT re-running the scan — a rising heuristic
+ *  rate is the early signal that kernel-metrics persistence regressed (the
+ *  DATA-1 "0 of 5 stages / didn't close" bug class). */
+export function negotiationOutcomeDerivation(
+  kernelMetrics?: DashboardSession["negotiationMetrics"],
+): "kernel" | "heuristic" {
+  return kernelMetrics && adoptKernelOutcome(kernelMetrics) ? "kernel" : "heuristic";
+}
+
 /** Derive the offer trajectory + deal outcome. Prefers the kernel's
  *  authoritative final state (`negotiationMetrics`); falls back to a
  *  heuristic transcript scan only for legacy rows that predate the

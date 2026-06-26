@@ -36,7 +36,7 @@ import {
 import { CLIENT_REPORT_VERSION, type DashboardSession } from "../dashboardTypes";
 import { useAuth } from "../AuthContext";
 import SessionReportView from "./SessionReportView";
-import { sessionReportToInterviewResult, toBehavioralFullReportData } from "./adapter";
+import { sessionReportToInterviewResult, toBehavioralFullReportData, negotiationOutcomeDerivation } from "./adapter";
 import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
 import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
@@ -907,6 +907,24 @@ export const SessionReport = memo(function SessionReport({
       cancelled = true;
     };
   }, [viewData]);
+
+  /* ── Report-derivation canary (telemetry) ──
+     Fires once per rendered negotiation report with which path produced the
+     deal outcome: "kernel" (authoritative persisted trajectory) or
+     "heuristic" (legacy / dropped-metrics row that fell back to the
+     transcript regex). The heuristic rate is the production early-warning
+     for the DATA-1 bug class — a closed negotiation rendering "0 of 5
+     stages / didn't close" because kernel metrics didn't persist. With no
+     live LLM run available to confirm end-to-end persistence, this is how we
+     measure it from real sessions instead of guessing. Best-effort; the
+     capture helper never throws. */
+  useEffect(() => {
+    if (!viewData || !viewData.negotiationOutcome) return;
+    captureClientEvent("neg_report_derivation", {
+      derivation: negotiationOutcomeDerivation(session.negotiationMetrics),
+      outcome: viewData.negotiationOutcome.outcome,
+    });
+  }, [viewData, session.negotiationMetrics]);
 
   /* ── Behavioral v2 report prop bag ──
      Computed only for behavioral focus + when both report and analyzer
