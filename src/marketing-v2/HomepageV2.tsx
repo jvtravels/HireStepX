@@ -1785,11 +1785,7 @@ export function InterviewFocusV2() {
             Walk into any round<br />
             <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it&rsquo;s testing.</span>
           </h2>
-          <p style={{ ...body, fontSize: 16, color: "#4a4540", maxWidth: 620, margin: "16px auto 0" }}>
-            Every format has hidden rules. HR tests culture, not qualifications.
-            Campus filters on communication, not marks. Salary expects you to negotiate,
-            even when nobody says so. Ten formats. One coach.
-          </p>
+
         </MotionReveal>
 
         {/* ── Row 1: Live types — 4 items, 80px icons, animated ── */}
