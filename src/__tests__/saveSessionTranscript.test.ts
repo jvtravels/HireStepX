@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeTranscript, toRoleTranscript } from "../../server-handlers/save-session";
+import { sanitizeTranscript, toRoleTranscript, sanitizeNegotiationMetrics } from "../../server-handlers/save-session";
 
 /* PRI-61 regression guard.
  *
@@ -99,5 +99,84 @@ describe("toRoleTranscript — evaluate-session boundary map (PRI-61)", () => {
     const grade = toRoleTranscript(persisted);
     expect(grade.length).toBeGreaterThan(0);
     expect(grade.every(t => t.role === "interviewer" || t.role === "candidate")).toBe(true);
+  });
+});
+
+/* DATA-1 regression guard (2026-06-27).
+ *
+ * The pre-2026-06-27 sanitizer whitelisted only the 9 scalar kernel fields
+ * and DROPPED the authoritative offer/ask numbers + grounded action signals
+ * (initialOfferLpa, offerTrajectoryLpa, candidateAskLpa, vossTacticsUsed,
+ * infoAsked, ...) before the Supabase write. Because the report adapter's
+ * adoptKernelOutcome REQUIRES initialOfferLpa + offerTrajectoryLpa, every
+ * Supabase-loaded (cross-device / post-eviction) report fell back to the
+ * transcript-regex heuristic and rendered a cleanly-closed negotiation as
+ * "0 of 5 stages / didn't close". These tests pin the full persisted shape
+ * so the drop can't recur. */
+describe("sanitizeNegotiationMetrics — persists the full kernel shape (DATA-1)", () => {
+  const full = {
+    outcome: "accepted",
+    anchorTurn: 1,
+    leverDiversity: 3,
+    lpaGained: 2.2,
+    lpaPerTurn: 0.7,
+    bandTraversal: 0.6,
+    overBandViolation: false,
+    totalTurns: 7,
+    score: 72,
+    initialOfferLpa: 23,
+    finalOfferLpa: 25.2,
+    candidateAskLpa: 30,
+    offerTrajectoryLpa: [23, 24.8, 25.2],
+    vossTacticsUsed: ["mirror", "calibrated-question"],
+    infoAsked: ["band-range"],
+    walkAwayReturned: false,
+    hardBandCap: true,
+    marketMode: "neutral",
+  };
+
+  it("retains the fields adoptKernelOutcome requires (initialOffer + trajectory + ask)", () => {
+    const out = sanitizeNegotiationMetrics(full);
+    expect(out).not.toBeNull();
+    expect(out!.initialOfferLpa).toBe(23);
+    expect(out!.finalOfferLpa).toBe(25.2);
+    expect(out!.candidateAskLpa).toBe(30);
+    expect(out!.offerTrajectoryLpa).toEqual([23, 24.8, 25.2]);
+  });
+
+  it("retains the grounded action signals the stage ladder reads", () => {
+    const out = sanitizeNegotiationMetrics(full);
+    expect(out!.vossTacticsUsed).toEqual(["mirror", "calibrated-question"]);
+    expect(out!.infoAsked).toEqual(["band-range"]);
+    expect(out!.leverDiversity).toBe(3);
+  });
+
+  it("clamps oversized/garbage trajectory entries without dropping the field", () => {
+    const out = sanitizeNegotiationMetrics({
+      ...full,
+      offerTrajectoryLpa: [-5, 999, 24, "x", null],
+    });
+    // negatives clamp to 0, >500 clamps to 500, non-numbers filtered out
+    expect(out!.offerTrajectoryLpa).toEqual([0, 500, 24]);
+  });
+
+  it("rejects an object with no valid outcome", () => {
+    expect(sanitizeNegotiationMetrics({ outcome: "bogus" })).toBeNull();
+    expect(sanitizeNegotiationMetrics(null)).toBeNull();
+    expect(sanitizeNegotiationMetrics("nope")).toBeNull();
+  });
+
+  it("omits optional numbers when absent (legacy row stays adapter-legacy)", () => {
+    const out = sanitizeNegotiationMetrics({
+      outcome: "stalemate",
+      leverDiversity: 1,
+      totalTurns: 4,
+      score: 40,
+    });
+    expect(out).not.toBeNull();
+    expect(out!.initialOfferLpa).toBeUndefined();
+    expect(out!.offerTrajectoryLpa).toBeUndefined();
+    // candidateAskLpa is always present (null when unknown) by contract
+    expect(out!.candidateAskLpa).toBeNull();
   });
 });

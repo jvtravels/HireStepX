@@ -38,6 +38,11 @@ const kernel = (over: Partial<KernelMetrics>): KernelMetrics => ({
   finalOfferLpa: 25.2,
   candidateAskLpa: 30,
   offerTrajectoryLpa: [23, 24.8, 25.2],
+  // Grounded candidate-action signals — a real closed deal carries them,
+  // and the report's stage ladder (derivePhases) now reads stages 2/3/4
+  // from these rather than from the recruiter's offer count (REPORT-6).
+  vossTacticsUsed: ["mirror", "calibrated-question"],
+  infoAsked: ["band-range"],
   ...over,
 });
 
@@ -68,10 +73,11 @@ describe("report adopts the kernel's authoritative negotiation outcome", () => {
     const outcome = buildNegotiationOutcome(opaqueReport, kernel({}));
     const phases = derivePhases(outcome!);
     expect(phases).toHaveLength(TOTAL_PHASES);
-    // Stage 1 (named a counter), 3 (pushback), 4 (levers), 5 (closed) all reached.
+    // Every stage reached from grounded signals, NOT recruiter offer count.
     expect(phases[0].reached).toBe(true); // candidateAsk present
-    expect(phases[2].reached).toBe(true); // offers.length >= 2
-    expect(phases[3].reached).toBe(true); // offers.length >= 3
+    expect(phases[1].reached).toBe(true); // tactics/info → justified
+    expect(phases[2].reached).toBe(true); // tactics → handled pushback
+    expect(phases[3].reached).toBe(true); // leverDiversity → levers
     expect(phases[4].reached).toBe(true); // accepted
     expect(phases[4].note).toBe("Accepted");
     expect(phases.filter((p) => p.reached)).toHaveLength(TOTAL_PHASES);

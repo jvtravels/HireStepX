@@ -61,7 +61,7 @@ interface SessionBody {
  *  anything not a plain object, drops unknown keys, clamps numbers to
  *  sane ranges. Returns null on any structural problem so the column
  *  stays NULL rather than persisting tampered data. */
-function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> | null {
+export function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> | null {
   if (!v || typeof v !== "object") return null;
   const o = v as Record<string, unknown>;
   const num = (n: unknown, lo: number, hi: number): number | null => {
@@ -72,6 +72,59 @@ function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> | null 
     ? o.outcome
     : null;
   if (!outcome) return null;
+  /* Bounded LPA array — the report's authoritative offer trajectory. Caps
+     length and clamps each entry so a malformed/oversized payload can't
+     bloat the row or poison the chart. */
+  const lpaArray = (a: unknown): number[] | undefined => {
+    if (!Array.isArray(a)) return undefined;
+    return a
+      .filter((x): x is number => typeof x === "number" && Number.isFinite(x))
+      .slice(0, 50)
+      .map((x) => Math.max(0, Math.min(500, x)));
+  };
+  /* Bounded short-string array — Voss tactics / info-asked labels. */
+  const strArray = (a: unknown): string[] | undefined => {
+    if (!Array.isArray(a)) return undefined;
+    return a
+      .filter((x): x is string => typeof x === "string")
+      .slice(0, 20)
+      .map((x) => x.slice(0, 80));
+  };
+  const lowballEvent = (() => {
+    if (!o.lowballEvent || typeof o.lowballEvent !== "object") return undefined;
+    const e = o.lowballEvent as Record<string, unknown>;
+    return {
+      candidateAnchor: num(e.candidateAnchor, 0, 500) ?? 0,
+      bandFloor: num(e.bandFloor, 0, 500) ?? 0,
+      gapPct: num(e.gapPct, -1000, 1000) ?? 0,
+      recruiterProbed: e.recruiterProbed === true,
+      candidateHeld: e.candidateHeld === true,
+    };
+  })();
+  const powerContext = (() => {
+    if (!o.powerContext || typeof o.powerContext !== "object") return undefined;
+    const p = o.powerContext as Record<string, unknown>;
+    const sig = (p.signals && typeof p.signals === "object" ? p.signals : {}) as Record<string, unknown>;
+    const posture = ["strong", "neutral", "hungry"].includes(p.posture as string) ? (p.posture as string) : "neutral";
+    const leverage = ["low", "neutral", "high"].includes(p.candidateLeverage as string) ? (p.candidateLeverage as string) : "neutral";
+    const quarter = ["fresh-quarter", "mid-quarter", "quarter-end", "annual-sprint"].includes(sig.quarterTiming as string)
+      ? (sig.quarterTiming as string)
+      : undefined;
+    return {
+      recruiterPower: num(p.recruiterPower, 0, 1) ?? 0,
+      signals: {
+        ...(num(sig.openReqMonths, 0, 120) != null ? { openReqMonths: num(sig.openReqMonths, 0, 120) } : {}),
+        ...(num(sig.pipelineDepth, 0, 1000) != null ? { pipelineDepth: num(sig.pipelineDepth, 0, 1000) } : {}),
+        ...(quarter ? { quarterTiming: quarter } : {}),
+        ...(typeof sig.candidateHasCompetingProcess === "boolean" ? { candidateHasCompetingProcess: sig.candidateHasCompetingProcess } : {}),
+      },
+      posture,
+      candidateLeverage: leverage,
+    };
+  })();
+  const traj = lpaArray(o.offerTrajectoryLpa);
+  const voss = strArray(o.vossTacticsUsed);
+  const info = strArray(o.infoAsked);
   return {
     outcome,
     anchorTurn: typeof o.anchorTurn === "number" && Number.isFinite(o.anchorTurn) ? Math.max(0, Math.min(50, o.anchorTurn)) : null,
@@ -82,6 +135,26 @@ function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> | null 
     overBandViolation: o.overBandViolation === true,
     totalTurns: num(o.totalTurns, 0, 50) ?? 0,
     score: num(o.score, 0, 100) ?? 0,
+    /* Authoritative offer/ask numbers — the report adapter's
+       adoptKernelOutcome REQUIRES initialOfferLpa + offerTrajectoryLpa to
+       drive the offer trajectory + close/stage detection from kernel truth.
+       Dropping them (the pre-2026-06-27 sanitizer did) forced every
+       Supabase-loaded report onto the transcript-regex heuristic, which
+       rendered a cleanly-closed negotiation as "0 of 5 stages / didn't
+       close" cross-device and after localStorage eviction. (DATA-1.) */
+    ...(num(o.initialOfferLpa, 0, 500) != null ? { initialOfferLpa: num(o.initialOfferLpa, 0, 500) } : {}),
+    ...(num(o.finalOfferLpa, 0, 500) != null ? { finalOfferLpa: num(o.finalOfferLpa, 0, 500) } : {}),
+    candidateAskLpa: num(o.candidateAskLpa, 0, 500),
+    ...(traj ? { offerTrajectoryLpa: traj } : {}),
+    /* Optional kernel signals consumed by the Quality / Voss-tactics /
+       UnaskedLevers / lowball / power-dynamics panels. */
+    ...(voss ? { vossTacticsUsed: voss } : {}),
+    ...(info ? { infoAsked: info } : {}),
+    ...(typeof o.walkAwayReturned === "boolean" ? { walkAwayReturned: o.walkAwayReturned } : {}),
+    ...(typeof o.hardBandCap === "boolean" ? { hardBandCap: o.hardBandCap } : {}),
+    ...(["soft", "neutral", "hot"].includes(o.marketMode as string) ? { marketMode: o.marketMode } : {}),
+    ...(lowballEvent ? { lowballEvent } : {}),
+    ...(powerContext ? { powerContext } : {}),
   };
 }
 

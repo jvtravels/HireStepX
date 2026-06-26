@@ -327,7 +327,14 @@ export function sessionReportToInterviewResult(
 
   const company = ctx.targetCompany || session.company || "Your target";
   const role = ctx.targetRole || session.role || "Candidate";
-  const level = report.calibration?.companyLabel?.split(" ").slice(-1)[0] || "—";
+  // Seniority band for the "Level" pill. The previous derivation took the
+  // last whitespace token of `companyLabel` ("Flipkart", "Big Tech
+  // (FAANG-tier)") — which leaked the COMPANY NAME ("Level: Flipkart") and
+  // duplicated it into the readiness headline ("For Flipkart Engineering
+  // Manager at Flipkart"). Derive an actual seniority keyword from the role
+  // instead; empty when the role carries no seniority signal so the pill +
+  // headline omit it rather than printing garbage. (REPORT-1/REPORT-2.)
+  const level = deriveSeniorityLevel(role);
   const difficulty = capitalize(session.difficulty || "Standard");
   const isNegotiation =
     /negotiat|salary/i.test(session.type || "") ||
@@ -478,7 +485,24 @@ function adoptKernelOutcome(
     )));
   }
 
-  return { offers, finalTotal, outcome, candidateAsk, gapClosurePct };
+  // Grounded candidate-action signals — drive the report's stage ladder
+  // (derivePhases) from real moves the candidate made, never from the
+  // recruiter's offer count. Optional on the kernel row; default to
+  // honest-empty when a legacy row persisted without them.
+  const leverDiversity = typeof km.leverDiversity === "number" ? km.leverDiversity : 0;
+  const tacticsUsed = Array.isArray(km.vossTacticsUsed) ? km.vossTacticsUsed : undefined;
+  const infoAsked = Array.isArray(km.infoAsked) ? km.infoAsked : undefined;
+
+  return {
+    offers,
+    finalTotal,
+    outcome,
+    candidateAsk,
+    gapClosurePct,
+    leverDiversity,
+    ...(tacticsUsed ? { tacticsUsed } : {}),
+    ...(infoAsked ? { infoAsked } : {}),
+  };
 }
 
 /** Derive the offer trajectory + deal outcome. Prefers the kernel's
@@ -620,6 +644,40 @@ function buildBiasFindings(
 
 /* ─── Field-level helpers ───────────────────────────────────────────── */
 
+/* Seniority band shown in the report's "Level" pill, extracted from the
+   role title. Ordered most→least specific so multi-word bands ("senior
+   manager") win over their substrings ("manager", "senior"). Returns ""
+   when the role carries no seniority signal — callers omit the pill rather
+   than render a placeholder, and the readiness headline drops the level
+   token entirely so we never print "For Flipkart Engineering Manager at
+   Flipkart" (REPORT-1/REPORT-2). */
+const SENIORITY_BANDS: ReadonlyArray<[RegExp, string]> = [
+  [/\bsenior\s+manager\b/i, "Senior Manager"],
+  [/\b(svp|senior\s+vice\s+president)\b/i, "SVP"],
+  [/\b(evp|executive\s+vice\s+president)\b/i, "EVP"],
+  [/\b(vp|vice\s+president)\b/i, "VP"],
+  [/\bdirector\b/i, "Director"],
+  [/\bprincipal\b/i, "Principal"],
+  [/\bdistinguished\b/i, "Distinguished"],
+  [/\bstaff\b/i, "Staff"],
+  [/\b(head|chief)\b/i, "Head"],
+  [/\bmanager\b/i, "Manager"],
+  [/\blead\b/i, "Lead"],
+  [/\bsenior\b|\bsr\.?\b/i, "Senior"],
+  [/\bmid[-\s]?level\b/i, "Mid"],
+  [/\b(junior|jr\.?)\b/i, "Junior"],
+  [/\bassociate\b/i, "Associate"],
+  [/\b(intern|trainee)\b/i, "Intern"],
+];
+
+export function deriveSeniorityLevel(role: string): string {
+  if (!role) return "";
+  for (const [re, label] of SENIORITY_BANDS) {
+    if (re.test(role)) return label;
+  }
+  return "";
+}
+
 function computeScoreDelta(recent?: number[]): number {
   if (!recent || recent.length < 2) return 0;
   return recent[recent.length - 1] - recent[recent.length - 2];
@@ -697,11 +755,16 @@ function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
   const candidateAnswers = report.perQuestion.map((q) => q.answerText || "");
   const allText = candidateAnswers.join(" ");
 
-  // Anchor strength — % of negotiation answers where the candidate stated
-  // a specific number anchor (₹X LPA / X lakhs). High = anchored hard.
+  // "Numbers stated" — % of negotiation answers where the candidate stated a
+  // specific figure. This used to be mislabelled "Anchor strength", which
+  // COLLIDED with the LLM/deterministic skill axis ALSO named "Anchor
+  // strength" (different scale, different meaning) — the same report could
+  // show "Anchor strength 100" here next to "Anchor strength 78" in the
+  // Skills section. Renamed so each metric has one unambiguous owner; the
+  // skill axis is now the single source for "Anchor strength". (REPORT-3.)
   const anchorRe = /(?:₹\s*)?\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
   const answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
-  const anchorStrength = candidateAnswers.length > 0
+  const numbersStated = candidateAnswers.length > 0
     ? Math.round((answersWithAnchor / candidateAnswers.length) * 100)
     : 0;
 
@@ -722,13 +785,13 @@ function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
   // performs better than one who rushes. Above 1.5s median = composed.
   const medianLatencySec = round1(report.advancedDelivery.medianLatencyMs / 1000);
 
-  return [
+  const metrics: DeliveryMetric[] = [
     {
-      label: "Anchor strength",
-      value: anchorStrength,
-      unit: "/100",
-      targetLabel: "Target 70+",
-      band: anchorStrength >= 70 ? "good" : anchorStrength >= 50 ? "ok" : "needsWork",
+      label: "Numbers stated",
+      value: numbersStated,
+      unit: "%",
+      targetLabel: "Anchor a figure",
+      band: numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork",
     },
     {
       label: "Concession rate",
@@ -738,19 +801,29 @@ function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
       band: concessionRate < 15 ? "good" : concessionRate < 30 ? "ok" : "needsWork",
     },
     {
-      label: "Median latency",
-      value: medianLatencySec,
-      unit: "s",
-      targetLabel: "Target 1.5–4s",
-      band: medianLatencySec >= 1.5 && medianLatencySec <= 4 ? "good" : medianLatencySec < 1 ? "needsWork" : "ok",
-    },
-    {
       label: "Disclosure leaks",
       value: leaks,
       targetLabel: "Target 0",
       band: leaks === 0 ? "good" : leaks <= 1 ? "ok" : "needsWork",
     },
   ];
+
+  // Median latency is derived from per-turn start/end timestamps that the
+  // engine never records (text OR voice) — so it is structurally 0 on every
+  // session and rendered a fake "0.0s / needs work" tile. Only surface it
+  // when real timing data exists; otherwise omit rather than fabricate.
+  // (REPORT-3 / LLM-3.)
+  if (report.advancedDelivery.medianLatencyMs > 0) {
+    metrics.push({
+      label: "Median latency",
+      value: medianLatencySec,
+      unit: "s",
+      targetLabel: "Target 1.5–4s",
+      band: medianLatencySec >= 1.5 && medianLatencySec <= 4 ? "good" : medianLatencySec < 1 ? "needsWork" : "ok",
+    });
+  }
+
+  return metrics;
 }
 
 function buildSkills(

@@ -37,6 +37,9 @@ describe("report currency leaks (pre-launch audit)", () => {
   it("TLDRHero does not render ₹null when the candidate walked with no offer", () => {
     const outcome = baseOutcome({ outcome: "walked_away", finalTotal: null });
     const { container } = render(
+      // `role` here is TLDRHero's domain prop (the job title), not a DOM ARIA
+      // role — jsx-a11y can't tell them apart on a custom component.
+      // eslint-disable-next-line jsx-a11y/aria-role
       <TLDRHero outcome={outcome} role="Engineering Manager" company="Flipkart" />,
     );
     expect(container.textContent || "").not.toMatch(NO_CURRENCY_LEAK);
@@ -51,6 +54,8 @@ describe("report currency leaks (pre-launch audit)", () => {
       offers: [{ turn: 1, total: 30, question: "" }],
     });
     const { container } = render(
+      // `role` is TLDRHero's domain prop (the job title), not a DOM ARIA role.
+      // eslint-disable-next-line jsx-a11y/aria-role
       <TLDRHero outcome={outcome} role="EM" company="Flipkart" />,
     );
     // closing falls back to the last offer (30) — present and not a leak.

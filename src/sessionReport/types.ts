@@ -279,6 +279,16 @@ export interface InterviewResultData {
      *  closure. Renamed + reframed across `OfferTrajectory` and
      *  `TLDRHero`. The cohort panel was deleted. */
     gapClosurePct?: number | null;
+    /** Grounded candidate-action signals lifted from the kernel final
+     *  state (adoptKernelOutcome). Used by `derivePhases` to mark the
+     *  middle ladder stages (justified / handled-pushback / explored-levers)
+     *  reached ONLY from actions the candidate actually took — never from
+     *  the recruiter's offer count (PDF#45 anti-fabrication contract).
+     *  Absent for legacy transcript-heuristic rows, which then fall back to
+     *  an honest "not reached" rather than an inflated stage count. */
+    leverDiversity?: number;
+    tacticsUsed?: ReadonlyArray<string>;
+    infoAsked?: ReadonlyArray<string>;
     /** Structured pushbacks the AI made during the call. Each entry pairs
      *  an AI line with how the candidate responded (held / deflected /
      *  conceded). Drives the "When they pushed back, did you fold?" panel.

@@ -94,34 +94,24 @@ describe("deriveAnchorBracket (P0 — kills 'single' fabrication)", () => {
   });
 });
 
-describe("derivePhases (action-signal gating)", () => {
-  it("no counter, no offers → only phase 1 missing, all subsequent missing", () => {
+describe("derivePhases (grounded action-signal gating — REPORT-6)", () => {
+  it("no counter, no signals → every stage missing", () => {
     const phases = derivePhases(makeOutcome());
     expect(phases.map((p) => p.reached)).toEqual([false, false, false, false, false]);
   });
 
-  it("counter named lights up phases 1 + 2", () => {
+  it("bare counter (no justification signal) lights up ONLY phase 1", () => {
+    // REPORT-6: naming a number no longer auto-credits 'justified'.
     const phases = derivePhases(makeOutcome({ candidateAsk: 30 }));
     expect(phases[0].reached).toBe(true);
-    expect(phases[1].reached).toBe(true);
+    expect(phases[1].reached).toBe(false);
     expect(phases[2].reached).toBe(false);
+    expect(phases[3].reached).toBe(false);
   });
 
-  it("two offers → phase 3 (pushback handled) reached", () => {
-    const phases = derivePhases(
-      makeOutcome({
-        candidateAsk: 30,
-        offers: [
-          { turn: 1, total: 20, question: "" },
-          { turn: 3, total: 24, question: "" },
-        ],
-      }),
-    );
-    expect(phases[2].reached).toBe(true);
-    expect(phases[3].reached).toBe(false); // levers needs 3+ offers
-  });
-
-  it("three+ offers → phase 4 (levers explored) reached", () => {
+  it("recruiter offers ALONE never credit the candidate (anti-fabrication)", () => {
+    // Three rising recruiter offers but zero candidate-action signals →
+    // stages 2/3/4 stay unreached. This is the core REPORT-6 fix.
     const phases = derivePhases(
       makeOutcome({
         candidateAsk: 30,
@@ -132,6 +122,51 @@ describe("derivePhases (action-signal gating)", () => {
         ],
       }),
     );
+    expect(phases[1].reached).toBe(false);
+    expect(phases[2].reached).toBe(false);
+    expect(phases[3].reached).toBe(false);
+  });
+
+  it("a defended range reaches phase 2 (justified)", () => {
+    const phases = derivePhases(
+      makeOutcome({
+        candidateAsk: 30,
+        anchorBracket: { type: "range_with_justification", quote: "", verdict: "" },
+      }),
+    );
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Framed a defended range");
+  });
+
+  it("a Voss tactic reaches phases 2 (justified) + 3 (pushback handled)", () => {
+    const phases = derivePhases(
+      makeOutcome({ candidateAsk: 30, tacticsUsed: ["calibrated-question"] }),
+    );
+    expect(phases[1].reached).toBe(true);
+    expect(phases[2].reached).toBe(true);
+  });
+
+  it("a held/deflected classifier pushback reaches phase 3", () => {
+    const phases = derivePhases(
+      makeOutcome({
+        candidateAsk: 30,
+        pushbacks: [{ pushback: "budget is tight", outcome: "held", detail: "" }],
+      }),
+    );
+    expect(phases[2].reached).toBe(true);
+  });
+
+  it("leverDiversity >= 1 reaches phase 4 (levers explored)", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, leverDiversity: 2 }));
+    expect(phases[3].reached).toBe(true);
+    expect(phases[3].note).toBe("Raised 2 levers beyond base");
+  });
+
+  it("infoAsked reaches phases 2 (justified) + 4 (levers)", () => {
+    const phases = derivePhases(
+      makeOutcome({ candidateAsk: 30, infoAsked: ["band-range"] }),
+    );
+    expect(phases[1].reached).toBe(true);
     expect(phases[3].reached).toBe(true);
   });
 

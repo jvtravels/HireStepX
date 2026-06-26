@@ -39,12 +39,44 @@ export const NPV_MODEL = {
    reached-stage now reflects an action the candidate took. */
 export const TOTAL_PHASES = 5;
 
+/* derivePhases — REPORT-6 audit (2026-06-27).
+ *
+ * Prior implementation fabricated the three middle stages from the
+ * RECRUITER's offer count: `reachedPushback = offers.length >= 2`,
+ * `reachedLevers = offers.length >= 3`, `reachedJustification =
+ * reachedCounter`. A passive candidate who said "okay" to three rising
+ * offers got credited for justifying, handling pushback, and exploring
+ * levers — none of which they did. That contradicts the file's own
+ * PDF#45 anti-fabrication contract ("Every reached-stage now reflects an
+ * action the candidate took").
+ *
+ * New contract: stages 2/3/4 light up ONLY from grounded candidate-action
+ * signals lifted from the kernel final state (adoptKernelOutcome →
+ * outcome.tacticsUsed / leverDiversity / infoAsked) or the transcript
+ * pushback classifier (outcome.pushbacks). Legacy heuristic rows that
+ * carry none of these fall back to an honest "not reached" rather than an
+ * inflated count. Stages 1 (named a counter) and 5 (closed) stay keyed on
+ * the directly-tracked candidateAsk / outcome — those were never fabricated. */
 export function derivePhases(outcome: NegotiationOutcome) {
-  const offers = outcome.offers ?? [];
+  const tactics = outcome.tacticsUsed ?? [];
+  const info = outcome.infoAsked ?? [];
+  const levers = outcome.leverDiversity ?? 0;
+  const heldPushback =
+    outcome.pushbacks?.some((p) => p.outcome === "held" || p.outcome === "deflected") ?? false;
+
   const reachedCounter = outcome.candidateAsk !== null;
-  const reachedJustification = reachedCounter; // approximate — classifier owns the precise signal
-  const reachedPushback = offers.length >= 2;
-  const reachedLevers = offers.length >= 3;
+  // Justified — defended the number with a range, a tactic, or structural
+  // discovery; a bare blurted number does NOT reach it.
+  const reachedJustification =
+    reachedCounter &&
+    (outcome.anchorBracket?.type === "range_with_justification" ||
+      tactics.length > 0 ||
+      info.length > 0);
+  // Handled pushback — a held/deflected classifier event or a Voss tactic
+  // the candidate played; passively absorbing offers does not count.
+  const reachedPushback = tactics.length > 0 || heldPushback;
+  // Explored levers — kernel lever-diversity or a structural question asked.
+  const reachedLevers = levers >= 1 || info.length > 0;
   const reachedClose =
     outcome.outcome === "accepted" || outcome.outcome === "walked_away";
   return [
@@ -60,22 +92,33 @@ export function derivePhases(outcome: NegotiationOutcome) {
       num: 2,
       name: "You justified your number",
       reached: reachedJustification,
-      note: reachedJustification ? "Counter implied a position" : undefined,
+      note: reachedJustification
+        ? outcome.anchorBracket?.type === "range_with_justification"
+          ? "Framed a defended range"
+          : tactics.length > 0
+            ? `Backed it with ${tactics.length} tactic${tactics.length === 1 ? "" : "s"}`
+            : "Asked about comp structure to support it"
+        : undefined,
     },
     {
       num: 3,
       name: "You handled their pushback",
       reached: reachedPushback,
-      note:
-        offers.length >= 2
-          ? `${offers.length - 1} round(s) of back-and-forth`
-          : undefined,
+      note: reachedPushback
+        ? heldPushback
+          ? "Held or deflected when they pushed"
+          : "Stayed in the back-and-forth with a counter-move"
+        : undefined,
     },
     {
       num: 4,
       name: "You explored package levers",
       reached: reachedLevers,
-      note: reachedLevers ? "Conversation went past base salary" : undefined,
+      note: reachedLevers
+        ? levers >= 1
+          ? `Raised ${levers} lever${levers === 1 ? "" : "s"} beyond base`
+          : "Asked about non-cash components"
+        : undefined,
     },
     {
       num: 5,
