@@ -484,20 +484,28 @@ const IN_PRINCIPLE_PATTERN = /\b(?:in\s+principle|pending\b)/i;
  * Shared single-source between the medium gate (classifyAcceptance step 1) and
  * the strict gate (HEDGE_VETO_PATTERNS), like the PRI-59 vetoes. */
 const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
-  /* inverted interrogative: "why would/should I … accept" */
-  /\bwhy\s+(?:would|should|will|on\s+earth\s+(?:would|should))\s+i\b[^.!?]{0,30}\baccept\b/i,
+  /* INFLECTION NOTE (offline hostile sweep, 2026-06-27) — every arm matches
+   * the verb stem as `accept(?:s|ing|ed)?` rather than a bare `\baccept\b`.
+   * `\baccept\b` does NOT match "accepting"/"accepted" (no word boundary after
+   * the "t"), but the performative recall bank DOES ("\bi'?m\s+accept(?:ing|ed)?
+   * \b"). The asymmetry meant "no way I'm accepting that" / "you think I'm
+   * accepting this" slipped the veto and FALSE-CLOSED on an outright rejection —
+   * the worst failure class. Keying both gates on the same inflected stem closes
+   * the gap. */
+  /* inverted interrogative: "why would/should I … accept(ing)" */
+  /\bwhy\s+(?:would|should|will|on\s+earth\s+(?:would|should))\s+i\b[^.!?]{0,30}\baccept(?:s|ing|ed)?\b/i,
   /* subject-verb inversion: "would/should I (ever) accept" — never a genuine
    * accept (that is "I would accept"); the inversion marks a question. */
-  /\b(?:would|should)\s+i\s+(?:ever\s+|really\s+|honestly\s+|seriously\s+)?accept\b/i,
-  /* disbelief frame: "(do) you (really) think/expect/believe … accept" */
-  /\byou\s+(?:really\s+|seriously\s+|honestly\s+|actually\s+)?(?:think|expect|believe|assume|reckon|suppose|imagine)\b[^.!?]{0,30}\baccept\b/i,
-  /* negation-by-impossibility: "(there's) no way I('d) accept" */
-  /\b(?:no\s+way|there'?s\s+no\s+way)\b[^.!?]{0,20}\baccept\b/i,
+  /\b(?:would|should)\s+i\s+(?:ever\s+|really\s+|honestly\s+|seriously\s+)?(?:be\s+)?accept(?:s|ing|ed)?\b/i,
+  /* disbelief frame: "(do) you (really) think/expect/believe … accept(ing)" */
+  /\byou\s+(?:really\s+|seriously\s+|honestly\s+|actually\s+)?(?:think|expect|believe|assume|reckon|suppose|imagine)\b[^.!?]{0,30}\baccept(?:s|ing|ed)?\b/i,
+  /* negation-by-impossibility: "(there's) no way I('m/d) accept(ing)" */
+  /\b(?:no\s+way|there'?s\s+no\s+way)\b[^.!?]{0,20}\baccept(?:s|ing|ed)?\b/i,
   /* sarcastic counterfactual: "(as if / like) I'd accept that" — the
    * conditional "I'd accept" under an "as if"/"like" frame is a refusal, never
    * a genuine accept (which is "I accept" / "I'll accept"). Offline sweep
    * batch 2 (2026-06-23). */
-  /\b(?:as\s+if|like)\s+i.?d\s+(?:ever\s+|really\s+|actually\s+)?accept\b/i,
+  /\b(?:as\s+if|like)\s+i.?d\s+(?:ever\s+|really\s+|actually\s+)?accept(?:s|ing|ed)?\b/i,
   /* sarcasm prefix: "yeah right, I'll take it" / "yeah right, deal". "yeah
    * right" is a stock dismissive in a negotiation; the accept idiom after it is
    * sarcastic, not a commitment. Negative-lookahead exempts the genuinely eager

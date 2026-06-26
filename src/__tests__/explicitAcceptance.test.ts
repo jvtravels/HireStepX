@@ -293,4 +293,33 @@ describe("PRI-63c — 'do it <redirect>' FALSE-CLOSE + recall (it-is/that's-a-ye
     expect(detectExplicitAcceptance("that's a yes only if base hits 40").accepted).toBe(false);
     expect(classifyAcceptance("that's a yes but I want more", { offerOnTable: true }).accepted).toBe(false);
   });
+
+  /* Offline hostile sweep (2026-06-27) — INFLECTED rhetorical rejection. The
+   * performative recall bank matches "I'm accepting" (accept + ing), but the
+   * rhetorical FALSE-CLOSE veto keyed on a bare `\baccept\b`, which does NOT
+   * match "accepting"/"accepted" (no word boundary after the "t"). Result: an
+   * outright rejection like "no way I'm accepting that" slipped the veto and
+   * FALSE-CLOSED — the single worst failure class (the bot finalizes a deal the
+   * candidate is rejecting). The fix keys every rhetorical arm on the same
+   * inflected stem `accept(?:s|ing|ed)?`. This locks BOTH gates (the veto is
+   * shared single-source between classifyAcceptance and detectExplicitAcceptance)
+   * against any future re-introduction of the bare-stem asymmetry. */
+  it("rejects INFLECTED rhetorical / impossibility / disbelief rejections (both gates)", () => {
+    const REJECT = [
+      "no way I'm accepting that",
+      "no way I'm accepting this lowball",
+      "why would I be accepting this",
+      "you really think I'm accepting that",
+      "as if I'd be accepting that",
+    ];
+    for (const p of REJECT) {
+      expect(detectExplicitAcceptance(p).accepted, `strict accepted: ${p}`).toBe(false);
+      expect(classifyAcceptance(p, { offerOnTable: true }).accepted, `medium accepted: ${p}`).toBe(false);
+    }
+  });
+
+  it("still accepts a genuine inflected accept (no rhetorical governor)", () => {
+    expect(detectExplicitAcceptance("yes, I'm accepting the offer").accepted).toBe(true);
+    expect(classifyAcceptance("yes, I'm accepting the offer", { offerOnTable: true }).accepted).toBe(true);
+  });
 });
