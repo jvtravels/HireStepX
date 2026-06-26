@@ -94,6 +94,30 @@ const COMMITMENT_IDIOM = /\b(?:i.?ll\s+(?:sign|accept|take\s+it|join|come\s+on\s
 
 const CONDITIONAL_CLAUSE = /\b(?:if|when|provided|as\s+long\s+as|on\s+condition|contingent\s+on|subject\s+to|once\s+you)\b/i;
 
+/* PRI-64 (2026-06-26, offline adversarial sweep) — IMPERATIVE-GRANT
+ * conditional accept. A candidate frequently states the closing condition as
+ * a bare imperative demand for a sweetener followed by a commitment, with NO
+ * "if/when" cue: "Add a joining bonus and I'll sign", "throw in relocation and
+ * I'm in", "include the ESOP refresh and we have a deal". CONDITIONAL_CLAUSE
+ * cannot see this (there is no subordinating conjunction), so the conditional
+ * acceptance went invisible and the planner kept exploring levers instead of
+ * routing to the conditional-close gate (which grants the sweetener and
+ * closes). Scoped to a GRANT verb + a concrete SWEETENER noun so a benign
+ * "add me to the team" cannot trip it; the co-required COMMITMENT_IDIOM keeps
+ * false positives near zero (same safety model as the soft-commit idioms). */
+const IMPERATIVE_GRANT =
+  /\b(?:add|throw\s+in|toss\s+in|include|cover|sweeten|bump|chip\s+in|give\s+me)\b[^.?!]{0,40}?\b(?:joining\s+bonus|signing\s+bonus|sign[-\s]?on\s+bonus|retention\s+bonus|relocation|esops?|rsus?|equity|stock|joining\s+amount)\b/i;
+
+/* PRI-64 — Hinglish conditional accept. "joining bonus mile toh done",
+ * "thoda bonus de do toh pakka", "X mil jaye toh theek hai" — the Hinglish
+ * "toh"/"to" ("then") gates a Hinglish commitment word (done / theek hai /
+ * pakka / final / ho jayega / chalega). Neither "toh" nor a bare Hinglish
+ * "done" appears in CONDITIONAL_CLAUSE / COMMITMENT_IDIOM, so these closed-
+ * intent utterances were read as a fresh counter and never closed. This is a
+ * self-contained signal (the "toh <commit>" shape is unambiguous consent). */
+const HINGLISH_COND_ACCEPT =
+  /\b(?:toh|to)\s+(?:done|theek\s+hai|thik\s+hai|pakka|final|ho\s+jayega|ho\s+jaayega|chalega|de\s+do)\b/i;
+
 function extractDeadlineDays(text: string): number | null {
   for (const re of NUMERIC_DEADLINE_PATTERNS) {
     const m = re.exec(text);
@@ -128,17 +152,44 @@ function extractDeadlineDays(text: string): number | null {
   return null;
 }
 
+/* PRI-64 — refusal/ultimatum veto. The shared COMMITMENT_IDIOM matches a bare
+ * "deal" (so "let's close, deal" reads as consent), but it also matches the
+ * "deal" inside "no deal" / "deal's off". An ultimatum ("Add a joining bonus
+ * or no deal", "unless you add a joining bonus, no deal") is a REFUSAL, not a
+ * conditional accept — closing on it is the worst failure mode (FALSE-CLOSE).
+ * Vetoing here protects every path, including the pre-existing Path 1. Scoped
+ * to explicit refusal markers so a genuine "deal" consent is untouched. */
+const REFUSAL_ULTIMATUM =
+  /\b(?:no\s+deal|deal'?s\s+off|i'?m\s+out|not\s+(?:signing|interested)|won'?t\s+sign|i'?ll\s+walk|walk\s+away|or\s+(?:else|no\s+deal|it'?s\s+(?:a\s+)?no))\b/i;
+
 function extractConditional(text: string): string | null {
-  if (!CONDITIONAL_CLAUSE.test(text)) return null;
-  if (!COMMITMENT_IDIOM.test(text)) return null;
-  /* Try to slice from the conditional cue through the commitment, or
-   * vice-versa, whichever ordering matched. Bound to 120 chars. */
-  const condIdx = text.search(CONDITIONAL_CLAUSE);
-  const commitIdx = text.search(COMMITMENT_IDIOM);
-  if (condIdx < 0 || commitIdx < 0) return null;
-  const start = Math.max(0, Math.min(condIdx, commitIdx));
-  const end = Math.min(text.length, Math.max(condIdx, commitIdx) + 40);
-  return text.slice(start, end).trim().slice(0, 120);
+  if (REFUSAL_ULTIMATUM.test(text)) return null;
+  /* Path 1 — explicit conditional clause ("if/when/provided/…") co-occurring
+   * with a commitment idiom. The original, highest-precision form. */
+  if (CONDITIONAL_CLAUSE.test(text) && COMMITMENT_IDIOM.test(text)) {
+    /* Slice from the conditional cue through the commitment, or vice-versa,
+     * whichever ordering matched. Bound to 120 chars. */
+    const condIdx = text.search(CONDITIONAL_CLAUSE);
+    const commitIdx = text.search(COMMITMENT_IDIOM);
+    if (condIdx >= 0 && commitIdx >= 0) {
+      const start = Math.max(0, Math.min(condIdx, commitIdx));
+      const end = Math.min(text.length, Math.max(condIdx, commitIdx) + 40);
+      return text.slice(start, end).trim().slice(0, 120);
+    }
+  }
+  /* Path 2 (PRI-64) — imperative-grant demand + commitment, no "if" cue:
+   * "Add a joining bonus and I'll sign". The grant is the unmet condition. */
+  if (IMPERATIVE_GRANT.test(text) && COMMITMENT_IDIOM.test(text)) {
+    const gIdx = text.search(IMPERATIVE_GRANT);
+    const cIdx = text.search(COMMITMENT_IDIOM);
+    const start = Math.max(0, Math.min(gIdx, cIdx));
+    const end = Math.min(text.length, Math.max(gIdx, cIdx) + 40);
+    return text.slice(start, end).trim().slice(0, 120);
+  }
+  /* Path 3 (PRI-64) — Hinglish "toh <commit>" conditional accept. */
+  const hm = text.match(HINGLISH_COND_ACCEPT);
+  if (hm) return hm[0];
+  return null;
 }
 
 export function extractDecisionDeadline(text: string): DecisionDeadlineResult {

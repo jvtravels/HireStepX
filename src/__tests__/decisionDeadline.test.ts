@@ -137,3 +137,50 @@ describe("mergeDecisionDeadline", () => {
     expect(mergeDecisionDeadline(null, extractDecisionDeadline("by Friday")).deadlineDays).toBe(4);
   });
 });
+
+/* PRI-64 (2026-06-26, offline adversarial sweep). Conditional acceptance must
+ * fire on two clause-less forms the original "if/when … commit" matcher missed:
+ *   (a) imperative-grant — "Add a joining bonus and I'll sign" (no "if")
+ *   (b) Hinglish "toh <commit>" — "joining bonus mile toh done"
+ * Both route to the planner's conditional-close gate, which grants the
+ * sweetener and closes. Missing them left the bot exploring levers forever.
+ * The refusal/ultimatum guard is load-bearing: "Add a joining bonus or no deal"
+ * must stay OUT — a FALSE-CLOSE (bot signs on a threat) is the worst outcome,
+ * and COMMITMENT_IDIOM's `deal\b` would otherwise match "no deal". */
+describe("extractDecisionDeadline — PRI-64 clause-less conditional accepts", () => {
+  const accepts = [
+    "Add a joining bonus and I'll sign.",
+    "throw in relocation and I'm in",
+    "Include the ESOP refresh and we have a deal.",
+    "give me a signing bonus and count me in",
+    "joining bonus mile toh done",
+    "thoda bonus de do toh pakka",
+    "agar joining bonus mil jaye to theek hai",
+  ];
+  for (const s of accepts) {
+    it(`detects conditional accept: "${s}"`, () => {
+      expect(extractDecisionDeadline(s).conditionalAcceptance).toBe(true);
+    });
+  }
+
+  const nonAccepts = [
+    "Add a joining bonus or no deal.",
+    "Either you add a joining bonus or it's no deal.",
+    "Unless you add a joining bonus, no deal.",
+    "Add a joining bonus, otherwise I'm not signing.",
+    "joining bonus nahi mile toh no deal",
+    "Can you add a joining bonus?",
+    "What's the joining bonus policy?",
+    "Add me to the team and we're good.", // grant verb, no sweetener noun
+    "If you can't add a joining bonus I'll walk.",
+  ];
+  for (const s of nonAccepts) {
+    it(`does NOT false-detect: "${s}"`, () => {
+      expect(extractDecisionDeadline(s).conditionalAcceptance).toBe(false);
+    });
+  }
+
+  it("still detects the classic if-clause form", () => {
+    expect(extractDecisionDeadline("if you match 30 LPA, I'll sign").conditionalAcceptance).toBe(true);
+  });
+});
