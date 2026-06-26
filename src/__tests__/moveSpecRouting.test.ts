@@ -186,10 +186,10 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
      *   - introduces NO new salary scalar → legacy's subset rule passes
      *     (legacy measures only ₹..L scalars), but the slot validator's
      *     Check 2 (every canonical DIGIT token must survive) rejects.
-     * The restyle below drops several canonical numbers (the ₹20.4L fixed,
-     * plus the 12-month / 9-week / day-count tokens); Check 2 iterates the
-     * canonical numbers in order and short-circuits on the FIRST missing
-     * one (20.4), so the asserted detail is "20.4". It is not a single-drop
+     * The restyle below drops the non-salary canonical numbers (the
+     * 12-month / 9-week / day-count tokens) while keeping every salary
+     * scalar so legacy stays green; Check 2 iterates the canonical numbers
+     * in order and short-circuits on the FIRST missing one (12). It is not a single-drop
      * fixture — the point is only that ≥1 canonical number is dropped while
      * legacy stays green, so the slot gate is the unique catcher.
      * The only way to reach a "slot:dropped-number" reason is for the gate
@@ -212,15 +212,20 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
      * NEW salary scalar so legacy's subset rule passes, (d) stay short so
      * `sentence-too-long` doesn't pre-empt, and (e) DROP at least one
      * canonical number so the slot validator is the unique catcher.
-     * Legacy's salary scalars are {20.4, 3.6, 2} (the ₹..L figures —
-     * "12-month"/"9 weeks"/"2-3 days" are NOT salary scalars, so legacy
-     * ignores them). We keep ₹3.6L + ₹2L and drop the Fixed ₹20.4L (and,
-     * incidentally, the non-salary tokens). The slot validator's Check 2
-     * walks the canonical digit tokens and short-circuits on the first
-     * missing one — 20.4 — making it the only thing that rejects. */
+     * Legacy's salary scalars are {24, 0, 2} (the ₹..L figures — "12-month"/
+     * "9 weeks"/"2-3 days" are NOT salary scalars, so legacy ignores them,
+     * but the structural slot validator extracts ALL digits). We keep every
+     * salary scalar (Fixed ₹24L, variable ₹0L, joining bonus ₹2L) so legacy
+     * passes, and drop the non-salary 12-month / 9-week / day tokens. The
+     * slot validator's Check 2 walks the canonical digit tokens
+     * [24,0,2,12,9,2,3] and short-circuits on the first missing one — 12 —
+     * making it the only thing that rejects. (Pre-PRI-54b this fixture used
+     * a fabricated 85/15 split, Fixed ₹20.4L / variable ₹3.6L; that split is
+     * gone — the canonical now carries the full ₹24L fixed with ₹0L
+     * variable.) */
     const dropFixedAmountLlm = vi.fn(
       async (_sys: string, _user: string) =>
-        "Fixed and variable confirmed: variable ₹3.6L, joining ₹2L — notice and BGV all noted.",
+        "Fixed ₹24L, variable ₹0L, joining bonus ₹2L, notice and BGV all noted.",
     );
     const result = await generateBotReply(
       fullRecapState,
@@ -231,8 +236,8 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
     expect(result.rejectReason).toBe("slot:dropped-number");
     expect(result.source).toBe("canonical-fallback");
     /* The shipped text is the kernel canonical, which retains the dropped
-     * Fixed amount — proof the number-dropping restyle was discarded. */
-    expect(result.text).toContain("20.4");
+     * non-salary tokens — proof the number-dropping restyle was discarded. */
+    expect(result.text).toContain("12-month");
   });
 
   it("flag ON — a faithful restyle ships as 'movespec', never slot-rejected (no silent downgrade)", async () => {
@@ -246,7 +251,7 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
      * the FULL recap state (notice+BGV stamped, so legacy completeness
      * passes) and a terse faithful restyle that reproduces EVERY canonical
      * numeric token (the slot validator extracts all digits, not just salary
-     * scalars: {20.4, 3.6, 2, 12, 9, 2, 3}), keeps the four completeness
+     * scalars: {24, 0, 2, 12, 9, 2, 3}), keeps the four completeness
      * tokens, invents no number, and stays under the 30-word length cap.
      * That forces source === "movespec", proving the validator ran AND let
      * the good prose through. */
@@ -257,7 +262,7 @@ describe("ARCH-C2a — MoveSpec route is feature-flag gated", () => {
     } as NegotiationState;
     const faithfulLlm = vi.fn(
       async (_sys: string, _user: string) =>
-        "Fixed ₹20.4L, variable ₹3.6L, joining ₹2L, 12-month clawback, notice 9 weeks, BGV later, offer letter 2-3 days.",
+        "Fixed ₹24L, variable ₹0L, joining bonus ₹2L, 12-month clawback, notice 9 weeks, BGV later, offer letter 2-3 days.",
     );
     const result = await generateBotReply(fullRecapState, faithfulLlm as never);
     expect(result.action.kind).toBe("close-recap-formal");
