@@ -1791,7 +1791,7 @@ export function InterviewFocusV2() {
         {/* ── Row 1: Live types — 4 items, 80px icons, animated ── */}
 
         {/* "Available now" label */}
-        <div style={{
+        <MotionReveal style={{
           display: "flex", alignItems: "center", gap: 14,
           margin: "56px 0 36px",
         }}>
@@ -1805,7 +1805,7 @@ export function InterviewFocusV2() {
             }}>Available now</span>
           </div>
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
-        </div>
+        </MotionReveal>
 
         <div
           className="mv2-focus-live-grid"
@@ -1815,9 +1815,10 @@ export function InterviewFocusV2() {
             gap: "0 32px",
           }}
         >
-          {LIVE_TYPES.map((type) => (
-            <div
+          {LIVE_TYPES.map((type, i) => (
+            <MotionReveal
               key={type.label}
+              delay={i * 80}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
             >
               <div style={{ width: 80, height: 80, marginBottom: 20 }}>{type.icon}</div>
@@ -1830,14 +1831,14 @@ export function InterviewFocusV2() {
                 fontFamily: fonts.sans, fontSize: 13,
                 color: t.inkSoft, margin: 0, lineHeight: 1.55, maxWidth: 150,
               }}>{type.desc}</p>
-            </div>
+            </MotionReveal>
           ))}
         </div>
 
         {/* ── Row 2: Coming-soon types — 6 items compact, single row, 60px icons ── */}
 
         {/* "Coming soon" label */}
-        <div style={{
+        <MotionReveal style={{
           display: "flex", alignItems: "center", gap: 14,
           margin: "52px 0 32px",
         }}>
@@ -1848,33 +1849,37 @@ export function InterviewFocusV2() {
             color: t.inkFaint, whiteSpace: "nowrap" as const,
           }}>Coming soon</span>
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
-        </div>
+        </MotionReveal>
 
         {/* 6-col single row — compact, label only, no description */}
-        <div
-          className="mv2-focus-soon-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(6, 1fr)",
-            gap: "0 20px",
-            opacity: 0.3,
-            filter: "saturate(0.45)",
-          }}
-        >
-          {SOON_TYPES.map((type) => (
-            <div
-              key={type.label}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
-            >
-              <div style={{ width: 60, height: 60, marginBottom: 16 }}>{type.icon}</div>
-              <p style={{
-                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
-                color: t.coal, margin: 0, lineHeight: 1.3,
-                letterSpacing: "-0.01em",
-              }}>{type.label}</p>
-            </div>
-          ))}
-        </div>
+        {/* MotionReveal wraps a plain container; opacity/filter live on the inner grid
+            so the CSS animation (which fills at opacity:1) doesn't clobber the faded look */}
+        <MotionReveal>
+          <div
+            className="mv2-focus-soon-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(6, 1fr)",
+              gap: "0 20px",
+              opacity: 0.3,
+              filter: "saturate(0.45)",
+            }}
+          >
+            {SOON_TYPES.map((type) => (
+              <div
+                key={type.label}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
+              >
+                <div style={{ width: 60, height: 60, marginBottom: 16 }}>{type.icon}</div>
+                <p style={{
+                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                  color: t.coal, margin: 0, lineHeight: 1.3,
+                  letterSpacing: "-0.01em",
+                }}>{type.label}</p>
+              </div>
+            ))}
+          </div>
+        </MotionReveal>
 
       </div>
     </section>
