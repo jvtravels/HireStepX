@@ -223,7 +223,12 @@ export async function generateAiText(
       ? "llm"
       : "fallback";
   return {
-    text: normalizeDashes(enforceRoleLabel(result.text, state.role || "")),
+    /* Dash normalization is applied once at the wire boundary (see the two
+     * response emits below), so EVERY producer path — LLM restyle, honor/
+     * contract fallback, scripted close-recap, and the hardcoded empty-text
+     * guards — gets the same guarantee. Normalizing only here would miss the
+     * non-LLM branches (observed live: anchor/offer/recap leaked em dashes). */
+    text: enforceRoleLabel(result.text, state.role || ""),
     source: adaptedSource,
     failureKinds: result.rejectReason ? [result.rejectReason] : [],
     envelopeMissingAttempts: 0,
@@ -600,6 +605,10 @@ export default async function handler(
         initText = "Thanks for hopping on — before we get into the numbers, walk me through where you are in your current role and what's driving this move.";
         initSource = "fallback";
       }
+      /* Single dash-normalization boundary for the opener — covers the kernel
+       * line AND the hardcoded em-dash fallback above. HR register: em/en
+       * dashes read as AI-generated to an Indian-HR audience. */
+      initText = normalizeDashes(initText);
       return new Response(
         JSON.stringify({
           ok: true,
@@ -1193,6 +1202,14 @@ export default async function handler(
         text = "Let me come back to that — what would be most useful to cover next from your side?";
         source = "fallback";
       }
+
+      /* Single dash-normalization boundary for the turn reply. This is the
+       * one place EVERY producer converges (kernel restyle, honor/contract
+       * fallback, scripted close-recap, the hardcoded guard above), so the
+       * em/en-dash → HR-register guarantee holds regardless of branch.
+       * Observed live (Flipkart EM): anchor/offer/recap lines leaked em
+       * dashes because they bypass the kernel helper's own normalization. */
+      text = normalizeDashes(text);
 
       /* Bug 2 fix (PDF#25, 2026-05-16) — single canonical field pair for
        * the typewriter consumer (see init-branch comment above). */
