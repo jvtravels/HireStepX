@@ -6150,9 +6150,24 @@ function wrapLeverExplore(
     isSalaryPush(latestCandidateText(state));
   /* PRI-60 — single source for the total-vs-fixed scope reconciliation figure.
    * Non-null only when the candidate's pinned fixed close-ask cannot be
-   * delivered as cash over the standing total offer. */
+   * delivered as cash over the standing total offer.
+   *
+   * PRI-65 (2026-06-26, pri59 sim repro) — `undeliverableFixedConditionAsk`
+   * reads the STICKY `candidateTargetFixed`, so once a candidate pins a fixed
+   * close ("get the fixed to ₹58L, then we have a deal") that figure replays
+   * the "On closing at ₹58L fixed —" scope-reconcile line on EVERY later turn,
+   * including fresh numberless cash pushes that never restated it ("put your
+   * best fixed on the table", "forget the perks, best fixed?"). That reads as a
+   * broken record fixated on a stale number. A numberless cash push has dropped
+   * the specific figure and just wants the best the band can do — the correct
+   * register is the cash-ceiling ack (name where the base sits now), not a
+   * re-litigation of the old ask. So the cash-push flag wins: it suppresses the
+   * stale scope-reconcile line and the two acks stay mutually exclusive. The
+   * genuine numbered scope-reconcile case still fires — it carries
+   * `lastCandidateCounterLpa`/isn't a bare push, so cashPushNamesCeiling is
+   * false there. */
   const fixedAskAboveBand =
-    state.highestOfferMade > 0
+    state.highestOfferMade > 0 && !cashPushNamesCeiling
       ? (undeliverableFixedConditionAsk(state) ?? undefined)
       : undefined;
   return {

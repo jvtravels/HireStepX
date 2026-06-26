@@ -94,9 +94,9 @@ describe("planner names the cash anchor on repeated fixed demands (PRI-59)", () 
 
   it("names the standing cash anchor on every repeated cash demand", () => {
     for (const t of cashDemandTurns) {
-      /* The standing fixed figure (₹55.3L after the T3 counter) must appear —
+      /* The standing fixed figure (₹55L after the T3 counter) must appear —
        * the candidate hears where the cash stands, not a silent perk pivot. */
-      expect(t.aiText).toContain("₹55.3L");
+      expect(t.aiText).toContain("₹55L");
       expect(t.aiText.toLowerCase()).toMatch(/on the fixed|on cash|the base sits/);
     }
   });
@@ -108,14 +108,26 @@ describe("planner names the cash anchor on repeated fixed demands (PRI-59)", () 
        * anchor is the exact deflection PRI-59 forbids. */
       const isPureBenefitsRecap =
         /medical|insurance|gratuity|\bpf\b|term life/.test(lower) &&
-        !lower.includes("₹55.3l");
+        !lower.includes("₹55l");
       expect(isPureBenefitsRecap).toBe(false);
+    }
+  });
+
+  /* PRI-65 (2026-06-26) — anti-broken-record. The candidate pinned a fixed
+   * close to ₹58L at T3 only; T4/T5 are fresh numberless cash pushes that never
+   * restated it. The scope-reconcile line ("On closing at ₹58L fixed …") reads
+   * the sticky candidateTargetFixed, so it used to replay verbatim on every
+   * later turn — a bot fixated on a stale number. A numberless push must answer
+   * in present cash terms (cash-ceiling ack), never re-litigate the old ask. */
+  it("does not replay the stale fixed-ask scope-reconcile line on numberless pushes", () => {
+    for (const t of cashDemandTurns) {
+      expect(t.aiText).not.toContain("On closing at ₹58L fixed");
     }
   });
 
   it("does not concede free cash above the standing offer on stonewall pushes", () => {
     /* Naming the ceiling must not also bid the number up — the offer stays at
-     * the ₹55.3L reached by the genuine T3 counter. */
+     * the ₹55L reached by the genuine T3 counter. */
     for (const t of cashDemandTurns) {
       expect(t.highestOfferMade).toBeLessThanOrEqual(55.3);
     }
