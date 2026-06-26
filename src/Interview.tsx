@@ -441,7 +441,7 @@ function InterviewInner() {
         // type-scale wasn't meant to take. Bumped to 1100 so the
         // question, transcript card, and metrics row all breathe.
         // Mobile / narrow viewports still flow naturally via media rules.
-        maxWidth: 1100, margin: "0 auto", width: "100%",
+        maxWidth: 1240, margin: "0 auto", width: "100%",
       }}>
         {/* Panel avatar stage — three avatars in a row above the question.
             In panel mode this REPLACES the single visualizer + persona
@@ -484,7 +484,7 @@ function InterviewInner() {
           // fallback to step.aiText leaked [pause] tokens into the heading.
           const displayText = stripProsodyMarkup(step.aiTextDisplay ?? step.aiText);
           return (
-          <div className="iv-question-wrap" style={{ maxWidth: 920, width: "100%" }}>
+          <div className="iv-question-wrap" style={{ maxWidth: 1040, width: "100%" }}>
             {/* Speaking: typewriter typed in sync with TTS audio.
                 Listening: static accent-split or plain heading.
                 The flicker that used to appear at phase transitions

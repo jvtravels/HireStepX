@@ -286,7 +286,7 @@ export function CanvasEditorialHeading({ before = "", accent, after = "", traili
       fontFamily: ef.serif, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
       lineHeight: 1.25, fontWeight: 400, letterSpacing: "-0.015em",
       color: e.coal, textAlign: "center", margin: "0 auto", textWrap: "balance",
-      maxWidth: 620,
+      maxWidth: 980,
     }}>
       {before && <>{before} </>}
       <em style={{ fontStyle: "italic", fontWeight: 400, color: e.copper }}>{accent}</em>
@@ -308,7 +308,7 @@ export function CanvasPlainHeading({ children }: { children: React.ReactNode }) 
       fontFamily: ef.serif, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
       lineHeight: 1.25, fontWeight: 400, letterSpacing: "-0.015em",
       color: e.coal, textAlign: "center", margin: "0 auto", textWrap: "balance",
-      maxWidth: 620,
+      maxWidth: 980,
     }}>
       {children}
     </h1>
