@@ -40,7 +40,7 @@ describe("UpgradeModal", () => {
 
   it("shows title in header", () => {
     render(<UpgradeModal {...defaultProps} />);
-    expect(screen.getByText("Choose your plan")).toBeInTheDocument();
+    expect(screen.getByText("More reps. More offers.")).toBeInTheDocument();
   });
 
   it("has role=dialog and aria-modal for accessibility", () => {
@@ -64,7 +64,7 @@ describe("UpgradeModal", () => {
 
   it("does not close when clicking modal content", () => {
     render(<UpgradeModal {...defaultProps} />);
-    fireEvent.click(screen.getByText("Choose your plan"));
+    fireEvent.click(screen.getByText("More reps. More offers."));
     expect(defaultProps.onClose).not.toHaveBeenCalled();
   });
 
@@ -82,8 +82,8 @@ describe("UpgradeModal", () => {
 
   it("marks starter as current when user is on starter plan", () => {
     render(<UpgradeModal {...defaultProps} currentTier="starter" />);
-    // Sprint Pack header copy switches to top-up messaging for starter users
-    expect(screen.getByText(/Top up sessions/)).toBeInTheDocument();
+    // Starter users see the Sprint Pack top-up banner (the pack has no reset).
+    expect(screen.getByText(/used all sessions in your Sprint Pack/)).toBeInTheDocument();
   });
 
   it("shows Razorpay footer text", () => {

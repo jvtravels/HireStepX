@@ -438,7 +438,7 @@ describe("Flow 6: Upgrade Modal", () => {
         ,
       );
     });
-    expect(screen.getByText("Choose your plan")).toBeInTheDocument();
+    expect(screen.getByText("More reps. More offers.")).toBeInTheDocument();
   });
 });
 
