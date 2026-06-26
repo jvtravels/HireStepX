@@ -97,16 +97,26 @@ export function TLDRHero({
       tone: p >= 70 ? "good" : p >= 30 ? "warn" : "bad",
     });
   }
+  /* The close (stage 5) is reached whenever the candidate accepted or walked
+   * away — the same source derivePhases uses. So "one short of the close" is
+   * only honest when the deal did NOT close; if it closed with < 5 stages, the
+   * skipped stage is a MIDDLE one (e.g. handling pushback), not the close. The
+   * prior copy printed "one short of the close" on a closed-but-incomplete run,
+   * contradicting the stage tracker showing the close stage REACHED. */
+  const dealClosed = outcome.outcome === "accepted";
+  const skipped = TOTAL_PHASES - phaseCount;
   stats.push({
     label: "How far you got",
     value: `${phaseCount} of ${TOTAL_PHASES} stages`,
     hint:
-      phaseCount === TOTAL_PHASES ? "you closed the deal" :
+      phaseCount === TOTAL_PHASES ? "you closed the deal — every stage reached" :
+      dealClosed ? `you closed the deal, but skipped ${skipped} stage${skipped === 1 ? "" : "s"} along the way` :
+      outcome.outcome === "walked_away" ? "you walked away. Part 2 has the next-round play" :
       phaseCount >= 4 ? "one short of the close" :
       phaseCount >= 2 ? "made it past the counter" :
       phaseCount === 1 ? "you named a counter. Part 2 below shows the next move" :
       "you didn't push past the first offer. Part 2 has the email draft",
-    tone: phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
+    tone: dealClosed || phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
   });
   if (delta !== null && opening !== null) {
     const askedFor = outcome.candidateAsk;

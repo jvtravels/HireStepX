@@ -85,6 +85,11 @@ describe("negotiation report — counter-named coherence across surfaces", () =>
     expect(text).not.toMatch(NO_COUNTER_CLAIM);
     // The figure the candidate countered with must be acknowledged somewhere.
     expect(text).toContain(`₹${o.candidateAsk}`);
+    // The close (stage 5) is reached on any accept — so "one short of the
+    // close" must never appear on a closed deal, regardless of phase count.
+    if (o.outcome === "accepted") {
+      expect(text.toLowerCase()).not.toContain("one short of the close");
+    }
   });
 
   it.each(NO_COUNTER)("stays honest that no counter was named: $name", ({ o }) => {

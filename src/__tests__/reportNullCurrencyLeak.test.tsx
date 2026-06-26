@@ -92,6 +92,34 @@ describe("report currency leaks (pre-launch audit)", () => {
     expect(text).toContain("countered");
   });
 
+  /* Coherence (2026-06-27) — "How far you got" must not say "one short of the
+   * close" when the deal actually closed. The close (stage 5) is reached on any
+   * accept; a sub-5 count means a MIDDLE stage was skipped, not the close. The
+   * live Flipkart-EM report showed "4 of 5 stages — one short of the close"
+   * while the stage tracker showed the close stage REACHED. */
+  it("TLDRHero does not say 'one short of the close' on a closed deal that skipped a middle stage", () => {
+    const outcome = baseOutcome({
+      outcome: "accepted",
+      finalTotal: 51,
+      offers: [{ turn: 1, total: 51, question: "" }],
+      candidateAsk: 65,
+      // 4 of 5 stages: counter (1) + justification (2) + levers (4) + close (5)
+      // reached; pushback (3) skipped.
+      tacticsUsed: [],
+      leverDiversity: 3,
+      infoAsked: ["comp structure"],
+      anchorBracket: { type: "range_with_justification", quote: "", verdict: "" },
+    });
+    const { container } = render(
+      // `role` is TLDRHero's domain prop (the job title), not a DOM ARIA role.
+      // eslint-disable-next-line jsx-a11y/aria-role
+      <TLDRHero outcome={outcome} role="Engineering Manager" company="Flipkart" />,
+    );
+    const text = (container.textContent || "").toLowerCase();
+    expect(text).not.toContain("one short of the close");
+    expect(text).toContain("closed the deal");
+  });
+
   it("TLDRHero keeps the 'no counter' framing on a flat-offer accept with no candidate ask", () => {
     const outcome = baseOutcome({
       outcome: "accepted",
