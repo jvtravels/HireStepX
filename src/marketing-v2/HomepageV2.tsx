@@ -1574,9 +1574,8 @@ export function HeroV2() {
 /* ─────────────────────────── 3.5. INTERVIEW FOCUS ─────────────────────────── */
 export function InterviewFocusV2() {
   /* Copper gradient — references the shared <defs> below */
-  const G   = "url(#hsx-cg)";
-  const nsw = 2.5;  /* uniform stroke weight across all icons */
-  const rp  = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const G  = "url(#hsx-cg)";
+  const rp = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
   /* ── Live interview types (4 available now) ─────────────────────── */
   const LIVE_TYPES = [
@@ -1585,11 +1584,10 @@ export function InterviewFocusV2() {
       desc: "STAR stories · leadership · decisions",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <path className="d" d="M9 8h46a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H28L16 50l2-12H9a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z"
-            stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.09"/>
-          <polygon className="d"
-            points="32,13 34.8,21 43,21 36.6,25.8 39,34 32,29 25,34 27.4,25.8 21,21 29.2,21"
-            stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.22"/>
+          <path d="M9 8h46a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H28L16 52l2-14H9a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.08"/>
+          <polygon points="32,12 35,21 44,21 37,26 40,35 32,30 24,35 27,26 20,21 29,21"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.26"/>
         </svg>
       ),
     },
@@ -1598,20 +1596,18 @@ export function InterviewFocusV2() {
       desc: "TCS · Infosys · Wipro · Cognizant",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <path className="d" d="M32 10L54 21L32 32L10 21z"
-            stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.12"/>
-          <path className="d" d="M18 25v9c0 7 28 7 28 0v-9"
-            stroke={G} strokeWidth={nsw} {...rp}/>
-          <line className="d" x1="54" y1="21" x2="54" y2="40"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line className="d" x1="49" y1="40" x2="59" y2="40"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line className="d" x1="50" y1="40" x2="49" y2="49"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line className="d" x1="54" y1="40" x2="53" y2="50"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line className="d" x1="58" y1="40" x2="57" y2="49"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          {/* Diamond board — wide flat mortarboard cap top */}
+          <path d="M32 10 L56 24 L32 38 L8 24 Z"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.18"/>
+          {/* Centre button — turns diamond into graduation cap */}
+          <circle cx="32" cy="24" r="5"
+            stroke={G} strokeWidth={1.5} fill={G} fillOpacity="0.55"/>
+          {/* Tassel: L-cord from button across cap top then hanging down */}
+          <path d="M32 24 L56 24 L56 46"
+            stroke={G} strokeWidth={2} strokeLinecap="round" fill="none"/>
+          {/* Bob */}
+          <circle cx="56" cy="51" r="4.5"
+            stroke={G} strokeWidth={2} fill={G} fillOpacity="0.40"/>
         </svg>
       ),
     },
@@ -1619,28 +1615,10 @@ export function InterviewFocusV2() {
       label: "Salary Negotiation",
       desc: "Counter-offers · levelling · benefits",
       icon: (
-        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <line className="d" x1="32" y1="10" x2="32" y2="54"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          {/* tilted beam — left side lower (heavier) */}
-          <line className="d" x1="10" y1="23" x2="54" y2="19"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line className="d" x1="14" y1="23" x2="11" y2="37"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line className="d" x1="14" y1="23" x2="17" y2="37"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <path className="d" d="M9 37a6 3 0 0 0 12 0"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round" fill={G} fillOpacity="0.15"/>
-          <line className="d" x1="50" y1="19" x2="47" y2="31"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line className="d" x1="50" y1="19" x2="53" y2="31"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <path className="d" d="M45 31a6 3 0 0 0 12 0"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round" fill={G} fillOpacity="0.15"/>
-          <rect className="d" x="28" y="48" width="8" height="6" rx="2"
-            stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.1"/>
-          <line className="d" x1="22" y1="54" x2="42" y2="54"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <text x="32" y="48" textAnchor="middle" fontSize="48"
+            fontFamily='"Satoshi", "Inter", system-ui, sans-serif'
+            fontWeight="500" fill={G}>₹</text>
         </svg>
       ),
     },
@@ -1649,16 +1627,20 @@ export function InterviewFocusV2() {
       desc: "Culture fit · motivation · expectations",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <circle className="d" cx="17" cy="16" r="7"
-            stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.09"/>
-          <path className="d" d="M4 47c0-11 26-11 26 0"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
-          <circle className="d" cx="47" cy="16" r="7"
-            stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.09"/>
-          <path className="d" d="M34 47c0-11 26-11 26 0"
-            stroke={G} strokeWidth={nsw} strokeLinecap="round" fill={G} fillOpacity="0.07"/>
-          <path className="d" d="M24 33l4 3h8l4-3"
-            stroke={G} strokeWidth={nsw} {...rp}/>
+          {/* Head */}
+          <circle cx="32" cy="20" r="11"
+            stroke={G} strokeWidth={2} fill={G} fillOpacity="0.12"/>
+          {/* Shoulders */}
+          <path d="M6 56 Q6 38 32 38 Q58 38 58 56"
+            stroke={G} strokeWidth={2} strokeLinecap="round" fill={G} fillOpacity="0.08"/>
+          {/* Erase shoulder arc behind badge — #FAF7F0 = canvas cream bg */}
+          <circle cx="50" cy="46" r="11" fill="#FAF7F0"/>
+          {/* Approval badge */}
+          <circle cx="50" cy="46" r="10"
+            stroke={G} strokeWidth={2} fill={G} fillOpacity="0.16"/>
+          {/* Checkmark */}
+          <path d="M44 46 L48 50 L56 40"
+            stroke={G} strokeWidth={2.5} {...rp}/>
         </svg>
       ),
     },
@@ -1670,11 +1652,13 @@ export function InterviewFocusV2() {
       label: "Leadership Round",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <circle cx="30" cy="32" r="20" stroke={G} strokeWidth={nsw}/>
-          <circle cx="30" cy="32" r="12" stroke={G} strokeWidth={nsw}/>
-          <circle cx="30" cy="32" r="5"  stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.24"/>
-          <line x1="52" y1="10" x2="35" y2="27" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <path d="M40 10h12v12" stroke={G} strokeWidth={nsw} {...rp}/>
+          <path d="M6 50 L6 26 L20 40 L32 8 L44 40 L58 26 L58 50"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.09"/>
+          <rect x="6" y="50" width="52" height="8" rx="2"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.18"/>
+          <circle cx="6"  cy="26" r="3.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
+          <circle cx="32" cy="8"  r="4.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
+          <circle cx="58" cy="26" r="3.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
         </svg>
       ),
     },
@@ -1682,13 +1666,15 @@ export function InterviewFocusV2() {
       label: "Technical Leadership",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <rect x="8"  y="10" width="48" height="34" rx="4" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
-          <rect x="12" y="14" width="40" height="26" rx="2" stroke={G} strokeWidth={nsw} {...rp}/>
-          <path d="M22 23l-7 4 7 4" stroke={G} strokeWidth={nsw} {...rp}/>
-          <path d="M42 23l7 4-7 4" stroke={G} strokeWidth={nsw} {...rp}/>
-          <line x1="34" y1="20" x2="30" y2="36" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <path d="M29 44l-4 9h14l-4-9" stroke={G} strokeWidth={nsw} {...rp}/>
-          <line x1="22" y1="53" x2="42" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
+          <rect x="8" y="10" width="48" height="34" rx="4"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.07"/>
+          <rect x="12" y="14" width="40" height="26" rx="2"
+            stroke={G} strokeWidth={2} {...rp}/>
+          <path d="M22 23 L15 27 L22 31" stroke={G} strokeWidth={2} {...rp}/>
+          <path d="M42 23 L49 27 L42 31" stroke={G} strokeWidth={2} {...rp}/>
+          <line x1="34" y1="20" x2="30" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <path d="M29 44 L26 54 L38 54 L35 44" stroke={G} strokeWidth={2} {...rp}/>
+          <line x1="22" y1="54" x2="42" y2="54" stroke={G} strokeWidth={2} strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -1696,13 +1682,13 @@ export function InterviewFocusV2() {
       label: "Case Study",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <path d="M10 8h24l12 12v36H10z" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
-          <path d="M34 8v12h12"          stroke={G} strokeWidth={nsw} {...rp}/>
-          <line x1="16" y1="28" x2="34" y2="28" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="16" y1="35" x2="30" y2="35" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="16" y1="42" x2="24" y2="42" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <circle cx="43" cy="45" r="9"  stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.1"/>
-          <line x1="49" y1="52" x2="55" y2="58" stroke={G} strokeWidth={nsw + 0.5} strokeLinecap="round"/>
+          <path d="M10 8 h24 l12 12 v36 H10 Z"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.07"/>
+          <path d="M34 8 v12 h12" stroke={G} strokeWidth={2} {...rp}/>
+          <line x1="16" y1="28" x2="30" y2="28" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="16" y1="34" x2="28" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <circle cx="44" cy="46" r="10" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.10"/>
+          <line x1="51" y1="53" x2="57" y2="59" stroke={G} strokeWidth={3} strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -1710,14 +1696,12 @@ export function InterviewFocusV2() {
       label: "Panel Interview",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <circle cx="13" cy="14" r="6" stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.07"/>
-          <circle cx="32" cy="11" r="8" stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.13"/>
-          <circle cx="51" cy="14" r="6" stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.07"/>
-          <rect x="8" y="36" width="48" height="7" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.13"/>
-          <rect x="11" y="38.5" width="11" height="2.5" rx="1" fill={G} fillOpacity="0.32"/>
-          <rect x="27" y="38.5" width="11" height="2.5" rx="1" fill={G} fillOpacity="0.32"/>
-          <rect x="43" y="38.5" width="11" height="2.5" rx="1" fill={G} fillOpacity="0.32"/>
-          <circle cx="32" cy="56" r="5" stroke={G} strokeWidth={nsw} fill={G} fillOpacity="0.06"/>
+          <circle cx="14" cy="17" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+          <circle cx="32" cy="15" r="8" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.13"/>
+          <circle cx="50" cy="17" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+          <rect x="4" y="36" width="56" height="6" rx="2"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.14"/>
+          <circle cx="32" cy="54" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.07"/>
         </svg>
       ),
     },
@@ -1725,15 +1709,15 @@ export function InterviewFocusV2() {
       label: "Management",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <rect x="22" y="8"  width="20" height="12" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.15"/>
-          <line x1="32" y1="20" x2="32" y2="30" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="12" y1="30" x2="52" y2="30" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="12" y1="30" x2="12" y2="38" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="32" y1="30" x2="32" y2="38" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="52" y1="30" x2="52" y2="38" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <rect x="2"  y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
-          <rect x="22" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
-          <rect x="42" y="38" width="20" height="12" rx="3" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.07"/>
+          <circle cx="32" cy="14" r="9" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.16"/>
+          <line x1="32" y1="23" x2="32" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="12" y1="34" x2="52" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="12" y1="34" x2="12" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="32" y1="34" x2="32" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="52" y1="34" x2="52" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <circle cx="12" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+          <circle cx="32" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+          <circle cx="52" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
         </svg>
       ),
     },
@@ -1741,18 +1725,21 @@ export function InterviewFocusV2() {
       label: "Govt / PSU",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* taller pediment — reads as a roof, not a wedge */}
-          <path d="M8 26L32 6l24 20H8z" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.1"/>
-          <circle cx="32" cy="18" r="5" stroke={G} strokeWidth="1.8" fill={G} fillOpacity="0.22"/>
-          <circle cx="32" cy="18" r="2" fill={G} fillOpacity="0.6"/>
-          <rect x="8"  y="26" width="48" height="5" rx="1" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.1"/>
-          <line x1="14" y1="31" x2="14" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="22" y1="31" x2="22" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="32" y1="31" x2="32" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="42" y1="31" x2="42" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <line x1="50" y1="31" x2="50" y2="53" stroke={G} strokeWidth={nsw} strokeLinecap="round"/>
-          <rect x="6"  y="53" width="52" height="4" rx="1" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.09"/>
-          <rect x="4"  y="57" width="56" height="4" rx="1" stroke={G} strokeWidth={nsw} {...rp} fill={G} fillOpacity="0.09"/>
+          <path d="M8 26 L32 6 L56 26"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.10"/>
+          <circle cx="32" cy="17" r="5"  stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.26"/>
+          <circle cx="32" cy="17" r="2"  fill={G} fillOpacity="0.60"/>
+          <rect x="8" y="26" width="48" height="5" rx="1"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.10"/>
+          <line x1="14" y1="31" x2="14" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="22" y1="31" x2="22" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="32" y1="31" x2="32" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="42" y1="31" x2="42" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <line x1="50" y1="31" x2="50" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+          <rect x="6"  y="53" width="52" height="4" rx="1"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.09"/>
+          <rect x="4"  y="57" width="56" height="3" rx="1"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.06"/>
         </svg>
       ),
     },
