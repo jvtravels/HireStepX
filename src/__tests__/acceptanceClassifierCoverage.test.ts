@@ -284,6 +284,15 @@ describe("acceptance classifier — batch-3 conditional-demand FALSE-CLOSE (both
     "get it to 52 and count me in",
     "let's close it the day you revise the base",
     "deal once you bump my number",
+    /* PRI-66 (2026-06-26, broken-record sweep) — the raise target may name the
+     * cash COMPONENT, not just a bare "it". These slipped the veto and produced
+     * a live FALSE-CLOSE (formal close-recap + document collection) while the
+     * candidate demanded an above-band fixed raise. */
+    "Get fixed to 58 and we have a deal.",
+    "get the fixed to 58 and we have a deal",
+    "bump the base to 50 and I'll sign",
+    "push cash to 60 then we're done",
+    "raise the base to 55 and count me in",
   ];
   for (const input of cases) {
     it(`"${input}" → NOT accepted`, () => {

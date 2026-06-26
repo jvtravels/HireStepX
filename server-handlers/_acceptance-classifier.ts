@@ -593,9 +593,18 @@ const RETRACTION_PATTERN = /\b(?:just\s+|only\s+)?kidding\b|\bjk\b/i;
  *  offer while the candidate is demanding a raise). Scoped to an unambiguous
  *  raise verb + number + and/then continuation; "make it official", "I'll do
  *  45 and sign" (no raise verb) are untouched. Offline sweep batch 3
- *  (2026-06-23). */
+ *  (2026-06-23).
+ *
+ *  PRI-66 (2026-06-26, broken-record sweep) — the raise target may NAME the
+ *  cash component ("get the fixed to 58", "bump the base to 50", "push cash to
+ *  60"), not just a bare "get it to N". Without an optional component noun
+ *  between the verb and "to", the veto missed "Get fixed to 58 and we have a
+ *  deal" — a live FALSE-CLOSE where the bot jumped to a formal close-recap and
+ *  document collection while the candidate was demanding an above-band fixed
+ *  raise (58 > maxStretch). The object slot now optionally absorbs
+ *  it/fixed/base/cash (with or without a leading "the"). */
 const CONDITIONAL_DEMAND_PATTERN =
-  /\b(?:make\s+it|get\s+(?:it\s+)?to|bump\s+(?:it\s+)?to|push\s+(?:it\s+)?to|raise\s+(?:it\s+)?to|take\s+it\s+to|bring\s+it\s+to|come\s+up\s+to)\s+\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|k|cr|crores?)?\b[^.!?]{0,25}\b(?:and|then|&)\b/i;
+  /\b(?:make\s+it|(?:get|bump|push|raise|take|bring|come\s+up)\s+(?:(?:it|the\s+fixed|the\s+base|the\s+cash|fixed|base|cash)\s+)?to)\s+\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|k|cr|crores?)?\b[^.!?]{0,25}\b(?:and|then|&)\b/i;
 
 /** Veto: NON-numeric counter-demand welded to a close idiom — "beat their
  *  number and you've got a deal", "match it and we're done". Sibling to
