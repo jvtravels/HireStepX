@@ -1846,7 +1846,7 @@ export function InterviewFocusV2() {
             fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700,
             letterSpacing: "0.12em", textTransform: "uppercase" as const,
             color: t.inkFaint, whiteSpace: "nowrap" as const,
-          }}>Coming soon · {SOON_TYPES.length} more formats</span>
+          }}>Coming soon</span>
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
         </div>
 
