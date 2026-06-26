@@ -322,4 +322,34 @@ describe("PRI-63c — 'do it <redirect>' FALSE-CLOSE + recall (it-is/that's-a-ye
     expect(detectExplicitAcceptance("yes, I'm accepting the offer").accepted).toBe(true);
     expect(classifyAcceptance("yes, I'm accepting the offer", { offerOnTable: true }).accepted).toBe(true);
   });
+
+  /* Offline hostile sweep (2026-06-27, batch 2) — INFLECTED proposition accept.
+   * "I'm accepting the reality / your position / the fact that …" is a resigned
+   * acknowledgment of a STANCE or FACT, not consent to the OFFER. The proposition
+   * veto (ACCEPT_PROPOSITION_PATTERN) exists for exactly this, but keyed on the
+   * bare "I accept" and missed the inflected "I'm accepting" / "I've accepted"
+   * that the performative recall bank DOES match — so the resigned line
+   * FALSE-CLOSED. The verb head now matches the inflected forms while the noun
+   * list still excludes "offer", so a genuine "I'm accepting the offer" closes. */
+  it("rejects INFLECTED proposition/stance/fact acceptance (both gates)", () => {
+    const REJECT = [
+      "I'm accepting the reality here",
+      "I'm accepting your position on this",
+      "I'm accepting that this is your best",
+      "I've accepted the fact that you can't move",
+      "I accept that the market is tough right now",
+    ];
+    for (const p of REJECT) {
+      expect(detectExplicitAcceptance(p).accepted, `strict accepted: ${p}`).toBe(false);
+      expect(classifyAcceptance(p, { offerOnTable: true }).accepted, `medium accepted: ${p}`).toBe(false);
+    }
+  });
+
+  it("inflected proposition veto does NOT swallow a genuine offer accept", () => {
+    for (const p of ["I'm accepting the offer", "I've accepted your offer", "I accept the offer"]) {
+      const s = detectExplicitAcceptance(p).accepted;
+      const c = classifyAcceptance(p, { offerOnTable: true }).accepted;
+      expect(s || c, `expected accept: ${p}`).toBe(true);
+    }
+  });
 });

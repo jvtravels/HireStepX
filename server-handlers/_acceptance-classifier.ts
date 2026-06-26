@@ -463,9 +463,17 @@ const IM_IN_HEDGE_PATTERN =
 /** Veto: "I accept THAT … / I accept YOUR position / I accept THE reality" —
  *  performative "accept" applied to a proposition, stance, or fact rather than
  *  the OFFER. "I accept" / "I accept the offer" / "I accept your offer" are not
- *  matched (offer excluded from the noun list) and still accept. */
+ *  matched (offer excluded from the noun list) and still accept.
+ *
+ *  INFLECTION (offline hostile sweep, 2026-06-27) — the verb head matches the
+ *  inflected forms ("I'm accepting the reality", "I've accepted that", "I'd be
+ *  accepting your position"), not just the bare "I accept". The performative
+ *  recall bank matches "I'm accept(ing)", so a bare-stem veto here let the
+ *  resigned "I'm accepting the reality here" FALSE-CLOSE — same asymmetry as the
+ *  rhetorical veto. The proposition NOUN list (reality/fact/position/…) still
+ *  excludes "offer", so a genuine "I'm accepting the offer" is untouched. */
 const ACCEPT_PROPOSITION_PATTERN =
-  /\bi\s+accept\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern))/i;
+  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern))/i;
 
 /** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
