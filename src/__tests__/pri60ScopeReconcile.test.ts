@@ -121,4 +121,63 @@ describe("close conflating equity-inclusive TOTAL with FIXED cash (PRI-60)", () 
   it("does not concede free cash above the standing offer", () => {
     expect(closeTurn.highestOfferMade).toBeLessThanOrEqual(52.3);
   });
+
+  /* Locks the variableMax>0 branch of the scope-reconcile prose: the standing
+   * total genuinely decomposes (fixed + ₹6L variable), so naming it as "total
+   * fitment, not all fixed" is TRUE and must remain. */
+  it("on a band WITH a variable component, states the total/fixed decomposition out loud", () => {
+    expect(closeTurn.aiText.toLowerCase()).toMatch(/not all fixed|total fitment/);
+  });
+});
+
+/* PRI-60 follow-up (2026-06-30, live Flipkart EM) — on a band with NO variable
+ * component the standing total is ALL fixed cash (ESOP sits over-and-above, not
+ * inside the number; deriveOfferFixedVariable reports the whole figure as
+ * Fixed). A fixed ask there is undeliverable purely because it EXCEEDS the cash
+ * ceiling — NOT because the standing number is partly variable. The prose must
+ * therefore NOT claim "total fitment, not all fixed" (that contradicts the
+ * close-recap, which shows the figure as Fixed), while still reconciling the
+ * overage ("above the cash band"). */
+describe("scope reconcile on a NO-variable band (PRI-60 follow-up)", () => {
+  const FLIPKART_EM_NO_VAR: NegotiationBand = {
+    initialOffer: 44,
+    maxStretch: 52.3,
+    walkAway: 38,
+    hasEquity: true,
+  } as NegotiationBand;
+
+  const turns = [
+    "I'm an EM with 10 years, currently at 46 LPA fixed plus some ESOPs.",
+    "What's the full package you can offer?",
+    "Can you walk me through the breakdown — fixed vs ESOP?",
+    "If you can close at 56 fixed, that works for me.",
+  ];
+
+  const { transcript } = runConversation({
+    sessionId: "pri60-novar-guard",
+    role: "Engineering Manager",
+    company: "Flipkart",
+    band: FLIPKART_EM_NO_VAR,
+    initExtras: { applicableYoe: 10, experienceLevel: "senior" },
+    stopOnTerminal: false,
+    turns,
+  });
+
+  const closeTurn = transcript[4];
+
+  it("ships a response and does NOT false-close the total as fixed", () => {
+    expect(closeTurn).toBeTruthy();
+    expect(closeTurn.kind).not.toBe("close");
+  });
+
+  it("reconciles the overage (names the ask is above the cash band)", () => {
+    expect(closeTurn.aiText.toLowerCase()).toMatch(
+      /above the cash band|cash band i can structure|on the fixed/,
+    );
+  });
+
+  it("does NOT falsely claim the all-fixed total is 'not all fixed'", () => {
+    expect(closeTurn.aiText.toLowerCase()).not.toMatch(/not all fixed/);
+    expect(closeTurn.aiText.toLowerCase()).not.toMatch(/total fitment, not/);
+  });
 });

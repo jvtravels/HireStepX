@@ -955,11 +955,27 @@ const PROSE_ARMS: ProseArmRegistry = {
      * counter/cash-ceiling acks because it carries the scope correction.
      * `fixedAskAboveBand` is the single-source figure stamped by
      * wrapLeverExplore (undeliverableFixedConditionAsk). */
+    /* PRI-60 fix (2026-06-30, live Flipkart EM) — the "total fitment, not all
+     * fixed" decomposition clause is only TRUE when the standing total
+     * actually carries a non-fixed (variable) portion. On a band with no
+     * variable component (band.variableMax falsy) the standing total is all
+     * fixed cash (ESOP sits over-and-above, not inside the number), so
+     * deriveOfferFixedVariable correctly reports the whole figure as Fixed —
+     * and a fixed ask is undeliverable purely because it EXCEEDS the cash
+     * ceiling, not because the standing number is partly variable. Asserting
+     * "not all fixed" there is factually wrong and contradicts the close-recap
+     * (which shows the total as Fixed). Gate the decomposition framing on the
+     * SAME signal deriveOfferFixedVariable / fixedScopedCloseTotal use
+     * (variableMax > 0); otherwise reconcile as a plain cash-ceiling overage. */
+    const standingHasVariable =
+      typeof state.band.variableMax === "number" && state.band.variableMax > 0;
     const scopeReconcileAck =
       action.fixedAskAboveBand != null &&
       action.fixedAskAboveBand > 0 &&
       state.highestOfferMade > 0
-        ? `On closing at ₹${action.fixedAskAboveBand}L fixed — to be straight with you, ₹${state.highestOfferMade}L is the total fitment, not all fixed, so ₹${action.fixedAskAboveBand}L as pure base is above the cash band I can structure on this grade. `
+        ? standingHasVariable
+          ? `On closing at ₹${action.fixedAskAboveBand}L fixed — to be straight with you, ₹${state.highestOfferMade}L is the total fitment, not all fixed, so ₹${action.fixedAskAboveBand}L as pure base is above the cash band I can structure on this grade. `
+          : `On closing at ₹${action.fixedAskAboveBand}L fixed — to be straight with you, ₹${action.fixedAskAboveBand}L as pure base is above the cash band I can structure on this grade. `
         : "";
     const counterAck =
       scopeReconcileAck ||

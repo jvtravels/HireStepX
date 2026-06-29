@@ -1,6 +1,7 @@
 import React, { memo, useState } from "react";
 import { e, ef } from "./interviewTokens";
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote } from "./_ctc-breakdown";
+import { extractCandidateAskLpa } from "./negotiationDealSummary";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
 
@@ -199,7 +200,6 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
   // Extract salary numbers from conversation
   // Matches: ₹25 LPA, 25 lakhs, 25L, 25l, 25 lakh, ₹25.5 lpa, 12,00,000, 1200000, ₹25 per annum
   const salaryRe = /₹?\s*(\d+(?:[,.]\d+)*)\s*(?:l?pa|lakh|lakhs|[lL]\b|crore|crores|cr\b|per\s*annum)/gi;
-  const userNumbers = userTexts.join(" ").match(salaryRe) || [];
 
   const parseNum = (s: string) => {
     const m = s.match(/(\d+(?:[,.]\d+)*)/);
@@ -299,7 +299,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
   // Safety: final offer should be at least as high as initial when negotiationBand confirms the initial
   if (negotiationBand && finalOffer < initialOffer) finalOffer = initialOffer;
 
-  const candidateAsk = userNumbers.length > 0 ? Math.max(...userNumbers.map(parseNum)) : 0;
+  const candidateAsk = extractCandidateAskLpa(userTexts);
 
   const improvement = initialOffer > 0 ? Math.round(((finalOffer - initialOffer) / initialOffer) * 100) : 0;
 
