@@ -127,4 +127,47 @@ describe("applyFallibilityOverlay", () => {
     }
     expect(fires).toBeGreaterThanOrEqual(15);
   });
+
+  /* Live-staging regression (2026-06-30) — the self-correction is spliced
+   * in place of the figure, which sits mid-sentence in BASE ("that's
+   * ₹32L"). The earlier "hold on, …"-leading template produced the
+   * garble "that's hold on, ₹32L is gross". Every template must now lead
+   * with the figure so the splice stays grammatical. */
+  it("never produces a mid-sentence discourse-marker garble", () => {
+    for (let i = 0; i < 400; i++) {
+      const out = applyFallibilityOverlay(BASE, {
+        mood: "cooled",
+        turnIndex: 5,
+        packageComplexity: 4,
+        sessionId: `s-garble-${i}`,
+      });
+      if (out === BASE) continue;
+      expect(out).not.toMatch(/\b(?:that's|the|at|of|is|for)\s+(?:hold on|wait|sorry|my bad)\b/i);
+      /* The marker must be preceded by the figure + an em/en dash, never
+       * by a bare article/preposition. */
+      expect(out).toMatch(/₹\d+(?:\.\d+)?L\s+[—–-]\s+(?:hold on|sorry|wait)\b/i);
+    }
+  });
+
+  /* The overlay must NOT mutate the committed headline figure nor invent
+   * a comp component (ESOP/variable/relocation) the kernel offer never
+   * carried — that surfaced live as shifting comp framing across turns. */
+  it("preserves the headline figure and invents no comp component", () => {
+    for (let i = 0; i < 400; i++) {
+      const out = applyFallibilityOverlay(BASE, {
+        mood: "cooled",
+        turnIndex: 5,
+        packageComplexity: 4,
+        sessionId: `s-coherent-${i}`,
+      });
+      if (out === BASE) continue;
+      /* Original ₹32L stays present and unchanged. */
+      expect(out).toContain("₹32L");
+      /* Only a gross/net clarification — never a fabricated comp lever. */
+      expect(out).not.toMatch(/with the (?:joining bonus|variable|relocation|retention)/i);
+      /* Gross→take-home clarification only ("net" or "in-hand"). */
+      expect(out).toMatch(/gross/i);
+      expect(out).toMatch(/\b(?:net|in-hand)\b/i);
+    }
+  });
 });

@@ -87,6 +87,34 @@ describe("validateRestyle — idiom-stacking rejection (Bug 1)", () => {
   });
 });
 
+describe("validateRestyle — percentage-subset guard (live-staging 2026-06-30)", () => {
+  it("rejects an invented percentage the canonical never carried", () => {
+    /* Live regression: discovery variable-comfort canonical is number-free
+     * ("Your variable component is on the higher side"); the LLM restyle
+     * fabricated "54% variable is significant" — a wrong, invented stat
+     * that the salary-only number guard could not see. */
+    const canonical = "Your variable component is on the higher side — comfortable with that continuing?";
+    const bad = "A 54% variable is significant — comfortable with that continuing?";
+    const r = validateRestyle(canonical, bad, mkState());
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.reason).toMatch(/^new-percent-in-restyle:/);
+  });
+
+  it("allows a percentage that IS present in the canonical (hike-anchor)", () => {
+    const canonical = "Honestly, that's a 33% hike — peers typically get 8-12% when changing jobs at this level.";
+    const restyle = "Honestly, that's a 33% jump — peers usually see 8-12% moving at the same level.";
+    const r = validateRestyle(canonical, restyle, mkState());
+    expect(r.valid).toBe(true);
+  });
+
+  it("allows a number-free restyle of a number-free canonical", () => {
+    const canonical = "Your variable component is on the higher side — comfortable with that continuing?";
+    const ok = "The variable piece sits on the higher side — are you comfortable with that structure?";
+    const r = validateRestyle(canonical, ok, mkState());
+    expect(r.valid).toBe(true);
+  });
+});
+
 describe("validateRestyle — declarative-plus-question grammar (Bug 1)", () => {
   it("rejects 'Fair enough on X, let's look at Y at present?' (single clause, declarative lead + ?)", () => {
     const canonical = "Got it on the current side — what's the total CTC at present?";

@@ -2357,6 +2357,27 @@ export function validateRestyle(
       return { valid: false, reason: `new-number-in-restyle:${n}` };
     }
   }
+  /* Live-staging (2026-06-30) — PERCENTAGE-SUBSET guard. The number
+   * subset above runs through `extractSalaryScalars`, which only sees
+   * ₹..L figures — so an LLM-invented stat like "54% variable is
+   * significant" (canonical: "Your variable component is on the higher
+   * side", number-free) sailed through and reached the candidate as a
+   * fabricated, wrong percentage. Percentages only appear in a handful
+   * of kernel canonicals (RSU yearly-grant %, hike-% anchor, the 25%
+   * lever), and the same subset rule applies per-turn: a "%" token in
+   * the restyle that the THIS-TURN canonical doesn't carry is invented.
+   * Zero false positives by construction — a faithful restyle of a
+   * percent-bearing canonical keeps the same token; a restyle of a
+   * percent-free canonical that adds one is exactly the regression. */
+  const PERCENT_TOKEN_RE = /\d{1,3}(?:\.\d+)?\s?%/g;
+  const canonicalPcts = new Set(
+    (canonical.match(PERCENT_TOKEN_RE) ?? []).map((p) => p.replace(/\s+/g, "")),
+  );
+  for (const p of restyled.match(PERCENT_TOKEN_RE) ?? []) {
+    if (!canonicalPcts.has(p.replace(/\s+/g, ""))) {
+      return { valid: false, reason: `new-percent-in-restyle:${p.trim()}` };
+    }
+  }
   /* Closing vocab is allowed only when the canonical itself has it OR
    * the phase is a close phase. */
   const canonicalHasClose = CLOSE_VOCAB_RE.test(canonical);

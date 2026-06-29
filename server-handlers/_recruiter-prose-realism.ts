@@ -733,13 +733,6 @@ export function humanizeRecruiterProse(
 
 /* -- Feature 1 -- Recruiter fallibility */
 
-const FALLIBILITY_COMPONENTS = [
-  "the joining bonus",
-  "the variable",
-  "the relocation",
-  "the retention sign-on",
-] as const;
-
 const RUPEE_FIGURE_RE = /\u20B9(\d+(?:\.\d+)?)L/;
 
 export interface FallibilityContext {
@@ -774,26 +767,30 @@ export function applyFallibilityOverlay(
 
   const figure = m[0];
   const numeric = parseFloat(m[1]);
-  const hComp = fnv1a(`fallibility-comp|${sessionId}|${ctx.turnIndex ?? 0}`);
   const hTpl = fnv1a(`fallibility-tpl|${sessionId}|${ctx.turnIndex ?? 0}`);
-  const hDelta = fnv1a(`fallibility-delta|${sessionId}|${ctx.turnIndex ?? 0}`);
 
-  const component = FALLIBILITY_COMPONENTS[hComp % FALLIBILITY_COMPONENTS.length];
-  const delta = 1 + (hDelta % 3);
-  const corrected = numeric + delta;
-  const correctedStr = Number.isInteger(corrected)
-    ? `${corrected}`
-    : `${corrected.toFixed(1)}`;
-  const correctedFigure = `\u20B9${correctedStr}L`;
-
+  /* Coherence guard (2026-06-30) \u2014 the overlay's stated contract is that
+   * it "only decorates, never changes the topical anchor's truth value".
+   * The earlier component-inventing templates ("\u20B932L \u2014 wait, \u20B934L with
+   * the variable, my bad") VIOLATED that twice: they (a) mutated the
+   * headline CTC by a random +1..3L and (b) attached a comp component
+   * (ESOP/variable/relocation) that the kernel offer never carried, which
+   * surfaced live as shifting ESOP/variable framing across turns and fed
+   * number drift into the report. The only faithful self-correction over
+   * a committed number is a gross\u2192net clarification: the headline figure
+   * is unchanged, and net is a deterministic take-home gesture (\u22480.85\u00D7).
+   * All templates lead with `${figure}` so the inline splice (which
+   * replaces the figure in place) stays grammatical even when the figure
+   * sits mid-sentence ("\u2026that's \u20B932L \u2014 hold on, \u2026"), closing the
+   * "the hold on, \u20B950L is gross" garble seen live. */
   const netVal = Math.round(numeric * 8.5) / 10;
   const netStr = Number.isInteger(netVal) ? `${netVal}` : `${netVal.toFixed(1)}`;
   const netFigure = `\u20B9${netStr}L`;
 
   const templates = [
-    `${figure} \u2014 wait, ${correctedFigure} with ${component}, my bad`,
-    `hold on, ${figure} is gross, net's ${netFigure}`,
-    `${figure} total \u2014 sorry, ${correctedFigure} including ${component}`,
+    `${figure} \u2014 hold on, that's gross; net's closer to ${netFigure}`,
+    `${figure} \u2014 sorry, that's the gross figure; in-hand works out nearer ${netFigure}`,
+    `${figure} \u2014 wait, let me be clear, that's gross; net lands around ${netFigure}`,
   ];
   const replacement = templates[hTpl % templates.length];
 
