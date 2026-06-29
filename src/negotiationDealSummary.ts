@@ -23,10 +23,11 @@
 const ASK_CUE_SRC =
   "(?:expect\\w*|looking\\s+for|look\\s+at|want\\w*|targeting|target|" +
   "hoping\\s+for|hope\\s+for|aiming\\s+for|aim\\s+for|asking\\s+for|" +
-  "my\\s+ask\\s+is|ask\\s+is|push\\s+(?:it\\s+)?to|bump\\s+(?:it\\s+)?to|" +
-  "get\\s+(?:me\\s+)?to|closer\\s+to|somewhere\\s+around|" +
-  "in\\s+the\\s+range\\s+of|range\\s+of|at\\s+least|north\\s+of|" +
-  "ideally|shooting\\s+for|comfortable\\s+at)";
+  "my\\s+ask\\s+is|ask\\s+is|my\\s+number\\s+is|push\\s+(?:it\\s+)?to|" +
+  "bump\\s+(?:it\\s+)?to|get\\s+(?:me\\s+)?to|closer\\s+to|" +
+  "somewhere\\s+around|in\\s+the\\s+range\\s+of|range\\s+of|at\\s+least|" +
+  "north\\s+of|ideally|shooting\\s+for|comfortable\\s+at|land\\s+at|" +
+  "(?:i'?d\\s+|would\\s+)(?:like|love)|can\\s+you\\s+do)";
 /* Echoed-offer clauses restate the company's number back ("if you close at
  * 52.3, that works") — never the candidate's own ask. */
 const ECHO_OFFER_RE =
@@ -48,10 +49,13 @@ export function extractCandidateAskLpa(userTexts: string[]): number {
   };
   let best = 0;
   for (const text of userTexts) {
-    // Split on sentence punctuation only — a bare "." that sits between
-    // digits (a decimal, e.g. "1.2 crore") must NOT break the clause. This
-    // also stops a CTC / echoed-offer clause from suppressing a sibling ask.
-    for (const clause of text.split(/[!?;]+|\.(?=\s|$)/)) {
+    // Split on sentence + clause punctuation so a CTC / echoed-offer clause
+    // cannot suppress a SIBLING ask in the same sentence ("your offer of 52
+    // is low, I want 65"). A bare "." or "," that sits between digits (a
+    // decimal "1.2 crore" or an Indian-format amount "56,00,000") must NOT
+    // break the clause — so only split on "." / "," when followed by
+    // whitespace or end-of-string, never mid-number.
+    for (const clause of text.split(/[!?;]+|[.,](?=\s|$)/)) {
       if (ECHO_OFFER_RE.test(clause)) continue;
       const re = new RegExp(ASK_NUM_SRC, "gi");
       let m: RegExpExecArray | null;

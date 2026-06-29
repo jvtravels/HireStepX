@@ -71,4 +71,41 @@ describe("extractCandidateAskLpa", () => {
   it("handles crore-denominated asks", () => {
     expect(extractCandidateAskLpa(["I'm looking for 1.2 crore."])).toBe(120);
   });
+
+  /* Adversarial hardening (2026-06-30) — common ask phrasings beyond the
+   * core cue set, plus the comma-joined echo+ask defect. */
+  describe("adversarial ask phrasings", () => {
+    it.each([
+      ["I'd like 65 ideally.", 65],
+      ["Can you do 68?", 68],
+      ["My number is 70.", 70],
+      ["I want at least 55, but ideally 65.", 65],
+      ["Looking for around 1.5cr.", 150],
+      ["I'd be comfortable at 60.", 60],
+      ["Hoping to land at 62.", 62],
+      ["I make 50 now and want 65.", 65],
+    ])("captures the ask in %s → %d", (input, expected) => {
+      expect(extractCandidateAskLpa([input])).toBe(expected);
+    });
+
+    it("recovers a sibling ask from a comma-joined echo-offer sentence", () => {
+      // The echo cue ("your offer") and the real ask ("I want 65") share one
+      // comma-joined sentence; clause-splitting on commas (but not inside the
+      // Indian-format number) keeps the ask while dropping the echo clause.
+      expect(
+        extractCandidateAskLpa(["Currently drawing 48, your offer of 52 is low, I want 65."]),
+      ).toBe(65);
+    });
+
+    it.each([
+      "I'd like to understand the 4 year vesting.",
+      "Can you do a recap of the package?",
+      "I have 12 years of experience.",
+      "My current CTC is 48 LPA.",
+      "The notice period is 3 months.",
+      "Land at the Bangalore office works for me.",
+    ])("does NOT read a non-ask number as an ask: %s", (input) => {
+      expect(extractCandidateAskLpa([input])).toBe(0);
+    });
+  });
 });
