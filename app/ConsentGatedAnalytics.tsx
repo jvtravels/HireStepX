@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { getCookieConsent } from "./CookieConsent";
-import { initPostHog } from "../src/posthogClient";
+import { initPostHog, upgradePostHogPersistence } from "../src/posthogClient";
 
 // Dynamically imported only when user accepts — keeps ~20KB out of the default bundle
 const Analytics = dynamic(() => import("@vercel/analytics/next").then(m => m.Analytics), { ssr: false });
@@ -15,11 +15,22 @@ export default function ConsentGatedAnalytics() {
   useEffect(() => {
     const isAccepted = getCookieConsent() === "accepted";
     setAccepted(isAccepted);
-    if (isAccepted) void initPostHog();
+    // Init PostHog immediately either way. Accepted → persistent (cookie).
+    // Not-yet-decided or rejected → cookieless "memory" mode so anonymous
+    // pageviews are still counted (GDPR-safe, no id written). This closes the
+    // visibility gap where DAU read near-zero because only consented visitors
+    // ever loaded the SDK.
+    void initPostHog(isAccepted ? "localStorage+cookie" : "memory");
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ accepted: boolean }>).detail;
-      setAccepted(!!detail?.accepted);
-      if (detail?.accepted) void initPostHog();
+      const nowAccepted = !!detail?.accepted;
+      setAccepted(nowAccepted);
+      // Upgrade the already-running cookieless instance to persistent storage
+      // (or init it if the key loaded late). No SDK reload needed.
+      if (nowAccepted) {
+        void initPostHog("localStorage+cookie");
+        upgradePostHogPersistence();
+      }
     };
     window.addEventListener("hirestepx:cookie-consent", handler);
     return () => window.removeEventListener("hirestepx:cookie-consent", handler);
