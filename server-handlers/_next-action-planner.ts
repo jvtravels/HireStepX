@@ -6551,12 +6551,29 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
    * on turn 4; the per-turn delta gate meant the probe never fired. */
   if (!hasFired("variable-comfort")) {
     const breakdown = state.candidateComponentBreakdown;
+    /* PRI-61 (2026-07-05, live Flipkart EM) — the probe interrogates
+     * payout history ("have you been hitting payouts in full?"), which is
+     * only coherent when the candidate ACTUALLY DISCLOSED a variable-heavy
+     * split. A complement-INFERRED variable (base + known total → derived
+     * variable, `variableInferred: true`) is explicitly not a disclosure —
+     * every other consumer (nextComponentProbe, canonical prose, move-spec)
+     * gates on `variableInferred !== true`; this probe was the lone
+     * violator. Live repro: "firm up the top of your fixed band plus that
+     * 4.2L joining bonus" mis-bound base=4.2 via extractNumberAfter, the
+     * total-complement then fabricated variable=41.8 (91% share), and the
+     * bot asked "91% variable is significant — have you been hitting payouts
+     * in full?" about a split the candidate never stated. Require a genuine
+     * (non-inferred) disclosed variable, matching the established idiom. */
+    const variableDisclosed =
+      breakdown != null &&
+      breakdown.variable != null &&
+      breakdown.variableInferred !== true;
     const total =
-      breakdown && breakdown.base != null && breakdown.variable != null
+      variableDisclosed && breakdown.base != null && breakdown.variable != null
         ? breakdown.base + breakdown.variable
         : null;
     const variableSharePct =
-      total != null && total > 0 && breakdown.variable != null
+      variableDisclosed && total != null && total > 0 && breakdown.variable != null
         ? (breakdown.variable / total) * 100
         : 0;
     /* 2026-05-29 realism-pass — per-session ±5% jitter on the 25%
