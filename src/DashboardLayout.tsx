@@ -529,10 +529,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.87)")}
                 onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
               >Manage Subscription</button>
-              <button onClick={() => setShowUpgradeModal(true)} title="Cancel or downgrade your subscription" style={{ display: "block", width: "100%", marginTop: 6, background: "none", border: "none", cursor: "pointer", fontFamily: font.ui, fontSize: 12, color: T.inkFaint ?? '#736B5D', opacity: 1, textAlign: "center" as const, padding: "2px 0", transition: "opacity 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
-              >Cancel plan</button>
             </>
           ) : (
             /* Free / Starter: upgrade prompt */
