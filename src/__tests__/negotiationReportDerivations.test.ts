@@ -170,15 +170,19 @@ describe("derivePhases (grounded action-signal gating — REPORT-6)", () => {
     expect(phases[3].reached).toBe(true);
   });
 
-  it("outcome accepted → phase 5 reached, with 'Accepted' note", () => {
+  it("outcome accepted → phase 5 reached, named 'You closed the deal', 'Accepted' note", () => {
     const phases = derivePhases(makeOutcome({ outcome: "accepted" }));
     expect(phases[4].reached).toBe(true);
+    expect(phases[4].name).toBe("You closed the deal");
     expect(phases[4].note).toBe("Accepted");
   });
 
-  it("outcome walked_away → phase 5 reached, with 'Walked away' note", () => {
+  /* PRI-63 — a walk-away reaches the close STAGE but must not render under
+   * "You closed the deal"; the name tracks the milestone, the note the outcome. */
+  it("outcome walked_away → phase 5 reached, named 'You reached the close', 'Walked away' note", () => {
     const phases = derivePhases(makeOutcome({ outcome: "walked_away" }));
     expect(phases[4].reached).toBe(true);
+    expect(phases[4].name).toBe("You reached the close");
     expect(phases[4].note).toBe("Walked away");
   });
 

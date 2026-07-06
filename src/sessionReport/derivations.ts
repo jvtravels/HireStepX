@@ -122,7 +122,12 @@ export function derivePhases(outcome: NegotiationOutcome) {
     },
     {
       num: 5,
-      name: "You closed the deal",
+      /* PRI-63 (2026-07-06, live staging) — the close STAGE is reached on
+       * accept OR walk-away, so a fixed "You closed the deal" name rendered
+       * a green ✓ "You closed the deal / Walked away" on a walk-away
+       * (contradicting the outcome record). The name tracks the milestone;
+       * the note carries the specific. Only an accept "closed the deal". */
+      name: outcome.outcome === "accepted" ? "You closed the deal" : "You reached the close",
       reached: reachedClose,
       note:
         outcome.outcome === "accepted"
