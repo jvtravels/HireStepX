@@ -20,6 +20,12 @@ export const PAYSLIP_PROMPT = /\b(payslip|pay slip|form\s*16|salary slip|salary 
 export const PAYSLIP_REFUSED = /\b(?:not comfortable|prefer not|can'?t share|cannot share|don'?t share|won'?t share|not willing|not (?:able|ready) to share|share nahi|nahi de sakta|share karna mushkil)\b/i;
 export const BADMOUTHING = /\b(toxic|terrible|awful|hated|worst|stupid|incompetent|micromanag|backstab|crook|garbage|nightmare|abusive|harass|bakwaas|bekaar|ghatiya|chutiya)\b/i;
 export const GAP_PROMPT = /\b(gap|career break|sabbatical|why (?:were you|are you|was there) (?:not working|unemployed|a (?:gap|break))|career mein gap)\b/i;
+/* A gap answer is "explained" — even if short — when it carries a concrete
+   anchor: a year, a duration, a month, or a named reason. Guards
+   gap_unexplained against false-positiving a crisp factual answer like
+   "4-month gap in 2023, cared for ill father, back at Infosys Feb 2024"
+   purely because it is under the length gate. */
+export const GAP_EXPLAINED = /\b(?:19|20)\d{2}\b|\b\d+[\s-]*(?:month|months|year|years|week|weeks|yr|yrs|mahine|saal)\b|\b(?:january|february|march|april|june|july|august|september|october|november|december)\b|\b(?:sabbatical|maternity|paternity|medical|health|surgery|illness|bereavement|layoff|laid off|restructur|relocat|upskill|reskill|certification|masters|mba|gmat|gate exam|preparation|startup|freelanc|consulting|higher stud|visa|immigration|caregiv|caring for|cared for)\b|\bfamily (?:reason|emergenc|commitment|obligation|matter|issue|health)|\b(?<!of )courses?\b/i;
 export const NOTICE_PERIOD = /\b(notice period|when can you (?:start|join)|availability|join (?:by|on|in)|relocat|location preference|lwd|last working day|buyout|earliest (?:join|start)|kab join|join kab|notice kitna)\b/i;
 export const NOTICE_ASKED = /\b(notice period|when can you (?:start|join)|earliest (?:join|start)|lwd|last working day|kab join kar|notice kitna)\b/i;
 export const NOTICE_VAGUE = /\b(?:not sure|don'?t know|haven'?t checked|will check|depends on|maybe|few months|some time|not decided|need to (?:check|find out|confirm)|pata nahi|dekh ke bataunga|check karke|abhi confirm nahi|thoda time)\b/i;
@@ -51,6 +57,13 @@ export const COMP_PROBE_RE = /\b(?:what(?:'?s| is) the (?:cliff|vesting|variable
 
 export const COUNTER_OFFER_VOLUNTEERED = /\b(?:my (?:current )?(?:employer|company|manager|boss) (?:is likely to|might|will|may) (?:counter|match|come back)|current (?:employer|company) (?:gave|offered|made) (?:me )?(?:a )?counter|already (?:got|received|have) (?:a )?counter[- ]?offer|they'?re (?:trying to|going to) match|trying to retain me|retention (?:offer|bonus) on the table|they want me to stay|they'?re working on (?:a |my )?revised (?:offer|package)|(?:my )?manager has spoken to (?:leadership|hr|skip)|hr called me (?:yesterday|today|last week) (?:about|on)|asked me to (?:think|reconsider) before resigning|asked me to (?:wait|hold) before resigning|they'?re putting together (?:a |an )?(?:counter|revised|new offer))\b/i;
 export const COUNTER_OFFER_DECLINE = /\b(?:i (?:declined|refused|turned (?:it )?down|rejected) (?:it|the counter|their offer)|told them no|not (?:taking|considering|accepting) (?:the |their |any )?counter|will not entertain|won'?t entertain|already (?:said|told them) no|no chance i (?:take|accept))\b/i;
+/* Firm forward-commitment to join REGARDLESS of a counter. Distinct from
+   DECLINE (which is about an already-received counter) and GRACEFUL (a
+   specific "no counter" script). Guards counter_offer_dodge from firing on
+   an answer that opens with a hedge phrase ("it depends...") but resolves
+   into a clear commitment ("...but I'm firm on this move, a counter won't
+   change it"). */
+export const COUNTER_OFFER_COMMITTED = /\b(?:i'?m (?:firm|committed|decided|set|sure|clear) (?:on|about) (?:this|the) (?:move|switch|offer|role|change|decision)|i'?m (?:definitely|100%|fully|surely) joining|(?:my )?(?:decision|mind) is (?:final|made (?:up)?)|i (?:really |genuinely )?want to join (?:you|your|this)|(?:i'?m|i am) (?:on board|all in)|(?:a )?counter (?:won'?t|will not|doesn'?t|wouldn'?t) (?:change|matter|move|sway)|(?:not|won'?t be|wouldn'?t) using (?:this|your offer|it) as (?:a )?(?:leverage|lever|bargaining))\b/i;
 export const PROBATION_PROMPT = /\b(probation(?:ary)?(?:\s+period)?|probationary|confirmation(?:\s+period)?|under probation|during probation)\b/i;
 export const PROBATION_PROBE = /\b(?:how long is the probation|probation (?:period|duration|length) (?:is|of)|(?:what'?s|what is) the (?:probation|confirmation) (?:period|criteria|process)|confirmation (?:criteria|review|process)|probation pay|salary during probation|notice (?:during|in) probation|probation kitni|probation kab tak|kya criteria hai)\b/i;
 export const HIKE_RATIONALE = /\b(market|benchmark|levels|glassdoor|range|peers?|competing|other offer|levels\.fyi|because i|since i'?ve|scope|impact|delivered|saved|drove|market rate|market mein)\b/i;

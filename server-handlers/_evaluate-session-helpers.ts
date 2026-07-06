@@ -9,6 +9,7 @@ import {
 } from "../data/focus-signature-metrics";
 import { detectStarPresence } from "../src/_star-detection";
 import type { HrCompanyNorms } from "../data/hr-company-norms";
+import type { HrSectorOverlay } from "./_hr-round-overlays";
 
 export type { FocusMetric } from "../data/focus-signature-metrics";
 
@@ -378,7 +379,7 @@ export function resolveCompanyProfile(
 export function resolveCalibrationLabel(
   targetCompany: string | null | undefined,
   profile: CompanyProfile | null,
-  hrSector: "services-tier1" | "product-unicorn" | "bfsi" | "none" = "none",
+  hrSector: HrSectorOverlay = "none",
 ): { companyLabel: string; companyNote: string } {
   if (profile) return { companyLabel: profile.label, companyNote: profile.note };
   const named = (targetCompany ?? "").trim();
@@ -392,6 +393,9 @@ export function resolveCalibrationLabel(
     "services-tier1": "Tier-1 IT services calibration — process discipline, documentation, and notice-period rigor weighted up.",
     "bfsi": "BFSI calibration — compliance readiness, stability, and background-verification rigor weighted up.",
     "product-unicorn": "Product-unicorn calibration — compensation transparency and switch-rationale clarity weighted up.",
+    "gcc": "MNC captive / GCC calibration — parent-stock RSU literacy, global-standard background verification, and benefits fluency weighted up.",
+    "consulting": "Consulting calibration — 'why this firm' specificity, up-or-out switch rationale, and travel/utilisation commitment weighted up.",
+    "psu": "Government / PSU calibration — compliance and document readiness weighted up; compensation treated as fixed pay-scale, not negotiable.",
   };
   const companyNote =
     hrSector !== "none"
