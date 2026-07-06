@@ -87,6 +87,28 @@ describe("sampleHrQuestions", () => {
     expect(withOpener.some((q) => q.id === opener!.id)).toBe(true);
   });
 
+  it("covers BGV / compliance readiness — a 13% rubric dimension (audit gap)", () => {
+    // Compliance readiness is the 2nd-heaviest scoring dimension in the
+    // HR-round recipe, yet the static fallback bank had zero questions
+    // probing it — so an LLM-down session could not score it. Guard that.
+    const compliance = HR_QUESTIONS.filter((q) => q.dimension === "compliance");
+    expect(compliance.length).toBeGreaterThanOrEqual(1);
+    expect(
+      compliance.some((q) =>
+        /bgv|background|payslip|form\s*16|relieving|document|verification|dual|overlap|moonlight/i.test(
+          q.text,
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("a default HR fallback draw surfaces compliance for a typical session", () => {
+    // count=7 is the live hr-round fallback size; weighted draw should
+    // reliably include the high-frequency compliance probe.
+    const picked = sampleHrQuestions({ count: 7, seed: 7, weightByFrequency: true });
+    expect(picked.some((q) => q.dimension === "compliance")).toBe(true);
+  });
+
   it("weightByFrequency front-loads the most common BODY question", () => {
     const picked = sampleHrQuestions({ count: 3, seed: 5, weightByFrequency: true });
     // The most-asked question among the body pool (opener excluded) should
@@ -95,5 +117,46 @@ describe("sampleHrQuestions", () => {
       ...HR_QUESTIONS.filter((q) => !q.opener).map((q) => q.frequencyPct),
     );
     expect(picked.some((q) => q.frequencyPct === topBodyFreq)).toBe(true);
+  });
+
+  it("prioritiseDimensions surfaces the rubric-heavy dimensions first (audit gap)", () => {
+    // The sampler used to be blind to the resolved rubric — a short draw
+    // could omit the dimensions the candidate's round actually grades
+    // hardest. Prioritised dimensions must land in a small draw.
+    const picked = sampleHrQuestions({
+      count: 3,
+      seed: 5,
+      weightByFrequency: true,
+      prioritiseDimensions: ["compliance", "compensation"],
+    });
+    const dims = new Set(picked.map((q) => q.dimension));
+    expect(dims.has("compliance")).toBe(true);
+    expect(dims.has("compensation")).toBe(true);
+  });
+
+  it("prioritisation is a soft boost, not a filter — still fills the rest", () => {
+    const picked = sampleHrQuestions({
+      count: 6,
+      seed: 9,
+      prioritiseDimensions: ["compliance"],
+    });
+    // Prioritised dimension present...
+    expect(picked.some((q) => q.dimension === "compliance")).toBe(true);
+    // ...but the draw is NOT collapsed to only that dimension.
+    expect(new Set(picked.map((q) => q.dimension)).size).toBeGreaterThan(1);
+  });
+
+  it("stays deterministic and dupe-free with prioritiseDimensions set", () => {
+    const opts = { count: 6, seed: 42, prioritiseDimensions: ["compensation"] as const };
+    const a = sampleHrQuestions(opts);
+    const b = sampleHrQuestions(opts);
+    expect(a.map((q) => q.id)).toEqual(b.map((q) => q.id));
+    expect(new Set(a.map((q) => q.id)).size).toBe(a.length);
+  });
+
+  it("empty prioritiseDimensions is a no-op (identical to omitting it)", () => {
+    const withEmpty = sampleHrQuestions({ count: 6, seed: 21, prioritiseDimensions: [] });
+    const without = sampleHrQuestions({ count: 6, seed: 21 });
+    expect(withEmpty.map((q) => q.id)).toEqual(without.map((q) => q.id));
   });
 });

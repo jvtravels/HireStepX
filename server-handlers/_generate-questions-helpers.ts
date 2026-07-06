@@ -327,7 +327,30 @@ export function computeQuestionCount(opts: { mini: boolean; isSalaryType: boolea
 
 import { QUESTION_BANK, type FocusArea, type RoleFamily } from "../data/interview-question-bank";
 import { sampleBehavioralQuestions, BEHAVIORAL_COMPETENCIES, COMPETENCY_LABELS, type BehavioralRole, type BehavioralCompetency } from "../data/behavioral-question-bank";
-import { sampleHrQuestions } from "../data/hr-round-question-bank";
+import { sampleHrQuestions, type HrDimension } from "../data/hr-round-question-bank";
+import { resolveHrSeniorityOverlay } from "./_hr-round-overlays";
+
+/* Map the resolved HR seniority overlay onto the bank's topic dimensions
+   the sampler should surface first. Mirrors the seniority weight lens in
+   _hr-round-overlays.ts (SENIORITY_MULTIPLIERS): a fresher's round leans on
+   self-awareness / motivation / growth; a senior's on comp, notice/logistics
+   and BGV (the drop-out & offer-stage signals HR weights harder); an
+   executive's on mission-fit + commitment + comp. Mid stays neutral (the
+   prior blind round-robin). Returns [] for the neutral case. */
+export function hrDimensionsForSeniority(
+  expLevel: string | null | undefined,
+): HrDimension[] {
+  switch (resolveHrSeniorityOverlay(expLevel)) {
+    case "fresher":
+      return ["self-awareness", "motivation", "career-goals"];
+    case "senior":
+      return ["compensation", "logistics", "compliance"];
+    case "executive":
+      return ["motivation", "compensation", "logistics"];
+    default:
+      return [];
+  }
+}
 
 /* Map the broad interview-bank RoleFamily onto the behavioural bank's
    compact discipline taxonomy. Drives the behavioural fallback so a
@@ -527,7 +550,16 @@ function buildStaticFallbackRaw(opts: {
   // either signal — type carries "hr-round", focus may be "hr"/"hr-round".
   if (focus === "hr" || focus === "hr-round" || type === "hr-round") {
     const seed = ((count * 37) + (roleFamily.length * 13) + 7) >>> 0;
-    const sampled = sampleHrQuestions({ count, seed, weightByFrequency: true });
+    // Seniority steering: surface the dimensions this candidate's HR round
+    // grades hardest first (rubric-aligned), instead of a blind round-robin.
+    // Sector steering would need the company threaded through the request
+    // contract (a provider-path change); seniority is already available here.
+    const sampled = sampleHrQuestions({
+      count,
+      seed,
+      weightByFrequency: true,
+      prioritiseDimensions: hrDimensionsForSeniority(opts.experienceLevel),
+    });
     if (sampled.length > 0) {
       return [
         // The intro IS the "tell me about yourself" opener (the sampler
