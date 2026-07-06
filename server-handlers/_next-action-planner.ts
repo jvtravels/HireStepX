@@ -1953,18 +1953,26 @@ function maybePlanProactiveSweetener(
   ) {
     signal = "counter-still-pending";
   }
-  /* (5c) 2+ turns since the last offer with no close action shipped.
-   * highestOfferMadeAtTurn carries the turn the cap was reached; when
-   * unavailable, fall through to the turn budget check on lastOfferTurn. */
+  /* (5c) 2+ candidate turns have elapsed since the offer landed with no
+   * close action shipped.
+   *
+   * PRI-65 (2026-07-06, launch-readiness audit) — this branch previously read
+   * `state.lastOfferTurn` and `state.highestOfferMadeAtTurn` through
+   * `as unknown as` casts. NEITHER property exists anywhere on NegotiationState
+   * (nor is written by the kernel), so both casts always resolved to undefined,
+   * `lastOfferTurn` was always null, and the entire (5c) stale-offer trigger
+   * was dead — the proactive sweetener could only ever fire via (5a)/(5b). The
+   * real, kernel-maintained field is `firstOfferAtTurn` (the turn the offer
+   * first landed, i.e. highestOfferMade went 0 → >0), whose own contract is to
+   * answer "how many candidate turns have elapsed since the offer landed?" —
+   * exactly this check. Using it removes both illegal casts and activates the
+   * intended cooling signal; it stays gated behind the cash-cap (4) and phase
+   * (2) guards above, and (5a)/(5b) still win first. */
   if (signal == null) {
-    const lastOfferTurn =
-      (state as unknown as { lastOfferTurn?: number }).lastOfferTurn ??
-      (state as unknown as { highestOfferMadeAtTurn?: number })
-        .highestOfferMadeAtTurn ??
-      null;
+    const firstOfferAtTurn = state.firstOfferAtTurn ?? null;
     if (
-      lastOfferTurn != null &&
-      state.turnIndex - lastOfferTurn >= 2 &&
+      firstOfferAtTurn != null &&
+      state.turnIndex - firstOfferAtTurn >= 2 &&
       !state.leversUsed.includes("close-acceptance")
     ) {
       signal = "stale-offer";
