@@ -674,8 +674,29 @@ const REVIEW_TAIL_PATTERN =
 const CONSULT_DEFERRAL_PATTERN =
   /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)\s+(?:talk|speak|consult|discuss|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+by|get\s+back|am\s+back))/i;
 
-/** All PRI-59/61/63 + batch-2 precision vetoes, shared by both gates. */
+/** PRI-69 (2026-07-08, offline hostile close battery) — first-person DEMAND for
+ *  MORE money welded to a close idiom by a NON-contrastive conjunction. The
+ *  candidate says "Give me 8% more and it's a deal" / "I want 2L more and I'll
+ *  sign": the close idiom ("it's a deal", "I'll sign") matches, but it is
+ *  CONTINGENT on the company first granting the demanded increase — a counter,
+ *  not an unconditional accept (FALSE-CLOSE: the bot finalizes at the un-bumped
+ *  offer while the candidate is demanding a raise). CONDITIONAL_DEMAND owns the
+ *  "make it / get it TO <target>" absolute form; PARTIAL_ACCEPT / NEGOTIATING_BUT
+ *  require a but/except/however CONTRASTIVE conjunction, so the "and"-welded
+ *  RELATIVE demand ("N% more", "N more") slipped every existing veto. Scoped to a
+ *  first-person demand verb (give/gimme/get/hand/throw/toss me · I want/need/…) +
+ *  an explicit increase magnitude (N% / N<unit> / bare N) + an increase token
+ *  (more/higher/extra/additional/on top). The `(?!\s+than)` guard spares
+ *  gratitude phrasings ("3% more than I expected, deal"); the delta form with no
+ *  increase token ("give me another 2L") carries no "more" and stays with the
+ *  PRI-68 meet-and-close path (resolveConditionalCashTarget). Shared
+ *  single-source so BOTH gates reject in lockstep. */
+const DEMAND_FOR_MORE_PATTERN =
+  /\b(?:(?:give|gimme|get|hand|throw|toss)\s+me|i(?:'?d)?\s+(?:want|need|expect|like)|i'?m\s+(?:after|looking\s+for))\b[^.!?]{0,20}?\d+(?:\.\d+)?\s*(?:%|percent|l|lpa|lakhs?|lac|k)?\s*(?:more|higher|extra|additional|on\s+top)\b(?!\s+than)/i;
+
+/** All PRI-59/61/63/69 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
+  DEMAND_FOR_MORE_PATTERN,
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
