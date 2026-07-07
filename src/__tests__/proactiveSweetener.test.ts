@@ -201,6 +201,33 @@ describe("proactive-sweetener — stale-offer cooling signal (5c)", () => {
   });
 });
 
+/* PRI-60 × PRI-65 precedence (2026-07-07) — activating the (5c) stale-offer
+ * signal let the sweetener win the SAME close turn that PRI-60's scope-reconcile
+ * counter owns: when the candidate has conditionally closed on an UNDELIVERABLE
+ * fixed number (above the band's cash cap), the recruiter must NAME the overage
+ * out loud before pivoting to equity — not silently dangle an equity-refresh
+ * sweetener that never reconciles the scope. The guard defers the sweetener when
+ * `undeliverableFixedConditionAsk` is pending. These two share one stale-offer
+ * fire-state so the ONLY difference is the pending fixed ask. */
+describe("proactive-sweetener — scope-reconcile precedence (PRI-60 × PRI-65)", () => {
+  /* Band base cap = maxStretch (32); a fixed ask above it is undeliverable. */
+  const staleFire = (over: Partial<NegotiationState> = {}): NegotiationState =>
+    cappedState({ turnIndex: 6, firstOfferAtTurn: 4, ...over });
+
+  it("positive control: the shared stale-offer state DOES fire the sweetener", () => {
+    const action = planNextAction(staleFire({ sessionId: "ps-prec-control" }));
+    expect(action.kind).toBe("proactive-sweetener");
+  });
+
+  it("defers to the scope-reconcile counter when an undeliverable fixed ask is pending", () => {
+    // 40 fixed > base cap 32 → undeliverableFixedConditionAsk is non-null.
+    const action = planNextAction(
+      staleFire({ sessionId: "ps-prec-guard", candidateTargetFixed: 40 }),
+    );
+    expect(action.kind).not.toBe("proactive-sweetener");
+  });
+});
+
 describe("proactive-sweetener — single-fire", () => {
   it("fires at most ONCE across 20 simulated turns", () => {
     let s = withAffinityDrop(cappedState({ sessionId: "ps-once" }));

@@ -1920,6 +1920,18 @@ function maybePlanProactiveSweetener(
     state.recruiterSectorPersona ?? "default";
   /* (1) Single-fire. */
   if (state.proactiveSweetenerFired === true) return null;
+  /* (1b) Scope-reconcile precedence (PRI-60 × PRI-65 regression guard,
+   * 2026-07-07). When an undeliverable fixed close-ask is pending over the
+   * standing offer, the counter/lever engine owns this turn: it must NAME the
+   * cash-band overage out loud ("that's above the cash band I can structure")
+   * before pivoting to equity-over-cash — the whole point of PRI-60. Activating
+   * the (5c) stale-offer cooling signal in PRI-65 let this sweetener win the
+   * SAME turn (offer has been standing ≥2 turns by the close), silently
+   * dangling an equity-refresh lever WITHOUT ever reconciling the scope — so the
+   * candidate is never told their fixed ask can't be met in cash. Defer to the
+   * scope-reconcile counter here; the sweetener still fires on ordinary
+   * cash-capped cooling turns where no undeliverable fixed ask is pending. */
+  if (undeliverableFixedConditionAsk(state) != null) return null;
   /* (2) Phase gate — only counter-offer OR closing-push. */
   if (state.phase !== "counter-offer" && state.phase !== "closing-push") {
     return null;
