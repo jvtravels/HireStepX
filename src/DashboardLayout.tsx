@@ -376,12 +376,15 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <span
                 aria-label={user.cancelAtPeriodEnd
                   ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — access until then`
-                  : `Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                  : isStarter
+                    ? `Sprint Pack valid till ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
+                    : `Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
                 style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, whiteSpace: "nowrap",
                   color: user.cancelAtPeriodEnd ? c.ember : c.stone,
                   opacity: user.cancelAtPeriodEnd ? 0.9 : 0.65 }}
               >
-                {user.cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
+                {/* Starter is a one-off Sprint Pack — it expires, it doesn't renew. */}
+                {user.cancelAtPeriodEnd ? "Ends" : isStarter ? "Valid till" : "Renews"}{" "}
                 {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </span>
             )}
@@ -476,12 +479,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   );
                 })()}
 
-                {/* Starter renewal footnote */}
+                {/* Sprint Pack footnote — a one-off pack of 5 sessions over 30 days.
+                    It does NOT renew and sessions do NOT reset weekly; framing it
+                    that way is what made a fresh pack read as "5 of 5 used". */}
                 {user?.subscriptionEnd && isStarter && (
                   <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
                     marginBottom: 10, marginTop: -6 }}>
-                    Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN",
-                      { day: "numeric", month: "short" })} · sessions reset Sun
+                    5 sessions · valid till {new Date(user.subscriptionEnd).toLocaleDateString("en-IN",
+                      { day: "numeric", month: "short" })}
                   </p>
                 )}
               </>
