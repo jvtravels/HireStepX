@@ -359,7 +359,17 @@ export function sessionReportToInterviewResult(
         session.negotiationMetrics?.powerContext,
       )
     : undefined;
-  const grounded = isNegotiation
+  // Only reconcile against an AUTHORITATIVE (kernel-derived) outcome. A
+  // heuristic outcome comes from the same fragile transcript regex that
+  // caused the DATA-1 "0 of 5 stages" bug class — grounding scores against a
+  // guessed outcome could wrongly cap a legacy row. Current sessions all
+  // carry kernel metrics, so the launch-critical LLM/deterministic paths are
+  // still covered; only pre-kernel legacy rows opt out (they were fully
+  // heuristic and already carry a low scoreConfidence).
+  const outcomeIsAuthoritative =
+    isNegotiation &&
+    negotiationOutcomeDerivation(session.negotiationMetrics) === "kernel";
+  const grounded = outcomeIsAuthoritative
     ? groundNegotiationReport(
         report.skills,
         report.overallScore,

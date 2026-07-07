@@ -10,8 +10,14 @@
  * only on an accepted-but-weak close, and moves skills + overall + band down
  * in lockstep while leaving demeanour, strong closes, and walk-aways alone. */
 import { describe, it, expect } from "vitest";
-import { groundNegotiationReport } from "../sessionReport/adapter";
+import {
+  groundNegotiationReport,
+  sessionReportToInterviewResult,
+  type AdapterContext,
+} from "../sessionReport/adapter";
 import type { InterviewResultData } from "../sessionReport/types";
+import type { SessionReport } from "../dashboardData";
+import type { DashboardSession } from "../dashboardTypes";
 
 type Outcome = InterviewResultData["negotiationOutcome"];
 
@@ -139,5 +145,100 @@ describe("groundNegotiationReport — report-layer coherence", () => {
     // Default profile: leanHire 55, hire 70. Grounded score ≤60 → not "hire".
     expect(r.overallScore).toBeLessThanOrEqual(60);
     expect(r.band).not.toBe("hire");
+  });
+});
+
+/* End-to-end proof that the gating + wiring inside the real adapter entry
+ * point behaves: a negotiation session whose kernel metrics say the
+ * candidate accepted a 0%-gap fold must NOT surface inflated skills, a
+ * "Hire" verdict, or a headline score that outruns them — no matter that
+ * the scorer (here standing in for any of the three paths) handed out 95s. */
+function negReport(over: Partial<SessionReport> = {}): SessionReport {
+  const base = {
+    version: "mvp-6",
+    overallScore: 79,
+    scoreConfidence: 0.8,
+    band: "hire",
+    verdict: "Named a number and cited market data, then accepted the opening.",
+    wins: [],
+    fixes: [],
+    redFlags: [],
+    coreMetrics: { fillerPerMin: 2, silenceRatio: 0.1, paceWpm: 160, energy: 70 },
+    advancedDelivery: {
+      hedgingPerMin: 1, lexicalDiversity: 0.7, firstPersonRatio: 0.5,
+      medianLatencyMs: 1500, selfCorrectionRate: 0.5,
+    },
+    skills: [
+      { name: "Anchoring", score: 95 },
+      { name: "Leverage Use", score: 95 },
+      { name: "Closing Technique", score: 95 },
+      { name: "Package Thinking", score: 95 },
+      { name: "Composure", score: 90 },
+    ],
+    perQuestion: [
+      { idx: 0, question: "We can offer ₹48.3 LPA.", answerText: "Okay, I accept the offer.", score: 80, verdict: "strong", explanation: "", starPresence: { S: true, T: true, A: true, R: true } },
+    ],
+    thoughtBubble: [],
+    calibration: { companyLabel: "Flipkart", note: "", bands: { strongHire: 90, hire: 75, leanHire: 60, noHire: 42 } },
+    crossSessionInsights: [],
+    priorSessionCount: 2,
+    storyReuseFindings: [],
+    blindSpots: [],
+    readiness: null,
+    reverseInterview: null,
+    model: "test",
+  } as unknown as SessionReport;
+  return { ...base, ...over };
+}
+
+function negSession(over: Partial<DashboardSession> = {}): DashboardSession {
+  return {
+    id: "neg1", date: "2026-07-07", dateLabel: "Today", type: "salary-negotiation",
+    role: "Engineering Manager", score: 79, change: 0, duration: "9 min",
+    difficulty: "standard", company: "Flipkart", focus: "salary-negotiation",
+    topStrength: "Anchoring", topWeakness: "Closing", feedback: "",
+    transcript: [], questionScores: [],
+    negotiationMetrics: {
+      outcome: "accepted", anchorTurn: 1, leverDiversity: 1, lpaGained: 0,
+      lpaPerTurn: 0, bandTraversal: 0, overBandViolation: false, totalTurns: 7,
+      score: 79, initialOfferLpa: 48.3, finalOfferLpa: 48.3, candidateAskLpa: 65,
+      offerTrajectoryLpa: [48.3, 48.3], // recruiter never moved
+    },
+    ...over,
+  } as unknown as DashboardSession;
+}
+
+describe("sessionReportToInterviewResult — fold is grounded end-to-end", () => {
+  it("caps skills, score, and verdict for an accepted 0%-gap fold", () => {
+    const ctx = { report: negReport(), session: negSession() } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+
+    // Kernel says gapClosurePct 0 → outcome-dependent skills capped to 45.
+    const score = (n: string) => out.skills.find((s) => s.name === n)!.score;
+    expect(score("Leverage Use")).toBeLessThanOrEqual(45);
+    expect(score("Closing Technique")).toBeLessThanOrEqual(45);
+    expect(score("Anchoring")).toBeLessThanOrEqual(45);
+    expect(score("Package Thinking")).toBeLessThanOrEqual(45);
+    // Demeanour untouched.
+    expect(score("Composure")).toBe(90);
+    // Headline reconciled: score down, verdict no longer "Hire".
+    expect(out.overallScore).toBeLessThanOrEqual(60);
+    expect(out.verdict).not.toBe("hire");
+    expect(out.verdict).not.toBe("strongHire");
+    // The report's own outcome agrees with the cap it drove.
+    expect(out.negotiationOutcome?.outcome).toBe("accepted");
+    expect(out.negotiationOutcome?.gapClosurePct).toBe(0);
+  });
+
+  it("leaves a legacy row without kernel metrics untouched (opt-out)", () => {
+    // No negotiationMetrics → outcome is heuristic → grounding must not fire.
+    const ctx = {
+      report: negReport(),
+      session: negSession({ negotiationMetrics: undefined }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    expect(out.skills.find((s) => s.name === "Leverage Use")!.score).toBe(95);
+    expect(out.overallScore).toBe(79);
+    expect(out.verdict).toBe("hire");
   });
 });
