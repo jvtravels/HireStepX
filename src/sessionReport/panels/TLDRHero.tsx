@@ -104,19 +104,32 @@ export function TLDRHero({
    * prior copy printed "one short of the close" on a closed-but-incomplete run,
    * contradicting the stage tracker showing the close stage REACHED. */
   const dealClosed = outcome.outcome === "accepted";
+  const walkedAway = outcome.outcome === "walked_away";
   const skipped = TOTAL_PHASES - phaseCount;
   stats.push({
     label: "How far you got",
     value: `${phaseCount} of ${TOTAL_PHASES} stages`,
+    /* PRI-63 (2026-07-06, live staging) — stage 5 (the close) is reached
+     * on EITHER accept OR walk-away (same source derivePhases uses), so a
+     * walk-away that traversed all five stages hit phaseCount === TOTAL and
+     * printed "you closed the deal — every stage reached" while the outcome
+     * record two lines up said "You walked away" (observed verbatim on a
+     * live Razorpay walk-away). Gate every "closed the deal" phrasing on the
+     * actual outcome; reaching the close STAGE is not closing the DEAL. */
     hint:
-      phaseCount === TOTAL_PHASES ? "you closed the deal — every stage reached" :
-      dealClosed ? `you closed the deal, but skipped ${skipped} stage${skipped === 1 ? "" : "s"} along the way` :
-      outcome.outcome === "walked_away" ? "you walked away. Part 2 has the next-round play" :
-      phaseCount >= 4 ? "one short of the close" :
-      phaseCount >= 2 ? "made it past the counter" :
-      phaseCount === 1 ? "you named a counter. Part 2 below shows the next move" :
-      "you didn't push past the first offer. Part 2 has the email draft",
-    tone: dealClosed || phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
+      dealClosed
+        ? phaseCount === TOTAL_PHASES
+          ? "you closed the deal — every stage reached"
+          : `you closed the deal, but skipped ${skipped} stage${skipped === 1 ? "" : "s"} along the way`
+        : walkedAway
+          ? phaseCount === TOTAL_PHASES
+            ? "you reached every stage, then walked away. Part 2 has the next-round play"
+            : "you walked away. Part 2 has the next-round play"
+          : phaseCount >= 4 ? "one short of the close" :
+            phaseCount >= 2 ? "made it past the counter" :
+            phaseCount === 1 ? "you named a counter. Part 2 below shows the next move" :
+            "you didn't push past the first offer. Part 2 has the email draft",
+    tone: dealClosed ? "good" : walkedAway ? "warn" : phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
   });
   if (delta !== null && opening !== null) {
     const askedFor = outcome.candidateAsk;

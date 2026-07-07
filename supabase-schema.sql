@@ -285,6 +285,9 @@ alter table payment_dedup enable row level security;
 create index if not exists idx_profiles_tier_end on profiles(subscription_tier, subscription_end);
 create index if not exists idx_sessions_user_created on sessions(user_id, created_at);
 create index if not exists idx_sessions_user_date on sessions(user_id, date);
+-- Serves the per-user, per-type ordered query in fetchSkillProgressTrends
+-- (user_id = $1 AND type = $2 ORDER BY created_at DESC). See migration 0007.
+create index if not exists idx_sessions_user_type_created on sessions(user_id, type, created_at desc);
 create index if not exists idx_payments_razorpay_id on payments(razorpay_payment_id);
 create index if not exists idx_calendar_events_user on calendar_events(user_id, date);
 create index if not exists idx_calendar_events_user_start on calendar_events(user_id, start_utc);

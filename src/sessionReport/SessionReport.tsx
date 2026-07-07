@@ -920,9 +920,24 @@ export const SessionReport = memo(function SessionReport({
      capture helper never throws. */
   useEffect(() => {
     if (!viewData || !viewData.negotiationOutcome) return;
+    const derivation = negotiationOutcomeDerivation(session.negotiationMetrics);
+    const { outcome, gapClosurePct } = viewData.negotiationOutcome;
+    /* Grounding trigger canary: report-layer coherence (PRI-66) only fires on
+       a kernel-authoritative accepted close whose gap closure is below the
+       "strong" bar (<55%). Emitting the raw ingredients here — rather than a
+       fired flag threaded up from the adapter — lets us measure from real
+       sessions how often an accepted deal is a weak-fold that had to be
+       reconciled down, across all three scoring paths, without new coupling. */
+    const groundingEligible =
+      derivation === "kernel" &&
+      outcome === "accepted" &&
+      gapClosurePct != null &&
+      gapClosurePct < 55;
     captureClientEvent("neg_report_derivation", {
-      derivation: negotiationOutcomeDerivation(session.negotiationMetrics),
-      outcome: viewData.negotiationOutcome.outcome,
+      derivation,
+      outcome,
+      gapClosurePct: gapClosurePct ?? null,
+      groundingEligible,
     });
   }, [viewData, session.negotiationMetrics]);
 

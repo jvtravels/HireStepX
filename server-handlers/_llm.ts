@@ -1,5 +1,7 @@
 /* Unified LLM caller — tries Groq first, falls back to Gemini on failure */
 
+import { captureServerEvent } from "./_posthog";
+
 declare const process: { env: Record<string, string | undefined> };
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
@@ -24,12 +26,55 @@ if (!USAGE_LOGGING_ENABLED) {
  * fire-and-forget writes never reach Supabase. (This was why llm_usage stayed
  * empty despite LLM calls succeeding.)
  */
+/** Map a model id OR a bare provider name to the provider label. Success rows
+ *  carry the real model id ("llama-3.3-70b-versatile", "gemini-2.5-flash",
+ *  "cerebras-llama-3.3-70b"); error rows carry the provider name directly. */
+function providerFromModel(model: string): string {
+  const m = model.toLowerCase();
+  if (m.includes("cerebras")) return "cerebras";
+  if (m.includes("gemini")) return "gemini";
+  if (m.includes("groq") || m.includes("llama")) return "groq";
+  return m;
+}
+
+/**
+ * Emit PostHog's native `$ai_generation` event so the LLM analytics dashboard
+ * (per-model cost, latency, error rate, fallback share) is populated. Mirrors
+ * the same data written to `llm_usage` but on PostHog's standard schema. Fires
+ * regardless of whether Supabase usage-logging is configured. Awaited by
+ * logUsage (which callers await) so the edge isolate stays alive until the
+ * event ships — same fire-and-forget hazard documented on logUsage.
+ */
+async function emitAiGeneration(entry: {
+  userId?: string; endpoint?: string; model: string; isFallback: boolean;
+  promptTokens: number; completionTokens: number; totalTokens: number;
+  latencyMs: number; status: "success" | "error" | "timeout"; errorMessage?: string;
+  sessionId?: string;
+}): Promise<void> {
+  const distinctId = entry.userId || "anonymous";
+  await captureServerEvent("$ai_generation", distinctId, {
+    $ai_trace_id: entry.sessionId || distinctId,
+    $ai_model: entry.model,
+    $ai_provider: providerFromModel(entry.model),
+    $ai_input_tokens: entry.promptTokens,
+    $ai_output_tokens: entry.completionTokens,
+    $ai_total_tokens: entry.totalTokens,
+    $ai_latency: entry.latencyMs / 1000,
+    $ai_is_error: entry.status !== "success",
+    $ai_span_name: entry.endpoint || "unknown",
+    is_fallback: entry.isFallback,
+    status: entry.status,
+    error_message: entry.errorMessage?.slice(0, 200) || null,
+  });
+}
+
 async function logUsage(entry: {
   userId?: string; endpoint?: string; model: string; isFallback: boolean;
   promptTokens: number; completionTokens: number; totalTokens: number;
   latencyMs: number; status: "success" | "error" | "timeout"; errorMessage?: string;
   sessionId?: string;
 }): Promise<void> {
+  await emitAiGeneration(entry);
   if (!USAGE_LOGGING_ENABLED) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/llm_usage`, {

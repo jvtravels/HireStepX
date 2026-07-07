@@ -163,6 +163,12 @@ export async function runEvaluationFlow(input: EvaluationFlowInput): Promise<Eva
     difficulty: input.difficulty,
     elapsed: input.elapsed,
     interviewType: input.interviewType,
+    /* Outcome grounding so the heuristic scorer reflects what the
+       negotiation achieved, not just the words used. Same signals the
+       LLM path already receives via negotiationContext above. */
+    negotiationInitialOffer: input.negotiationBand?.initialOffer ?? null,
+    negotiationHighestOffer: input.highestOfferMade && input.highestOfferMade > 0 ? input.highestOfferMade : null,
+    negotiationTargetSalary: input.targetSalary ?? null,
   });
 
   const out: EvaluationOutcome = {

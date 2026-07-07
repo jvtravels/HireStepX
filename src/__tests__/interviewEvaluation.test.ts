@@ -109,6 +109,116 @@ describe("computeFallbackScores", () => {
   });
 });
 
+describe("computeFallbackScores — salary-negotiation outcome grounding", () => {
+  /* Launch blocker (staging session 91f8fdb3): a candidate who named a
+     number, cited market data, flagged a competing offer, then FOLDED —
+     accepting ₹48.3 against a ₹65 ask while the recruiter never moved —
+     scored 95 on Leverage Use / Closing / Anchoring and 79 "Hire". Word
+     signals were rewarded; the actual (zero-gap-closure) outcome ignored.
+     These tests pin the fix: when the candidate accepts a weak result,
+     the outcome-dependent skills are capped to what was achieved. */
+
+  const strongWordsButFold = makeTranscript([
+    "Based on Glassdoor and levels.fyi market data, comparable roles sit at 65 LPA, so my target for this role is 65 LPA.",
+    "I also have a competing offer of 60 LPA in hand from another company.",
+    "Okay, that works for me — I accept the offer.",
+  ]);
+
+  it("caps outcome-dependent skills when the candidate folds below their ask", () => {
+    const r = computeFallbackScores({
+      transcript: strongWordsButFold,
+      currentStep: 5, scriptLength: 5, difficulty: "standard", elapsed: 300,
+      interviewType: "salary-negotiation",
+      negotiationTargetSalary: 65,     // asked for 65
+      negotiationHighestOffer: 48.3,   // settled 26% below
+      negotiationInitialOffer: 48.3,   // recruiter never moved
+    });
+    // >20% short → ceiling 45; the strong words must NOT rescue the score.
+    expect(r.skillScores.leverageUse).toBeLessThanOrEqual(45);
+    expect(r.skillScores.closingTechnique).toBeLessThanOrEqual(45);
+    expect(r.skillScores.anchoring).toBeLessThanOrEqual(45);
+    expect(r.skillScores.concessionStrategy).toBeLessThanOrEqual(45);
+    expect(r.skillScores.packageThinking).toBeLessThanOrEqual(45);
+    // Overall can't headline as "Hire" on a cave.
+    expect(r.score).toBeLessThanOrEqual(60);
+    // Demeanour is unaffected — a calm, polite fold is still calm and polite.
+    expect(r.skillScores.composure).toBeGreaterThan(45);
+    expect(r.skillScores.professionalTone).toBeGreaterThan(45);
+  });
+
+  it("does NOT cap when the candidate closes at or above their ask", () => {
+    const r = computeFallbackScores({
+      transcript: strongWordsButFold, // same words…
+      currentStep: 5, scriptLength: 5, difficulty: "standard", elapsed: 300,
+      interviewType: "salary-negotiation",
+      negotiationTargetSalary: 65,
+      negotiationHighestOffer: 66,    // …but they actually got 66 (≥ ask)
+      negotiationInitialOffer: 48.3,  // recruiter moved a lot
+    });
+    expect(r.skillScores.leverageUse).toBeGreaterThan(60);
+    expect(r.skillScores.closingTechnique).toBeGreaterThan(60);
+    expect(r.score).toBeGreaterThan(70);
+  });
+
+  it("applies a mediocre ceiling for a 10–20% shortfall", () => {
+    const r = computeFallbackScores({
+      transcript: strongWordsButFold,
+      currentStep: 5, scriptLength: 5, difficulty: "standard", elapsed: 300,
+      interviewType: "salary-negotiation",
+      negotiationTargetSalary: 65,
+      negotiationHighestOffer: 55.25, // 15% below ask
+      negotiationInitialOffer: 50,    // recruiter moved 5 → not a total stall
+    });
+    expect(r.skillScores.leverageUse).toBeLessThanOrEqual(60);
+    expect(r.skillScores.leverageUse).toBeGreaterThan(45);
+  });
+
+  it("caps on a recruiter-never-moved fold even with no target known", () => {
+    const r = computeFallbackScores({
+      transcript: strongWordsButFold,
+      currentStep: 5, scriptLength: 5, difficulty: "standard", elapsed: 300,
+      interviewType: "salary-negotiation",
+      negotiationTargetSalary: null,  // never stated a number we captured
+      negotiationHighestOffer: 50,
+      negotiationInitialOffer: 50,    // flat trajectory → fold
+    });
+    expect(r.skillScores.leverageUse).toBeLessThanOrEqual(50);
+    expect(r.skillScores.closingTechnique).toBeLessThanOrEqual(50);
+  });
+
+  it("is opt-in: without outcome params, legacy behaviour is unchanged", () => {
+    const withParams = computeFallbackScores({
+      transcript: strongWordsButFold,
+      currentStep: 5, scriptLength: 5, difficulty: "standard", elapsed: 300,
+      interviewType: "salary-negotiation",
+      negotiationTargetSalary: 65, negotiationHighestOffer: 48.3, negotiationInitialOffer: 48.3,
+    });
+    const withoutParams = computeFallbackScores({
+      transcript: strongWordsButFold,
+      currentStep: 5, scriptLength: 5, difficulty: "standard", elapsed: 300,
+      interviewType: "salary-negotiation",
+    });
+    // No outcome signal → no cap → the old word-driven high score survives.
+    expect(withoutParams.skillScores.leverageUse).toBeGreaterThan(75);
+    expect(withoutParams.skillScores.leverageUse).toBeGreaterThan(withParams.skillScores.leverageUse);
+  });
+
+  it("does not cap a walk-away (candidate never accepted)", () => {
+    const walkAway = makeTranscript([
+      "Based on market data my target is 65 LPA.",
+      "That offer is too far below market. I'll have to decline and pursue my other options.",
+    ]);
+    const r = computeFallbackScores({
+      transcript: walkAway,
+      currentStep: 5, scriptLength: 5, difficulty: "standard", elapsed: 300,
+      interviewType: "salary-negotiation",
+      negotiationTargetSalary: 65, negotiationHighestOffer: 48.3, negotiationInitialOffer: 48.3,
+    });
+    // Declining a lowball is not a fold — outcome caps must not fire.
+    expect(r.skillScores.leverageUse).toBeGreaterThan(60);
+  });
+});
+
 describe("processLLMEvaluation", () => {
   it("extracts score and clamps to [0, 100]", () => {
     const r = processLLMEvaluation({ overallScore: 150, feedback: "Great" }, 70);

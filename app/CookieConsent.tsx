@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { captureClientEvent } from "../src/posthogClient";
 
 const CONSENT_KEY = "hirestepx_cookie_consent";
 
@@ -27,12 +28,19 @@ export default function CookieConsent() {
     const existing = getCookieConsent();
     if (existing) return;
     // Delay slightly so first paint isn't blocked by the banner
-    const t = setTimeout(() => setVisible(true), 400);
+    const t = setTimeout(() => {
+      setVisible(true);
+      // Top of the consent-rate funnel — captured on the cookieless
+      // (memory-mode) instance so acceptance rate is measurable even for
+      // visitors who ultimately decline.
+      captureClientEvent("cookie_consent_shown");
+    }, 400);
     return () => clearTimeout(t);
   }, []);
 
   const setConsent = (accepted: boolean) => {
     try { localStorage.setItem(CONSENT_KEY, accepted ? "accepted" : "rejected"); } catch { /* noop */ }
+    captureClientEvent(accepted ? "cookie_consent_accepted" : "cookie_consent_rejected");
     broadcast(accepted);
     setVisible(false);
   };

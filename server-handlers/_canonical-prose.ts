@@ -566,13 +566,21 @@ export function closeAcceptProse(
  *
  *  Banned: "I understand how you feel", "I hear that this must be
  *  difficult", "let's circle back" — all US-recruiter / coach-speak. */
+/* PRI-62 (2026-07-06) — the "frustrated" acknowledgement is split into a
+ * bare head and a "straight with you" hedge tail so the composition site
+ * can drop the tail (single source of truth) when the action body already
+ * carries its own "straight with you" hedge, avoiding a doubled cushion.
+ * Concatenated they are byte-identical to the prior literal. */
+export const FRUSTRATED_ACK_HEAD = "I hear you —";
+const FRUSTRATED_ACK_HEDGE = " and I want to be straight with you here.";
+
 export function renderSentimentPrefix(
   sentiment: import("./_negotiation-kernel").TurnDelta["candidateSentiment"] | undefined | null,
 ): string | null {
   if (sentiment == null) return null;
   switch (sentiment) {
     case "frustrated":
-      return "I hear you — and I want to be straight with you here.";
+      return FRUSTRATED_ACK_HEAD + FRUSTRATED_ACK_HEDGE;
     case "excited":
       return "Glad we're in the same range —";
     case "hesitant":
@@ -2021,7 +2029,25 @@ export function renderCanonicalProse(
     const pfx = timeContextPrefix(tCtx, prefixedBody);
     if (pfx) prefixedBody = `${pfx}${prefixedBody}`;
   }
-  const finalProse = sentimentPrefix ? `${sentimentPrefix} ${prefixedBody}` : prefixedBody;
+  /* PRI-62 (2026-07-06, live staging) — doubled-hedge dedup. The
+   * "frustrated" sentiment prefix ("I hear you — and I want to be straight
+   * with you here.") and the above-band scopeReconcileAck body ("On closing
+   * at ₹58L fixed — to be straight with you, …") each carry an independent
+   * "straight with you" hedge; concatenated they ship "…I want to be
+   * straight with you here. On closing at ₹58L fixed — to be straight with
+   * you, …" (observed verbatim on a Razorpay senior close). When the body
+   * already hedges "straight with you", drop the prefix's hedge tail so it
+   * fires once — in the body, where the figure lives. Same defect class as
+   * the 2026-06-20 excited/same-range suppression above. */
+  let composedPrefix = sentimentPrefix;
+  if (
+    composedPrefix != null &&
+    /straight with you/i.test(composedPrefix) &&
+    /straight with you/i.test(prefixedBody)
+  ) {
+    composedPrefix = FRUSTRATED_ACK_HEAD;
+  }
+  const finalProse = composedPrefix ? `${composedPrefix} ${prefixedBody}` : prefixedBody;
   /* Adversarial-sweep fix (2026-06-19) — escalate, don't repeat. When the
    * line we're about to ship normalizes equal to the prior AI line AND an
    * offer genuinely stands, the candidate is stonewalling and the planner
