@@ -1014,6 +1014,28 @@ function isComponentBonusScopedSpan(text: string, span: SalarySpan): boolean {
   return COMPONENT_BONUS_RIGHT_ANCHORED.test(rightWindow);
 }
 
+/* Relative-increase scope (§9d / PRI-69b, 2026-07-08). A number whose
+ * IMMEDIATE right context is an increase marker — "2L more", "2 higher",
+ * "3 lakh extra", "5 on top" — is a RELATIVE delta the candidate wants
+ * ADDED to the standing offer, NOT an absolute target/counter. Binding it as
+ * an absolute total ("2L more" → target ₹2L) let totalScopedCounter read the
+ * ₹2L delta as a ₹2L TOTAL counter ≤ offer, and the planner's
+ * auto-accept-counter gate false-accepted at the un-bumped offer — bypassing
+ * the acceptance classifier's DEMAND_FOR_MORE veto entirely. The kernel has
+ * no anchor in this pure classifier to resolve the delta, so the correct
+ * minimum is to bind it to NO role; the utterance then routes through the
+ * DEMAND_FOR_MORE veto to a counter. Right-anchored + tight so a non-adjacent
+ * "more" is untouched: "I want 50, a bit more than the 45" still binds 50
+ * (the "more" is not adjacent to 50), and "50 or higher" still binds 50 (the
+ * "or" breaks adjacency). The unit is optional because span.end already
+ * absorbs it for LPA spans but not for bare-integer spans ("2 more"). */
+const RELATIVE_INCREASE_RIGHT_ANCHORED =
+  /^\s*(?:lpa|lakhs?|lacs?|lac|l|k|cr|crores?)?\s*(?:more|higher|extra|additional|on\s+top)\b/i;
+function isRelativeIncreaseSpan(text: string, span: SalarySpan): boolean {
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 14));
+  return RELATIVE_INCREASE_RIGHT_ANCHORED.test(rightWindow);
+}
+
 /* ─── Aggregator ───────────────────────────────────────────────────── */
 
 /** Main entry point. Returns the role-bound numbers for the utterance.
@@ -1081,6 +1103,10 @@ export function classifyNumberRoles(
      * below 28") with no role cue binds to NO role — it's captured as
      * candidateFloor by the kernel, distinct from current AND target. */
     if (cueMax === 0 && isFloorScopedSpan(text, span)) continue;
+    /* §9d/PRI-69b: a number trailed by an increase marker ("2L more") is a
+     * RELATIVE delta, not an absolute target/counter — bind to no role so it
+     * can't false-accept via the auto-accept-counter gate. */
+    if (isRelativeIncreaseSpan(text, span)) continue;
     /* Equity keyword directly preceding the number overrides even a scored
      * current cue ("I get stock worth 5 LPA"). */
     if (isEquityLeftAdjacentSpan(text, span)) continue;

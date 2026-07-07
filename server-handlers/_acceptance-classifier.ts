@@ -694,9 +694,22 @@ const CONSULT_DEFERRAL_PATTERN =
 const DEMAND_FOR_MORE_PATTERN =
   /\b(?:(?:give|gimme|get|hand|throw|toss)\s+me|i(?:'?d)?\s+(?:want|need|expect|like)|i'?m\s+(?:after|looking\s+for))\b[^.!?]{0,20}?\d+(?:\.\d+)?\s*(?:%|percent|l|lpa|lakhs?|lac|k)?\s*(?:more|higher|extra|additional|on\s+top)\b(?!\s+than)/i;
 
+/** PRI-69b (2026-07-08) — companion to DEMAND_FOR_MORE for the BARE relative
+ *  demand welded to a close idiom by a non-contrastive conjunction, WITHOUT the
+ *  first-person demand verb: "Just 2 higher and it's a deal", "3% more then
+ *  we're done". A magnitude + increase token ("2 higher", "3% more") ABUTS an
+ *  and/then/& continuation carrying the close idiom. Mirrors CONDITIONAL_DEMAND
+ *  (which owns the absolute "make it TO N and…" form) for the relative case;
+ *  DEMAND_FOR_MORE covers only the "give me / I want N more" first-person form.
+ *  `(?!\s+than)` spares gratitude ("3% more than I expected, and I'm thrilled").
+ *  Shared single-source so BOTH gates reject in lockstep. */
+const RELATIVE_DEMAND_THEN_CLOSE_PATTERN =
+  /\b\d+(?:\.\d+)?\s*(?:%|percent|lpa|lakhs?|lac|l|k)?\s*(?:more|higher|extra|additional|on\s+top)(?!\s+than)\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
+
 /** All PRI-59/61/63/69 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   DEMAND_FOR_MORE_PATTERN,
+  RELATIVE_DEMAND_THEN_CLOSE_PATTERN,
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
