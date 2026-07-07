@@ -1201,6 +1201,85 @@ function acceptanceUtteranceFigure(state: NegotiationState): number | null {
   return null;
 }
 
+/** PRI-68 (2026-07-07, offline hostile sweep) — the implied TOTAL a candidate
+ *  has conditioned acceptance on when they ask for MORE cash on the standing
+ *  offer ("I'll accept if you bump the fixed by another 2L"), or null.
+ *
+ *  This is the missing single source for a relative cash-increase target. The
+ *  acceptance classifier flags such an utterance `conditionalAcceptance=true`
+ *  (Path 1: an `if` clause + a commitment idiom) but records only a text
+ *  snippet — never the magnitude — so the near-offer close gate, lacking a
+ *  resolved figure, used to close at the UN-bumped offer, silently dropping
+ *  the candidate's condition (a PRI-63-class soft false-close). This resolves
+ *  the figure so the gate can meet-and-close a deliverable bump or DECLINE an
+ *  undeliverable one.
+ *
+ *  Two shapes, both returning the implied TOTAL (bumping the fixed by δ raises
+ *  the total by δ, so impliedTotal = offer + δ regardless of which cash
+ *  component is named):
+ *    • delta   — "by 2L" / "another 2L" / "2L more"      → offer + δ
+ *    • absolute — "to 54(L)" welded to an increase verb   → 54
+ *
+ *  Sweetener-scoped conditions (joining/signing/relocation/esop/equity/stock
+ *  bonus) are DELIBERATELY excluded — returning null — because the near-offer
+ *  gate's PRI-63 path already grants those and closes; stealing them here would
+ *  regress that behaviour. A pure non-cash condition ("once you confirm the
+ *  band") or a bare accept ("done") carries no magnitude and returns null too,
+ *  so the gate closes at the offer as before. Pure. */
+function resolveConditionalCashTarget(
+  state: NegotiationState,
+  offer: number,
+): number | null {
+  if (!Number.isFinite(offer) || offer <= 0) return null;
+  const log = state.conversationLog ?? [];
+  let text = "";
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (e && e.speaker === "candidate") {
+      text = e.text || "";
+      break;
+    }
+  }
+  if (!text) return null;
+  const t = ` ${text.toLowerCase()} `;
+  /* Sweetener grants are owned by the PRI-63 close-with-joining-bonus path. */
+  if (
+    /\b(joining|signing|sign[-\s]?on|retention|relocation|reloc|esops?|rsus?|equity|stock|bonus)\b/.test(
+      t,
+    )
+  )
+    return null;
+  const num = String.raw`(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?|lac)?`;
+  /* Delta cues carry increase intent on their own ("another 2L", "2L more"). */
+  const another = new RegExp(String.raw`\banother\s+${num}`).exec(t);
+  const more = new RegExp(
+    String.raw`\b${num}\s+(?:more|extra|additional)\b`,
+  ).exec(t);
+  const INCREASE_VERB =
+    /\b(bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack|bump\s+up|move\s+up)\b/;
+  const hasIncreaseVerb = INCREASE_VERB.test(t);
+  /* "by N" / "to N" only count as an increase when welded to an increase verb,
+   * so "close by Friday" / "get back to you" never register as a cash bump. */
+  const by = hasIncreaseVerb
+    ? new RegExp(String.raw`\bby\s+${num}`).exec(t)
+    : null;
+  const to = hasIncreaseVerb
+    ? new RegExp(String.raw`\bto\s+(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?|lac)\b`).exec(
+        t,
+      )
+    : null;
+  const deltaMatch = another ?? more ?? by;
+  if (deltaMatch) {
+    const d = parseFloat(deltaMatch[1]);
+    if (Number.isFinite(d) && d > 0 && d <= 50) return offer + d;
+  }
+  if (to) {
+    const v = parseFloat(to[1]);
+    if (Number.isFinite(v) && v > 0 && v <= 200) return v;
+  }
+  return null;
+}
+
 /** #105 — the FIXED figure the candidate has pinned a (conditional) close to,
  *  or null. Two shapes occur in the wild:
  *    1. a FIXED-scoped counter — `lastCounterComponent === "fixed"` carries
@@ -3033,8 +3112,27 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
        * counter to haggle — capped at the band ceiling, never below the offer.
        * A bare "done"/"ok" with no figure returns null → close at the offer. */
       const agreed = acceptanceUtteranceFigure(state);
-      closeAt =
-        agreed != null && agreed > offer && agreed <= ceil ? agreed : offer;
+      if (agreed != null && agreed > offer && agreed <= ceil) {
+        closeAt = agreed;
+      } else {
+        /* PRI-68 (2026-07-07) — a conditional accept that demands MORE cash on
+         * the standing offer ("I'll accept if you bump the fixed by another
+         * 2L") resolves to an implied total. Meet it only when deliverable —
+         * at/under the ceiling AND within the instant-close gap; otherwise
+         * DECLINE (null → fall through to hold/counter) rather than closing at
+         * the un-bumped offer and silently dropping the candidate's condition.
+         * A target already at/under the offer is effectively an accept (close
+         * at offer); a pure non-cash condition or bare accept resolves to null
+         * here and closes at the offer, unchanged. */
+        const bumpTarget = resolveConditionalCashTarget(state, offer);
+        if (bumpTarget == null || bumpTarget <= offer) {
+          closeAt = offer;
+        } else if (bumpTarget <= ceil && bumpTarget - offer <= gap) {
+          closeAt = bumpTarget;
+        } else {
+          closeAt = null;
+        }
+      }
     }
     if (closeAt != null) {
       /* PRI-63 (2026-06-25, real prod salary-negotiation audit, session
