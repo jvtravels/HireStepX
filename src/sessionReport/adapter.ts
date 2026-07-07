@@ -11,6 +11,7 @@
 
 import type {
   SessionReport,
+  SessionReportBand,
   SessionReportPerQuestion,
   SessionReportRedFlag,
   SessionReportCrossSessionInsight,
@@ -344,17 +345,40 @@ export function sessionReportToInterviewResult(
     /hr.?round|\bhr\b/i.test(session.focus || "");
 
   const scoreDelta = computeScoreDelta(ctx.recentScores);
-  const weakestSkill = pickWeakestSkill(report.skills);
+
+  // Authoritative negotiation outcome (kernel metrics when present), computed
+  // before the skills so the report layer can reconcile skills/score/band
+  // against it — see groundNegotiationReport. Undefined for non-negotiation
+  // sessions, where the grounding below is a pass-through no-op.
+  const negotiationOutcome = isNegotiation
+    ? attachPowerContext(
+        attachLowballEvent(
+          buildNegotiationOutcome(report, session.negotiationMetrics),
+          session.negotiationMetrics?.lowballEvent,
+        ),
+        session.negotiationMetrics?.powerContext,
+      )
+    : undefined;
+  const grounded = isNegotiation
+    ? groundNegotiationReport(
+        report.skills,
+        report.overallScore,
+        report.band,
+        negotiationOutcome,
+        report.calibration?.bands,
+      )
+    : { skills: report.skills, overallScore: report.overallScore, band: report.band };
+  const weakestSkill = pickWeakestSkill(grounded.skills);
 
   return {
-    overallScore: report.overallScore,
-    verdict: report.band as Verdict,
+    overallScore: grounded.overallScore,
+    verdict: grounded.band as Verdict,
     scoreDelta,
     percentile: ctx.percentile,
     recentScores: ctx.recentScores,
     readiness: report.readiness
       ? {
-          pct: clamp(report.overallScore, 0, 100),
+          pct: clamp(grounded.overallScore, 0, 100),
           etaWeeks: estimateWeeks(report.readiness.estimatedHours),
         }
       : undefined,
@@ -367,7 +391,7 @@ export function sessionReportToInterviewResult(
     strengths: report.wins.map((w) => w.text),
     improvements: report.fixes.map((f) => f.text),
     metrics: isNegotiation ? buildNegotiationMetrics(report) : buildMetrics(report),
-    skills: buildSkills(report.skills),
+    skills: buildSkills(grounded.skills),
     weakestSkill: {
       name: weakestSkill?.name || "—",
       tip:
@@ -421,19 +445,74 @@ export function sessionReportToInterviewResult(
     resumeImprovements: Array.isArray(ctx.resumeImprovements) && ctx.resumeImprovements.length > 0
       ? ctx.resumeImprovements.slice(0, 3)
       : undefined,
-    negotiationOutcome: isNegotiation
-      ? attachPowerContext(
-          attachLowballEvent(
-            buildNegotiationOutcome(report, session.negotiationMetrics),
-            session.negotiationMetrics?.lowballEvent,
-          ),
-          session.negotiationMetrics?.powerContext,
-        )
-      : undefined,
+    negotiationOutcome,
     kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
     focusBanner: buildFocusBanner(session, report),
     hrReport: isHrRound ? buildHrReport(report) : undefined,
   };
+}
+
+/* Skill names whose whole point is "did you move the number / extract
+   value" — the outcome-dependent negotiation axes. Demeanour axes
+   (composure, professional tone, communication) are deliberately excluded:
+   a calm, polite fold is still calm and polite. Matched case-insensitively
+   against the display names every scoring path emits ("Leverage Use",
+   "Closing Technique", "Anchoring", "Concession Strategy", "Package
+   Thinking", "Deal Structuring", "Counter-Offer Handling"). */
+const NEG_OUTCOME_SKILL_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter/i;
+
+/** Report-layer coherence guarantee for salary-negotiation.
+ *
+ *  Three independent code paths can score a negotiation: the LLM evaluator
+ *  (evaluate-session), the server deterministic fallback
+ *  (buildDeterministicNegotiationReport), and the client heuristic
+ *  (computeFallbackScores). Only the last grounds its own scores in the
+ *  outcome (PRI-66). This adapter is the ONE place where the kernel's
+ *  authoritative gap-closure AND the finished skill scores are both in
+ *  hand — so it's where we enforce the invariant that NO path may render
+ *  "accepted, ~0% of the gap closed" beside a 95 Leverage bar.
+ *
+ *  We only ever LOWER, and only when the kernel says the candidate ACCEPTED
+ *  while closing little of a real ask-vs-offer gap. A strong close, a
+ *  walk-away, or a legacy row with no authoritative gap is left exactly as
+ *  the scorer produced it. The overall score and Hire/No band move down in
+ *  lockstep so we never trade a skill contradiction for a headline one. */
+export function groundNegotiationReport(
+  skills: Array<{ name: string; score: number; weight?: number }>,
+  overallScore: number,
+  band: SessionReportBand,
+  outcome: InterviewResultData["negotiationOutcome"],
+  calibrationBands?: { strongHire: number; hire: number; leanHire: number; noHire: number },
+): { skills: Array<{ name: string; score: number; weight?: number }>; overallScore: number; band: SessionReportBand } {
+  const unchanged = { skills, overallScore, band };
+  if (!outcome || outcome.outcome !== "accepted") return unchanged;
+  const gap = outcome.gapClosurePct;
+  if (gap == null) return unchanged; // no authoritative gap → don't second-guess the scorer
+
+  let ceiling: number | null = null;
+  if (gap < 10) ceiling = 45;       // accepted, closed ~nothing → clear cave
+  else if (gap < 30) ceiling = 60;  // token movement → mediocre close
+  else if (gap < 55) ceiling = 75;  // closed under half the gap → decent, not strong
+  // gap ≥ 55 → genuinely closed the gap; leave the scorer's numbers intact.
+  if (ceiling === null) return unchanged;
+
+  const cap = ceiling;
+  const groundedSkills = skills.map((s) =>
+    NEG_OUTCOME_SKILL_RE.test(s.name) ? { ...s, score: Math.min(s.score, cap) } : s,
+  );
+  const groundedScore = Math.min(overallScore, cap + 15);
+  // Recompute the band from the grounded score so the verdict pill can't
+  // outrun the skills it summarizes. Company thresholds when we have them,
+  // else the default profile (companyCalibration DEFAULT_PROFILE). Monotonic:
+  // groundedScore ≤ overallScore, so the band only ever moves down.
+  const b = calibrationBands ?? { strongHire: 85, hire: 70, leanHire: 55, noHire: 40 };
+  const groundedBand: SessionReportBand =
+    groundedScore >= b.strongHire ? "strongHire"
+    : groundedScore >= b.hire ? "hire"
+    : groundedScore >= b.leanHire ? "leanHire"
+    : groundedScore >= b.noHire ? "noHire"
+    : "strongNoHire";
+  return { skills: groundedSkills, overallScore: groundedScore, band: groundedBand };
 }
 
 /** Adopt the negotiation outcome from the kernel's authoritative final
