@@ -470,6 +470,10 @@ export function sessionReportToInterviewResult(
    "Closing Technique", "Anchoring", "Concession Strategy", "Package
    Thinking", "Deal Structuring", "Counter-Offer Handling"). */
 const NEG_OUTCOME_SKILL_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter/i;
+/* PRI-67 — the close-specific axis. Capped on a "no_agreement" outcome, where
+ * the close stage was provably never reached (derivePhases.reachedClose false). */
+const NEG_CLOSING_SKILL_RE = /clos(?:e|ing)/i;
+const NOT_CLOSED_CEILING = 45;
 
 /** Report-layer coherence guarantee for salary-negotiation.
  *
@@ -495,7 +499,27 @@ export function groundNegotiationReport(
   calibrationBands?: { strongHire: number; hire: number; leanHire: number; noHire: number },
 ): { skills: Array<{ name: string; score: number; weight?: number }>; overallScore: number; band: SessionReportBand } {
   const unchanged = { skills, overallScore, band };
-  if (!outcome || outcome.outcome !== "accepted") return unchanged;
+  if (!outcome) return unchanged;
+
+  /* PRI-67 (2026-07-07, live staging) — close-stage ↔ Closing-skill coherence.
+   * A "no_agreement" kernel outcome (stalemate / ran out of turns) never
+   * reached the close stage — derivePhases.reachedClose is false for it — yet
+   * the scorers still handed out Closing Technique 85-90 on 5 of 23 live kernel
+   * sessions, so the report rendered "You reached the close — not reached"
+   * beside a 90 Closing bar. Cap the ONE outcome-gated axis whose stage was
+   * provably not reached. Anchoring / Leverage / Package are left alone (their
+   * stages — counter named, levers explored — are reachable mid-negotiation),
+   * and walk-aways fall through untouched: they DID reach the close, and
+   * PRI-64 says a walk-away's leverage is legitimately high. */
+  if (outcome.outcome === "no_agreement") {
+    const groundedSkills = skills.map((s) =>
+      NEG_CLOSING_SKILL_RE.test(s.name)
+        ? { ...s, score: Math.min(s.score, NOT_CLOSED_CEILING) }
+        : s,
+    );
+    return { skills: groundedSkills, overallScore, band };
+  }
+  if (outcome.outcome !== "accepted") return unchanged; // walk-away → untouched
   const gap = outcome.gapClosurePct;
   if (gap == null) return unchanged; // no authoritative gap → don't second-guess the scorer
 

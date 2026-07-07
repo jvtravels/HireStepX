@@ -115,6 +115,25 @@ describe("groundNegotiationReport — report-layer coherence", () => {
     expect(r.band).toBe("hire");
   });
 
+  it("caps Closing Technique on a no_agreement (close never reached)", () => {
+    // PRI-67: a stalemate / ran-out-of-turns outcome never reached the close
+    // stage (derivePhases.reachedClose false), so an 85+ Closing bar beside
+    // "You reached the close — not reached" is a contradiction. Cap only Closing.
+    const r = groundNegotiationReport(
+      inflatedSkills(), 58, "leanHire",
+      outcome({ outcome: "no_agreement", gapClosurePct: null }), FLIPKART_BANDS,
+    );
+    expect(byName(r.skills, "Closing Technique")).toBeLessThanOrEqual(45);
+    // The other outcome axes are reachable mid-negotiation — left untouched.
+    expect(byName(r.skills, "Leverage Use")).toBe(95);
+    expect(byName(r.skills, "Package Thinking")).toBe(95);
+    expect(byName(r.skills, "Anchoring")).toBe(95);
+    // Demeanour untouched, and the headline is NOT a Hire claim here → leave it.
+    expect(byName(r.skills, "Composure")).toBe(90);
+    expect(r.overallScore).toBe(58);
+    expect(r.band).toBe("leanHire");
+  });
+
   it("is a no-op for a non-negotiation (undefined outcome)", () => {
     const skills = inflatedSkills();
     const r = groundNegotiationReport(skills, 79, "hire", undefined, FLIPKART_BANDS);
