@@ -305,6 +305,18 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
    * cannot "close the deal" before one exists. */
   /\blet.?s\s+close\s+(?:it|this\s+out|the\s+deal|this\s+deal)\b/i,
   /\bclose\s+(?:the|this)\s+deal\b/i,
+  /* Anaphoric close-at (#133, 2026-07-07, offline hostile sweep). "let's close
+   * at that / at this / at it" points the settle-verb at the STANDING offer by
+   * anaphora — an unambiguous accept ("Okay, done. Let's close at that."). The
+   * bare-token "done" below needs the WHOLE utterance, so a "done." welded to a
+   * trailing close-out clause dropped to no-match and the yes was lost (the bot
+   * pivoted to an ESOP ask instead of closing). Pronoun-anchored ONLY: "let's
+   * close at <number>" names a NEW figure and is a COUNTER (owned by
+   * _number-role-classifier's "let's close at 35" / "come up to 36"), so the
+   * numeric form is deliberately excluded here. Still a commitment idiom, so the
+   * offer-on-table phase gate and the NEGATION/HEDGE/CONDITIONAL vetoes all
+   * still apply ("I won't close at that" stays vetoed). */
+  /\blet.?s\s+close\s+at\s+(?:that|this|it)\b/i,
   /\bi.?m\s+happy\s+with\s+(?:that|the\s+offer)\b/i,
   /\bfine\s+with\s+me\b/i,
   /* Session B (2026-05-14) — bare commitment tokens. Each must be the
