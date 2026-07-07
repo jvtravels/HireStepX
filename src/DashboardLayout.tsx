@@ -397,7 +397,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             const planUsed      = Math.min(planUsedRaw, planTotal);
             const planLeft      = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
             const planExhausted = isPro ? proExhausted : isStarter ? starterExhausted : freeExhausted;
-            const periodLabel   = isPro ? "this month" : isStarter ? "this week" : "total";
+            const periodLabel   = isPro ? "this month" : isStarter ? "in this pack" : "total";
             // planName kept for potential future use (e.g. aria labels, tooltips).
             const pct  = Math.min(100, (planUsed / planTotal) * 100);
             const isLow = !planExhausted && (

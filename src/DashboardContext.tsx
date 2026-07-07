@@ -716,9 +716,37 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const isPro = effectiveTier === "pro";
   const sessionsUsed = practiceTimestamps.length;
   const sessionsRemaining = Math.max(0, FREE_SESSION_LIMIT - sessionsUsed);
+  // Starter is a "Sprint Pack": 5 sessions counted from the day the pack was
+  // bought (subscription_start), within a 30-day validity window — NOT a
+  // calendar week. This mirrors the server gate in _shared.ts
+  // checkSessionLimit, which counts sessions since subscription_start. The
+  // previous calendar-week anchor (Sunday 00:00) wrongly swept in free-tier
+  // practice sessions the user did earlier the same week, so a freshly
+  // purchased pack could show "5 of 5 used" before any paid session ran.
+  const THIRTY_ONE_DAYS_MS = 31 * 24 * 60 * 60 * 1000;
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+  const subStartMs = user?.subscriptionStart ? new Date(user.subscriptionStart).getTime() : NaN;
+  // Anchor on subscription_start when present; clamp to at most 31 days back
+  // (matching the server's pack-window guard). If it's missing — e.g. the
+  // cached fast-render path carries subscription_end but not _start — derive
+  // the start from subscription_end (a pack is exactly 30 days), and only as a
+  // last resort fall back to a rolling 30-day lookback. Anything but the
+  // calendar week, so the count can't be inflated by pre-purchase sessions.
+  const subEndMs = user?.subscriptionEnd ? new Date(user.subscriptionEnd).getTime() : NaN;
+  const derivedStartMs = Number.isFinite(subStartMs)
+    ? subStartMs
+    : Number.isFinite(subEndMs)
+      ? subEndMs - THIRTY_DAYS_MS
+      : Date.now() - THIRTY_DAYS_MS;
+  const packStartMs = Math.max(derivedStartMs, Date.now() - THIRTY_ONE_DAYS_MS);
   const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);
+  // For starter, count within the pack window; other tiers keep the calendar
+  // week (used only for informational display, not gating).
   const sessionsThisWeek = practiceTimestamps.filter((t) => {
-    try { return new Date(t).getTime() >= weekStart.getTime(); } catch { return false; }
+    try {
+      const ms = new Date(t).getTime();
+      return ms >= (isStarter ? packStartMs : weekStart.getTime());
+    } catch { return false; }
   }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
   // Pro plan: 40 sessions per calendar month. Track this so the sidebar
