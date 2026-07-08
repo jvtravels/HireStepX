@@ -3884,6 +3884,12 @@ export function parseCandidateAnswer(
    *  role at Flipkart, I'm targeting 65" must not register Flipkart as a
    *  rival). Optional to preserve back-compat for fixture callers. */
   hiringCompany: string | null = null,
+  /** §11 (2026-07-08) — the numeric standing offer (state.highestOfferMade).
+   *  Threaded to classifyAcceptance so an accept frame naming a number at or
+   *  below the offer ("I'll take 40", "happy with 38") is read as acceptance,
+   *  not a self-defeating upward counter. Optional to preserve back-compat for
+   *  fixture callers that don't have state context. */
+  offerLpa: number | null = null,
 ): ParsedAnswer {
   /* STT fragility audit (2026-05-22) — kernel-boundary normalization.
    *
@@ -3933,7 +3939,11 @@ export function parseCandidateAnswer(
    * walk-away signal is still computed locally because the kernel
    * exposes it as an independent ParsedAnswer field, and the legacy
    * extractor needs a paired walk-away check on the same axis. */
-  const acceptanceResult = classifyAcceptance(a, { phase, offerOnTable });
+  const acceptanceResult = classifyAcceptance(a, {
+    phase,
+    offerOnTable,
+    offerLpa: offerLpa != null && offerLpa > 0 ? offerLpa : undefined,
+  });
   const signalsAcceptance = acceptanceResult.accepted;
   const signalsWalkAway = isWalkAway(a);
 
@@ -4537,7 +4547,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      is meant to express — we are past discovery the moment the band is
      communicated. */
   const offerOnTable = isOfferOnTable(state);
-  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null, state.company ?? null);
+  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null, state.company ?? null, state.highestOfferMade ?? null);
   /* Per-month periodicity (2026-06-15, unbiased-review HIGH) is normalized at
    * the SOURCE — _number-role-classifier.ts annualizes each salary span by its
    * own trailing context, so parsed.target / currentCtc / competing already

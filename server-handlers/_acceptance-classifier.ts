@@ -48,6 +48,12 @@ export interface AcceptanceContext {
    *  exists to accept). Pass undefined when unknown — phase gate
    *  is skipped. The kernel passes `state.highestOfferMade > 0`. */
   offerOnTable?: boolean;
+  /** The numeric standing offer (LPA), when known. Enables the
+   *  accept-at-or-below-offer rule (§11): an accept frame naming a
+   *  number no higher than this is an acceptance, not a counter. Pass
+   *  undefined when unknown — the rule is skipped. The kernel passes
+   *  `state.highestOfferMade`. */
+  offerLpa?: number;
 }
 
 export type AcceptanceConfidence = "strong" | "medium" | "none";
@@ -70,6 +76,21 @@ export interface AcceptanceResult {
 }
 
 /* ─── Pattern bank ─────────────────────────────────────────────── */
+
+/** §11 (2026-07-08, offline hostile battery) — an accept/settle frame
+ *  immediately followed by a bare cash number: "I'll take 40", "happy with 38",
+ *  "I'll do 40 lpa", "fine at 40", "let's close at 40". The captured number is
+ *  gated by the CALLER against the standing offer (classifyAcceptance step 2.4):
+ *  a number at or below the offer is an acceptance/concession; a number above it
+ *  is a genuine counter and is left to fall through.
+ *
+ *  Deliberately NARROW to avoid false accepts: the verb must be a commit/settle
+ *  verb, the number must sit right after it, and a trailing time/count/percent
+ *  noun is excluded by lookahead so "I'll take 40 minutes", "I'll do 3 rounds",
+ *  "I'll take 5%" never match. The verb "take it/the offer" (no number) is
+ *  unchanged — it stays with the performative bank. */
+const ACCEPT_FRAME_NUMBER_PATTERN =
+  /\b(?:i(?:'?ll|\s+will|\s+would|\s+can|\s+could)?\s+(?:take|do|go\s+with|accept|settle\s+for)|happy\s+(?:with|at)|fine\s+(?:with|at)|good\s+(?:with|at)|ok(?:ay)?\s+(?:with|at)|settle\s+(?:for|at)|let'?s\s+(?:do|close\s+at|go\s+with|settle\s+at))\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lac|l|k)?(?!\s*(?:%|percent|per\s?cent|minutes?|mins?|hours?|hrs?|days?|weeks?|months?|years?|yrs?|people|folks?|things?|reasons?|questions?|calls?|rounds?|candidates?|offers?))\b/i;
 
 /** Performative acceptance verbs — these alone are strong enough
  *  to count as acceptance regardless of whether an offer reference
@@ -966,6 +987,29 @@ export function classifyAcceptance(
       reasons,
       hasFollowUpQuestion: split.acceptance && split.question,
     };
+  }
+
+  /* Step 2.4 (§11, 2026-07-08, offline hostile battery) — accept-frame naming a
+   * number AT or BELOW the standing offer. "I'll take 40" (restating the offer),
+   * "happy with 38", "I'll do 40" are acceptances/concessions, not counters: a
+   * candidate naming a number no higher than what's on the table has conceded to
+   * (or under) it. The performative bank only matched "take it / the offer", so a
+   * numbered restatement fell through to no-match and the planner defaulted to a
+   * self-defeating UPWARD counter (confirmed via probe: offer ₹40L, "I'll take
+   * 40" → counter ₹43L — the bot raised its OWN offer on a done deal). Runs after
+   * every step-1 veto (walk-away / negation / hard-conditional / false-close),
+   * so "I won't take 40" and "I'll take 40 elsewhere" are already excluded. A
+   * number ABOVE the offer is a genuine counter/target and is left to fall
+   * through untouched. Gated on the numeric offer; skipped when it's unknown. */
+  if (context.offerLpa != null && context.offerLpa > 0) {
+    const m = ACCEPT_FRAME_NUMBER_PATTERN.exec(a);
+    if (m) {
+      const n = parseFloat(m[1]);
+      if (Number.isFinite(n) && n > 0 && n <= context.offerLpa + 1e-9) {
+        reasons.push("accept-at-or-below-offer");
+        return { accepted: true, confidence: "strong", reasons };
+      }
+    }
   }
 
   /* Step 2.5: split-clause acceptance with follow-up question.
