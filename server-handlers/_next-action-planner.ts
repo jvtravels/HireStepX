@@ -1277,6 +1277,31 @@ function resolveConditionalCashTarget(
     const v = parseFloat(to[1]);
     if (Number.isFinite(v) && v > 0 && v <= 200) return v;
   }
+  /* #33 (2026-07-08, live-staging) — word-magnitude cash bumps. A conditional
+   * close whose increase is stated in WORDS, not digits ("push the base up by a
+   * couple of lakhs", "another few lakh"), fell through every numeric branch to
+   * `return null`; the caller then read that null as "no cash condition" and
+   * closed at the UN-BUMPED offer — a soft false-close that silently dropped the
+   * candidate's condition (confirmed live: "couple of lakhs" closed at ₹45.4L,
+   * 0% gap closed, 0% movement). Resolve the common quantifiers to a real delta
+   * so the SAME deliverability gate downstream either honors the demand (in-gap,
+   * in-band → close at the bumped figure) or declines it (undeliverable → fall
+   * through to counter) — never a silent accept at the un-bumped number. Gated
+   * on the same increase intent as the numeric path, and welded to a cash noun
+   * so "a couple of days"/"a few weeks" never register as a bump. */
+  const WORD_MAGNITUDE: Record<string, number> = {
+    couple: 2,
+    few: 3,
+    several: 4,
+  };
+  const cashNoun = String.raw`(?:l|lpa|lakhs?|lac|base|fixed|cash|ctc)`;
+  const wordDelta = new RegExp(
+    String.raw`\b(?:by|another|add|of|up)?\s*a?\s*(couple|few|several)\s+(?:of\s+)?(?:more\s+)?${cashNoun}\b`,
+  ).exec(t);
+  if ((hasIncreaseVerb || another != null || more != null) && wordDelta) {
+    const d = WORD_MAGNITUDE[wordDelta[1]];
+    if (Number.isFinite(d) && d > 0 && d <= 50) return offer + d;
+  }
   return null;
 }
 
