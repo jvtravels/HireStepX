@@ -536,16 +536,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               >Manage Subscription</button>
             </>
           ) : isStarter && !starterExhausted ? (
-            /* Active Starter with sessions remaining — soft upsell, not a loud CTA.
-               User just paid; hammering them with "Upgrade" feels predatory. */
-            <button onClick={() => setShowUpgradeModal(true)}
-              title="See what's included in Pro — 40 sessions/month, STAR coaching, skill tracking"
-              style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: `1px solid ${c.border}`,
-                cursor: "pointer", background: "transparent", color: c.stone,
-                fontFamily: font.ui, fontSize: 12, fontWeight: 500, transition: "color 0.2s, border-color 0.2s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = c.gilt; e.currentTarget.style.borderColor = c.gilt; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; e.currentTarget.style.borderColor = c.border; }}
-            >Explore Pro →</button>
+            /* Active Starter with sessions remaining — no upsell, Pro isn't purchasable */
+            null
           ) : (
             /* Free / Starter exhausted: primary upgrade prompt */
             <button onClick={() => setShowUpgradeModal(true)} title="See what's included in Pro — unlimited sessions, STAR coaching, skill tracking" style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.2s" }}
