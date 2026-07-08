@@ -1422,6 +1422,20 @@ export function detectExplicitAcceptance(text: string | null | undefined): Expli
   for (const p of HEDGE_VETO_PATTERNS) {
     if (p.test(t)) return { accepted: false, confidence: 0 };
   }
+  /* Structured-demand veto — LOCKSTEP with the medium gate (classifyAcceptance).
+   * HEDGE_VETO_PATTERNS above spreads the OLD conjunction-bridge vetoes, which
+   * only span `and|then|&`; a comma / "plus" / "with" / no-joiner defeats all of
+   * them, so a demand-then-close ("make it 50, I'll take it") slipped past the
+   * hedge veto and matched a STRICT_ACCEPTANCE close idiom — a soft FALSE-CLOSE
+   * driving the closing UI + kernel escalation-boost off an unmet demand (worst
+   * failure mode). A differential probe found 407/756 such utterances accepted
+   * here while the medium gate blocked them. analyzeDemand is the single source
+   * of truth for "does this carry an unmet demand", conjunction-independent.
+   * The strict gate has no offer context, so absolute bare demands ("give me 45")
+   * that need the offer to prove they exceed it are NOT flagged here — matching
+   * analyzeDemand's offer-unknown behavior (relative/sweetener/comparative/title
+   * and absolute-TARGET change-requests still fire; they are inherently upward). */
+  if (analyzeDemand(t).unmet) return { accepted: false, confidence: 0 };
   for (const p of STRICT_ACCEPTANCE_PATTERNS) {
     if (p.test(t)) return { accepted: true, confidence: 0.95 };
   }

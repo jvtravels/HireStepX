@@ -15,7 +15,10 @@
  * safe direction exhaustively, and a companion block asserts genuine
  * unconditional accepts still fire (no over-blocking). */
 import { describe, it, expect } from "vitest";
-import { classifyAcceptance } from "../../server-handlers/_acceptance-classifier";
+import {
+  classifyAcceptance,
+  detectExplicitAcceptance,
+} from "../../server-handlers/_acceptance-classifier";
 import { analyzeDemand, carriesUnmetDemand } from "../../server-handlers/_utterance-intent";
 
 const ctx = { offerLpa: 40, offerOnTable: true, phase: "counter" as const };
@@ -132,6 +135,65 @@ describe("intent gate — acquiescence conditionals still accept (no over-block)
     "if that works for you, count me in",
   ]) {
     it(`accepts: "${t}"`, () => expect(accepted(t)).toBe(true));
+  }
+});
+
+/* Lockstep wall (2026-07-09) — the STRICT gate (detectExplicitAcceptance)
+ * drives the closing UI + kernel escalation-boost, so a strict FALSE-ACCEPT on
+ * an unmet demand is a soft FALSE-CLOSE. Its HEDGE_VETO_PATTERNS spread only the
+ * old conjunction-bridge vetoes (and|then|&); a comma/plus/with/no-joiner
+ * defeated them and matched a strict close idiom. A differential probe found
+ * 407/756 demand-then-close utterances accepted by the strict gate while the
+ * medium gate blocked them. The fix wired analyzeDemand (single source of truth)
+ * into detectExplicitAcceptance. This wall asserts the two gates stay in
+ * lockstep: the strict gate must NEVER accept an offer-independent demand welded
+ * to a close idiom, across every joiner. If a future edit desyncs them, red. */
+describe("gate lockstep — strict gate must never accept a demand-then-close", () => {
+  /* Offer-independent demands (relative / sweetener / comparative / title /
+   * absolute-TARGET change) — flagged by analyzeDemand even with no offer, which
+   * is all the strict gate has. Bare "give me N" is excluded: it needs the offer
+   * to prove it exceeds, so the strict gate deliberately cannot flag it. */
+  const OFFER_INDEPENDENT = [
+    "bump the base by 5 lakh",
+    "add 5 lakh to the base",
+    "match my current base",
+    "throw in relocation",
+    "make it a Principal role",
+    "push the base up by a couple percent",
+    "get the fixed to 55",
+    "I want 2 lakh more",
+    "a lakh more",
+    "beat their number",
+    "include equity",
+    "make it 50",
+  ];
+  const STRICT_CLOSERS = [
+    "I'll take it",
+    "I'm in",
+    "let's close it",
+    "you've got a deal",
+    "let's go ahead",
+    "send the offer letter",
+  ];
+  for (const d of OFFER_INDEPENDENT) {
+    for (const j of [", ", " and ", " then ", " plus ", " with ", "; ", ". "]) {
+      for (const c of STRICT_CLOSERS) {
+        const utter = `${d}${j}${c}.`;
+        it(`strict blocks: "${utter}"`, () =>
+          expect(detectExplicitAcceptance(utter).accepted).toBe(false));
+      }
+    }
+  }
+  /* And the strict gate must still fire on clean performatives (no over-block). */
+  for (const t of [
+    "I accept the offer.",
+    "Please send me the offer letter.",
+    "I'll take it.",
+    "Yes, let's close it.",
+    "Let's go ahead.",
+  ]) {
+    it(`strict accepts clean: "${t}"`, () =>
+      expect(detectExplicitAcceptance(t).accepted).toBe(true));
   }
 });
 
