@@ -813,18 +813,18 @@ export default function SessionSetup() {
   // _shared.ts checkSessionLimit (and DashboardContext). Anchoring on the
   // calendar week wrongly counted pre-purchase free sessions from the same
   // week, showing a freshly bought pack as already exhausted.
-  const STARTER_PACK_MS = 31 * 24 * 60 * 60 * 1000;
-  const STARTER_PACK_30_MS = 30 * 24 * 60 * 60 * 1000;
+  const STARTER_PACK_CLAMP_MS = 8 * 24 * 60 * 60 * 1000; // 8d clamp — just over 7d pack
+  const STARTER_PACK_7_MS = 7 * 24 * 60 * 60 * 1000;
   const starterSubStartMs = user?.subscriptionStart ? new Date(user.subscriptionStart).getTime() : NaN;
   const starterSubEndMs = user?.subscriptionEnd ? new Date(user.subscriptionEnd).getTime() : NaN;
-  // Prefer subscription_start; else derive from subscription_end (pack = 30d);
-  // else rolling 30-day lookback. Never the calendar week (see DashboardContext).
+  // Prefer subscription_start; else derive from subscription_end (pack = 7d);
+  // else rolling 7-day lookback. Never the calendar week (see DashboardContext).
   const starterDerivedStartMs = Number.isFinite(starterSubStartMs)
     ? starterSubStartMs
     : Number.isFinite(starterSubEndMs)
-      ? starterSubEndMs - STARTER_PACK_30_MS
-      : Date.now() - STARTER_PACK_30_MS;
-  const packStartMs = Math.max(starterDerivedStartMs, Date.now() - STARTER_PACK_MS);
+      ? starterSubEndMs - STARTER_PACK_7_MS
+      : Date.now() - STARTER_PACK_7_MS;
+  const packStartMs = Math.max(starterDerivedStartMs, Date.now() - STARTER_PACK_CLAMP_MS);
   const practiceTimestamps = user?.practiceTimestamps ?? [];
   const sessionsThisWeek = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= packStartMs; } catch { return false; } }).length;
   const sessionsThisMonth = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; } }).length;
