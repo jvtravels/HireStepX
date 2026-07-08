@@ -1226,40 +1226,49 @@ function acceptanceUtteranceFigure(state: NegotiationState): number | null {
  *  regress that behaviour. A pure non-cash condition ("once you confirm the
  *  band") or a bare accept ("done") carries no magnitude and returns null too,
  *  so the gate closes at the offer as before. Pure. */
-function resolveConditionalCashTarget(
-  state: NegotiationState,
-  offer: number,
-): number | null {
-  if (!Number.isFinite(offer) || offer <= 0) return null;
-  const log = state.conversationLog ?? [];
-  let text = "";
-  for (let i = log.length - 1; i >= 0; i--) {
-    const e = log[i];
-    if (e && e.speaker === "candidate") {
-      text = e.text || "";
-      break;
-    }
-  }
+/** The parsed cash-INCREASE intent behind a conditional close ("I'll sign if
+ *  you …"), or null when the utterance carries no numeric cash condition.
+ *
+ *  Discriminated so the caller applies the offer once, in one place:
+ *   - `delta`    → add `lakhs` to the standing offer ("2L more", "another few
+ *                  lakh", "half a lakh", "a lakh more")
+ *   - `percent`  → add `pct` % of the standing offer ("bump it 5%", "a couple
+ *                  of percent")
+ *   - `absolute` → set the total to `lakhs` ("bump it to 45L")
+ *
+ *  Consolidation of #33 / #33b / #35 / #36 (2026-07-08). Every hostile
+ *  surface form used to be a `return offer + …` branch scattered through the
+ *  resolver; each new phrasing meant another branch and another soft-false-
+ *  close bug when it was missed. Folding them into ONE pure, offer- and
+ *  NegotiationState-free parser lets the whole battery be unit-tested in
+ *  isolation (conditionalCashIntent.test.ts) and gives future phrasings a
+ *  single, bounded home — resolveConditionalCashTarget below is now just an
+ *  offer-applying, range-gating wrapper.
+ *
+ *  ORDERING IS LOAD-BEARING and preserved exactly from the pre-refactor code:
+ *  percent is resolved BEFORE the lakh-delta so "another 3 percent" reads as
+ *  +3% (not +3L); "half" before the indefinite article so "half a lakh" is
+ *  +0.5 (not +1). A magnitude that fails its range cap FALLS THROUGH to the
+ *  next shape rather than short-circuiting to null — same as before.
+ *
+ *  `unitMandatory` (#36): when a bonus is ALSO named in the same breath
+ *  ("2L more and a joining bonus"), the base delta must carry an explicit
+ *  lakh unit to be trusted, so a bonus AMOUNT ("joining bonus of 2L") and a
+ *  non-cash aside ("another 2 weeks and a bonus") are never misread as a base
+ *  bump. The percent axis is unaffected (a "%" is itself an explicit unit).
+ *  Pure. */
+export type CashIncreaseIntent =
+  | { kind: "delta"; lakhs: number }
+  | { kind: "percent"; pct: number }
+  | { kind: "absolute"; lakhs: number };
+
+export function parseCashIncreaseIntent(
+  text: string,
+  opts: { unitMandatory: boolean },
+): CashIncreaseIntent | null {
   if (!text) return null;
   const t = ` ${text.toLowerCase()} `;
-  /* #36 (2026-07-08, offline hostile battery) — COMPOUND demands ("give me 2L
-   * more AND a joining bonus, then I'll sign"). A pure sweetener ("if you throw
-   * in a joining bonus") is owned by the PRI-63 close-with-joining-bonus path, so
-   * this resolver used to blanket-bail to null on any bonus keyword. But that
-   * dropped the BASE cash bump of a compound demand: PRI-63 then closed at the
-   * UN-BUMPED offer while granting only the JB — a soft false-close on the base
-   * axis (confirmed via probe: "2L more and a joining bonus" → closed ₹40L + JB,
-   * the +2L silently dropped). Instead of bailing, resolve an EXPLICIT, cash-unit-
-   * bound base bump even when a bonus is named (the JB is still granted downstream
-   * by the unmetJoiningBonus path); only cede to PRI-63 when NO separate base cash
-   * increase is present. The bonus-present path trusts ONLY cash-welded deltas
-   * (mandatory lakh/percent unit) so a bonus AMOUNT ("joining bonus of 2L") is
-   * never misread as a base bump, and a non-cash aside ("another 2 weeks and a
-   * bonus") never registers. */
-  const bonusPresent =
-    /\b(joining|signing|sign[-\s]?on|retention|relocation|reloc|esops?|rsus?|equity|stock|bonus)\b/.test(
-      t,
-    );
+  const { unitMandatory } = opts;
   const num = String.raw`(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?|lac)?`;
   /* Unit-MANDATORY delta cues — used when a bonus is also named, so the base bump
    * must carry an explicit cash unit to be trusted (see #36 above). */
@@ -1318,13 +1327,12 @@ function resolveConditionalCashTarget(
    * on a lakh noun — "%"/"percent" parsed nowhere — so it returned null and the
    * near-offer close gate finalized at the UN-BUMPED offer: the same soft-false-
    * close class as #33 on a different unit (confirmed via probe: "bump it a
-   * couple of percent" → closed at ₹40L, 0% movement). Resolve the percent to a
-   * real lakh delta (offer × pct/100) so the unchanged deliverability gate honors
-   * or declines it. Checked BEFORE the lakh-delta parse so "another 3 percent"
-   * reads as +3% (₹41.2L), not +3L. Gated on the same increase intent as every
-   * other branch, so "I'm 100 percent in" (full-acceptance idiom, no increase
-   * cue) never registers as a bump. Capped at 100% — an out-of-range figure
-   * declines to null (fall through to counter), never a silent accept. */
+   * couple of percent" → closed at ₹40L, 0% movement). Resolve the percent so
+   * the unchanged deliverability gate honors or declines it. Checked BEFORE the
+   * lakh-delta parse so "another 3 percent" reads as +3%, not +3L. Gated on the
+   * same increase intent as every other branch, so "I'm 100 percent in" (full-
+   * acceptance idiom, no increase cue) never registers as a bump. Capped at
+   * 100% — an out-of-range figure falls through, never a silent accept. */
   const PCT = String.raw`(?:%|percent|per\s?cent|pct)`;
   const numPct = new RegExp(String.raw`(\d+(?:\.\d+)?)\s*${PCT}`).exec(t);
   const wordPct = new RegExp(
@@ -1335,21 +1343,21 @@ function resolveConditionalCashTarget(
     if (numPct) pct = parseFloat(numPct[1]);
     else if (wordPct) pct = WORD_MAGNITUDE[wordPct[1]];
     if (pct != null && Number.isFinite(pct) && pct > 0 && pct <= 100) {
-      return offer + (offer * pct) / 100;
+      return { kind: "percent", pct };
     }
   }
   /* #36 — with a bonus also named, trust only unit-bound deltas so the bonus
    * amount is never misread as a base bump; otherwise the loose forms apply. */
-  const deltaMatch = bonusPresent
+  const deltaMatch = unitMandatory
     ? (anotherCash ?? moreCash ?? byCash ?? verbCash)
     : (another ?? more ?? by ?? verbCash);
   if (deltaMatch) {
     const d = parseFloat(deltaMatch[1]);
-    if (Number.isFinite(d) && d > 0 && d <= 50) return offer + d;
+    if (Number.isFinite(d) && d > 0 && d <= 50) return { kind: "delta", lakhs: d };
   }
   if (to) {
     const v = parseFloat(to[1]);
-    if (Number.isFinite(v) && v > 0 && v <= 200) return v;
+    if (Number.isFinite(v) && v > 0 && v <= 200) return { kind: "absolute", lakhs: v };
   }
   /* #33 (2026-07-08, live-staging) — word-magnitude cash bumps. A conditional
    * close whose increase is stated in WORDS, not digits ("push the base up by a
@@ -1369,7 +1377,7 @@ function resolveConditionalCashTarget(
   ).exec(t);
   if ((wantsMore || another != null || more != null) && wordDelta) {
     const d = WORD_MAGNITUDE[wordDelta[1]];
-    if (Number.isFinite(d) && d > 0 && d <= 50) return offer + d;
+    if (Number.isFinite(d) && d > 0 && d <= 50) return { kind: "delta", lakhs: d };
   }
   /* #33b (2026-07-08, offline hostile battery) — article/fraction-quantified
    * lakh deltas. The same soft-false-close class as the couple/few magnitudes,
@@ -1382,12 +1390,48 @@ function resolveConditionalCashTarget(
    * pattern, and 0.5 is the correct reading. */
   const lakhNoun = String.raw`(?:l\b|lpa|lakhs?|lac)`;
   const halfLakh = new RegExp(String.raw`\bhalf\s+a\s+${lakhNoun}`).test(t);
-  if (wantsMore && halfLakh) return offer + 0.5;
+  if (wantsMore && halfLakh) return { kind: "delta", lakhs: 0.5 };
   const articleLakh = new RegExp(
     String.raw`\b(?:a|an|one)\s+(?:more\s+)?${lakhNoun}`,
   ).test(t);
-  if (wantsMore && articleLakh) return offer + 1;
+  if (wantsMore && articleLakh) return { kind: "delta", lakhs: 1 };
   return null;
+}
+
+/** The numeric cash TARGET the candidate has conditioned a close on, or null
+ *  when there is no numeric cash condition. Thin wrapper over
+ *  parseCashIncreaseIntent: pull the last candidate utterance, decide whether a
+ *  bonus co-occurs (→ unitMandatory, #36), parse the intent, then apply the
+ *  offer in ONE place. A pure sweetener ("if you throw in a joining bonus")
+ *  carries no cash intent and returns null, so the near-offer gate's PRI-63
+ *  path still owns it and closes at the offer as before. Pure. */
+function resolveConditionalCashTarget(
+  state: NegotiationState,
+  offer: number,
+): number | null {
+  if (!Number.isFinite(offer) || offer <= 0) return null;
+  const log = state.conversationLog ?? [];
+  let text = "";
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (e && e.speaker === "candidate") {
+      text = e.text || "";
+      break;
+    }
+  }
+  if (!text) return null;
+  const t = ` ${text.toLowerCase()} `;
+  /* #36 — a bonus named in the same breath forces unit-mandatory base-delta
+   * parsing so the bonus amount is never misread as a base bump. */
+  const bonusPresent =
+    /\b(joining|signing|sign[-\s]?on|retention|relocation|reloc|esops?|rsus?|equity|stock|bonus)\b/.test(
+      t,
+    );
+  const intent = parseCashIncreaseIntent(text, { unitMandatory: bonusPresent });
+  if (!intent) return null;
+  if (intent.kind === "percent") return offer + (offer * intent.pct) / 100;
+  if (intent.kind === "delta") return offer + intent.lakhs;
+  return intent.lakhs; // absolute
 }
 
 /** #105 — the FIXED figure the candidate has pinned a (conditional) close to,
