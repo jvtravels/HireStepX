@@ -95,6 +95,21 @@ const ACCEPT_FRAME_NUMBER_PATTERN =
 /** Performative acceptance verbs — these alone are strong enough
  *  to count as acceptance regardless of whether an offer reference
  *  is present. The verb itself names the speech act. */
+/** Willingness-to-commit performative — "happy/glad/delighted/pleased/thrilled/
+ *  keen to accept/sign/join". Generalizes the original narrow "happy to accept"
+ *  so "I'd be glad to sign", "delighted to accept", "keen to join" also close
+ *  (round-3 hostile probe surfaced "I'd be glad to sign" as a NO-CLOSE). Lives
+ *  in the MEDIUM gate (STRONG_PERFORMATIVE_PATTERNS) only — deliberately NOT in
+ *  the strict gate, exactly like the "happy to accept" idiom it generalizes: a
+ *  willingness idiom is soft consent that drives signalsAcceptance and the
+ *  planner's soft close, but is intentionally kept out of the strict
+ *  offer-letter/formal-recap gate (promoting it there flips the planner from
+ *  `close` to `close-recap-formal`). The conditional/deferral vetoes run BEFORE
+ *  this in the medium gate, so "glad to sign if you bump base" is still
+ *  excluded. */
+const WILLING_TO_COMMIT_PATTERN =
+  /\b(?:happy|glad|delighted|pleased|thrilled|keen)\s+to\s+(?:accept|sign|join)\b/i;
+
 const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   /\bi(?:'d)?\s+accept(?:\s+(?:this|the|your)\s+offer|\s+it)?\b/i,
   /\bi\s*(?:'m|am)\s+accept(?:ing|ed)?\b/i,
@@ -116,7 +131,7 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   /\bi\s+(?:fully\s+|totally\s+|completely\s+)?agree\b/i,
   /\b(?:fully|totally|completely)\s+agree\b/i,
   /\bi.?ll\s+take\s+(?:it|the\s+offer)\b/i,
-  /\bhappy\s+to\s+accept\b/i,
+  WILLING_TO_COMMIT_PATTERN,
   /\bi.?m\s+signing\s+(?:today|now|tonight)\b/i,
   /\bsign\s+(?:today|right\s+now|tonight)\b/i,
   /* Session B (2026-05-14) — bare "I'll sign" / "let me sign" commit
@@ -484,7 +499,7 @@ const WALK_AWAY_PATTERN =
  * so a benign temporal "once payroll ran the numbers last year" (no
  * sort/confirm/finalize/… verb) is untouched. */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es))\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
 
 /* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
  * recall-focused accept idioms (PRI-56/57/58) each carry a short substring
@@ -661,8 +676,13 @@ const NEGOTIATION_REDIRECT_PATTERN =
 
 /** Veto: explicit retraction / sarcasm tokens that void a preceding consent —
  *  "deal — just kidding", "yes, only kidding". No genuine accept contains a
- *  kidding/sarcasm token. */
-const RETRACTION_PATTERN = /\b(?:just\s+|only\s+)?kidding\b|\bjk\b/i;
+ *  kidding/sarcasm token.
+ *  Round-3 hostile probe (2026-07-08) — a self-cancelling retraction voids the
+ *  consent the same way: "Deal — actually no, forget it.", "I accept, never
+ *  mind." None of never mind / forget it / scratch that / "actually no" ever
+ *  appears in a genuine unconditional accept, so a flat token veto is safe. */
+const RETRACTION_PATTERN =
+  /\b(?:just\s+|only\s+)?kidding\b|\bjk\b|\bnever\s*mind\b|\bforget\s+it\b|\bscratch\s+that\b|\bactually,?\s+no(?:pe)?\b/i;
 
 /** Veto: conditional RAISE demand welded to a close idiom — "make it 45 and we
  *  have a deal", "raise it to 50 and I'll sign", "bump it to 48 then we're
@@ -772,7 +792,18 @@ const GRANT_THEN_CLOSE_PATTERN =
  *  accept, so a flat token veto is safe. "fat chance" / "not a chance" overlap
  *  WALK_AWAY (harmless redundancy). Shared single-source so BOTH gates reject. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|when\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b)\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|when\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s+one\s+ever)\b/i;
+
+/** Veto (round-3 hostile probe, 2026-07-08) — a NON-comp demand ("make it a
+ *  Principal role", "make it a Staff title") welded to a close idiom by
+ *  and/then/&. GRANT_THEN_CLOSE owns cash SWEETENERS and CONDITIONAL_RAISE owns
+ *  a numeric raise; a role/title/level/designation upgrade is neither, so
+ *  "Make it a Principal role and it's a deal." FALSE-CLOSED at the un-upgraded
+ *  offer. Scoped to "make it" + a level/title noun + an and/then continuation;
+ *  "make it official and I'll sign" ("official" is not a level noun) is
+ *  untouched. Shared single-source so BOTH gates reject in lockstep. */
+const NONCOMP_DEMAND_THEN_CLOSE_PATTERN =
+  /\bmake\s+it\s+(?:a\s+|an\s+|the\s+)?[^.!?]{0,20}?\b(?:roles?|titles?|designations?|levels?|bands?|grades?|positions?|principal|staff|senior|lead|director|manager|architect)\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
 
 /** PRI-69 (2026-07-08, offline hostile close battery) — first-person DEMAND for
  *  MORE money welded to a close idiom by a NON-contrastive conjunction. The
@@ -858,6 +889,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   CONDITIONAL_DEMAND_PATTERN,
   COUNTER_THEN_CLOSE_PATTERN,
   GRANT_THEN_CLOSE_PATTERN,
+  NONCOMP_DEMAND_THEN_CLOSE_PATTERN,
   CONDITIONAL_ACCEPT_PATTERN,
   SARCASTIC_REFUSAL_PATTERN,
   REVIEW_TAIL_PATTERN,
