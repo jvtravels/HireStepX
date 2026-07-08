@@ -40,7 +40,18 @@
  *     accept classifier's breaker lookahead.
  *   • `i'll pass` fired on the hand-off sense "I'll pass along …" — a lookahead
  *     spares "pass along" while "I'll pass, not for me" still fires. */
-export const WALKAWAY_PATTERN = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass(?![^.!?]{0,15}?\balong\b)|no deal\b(?!\s*[-\s]?breakers?)|withdraw|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)|won.?t work|isn.?t going to work|have to pass|that won.?t work|(?:i(?:'|’)?(?:ll|m|d)|i\s+(?:will|have\s+to|need\s+to|want\s+to|am\s+going\s+to|would\s+rather|think\s+i(?:'|’)?ll|guess\s+i(?:'|’)?ll))\s+(?:just\s+|then\s+|probably\s+|simply\s+|really\s+|now\s+|going\s+to\s+|gonna\s+|rather\s+|likely\s+|instead\s+)?(?:move|moving)\s+on|pull out|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
+/* Classifier merge (2026-07-09) — the acceptance classifier carried its own
+ * private walk-away regex that had drifted with two extra rejection arms never
+ * merged here: `no chance`/`not a chance` (a live FALSE-CLOSE fix — "not a
+ * chance I sign today" was closing on the "sign today" performative arm) and
+ * the Hindi "won't work" forms `nahi chalega` / `nahi chal payega` / `nahi
+ * jamega` (the Hindi twin of the English `won't work` arm already here). The
+ * private copy was deleted and its unique arms folded in so both the kernel and
+ * the classifier share one detector — completing the single-source unification.
+ * The private copy's other arms (bare `decline`, bare `move on`, bare
+ * `i'll pass`, bare `no deal`) are deliberately NOT re-added crude: this
+ * module's guarded forms strictly supersede them. */
+export const WALKAWAY_PATTERN = /\b(walk away|walking away|i.?m out|not interested|no chance|not a chance|i.?ll pass(?![^.!?]{0,15}?\balong\b)|no deal\b(?!\s*[-\s]?breakers?)|withdraw|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)|won.?t work|isn.?t going to work|have to pass|that won.?t work|(?:i(?:'|’)?(?:ll|m|d)|i\s+(?:will|have\s+to|need\s+to|want\s+to|am\s+going\s+to|would\s+rather|think\s+i(?:'|’)?ll|guess\s+i(?:'|’)?ll))\s+(?:just\s+|then\s+|probably\s+|simply\s+|really\s+|now\s+|going\s+to\s+|gonna\s+|rather\s+|likely\s+|instead\s+)?(?:move|moving)\s+on|pull out|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta)|nahin\s+(?:chahiye|karna|chalega)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
 
 /* Negation guard (PRI-64, 2026-07-06, live staging) — WALKAWAY_PATTERN is a
  * bare alternation with no awareness of negation, so a candidate REASSURING the

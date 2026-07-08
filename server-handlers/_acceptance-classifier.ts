@@ -40,6 +40,9 @@
  *      — already names the offer, medium confidence acceptance.
  *   5. Otherwise no acceptance. */
 
+import { analyzeDemand } from "./_utterance-intent";
+import { isWalkAway } from "./_walkaway-detection";
+
 export interface AcceptanceContext {
   /** Current kernel phase, if known. Pass undefined from legacy
    *  whole-transcript callers — the phase gate is skipped. */
@@ -478,9 +481,13 @@ const HINDI_MIX_PATTERNS: RegExp[] = [
 const OFFER_REFERENCE_PATTERN =
   /\b(?:offer|deal|salary|ctc|package|lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|₹|rs\.?|inr|\$\s*\d|\d+\s*(?:lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l\b|cr|crore|k\b))\b/i;
 
-/** Veto: walk-away or rejection. */
-const WALK_AWAY_PATTERN =
-  /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|no chance|not a chance|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|kar\s+sakta)|nahin\s+(?:chahiye|karna|chalega)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
+/* Veto: walk-away or rejection — owned by the canonical single source
+ * of truth `_walkaway-detection.ts` (isWalkAway), imported above. This
+ * module previously carried a PRIVATE, divergent WALK_AWAY_PATTERN copy
+ * that never picked up the canonical module's negation guard
+ * (stripNegatedDepartures) or its richer decline/move-on forms — a
+ * "single source of truth" claim the code did not actually honor.
+ * classifyAcceptance now vetoes via isWalkAway(a) directly. */
 
 /** Veto: deferred-condition framing — "once we sort the base", "after you
  *  confirm the split". A close-consent idiom ("where do I sign", "count me
@@ -973,6 +980,26 @@ function anyMatch(text: string, patterns: RegExp[]): boolean {
   return patterns.some(p => p.test(text));
 }
 
+/** Does the utterance carry ANY commit / close idiom (performative
+ *  verb, commitment idiom, Hindi-mix accept, soft alignment, an
+ *  accept-frame number, or a split-clause commit)? Used only to
+ *  compose the conjunction-independent unmet-demand gate: a demand
+ *  matters for false-close prevention only when a close idiom is also
+ *  present. A superset of every idiom bank the classifier can accept
+ *  on, so the gate can never let a demand-welded close slip past
+ *  merely because the two are joined by a comma / "plus" / no joiner
+ *  rather than "and" / "then". */
+function hasCommitOrCloseIdiom(text: string): boolean {
+  return (
+    anyMatch(text, STRONG_PERFORMATIVE_PATTERNS) ||
+    anyMatch(text, COMMITMENT_IDIOM_PATTERNS) ||
+    anyMatch(text, HINDI_MIX_PATTERNS) ||
+    anyMatch(text, SOFT_ALIGNMENT_PATTERNS) ||
+    anyMatch(text, SPLIT_CLAUSE_ACCEPTANCE_PATTERNS) ||
+    ACCEPT_FRAME_NUMBER_PATTERN.test(text)
+  );
+}
+
 /** Tokenize into clause-ish sentences by `.`, `!`, `?`, or `; `. */
 function splitSentences(text: string): string[] {
   return text
@@ -1064,7 +1091,7 @@ export function classifyAcceptance(
 
   /* Step 1: vetoes. Each veto is structural — even if every other
      signal screams acceptance, these rule it out. */
-  if (WALK_AWAY_PATTERN.test(a)) {
+  if (isWalkAway(a)) {
     return { accepted: false, confidence: "none", reasons: ["walk-away"] };
   }
   const hasAnyConditional = HARD_CONDITIONAL_PATTERN.test(a);
@@ -1080,6 +1107,20 @@ export function classifyAcceptance(
      that this is your final number", "I accept in principle"). */
   if (anyMatch(a, FALSE_CLOSE_VETO_PATTERNS)) {
     return { accepted: false, confidence: "none", reasons: ["false-close-veto"] };
+  }
+  /* Conjunction-independent unmet-demand gate (single source of truth,
+   * _utterance-intent.ts). The FALSE_CLOSE_VETO_PATTERNS above bridge a
+   * demand to its close idiom with a literal `and|then|&`; a comma,
+   * "plus", "with", a different demand verb, or no joiner at all
+   * defeats every one of them, FALSE-CLOSING a conditional counter at
+   * the un-bumped offer ("Bump the base by 5 lakh, I'll sign today.",
+   * "Give me 45 and I'm in."). Detecting the demand as a STRUCTURED
+   * slot and requiring only that a close idiom appears somewhere in the
+   * same utterance closes that whole class regardless of the
+   * conjunction. Runs after the bridge vetoes so their finer-grained
+   * reason ids win when they DO match; this catches the rest. */
+  if (hasCommitOrCloseIdiom(a) && analyzeDemand(a, context.offerLpa).unmet) {
+    return { accepted: false, confidence: "none", reasons: ["unmet-demand-then-close"] };
   }
   if (NEGOTIATING_BUT_PATTERN.test(a) && !INFO_SEEKING_BUT_PATTERN.test(a)) {
     return { accepted: false, confidence: "none", reasons: ["negotiating-but"] };
