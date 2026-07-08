@@ -121,7 +121,7 @@ const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, team: 3 };
 
 
-export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: (newBalance: number) => void }) {
+export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, starterExhausted, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; starterExhausted?: boolean; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: (newBalance: number) => void }) {
   // Cream palette shadow — matches the marketing /pricing page and settings repaint.
   // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
   const c = {
@@ -427,9 +427,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           </p>
         </div>
 
-        {/* ── Sprint Pack top-up banner — shown to starter users ──────────────
-            Explains that the pack has no reset; buy more sessions below. */}
-        {currentTier === "starter" && (
+        {/* ── Sprint Pack exhausted banner — only shown when sessions are used up */}
+        {currentTier === "starter" && starterExhausted && (
           <div style={{ display: "flex", alignItems: "center", gap: 12,
             background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)",
             borderRadius: 12, padding: "12px 16px", marginBottom: 20 }}>
