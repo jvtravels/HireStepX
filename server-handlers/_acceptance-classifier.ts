@@ -912,6 +912,15 @@ const HARD_CONDITIONAL_PATTERN =
   /\b(?:if|unless|provided|on condition|contingent|only\s+if|agar|jab\s+tak)\b/i;
 const INFO_SEEKING_CONDITIONAL_PATTERN =
   /\b(?:if|unless|provided)\s+(?:you|it.?s|i)\s*(?:could|can|may|might|would|don.?t mind)?\s*(?:share|tell|let me know|elaborate|explain|clarify|confirm|provide|walk me through|give me|outline|show)\b/i;
+/* Acquiescence exception (hostile-probe over-block, 2026-07-09) — an "if"
+ * that introduces CONCESSION, not a demand: "if that's the best you can do,
+ * I'll take it", "if you say so, deal", "if that works for you". These are
+ * genuine accepts, not hard conditionals, and the broad HARD_CONDITIONAL "if"
+ * was blocking them. Whitelisting them here is safe: any real demand riding in
+ * the same utterance is still caught downstream by the unmet-demand gate, so
+ * this only rescues the pure-acquiescence accept. */
+const ACQUIESCENCE_CONDITIONAL_PATTERN =
+  /\bif\s+(?:you\s+(?:say\s+so|insist|really\s+(?:say\s+so|mean\s+it))|need\s+be|(?:that|this|it)(?:'?s|\s+is)?\s+(?:the\s+best|really\s+(?:the\s+)?best|what\s+(?:it|you)|final|it\s+is|fine|good|ok(?:ay)?|works?|acceptable|all\s+you|the\s+deal)|that'?ll\s+work|that\s+works\s+for\s+you)\b/i;
 
 /** Veto: "but/however … negotiation cue" within 60 chars. The
  *  cue list intentionally includes "more" — the most common
@@ -1096,7 +1105,8 @@ export function classifyAcceptance(
   }
   const hasAnyConditional = HARD_CONDITIONAL_PATTERN.test(a);
   const hasInfoSeeking = INFO_SEEKING_CONDITIONAL_PATTERN.test(a);
-  if (hasAnyConditional && !hasInfoSeeking) {
+  const hasAcquiescence = ACQUIESCENCE_CONDITIONAL_PATTERN.test(a);
+  if (hasAnyConditional && !hasInfoSeeking && !hasAcquiescence) {
     return { accepted: false, confidence: "none", reasons: ["hard-conditional"] };
   }
   if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) {
@@ -1105,7 +1115,16 @@ export function classifyAcceptance(
   /* PRI-59 precision vetoes — a hostile NON-accept sharing a substring with a
      real accept idiom ("I'll take it elsewhere", "I'm in talks", "I accept
      that this is your final number", "I accept in principle"). */
-  if (anyMatch(a, FALSE_CLOSE_VETO_PATTERNS)) {
+  /* CONDITIONAL_ACCEPT_PATTERN ("if <cond> … I'll take it") is the old
+   * bridge-style veto; under an ACQUIESCENCE "if" ("if that's the best you can
+   * do, I'll take it") it over-fires on a genuine concession accept. Lift only
+   * that one pattern for acquiescence — every other false-close veto AND the
+   * downstream unmet-demand gate still apply, so a real demand riding the same
+   * acquiescence clause ("if you say so, but bump it 2%") is still blocked. */
+  const falseClosePatterns = hasAcquiescence
+    ? FALSE_CLOSE_VETO_PATTERNS.filter((p) => p !== CONDITIONAL_ACCEPT_PATTERN)
+    : FALSE_CLOSE_VETO_PATTERNS;
+  if (anyMatch(a, falseClosePatterns)) {
     return { accepted: false, confidence: "none", reasons: ["false-close-veto"] };
   }
   /* Conjunction-independent unmet-demand gate (single source of truth,

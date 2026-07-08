@@ -97,6 +97,44 @@ describe("intent gate — genuine unconditional accepts still fire (no over-bloc
   }
 });
 
+/* Hostile-probe round (2026-07-09) — demand-then-close phrasings the
+ * demand×joiner×closer battery does NOT span: question-form demands,
+ * non-imperative sweetener asks, and million/crore currency units. Each
+ * must block; each was a live leak before the sweetener-demand /
+ * demand-question cores and unit normalization landed. */
+describe("intent gate — novel demand-then-close phrasings must block", () => {
+  const HOSTILE = [
+    // question-form absolute demand > offer
+    "could you do 46? deal",
+    "any chance of 45? I'll take it",
+    "can you get me to 45? I'm in",
+    // non-imperative sweetener demand
+    "it'd be great to see relocation added, deal",
+    "would be perfect with a joining bonus, I'll sign",
+    "fine on base but I need equity, deal",
+    "I accept, just add a 5 lakh signing bonus",
+    // million / crore currency units normalized to lakhs
+    "push it to 4.5M, I'll take it",
+    "make it 0.5 crore, deal",
+  ];
+  for (const t of HOSTILE) {
+    it(`no-close: "${t}"`, () => expect(accepted(t)).toBe(false));
+  }
+});
+
+/* Acquiescence conditionals are CONCESSION accepts, not hard conditionals —
+ * the broad "if" veto and the bridge-style conditional-accept veto both
+ * over-blocked them before the acquiescence exception landed. */
+describe("intent gate — acquiescence conditionals still accept (no over-block)", () => {
+  for (const t of [
+    "if that's the best you can do, I'll take it",
+    "if you say so, deal",
+    "if that works for you, count me in",
+  ]) {
+    it(`accepts: "${t}"`, () => expect(accepted(t)).toBe(true));
+  }
+});
+
 describe("analyzeDemand — structured extractor unit behavior", () => {
   it("flags an above-offer bare demand only when the offer is known and exceeded", () => {
     expect(carriesUnmetDemand("give me 45", 40)).toBe(true);

@@ -54,6 +54,11 @@ interface DemandCore {
    *  inherently upward asks (relative "more", sweetener grants, title
    *  upgrades, comparatives) and are always unmet. */
   absoluteTargetGroup?: number;
+  /** Capture group holding the UNIT that scales absoluteTargetGroup to
+   *  lakhs (cr/crore ×100, m/mn/million ×10, else ×1). Lets "push it to
+   *  4.5M" (= ₹45L) be compared against a lakh-denominated offer instead
+   *  of read as a bare 4.5. */
+  unitGroup?: number;
   /** When true, the core only counts as a demand when the standing
    *  offer is KNOWN and the captured figure exceeds it. Used for the
    *  bare "give me N" / "I want N" absolute form, which is a demand
@@ -70,6 +75,13 @@ const VERBAL_QTY = "(?:a|an|one|half\\s+a|(?:a\\s+)?couple(?:\\s+of)?|(?:a\\s+)?
 const INCREASE_TOKEN = "(?:more|higher|extra|additional|on\\s+top)";
 /* Gratitude guard — "3% more THAN I expected" is thanks, not a demand. */
 const NOT_THAN = "(?!\\s+than)";
+/* Non-cash sweetener nouns — shared by the imperative grant core and the
+ * non-imperative sweetener-demand core below. A sweetener is inherently an
+ * UPWARD ask (it can only add to the package), so detecting one is safe
+ * against over-block PROVIDED it sits in a demand frame, not a satisfaction
+ * frame ("happy with THE bonus" is an accept, "I need a bonus" is a demand). */
+const SWEETENER =
+  "(?:joining\\s+bonus|signing\\s+bonus|sign[-\\s]?on\\s+bonus|retention\\s+bonus|bonus(?:es)?|joining|relocation|reloc\\b|notice\\s+(?:buyout|pay|period(?:\\s+buyout)?)|buyout|esops?|rsus?|equity|stock(?:\\s+options?)?|shares?|variable|allowances?|hra\\b|perks?|benefits?|wfh|remote|sabbatical)";
 
 const DEMAND_CORES: DemandCore[] = [
   /* Absolute raise TARGET: "make it 50", "get the base to 55", "bump
@@ -79,7 +91,8 @@ const DEMAND_CORES: DemandCore[] = [
   {
     reason: "raise-to-target",
     absoluteTargetGroup: 1,
-    re: /\b(?:make\s+it|(?:get|bump|push|raise|take|bring|come\s+up|move|nudge)\s+(?:(?:it|the\s+fixed|the\s+base|the\s+cash|fixed|base|cash|total|ctc|package)\s+)?to)\s+(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lac|l|k|cr|crores?)?\b/i,
+    unitGroup: 2,
+    re: /\b(?:make\s+it|(?:get|bump|push|raise|take|bring|come\s+up|move|nudge)\s+(?:(?:it|the\s+fixed|the\s+base|the\s+cash|fixed|base|cash|total|ctc|package)\s+)?to)\s+(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
   /* First-person / imperative demand for MORE by magnitude: "give me 8%
    * more", "I want 2L more", "I'm after a couple more". Ported from
@@ -121,12 +134,39 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "beat-match",
     re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:current|ctc|comp\w*|package|base|salary|pay|number))\b/i,
   },
-  /* Non-numeric sweetener GRANT: "throw in relocation", "add a joining
-   * bonus", "include equity", "sort out the ESOP". Ported from
+  /* Non-numeric sweetener GRANT (imperative): "throw in relocation", "add a
+   * joining bonus", "include equity", "sort out the ESOP". Ported from
    * GRANT_THEN_CLOSE_PATTERN, bridge dropped. */
   {
     reason: "grant-sweetener",
-    re: /\b(?:throw\s+in|toss\s+in|chip\s+in|add\b|include\b|cover\b|sort\s+out|guarantee|sweeten|match\b)\b[^.!?]{0,30}?\b(?:joining\s+bonus|signing\s+bonus|sign[-\s]?on\s+bonus|retention\s+bonus|bonus(?:es)?|joining|relocation|reloc\b|notice\s+(?:buyout|pay|period(?:\s+buyout)?)|buyout|esops?|rsus?|equity|stock(?:\s+options?)?|shares?|variable|allowances?|hra\b|perks?|benefits?|wfh|remote|sabbatical)\b/i,
+    re: new RegExp(
+      `\\b(?:throw\\s+in|toss\\s+in|chip\\s+in|add\\b|include\\b|cover\\b|sort\\s+out|guarantee|sweeten|match\\b)\\b[^.!?]{0,30}?\\b${SWEETENER}\\b`,
+      "i",
+    ),
+  },
+  /* Non-imperative sweetener DEMAND — the phrasings the imperative core above
+   * misses because the grant verb comes after the noun, is first-person, or is
+   * a hypothetical ("relocation added", "I need equity", "would be perfect with
+   * a joining bonus"). Hostile-probe leaks (2026-07-09). Kept in demand FRAMES
+   * only so a satisfaction reference ("happy with the bonus, deal") does not
+   * over-block. */
+  {
+    reason: "sweetener-demand",
+    re: new RegExp(
+      "(?:" +
+        // passive grant: verb after the noun — "relocation added", "equity included"
+        `\\b${SWEETENER}\\b[^.!?]{0,15}?\\b(?:added|include[ds]|thrown\\s+in|sorted(?:\\s+out)?|covered|guaranteed|sweetened|on\\s+top|in\\s+the\\s+mix)\\b` +
+        "|" +
+        // first-person want: "I need equity", "I'd like a joining bonus"
+        `\\bi(?:'?d)?\\s+(?:need|want|expect|require|would\\s+like|'?d\\s+like|must\\s+have|gotta\\s+have|also\\s+want)\\b[^.!?]{0,15}?\\b${SWEETENER}\\b` +
+        "|" +
+        // hypothetical improvement with an INDEFINITE sweetener: "would be
+        // perfect with a joining bonus" (indefinite article ⇒ a new/wanted item;
+        // "…with THE bonus" is satisfaction and deliberately not matched)
+        `\\b(?:would\\s+be|it'?d\\s+be|be)\\s+(?:even\\s+)?(?:perfect|great|ideal|better|nicer?|sweeter)\\s+with\\s+(?:a|an|some)\\b[^.!?]{0,15}?\\b${SWEETENER}\\b` +
+        ")",
+      "i",
+    ),
   },
   /* Non-comp role/title/level upgrade: "make it a Principal role",
    * "make it a Staff title". Ported from
@@ -146,6 +186,16 @@ const DEMAND_CORES: DemandCore[] = [
     absoluteTargetGroup: 1,
     requiresOfferToExceed: true,
     re: /\b(?:(?:give|gimme|get|hand)\s+me|i(?:'?d)?\s+(?:want|need|expect))\b[^.!?]{0,15}?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lac|l|k)?\b/i,
+  },
+  /* Interrogative absolute demand — the question-form twin of raise-to-target:
+   * "could you do 46?", "can you get me to 45?", "any chance of 45?". Unmet
+   * only when the asked figure beats the offer (matching the imperative cores).
+   * Hostile-probe leak (2026-07-09). */
+  {
+    reason: "demand-question",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(?:(?:could|can|would|will)\s+you\s+(?:do|make\s+it|get\s+me\s+to|bump\s+(?:it|the\s+\w+)\s+to|push\s+(?:it|the\s+\w+)\s+to|raise\s+(?:it|the\s+\w+)\s+to|go\s+to|stretch\s+to|come\s+up\s+to)|any\s+chance\s+(?:of|at|for))\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
 ];
 
@@ -171,6 +221,18 @@ export interface DemandAnalysis {
  * known offer — is skipped to avoid over-blocking a numberless-context
  * concession.
  */
+/** Normalize a captured "<figure><unit>" to LAKHS so it compares against a
+ *  lakh-denominated offer: crore ×100, million (m/mn/million) ×10, everything
+ *  else (lpa/lakh/lac/l/k/bare) already lakhs. */
+function figureToLakhs(figure: string, unit: string | undefined): number {
+  const n = parseFloat(figure);
+  if (!Number.isFinite(n)) return NaN;
+  const u = (unit || "").toLowerCase();
+  if (u === "cr" || u.startsWith("crore")) return n * 100;
+  if (u === "m" || u === "mn" || u === "million") return n * 10;
+  return n;
+}
+
 export function analyzeDemand(text: string | null | undefined, offerLpa?: number): DemandAnalysis {
   const a = (text || "").trim();
   if (!a) return { unmet: false, reasons: [] };
@@ -179,19 +241,21 @@ export function analyzeDemand(text: string | null | undefined, offerLpa?: number
   for (const core of DEMAND_CORES) {
     const m = core.re.exec(a);
     if (!m) continue;
+    const figure =
+      core.absoluteTargetGroup != null
+        ? figureToLakhs(m[core.absoluteTargetGroup], core.unitGroup != null ? m[core.unitGroup] : undefined)
+        : NaN;
     if (core.requiresOfferToExceed) {
       /* Only a demand when we can PROVE the figure exceeds the offer. */
       if (!haveOffer) continue;
-      const n = core.absoluteTargetGroup != null ? parseFloat(m[core.absoluteTargetGroup]) : NaN;
-      if (!Number.isFinite(n) || n <= (offerLpa as number) + 1e-9) continue;
+      if (!Number.isFinite(figure) || figure <= (offerLpa as number) + 1e-9) continue;
       reasons.push(core.reason);
       continue;
     }
     if (core.absoluteTargetGroup != null && haveOffer) {
       /* Absolute raise target: unmet only when it beats the offer. A
        * target at or below the standing offer is a no-op restatement. */
-      const n = parseFloat(m[core.absoluteTargetGroup]);
-      if (Number.isFinite(n) && n <= (offerLpa as number) + 1e-9) continue;
+      if (Number.isFinite(figure) && figure <= (offerLpa as number) + 1e-9) continue;
     }
     reasons.push(core.reason);
   }
