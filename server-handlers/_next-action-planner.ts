@@ -1242,18 +1242,36 @@ function resolveConditionalCashTarget(
   }
   if (!text) return null;
   const t = ` ${text.toLowerCase()} `;
-  /* Sweetener grants are owned by the PRI-63 close-with-joining-bonus path. */
-  if (
+  /* #36 (2026-07-08, offline hostile battery) — COMPOUND demands ("give me 2L
+   * more AND a joining bonus, then I'll sign"). A pure sweetener ("if you throw
+   * in a joining bonus") is owned by the PRI-63 close-with-joining-bonus path, so
+   * this resolver used to blanket-bail to null on any bonus keyword. But that
+   * dropped the BASE cash bump of a compound demand: PRI-63 then closed at the
+   * UN-BUMPED offer while granting only the JB — a soft false-close on the base
+   * axis (confirmed via probe: "2L more and a joining bonus" → closed ₹40L + JB,
+   * the +2L silently dropped). Instead of bailing, resolve an EXPLICIT, cash-unit-
+   * bound base bump even when a bonus is named (the JB is still granted downstream
+   * by the unmetJoiningBonus path); only cede to PRI-63 when NO separate base cash
+   * increase is present. The bonus-present path trusts ONLY cash-welded deltas
+   * (mandatory lakh/percent unit) so a bonus AMOUNT ("joining bonus of 2L") is
+   * never misread as a base bump, and a non-cash aside ("another 2 weeks and a
+   * bonus") never registers. */
+  const bonusPresent =
     /\b(joining|signing|sign[-\s]?on|retention|relocation|reloc|esops?|rsus?|equity|stock|bonus)\b/.test(
       t,
-    )
-  )
-    return null;
+    );
   const num = String.raw`(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?|lac)?`;
+  /* Unit-MANDATORY delta cues — used when a bonus is also named, so the base bump
+   * must carry an explicit cash unit to be trusted (see #36 above). */
+  const numCash = String.raw`(\d+(?:\.\d+)?)\s*(?:l\b|lpa|lakhs?|lac)`;
   /* Delta cues carry increase intent on their own ("another 2L", "2L more"). */
   const another = new RegExp(String.raw`\banother\s+${num}`).exec(t);
+  const anotherCash = new RegExp(String.raw`\banother\s+${numCash}`).exec(t);
   const more = new RegExp(
     String.raw`\b${num}\s+(?:more|extra|additional)\b`,
+  ).exec(t);
+  const moreCash = new RegExp(
+    String.raw`\b${numCash}\s+(?:more|extra|additional)\b`,
   ).exec(t);
   const INCREASE_VERB =
     /\b(bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack|bump\s+up|move\s+up)\b/;
@@ -1269,6 +1287,18 @@ function resolveConditionalCashTarget(
    * so "close by Friday" / "get back to you" never register as a cash bump. */
   const by = hasIncreaseVerb
     ? new RegExp(String.raw`\bby\s+${num}`).exec(t)
+    : null;
+  const byCash = hasIncreaseVerb
+    ? new RegExp(String.raw`\bby\s+${numCash}`).exec(t)
+    : null;
+  /* #36 — verb-adjacent bare cash amount ("add 2 lakh", "bump the base 2L")
+   * with no another/more/by marker. Unit-mandatory, and a trailing bonus noun is
+   * excluded so a bonus AMOUNT ("add a 2 lakh joining bonus") is never read as a
+   * base bump. */
+  const verbCash = hasIncreaseVerb
+    ? new RegExp(
+        String.raw`\b(?:bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack)(?:\s+up)?\s+(?:it\s+|the\s+|my\s+|base\s+|fixed\s+|by\s+|another\s+)*${numCash}(?!\s+(?:joining|signing|sign|retention|relocation|reloc|esops?|rsus?|equity|stock|bonus))`,
+      ).exec(t)
     : null;
   const to = hasIncreaseVerb
     ? new RegExp(String.raw`\bto\s+(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?|lac)\b`).exec(
@@ -1308,7 +1338,11 @@ function resolveConditionalCashTarget(
       return offer + (offer * pct) / 100;
     }
   }
-  const deltaMatch = another ?? more ?? by;
+  /* #36 — with a bonus also named, trust only unit-bound deltas so the bonus
+   * amount is never misread as a base bump; otherwise the loose forms apply. */
+  const deltaMatch = bonusPresent
+    ? (anotherCash ?? moreCash ?? byCash ?? verbCash)
+    : (another ?? more ?? by ?? verbCash);
   if (deltaMatch) {
     const d = parseFloat(deltaMatch[1]);
     if (Number.isFinite(d) && d > 0 && d <= 50) return offer + d;

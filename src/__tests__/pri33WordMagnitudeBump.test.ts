@@ -203,3 +203,74 @@ describe("#35 — percentage-axis conditional cash bump never soft-false-closes 
     expect(finalizesAtUnbumped40("I'm 100 percent in, send the letter.")).toBe(true);
   });
 });
+
+/* #36 — SPLIT (compound) conditional demand: a BASE cash bump AND a joining/
+ * signing bonus in one breath ("give me 2L more AND a joining bonus, then I'll
+ * sign"). resolveConditionalCashTarget used to blanket-bail to null on any bonus
+ * keyword — ceding to the PRI-63 pure-sweetener close — which honored only the
+ * JB and closed at the UN-BUMPED offer, silently dropping the base bump (a soft
+ * false-close on the base axis). Fix (single source): resolve an explicit,
+ * cash-unit-bound base bump even when a bonus is named; the JB is still granted
+ * downstream by the unmetJoiningBonus path. Only cede to PRI-63 when there is NO
+ * separate base cash increase. A bonus AMOUNT ("joining bonus of 2L") and a
+ * non-cash aside ("another 2 weeks") are excluded from the base bump.
+ */
+function closeFigureAndJb(utter: string): { fig: number | null; jb: number | undefined } {
+  const s = applyCandidateAnswer(offeredAt(40), utter);
+  const action = planNextAction(s);
+  if (action.kind !== "close" && action.kind !== "auto-accept") return { fig: null, jb: undefined };
+  const lever = actionToLever(action, s);
+  return { fig: lever.newTotalLpa, jb: lever.joiningBonusAmount };
+}
+
+describe("#36 — split conditional demand (base bump + joining bonus) honors BOTH, never drops the base", () => {
+  it("closes a deliverable '2L more AND a joining bonus' at the BUMPED ₹42L WITH a JB", () => {
+    const { fig, jb } = closeFigureAndJb("I'll sign if you give me 2L more and a joining bonus.");
+    expect(fig).toBe(42);
+    expect(jb).toBeGreaterThan(0);
+  });
+
+  it("honors a verb+bare-amount base 'Add 2 lakh and throw in a joining bonus' at ₹42L WITH a JB", () => {
+    const { fig, jb } = closeFigureAndJb("Add 2 lakh and throw in a joining bonus, then I'll sign.");
+    expect(fig).toBe(42);
+    expect(jb).toBeGreaterThan(0);
+  });
+
+  it("honors base AND a SIGNING bonus 'bump the base by 2L and include a signing bonus' at ₹42L WITH a JB", () => {
+    const { fig, jb } = closeFigureAndJb(
+      "Bump the base by 2L and include a signing bonus and we have a deal.",
+    );
+    expect(fig).toBe(42);
+    expect(jb).toBeGreaterThan(0);
+  });
+
+  it("honors a PERCENT base '+5% and a joining bonus' at ₹42L WITH a JB", () => {
+    const { fig, jb } = closeFigureAndJb("Bump it 5% and add a joining bonus, then I'll sign.");
+    expect(fig).toBe(42);
+    expect(jb).toBeGreaterThan(0);
+  });
+
+  it("DECLINES an undeliverable '5L more and a joining bonus' — never false-closes at ₹40L", () => {
+    // +5L exceeds the instant-close gap → the whole compound demand declines
+    // (no close), rather than closing at the un-bumped ₹40L with the base dropped.
+    expect(closeFigureAndJb("I'll sign if you give me 5L more and a joining bonus.").fig).toBeNull();
+  });
+
+  it("GUARD: a bonus AMOUNT 'joining bonus of 2L' is NOT read as a base bump — closes at ₹40L + JB", () => {
+    const { fig, jb } = closeFigureAndJb("I'll sign if you throw in a joining bonus of 2L.");
+    expect(fig).toBe(40);
+    expect(jb).toBeGreaterThan(0);
+  });
+
+  it("GUARD: a non-cash aside 'another 2 weeks and a joining bonus' is NOT a base bump — closes at ₹40L + JB", () => {
+    const { fig, jb } = closeFigureAndJb("Give me another 2 weeks and a joining bonus, then I'll sign.");
+    expect(fig).toBe(40);
+    expect(jb).toBeGreaterThan(0);
+  });
+
+  it("PRESERVES the pure-sweetener PRI-63 path 'throw in a joining bonus' — closes at ₹40L + JB", () => {
+    const { fig, jb } = closeFigureAndJb("If you can throw in a joining bonus I'll sign.");
+    expect(fig).toBe(40);
+    expect(jb).toBeGreaterThan(0);
+  });
+});

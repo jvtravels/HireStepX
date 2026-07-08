@@ -3288,7 +3288,10 @@ function detectWantsHigherBase(t: string): boolean {
 
 /* `wantsJoiningBonus` — candidate asked about or mentioned joining bonus. */
 function detectWantsJoiningBonus(t: string): boolean {
-  return /\b(?:joining\s+bonus|sign[-\s]?on\s+bonus|sign[-\s]?on\s+(?:payment|component))\b/i.test(t) ||
+  /* #36 (2026-07-08) — "signing bonus" is the same sweetener as "joining bonus"
+   * (US/global register); without it a "2L more and a signing bonus" compound
+   * demand honored the base but silently dropped the bonus condition. */
+  return /\b(?:joining\s+bonus|signing\s+bonus|sign[-\s]?on\s+bonus|sign[-\s]?on\s+(?:payment|component))\b/i.test(t) ||
     /\b(?:can\s+(?:you|the\s+company)\s+(?:offer|provide|give)\s+(?:a\s+)?(?:joining|sign[-\s]?on)\s+bonus)\b/i.test(t) ||
     /\b(?:is\s+there\s+(?:a\s+)?(?:joining|sign[-\s]?on)\s+bonus)\b/i.test(t);
 }
