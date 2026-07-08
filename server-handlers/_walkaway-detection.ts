@@ -25,7 +25,22 @@
  * moving on", "I'd rather move on", …). Topic-transition and noun uses
  * ("let's move on to…", "a smart move on paper", "this move on the
  * scope") no longer trigger. The other alternations remain broad. */
-export const WALKAWAY_PATTERN = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|(?:i(?:'|’)?(?:ll|m|d)|i\s+(?:will|have\s+to|need\s+to|want\s+to|am\s+going\s+to|would\s+rather|think\s+i(?:'|’)?ll|guess\s+i(?:'|’)?ll))\s+(?:just\s+|then\s+|probably\s+|simply\s+|really\s+|now\s+|going\s+to\s+|gonna\s+|rather\s+|likely\s+|instead\s+)?(?:move|moving)\s+on|pull out|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
+/* Round-4 hostile probe (2026-07-08) — three FALSE-POSITIVE fixes, each a
+ * catastrophic spurious walk-away (terminates a live negotiation the candidate
+ * is NOT ending):
+ *   • bare `decline` fired on positive/rhetorical/negated uses ("hard to
+ *     decline", "who would decline that?", "I can't decline an offer this
+ *     strong"). Replaced with committal-frame arms — decline must sit under a
+ *     first-person commit ("I decline", "I'll decline", "I'm going to have to
+ *     decline") or a settlement adverb ("respectfully/reluctantly decline").
+ *     Negated committal forms ("I'm not going to decline") are additionally
+ *     stripped by the negation guard below (decline added to NEGATABLE_DEPARTURE,
+ *     "no way" added to DEPARTURE_NEGATOR).
+ *   • `no deal` fired on the reassurance "no deal-breaker(s)" — mirrors the
+ *     accept classifier's breaker lookahead.
+ *   • `i'll pass` fired on the hand-off sense "I'll pass along …" — a lookahead
+ *     spares "pass along" while "I'll pass, not for me" still fires. */
+export const WALKAWAY_PATTERN = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass(?![^.!?]{0,15}?\balong\b)|no deal\b(?!\s*[-\s]?breakers?)|withdraw|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)|won.?t work|isn.?t going to work|have to pass|that won.?t work|(?:i(?:'|’)?(?:ll|m|d)|i\s+(?:will|have\s+to|need\s+to|want\s+to|am\s+going\s+to|would\s+rather|think\s+i(?:'|’)?ll|guess\s+i(?:'|’)?ll))\s+(?:just\s+|then\s+|probably\s+|simply\s+|really\s+|now\s+|going\s+to\s+|gonna\s+|rather\s+|likely\s+|instead\s+)?(?:move|moving)\s+on|pull out|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
 
 /* Negation guard (PRI-64, 2026-07-06, live staging) — WALKAWAY_PATTERN is a
  * bare alternation with no awareness of negation, so a candidate REASSURING the
@@ -45,7 +60,7 @@ export const WALKAWAY_PATTERN = /\b(walk away|walking away|i.?m out|not interest
  * still fires. Conservative by construction — suppression requires an explicit
  * negator within a few tokens, so genuine walk-aways keep firing. */
 const NEGATABLE_DEPARTURE =
-  /\b(?:walk(?:ing)? away|pull(?:ing)? out|back(?:ing)? out|withdraw(?:ing)?|drop(?:ping)? out)\b/gi;
+  /\b(?:walk(?:ing)? away|pull(?:ing)? out|back(?:ing)? out|withdraw(?:ing)?|drop(?:ping)? out|declin(?:e|ing))\b/gi;
 
 /* A negation / aversion cue that inverts a following departure phrase, matched
  * at the END of the window preceding the phrase (so it governs that phrase).
@@ -54,7 +69,7 @@ const NEGATABLE_DEPARTURE =
  * negation ("I don't think the scope fits, so I'll walk away") from suppressing
  * a real walk-away. */
 const DEPARTURE_NEGATOR =
-  /(?:\b(?:not|never|rather\s+than|instead\s+of|avoid(?:ing)?|no\s+(?:need|reason|point|intention|plan|desire)|would\s+rather\s+not|prefer\s+not|hate\s+to|reluctant\s+to|hesitant\s+to|hoping\s+not|don['’]?t\s+want|do\s+not\s+want|does\s*n['’]?t\s+want)\b|n['’]t\b)(?:\s+\S+){0,5}?\s*$/i;
+  /(?:\b(?:not|never|rather\s+than|instead\s+of|avoid(?:ing)?|no\s+(?:need|reason|point|intention|plan|desire|way)|would\s+rather\s+not|prefer\s+not|hate\s+to|reluctant\s+to|hesitant\s+to|hoping\s+not|don['’]?t\s+want|do\s+not\s+want|does\s*n['’]?t\s+want)\b|n['’]t\b)(?:\s+\S+){0,5}?\s*$/i;
 
 function stripNegatedDepartures(text: string): string {
   return text.replace(NEGATABLE_DEPARTURE, (match, offset: number, full: string) => {
