@@ -314,6 +314,20 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
   /\b(?:your|the)\s+offer\s+(?:works|sounds\s+good|is\s+fine|is\s+great)\b/i,
   /\bsounds\s+good\b/i,
   /\bthat\s+works\b/i,
+  /* Batch-2 recall (2026-07-08) — "works for me" beyond the whole-utterance
+   * anchor below. "fine, works for me." carries a leading "fine," so the
+   * `^…$` bare-token arm failed and the accept was lost (NO-CLOSE). The
+   * offer-on-table phase gate still vetoes pre-offer filler; NEGATION owns
+   * "doesn't work for me" (no trailing "s"), NEGOTIATING_BUT owns
+   * "works for me but I want more". */
+  /\bworks\s+for\s+me\b/i,
+  /* Batch-2 gate-drift fix (2026-07-08) — "let's move forward with this/the
+   * offer/number" was STRICT-gate-only (STRICT_ACCEPTANCE_PATTERNS), so the
+   * medium classifier returned signalsAcceptance=false on "done, let's move
+   * forward with this offer" — exactly the two-detector drift this module
+   * exists to prevent. Mirror it into the commitment bank; offer-reference is
+   * implicit, HEDGE/CONDITIONAL vetoes still run first. */
+  /\blet'?s\s+move\s+forward\s+with\s+(?:this|the)\s+(?:offer|number|package|deal|fitment)\b/i,
   /\bit.?s\s+a\s+deal\b/i,
   /\bdone\s+deal\b/i,
   /\blet.?s\s+(?:go\s+ahead|do\s+it|lock\s+it\s+in|proceed)\b/i,
@@ -748,7 +762,17 @@ const CONSULT_FIRST_PATTERN =
  *  boundary) does not match. Shared single-source so BOTH gates reject in
  *  lockstep. */
 const GRANT_THEN_CLOSE_PATTERN =
-  /\b(?:throw\s+in|toss\s+in|chip\s+in|add\b|include\b|cover\b|sort\s+out|guarantee|sweeten|match\b)\b[^.!?]{0,30}?\b(?:joining\s+bonus|signing\s+bonus|sign[-\s]?on\s+bonus|retention\s+bonus|joining|relocation|reloc\b|notice\s+(?:buyout|pay|period(?:\s+buyout)?)|buyout|esops?|rsus?|equity|stock(?:\s+options?)?|shares?|variable|allowances?|hra\b|perks?|benefits?|wfh|remote|sabbatical)\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
+  /\b(?:throw\s+in|toss\s+in|chip\s+in|add\b|include\b|cover\b|sort\s+out|guarantee|sweeten|match\b)\b[^.!?]{0,30}?\b(?:joining\s+bonus|signing\s+bonus|sign[-\s]?on\s+bonus|retention\s+bonus|bonus(?:es)?|joining|relocation|reloc\b|notice\s+(?:buyout|pay|period(?:\s+buyout)?)|buyout|esops?|rsus?|equity|stock(?:\s+options?)?|shares?|variable|allowances?|hra\b|perks?|benefits?|wfh|remote|sabbatical)\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
+
+/** Veto (offline hostile close battery batch 2, 2026-07-08) — a close idiom
+ *  welded to a STOCK SARCASTIC REFUSAL: "Deal? Only in your dreams.", "I'll
+ *  sign — dream on.", "count me in, when pigs fly." The bare-"deal" / "I'm in"
+ *  idiom matches, but the dismissive stock phrase flips it to an emphatic
+ *  rejection (FALSE-CLOSE). None of these idioms ever appear in a genuine
+ *  accept, so a flat token veto is safe. "fat chance" / "not a chance" overlap
+ *  WALK_AWAY (harmless redundancy). Shared single-source so BOTH gates reject. */
+const SARCASTIC_REFUSAL_PATTERN =
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|when\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b)\b/i;
 
 /** PRI-69 (2026-07-08, offline hostile close battery) — first-person DEMAND for
  *  MORE money welded to a close idiom by a NON-contrastive conjunction. The
@@ -835,6 +859,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   COUNTER_THEN_CLOSE_PATTERN,
   GRANT_THEN_CLOSE_PATTERN,
   CONDITIONAL_ACCEPT_PATTERN,
+  SARCASTIC_REFUSAL_PATTERN,
   REVIEW_TAIL_PATTERN,
   CONSULT_DEFERRAL_PATTERN,
   CONSULT_FIRST_PATTERN,

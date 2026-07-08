@@ -134,6 +134,50 @@ function offeredAt(offer: number): NegotiationState {
   return s;
 }
 
+/* PRI-70 batch 2 (2026-07-08) — a second adversarial probe surfaced two more
+ * FALSE-CLOSES and two NO-CLOSES (genuine accepts the bot would have ignored):
+ *   E. GRANT_THEN_CLOSE sweetener list missed bare "bonus" ("Guarantee the bonus
+ *      and I'm in").
+ *   F. SARCASTIC_REFUSAL — a close idiom welded to a stock dismissive ("Deal?
+ *      Only in your dreams").
+ *   G. "works for me" recall beyond the whole-utterance anchor ("fine, works
+ *      for me").
+ *   H. gate drift — "let's move forward with this offer" was strict-only, so the
+ *      medium classifier missed it ("done, let's move forward with this offer").
+ */
+describe("PRI-70 batch 2 — more FALSE-CLOSES fixed", () => {
+  it("'Guarantee the bonus and I'm in.' → NOT accepted", () => {
+    expect(acc("Guarantee the bonus and I'm in.")).toBe(false);
+  });
+  it("'Deal? Only in your dreams.' → NOT accepted", () => {
+    expect(acc("Deal? Only in your dreams.")).toBe(false);
+  });
+  it("'I'll sign — dream on.' → NOT accepted", () => {
+    expect(acc("I'll sign — dream on.")).toBe(false);
+  });
+  it("strict gate rejects the sarcasm too (lockstep)", () => {
+    expect(detectExplicitAcceptance("Deal? Only in your dreams.").accepted).toBe(false);
+  });
+});
+
+describe("PRI-70 batch 2 — genuine accepts no longer dropped (NO-CLOSE fixes)", () => {
+  it("'fine, works for me.' → accepted", () => {
+    expect(acc("fine, works for me.")).toBe(true);
+  });
+  it("'done, let's move forward with this offer.' → accepted (was strict-only)", () => {
+    expect(acc("done, let's move forward with this offer.")).toBe(true);
+  });
+  it("strict gate also accepts 'let's move forward with this offer' (lockstep)", () => {
+    expect(detectExplicitAcceptance("done, let's move forward with this offer.").accepted).toBe(true);
+  });
+  it("GUARD: 'this doesn't work for me' still NOT accepted", () => {
+    expect(acc("this doesn't work for me.")).toBe(false);
+  });
+  it("GUARD: 'works for me but I want more' still NOT accepted", () => {
+    expect(acc("works for me but I want more.")).toBe(false);
+  });
+});
+
 describe("PRI-70 end-to-end — grant-then-close never DROPS the demanded sweetener", () => {
   it("'Add a joining bonus and I'll sign' → if it closes, the JB is GRANTED (never a bare ₹40L)", () => {
     const s = applyCandidateAnswer(offeredAt(40), "Add a joining bonus and I'll sign.");
