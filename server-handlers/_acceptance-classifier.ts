@@ -345,7 +345,7 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
   /\blet'?s\s+move\s+forward\s+with\s+(?:this|the)\s+(?:offer|number|package|deal|fitment)\b/i,
   /\bit.?s\s+a\s+deal\b/i,
   /\bdone\s+deal\b/i,
-  /\blet.?s\s+(?:go\s+ahead|do\s+it|lock\s+it\s+in|proceed)\b/i,
+  /\blet.?s\s+(?:go\s+ahead|do\s+(?:it|this)|lock\s+it\s+in|proceed)\b/i,
   /* Deal-close idioms (live-staging 2026-06-19). "let's close it" /
    * "let's close the deal" / "close the deal" / "let's close this out" are
    * unambiguous finalize-the-deal commits in a negotiation — the candidate
@@ -499,7 +499,7 @@ const WALK_AWAY_PATTERN =
  * so a benign temporal "once payroll ran the numbers last year" (no
  * sort/confirm/finalize/… verb) is untouched. */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
 
 /* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
  * recall-focused accept idioms (PRI-56/57/58) each carry a short substring
@@ -543,7 +543,7 @@ const IM_IN_HEDGE_PATTERN =
  *  rhetorical veto. The proposition NOUN list (reality/fact/position/…) still
  *  excludes "offer", so a genuine "I'm accepting the offer" is untouched. */
 const ACCEPT_PROPOSITION_PATTERN =
-  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern))/i;
+  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies))/i;
 
 /** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
@@ -648,7 +648,7 @@ const SETTLE_NEGATION_PATTERN =
  * accept "let's do it now" / "let's do it at 45" is untouched (no tail token).
  * Shared single-source so both gates reject in lockstep. */
 const DO_IT_REDIRECT_PATTERN =
-  /\bdo\s+it\s+(?:differently|in\s+a\s+different\s+way|a\s+different\s+way|another\s+way|some\s+other\s+way|some\s+other\s+time|your\s+way|later|instead)\b/i;
+  /\bdo\s+(?:it|this)\s+(?:differently|in\s+a\s+different\s+way|a\s+different\s+way|another\s+way|some\s+other\s+way|some\s+other\s+time|your\s+way|later|instead)\b/i;
 
 /* Offline hostile sweep batch 2 (2026-06-23) — three more FALSE-CLOSE classes
  * surfaced by the adversarial probe, each a close idiom whose meaning is flipped
