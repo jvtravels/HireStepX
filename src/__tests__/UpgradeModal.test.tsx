@@ -81,8 +81,8 @@ describe("UpgradeModal", () => {
   });
 
   it("marks starter as current when user is on starter plan", () => {
-    render(<UpgradeModal {...defaultProps} currentTier="starter" />);
-    // Starter users see the Sprint Pack top-up banner (the pack has no reset).
+    render(<UpgradeModal {...defaultProps} currentTier="starter" starterExhausted />);
+    // An exhausted Starter sees the Sprint Pack top-up banner (the pack has no reset).
     expect(screen.getByText(/used all sessions in your Sprint Pack/)).toBeInTheDocument();
   });
 
