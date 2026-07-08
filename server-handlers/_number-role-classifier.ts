@@ -146,10 +146,7 @@ const CURRENT_CUES: CueTable = {
      * noun-phrase role tokens. */
     /\bi.?m\s+an?\s+(?:[a-z0-9]+\s+){0,3}at\s+\w/i,
     /\b(?:earning|drawing|making|getting|take\s+home)\b/i,
-    /\btold\s+you(?:\s+(?:already|multiple\s+times|before|many\s+times))?\b/i,
-    /\b(?:as|like)\s+i\s+(?:said|mentioned|stated|told\s+you)\b/i,
     /\bpackage\s+progression\b/i,
-    /\b(?:said|mentioned)\s+(?:already\s+)?/i,
     /* PARSER-1 (2026-06-08): "Total CTC is N LPA" is a very common
      * candidate phrasing in long sessions (EVAL-6 long-horizon-
      * trajectory T2). The pre-existing `my ... ctc` cue requires a
@@ -201,6 +198,31 @@ const CURRENT_CUES: CueTable = {
      * LPA total." binds to target (target left-cue wins outright). */
   ],
 };
+
+/* Restatement / repetition meta-cues (#40, live-staging 2026-07-08).
+ *
+ * "I already told you", "as I said/mentioned", "I said/mentioned already"
+ * signal that the candidate is REPEATING a previously-stated figure — but
+ * they do NOT say WHICH figure (current pay vs target ask). Historically
+ * they lived inside CURRENT_CUES.left because, in isolation ("I told you,
+ * 24 LPA CTC overall"), the repeated figure is almost always the current
+ * CTC and no other cue fires. The failure mode: when the SAME span also
+ * carries an explicit target declaration — "I already told you: 55 lakhs
+ * is my target" — the restatement cue tied the target cue on score and won
+ * the current>target tiebreak, binding 55 to CURRENT. That overwrote the
+ * real current CTC (42) and fired a phantom same-axis contradiction the
+ * candidate could not clear (restating either number just flipped it).
+ *
+ * Fix: treat these as the WEAKEST tier. They reinforce `current` ONLY when
+ * no explicit target/competing cue bound the span — i.e. when they are the
+ * sole signal. An explicit "is my target" / "offer of" always wins. This
+ * preserves the isolated "I told you, 24 LPA CTC overall" bind (no target
+ * cue → restatement still scores current) while fixing the collision. */
+const RESTATEMENT_CUES: RegExp[] = [
+  /\btold\s+you(?:\s+(?:already|multiple\s+times|before|many\s+times))?\b/i,
+  /\b(?:as|like)\s+i\s+(?:said|mentioned|stated|told\s+you)\b/i,
+  /\b(?:said|mentioned)\s+(?:already\s+)?/i,
+];
 
 const TARGET_CUES: CueTable = {
   left: [
@@ -317,8 +339,15 @@ const TARGET_CUES: CueTable = {
     /\bthat.?s\s+my\s+(?:number|ask|figure|final)\b/i,
     /* "42 is my final figure / my figure / my expectation" — Indian-HR
      * candidates state the target as a "figure" or "expectation" just as
-     * often as "number/ask". Live-staging 2026-06-19: these bound null. */
-    /\bmy\s+(?:final\s+)?(?:number|ask|figure|expectation)\b/i,
+     * often as "number/ask". Live-staging 2026-06-19: these bound null.
+     * #40 (live-staging 2026-07-08): `target` added to the alternation.
+     * "55 lakhs is my target" is the single most literal way to state an
+     * ask, yet "my target" was absent here — target scored 0, and a
+     * co-occurring restatement cue ("I already told you: 55 … is my
+     * target") bound the 55 to CURRENT, overwriting the real current CTC
+     * and firing a phantom same-axis contradiction the candidate could
+     * never clear. See RESTATEMENT_CUES below for the sibling half. */
+    /\bmy\s+(?:final\s+)?(?:number|ask|figure|expectation|target)\b/i,
     /\bmy\s+bottom\s+line\b/i,
     /\bnon[-\s]?negotiable\b/i,
     /\bno\s+less\b/i,
@@ -766,10 +795,22 @@ function scoreRolesForSpan(
     for (const re of cues.right) if (re.test(rightWindow)) n++;
     return n;
   };
+  const currentScore = scoreOne(CURRENT_CUES);
+  const targetScore = scoreOne(TARGET_CUES);
+  const competingScore = scoreOne(COMPETING_CUES);
+  /* #40 — restatement meta-cues are the weakest tier: they reinforce
+   * `current` only when no explicit target/competing cue bound this span
+   * (see RESTATEMENT_CUES). Left-window only, mirroring how they used to
+   * sit in CURRENT_CUES.left. */
+  const restatementFired = RESTATEMENT_CUES.some((re) => re.test(leftWindow));
+  const currentWithRestatement =
+    restatementFired && targetScore === 0 && competingScore === 0
+      ? currentScore + 1
+      : currentScore;
   return {
-    current: scoreOne(CURRENT_CUES),
-    target: scoreOne(TARGET_CUES),
-    competing: scoreOne(COMPETING_CUES),
+    current: currentWithRestatement,
+    target: targetScore,
+    competing: competingScore,
   };
 }
 
