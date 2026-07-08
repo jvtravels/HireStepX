@@ -627,6 +627,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           sessionsUsed={sessionsUsed}
           user={user}
           currentTier={user?.subscriptionTier || "free"}
+          starterExhausted={starterExhausted}
           onPaymentSuccess={(tier, start, end) => {
             setShowUpgradeModal(false);
             setPaymentBanner("success");
