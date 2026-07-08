@@ -722,11 +722,29 @@ const RELATIVE_DEMAND_THEN_CLOSE_PATTERN =
 const WORD_DEMAND_THEN_CLOSE_PATTERN =
   /\b(?:a|an|one|half\s+a|(?:a\s+)?couple(?:\s+of)?|(?:a\s+)?few|several)\s+(?:l\b|lpa|lakhs?|lac|%|percent)\s*(?:more|higher|extra|additional|on\s+top)(?!\s+than)\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
 
+/** #35 (2026-07-08, offline hostile close battery) — VERB-FRONTED cash bump
+ *  welded to a close idiom. The three demand vetoes above all require a TRAILING
+ *  increase token ("2 higher", "a lakh more"), but a bump whose increase intent
+ *  lives in the VERB carries none: "Bump it 5% and I'll sign", "Push the base up
+ *  by a few percent and we have a deal". Those slipped every veto and classified
+ *  an UNCONDITIONAL accept → the close finalized at the un-bumped offer while the
+ *  candidate demanded a raise (soft false-close). Match an increase VERB
+ *  (same set as the planner's INCREASE_VERB) + a magnitude (digit or verbal
+ *  quantifier) + a cash/percent unit, ABUTTING an and/then/& close continuation.
+ *  Vetoing routes the turn to the conditional-close path where
+ *  resolveConditionalCashTarget (#35) resolves the percent/lakh delta and honors
+ *  or declines it. Needs the unit, so "add the joining bonus and I'll sign" (no
+ *  magnitude+unit) and "I'm 100 percent in" (no increase verb, no and/then) are
+ *  both spared. Shared single-source so BOTH gates reject in lockstep. */
+const VERB_MAGNITUDE_THEN_CLOSE_PATTERN =
+  /\b(?:bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack)\b[^.!?]{0,25}?\b(?:\d+(?:\.\d+)?|a|an|one|half\s+a|(?:a\s+)?couple(?:\s+of)?|(?:a\s+)?few|several)\s*(?:%|(?:percent|per\s?cent|lpa|lakhs?|lac|l|k)\b)[^.!?]{0,25}?\b(?:and|then|&)\b/i;
+
 /** All PRI-59/61/63/69 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   DEMAND_FOR_MORE_PATTERN,
   RELATIVE_DEMAND_THEN_CLOSE_PATTERN,
   WORD_DEMAND_THEN_CLOSE_PATTERN,
+  VERB_MAGNITUDE_THEN_CLOSE_PATTERN,
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,

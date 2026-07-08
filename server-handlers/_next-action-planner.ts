@@ -1275,6 +1275,39 @@ function resolveConditionalCashTarget(
         t,
       )
     : null;
+  /* couple/few/several magnitude map, shared by the percent resolver below and
+   * the word-magnitude lakh branch further down. */
+  const WORD_MAGNITUDE: Record<string, number> = {
+    couple: 2,
+    few: 3,
+    several: 4,
+  };
+  /* #35 (2026-07-08, offline hostile battery) — percentage-axis conditional
+   * bump. A cash increase stated as a PERCENT ("bump it 5%", "a couple of
+   * percent", "another 3 percent") reached this resolver, but every branch keyed
+   * on a lakh noun — "%"/"percent" parsed nowhere — so it returned null and the
+   * near-offer close gate finalized at the UN-BUMPED offer: the same soft-false-
+   * close class as #33 on a different unit (confirmed via probe: "bump it a
+   * couple of percent" → closed at ₹40L, 0% movement). Resolve the percent to a
+   * real lakh delta (offer × pct/100) so the unchanged deliverability gate honors
+   * or declines it. Checked BEFORE the lakh-delta parse so "another 3 percent"
+   * reads as +3% (₹41.2L), not +3L. Gated on the same increase intent as every
+   * other branch, so "I'm 100 percent in" (full-acceptance idiom, no increase
+   * cue) never registers as a bump. Capped at 100% — an out-of-range figure
+   * declines to null (fall through to counter), never a silent accept. */
+  const PCT = String.raw`(?:%|percent|per\s?cent|pct)`;
+  const numPct = new RegExp(String.raw`(\d+(?:\.\d+)?)\s*${PCT}`).exec(t);
+  const wordPct = new RegExp(
+    String.raw`\b(couple|few|several)\s+(?:of\s+)?(?:more\s+)?${PCT}`,
+  ).exec(t);
+  if (wantsMore || another != null || more != null || by != null) {
+    let pct: number | null = null;
+    if (numPct) pct = parseFloat(numPct[1]);
+    else if (wordPct) pct = WORD_MAGNITUDE[wordPct[1]];
+    if (pct != null && Number.isFinite(pct) && pct > 0 && pct <= 100) {
+      return offer + (offer * pct) / 100;
+    }
+  }
   const deltaMatch = another ?? more ?? by;
   if (deltaMatch) {
     const d = parseFloat(deltaMatch[1]);
@@ -1296,11 +1329,6 @@ function resolveConditionalCashTarget(
    * through to counter) — never a silent accept at the un-bumped number. Gated
    * on the same increase intent as the numeric path, and welded to a cash noun
    * so "a couple of days"/"a few weeks" never register as a bump. */
-  const WORD_MAGNITUDE: Record<string, number> = {
-    couple: 2,
-    few: 3,
-    several: 4,
-  };
   const cashNoun = String.raw`(?:l|lpa|lakhs?|lac|base|fixed|cash|ctc)`;
   const wordDelta = new RegExp(
     String.raw`\b(?:by|another|add|of|up)?\s*a?\s*(couple|few|several)\s+(?:of\s+)?(?:more\s+)?${cashNoun}\b`,

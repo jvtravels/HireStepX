@@ -130,3 +130,76 @@ describe("#33b — article/half-lakh verbal cash demand never false-closes at th
     expect(r.reasons).not.toContain("false-close-veto");
   });
 });
+
+/* #35 — percentage-axis conditional cash bump. A cash increase stated as a
+ * PERCENT must resolve to a real lakh delta and honor-or-decline it — never
+ * soft-false-close at the un-bumped offer (offline hostile close battery,
+ * 2026-07-08). Two defects, one class ("[increase] N percent + close idiom"):
+ *
+ *  1. Planner resolution miss. "if you can bump it a couple of percent" reached
+ *     resolveConditionalCashTarget, but every branch keyed on a lakh noun — "%"
+ *     parsed nowhere — so it returned null and the near-offer close gate
+ *     finalized at the un-bumped offer. Fix (single source): percent resolution
+ *     (offer × pct/100) in that function, checked before the lakh-delta parse.
+ *  2. Acceptance-classifier miss. "Bump it 5% and I'll sign" / "Push the base up
+ *     by a few percent and we have a deal" — the increase intent is in the VERB,
+ *     so the three trailing-token demand vetoes all missed and the close idiom
+ *     classified an UNCONDITIONAL accept at the un-bumped offer. Fix (single
+ *     source): VERB_MAGNITUDE_THEN_CLOSE_PATTERN in FALSE_CLOSE_VETO_PATTERNS.
+ *
+ * Control: "I'm 100 percent in" is a full-acceptance idiom, not a demand — it
+ * carries no increase cue and must still finalize cleanly at the standing offer.
+ */
+/** True across ALL close-family levers (close, auto-accept, close-recap-formal):
+ *  did the turn FINALIZE at the standing, un-bumped ₹40L? A demand that
+ *  finalizes here has had its raise silently dropped — the soft-false-close. */
+function finalizesAtUnbumped40(utter: string): boolean {
+  const s = applyCandidateAnswer(offeredAt(40), utter);
+  const action = planNextAction(s);
+  const isClose =
+    action.kind === "close" ||
+    action.kind === "auto-accept" ||
+    action.kind === "close-recap-formal";
+  return isClose && actionToLever(action, s).newTotalLpa === 40;
+}
+
+describe("#35 — percentage-axis conditional cash bump never soft-false-closes at the un-bumped offer", () => {
+  it("resolves an explicit conditional 'bump it a couple of percent' to a +2% BUMP (₹40.8L)", () => {
+    // a couple = 2% of 40 = 0.8 → ₹40.8L; gap = max(2, 2.4) = 2.4 > 0.8, so this
+    // is a deliverable in-gap bump — meet-and-close at the bumped figure, not ₹40L.
+    const at = closeFigure("I'll sign today if you can bump it a couple of percent.");
+    expect(at).not.toBeNull();
+    expect(at).toBeCloseTo(40.8, 5);
+  });
+
+  it("resolves an explicit numeric '5%' conditional bump to ₹42L (5% of 40 = 2, in-gap)", () => {
+    const at = closeFigure("I'll sign if you can bump it 5%.");
+    expect(at).not.toBeNull();
+    expect(at).toBeCloseTo(42, 5);
+  });
+
+  it("VETOES and never finalizes the verb-fronted 'Bump it 5% and I'll sign' at ₹40L", () => {
+    // The increase intent is in the VERB (bump), so the trailing-token demand
+    // vetoes miss it — VERB_MAGNITUDE_THEN_CLOSE catches it. Vetoed → routed to a
+    // counter, never a close at the un-bumped ₹40L with the +5% dropped.
+    expect(classifyAcceptance("Bump it 5% and I'll sign.").reasons).toContain("false-close-veto");
+    expect(finalizesAtUnbumped40("Bump it 5% and I'll sign.")).toBe(false);
+  });
+
+  it("VETOES and never finalizes 'Push the base up by a few percent and we have a deal' at ₹40L", () => {
+    expect(
+      classifyAcceptance("Push the base up by a few percent and we have a deal.").reasons,
+    ).toContain("false-close-veto");
+    expect(finalizesAtUnbumped40("Push the base up by a few percent and we have a deal.")).toBe(false);
+  });
+
+  it("CONTROL: 'I'm 100 percent in' is a full-acceptance idiom — no bump, closes cleanly at ₹40L", () => {
+    // No increase cue → resolveConditionalCashTarget returns null and the veto
+    // never fires; the acceptance idiom finalizes cleanly at the offer (NOT a
+    // +100% bump to ₹80L). Finalizing at ₹40L here is CORRECT — nothing was demanded.
+    expect(classifyAcceptance("I'm 100 percent in, send the letter.").reasons).not.toContain(
+      "false-close-veto",
+    );
+    expect(finalizesAtUnbumped40("I'm 100 percent in, send the letter.")).toBe(true);
+  });
+});
