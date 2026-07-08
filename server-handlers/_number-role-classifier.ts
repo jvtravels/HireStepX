@@ -1036,6 +1036,33 @@ function isRelativeIncreaseSpan(text: string, span: SalarySpan): boolean {
   return RELATIVE_INCREASE_RIGHT_ANCHORED.test(rightWindow);
 }
 
+/* Beat-by / over-reference relative delta (§11b, 2026-07-08). The LEFT-anchored
+ * sibling of isRelativeIncreaseSpan. A number governed by a comparison-beat verb
+ * over a reference ("beat my current by 5", "exceed it by 3", "top that by 2") —
+ * or trailing an over-reference phrase ("5 over my current", "3 above the offer")
+ * — is a delta the candidate wants applied to their current pay / the offer, NOT
+ * a restatement of that reference. Before this guard, "beat my current by 5"
+ * bound 5 as currentCtc: with the candidate's real current (e.g. 38) already on
+ * record, that drifted >10% and false-fired the memory contradiction-callout,
+ * derailing a perfectly reasonable in-band ask (current + 5 = 43) into a
+ * "which figure is authoritative?" reconciliation. This pure classifier has no
+ * anchor to resolve the delta to an absolute, so — mirroring §9d — the correct
+ * minimum is to bind it to NO role; the utterance then routes through the normal
+ * counter path. (Deriving the absolute target = reference + delta is a separate
+ * kernel-side enhancement; it needs the stored reference this parser lacks.)
+ * Verb-gated to comparison-beats (beat/exceed/top/surpass/better-than/…) so a
+ * bare temporal "by 5 pm" or an additive "bump it by 5" stays untouched. */
+const BEAT_BY_LEFT_ANCHORED =
+  /\b(?:beat|exceed|top|surpass|improve\s+(?:on|upon)|better\s+than|go\s+(?:above|over)|get\s+(?:me\s+)?(?:above|over))\b[^.!?;]{0,24}?\bby\s+$/i;
+const OVER_REFERENCE_RIGHT_ANCHORED =
+  /^\s*(?:lpa|lakhs?|lacs?|lac|l|k)?\s*(?:over|above|on\s+top\s+of|more\s+than)\s+(?:my\s+|the\s+|their\s+)?(?:current|ctc|comp\w*|package|base|offer|salary)\b/i;
+function isBeatByReferenceSpan(text: string, span: SalarySpan): boolean {
+  const leftWindow = text.slice(0, span.start);
+  if (BEAT_BY_LEFT_ANCHORED.test(leftWindow)) return true;
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 24));
+  return OVER_REFERENCE_RIGHT_ANCHORED.test(rightWindow);
+}
+
 /* ─── Aggregator ───────────────────────────────────────────────────── */
 
 /** Main entry point. Returns the role-bound numbers for the utterance.
@@ -1107,6 +1134,10 @@ export function classifyNumberRoles(
      * RELATIVE delta, not an absolute target/counter — bind to no role so it
      * can't false-accept via the auto-accept-counter gate. */
     if (isRelativeIncreaseSpan(text, span)) continue;
+    /* §11b: "beat my current by 5" / "5 over my current" is a delta on a
+     * reference, not a restatement of it — bind to no role so it can't clobber
+     * currentCtc and false-fire the memory contradiction-callout. */
+    if (isBeatByReferenceSpan(text, span)) continue;
     /* Equity keyword directly preceding the number overrides even a scored
      * current cue ("I get stock worth 5 LPA"). */
     if (isEquityLeftAdjacentSpan(text, span)) continue;

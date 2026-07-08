@@ -661,9 +661,14 @@ const CONDITIONAL_DEMAND_PATTERN =
  *  figure rather than an explicit number. The close idiom is contingent on the
  *  company first improving, so it is a counter, not an accept (FALSE-CLOSE).
  *  Object scoped to money referents so "match the role and start" is untouched.
- *  Offline sweep batch 4 (2026-06-23). */
+ *  §11b (2026-07-08) widened the object set to the candidate's OWN reference
+ *  ("beat my current by 5 and I'm in", "top my package and we're done"): a
+ *  beat-by-N on their current pay is just as much an unmet condition as beating
+ *  a rival's number, and the number-role classifier deliberately drops the
+ *  unresolvable "by 5" delta — so without this the bare "and I'm in" idiom
+ *  false-closed at the un-bumped offer. Offline sweep batch 4 (2026-06-23). */
 const COUNTER_THEN_CLOSE_PATTERN =
-  /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc))\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
+  /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:current|ctc|comp\w*|package|base|salary|pay|number))\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
 
 /** Veto: leading conditional governing a close idiom — "if you beat Google's
  *  offer I'm in", "if my manager approves then deal", "unless you fix the base,
