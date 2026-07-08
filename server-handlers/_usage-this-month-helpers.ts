@@ -29,7 +29,7 @@ export function monthWindow(now: Date): UsageWindow {
 
 /** One day / 31 days in ms — the pack-window clamp mirrors checkSessionLimit. */
 const DAY_MS = 24 * 60 * 60 * 1000;
-const THIRTY_ONE_DAYS_MS = 31 * DAY_MS;
+const EIGHT_DAYS_MS = 8 * DAY_MS; // clamp slightly over the 7-day pack
 
 /**
  * Usage window for the Starter Sprint Pack — a one-off pack of 5 sessions
@@ -47,8 +47,8 @@ export function packWindow(
   const nowMs = now.getTime();
   const startMs = subscriptionStart ? new Date(subscriptionStart).getTime() : NaN;
   const clampedStart = Number.isFinite(startMs)
-    ? Math.max(startMs, nowMs - THIRTY_ONE_DAYS_MS)
-    : nowMs - THIRTY_ONE_DAYS_MS;
+    ? Math.max(startMs, nowMs - EIGHT_DAYS_MS)
+    : nowMs - EIGHT_DAYS_MS;
   const endMs = subscriptionEnd ? new Date(subscriptionEnd).getTime() : NaN;
   const upper = Number.isFinite(endMs) && endMs > nowMs ? endMs : nowMs + DAY_MS;
   return {
