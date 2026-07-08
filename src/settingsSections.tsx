@@ -893,7 +893,9 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
             <div style={subHeaderHint}>
               {authUser?.cancelAtPeriodEnd
                 ? `Access remains until ${endDateLabel}.`
-                : `Renews ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle.`}
+                : tier === "starter"
+                  ? `Valid till ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this pack.`
+                  : `Renews ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle.`}
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
