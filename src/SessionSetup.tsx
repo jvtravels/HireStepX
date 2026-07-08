@@ -808,9 +808,25 @@ export default function SessionSetup() {
   const freeSessionCount = user?.practiceTimestamps?.length ?? 0;
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);
+  // Starter is a "Sprint Pack": 5 sessions counted from subscription_start
+  // over a 30-day window, NOT a calendar week — mirror the server gate in
+  // _shared.ts checkSessionLimit (and DashboardContext). Anchoring on the
+  // calendar week wrongly counted pre-purchase free sessions from the same
+  // week, showing a freshly bought pack as already exhausted.
+  const STARTER_PACK_MS = 31 * 24 * 60 * 60 * 1000;
+  const STARTER_PACK_30_MS = 30 * 24 * 60 * 60 * 1000;
+  const starterSubStartMs = user?.subscriptionStart ? new Date(user.subscriptionStart).getTime() : NaN;
+  const starterSubEndMs = user?.subscriptionEnd ? new Date(user.subscriptionEnd).getTime() : NaN;
+  // Prefer subscription_start; else derive from subscription_end (pack = 30d);
+  // else rolling 30-day lookback. Never the calendar week (see DashboardContext).
+  const starterDerivedStartMs = Number.isFinite(starterSubStartMs)
+    ? starterSubStartMs
+    : Number.isFinite(starterSubEndMs)
+      ? starterSubEndMs - STARTER_PACK_30_MS
+      : Date.now() - STARTER_PACK_30_MS;
+  const packStartMs = Math.max(starterDerivedStartMs, Date.now() - STARTER_PACK_MS);
   const practiceTimestamps = user?.practiceTimestamps ?? [];
-  const sessionsThisWeek = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= weekStart.getTime(); } catch { return false; } }).length;
+  const sessionsThisWeek = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= packStartMs; } catch { return false; } }).length;
   const sessionsThisMonth = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; } }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
   const proRemaining = Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth);
@@ -1984,8 +2000,8 @@ export default function SessionSetup() {
                 : `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions left this month.`
               : showStarter
               ? starterRemaining === 0
-                ? 'Weekly session limit reached — resets on Sunday.'
-                : `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left this week.`
+                ? 'Sprint Pack used up — buy session credits to keep going.'
+                : `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left in your pack.`
               : freeLeft <= 0
               ? 'No free sessions left — upgrade to continue.'
               : freeLeft === 1
