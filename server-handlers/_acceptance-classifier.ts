@@ -461,8 +461,16 @@ const WALK_AWAY_PATTERN =
  *  medium gate (classifyAcceptance, via HARD_CONDITIONAL) and the strict gate
  *  (detectExplicitAcceptance, via HEDGE_VETO_PATTERNS) so the two stay in
  *  lockstep — offline hostile sweep (2026-06-22). */
+/* Offline hostile close battery (2026-07-08) — the subject slot was scoped to
+ * first/second-person + it/that/the/my, so a deferral gated on an ORG ACTOR
+ * ("I'll sign once PAYROLL confirms the base", "count me in when FINANCE signs
+ * off") slipped the veto and FALSE-CLOSED at the un-adjusted offer. Widened to
+ * the settlement-relevant org actors (payroll/hr/finance/legal/management/the
+ * team/the company/approvals); the trailing settlement VERB is still required,
+ * so a benign temporal "once payroll ran the numbers last year" (no
+ * sort/confirm/finalize/… verb) is untouched. */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?)\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es))\b/i;
 
 /* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
  * recall-focused accept idioms (PRI-56/57/58) each carry a short substring
@@ -533,15 +541,23 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * accepting this" slipped the veto and FALSE-CLOSED on an outright rejection —
    * the worst failure class. Keying both gates on the same inflected stem closes
    * the gap. */
-  /* inverted interrogative: "why would/should I … accept(ing)" */
-  /\bwhy\s+(?:would|should|will|on\s+earth\s+(?:would|should))\s+i\b[^.!?]{0,30}\baccept(?:s|ing|ed)?\b/i,
-  /* subject-verb inversion: "would/should I (ever) accept" — never a genuine
-   * accept (that is "I would accept"); the inversion marks a question. */
-  /\b(?:would|should)\s+i\s+(?:ever\s+|really\s+|honestly\s+|seriously\s+)?(?:be\s+)?accept(?:s|ing|ed)?\b/i,
-  /* disbelief frame: "(do) you (really) think/expect/believe … accept(ing)" */
-  /\byou\s+(?:really\s+|seriously\s+|honestly\s+|actually\s+)?(?:think|expect|believe|assume|reckon|suppose|imagine)\b[^.!?]{0,30}\baccept(?:s|ing|ed)?\b/i,
-  /* negation-by-impossibility: "(there's) no way I('m/d) accept(ing)" */
-  /\b(?:no\s+way|there'?s\s+no\s+way)\b[^.!?]{0,20}\baccept(?:s|ing|ed)?\b/i,
+  /* VERB WIDENING (offline hostile close battery, 2026-07-08) — the disbelief /
+   * inversion frames governed only "accept", but the same rhetorical frame over
+   * the "take N" / "sign" commit verb ("You really think I'll TAKE 40?", "Why
+   * would I SIGN this?") flipped an accept-frame into a rejection that step-2.4
+   * (accept-at-or-below-offer) then FALSE-CLOSED. The commit-verb group below
+   * matches accept/take/sign in all inflections; a genuine accept ("I accept",
+   * "I'll take 40", "I'll sign") carries none of these governors, so it is
+   * untouched. */
+  /* inverted interrogative: "why would/should I … accept/take/sign" */
+  /\bwhy\s+(?:would|should|will|on\s+earth\s+(?:would|should))\s+i\b[^.!?]{0,30}\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
+  /* subject-verb inversion: "would/should I (ever) accept/take/sign" — never a
+   * genuine accept (that is "I would accept"); the inversion marks a question. */
+  /\b(?:would|should)\s+i\s+(?:ever\s+|really\s+|honestly\s+|seriously\s+)?(?:be\s+)?(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
+  /* disbelief frame: "(do) you (really) think/expect/believe … accept/take/sign" */
+  /\byou\s+(?:really\s+|seriously\s+|honestly\s+|actually\s+)?(?:think|expect|believe|assume|reckon|suppose|imagine)\b[^.!?]{0,30}\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
+  /* negation-by-impossibility: "(there's) no way I('m/d) accept/take/sign" */
+  /\b(?:no\s+way|there'?s\s+no\s+way)\b[^.!?]{0,20}\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
   /* sarcastic counterfactual: "(as if / like) I'd accept that" — the
    * conditional "I'd accept" under an "as if"/"like" frame is a refusal, never
    * a genuine accept (which is "I accept" / "I'll accept"). Offline sweep
@@ -698,7 +714,41 @@ const REVIEW_TAIL_PATTERN =
  *  "once you confirm the base I'll sign" (owned by CONDITIONAL_DEFERRAL) and
  *  genuine accepts are untouched. Offline sweep batch 4. */
 const CONSULT_DEFERRAL_PATTERN =
-  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)\s+(?:talk|speak|consult|discuss|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+by|get\s+back|am\s+back))/i;
+  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)\s+(?:talk|speak|consult|discuss|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+(?:by|past|with)|get\s+back|am\s+back))/i;
+
+/** Veto (offline hostile close battery, 2026-07-08) — the LEADING consult form:
+ *  "Let me run it past my spouse and I'll sign", "let me sleep on it and it's a
+ *  deal", "let me check with my manager, then deal". CONSULT_DEFERRAL_PATTERN
+ *  owns only the TRAILING "…and I'll sign once I talk to X" (after/once/when/
+ *  until head); a candidate who fronts the consultation carries no such head, so
+ *  the welded close idiom ("I'll sign"/"deal") FALSE-CLOSED while they were
+ *  deferring to a third party. Scoped to unambiguous consult/deliberate verbs
+ *  after "let me" so the genuine performative "let me sign" (a commit) does NOT
+ *  match. Shared single-source so BOTH gates reject in lockstep. */
+const CONSULT_FIRST_PATTERN =
+  /\blet\s+me\s+(?:first\s+|just\s+)?(?:run\s+it\s+(?:by|past|with)|bounce\s+it\s+(?:off|by)|check\s+(?:with|in\s+with)|speak\s+(?:to|with)|talk\s+(?:to|it\s+over\s+with|with)|consult|discuss\s+(?:it\s+)?with|sleep\s+on\s+it|loop\s+in|think\s+it\s+over)\b/i;
+
+/** Veto (offline hostile close battery, 2026-07-08) — a NON-numeric sweetener
+ *  GRANT demand welded to a close idiom by a non-contrastive conjunction:
+ *  "Throw in relocation and we've got a deal", "Add a joining bonus and I'll
+ *  sign", "Include equity and I'm in", "Sort out the ESOP and count me in". The
+ *  close idiom matches, but it is CONTINGENT on the company first granting an
+ *  unmet sweetener — a counter, not an unconditional accept (soft FALSE-CLOSE,
+ *  the worst mode). CONDITIONAL_DEMAND / DEMAND_FOR_MORE / VERB_MAGNITUDE all
+ *  require a NUMBER, COUNTER_THEN_CLOSE requires a beat/match verb, and PRI-63's
+ *  grant veto owns only the LEADING "if you throw in …" form — so the "and"-
+ *  welded bare-grant form slipped every existing veto. Match a grant verb
+ *  (throw/toss/chip in · add · include · cover · sort out · guarantee · sweeten ·
+ *  match) + an explicit SWEETENER noun (joining/signing/retention bonus · equity/
+ *  ESOP/RSU/stock · relocation · notice buyout · variable · allowance/HRA · perks/
+ *  benefits · WFH) ABUTTING an and/then/& continuation. The sweetener noun is
+ *  REQUIRED, so a genuine accept naming no sweetener ("add me and I'll sign") is
+ *  untouched, and past-tense acknowledgement of a GRANTED sweetener ("you covered
+ *  relocation and I'm in" — "covered"/"threw" carry no \bcover\b/\bthrow\b
+ *  boundary) does not match. Shared single-source so BOTH gates reject in
+ *  lockstep. */
+const GRANT_THEN_CLOSE_PATTERN =
+  /\b(?:throw\s+in|toss\s+in|chip\s+in|add\b|include\b|cover\b|sort\s+out|guarantee|sweeten|match\b)\b[^.!?]{0,30}?\b(?:joining\s+bonus|signing\s+bonus|sign[-\s]?on\s+bonus|retention\s+bonus|joining|relocation|reloc\b|notice\s+(?:buyout|pay|period(?:\s+buyout)?)|buyout|esops?|rsus?|equity|stock(?:\s+options?)?|shares?|variable|allowances?|hra\b|perks?|benefits?|wfh|remote|sabbatical)\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
 
 /** PRI-69 (2026-07-08, offline hostile close battery) — first-person DEMAND for
  *  MORE money welded to a close idiom by a NON-contrastive conjunction. The
@@ -783,9 +833,11 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   RETRACTION_PATTERN,
   CONDITIONAL_DEMAND_PATTERN,
   COUNTER_THEN_CLOSE_PATTERN,
+  GRANT_THEN_CLOSE_PATTERN,
   CONDITIONAL_ACCEPT_PATTERN,
   REVIEW_TAIL_PATTERN,
   CONSULT_DEFERRAL_PATTERN,
+  CONSULT_FIRST_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
   ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];
