@@ -76,11 +76,40 @@ describe("acceptance classifier — negation / hesitation must not accept", () =
     "let me check",
     "give me time",
     "hmm, not sure",
+    /* Negated-acceptance wall (2026-07-09 probe) — an accept idiom under a
+     * negation scope is a REJECTION. NEGATION_PATTERN's verb list previously
+     * omitted sign/take and inflected accepting/accepted, so these matched a
+     * positive arm and FALSE-CLOSED on an outright refusal. Both gates must
+     * block (see the strict-gate assertion below). */
+    "I won't sign today",
+    "I will not sign today",
+    "I'm not signing this",
+    "I am not accepting this offer",
+    "I don't accept this",
+    "I'm not taking it",
+    "I won't take the offer",
+    "I'm not going to accept that",
+    "no way I accept this",
+    "I can't accept that",
   ];
   for (const input of cases) {
     it(`"${input}" → NOT accepted`, () => {
       const r = classifyAcceptance(input, onTable);
       expect(r.accepted, `reasons=${r.reasons.join(",")}`).toBe(false);
+    });
+  }
+  /* The strict gate (closing UI + kernel escalation-boost) must reject the same
+   * negated-acceptance forms — a strict false-accept here is a soft FALSE-CLOSE. */
+  const strictNegated = [
+    "I won't sign today",
+    "I will not sign today",
+    "I am not accepting this offer",
+    "I'm not taking it",
+    "no way I accept this",
+  ];
+  for (const input of strictNegated) {
+    it(`strict: "${input}" → NOT accepted`, () => {
+      expect(detectExplicitAcceptance(input).accepted).toBe(false);
     });
   }
 });

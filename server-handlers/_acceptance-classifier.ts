@@ -935,9 +935,18 @@ const NEGOTIATING_BUT_PATTERN =
 const INFO_SEEKING_BUT_PATTERN =
   /\b(?:but|however|lekin|magar)\b[^.!?\n]{0,60}?\b(?:know|share|tell|explain|clarify|elaborate|walk\s+(?:me\s+)?through|understand|learn|hear|see|ask|find\s+out)\b/i;
 
-/** Veto: negation of acceptance ("not interested", "won't accept"). */
+/** Veto: negation of acceptance ("not interested", "won't accept", "won't
+ *  sign", "not accepting this offer"). The verb alternation must cover the
+ *  SAME acceptance verbs the positive arms match, or a negated accept slips the
+ *  veto and FALSE-CLOSES on an outright rejection (2026-07-09 probe: "I won't
+ *  sign today" matched the "signing today" arm; "I am not accepting this offer"
+ *  matched the performative-accept arm). `accept(?:ing|ed)?` is required because
+ *  bare `\baccept\b` stops at the word boundary before "-ing"/"-ed", so it never
+ *  matched the inflected "not accepting"/"not accepted". Adjacency (single \s+
+ *  gap) keeps enthusiastic accepts safe: "I can't wait to sign" has filler
+ *  between the negator and the verb, so it is not vetoed. */
 const NEGATION_PATTERN =
-  /\b(no|not|don.?t|can.?t|won.?t|never)\s+(?:accept|interested|want|going|happy|comfortable|sure)\b/i;
+  /\b(no|not|don.?t|can.?t|won.?t|never)\s+(?:accept(?:ing|ed)?|interested|want|going|happy|comfortable|sure|sign(?:ing)?|tak(?:e|ing))\b/i;
 
 /** Veto: weak-affirmative starters with no offer reference.
  *  "Okay, let's get started" type — Accenture session (2026-05-13). */
