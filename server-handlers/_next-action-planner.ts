@@ -1258,6 +1258,13 @@ function resolveConditionalCashTarget(
   const INCREASE_VERB =
     /\b(bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack|bump\s+up|move\s+up)\b/;
   const hasIncreaseVerb = INCREASE_VERB.test(t);
+  /* A bare increase adverb ("a lakh MORE", "a couple EXTRA") carries increase
+   * intent with no verb — the demand shape "just a lakh more and I'll sign"
+   * has neither an increase verb nor a digit-anchored delta, so without this
+   * cue the verbal-quantity branches below never fire and it soft-false-closes
+   * at the un-bumped offer (#33b). */
+  const bareIncreaseCue = /\b(?:more|extra|additional|higher|on\s+top)\b/.test(t);
+  const wantsMore = hasIncreaseVerb || bareIncreaseCue;
   /* "by N" / "to N" only count as an increase when welded to an increase verb,
    * so "close by Friday" / "get back to you" never register as a cash bump. */
   const by = hasIncreaseVerb
@@ -1298,10 +1305,26 @@ function resolveConditionalCashTarget(
   const wordDelta = new RegExp(
     String.raw`\b(?:by|another|add|of|up)?\s*a?\s*(couple|few|several)\s+(?:of\s+)?(?:more\s+)?${cashNoun}\b`,
   ).exec(t);
-  if ((hasIncreaseVerb || another != null || more != null) && wordDelta) {
+  if ((wantsMore || another != null || more != null) && wordDelta) {
     const d = WORD_MAGNITUDE[wordDelta[1]];
     if (Number.isFinite(d) && d > 0 && d <= 50) return offer + d;
   }
+  /* #33b (2026-07-08, offline hostile battery) — article/fraction-quantified
+   * lakh deltas. The same soft-false-close class as the couple/few magnitudes,
+   * but the quantity is an indefinite article or "half": "just a lakh more and
+   * I'll sign" (+1L), "add half a lakh" (+0.5L). The digit-only parser dropped
+   * both (no \d), so the demand closed at the un-bumped offer. Resolve to the
+   * delta so the unchanged deliverability gate honors or declines it. Welded to
+   * a lakh noun and gated on increase intent, so "a day"/"half an hour" never
+   * register. "half" is checked first — "half a lakh" also matches the article
+   * pattern, and 0.5 is the correct reading. */
+  const lakhNoun = String.raw`(?:l\b|lpa|lakhs?|lac)`;
+  const halfLakh = new RegExp(String.raw`\bhalf\s+a\s+${lakhNoun}`).test(t);
+  if (wantsMore && halfLakh) return offer + 0.5;
+  const articleLakh = new RegExp(
+    String.raw`\b(?:a|an|one)\s+(?:more\s+)?${lakhNoun}`,
+  ).test(t);
+  if (wantsMore && articleLakh) return offer + 1;
   return null;
 }
 

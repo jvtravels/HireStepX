@@ -706,10 +706,27 @@ const DEMAND_FOR_MORE_PATTERN =
 const RELATIVE_DEMAND_THEN_CLOSE_PATTERN =
   /\b\d+(?:\.\d+)?\s*(?:%|percent|lpa|lakhs?|lac|l|k)?\s*(?:more|higher|extra|additional|on\s+top)(?!\s+than)\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
 
+/** #33b (2026-07-08, offline hostile close battery) — the WORD/ARTICLE-quantified
+ *  sibling of RELATIVE_DEMAND_THEN_CLOSE. The relative-demand veto keys on a
+ *  DIGIT magnitude ("2 higher", "3% more"), so a demand whose magnitude is an
+ *  indefinite article, "half", or a couple/few word ("a lakh more and I'll
+ *  sign", "half a lakh more and I'm in") slipped every veto and was classified
+ *  an UNCONDITIONAL accept — the close finalized at the un-bumped offer while the
+ *  candidate was demanding a raise (soft false-close, the worst mode). Match a
+ *  verbal cash quantifier + increase token (more/higher/extra) ABUTTING an
+ *  and/then/& continuation, mirroring the digit pattern. Vetoing here routes the
+ *  turn to the conditional-close path, where resolveConditionalCashTarget (#33)
+ *  resolves the verbal delta and honors or declines it. `(?!\s+than)` spares
+ *  gratitude ("a lakh more than I hoped, deal"). Shared single-source so BOTH
+ *  gates reject in lockstep. */
+const WORD_DEMAND_THEN_CLOSE_PATTERN =
+  /\b(?:a|an|one|half\s+a|(?:a\s+)?couple(?:\s+of)?|(?:a\s+)?few|several)\s+(?:l\b|lpa|lakhs?|lac|%|percent)\s*(?:more|higher|extra|additional|on\s+top)(?!\s+than)\b[^.!?]{0,25}?\b(?:and|then|&)\b/i;
+
 /** All PRI-59/61/63/69 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   DEMAND_FOR_MORE_PATTERN,
   RELATIVE_DEMAND_THEN_CLOSE_PATTERN,
+  WORD_DEMAND_THEN_CLOSE_PATTERN,
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,

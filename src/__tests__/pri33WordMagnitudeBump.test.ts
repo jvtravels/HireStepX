@@ -26,6 +26,7 @@ import {
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
 import { planNextAction, actionToLever } from "../../server-handlers/_next-action-planner";
+import { classifyAcceptance } from "../../server-handlers/_acceptance-classifier";
 
 const band: NegotiationBand = {
   initialOffer: 40,
@@ -83,5 +84,49 @@ describe("#33 — word-magnitude conditional cash bump never soft-false-closes a
 
   it("PRESERVES the numeric delta path: 'add another 2 lakh' still closes at ₹42L", () => {
     expect(closeFigure("I'll sign if you can add another 2 lakh.")).toBe(42);
+  });
+});
+
+/* #33b — article/fraction-quantified lakh deltas ("a lakh more", "half a lakh")
+ * must NOT be swallowed as an unconditional accept and finalized at the un-bumped
+ * offer. Two defects, one class ("[verbal-quantity] more + close idiom"):
+ *
+ *  1. Acceptance-classifier miss. "Just a lakh more and I'll sign." — the digit-
+ *     based RELATIVE_DEMAND_THEN_CLOSE veto keyed on \d, so the word/article
+ *     magnitude slipped through and the close idiom classified an UNCONDITIONAL
+ *     accept → finalized at ₹40 while the candidate demanded a raise. Fix (single
+ *     source): WORD_DEMAND_THEN_CLOSE_PATTERN in the shared FALSE_CLOSE_VETO_PATTERNS.
+ *  2. Planner resolution miss. "if you bump the base by a lakh" — the conditional
+ *     path reached resolveConditionalCashTarget but its digit-only parser dropped
+ *     "a lakh". Fix (single source): article/half handling in that function.
+ *
+ * Net: a bare verbal-quantity demand routes to a counter (never a false-close);
+ * the explicit conditional form meets-and-closes at the deliverable bump.
+ */
+describe("#33b — article/half-lakh verbal cash demand never false-closes at the un-bumped offer", () => {
+  it("does NOT finalize 'Just a lakh more and I'll sign' at the un-bumped ₹40L", () => {
+    // Vetoed as an accept → routes to a counter (kind !== close) rather than
+    // closing at the standing ₹40L with the +1L demand silently dropped.
+    expect(closeFigure("Just a lakh more and I'll sign.")).toBeNull();
+  });
+
+  it("does NOT finalize 'Add half a lakh more and I'm in' at the un-bumped ₹40L", () => {
+    expect(closeFigure("Add half a lakh more and I'm in.")).toBeNull();
+  });
+
+  it("MEETS an explicit conditional 'if you bump the base by a lakh' at ₹41L", () => {
+    expect(closeFigure("I'll sign if you can bump the base by a lakh.")).toBe(41);
+  });
+
+  it("MEETS an explicit conditional 'half a lakh' bump at ₹40.5L", () => {
+    expect(closeFigure("I'll sign if you can bump the base by half a lakh.")).toBe(40.5);
+  });
+
+  it("spares gratitude: 'a lakh more than I hoped, deal' does not fire the false-close veto", () => {
+    // "more than" is a comparison, not a demand — the (?!than) guard keeps the
+    // WORD_DEMAND_THEN_CLOSE veto off. Proven at the classifier: the demand veto
+    // is never among the reasons for this gratitude phrasing.
+    const r = classifyAcceptance("This is a lakh more than I hoped for, deal.");
+    expect(r.reasons).not.toContain("false-close-veto");
   });
 });
