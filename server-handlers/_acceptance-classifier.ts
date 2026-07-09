@@ -859,6 +859,25 @@ const GRANT_THEN_CLOSE_PATTERN =
 const SARCASTIC_REFUSAL_PATTERN =
   /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|when\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s+one\s+ever)\b/i;
 
+/** Veto (offline hostile close battery, 2026-07-09) — a close idiom welded to a
+ *  PEJORATIVE CHARACTERIZATION OF THE OFFER: "count me in, for a pay cut", "I'll
+ *  take it if you enjoy lowballing me", "deal, if you call this an offer", "I'll
+ *  sign — for someone with half my experience", "I'll take it, what a joke". The
+ *  close idiom ("count me in"/"I'll take it"/"deal") matches, but the candidate
+ *  is simultaneously calling the offer a pay cut / lowball / insult — a sarcastic
+ *  refusal, not an accept (soft FALSE-CLOSE, the worst mode). SARCASTIC_REFUSAL
+ *  owns only stock dismissive interjections ("in your dreams"); a pejorative
+ *  DESCRIPTION of the offer carries none, so these slipped every veto. Per the
+ *  safe-default contract (a false-close is unrecoverable; missing an accept costs
+ *  one turn) the veto is deliberately aggressive: it matches the pejorative
+ *  anywhere, so a rare grudging accept that names a "pay cut" is re-asked (safe)
+ *  rather than risking a false-close. The token set excludes ambiguous praise
+ *  words with a common SINCERE accept use — notably "so generous" ("that's so
+ *  generous, I'll take it!") is intentionally NOT here. Shared single-source so
+ *  BOTH gates reject in lockstep. */
+const DISMISSIVE_OFFER_CHARACTERIZATION_PATTERN =
+  /\b(?:pay[\s-]?cut|low[\s-]?ball(?:ing|ed|s)?|under[\s-]?paid|under[\s-]?pay(?:ing)?|what\s+a\s+joke|call\s+(?:this|that)\s+an?\s+offer|half\s+(?:my|the|your)\s+experience|insulting\s+(?:offer|number|amount|lowball)|an\s+insult\b)/i;
+
 /** Veto (round-3 hostile probe, 2026-07-08) — a NON-comp demand ("make it a
  *  Principal role", "make it a Staff title") welded to a close idiom by
  *  and/then/&. GRANT_THEN_CLOSE owns cash SWEETENERS and CONDITIONAL_RAISE owns
@@ -958,6 +977,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   NONCOMP_DEMAND_THEN_CLOSE_PATTERN,
   CONDITIONAL_ACCEPT_PATTERN,
   SARCASTIC_REFUSAL_PATTERN,
+  DISMISSIVE_OFFER_CHARACTERIZATION_PATTERN,
   REVIEW_TAIL_PATTERN,
   CONSULT_DEFERRAL_PATTERN,
   CONSULT_FIRST_PATTERN,

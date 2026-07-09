@@ -231,6 +231,43 @@ describe("intent gate — future/temporal-deferral accepts must never FALSE-CLOS
   }
 });
 
+/* Dismissive-offer-characterization wall (2026-07-09) — a close idiom welded to
+ * a PEJORATIVE description of the offer ("count me in, for a pay cut", "I'll take
+ * it if you enjoy lowballing me", "deal, if you call this an offer"). The close
+ * idiom matches, but the candidate is calling the offer a pay cut / lowball /
+ * insult — a sarcastic refusal, so closing is a soft FALSE-CLOSE. A differential
+ * probe found 7/10 such phrasings accepted by one or both gates; the fix added
+ * DISMISSIVE_OFFER_CHARACTERIZATION_PATTERN to the shared veto array, so both
+ * gates reject in lockstep. If a future edit reopens any, this wall goes red. */
+describe("intent gate — pejorative offer-characterization + close must never FALSE-CLOSE", () => {
+  const DISMISSIVE = [
+    "Sure, I'll take it — if you enjoy lowballing me.",
+    "Great, count me in, for a pay cut.",
+    "Yeah, I'll sign — for someone with half my experience.",
+    "Perfect, I accept, if I wanted to be underpaid.",
+    "Fine, deal, if you call this an offer.",
+    "Sure thing, I'll take it, what a joke.",
+    "Deal, what an insult.",
+  ];
+  for (const t of DISMISSIVE) {
+    it(`medium blocks: "${t}"`, () => expect(accepted(t)).toBe(false));
+    it(`strict blocks: "${t}"`, () =>
+      expect(detectExplicitAcceptance(t).accepted).toBe(false));
+  }
+
+  /* No over-block: a SINCERE accept that praises the offer ("so generous") must
+     still fire. "so generous" is intentionally NOT a veto token — it carries a
+     common genuine-accept sense that the pejorative tokens above do not. */
+  for (const t of [
+    "That's so generous, I'll take it!",
+    "Wow, so generous of you — I'm in.",
+    "I'll take it.",
+    "Deal, send the paperwork.",
+  ]) {
+    it(`still accepts sincere: "${t}"`, () => expect(accepted(t)).toBe(true));
+  }
+});
+
 describe("analyzeDemand — structured extractor unit behavior", () => {
   it("flags an above-offer bare demand only when the offer is known and exceeded", () => {
     expect(carriesUnmetDemand("give me 45", 40)).toBe(true);
