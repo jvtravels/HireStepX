@@ -157,13 +157,16 @@ const DEMAND_CORES: DemandCore[] = [
    * "above 44" and the floor-VERBS "tops 46", "clears 48", "crosses 45",
    * "breaks 46", "surpasses 45" — each pins a figure the package must exceed
    * and each false-closed at the ₹40 offer because the alternation omitted them
-   * (batch-8 hostile leak, 2026-07-09). Offer-gated, so a below-offer number
-   * ("over 15 years", "clears 30") is met, not a demand. */
+   * (batch-8 hostile leak, 2026-07-09). "more than 45" / "a bit more than 45"
+   * are the same floor idiom (batch-11 leak, 2026-07-09), added with a negative
+   * lookbehind so the CEILING forms "no more than 45" / "not more than 45" are
+   * NOT read as floors. Offer-gated, so a below-offer number ("over 15 years",
+   * "clears 30") is met, not a demand. */
   {
     reason: "floor-target",
     absoluteTargetGroup: 1,
     unitGroup: 2,
-    re: /\b(?:at\s+least|no\s+less\s+than|no\s+lower\s+than|not\s+below|not\s+under|nothing\s+(?:under|below|less\s+than|lower\s+than)|north\s+of|upwards?\s+of|in\s+excess\s+of|(?:a\s+)?minimum\s+of|starting\s+at|over|above|tops?|clears?|crosses?|breaks?|surpasses?)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+    re: /\b(?:at\s+least|no\s+less\s+than|no\s+lower\s+than|not\s+below|not\s+under|nothing\s+(?:under|below|less\s+than|lower\s+than)|north\s+of|upwards?\s+of|in\s+excess\s+of|(?:a\s+)?minimum\s+of|starting\s+at|over|above|tops?|clears?|crosses?|breaks?|surpasses?|(?<!\bno\s)(?<!\bnot\s)more\s+than)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
   /* Vague decade-band demand: "in the mid-forties", "low fifties", "high
    * forties". No literal digit at all, so every digit-anchored core (and the
@@ -179,6 +182,29 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "decade-band",
     computeFigure: (m) => DECADE_WORDS[m[2].toLowerCase()] + BAND_QUALIFIER[m[1].toLowerCase()],
     re: /\b(low|mid|middle|high|early|late)[-\s]+(thirties|forties|fifties|sixties|seventies|eighties)\b/i,
+  },
+  /* Bare decade-plural band: "somewhere in the 50s", "the fifties" — a decade
+   * named with NO qualifier and no single figure, so the decade-band core (which
+   * requires low/mid/high) missed it and "I'll sign if it's somewhere in the
+   * 50s" false-closed at the ₹40 offer (batch-11 leak, 2026-07-09). computeFigure
+   * derives the decade FLOOR (digit form "50s" → 50; word form via DECADE_WORDS).
+   * Offer-gated absolute — "in the 40s" against a ₹40 offer is met (40 ≤ 40) and
+   * NOT flagged, so a genuine accept describing the standing offer still closes. */
+  {
+    reason: "decade-plural",
+    computeFigure: (m) => (m[1] ? parseInt(m[1], 10) : DECADE_WORDS[m[2].toLowerCase()]),
+    re: /\bthe\s+(?:(\d0)s|(thirties|forties|fifties|sixties|seventies|eighties))\b/i,
+  },
+  /* Approximation suffix: "45-ish", "45ish", "45 ish". A figure softened with
+   * "-ish" carries the target as an ordinary absolute, but the trailing suffix
+   * defeated the exact-figure resolvers and "45-ish and I'm in" false-closed at
+   * the ₹40 offer (batch-11 leak, 2026-07-09). Absolute target, offer-gated — a
+   * below-offer "-ish" figure ("38-ish") is met, above (or offer-unknown) is
+   * unmet so both gates block. */
+  {
+    reason: "ish-approx",
+    absoluteTargetGroup: 1,
+    re: /\b(\d+(?:\.\d+)?)\s*[-\s]?ish\b/i,
   },
   /* Word-form fractional crore: "half a crore" (=50L), "quarter crore" (=25L),
    * "three quarters of a crore" (=75L). A crore-scale target written as a word

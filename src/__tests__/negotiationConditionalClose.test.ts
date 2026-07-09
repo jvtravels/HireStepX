@@ -232,4 +232,25 @@ describe("#94 — near-offer conditional close-engagement", () => {
       }
     }
   });
+
+  /* Comparative-floor / decade-plural / "-ish" false-close (2026-07-09, offline
+   * hostile battery batch-11). "a bit more than 45", "somewhere in the 50s" and
+   * "45-ish" each demand a raise above the ₹35 offer but carried no exact-figure
+   * form, so the gate close-recap'd at the un-bumped offer. Now caught by
+   * analyzeDemand (floor-target "more than" arm + decade-plural + ish-approx
+   * cores) and routed to a live counter. */
+  it("does NOT false-close at the offer on comparative/decade-plural/ish demands", () => {
+    for (const utter of [
+      "Deal if it's a bit more than 45",
+      "I'll sign if it's somewhere in the 50s",
+      "45-ish and I'm in",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
 });

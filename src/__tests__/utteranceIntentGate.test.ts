@@ -656,6 +656,50 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Comparative-floor / decade-plural / "-ish" approximation (batch-11 hostile
+   * leak, 2026-07-09). "a bit more than 45", "somewhere in the 50s" and "45-ish"
+   * each encode an unmet raise above the ₹40 offer but carried no exact-figure
+   * form the resolvers recognized, so each false-closed at the offer. Now caught
+   * by analyzeDemand (floor-target "more than" arm + decade-plural + ish-approx
+   * cores). The floor "more than" arm carries a negative lookbehind so the
+   * CEILING forms "no more than 45" / "not more than 45" are NOT read as floors. */
+  it("flags a comparative 'more than' floor, gated by offer, and excludes the ceiling form", () => {
+    expect(carriesUnmetDemand("a bit more than 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("more than 45", 40)).toBe(true);
+    // Ceiling forms are NOT floors.
+    expect(carriesUnmetDemand("no more than 45", 40)).toBe(false);
+    expect(carriesUnmetDemand("not more than 45", 40)).toBe(false);
+    // Below-offer floor is met.
+    expect(carriesUnmetDemand("more than 30", 40)).toBe(false);
+  });
+
+  it("flags a bare decade-plural band, gated by offer", () => {
+    expect(carriesUnmetDemand("somewhere in the 50s", 40)).toBe(true);
+    expect(carriesUnmetDemand("in the fifties", 40)).toBe(true);
+    // The standing offer's own decade is met, not a demand.
+    expect(carriesUnmetDemand("in the 40s", 40)).toBe(false);
+  });
+
+  it("flags an '-ish' approximation, gated by offer", () => {
+    expect(carriesUnmetDemand("45-ish and I'm in", 40)).toBe(true);
+    expect(carriesUnmetDemand("45ish", 40)).toBe(true);
+    // Below-offer -ish figure is met.
+    expect(carriesUnmetDemand("38-ish", 40)).toBe(false);
+    // Offer unknown: still counts (strict gate).
+    expect(carriesUnmetDemand("45-ish")).toBe(true);
+  });
+
+  it("blocks both gates on comparative/decade-plural/ish demands", () => {
+    for (const t of [
+      "Deal if it's a bit more than 45.",
+      "I'll sign if it's somewhere in the 50s.",
+      "45-ish and I'm in.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close
