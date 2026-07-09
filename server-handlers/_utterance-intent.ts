@@ -204,6 +204,23 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "beat-match",
     re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:other\s+)?(?:current|ctc|comp\w*|package|base|salary|pay|number|offer)|(?:a|an|another|the|my|their)\s+(?:competing|rival|outside|other)\s+offer)\b/i,
   },
+  /* Beat/match a bare FIGURE ("beat the 47 Razorpay gave me", "match 46",
+   * "exceed the 48 I have"). beat-match above only binds an OBJECT WORD
+   * (offer/number/comp) after the verb, so a competing figure quoted as a bare
+   * number slipped through: the planner's acceptanceUtteranceFigure then read
+   * that figure as an AGREED close (it sits within 6% of the sticky target) and
+   * closed there — a false-close, since "beat 47" demands strictly MORE than 47
+   * (offline hostile battery, 2026-07-09). Offer-gated absolute target: a figure
+   * at/below the offer ("match my current 38") is met — no demand — while
+   * above-offer or offer-unknown registers as unmet so both gates block. The
+   * verb+figure adjacency keeps ordinary prose out ("beat the deadline", "match
+   * your energy" carry no number; "beat the 3 references" is below any offer). */
+  {
+    reason: "beat-figure",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon))\s+(?:the|that|this|my|their|a|an|another|it)?\s*(?:competing|rival|outside|other|current)?\s*(?:offer|number|figure|package|ctc|comp\w*)?\s*(?:of\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+  },
   /* Trailing floor idiom: a figure pinned by "not a rupee/penny/paisa
    * less/below" ("I'm in at 45.5, not a rupee less"). The floor sits AFTER
    * the number, so floor-target — which LEADS with the floor phrase — misses

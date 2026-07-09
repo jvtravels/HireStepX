@@ -471,6 +471,39 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Beat/match a bare competing FIGURE ("beat the 47", "match 46"). beat-match
+   * only bound an OBJECT WORD after the verb, so a competing number quoted bare
+   * slipped through; the planner's acceptanceUtteranceFigure then read that
+   * figure (within 6% of the sticky target) as an AGREED close and closed AT it
+   * — a false-close, since "beat 47" demands strictly MORE than 47 (offline
+   * hostile battery, 2026-07-09). Offer-gated absolute target. */
+  it("flags a beat/match of a bare figure above the offer", () => {
+    expect(carriesUnmetDemand("beat the 47 Razorpay gave me", 40)).toBe(true);
+    expect(carriesUnmetDemand("match 46", 40)).toBe(true);
+    expect(carriesUnmetDemand("you'll need to exceed the 48 I have", 40)).toBe(true);
+    expect(carriesUnmetDemand("top the 50 they offered", 40)).toBe(true);
+    // offer-gated: a figure at/below the offer is met, not a demand
+    expect(carriesUnmetDemand("beat the 35 elsewhere", 40)).toBe(false);
+    // offer-unknown: still counts so the strict gate blocks it
+    expect(carriesUnmetDemand("beat the 47 Razorpay gave me")).toBe(true);
+  });
+
+  it("does NOT flag beat/match with no numeric object (over-block guard)", () => {
+    expect(carriesUnmetDemand("we need to beat the deadline", 40)).toBe(false);
+    expect(carriesUnmetDemand("I'll match your energy", 40)).toBe(false);
+    expect(carriesUnmetDemand("please beat the 3 references I sent", 40)).toBe(false);
+  });
+
+  it("blocks both gates on a beat-the-figure demand", () => {
+    for (const t of [
+      "Deal, if you can beat the 47 Razorpay gave me.",
+      "I'm in if you exceed the 48 I already have.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close

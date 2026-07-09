@@ -3278,8 +3278,23 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
        * candidate has stopped bargaining at their stated number), not a fresh
        * counter to haggle — capped at the band ceiling, never below the offer.
        * A bare "done"/"ok" with no figure returns null → close at the offer. */
+      /* Canonical demand veto, computed ONCE and consulted by BOTH close paths
+       * below (single source — the same analyzeDemand the acceptance gates use).
+       * Only CASH cores veto: a non-numeric sweetener ("throw in a joining
+       * bonus") is deliverable in-place via the JB grant below (PRI-63) and must
+       * still close. Over-blocking a genuine bare accept costs one turn; a
+       * false-close is unrecoverable. */
+      const demand = analyzeDemand(latestCandidateText(state), offer);
+      const unmetCashDemand =
+        demand.unmet &&
+        demand.reasons.some((r) => !NON_CASH_DEMAND_REASONS.has(r));
       const agreed = acceptanceUtteranceFigure(state);
-      if (agreed != null && agreed > offer && agreed <= ceil) {
+      if (agreed != null && agreed > offer && agreed <= ceil && !unmetCashDemand) {
+        /* #129 close-number fidelity — but NOT when an unmet cash demand is on
+         * the table. acceptanceUtteranceFigure only corroborates a figure near
+         * the sticky target; it is demand-blind, so "beat the 47" (a competing
+         * figure the candidate wants EXCEEDED) resolved to a false-close AT 47
+         * (offline battery, 2026-07-09). The veto routes it to a live counter. */
         closeAt = agreed;
       } else {
         /* PRI-68 (2026-07-07) — a conditional accept that demands MORE cash on
@@ -3297,18 +3312,10 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
            * pure non-cash condition / bare accept (close at the offer) OR a
            * real cash demand this resolver's parser could not read (a
            * crore-scale figure, a prepositionless landing verb, a floor
-           * expression). Defer to the canonical demand extractor — the same
-           * analyzeDemand both acceptance gates use — so an unparsed-but-real
-           * demand cannot fall through to a false-close at the un-bumped offer
-           * ("I'll take it if the package hits 1.2 crore" — batch-5 leak,
-           * 2026-07-09). Only CASH cores veto: a non-numeric sweetener
-           * ("throw in a joining bonus") is deliverable in-place via the JB
-           * grant below (PRI-63) and must still close. Over-blocking a genuine
-           * bare accept costs one turn; a false-close is unrecoverable. */
-          const demand = analyzeDemand(latestCandidateText(state), offer);
-          const unmetCashDemand =
-            demand.unmet &&
-            demand.reasons.some((r) => !NON_CASH_DEMAND_REASONS.has(r));
+           * expression, a bare competing figure). Defer to the canonical
+           * demand veto computed above so an unparsed-but-real demand cannot
+           * fall through to a false-close at the un-bumped offer ("I'll take it
+           * if the package hits 1.2 crore" — batch-5 leak, 2026-07-09). */
           closeAt = unmetCashDemand ? null : offer;
         } else if (bumpTarget <= offer) {
           closeAt = offer;

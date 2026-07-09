@@ -102,4 +102,22 @@ describe("#94 — near-offer conditional close-engagement", () => {
       expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
     }
   });
+
+  /* Beat-the-figure false-close (2026-07-09, offline hostile battery). A
+   * conditional accept quoting a COMPETING figure to beat ("if you can beat the
+   * 39 I already have") is a demand for strictly MORE than that figure — never
+   * an agreement to it. But acceptanceUtteranceFigure is demand-blind: it just
+   * corroborates any nearby number against the sticky target (40 here, so 39 is
+   * within 6%) and the planner closed AT 39. The fix flags "beat the 39" in the
+   * canonical analyzeDemand (new beat-figure core) and gates the
+   * acceptanceUtteranceFigure close path with that same unmet-cash veto, so the
+   * turn routes to a live counter instead of a false-close. */
+  it("does NOT false-close at a bare competing figure the candidate wants beaten", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "Deal, if you can beat the 39 I already have");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(39);
+    }
+  });
 });
