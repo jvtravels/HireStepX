@@ -294,3 +294,52 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
     expect(analyzeDemand("throw in equity", 40).reasons).toContain("grant-sweetener");
   });
 });
+
+/* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close
+ * idiom stated FIRST, then gated on a trailing condition/demand
+ * ("I'll take it, as long as you bump the base to 48", "...contingent on a
+ * WFH guarantee", "...assuming the base moves to 50", "...subject to the
+ * relocation clause"). A conditional accept is never an unconditional close —
+ * the trailing condition means the deal is NOT done. Probe found three that
+ * leaked: two because HARD_CONDITIONAL_PATTERN omitted "assuming" / "subject
+ * to", and two on the strict gate because it never applied the conditional
+ * veto at all (its offer-unknown analyzeDemand can't see a WFH/title/passive
+ * demand). Fix wired both gates through the shared blockingConditionalReason()
+ * so they veto in lockstep. Asserts every nibble is blocked on BOTH gates and
+ * a companion block asserts unconditional accepts still fire (no over-block). */
+describe("intent gate — nibble/conditional AFTER an accept idiom must never FALSE-CLOSE", () => {
+  const NIBBLES = [
+    "I'll take it, as long as you bump the base to 48.",
+    "Yes, I accept — provided you add a 5 lakh joining bonus.",
+    "Deal, but I'll need relocation covered first.",
+    "Sounds good, I'm in, once you confirm the Principal title.",
+    "Okay let's do it, assuming the base moves to 50.",
+    "Great, count me in — just get the fixed to 55 and we're set.",
+    "I'll sign, but only if you match my current 46.",
+    "Perfect, I accept, pending you throw in the sign-on bonus.",
+    "Alright, I'm on board, so long as equity is added.",
+    "Done deal — well, after you push the base up 2 lakh.",
+    "Yeah I'll take the offer, contingent on a WFH guarantee.",
+    "I'm ready to accept the moment you bump it by 4 lakh.",
+    "Consider it accepted, provided the number hits 52.",
+    "You've got a deal, subject to the relocation clause.",
+    "Happy to accept — one thing, I need 2 lakh more first.",
+  ];
+  for (const t of NIBBLES) {
+    it(`medium gate blocks: "${t}"`, () => expect(accepted(t)).toBe(false));
+    it(`strict gate blocks: "${t}"`, () =>
+      expect(detectExplicitAcceptance(t).accepted).toBe(false));
+  }
+
+  const CLEAN = [
+    "I'll take it.",
+    "Yes, I accept the offer.",
+    "Deal, send the paperwork.",
+    "Great, count me in.",
+    "Perfect, that works — I'm in.",
+    "If that's the best you can do, I'll take it.", // acquiescence carve-out survives
+  ];
+  for (const t of CLEAN) {
+    it(`still accepts unconditional: "${t}"`, () => expect(accepted(t)).toBe(true));
+  }
+});

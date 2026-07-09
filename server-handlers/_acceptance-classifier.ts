@@ -991,7 +991,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
 /** Veto: hard conditional ("if/unless/provided"). Info-seeking
  *  conditionals are excepted ("if you could share the breakdown"). */
 const HARD_CONDITIONAL_PATTERN =
-  /\b(?:if|unless|provided|on condition|contingent|only\s+if|agar|jab\s+tak)\b/i;
+  /\b(?:if|unless|provided|on condition|conditional\s+on|contingent|only\s+if|as\s+long\s+as|so\s+long\s+as|assuming|subject\s+to|agar|jab\s+tak)\b/i;
 const INFO_SEEKING_CONDITIONAL_PATTERN =
   /\b(?:if|unless|provided)\s+(?:you|it.?s|i)\s*(?:could|can|may|might|would|don.?t mind)?\s*(?:share|tell|let me know|elaborate|explain|clarify|confirm|provide|walk me through|give me|outline|show)\b/i;
 /* Acquiescence exception (hostile-probe over-block, 2026-07-09) — an "if"
@@ -1003,6 +1003,30 @@ const INFO_SEEKING_CONDITIONAL_PATTERN =
  * this only rescues the pure-acquiescence accept. */
 const ACQUIESCENCE_CONDITIONAL_PATTERN =
   /\bif\s+(?:you\s+(?:say\s+so|insist|really\s+(?:say\s+so|mean\s+it))|need\s+be|(?:that|this|it)(?:'?s|\s+is)?\s+(?:the\s+best|really\s+(?:the\s+)?best|what\s+(?:it|you)|final|it\s+is|fine|good|ok(?:ay)?|works?|acceptable|all\s+you|the\s+deal)|that'?ll\s+work|that\s+works\s+for\s+you)\b/i;
+
+/** Shared conditional-acceptance veto — the SINGLE source of truth for
+ *  "this close idiom is gated on an unmet condition, so it is not an
+ *  unconditional accept". Both gates call it: the medium gate
+ *  (classifyAcceptance, step 1) and the strict gate
+ *  (detectExplicitAcceptance), so a conditional close is blocked in lockstep.
+ *  A hard conditional ("as long as / provided / only if / assuming / subject
+ *  to / contingent on …") wins unless it's the info-seeking ("if you could
+ *  share …") or acquiescence ("if that's the best you can do, I'll take it")
+ *  variant — both of which are genuine, non-blocking. A temporal deferral
+ *  ("I'll sign once you confirm the title") is the second blocking class.
+ *  Returns the reason id (so the medium gate keeps its granular reasons) or
+ *  null. */
+function blockingConditionalReason(a: string): "hard-conditional" | "conditional-deferral" | null {
+  if (
+    HARD_CONDITIONAL_PATTERN.test(a) &&
+    !INFO_SEEKING_CONDITIONAL_PATTERN.test(a) &&
+    !ACQUIESCENCE_CONDITIONAL_PATTERN.test(a)
+  ) {
+    return "hard-conditional";
+  }
+  if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) return "conditional-deferral";
+  return null;
+}
 
 /** Veto: "but/however … negotiation cue" within 60 chars. The
  *  cue list intentionally includes "more" — the most common
@@ -1194,14 +1218,10 @@ export function classifyAcceptance(
   if (isWalkAway(a)) {
     return { accepted: false, confidence: "none", reasons: ["walk-away"] };
   }
-  const hasAnyConditional = HARD_CONDITIONAL_PATTERN.test(a);
-  const hasInfoSeeking = INFO_SEEKING_CONDITIONAL_PATTERN.test(a);
   const hasAcquiescence = ACQUIESCENCE_CONDITIONAL_PATTERN.test(a);
-  if (hasAnyConditional && !hasInfoSeeking && !hasAcquiescence) {
-    return { accepted: false, confidence: "none", reasons: ["hard-conditional"] };
-  }
-  if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) {
-    return { accepted: false, confidence: "none", reasons: ["conditional-deferral"] };
+  const condReason = blockingConditionalReason(a);
+  if (condReason) {
+    return { accepted: false, confidence: "none", reasons: [condReason] };
   }
   /* PRI-59 precision vetoes — a hostile NON-accept sharing a substring with a
      real accept idiom ("I'll take it elsewhere", "I'm in talks", "I accept
@@ -1513,6 +1533,17 @@ export function detectExplicitAcceptance(text: string | null | undefined): Expli
   for (const p of HEDGE_VETO_PATTERNS) {
     if (p.test(t)) return { accepted: false, confidence: 0 };
   }
+  /* Conditional-acceptance veto — LOCKSTEP with the medium gate via the shared
+   * blockingConditionalReason(). A close idiom gated on an unmet condition
+   * ("...contingent on a WFH guarantee", "...assuming the base moves to 50") is
+   * not an unconditional accept. The medium gate blocked these, but the strict
+   * gate checked neither HARD_CONDITIONAL_PATTERN nor CONDITIONAL_DEFERRAL_PATTERN,
+   * so a conditional whose demand needs offer context to prove it's upward (WFH,
+   * a title, a passive "base moves to 50") slipped past analyzeDemand's
+   * offer-unknown mode and matched a STRICT_ACCEPTANCE close idiom — a soft
+   * FALSE-CLOSE. Sharing the exact carve-out logic (info-seeking / acquiescence)
+   * keeps the two gates in lockstep. */
+  if (blockingConditionalReason(t)) return { accepted: false, confidence: 0 };
   /* Structured-demand veto — LOCKSTEP with the medium gate (classifyAcceptance).
    * HEDGE_VETO_PATTERNS above spreads the OLD conjunction-bridge vetoes, which
    * only span `and|then|&`; a comma / "plus" / "with" / no-joiner defeats all of
