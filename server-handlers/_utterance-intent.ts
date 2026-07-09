@@ -100,6 +100,13 @@ const BAND_QUALIFIER: Record<string, number> = {
   low: 2, early: 2, mid: 5, middle: 5, high: 8, late: 8,
 };
 
+/* Fractional-crore figures for the word-form "half a crore" demand (see the
+ * crore-fraction core below). A crore is 100 lakh, so the fraction maps
+ * straight to a lakh figure. */
+const CRORE_FRACTION: Record<string, number> = {
+  quarter: 25, half: 50, "three-quarter": 75, "three-quarters": 75,
+};
+
 const DEMAND_CORES: DemandCore[] = [
   /* Absolute raise TARGET: "make it 50", "get the base to 55", "bump
    * fixed to 58", "push cash to 60". Unmet only when the target beats
@@ -139,12 +146,17 @@ const DEMAND_CORES: DemandCore[] = [
    * Includes the "nothing/not under|below" negative-floor idiom ("I'm in, but
    * nothing under 46") — a floor stated as a prohibition, which close-recap'd at
    * the un-bumped offer because the leading-phrase list omitted it (batch-7
-   * hostile leak, 2026-07-09). */
+   * hostile leak, 2026-07-09). Also the bare-preposition floors "over 45",
+   * "above 44" and the floor-VERBS "tops 46", "clears 48", "crosses 45",
+   * "breaks 46", "surpasses 45" — each pins a figure the package must exceed
+   * and each false-closed at the ₹40 offer because the alternation omitted them
+   * (batch-8 hostile leak, 2026-07-09). Offer-gated, so a below-offer number
+   * ("over 15 years", "clears 30") is met, not a demand. */
   {
     reason: "floor-target",
     absoluteTargetGroup: 1,
     unitGroup: 2,
-    re: /\b(?:at\s+least|no\s+less\s+than|no\s+lower\s+than|not\s+below|not\s+under|nothing\s+(?:under|below|less\s+than|lower\s+than)|north\s+of|upwards?\s+of|in\s+excess\s+of|(?:a\s+)?minimum\s+of|starting\s+at)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+    re: /\b(?:at\s+least|no\s+less\s+than|no\s+lower\s+than|not\s+below|not\s+under|nothing\s+(?:under|below|less\s+than|lower\s+than)|north\s+of|upwards?\s+of|in\s+excess\s+of|(?:a\s+)?minimum\s+of|starting\s+at|over|above|tops?|clears?|crosses?|breaks?|surpasses?)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
   /* Vague decade-band demand: "in the mid-forties", "low fifties", "high
    * forties". No literal digit at all, so every digit-anchored core (and the
@@ -160,6 +172,19 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "decade-band",
     computeFigure: (m) => DECADE_WORDS[m[2].toLowerCase()] + BAND_QUALIFIER[m[1].toLowerCase()],
     re: /\b(low|mid|middle|high|early|late)[-\s]+(thirties|forties|fifties|sixties|seventies|eighties)\b/i,
+  },
+  /* Word-form fractional crore: "half a crore" (=50L), "quarter crore" (=25L),
+   * "three quarters of a crore" (=75L). A crore-scale target written as a word
+   * fraction carries no lakh digit, so every digit-anchored core missed it and
+   * "I'm in if the package is half a crore" false-closed at the ₹40 offer
+   * (batch-8 hostile leak, 2026-07-09). computeFigure maps the fraction to lakhs
+   * (crore = 100 lakh). Offer-gated absolute — a fraction at/below the offer is
+   * met, above (or offer-unknown) is unmet so both gates block. The
+   * fraction-word + "crore" adjacency is lexically specific. */
+  {
+    reason: "crore-fraction",
+    computeFigure: (m) => CRORE_FRACTION[m[1].toLowerCase().replace(/\s+/g, "-")],
+    re: /\b(quarter|half|three[-\s]quarters?)\s+(?:of\s+)?(?:a\s+)?crores?\b/i,
   },
   /* First-person / imperative demand for MORE by magnitude: "give me 8%
    * more", "I want 2L more", "I'm after a couple more". Ported from

@@ -145,4 +145,36 @@ describe("#94 — near-offer conditional close-engagement", () => {
       expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
     }
   });
+
+  /* Preposition/verb floor + fractional-crore false-close (2026-07-09, offline
+   * hostile battery). Floor idioms that pin a figure via a bare preposition
+   * ("anything over 45", "above 44") or a floor VERB ("it tops 46", "clears
+   * 48"), and word-form crore targets ("half a crore" = 50L), carried no
+   * floor-target-recognized phrase / no lakh digit — so the gate close-recap'd
+   * at the un-bumped offer. All three are now caught by analyzeDemand (extended
+   * floor-target + crore-fraction core) and routed to a live counter. */
+  it("does NOT false-close at the offer on a preposition/verb floor demand", () => {
+    for (const utter of [
+      "I'll take it at anything over 45",
+      "I'll sign for anything above 44",
+      "Deal, provided it tops 46",
+      "I'm in as long as the total clears 48",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
+
+  it("does NOT false-close at the offer on a word-form fractional-crore demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'm in if the package is half a crore");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
 });

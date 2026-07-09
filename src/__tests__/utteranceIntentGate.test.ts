@@ -544,6 +544,51 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Preposition/verb floor idioms ("over 45", "above 44", "it tops 46",
+   * "clears 48", "crosses 45", "breaks 46", "surpasses 45") — each pins a floor
+   * the package must exceed. The floor-target alternation omitted them, so they
+   * false-closed at the ₹40 offer (batch-8 hostile leak, 2026-07-09). Offer-
+   * gated, so a below-offer number is met. */
+  it("flags preposition/verb floor idioms only when the floor beats the offer", () => {
+    expect(carriesUnmetDemand("I'll take it at anything over 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("I'll sign for anything above 44", 40)).toBe(true);
+    expect(carriesUnmetDemand("provided it tops 46", 40)).toBe(true);
+    expect(carriesUnmetDemand("as long as the total clears 48", 40)).toBe(true);
+    expect(carriesUnmetDemand("so long as it crosses 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("only if it breaks 46", 40)).toBe(true);
+    expect(carriesUnmetDemand("if it surpasses 45", 40)).toBe(true);
+    // Below-offer floors are met, not demands.
+    expect(carriesUnmetDemand("anything over 30 is fine", 40)).toBe(false);
+    expect(carriesUnmetDemand("as long as it clears 38", 40)).toBe(false);
+    // Offer unknown (strict gate) still flags the floor.
+    expect(carriesUnmetDemand("anything over 45")).toBe(true);
+  });
+
+  /* Word-form fractional crore ("half a crore" = 50L, "quarter crore" = 25L,
+   * "three quarters of a crore" = 75L) — a crore-scale target with no lakh
+   * digit, missed by every digit-anchored core; false-closed at the ₹40 offer
+   * (batch-8 hostile leak, 2026-07-09). Offer-gated absolute. */
+  it("flags a word-form fractional crore, gated by offer", () => {
+    expect(carriesUnmetDemand("I'm in if the package is half a crore", 40)).toBe(true);
+    expect(carriesUnmetDemand("three quarters of a crore works", 40)).toBe(true);
+    expect(carriesUnmetDemand("half a crore", 40)).toBe(true);
+    // A quarter crore (25L) is below the ₹40 offer — met, not a demand.
+    expect(carriesUnmetDemand("a quarter crore is fine", 40)).toBe(false);
+    // Offer unknown (strict gate) still flags it.
+    expect(carriesUnmetDemand("if it's half a crore")).toBe(true);
+  });
+
+  it("blocks both gates on a floor-idiom / fractional-crore demand", () => {
+    for (const t of [
+      "I'm in as long as the total clears 48.",
+      "I'll take it at anything over 45.",
+      "I'm in if the package is half a crore.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close
