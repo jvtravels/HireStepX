@@ -94,6 +94,22 @@ const DEMAND_CORES: DemandCore[] = [
     unitGroup: 2,
     re: /\b(?:make\s+it|(?:get|bump|push|raise|take|bring|come\s+up|move|nudge)\s+(?:(?:it|the\s+fixed|the\s+base|the\s+cash|fixed|base|cash|total|ctc|package)\s+)?to)\s+(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
+  /* Prepositionless landing verb + target: "the base needs to hit 46",
+   * "reach 50", "sit at 48", "land on 55". raise-to-target requires an
+   * explicit "to" ("get it TO 46"), so a landing verb that drops the
+   * preposition slipped through — "The base needs to hit 46. Otherwise,
+   * yeah, I'm in." false-closed at the un-bumped offer (batch-4 hostile
+   * leak, 2026-07-09). Absolute target: unmet only when it beats the
+   * offer; like raise-to-target it still counts when the offer is unknown
+   * (strict gate), which is what blocks the welded accept. Verb set is
+   * comp-oriented so "reach out to HR" / "hit it off" (no adjacent figure)
+   * do not match. */
+  {
+    reason: "raise-hit-target",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(?:hit|reach|touch|land\s+(?:at|on)|sit\s+at)\s+(?:the\s+(?:base|fixed|cash|number|figure|total|ctc|package)\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+  },
   /* First-person / imperative demand for MORE by magnitude: "give me 8%
    * more", "I want 2L more", "I'm after a couple more". Ported from
    * DEMAND_FOR_MORE_PATTERN (already bridge-free). */

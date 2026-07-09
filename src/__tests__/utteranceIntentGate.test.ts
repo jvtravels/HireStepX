@@ -313,6 +313,25 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
     expect(accepted(t)).toBe(false);
     expect(detectExplicitAcceptance(t).accepted).toBe(false);
   });
+  /* Prepositionless landing verb ("hit/reach/touch/sit at/land at N").
+   * raise-to-target needs an explicit "to", so "the base needs to hit 46"
+   * slipped through and false-closed "…Otherwise, yeah, I'm in." at the
+   * un-bumped offer (batch-4 hostile battery, 2026-07-09). Offer-gated. */
+  it("flags a landing-verb absolute target only when it beats the offer", () => {
+    expect(carriesUnmetDemand("the base needs to hit 46", 40)).toBe(true);
+    expect(carriesUnmetDemand("the base needs to hit 46", 50)).toBe(false); // below offer
+    expect(carriesUnmetDemand("reach 50", 40)).toBe(true);
+    expect(carriesUnmetDemand("just sit at 48 and I'm in", 40)).toBe(true);
+    // comp-context verbs with no adjacent figure must NOT match
+    expect(carriesUnmetDemand("I'll reach out to HR, deal at 40.", 40)).toBe(false);
+    expect(carriesUnmetDemand("we hit it off, I accept the 40.", 40)).toBe(false);
+    expect(carriesUnmetDemand("let me touch base with my spouse, then I'm in.", 40)).toBe(false);
+  });
+  it("blocks both gates on a landing-verb demand welded before an accept idiom", () => {
+    const t = "The base needs to hit 46. Otherwise, yeah, I'm in.";
+    expect(accepted(t)).toBe(false);
+    expect(detectExplicitAcceptance(t).accepted).toBe(false);
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close
