@@ -206,6 +206,53 @@ const DEMAND_CORES: DemandCore[] = [
     absoluteTargetGroup: 1,
     re: /\b(\d+(?:\.\d+)?)\s*[-\s]?ish\b/i,
   },
+  /* Trailing "plus" floor: "45 plus", "forty-five plus" (normalized to "45
+   * plus") — a figure suffixed with "plus" is a floor at that figure, but no
+   * leading floor phrase was present so floor-target missed it and "Forty-five
+   * plus and I'm in" false-closed at the ₹40 offer (batch-12 leak, 2026-07-09).
+   * Absolute target, offer-gated — "40 plus the joining bonus" against a ₹40
+   * offer is met (40 ≤ 40) so a genuine accept adding a deliverable still closes.
+   * The negative lookahead keeps non-comp "plus" ("45 plus years", "10 plus
+   * percent") out. */
+  {
+    reason: "plus-floor",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\s+plus\b(?!\s*(?:years?|yrs?|months?|mos?|percent|%|pct))/i,
+  },
+  /* "N and change" floor: "45 and change" = a little above 45. The trailing
+   * "and change" defeated the exact-figure resolvers and "45 and change works
+   * for me" false-closed at the ₹40 offer (batch-12 leak, 2026-07-09). Absolute
+   * target (the floor), offer-gated. */
+  {
+    reason: "and-change-floor",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?)?\s+and\s+(?:some\s+)?change\b/i,
+  },
+  /* Ultimatum floor: "45 or I walk", "45 or nothing", "45 or I'm out" — a figure
+   * pinned by a walk-away alternative is a hard floor, but the number reads as a
+   * clean accept target so "I'm in at 45 or I walk" false-closed at the ₹40 offer
+   * (batch-12 leak, 2026-07-09). Absolute target, offer-gated. The walk-away
+   * tail ("or I walk/out/nothing/no deal") is lexically specific. */
+  {
+    reason: "ultimatum-floor",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\s+or\s+(?:i(?:'?m)?\s+(?:walk|out|gone|leaving|done)|nothing|no\s+deal|i\s+walk\b|forget\s+it)/i,
+  },
+  /* Positional-ceiling demand: "top of the band", "max of the range", "upper end
+   * of the band". A demand for the ceiling of the recruiter's band carries NO
+   * figure, so every figure-anchored core (and the exact-figure resolvers) missed
+   * it and "Top of the band and I'll sign" false-closed at the offer (batch-11/12
+   * leak, 2026-07-09). A bare lexical demand (no figure) — always unmet, like the
+   * other numberless demands — so both gates block and the planner counters. The
+   * "of the band/range/scale/grade/bracket" tail is lexically specific, so
+   * ordinary prose ("top of my list") does not trip it. */
+  {
+    reason: "positional-ceiling",
+    re: /\b(?:top|max(?:imum)?|upper\s+end|high(?:er)?\s+end|ceiling)\s+of\s+(?:the\s+|your\s+|my\s+)?(?:band|range|scale|grade|bracket)\b/i,
+  },
   /* Word-form fractional crore: "half a crore" (=50L), "quarter crore" (=25L),
    * "three quarters of a crore" (=75L). A crore-scale target written as a word
    * fraction carries no lakh digit, so every digit-anchored core missed it and

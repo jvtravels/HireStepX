@@ -253,4 +253,27 @@ describe("#94 — near-offer conditional close-engagement", () => {
       }
     }
   });
+
+  /* Plus-floor / and-change / ultimatum / positional-ceiling false-close
+   * (2026-07-09, offline hostile battery batch-12). "Forty-five plus", "45 and
+   * change", "45 or I walk" and "top of the band" each demand a raise above the
+   * ₹35 offer but carried no exact-figure form the resolvers recognized, so the
+   * gate close-recap'd at the un-bumped offer. Now caught by analyzeDemand
+   * (plus-floor + and-change-floor + ultimatum-floor + positional-ceiling cores)
+   * and routed to a live counter. */
+  it("does NOT false-close at the offer on plus/and-change/ultimatum/positional demands", () => {
+    for (const utter of [
+      "Forty-five plus and I'm in",
+      "45 and change works for me",
+      "I'm in at 45 or I walk",
+      "Top of the band and I'll sign",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
 });

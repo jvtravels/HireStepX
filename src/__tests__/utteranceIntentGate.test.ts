@@ -700,6 +700,65 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Plus-floor / and-change / ultimatum / positional-ceiling (batch-12 hostile
+   * leak, 2026-07-09). Four more conditional accepts encoded a raise above the
+   * ₹40 offer but carried no exact-figure form the resolvers recognized, so
+   * each false-closed at the offer:
+   *   "Forty-five plus and I'm in."     -- N plus  => floor >N
+   *   "45 and change works for me."     -- N and change => floor >N
+   *   "I'm in at 45 or I walk."         -- N or-ultimatum => floor N
+   *   "Top of the band and I'll sign."  -- positional ceiling, no figure
+   * Fixed at analyzeDemand (plus-floor + and-change-floor + ultimatum-floor +
+   * positional-ceiling cores). The plus-floor lookahead excludes non-comp units
+   * ("45 plus years", "10 plus percent") and offer-gating keeps the standing
+   * offer's own figure met ("40 plus the JB" @40, "40 or I walk" @40). */
+  it("flags an 'N plus' floor, gated by offer, excluding non-comp units", () => {
+    expect(carriesUnmetDemand("Forty-five plus and I'm in.", 40)).toBe(true);
+    expect(carriesUnmetDemand("45 plus", 40)).toBe(true);
+    // Standing-offer figure is met, not a demand.
+    expect(carriesUnmetDemand("40 plus the joining bonus we discussed, I'm in", 40)).toBe(false);
+    // Non-compensation "plus" phrases are excluded by the lookahead.
+    expect(carriesUnmetDemand("I bring 45 plus years", 40)).toBe(false);
+    expect(carriesUnmetDemand("10 plus percent", 40)).toBe(false);
+    // Offer unknown: still counts (strict gate).
+    expect(carriesUnmetDemand("45 plus")).toBe(true);
+  });
+
+  it("flags an 'N and change' floor, gated by offer", () => {
+    expect(carriesUnmetDemand("45 and change works for me", 40)).toBe(true);
+    expect(carriesUnmetDemand("45 and some change", 40)).toBe(true);
+    // Below-offer figure is met.
+    expect(carriesUnmetDemand("38 and change", 40)).toBe(false);
+  });
+
+  it("flags an 'N or I walk / or nothing' ultimatum floor, gated by offer", () => {
+    expect(carriesUnmetDemand("I'm in at 45 or I walk", 40)).toBe(true);
+    expect(carriesUnmetDemand("45 or nothing", 40)).toBe(true);
+    // The standing offer as an ultimatum is met, not a demand.
+    expect(carriesUnmetDemand("40 or I walk", 40)).toBe(false);
+  });
+
+  it("flags a positional band-ceiling demand (top/max/upper end of the band)", () => {
+    // No figure, so always unmet regardless of offer.
+    expect(carriesUnmetDemand("Top of the band and I'll sign", 40)).toBe(true);
+    expect(carriesUnmetDemand("put me at the max of the range", 40)).toBe(true);
+    expect(carriesUnmetDemand("the upper end of the band", 40)).toBe(true);
+    // "top of my list" is not a band ceiling.
+    expect(carriesUnmetDemand("that's top of my list", 40)).toBe(false);
+  });
+
+  it("blocks both gates on plus/and-change/ultimatum/positional demands", () => {
+    for (const t of [
+      "Forty-five plus and I'm in.",
+      "45 and change works for me.",
+      "I'm in at 45 or I walk.",
+      "Top of the band and I'll sign.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close
