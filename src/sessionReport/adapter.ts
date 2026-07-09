@@ -465,11 +465,26 @@ export function sessionReportToInterviewResult(
 /* Skill names whose whole point is "did you move the number / extract
    value" — the outcome-dependent negotiation axes. Demeanour axes
    (composure, professional tone, communication) are deliberately excluded:
-   a calm, polite fold is still calm and polite. Matched case-insensitively
-   against the display names every scoring path emits ("Leverage Use",
-   "Closing Technique", "Anchoring", "Concession Strategy", "Package
-   Thinking", "Deal Structuring", "Counter-Offer Handling"). */
-const NEG_OUTCOME_SKILL_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter/i;
+   a calm, polite fold is still calm and polite.
+
+   CRITICAL: this regex is the SINGLE classification point for "is this axis
+   outcome-dependent?", and TWO independent scorers emit two different naming
+   schemes — it must cover BOTH or axes silently escape the fold-cap:
+     - LLM evaluator / client heuristic: "Leverage Use", "Closing Technique",
+       "Anchoring", "Concession Strategy", "Package Thinking",
+       "Deal Structuring", "Counter-Offer Handling".
+     - Server deterministic fallback (_deterministic-neg-report.ts NEG_AXES,
+       the ACTIVE path whenever both LLM providers are exhausted):
+       "Anchor strength", "Counter-offer judgement", "Trade-off awareness",
+       "Structural fluency", "Walk-away discipline" (+ "Tactical composure",
+       a demeanour axis, correctly NOT matched).
+   The `trade|structural|walk` alternatives cover the three deterministic
+   axes the original LLM-scheme regex missed — without them an accepted-caved
+   report rendered Trade-off/Structural/Walk-away bars at 95 beside
+   "0% of the gap closed". `walk` only ever bites in the `accepted` branch
+   below (genuine walk-aways return early at outcome !== "accepted"), so a
+   real walk-away's discipline score is never capped. */
+const NEG_OUTCOME_SKILL_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter|trade|structural|walk/i;
 /* PRI-67 — the close-specific axis. Capped on a "no_agreement" outcome, where
  * the close stage was provably never reached (derivePhases.reachedClose false). */
 const NEG_CLOSING_SKILL_RE = /clos(?:e|ing)/i;

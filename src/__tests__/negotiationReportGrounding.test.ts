@@ -18,6 +18,7 @@ import {
 import type { InterviewResultData } from "../sessionReport/types";
 import type { SessionReport } from "../dashboardData";
 import type { DashboardSession } from "../dashboardTypes";
+import { NEG_AXES } from "../../server-handlers/_deterministic-neg-report";
 
 type Outcome = InterviewResultData["negotiationOutcome"];
 
@@ -67,6 +68,36 @@ describe("groundNegotiationReport — report-layer coherence", () => {
     // Demeanour axes are never touched — a calm, polite fold is still calm.
     expect(byName(r.skills, "Composure")).toBe(90);
     expect(byName(r.skills, "Professional Tone")).toBe(88);
+  });
+
+  /* The prior tests all use the LLM-evaluator naming scheme ("Leverage Use",
+   * "Closing Technique"…). The SERVER DETERMINISTIC fallback — the active
+   * scorer whenever both LLM providers are exhausted — emits an entirely
+   * different set of display names (NEG_AXES). The grounding regex silently
+   * missed three of them (Trade-off awareness, Structural fluency, Walk-away
+   * discipline), so an accepted-caved report rendered those bars at 95 beside
+   * "0% of the gap closed". Lock every outcome-dependent NEG_AXES name to the
+   * fold ceiling; import the real constant so a rename can't re-open the gap. */
+  it("caps the DETERMINISTIC-scorer axis names on an accepted 0%-gap fold", () => {
+    const detSkills = NEG_AXES.map((name) => ({ name, score: 95 }));
+    const r = groundNegotiationReport(
+      detSkills, 92, "strongHire", outcome({ gapClosurePct: 0 }), FLIPKART_BANDS,
+    );
+    // Every value-extraction / outcome axis in the deterministic scheme caps.
+    for (const name of [
+      "Anchor strength",
+      "Counter-offer judgement",
+      "Trade-off awareness",
+      "Structural fluency",
+      "Walk-away discipline",
+    ]) {
+      expect(byName(r.skills, name)).toBeLessThanOrEqual(45);
+    }
+    // "Tactical composure" is a demeanour axis — a calm fold is still calm.
+    expect(byName(r.skills, "Tactical composure")).toBe(95);
+    expect(r.overallScore).toBeLessThanOrEqual(60);
+    expect(r.band).not.toBe("hire");
+    expect(r.band).not.toBe("strongHire");
   });
 
   it("applies a mediocre ceiling (60) for a token-movement close", () => {
