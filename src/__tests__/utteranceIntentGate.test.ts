@@ -434,6 +434,43 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Spelled-out figures ("forty eight") — candidates and STT transcripts spell
+   * salary numbers out, but every demand core needs a DIGIT, so "Bring the base
+   * to forty eight and I'm in" false-closed at the un-bumped offer (deferred
+   * batch-6 leak, closed 2026-07-09). analyzeDemand now normalizes spelled
+   * cardinals to digits at its single choke point, so ALL cores + BOTH gates
+   * inherit it. Conservative: only <tens>[-\s]<ones> / bare-tens / teen forms,
+   * never bare ones ("one"/"two") which are usually articles/quantifiers. */
+  it("flags a spelled-out target above the offer (tens, tens+ones, teens)", () => {
+    expect(carriesUnmetDemand("make it forty-five", 40)).toBe(true);
+    expect(carriesUnmetDemand("bring the base to forty eight", 40)).toBe(true);
+    expect(carriesUnmetDemand("I need fifty two flat", 40)).toBe(true);
+    expect(carriesUnmetDemand("raise it to sixty", 40)).toBe(true);
+    // offer-gated: a spelled figure at/below the offer is met, no demand
+    expect(carriesUnmetDemand("make it thirty-five", 40)).toBe(false);
+    // offer-unknown: still counts so the strict gate blocks it
+    expect(carriesUnmetDemand("bring the base to forty eight")).toBe(true);
+  });
+
+  it("does NOT convert spelled words in ordinary prose (over-block guard)", () => {
+    expect(carriesUnmetDemand("I'm excited for the role", 40)).toBe(false);
+    expect(carriesUnmetDemand("one small thing though, sounds good", 40)).toBe(false);
+    expect(carriesUnmetDemand("give me a couple minutes", 40)).toBe(false);
+    expect(carriesUnmetDemand("let's go fifty-fifty on it", 40)).toBe(false);
+    expect(carriesUnmetDemand("there were forty-odd people there", 40)).toBe(false);
+    expect(carriesUnmetDemand("call me in ten minutes", 40)).toBe(false);
+  });
+
+  it("blocks both gates on a spelled-out welded demand", () => {
+    for (const t of [
+      "Bring the base to forty eight and I'm in.",
+      "I'll sign if you make it forty-five.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close

@@ -317,9 +317,48 @@ function figureToLakhs(figure: string, unit: string | undefined): number {
   return n;
 }
 
+/* Spelled-out cardinal → digits, so a demand phrased "bring the base to forty
+ * eight" is seen by the same cores that catch "…to 48". Candidates (and STT
+ * transcripts) do spell figures out; "Bring the base to forty eight and I'm in"
+ * false-closed at the un-bumped offer because every core needs a DIGIT (batch-6
+ * hostile leak, 2026-07-09). Normalization is deliberately conservative — it
+ * converts only the compound "<tens>[-\s]<ones>" / bare-tens / teen forms that
+ * dominate salary figures (20-99, plus 10-19), never bare ones ("one", "two")
+ * which are far more often articles/quantifiers than an LPA number. Applied at
+ * the single analyzeDemand choke point, so BOTH acceptance gates inherit it and
+ * digit-only inputs are untouched. */
+const SPELLED_TENS: Record<string, number> = {
+  twenty: 20, thirty: 30, forty: 40, fourty: 40, fifty: 50,
+  sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+};
+const SPELLED_TEENS: Record<string, number> = {
+  ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14,
+  fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+};
+const SPELLED_ONES: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5,
+  six: 6, seven: 7, eight: 8, nine: 9,
+};
+const SPELLED_TENS_RE = new RegExp(
+  `\\b(${Object.keys(SPELLED_TENS).join("|")})(?:[-\\s]+(${Object.keys(SPELLED_ONES).join("|")}))?\\b`,
+  "gi",
+);
+const SPELLED_TEENS_RE = new RegExp(`\\b(${Object.keys(SPELLED_TEENS).join("|")})\\b`, "gi");
+
+function normalizeSpelledNumbers(text: string): string {
+  return text
+    .replace(SPELLED_TENS_RE, (_m, tens: string, ones?: string) => {
+      const base = SPELLED_TENS[tens.toLowerCase()];
+      const add = ones ? SPELLED_ONES[ones.toLowerCase()] : 0;
+      return String(base + add);
+    })
+    .replace(SPELLED_TEENS_RE, (_m, teen: string) => String(SPELLED_TEENS[teen.toLowerCase()]));
+}
+
 export function analyzeDemand(text: string | null | undefined, offerLpa?: number): DemandAnalysis {
-  const a = (text || "").trim();
-  if (!a) return { unmet: false, reasons: [] };
+  const trimmed = (text || "").trim();
+  if (!trimmed) return { unmet: false, reasons: [] };
+  const a = normalizeSpelledNumbers(trimmed);
   const reasons: string[] = [];
   const haveOffer = typeof offerLpa === "number" && Number.isFinite(offerLpa) && offerLpa > 0;
   for (const core of DEMAND_CORES) {
