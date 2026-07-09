@@ -120,4 +120,29 @@ describe("#94 — near-offer conditional close-engagement", () => {
       expect(actionToLever(action, s).newTotalLpa).not.toBe(39);
     }
   });
+
+  /* Vague decade-band / negative-floor false-close (2026-07-09, offline hostile
+   * battery). "if it lands in the mid-forties" carries NO literal digit, so
+   * every digit-anchored resolver returned null and the gate closed at the
+   * un-bumped offer, silently dropping the ~45 band. Likewise "nothing under 46"
+   * (a floor stated as a prohibition) close-recap'd at the offer. Both are now
+   * caught by analyzeDemand (decade-band core + extended floor-target) and the
+   * shared unmet-cash veto routes them to a live counter. */
+  it("does NOT false-close at the offer on a vague decade-band demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'll take it if it lands in the mid-forties");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
+
+  it("does NOT false-close at the offer on a negative-floor demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'm in, but nothing under 46");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
 });

@@ -65,6 +65,13 @@ interface DemandCore {
    *  only if N is provably above the offer (otherwise it may be a
    *  concession restatement — "give me 40" at a ₹40L offer). */
   requiresOfferToExceed?: boolean;
+  /** Derives the ABSOLUTE target (in lakhs) from the match when the figure
+   *  is not a literal digit group — e.g. a decade-band phrase ("mid-forties"
+   *  → 45). Gated exactly like absoluteTargetGroup: unmet only when the
+   *  derived figure beats the offer, and still counts when the offer is
+   *  unknown so the strict gate blocks a welded accept. Mutually exclusive
+   *  with absoluteTargetGroup. */
+  computeFigure?: (m: RegExpExecArray) => number;
 }
 
 /* Increase magnitude fragment shared by the relative/word forms:
@@ -82,6 +89,16 @@ const NOT_THAN = "(?!\\s+than)";
  * frame ("happy with THE bonus" is an accept, "I need a bonus" is a demand). */
 const SWEETENER =
   "(?:joining\\s+bonus|signing\\s+bonus|sign[-\\s]?on\\s+bonus|retention\\s+bonus|bonus(?:es)?|joining|relocation|reloc\\b|notice\\s+(?:buyout|pay|period(?:\\s+buyout)?)|buyout|esops?|rsus?|equity|stock(?:\\s+options?)?|shares?|variable|allowances?|hra\\b|perks?|benefits?|wfh|remote|sabbatical)";
+
+/* Decade-band figures for the vague "mid-forties" demand form (see the
+ * decade-band core below). Kept lakh-denominated to match figureToLakhs output;
+ * the qualifier nudges within the decade. */
+const DECADE_WORDS: Record<string, number> = {
+  thirties: 30, forties: 40, fifties: 50, sixties: 60, seventies: 70, eighties: 80,
+};
+const BAND_QUALIFIER: Record<string, number> = {
+  low: 2, early: 2, mid: 5, middle: 5, high: 8, late: 8,
+};
 
 const DEMAND_CORES: DemandCore[] = [
   /* Absolute raise TARGET: "make it 50", "get the base to 55", "bump
@@ -118,12 +135,31 @@ const DEMAND_CORES: DemandCore[] = [
    * 2026-07-09). Absolute target: unmet only when the floor beats the offer;
    * still counts when the offer is unknown (strict gate) so the welded accept
    * is blocked. Floor phrases are lexically specific ("north of 45", not "north
-   * of the city" — that has no adjacent figure), so non-comp uses do not match. */
+   * of the city" — that has no adjacent figure), so non-comp uses do not match.
+   * Includes the "nothing/not under|below" negative-floor idiom ("I'm in, but
+   * nothing under 46") — a floor stated as a prohibition, which close-recap'd at
+   * the un-bumped offer because the leading-phrase list omitted it (batch-7
+   * hostile leak, 2026-07-09). */
   {
     reason: "floor-target",
     absoluteTargetGroup: 1,
     unitGroup: 2,
-    re: /\b(?:at\s+least|no\s+less\s+than|no\s+lower\s+than|not\s+below|north\s+of|upwards?\s+of|in\s+excess\s+of|(?:a\s+)?minimum\s+of|starting\s+at)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+    re: /\b(?:at\s+least|no\s+less\s+than|no\s+lower\s+than|not\s+below|not\s+under|nothing\s+(?:under|below|less\s+than|lower\s+than)|north\s+of|upwards?\s+of|in\s+excess\s+of|(?:a\s+)?minimum\s+of|starting\s+at)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+  },
+  /* Vague decade-band demand: "in the mid-forties", "low fifties", "high
+   * forties". No literal digit at all, so every digit-anchored core (and the
+   * planner's figure resolvers) missed it and the conditional accept
+   * false-closed at the un-bumped offer, silently dropping the band ("I'll take
+   * it if it lands in the mid-forties" → closed at ₹40 — batch-7 hostile leak,
+   * 2026-07-09). computeFigure derives a representative target from the band:
+   * low/early ≈ +2, mid/middle ≈ +5, high/late ≈ +8 over the decade. Offer-
+   * gated absolute — a band at/below the offer is met, above (or offer-unknown)
+   * is unmet so both gates block. The qualifier+decade adjacency is lexically
+   * specific, so it does not fire on ordinary prose. */
+  {
+    reason: "decade-band",
+    computeFigure: (m) => DECADE_WORDS[m[2].toLowerCase()] + BAND_QUALIFIER[m[1].toLowerCase()],
+    re: /\b(low|mid|middle|high|early|late)[-\s]+(thirties|forties|fifties|sixties|seventies|eighties)\b/i,
   },
   /* First-person / imperative demand for MORE by magnitude: "give me 8%
    * more", "I want 2L more", "I'm after a couple more". Ported from
@@ -381,8 +417,12 @@ export function analyzeDemand(text: string | null | undefined, offerLpa?: number
   for (const core of DEMAND_CORES) {
     const m = core.re.exec(a);
     if (!m) continue;
-    const figure =
-      core.absoluteTargetGroup != null
+    /* A figure comes from either a literal digit group or a derived
+     * computeFigure (decade-band); both are offer-gated absolute targets. */
+    const hasAbsolute = core.absoluteTargetGroup != null || core.computeFigure != null;
+    const figure = core.computeFigure
+      ? core.computeFigure(m)
+      : core.absoluteTargetGroup != null
         ? figureToLakhs(m[core.absoluteTargetGroup], core.unitGroup != null ? m[core.unitGroup] : undefined)
         : NaN;
     if (core.requiresOfferToExceed) {
@@ -392,7 +432,7 @@ export function analyzeDemand(text: string | null | undefined, offerLpa?: number
       reasons.push(core.reason);
       continue;
     }
-    if (core.absoluteTargetGroup != null && haveOffer) {
+    if (hasAbsolute && haveOffer) {
       /* Absolute raise target: unmet only when it beats the offer. A
        * target at or below the standing offer is a no-op restatement. */
       if (Number.isFinite(figure) && figure <= (offerLpa as number) + 1e-9) continue;

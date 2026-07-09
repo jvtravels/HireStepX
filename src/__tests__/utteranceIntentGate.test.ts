@@ -504,6 +504,46 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Vague decade-band demand ("in the mid-forties") — no literal digit, so
+   * every digit-anchored core AND the planner's figure resolvers missed it and
+   * the conditional accept false-closed at the un-bumped offer (batch-7 hostile
+   * leak, 2026-07-09). A representative figure is derived from the band
+   * (low/early +2, mid/middle +5, high/late +8 over the decade), offer-gated. */
+  it("flags a decade-band demand above the offer, gated by band", () => {
+    expect(carriesUnmetDemand("I'll take it if it lands in the mid-forties", 40)).toBe(true);
+    expect(carriesUnmetDemand("I want something in the low fifties", 40)).toBe(true);
+    expect(carriesUnmetDemand("high forties works", 40)).toBe(true);
+    expect(carriesUnmetDemand("somewhere in the mid forties", 40)).toBe(true);
+    // offer-gated: a band at/below the offer is met, not a demand
+    expect(carriesUnmetDemand("low forties is fine", 42)).toBe(false); // ~42 <= 42
+    expect(carriesUnmetDemand("mid thirties is okay", 40)).toBe(false); // ~35 <= 40
+    // offer-unknown: still counts so the strict gate blocks it
+    expect(carriesUnmetDemand("I'll take it in the mid-forties")).toBe(true);
+    // over-block guards — era references and generic prose stay clean
+    expect(carriesUnmetDemand("back in the nineties things were different", 40)).toBe(false);
+    expect(carriesUnmetDemand("there's nothing here to review", 40)).toBe(false);
+  });
+
+  /* Negative-floor idiom ("nothing under 46", "not under 45") — a floor stated
+   * as a prohibition. floor-target's leading-phrase list omitted it, so it
+   * close-recap'd at the un-bumped offer (batch-7 hostile leak, 2026-07-09). */
+  it("flags a negative-floor idiom only when the floor beats the offer", () => {
+    expect(carriesUnmetDemand("I'm in, but nothing under 46", 40)).toBe(true);
+    expect(carriesUnmetDemand("not under 45 and I'm yours", 40)).toBe(true);
+    expect(carriesUnmetDemand("nothing below 47", 40)).toBe(true);
+    expect(carriesUnmetDemand("nothing under 38", 40)).toBe(false); // 38 <= 40, met
+  });
+
+  it("blocks both gates on a decade-band / negative-floor demand", () => {
+    for (const t of [
+      "I'll take it if it lands in the mid-forties.",
+      "I'm in, but nothing under 46.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close
