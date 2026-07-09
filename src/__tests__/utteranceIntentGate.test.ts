@@ -332,6 +332,65 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
     expect(accepted(t)).toBe(false);
     expect(detectExplicitAcceptance(t).accepted).toBe(false);
   });
+
+  /* Verb-inflection twin of the landing-verb core: "hits/reaches/touches"
+   * (batch-5 hostile battery, 2026-07-09). The original core required the
+   * bare verb + "\s", so inflected forms slipped through. */
+  it("flags inflected landing verbs (hits/reaches/touches) above the offer", () => {
+    expect(carriesUnmetDemand("the package hits 1.2 crore", 40)).toBe(true);
+    expect(carriesUnmetDemand("once it reaches 50", 40)).toBe(true);
+    expect(carriesUnmetDemand("the base touches 46", 40)).toBe(true);
+    expect(carriesUnmetDemand("once it reaches 50", 55)).toBe(false); // below offer
+  });
+
+  /* Floor expressions ("at least/no less than/north of/upwards of/in excess
+   * of/minimum of/starting at N") name a lower bound the package must meet —
+   * an absolute-target demand. "I'm in for something north of 45" false-closed
+   * at the ₹40 offer (batch-5 hostile battery, 2026-07-09). Offer-gated. */
+  it("flags a floor expression only when the floor beats the offer", () => {
+    expect(carriesUnmetDemand("at least 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("no less than 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("something north of 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("upwards of 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("in excess of 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("a minimum of 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("starting at 45", 40)).toBe(true);
+    expect(carriesUnmetDemand("at least 40", 40)).toBe(false); // at offer
+    expect(carriesUnmetDemand("north of 38", 40)).toBe(false); // below offer
+    // offer-unknown: still counts (blocks the strict gate)
+    expect(carriesUnmetDemand("north of 45")).toBe(true);
+    // non-comp uses with no adjacent figure must NOT match
+    expect(carriesUnmetDemand("we're north of the city, deal at 40.", 40)).toBe(false);
+    expect(carriesUnmetDemand("at least it's a fair number, I'm in.", 40)).toBe(false);
+  });
+
+  /* Noun-form raises ("a 15% hike", "a 4L raise", "a 5% increment") carry the
+   * increase intent in a raise NOUN after the figure — missed by verb-magnitude
+   * and relative-more. Always unmet (a raise only adds). Excluded after "the"
+   * (satisfaction reference, not a demand) so an accept is not over-blocked.
+   * Batch-5 hostile battery, 2026-07-09. */
+  it("flags a noun-form raise (always unmet), except in a satisfaction frame", () => {
+    expect(carriesUnmetDemand("a 15% hike", 40)).toBe(true);
+    expect(carriesUnmetDemand("a 4L raise on base", 40)).toBe(true);
+    expect(carriesUnmetDemand("a 5% increment", 40)).toBe(true);
+    expect(carriesUnmetDemand("a 3L bump", 40)).toBe(true);
+    expect(carriesUnmetDemand("a 4L increase", 40)).toBe(true);
+    // "the <N> hike" is satisfaction with an agreed item, not a fresh demand
+    expect(carriesUnmetDemand("happy with the 15% hike, deal.", 40)).toBe(false);
+    // a raise VERB ("raise the question") without an adjacent figure/unit
+    expect(carriesUnmetDemand("let me raise the question with HR, I'm in.", 40)).toBe(false);
+  });
+
+  it("blocks both gates on a floor/noun/inflected demand welded to an accept", () => {
+    for (const t of [
+      "I'm in for something north of 45.",
+      "Give me a 15% hike and I'm in.",
+      "I'll take it if the package hits 1.2 crore.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close

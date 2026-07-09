@@ -99,6 +99,19 @@ import {
   BREAKDOWN_ASK_RE,
   type QuestionRoute,
 } from "./_question-router";
+/* Canonical demand extractor — the single source of truth both acceptance
+ * gates consult. The conditional-close gate uses it to veto a fall-through
+ * close-at-offer when a CASH demand is present but the local numeric
+ * resolvers could not quantify it (batch-5 crore-scale / landing-verb leak).
+ * NON_CASH_DEMAND_REASONS are the extractor cores that are NOT an unmet cash
+ * ask — non-numeric sweeteners (deliverable downstream via the joining-bonus
+ * grant, PRI-63) and role/title upgrades — so they must NOT trip the cash veto. */
+import { analyzeDemand } from "./_utterance-intent";
+const NON_CASH_DEMAND_REASONS = new Set([
+  "grant-sweetener",
+  "sweetener-demand",
+  "title-upgrade",
+]);
 import {
   renderCandidateQuestionResponse,
   type CandidateQuestionTopic,
@@ -3279,7 +3292,25 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
          * at offer); a pure non-cash condition or bare accept resolves to null
          * here and closes at the offer, unchanged. */
         const bumpTarget = resolveConditionalCashTarget(state, offer);
-        if (bumpTarget == null || bumpTarget <= offer) {
+        if (bumpTarget == null) {
+          /* No quantifiable cash target from the local resolver — either a
+           * pure non-cash condition / bare accept (close at the offer) OR a
+           * real cash demand this resolver's parser could not read (a
+           * crore-scale figure, a prepositionless landing verb, a floor
+           * expression). Defer to the canonical demand extractor — the same
+           * analyzeDemand both acceptance gates use — so an unparsed-but-real
+           * demand cannot fall through to a false-close at the un-bumped offer
+           * ("I'll take it if the package hits 1.2 crore" — batch-5 leak,
+           * 2026-07-09). Only CASH cores veto: a non-numeric sweetener
+           * ("throw in a joining bonus") is deliverable in-place via the JB
+           * grant below (PRI-63) and must still close. Over-blocking a genuine
+           * bare accept costs one turn; a false-close is unrecoverable. */
+          const demand = analyzeDemand(latestCandidateText(state), offer);
+          const unmetCashDemand =
+            demand.unmet &&
+            demand.reasons.some((r) => !NON_CASH_DEMAND_REASONS.has(r));
+          closeAt = unmetCashDemand ? null : offer;
+        } else if (bumpTarget <= offer) {
           closeAt = offer;
         } else if (bumpTarget <= ceil && bumpTarget - offer <= gap) {
           closeAt = bumpTarget;

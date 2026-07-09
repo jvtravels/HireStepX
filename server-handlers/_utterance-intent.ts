@@ -108,7 +108,22 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "raise-hit-target",
     absoluteTargetGroup: 1,
     unitGroup: 2,
-    re: /\b(?:hit|reach|touch|land\s+(?:at|on)|sit\s+at)\s+(?:the\s+(?:base|fixed|cash|number|figure|total|ctc|package)\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+    re: /\b(?:hits?|reach(?:es)?|touch(?:es)?|lands?\s+(?:at|on)|sits?\s+at)\s+(?:the\s+(?:base|fixed|cash|number|figure|total|ctc|package)\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+  },
+  /* Floor expression + figure: "at least 45", "no less than 45", "north of
+   * 45", "upwards of 45", "in excess of 45", "a minimum of 45", "starting at
+   * 45", "no lower than 45". A stated floor is a demand that the package meet
+   * or exceed that figure — "I'm in for something north of 45" false-closed at
+   * the ₹40 offer because no core saw the floor (batch-5 hostile leak,
+   * 2026-07-09). Absolute target: unmet only when the floor beats the offer;
+   * still counts when the offer is unknown (strict gate) so the welded accept
+   * is blocked. Floor phrases are lexically specific ("north of 45", not "north
+   * of the city" — that has no adjacent figure), so non-comp uses do not match. */
+  {
+    reason: "floor-target",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(?:at\s+least|no\s+less\s+than|no\s+lower\s+than|not\s+below|north\s+of|upwards?\s+of|in\s+excess\s+of|(?:a\s+)?minimum\s+of|starting\s+at)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
   /* First-person / imperative demand for MORE by magnitude: "give me 8%
    * more", "I want 2L more", "I'm after a couple more". Ported from
@@ -157,6 +172,22 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "verb-magnitude",
     re: new RegExp(
       `\\b(?:bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack)\\b[^.!?]{0,25}?\\b(?:\\d+(?:\\.\\d+)?|${VERBAL_QTY})\\s*(?:%|(?:percent|per\\s?cent|lpa|lakhs?|lac|l|k)\\b)`,
+      "i",
+    ),
+  },
+  /* Noun-form raise: "a 15% hike", "a 4L raise on base", "a 5% increment", "a
+   * 3L bump", "a 4L increase/rise/jump/boost/uptick". The increase intent lives
+   * in a raise NOUN following the figure, not a verb or trailing more/higher —
+   * so verb-magnitude and relative-more both miss it, and "Give me a 15% hike
+   * and I'm in." false-closed at the ₹40 offer (batch-5 hostile leak,
+   * 2026-07-09). Always unmet: a raise noun only ever adds to the standing
+   * offer, so no offer gate. Requires an adjacent %/cash unit so a bare "a 4
+   * hike" is not caught. Excluded after a definite article ("happy with THE 15%
+   * hike" is satisfaction, not a demand) to avoid over-blocking an accept. */
+  {
+    reason: "noun-raise",
+    re: new RegExp(
+      `(?<!the\\s)\\b\\d+(?:\\.\\d+)?\\s*(?:%|percent|per\\s?cent|lpa|lakhs?|lac|l|k)\\s*(?:hike|raise|bump|increment|increase|rise|jump|boost|uptick)s?\\b`,
       "i",
     ),
   },

@@ -83,4 +83,23 @@ describe("#94 — near-offer conditional close-engagement", () => {
       expect(actionToLever(action, s).newTotalLpa).not.toBe(48);
     }
   });
+
+  /* Batch-5 regression (2026-07-09). The bare-fallback branch closed at the
+   * standing offer whenever the LOCAL numeric resolvers (totalScopedCounter,
+   * resolveFixedCloseAsk, acceptanceUtteranceFigure, resolveConditionalCashTarget
+   * / parseCashIncreaseIntent) could not quantify the demand — but those parsers
+   * miss a crore-scale figure with a prepositionless landing verb. "…hits 1.2
+   * crore" left every resolver null and the gate false-closed at the un-bumped
+   * offer, silently dropping a ₹120L condition. The fix routes the fall-through
+   * through the canonical analyzeDemand (the same extractor both acceptance
+   * gates use): an unmet CASH demand it flags now vetoes the close-at-offer. */
+  it("does NOT false-close at the offer on an unparsed crore-scale conditional demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'll take it if the package hits 1.2 crore");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      // If it somehow closes, it must NOT be at the un-bumped ₹35L offer.
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
 });
