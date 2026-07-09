@@ -222,6 +222,22 @@ const DEMAND_CORES: DemandCore[] = [
     unitGroup: 2,
     re: /\b(?:fixed|base|cash|salary|ctc)\s+(?:component\s+|part\s+)?(?:alone|component|itself)\s+(?:is|at|to\s+be|should\s+be|must\s+be|needs?\s+to\s+be|hits?)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
+  /* Digit-handle idiom: the candidate names only the LEADING digit of the CTC
+   * they want — "get me to a 5 in front", "once it starts with a 5", "a 5
+   * handle". No absolute figure is stated, so every digit-anchored core missed
+   * it and "Get me to a 5 in front and I'll sign" false-closed at the ₹40 offer
+   * (batch-9 hostile leak deferred as high-over-block-risk, fixed batch-10
+   * 2026-07-09). computeFigure derives the decade FLOOR (digit × 10): "a 5 in
+   * front" ⇒ ≥50L. Offer-gated absolute — when the standing offer already has
+   * that digit in front (e.g. a ₹50 offer vs "starts with a 5" ⇒ 50 ≤ 50) it is
+   * met and NOT flagged, so this never fires on an offer restatement. The
+   * "in front"/"handle"/"starts with" anchors + single-digit group keep it off
+   * ordinary numerals ("5 rounds", "starts with a review"). */
+  {
+    reason: "digit-handle",
+    computeFigure: (m) => parseInt(m[1] ?? m[2], 10) * 10,
+    re: /\b(?:starts?\s+with\s+(?:a\s+)?(\d)|(?:a\s+)?(\d)(?:\s+in\s+front|[-\s]?handle))\b/i,
+  },
   /* First-person / imperative demand for MORE by magnitude: "give me 8%
    * more", "I want 2L more", "I'm after a couple more". Ported from
    * DEMAND_FOR_MORE_PATTERN (already bridge-free). */

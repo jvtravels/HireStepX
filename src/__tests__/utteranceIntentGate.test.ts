@@ -629,6 +629,33 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Digit-handle idiom ("a 5 in front" / "starts with a 5" / "a 5 handle") —
+   * names only the LEADING digit, so no absolute figure is present and every
+   * digit-anchored core missed it; "Get me to a 5 in front" false-closed at the
+   * ₹40 offer (batch-9 leak deferred as high-over-block-risk, fixed batch-10
+   * 2026-07-09). computeFigure derives the decade floor (digit × 10). */
+  it("flags a digit-handle demand, gated by offer", () => {
+    expect(carriesUnmetDemand("get me to a 5 in front", 40)).toBe(true);
+    expect(carriesUnmetDemand("once it starts with a 5", 40)).toBe(true);
+    expect(carriesUnmetDemand("as long as it's got a 5 handle", 40)).toBe(true);
+    expect(carriesUnmetDemand("a 6 handle and I'm in", 40)).toBe(true); // 60 > 40
+    // The standing offer already has that digit in front → met, not a demand.
+    expect(carriesUnmetDemand("starts with a 4", 40)).toBe(false); // 40 <= 40
+    expect(carriesUnmetDemand("a 3 in front", 40)).toBe(false); // 30 <= 40
+    // Offer unknown: still counts (strict gate).
+    expect(carriesUnmetDemand("get me to a 5 in front")).toBe(true);
+  });
+
+  it("blocks both gates on a digit-handle demand", () => {
+    for (const t of [
+      "Get me to a 5 in front and I'll sign.",
+      "I'll accept once it starts with a 5.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close

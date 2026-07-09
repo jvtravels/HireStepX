@@ -208,4 +208,28 @@ describe("#94 — near-offer conditional close-engagement", () => {
       expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
     }
   });
+
+  /* Digit-handle false-close (2026-07-09, offline hostile battery batch-10).
+   * A demand that names only the LEADING digit of the wanted CTC — "get me to a
+   * 5 in front", "once it starts with a 5", "a 5 handle" — carries no absolute
+   * figure, so every digit-anchored resolver returned null and the gate
+   * close-recap'd at the un-bumped ₹35 offer, silently dropping a ~50L floor.
+   * Now caught by analyzeDemand (digit-handle core: derives the decade floor,
+   * digit × 10) and routed to a live counter. Deferred from batch-9 as
+   * high-over-block-risk; the "in front"/"handle"/"starts with" anchors keep it
+   * off ordinary numerals. */
+  it("does NOT false-close at the offer on a digit-handle demand", () => {
+    for (const utter of [
+      "I'll sign once you get me to a 5 in front",
+      "I'll accept once it starts with a 5",
+      "Deal, as long as it's got a 5 handle",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
 });
