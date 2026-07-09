@@ -197,6 +197,40 @@ describe("gate lockstep — strict gate must never accept a demand-then-close", 
   }
 });
 
+/* Future-deferral wall (2026-07-09) — a strong commit verb (sign/take/accept/
+ * in) gated on a NOT-yet-true reference point: a clock time ("give me till
+ * Monday"), a future event ("the day the joining bonus lands"), a perfect-tense
+ * consult ("after I've run it past my spouse"), or a pending revised document
+ * ("send the revised letter"). The commit is deferred, so closing NOW is a
+ * FALSE-CLOSE. A differential probe found four such phrasings slipping BOTH
+ * gates — the demand/consult/review vetoes each required a token these forms
+ * lack (a grant verb, a present-tense consult subject, a review verb). The fix
+ * widened CONSULT_DEFERRAL to the perfect tense and added TEMPORAL_DEFERRAL /
+ * FUTURE_EVENT_CLOSE / REVISED_DOCUMENT to the shared veto array, so both gates
+ * reject in lockstep. If a future edit reopens any, this wall goes red. */
+describe("intent gate — future/temporal-deferral accepts must never FALSE-CLOSE", () => {
+  const DEFERRED = [
+    "I'll sign once you put the relocation in writing.",
+    "As soon as the equity is confirmed, I'll take it.",
+    "I'll accept the moment HR sends the revised letter.",
+    "Give me till Monday and I'll sign.",
+    "Once it's all in writing, you've got a deal.",
+    "I'm ready to sign the minute you bump it to 45.",
+    "The day the joining bonus lands, I'm in.",
+    "I'll take it after I've run it past my spouse.",
+    "Send the revised letter and I'll sign then.",
+    "When the base hits 45, count me in.",
+    "Get me a couple of days, then deal.",
+    "The moment the equity clears, count me in.",
+    "Share the updated offer and I'm in.",
+  ];
+  for (const t of DEFERRED) {
+    it(`medium blocks: "${t}"`, () => expect(accepted(t)).toBe(false));
+    it(`strict blocks: "${t}"`, () =>
+      expect(detectExplicitAcceptance(t).accepted).toBe(false));
+  }
+});
+
 describe("analyzeDemand — structured extractor unit behavior", () => {
   it("flags an above-offer bare demand only when the offer is known and exceeded", () => {
     expect(carriesUnmetDemand("give me 45", 40)).toBe(true);

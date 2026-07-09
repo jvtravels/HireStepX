@@ -77,9 +77,12 @@ describe("#33 — word-magnitude conditional cash bump never soft-false-closes a
   });
 
   it("does NOT treat non-cash word magnitudes as a bump ('a couple of days')", () => {
-    // No cash noun after the quantifier → no bump; a bare non-cash condition
-    // closes at the standing offer, unchanged.
-    expect(closeFigure("Give me a couple of days to think and I'll sign.")).toBe(40);
+    // No cash noun after the quantifier → no bump. And "give me a couple of days
+    // … and I'll sign" is a TEMPORAL DEFERRAL, not a present close (TEMPORAL_
+    // DEFERRAL veto, 2026-07-09), so it must NOT close at all — closing at the
+    // standing ₹40L here would be a soft false-close on a candidate who is
+    // explicitly asking for days before signing.
+    expect(closeFigure("Give me a couple of days to think and I'll sign.")).toBeNull();
   });
 
   it("PRESERVES the numeric delta path: 'add another 2 lakh' still closes at ₹42L", () => {

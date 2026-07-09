@@ -774,7 +774,7 @@ const REVIEW_TAIL_PATTERN =
  *  "once you confirm the base I'll sign" (owned by CONDITIONAL_DEFERRAL) and
  *  genuine accepts are untouched. Offline sweep batch 4. */
 const CONSULT_DEFERRAL_PATTERN =
-  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)\s+(?:talk|speak|consult|discuss|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+(?:by|past|with)|get\s+back|am\s+back))/i;
+  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)(?:'?ve|'?d|\s+ha(?:ve|d))?\s+(?:talk|speak|consult|discuss|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+(?:by|past|with)|get\s+back|am\s+back))/i;
 
 /** Veto (offline hostile close battery, 2026-07-08) — the LEADING consult form:
  *  "Let me run it past my spouse and I'll sign", "let me sleep on it and it's a
@@ -787,6 +787,45 @@ const CONSULT_DEFERRAL_PATTERN =
  *  match. Shared single-source so BOTH gates reject in lockstep. */
 const CONSULT_FIRST_PATTERN =
   /\blet\s+me\s+(?:first\s+|just\s+)?(?:run\s+it\s+(?:by|past|with)|bounce\s+it\s+(?:off|by)|check\s+(?:with|in\s+with)|speak\s+(?:to|with)|talk\s+(?:to|it\s+over\s+with|with)|consult|discuss\s+(?:it\s+)?with|sleep\s+on\s+it|loop\s+in|think\s+it\s+over)\b/i;
+
+/** Veto (offline future-deferral battery, 2026-07-09) — a request for TIME
+ *  before committing, welded to a close idiom: "Give me till Monday and I'll
+ *  sign", "get me a couple of days, then deal", "let me have the weekend, I'm
+ *  in". The commit is deferred to a future clock point, so closing NOW is a
+ *  FALSE-CLOSE. CONSULT_DEFERRAL owns the "after I talk to X" consult form and
+ *  REVIEW_TAIL the "I'll review it" deliberation form; a bare time request
+ *  ("give me a day") carries neither, so it slipped every veto. Anchored on a
+ *  time-request verb (give/get/grant/allow/let me) + EITHER a till/until/through
+ *  head OR a determiner + explicit TIME unit — so "give me the paperwork and I'm
+ *  in" ("paperwork" is not a time unit) stays a genuine accept. Shared
+ *  single-source so BOTH gates reject in lockstep. */
+const TEMPORAL_DEFERRAL_PATTERN =
+  /\b(?:give|gimme|get|grant|allow|let)\s+me\s+(?:have\s+)?(?:(?:till|until|through)\b|(?:a|an|another|some|more|the|a\s+couple(?:\s+of)?|a\s+few)\s+(?:days?|weeks?|weekend|nights?|evenings?|hours?|moments?|minutes?|mins?|bit|while|months?|time)\b)/i;
+
+/** Veto (offline future-deferral battery, 2026-07-09) — a close idiom gated on
+ *  a FUTURE EVENT that has not yet happened: "The day the joining bonus lands,
+ *  I'm in", "the moment the equity clears, deal", "the minute it hits my account,
+ *  I'll sign". The "the day/moment/minute … <future-verb>" frame defers the
+ *  commit to an unrealized event (the offer is un-bumped now), so closing is a
+ *  FALSE-CLOSE. The demand-then-close vetoes need a grant VERB abutting the
+ *  sweetener; a future-event frame carries none, so "the day the joining bonus
+ *  lands" slipped them. Scoped to a temporal head noun + a settlement/arrival
+ *  verb within 40 chars; genuine accepts never use this frame. Shared
+ *  single-source so BOTH gates reject in lockstep. */
+const FUTURE_EVENT_CLOSE_PATTERN =
+  /\bthe\s+(?:day|moment|minute|second|instant|hour)\b[^.!?\n]{0,40}?\b(?:lands?|arrives?|comes?\s+(?:in|through)|clears?|hits?|shows?\s+up|is\s+(?:confirmed|sorted|done|in|finalized|settled|through|paid|approved)|goes?\s+through)\b/i;
+
+/** Veto (offline future-deferral battery, 2026-07-09) — a commit gated on first
+ *  receiving a CHANGED document: "Send the revised letter and I'll sign then",
+ *  "share the updated offer and I'm in", "the corrected paperwork, then deal".
+ *  The revised/updated/corrected/amended qualifier marks the current document as
+ *  superseded — an unmet demand for a change — so the welded close finalizes at
+ *  the un-revised offer (soft FALSE-CLOSE). REVIEW_TAIL owns "I'll review it";
+ *  this owns the pending-revision request. Scoped to unambiguous change-markers
+ *  (a genuine "send the offer letter and I'll sign" carries none). Shared
+ *  single-source so BOTH gates reject in lockstep. */
+const REVISED_DOCUMENT_PATTERN =
+  /\b(?:revised|updated|corrected|amended|reworked)\s+(?:offer(?:\s+letter)?|letter|paperwork|contract|agreement|version|draft|document|terms|ctc\s+letter)\b/i;
 
 /** Veto (offline hostile close battery, 2026-07-08) — a NON-numeric sweetener
  *  GRANT demand welded to a close idiom by a non-contrastive conjunction:
@@ -922,6 +961,9 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   REVIEW_TAIL_PATTERN,
   CONSULT_DEFERRAL_PATTERN,
   CONSULT_FIRST_PATTERN,
+  TEMPORAL_DEFERRAL_PATTERN,
+  FUTURE_EVENT_CLOSE_PATTERN,
+  REVISED_DOCUMENT_PATTERN,
   ...RHETORICAL_ACCEPT_VETO_PATTERNS,
   ...PARTIAL_ACCEPT_VETO_PATTERNS,
 ];
