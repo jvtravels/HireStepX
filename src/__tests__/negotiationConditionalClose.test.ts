@@ -177,4 +177,35 @@ describe("#94 — near-offer conditional close-engagement", () => {
       expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
     }
   });
+
+  /* Multiplier-of-current + component-floor false-close (2026-07-09, offline
+   * hostile battery). A target expressed as a multiple of the candidate's
+   * current figure ("double my current 38" = 76, "1.5x my current 38" = 57) or
+   * pinned to a named component via a bare copula ("the fixed alone is 46")
+   * carried no literal target digit, so the gate close-recap'd at the un-bumped
+   * offer. Both are now caught by analyzeDemand (multiplier-current +
+   * component-floor cores) and routed to a live counter. */
+  it("does NOT false-close at the offer on a multiplier-of-current demand", () => {
+    for (const utter of [
+      "I'll sign if you double my current 38",
+      "I'm in at twice my current 38",
+      "Deal if you do 1.5x my current 38",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
+
+  it("does NOT false-close at the offer on a component-specific floor demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'm in if the fixed alone is 46");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
 });

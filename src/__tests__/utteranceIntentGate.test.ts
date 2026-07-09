@@ -589,6 +589,46 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Multiplier of the current figure ("double my current 38" = 76, "twice my
+   * current 38", "1.5x my current 38"). The target is derived, so no literal
+   * digit is present and every target-anchored core missed it — false-closed at
+   * the ₹40 offer (batch-9 hostile leak, 2026-07-09). Offer-gated. */
+  it("flags a multiplier of the current figure, gated by offer", () => {
+    expect(carriesUnmetDemand("if you double my current 38", 40)).toBe(true);
+    expect(carriesUnmetDemand("at twice my current 38", 40)).toBe(true);
+    expect(carriesUnmetDemand("do 1.5x my current 38", 40)).toBe(true);
+    expect(carriesUnmetDemand("triple my current 20", 40)).toBe(true); // 60 > 40
+    // A product at/below the offer is met, not a demand.
+    expect(carriesUnmetDemand("double my current 18", 40)).toBe(false); // 36 <= 40
+    // The "current" anchor keeps ordinary prose out.
+    expect(carriesUnmetDemand("we should double the effort here", 40)).toBe(false);
+    // Offer unknown (strict gate) still flags it.
+    expect(carriesUnmetDemand("double my current 38")).toBe(true);
+  });
+
+  /* Component-specific floor ("the fixed alone is 46") — a bare copula pinning a
+   * figure to a named slice, missed by the landing-verb cores; false-closed at
+   * the ₹40 offer (batch-9 hostile leak, 2026-07-09). The "alone" qualifier
+   * keeps a whole-offer restatement ("this is 40") out. */
+  it("flags a component-specific floor, gated by offer", () => {
+    expect(carriesUnmetDemand("I'm in if the fixed alone is 46", 40)).toBe(true);
+    expect(carriesUnmetDemand("the base component itself must be 47", 40)).toBe(true);
+    // Below-offer component figure is met.
+    expect(carriesUnmetDemand("the fixed alone is 35", 40)).toBe(false);
+    // A whole-offer restatement is not a component demand.
+    expect(carriesUnmetDemand("this is 40 and it works", 40)).toBe(false);
+  });
+
+  it("blocks both gates on a multiplier / component-floor demand", () => {
+    for (const t of [
+      "I'll sign if you double my current 38.",
+      "I'm in if the fixed alone is 46.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close

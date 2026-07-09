@@ -107,6 +107,13 @@ const CRORE_FRACTION: Record<string, number> = {
   quarter: 25, half: 50, "three-quarter": 75, "three-quarters": 75,
 };
 
+/* Word multipliers for the "double my current 38" demand form (see the
+ * multiplier-current core below). "Nx" forms carry the multiplier as a literal
+ * digit and are handled inline. */
+const MULTIPLIER_WORDS: Record<string, number> = {
+  double: 2, twice: 2, triple: 3, treble: 3, quadruple: 4,
+};
+
 const DEMAND_CORES: DemandCore[] = [
   /* Absolute raise TARGET: "make it 50", "get the base to 55", "bump
    * fixed to 58", "push cash to 60". Unmet only when the target beats
@@ -185,6 +192,35 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "crore-fraction",
     computeFigure: (m) => CRORE_FRACTION[m[1].toLowerCase().replace(/\s+/g, "-")],
     re: /\b(quarter|half|three[-\s]quarters?)\s+(?:of\s+)?(?:a\s+)?crores?\b/i,
+  },
+  /* Multiplier of the candidate's CURRENT figure: "double my current 38",
+   * "twice my current 38", "1.5x my current 38". The target is derived
+   * (multiplier × current), so no literal target digit is present and every
+   * target-anchored core missed it — "I'll sign if you double my current 38"
+   * false-closed at the ₹40 offer (batch-9 hostile leak, 2026-07-09).
+   * computeFigure multiplies the current figure by the word (double=2, triple=3,
+   * quadruple=4) or the "Nx" literal. Offer-gated absolute — a product at/below
+   * the offer is met, above (or offer-unknown) is unmet so both gates block. The
+   * "current|present|existing" anchor keeps ordinary "double the effort" out. */
+  {
+    reason: "multiplier-current",
+    computeFigure: (m) =>
+      (m[1] ? MULTIPLIER_WORDS[m[1].toLowerCase()] : parseFloat(m[2])) *
+      figureToLakhs(m[3], m[4]),
+    re: /\b(?:(double|twice|triple|treble|quadruple)|(\d+(?:\.\d+)?)\s*x)\s+(?:my\s+|the\s+)?(?:current|present|existing)\s+(?:ctc|salary|base|pay|package|comp\w*)?\s*(?:of\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+  },
+  /* Component-specific floor: "the fixed alone is 46", "the base component must
+   * be 47". A bare copula ("is"/"must be") pins a figure to a NAMED component,
+   * which no landing-verb core caught ("hits/reaches/sits at" only) — so "I'm in
+   * if the fixed alone is 46" false-closed at the ₹40 offer (batch-9 hostile
+   * leak, 2026-07-09). Absolute target, offer-gated. The "alone"/"component"
+   * qualifier is what makes the bare copula safe: it marks a raise demand on one
+   * slice, not a restatement of the whole offer, so "this is 40" is not caught. */
+  {
+    reason: "component-floor",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(?:fixed|base|cash|salary|ctc)\s+(?:component\s+|part\s+)?(?:alone|component|itself)\s+(?:is|at|to\s+be|should\s+be|must\s+be|needs?\s+to\s+be|hits?)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
   /* First-person / imperative demand for MORE by magnitude: "give me 8%
    * more", "I want 2L more", "I'm after a couple more". Ported from
