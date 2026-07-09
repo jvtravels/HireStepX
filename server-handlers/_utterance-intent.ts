@@ -192,11 +192,31 @@ const DEMAND_CORES: DemandCore[] = [
     ),
   },
   /* Comparative beat/match/top of a competing or own figure: "beat
-   * their number", "match my current base", "top the offer". Ported
-   * from COUNTER_THEN_CLOSE_PATTERN, bridge dropped. */
+   * their number", "match my current base", "top the offer", "match my
+   * other offer of 46", "beat a competing offer". Ported from
+   * COUNTER_THEN_CLOSE_PATTERN, bridge dropped. The `my …offer` and
+   * competing/rival/outside-offer arms were added after "match my other
+   * offer of 46" false-closed at the un-bumped ₹40 offer (batch-6 hostile
+   * leak, 2026-07-09): the object list omitted "offer" and "other", so the
+   * strict gate read a clean accept. Always unmet (matching a competing
+   * figure is an upward ask), so no offer gate. */
   {
     reason: "beat-match",
-    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:current|ctc|comp\w*|package|base|salary|pay|number))\b/i,
+    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:other\s+)?(?:current|ctc|comp\w*|package|base|salary|pay|number|offer)|(?:a|an|another|the|my|their)\s+(?:competing|rival|outside|other)\s+offer)\b/i,
+  },
+  /* Trailing floor idiom: a figure pinned by "not a rupee/penny/paisa
+   * less/below" ("I'm in at 45.5, not a rupee less"). The floor sits AFTER
+   * the number, so floor-target — which LEADS with the floor phrase — misses
+   * it, and the strict gate read a clean accept and false-closed at the
+   * un-bumped offer (batch-6 hostile leak, 2026-07-09). Absolute target:
+   * counts when the offer is unknown so the strict gate blocks it. The coin
+   * noun + comparative is lexically specific, so ordinary prose does not
+   * trip it. */
+  {
+    reason: "floor-tail",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?)?\b[^.!?]{0,10}?\bnot\s+(?:a|one|even\s+a)\s+(?:single\s+)?(?:rupee|penny|paisa|dime|cent|buck)\s+(?:less|below|lower|under|short)\b/i,
   },
   /* Non-numeric sweetener GRANT (imperative): "throw in relocation", "add a
    * joining bonus", "include equity", "sort out the ESOP". Ported from

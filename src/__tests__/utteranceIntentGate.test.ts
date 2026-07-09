@@ -391,6 +391,49 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* Competing-offer match ("match my other offer of 46", "beat a competing
+   * offer") — beat-match's object list omitted "offer"/"other", so the strict
+   * gate read a clean accept and false-closed (batch-6 hostile battery,
+   * 2026-07-09). Always unmet (matching a competing figure is upward). */
+  it("flags a competing-offer match/beat (always unmet)", () => {
+    expect(carriesUnmetDemand("match my other offer of 46", 40)).toBe(true);
+    expect(carriesUnmetDemand("just match my offer", 40)).toBe(true);
+    expect(carriesUnmetDemand("beat a competing offer", 40)).toBe(true);
+    expect(carriesUnmetDemand("match the rival offer", 40)).toBe(true);
+    // still fires on the original phrasings
+    expect(carriesUnmetDemand("beat their number", 40)).toBe(true);
+    expect(carriesUnmetDemand("match my current base", 40)).toBe(true);
+    // over-block guards: non-comp "match" objects must NOT fire
+    expect(carriesUnmetDemand("match my energy and I'm in", 40)).toBe(false);
+    expect(carriesUnmetDemand("I'll match your enthusiasm, deal", 40)).toBe(false);
+  });
+
+  /* Trailing floor idiom ("…, not a rupee/penny/paisa less") — the floor sits
+   * AFTER the figure, so floor-target (which leads with the floor phrase)
+   * missed it and the strict gate false-closed "I'm in at 45.5, not a rupee
+   * less" at the offer (batch-6 hostile battery, 2026-07-09). Offer-gated,
+   * counts when the offer is unknown so the strict gate blocks it. */
+  it("flags a trailing floor idiom only when the pinned figure beats the offer", () => {
+    expect(carriesUnmetDemand("I'm in at 45.5, not a rupee less", 40)).toBe(true);
+    expect(carriesUnmetDemand("46, not a penny less", 40)).toBe(true);
+    expect(carriesUnmetDemand("do 47, not a paisa lower", 40)).toBe(true);
+    expect(carriesUnmetDemand("40, not a rupee less", 40)).toBe(false); // at offer
+    // offer-unknown: still counts (blocks the strict gate)
+    expect(carriesUnmetDemand("I'm in at 45.5, not a rupee less")).toBe(true);
+    // over-block guard: no leading figure adjacent to the coin idiom
+    expect(carriesUnmetDemand("it's fair, not a penny less than fair", 40)).toBe(false);
+  });
+
+  it("blocks both gates on a competing-match / trailing-floor demand", () => {
+    for (const t of [
+      "I'll take it if you match my other offer of 46.",
+      "I'm in at 45.5, not a rupee less.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close
