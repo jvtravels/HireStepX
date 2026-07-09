@@ -557,6 +557,25 @@ const ACCEPT_PROPOSITION_PATTERN =
  *  terminal close. */
 const IN_PRINCIPLE_PATTERN = /\b(?:in\s+principle|pending\b)/i;
 
+/** Veto: DOUBT / POSSIBILITY governor over an embedded commit idiom (2026-07-09
+ *  offline hostile sweep). The performative/idiom banks match the bare "I'll
+ *  take it" / "I'm in" / "accept" substring, but a leading non-committal
+ *  qualifier ("I don't think I'll take it", "I doubt I'll take it", "I'm not
+ *  convinced I'll take it", "maybe I'll take it", "unlikely I'll take it at this
+ *  number") flips the utterance into a NON-commitment. NEGATION_PATTERN only
+ *  fires on a negator ADJACENT to the verb, so a governor separated from the
+ *  commit by a subject ("I don't think" + "I'll take it") slipped it and
+ *  FALSE-CLOSED — and the strict gate never ran NEGATION_PATTERN at all, so it
+ *  leaked every form. Scoped like the PRI-60 rhetorical vetoes: the governor
+ *  must GOVERN a commit idiom within a short window, so a doubt about a
+ *  DIFFERENT aspect ("I'm not sure about the title, but I accept the offer")
+ *  keeps its distant, ungoverned accept. Blocking a hedged accept is the SAFE
+ *  direction under the safe-default contract — it costs one recoverable turn,
+ *  never an unrecoverable false close. Shared single-source so BOTH gates reject
+ *  in lockstep (FALSE_CLOSE_VETO_PATTERNS → HEDGE_VETO_PATTERNS). */
+const DOUBT_HEDGE_THEN_COMMIT_PATTERN =
+  /\b(?:i\s+don.?t\s+think|i\s+doubt|i.?m\s+not\s+(?:sure|convinced|certain)|not\s+(?:sure|convinced|certain)|unlikely|i.?m\s+leaning\s+(?:against|towards?\s+no)|hard\s+to\s+say|i.?m\s+on\s+the\s+fence|i.?m\s+hesitant|maybe|perhaps|possibly)\b[^.!?]{0,18}?\b(?:i.?(?:ll|d)\s+(?:take|sign|go\s+with|do\s+it|join|accept)|i.?m\s+in\b|take\s+(?:it|the\s+offer)|sign(?:\s+up)?\b|accept\b|go\s+ahead|do\s+it\b|it.?s\s+a\s+deal|\bdeal\b)/i;
+
 /* PRI-60 (2026-06-22, offline precision sweep) — RHETORICAL / INVERTED /
  * NEGATED "accept". The performative bank matches the bare "I accept" / "I'd
  * accept" substring, but an interrogative inversion ("why would I accept…",
@@ -887,6 +906,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
   IN_PRINCIPLE_PATTERN,
+  DOUBT_HEDGE_THEN_COMMIT_PATTERN,
   MONEY_REJECTION_PATTERN,
   SETTLE_NEGATION_PATTERN,
   DO_IT_REDIRECT_PATTERN,

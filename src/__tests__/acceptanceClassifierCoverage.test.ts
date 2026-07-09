@@ -114,6 +114,43 @@ describe("acceptance classifier — negation / hesitation must not accept", () =
   }
 });
 
+/* Doubt/possibility-governor wall (2026-07-09 probe) — a commit idiom EMBEDDED
+ * under a non-adjacent doubt/possibility qualifier ("I don't think I'll take
+ * it", "maybe I'll take it", "unlikely I'll take it") is a NON-commitment.
+ * NEGATION_PATTERN only fires on an adjacent negator, and the strict gate never
+ * ran it, so these leaked in both gates before DOUBT_HEDGE_THEN_COMMIT_PATTERN.
+ * Both gates must block; a governor over a DIFFERENT aspect must still accept. */
+describe("acceptance classifier — doubt/possibility governor over embedded commit", () => {
+  const nonCommittal = [
+    "I don't think I'll take it",
+    "I'm not sure I'll take it",
+    "I doubt I'll take it",
+    "I'm not convinced I'll take it",
+    "not sure I'm in",
+    "I don't think I'm in",
+    "maybe I'll take it",
+    "perhaps I'll take it",
+    "unlikely I'll take it at this number",
+    "hard to say if I'll take it",
+    "I don't think I can accept this",
+  ];
+  for (const input of nonCommittal) {
+    it(`medium: "${input}" → NOT accepted`, () =>
+      expect(classifyAcceptance(input, onTable).accepted).toBe(false));
+    it(`strict: "${input}" → NOT accepted`, () =>
+      expect(detectExplicitAcceptance(input).accepted).toBe(false));
+  }
+  /* A doubt about a DIFFERENT aspect must NOT suppress a distinct, ungoverned
+   * accept — the governor is window-scoped, so a far accept survives. "I doubt"
+   * is used (not "not sure", which is a standalone NEGATION_PATTERN token that
+   * vetoes on its own) so this isolates the window scope of the new pattern. */
+  it("governed-elsewhere accept still fires", () =>
+    expect(
+      classifyAcceptance("I doubt the title matters much here, but I accept the offer", onTable)
+        .accepted,
+    ).toBe(true));
+});
+
 describe("acceptance classifier — ambiguous fillers (without offer on table) must NOT accept", () => {
   /* The phase-gate fires when offerOnTable === false. Bare "okay" /
    * "alright" / "fine" must not promote to acceptance in that path. */
