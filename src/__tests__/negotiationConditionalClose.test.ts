@@ -276,4 +276,25 @@ describe("#94 — near-offer conditional close-engagement", () => {
       }
     }
   });
+
+  /* N-minimum floor + spelled digit-handle false-close (2026-07-10, offline
+   * hostile battery batch-13). "45 minimum and I'll sign" and the SPELLED
+   * leading-digit handle "a five in front" (=₹50) each demand a raise above the
+   * ₹35 offer but carried no exact-figure form the resolvers recognized, so the
+   * gate close-recap'd at the un-bumped offer. Now caught by analyzeDemand
+   * (minimum-floor core + digit-handle spelled-digit extension) and routed to a
+   * live counter. */
+  it("does NOT false-close at the offer on N-minimum or spelled-handle demands", () => {
+    for (const utter of [
+      "45 minimum and I'll sign",
+      "As long as there's a five in front, I'm in",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
 });

@@ -759,6 +759,49 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
       expect(detectExplicitAcceptance(t).accepted).toBe(false);
     }
   });
+
+  /* N-minimum floor + spelled digit-handle (batch-13 hostile leak, 2026-07-10).
+   * "45 minimum and I'll sign" and a SPELLED leading-digit handle ("a five in
+   * front") each encoded an unmet raise above the ₹40 offer but carried no
+   * exact-figure form the resolvers recognized, so each false-closed at the
+   * offer. Fixed at analyzeDemand: a minimum-floor core ("N minimum / N min",
+   * offer-gated, with a time-phrase lookahead so "45 minutes" is not a floor)
+   * and an extension of digit-handle to accept a spelled leading digit
+   * (one-nine) in addition to a numeral. */
+  it("flags an 'N minimum / N min' floor, gated by offer, excluding time phrases", () => {
+    expect(carriesUnmetDemand("45 minimum and I'll sign", 40)).toBe(true);
+    expect(carriesUnmetDemand("45 min, then done", 40)).toBe(true);
+    // Standing-offer figure is met.
+    expect(carriesUnmetDemand("40 minimum is fine", 40)).toBe(false);
+    // Below-offer figure is met.
+    expect(carriesUnmetDemand("38 minimum", 40)).toBe(false);
+    // Time phrase is NOT a floor.
+    expect(carriesUnmetDemand("45 mins to think it over", 40)).toBe(false);
+    // Offer unknown: still counts (strict gate).
+    expect(carriesUnmetDemand("45 minimum")).toBe(true);
+  });
+
+  it("flags a SPELLED leading-digit handle above the offer, gated by offer", () => {
+    expect(carriesUnmetDemand("as long as there's a five in front", 40)).toBe(true);
+    expect(carriesUnmetDemand("once it starts with a six", 40)).toBe(true);
+    expect(carriesUnmetDemand("a seven handle and I'm in", 40)).toBe(true);
+    // The standing offer's own leading digit is met, not a demand.
+    expect(carriesUnmetDemand("a four in front", 40)).toBe(false);
+    // The numeral form still fires (no regression).
+    expect(carriesUnmetDemand("a 5 in front", 40)).toBe(true);
+    // A spelled one outside the handle idiom is NOT a demand.
+    expect(carriesUnmetDemand("four rounds of interviews", 40)).toBe(false);
+  });
+
+  it("blocks both gates on N-minimum and spelled-handle demands", () => {
+    for (const t of [
+      "45 minimum and I'll sign.",
+      "As long as there's a five in front, I'm in.",
+    ]) {
+      expect(accepted(t)).toBe(false);
+      expect(detectExplicitAcceptance(t).accepted).toBe(false);
+    }
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close

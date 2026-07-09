@@ -230,6 +230,19 @@ const DEMAND_CORES: DemandCore[] = [
     unitGroup: 2,
     re: /\b(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?)?\s+and\s+(?:some\s+)?change\b/i,
   },
+  /* "N minimum / N min" floor: "45 minimum", "45 min" — a figure tagged as the
+   * candidate's minimum is a hard floor, but "minimum" trailing a clean number
+   * defeated the exact-figure resolvers so "45 minimum and I'll sign" false-closed
+   * at the ₹40 offer (batch-13 leak, 2026-07-10). Absolute target, offer-gated
+   * (so "40 minimum" against a ₹40 offer is met). The optional unit sits between
+   * the figure and "min", and a negative lookahead keeps the abbreviation off
+   * time phrases ("45 minutes", "45 mins to decide"). */
+  {
+    reason: "minimum-floor",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\s+min(?:imum)?\b(?!(?:ute|s?\s+(?:to|left|remaining)))/i,
+  },
   /* Ultimatum floor: "45 or I walk", "45 or nothing", "45 or I'm out" — a figure
    * pinned by a walk-away alternative is a hard floor, but the number reads as a
    * clean accept target so "I'm in at 45 or I walk" false-closed at the ₹40 offer
@@ -308,8 +321,16 @@ const DEMAND_CORES: DemandCore[] = [
    * ordinary numerals ("5 rounds", "starts with a review"). */
   {
     reason: "digit-handle",
-    computeFigure: (m) => parseInt(m[1] ?? m[2], 10) * 10,
-    re: /\b(?:starts?\s+with\s+(?:a\s+)?(\d)|(?:a\s+)?(\d)(?:\s+in\s+front|[-\s]?handle))\b/i,
+    computeFigure: (m) => {
+      const raw = (m[1] ?? m[2]).toLowerCase();
+      const ones: Record<string, number> = {
+        one: 1, two: 2, three: 3, four: 4, five: 5,
+        six: 6, seven: 7, eight: 8, nine: 9,
+      };
+      const digit = /^\d$/.test(raw) ? parseInt(raw, 10) : ones[raw];
+      return digit * 10;
+    },
+    re: /\b(?:starts?\s+with\s+(?:a\s+)?(\d|one|two|three|four|five|six|seven|eight|nine)|(?:a\s+)?(\d|one|two|three|four|five|six|seven|eight|nine)(?:\s+in\s+front|[-\s]?handle))\b/i,
   },
   /* First-person / imperative demand for MORE by magnitude: "give me 8%
    * more", "I want 2L more", "I'm after a couple more". Ported from
