@@ -117,6 +117,23 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "word-more",
     re: new RegExp(`\\b${VERBAL_QTY}\\s+(?:l\\b|lpa|lakhs?|lac|%|percent)\\s*${INCREASE_TOKEN}${NOT_THAN}\\b`, "i"),
   },
+  /* Pre-number increase word: "another 3L", "an extra 5%", "an additional
+   * 3 lakh", "a further 2L", "another 3 on base". The increase intent sits
+   * BEFORE the figure, unlike relative-more / demand-for-more, which need a
+   * TRAILING more/higher/extra — so those cores miss "get me another 3L on
+   * base first", a welded imperative demand that was false-closing after an
+   * accept idiom ("I accept the offer. That said, get me another 3L …";
+   * batch-3 hostile leak, 2026-07-09). Always unmet: an additive "another
+   * N" only ever adds to the standing offer, so no offer gate. Requires a
+   * cash/percent unit OR an explicit "on <base/fixed/cash/…>" so non-comp
+   * counts ("another 3 rounds", "another 3 weeks") are not caught. */
+  {
+    reason: "another-more",
+    re: new RegExp(
+      `\\b(?:another|an?\\s+extra|an?\\s+additional|a\\s+further)\\s+(?:₹|rs\\.?\\s*|inr\\s*)?\\d+(?:\\.\\d+)?\\s*(?:%|(?:percent|per\\s?cent|lpa|lakhs?|lac|l|k)\\b|on\\s+(?:the\\s+)?(?:base|fixed|cash|ctc|salary|package|comp))`,
+      "i",
+    ),
+  },
   /* Verb-fronted cash/percent bump whose increase intent lives in the
    * verb: "bump it 5%", "push the base up by a few percent". Ported
    * from VERB_MAGNITUDE_THEN_CLOSE_PATTERN, bridge dropped. */

@@ -293,6 +293,26 @@ describe("analyzeDemand — structured extractor unit behavior", () => {
     expect(analyzeDemand("make it 50", 40).reasons).toContain("raise-to-target");
     expect(analyzeDemand("throw in equity", 40).reasons).toContain("grant-sweetener");
   });
+  /* Pre-number increase word ("another 3L", "an extra 5%", "a further 2L").
+   * The increase intent sits BEFORE the figure, so relative-more /
+   * demand-for-more (trailing more/higher/extra) miss it — this was the
+   * "get me another 3L on base first" welded-demand false-close leak
+   * (batch-3 hostile battery, 2026-07-09). Always upward → offer-independent. */
+  it("flags a pre-number 'another/extra/additional/further N' cash demand", () => {
+    expect(analyzeDemand("get me another 3L on base first").reasons).toContain("another-more");
+    expect(carriesUnmetDemand("an extra 5%", 40)).toBe(true);
+    expect(carriesUnmetDemand("an additional 3 lakh", 40)).toBe(true);
+    expect(carriesUnmetDemand("a further 2L on base", 40)).toBe(true);
+    expect(carriesUnmetDemand("another 3 on base", 40)).toBe(true);
+    // non-comp "another N" must NOT be read as a cash demand
+    expect(carriesUnmetDemand("happy to do another 3 rounds of interviews", 40)).toBe(false);
+    expect(carriesUnmetDemand("give me another 2 weeks to decide", 40)).toBe(false);
+  });
+  it("blocks both gates on an accept idiom welded to a pre-number 'another N' demand", () => {
+    const t = "I accept the offer. That said, get me another 3L on base first.";
+    expect(accepted(t)).toBe(false);
+    expect(detectExplicitAcceptance(t).accepted).toBe(false);
+  });
 });
 
 /* Nibble-after-accept wall (2026-07-09, offline hostile battery). A close
