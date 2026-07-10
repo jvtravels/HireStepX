@@ -462,7 +462,19 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "sweetener-demand",
     re: new RegExp(
       "(?:" +
-        // passive grant: verb after the noun — "relocation added", "equity included"
+        // passive grant: verb after the noun — "relocation added", "equity
+        // included". Guarded by a DEFINITE-determiner negative lookbehind so a
+        // sweetener referenced as ALREADY on the table ("with the 2L joining
+        // bonus on top, I accept", "with the joining bonus included") reads as a
+        // CONFIRMATION of the standing package, not a fresh demand — the same
+        // definite/indefinite discipline the hypothetical branch below applies
+        // ("with THE bonus" is satisfaction, "with A bonus" is a new ask). The
+        // lookbehind skips up to three intervening tokens (figure, unit, and
+        // the compound-noun head, e.g. "the 2L joining " before "bonus", since
+        // SWEETENER also matches the bare word "bonus"). A bare ("equity
+        // included") or indefinite ("a joining bonus thrown in") sweetener still
+        // matches and still vetoes the welded false-close.
+        `(?<!\\b(?:the|that|this|these|those|your|our|their|its|his|her)\\s+(?:[\\w.,₹-]+\\s+){0,3})` +
         `\\b${SWEETENER}\\b[^.!?]{0,15}?\\b(?:added|include[ds]|thrown\\s+in|sorted(?:\\s+out)?|covered|guaranteed|sweetened|on\\s+top|in\\s+the\\s+mix)\\b` +
         "|" +
         // first-person want: "I need equity", "I'd like a joining bonus"
