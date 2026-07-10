@@ -657,6 +657,35 @@ const ACCEPT_NO_EXCUSES_PATTERN =
 const COMPARATIVE_OFFER_ACCEPT_PATTERN =
   /\baccept(?:s|ing|ed)?\s+(?:(?:a|an|the|any|some|another)\s+(?:better|higher|bigger|stronger|improved|revised|different|superior|sweeter|richer|competing|rival)|another|(?:some\s+|any\s+)?other)\s+(?:offer|number|figure|package|comp(?:ensation)?|ctc|deal|proposal)\b/i;
 
+/** Veto (PRI-86, 2026-07-10, adversarial probe) — an accept verb whose OBJECT
+ *  is a NEGATIVE-POLARITY item: "I accept nothing at this number", "I'll accept
+ *  none of this", "accept zilch". "accept nothing" is a flat refusal (the object
+ *  is the empty set), the polar opposite of a close. The wrong-object arms above
+ *  key on a determiner or an "excuses" object; a bare negative pronoun object
+ *  ("nothing/none/zilch/nada/no part of it") carries none of those, so it needs
+ *  its own arm. The negative pronoun is the single disambiguator — a genuine
+ *  accept never takes "nothing" as its object. Shared by both gates via
+ *  FALSE_CLOSE_VETO_PATTERNS. */
+const ACCEPT_NOTHING_PATTERN =
+  /\baccept(?:s|ing|ed)?\s+(?:absolutely\s+|precisely\s+)?(?:nothing|none(?:\s+of\s+(?:it|this|that|these|those))?|zilch|nada|no\s+part\s+of\s+(?:it|this|that))\b/i;
+
+/** Veto (PRI-86, 2026-07-10, adversarial probe) — a TEMPORAL PRECONDITION frame
+ *  fronting the accept verb: "Before I accept, the number has to move", "Until I
+ *  accept…", "prior to accepting". CONDITIONAL_DEFERRAL_PATTERN keys on a
+ *  subordinator + a SETTLEMENT verb (sort/confirm/…), but here the deferred verb
+ *  IS the accept — the subordinator makes the accept a not-yet-reached event, so
+ *  the utterance states a CONDITION for a future close, not a close now. The
+ *  disambiguator is FRONTING: a precondition fronts the temporal clause
+ *  ("Before I accept, the number must move"), whereas a TRAILING "…before I
+ *  sign" is a benign adverbial of time on an already-consummated accept ("I'd
+ *  like to accept this offer — please share benefits before I sign"). So the arm
+ *  is anchored to clause-initial position (start-of-string or after a sentence
+ *  terminator); a trailing before/until clause is left untouched, keeping the
+ *  genuine long-acceptance intact. Shared by both gates via
+ *  FALSE_CLOSE_VETO_PATTERNS. */
+const BEFORE_ACCEPT_PATTERN =
+  /(?:^|[.!?]\s+)\s*(?:before|until|til|till|prior\s+to|ahead\s+of)\s+(?:i(?:'?d|'?ll)?\s+(?:can\s+|could\s+|would\s+|even\s+|ever\s+)?)?(?:accept(?:s|ing|ed)?|takes?|taking|sign(?:s|ing|ed)?|commit(?:s|ting|ted)?|say(?:ing)?\s+yes)\b/i;
+
 /** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
  *  terminal close. */
@@ -1231,6 +1260,8 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   ACCEPT_NOT_THE_OFFER_PATTERN,
   WRONG_OBJECT_ACCEPT_PATTERN,
   ACCEPT_NO_EXCUSES_PATTERN,
+  ACCEPT_NOTHING_PATTERN,
+  BEFORE_ACCEPT_PATTERN,
   COMPARATIVE_OFFER_ACCEPT_PATTERN,
   CLOSE_THEN_CONDITIONAL_PATTERN,
   IN_PRINCIPLE_PATTERN,
