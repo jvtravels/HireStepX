@@ -113,6 +113,20 @@ const ACCEPT_FRAME_NUMBER_PATTERN =
 const WILLING_TO_COMMIT_PATTERN =
   /\b(?:happy|glad|delighted|pleased|thrilled|keen)\s+to\s+(?:accept|sign|join)\b/i;
 
+/* Clause-start boundary — SINGLE SOURCE OF TRUTH (PRI-82, 2026-07-10, surfaced
+ * by the adversarial differential audit as an OVERREACH: a real accept silently
+ * dropped, same missed-close class as I-5). Every clause-anchored accept/close
+ * pattern below builds its leading boundary from this instead of inlining a
+ * `[,.!?]` char class. A closer can begin the utterance (^) or follow a clause
+ * separator. Besides . ! ? and comma, speech-to-text transcripts routinely
+ * separate clauses with an em/en dash ("This is great — deal!"), a spaced
+ * hyphen ("Perfect - I'll take it") or a colon ("my answer: deal") — none of
+ * which the old char class recognized, so a closer after a dash clause fell
+ * through to no-match. A bare hyphen must be spaced on BOTH sides so intra-word
+ * hyphens ("deal-breaker", "sign-on") never count as a boundary. Composed via
+ * `.source` so each consumer stays a readable literal with no hand-escaping. */
+const CLAUSE_START = /(?:^|[,.!?:]\s*|\s*[—–]\s*|\s+-\s+)/.source;
+
 const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   /\bi(?:'d)?\s+accept(?:\s+(?:this|the|your)\s+offer|\s+it)?\b/i,
   /\bi\s*(?:'m|am)\s+accept(?:ing|ed)?\b/i,
@@ -126,8 +140,8 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
    * subject is optional but the speech act is unambiguous. Anchored
    * to the start of a sentence (^ or after .?!) to avoid matching
    * "if you'd ever want to accept" type embedded phrases. */
-  /(?:^|[.!?]\s*)(?:would|want)\s+to\s+accept\b/i,
-  /(?:^|[.!?]\s*)(?:would\s+)?like\s+to\s+accept\b/i,
+  new RegExp(CLAUSE_START + /(?:would|want)\s+to\s+accept\b/.source, "i"),
+  new RegExp(CLAUSE_START + /(?:would\s+)?like\s+to\s+accept\b/.source, "i"),
   /\bi\s*(?:'ve|have)\s+(?:already\s+)?accepted\b/i,
   /\bi(?:\s+have)?\s+already\s+accepted\b/i,
   /\baccept(?:ing|ed)\s+(?:this|the|your)\s+offer\b/i,
@@ -185,7 +199,12 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
    * candidate's own commitment. A genuine terse close ends with .!, or nothing,
    * never "?". Drop "?" from the trailing clause-terminator (the LEADING
    * boundary keeps it — a prior sentence may end in "?"). */
-  /(?:^|[.!?,]\s*)(?:(?:yes|yeah|yep|yup|ok|okay|sure|alright|fine)[,\s]+)?accept(?:ed|ing|s)?\b(?:\s+(?:it|this|the\s+offer))?\s*(?:[.!,]|$)/i,
+  new RegExp(
+    CLAUSE_START +
+      /(?:(?:yes|yeah|yep|yup|ok|okay|sure|alright|fine)[,\s]+)?accept(?:ed|ing|s)?\b(?:\s+(?:it|this|the\s+offer))?\s*(?:[.!,]|$)/
+        .source,
+    "i",
+  ),
 ];
 
 /* PRI-56 (2026-06-22, offline hostile sweep S2/S4) — unambiguous close-consent
@@ -220,7 +239,12 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    candidate is walking away from). Two negative lookaheads exclude the
    *    "deal('s)/(is) off|dead|over|done|cancelled|gone" walk-away continuations;
    *    "ok, deal." / "deal, 40 works" / "deal is sealed" are untouched. */
-  /(?:^|[,.!?]\s*)(?:ok(?:ay)?|alright|yes|yeah|yep|fine|sure)?[,\s]*deal\b(?!\s*[-\s]?breaker)(?!'?s?\s+(?:off|dead|over\b|done\s+for|cancell?ed|gone))(?!\s+(?:is|was)\s+(?:off|dead|over|done|cancell?ed|gone))/i,
+  new RegExp(
+    CLAUSE_START +
+      /(?:ok(?:ay)?|alright|yes|yeah|yep|fine|sure)?[,\s]*deal\b(?!\s*[-\s]?breaker)(?!'?s?\s+(?:off|dead|over\b|done\s+for|cancell?ed|gone))(?!\s+(?:is|was)\s+(?:off|dead|over|done|cancell?ed|gone))/
+        .source,
+    "i",
+  ),
   /* 2. Defer-to-your-offer accept — "whatever you just said works", "whatever
    *    you offered is fine", "whatever works for me". The "whatever" head
    *    disambiguates from the bare "<n> works" COUNTER the bank deliberately
@@ -247,7 +271,11 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    token closing the deal. Anchored to a clause boundary AND required to
    *    END the clause so the info-probe "can you confirm the split" (confirm
    *    + object) does NOT match. */
-  /(?:^|[,.!?]\s*)(?:yes,?\s+|ok(?:ay)?,?\s+)?confirm(?:ed|ing)?\s*(?:[.!?,]|$)/i,
+  new RegExp(
+    CLAUSE_START +
+      /(?:yes,?\s+|ok(?:ay)?,?\s+)?confirm(?:ed|ing)?\s*(?:[.!?,]|$)/.source,
+    "i",
+  ),
   /* 5. Hindi "send the offer letter" — "bhej do offer letter", "offer letter
    *    bhej dijiye", "letter bhej do". The Hindi analogue of the English
    *    send-the-paperwork arm above (#3); unambiguous deal-close consent in
@@ -281,7 +309,7 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
   /* 11. Bare "agreed" closing the clause — "agreed.", "great, agreed". Clause-
    *     anchored AND clause-terminal so the negotiation phrase "agreed terms"
    *     / "we agreed earlier" / "agreed on a higher number" does NOT match. */
-  /(?:^|[,.!?]\s*)agreed\s*(?:[.!?,]|$)/i,
+  new RegExp(CLAUSE_START + /agreed\s*(?:[.!?,]|$)/.source, "i"),
   /* PRI-60 (2026-06-22, offline recall sweep) — "I'm on board" / "happy to
    * proceed", unambiguous same-turn consent over a standing offer the bank
    * missed (NO-CLOSE on a real accept). In CLOSE_CONSENT so BOTH the medium
