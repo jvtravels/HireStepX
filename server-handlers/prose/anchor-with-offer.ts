@@ -30,6 +30,16 @@ export function proseAnchorWithOffer(
   }
   const variableMax = state.band?.variableMax;
   const persona = helpers.sectorPersona;
+  /* Equity-coherence gate (2026-07-10, live staging — Senior PD @ a design
+   * agency). recruiterSectorPersona is assigned by TIER BUCKET
+   * (growth/early_startup → "early-startup", unicorn → "indian-unicorn") in
+   * _indian-recruiter-personas.ts REGARDLESS of band.hasEquity, so a
+   * cash-only agency band (hasEquity=false) still drew the equity-stretch /
+   * ESOP-grant tail — promising a lever that does not exist for this offer.
+   * band.hasEquity is the single source of truth for whether equity is on
+   * the table; when it's false, degrade the two equity-bearing sector tails
+   * to their cash-only equivalents. */
+  const hasEquity = state.band?.hasEquity === true;
   const roundPersonaB = helpers.activeRoundPersona;
   const tail = roundPersonaB != null
     ? helpers.selectByRoundPersona(roundPersonaB, {
@@ -40,8 +50,12 @@ export function proseAnchorWithOffer(
     : helpers.selectBySectorPersona(persona, {
         "it-services":   " That's the grade fitment as per our band for this role.",
         "gcc":           " That's anchored to the global band for this level.",
-        "indian-unicorn":" The cash sits inside our band; ESOP grant follows the same level — I'll share the annual-value figure before the offer letter.",
-        "early-startup": " Cash is tight at this stage, but equity % is where we can stretch.",
+        "indian-unicorn": hasEquity
+          ? " The cash sits inside our band; ESOP grant follows the same level — I'll share the annual-value figure before the offer letter."
+          : " The cash sits inside our band for this level.",
+        "early-startup": hasEquity
+          ? " Cash is tight at this stage, but equity % is where we can stretch."
+          : " Cash is tight at this stage — this is the ceiling I can hold on fixed right now.",
         "bfsi":          " Fixed sits as per our regulatory band; variable is on the performance cycle.",
         /* Realism-Audit Fix 1 — three new sector personas. */
         "psu":           " That's the grade fitment as per the pay-scale matrix; HRA and LTC are on top per government norms.",

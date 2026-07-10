@@ -214,3 +214,51 @@ describe("canonical-prose — persona-conditional surfaces (PDF-style)", () => {
     );
   });
 });
+
+/* N-3 (2026-07-10, live staging — Senior PD @ a design studio) — equity-
+ * coherence gate. recruiterSectorPersona is assigned by TIER BUCKET
+ * (early_startup → "early-startup", unicorn → "indian-unicorn") regardless of
+ * band.hasEquity, so a cash-only agency band (hasEquity=false) still drew the
+ * equity-stretch / ESOP-grant anchor+counter tail — promising a lever that
+ * does not exist for this offer. band.hasEquity is the single source of truth;
+ * when it's false the two equity-bearing sector tails degrade to cash-only. */
+describe("N-3 — equity language gated on band.hasEquity", () => {
+  const CASH_ONLY: NegotiationBand = {
+    initialOffer: 20,
+    maxStretch: 28,
+    walkAway: 16,
+    hasEquity: false,
+  };
+  const counter: NextAction = { kind: "counter-offer", counterTotalLpa: 24 } as NextAction;
+  const anchor: NextAction = {
+    kind: "anchor-with-offer",
+    initialOffer: 20,
+    bandIncomplete: false,
+  } as NextAction;
+  const cashState = (p: RecruiterSectorPersona): NegotiationState => {
+    const base = initState({ sessionId: "s-cash", role: "product designer", company: "studio", band: CASH_ONLY });
+    return { ...base, recruiterSectorPersona: p };
+  };
+
+  it("early-startup cash-only band → no equity/ESOP on anchor or counter", () => {
+    const s = cashState("early-startup");
+    expect(renderCanonicalProse(anchor, s)).not.toMatch(/equity|ESOP/i);
+    expect(renderCanonicalProse(counter, s)).not.toMatch(/equity|ESOP/i);
+    // The cash figure contract still holds.
+    expect(renderCanonicalProse(counter, s)).toMatch(/₹24L/);
+  });
+
+  it("indian-unicorn cash-only band → no equity/ESOP on anchor or counter", () => {
+    const s = cashState("indian-unicorn");
+    expect(renderCanonicalProse(anchor, s)).not.toMatch(/equity|ESOP/i);
+    expect(renderCanonicalProse(counter, s)).not.toMatch(/equity|ESOP/i);
+    expect(renderCanonicalProse(counter, s)).toMatch(/₹24L/);
+  });
+
+  it("equity IS still surfaced when the band carries equity", () => {
+    const withEquity: NegotiationBand = { ...CASH_ONLY, hasEquity: true };
+    const base = initState({ sessionId: "s-eq", role: "swe", company: "acme", band: withEquity });
+    const s = { ...base, recruiterSectorPersona: "early-startup" as RecruiterSectorPersona };
+    expect(renderCanonicalProse(anchor, s)).toMatch(/equity %/i);
+  });
+});
