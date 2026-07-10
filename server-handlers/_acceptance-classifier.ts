@@ -681,8 +681,14 @@ const PARTIAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
  * at/for/on, so a genuine accept that happens to contain "at this number"
  * without a leading negation ("yes, fine at this number") is NOT vetoed.
  * Shared single-source so BOTH gates reject in lockstep. */
+/* PRI-75 (2026-07-10, offline hostile close battery — round-7) — the refusal
+ * head widened to the CAN'T/WON'T modals: "I'd love to accept, but I can't at
+ * 40" welds a warm accept idiom to "can't at <number>", a money-refusal the
+ * "not/no way" head missed (and PARTIAL_ACCEPT's money-noun list excludes a
+ * bare digit), so it FALSE-CLOSED on a polite decline. `can'?t` requires the
+ * trailing t, so an affirmative "I can do it at 40" (no negation) is untouched. */
 const MONEY_REJECTION_PATTERN =
-  /\b(?:not|no\s+way|never|no\s+chance)\s+(?:at|for|on)\s+(?:this|that|these|those|the|such\s+a)?\s*(?:number|price|comp(?:ensation)?|figure|salary|rate|amount|level|money|ctc|package|pay|offer|\d)/i;
+  /\b(?:not|no\s+way|never|no\s+chance|can'?t|cannot|couldn'?t|won'?t|wouldn'?t)\s+(?:at|for|on)\s+(?:this|that|these|those|the|such\s+a)?\s*(?:number|price|comp(?:ensation)?|figure|salary|rate|amount|level|money|ctc|package|pay|offer|\d)/i;
 
 /* PRI-63b (2026-06-22) — NEGATED settle-token veto. The accept-with-number
  * idioms ("done at 45", "45 done", "it's a deal") match the bare settle token,
@@ -894,8 +900,14 @@ const GRANT_THEN_CLOSE_PATTERN =
  * FALSE-CLOSED on an outright refusal — the worst mode. Widen the trailing
  * "ever" to optional and accept "said nobody" too; a genuine accept never
  * carries a "said no one/nobody" tag. */
+/* PRI-75 (2026-07-10, offline hostile close battery — round-7) — three more
+ * stock IMPOSSIBILITY idioms that negate a welded close, each a FALSE-CLOSE on
+ * an outright refusal: "the day pigs fly" (the "when pigs fly" sibling), "in
+ * an alternate/another universe" (the "in your dreams" sibling), and "only in
+ * your imagination". A genuine accept never carries an impossibility tag, so
+ * matching anywhere in the clause is safe under the safe-default contract. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|when\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s*(?:one|body)(?:\s+ever)?)\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s*(?:one|body)(?:\s+ever)?|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
 
 /** Veto (offline hostile close battery, 2026-07-09) — a close idiom welded to a
  *  PEJORATIVE CHARACTERIZATION OF THE OFFER: "count me in, for a pay cut", "I'll
