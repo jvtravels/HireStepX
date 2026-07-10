@@ -344,8 +344,6 @@ export function sessionReportToInterviewResult(
     /hr.?round|\bhr\b/i.test(session.type || "") ||
     /hr.?round|\bhr\b/i.test(session.focus || "");
 
-  const scoreDelta = computeScoreDelta(ctx.recentScores);
-
   // Authoritative negotiation outcome (kernel metrics when present), computed
   // before the skills so the report layer can reconcile skills/score/band
   // against it — see groundNegotiationReport. Undefined for non-negotiation
@@ -400,6 +398,16 @@ export function sessionReportToInterviewResult(
     groundedRecentScores && groundedRecentScores.length > 0
       ? groundedRecentScores.length - 1
       : report.priorSessionCount;
+
+  /* I-11 (2026-07-10, live staging) — the hero showed a green "↑18" beside a
+   * sparkline whose visible last point had ticked DOWN. Root cause: R-4 forced
+   * the sparkline to plot `groundedRecentScores` (last point = the grounded
+   * gauge score) but `scoreDelta` (the arrow) was still computed off the
+   * UN-grounded `ctx.recentScores`, so the two disagreed on this session's
+   * score. Derive the arrow from the SAME grounded array the sparkline plots —
+   * single source of truth — so the arrow's number and direction always match
+   * the last plotted segment. */
+  const scoreDelta = computeScoreDelta(groundedRecentScores);
 
   return {
     overallScore: grounded.overallScore,

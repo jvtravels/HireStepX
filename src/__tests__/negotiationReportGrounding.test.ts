@@ -280,6 +280,30 @@ describe("sessionReportToInterviewResult — fold is grounded end-to-end", () =>
     expect(out.negotiationOutcome?.gapClosurePct).toBe(0);
   });
 
+  it("I-11: hero arrow (scoreDelta) is coherent with the grounded sparkline's last point", () => {
+    /* The sparkline plots groundedRecentScores whose LAST point is forced to the
+     * grounded gauge score (R-4). The arrow must be derived from that SAME
+     * grounded array, not the ungrounded ctx.recentScores — otherwise a capped
+     * negotiation renders a big green "↑" beside a sparkline whose last dot ticked
+     * down. Prior session 50, ungrounded current 95, grounding caps the fold to
+     * ≤60: the arrow must reflect (grounded - 50), a small delta, and the plotted
+     * last point must equal the gauge score. */
+    const ctx = {
+      report: negReport(),
+      session: negSession(),
+      recentScores: [50, 95],
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const rs = out.recentScores!;
+    // Single source: the plotted last point IS the grounded gauge score.
+    expect(rs[rs.length - 1]).toBe(out.overallScore);
+    // Arrow agrees with the last plotted segment (grounded current − prior).
+    expect(out.scoreDelta).toBe(rs[rs.length - 1] - rs[rs.length - 2]);
+    // And it did NOT read the ungrounded 95 (which would have shown ↑45).
+    expect(out.scoreDelta).not.toBe(95 - 50);
+    expect(out.scoreDelta! < 45).toBe(true);
+  });
+
   it("leaves a legacy row without kernel metrics untouched (opt-out)", () => {
     // No negotiationMetrics → outcome is heuristic → grounding must not fire.
     const ctx = {
