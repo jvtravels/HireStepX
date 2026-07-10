@@ -686,6 +686,35 @@ const ACCEPT_NOTHING_PATTERN =
 const BEFORE_ACCEPT_PATTERN =
   /(?:^|[.!?]\s+)\s*(?:before|until|til|till|prior\s+to|ahead\s+of)\s+(?:i(?:'?d|'?ll)?\s+(?:can\s+|could\s+|would\s+|even\s+|ever\s+)?)?(?:accept(?:s|ing|ed)?|takes?|taking|sign(?:s|ing|ed)?|commit(?:s|ting|ted)?|say(?:ing)?\s+yes)\b/i;
 
+/** Veto (PRI-87, 2026-07-11, adversarial probe) — an INVERTED (irrealis)
+ *  CONDITIONAL fronting the accept verb: "Were I ten years younger, I'd accept",
+ *  "Should the number improve, I'll accept", "Had the equity been real, I'd
+ *  accept". English forms a hypothetical protasis two ways: with "if" ("If I
+ *  were younger, I'd accept") OR by subject-auxiliary INVERSION that drops "if"
+ *  ("Were I younger, …"). The if-form is already vetoed by the conditional
+ *  guards, but the inverted form carries no "if" token, so a fronted irrealis
+ *  accept slipped through as a FALSE-CLOSE (the accept is hypothetical, contingent
+ *  on a counterfactual that is not true). Only a handful were caught incidentally
+ *  because their protasis happened to mention a number moving; the frame itself
+ *  was unowned. This arm owns the inverted-conditional frame at single source.
+ *
+ *  Anchored to clause-initial "Were / Should / Had" (subject-auxiliary inversion
+ *  only ever opens a clause) + a comma-fronted protasis + a downstream accept
+ *  verb — three guards that keep genuine accepts intact:
+ *    - clause-initial anchor: a mid-clause "were/should/had" is ordinary
+ *      past/modal, not inversion ("The terms were what I wanted, so I accept.",
+ *      "I should accept this." both survive — the auxiliary follows its subject);
+ *    - the "had" branch additionally requires a past participle ("been" / an
+ *      "-ed" word) in the protasis, so a genuine elided narrative "Had a great
+ *      chat, I accept." (no participle → not a conditional) is NOT vetoed;
+ *    - the comma boundary scopes the match to a true fronted protasis→apodosis
+ *      conditional sentence.
+ *  Shared by both gates via FALSE_CLOSE_VETO_PATTERNS. (A no-comma spoken variant
+ *  "Were I younger I'd accept" is deliberately out of scope here — the comma
+ *  anchor is the overreach-safe boundary; widen only with observed evidence.) */
+const INVERTED_CONDITIONAL_ACCEPT_PATTERN =
+  /(?:^|[.!?]\s+)\s*(?:(?:were|should)\b[^,.!?]{1,55}|had\b[^,.!?]{0,45}\b(?:been|[a-z]+ed)\b[^,.!?]{0,20}),\s*[^.!?]{0,60}\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i;
+
 /** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
  *  terminal close. */
@@ -1262,6 +1291,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   ACCEPT_NO_EXCUSES_PATTERN,
   ACCEPT_NOTHING_PATTERN,
   BEFORE_ACCEPT_PATTERN,
+  INVERTED_CONDITIONAL_ACCEPT_PATTERN,
   COMPARATIVE_OFFER_ACCEPT_PATTERN,
   CLOSE_THEN_CONDITIONAL_PATTERN,
   IN_PRINCIPLE_PATTERN,
