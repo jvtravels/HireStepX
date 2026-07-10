@@ -1023,14 +1023,19 @@ const NON_PARTY_ATTRIBUTION_PATTERN =
 const TRAILING_NOT_NEGATION_PATTERN =
   /(?:[—–-]{1,2}|\.{2,})\s*not\b[.!\s]*$/i;
 
-/** Veto (PRI-79, 2026-07-10, round-11) — a commit gated on the offer first
- *  becoming "worth" it: "I'll sign when you offer something worth signing", "I'll
- *  take it once it's worth accepting". The "when/once/until … worth <verb>"
- *  frame is a sarcastic refusal (the current offer is deemed unworthy) — a FALSE-
- *  CLOSE. Scoped to the temporal-conditional head so a genuine "this is worth
- *  signing, deal!" (no when/once/until) is untouched. */
+/** Veto (PRI-79, 2026-07-10, round-11; temporal head completed PRI-81,
+ *  2026-07-10 via the adversarial differential audit) — a commit gated on the
+ *  offer first becoming "worth" it: "I'll sign when you offer something worth
+ *  signing", "I'll take it once it's worth accepting". The "<temporal> … worth
+ *  <verb>" frame is a sarcastic refusal (the current offer is deemed unworthy) —
+ *  a FALSE-CLOSE. The temporal head enumerates the full synonym set of
+ *  conditional-time conjunctions — the conjunction forms (when/once/until/till)
+ *  AND the noun-phrase forms (the moment/second/minute/instant), which the audit
+ *  found leaking ("Deal, the moment it's worth signing"). Scoped to that head so
+ *  a genuine "this is worth signing, deal!" (no temporal conditional) is
+ *  untouched. */
 const WORTH_SIGNING_CONDITIONAL_PATTERN =
-  /\b(?:when|once|until|till)\s+(?:you|they|it.?s|there.?s)\b[^.!?]{0,30}?\bworth\s+(?:signing|accepting|taking|considering|my\s+(?:time|while))\b/i;
+  /\b(?:when|once|until|till|the\s+(?:moment|second|minute|instant))\s+(?:you|they|it.?s|there.?s)\b[^.!?]{0,30}?\bworth\s+(?:signing|accepting|taking|considering|my\s+(?:time|while))\b/i;
 
 /** Veto (offline hostile close battery, 2026-07-09) — a close idiom welded to a
  *  PEJORATIVE CHARACTERIZATION OF THE OFFER: "count me in, for a pay cut", "I'll
