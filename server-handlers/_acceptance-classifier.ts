@@ -233,7 +233,9 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    it back" / "send it to X" / "send it later" no longer match (the latter is
    *    also caught by the conditional-deferral veto). */
   /\bsend\s+it\b(?:\s+(?:over|across|through|already|now|please|right\s+away))*\s*(?:[.!?,]|$)/i,
-  /\bsend\s+(?:me\s+|it\s+|them\s+)?(?:(?:over|across)\s+)?(?:the\s+)?(?:offer\s+)?(?:letter|paperwork|paper\s*work|docs?|contract)\b/i,
+  /* PRI-74 (2026-07-10) — verb widened to send|ship: "ship the offer letter"
+   * / "ship it over" is the same finalize-the-paperwork consent as "send". */
+  /\b(?:send|ship)\s+(?:me\s+|it\s+|them\s+)?(?:(?:over|across)\s+)?(?:the\s+)?(?:offer\s+)?(?:letter|paperwork|paper\s*work|docs?|contract)\b/i,
   /* 4. "confirmed" / "yes confirmed" / "confirming" — a bare confirmation
    *    token closing the deal. Anchored to a clause boundary AND required to
    *    END the clause so the info-probe "can you confirm the split" (confirm
@@ -552,6 +554,18 @@ const IM_IN_HEDGE_PATTERN =
 const ACCEPT_PROPOSITION_PATTERN =
   /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies))/i;
 
+/** Veto (PRI-74, 2026-07-10, offline hostile close battery — round-6) — an
+ *  accept verb whose OBJECT is explicitly contrasted AWAY from the offer: "I'd
+ *  accept a coffee, not this offer", "I accept the challenge, not the number".
+ *  ACCEPT_PROPOSITION excludes a fixed noun list (reality/fact/position/…), but
+ *  the object here is an arbitrary noun ("a coffee") disambiguated only by the
+ *  trailing "not (this/the/your/that) offer/number/comp" — a refusal, not a
+ *  commit. The contrast tail is the single disambiguator, so a genuine "I
+ *  accept the offer" (no "not … offer" tail) is untouched; "not letting this
+ *  offer go" has a verb between "not" and "offer" and does not match. */
+const ACCEPT_NOT_THE_OFFER_PATTERN =
+  /\baccept(?:s|ing|ed)?\b[^.!?]{0,30}?\bnot\s+(?:this|the|your|that)\s+(?:offer|number|comp(?:ensation)?|package|deal|base|money)\b/i;
+
 /** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
  *  terminal close. */
@@ -624,6 +638,22 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * "yeah, right away / right now" so an enthusiastic accept still closes.
    * Offline sweep batch 4 (2026-06-23). */
   /\byeah,?\s+right\b(?!\s+(?:away|now|here|on\s+it|then))/i,
+  /* PRI-74 (2026-07-10, offline hostile close battery — round-6) — NEGATED
+   * IMPERATIVE governor: "don't expect me to sign", "don't count on me to
+   * accept". The disbelief frame above needs "you … expect …"; the
+   * imperative-negation form ("DON'T expect me to …") has no "you" subject, so
+   * it slipped and FALSE-CLOSED on the embedded "sign"/"accept". Scoped to the
+   * negated expectation verb GOVERNING a commit verb within a short window; a
+   * genuine "I accept" carries no "don't expect me to" head. */
+  /\bdon.?t\s+(?:expect|count\s+on|bank\s+on|hold\s+your\s+breath\s+(?:for|on))\s+me\b[^.!?]{0,18}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?|do\s+it|join)\b/i,
+  /* PRI-74 (2026-07-10) — COUNTERFACTUAL SUBJUNCTIVE inversion: "Were I you,
+   * I'd accept", "Were I in your shoes, I'd sign". The "were I <other-party>"
+   * head is a hypothetical about someone ELSE ("but I'm not you"), never the
+   * speaker's own commitment (which is "I accept" / "I'll accept"). The
+   * sarcastic-counterfactual arm above owns only the "as if/like I'd accept"
+   * frame; the inverted-subjunctive form carried none. Scoped to the inversion
+   * head so a genuine "I would accept" (no leading "were I …") is untouched. */
+  /\bwere\s+i\s+(?:you|him|her|them|in\s+(?:your|his|her|their))\b[^.!?]{0,25}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
 ];
 
 /* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
@@ -856,8 +886,16 @@ const GRANT_THEN_CLOSE_PATTERN =
  *  rejection (FALSE-CLOSE). None of these idioms ever appear in a genuine
  *  accept, so a flat token veto is safe. "fat chance" / "not a chance" overlap
  *  WALK_AWAY (harmless redundancy). Shared single-source so BOTH gates reject. */
+/* PRI-74 (2026-07-10, offline hostile close battery — round-6) — the
+ * "…, said no one" sarcasm idiom negates the whole preceding clause, but the
+ * bank only carried the fixed "said no one EVER" form. "I'll sign, said no one
+ * looking at this base." carries "said no one" WITHOUT "ever" (the sarcasm is
+ * completed by the trailing qualifier, not the "ever"), so it slipped and
+ * FALSE-CLOSED on an outright refusal — the worst mode. Widen the trailing
+ * "ever" to optional and accept "said nobody" too; a genuine accept never
+ * carries a "said no one/nobody" tag. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|when\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s+one\s+ever)\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|when\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s*(?:one|body)(?:\s+ever)?)\b/i;
 
 /** Veto (offline hostile close battery, 2026-07-09) — a close idiom welded to a
  *  PEJORATIVE CHARACTERIZATION OF THE OFFER: "count me in, for a pay cut", "I'll
@@ -963,6 +1001,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   TAKE_IT_HEDGE_PATTERN,
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
+  ACCEPT_NOT_THE_OFFER_PATTERN,
   IN_PRINCIPLE_PATTERN,
   DOUBT_HEDGE_THEN_COMMIT_PATTERN,
   MONEY_REJECTION_PATTERN,
@@ -1391,8 +1430,8 @@ const STRICT_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\bi\s+(?:do\s+)?accept(?:\s+(?:this|the|your)\s+offer|\s+it)?\b/i,
   /\byes,?\s+i'?m\s+accepting\b/i,
   /\byes,?\s+i\s+accept\b/i,
-  /\bplease\s+send\s+(?:me\s+)?the\s+offer\s+letter\b/i,
-  /\bsend\s+(?:me\s+)?the\s+offer\s+letter\b/i,
+  /\bplease\s+(?:send|ship)\s+(?:me\s+)?the\s+offer\s+letter\b/i,
+  /\b(?:send|ship)\s+(?:me\s+)?the\s+offer\s+letter\b/i,
   /\bi'?m\s+in\b/i,
   /\blet'?s\s+move\s+forward\s+with\s+this\s+number\b/i,
   /\blet'?s\s+move\s+forward\s+with\s+(?:this|the)\s+offer\b/i,
