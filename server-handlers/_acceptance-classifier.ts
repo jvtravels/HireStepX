@@ -299,6 +299,13 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    rejection sense "deal[- ]breaker" (the bare-"deal" arm #1 owns the
    *    walk-away). */
   /\b(?:you'?ve|you|we'?ve|we)\s+(?:got|have)\s+(?:yourself\s+|ourselves\s+)?(?:a\s+)?deal\b(?!\s*[-\s]?breaker)/i,
+  /* 8b. "you've got yourself a new hire" — the hiring-idiom sibling of arm 8.
+   *     Naming the speaker as the company's new hire IS accepting the job
+   *     (surfaced as an OVERREACH miss by the 2026-07-10 adversarial probe).
+   *     Same subject scaffold as arm 8 — "you"/"we" must directly abut
+   *     "got"/"have", so a negated future ("you won't have a new hire", where
+   *     "won't" sits between) can never match. */
+  /\b(?:you'?ve|you|we'?ve|we)\s+(?:got|have)\s+(?:yourself\s+|yourselves\s+|ourselves\s+)?(?:a\s+)?new\s+hire\b/i,
   /* 9. "(let's) make it official" — finalize-the-deal commit. */
   /\bmake\s+it\s+official\b/i,
   /* 10. Start-the-paperwork instruction — "let's get the paperwork going",
@@ -618,6 +625,23 @@ const ACCEPT_NOT_THE_OFFER_PATTERN =
  *  job" are deliberately excluded so a genuine "accept the offer" is untouched. */
 const WRONG_OBJECT_ACCEPT_PATTERN =
   /\baccept(?:s|ing|ed)?\s+(?:a|an|your|the|another|this|that)\s+(?:counter[\s-]?(?:offer|proposal)|invitation|invite|apology|apologies|challenge|defeat)\b/i;
+
+/** Veto (PRI-83, 2026-07-10, adversarial probe) — an accept verb whose OBJECT
+ *  is a COMPARATIVE-qualified offer: "I'll accept a better offer, not this
+ *  one", "I'd accept a higher number". WRONG_OBJECT_ACCEPT_PATTERN deliberately
+ *  excludes bare "offer/number/package" so a genuine "accept the offer" closes,
+ *  and NEGOTIATION_REDIRECT_PATTERN only owns the PP form ("sign up FOR a better
+ *  offer") — the direct-object form ("accept A BETTER offer") slipped both and
+ *  FALSE-CLOSED on an outright refusal (accepting a hypothetical SUPERIOR offer
+ *  is, by definition, declining the one on the table). The comparative adjective
+ *  is the single disambiguator: a genuine close never qualifies its object as
+ *  better/higher/different, so "accept the offer" / "accept your offer" is
+ *  untouched. A bare "another/other <offer-noun>" ("I accept ANOTHER offer, not
+ *  yours") carries the same wrong-object sense without a comparative adjective —
+ *  accepting a DIFFERENT offer is declining this one — so it's a second arm.
+ *  Shared by both gates via FALSE_CLOSE_VETO_PATTERNS. */
+const COMPARATIVE_OFFER_ACCEPT_PATTERN =
+  /\baccept(?:s|ing|ed)?\s+(?:(?:a|an|the|any|some|another)\s+(?:better|higher|bigger|stronger|improved|revised|different|superior|sweeter|richer|competing|rival)|another|(?:some\s+|any\s+)?other)\s+(?:offer|number|figure|package|comp(?:ensation)?|ctc|deal|proposal)\b/i;
 
 /** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
@@ -1009,8 +1033,14 @@ const GRANT_THEN_CLOSE_PATTERN =
  * to an impossibility tag = emphatic refusal (FALSE-CLOSE). A genuine accept
  * never carries a "monkeys fly" tag, so matching anywhere in the clause is safe
  * under the safe-default contract. */
+/* PRI-83 (2026-07-10, adversarial probe) — the stock emphatic-refusal slang
+ * "hard pass" / "hard no" welded to a bare-"deal" close: "Deal? Hard pass."
+ * The interrogative "Deal?" fires the deal-noun accept core, and the dismissive
+ * "hard pass" flips it to an outright refusal (FALSE-CLOSE, the worst mode).
+ * Like the rest of this bank, "hard pass" / "hard no" never appear in a genuine
+ * accept, so a flat token veto anywhere in the clause is safe. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|monkeys?\s+(?:might\s+|will\s+|could\s+|may\s+|would\s+)?fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|monkeys?\s+(?:might\s+|will\s+|could\s+|may\s+|would\s+)?fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|hard\s+(?:pass|no)\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
 
 /** Veto (PRI-79, 2026-07-10, round-11) — an accept verb whose OBJECT is a
  *  GIVING-UP / WALK noun: "I accept defeat — I'm walking", "I accept my
@@ -1171,6 +1201,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   ACCEPT_PROPOSITION_PATTERN,
   ACCEPT_NOT_THE_OFFER_PATTERN,
   WRONG_OBJECT_ACCEPT_PATTERN,
+  COMPARATIVE_OFFER_ACCEPT_PATTERN,
   CLOSE_THEN_CONDITIONAL_PATTERN,
   IN_PRINCIPLE_PATTERN,
   DOUBT_HEDGE_THEN_COMMIT_PATTERN,
