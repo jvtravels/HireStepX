@@ -177,8 +177,15 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
    * OPTIONAL leading affirmative and OPTIONAL trailing object; the verb +
    * clause-end requirement is unchanged, so embedded uses ("accepting your
    * feedback", "then accept the role later") still do not match, and the
-   * negation / conditional / negotiating-but vetoes still run first. */
-  /(?:^|[.!?,]\s*)(?:(?:yes|yeah|yep|yup|ok|okay|sure|alright|fine)[,\s]+)?accept(?:ed|ing|s)?\b(?:\s+(?:it|this|the\s+offer))?\s*(?:[.!?,]|$)/i,
+   * negation / conditional / negotiating-but vetoes still run first.
+   *
+   * Round-8 hostile probe (2026-07-10) — a bare verb TERMINATED BY "?" is an
+   * interrogative echo of the recruiter's ask ("Accept? Ha.", "Accept? Ask me
+   * again at 55.", the recruiter's own "will you accept?"), never the
+   * candidate's own commitment. A genuine terse close ends with .!, or nothing,
+   * never "?". Drop "?" from the trailing clause-terminator (the LEADING
+   * boundary keeps it — a prior sentence may end in "?"). */
+  /(?:^|[.!?,]\s*)(?:(?:yes|yeah|yep|yup|ok|okay|sure|alright|fine)[,\s]+)?accept(?:ed|ing|s)?\b(?:\s+(?:it|this|the\s+offer))?\s*(?:[.!,]|$)/i,
 ];
 
 /* PRI-56 (2026-06-22, offline hostile sweep S2/S4) — unambiguous close-consent
@@ -907,7 +914,7 @@ const GRANT_THEN_CLOSE_PATTERN =
  * your imagination". A genuine accept never carries an impossibility tag, so
  * matching anywhere in the clause is safe under the safe-default contract. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s*(?:one|body)(?:\s+ever)?|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s*(?:one|body)(?:\s+ever)?|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
 
 /** Veto (offline hostile close battery, 2026-07-09) — a close idiom welded to a
  *  PEJORATIVE CHARACTERIZATION OF THE OFFER: "count me in, for a pay cut", "I'll
