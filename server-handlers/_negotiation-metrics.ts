@@ -200,13 +200,33 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     ? Math.max(...offerTrajectoryLpa)
     : finalState.highestOfferMade;
 
-  const lpaGained = Math.max(0, recruiterTopOfferLpa - band.initialOffer);
+  /* L-5 (2026-07-10, live staging — walk-away report 599e1c9f): `lpaGained`
+     is "LPA gained ... over the opening offer" (see the outcome explanation
+     in scoreNegotiationBehaviourDetailed) — the value the candidate NEGOTIATED,
+     i.e. movement from the recruiter's first spoken offer to their top offer.
+     Baselining it on `band.initialOffer` (the band FLOOR) instead over-credited
+     every session where the recruiter opened ABOVE the floor: a Tough recruiter
+     who opened at the ceiling (₹40.3, band ₹30.4–₹40.3) and never moved showed
+     "LPA gained ₹9.9" on a WALK-AWAY, contradicting "Money left on the table",
+     "0% gap closed", and "+7% pushed back" on the same report. Movement is
+     top − first actual offer; when the recruiter opens exactly at the floor
+     (the common case) first === band.initialOffer, so this is a no-op there.
+     The empty-trajectory fallback preserves the pure accept-on-band close. */
+  const recruiterFirstOfferLpa = offerTrajectoryLpa.length > 0
+    ? offerTrajectoryLpa[0]
+    : band.initialOffer;
+  const lpaGained = Math.max(0, recruiterTopOfferLpa - recruiterFirstOfferLpa);
   const cashTurns = moves.filter((m) => m.newTotalLpa != null).length;
   const lpaPerTurn = cashTurns > 0 ? Math.round((lpaGained / cashTurns) * 100) / 100 : 0;
 
+  /* Band traversal is a POSITION metric — how high in the band the final offer
+     sits — distinct from lpaGained (movement). It stays keyed on band.initialOffer
+     so it is unchanged by the L-5 fix above (it previously read lpaGained/spread,
+     and old lpaGained === recruiterTopOfferLpa − band.initialOffer, so this is the
+     identical value). Kept explicit so the two metrics can no longer drift. */
   const spread = band.maxStretch - band.initialOffer;
   const bandTraversal = spread > 0
-    ? Math.max(0, Math.min(1, lpaGained / spread))
+    ? Math.max(0, Math.min(1, (recruiterTopOfferLpa - band.initialOffer) / spread))
     : null;
 
   const overBandViolation = moves.some(

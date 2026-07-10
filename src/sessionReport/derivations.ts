@@ -200,6 +200,28 @@ export function deriveAnchorBracket(
   return null;
 }
 
+/* L-6 (2026-07-10, live staging — walk-away report 599e1c9f): the kernel-quality
+   "Anchored at" tile read "Never anchored" beside a stage tracker showing "You
+   named a counter number — Asked for ₹43 REACHED ✓" and "+7% pushed back". Root:
+   `anchorTurn` is derived from the per-turn candidateTarget snapshot, which only
+   records a TOTAL ask — a fixed-only anchor ("46 fixed") sets candidateTargetFixed
+   and leaves the snapshot null, so no turn is credited even though the candidate
+   clearly named a number. `candidateAskLpa` folds the fixed-only ask (single
+   source, same as the kernel's effectiveTargetCtcLpaLocal), so it is the
+   authoritative did-they-anchor signal; anchorTurn only carries the WHEN. When we
+   have the number but not the turn, say so honestly, not falsely "Never anchored". */
+export function anchorAtLabel(
+  anchorTurn: number | null,
+  candidateAskLpa: number | null | undefined,
+): string {
+  if (anchorTurn == null) {
+    return candidateAskLpa != null ? "Anchored (turn not tracked)" : "Never anchored";
+  }
+  if (anchorTurn <= 1) return `Turn ${anchorTurn} (early)`;
+  if (anchorTurn <= 3) return `Turn ${anchorTurn}`;
+  return `Turn ${anchorTurn} (late)`;
+}
+
 export function computeNpvRows(outcome: NegotiationOutcome) {
   const offers = outcome.offers ?? [];
   if (offers.length === 0) return [];

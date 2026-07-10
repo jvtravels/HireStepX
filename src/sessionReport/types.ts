@@ -398,6 +398,12 @@ export interface InterviewResultData {
     overBandViolation: boolean;
     totalTurns: number;
     score: number;
+    /** The candidate's authoritative effective ask (LPA), folding a
+     *  fixed-only anchor into a total-equivalent. Optional: absent on rows
+     *  persisted before it was added. The panel's "Anchored at" tile uses it
+     *  as the single source for did-they-anchor (L-6) — anchorTurn only carries
+     *  the WHEN, and misses fixed-only anchors the turn snapshot never recorded. */
+    candidateAskLpa?: number | null;
     /* Kernel tactic + intent signals. Optional because rows persisted
        before this ship landed will not have them. */
     vossTacticsUsed?: ReadonlyArray<string>;

@@ -80,6 +80,23 @@ export function TLDRHero({
         hint: "rupees lost over 4 years, before tax",
         tone: "bad",
       });
+    } else if (outcome.outcome === "walked_away") {
+      /* L-1 (2026-07-10, live staging — walk-away report cc0a7469): when the
+       * offer never moved (delta===0) this branch printed "you countered at ₹X
+       * but ACCEPTED THEIR OPENING" — on a WALKED-AWAY outcome, three lines
+       * under a "You walked away" verdict. The delta===0 math ("offer didn't
+       * move") is true, but "accepted" is categorically false: the candidate
+       * rejected the offer, they did not take it. Same class as the PRI-63
+       * "closed the deal on walk-away" fix — gate the accept phrasing on the
+       * actual outcome. On a walk-away the whole offer was left behind. */
+      stats.push({
+        label: "What you walked from",
+        value: opening !== null ? `₹${opening} LPA` : "—",
+        hint: counterNamed
+          ? `you countered at ₹${outcome.candidateAsk} but the offer never moved, and you walked`
+          : "you walked from their opening without naming a counter",
+        tone: "bad",
+      });
     } else {
       stats.push({
         label: "Money you left on the table",

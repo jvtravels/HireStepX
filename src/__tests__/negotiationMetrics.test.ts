@@ -310,6 +310,39 @@ describe("computeNegotiationMetrics", () => {
     expect(m.lpaPerTurn).toBe(0);
   });
 
+  /* L-5 (live staging walk-away 599e1c9f) — lpaGained is MOVEMENT the candidate
+     negotiated (recruiter's top offer − their FIRST actual offer), not distance
+     from the band floor. When the recruiter opens ABOVE the floor and never moves,
+     nothing was gained even though final > floor. Band traversal stays POSITION
+     within the band and is unaffected. */
+  it("L-5: recruiter opens above the floor and never moves → zero lpaGained", () => {
+    const m = computeNegotiationMetrics({
+      // Floor is 20; recruiter opens at 25 (a Tough recruiter fitting high) and holds.
+      finalState: makeState({ phase: "walked-away", highestOfferMade: 25 }),
+      moves: [
+        move({ lever: "open-with-offer", newTotalLpa: 25, turnIndex: 0 }),
+        move({ lever: "hold-firm", newTotalLpa: 25, turnIndex: 2 }),
+      ],
+    });
+    expect(m.outcome).toBe("walked-away");
+    expect(m.offerTrajectoryLpa).toEqual([25, 25]);
+    expect(m.lpaGained).toBe(0);         // movement 25→25, not 25−20=5
+    expect(m.lpaPerTurn).toBe(0);
+    expect(m.bandTraversal).toBe(0.5);   // POSITION: (25−20)/(30−20), unchanged
+  });
+
+  it("L-5: recruiter opens above the floor then climbs → credits only real movement", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ phase: "accepted", highestOfferMade: 28 }),
+      moves: [
+        move({ lever: "open-with-offer", newTotalLpa: 24, turnIndex: 0 }),
+        move({ lever: "counter-base", newTotalLpa: 28, turnIndex: 2 }),
+      ],
+    });
+    expect(m.lpaGained).toBe(4);         // 28−24 movement, not 28−20=8
+    expect(m.bandTraversal).toBe(0.8);   // POSITION: (28−20)/(30−20)
+  });
+
   it("finalOfferLpa/lpaGained clamp to the recruiter's real top offer", () => {
     const m = computeNegotiationMetrics({
       /* Recruiter moved 20→24; highestOfferMade polluted above the trajectory. */

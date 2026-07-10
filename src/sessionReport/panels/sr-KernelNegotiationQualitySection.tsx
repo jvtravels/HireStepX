@@ -5,6 +5,7 @@
 
 import { t, f, radius } from "../tokens";
 import type { InterviewResultData } from "../types";
+import { anchorAtLabel } from "../derivations";
 import { SrSectionShell } from "./_primitives";
 
 type KernelMetrics = NonNullable<InterviewResultData["kernelMetrics"]>;
@@ -128,11 +129,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
     : m.outcome === "walked-away" ? t.badInk
     : m.outcome === "stalemate" ? t.warnInk
     : t.inkSoft;
-  const anchorLabel = m.anchorTurn == null
-    ? "Never anchored"
-    : m.anchorTurn <= 1 ? `Turn ${m.anchorTurn} (early)`
-    : m.anchorTurn <= 3 ? `Turn ${m.anchorTurn}`
-    : `Turn ${m.anchorTurn} (late)`;
+  const anchorLabel = anchorAtLabel(m.anchorTurn, m.candidateAskLpa);
   const traversalPct = m.bandTraversal == null ? null : Math.round(m.bandTraversal * 100);
   const tiles: Array<{ label: string; value: string; sub?: string }> = [
     { label: "Execution score", value: `${m.score}`, sub: "/100" },
