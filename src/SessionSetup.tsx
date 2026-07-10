@@ -125,24 +125,29 @@ function AutocompleteInput({
   const [selectedIdx, setSelectedIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
-  const [diverseSample] = useState(() => sampleDiverse(suggestions, 8));
+  // Browse-mode sample (shown only when the input is empty). Reactive to the
+  // suggestions list so a newly-added user company can surface, and stable
+  // across renders because sampleDiverse is deterministic (evenly-spaced).
+  const diverseSample = useMemo(() => sampleDiverse(suggestions, 8), [suggestions]);
 
   useEffect(() => { return () => { setFocused(false); }; }, []);
 
-  /* Filtering rules:
-     - empty input → diverseSample (browse mode)
-     - exact match to a suggestion (e.g. user picked "Razorpay" earlier
-       and re-focused) → also browse mode, so they can switch — without
-       this branch the only matching suggestion gets self-filtered and
-       the dropdown collapses to empty (real production bug).
-     - partial input → substring match, excluding the typed value
-       itself so the input doesn't echo back as a row. */
+  /* Filtering rules (I-1, 2026-07-10, live staging) — the INPUT is the single
+     query source, like any well-behaved combobox:
+     - empty input → diverseSample (browse mode / discovery).
+     - non-empty input → substring match on what was typed, capped at 8.
+     A prior version flipped to `diverseSample` whenever the typed text EXACTLY
+     matched a suggestion — so finishing a real company name ("Flipkart", which
+     IS in the list) swapped the dropdown to 8 unrelated companies (Google,
+     Mahindra Aerospace, …), reading as broken. That exact-match browse branch
+     existed only to avoid the dropdown collapsing to empty when the sole match
+     was self-filtered out; keeping the exact match IN the results (no self-echo
+     exclusion) solves the collapse without ever showing an off-query list. */
   const v = value.toLowerCase();
-  const exactMatch = v.length > 0 && suggestions.some(s => s.toLowerCase() === v);
   const filtered = focused
-    ? value.length === 0 || exactMatch
+    ? value.length === 0
       ? diverseSample
-      : suggestions.filter(s => s.toLowerCase().includes(v) && s.toLowerCase() !== v).slice(0, 8)
+      : suggestions.filter(s => s.toLowerCase().includes(v)).slice(0, 8)
     : [];
 
   useEffect(() => {

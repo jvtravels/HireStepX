@@ -264,10 +264,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // without an independent API round-trip. Writes on every change — including the
   // initial DB fetch AND the setCreditBalanceDirect call after a credit purchase —
   // so the session/new page always has the freshest value we know about.
+  //
+  // Gated on creditsLoaded: sessionStorage is a write-through cache of
+  // DB-CONFIRMED balances only, never transient pre-load render state. Without
+  // this gate the effect fires on first mount while creditBalance is still its
+  // initial 0 — clobbering a valid cached value to "0" before the seed effect's
+  // setState commits — so a cross-route read (or a fast remount) briefly sees 0
+  // and the sidebar flip-flops 0→real. Once creditsLoaded is true the value is
+  // always something the DB (or a purchase/realtime event) confirmed.
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !creditsLoaded) return;
     try { sessionStorage.setItem(`hsx_credit_${user.id}`, String(creditBalance)); } catch { /* private-browsing caps */ }
-  }, [creditBalance, user?.id]);
+  }, [creditBalance, creditsLoaded, user?.id]);
 
   // ── Supabase Realtime: live credit-balance sync ───────────────────────────
   // Subscribes to row-level changes on session_credits for this user so the
