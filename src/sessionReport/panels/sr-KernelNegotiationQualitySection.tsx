@@ -135,7 +135,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
     : `Turn ${m.anchorTurn} (late)`;
   const traversalPct = m.bandTraversal == null ? null : Math.round(m.bandTraversal * 100);
   const tiles: Array<{ label: string; value: string; sub?: string }> = [
-    { label: "Quality score", value: `${m.score}`, sub: "/100" },
+    { label: "Execution score", value: `${m.score}`, sub: "/100" },
     { label: "Outcome", value: outcomeLabel },
     { label: "Anchored at", value: anchorLabel },
     { label: "LPA gained", value: `₹${m.lpaGained}`, sub: `LPA · ${m.lpaPerTurn}/turn` },
@@ -154,7 +154,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
       num="N1"
       label="Negotiation quality"
       title="How you negotiated"
-      subtitle={`Computed from the ${m.totalTurns} kernel-tracked turns in this session — the actual lever picks and counters, not transcript regex. Anchoring early, climbing the band, and exploring multiple levers all lift the score.`}
+      subtitle={`How well you ran the negotiation itself — scored deterministically from the ${m.totalTurns} kernel-tracked turns (your actual lever picks and counters, not transcript regex). This is separate from your overall interview-readiness score up top: anchoring early, climbing the band, and exploring multiple levers all lift it.`}
       aside={outcomeChip}
     >
       <div className="ir-tile-grid">
@@ -174,7 +174,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
             <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{tile.label}</span>
             <div style={{ fontFamily: f.serif, fontSize: 32, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
               {tile.value}
-              {tile.sub && tile.label === "Quality score" && (
+              {tile.sub && tile.label === "Execution score" && (
                 <span style={{ fontSize: 16, color: t.inkSoft, marginLeft: 2, fontFamily: f.mono }}>{tile.sub}</span>
               )}
             </div>

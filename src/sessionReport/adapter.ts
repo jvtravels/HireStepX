@@ -380,16 +380,46 @@ export function sessionReportToInterviewResult(
     : { skills: report.skills, overallScore: report.overallScore, band: report.band };
   const weakestSkill = pickWeakestSkill(grounded.skills);
 
+  /* R-4 (2026-07-10, live staging) — sparkline / headline coherence. The hero
+   * gauge renders the GROUNDED overall score (grounded.overallScore), but the
+   * trend sparkline plotted ctx.recentScores whose last point is THIS session's
+   * UN-grounded score — so a capped negotiation rendered "Currently 93" on the
+   * sparkline beside a "72" headline gauge. The last plotted point IS this
+   * session; force it to the same number the gauge shows. No-op for
+   * non-negotiation rows (grounded.overallScore === report.overallScore). */
+  const groundedRecentScores =
+    ctx.recentScores && ctx.recentScores.length > 0
+      ? [...ctx.recentScores.slice(0, -1), grounded.overallScore]
+      : ctx.recentScores;
+  /* The trend strip labels itself "Across {priorSessionCount + 1} sessions" but
+   * the sparkline plots `groundedRecentScores`. When the two disagreed the
+   * report read "across 4 sessions" over a 6-dot sparkline. The plotted window
+   * is the authoritative "how many sessions this view summarizes", so derive
+   * the label count from it. */
+  const coherentPriorSessionCount =
+    groundedRecentScores && groundedRecentScores.length > 0
+      ? groundedRecentScores.length - 1
+      : report.priorSessionCount;
+
   return {
     overallScore: grounded.overallScore,
     verdict: grounded.band as Verdict,
     scoreDelta,
     percentile: ctx.percentile,
-    recentScores: ctx.recentScores,
+    recentScores: groundedRecentScores,
     readiness: report.readiness
       ? {
           pct: clamp(grounded.overallScore, 0, 100),
-          etaWeeks: estimateWeeks(report.readiness.estimatedHours),
+          /* R-9 (2026-07-10, live staging) — the hero's "~N weeks" ETA and the
+           * readinessSentence's "~H hours over ~S sessions" are two views of the
+           * SAME plan and must agree. Deriving weeks from hours (÷3) while the
+           * sentence quoted an independent session count made them diverge
+           * ("~13 weeks" beside "~8 sessions"). Derive the ETA from the same
+           * session count the sentence shows, at ~3 focused sessions/week. */
+          etaWeeks: estimateWeeksFromSessions(
+            report.readiness.estimatedSessions,
+            report.readiness.estimatedHours,
+          ),
         }
       : undefined,
     daysUntilInterview: ctx.daysUntilInterview,
@@ -430,13 +460,22 @@ export function sessionReportToInterviewResult(
       report.fairnessSignals && report.fairnessSignals.notes.length > 0
         ? { notes: report.fairnessSignals.notes }
         : undefined,
-    priorSessionCount: report.priorSessionCount,
+    priorSessionCount: coherentPriorSessionCount,
     crossSessionInsights: adaptInsights(report.crossSessionInsights),
     storyReuseFindings: report.storyReuseFindings.map((s) => ({
       storyLabel: s.storyLabel,
       body: s.concern,
     })),
-    blindSpots: report.blindSpots.map((b) => ({
+    /* R-8 (2026-07-10, live staging) — the evaluator's blindSpots array carries
+     * generic behavioral competencies (Conflict Resolution, Time Management,
+     * Communication Clarity, …). On a salary-negotiation report those are
+     * off-domain noise — the reader is here to learn why the number didn't move,
+     * not about their conflict style. Keep only negotiation-relevant blind spots
+     * on a negotiation report; behavioral reports pass through untouched. */
+    blindSpots: (isNegotiation
+      ? report.blindSpots.filter((b) => isNegotiationCompetency(b.competency))
+      : report.blindSpots
+    ).map((b) => ({
       title: b.competency,
       body: b.note,
     })),
@@ -485,6 +524,16 @@ export function sessionReportToInterviewResult(
    below (genuine walk-aways return early at outcome !== "accepted"), so a
    real walk-away's discipline score is never capped. */
 const NEG_OUTCOME_SKILL_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter|trade|structural|walk/i;
+/* R-8 — is a competency name in the salary-negotiation domain? Superset of the
+ * outcome-skill regex (which covers the number-moving axes) PLUS the demeanour /
+ * process axes a negotiation report legitimately surfaces as blind spots
+ * (composure under pressure, BATNA prep, silence discipline, discovery,
+ * comp-structure fluency). Anything else — behavioral-interview competencies —
+ * is off-domain for a negotiation report and filtered out. */
+const NEG_BLINDSPOT_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter|trade|structural|walk|batna|silence|discovery|composure|compensation|comp\b|equity|offer|negotiat/i;
+function isNegotiationCompetency(name: string): boolean {
+  return NEG_BLINDSPOT_RE.test(name || "");
+}
 /* PRI-67 — the close-specific axis. Capped on a "no_agreement" outcome, where
  * the close stage was provably never reached (derivePhases.reachedClose false). */
 const NEG_CLOSING_SKILL_RE = /clos(?:e|ing)/i;
@@ -682,6 +731,18 @@ export function buildNegotiationOutcome(
   let outcome: "accepted" | "walked_away" | "no_agreement" = "no_agreement";
   if (acceptedRe.test(allAnswers)) outcome = "accepted";
   else if (walkRe.test(allAnswers)) outcome = "walked_away";
+  /* R-1 (2026-07-10, live staging) — cross-surface outcome coherence. This
+   * heuristic path runs ONLY when kernel metrics are present but carry no
+   * authoritative trajectory (legacy row) — adoptKernelOutcome returned null.
+   * In that case the fragile accept/walk regex could classify "accepted" off a
+   * stray "sounds good" while the kernel's own terminal state
+   * (kernelMetrics.outcome, rendered verbatim by KernelNegotiationQualitySection)
+   * said "walked-away" — the same report reading "accepted their opening" beside
+   * "Walked away". The kernel's terminal outcome is the authority even when the
+   * per-turn trajectory wasn't persisted; let it override the regex so both
+   * surfaces read one outcome. Stalemate / in-progress stay "no_agreement". */
+  if (kernelMetrics?.outcome === "accepted") outcome = "accepted";
+  else if (kernelMetrics?.outcome === "walked-away") outcome = "walked_away";
 
   // Candidate's highest stated target (their ask). The cue set mirrors the
   // kernel's TARGET_CUE_PRESENCE (_number-role-classifier) so a counter the
@@ -697,7 +758,14 @@ export function buildNegotiationOutcome(
   while ((am = askRe.exec(allAnswers)) !== null) {
     const v = parseFloat(am[1]);
     if (Number.isFinite(v) && v >= 3 && v <= 500) {
-      candidateAsk = candidateAsk === null ? v : Math.max(candidateAsk, v);
+      /* R-2 (2026-07-10, live staging) — last-stated-wins, mirroring the kernel's
+       * candidateTarget binding. The prior Math.max grabbed the HIGHEST number
+       * any ask-cue touched ("₹50 would be ideal but I'd take ₹46"), so this
+       * legacy-fallback path reported ₹50 while the kernel-authoritative
+       * interstitial showed the truly-anchored ₹46 — the same session showing
+       * two asks. The candidate's final stated number is the ask, same rule the
+       * kernel uses, so the two surfaces can't disagree. */
+      candidateAsk = v;
     }
   }
 
@@ -1257,6 +1325,16 @@ function capitalize(s: string): string {
 function estimateWeeks(hours: number): number {
   // ~3 focused sessions/week × ~1hr each → 3hrs/week effective practice.
   return Math.max(1, Math.round(hours / 3));
+}
+/* R-9 — single ETA model shared with the readinessSentence. Sessions are the
+ * planning unit the sentence quotes ("~S sessions"), so pace the ETA off them
+ * at ~3 focused sessions/week; fall back to the hours model when the session
+ * count is missing so legacy readiness rows still get a sane number. */
+function estimateWeeksFromSessions(sessions: number | undefined, hours: number): number {
+  if (typeof sessions === "number" && Number.isFinite(sessions) && sessions > 0) {
+    return Math.max(1, Math.ceil(sessions / 3));
+  }
+  return estimateWeeks(hours);
 }
 function formatBand(band: "strongHire" | "hire" | "leanHire"): string {
   if (band === "strongHire") return "Strong Hire";

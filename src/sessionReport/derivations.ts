@@ -57,6 +57,15 @@ export const TOTAL_PHASES = 5;
  * carry none of these fall back to an honest "not reached" rather than an
  * inflated count. Stages 1 (named a counter) and 5 (closed) stay keyed on
  * the directly-tracked candidateAsk / outcome — those were never fabricated. */
+/* R-5 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
+ * Studio) — DELIBERATE non-fabrication. These five stages are an independent
+ * skills CHECKLIST, not a strict monotonic ladder: a candidate can reach the
+ * close (5) after accepting without ever handling a pushback (3), because the
+ * recruiter simply never pushed. Forcing monotonicity — marking stage 3
+ * "reached" merely because stage 5 was — would fabricate a pushback that did
+ * not occur, exactly the failure the PDF#45 contract below forbids. The
+ * honest per-stage truth stands; `phaseCount` in the hero counts skills shown,
+ * not rungs climbed. No code change is the correct resolution here. */
 export function derivePhases(outcome: NegotiationOutcome) {
   const tactics = outcome.tacticsUsed ?? [];
   const info = outcome.infoAsked ?? [];

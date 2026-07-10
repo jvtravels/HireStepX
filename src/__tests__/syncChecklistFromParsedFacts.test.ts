@@ -97,4 +97,34 @@ describe("syncChecklistFromParsedFacts (integration via applyCandidateAnswer)", 
     const s1 = applyCandidateAnswer(s0, "I have a 90 days notice period at my current company.");
     expect(s1.discoveryChecklist?.noticePeriodAnswered).toBe(true);
   });
+
+  /* N-2 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
+   * Studio) — a fixed-scoped anchor ("I'm looking for 46 LPA fixed") binds the
+   * ask to candidateTargetFixed, leaving parsed.target null. The checklist
+   * reconcile used to read only parsed.target, so targetAnswered stayed false
+   * and the planner's anchor gate re-asked "what's your target?" AFTER the
+   * candidate had already anchored. The reconcile now folds the persisted
+   * candidateTarget / candidateTargetFixed in, so an in-hand ask is coherent
+   * with targetAnswered regardless of the surface it was stated on. */
+  it("fixed-scoped anchor with parsed.target null still flips targetAnswered", () => {
+    const s0 = initState({
+      sessionId: "s",
+      role: "Senior Product Designer",
+      company: "Lollypop Design Studio",
+      band: BAND,
+    });
+    const s1 = applyCandidateAnswer(s0, "I'm looking for 46 LPA fixed.");
+    // The ask landed on the fixed slot, NOT the soft-target slot...
+    expect(s1.candidateTargetFixed).toBe(46);
+    expect(s1.candidateTarget).toBeNull();
+    // ...yet the checklist reconciles to targetAnswered — no stale re-ask.
+    expect(s1.discoveryChecklist?.targetAnswered).toBe(true);
+  });
+
+  it("coherence invariant: an in-hand candidate ask never coexists with targetAnswered=false", () => {
+    const s0 = initState({ sessionId: "s", role: "swe", company: "acme", band: BAND });
+    const s1 = applyCandidateAnswer(s0, "My target is 46 fixed base.");
+    const hasAsk = s1.candidateTarget != null || s1.candidateTargetFixed != null;
+    if (hasAsk) expect(s1.discoveryChecklist?.targetAnswered).toBe(true);
+  });
 });

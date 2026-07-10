@@ -5924,7 +5924,17 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
           parsed.candidateProfile.transferableSkillsClaimed ||
           parsed.candidateProfile.variableTrackRecord));
     next.discoveryChecklist = syncChecklistFromParsedFacts(next.discoveryChecklist, {
-      target: parsed.target,
+      /* N-2 (2026-07-10, live staging) — reconcile targetAnswered against the
+       * GROUND TRUTH, not just this-turn's parse. `parsed.target` only carries
+       * a soft target parsed on THIS utterance; a target captured via the
+       * counter/fixed-ask path lands on next.candidateTarget /
+       * candidateTargetFixed instead, leaving parsed.target null. That desync
+       * kept the checklist's targetAnswered=false even though the candidate had
+       * already anchored a number (observed: candidateTarget=46 captured, yet
+       * the planner's anchor gate re-asked "what's your target?"). Fold the
+       * persisted target in so the single checklist reconcile is authoritative
+       * and every downstream gate that reads targetAnswered stays coherent. */
+      target: parsed.target ?? next.candidateTarget ?? next.candidateTargetFixed ?? null,
       currentCtc: parsed.currentCtc,
       competing: parsed.competing,
       signalsCompetingExistsWithoutNumber: parsed.signalsCompetingExistsWithoutNumber,

@@ -25,7 +25,14 @@ const BAND_META: Record<Question["band"], { label: string; color: string }> = {
 export function PerQuestionSection({ questions }: { questions: Question[] }) {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
   const PRIMARY_COUNT = 3;
-  const [showAll, setShowAll] = useState<boolean>(questions.length <= PRIMARY_COUNT);
+  /* R-7 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
+   * Studio): a negotiation runs as a handful of turns, and every turn is
+   * load-bearing (anchor, counter, close) — collapsing to the first 3 hid the
+   * close and read as "the report is truncating my negotiation". Short sessions
+   * (≤ AUTO_EXPAND_MAX turns) open fully; only long Q&A interviews keep the
+   * top-3 progressive disclosure. */
+  const AUTO_EXPAND_MAX = 6;
+  const [showAll, setShowAll] = useState<boolean>(questions.length <= AUTO_EXPAND_MAX);
   const visible = showAll ? questions : questions.slice(0, PRIMARY_COUNT);
   const hiddenCount = questions.length - visible.length;
   const handleExpandAll = () => {

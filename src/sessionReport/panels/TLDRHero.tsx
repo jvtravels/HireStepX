@@ -38,7 +38,15 @@ export function TLDRHero({
       ? `You walked away from a ₹${closing} LPA offer for ${role} at ${company}. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`
       : `You walked away from the ${role} offer at ${company} before a firm number landed. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`;
   } else {
-    verdict = `You explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but didn't close. Part 2 has the email draft you can send to keep the conversation alive.`;
+    /* R-10 (2026-07-10, live staging — Senior Product Designer @ Lollypop
+     * Design Studio): the no-agreement branch read like a win ("You explored N
+     * offer points") when the candidate walked from the table with ₹0 locked
+     * in. Name the no-deal plainly — nothing was secured — then point at the
+     * recovery play. Distinguish "countered but it never closed" from "never
+     * even named a number", since the coaching differs. */
+    verdict = counterNamed
+      ? `No deal closed. You countered at ₹${outcome.candidateAsk} LPA${opening !== null ? ` against their ₹${opening} LPA opening` : ""}, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. Part 2 has the email draft to reopen it before the offer lapses.`
+      : `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. Part 2 has the email draft to restart the conversation.`;
   }
 
   type StatTone = "good" | "bad" | "warn" | "neutral";

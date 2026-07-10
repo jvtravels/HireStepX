@@ -138,6 +138,46 @@ export function substituteEnglishNumbers(s: string): string {
   });
 }
 
+/* N-4 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
+ * Studio) — vague decade-band CTC idiom. Indian candidates routinely disclose
+ * comp as a fuzzy decade ("my current is in the low-to-mid 30s", "somewhere in
+ * the high 20s") instead of a crisp number. Every downstream salary parser keys
+ * on a digit+unit shape, so the disclosure was silently dropped: currentCtc
+ * stayed null, discovery never completed the current-CTC item, and the planner
+ * re-probed. This normalises the idiom to a representative "NN LPA" BEFORE the
+ * regex bank / span discovery runs, so both parseSalaryFacts and the
+ * number-role-classifier bind it. Gated on a money-context cue in the same text
+ * so the age idiom ("she's in her mid 30s") is never mis-read as salary. */
+const VAGUE_DECADE_MONEY_CUE_RE =
+  /\b(ctc|salary|salaries|lpa|lakhs?|lacs?|package|comp|compensation|pay|paid|paying|earn(?:ing|s)?|mak(?:e|ing)|draw(?:ing|s)?|base|fixed|in[-\s]?hand|take[-\s]?home|per\s?annum|p\.?a\.?|current(?:ly)?|currently\s+at)\b/i;
+/* Modifier → offset within the decade. Compound "X-to-Y" averages the two.
+ * low/early → bottom third, mid → middle, high/late/upper → top. */
+const VAGUE_MOD_OFFSET: Record<string, number> = {
+  low: 2, lower: 2, early: 2,
+  mid: 5, middle: 5, medium: 5,
+  high: 8, higher: 8, upper: 8, late: 8,
+};
+const VAGUE_DECADE_RE =
+  /\b(low|lower|early|mid|middle|medium|high|higher|upper|late)(?:[-\s](?:to[-\s]?)?(low|lower|early|mid|middle|medium|high|higher|upper|late))?\s+([2-9]0)s\b/gi;
+
+/** Normalise a vague decade-band salary idiom ("low-to-mid 30s") to a
+ *  representative "NN LPA" token. Pure. No-op unless the text also carries a
+ *  money-context cue (so age phrasings are left untouched). Exposed so the
+ *  number-role-classifier can apply the identical normalization at its input
+ *  boundary — single source of truth for the idiom. */
+export function substituteVagueSalaryDecades(s: string): string {
+  if (!s || !VAGUE_DECADE_MONEY_CUE_RE.test(s)) return s;
+  return s.replace(VAGUE_DECADE_RE, (whole, mod1: string, mod2: string | undefined, decadeTok: string) => {
+    const decade = Number(decadeTok);
+    if (!Number.isFinite(decade)) return whole;
+    const o1 = VAGUE_MOD_OFFSET[mod1.toLowerCase()];
+    if (o1 == null) return whole;
+    const o2 = mod2 ? VAGUE_MOD_OFFSET[mod2.toLowerCase()] : null;
+    const offset = o2 == null ? o1 : Math.round((o1 + o2) / 2);
+    return `${decade + offset} LPA`;
+  });
+}
+
 /* Standalone salary-bearing tokens: 22 LPA / 22.5 lakhs / 1.2 crore / 22L.
  * Capture groups:
  *   1 → digits, 2 → unit token */
@@ -196,7 +236,7 @@ export function parseSalaryFacts(textIn: string): SalaryFact[] {
    * Without this pre-pass, the entire downstream pipeline (kernel fact
    * binding, salary clamping, hike math, telemetry) silently drops
    * spelled-out salary disclosures. */
-  const text = substituteEnglishNumbers(textIn);
+  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(textIn));
   const facts: SalaryFact[] = [];
   /* Tracks spans we've already produced a fact for, so a range match
    * doesn't double-count with the per-number unit/rupee passes. */

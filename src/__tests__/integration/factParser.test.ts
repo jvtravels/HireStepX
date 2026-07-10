@@ -11,6 +11,7 @@ import {
   extractSalaryScalars,
   hasSalaryAbove,
   maxSalaryLpa,
+  substituteVagueSalaryDecades,
 } from "../../../server-handlers/_fact-parser";
 
 describe("_fact-parser — parseSalaryFacts", () => {
@@ -53,6 +54,35 @@ describe("_fact-parser — parseSalaryFacts", () => {
     expect(f[1].value).toBe(24);
     expect(f[1].isRangeUpper).toBe(true);
     expect(f[1].rangePeer).toBe(22);
+  });
+
+  /* N-4 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
+   * Studio) — vague decade-band CTC idiom. "my current is in the low-to-mid
+   * 30s" carries no digit+unit shape, so the disclosure was silently dropped
+   * and discovery re-probed the current CTC. Normalised to a representative
+   * "NN LPA" so it binds — gated on a money cue so age phrasings stay untouched. */
+  describe("N-4 — vague decade-band CTC idiom", () => {
+    it("'low-to-mid 30s' with a money cue parses a representative ~33 LPA fact", () => {
+      const f = parseSalaryFacts("my current CTC is in the low-to-mid 30s");
+      expect(f).toHaveLength(1);
+      expect(f[0].value).toBeGreaterThanOrEqual(32);
+      expect(f[0].value).toBeLessThanOrEqual(35);
+    });
+
+    it("'high 20s' and 'mid 40s' map into the right decade", () => {
+      expect(parseSalaryFacts("currently earning in the high 20s")[0].value).toBe(28);
+      expect(parseSalaryFacts("my package is mid 40s")[0].value).toBe(45);
+    });
+
+    it("age idiom WITHOUT a money cue is left untouched (no salary fact)", () => {
+      expect(substituteVagueSalaryDecades("she's in her mid 30s")).toBe("she's in her mid 30s");
+      expect(parseSalaryFacts("she's in her mid 30s")).toHaveLength(0);
+    });
+
+    it("'low 30s' → bottom of the decade, 'high 30s' → top", () => {
+      expect(parseSalaryFacts("current salary is in the low 30s")[0].value).toBe(32);
+      expect(parseSalaryFacts("current salary is in the high 30s")[0].value).toBe(38);
+    });
   });
 
   it("range 'N to M LPA' (word 'to') matches", () => {
