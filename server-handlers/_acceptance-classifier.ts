@@ -573,6 +573,19 @@ const ACCEPT_PROPOSITION_PATTERN =
 const ACCEPT_NOT_THE_OFFER_PATTERN =
   /\baccept(?:s|ing|ed)?\b[^.!?]{0,30}?\bnot\s+(?:this|the|your|that)\s+(?:offer|number|comp(?:ensation)?|package|deal|base|money)\b/i;
 
+/** Veto (PRI-78, 2026-07-10, round-10) — an accept verb whose OBJECT is a
+ *  concrete NON-offer noun: "I'm happy to accept a counteroffer, not this", "I
+ *  accept your invitation to keep talking". ACCEPT_PROPOSITION owns the
+ *  subject-led "I accept the reality/your position" form but requires the verb
+ *  to abut the subject ("happy to accept" detaches it), and its object list is
+ *  abstractions (reality/fact/position), not a counteroffer/invitation. Verb-
+ *  fronted here (no subject needed) and scoped to objects that are definitionally
+ *  NOT the on-table offer — accepting a COUNTEROFFER or an INVITATION/apology/
+ *  challenge/defeat is a deflection, never a close. "offer/deal/role/position/
+ *  job" are deliberately excluded so a genuine "accept the offer" is untouched. */
+const WRONG_OBJECT_ACCEPT_PATTERN =
+  /\baccept(?:s|ing|ed)?\s+(?:a|an|your|the|another|this|that)\s+(?:counter[\s-]?(?:offer|proposal)|invitation|invite|apology|apologies|challenge|defeat)\b/i;
+
 /** Veto: "in principle" / "pending …" — explicit incomplete-commitment markers.
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
  *  terminal close. */
@@ -825,6 +838,18 @@ const COUNTER_THEN_CLOSE_PATTERN =
 const CONDITIONAL_ACCEPT_PATTERN =
   /\b(?:if|unless|provided|contingent\s+on|only\s+if|as\s+long\s+as)\b[^.!?\n]{0,40}?\b(?:i'?m\s+in\b|count\s+me\s+in\b|you'?ve\s+got\s+(?:a\s+|yourself\s+a\s+)?deal\b|we\s+(?:have|have\s+got|got)\s+a\s+deal\b|it'?s\s+a\s+deal\b|then\s+deal\b|i'?ll\s+(?:take\s+it|sign|join)\b)/i;
 
+/** Veto (PRI-78, 2026-07-10, round-10) — the MIRROR of CONDITIONAL_ACCEPT: a
+ *  close idiom FOLLOWED by a hard condition — "I accept on the condition you
+ *  never do this again", "I'll take it, provided the base moves". CONDITIONAL_
+ *  ACCEPT keys on condition-BEFORE-close; the reversed order (accept, THEN the
+ *  condition) slipped it and FALSE-CLOSED at the un-met condition. Scoped to
+ *  STRONG condition markers only (on-condition / provided / only-if / as-long-as
+ *  / contingent / subject-to), deliberately NOT bare "if", so politeness tails
+ *  ("I accept, if that's alright") are spared. A genuine unconditional accept
+ *  carries none of these after the close. Shared so BOTH gates reject. */
+const CLOSE_THEN_CONDITIONAL_PATTERN =
+  /\b(?:accept(?:s|ing|ed)?|i.?ll\s+(?:take\s+it|sign|do\s+it)|it.?s\s+a\s+deal|count\s+me\s+in|i.?m\s+in|deal)\b[^.!?]{0,30}?\b(?:on\s+(?:the\s+)?condition|only\s+(?:if|when|on)|provided|as\s+long\s+as|contingent\s+(?:on|upon)|subject\s+to)\b/i;
+
 /** Veto: accept idiom trailed by a review/deliberation tail — "send the offer
  *  letter and I'll review it", "share the paperwork and I'll think it over".
  *  The "send the offer letter" close idiom matches, but "I'll review/think it
@@ -938,8 +963,15 @@ const GRANT_THEN_CLOSE_PATTERN =
  * an alternate/another universe" (the "in your dreams" sibling), and "only in
  * your imagination". A genuine accept never carries an impossibility tag, so
  * matching anywhere in the clause is safe under the safe-default contract. */
+/* PRI-78 (2026-07-10, round-10) — the "…, said no X ever" sarcasm idiom
+ * generalizes past "said no one/body ever": "I'll take it… said no engineer
+ * ever." PRI-74 only widened the "ever" to optional on the fixed one/body head;
+ * the arbitrary-noun form ("said no <noun> ever") slipped and FALSE-CLOSED. The
+ * "ever" is the disambiguator for an arbitrary noun (so "he said no engineer
+ * would apply" without "ever" is untouched); the bare one/body head keeps its
+ * ever-optional form. A genuine accept never carries a "said no … ever" tag. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s*(?:one|body)(?:\s+ever)?|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
 
 /** Veto (offline hostile close battery, 2026-07-09) — a close idiom welded to a
  *  PEJORATIVE CHARACTERIZATION OF THE OFFER: "count me in, for a pay cut", "I'll
@@ -1046,6 +1078,8 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
   ACCEPT_NOT_THE_OFFER_PATTERN,
+  WRONG_OBJECT_ACCEPT_PATTERN,
+  CLOSE_THEN_CONDITIONAL_PATTERN,
   IN_PRINCIPLE_PATTERN,
   DOUBT_HEDGE_THEN_COMMIT_PATTERN,
   MONEY_REJECTION_PATTERN,
