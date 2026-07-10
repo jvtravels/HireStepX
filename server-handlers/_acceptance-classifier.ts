@@ -579,12 +579,15 @@ const CONDITIONAL_DEFERRAL_PATTERN =
 const TAKE_IT_HEDGE_PATTERN =
   /\btake\s+(?:it|the\s+offer)\s+(?:elsewhere|somewhere|under\s+(?:advisement|consideration|review)|or\s+leave\s+it|back\b|away\b|from\s+here\b|on\s+board\b|as\s+a\s+maybe\b|slow\b|up\s+with\b|to\s+(?:my|the|another|a\s)|with\s+me\b|home\b)/i;
 
-/** Veto: "I'm in A / AN / TALKS / DISCUSSIONS / NO RUSH / THE MIDDLE / TWO
- *  MINDS …" — the "I'm in" commit hijacked by a hedge noun phrase. Plain
- *  "I'm in" / "I'm in!" / "I'm in for it" carry no hedge tail and still
- *  accept. Offer-nouns ("I'm in the deal") are deliberately NOT vetoed. */
+/** Veto: "I'm in A / AN / TALKS / DISCUSSIONS / NO RUSH / NO MOOD / THE MIDDLE /
+ *  TWO MINDS …" — the "I'm in" commit hijacked by a hedge (or, for "no mood", an
+ *  outright refusal) noun phrase. Plain "I'm in" / "I'm in!" / "I'm in for it"
+ *  carry no hedge tail and still accept. "I'm in no mood to accept this" (PRI-84,
+ *  2026-07-10 adversarial probe) is a REFUSAL — the bare "I'm in" fired the
+ *  performative idiom while "no mood to accept" negated it — so it joins the
+ *  hijack list. Offer-nouns ("I'm in the deal") are deliberately NOT vetoed. */
 const IM_IN_HEDGE_PATTERN =
-  /\bi.?m\s+in\s+(?:a\b|an\b|talks|discussions?|conversations?|negotiations?|no\s+rush|two\s+minds|touch\b|agreement\b|agreeing\b|the\s+(?:middle|process|running|dark|weeds|loop)|another|other\s+(?:processes|rounds?))/i;
+  /\bi.?m\s+in\s+(?:a\b|an\b|talks|discussions?|conversations?|negotiations?|no\s+rush|no\s+mood|two\s+minds|touch\b|agreement\b|agreeing\b|the\s+(?:middle|process|running|dark|weeds|loop)|another|other\s+(?:processes|rounds?))/i;
 
 /** Veto: "I accept THAT … / I accept YOUR position / I accept THE reality" —
  *  performative "accept" applied to a proposition, stance, or fact rather than
@@ -625,6 +628,17 @@ const ACCEPT_NOT_THE_OFFER_PATTERN =
  *  job" are deliberately excluded so a genuine "accept the offer" is untouched. */
 const WRONG_OBJECT_ACCEPT_PATTERN =
   /\baccept(?:s|ing|ed)?\s+(?:a|an|your|the|another|this|that)\s+(?:counter[\s-]?(?:offer|proposal)|invitation|invite|apology|apologies|challenge|defeat)\b/i;
+
+/** Veto (PRI-84, 2026-07-10, adversarial probe) — the "accept NO/ZERO excuses"
+ *  idiom: "I accept zero excuses for this number", "I'll accept no excuses". The
+ *  accept verb fired but the object is "excuses" under a no/zero/any quantifier —
+ *  a fixed idiom meaning "I will TOLERATE no excuses" (a hostile demand), never a
+ *  close on the offer. WRONG_OBJECT_ACCEPT's determiner set (a/an/your/the/…)
+ *  can't carry the no/zero quantifier, so this needs its own arm. Quantifier +
+ *  "excuse(s)" is the single disambiguator — no genuine accept closes on an
+ *  "excuses" object. Shared by both gates via FALSE_CLOSE_VETO_PATTERNS. */
+const ACCEPT_NO_EXCUSES_PATTERN =
+  /\baccept(?:s|ing|ed)?\s+(?:no|zero|any|your|his|her|their|our|the|these|those|more)(?:\s+more)?\s+excuses?\b/i;
 
 /** Veto (PRI-83, 2026-07-10, adversarial probe) — an accept verb whose OBJECT
  *  is a COMPARATIVE-qualified offer: "I'll accept a better offer, not this
@@ -1201,6 +1215,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   ACCEPT_PROPOSITION_PATTERN,
   ACCEPT_NOT_THE_OFFER_PATTERN,
   WRONG_OBJECT_ACCEPT_PATTERN,
+  ACCEPT_NO_EXCUSES_PATTERN,
   COMPARATIVE_OFFER_ACCEPT_PATTERN,
   CLOSE_THEN_CONDITIONAL_PATTERN,
   IN_PRINCIPLE_PATTERN,
