@@ -716,8 +716,23 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
   /\b(?:would|should)\s+i\s+(?:ever\s+|really\s+|honestly\s+|seriously\s+)?(?:be\s+)?(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
   /* disbelief frame: "(do) you (really) think/expect/believe … accept/take/sign" */
   /\byou\s+(?:really\s+|seriously\s+|honestly\s+|actually\s+)?(?:think|expect|believe|assume|reckon|suppose|imagine)\b[^.!?]{0,30}\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
-  /* negation-by-impossibility: "(there's) no way I('m/d) accept/take/sign" */
-  /\b(?:no\s+way|there'?s\s+no\s+way)\b[^.!?]{0,20}\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
+  /* negation-by-impossibility: "(there's) no way/world/universe/chance/… I
+   * accept/take/sign". PRI-85 (2026-07-10, round-11) widened the impossibility
+   * NOUN from a bare "no way" to the full stock set — "there's no world where I
+   * accept this", "no universe where I sign", "no chance I take that" are the
+   * same idiom (an accept declared impossible) and were FALSE-CLOSING because
+   * only "no way" was listed. The connective between the noun and the verb
+   * ("where"/"that"/"I'd") is absorbed by the 0-25 char gap; a genuine accept
+   * carries no "no <noun>" impossibility head. */
+  /\bno\s+(?:way|world|universe|chance|scenario|reality|planet|life|version\s+of\s+(?:this|me|reality))\b[^.!?]{0,25}\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
+  /* impossibility TAG: an accept/commit verb followed by a clause-terminal
+   * "which is never" / "— which is never" disclaimer, the "I'll believe it when
+   * I accept it — which is never" sarcasm (PRI-85, round-11). The tell is a
+   * TERMINAL "never" (not followed by another word) — "I accept, which is never
+   * a light call" keeps its accept because "never" governs "a light call", so
+   * the negative-lookahead exempts it. Scoped to a preceding commit verb within
+   * 20 chars so only an accept-then-impossibility idiom is vetoed. */
+  /\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b[^.!?]{0,20}(?:[—–-]|,|;)?\s*which\s+is\s+never\b(?!\s+\w)/i,
   /* sarcastic counterfactual: "(as if / like) I'd accept that" — the
    * conditional "I'd accept" under an "as if"/"like" frame is a refusal, never
    * a genuine accept (which is "I accept" / "I'll accept"). Offline sweep
