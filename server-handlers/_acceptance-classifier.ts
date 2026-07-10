@@ -536,8 +536,13 @@ const CONDITIONAL_DEFERRAL_PATTERN =
  *  "slow" (slow down). All are "I'll think about it" in disguise, not consent.
  *  "as a maybe" is scoped to the non-commit noun so "take it as a yes" — a
  *  genuine (if rare) accept — is NOT vetoed. */
+/* PRI-79 (2026-07-10, round-11) — "take it UP WITH <someone>" is the phrasal
+ * verb "take (a matter) up with", NOT "take it" = accept: "I'll take it up with
+ * your competitor", "I'll take it up with my lawyer". The bare "take it" idiom
+ * matched and FALSE-CLOSED an outright deflection. "up with" is never a genuine
+ * accept tail, so folding it into this hedge list is safe. */
 const TAKE_IT_HEDGE_PATTERN =
-  /\btake\s+(?:it|the\s+offer)\s+(?:elsewhere|somewhere|under\s+(?:advisement|consideration|review)|or\s+leave\s+it|back\b|away\b|from\s+here\b|on\s+board\b|as\s+a\s+maybe\b|slow\b|to\s+(?:my|the|another|a\s)|with\s+me\b|home\b)/i;
+  /\btake\s+(?:it|the\s+offer)\s+(?:elsewhere|somewhere|under\s+(?:advisement|consideration|review)|or\s+leave\s+it|back\b|away\b|from\s+here\b|on\s+board\b|as\s+a\s+maybe\b|slow\b|up\s+with\b|to\s+(?:my|the|another|a\s)|with\s+me\b|home\b)/i;
 
 /** Veto: "I'm in A / AN / TALKS / DISCUSSIONS / NO RUSH / THE MIDDLE / TWO
  *  MINDS …" — the "I'm in" commit hijacked by a hedge noun phrase. Plain
@@ -970,8 +975,62 @@ const GRANT_THEN_CLOSE_PATTERN =
  * "ever" is the disambiguator for an arbitrary noun (so "he said no engineer
  * would apply" without "ever" is untouched); the bare one/body head keeps its
  * ever-optional form. A genuine accept never carries a "said no … ever" tag. */
+/* PRI-79 (2026-07-10, round-11) — the "when monkeys fly (out of my ass)"
+ * impossibility idiom, sibling of "when pigs fly" / "when hell freezes over"
+ * already here. "I accept, and monkeys might fly out of my ass." welds a close
+ * to an impossibility tag = emphatic refusal (FALSE-CLOSE). A genuine accept
+ * never carries a "monkeys fly" tag, so matching anywhere in the clause is safe
+ * under the safe-default contract. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|monkeys?\s+(?:might\s+|will\s+|could\s+|may\s+|would\s+)?fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
+
+/** Veto (PRI-79, 2026-07-10, round-11) — an accept verb whose OBJECT is a
+ *  GIVING-UP / WALK noun: "I accept defeat — I'm walking", "I accept my
+ *  resignation from this conversation", "I accept the loss". WRONG_OBJECT_ACCEPT
+ *  requires an article before its noun list and does not carry "defeat" bare, a
+ *  "my"-articled object, or "resignation/loss" — so these slipped and FALSE-
+ *  CLOSED an explicit surrender/walk. "Accepting defeat" is the opposite of
+ *  closing the deal. The offer nouns are absent from this list, so a genuine
+ *  "accept the offer" is untouched. */
+const ACCEPT_WALK_OBJECT_PATTERN =
+  /\baccept(?:s|ing|ed)?\s+(?:my\s+|your\s+|the\s+|this\s+)?(?:defeat|resignation|loss|walk[\s-]?away)\b/i;
+
+/** Veto (PRI-79, 2026-07-10, round-11) — the "(agree/offer) to disagree/differ"
+ *  idiom riding an accept verb: "I accept the offer to disagree". The literal
+ *  "the offer" satisfied the accept core, but "offer to disagree/differ" is a
+ *  fixed idiom (a willingness to stop agreeing), never the comp offer — a
+ *  refusal. Scoped to the "to disagree/differ" idiom tail so a genuine "accept
+ *  the offer" is untouched. */
+const OFFER_TO_DISAGREE_PATTERN =
+  /\b(?:offer|agree)\s+to\s+(?:dis)?(?:agree|differ)\b/i;
+
+/** Veto (PRI-79, 2026-07-10, round-11) — a close idiom whose deal is attributed
+ *  to a NON-PARTY: "You have yourself a deal with nobody", "Consider it accepted
+ *  — by someone else", "It's a deal for someone else". The bare "deal"/"accepted"
+ *  idiom matched, but the attribution ("with nobody", "by/for someone else")
+ *  says the candidate is NOT the party closing — an emphatic refusal (FALSE-
+ *  CLOSE). No genuine accept attributes the deal away from the speaker, so this
+ *  is safe. */
+const NON_PARTY_ATTRIBUTION_PATTERN =
+  /\b(?:deal|accepted|sign(?:ed|ing)?|in|take\s+it)\b[^.!?]{0,20}?\b(?:with\s+(?:nobody|no\s+one|no-one)|(?:by|for)\s+someone\s+else)\b/i;
+
+/** Veto (PRI-79, 2026-07-10, round-11) — an emphatic TRAILING "— NOT" negation:
+ *  "Fine, deal — NOT.", "I'll take it... not." The close idiom matches, but the
+ *  clause-final standalone "not" (behind a dash or ellipsis) flips the whole
+ *  statement to a refusal (the '90s sarcasm construction). Scoped to a dash/
+ *  ellipsis-preceded, clause-final "not" so mid-sentence "I'm not sure" and
+ *  "not a problem, deal" are untouched. */
+const TRAILING_NOT_NEGATION_PATTERN =
+  /(?:[—–-]{1,2}|\.{2,})\s*not\b[.!\s]*$/i;
+
+/** Veto (PRI-79, 2026-07-10, round-11) — a commit gated on the offer first
+ *  becoming "worth" it: "I'll sign when you offer something worth signing", "I'll
+ *  take it once it's worth accepting". The "when/once/until … worth <verb>"
+ *  frame is a sarcastic refusal (the current offer is deemed unworthy) — a FALSE-
+ *  CLOSE. Scoped to the temporal-conditional head so a genuine "this is worth
+ *  signing, deal!" (no when/once/until) is untouched. */
+const WORTH_SIGNING_CONDITIONAL_PATTERN =
+  /\b(?:when|once|until|till)\s+(?:you|they|it.?s|there.?s)\b[^.!?]{0,30}?\bworth\s+(?:signing|accepting|taking|considering|my\s+(?:time|while))\b/i;
 
 /** Veto (offline hostile close battery, 2026-07-09) — a close idiom welded to a
  *  PEJORATIVE CHARACTERIZATION OF THE OFFER: "count me in, for a pay cut", "I'll
@@ -1095,6 +1154,11 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   NONCOMP_DEMAND_THEN_CLOSE_PATTERN,
   CONDITIONAL_ACCEPT_PATTERN,
   SARCASTIC_REFUSAL_PATTERN,
+  ACCEPT_WALK_OBJECT_PATTERN,
+  OFFER_TO_DISAGREE_PATTERN,
+  NON_PARTY_ATTRIBUTION_PATTERN,
+  TRAILING_NOT_NEGATION_PATTERN,
+  WORTH_SIGNING_CONDITIONAL_PATTERN,
   DISMISSIVE_OFFER_CHARACTERIZATION_PATTERN,
   REVIEW_TAIL_PATTERN,
   CONSULT_DEFERRAL_PATTERN,
