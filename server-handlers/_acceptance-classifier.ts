@@ -661,6 +661,16 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * frame; the inverted-subjunctive form carried none. Scoped to the inversion
    * head so a genuine "I would accept" (no leading "were I …") is untouched. */
   /\bwere\s+i\s+(?:you|him|her|them|in\s+(?:your|his|her|their))\b[^.!?]{0,25}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b/i,
+  /* PRI-76 (2026-07-10, round-8) excluded a "?"-TERMINATED bare accept verb
+   * ("Accept? Ha.") as an interrogative echo. Round-9 finds the sibling that
+   * slips it: a QUOTATIVE ATTRIBUTION welded to the accept idiom — "Accept it,
+   * you say?", "Sign this, they said". The bare verb is followed by an object
+   * and then a comma (not "?"), so the round-8 trailing-terminator fix doesn't
+   * reach it; the tell is the reported-speech tag (you/they/he/she + say/said)
+   * that reframes the verb as the recruiter's instruction being echoed, never
+   * the candidate's own commit. A genuine accept never attributes the accept to
+   * "you say". Shared single-source so both gates reject in lockstep. */
+  /\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b(?:\s+(?:it|this|that|the\s+offer))?\s*,?\s*(?:so\s+)?(?:you|they|he|she|we)\s+(?:say|says|said)\b/i,
 ];
 
 /* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
@@ -696,6 +706,21 @@ const PARTIAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
  * trailing t, so an affirmative "I can do it at 40" (no negation) is untouched. */
 const MONEY_REJECTION_PATTERN =
   /\b(?:not|no\s+way|never|no\s+chance|can'?t|cannot|couldn'?t|won'?t|wouldn'?t)\s+(?:at|for|on)\s+(?:this|that|these|those|the|such\s+a)?\s*(?:number|price|comp(?:ensation)?|figure|salary|rate|amount|level|money|ctc|package|pay|offer|\d)/i;
+
+/* PRI-77 (2026-07-10, offline hostile close battery — round-9) — a close idiom
+ * welded to an "at <price>, NOT <price>" COUNTER: "I'll take it at forty-five,
+ * not forty", "deal at 50, not 40". The candidate accepts AT a figure they name
+ * and explicitly rejects another (the on-table offer) — a price-counter, not an
+ * unconditional close. MONEY_REJECTION requires "not (at/for/on) …" so the bare
+ * "not forty"/"not 40" rejection slipped it, and "take it at 45" alone is
+ * indistinguishable from the genuine "I accept at 40" without number parsing.
+ * The tell that disambiguates is the explicit "not <bare cardinal>" — a genuine
+ * accept ("I accept at 40") never negates a number. Scoped to a close idiom
+ * within a short window of "not <digit|spelled-cardinal>", so a plain "not
+ * because …" / "not gonna lie" (non-numeric) is untouched. Shared single-source
+ * so both gates reject in lockstep. */
+const COUNTER_NOT_NUMBER_PATTERN =
+  /\b(?:take\s+it|i.?ll\s+take|accept(?:s|ing|ed)?(?:\s+it)?|sign|deal|count\s+me\s+in|i.?m\s+in)\b[^.!?]{0,40}?\bnot\s+(?:at\s+)?(?:\d[\d,.]*|(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)(?:[\s-](?:one|two|three|four|five|six|seven|eight|nine))?)\b/i;
 
 /* PRI-63b (2026-06-22) — NEGATED settle-token veto. The accept-with-number
  * idioms ("done at 45", "45 done", "it's a deal") match the bare settle token,
@@ -1024,6 +1049,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   IN_PRINCIPLE_PATTERN,
   DOUBT_HEDGE_THEN_COMMIT_PATTERN,
   MONEY_REJECTION_PATTERN,
+  COUNTER_NOT_NUMBER_PATTERN,
   SETTLE_NEGATION_PATTERN,
   DO_IT_REDIRECT_PATTERN,
   DEFERRED_SETTLE_NOUN_PATTERN,
