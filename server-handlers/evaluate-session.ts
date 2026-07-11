@@ -57,6 +57,8 @@ import {
   normalizeCoaching,
   normalizeFocusMetrics,
   normalizeHrReport,
+  buildNegotiationOfferFactsBlock,
+  validateVerdictCoherence,
   type Coaching,
   type FocusMetric,
   type ResumeGroundingScore,
@@ -626,6 +628,13 @@ export default async function handler(req: Request): Promise<Response> {
 - Comp reality: ${hrNorms.compNote}
 - Dual employment: ${hrNorms.dualEmploymentNote}`
       : "";
+    /* Salary-negotiation offer-facts + observed-tactics grounding (I-6 / I-9A).
+       Extracted deterministically from THIS transcript, so it's dynamic and must
+       land AFTER the static rules to preserve Groq's prefix cache. Surfaces only
+       comp facts/tactics actually present — the trailing RULE forbids the model
+       inventing comp structure or crediting unused tactics. Empty for non-neg. */
+    const negotiationOfferFactsBlock =
+      meta?.type === "salary-negotiation" ? buildNegotiationOfferFactsBlock(transcript) : "";
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
     // lets Groq's automatic prompt caching (which keys on the longest shared
@@ -763,7 +772,7 @@ TRANSCRIPT (numbered turns):
 """
 ${transcriptBlock}
 """
-${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}${hrNormsPrompt}
+${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}${signatureMetricsPrompt}${perQuestionMetricsPrompt}${hrNormsPrompt}${negotiationOfferFactsBlock}
 
 RUBRIC — score each skill 0-100:
 ${skillAxes.map((s) => `- ${s}`).join("\n")}
@@ -1148,7 +1157,15 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       overallScore,
       scoreConfidence,
       band: applyBands(overallScore, bands),
-      verdict: typeof parsed.verdict === "string" ? parsed.verdict.slice(0, 200) : "",
+      /* I-12 — reconcile the verdict prose with the numeric scores. When the
+         LLM's one-liner claims strength on a low score (or a weakness with no
+         low skill), validateVerdictCoherence swaps in a deterministic
+         score-derived sentence so the headline never contradicts the numbers. */
+      verdict: validateVerdictCoherence(
+        typeof parsed.verdict === "string" ? parsed.verdict.slice(0, 200) : "",
+        overallScore,
+        weightedSkills,
+      ),
       wins: filterGroundedItems(parsed.wins as WinOrFixH[] | undefined, candidateCorpus),
       fixes: filterGroundedItems(parsed.fixes as WinOrFixH[] | undefined, candidateCorpus),
       redFlags: filterGroundedRedFlags((parsed as Record<string, unknown>).redFlags as RedFlagH[] | undefined, candidateCorpus) as RedFlag[],
