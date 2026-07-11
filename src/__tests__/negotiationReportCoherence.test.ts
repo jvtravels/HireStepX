@@ -189,3 +189,78 @@ describe("I-13 — Per-Question Review shows every recorded exchange", () => {
     expect(result.questions).toHaveLength(1);
   });
 });
+
+describe("REPORT-3b — 'Numbers stated' never contradicts the kernel's anchor", () => {
+  const negSession = (over: Partial<DashboardSession>): DashboardSession =>
+    ({
+      id: "s1",
+      type: "salary-negotiation",
+      focus: "salary-negotiation",
+      role: "Senior Product Designer",
+      company: "Acme",
+      difficulty: "standard",
+      duration: "12 min",
+      transcript: [],
+      questionScores: [],
+      feedback: "",
+      ...over,
+    } as unknown as DashboardSession);
+
+  /* perQuestion answers that state numbers the unit-anchored `anchorRe` misses
+   * (bare counters / degraded answerText) — the exact live "Numbers stated 0%"
+   * shape observed on staging beside a report crediting "Asked for ₹45 LPA". */
+  const unitlessReport = {
+    perQuestion: [
+      "I was targeting the mid forties.",
+      "Make it 45 and we have a deal.",
+      "That works for me.",
+      "Add a signing bonus then.",
+      "Sounds good.",
+      "I accept.",
+    ].map((answerText, idx) => ({
+      idx,
+      question: "q",
+      answerText,
+      score: 68,
+      verdict: "partial",
+      starPresence: { S: false, T: false, A: false, R: false },
+    })),
+    redFlags: [],
+    skills: [{ name: "Anchoring", score: 60 }],
+    overallScore: 68,
+    band: "leanHire",
+    wins: [],
+    fixes: [],
+    blindSpots: [],
+    storyReuseFindings: [],
+    crossSessionInsights: [],
+    thoughtBubble: [],
+    scoreConfidence: 0.8,
+    coreMetrics: { fillerPerMin: 0, silenceRatio: 0, paceWpm: 150, energy: 70 },
+    advancedDelivery: { medianLatencyMs: 0, selfCorrectionRate: 0 },
+  } as unknown as SessionReport;
+
+  const numbersStated = (over: Partial<KernelMetrics>) => {
+    const result = sessionReportToInterviewResult({
+      report: unitlessReport,
+      session: negSession({ negotiationMetrics: kernel(over) }),
+    });
+    return result.metrics.find((m) => m.label === "Numbers stated")!;
+  };
+
+  it("credits an anchored candidate even when answerText has no unit-adjacent figure", () => {
+    // Kernel recorded the ask (candidateAsk = 45) → the delivery metric must not
+    // read "Needs Work" beside the report's own "Asked for ₹45 LPA".
+    const m = numbersStated({ candidateAskLpa: 45 });
+    expect(m.band).not.toBe("needsWork");
+    expect(m.value).toBeGreaterThan(0);
+  });
+
+  it("still flags a candidate who never anchored (no kernel ask, no unit figures)", () => {
+    // No recorded ask and no unit-adjacent figure → the honest, coherent verdict
+    // is a genuine "Needs Work"; the floor must NOT fire here.
+    const m = numbersStated({ candidateAskLpa: null });
+    expect(m.band).toBe("needsWork");
+    expect(m.value).toBe(0);
+  });
+});

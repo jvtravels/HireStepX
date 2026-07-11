@@ -438,7 +438,9 @@ export function sessionReportToInterviewResult(
     aiVerdict: report.verdict,
     strengths: report.wins.map((w) => w.text),
     improvements: report.fixes.map((f) => f.text),
-    metrics: isNegotiation ? buildNegotiationMetrics(report) : buildMetrics(report),
+    metrics: isNegotiation
+      ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null)
+      : buildMetrics(report),
     skills: buildSkills(grounded.skills),
     weakestSkill: {
       name: weakestSkill?.name || "—",
@@ -992,7 +994,10 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
  *  Best-effort derivations from the candidate's transcript text — these
  *  are heuristic and replaceable when the LLM scoring pipeline starts
  *  emitting first-class negotiation signals on `report`. */
-function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
+function buildNegotiationMetrics(
+  report: SessionReport,
+  kernelAsk: number | null,
+): DeliveryMetric[] {
   const candidateAnswers = report.perQuestion.map((q) => q.answerText || "");
   const allText = candidateAnswers.join(" ");
 
@@ -1004,10 +1009,27 @@ function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
   // Skills section. Renamed so each metric has one unambiguous owner; the
   // skill axis is now the single source for "Anchor strength". (REPORT-3.)
   const anchorRe = /(?:₹\s*)?\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
-  const answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
+  let answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
+  // REPORT-3b (2026-07-11, live staging) — cross-surface coherence. The kernel
+  // authoritatively tracks whether the candidate named a counter-number
+  // (`candidateAsk`, the same field derivePhases renders as "Asked for ₹X LPA").
+  // The bespoke `anchorRe` above is a SECOND, divergent detector over raw
+  // answerText: when the ask phrasing sits outside the regex ("make it 45",
+  // "mid-forties") or answerText is degraded/empty, it counted 0 and the report
+  // showed "Numbers stated 0% · Needs Work" right beside its own "Asked for
+  // ₹45 LPA". Reuse the single authoritative source — a recorded ask guarantees
+  // at least one figure-stating turn, and a credited anchor must never read
+  // "Needs Work". No effect when the candidate genuinely never anchored
+  // (kernelAsk === null): that 0% · Needs Work is the honest, coherent verdict.
+  const kernelAnchored = kernelAsk !== null;
+  if (kernelAnchored) answersWithAnchor = Math.max(answersWithAnchor, 1);
   const numbersStated = candidateAnswers.length > 0
     ? Math.round((answersWithAnchor / candidateAnswers.length) * 100)
     : 0;
+  const rawNumbersBand =
+    numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork";
+  const numbersBand: DeliveryMetric["band"] =
+    kernelAnchored && rawNumbersBand === "needsWork" ? "ok" : rawNumbersBand;
 
   // Concession rate — count "I'd be open to / I can lower / how about / fine
   // with X" type concessions. Low concession = strong negotiator.
@@ -1032,7 +1054,7 @@ function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
       value: numbersStated,
       unit: "%",
       targetLabel: "Anchor a figure",
-      band: numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork",
+      band: numbersBand,
     },
     {
       label: "Concession rate",
