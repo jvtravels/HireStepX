@@ -90,6 +90,14 @@ const NOT_THAN = "(?!\\s+than)";
 const SWEETENER =
   "(?:joining\\s+bonus|signing\\s+bonus|sign[-\\s]?on\\s+bonus|retention\\s+bonus|bonus(?:es)?|joining|relocation|reloc\\b|notice\\s+(?:buyout|pay|period(?:\\s+buyout)?)|buyout|esops?|rsus?|equity|stock(?:\\s+options?)?|shares?|variable|allowances?|hra\\b|perks?|benefits?|wfh|remote|sabbatical)";
 
+/* Core cash-comp levers — the components a candidate can ask to be raised by
+ * name ("the base", "fixed", "the cash", "CTC", "package", "salary"). Distinct
+ * from SWEETENER (add-on perks): these are the primary numbers, so a demand to
+ * "sweeten the base" / "fix the CTC" is inherently an UPWARD ask on the standing
+ * offer. Shared with the improve-lever core below. */
+const CORE_COMP =
+  "(?:base(?:\\s+pay)?|fixed(?:\\s+pay|\\s+comp(?:onent)?)?|cash(?:\\s+comp(?:onent)?)?|ctc|package|salary|comp(?:ensation)?)";
+
 /* Decade-band figures for the vague "mid-forties" demand form (see the
  * decade-band core below). Kept lakh-denominated to match figureToLakhs output;
  * the qualifier nudges within the decade. */
@@ -449,6 +457,27 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "grant-sweetener",
     re: new RegExp(
       `\\b(?:throw\\s+in|toss\\s+in|chip\\s+in|add\\b|include\\b|cover\\b|sort\\s+out|guarantee|sweeten|match\\b)\\b[^.!?]{0,30}?\\b${SWEETENER}\\b`,
+      "i",
+    ),
+  },
+  /* Terms-change imperative on a NAMED comp lever (no figure): "fix the equity",
+   * "sweeten the base", "improve the CTC", "bump up the cash", "sort out the
+   * package". The grant-sweetener core above catches an upward verb only when it
+   * lands on a SWEETENER noun ("sweeten the BONUS"), and verb-magnitude only fires
+   * with an adjacent figure — so a bare "make this lever better" imperative on a
+   * CORE cash component slipped both, and "Fix the equity and I'll accept." /
+   * "Sweeten the base and we have a deal." false-closed at the un-bumped offer
+   * (batch-14 hostile leak, 2026-07-11). The verb set is upward-only ("fix/improve/
+   * sweeten/beef up/firm up/revise" a comp lever can only mean raise it), so no
+   * figure or offer gate is needed — it is always an unmet demand. Lexically
+   * pinned to comp levers (SWEETENER ∪ CORE_COMP), so procedural closes with no
+   * lever ("send me the offer letter and I'll sign") and satisfaction references
+   * ("the base works, deal") never match. */
+  {
+    reason: "improve-lever",
+    re: new RegExp(
+      `\\b(?:sweeten|fix|improve|firm\\s+up|beef\\s+up|top\\s+up|bump\\s+up|push\\s+up|jack\\s+up|revise|rework|revisit|relook\\s+at|adjust|sort\\s+out|work\\s+on)\\b` +
+        `[^.!?]{0,15}?\\b(?:${CORE_COMP}|${SWEETENER})\\b`,
       "i",
     ),
   },
