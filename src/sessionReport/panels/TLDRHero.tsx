@@ -14,14 +14,21 @@ export function TLDRHero({
   const phaseCount = derivePhases(outcome).filter(p => p.reached).length;
   const TOTAL_PHASES = 5;
 
-  /* A counter was named iff the candidate stated an ask above the opening —
-   * the same single source the stage tracker uses (derivePhases →
-   * reachedCounter = candidateAsk !== null). "The offer didn't move"
-   * (delta === 0) is NOT the same as "the candidate never countered": the
-   * recruiter can hold firm against a real counter. Conflating the two made
-   * the hero print "no counter named" while the very same hero showed a
-   * "+X% pushback" stat and the stage tracker showed "named a counter ✓". */
-  const counterNamed = outcome.candidateAsk !== null && opening !== null && outcome.candidateAsk > opening;
+  /* A counter was named iff the candidate stated an ask — the SAME single
+   * source the stage tracker uses (derivePhases → reachedCounter =
+   * candidateAsk !== null). Two conflations previously broke this:
+   *   1. "The offer didn't move" (delta === 0) is NOT "no counter": the
+   *      recruiter can hold firm against a real counter.
+   *   2. "No opening was tabled" (opening === null, recruiter never named a
+   *      number) is NOT "no counter": the candidate can name ₹X into silence.
+   * The prior `&& opening !== null && candidateAsk > opening` guard folded
+   * both in, so a live run where the recruiter never verbalized an offer
+   * (offers empty → opening null) printed "no counter on the table / never
+   * naming a number" beside the report's own "named a counter ✓ Asked ₹50",
+   * "1 of 5 stages — you named a counter", and "Numbers stated 100%". Key it
+   * on candidateAsk alone; branches that compare to the opening already guard
+   * `opening !== null` (verdict) or `delta !== null` (stats) themselves. */
+  const counterNamed = outcome.candidateAsk !== null;
 
   let verdict: string;
   if (outcome.outcome === "accepted" && delta !== null && delta > 0) {

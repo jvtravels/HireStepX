@@ -22,7 +22,7 @@ import { derivePhases, type NegotiationOutcome } from "../sessionReport/derivati
  * may claim it wasn't; whenever none was named, the surfaces stay honest. */
 
 const NO_COUNTER_CLAIM =
-  /no counter named|didn'?t name a counter|no counter,? no movement|no counter-number/i;
+  /no counter named|didn'?t name a counter|no counter,? no movement|no counter-number|no counter on the table|never naming a number|didn'?t name a counter-number/i;
 
 function outcome(over: Partial<NegotiationOutcome>): NegotiationOutcome {
   return {
@@ -63,6 +63,19 @@ const COUNTERED: Array<{ name: string; o: NegotiationOutcome }> = [
   {
     name: "no agreement but a counter was on the table",
     o: outcome({ outcome: "no_agreement", finalTotal: null, offers: [{ turn: 1, total: 50, question: "" }], candidateAsk: 60 }),
+  },
+  {
+    /* 2026-07-11, live staging — Senior Product Designer @ Flipkart, session
+     * f289b580: the recruiter never verbalized a cash offer, so `offers` was
+     * empty (opening === null) even though the candidate named ₹50. The verdict
+     * keyed `counterNamed` on `opening !== null && candidateAsk > opening`, so
+     * an empty opening flipped it false and the hero printed "no counter on the
+     * table — you explored 0 offer points… never naming a number" beside the
+     * report's own "named a counter ✓ Asked ₹50", "1 of 5 stages — you named a
+     * counter", and "Numbers stated 100%". A named counter is `candidateAsk`,
+     * independent of whether an opening was ever tabled. */
+    name: "countered into silence — recruiter never tabled an offer (the live bug)",
+    o: outcome({ outcome: "no_agreement", finalTotal: null, offers: [], candidateAsk: 50 }),
   },
 ];
 
