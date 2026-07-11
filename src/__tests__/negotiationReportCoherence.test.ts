@@ -263,4 +263,26 @@ describe("REPORT-3b — 'Numbers stated' never contradicts the kernel's anchor",
     expect(m.band).toBe("needsWork");
     expect(m.value).toBe(0);
   });
+
+  /* REPORT-3c (2026-07-11, live staging — session 734493c9): the degraded
+   * heuristic path stored an empty perQuestion, so the value ternary returned a
+   * hard 0 (bypassing the anchored floor) while the band still flipped to "ok",
+   * rendering "Numbers stated 0% · On Target" beside "Asked for ₹50 LPA". The
+   * VALUE and BAND must never tell different stories: an anchored candidate
+   * reads a non-zero value AND an on-target band even with no answerText. */
+  it("value and band agree for an anchored candidate even with no answerText (denom 0)", () => {
+    const empty = {
+      ...unitlessReport,
+      perQuestion: [],
+    } as unknown as SessionReport;
+    const result = sessionReportToInterviewResult({
+      report: empty,
+      session: negSession({ negotiationMetrics: kernel({ candidateAskLpa: 50 }) }),
+    });
+    const m = result.metrics.find((x) => x.label === "Numbers stated")!;
+    // The exact live bug: value 0 (needsWork range) beside an "ok"/On-Target band.
+    expect(m.band).not.toBe("needsWork");
+    // If the band says On Target, the value must sit in that band's range too.
+    expect(m.value).toBeGreaterThanOrEqual(25);
+  });
 });

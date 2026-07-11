@@ -1009,7 +1009,7 @@ function buildNegotiationMetrics(
   // Skills section. Renamed so each metric has one unambiguous owner; the
   // skill axis is now the single source for "Anchor strength". (REPORT-3.)
   const anchorRe = /(?:₹\s*)?\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
-  let answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
+  const answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
   // REPORT-3b (2026-07-11, live staging) — cross-surface coherence. The kernel
   // authoritatively tracks whether the candidate named a counter-number
   // (`candidateAsk`, the same field derivePhases renders as "Asked for ₹X LPA").
@@ -1017,19 +1017,27 @@ function buildNegotiationMetrics(
   // answerText: when the ask phrasing sits outside the regex ("make it 45",
   // "mid-forties") or answerText is degraded/empty, it counted 0 and the report
   // showed "Numbers stated 0% · Needs Work" right beside its own "Asked for
-  // ₹45 LPA". Reuse the single authoritative source — a recorded ask guarantees
-  // at least one figure-stating turn, and a credited anchor must never read
-  // "Needs Work". No effect when the candidate genuinely never anchored
-  // (kernelAsk === null): that 0% · Needs Work is the honest, coherent verdict.
+  // ₹45 LPA".
+  //
+  // REPORT-3c (2026-07-11, live staging — session 734493c9, "Numbers stated
+  // 0% · On Target"): the first pass floored answersWithAnchor to ≥1 but then
+  // divided by candidateAnswers.length and floored only the BAND
+  // (needsWork→ok), NOT the displayed value. When perQuestion carried no usable
+  // answerText (length 0, the degraded/heuristic path), the value ternary
+  // returned a hard 0 — bypassing the ≥1 floor entirely — while the band still
+  // flipped to "ok", printing a self-contradicting "0% · On Target". Floor the
+  // VALUE itself (the single source the band derives from) so the two can never
+  // disagree: a credited kernel anchor reads at least "On Target" (25%), the
+  // band follows from the value, and there is no separate band override to drift.
+  // No effect when the candidate genuinely never anchored (kernelAsk === null):
+  // that 0% · Needs Work is the honest, coherent verdict.
   const kernelAnchored = kernelAsk !== null;
-  if (kernelAnchored) answersWithAnchor = Math.max(answersWithAnchor, 1);
-  const numbersStated = candidateAnswers.length > 0
+  let numbersStated = candidateAnswers.length > 0
     ? Math.round((answersWithAnchor / candidateAnswers.length) * 100)
     : 0;
-  const rawNumbersBand =
-    numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork";
+  if (kernelAnchored) numbersStated = Math.max(numbersStated, 25);
   const numbersBand: DeliveryMetric["band"] =
-    kernelAnchored && rawNumbersBand === "needsWork" ? "ok" : rawNumbersBand;
+    numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork";
 
   // Concession rate — count "I'd be open to / I can lower / how about / fine
   // with X" type concessions. Low concession = strong negotiator.
