@@ -563,6 +563,46 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "convergence-demand",
     re: /\b(?:round\s+(?:it|that|(?:the|this)\s+\w+)?\s*up|round\s+up|split\s+the\s+difference|meet\s+(?:me\s+)?(?:half\s?way|in\s+the\s+middle)|(?:close|bridge|narrow|split)\s+the\s+gap|(?:find|reach|hit)\s+(?:a\s+)?middle\s+ground)\b/i,
   },
+  /* Figureless VAGUE-IMPROVE demand: "sweeten it a bit", "push it a little",
+   * "make it worth my while", "do a bit better", "come back with a better
+   * number". Each imperatively asks the recruiter to RAISE the standing offer
+   * without naming a figure — a sibling of vague-relative-bump (bump/nudge/…)
+   * and convergence-demand, but keyed on the improve verbs those two miss, so
+   * "Sweeten it a bit and I'll take it." / "Do a bit better and I'll sign."
+   * false-closed at the un-bumped offer (batch-18 hostile leak, 2026-07-11).
+   * Always unmet (all move the offer up), so no offer gate. The directional
+   * tail on push/nudge/move (up/higher/a little) keeps "push it to next week"
+   * (defer, not raise) out; the comparative arms require a compare verb frame
+   * ("do better", "come back with a better …"), so a satisfaction reference to
+   * a "better offer" naming no request never matches. */
+  {
+    reason: "vague-improve-demand",
+    re: /\b(?:sweeten\s+(?:it|that|the\s+(?:deal|offer|pot|package|number|comp))|(?:push|nudge|move)\s+(?:it|that)\s+(?:up|higher|north|a\s+(?:little|bit|touch))|make\s+it\s+worth\s+(?:my|the)\s+while|do\s+(?:a\s+(?:bit|little|touch)\s+)?better|come\s+back\s+with\s+(?:a\s+)?(?:better|higher|stronger|more))\b/i,
+  },
+  /* PEER-MATCH demand: "match what you paid the last senior hire", "pay me what
+   * the other seniors make". A request to lift the offer to an (unnamed) peer /
+   * cohort benchmark — inherently upward, yet the beat-match core binds only a
+   * possessive OFFER object (their/Google's offer), so a "what <peer> earns"
+   * clause slipped it and false-closed at the un-bumped offer (batch-18 hostile
+   * leak, 2026-07-11). The "match/beat/pay-me … what … <earn verb>" frame keeps
+   * a bare "you don't have to match anyone, I accept" (no "what … earns" clause)
+   * out, so the negation trap still accepts. */
+  {
+    reason: "peer-match-demand",
+    re: /\b(?:match|beat|pay\s+me)\b[^.!?]{0,30}?\bwhat\b[^.!?]{0,30}?\b(?:paid|pays?|makes?|earns?|gets?|got|make|earn|are\s+(?:paid|making|on))\b/i,
+  },
+  /* FUTURE-GUARANTEE demand: "guarantee a review in six months", "promise me a
+   * raise at review". A demand for a forward commitment (review / raise / bump)
+   * the recruiter has NOT granted — welding it to a close fabricates agreement
+   * to a guarantee that was never made, so "Guarantee a review in six months
+   * and I accept." false-closed (batch-18 hostile leak, 2026-07-11). Gated on a
+   * commit verb (guarantee/promise/commit-to/lock-in) governing a raise/review
+   * noun, so ordinary future talk ("looking forward to the review, I accept")
+   * — no commit verb — still accepts. */
+  {
+    reason: "future-guarantee-demand",
+    re: /\b(?:guarantee|promise|commit\s+to|lock\s+in)\s+(?:me\s+)?(?:a|an|the)?\s*(?:review|raise|bump|increase|hike|promotion|re-?visit|reassessment|re-?evaluation)\b/i,
+  },
   /* Anaphoric terms-change welded to a comp topic: "what about relocation? sort
    * that and I accept", "the equity — fix that and I'm in". improve-lever needs
    * the lever named DIRECTLY after the verb, so a terms-change verb governing the
@@ -751,6 +791,18 @@ function normalizeSpelledNumbers(text: string): string {
     .replace(SPELLED_TEENS_RE, (_m, teen: string) => String(SPELLED_TEENS[teen.toLowerCase()]));
 }
 
+/* A demand trigger immediately preceded by a dismissal frame is the candidate
+ * WAIVING the demand, not making it: "No need to bump it, I'll take it.",
+ * "You don't have to match anyone — I accept.", "Not asking for more, deal."
+ * The negated trigger must NOT veto the accept. Applied uniformly to every
+ * core (single source): if the text right before the matched trigger ends in a
+ * dismissal frame, the match is a waiver and is skipped. Requires the frame to
+ * abut the trigger (trailing \s+$ against the pre-match slice), so a genuine
+ * demand elsewhere in the utterance ("don't lowball me — bump it up and I'll
+ * sign") is unaffected. */
+const DISMISSAL_TAIL_RE =
+  /\b(?:no\s+need\s+(?:to|for)|don'?t\s+need(?:\s+to)?|don'?t\s+have\s+to|not\s+(?:asking|looking)\s+for)\s+$/i;
+
 export function analyzeDemand(text: string | null | undefined, offerLpa?: number): DemandAnalysis {
   const trimmed = (text || "").trim();
   if (!trimmed) return { unmet: false, reasons: [] };
@@ -760,6 +812,11 @@ export function analyzeDemand(text: string | null | undefined, offerLpa?: number
   for (const core of DEMAND_CORES) {
     const m = core.re.exec(a);
     if (!m) continue;
+    /* Skip a trigger that sits immediately after a dismissal frame — the
+     * candidate is waiving that demand, not raising it. m.index points at the
+     * trigger for the direct cores; lookahead cores match at 0 (empty slice,
+     * never a dismissal), so they are unaffected. */
+    if (m.index > 0 && DISMISSAL_TAIL_RE.test(a.slice(0, m.index))) continue;
     /* A figure comes from either a literal digit group or a derived
      * computeFigure (decade-band); both are offer-gated absolute targets. */
     const hasAbsolute = core.absoluteTargetGroup != null || core.computeFigure != null;
