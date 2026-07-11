@@ -447,7 +447,21 @@ export function sessionReportToInterviewResult(
           ? `Focus your next session on ${weakestSkill.name.toLowerCase()} — it's your lowest signal at ${weakestSkill.score}/100.`
           : "Keep practising consistently.",
     },
-    questions: report.perQuestion.map((q) => adaptQuestion(q, report.redFlags)),
+    questions: (() => {
+      const base = report.perQuestion.map((q) => adaptQuestion(q, report.redFlags));
+      /* I-13 (2026-07-11, live staging) — for salary negotiations the evaluator
+       * collapses the whole call into a SINGLE aggregate perQuestion item, so the
+       * Per-Question Review showed "1" for a six-turn negotiation. The real
+       * per-turn exchanges live on session.transcript (ai = recruiter line,
+       * user = candidate reply). Reconstruct one Per-Question item per candidate
+       * turn from that recorded transcript so the section shows every exchange and
+       * the heading count is honest. Falls back to the aggregate base when the
+       * transcript can't be split into more turns than we already have (legacy
+       * rows without a stored transcript) — we never invent exchanges. */
+      if (!isNegotiation) return base;
+      const reconstructed = buildNegotiationPerQuestion(session.transcript, base);
+      return reconstructed ?? base;
+    })(),
     scoreConfidence: confidenceBucket(report.scoreConfidence),
     scoreConfidenceNote:
       report.scoreConfidence < 0.7
@@ -649,7 +663,13 @@ function adoptKernelOutcome(
     total,
     question: "",
   }));
-  const candidateAsk = km.candidateAskLpa ?? null;
+  // I-10 — the candidate ask is the SINGLE source every report surface
+  // renders (TLDRHero "YOUR ASK", AnchorBracketPanel, OfferTrajectory,
+  // derivations phase note, CounterOfferLetter). Round to a whole LPA at the
+  // point of derivation so no downstream surface can render a bare float on
+  // one card while another rounds — the two surfaces can't disagree.
+  const candidateAsk =
+    typeof km.candidateAskLpa === "number" ? Math.round(km.candidateAskLpa) : null;
   const latest = trajectory.length > 0
     ? trajectory[trajectory.length - 1]
     : (typeof km.finalOfferLpa === "number" ? km.finalOfferLpa : null);
@@ -773,7 +793,10 @@ export function buildNegotiationOutcome(
        * interstitial showed the truly-anchored ₹46 — the same session showing
        * two asks. The candidate's final stated number is the ask, same rule the
        * kernel uses, so the two surfaces can't disagree. */
-      candidateAsk = v;
+      // I-10 — round to a whole LPA at derivation so the ask renders identically
+      // on every surface (see adoptKernelOutcome); parseFloat could otherwise
+      // hand "48.5" to one card while another rounds it to "48".
+      candidateAsk = Math.round(v);
     }
   }
 
@@ -1135,6 +1158,67 @@ function adaptQuestion(
         }))
       : undefined,
   };
+}
+
+/** I-13 — reconstruct per-turn negotiation exchanges from the recorded
+ *  transcript when the evaluator only produced a single aggregate item.
+ *
+ *  Each candidate ("user") turn becomes one Question item: the immediately
+ *  preceding recruiter ("ai") line is the question text, the candidate's reply
+ *  is the answer. This is a pure re-projection of REAL recorded turns — no
+ *  scores or exchanges are invented. Per-turn scores don't exist for a
+ *  negotiation (the evaluator scored the call as a whole), so every item carries
+ *  a neutral band and the aggregate's score, and the section shows the true
+ *  number of exchanges instead of claiming a per-turn breakdown we don't have.
+ *
+ *  Returns null (caller keeps the aggregate) when the transcript can't yield
+ *  MORE exchanges than the aggregate already shows — a legacy row with no stored
+ *  transcript, or a genuinely single-turn call — so we never over-claim. */
+function buildNegotiationPerQuestion(
+  transcript: DashboardSession["transcript"] | undefined,
+  base: Question[],
+): Question[] | null {
+  if (!Array.isArray(transcript) || transcript.length === 0) return null;
+
+  const aggregate = base[0];
+  let pendingRecruiter = "";
+  const items: Question[] = [];
+  for (const entry of transcript) {
+    if (!entry || typeof entry.text !== "string") continue;
+    const text = stripProsodyMarkup(entry.text).trim();
+    if (!text) continue;
+    // Skip listening-nudge / interjection sentinels ([tracking], [pause], …)
+    // the engine writes as "ai" lines — they aren't recruiter offers.
+    if (entry.speaker === "ai") {
+      if (/^\[.*\]$/.test(text)) continue;
+      pendingRecruiter = text;
+      continue;
+    }
+    if (entry.speaker !== "user") continue;
+    if (/^\[.*\]$/.test(text)) continue; // skipped-turn sentinel
+    items.push({
+      index: items.length + 1,
+      text: pendingRecruiter || `Exchange ${items.length + 1}`,
+      // No per-turn score exists — the evaluator scored the whole call. Carry
+      // the aggregate score with a neutral band rather than fabricate a per-turn
+      // number the kernel never recorded.
+      score: aggregate?.score ?? 0,
+      band: "partial",
+      answer: highlightAnswer(entry.text),
+      star: { situation: false, task: false, action: false, result: false, learning: false },
+      metrics: {
+        wordCount: wordCount(entry.text),
+        responseSec: Math.round((wordCount(entry.text) / 150) * 60),
+        firstPersonRatioPct: Math.round(firstPersonRatio(entry.text) * 100),
+        quantificationCount: countQuantifications(entry.text),
+      },
+      whyScored: "",
+    });
+    pendingRecruiter = "";
+  }
+
+  // Only replace the aggregate when we genuinely recovered more exchanges.
+  return items.length > base.length ? items : null;
 }
 
 function adaptRedFlag(rf: SessionReportRedFlag): RedFlag {

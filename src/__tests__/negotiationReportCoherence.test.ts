@@ -1,0 +1,191 @@
+/* Report-coherence regression tests for the salary-negotiation report.
+ *
+ * I-10 — the candidate ask must be ONE integer value across every surface.
+ * I-13 — the Per-Question Review must show every recorded exchange, not a
+ *        single aggregate item, reconstructed from the real transcript.
+ *
+ * (I-8 is a presentation-only change in PhaseLadderPanel — the underlying
+ *  derivePhases reached/not-reached data is deliberately left as-is, so it is
+ *  covered by the existing derivePhases tests, not asserted here.) */
+import { describe, it, expect } from "vitest";
+import {
+  buildNegotiationOutcome,
+  sessionReportToInterviewResult,
+} from "../sessionReport/adapter";
+import { derivePhases } from "../sessionReport/derivations";
+import type { SessionReport } from "../dashboardData";
+import type { DashboardSession } from "../dashboardTypes";
+
+type KernelMetrics = NonNullable<DashboardSession["negotiationMetrics"]>;
+
+const kernel = (over: Partial<KernelMetrics>): KernelMetrics => ({
+  outcome: "accepted",
+  anchorTurn: 1,
+  leverDiversity: 2,
+  lpaGained: 2,
+  lpaPerTurn: 0.7,
+  bandTraversal: 0.5,
+  overBandViolation: false,
+  totalTurns: 6,
+  score: 68,
+  initialOfferLpa: 40,
+  finalOfferLpa: 46,
+  candidateAskLpa: 48,
+  offerTrajectoryLpa: [40, 44, 46],
+  ...over,
+});
+
+const opaqueReport = {
+  perQuestion: [
+    { question: "Let's talk numbers.", answerText: "That works, let's proceed." },
+  ],
+} as unknown as SessionReport;
+
+describe("I-10 — candidate ask is a single rounded value everywhere", () => {
+  it("rounds a fractional kernel ask to a whole LPA at derivation", () => {
+    const outcome = buildNegotiationOutcome(
+      opaqueReport,
+      kernel({ candidateAskLpa: 48.4 }),
+    );
+    expect(outcome!.candidateAsk).toBe(48);
+    // The stage-note surface reads the same rounded value — no bare float.
+    expect(derivePhases(outcome!)[0].note).toBe("Asked for ₹48 LPA");
+  });
+
+  it("rounds a fractional ask in the transcript-heuristic (legacy) path", () => {
+    const legacy = {
+      outcome: "stalemate",
+      anchorTurn: 2,
+      leverDiversity: 1,
+      lpaGained: 0,
+      lpaPerTurn: 0,
+      bandTraversal: 0,
+      overBandViolation: false,
+      totalTurns: 4,
+      score: 40,
+    } as unknown as KernelMetrics;
+    const report = {
+      perQuestion: [
+        { question: "I can offer ₹40 LPA.", answerText: "I'm targeting 48.5 LPA." },
+      ],
+    } as unknown as SessionReport;
+    const outcome = buildNegotiationOutcome(report, legacy);
+    expect(Number.isInteger(outcome!.candidateAsk!)).toBe(true);
+    expect(outcome!.candidateAsk).toBe(49);
+  });
+
+  it("is an integer that every surface (phase note, ask value) shares", () => {
+    const outcome = buildNegotiationOutcome(
+      opaqueReport,
+      kernel({ candidateAskLpa: 47.6 }),
+    );
+    const ask = outcome!.candidateAsk!;
+    expect(Number.isInteger(ask)).toBe(true);
+    // derivations phase note and the outcome.candidateAsk are one value.
+    expect(derivePhases(outcome!)[0].note).toBe(`Asked for ₹${ask} LPA`);
+  });
+});
+
+describe("I-13 — Per-Question Review shows every recorded exchange", () => {
+  const baseSession = (over: Partial<DashboardSession>): DashboardSession =>
+    ({
+      id: "s1",
+      type: "salary-negotiation",
+      focus: "salary-negotiation",
+      role: "Senior Product Designer",
+      company: "Acme",
+      difficulty: "standard",
+      duration: "12 min",
+      transcript: [],
+      questionScores: [],
+      feedback: "",
+      ...over,
+    } as unknown as DashboardSession);
+
+  // Evaluator collapses a negotiation into ONE aggregate perQuestion item.
+  const aggregateReport = {
+    perQuestion: [
+      {
+        idx: 0,
+        question: "Full negotiation",
+        answerText: "aggregate answer",
+        score: 68,
+        verdict: "partial",
+        starPresence: { S: false, T: false, A: false, R: false },
+      },
+    ],
+    redFlags: [],
+    skills: [{ name: "Anchoring", score: 60 }],
+    overallScore: 68,
+    band: "leanHire",
+    wins: [],
+    fixes: [],
+    blindSpots: [],
+    storyReuseFindings: [],
+    crossSessionInsights: [],
+    thoughtBubble: [],
+    scoreConfidence: 0.8,
+    coreMetrics: { fillerPerMin: 0, silenceRatio: 0, paceWpm: 150, energy: 70 },
+    advancedDelivery: { medianLatencyMs: 0, selfCorrectionRate: 0 },
+  } as unknown as SessionReport;
+
+  it("reconstructs one item per candidate turn from the transcript (6 exchanges)", () => {
+    const transcript = [
+      { speaker: "ai", text: "We can offer ₹40 LPA." },
+      { speaker: "user", text: "I was targeting ₹48 LPA." },
+      { speaker: "ai", text: "That's a stretch." },
+      { speaker: "user", text: "My market data supports it." },
+      { speaker: "ai", text: "We can do ₹44 LPA." },
+      { speaker: "user", text: "Closer — can we get to 46?" },
+      { speaker: "ai", text: "₹46 LPA is our ceiling." },
+      { speaker: "user", text: "Let's add a signing bonus then." },
+      { speaker: "ai", text: "We can do a ₹3L bonus." },
+      { speaker: "user", text: "That works." },
+      { speaker: "ai", text: "Great, welcome aboard." },
+      { speaker: "user", text: "Thank you, I accept." },
+    ];
+    const result = sessionReportToInterviewResult({
+      report: aggregateReport,
+      session: baseSession({ transcript, negotiationMetrics: kernel({}) }),
+    });
+    // 6 candidate turns → 6 Per-Question items (not the single aggregate).
+    expect(result.questions).toHaveLength(6);
+    // Each item pairs the preceding recruiter line as the question text.
+    expect(result.questions[0].text).toBe("We can offer ₹40 LPA.");
+    expect(result.questions[0].index).toBe(1);
+    // Answer carries the real candidate reply.
+    expect(result.questions[0].answer.map((s) => s.text).join("")).toContain(
+      "targeting ₹48 LPA",
+    );
+    expect(result.questions[5].answer.map((s) => s.text).join("")).toContain(
+      "I accept",
+    );
+  });
+
+  it("skips interjection/nudge sentinels and never over-claims turn count", () => {
+    const transcript = [
+      { speaker: "ai", text: "[tracking]" },
+      { speaker: "ai", text: "We can offer ₹40 LPA." },
+      { speaker: "user", text: "I want ₹48 LPA." },
+      { speaker: "user", text: "[skipped]" },
+      { speaker: "ai", text: "We can do ₹44 LPA." },
+      { speaker: "user", text: "Deal." },
+    ];
+    const result = sessionReportToInterviewResult({
+      report: aggregateReport,
+      session: baseSession({ transcript, negotiationMetrics: kernel({}) }),
+    });
+    // Two real candidate turns (the [skipped] sentinel is dropped).
+    expect(result.questions).toHaveLength(2);
+    expect(result.questions[1].text).toBe("We can do ₹44 LPA.");
+  });
+
+  it("falls back to the aggregate when no transcript is stored (legacy row)", () => {
+    const result = sessionReportToInterviewResult({
+      report: aggregateReport,
+      session: baseSession({ transcript: [], negotiationMetrics: kernel({}) }),
+    });
+    // No exchanges to recover → keep the single aggregate item, don't invent.
+    expect(result.questions).toHaveLength(1);
+  });
+});
