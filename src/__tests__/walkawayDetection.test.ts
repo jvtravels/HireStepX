@@ -64,3 +64,43 @@ describe("_walkaway-detection — innocent 'move' / 'move on' does NOT fire", ()
     expect(isWalkAway(undefined)).toBe(false);
   });
 });
+
+/* PRI-64 (2026-07-06, live staging) — a candidate REASSURING the recruiter
+ * they are staying must not be scored as a walk-away. The bare alternation had
+ * no negation awareness, so "I don't want to walk away" matched `walk away` and
+ * terminated a live negotiation the candidate was actively trying to save. */
+describe("_walkaway-detection — negated departures do NOT fire (re-engagement)", () => {
+  const NEGATIVES = [
+    "I don't want to walk away, let's close at 52 fixed.",
+    "I really don't want to walk away from this — can we meet in the middle?",
+    "I'm not going to walk away over 2 lakhs, let's find a number.",
+    "Rather than walk away, I'd like to keep talking.",
+    "Instead of walking away I'd rather we bridge the gap on base.",
+    "No need to walk away — I'm still very interested.",
+    "No reason for me to walk away if the joining bonus covers it.",
+    "I'd prefer not to walk away, so what flexibility is there on base?",
+    "I'm not going to pull out, let's just align on the fixed number.",
+    "There's no need to withdraw my candidacy, I want to make this work.",
+    "I'm not ready to walk away yet, give me your best number.",
+  ];
+  for (const text of NEGATIVES) {
+    it(`does not fire on: ${text}`, () => {
+      expect(isWalkAway(text)).toBe(false);
+    });
+  }
+
+  /* A negated departure must NOT swallow a genuine, un-negated walk signal
+   * elsewhere in the same utterance. */
+  it("still fires when a negated departure is followed by a real walk signal", () => {
+    expect(
+      isWalkAway("I don't want to walk away, but if the base won't move I'll pass."),
+    ).toBe(true);
+  });
+
+  it("still fires when the departure itself is not negated (distant negation)", () => {
+    // "don't" governs "think the scope fits", not the far-away "walk away".
+    expect(
+      isWalkAway("I don't think the scope fits what I'm after, so I'll walk away."),
+    ).toBe(true);
+  });
+});

@@ -146,3 +146,41 @@ describe("Bug 1: regression — Infosys React Dev does NOT anchor ₹22L", () =>
     expect(b.target).toBeLessThanOrEqual(12);
   });
 });
+
+/* N-1 (2026-07-10, live staging — Senior Product Designer @ a design studio,
+ * text-only setup so YoE unknown) — a senior title with UNKNOWN YoE resolved
+ * to a mid-IC band (₹8 target / ₹11.5 ceil) because yoeScale() defaults to the
+ * 5-yr anchor and only the 1.15× roleModifier lifted it. A seniority-bearing
+ * title is itself an experience floor; when YoE is unknown, the title now
+ * floors the effective YoE (TITLE_IMPLIED_YOE). Explicit YoE is untouched. */
+describe("N-1: title-implied YoE floor when YoE is unknown", () => {
+  it("Senior title (unknown YoE) lifts the band well above the 5-yr mid anchor", () => {
+    const mid = getBandForRole("sme", "Product Designer", null);
+    const senior = getBandForRole("sme", "Senior Product Designer", null);
+    // Senior with no YoE must clear the mid band, not collapse onto it.
+    expect(senior.target).toBeGreaterThan(mid.target * 1.3);
+    expect(senior.ceil).toBeGreaterThanOrEqual(15);
+  });
+
+  it("Staff/Principal (unknown YoE) floors higher than Senior", () => {
+    const senior = getBandForRole("sme", "Senior Product Designer", null);
+    const staff = getBandForRole("sme", "Staff Product Designer", null);
+    expect(staff.target).toBeGreaterThan(senior.target);
+  });
+
+  it("explicit YoE is byte-identical (floor fires ONLY on unknown YoE)", () => {
+    // yoe=5 senior — the title floor must NOT override a supplied YoE.
+    const a = getBandForRole("sme", "Senior Product Designer", 5);
+    const b = getBandForRole("sme", "Senior Product Designer", 5);
+    expect(a).toEqual(b);
+    // With yoe=5 the multiplier is yoeScale(5)=1.0 × roleModifier(senior)=1.15.
+    const base = getBandForRole("sme", "Product Designer", 5);
+    expect(a.target).toBeCloseTo(base.target * 1.15, 0);
+  });
+
+  it("non-senior title (unknown YoE) still uses the 5-yr default anchor", () => {
+    const unknown = getBandForRole("sme", "Product Designer", null);
+    const fiveYr = getBandForRole("sme", "Product Designer", 5);
+    expect(unknown).toEqual(fiveYr);
+  });
+});

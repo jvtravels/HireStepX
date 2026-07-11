@@ -389,6 +389,27 @@ function roleModifier(role: string): number {
   return 1.0;
 }
 
+/* Title-implied YoE floor (2026-07-10, live staging — a Senior Product
+ * Designer with no resume / text-only setup resolved to ₹8 / ₹11.5, a mid-IC
+ * band). Root cause: when the caller has NO YoE, yoeScale() defaults to the
+ * 5-yr mid anchor (1.0×), so a title that EXPLICITLY carries seniority only
+ * ever received the flat roleModifier premium and none of the years-of-
+ * experience lift a real senior commands. Holding a senior/lead/staff title
+ * IS itself an experience floor — the same principle MANAGER_DEFAULT_YOE
+ * already applies to people-managers. Fire ONLY when yoe is unknown so every
+ * explicit-YoE caller and test is byte-identical; a supplied YoE always wins.
+ * Ordered most-senior-first; representative Indian-market YoE per band. */
+const TITLE_IMPLIED_YOE: Array<{ re: RegExp; yoe: number }> = [
+  { re: /\b(staff|principal|architect|distinguished|fellow)\b/, yoe: 12 },
+  { re: /\b(senior|sr\.?|lead)\b/, yoe: 8 },
+];
+
+function impliedYoeFromTitle(role: string): number | null {
+  const r = (role || "").toLowerCase();
+  for (const { re, yoe } of TITLE_IMPLIED_YOE) if (re.test(r)) return yoe;
+  return null;
+}
+
 /** Compute (floor, ceil, target) LPA band for a (tier, role, yoe) tuple.
  *  Uses the role family × tier matrix (Fix 2, 2026-05-15). */
 export function getBandForRole(
@@ -398,7 +419,12 @@ export function getBandForRole(
 ): RoleBand {
   const family = classifyRoleFamily(role);
   const base = FAMILY_TIER_REFERENCE_5YR[family][tier];
-  const m = yoeScale(yoe) * roleModifier(role);
+  /* When YoE is unknown, let a seniority-bearing title floor the effective
+   * YoE (see TITLE_IMPLIED_YOE) instead of silently defaulting to the 5-yr
+   * mid anchor. Explicit YoE always passes through untouched. */
+  const effYoe =
+    yoe == null || !Number.isFinite(yoe) ? impliedYoeFromTitle(role) ?? yoe : yoe;
+  const m = yoeScale(effYoe) * roleModifier(role);
   return {
     floor: Math.round(base.floor * m * 10) / 10,
     ceil: Math.round(base.ceil * m * 10) / 10,

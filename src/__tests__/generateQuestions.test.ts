@@ -11,6 +11,7 @@ import {
   buildDisciplineFence,
   buildFollowUpDisciplineFence,
   focusToCompetencies,
+  hrDimensionsForSeniority,
   VALID_PERSONAS,
   type RawQuestion,
 } from "../../server-handlers/_generate-questions-helpers";
@@ -317,6 +318,39 @@ describe("buildStaticFallback", () => {
     expect(body.some((q) => asksBackground(q.aiText))).toBe(false); // body never repeats it
   });
 
+  /* Seniority-steered HR fallback: the sampler used to draw a blind
+     round-robin ignoring the resolved rubric. A senior candidate's round
+     grades comp / notice / BGV harder; a fresher's leans on self-awareness
+     / motivation. These prove the steering lands on the LLM-down path. */
+  it("steers the HR fallback toward senior-weighted dimensions for a senior candidate", () => {
+    const qs = buildStaticFallback({
+      type: "hr-round",
+      focus: "hr",
+      difficulty: "standard",
+      roleFamily: "swe",
+      experienceLevel: "senior",
+      count: 3,
+    });
+    const body = qs.filter((q) => q.type === "question");
+    const dims = new Set(body.map((q) => (q.scoreNote || "").replace(/^HR dimension:\s*/, "").replace(/\.$/, "")));
+    // At least one of the senior-priority dimensions must appear in a short draw.
+    expect(["compensation", "logistics", "compliance"].some((d) => dims.has(d))).toBe(true);
+  });
+
+  it("steers the HR fallback toward self-awareness/motivation for a fresher", () => {
+    const qs = buildStaticFallback({
+      type: "hr-round",
+      focus: "hr",
+      difficulty: "standard",
+      roleFamily: "swe",
+      experienceLevel: "fresher",
+      count: 3,
+    });
+    const body = qs.filter((q) => q.type === "question");
+    const dims = new Set(body.map((q) => (q.scoreNote || "").replace(/^HR dimension:\s*/, "").replace(/\.$/, "")));
+    expect(["self-awareness", "motivation", "career-goals"].some((d) => dims.has(d))).toBe(true);
+  });
+
   it("also serves HR questions when focus is 'hr' regardless of type", () => {
     const qs = buildStaticFallback({
       type: "behavioral",
@@ -374,6 +408,38 @@ describe("buildStaticFallback", () => {
     const body = qs.filter((q) => q.type === "question");
     expect(body.length).toBeGreaterThan(0);
     expect(validateQuestionShape(qs as unknown[])).toBe(true);
+  });
+});
+
+describe("hrDimensionsForSeniority (HR sampler rubric steering)", () => {
+  it("prioritises self-awareness/motivation/growth for freshers", () => {
+    expect(hrDimensionsForSeniority("fresher")).toEqual([
+      "self-awareness",
+      "motivation",
+      "career-goals",
+    ]);
+  });
+
+  it("prioritises comp/logistics/compliance for seniors", () => {
+    expect(hrDimensionsForSeniority("senior")).toEqual([
+      "compensation",
+      "logistics",
+      "compliance",
+    ]);
+  });
+
+  it("prioritises mission-fit + commitment + comp for executives", () => {
+    expect(hrDimensionsForSeniority("director")).toEqual([
+      "motivation",
+      "compensation",
+      "logistics",
+    ]);
+  });
+
+  it("is a neutral no-op for mid-level (unknown / empty)", () => {
+    expect(hrDimensionsForSeniority("mid")).toEqual([]);
+    expect(hrDimensionsForSeniority(undefined)).toEqual([]);
+    expect(hrDimensionsForSeniority("")).toEqual([]);
   });
 });
 

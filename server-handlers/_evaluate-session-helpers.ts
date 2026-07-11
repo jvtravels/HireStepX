@@ -9,6 +9,8 @@ import {
 } from "../data/focus-signature-metrics";
 import { detectStarPresence } from "../src/_star-detection";
 import type { HrCompanyNorms } from "../data/hr-company-norms";
+import type { HrSectorOverlay } from "./_hr-round-overlays";
+import { extractComponentBreakdown } from "./_component-breakdown";
 
 export type { FocusMetric } from "../data/focus-signature-metrics";
 
@@ -175,6 +177,38 @@ export const NEGOTIATION_SKILL_AXES: readonly string[] = [
   "Tactical composure",
   "Walk-away discipline",
 ];
+
+/* Delivery/coaching metrics the report legitimately tracks longitudinally
+   (see the crossSessionInsights prompt examples in evaluate-session.ts:
+   "pace", "fillers", "quantification", …). These are NOT skill axes but ARE
+   valid values for a CrossSessionInsight.metric, so the unknown-skill guard
+   below must not reject them. */
+const RECOGNIZED_DELIVERY_METRICS: readonly string[] = [
+  "pace",
+  "fillers",
+  "filler",
+  "hedging",
+  "quantification",
+  "energy",
+  "silence",
+  "latency",
+  "confidence",
+  "structure",
+  "overall",
+];
+
+/* Every skill name the report can legitimately assign, canonicalized, drawn
+   from the single-source skill-axis constants above plus the delivery metrics.
+   Used by normalizeCrossSessionInsights to drop an insight whose `metric`
+   names a "skill" that isn't in any of our taxonomies (a hallucinated axis). */
+const RECOGNIZED_INSIGHT_METRICS: ReadonlySet<string> = new Set(
+  [
+    ...Object.values(ROLE_SKILLS).flat(),
+    ...HR_ROUND_SKILL_AXES,
+    ...NEGOTIATION_SKILL_AXES,
+    ...RECOGNIZED_DELIVERY_METRICS,
+  ].map(canonicalizeAxisName),
+);
 
 /* Single source of truth for the report's skill axes. Focus type wins over
    role family: an HR round or a salary negotiation is graded on what the
@@ -378,7 +412,7 @@ export function resolveCompanyProfile(
 export function resolveCalibrationLabel(
   targetCompany: string | null | undefined,
   profile: CompanyProfile | null,
-  hrSector: "services-tier1" | "product-unicorn" | "bfsi" | "none" = "none",
+  hrSector: HrSectorOverlay = "none",
 ): { companyLabel: string; companyNote: string } {
   if (profile) return { companyLabel: profile.label, companyNote: profile.note };
   const named = (targetCompany ?? "").trim();
@@ -392,6 +426,9 @@ export function resolveCalibrationLabel(
     "services-tier1": "Tier-1 IT services calibration — process discipline, documentation, and notice-period rigor weighted up.",
     "bfsi": "BFSI calibration — compliance readiness, stability, and background-verification rigor weighted up.",
     "product-unicorn": "Product-unicorn calibration — compensation transparency and switch-rationale clarity weighted up.",
+    "gcc": "MNC captive / GCC calibration — parent-stock RSU literacy, global-standard background verification, and benefits fluency weighted up.",
+    "consulting": "Consulting calibration — 'why this firm' specificity, up-or-out switch rationale, and travel/utilisation commitment weighted up.",
+    "psu": "Government / PSU calibration — compliance and document readiness weighted up; compensation treated as fixed pay-scale, not negotiable.",
   };
   const companyNote =
     hrSector !== "none"
@@ -854,9 +891,23 @@ export function normalizeResumeGrounding(raw: unknown): ResumeGroundingScore | n
   return { score, rationale };
 }
 
+/* Max believable session-over-session skill delta. The LLM occasionally
+   hallucinates an implausible swing (+80 in one session) that would render as
+   a wildly misleading trend arrow; a real skill moves single digits between
+   two mock interviews. Clamp both directions at this single source. */
+const MAX_INSIGHT_DELTA = 30;
+
 /**
  * Cross-session insights are gated: empty array if no prior reports were
  * provided to the LLM. Defense-in-depth against fabricated history.
+ *
+ * Two additional grounding guards (I-9B):
+ *  - each `delta` is clamped to ±MAX_INSIGHT_DELTA so a hallucinated +80 swing
+ *    can't render as a real trend;
+ *  - an insight whose `metric` names a "skill" that isn't in any of the report's
+ *    taxonomies (ROLE_SKILLS / HR / negotiation axes) or the known delivery
+ *    metrics is dropped — the LLM invented an axis we never scored. Insights
+ *    with no `metric` (prose-only callouts) always pass.
  */
 export function normalizeCrossSessionInsights(
   raw: unknown,
@@ -873,12 +924,20 @@ export function normalizeCrossSessionInsights(
         typeof i.text === "string" &&
         i.text.trim().length > 0,
     )
+    .filter((i) => {
+      // Drop insights that name an unrecognized skill axis; keep prose-only
+      // (no metric) and any recognized skill/delivery metric.
+      if (typeof i.metric !== "string" || i.metric.trim().length === 0) return true;
+      return RECOGNIZED_INSIGHT_METRICS.has(canonicalizeAxisName(i.metric));
+    })
     .map((i) => ({
       kind: i.kind,
       text: i.text.slice(0, 220),
       metric: typeof i.metric === "string" ? i.metric.slice(0, 40) : undefined,
       delta:
-        typeof i.delta === "number" && isFinite(i.delta) ? Math.round(i.delta * 10) / 10 : undefined,
+        typeof i.delta === "number" && isFinite(i.delta)
+          ? Math.round(Math.max(-MAX_INSIGHT_DELTA, Math.min(MAX_INSIGHT_DELTA, i.delta)) * 10) / 10
+          : undefined,
     }))
     .slice(0, 4);
 }
@@ -1041,4 +1100,194 @@ export function normalizeHrReport(
     bgvGaps,
     companyNorms: companyNorms ?? null,
   };
+}
+
+/* ─── Salary-negotiation prose grounding (I-6 / I-9A / I-12) ─────────────
+   The eval prompt gets NO structured offer facts for a salary negotiation, so
+   the LLM invents compensation structure ("50% variable", base/bonus splits,
+   band limits) the conversation never contained, and credits tactics
+   ("used market-data anchoring", "invoked a competing offer") the candidate
+   never used. The helpers below feed the prompt ONLY facts/tactics that
+   actually appear in the transcript — deterministic, zero fabrication. */
+
+/** A recognized negotiation tactic the eval may assess, plus the detector that
+ *  decides whether the CANDIDATE actually used it (matched over their turns
+ *  only, so the interviewer naming a lever doesn't credit the candidate). */
+interface NegotiationTactic {
+  key: string;
+  /** Human label surfaced to the eval prompt. */
+  label: string;
+  re: RegExp;
+}
+
+/* Tactic detectors run over the candidate's own words. Kept deliberately
+   conservative — a false "not observed" is safer than a false "observed",
+   because the whole point is to stop the eval crediting unused tactics. */
+const NEGOTIATION_TACTICS: readonly NegotiationTactic[] = [
+  {
+    key: "anchoring",
+    label: "Anchoring (named a concrete target number)",
+    re: /\b(?:target(?:ing)?|expecting|looking for|aiming for|i(?:'m| am)? (?:looking|hoping) (?:for|at)|ask(?:ing)? for|i want|i(?:'d| would) (?:want|need)|my (?:expectation|ask|number))\b[^.!?\n]{0,30}?₹?\s*\d/i,
+  },
+  {
+    key: "competing-offer",
+    label: "Competing offer / BATNA (cited another offer or outside option)",
+    re: /\b(?:competing offer|another offer|other offer|counter[- ]?offer|i have an offer|i(?:'ve| have) been offered|walk away|best alternative|batna|current employer (?:is )?(?:matching|countering)|explor(?:e|ing) other)\b/i,
+  },
+  {
+    key: "market-data",
+    label: "Market-data anchoring (cited market/benchmark/peer comp data)",
+    re: /\b(?:market rate|market data|market standard|industry (?:standard|benchmark|average)|benchmark|glassdoor|levels\.fyi|ambitionbox|peers?(?:'| are)? (?:making|getting|earning)|going rate|median (?:comp|salary|pay))\b/i,
+  },
+  {
+    key: "flinch",
+    label: "Flinch (visibly pushed back on the first number)",
+    re: /\b(?:that(?:'s| is) (?:a bit )?(?:low|below|less than)|lower than (?:i|my)|hmm,? that|expected (?:a bit )?more|hoping for (?:a bit )?more|that doesn(?:'t| not) (?:quite )?work|a little short)\b/i,
+  },
+  {
+    key: "deadline",
+    label: "Deadline / urgency (referenced a decision timeline)",
+    re: /\b(?:deadline|by (?:end of |the )?(?:this |next )?week|need to (?:decide|know) by|exploding offer|time[- ]?sensitive|another (?:process|company) (?:is )?(?:moving|waiting)|when do you need)\b/i,
+  },
+  {
+    key: "bundling",
+    label: "Bundling / trade-offs (traded across comp components)",
+    re: /\b(?:esop|equity|rsu|stock|joining bonus|sign[- ]?on|signing bonus|in lieu of|instead of|variable|relocation|wfh|remote|notice[- ]?period buyout|if (?:cash|base) (?:is )?(?:capped|fixed)|trade (?:off|across))\b/i,
+  },
+];
+
+/**
+ * Detect which recognized negotiation tactics the CANDIDATE actually used,
+ * scanning their turns only. Deterministic and grounded — the eval prompt is
+ * told to assess ONLY the returned tactics, so it can't credit anchoring or a
+ * competing offer that never happened. Returns the human labels, in the fixed
+ * NEGOTIATION_TACTICS order, deduped.
+ */
+export function extractTacticsFromTranscript(
+  transcript: ReadonlyArray<{ role: string; text?: string | null }>,
+): string[] {
+  const candidateCorpus = transcript
+    .filter((t) => t.role === "candidate" && typeof t.text === "string" && t.text.trim().length > 0)
+    .map((t) => t.text as string)
+    .join("\n");
+  if (!candidateCorpus.trim()) return [];
+  const out: string[] = [];
+  for (const tactic of NEGOTIATION_TACTICS) {
+    if (tactic.re.test(candidateCorpus)) out.push(tactic.label);
+  }
+  return out;
+}
+
+/**
+ * Build the salary-negotiation offer-facts + observed-tactics context block for
+ * the eval prompt (I-6 + I-9A). Every figure is extracted deterministically
+ * from the transcript via extractComponentBreakdown — we surface ONLY what was
+ * actually stated (a base, a variable, a percent split, an equity figure) and
+ * emit NO placeholder for anything absent. The trailing grounding RULE tells the
+ * model it may not invent comp structure or credit unlisted tactics.
+ *
+ * Returns "" for a non-negotiation session or an empty transcript so the caller
+ * appends nothing. The block is DYNAMIC (per-transcript) and must be placed
+ * AFTER the static rules in the prompt to keep Groq's prefix cache intact.
+ */
+export function buildNegotiationOfferFactsBlock(
+  transcript: ReadonlyArray<{ role: string; text?: string | null }>,
+): string {
+  const fullCorpus = transcript
+    .filter((t) => typeof t.text === "string" && (t.text as string).trim().length > 0)
+    .map((t) => t.text as string)
+    .join("\n");
+  if (!fullCorpus.trim()) return "";
+
+  // Comp-structure facts the conversation actually contained. Run over the full
+  // corpus (interviewer offer + candidate replies) so a variable/base disclosed
+  // by either side is captured; only non-null components are surfaced.
+  const comp = extractComponentBreakdown(fullCorpus);
+  const facts: string[] = [];
+  if (typeof comp.base === "number") facts.push(`Base / fixed: ${comp.base} LPA`);
+  if (typeof comp.variable === "number") facts.push(`Variable / bonus: ${comp.variable} LPA`);
+  if (typeof comp.equity === "number") facts.push(`Equity / ESOP (annualized): ${comp.equity} LPA`);
+  if (typeof comp.basePercent === "number" && typeof comp.variablePercent === "number") {
+    facts.push(`Fixed/variable split: ${comp.basePercent}% fixed / ${comp.variablePercent}% variable`);
+  }
+
+  const observedTactics = extractTacticsFromTranscript(transcript);
+
+  const lines: string[] = ["\n\nNEGOTIATION OFFER-FACTS (extracted from the transcript — the ONLY offer/comp facts you may cite):"];
+  lines.push(
+    facts.length > 0
+      ? facts.map((f) => `- ${f}`).join("\n")
+      : "- No structured compensation breakdown was stated in the transcript.",
+  );
+  lines.push(
+    observedTactics.length > 0
+      ? `OBSERVED NEGOTIATION TACTICS (the candidate actually used these — assess ONLY these):\n${observedTactics.map((t) => `- ${t}`).join("\n")}`
+      : "OBSERVED NEGOTIATION TACTICS: none detected in the candidate's turns — do NOT credit any tactic.",
+  );
+  lines.push(
+    "CRITICAL grounding RULE (salary-negotiation): Only cite offer/compensation facts present in the transcript or the offer-facts block above; do NOT invent comp structure (variable %, base/bonus splits, band limits) that is not given. Only assess tactics in the observed list above; do not credit tactics not listed.",
+  );
+  return lines.join("\n");
+}
+
+/* ─── Verdict coherence (I-12) ───────────────────────────────────────────
+   The one-line verdict is free LLM prose and can contradict the numeric
+   scores — claiming "strong performance" on a 48, or naming a "clear weakness"
+   when every skill scored well. validateVerdictCoherence checks the verdict
+   against the score/skills and, when they disagree, substitutes a deterministic
+   score-derived sentence so the headline never fights the numbers. */
+
+const POSITIVE_VERDICT_RE =
+  /\b(?:strong|excellent|impressive|outstanding|great job|well done|solid (?:performance|answer|showing)|hire|nailed|stood out|compelling|convincing|top[- ]?tier|standout)\b/i;
+const NEGATIVE_VERDICT_RE =
+  /\b(?:weak|poor|struggl|fell short|lacked|lacking|no[- ]?hire|not ready|failed to|major (?:gap|concern|weakness)|significant (?:gap|concern|weakness)|underwhelm|disappoint|concerning)\b/i;
+
+/** A verdict is only "coherent" as positive when the score supports it. */
+const POSITIVE_VERDICT_MIN_SCORE = 70;
+/** A negative verdict needs at least this many genuinely-low skills to hold. */
+const NEGATIVE_VERDICT_MIN_WEAK_SKILLS = 2;
+const WEAK_SKILL_THRESHOLD = 50;
+
+/**
+ * Reconcile the verdict sentence with the numeric report (I-12). When the
+ * verdict's sentiment contradicts the scores — a positive verdict under a
+ * sub-70 overall, or a negative verdict with fewer than two sub-50 skills —
+ * replace it with a deterministic, score-derived sentence. Coherent verdicts
+ * (and empty verdicts, which the caller handles separately) pass through
+ * unchanged. Pure — no LLM.
+ */
+export function validateVerdictCoherence(
+  verdict: string,
+  overallScore: number,
+  skills: ReadonlyArray<{ name: string; score: number }>,
+): string {
+  const v = typeof verdict === "string" ? verdict.trim() : "";
+  if (!v) return v;
+
+  const weakSkills = skills.filter(
+    (s) => typeof s.score === "number" && isFinite(s.score) && s.score < WEAK_SKILL_THRESHOLD,
+  );
+  const claimsPositive = POSITIVE_VERDICT_RE.test(v);
+  const claimsNegative = NEGATIVE_VERDICT_RE.test(v);
+
+  const positiveIncoherent = claimsPositive && overallScore < POSITIVE_VERDICT_MIN_SCORE;
+  const negativeIncoherent =
+    claimsNegative && weakSkills.length < NEGATIVE_VERDICT_MIN_WEAK_SKILLS && overallScore >= POSITIVE_VERDICT_MIN_SCORE;
+
+  if (!positiveIncoherent && !negativeIncoherent) return v;
+
+  // Deterministic fallback keyed on the actual score, so the headline can never
+  // fight the numbers again.
+  const weakestName = [...skills].sort((a, b) => a.score - b.score)[0]?.name;
+  if (overallScore >= POSITIVE_VERDICT_MIN_SCORE) {
+    return `Solid overall showing at ${overallScore}/100 — a few axes still have room, but no single weakness stands out.`;
+  }
+  if (overallScore >= WEAK_SKILL_THRESHOLD) {
+    return weakestName
+      ? `A mixed result at ${overallScore}/100 — ${weakestName} is the clearest area to lift next.`
+      : `A mixed result at ${overallScore}/100 with room to lift across the board.`;
+  }
+  return weakestName
+    ? `Below the bar at ${overallScore}/100 — ${weakestName} is the weakest axis and the place to start.`
+    : `Below the bar at ${overallScore}/100 — several axes need work before this reads as a hire.`;
 }

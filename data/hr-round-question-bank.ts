@@ -32,6 +32,7 @@ export const HR_DIMENSIONS = [
   "adaptability",
   "integrity",
   "logistics",
+  "compliance",
   "company-knowledge",
 ] as const;
 
@@ -101,6 +102,11 @@ export const HR_QUESTIONS: ReadonlyArray<HrQuestion> = [
   { id: "log-02", text: "Are you comfortable with this role's location and work model — on-site, hybrid, or remote?", dimension: "logistics", frequencyPct: 60 },
   { id: "log-03", text: "Do you have any other offers or processes in progress right now?", dimension: "logistics", frequencyPct: 44 },
 
+  // ── Compliance / BGV (the 13% "Compliance readiness" rubric dimension) ──
+  { id: "cmp-01", text: "Our offer is subject to background verification. Are you comfortable sharing your last 3 months' payslips, Form 16, and relieving letters from previous employers?", dimension: "compliance", frequencyPct: 76 },
+  { id: "cmp-02", text: "Do you have any overlapping employment, consulting, or freelance engagements we should know about before the BGV runs? Your UAN will show concurrent PF contributions.", dimension: "compliance", frequencyPct: 58 },
+  { id: "cmp-03", text: "Are there any gaps, short stints, or prior background-check issues we should discuss up front so nothing surprises us later?", dimension: "compliance", frequencyPct: 50 },
+
   // ── Company knowledge ──
   { id: "cok-01", text: "What do you know about what we do, and where do you think you'd add value?", dimension: "company-knowledge", frequencyPct: 65 },
   { id: "cok-02", text: "Why should we hire you over other candidates for this role?", dimension: "company-knowledge", frequencyPct: 74 },
@@ -137,6 +143,14 @@ export interface SampleHrOpts {
    *  default: the opener is rendered as the intro beat, so sampling it
    *  into the body would ask for the candidate's background twice. */
   includeOpener?: boolean;
+  /** Dimensions the caller wants surfaced FIRST — the sampler fills these
+   *  before the neutral round-robin. Lets the caller reflect the resolved
+   *  HR rubric (e.g. a senior candidate's higher comp/commitment weight,
+   *  a fresher's self-awareness/motivation weight) so the draw isn't blind
+   *  to what this candidate's round actually grades hardest. A soft boost,
+   *  not a filter: non-prioritised dimensions still fill the remaining
+   *  slots. Empty / omitted → the prior neutral behaviour. */
+  prioritiseDimensions?: ReadonlyArray<HrDimension>;
 }
 
 /** Pick `count` HR *body* questions, spreading coverage across dimensions
@@ -161,9 +175,22 @@ export function sampleHrQuestions(opts: SampleHrOpts): HrQuestion[] {
       .map((x) => x.q);
   }
 
-  // Pass 1: one question per dimension until we hit the target.
+  // Pass 1: one question per dimension until we hit the target. Prioritised
+  // dimensions (the resolved rubric's heaviest) fill first so a short draw
+  // still surfaces what this candidate's round grades hardest; the neutral
+  // round-robin then covers the rest.
   const out: HrQuestion[] = [];
   const usedDimensions = new Set<HrDimension>();
+  const prioritised = new Set(opts.prioritiseDimensions || []);
+  if (prioritised.size > 0) {
+    for (const q of pool) {
+      if (out.length >= requested) break;
+      if (!prioritised.has(q.dimension)) continue;
+      if (usedDimensions.has(q.dimension)) continue;
+      usedDimensions.add(q.dimension);
+      out.push(q);
+    }
+  }
   for (const q of pool) {
     if (out.length >= requested) break;
     if (usedDimensions.has(q.dimension)) continue;

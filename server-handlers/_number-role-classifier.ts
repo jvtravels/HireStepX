@@ -52,7 +52,7 @@
  * Pure. No clock, no IO.
  */
 
-import { substituteEnglishNumbers } from "./_fact-parser";
+import { substituteEnglishNumbers, substituteVagueSalaryDecades } from "./_fact-parser";
 
 /* ─── Type surface ─────────────────────────────────────────────────── */
 
@@ -146,10 +146,7 @@ const CURRENT_CUES: CueTable = {
      * noun-phrase role tokens. */
     /\bi.?m\s+an?\s+(?:[a-z0-9]+\s+){0,3}at\s+\w/i,
     /\b(?:earning|drawing|making|getting|take\s+home)\b/i,
-    /\btold\s+you(?:\s+(?:already|multiple\s+times|before|many\s+times))?\b/i,
-    /\b(?:as|like)\s+i\s+(?:said|mentioned|stated|told\s+you)\b/i,
     /\bpackage\s+progression\b/i,
-    /\b(?:said|mentioned)\s+(?:already\s+)?/i,
     /* PARSER-1 (2026-06-08): "Total CTC is N LPA" is a very common
      * candidate phrasing in long sessions (EVAL-6 long-horizon-
      * trajectory T2). The pre-existing `my ... ctc` cue requires a
@@ -201,6 +198,31 @@ const CURRENT_CUES: CueTable = {
      * LPA total." binds to target (target left-cue wins outright). */
   ],
 };
+
+/* Restatement / repetition meta-cues (#40, live-staging 2026-07-08).
+ *
+ * "I already told you", "as I said/mentioned", "I said/mentioned already"
+ * signal that the candidate is REPEATING a previously-stated figure — but
+ * they do NOT say WHICH figure (current pay vs target ask). Historically
+ * they lived inside CURRENT_CUES.left because, in isolation ("I told you,
+ * 24 LPA CTC overall"), the repeated figure is almost always the current
+ * CTC and no other cue fires. The failure mode: when the SAME span also
+ * carries an explicit target declaration — "I already told you: 55 lakhs
+ * is my target" — the restatement cue tied the target cue on score and won
+ * the current>target tiebreak, binding 55 to CURRENT. That overwrote the
+ * real current CTC (42) and fired a phantom same-axis contradiction the
+ * candidate could not clear (restating either number just flipped it).
+ *
+ * Fix: treat these as the WEAKEST tier. They reinforce `current` ONLY when
+ * no explicit target/competing cue bound the span — i.e. when they are the
+ * sole signal. An explicit "is my target" / "offer of" always wins. This
+ * preserves the isolated "I told you, 24 LPA CTC overall" bind (no target
+ * cue → restatement still scores current) while fixing the collision. */
+const RESTATEMENT_CUES: RegExp[] = [
+  /\btold\s+you(?:\s+(?:already|multiple\s+times|before|many\s+times))?\b/i,
+  /\b(?:as|like)\s+i\s+(?:said|mentioned|stated|told\s+you)\b/i,
+  /\b(?:said|mentioned)\s+(?:already\s+)?/i,
+];
 
 const TARGET_CUES: CueTable = {
   left: [
@@ -317,8 +339,15 @@ const TARGET_CUES: CueTable = {
     /\bthat.?s\s+my\s+(?:number|ask|figure|final)\b/i,
     /* "42 is my final figure / my figure / my expectation" — Indian-HR
      * candidates state the target as a "figure" or "expectation" just as
-     * often as "number/ask". Live-staging 2026-06-19: these bound null. */
-    /\bmy\s+(?:final\s+)?(?:number|ask|figure|expectation)\b/i,
+     * often as "number/ask". Live-staging 2026-06-19: these bound null.
+     * #40 (live-staging 2026-07-08): `target` added to the alternation.
+     * "55 lakhs is my target" is the single most literal way to state an
+     * ask, yet "my target" was absent here — target scored 0, and a
+     * co-occurring restatement cue ("I already told you: 55 … is my
+     * target") bound the 55 to CURRENT, overwriting the real current CTC
+     * and firing a phantom same-axis contradiction the candidate could
+     * never clear. See RESTATEMENT_CUES below for the sibling half. */
+    /\bmy\s+(?:final\s+)?(?:number|ask|figure|expectation|target)\b/i,
     /\bmy\s+bottom\s+line\b/i,
     /\bnon[-\s]?negotiable\b/i,
     /\bno\s+less\b/i,
@@ -766,10 +795,22 @@ function scoreRolesForSpan(
     for (const re of cues.right) if (re.test(rightWindow)) n++;
     return n;
   };
+  const currentScore = scoreOne(CURRENT_CUES);
+  const targetScore = scoreOne(TARGET_CUES);
+  const competingScore = scoreOne(COMPETING_CUES);
+  /* #40 — restatement meta-cues are the weakest tier: they reinforce
+   * `current` only when no explicit target/competing cue bound this span
+   * (see RESTATEMENT_CUES). Left-window only, mirroring how they used to
+   * sit in CURRENT_CUES.left. */
+  const restatementFired = RESTATEMENT_CUES.some((re) => re.test(leftWindow));
+  const currentWithRestatement =
+    restatementFired && targetScore === 0 && competingScore === 0
+      ? currentScore + 1
+      : currentScore;
   return {
-    current: scoreOne(CURRENT_CUES),
-    target: scoreOne(TARGET_CUES),
-    competing: scoreOne(COMPETING_CUES),
+    current: currentWithRestatement,
+    target: targetScore,
+    competing: competingScore,
   };
 }
 
@@ -1014,6 +1055,55 @@ function isComponentBonusScopedSpan(text: string, span: SalarySpan): boolean {
   return COMPONENT_BONUS_RIGHT_ANCHORED.test(rightWindow);
 }
 
+/* Relative-increase scope (§9d / PRI-69b, 2026-07-08). A number whose
+ * IMMEDIATE right context is an increase marker — "2L more", "2 higher",
+ * "3 lakh extra", "5 on top" — is a RELATIVE delta the candidate wants
+ * ADDED to the standing offer, NOT an absolute target/counter. Binding it as
+ * an absolute total ("2L more" → target ₹2L) let totalScopedCounter read the
+ * ₹2L delta as a ₹2L TOTAL counter ≤ offer, and the planner's
+ * auto-accept-counter gate false-accepted at the un-bumped offer — bypassing
+ * the acceptance classifier's DEMAND_FOR_MORE veto entirely. The kernel has
+ * no anchor in this pure classifier to resolve the delta, so the correct
+ * minimum is to bind it to NO role; the utterance then routes through the
+ * DEMAND_FOR_MORE veto to a counter. Right-anchored + tight so a non-adjacent
+ * "more" is untouched: "I want 50, a bit more than the 45" still binds 50
+ * (the "more" is not adjacent to 50), and "50 or higher" still binds 50 (the
+ * "or" breaks adjacency). The unit is optional because span.end already
+ * absorbs it for LPA spans but not for bare-integer spans ("2 more"). */
+const RELATIVE_INCREASE_RIGHT_ANCHORED =
+  /^\s*(?:lpa|lakhs?|lacs?|lac|l|k|cr|crores?)?\s*(?:more|higher|extra|additional|on\s+top)\b/i;
+function isRelativeIncreaseSpan(text: string, span: SalarySpan): boolean {
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 14));
+  return RELATIVE_INCREASE_RIGHT_ANCHORED.test(rightWindow);
+}
+
+/* Beat-by / over-reference relative delta (§11b, 2026-07-08). The LEFT-anchored
+ * sibling of isRelativeIncreaseSpan. A number governed by a comparison-beat verb
+ * over a reference ("beat my current by 5", "exceed it by 3", "top that by 2") —
+ * or trailing an over-reference phrase ("5 over my current", "3 above the offer")
+ * — is a delta the candidate wants applied to their current pay / the offer, NOT
+ * a restatement of that reference. Before this guard, "beat my current by 5"
+ * bound 5 as currentCtc: with the candidate's real current (e.g. 38) already on
+ * record, that drifted >10% and false-fired the memory contradiction-callout,
+ * derailing a perfectly reasonable in-band ask (current + 5 = 43) into a
+ * "which figure is authoritative?" reconciliation. This pure classifier has no
+ * anchor to resolve the delta to an absolute, so — mirroring §9d — the correct
+ * minimum is to bind it to NO role; the utterance then routes through the normal
+ * counter path. (Deriving the absolute target = reference + delta is a separate
+ * kernel-side enhancement; it needs the stored reference this parser lacks.)
+ * Verb-gated to comparison-beats (beat/exceed/top/surpass/better-than/…) so a
+ * bare temporal "by 5 pm" or an additive "bump it by 5" stays untouched. */
+const BEAT_BY_LEFT_ANCHORED =
+  /\b(?:beat|exceed|top|surpass|improve\s+(?:on|upon)|better\s+than|go\s+(?:above|over)|get\s+(?:me\s+)?(?:above|over))\b[^.!?;]{0,24}?\bby\s+$/i;
+const OVER_REFERENCE_RIGHT_ANCHORED =
+  /^\s*(?:lpa|lakhs?|lacs?|lac|l|k)?\s*(?:over|above|on\s+top\s+of|more\s+than)\s+(?:my\s+|the\s+|their\s+)?(?:current|ctc|comp\w*|package|base|offer|salary)\b/i;
+function isBeatByReferenceSpan(text: string, span: SalarySpan): boolean {
+  const leftWindow = text.slice(0, span.start);
+  if (BEAT_BY_LEFT_ANCHORED.test(leftWindow)) return true;
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 24));
+  return OVER_REFERENCE_RIGHT_ANCHORED.test(rightWindow);
+}
+
 /* ─── Aggregator ───────────────────────────────────────────────────── */
 
 /** Main entry point. Returns the role-bound numbers for the utterance.
@@ -1041,7 +1131,7 @@ export function classifyNumberRoles(
    * Without this, "my current CTC is thirty six LPA" silently returns
    * { currentCtc: null }, the kernel sees no disclosure, and the engine
    * falls through — exact same shape as the LPE bug f5289f3 fixed. */
-  const text = substituteEnglishNumbers(textIn);
+  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(textIn));
   const spans = findSalarySpans(text, ctx);
   if (spans.length === 0) {
     return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };
@@ -1081,6 +1171,14 @@ export function classifyNumberRoles(
      * below 28") with no role cue binds to NO role — it's captured as
      * candidateFloor by the kernel, distinct from current AND target. */
     if (cueMax === 0 && isFloorScopedSpan(text, span)) continue;
+    /* §9d/PRI-69b: a number trailed by an increase marker ("2L more") is a
+     * RELATIVE delta, not an absolute target/counter — bind to no role so it
+     * can't false-accept via the auto-accept-counter gate. */
+    if (isRelativeIncreaseSpan(text, span)) continue;
+    /* §11b: "beat my current by 5" / "5 over my current" is a delta on a
+     * reference, not a restatement of it — bind to no role so it can't clobber
+     * currentCtc and false-fire the memory contradiction-callout. */
+    if (isBeatByReferenceSpan(text, span)) continue;
     /* Equity keyword directly preceding the number overrides even a scored
      * current cue ("I get stock worth 5 LPA"). */
     if (isEquityLeftAdjacentSpan(text, span)) continue;

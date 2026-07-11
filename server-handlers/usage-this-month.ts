@@ -27,6 +27,7 @@ import {
   capsForTier,
   countFromContentRange,
   monthWindow,
+  packWindow,
 } from "./_usage-this-month-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -64,20 +65,33 @@ async function countResumeParses(userId: string, periodStart: string, periodEnd:
   return countFromContentRange(res.headers.get("content-range"));
 }
 
-async function readTier(userId: string): Promise<string> {
-  const q = `profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_end`;
+interface ProfileWindow {
+  tier: string;
+  subscriptionStart: string | null;
+  subscriptionEnd: string | null;
+}
+
+async function readProfile(userId: string): Promise<ProfileWindow> {
+  const none: ProfileWindow = { tier: "free", subscriptionStart: null, subscriptionEnd: null };
+  const q = `profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_tier,subscription_start,subscription_end`;
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${q}`, {
     headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
   });
-  if (!res.ok) return "free";
-  const rows = (await res.json()) as Array<{ subscription_tier?: string; subscription_end?: string | null }>;
+  if (!res.ok) return none;
+  const rows = (await res.json()) as Array<{
+    subscription_tier?: string; subscription_start?: string | null; subscription_end?: string | null;
+  }>;
   const row = rows?.[0];
-  if (!row) return "free";
+  if (!row) return none;
   // Expired paid tiers fall back to free — same rule as checkSessionLimit.
   if (row.subscription_tier && row.subscription_tier !== "free" && row.subscription_end) {
-    if (new Date(row.subscription_end) < new Date()) return "free";
+    if (new Date(row.subscription_end) < new Date()) return none;
   }
-  return row.subscription_tier || "free";
+  return {
+    tier: row.subscription_tier || "free",
+    subscriptionStart: row.subscription_start ?? null,
+    subscriptionEnd: row.subscription_end ?? null,
+  };
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -122,8 +136,15 @@ export default async function handler(req: Request): Promise<Response> {
     } catch { /* malformed cache entry — fall through to live path */ }
   }
 
-  const { periodStart, periodEnd } = monthWindow(new Date());
-  const tier = await readTier(auth.userId);
+  const now = new Date();
+  const profile = await readProfile(auth.userId);
+  const tier = profile.tier;
+  // Starter is a one-off Sprint Pack counted from the purchase date, not the
+  // calendar month — mirror the server gate so Settings, the sidebar, and the
+  // enforced limit all agree. Pro/free stay on the monthly window.
+  const { periodStart, periodEnd } = tier === "starter"
+    ? packWindow(profile.subscriptionStart, profile.subscriptionEnd, now)
+    : monthWindow(now);
   const caps = capsForTier(tier);
 
   // Fan out the two count queries in parallel; the auth + tier lookup

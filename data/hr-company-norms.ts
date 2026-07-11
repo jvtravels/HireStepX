@@ -15,7 +15,14 @@
  * scrutiny). Ranges are typical, not contractual — the copy says "typically".
  */
 
-export type HrNormSector = "services-tier1" | "product-unicorn" | "bfsi" | "none";
+export type HrNormSector =
+  | "services-tier1"
+  | "product-unicorn"
+  | "bfsi"
+  | "gcc"
+  | "consulting"
+  | "psu"
+  | "none";
 
 export interface HrCompanyNorms {
   sector: HrNormSector;
@@ -88,6 +95,60 @@ const BFSI: HrCompanyNorms = {
   dualEmploymentNote: "Regulatory conduct rules apply — conflicts of interest and outside directorships are checked. Disclose everything.",
 };
 
+const GCC: HrCompanyNorms = {
+  sector: "gcc",
+  sectorLabel: "MNC captive / GCC",
+  noticeNorm: "30–90 days",
+  buyoutNote: "Buyouts are often covered for in-demand roles — the parent's India entity has budget; ask.",
+  bgvDocs: [
+    "3 months' payslips",
+    "offer + relieving letters (every employer)",
+    "education degree + marksheets",
+    "PAN + Aadhaar",
+    "UAN / PF passbook",
+    "criminal / court-record check consent",
+  ],
+  bgvFirms: ["First Advantage", "HireRight", "AuthBridge"],
+  compNote: "Parent-stock RSUs are real, liquid equity — know your grant, vest schedule, and refresh cadence; ESPP too. Base bands are benchmarked and fairly firm.",
+  dualEmploymentNote: "Global code-of-conduct bars undisclosed dual employment — moonlighting and outside engagements must be declared and are often disallowed.",
+};
+
+const CONSULTING: HrCompanyNorms = {
+  sector: "consulting",
+  sectorLabel: "consulting / advisory",
+  noticeNorm: "60–90 days",
+  buyoutNote: "Buyouts are uncommon — plan to serve notice; client staffing drives start dates.",
+  bgvDocs: [
+    "3 months' payslips",
+    "relieving + experience letters",
+    "education marksheets + degree",
+    "PAN + Aadhaar",
+    "professional references (partner/manager level)",
+    "client-conflict / prior-engagement disclosure",
+  ],
+  bgvFirms: ["First Advantage", "AuthBridge", "in-house risk & compliance"],
+  compNote: "Comp is variable-heavy (bonus + profit share) on an up-or-out track — negotiate the bonus target and grade, not just base. Travel and utilisation expectations are part of the deal.",
+  dualEmploymentNote: "Client conflict-of-interest is scrutinised hard — any outside consulting, board seat, or investment that touches a client must be disclosed.",
+};
+
+const PSU: HrCompanyNorms = {
+  sector: "psu",
+  sectorLabel: "government / PSU",
+  noticeNorm: "relieving-based; joining tied to allotment / offer validity",
+  buyoutNote: "Buyouts don't apply — serve notice and produce a clean relieving letter; joining follows the allotment timeline.",
+  bgvDocs: [
+    "police / character verification",
+    "category certificate (SC/ST/OBC/EWS) if claimed",
+    "date-of-birth + education certificates (originals)",
+    "medical fitness certificate",
+    "no-objection certificate from current government employer (if applicable)",
+    "PAN + Aadhaar",
+  ],
+  bgvFirms: ["state police verification", "in-house vigilance / administration"],
+  compNote: "Pay is a fixed CPC pay-scale (basic + DA + HRA + perks) — effectively non-negotiable. Focus on grade/level, not a number.",
+  dualEmploymentNote: "Conduct rules bar any private employment, business, or unapproved outside work — disclosure and prior permission are mandatory.",
+};
+
 const NONE: HrCompanyNorms = {
   sector: "none",
   sectorLabel: "",
@@ -103,6 +164,9 @@ const NORMS_BY_SECTOR: Record<HrNormSector, HrCompanyNorms> = {
   "services-tier1": SERVICES_T1,
   "product-unicorn": PRODUCT_UNICORN,
   bfsi: BFSI,
+  gcc: GCC,
+  consulting: CONSULTING,
+  psu: PSU,
   none: NONE,
 };
 

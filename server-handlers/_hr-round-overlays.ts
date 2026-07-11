@@ -29,18 +29,43 @@
 import type { FocusRecipe } from "../data/focus-question-recipes";
 import { hrCompanyNorms, type HrCompanyNorms } from "../data/hr-company-norms";
 
-export type HrSectorOverlay = "services-tier1" | "product-unicorn" | "bfsi" | "none";
+export type HrSectorOverlay =
+  | "services-tier1"
+  | "product-unicorn"
+  | "bfsi"
+  | "gcc"
+  | "consulting"
+  | "psu"
+  | "none";
 export type HrSeniorityOverlay = "fresher" | "mid" | "senior" | "executive";
 
 const SERVICES_T1 = /tcs|tata consultancy|infosys|wipro|hcl|tech mahindra|cognizant|capgemini|accenture|ltimindtree|lti|mindtree|mphasis|hexaware|persistent/i;
 const PRODUCT_UNICORN = /razorpay|phonepe|paytm|swiggy|zomato|meesho|cred|groww|zerodha|nykaa|udaan|dream11|policybazaar|byju'?s|unacademy|upgrad|postman|freshworks|chargebee|zoho|flipkart|myntra|ola/i;
 const BFSI = /hdfc|icici|sbi|state bank|kotak|axis bank|bajaj (?:finserv|finance|allianz)|yes bank|indusind|standard chartered|hsbc|citi|deutsche|jp ?morgan|goldman|morgan stanley|barclays|aditya birla capital|tata aia|lic|max life|reliance (?:nippon|general)/i;
+/* MNC captive / Global Capability Centres — parent-stock RSU literacy,
+   global-standard BGV (criminal + education + prior-employment, sometimes
+   sanctions screening), strict code-of-conduct on dual employment. */
+const GCC = /walmart|google|alphabet|amazon|\baws\b|microsoft|\bidc\b|\bgcc\b|target corp|wells fargo|american express|\bamex\b|optum|unitedhealth|nvidia|\bintel\b|qualcomm|adobe|salesforce|sap labs|oracle|cisco|vmware|\bibm\b|\bdell\b|\bhp\b|\bhpe\b|shell|lowe'?s|tesco|mastercard|\bvisa inc|paypal|expedia|booking|uber|linkedin|meta|\bapple\b/i;
+/* Strategy + Big-4 consulting — up-or-out narrative, client-conflict
+   scrutiny, travel/utilisation expectations, variable-heavy comp.
+   (Accenture stays services-tier1 by design — its India footprint is
+   delivery-shaped, not partner-track consulting.) */
+const CONSULTING = /mckinsey|bcg|boston consulting|\bbain\b|deloitte|\bey\b|ernst (?:&|and) young|\bkpmg\b|\bpwc\b|pricewaterhouse|kearney|oliver wyman|\bzs\b|zs associates|roland berger|alvarez (?:&|and) marsal|grant thornton|\bbcg\b/i;
+/* Government / PSU / Maharatna-Navratna — fixed pay-scale (CPC), police
+   verification + category/character certificates, dual employment barred
+   by conduct rules, joining tied to allotment not a negotiated date. */
+const PSU = /\bongc\b|\bntpc\b|\bsail\b|\bgail\b|\bbhel\b|\bhal\b|\bisro\b|\bdrdo\b|coal india|\bnabard\b|\brbi\b|\bbsnl\b|\bnhpc\b|\bpowergrid\b|power grid|indian oil|\biocl\b|\bbpcl\b|\bhpcl\b|\bnmdc\b|\becil\b|\bnpcil\b|railway|\birctc\b|public sector|\bpsu\b|ministry of|govt of|government of|\bupsc\b|\bibps\b/i;
 
 export function resolveHrSectorOverlay(companyName: string | null | undefined): HrSectorOverlay {
   const c = (companyName || "").trim();
   if (!c) return "none";
+  // Order matters only where patterns could overlap. Consulting and PSU are
+  // checked before services/BFSI so a "Deloitte"/"RBI" match wins cleanly.
+  if (CONSULTING.test(c)) return "consulting";
+  if (PSU.test(c)) return "psu";
   if (SERVICES_T1.test(c)) return "services-tier1";
   if (BFSI.test(c)) return "bfsi";
+  if (GCC.test(c)) return "gcc";
   if (PRODUCT_UNICORN.test(c)) return "product-unicorn";
   return "none";
 }
@@ -90,6 +115,24 @@ const SECTOR_MULTIPLIERS: Record<Exclude<HrSectorOverlay, "none">, Record<string
     "Switch-rationale honesty": 1.3,  // vintage and tenure pattern matter
     "Motivation specificity": 1.2,    // why banking + role specificity
     "Comp transparency": 0.9,
+  },
+  "gcc": {
+    "Comp transparency": 1.4,         // parent-stock RSU literacy, liquid equity
+    "Compliance readiness": 1.3,      // global BGV: criminal + education + sanctions
+    "Benefits/policy literacy": 1.2,  // RSU vest, ESPP, global benefits
+    "Motivation specificity": 0.9,
+  },
+  "consulting": {
+    "Motivation specificity": 1.4,    // "why consulting / why this firm" is the gate
+    "Switch-rationale honesty": 1.3,  // up-or-out narrative, exit timing
+    "Commitment signal": 1.2,         // travel/utilisation buy-in, offer-shopping risk
+    "Comp transparency": 0.9,         // variable-heavy, bands well known
+  },
+  "psu": {
+    "Compliance readiness": 1.6,      // police verification, category/character certs, medical
+    "Comp transparency": 0.5,         // fixed CPC pay-scale — effectively non-negotiable
+    "Motivation specificity": 1.3,    // "why public sector" carries real weight
+    "Commitment signal": 1.2,         // long joining/allotment timelines, stability expected
   },
 };
 

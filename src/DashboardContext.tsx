@@ -264,10 +264,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // without an independent API round-trip. Writes on every change — including the
   // initial DB fetch AND the setCreditBalanceDirect call after a credit purchase —
   // so the session/new page always has the freshest value we know about.
+  //
+  // Gated on creditsLoaded: sessionStorage is a write-through cache of
+  // DB-CONFIRMED balances only, never transient pre-load render state. Without
+  // this gate the effect fires on first mount while creditBalance is still its
+  // initial 0 — clobbering a valid cached value to "0" before the seed effect's
+  // setState commits — so a cross-route read (or a fast remount) briefly sees 0
+  // and the sidebar flip-flops 0→real. Once creditsLoaded is true the value is
+  // always something the DB (or a purchase/realtime event) confirmed.
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !creditsLoaded) return;
     try { sessionStorage.setItem(`hsx_credit_${user.id}`, String(creditBalance)); } catch { /* private-browsing caps */ }
-  }, [creditBalance, user?.id]);
+  }, [creditBalance, creditsLoaded, user?.id]);
 
   // ── Supabase Realtime: live credit-balance sync ───────────────────────────
   // Subscribes to row-level changes on session_credits for this user so the
@@ -716,9 +724,34 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const isPro = effectiveTier === "pro";
   const sessionsUsed = practiceTimestamps.length;
   const sessionsRemaining = Math.max(0, FREE_SESSION_LIMIT - sessionsUsed);
+  // Starter is a "Sprint Pack": 5 sessions counted from the day the pack was
+  // bought (subscription_start), within a 30-day validity window — NOT a
+  // calendar week. This mirrors the server gate in _shared.ts
+  // checkSessionLimit, which counts sessions since subscription_start. The
+  // previous calendar-week anchor (Sunday 00:00) wrongly swept in free-tier
+  // practice sessions the user did earlier the same week, so a freshly
+  // purchased pack could show "5 of 5 used" before any paid session ran.
+  const EIGHT_DAYS_MS = 8 * 24 * 60 * 60 * 1000; // clamp slightly over 7-day pack
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const subStartMs = user?.subscriptionStart ? new Date(user.subscriptionStart).getTime() : NaN;
+  // Anchor on subscription_start when present; clamp to at most 8 days back
+  // (just over the 7-day pack — mirrors the server gate). If start is missing
+  // derive from subscription_end - 7d; last resort: rolling 7-day lookback.
+  const subEndMs = user?.subscriptionEnd ? new Date(user.subscriptionEnd).getTime() : NaN;
+  const derivedStartMs = Number.isFinite(subStartMs)
+    ? subStartMs
+    : Number.isFinite(subEndMs)
+      ? subEndMs - SEVEN_DAYS_MS
+      : Date.now() - SEVEN_DAYS_MS;
+  const packStartMs = Math.max(derivedStartMs, Date.now() - EIGHT_DAYS_MS);
   const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);
+  // For starter, count within the pack window; other tiers keep the calendar
+  // week (used only for informational display, not gating).
   const sessionsThisWeek = practiceTimestamps.filter((t) => {
-    try { return new Date(t).getTime() >= weekStart.getTime(); } catch { return false; }
+    try {
+      const ms = new Date(t).getTime();
+      return ms >= (isStarter ? packStartMs : weekStart.getTime());
+    } catch { return false; }
   }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
   // Pro plan: 40 sessions per calendar month. Track this so the sidebar

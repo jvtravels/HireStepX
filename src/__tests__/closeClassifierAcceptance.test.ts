@@ -277,4 +277,43 @@ describe("close-classifier acceptance guards (#124/#125/#126)", () => {
     });
     expect(finalState.highestOfferMade === 0 ? finalState.phase : "ok").not.toBe("accepted");
   });
+
+  /* #133 (2026-07-07, offline hostile accept/close sweep) — anaphoric deal-close.
+   * "Okay, done. Let's close at that." welds a bare "done" (which the token gate
+   * requires to be the WHOLE utterance) to a trailing close-out clause, so the
+   * accept dropped to no-match and the bot pivoted to an ESOP ask instead of
+   * closing. "let's close at that/this/it" points the settle-verb at the STANDING
+   * offer by anaphora and is now a commitment idiom — while "let's close at
+   * <number>" stays a COUNTER (owned by the number-role classifier). */
+  it("#133 — anaphoric 'let's close at that' over a standing offer closes", () => {
+    const { transcript, finalState } = runConversation({
+      role: "Senior Software Engineer",
+      company: "Flipkart",
+      band: { initialOffer: 40, maxStretch: 52, walkAway: 34, hasEquity: true, variableMax: 8 } as NegotiationBand,
+      initExtras: { applicableYoe: 8, experienceLevel: "senior", currentCtcLpa: 42 },
+      turns: [
+        "I'm a senior engineer, 8 years, currently at 42 LPA fixed.",
+        "I was targeting around 50 LPA total for this move.",
+        "Okay, done. Let's close at that.",
+      ],
+    });
+    expect(finalState.phase).toBe("accepted");
+    expect(transcript[transcript.length - 1].terminal).toBe(true);
+    // Closes on a committed in-band figure, never ₹0 nor above the ceiling.
+    expect(finalState.highestOfferMade).toBeGreaterThan(0);
+    expect(finalState.highestOfferMade).toBeLessThanOrEqual(52);
+  });
+
+  it("#133 guard — anaphoric close idiom stays gated: 'close at that' pre-offer must NOT force a ₹0 close", () => {
+    const { finalState } = runConversation({
+      role: "Senior Software Engineer",
+      company: "Flipkart",
+      band: { initialOffer: 40, maxStretch: 52, walkAway: 34, hasEquity: true } as NegotiationBand,
+      turns: ["let's close at that"],
+      stopOnTerminal: false,
+    });
+    // The offer-on-table phase gate must still apply — you cannot "close at that"
+    // before an offer exists.
+    expect(finalState.highestOfferMade === 0 ? finalState.phase : "ok").not.toBe("accepted");
+  });
 });

@@ -83,4 +83,218 @@ describe("#94 — near-offer conditional close-engagement", () => {
       expect(actionToLever(action, s).newTotalLpa).not.toBe(48);
     }
   });
+
+  /* Batch-5 regression (2026-07-09). The bare-fallback branch closed at the
+   * standing offer whenever the LOCAL numeric resolvers (totalScopedCounter,
+   * resolveFixedCloseAsk, acceptanceUtteranceFigure, resolveConditionalCashTarget
+   * / parseCashIncreaseIntent) could not quantify the demand — but those parsers
+   * miss a crore-scale figure with a prepositionless landing verb. "…hits 1.2
+   * crore" left every resolver null and the gate false-closed at the un-bumped
+   * offer, silently dropping a ₹120L condition. The fix routes the fall-through
+   * through the canonical analyzeDemand (the same extractor both acceptance
+   * gates use): an unmet CASH demand it flags now vetoes the close-at-offer. */
+  it("does NOT false-close at the offer on an unparsed crore-scale conditional demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'll take it if the package hits 1.2 crore");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      // If it somehow closes, it must NOT be at the un-bumped ₹35L offer.
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
+
+  /* Beat-the-figure false-close (2026-07-09, offline hostile battery). A
+   * conditional accept quoting a COMPETING figure to beat ("if you can beat the
+   * 39 I already have") is a demand for strictly MORE than that figure — never
+   * an agreement to it. But acceptanceUtteranceFigure is demand-blind: it just
+   * corroborates any nearby number against the sticky target (40 here, so 39 is
+   * within 6%) and the planner closed AT 39. The fix flags "beat the 39" in the
+   * canonical analyzeDemand (new beat-figure core) and gates the
+   * acceptanceUtteranceFigure close path with that same unmet-cash veto, so the
+   * turn routes to a live counter instead of a false-close. */
+  it("does NOT false-close at a bare competing figure the candidate wants beaten", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "Deal, if you can beat the 39 I already have");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(39);
+    }
+  });
+
+  /* Vague decade-band / negative-floor false-close (2026-07-09, offline hostile
+   * battery). "if it lands in the mid-forties" carries NO literal digit, so
+   * every digit-anchored resolver returned null and the gate closed at the
+   * un-bumped offer, silently dropping the ~45 band. Likewise "nothing under 46"
+   * (a floor stated as a prohibition) close-recap'd at the offer. Both are now
+   * caught by analyzeDemand (decade-band core + extended floor-target) and the
+   * shared unmet-cash veto routes them to a live counter. */
+  it("does NOT false-close at the offer on a vague decade-band demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'll take it if it lands in the mid-forties");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
+
+  it("does NOT false-close at the offer on a negative-floor demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'm in, but nothing under 46");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
+
+  /* Preposition/verb floor + fractional-crore false-close (2026-07-09, offline
+   * hostile battery). Floor idioms that pin a figure via a bare preposition
+   * ("anything over 45", "above 44") or a floor VERB ("it tops 46", "clears
+   * 48"), and word-form crore targets ("half a crore" = 50L), carried no
+   * floor-target-recognized phrase / no lakh digit — so the gate close-recap'd
+   * at the un-bumped offer. All three are now caught by analyzeDemand (extended
+   * floor-target + crore-fraction core) and routed to a live counter. */
+  it("does NOT false-close at the offer on a preposition/verb floor demand", () => {
+    for (const utter of [
+      "I'll take it at anything over 45",
+      "I'll sign for anything above 44",
+      "Deal, provided it tops 46",
+      "I'm in as long as the total clears 48",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
+
+  it("does NOT false-close at the offer on a word-form fractional-crore demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'm in if the package is half a crore");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
+
+  /* Multiplier-of-current + component-floor false-close (2026-07-09, offline
+   * hostile battery). A target expressed as a multiple of the candidate's
+   * current figure ("double my current 38" = 76, "1.5x my current 38" = 57) or
+   * pinned to a named component via a bare copula ("the fixed alone is 46")
+   * carried no literal target digit, so the gate close-recap'd at the un-bumped
+   * offer. Both are now caught by analyzeDemand (multiplier-current +
+   * component-floor cores) and routed to a live counter. */
+  it("does NOT false-close at the offer on a multiplier-of-current demand", () => {
+    for (const utter of [
+      "I'll sign if you double my current 38",
+      "I'm in at twice my current 38",
+      "Deal if you do 1.5x my current 38",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
+
+  it("does NOT false-close at the offer on a component-specific floor demand", () => {
+    let s = anchoredAt35();
+    s = applyCandidateAnswer(s, "I'm in if the fixed alone is 46");
+    const action = planNextAction(s);
+    if (action.kind === "close" || action.kind === "auto-accept") {
+      expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+    }
+  });
+
+  /* Digit-handle false-close (2026-07-09, offline hostile battery batch-10).
+   * A demand that names only the LEADING digit of the wanted CTC — "get me to a
+   * 5 in front", "once it starts with a 5", "a 5 handle" — carries no absolute
+   * figure, so every digit-anchored resolver returned null and the gate
+   * close-recap'd at the un-bumped ₹35 offer, silently dropping a ~50L floor.
+   * Now caught by analyzeDemand (digit-handle core: derives the decade floor,
+   * digit × 10) and routed to a live counter. Deferred from batch-9 as
+   * high-over-block-risk; the "in front"/"handle"/"starts with" anchors keep it
+   * off ordinary numerals. */
+  it("does NOT false-close at the offer on a digit-handle demand", () => {
+    for (const utter of [
+      "I'll sign once you get me to a 5 in front",
+      "I'll accept once it starts with a 5",
+      "Deal, as long as it's got a 5 handle",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
+
+  /* Comparative-floor / decade-plural / "-ish" false-close (2026-07-09, offline
+   * hostile battery batch-11). "a bit more than 45", "somewhere in the 50s" and
+   * "45-ish" each demand a raise above the ₹35 offer but carried no exact-figure
+   * form, so the gate close-recap'd at the un-bumped offer. Now caught by
+   * analyzeDemand (floor-target "more than" arm + decade-plural + ish-approx
+   * cores) and routed to a live counter. */
+  it("does NOT false-close at the offer on comparative/decade-plural/ish demands", () => {
+    for (const utter of [
+      "Deal if it's a bit more than 45",
+      "I'll sign if it's somewhere in the 50s",
+      "45-ish and I'm in",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
+
+  /* Plus-floor / and-change / ultimatum / positional-ceiling false-close
+   * (2026-07-09, offline hostile battery batch-12). "Forty-five plus", "45 and
+   * change", "45 or I walk" and "top of the band" each demand a raise above the
+   * ₹35 offer but carried no exact-figure form the resolvers recognized, so the
+   * gate close-recap'd at the un-bumped offer. Now caught by analyzeDemand
+   * (plus-floor + and-change-floor + ultimatum-floor + positional-ceiling cores)
+   * and routed to a live counter. */
+  it("does NOT false-close at the offer on plus/and-change/ultimatum/positional demands", () => {
+    for (const utter of [
+      "Forty-five plus and I'm in",
+      "45 and change works for me",
+      "I'm in at 45 or I walk",
+      "Top of the band and I'll sign",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
+
+  /* N-minimum floor + spelled digit-handle false-close (2026-07-10, offline
+   * hostile battery batch-13). "45 minimum and I'll sign" and the SPELLED
+   * leading-digit handle "a five in front" (=₹50) each demand a raise above the
+   * ₹35 offer but carried no exact-figure form the resolvers recognized, so the
+   * gate close-recap'd at the un-bumped offer. Now caught by analyzeDemand
+   * (minimum-floor core + digit-handle spelled-digit extension) and routed to a
+   * live counter. */
+  it("does NOT false-close at the offer on N-minimum or spelled-handle demands", () => {
+    for (const utter of [
+      "45 minimum and I'll sign",
+      "As long as there's a five in front, I'm in",
+    ]) {
+      let s = anchoredAt35();
+      s = applyCandidateAnswer(s, utter);
+      const action = planNextAction(s);
+      if (action.kind === "close" || action.kind === "auto-accept") {
+        expect(actionToLever(action, s).newTotalLpa).not.toBe(35);
+      }
+    }
+  });
 });

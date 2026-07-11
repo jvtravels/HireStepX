@@ -120,6 +120,35 @@ describe("report currency leaks (pre-launch audit)", () => {
     expect(text).toContain("closed the deal");
   });
 
+  /* PRI-63 (2026-07-06, live staging) — a walk-away that traversed all five
+   * stages hit phaseCount === TOTAL_PHASES and printed "you closed the deal —
+   * every stage reached" in the "How far you got" hint, directly above an
+   * outcome record that read "You walked away". Reaching the close STAGE is
+   * not closing the DEAL. Pinned: on any walk-away the hero must NOT claim the
+   * deal closed, and must name the walk-away + point to the next-round play. */
+  it("TLDRHero does not say 'closed the deal' on a walk-away that reached all five stages", () => {
+    const outcome = baseOutcome({
+      outcome: "walked_away",
+      finalTotal: null,
+      offers: [{ turn: 1, total: 42, question: "" }],
+      candidateAsk: 52, // > opening (42): counter named (stage 1)
+      anchorBracket: { type: "range_with_justification", quote: "", verdict: "" }, // stage 2
+      tacticsUsed: ["calibrated-question"], // stage 3
+      leverDiversity: 2, // stage 4
+      // stage 5 = walked_away → all five reached
+    });
+    const { container } = render(
+      // `role` is TLDRHero's domain prop (the job title), not a DOM ARIA role.
+      // eslint-disable-next-line jsx-a11y/aria-role
+      <TLDRHero outcome={outcome} role="Engineering Manager" company="Flipkart" />,
+    );
+    const text = (container.textContent || "").toLowerCase();
+    expect(text).toContain("5 of 5 stages");
+    expect(text).not.toContain("closed the deal");
+    expect(text).toContain("walked away");
+    expect(text).toContain("next-round play");
+  });
+
   it("TLDRHero keeps the 'no counter' framing on a flat-offer accept with no candidate ask", () => {
     const outcome = baseOutcome({
       outcome: "accepted",

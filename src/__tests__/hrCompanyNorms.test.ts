@@ -40,8 +40,31 @@ describe("hrCompanyNorms (data layer)", () => {
     expect(n!.dualEmploymentNote.toLowerCase()).toMatch(/regulat|conflict/);
   });
 
+  it("returns gcc norms with parent-stock RSU literacy + global BGV", () => {
+    const n = hrCompanyNorms("gcc");
+    expect(n).not.toBeNull();
+    expect(n!.compNote.toLowerCase()).toMatch(/rsu|espp|equity/);
+    expect(n!.bgvDocs.some((d) => /criminal|court/i.test(d))).toBe(true);
+    expect(n!.bgvFirms).toContain("HireRight");
+  });
+
+  it("returns consulting norms with client-conflict scrutiny + variable-heavy comp", () => {
+    const n = hrCompanyNorms("consulting");
+    expect(n).not.toBeNull();
+    expect(n!.dualEmploymentNote.toLowerCase()).toMatch(/conflict|client/);
+    expect(n!.compNote.toLowerCase()).toMatch(/variable|bonus|up-or-out/);
+  });
+
+  it("returns psu norms with police verification + fixed non-negotiable pay-scale", () => {
+    const n = hrCompanyNorms("psu");
+    expect(n).not.toBeNull();
+    expect(n!.bgvDocs.some((d) => /police|character/i.test(d))).toBe(true);
+    expect(n!.compNote.toLowerCase()).toMatch(/cpc|pay-scale|non-negotiable|fixed/);
+    expect(n!.dualEmploymentNote.toLowerCase()).toMatch(/conduct|barred|permission/);
+  });
+
   it("every non-none sector populates all narrative fields (no blank report copy)", () => {
-    for (const s of ["services-tier1", "product-unicorn", "bfsi"] as const) {
+    for (const s of ["services-tier1", "product-unicorn", "bfsi", "gcc", "consulting", "psu"] as const) {
       const n = hrCompanyNorms(s);
       expect(n).not.toBeNull();
       expect(n!.sectorLabel).not.toBe("");

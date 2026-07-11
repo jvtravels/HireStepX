@@ -24,10 +24,11 @@ import {
 import { rescoreFlags, type FlagRescoreCandidate } from "./_llm-rescore";
 import {
   SALARY_NUMBER, ASKED_ABOUT_SALARY, HIKE_PROMPT, PAYSLIP_PROMPT, PAYSLIP_REFUSED,
-  BADMOUTHING, GAP_PROMPT, NOTICE_PERIOD, NOTICE_ASKED, NOTICE_VAGUE, NOTICE_CONCRETE,
+  BADMOUTHING, GAP_PROMPT, GAP_EXPLAINED, NOTICE_PERIOD, NOTICE_ASKED, NOTICE_VAGUE, NOTICE_CONCRETE,
   BGV_PROMPT, BGV_EVASIVE, COUNTER_OFFER_PROMPT, COUNTER_OFFER_DODGE, OFFER_ACCEPTED_GRACEFUL,
   WHY_COMPANY_PROMPT, GENERIC_WHY, SPECIFIC_WHY, SELF_INTRO_PROMPT, SPECIFICS, BENEFITS_PROMPT,
   NOTICE_DEPTH, BGV_DOC_NAMED, COMP_PROBE_RE, COUNTER_OFFER_VOLUNTEERED, COUNTER_OFFER_DECLINE,
+  COUNTER_OFFER_COMMITTED,
   PROBATION_PROMPT, PROBATION_PROBE, HIKE_RATIONALE, BOND_PROMPT, BOND_PROBE_RE,
   PEDIGREE_PROMPT, PEDIGREE_EVASION, BREAKUP_ASKED, BREAKUP_DETAIL, BREAKUP_GENUINELY_UNKNOWN,
   DEFERENTIAL_OPENER, COMP_RAISED_BY_USER, REFERENCE_PROMPT, REFERENCE_REFUSAL,
@@ -239,12 +240,26 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       const t = transcript[i];
       if (isAi(t) && COUNTER_OFFER_PROMPT.test(t.text || "")) {
         const r = replyTo(transcript, i);
-        if (!r || !r.text || r.text.length >= 220) continue;
+        // The 220-char gate used to let a *verbose* dodge slip through
+        // untouched (audit repro). Length is not the discriminator — the
+        // dodge/graceful/decline regexes are. Keep a sane upper bound to
+        // skip essay-length rambles, but flag long waffle that reads as a
+        // dodge and carries no firm-commitment signal. The 2nd-pass LLM
+        // rescore backstops the raise.
+        if (!r || !r.text || r.text.length >= 600) continue;
         if (OFFER_ACCEPTED_GRACEFUL.test(r.text)) {
           flags.add("offer_accepted_graceful");
           break;
         }
-        if (COUNTER_OFFER_DODGE.test(r.text)) {
+        // A hedge phrase that resolves into a firm commitment ("it depends…
+        // but I'm firm on this move, a counter won't change it") is NOT a
+        // dodge — COUNTER_OFFER_COMMITTED vetoes the false positive alongside
+        // the explicit-decline guard.
+        if (
+          COUNTER_OFFER_DODGE.test(r.text) &&
+          !COUNTER_OFFER_DECLINE.test(r.text) &&
+          !COUNTER_OFFER_COMMITTED.test(r.text)
+        ) {
           flags.add("counter_offer_dodge");
           gaps.push({ dimension: "commitment_signal", expected: "Clear stance on counter-offer / other offers — HR is testing pre-joining drop-out risk", observed: "Candidate dodged the commitment question, reads as flight risk", severity: "medium", flag: "counter_offer_dodge" });
           rescoreEvidence.set("counter_offer_dodge", { aiPrompt: t.text || "", userReply: r.text || "" });
@@ -269,7 +284,10 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (GAP_PROMPT.test(aiText)) {
       const idx = transcript.findIndex((t) => isAi(t) && GAP_PROMPT.test(t.text || ""));
       const r = replyTo(transcript, idx);
-      if (r && r.text && r.text.length < 80) {
+      // Short AND lacking any concrete anchor (year / duration / named
+      // reason). A crisp factual answer under the length gate is NOT
+      // unexplained — GAP_EXPLAINED suppresses that false positive.
+      if (r && r.text && r.text.length < 80 && !GAP_EXPLAINED.test(r.text)) {
         flags.add("gap_unexplained");
         gaps.push({ dimension: "switch_rationale_honesty", expected: "Crisp factual explanation of any gap (study, family, layoff, sabbatical) with dates", observed: "Gap question received a thin or evasive answer — Indian HR probes harder here", severity: "medium" });
       }
@@ -619,6 +637,70 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           if (fluff && !substantive) {
             flags.add("reverse_interview_low_quality");
             gaps.push({ dimension: "motivation_specificity", expected: "Ask 2-3 substantive questions (team structure, success metric, manager style, first-90-day expectations)", observed: "Closed with no questions or only logistics — reads as low engagement", severity: "medium" });
+            break;
+          }
+        }
+      }
+    }
+
+    /* ── Positive HR signals ─────────────────────────────────────────────
+       Mirror the four highest-frequency negative detectors so a strong
+       candidate gets credit, not just a list of nits. Each fires ONLY when
+       the corresponding negative did NOT, and is surfaced as a strength in
+       coachingNotes — never pushed as a rubric gap. */
+    {
+      // notice_period_precise — exact days AND buyout/handover/LWD depth.
+      const hrAskedNotice = transcript.some((t) => isAi(t) && NOTICE_ASKED.test(t.text || ""));
+      const gaveConcrete = transcript.some((t) => isUser(t) && NOTICE_CONCRETE.test(t.text || ""));
+      if (
+        hrAskedNotice &&
+        gaveConcrete &&
+        // Depth must come from the CANDIDATE, not the interviewer. allText
+        // mixes AI + user turns, so testing it credited the candidate when
+        // HR raised buyout/handover/LWD and the candidate never did.
+        NOTICE_DEPTH.test(userText) &&
+        !flags.has("vague_notice_period") &&
+        !flags.has("notice_period_shallow")
+      ) {
+        flags.add("notice_period_precise");
+      }
+
+      // bgv_docs_volunteered — HR raised BGV and candidate named docs, no evasion.
+      const hrAskedBgv = transcript.some((t) => isAi(t) && BGV_PROMPT.test(t.text || ""));
+      const userNamedDoc = transcript.some((t) => isUser(t) && BGV_DOC_NAMED.test(t.text || ""));
+      if (
+        hrAskedBgv &&
+        userNamedDoc &&
+        !flags.has("bgv_document_evasion") &&
+        !flags.has("bgv_document_evasion_sustained") &&
+        !flags.has("bgv_document_initial_hedge") &&
+        // Naming other docs while refusing payslips is not a clean volunteer —
+        // payslip refusal is the dominant BGV red flag and must veto the credit.
+        !flags.has("payslip_refusal") &&
+        !flags.has("payslip_refusal_sustained")
+      ) {
+        flags.add("bgv_docs_volunteered");
+      }
+
+      // specific_why_us — why-company answer grounded in a concrete signal.
+      for (let i = 0; i < transcript.length; i++) {
+        const t = transcript[i];
+        if (isAi(t) && WHY_COMPANY_PROMPT.test(t.text || "")) {
+          const r = replyTo(transcript, i);
+          if (r && r.text && r.text.length >= 40 && SPECIFIC_WHY.test(r.text) && !flags.has("generic_why_company")) {
+            flags.add("specific_why_us");
+            break;
+          }
+        }
+      }
+
+      // reverse_questions_substantive — closed with real questions.
+      for (let i = 0; i < transcript.length; i++) {
+        const t = transcript[i];
+        if (isAi(t) && REVERSE_INVITED.test(t.text || "")) {
+          const r = replyTo(transcript, i);
+          if (r && r.text && REVERSE_SUBSTANTIVE.test(r.text) && !flags.has("reverse_interview_low_quality")) {
+            flags.add("reverse_questions_substantive");
             break;
           }
         }
@@ -1211,6 +1293,18 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     }
     if (flags.has("comp_held_until_close")) {
       tips.push("Positive signal: you held salary off the table until HR opened it — that reads as role-first, not money-first. Indian HR scores this as the right register; keep that discipline.");
+    }
+    if (flags.has("notice_period_precise")) {
+      tips.push("Strong logistics signal: you gave exact notice days AND covered the depth (buyout / handover / earliest LWD). That's precisely what mid-senior HR scores — it de-risks your start date. Keep leading with the full picture.");
+    }
+    if (flags.has("bgv_docs_volunteered")) {
+      tips.push("Strong compliance signal: you named your BGV docs by name (Form 16 / UAN / payslips / relieving letters) without being pushed. Fluency here reads as 'I've onboarded before' and speeds up intake. Keep it.");
+    }
+    if (flags.has("specific_why_us")) {
+      tips.push("Strong motivation signal: your 'why us' was grounded in something concrete (a launch / leader / domain), not 'great culture'. That specificity is what separates a real answer from a template — keep anchoring on facts.");
+    }
+    if (flags.has("reverse_questions_substantive")) {
+      tips.push("Strong engagement signal: you closed with substantive questions (team / success metrics / manager style), not logistics. HR reads this as genuine interest — keep ending rounds this way.");
     }
 
     if (flags.has("user_anchor_leaked_salary")) tips.push("Never name a salary first — deflect with 'I'd want to understand the role + level before discussing comp.'");

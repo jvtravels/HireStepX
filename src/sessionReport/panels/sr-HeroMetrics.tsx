@@ -86,9 +86,17 @@ export function Sparkline({ points }: { points: number[] }) {
   const ys = points.map((p) => pad + innerH - ((p - min) / range) * innerH);
   const path = points.map((_, i) => `${i === 0 ? "M" : "L"} ${xs[i].toFixed(1)} ${ys[i].toFixed(1)}`).join(" ");
   const area = `${path} L ${xs[xs.length - 1].toFixed(1)} ${(h - pad).toFixed(1)} L ${xs[0].toFixed(1)} ${(h - pad).toFixed(1)} Z`;
-  const trend = points[points.length - 1] - points[0];
-  const trendVerb = trend > 0 ? "trending up" : trend < 0 ? "trending down" : "flat";
-  const a11y = `Recent session scores: ${points.join(", ")}. Currently ${points[points.length - 1]}, ${trendVerb} from ${points[0]}.`;
+  /* I-11 (2026-07-10) — the trend verb must describe the SAME comparison as the
+   * session-delta arrow rendered beside it (current vs the immediately prior
+   * session), not a full-window first→last span. When the window trended down
+   * long-term but this session ticked up, a "trending down from {first}" label
+   * contradicted a green "↑" arrow. The full window is still visible in the
+   * plot; the words now agree with the arrow. */
+  const prev = points[points.length - 2];
+  const current = points[points.length - 1];
+  const trend = current - prev;
+  const trendVerb = trend > 0 ? "up" : trend < 0 ? "down" : "flat";
+  const a11y = `Recent session scores: ${points.join(", ")}. Currently ${current}, ${trendVerb} from last session's ${prev}.`;
   return (
     <svg
       className="ir-spark"

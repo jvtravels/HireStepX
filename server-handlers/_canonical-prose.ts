@@ -837,6 +837,28 @@ const PROBE_KINDS_NEEDING_BRIDGE = new Set<NextAction["kind"]>([
 const CANONICAL_OPENS_WITH_ACK_RE =
   /^(?:Noted|Got it|Understood|Appreciate|Right[,\s—]|Thanks for that|Fair enough|Fine,?\s+so|Okay[,.]?\s+on|Alright[,.]?\s+on)\b/i;
 
+/** I-3 (2026-07-11) — decorator double-opener guard.
+ *
+ * `pickProbeOpener` (NON_ACK_PROBE_OPENERS: "So," / "Quick one —") and
+ * `pickNeutralBridgeAck` (NEUTRAL_TURN_BRIDGE_ACKS: "Got it." / "Right." /
+ * "Okay.") are prepended MECHANICALLY. When the body ALREADY opens with an
+ * acknowledgement or discourse marker (e.g. a probe arm whose template
+ * leads "Right, so…" or "So let's…"), stacking a decorator produces a
+ * disfluent double-opener ("Got it. Right, so…", "So, So let's…").
+ *
+ * `CANONICAL_OPENS_WITH_ACK_RE` is deliberately narrow — it only matches
+ * ACKs that are FOLLOWED by a clause lead-in ("Okay, on …", "Fine, so …")
+ * because it gates a different (FL2-suppression) decision. This guard is
+ * the broader SEMANTIC check the decorator sites need: any of the small
+ * discourse-marker set at string start, case-insensitive, whether or not a
+ * clause follows. Single guard reused by both decorator call-sites so the
+ * skip rule has one definition. */
+const BODY_OPENS_WITH_ACK_RE =
+  /^\s*(?:got it|right|okay|ok|so|sure|fair enough|understood|noted|alright|fine)\b/i;
+export function bodyOpensWithAck(body: string): boolean {
+  return BODY_OPENS_WITH_ACK_RE.test(body || "");
+}
+
 /** Per-kind canonical-prose arm. Each entry produces the body for one
  *  NextAction.kind. Carved out of the in-function switch (2026-05-29)
  *  so the dispatch reduces to a single lookup. The 10 prose/<kind>.ts
@@ -1907,14 +1929,72 @@ function normalizeForRepeat(s: string): string {
     .replace(/\s+/g, " ")
     .replace(/[.!?]+$/, "");
 }
-function escalatingCloseOut(offerLpa: number, turnIndex: number): string {
+/* I-4 + I-7 (2026-07-11) — session-scoped verbatim-dedup pool picker.
+ *
+ * A `turnIndex % N` pool wraps around: turn N repeats turn 0 VERBATIM, and
+ * the adjacent-only repeat-check downstream never catches wrap-around
+ * recycling. The single source of truth for "what has this session already
+ * said" is `state.conversationLog` (the AI entries) — it is per-session,
+ * already threaded into renderCanonicalProse, and does NOT leak across
+ * sessions or tests the way a process-global mutable Set would. Keeping the
+ * dedup derived from read-only state also preserves this module's purity.
+ *
+ * Contract:
+ *   - deterministic: the pick is keyed by turnIndex, then advanced past any
+ *     already-spoken line by scanning the pool in a fixed order (no
+ *     Math.random — banned, and it breaks reproducibility);
+ *   - graceful degradation: when EVERY pool line has already been spoken
+ *     (a pathologically long session), append a minor deterministic variant
+ *     marker so the emitted line is still not byte-identical to a prior one,
+ *     rather than repeating verbatim. */
+function normalizedSpokenAiLines(state: NegotiationState): Set<string> {
+  const spoken = new Set<string>();
+  for (const e of state.conversationLog ?? []) {
+    if (e && e.speaker === "ai" && e.text) spoken.add(normalizeForRepeat(e.text));
+  }
+  return spoken;
+}
+
+function pickUnusedPoolLine(
+  pool: readonly string[],
+  turnIndex: number,
+  spoken: Set<string>,
+): string {
+  const n = pool.length;
+  const start = ((Math.abs(turnIndex) % n) + n) % n;
+  for (let step = 0; step < n; step++) {
+    const candidate = pool[(start + step) % n];
+    if (!spoken.has(normalizeForRepeat(candidate))) return candidate;
+  }
+  /* Pool exhausted — every line already spoken this session. Degrade with a
+   * minor deterministic variation keyed by turnIndex so the shipped line is
+   * still distinct from the verbatim original. */
+  const base = pool[start];
+  const nudges = [
+    " Just to be clear, that's where I land.",
+    " I want to be straight with you on that.",
+    " That's the honest position from my side.",
+  ] as const;
+  return `${base}${nudges[start % nudges.length]}`;
+}
+
+function escalatingCloseOut(
+  offerLpa: number,
+  turnIndex: number,
+  state: NegotiationState,
+): string {
   const offer = `₹${offerLpa}L`;
+  /* Widened to 6 lines (was 3) so a realistic ~8-10-turn negotiation
+   * doesn't exhaust the pool before the phase-cap drives a terminal. */
   const POOL = [
     `I don't want to keep circling on this. The strongest fitment I can stand behind at this grade is ${offer} — take a day to sit with it and let me know how you'd like to proceed.`,
     `I've stretched as far as the band allows on this one. If ${offer} works for you, I'll get the paperwork moving; if it doesn't, I completely understand and we can revisit if anything changes on our side.`,
     `Let's not go round in circles. ${offer} is the number I can commit to today — shall I go ahead and start rolling out the offer letter?`,
+    `I'd rather be honest than keep you waiting: ${offer} is the ceiling I can sign off on for this role right now. Have a think overnight and tell me where you stand tomorrow.`,
+    `We've gone back and forth a fair bit, and my number hasn't moved because it genuinely can't — ${offer} is it. Shall I get the formal offer drafted so you have it in writing to decide against?`,
+    `I don't want either of us stuck in limbo. ${offer} is my final, committed figure for this grade — if that lands for you I'll start the paperwork today; if not, no hard feelings and we can reconnect if the picture changes.`,
   ];
-  return POOL[Math.abs(turnIndex) % POOL.length];
+  return pickUnusedPoolLine(POOL, turnIndex, normalizedSpokenAiLines(state));
 }
 
 /** Canonical kernel-authored prose for every NextAction kind. The
@@ -1973,8 +2053,12 @@ export function renderCanonicalProse(
   ) {
     const lastUtt = lastCandidateUtterance(state);
     if (isNonTrivialUtterance(lastUtt)) {
-      const bridge = pickNeutralBridgeAck(state.turnIndex);
-      body = `${bridge} ${body}`;
+      /* I-3 — skip the neutral bridge-ACK when the body already opens
+       * with an ACK/discourse marker, else "Got it. Right, so…". */
+      if (!bodyOpensWithAck(body)) {
+        const bridge = pickNeutralBridgeAck(state.turnIndex);
+        body = `${bridge} ${body}`;
+      }
     } else {
       /* LN1 / Audit Pass 4 (PDF#27, 2026-05-17) — decorative opener
        * rotation when the FL2 bridge doesn't fire (trivial or absent
@@ -1982,8 +2066,10 @@ export function renderCanonicalProse(
        * probes ("So, …", "Quick one — …", "Coming to …") so the bot
        * doesn't sound rote. Empty-string opener is intentional — some
        * turns the cleanest path is no opener at all. */
+      /* I-3 — skip the decorative opener when the body already opens
+       * with an ACK/discourse marker, else "So, So let's…". */
       const opener = pickProbeOpener(state, action.kind);
-      if (opener) body = `${opener} ${body}`;
+      if (opener && !bodyOpensWithAck(body)) body = `${opener} ${body}`;
     }
   }
   /* 2026-05-29 realism-pass P0-1 (cross-arm completion) — humanize at
@@ -2060,7 +2146,7 @@ export function renderCanonicalProse(
     const prior = normalizeForRepeat(state.lastAiText || "");
     const next = normalizeForRepeat(finalProse);
     if (prior.length > 0 && next.length > 0 && prior === next) {
-      return escalatingCloseOut(state.highestOfferMade, state.turnIndex ?? 0);
+      return escalatingCloseOut(state.highestOfferMade, state.turnIndex ?? 0, state);
     }
   }
   /* PDF #28 (2026-06-07) — kernel non-empty-prose contract.
@@ -2084,13 +2170,22 @@ export function renderCanonicalProse(
    * keeps this function side-effect free, matches existing canonical-
    * prose snapshot determinism. */
   if (!finalProse || finalProse.trim().length === 0) {
+    /* I-7 — widened to 6 lines and routed through the session-scoped
+     * dedup picker so a long empty-prose streak doesn't recycle a line
+     * verbatim (turnIndex % N wrapped around at N). */
     const RECOVERY_POOL = [
       "Let me step back for a second — what part of this is most on your mind right now? Comp, timeline, role scope, something else?",
       "I want to be useful here, not transactional. Walk me through what you actually came to this conversation hoping to figure out.",
       "Let's keep this focused on you. What's the part of this decision you're least sure about right now?",
       "Hmm, let me reset. Tell me what's most pressing for you on this conversation — and I'll meet you there.",
+      "Let me park my side for a moment. What would make this feel like a good outcome for you specifically?",
+      "I'd rather get this right than rush it. Which piece of the decision would you most want us to nail down first?",
     ];
-    return RECOVERY_POOL[Math.abs(state.turnIndex ?? 0) % RECOVERY_POOL.length];
+    return pickUnusedPoolLine(
+      RECOVERY_POOL,
+      state.turnIndex ?? 0,
+      normalizedSpokenAiLines(state),
+    );
   }
   return finalProse;
 }

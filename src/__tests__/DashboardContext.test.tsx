@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import "./setup-next-navigation";
 import { DashboardProvider, useDashboard } from "../DashboardContext";
+import { getCreditBalance } from "../supabase";
 
 // Mock auth
 const mockUser: {
@@ -50,6 +51,8 @@ function TestConsumer() {
       <span data-testid="displayName">{ctx.displayName}</span>
       <span data-testid="sessionsRemaining">{ctx.sessionsRemaining}</span>
       <span data-testid="dataLoading">{String(ctx.dataLoading)}</span>
+      <span data-testid="creditBalance">{String(ctx.creditBalance)}</span>
+      <span data-testid="creditsLoaded">{String(ctx.creditsLoaded)}</span>
       <span data-testid="showUpgrade">{String(ctx.showUpgradeModal)}</span>
       <button data-testid="startSession" onClick={ctx.handleStartSession}>Start</button>
       <button data-testid="openUpgrade" onClick={() => ctx.setShowUpgradeModal(true)}>Upgrade</button>
@@ -66,7 +69,7 @@ function renderWithProviders() {
 }
 
 describe("DashboardContext", () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => { vi.clearAllMocks(); sessionStorage.clear(); });
 
   it("throws when used outside provider", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -119,6 +122,29 @@ describe("DashboardContext", () => {
     await act(async () => { renderWithProviders(); });
     expect(screen.getByTestId("sessionsRemaining").textContent).toBe("0");
     mockUser.practiceTimestamps = [];
+  });
+
+  // ─── I-2 regression: sessionStorage is a write-through cache of DB-CONFIRMED
+  // balances only — never the transient initial 0. Before the creditsLoaded gate,
+  // the persist effect fired on first mount while creditBalance was still its
+  // initial 0 and clobbered the cache to "0"; a cross-route /session/new read (or
+  // a fast remount) then briefly saw 0 and the sidebar flip-flopped 0→real. ───
+  it("never persists the transient 0 balance before the DB confirms (I-2)", async () => {
+    vi.mocked(getCreditBalance).mockResolvedValueOnce(5);
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    try {
+      await act(async () => { renderWithProviders(); });
+      const creditWrites = setItem.mock.calls.filter(([k]) => k === "hsx_credit_u1");
+      // The only value ever written for the credit key is the DB-confirmed 5 —
+      // the initial 0 must never reach sessionStorage.
+      expect(creditWrites.every(([, v]) => v === "5")).toBe(true);
+      expect(creditWrites.some(([, v]) => v === "0")).toBe(false);
+      expect(screen.getByTestId("creditBalance").textContent).toBe("5");
+      expect(screen.getByTestId("creditsLoaded").textContent).toBe("true");
+    } finally {
+      setItem.mockRestore();
+      sessionStorage.clear();
+    }
   });
 
   it("can toggle upgrade modal", async () => {

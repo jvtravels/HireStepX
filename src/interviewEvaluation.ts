@@ -23,6 +23,19 @@ export interface EvalParams {
   difficulty: string;
   elapsed: number;
   interviewType?: string;
+  /* Salary-negotiation outcome grounding. The heuristic scorer must
+     reflect what the negotiation ACHIEVED, not just the words the
+     candidate used — otherwise a fold (accepting well below your own
+     ask while the recruiter never moved) scores 95 on Leverage Use.
+     Threaded from the engine's kernel state via _evaluation-flow.ts:
+       negotiationInitialOffer  = negotiationBand.initialOffer (opening/floor)
+       negotiationHighestOffer  = highestOfferMade (best offer actually reached)
+       negotiationTargetSalary  = the candidate's stated ask
+     All optional; when absent the outcome caps are skipped and scoring
+     falls back to the word-signal behaviour (legacy rows, non-kernel runs). */
+  negotiationInitialOffer?: number | null;
+  negotiationHighestOffer?: number | null;
+  negotiationTargetSalary?: number | null;
 }
 
 /** Compute heuristic fallback scores when LLM evaluation is unavailable */
@@ -83,16 +96,57 @@ export function computeFallbackScores(params: EvalParams): FallbackResult {
       /(?:just to confirm|so the total|let me summarize|offer letter|in writing|full package|all.*included)/i.test(t.text),
     );
 
+    /* ── Outcome grounding ──────────────────────────────────────────────
+       Word signals alone reward a candidate who names a number, cites
+       market data and asks for time — even when they then fold, accepting
+       well below their own ask while the recruiter never budged. The
+       kernel's offer trajectory is the authoritative outcome; here we
+       approximate it from the highest offer reached vs the candidate's
+       target (floor-independent) and vs the opening (movement). When the
+       candidate ACCEPTED a weak result, cap the outcome-dependent skills
+       — you cannot score 95 on Leverage Use for a 0%-gap-closed cave.
+       Demeanour skills (composure, professionalTone) are unaffected: a
+       calm, polite fold is still calm and polite. */
+    const target = params.negotiationTargetSalary && params.negotiationTargetSalary > 0
+      ? params.negotiationTargetSalary : null;
+    const got = params.negotiationHighestOffer && params.negotiationHighestOffer > 0
+      ? params.negotiationHighestOffer : null;
+    const initial = params.negotiationInitialOffer && params.negotiationInitialOffer > 0
+      ? params.negotiationInitialOffer : null;
+    // Shortfall vs own ask (fraction below target the candidate settled for).
+    const shortfall = target && got ? Math.max(0, (target - got) / target) : null;
+    // Did the recruiter move off their opening at all?
+    const recruiterMoved = initial && got && got > initial ? (got - initial) / initial : 0;
+
+    let outcomeCeiling: number | null = null;
+    if (facts.acceptedImmediately) {
+      if (shortfall !== null) {
+        if (shortfall > 0.20) outcomeCeiling = 45;      // accepted >20% below ask — clear cave
+        else if (shortfall > 0.10) outcomeCeiling = 60; // 10–20% short — mediocre close
+        else if (shortfall > 0.03) outcomeCeiling = 75; // small residual gap — decent
+        // ≤3% short → closed at/near ask; no cap (a genuinely strong close)
+      }
+      // Recruiter never moved AND candidate accepted = fold, regardless of the
+      // target being known. Floor the ceiling independently of shortfall.
+      if (initial && got && recruiterMoved < 0.01) {
+        outcomeCeiling = Math.min(outcomeCeiling ?? 95, 50);
+      }
+    }
+    const capOutcome = (v: number) => outcomeCeiling === null ? v : Math.min(v, outcomeCeiling);
+
     const skillScores: Record<string, number> = {
-      anchoring: clamp(fallbackScore + anchoringBonus),
-      packageThinking: clamp(fallbackScore + packageBonus),
-      leverageUse: clamp(fallbackScore + (facts.hasCompetingOffers ? 10 : 0) + (facts.mentionedBATNA ? 8 : 0) + (facts.deflectedNumbers ? 3 : 0) + (usedMarketData ? 5 : -3)),
-      concessionStrategy: clamp(fallbackScore + concessionBonus),
-      closingTechnique: clamp(fallbackScore + (facts.askedForTime ? 5 : 0) + (confirmedPackage ? 8 : 0) + (completionRatio > 0.8 ? 5 : -5)),
+      anchoring: capOutcome(clamp(fallbackScore + anchoringBonus)),
+      packageThinking: capOutcome(clamp(fallbackScore + packageBonus)),
+      leverageUse: capOutcome(clamp(fallbackScore + (facts.hasCompetingOffers ? 10 : 0) + (facts.mentionedBATNA ? 8 : 0) + (facts.deflectedNumbers ? 3 : 0) + (usedMarketData ? 5 : -3))),
+      concessionStrategy: capOutcome(clamp(fallbackScore + concessionBonus)),
+      closingTechnique: capOutcome(clamp(fallbackScore + (facts.askedForTime ? 5 : 0) + (confirmedPackage ? 8 : 0) + (completionRatio > 0.8 ? 5 : -5))),
       composure: clamp(fallbackScore + (fillerCount < 2 ? 5 : -8) + (facts.expressedSurprise ? 3 : 0) + (facts.usedTacticalSilence ? 5 : 0)),
       professionalTone: clamp(fallbackScore + (fillerCount < 3 ? 5 : -5) + (avgAnswerLen > 30 ? 3 : -5)),
     };
-    return { score, skillScores, hasAnyAnswers };
+    // A folded outcome must not headline as "Hire". Pull the overall score
+    // toward the ceiling so it can't outrun the skills it's built from.
+    const negScore = outcomeCeiling === null ? score : Math.min(score, outcomeCeiling + 15);
+    return { score: negScore, skillScores, hasAnyAnswers };
   }
 
   const hasMetrics = userAnswers.some(t =>

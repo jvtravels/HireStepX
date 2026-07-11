@@ -11,6 +11,7 @@
 
 import type {
   SessionReport,
+  SessionReportBand,
   SessionReportPerQuestion,
   SessionReportRedFlag,
   SessionReportCrossSessionInsight,
@@ -343,19 +344,90 @@ export function sessionReportToInterviewResult(
     /hr.?round|\bhr\b/i.test(session.type || "") ||
     /hr.?round|\bhr\b/i.test(session.focus || "");
 
-  const scoreDelta = computeScoreDelta(ctx.recentScores);
-  const weakestSkill = pickWeakestSkill(report.skills);
+  // Authoritative negotiation outcome (kernel metrics when present), computed
+  // before the skills so the report layer can reconcile skills/score/band
+  // against it — see groundNegotiationReport. Undefined for non-negotiation
+  // sessions, where the grounding below is a pass-through no-op.
+  const negotiationOutcome = isNegotiation
+    ? attachPowerContext(
+        attachLowballEvent(
+          buildNegotiationOutcome(report, session.negotiationMetrics),
+          session.negotiationMetrics?.lowballEvent,
+        ),
+        session.negotiationMetrics?.powerContext,
+      )
+    : undefined;
+  // Only reconcile against an AUTHORITATIVE (kernel-derived) outcome. A
+  // heuristic outcome comes from the same fragile transcript regex that
+  // caused the DATA-1 "0 of 5 stages" bug class — grounding scores against a
+  // guessed outcome could wrongly cap a legacy row. Current sessions all
+  // carry kernel metrics, so the launch-critical LLM/deterministic paths are
+  // still covered; only pre-kernel legacy rows opt out (they were fully
+  // heuristic and already carry a low scoreConfidence).
+  const outcomeIsAuthoritative =
+    isNegotiation &&
+    negotiationOutcomeDerivation(session.negotiationMetrics) === "kernel";
+  const grounded = outcomeIsAuthoritative
+    ? groundNegotiationReport(
+        report.skills,
+        report.overallScore,
+        report.band,
+        negotiationOutcome,
+        report.calibration?.bands,
+      )
+    : { skills: report.skills, overallScore: report.overallScore, band: report.band };
+  const weakestSkill = pickWeakestSkill(grounded.skills);
+
+  /* R-4 (2026-07-10, live staging) — sparkline / headline coherence. The hero
+   * gauge renders the GROUNDED overall score (grounded.overallScore), but the
+   * trend sparkline plotted ctx.recentScores whose last point is THIS session's
+   * UN-grounded score — so a capped negotiation rendered "Currently 93" on the
+   * sparkline beside a "72" headline gauge. The last plotted point IS this
+   * session; force it to the same number the gauge shows. No-op for
+   * non-negotiation rows (grounded.overallScore === report.overallScore). */
+  const groundedRecentScores =
+    ctx.recentScores && ctx.recentScores.length > 0
+      ? [...ctx.recentScores.slice(0, -1), grounded.overallScore]
+      : ctx.recentScores;
+  /* The trend strip labels itself "Across {priorSessionCount + 1} sessions" but
+   * the sparkline plots `groundedRecentScores`. When the two disagreed the
+   * report read "across 4 sessions" over a 6-dot sparkline. The plotted window
+   * is the authoritative "how many sessions this view summarizes", so derive
+   * the label count from it. */
+  const coherentPriorSessionCount =
+    groundedRecentScores && groundedRecentScores.length > 0
+      ? groundedRecentScores.length - 1
+      : report.priorSessionCount;
+
+  /* I-11 (2026-07-10, live staging) — the hero showed a green "↑18" beside a
+   * sparkline whose visible last point had ticked DOWN. Root cause: R-4 forced
+   * the sparkline to plot `groundedRecentScores` (last point = the grounded
+   * gauge score) but `scoreDelta` (the arrow) was still computed off the
+   * UN-grounded `ctx.recentScores`, so the two disagreed on this session's
+   * score. Derive the arrow from the SAME grounded array the sparkline plots —
+   * single source of truth — so the arrow's number and direction always match
+   * the last plotted segment. */
+  const scoreDelta = computeScoreDelta(groundedRecentScores);
 
   return {
-    overallScore: report.overallScore,
-    verdict: report.band as Verdict,
+    overallScore: grounded.overallScore,
+    verdict: grounded.band as Verdict,
     scoreDelta,
     percentile: ctx.percentile,
-    recentScores: ctx.recentScores,
+    recentScores: groundedRecentScores,
     readiness: report.readiness
       ? {
-          pct: clamp(report.overallScore, 0, 100),
-          etaWeeks: estimateWeeks(report.readiness.estimatedHours),
+          pct: clamp(grounded.overallScore, 0, 100),
+          /* R-9 (2026-07-10, live staging) — the hero's "~N weeks" ETA and the
+           * readinessSentence's "~H hours over ~S sessions" are two views of the
+           * SAME plan and must agree. Deriving weeks from hours (÷3) while the
+           * sentence quoted an independent session count made them diverge
+           * ("~13 weeks" beside "~8 sessions"). Derive the ETA from the same
+           * session count the sentence shows, at ~3 focused sessions/week. */
+          etaWeeks: estimateWeeksFromSessions(
+            report.readiness.estimatedSessions,
+            report.readiness.estimatedHours,
+          ),
         }
       : undefined,
     daysUntilInterview: ctx.daysUntilInterview,
@@ -366,8 +438,10 @@ export function sessionReportToInterviewResult(
     aiVerdict: report.verdict,
     strengths: report.wins.map((w) => w.text),
     improvements: report.fixes.map((f) => f.text),
-    metrics: isNegotiation ? buildNegotiationMetrics(report) : buildMetrics(report),
-    skills: buildSkills(report.skills),
+    metrics: isNegotiation
+      ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null)
+      : buildMetrics(report),
+    skills: buildSkills(grounded.skills),
     weakestSkill: {
       name: weakestSkill?.name || "—",
       tip:
@@ -375,7 +449,21 @@ export function sessionReportToInterviewResult(
           ? `Focus your next session on ${weakestSkill.name.toLowerCase()} — it's your lowest signal at ${weakestSkill.score}/100.`
           : "Keep practising consistently.",
     },
-    questions: report.perQuestion.map((q) => adaptQuestion(q, report.redFlags)),
+    questions: (() => {
+      const base = report.perQuestion.map((q) => adaptQuestion(q, report.redFlags));
+      /* I-13 (2026-07-11, live staging) — for salary negotiations the evaluator
+       * collapses the whole call into a SINGLE aggregate perQuestion item, so the
+       * Per-Question Review showed "1" for a six-turn negotiation. The real
+       * per-turn exchanges live on session.transcript (ai = recruiter line,
+       * user = candidate reply). Reconstruct one Per-Question item per candidate
+       * turn from that recorded transcript so the section shows every exchange and
+       * the heading count is honest. Falls back to the aggregate base when the
+       * transcript can't be split into more turns than we already have (legacy
+       * rows without a stored transcript) — we never invent exchanges. */
+      if (!isNegotiation) return base;
+      const reconstructed = buildNegotiationPerQuestion(session.transcript, base);
+      return reconstructed ?? base;
+    })(),
     scoreConfidence: confidenceBucket(report.scoreConfidence),
     scoreConfidenceNote:
       report.scoreConfidence < 0.7
@@ -396,13 +484,22 @@ export function sessionReportToInterviewResult(
       report.fairnessSignals && report.fairnessSignals.notes.length > 0
         ? { notes: report.fairnessSignals.notes }
         : undefined,
-    priorSessionCount: report.priorSessionCount,
+    priorSessionCount: coherentPriorSessionCount,
     crossSessionInsights: adaptInsights(report.crossSessionInsights),
     storyReuseFindings: report.storyReuseFindings.map((s) => ({
       storyLabel: s.storyLabel,
       body: s.concern,
     })),
-    blindSpots: report.blindSpots.map((b) => ({
+    /* R-8 (2026-07-10, live staging) — the evaluator's blindSpots array carries
+     * generic behavioral competencies (Conflict Resolution, Time Management,
+     * Communication Clarity, …). On a salary-negotiation report those are
+     * off-domain noise — the reader is here to learn why the number didn't move,
+     * not about their conflict style. Keep only negotiation-relevant blind spots
+     * on a negotiation report; behavioral reports pass through untouched. */
+    blindSpots: (isNegotiation
+      ? report.blindSpots.filter((b) => isNegotiationCompetency(b.competency))
+      : report.blindSpots
+    ).map((b) => ({
       title: b.competency,
       body: b.note,
     })),
@@ -421,19 +518,123 @@ export function sessionReportToInterviewResult(
     resumeImprovements: Array.isArray(ctx.resumeImprovements) && ctx.resumeImprovements.length > 0
       ? ctx.resumeImprovements.slice(0, 3)
       : undefined,
-    negotiationOutcome: isNegotiation
-      ? attachPowerContext(
-          attachLowballEvent(
-            buildNegotiationOutcome(report, session.negotiationMetrics),
-            session.negotiationMetrics?.lowballEvent,
-          ),
-          session.negotiationMetrics?.powerContext,
-        )
-      : undefined,
+    negotiationOutcome,
     kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
     focusBanner: buildFocusBanner(session, report),
     hrReport: isHrRound ? buildHrReport(report) : undefined,
   };
+}
+
+/* Skill names whose whole point is "did you move the number / extract
+   value" — the outcome-dependent negotiation axes. Demeanour axes
+   (composure, professional tone, communication) are deliberately excluded:
+   a calm, polite fold is still calm and polite.
+
+   CRITICAL: this regex is the SINGLE classification point for "is this axis
+   outcome-dependent?", and TWO independent scorers emit two different naming
+   schemes — it must cover BOTH or axes silently escape the fold-cap:
+     - LLM evaluator / client heuristic: "Leverage Use", "Closing Technique",
+       "Anchoring", "Concession Strategy", "Package Thinking",
+       "Deal Structuring", "Counter-Offer Handling".
+     - Server deterministic fallback (_deterministic-neg-report.ts NEG_AXES,
+       the ACTIVE path whenever both LLM providers are exhausted):
+       "Anchor strength", "Counter-offer judgement", "Trade-off awareness",
+       "Structural fluency", "Walk-away discipline" (+ "Tactical composure",
+       a demeanour axis, correctly NOT matched).
+   The `trade|structural|walk` alternatives cover the three deterministic
+   axes the original LLM-scheme regex missed — without them an accepted-caved
+   report rendered Trade-off/Structural/Walk-away bars at 95 beside
+   "0% of the gap closed". `walk` only ever bites in the `accepted` branch
+   below (genuine walk-aways return early at outcome !== "accepted"), so a
+   real walk-away's discipline score is never capped. */
+const NEG_OUTCOME_SKILL_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter|trade|structural|walk/i;
+/* R-8 — is a competency name in the salary-negotiation domain? Superset of the
+ * outcome-skill regex (which covers the number-moving axes) PLUS the demeanour /
+ * process axes a negotiation report legitimately surfaces as blind spots
+ * (composure under pressure, BATNA prep, silence discipline, discovery,
+ * comp-structure fluency). Anything else — behavioral-interview competencies —
+ * is off-domain for a negotiation report and filtered out. */
+const NEG_BLINDSPOT_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter|trade|structural|walk|batna|silence|discovery|composure|compensation|comp\b|equity|offer|negotiat/i;
+function isNegotiationCompetency(name: string): boolean {
+  return NEG_BLINDSPOT_RE.test(name || "");
+}
+/* PRI-67 — the close-specific axis. Capped on a "no_agreement" outcome, where
+ * the close stage was provably never reached (derivePhases.reachedClose false). */
+const NEG_CLOSING_SKILL_RE = /clos(?:e|ing)/i;
+const NOT_CLOSED_CEILING = 45;
+
+/** Report-layer coherence guarantee for salary-negotiation.
+ *
+ *  Three independent code paths can score a negotiation: the LLM evaluator
+ *  (evaluate-session), the server deterministic fallback
+ *  (buildDeterministicNegotiationReport), and the client heuristic
+ *  (computeFallbackScores). Only the last grounds its own scores in the
+ *  outcome (PRI-66). This adapter is the ONE place where the kernel's
+ *  authoritative gap-closure AND the finished skill scores are both in
+ *  hand — so it's where we enforce the invariant that NO path may render
+ *  "accepted, ~0% of the gap closed" beside a 95 Leverage bar.
+ *
+ *  We only ever LOWER, and only when the kernel says the candidate ACCEPTED
+ *  while closing little of a real ask-vs-offer gap. A strong close, a
+ *  walk-away, or a legacy row with no authoritative gap is left exactly as
+ *  the scorer produced it. The overall score and Hire/No band move down in
+ *  lockstep so we never trade a skill contradiction for a headline one. */
+export function groundNegotiationReport(
+  skills: Array<{ name: string; score: number; weight?: number }>,
+  overallScore: number,
+  band: SessionReportBand,
+  outcome: InterviewResultData["negotiationOutcome"],
+  calibrationBands?: { strongHire: number; hire: number; leanHire: number; noHire: number },
+): { skills: Array<{ name: string; score: number; weight?: number }>; overallScore: number; band: SessionReportBand } {
+  const unchanged = { skills, overallScore, band };
+  if (!outcome) return unchanged;
+
+  /* PRI-67 (2026-07-07, live staging) — close-stage ↔ Closing-skill coherence.
+   * A "no_agreement" kernel outcome (stalemate / ran out of turns) never
+   * reached the close stage — derivePhases.reachedClose is false for it — yet
+   * the scorers still handed out Closing Technique 85-90 on 5 of 23 live kernel
+   * sessions, so the report rendered "You reached the close — not reached"
+   * beside a 90 Closing bar. Cap the ONE outcome-gated axis whose stage was
+   * provably not reached. Anchoring / Leverage / Package are left alone (their
+   * stages — counter named, levers explored — are reachable mid-negotiation),
+   * and walk-aways fall through untouched: they DID reach the close, and
+   * PRI-64 says a walk-away's leverage is legitimately high. */
+  if (outcome.outcome === "no_agreement") {
+    const groundedSkills = skills.map((s) =>
+      NEG_CLOSING_SKILL_RE.test(s.name)
+        ? { ...s, score: Math.min(s.score, NOT_CLOSED_CEILING) }
+        : s,
+    );
+    return { skills: groundedSkills, overallScore, band };
+  }
+  if (outcome.outcome !== "accepted") return unchanged; // walk-away → untouched
+  const gap = outcome.gapClosurePct;
+  if (gap == null) return unchanged; // no authoritative gap → don't second-guess the scorer
+
+  let ceiling: number | null = null;
+  if (gap < 10) ceiling = 45;       // accepted, closed ~nothing → clear cave
+  else if (gap < 30) ceiling = 60;  // token movement → mediocre close
+  else if (gap < 55) ceiling = 75;  // closed under half the gap → decent, not strong
+  // gap ≥ 55 → genuinely closed the gap; leave the scorer's numbers intact.
+  if (ceiling === null) return unchanged;
+
+  const cap = ceiling;
+  const groundedSkills = skills.map((s) =>
+    NEG_OUTCOME_SKILL_RE.test(s.name) ? { ...s, score: Math.min(s.score, cap) } : s,
+  );
+  const groundedScore = Math.min(overallScore, cap + 15);
+  // Recompute the band from the grounded score so the verdict pill can't
+  // outrun the skills it summarizes. Company thresholds when we have them,
+  // else the default profile (companyCalibration DEFAULT_PROFILE). Monotonic:
+  // groundedScore ≤ overallScore, so the band only ever moves down.
+  const b = calibrationBands ?? { strongHire: 85, hire: 70, leanHire: 55, noHire: 40 };
+  const groundedBand: SessionReportBand =
+    groundedScore >= b.strongHire ? "strongHire"
+    : groundedScore >= b.hire ? "hire"
+    : groundedScore >= b.leanHire ? "leanHire"
+    : groundedScore >= b.noHire ? "noHire"
+    : "strongNoHire";
+  return { skills: groundedSkills, overallScore: groundedScore, band: groundedBand };
 }
 
 /** Adopt the negotiation outcome from the kernel's authoritative final
@@ -464,7 +665,13 @@ function adoptKernelOutcome(
     total,
     question: "",
   }));
-  const candidateAsk = km.candidateAskLpa ?? null;
+  // I-10 — the candidate ask is the SINGLE source every report surface
+  // renders (TLDRHero "YOUR ASK", AnchorBracketPanel, OfferTrajectory,
+  // derivations phase note, CounterOfferLetter). Round to a whole LPA at the
+  // point of derivation so no downstream surface can render a bare float on
+  // one card while another rounds — the two surfaces can't disagree.
+  const candidateAsk =
+    typeof km.candidateAskLpa === "number" ? Math.round(km.candidateAskLpa) : null;
   const latest = trajectory.length > 0
     ? trajectory[trajectory.length - 1]
     : (typeof km.finalOfferLpa === "number" ? km.finalOfferLpa : null);
@@ -554,6 +761,18 @@ export function buildNegotiationOutcome(
   let outcome: "accepted" | "walked_away" | "no_agreement" = "no_agreement";
   if (acceptedRe.test(allAnswers)) outcome = "accepted";
   else if (walkRe.test(allAnswers)) outcome = "walked_away";
+  /* R-1 (2026-07-10, live staging) — cross-surface outcome coherence. This
+   * heuristic path runs ONLY when kernel metrics are present but carry no
+   * authoritative trajectory (legacy row) — adoptKernelOutcome returned null.
+   * In that case the fragile accept/walk regex could classify "accepted" off a
+   * stray "sounds good" while the kernel's own terminal state
+   * (kernelMetrics.outcome, rendered verbatim by KernelNegotiationQualitySection)
+   * said "walked-away" — the same report reading "accepted their opening" beside
+   * "Walked away". The kernel's terminal outcome is the authority even when the
+   * per-turn trajectory wasn't persisted; let it override the regex so both
+   * surfaces read one outcome. Stalemate / in-progress stay "no_agreement". */
+  if (kernelMetrics?.outcome === "accepted") outcome = "accepted";
+  else if (kernelMetrics?.outcome === "walked-away") outcome = "walked_away";
 
   // Candidate's highest stated target (their ask). The cue set mirrors the
   // kernel's TARGET_CUE_PRESENCE (_number-role-classifier) so a counter the
@@ -569,7 +788,17 @@ export function buildNegotiationOutcome(
   while ((am = askRe.exec(allAnswers)) !== null) {
     const v = parseFloat(am[1]);
     if (Number.isFinite(v) && v >= 3 && v <= 500) {
-      candidateAsk = candidateAsk === null ? v : Math.max(candidateAsk, v);
+      /* R-2 (2026-07-10, live staging) — last-stated-wins, mirroring the kernel's
+       * candidateTarget binding. The prior Math.max grabbed the HIGHEST number
+       * any ask-cue touched ("₹50 would be ideal but I'd take ₹46"), so this
+       * legacy-fallback path reported ₹50 while the kernel-authoritative
+       * interstitial showed the truly-anchored ₹46 — the same session showing
+       * two asks. The candidate's final stated number is the ask, same rule the
+       * kernel uses, so the two surfaces can't disagree. */
+      // I-10 — round to a whole LPA at derivation so the ask renders identically
+      // on every surface (see adoptKernelOutcome); parseFloat could otherwise
+      // hand "48.5" to one card while another rounds it to "48".
+      candidateAsk = Math.round(v);
     }
   }
 
@@ -765,7 +994,10 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
  *  Best-effort derivations from the candidate's transcript text — these
  *  are heuristic and replaceable when the LLM scoring pipeline starts
  *  emitting first-class negotiation signals on `report`. */
-function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
+function buildNegotiationMetrics(
+  report: SessionReport,
+  kernelAsk: number | null,
+): DeliveryMetric[] {
   const candidateAnswers = report.perQuestion.map((q) => q.answerText || "");
   const allText = candidateAnswers.join(" ");
 
@@ -778,9 +1010,34 @@ function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
   // skill axis is now the single source for "Anchor strength". (REPORT-3.)
   const anchorRe = /(?:₹\s*)?\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
   const answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
-  const numbersStated = candidateAnswers.length > 0
+  // REPORT-3b (2026-07-11, live staging) — cross-surface coherence. The kernel
+  // authoritatively tracks whether the candidate named a counter-number
+  // (`candidateAsk`, the same field derivePhases renders as "Asked for ₹X LPA").
+  // The bespoke `anchorRe` above is a SECOND, divergent detector over raw
+  // answerText: when the ask phrasing sits outside the regex ("make it 45",
+  // "mid-forties") or answerText is degraded/empty, it counted 0 and the report
+  // showed "Numbers stated 0% · Needs Work" right beside its own "Asked for
+  // ₹45 LPA".
+  //
+  // REPORT-3c (2026-07-11, live staging — session 734493c9, "Numbers stated
+  // 0% · On Target"): the first pass floored answersWithAnchor to ≥1 but then
+  // divided by candidateAnswers.length and floored only the BAND
+  // (needsWork→ok), NOT the displayed value. When perQuestion carried no usable
+  // answerText (length 0, the degraded/heuristic path), the value ternary
+  // returned a hard 0 — bypassing the ≥1 floor entirely — while the band still
+  // flipped to "ok", printing a self-contradicting "0% · On Target". Floor the
+  // VALUE itself (the single source the band derives from) so the two can never
+  // disagree: a credited kernel anchor reads at least "On Target" (25%), the
+  // band follows from the value, and there is no separate band override to drift.
+  // No effect when the candidate genuinely never anchored (kernelAsk === null):
+  // that 0% · Needs Work is the honest, coherent verdict.
+  const kernelAnchored = kernelAsk !== null;
+  let numbersStated = candidateAnswers.length > 0
     ? Math.round((answersWithAnchor / candidateAnswers.length) * 100)
     : 0;
+  if (kernelAnchored) numbersStated = Math.max(numbersStated, 25);
+  const numbersBand: DeliveryMetric["band"] =
+    numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork";
 
   // Concession rate — count "I'd be open to / I can lower / how about / fine
   // with X" type concessions. Low concession = strong negotiator.
@@ -805,7 +1062,7 @@ function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
       value: numbersStated,
       unit: "%",
       targetLabel: "Anchor a figure",
-      band: numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork",
+      band: numbersBand,
     },
     {
       label: "Concession rate",
@@ -931,6 +1188,67 @@ function adaptQuestion(
         }))
       : undefined,
   };
+}
+
+/** I-13 — reconstruct per-turn negotiation exchanges from the recorded
+ *  transcript when the evaluator only produced a single aggregate item.
+ *
+ *  Each candidate ("user") turn becomes one Question item: the immediately
+ *  preceding recruiter ("ai") line is the question text, the candidate's reply
+ *  is the answer. This is a pure re-projection of REAL recorded turns — no
+ *  scores or exchanges are invented. Per-turn scores don't exist for a
+ *  negotiation (the evaluator scored the call as a whole), so every item carries
+ *  a neutral band and the aggregate's score, and the section shows the true
+ *  number of exchanges instead of claiming a per-turn breakdown we don't have.
+ *
+ *  Returns null (caller keeps the aggregate) when the transcript can't yield
+ *  MORE exchanges than the aggregate already shows — a legacy row with no stored
+ *  transcript, or a genuinely single-turn call — so we never over-claim. */
+function buildNegotiationPerQuestion(
+  transcript: DashboardSession["transcript"] | undefined,
+  base: Question[],
+): Question[] | null {
+  if (!Array.isArray(transcript) || transcript.length === 0) return null;
+
+  const aggregate = base[0];
+  let pendingRecruiter = "";
+  const items: Question[] = [];
+  for (const entry of transcript) {
+    if (!entry || typeof entry.text !== "string") continue;
+    const text = stripProsodyMarkup(entry.text).trim();
+    if (!text) continue;
+    // Skip listening-nudge / interjection sentinels ([tracking], [pause], …)
+    // the engine writes as "ai" lines — they aren't recruiter offers.
+    if (entry.speaker === "ai") {
+      if (/^\[.*\]$/.test(text)) continue;
+      pendingRecruiter = text;
+      continue;
+    }
+    if (entry.speaker !== "user") continue;
+    if (/^\[.*\]$/.test(text)) continue; // skipped-turn sentinel
+    items.push({
+      index: items.length + 1,
+      text: pendingRecruiter || `Exchange ${items.length + 1}`,
+      // No per-turn score exists — the evaluator scored the whole call. Carry
+      // the aggregate score with a neutral band rather than fabricate a per-turn
+      // number the kernel never recorded.
+      score: aggregate?.score ?? 0,
+      band: "partial",
+      answer: highlightAnswer(entry.text),
+      star: { situation: false, task: false, action: false, result: false, learning: false },
+      metrics: {
+        wordCount: wordCount(entry.text),
+        responseSec: Math.round((wordCount(entry.text) / 150) * 60),
+        firstPersonRatioPct: Math.round(firstPersonRatio(entry.text) * 100),
+        quantificationCount: countQuantifications(entry.text),
+      },
+      whyScored: "",
+    });
+    pendingRecruiter = "";
+  }
+
+  // Only replace the aggregate when we genuinely recovered more exchanges.
+  return items.length > base.length ? items : null;
 }
 
 function adaptRedFlag(rf: SessionReportRedFlag): RedFlag {
@@ -1129,6 +1447,16 @@ function capitalize(s: string): string {
 function estimateWeeks(hours: number): number {
   // ~3 focused sessions/week × ~1hr each → 3hrs/week effective practice.
   return Math.max(1, Math.round(hours / 3));
+}
+/* R-9 — single ETA model shared with the readinessSentence. Sessions are the
+ * planning unit the sentence quotes ("~S sessions"), so pace the ETA off them
+ * at ~3 focused sessions/week; fall back to the hours model when the session
+ * count is missing so legacy readiness rows still get a sane number. */
+function estimateWeeksFromSessions(sessions: number | undefined, hours: number): number {
+  if (typeof sessions === "number" && Number.isFinite(sessions) && sessions > 0) {
+    return Math.max(1, Math.ceil(sessions / 3));
+  }
+  return estimateWeeks(hours);
 }
 function formatBand(band: "strongHire" | "hire" | "leanHire"): string {
   if (band === "strongHire") return "Strong Hire";

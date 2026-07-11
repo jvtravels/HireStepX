@@ -109,7 +109,7 @@ export function DataLoadingSkeleton() {
 const PLANS_ALL = [
   { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false, hidden: false },
   { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false, hidden: false },
-  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"],                                                                                                featured: true,  hidden: false },
+  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"],                                                                                                featured: true,  hidden: false },
   /* Monthly plan \u2014 hidden until re-enabled. Keep all data intact so re-enabling is a one-line change. */
   { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",       features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"],                                                    featured: false, hidden: true  },
 ];
@@ -121,7 +121,7 @@ const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, team: 3 };
 
 
-export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: (newBalance: number) => void }) {
+export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, starterExhausted, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; starterExhausted?: boolean; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: (newBalance: number) => void }) {
   // Cream palette shadow — matches the marketing /pricing page and settings repaint.
   // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
   const c = {
@@ -427,9 +427,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           </p>
         </div>
 
-        {/* ── Sprint Pack top-up banner — shown to starter users ──────────────
-            Explains that the pack has no reset; buy more sessions below. */}
-        {currentTier === "starter" && (
+        {/* ── Sprint Pack exhausted banner — only shown when sessions are used up */}
+        {currentTier === "starter" && starterExhausted && (
           <div style={{ display: "flex", alignItems: "center", gap: 12,
             background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)",
             borderRadius: 12, padding: "12px 16px", marginBottom: 20 }}>

@@ -173,25 +173,65 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
 
   const leverDiversity = new Set(moves.map((m) => m.lever)).size;
 
-  const lpaGained = Math.max(0, finalState.highestOfferMade - band.initialOffer);
-  const cashTurns = moves.filter((m) => m.newTotalLpa != null).length;
-  const lpaPerTurn = cashTurns > 0 ? Math.round((lpaGained / cashTurns) * 100) / 100 : 0;
-
-  const spread = band.maxStretch - band.initialOffer;
-  const bandTraversal = spread > 0
-    ? Math.max(0, Math.min(1, lpaGained / spread))
-    : null;
-
-  const overBandViolation = moves.some(
-    (m) => m.newTotalLpa != null && m.newTotalLpa > band.maxStretch + 0.01,
-  );
-
   /* Authoritative offer trajectory + ask — straight off the kernel, no
      transcript re-parse. Cash turns only (non-cash levers carry null). */
   const offerTrajectoryLpa = moves
     .map((m) => m.newTotalLpa)
     .filter((n): n is number => n != null);
   const candidateAskLpa = effectiveTargetCtcLpaLocal(finalState);
+
+  /* The recruiter's realized top offer — the SINGLE source of truth for every
+     concession-derived metric below (final offer, LPA gained, band traversal).
+     It is the max of the recruiter's actual spoken numbers (the trajectory the
+     offer-progression panel renders), NOT the raw highestOfferMade field.
+     Rationale: the accept-on-band back-fill (_negotiation-kernel.ts:6046) can
+     register the candidate's in-band TARGET into highestOfferMade without ever
+     emitting a numeric move — a write that never enters the trajectory. Reading
+     highestOfferMade for `lpaGained` while the progression panel reads the
+     trajectory lets the two panels contradict (report shows "gained ₹15L" beside
+     a flat ₹48→₹48→₹48 progression). Deriving both from the trajectory makes them
+     consistent by construction. This is a strict no-op on every kernel-produced
+     state: highestOfferMade only exceeds max(trajectory) via the !hasOffer-gated
+     6046 path, which fires only when no numeric move exists (empty trajectory) —
+     so whenever the trajectory is non-empty, max(trajectory) === highestOfferMade
+     already. The empty-trajectory fallback keeps the legitimate pure accept-on-band
+     close number (candidate accepted the band outright, no counter ever spoken). */
+  const recruiterTopOfferLpa = offerTrajectoryLpa.length > 0
+    ? Math.max(...offerTrajectoryLpa)
+    : finalState.highestOfferMade;
+
+  /* L-5 (2026-07-10, live staging — walk-away report 599e1c9f): `lpaGained`
+     is "LPA gained ... over the opening offer" (see the outcome explanation
+     in scoreNegotiationBehaviourDetailed) — the value the candidate NEGOTIATED,
+     i.e. movement from the recruiter's first spoken offer to their top offer.
+     Baselining it on `band.initialOffer` (the band FLOOR) instead over-credited
+     every session where the recruiter opened ABOVE the floor: a Tough recruiter
+     who opened at the ceiling (₹40.3, band ₹30.4–₹40.3) and never moved showed
+     "LPA gained ₹9.9" on a WALK-AWAY, contradicting "Money left on the table",
+     "0% gap closed", and "+7% pushed back" on the same report. Movement is
+     top − first actual offer; when the recruiter opens exactly at the floor
+     (the common case) first === band.initialOffer, so this is a no-op there.
+     The empty-trajectory fallback preserves the pure accept-on-band close. */
+  const recruiterFirstOfferLpa = offerTrajectoryLpa.length > 0
+    ? offerTrajectoryLpa[0]
+    : band.initialOffer;
+  const lpaGained = Math.max(0, recruiterTopOfferLpa - recruiterFirstOfferLpa);
+  const cashTurns = moves.filter((m) => m.newTotalLpa != null).length;
+  const lpaPerTurn = cashTurns > 0 ? Math.round((lpaGained / cashTurns) * 100) / 100 : 0;
+
+  /* Band traversal is a POSITION metric — how high in the band the final offer
+     sits — distinct from lpaGained (movement). It stays keyed on band.initialOffer
+     so it is unchanged by the L-5 fix above (it previously read lpaGained/spread,
+     and old lpaGained === recruiterTopOfferLpa − band.initialOffer, so this is the
+     identical value). Kept explicit so the two metrics can no longer drift. */
+  const spread = band.maxStretch - band.initialOffer;
+  const bandTraversal = spread > 0
+    ? Math.max(0, Math.min(1, (recruiterTopOfferLpa - band.initialOffer) / spread))
+    : null;
+
+  const overBandViolation = moves.some(
+    (m) => m.newTotalLpa != null && m.newTotalLpa > band.maxStretch + 0.01,
+  );
 
   return {
     outcome,
@@ -210,7 +250,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     recruiterCritique: critiqueRecruiterStrategy({ finalState, moves }),
     pivotalTurn: analyzePivotalTurn({ finalState, moves }),
     initialOfferLpa: band.initialOffer,
-    finalOfferLpa: finalState.highestOfferMade,
+    finalOfferLpa: recruiterTopOfferLpa,
     candidateAskLpa,
     offerTrajectoryLpa,
   };

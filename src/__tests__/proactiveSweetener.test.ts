@@ -152,6 +152,82 @@ describe("proactive-sweetener — cooling signals", () => {
   });
 });
 
+/* PRI-65 (2026-07-06, launch-readiness audit) — the (5c) "stale-offer"
+ * cooling signal (2+ candidate turns since the offer landed, no close shipped)
+ * was DEAD: it read `state.lastOfferTurn` / `state.highestOfferMadeAtTurn`
+ * through `as unknown as` casts, and neither property exists on
+ * NegotiationState, so both always resolved to undefined and the branch never
+ * fired. It now reads the real `firstOfferAtTurn` field. These tests exercise
+ * (5c) IN ISOLATION — no affinity ledger (5a) and no pending counter (5b), so
+ * the ONLY path to a fire is the stale-offer trigger itself. */
+describe("proactive-sweetener — stale-offer cooling signal (5c)", () => {
+  it("fires when the offer has sat 2+ turns since it landed (firstOfferAtTurn)", () => {
+    const s = cappedState({
+      sessionId: "ps-stale-fire",
+      turnIndex: 6,
+      firstOfferAtTurn: 4, // 6 - 4 = 2 turns elapsed → stale
+    });
+    const action = planNextAction(s);
+    expect(action.kind).toBe("proactive-sweetener");
+  });
+
+  it("does NOT fire when the offer only just landed (< 2 turns elapsed)", () => {
+    const s = cappedState({
+      sessionId: "ps-stale-fresh",
+      turnIndex: 6,
+      firstOfferAtTurn: 5, // 6 - 5 = 1 turn elapsed → not yet stale
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("proactive-sweetener");
+  });
+
+  it("does NOT fire when firstOfferAtTurn is absent (no offer-landed marker)", () => {
+    // Guards the backward-compat path: undefined firstOfferAtTurn must not
+    // arithmetic into a spurious fire (NaN >= 2 is false).
+    const s = cappedState({ sessionId: "ps-stale-absent", turnIndex: 6 });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("proactive-sweetener");
+  });
+
+  it("does NOT fire once a close-acceptance lever has already shipped", () => {
+    const s = cappedState({
+      sessionId: "ps-stale-closed",
+      turnIndex: 8,
+      firstOfferAtTurn: 4, // 4 turns elapsed — would be stale…
+      leversUsed: ["close-acceptance"], // …but the close already happened
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("proactive-sweetener");
+  });
+});
+
+/* PRI-60 × PRI-65 precedence (2026-07-07) — activating the (5c) stale-offer
+ * signal let the sweetener win the SAME close turn that PRI-60's scope-reconcile
+ * counter owns: when the candidate has conditionally closed on an UNDELIVERABLE
+ * fixed number (above the band's cash cap), the recruiter must NAME the overage
+ * out loud before pivoting to equity — not silently dangle an equity-refresh
+ * sweetener that never reconciles the scope. The guard defers the sweetener when
+ * `undeliverableFixedConditionAsk` is pending. These two share one stale-offer
+ * fire-state so the ONLY difference is the pending fixed ask. */
+describe("proactive-sweetener — scope-reconcile precedence (PRI-60 × PRI-65)", () => {
+  /* Band base cap = maxStretch (32); a fixed ask above it is undeliverable. */
+  const staleFire = (over: Partial<NegotiationState> = {}): NegotiationState =>
+    cappedState({ turnIndex: 6, firstOfferAtTurn: 4, ...over });
+
+  it("positive control: the shared stale-offer state DOES fire the sweetener", () => {
+    const action = planNextAction(staleFire({ sessionId: "ps-prec-control" }));
+    expect(action.kind).toBe("proactive-sweetener");
+  });
+
+  it("defers to the scope-reconcile counter when an undeliverable fixed ask is pending", () => {
+    // 40 fixed > base cap 32 → undeliverableFixedConditionAsk is non-null.
+    const action = planNextAction(
+      staleFire({ sessionId: "ps-prec-guard", candidateTargetFixed: 40 }),
+    );
+    expect(action.kind).not.toBe("proactive-sweetener");
+  });
+});
+
 describe("proactive-sweetener — single-fire", () => {
   it("fires at most ONCE across 20 simulated turns", () => {
     let s = withAffinityDrop(cappedState({ sessionId: "ps-once" }));

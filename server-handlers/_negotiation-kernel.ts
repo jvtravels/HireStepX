@@ -3884,6 +3884,12 @@ export function parseCandidateAnswer(
    *  role at Flipkart, I'm targeting 65" must not register Flipkart as a
    *  rival). Optional to preserve back-compat for fixture callers. */
   hiringCompany: string | null = null,
+  /** §11 (2026-07-08) — the numeric standing offer (state.highestOfferMade).
+   *  Threaded to classifyAcceptance so an accept frame naming a number at or
+   *  below the offer ("I'll take 40", "happy with 38") is read as acceptance,
+   *  not a self-defeating upward counter. Optional to preserve back-compat for
+   *  fixture callers that don't have state context. */
+  offerLpa: number | null = null,
 ): ParsedAnswer {
   /* STT fragility audit (2026-05-22) — kernel-boundary normalization.
    *
@@ -3933,7 +3939,11 @@ export function parseCandidateAnswer(
    * walk-away signal is still computed locally because the kernel
    * exposes it as an independent ParsedAnswer field, and the legacy
    * extractor needs a paired walk-away check on the same axis. */
-  const acceptanceResult = classifyAcceptance(a, { phase, offerOnTable });
+  const acceptanceResult = classifyAcceptance(a, {
+    phase,
+    offerOnTable,
+    offerLpa: offerLpa != null && offerLpa > 0 ? offerLpa : undefined,
+  });
   const signalsAcceptance = acceptanceResult.accepted;
   const signalsWalkAway = isWalkAway(a);
 
@@ -4537,7 +4547,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      is meant to express — we are past discovery the moment the band is
      communicated. */
   const offerOnTable = isOfferOnTable(state);
-  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null, state.company ?? null);
+  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null, state.company ?? null, state.highestOfferMade ?? null);
   /* Per-month periodicity (2026-06-15, unbiased-review HIGH) is normalized at
    * the SOURCE — _number-role-classifier.ts annualizes each salary span by its
    * own trailing context, so parsed.target / currentCtc / competing already
@@ -5914,7 +5924,17 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
           parsed.candidateProfile.transferableSkillsClaimed ||
           parsed.candidateProfile.variableTrackRecord));
     next.discoveryChecklist = syncChecklistFromParsedFacts(next.discoveryChecklist, {
-      target: parsed.target,
+      /* N-2 (2026-07-10, live staging) — reconcile targetAnswered against the
+       * GROUND TRUTH, not just this-turn's parse. `parsed.target` only carries
+       * a soft target parsed on THIS utterance; a target captured via the
+       * counter/fixed-ask path lands on next.candidateTarget /
+       * candidateTargetFixed instead, leaving parsed.target null. That desync
+       * kept the checklist's targetAnswered=false even though the candidate had
+       * already anchored a number (observed: candidateTarget=46 captured, yet
+       * the planner's anchor gate re-asked "what's your target?"). Fold the
+       * persisted target in so the single checklist reconcile is authoritative
+       * and every downstream gate that reads targetAnswered stays coherent. */
+      target: parsed.target ?? next.candidateTarget ?? next.candidateTargetFixed ?? null,
       currentCtc: parsed.currentCtc,
       competing: parsed.competing,
       signalsCompetingExistsWithoutNumber: parsed.signalsCompetingExistsWithoutNumber,

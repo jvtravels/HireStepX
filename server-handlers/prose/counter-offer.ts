@@ -23,6 +23,12 @@ export function proseCounterOffer(
   const total = action.counterTotalLpa;
   const round = state.counterRound;
   const persona = helpers.sectorPersona;
+  /* Equity-coherence gate (2026-07-10) — mirror of anchor-with-offer.ts.
+   * recruiterSectorPersona is tier-bucket-assigned regardless of
+   * band.hasEquity, so a cash-only band still drew the ESOP/equity-% counter
+   * tail. band.hasEquity is the single source of truth; degrade the two
+   * equity-bearing counter tails to cash-only when it's false. */
+  const hasEquity = state.band?.hasEquity === true;
   let spiralLead = "Hearing you out — let me see what I can structure.";
   if (round >= 2) {
     spiralLead = "I've stretched as far as my band allows on cash —";
@@ -60,8 +66,12 @@ export function proseCounterOffer(
     const body = helpers.selectBySectorPersona(persona, {
       "it-services": `Services-track ceiling lands the fitment at ₹${total}L total.`,
       "gcc": `Anchored to the global band, we can revise the fitment to ₹${total}L total.`,
-      "indian-unicorn": `On cash we can revise the fitment to ₹${total}L total, with a stronger ESOP grant on top.`,
-      "early-startup": `Cash runway is tight — we can revise the fitment to ₹${total}L total, with a stretch on equity %.`,
+      "indian-unicorn": hasEquity
+        ? `On cash we can revise the fitment to ₹${total}L total, with a stronger ESOP grant on top.`
+        : `On cash we can revise the fitment to ₹${total}L total.`,
+      "early-startup": hasEquity
+        ? `Cash runway is tight — we can revise the fitment to ₹${total}L total, with a stretch on equity %.`
+        : `Cash runway is tight — the most we can revise the fitment to is ₹${total}L total.`,
       "bfsi": `Variable bumps to land the fitment at ₹${total}L total on the perf cycle.`,
       /* Realism-Audit Fix 1 — PSU / Big-4 / FMCG-management framings. */
       "psu": `As per government norms the grade-fitment lands at ₹${total}L total — HRA and LTC are the only flex.`,

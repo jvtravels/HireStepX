@@ -283,6 +283,93 @@ describe("computeNegotiationMetrics", () => {
     expect(m.bandTraversal).toBe(null);
   });
 
+  /* Phantom-gain wall — the recruiter's realized top offer is the SINGLE
+     source of truth for every concession metric, derived from the authoritative
+     offer trajectory (what the offer-progression panel renders), NOT the raw
+     highestOfferMade field. The accept-on-band back-fill (kernel:6046) can
+     register the candidate's in-band TARGET into highestOfferMade without ever
+     emitting a numeric move — so a live report once showed "gained ₹15L" beside
+     a flat ₹48→₹48→₹48 progression. These lock the two panels consistent by
+     construction: when the trajectory is flat, lpaGained/bandTraversal are 0 and
+     finalOfferLpa tracks the trajectory, regardless of highestOfferMade. */
+  it("flat offer trajectory → zero gain even when highestOfferMade is polluted", () => {
+    const m = computeNegotiationMetrics({
+      /* Recruiter held at 20 the whole time; highestOfferMade back-filled to 28
+         (candidate's in-band target) by the accept-on-band path. */
+      finalState: makeState({ phase: "accepted", highestOfferMade: 28, candidateTarget: 28 }),
+      moves: [
+        move({ lever: "open-with-offer", newTotalLpa: 20 }),
+        move({ lever: "hold-firm", newTotalLpa: 20, turnIndex: 2 }),
+        move({ lever: "close-acceptance", newTotalLpa: 20, turnIndex: 4 }),
+      ],
+    });
+    expect(m.offerTrajectoryLpa).toEqual([20, 20, 20]);
+    expect(m.finalOfferLpa).toBe(20); // tracks the trajectory, not the polluted 28
+    expect(m.lpaGained).toBe(0);
+    expect(m.bandTraversal).toBe(0);
+    expect(m.lpaPerTurn).toBe(0);
+  });
+
+  /* L-5 (live staging walk-away 599e1c9f) — lpaGained is MOVEMENT the candidate
+     negotiated (recruiter's top offer − their FIRST actual offer), not distance
+     from the band floor. When the recruiter opens ABOVE the floor and never moves,
+     nothing was gained even though final > floor. Band traversal stays POSITION
+     within the band and is unaffected. */
+  it("L-5: recruiter opens above the floor and never moves → zero lpaGained", () => {
+    const m = computeNegotiationMetrics({
+      // Floor is 20; recruiter opens at 25 (a Tough recruiter fitting high) and holds.
+      finalState: makeState({ phase: "walked-away", highestOfferMade: 25 }),
+      moves: [
+        move({ lever: "open-with-offer", newTotalLpa: 25, turnIndex: 0 }),
+        move({ lever: "hold-firm", newTotalLpa: 25, turnIndex: 2 }),
+      ],
+    });
+    expect(m.outcome).toBe("walked-away");
+    expect(m.offerTrajectoryLpa).toEqual([25, 25]);
+    expect(m.lpaGained).toBe(0);         // movement 25→25, not 25−20=5
+    expect(m.lpaPerTurn).toBe(0);
+    expect(m.bandTraversal).toBe(0.5);   // POSITION: (25−20)/(30−20), unchanged
+  });
+
+  it("L-5: recruiter opens above the floor then climbs → credits only real movement", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ phase: "accepted", highestOfferMade: 28 }),
+      moves: [
+        move({ lever: "open-with-offer", newTotalLpa: 24, turnIndex: 0 }),
+        move({ lever: "counter-base", newTotalLpa: 28, turnIndex: 2 }),
+      ],
+    });
+    expect(m.lpaGained).toBe(4);         // 28−24 movement, not 28−20=8
+    expect(m.bandTraversal).toBe(0.8);   // POSITION: (28−20)/(30−20)
+  });
+
+  it("finalOfferLpa/lpaGained clamp to the recruiter's real top offer", () => {
+    const m = computeNegotiationMetrics({
+      /* Recruiter moved 20→24; highestOfferMade polluted above the trajectory. */
+      finalState: makeState({ phase: "accepted", highestOfferMade: 29, candidateTarget: 29 }),
+      moves: [
+        move({ lever: "open-with-offer", newTotalLpa: 20 }),
+        move({ lever: "counter-base", newTotalLpa: 24, turnIndex: 2 }),
+      ],
+    });
+    expect(m.finalOfferLpa).toBe(24); // max(trajectory), not 29
+    expect(m.lpaGained).toBe(4);
+    expect(m.bandTraversal).toBe(0.4); // 4 / (30-20) spread
+  });
+
+  it("empty trajectory (pure accept-on-band) keeps the legitimate close number", () => {
+    /* No numeric move ever registered → the trajectory is empty and the
+       accept-on-band close number in highestOfferMade is the only truth we have.
+       Fall back to it rather than reporting a phantom zero. */
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ phase: "accepted", highestOfferMade: 26, candidateTarget: 26 }),
+      moves: [move({ lever: "probe", newTotalLpa: null }), move({ lever: "close-acceptance", newTotalLpa: null, turnIndex: 2 })],
+    });
+    expect(m.offerTrajectoryLpa).toEqual([]);
+    expect(m.finalOfferLpa).toBe(26);
+    expect(m.lpaGained).toBe(6);
+  });
+
   it("lpaPerTurn = lpaGained / cashTurns only", () => {
     const m = computeNegotiationMetrics({
       finalState: makeState({ highestOfferMade: 28 }),

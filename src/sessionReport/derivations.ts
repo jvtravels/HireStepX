@@ -57,6 +57,15 @@ export const TOTAL_PHASES = 5;
  * carry none of these fall back to an honest "not reached" rather than an
  * inflated count. Stages 1 (named a counter) and 5 (closed) stay keyed on
  * the directly-tracked candidateAsk / outcome — those were never fabricated. */
+/* R-5 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
+ * Studio) — DELIBERATE non-fabrication. These five stages are an independent
+ * skills CHECKLIST, not a strict monotonic ladder: a candidate can reach the
+ * close (5) after accepting without ever handling a pushback (3), because the
+ * recruiter simply never pushed. Forcing monotonicity — marking stage 3
+ * "reached" merely because stage 5 was — would fabricate a pushback that did
+ * not occur, exactly the failure the PDF#45 contract below forbids. The
+ * honest per-stage truth stands; `phaseCount` in the hero counts skills shown,
+ * not rungs climbed. No code change is the correct resolution here. */
 export function derivePhases(outcome: NegotiationOutcome) {
   const tactics = outcome.tacticsUsed ?? [];
   const info = outcome.infoAsked ?? [];
@@ -122,7 +131,12 @@ export function derivePhases(outcome: NegotiationOutcome) {
     },
     {
       num: 5,
-      name: "You closed the deal",
+      /* PRI-63 (2026-07-06, live staging) — the close STAGE is reached on
+       * accept OR walk-away, so a fixed "You closed the deal" name rendered
+       * a green ✓ "You closed the deal / Walked away" on a walk-away
+       * (contradicting the outcome record). The name tracks the milestone;
+       * the note carries the specific. Only an accept "closed the deal". */
+      name: outcome.outcome === "accepted" ? "You closed the deal" : "You reached the close",
       reached: reachedClose,
       note:
         outcome.outcome === "accepted"
@@ -184,6 +198,28 @@ export function deriveAnchorBracket(
     };
   }
   return null;
+}
+
+/* L-6 (2026-07-10, live staging — walk-away report 599e1c9f): the kernel-quality
+   "Anchored at" tile read "Never anchored" beside a stage tracker showing "You
+   named a counter number — Asked for ₹43 REACHED ✓" and "+7% pushed back". Root:
+   `anchorTurn` is derived from the per-turn candidateTarget snapshot, which only
+   records a TOTAL ask — a fixed-only anchor ("46 fixed") sets candidateTargetFixed
+   and leaves the snapshot null, so no turn is credited even though the candidate
+   clearly named a number. `candidateAskLpa` folds the fixed-only ask (single
+   source, same as the kernel's effectiveTargetCtcLpaLocal), so it is the
+   authoritative did-they-anchor signal; anchorTurn only carries the WHEN. When we
+   have the number but not the turn, say so honestly, not falsely "Never anchored". */
+export function anchorAtLabel(
+  anchorTurn: number | null,
+  candidateAskLpa: number | null | undefined,
+): string {
+  if (anchorTurn == null) {
+    return candidateAskLpa != null ? "Anchored (turn not tracked)" : "Never anchored";
+  }
+  if (anchorTurn <= 1) return `Turn ${anchorTurn} (early)`;
+  if (anchorTurn <= 3) return `Turn ${anchorTurn}`;
+  return `Turn ${anchorTurn} (late)`;
 }
 
 export function computeNpvRows(outcome: NegotiationOutcome) {

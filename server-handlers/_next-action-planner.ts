@@ -99,6 +99,19 @@ import {
   BREAKDOWN_ASK_RE,
   type QuestionRoute,
 } from "./_question-router";
+/* Canonical demand extractor — the single source of truth both acceptance
+ * gates consult. The conditional-close gate uses it to veto a fall-through
+ * close-at-offer when a CASH demand is present but the local numeric
+ * resolvers could not quantify it (batch-5 crore-scale / landing-verb leak).
+ * NON_CASH_DEMAND_REASONS are the extractor cores that are NOT an unmet cash
+ * ask — non-numeric sweeteners (deliverable downstream via the joining-bonus
+ * grant, PRI-63) and role/title upgrades — so they must NOT trip the cash veto. */
+import { analyzeDemand } from "./_utterance-intent";
+const NON_CASH_DEMAND_REASONS = new Set([
+  "grant-sweetener",
+  "sweetener-demand",
+  "title-upgrade",
+]);
 import {
   renderCandidateQuestionResponse,
   type CandidateQuestionTopic,
@@ -1201,6 +1214,239 @@ function acceptanceUtteranceFigure(state: NegotiationState): number | null {
   return null;
 }
 
+/** PRI-68 (2026-07-07, offline hostile sweep) — the implied TOTAL a candidate
+ *  has conditioned acceptance on when they ask for MORE cash on the standing
+ *  offer ("I'll accept if you bump the fixed by another 2L"), or null.
+ *
+ *  This is the missing single source for a relative cash-increase target. The
+ *  acceptance classifier flags such an utterance `conditionalAcceptance=true`
+ *  (Path 1: an `if` clause + a commitment idiom) but records only a text
+ *  snippet — never the magnitude — so the near-offer close gate, lacking a
+ *  resolved figure, used to close at the UN-bumped offer, silently dropping
+ *  the candidate's condition (a PRI-63-class soft false-close). This resolves
+ *  the figure so the gate can meet-and-close a deliverable bump or DECLINE an
+ *  undeliverable one.
+ *
+ *  Two shapes, both returning the implied TOTAL (bumping the fixed by δ raises
+ *  the total by δ, so impliedTotal = offer + δ regardless of which cash
+ *  component is named):
+ *    • delta   — "by 2L" / "another 2L" / "2L more"      → offer + δ
+ *    • absolute — "to 54(L)" welded to an increase verb   → 54
+ *
+ *  Sweetener-scoped conditions (joining/signing/relocation/esop/equity/stock
+ *  bonus) are DELIBERATELY excluded — returning null — because the near-offer
+ *  gate's PRI-63 path already grants those and closes; stealing them here would
+ *  regress that behaviour. A pure non-cash condition ("once you confirm the
+ *  band") or a bare accept ("done") carries no magnitude and returns null too,
+ *  so the gate closes at the offer as before. Pure. */
+/** The parsed cash-INCREASE intent behind a conditional close ("I'll sign if
+ *  you …"), or null when the utterance carries no numeric cash condition.
+ *
+ *  Discriminated so the caller applies the offer once, in one place:
+ *   - `delta`    → add `lakhs` to the standing offer ("2L more", "another few
+ *                  lakh", "half a lakh", "a lakh more")
+ *   - `percent`  → add `pct` % of the standing offer ("bump it 5%", "a couple
+ *                  of percent")
+ *   - `absolute` → set the total to `lakhs` ("bump it to 45L")
+ *
+ *  Consolidation of #33 / #33b / #35 / #36 (2026-07-08). Every hostile
+ *  surface form used to be a `return offer + …` branch scattered through the
+ *  resolver; each new phrasing meant another branch and another soft-false-
+ *  close bug when it was missed. Folding them into ONE pure, offer- and
+ *  NegotiationState-free parser lets the whole battery be unit-tested in
+ *  isolation (conditionalCashIntent.test.ts) and gives future phrasings a
+ *  single, bounded home — resolveConditionalCashTarget below is now just an
+ *  offer-applying, range-gating wrapper.
+ *
+ *  ORDERING IS LOAD-BEARING and preserved exactly from the pre-refactor code:
+ *  percent is resolved BEFORE the lakh-delta so "another 3 percent" reads as
+ *  +3% (not +3L); "half" before the indefinite article so "half a lakh" is
+ *  +0.5 (not +1). A magnitude that fails its range cap FALLS THROUGH to the
+ *  next shape rather than short-circuiting to null — same as before.
+ *
+ *  `unitMandatory` (#36): when a bonus is ALSO named in the same breath
+ *  ("2L more and a joining bonus"), the base delta must carry an explicit
+ *  lakh unit to be trusted, so a bonus AMOUNT ("joining bonus of 2L") and a
+ *  non-cash aside ("another 2 weeks and a bonus") are never misread as a base
+ *  bump. The percent axis is unaffected (a "%" is itself an explicit unit).
+ *  Pure. */
+export type CashIncreaseIntent =
+  | { kind: "delta"; lakhs: number }
+  | { kind: "percent"; pct: number }
+  | { kind: "absolute"; lakhs: number };
+
+export function parseCashIncreaseIntent(
+  text: string,
+  opts: { unitMandatory: boolean },
+): CashIncreaseIntent | null {
+  if (!text) return null;
+  const t = ` ${text.toLowerCase()} `;
+  const { unitMandatory } = opts;
+  const num = String.raw`(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?|lac)?`;
+  /* Unit-MANDATORY delta cues — used when a bonus is also named, so the base bump
+   * must carry an explicit cash unit to be trusted (see #36 above). */
+  const numCash = String.raw`(\d+(?:\.\d+)?)\s*(?:l\b|lpa|lakhs?|lac)`;
+  /* Delta cues carry increase intent on their own ("another 2L", "2L more"). */
+  const another = new RegExp(String.raw`\banother\s+${num}`).exec(t);
+  const anotherCash = new RegExp(String.raw`\banother\s+${numCash}`).exec(t);
+  const more = new RegExp(
+    String.raw`\b${num}\s+(?:more|extra|additional)\b`,
+  ).exec(t);
+  const moreCash = new RegExp(
+    String.raw`\b${numCash}\s+(?:more|extra|additional)\b`,
+  ).exec(t);
+  const INCREASE_VERB =
+    /\b(bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack|bump\s+up|move\s+up)\b/;
+  const hasIncreaseVerb = INCREASE_VERB.test(t);
+  /* A bare increase adverb ("a lakh MORE", "a couple EXTRA") carries increase
+   * intent with no verb — the demand shape "just a lakh more and I'll sign"
+   * has neither an increase verb nor a digit-anchored delta, so without this
+   * cue the verbal-quantity branches below never fire and it soft-false-closes
+   * at the un-bumped offer (#33b). */
+  const bareIncreaseCue = /\b(?:more|extra|additional|higher|on\s+top)\b/.test(t);
+  const wantsMore = hasIncreaseVerb || bareIncreaseCue;
+  /* "by N" / "to N" only count as an increase when welded to an increase verb,
+   * so "close by Friday" / "get back to you" never register as a cash bump. */
+  const by = hasIncreaseVerb
+    ? new RegExp(String.raw`\bby\s+${num}`).exec(t)
+    : null;
+  const byCash = hasIncreaseVerb
+    ? new RegExp(String.raw`\bby\s+${numCash}`).exec(t)
+    : null;
+  /* #36 — verb-adjacent bare cash amount ("add 2 lakh", "bump the base 2L")
+   * with no another/more/by marker. Unit-mandatory, and a trailing bonus noun is
+   * excluded so a bonus AMOUNT ("add a 2 lakh joining bonus") is never read as a
+   * base bump. */
+  const verbCash = hasIncreaseVerb
+    ? new RegExp(
+        String.raw`\b(?:bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack)(?:\s+up)?\s+(?:it\s+|the\s+|my\s+|base\s+|fixed\s+|by\s+|another\s+)*${numCash}(?!\s+(?:joining|signing|sign|retention|relocation|reloc|esops?|rsus?|equity|stock|bonus))`,
+      ).exec(t)
+    : null;
+  const to = hasIncreaseVerb
+    ? new RegExp(String.raw`\bto\s+(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?|lac)\b`).exec(
+        t,
+      )
+    : null;
+  /* couple/few/several magnitude map, shared by the percent resolver below and
+   * the word-magnitude lakh branch further down. */
+  const WORD_MAGNITUDE: Record<string, number> = {
+    couple: 2,
+    few: 3,
+    several: 4,
+  };
+  /* #35 (2026-07-08, offline hostile battery) — percentage-axis conditional
+   * bump. A cash increase stated as a PERCENT ("bump it 5%", "a couple of
+   * percent", "another 3 percent") reached this resolver, but every branch keyed
+   * on a lakh noun — "%"/"percent" parsed nowhere — so it returned null and the
+   * near-offer close gate finalized at the UN-BUMPED offer: the same soft-false-
+   * close class as #33 on a different unit (confirmed via probe: "bump it a
+   * couple of percent" → closed at ₹40L, 0% movement). Resolve the percent so
+   * the unchanged deliverability gate honors or declines it. Checked BEFORE the
+   * lakh-delta parse so "another 3 percent" reads as +3%, not +3L. Gated on the
+   * same increase intent as every other branch, so "I'm 100 percent in" (full-
+   * acceptance idiom, no increase cue) never registers as a bump. Capped at
+   * 100% — an out-of-range figure falls through, never a silent accept. */
+  const PCT = String.raw`(?:%|percent|per\s?cent|pct)`;
+  const numPct = new RegExp(String.raw`(\d+(?:\.\d+)?)\s*${PCT}`).exec(t);
+  const wordPct = new RegExp(
+    String.raw`\b(couple|few|several)\s+(?:of\s+)?(?:more\s+)?${PCT}`,
+  ).exec(t);
+  if (wantsMore || another != null || more != null || by != null) {
+    let pct: number | null = null;
+    if (numPct) pct = parseFloat(numPct[1]);
+    else if (wordPct) pct = WORD_MAGNITUDE[wordPct[1]];
+    if (pct != null && Number.isFinite(pct) && pct > 0 && pct <= 100) {
+      return { kind: "percent", pct };
+    }
+  }
+  /* #36 — with a bonus also named, trust only unit-bound deltas so the bonus
+   * amount is never misread as a base bump; otherwise the loose forms apply. */
+  const deltaMatch = unitMandatory
+    ? (anotherCash ?? moreCash ?? byCash ?? verbCash)
+    : (another ?? more ?? by ?? verbCash);
+  if (deltaMatch) {
+    const d = parseFloat(deltaMatch[1]);
+    if (Number.isFinite(d) && d > 0 && d <= 50) return { kind: "delta", lakhs: d };
+  }
+  if (to) {
+    const v = parseFloat(to[1]);
+    if (Number.isFinite(v) && v > 0 && v <= 200) return { kind: "absolute", lakhs: v };
+  }
+  /* #33 (2026-07-08, live-staging) — word-magnitude cash bumps. A conditional
+   * close whose increase is stated in WORDS, not digits ("push the base up by a
+   * couple of lakhs", "another few lakh"), fell through every numeric branch to
+   * `return null`; the caller then read that null as "no cash condition" and
+   * closed at the UN-BUMPED offer — a soft false-close that silently dropped the
+   * candidate's condition (confirmed live: "couple of lakhs" closed at ₹45.4L,
+   * 0% gap closed, 0% movement). Resolve the common quantifiers to a real delta
+   * so the SAME deliverability gate downstream either honors the demand (in-gap,
+   * in-band → close at the bumped figure) or declines it (undeliverable → fall
+   * through to counter) — never a silent accept at the un-bumped number. Gated
+   * on the same increase intent as the numeric path, and welded to a cash noun
+   * so "a couple of days"/"a few weeks" never register as a bump. */
+  const cashNoun = String.raw`(?:l|lpa|lakhs?|lac|base|fixed|cash|ctc)`;
+  const wordDelta = new RegExp(
+    String.raw`\b(?:by|another|add|of|up)?\s*a?\s*(couple|few|several)\s+(?:of\s+)?(?:more\s+)?${cashNoun}\b`,
+  ).exec(t);
+  if ((wantsMore || another != null || more != null) && wordDelta) {
+    const d = WORD_MAGNITUDE[wordDelta[1]];
+    if (Number.isFinite(d) && d > 0 && d <= 50) return { kind: "delta", lakhs: d };
+  }
+  /* #33b (2026-07-08, offline hostile battery) — article/fraction-quantified
+   * lakh deltas. The same soft-false-close class as the couple/few magnitudes,
+   * but the quantity is an indefinite article or "half": "just a lakh more and
+   * I'll sign" (+1L), "add half a lakh" (+0.5L). The digit-only parser dropped
+   * both (no \d), so the demand closed at the un-bumped offer. Resolve to the
+   * delta so the unchanged deliverability gate honors or declines it. Welded to
+   * a lakh noun and gated on increase intent, so "a day"/"half an hour" never
+   * register. "half" is checked first — "half a lakh" also matches the article
+   * pattern, and 0.5 is the correct reading. */
+  const lakhNoun = String.raw`(?:l\b|lpa|lakhs?|lac)`;
+  const halfLakh = new RegExp(String.raw`\bhalf\s+a\s+${lakhNoun}`).test(t);
+  if (wantsMore && halfLakh) return { kind: "delta", lakhs: 0.5 };
+  const articleLakh = new RegExp(
+    String.raw`\b(?:a|an|one)\s+(?:more\s+)?${lakhNoun}`,
+  ).test(t);
+  if (wantsMore && articleLakh) return { kind: "delta", lakhs: 1 };
+  return null;
+}
+
+/** The numeric cash TARGET the candidate has conditioned a close on, or null
+ *  when there is no numeric cash condition. Thin wrapper over
+ *  parseCashIncreaseIntent: pull the last candidate utterance, decide whether a
+ *  bonus co-occurs (→ unitMandatory, #36), parse the intent, then apply the
+ *  offer in ONE place. A pure sweetener ("if you throw in a joining bonus")
+ *  carries no cash intent and returns null, so the near-offer gate's PRI-63
+ *  path still owns it and closes at the offer as before. Pure. */
+function resolveConditionalCashTarget(
+  state: NegotiationState,
+  offer: number,
+): number | null {
+  if (!Number.isFinite(offer) || offer <= 0) return null;
+  const log = state.conversationLog ?? [];
+  let text = "";
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (e && e.speaker === "candidate") {
+      text = e.text || "";
+      break;
+    }
+  }
+  if (!text) return null;
+  const t = ` ${text.toLowerCase()} `;
+  /* #36 — a bonus named in the same breath forces unit-mandatory base-delta
+   * parsing so the bonus amount is never misread as a base bump. */
+  const bonusPresent =
+    /\b(joining|signing|sign[-\s]?on|retention|relocation|reloc|esops?|rsus?|equity|stock|bonus)\b/.test(
+      t,
+    );
+  const intent = parseCashIncreaseIntent(text, { unitMandatory: bonusPresent });
+  if (!intent) return null;
+  if (intent.kind === "percent") return offer + (offer * intent.pct) / 100;
+  if (intent.kind === "delta") return offer + intent.lakhs;
+  return intent.lakhs; // absolute
+}
+
 /** #105 — the FIXED figure the candidate has pinned a (conditional) close to,
  *  or null. Two shapes occur in the wild:
  *    1. a FIXED-scoped counter — `lastCounterComponent === "fixed"` carries
@@ -1920,6 +2166,18 @@ function maybePlanProactiveSweetener(
     state.recruiterSectorPersona ?? "default";
   /* (1) Single-fire. */
   if (state.proactiveSweetenerFired === true) return null;
+  /* (1b) Scope-reconcile precedence (PRI-60 × PRI-65 regression guard,
+   * 2026-07-07). When an undeliverable fixed close-ask is pending over the
+   * standing offer, the counter/lever engine owns this turn: it must NAME the
+   * cash-band overage out loud ("that's above the cash band I can structure")
+   * before pivoting to equity-over-cash — the whole point of PRI-60. Activating
+   * the (5c) stale-offer cooling signal in PRI-65 let this sweetener win the
+   * SAME turn (offer has been standing ≥2 turns by the close), silently
+   * dangling an equity-refresh lever WITHOUT ever reconciling the scope — so the
+   * candidate is never told their fixed ask can't be met in cash. Defer to the
+   * scope-reconcile counter here; the sweetener still fires on ordinary
+   * cash-capped cooling turns where no undeliverable fixed ask is pending. */
+  if (undeliverableFixedConditionAsk(state) != null) return null;
   /* (2) Phase gate — only counter-offer OR closing-push. */
   if (state.phase !== "counter-offer" && state.phase !== "closing-push") {
     return null;
@@ -1953,18 +2211,26 @@ function maybePlanProactiveSweetener(
   ) {
     signal = "counter-still-pending";
   }
-  /* (5c) 2+ turns since the last offer with no close action shipped.
-   * highestOfferMadeAtTurn carries the turn the cap was reached; when
-   * unavailable, fall through to the turn budget check on lastOfferTurn. */
+  /* (5c) 2+ candidate turns have elapsed since the offer landed with no
+   * close action shipped.
+   *
+   * PRI-65 (2026-07-06, launch-readiness audit) — this branch previously read
+   * `state.lastOfferTurn` and `state.highestOfferMadeAtTurn` through
+   * `as unknown as` casts. NEITHER property exists anywhere on NegotiationState
+   * (nor is written by the kernel), so both casts always resolved to undefined,
+   * `lastOfferTurn` was always null, and the entire (5c) stale-offer trigger
+   * was dead — the proactive sweetener could only ever fire via (5a)/(5b). The
+   * real, kernel-maintained field is `firstOfferAtTurn` (the turn the offer
+   * first landed, i.e. highestOfferMade went 0 → >0), whose own contract is to
+   * answer "how many candidate turns have elapsed since the offer landed?" —
+   * exactly this check. Using it removes both illegal casts and activates the
+   * intended cooling signal; it stays gated behind the cash-cap (4) and phase
+   * (2) guards above, and (5a)/(5b) still win first. */
   if (signal == null) {
-    const lastOfferTurn =
-      (state as unknown as { lastOfferTurn?: number }).lastOfferTurn ??
-      (state as unknown as { highestOfferMadeAtTurn?: number })
-        .highestOfferMadeAtTurn ??
-      null;
+    const firstOfferAtTurn = state.firstOfferAtTurn ?? null;
     if (
-      lastOfferTurn != null &&
-      state.turnIndex - lastOfferTurn >= 2 &&
+      firstOfferAtTurn != null &&
+      state.turnIndex - firstOfferAtTurn >= 2 &&
       !state.leversUsed.includes("close-acceptance")
     ) {
       signal = "stale-offer";
@@ -3012,9 +3278,53 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
        * candidate has stopped bargaining at their stated number), not a fresh
        * counter to haggle — capped at the band ceiling, never below the offer.
        * A bare "done"/"ok" with no figure returns null → close at the offer. */
+      /* Canonical demand veto, computed ONCE and consulted by BOTH close paths
+       * below (single source — the same analyzeDemand the acceptance gates use).
+       * Only CASH cores veto: a non-numeric sweetener ("throw in a joining
+       * bonus") is deliverable in-place via the JB grant below (PRI-63) and must
+       * still close. Over-blocking a genuine bare accept costs one turn; a
+       * false-close is unrecoverable. */
+      const demand = analyzeDemand(latestCandidateText(state), offer);
+      const unmetCashDemand =
+        demand.unmet &&
+        demand.reasons.some((r) => !NON_CASH_DEMAND_REASONS.has(r));
       const agreed = acceptanceUtteranceFigure(state);
-      closeAt =
-        agreed != null && agreed > offer && agreed <= ceil ? agreed : offer;
+      if (agreed != null && agreed > offer && agreed <= ceil && !unmetCashDemand) {
+        /* #129 close-number fidelity — but NOT when an unmet cash demand is on
+         * the table. acceptanceUtteranceFigure only corroborates a figure near
+         * the sticky target; it is demand-blind, so "beat the 47" (a competing
+         * figure the candidate wants EXCEEDED) resolved to a false-close AT 47
+         * (offline battery, 2026-07-09). The veto routes it to a live counter. */
+        closeAt = agreed;
+      } else {
+        /* PRI-68 (2026-07-07) — a conditional accept that demands MORE cash on
+         * the standing offer ("I'll accept if you bump the fixed by another
+         * 2L") resolves to an implied total. Meet it only when deliverable —
+         * at/under the ceiling AND within the instant-close gap; otherwise
+         * DECLINE (null → fall through to hold/counter) rather than closing at
+         * the un-bumped offer and silently dropping the candidate's condition.
+         * A target already at/under the offer is effectively an accept (close
+         * at offer); a pure non-cash condition or bare accept resolves to null
+         * here and closes at the offer, unchanged. */
+        const bumpTarget = resolveConditionalCashTarget(state, offer);
+        if (bumpTarget == null) {
+          /* No quantifiable cash target from the local resolver — either a
+           * pure non-cash condition / bare accept (close at the offer) OR a
+           * real cash demand this resolver's parser could not read (a
+           * crore-scale figure, a prepositionless landing verb, a floor
+           * expression, a bare competing figure). Defer to the canonical
+           * demand veto computed above so an unparsed-but-real demand cannot
+           * fall through to a false-close at the un-bumped offer ("I'll take it
+           * if the package hits 1.2 crore" — batch-5 leak, 2026-07-09). */
+          closeAt = unmetCashDemand ? null : offer;
+        } else if (bumpTarget <= offer) {
+          closeAt = offer;
+        } else if (bumpTarget <= ceil && bumpTarget - offer <= gap) {
+          closeAt = bumpTarget;
+        } else {
+          closeAt = null;
+        }
+      }
     }
     if (closeAt != null) {
       /* PRI-63 (2026-06-25, real prod salary-negotiation audit, session

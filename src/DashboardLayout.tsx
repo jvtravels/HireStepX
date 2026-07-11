@@ -6,6 +6,7 @@ import { useAuth } from "./AuthContext";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
+import { starterPackFootnote, planCtaLabel, planCtaTitle } from "./planCardCopy";
 import { daysUntilEvent } from "./dashboardHelpers";
 import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
@@ -214,6 +215,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const proExhausted = tierKnown && isPro && proRemaining === 0;
   const starterExhausted = tierKnown && isStarter && starterRemaining === 0;
   const freeExhausted = tierKnown && isFree && sessionsRemaining === 0;
+  // Primary plan-card CTA (rendered by the else branch below) — label + matching
+  // tooltip/aria derived from plan state. See planCardCopy.ts for the rules.
+  const primaryCtaLabel = planCtaLabel({ starterExhausted, freeExhausted, creditBalance });
+  const primaryCtaTitle = planCtaTitle(primaryCtaLabel);
 
   return (
     // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
@@ -376,12 +381,15 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <span
                 aria-label={user.cancelAtPeriodEnd
                   ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — access until then`
-                  : `Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                  : isStarter
+                    ? `Sprint Pack valid till ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
+                    : `Subscription renews ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
                 style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, whiteSpace: "nowrap",
                   color: user.cancelAtPeriodEnd ? c.ember : c.stone,
                   opacity: user.cancelAtPeriodEnd ? 0.9 : 0.65 }}
               >
-                {user.cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
+                {/* Starter is a one-off Sprint Pack — it expires, it doesn't renew. */}
+                {user.cancelAtPeriodEnd ? "Ends" : isStarter ? "Valid till" : "Renews"}{" "}
                 {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </span>
             )}
@@ -397,7 +405,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             const planUsed      = Math.min(planUsedRaw, planTotal);
             const planLeft      = isPro ? proRemaining : isStarter ? starterRemaining : sessionsRemaining;
             const planExhausted = isPro ? proExhausted : isStarter ? starterExhausted : freeExhausted;
-            const periodLabel   = isPro ? "this month" : isStarter ? "this week" : "total";
+            const periodLabel   = isPro ? "this month" : isStarter ? "in this pack" : "total";
             // planName kept for potential future use (e.g. aria labels, tooltips).
             const pct  = Math.min(100, (planUsed / planTotal) * 100);
             const isLow = !planExhausted && (
@@ -476,12 +484,16 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   );
                 })()}
 
-                {/* Starter renewal footnote */}
-                {user?.subscriptionEnd && isStarter && (
+                {/* Sprint Pack footnote — a one-off pack that does NOT renew and
+                    does NOT reset weekly. The plan name + validity date already
+                    live in the card header and the "N of 5" count in the usage
+                    row, so this line carries only the pack's one-off nature (and
+                    a spent-status line once used up) — never the pack SIZE, which
+                    used to read as availability directly above a buy CTA. */}
+                {isStarter && (
                   <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
                     marginBottom: 10, marginTop: -6 }}>
-                    Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN",
-                      { day: "numeric", month: "short" })} · sessions reset Sun
+                    {starterPackFootnote(starterRemaining)}
                   </p>
                 )}
               </>
@@ -530,12 +542,17 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
               >Manage Subscription</button>
             </>
+          ) : isStarter && !starterExhausted ? (
+            /* Active Starter with sessions remaining — no upsell, Pro isn't purchasable */
+            null
           ) : (
-            /* Free / Starter: upgrade prompt */
-            <button onClick={() => setShowUpgradeModal(true)} title="See what's included in Pro — unlimited sessions, STAR coaching, skill tracking" style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.2s" }}
+            /* Free upsell or exhausted Starter: label + tooltip follow plan state.
+               An exhausted Sprint Pack gets a pack-consistent "Buy more sessions"
+               (opens the pack/credit modal), not a mismatched "Upgrade to Pro". */
+            <button onClick={() => setShowUpgradeModal(true)} title={primaryCtaTitle} aria-label={primaryCtaLabel} style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.2s" }}
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.93)")}
               onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-            >{freeExhausted && creditBalance > 0 ? "Buy more sessions" : freeExhausted ? "Unlock sessions now" : "Upgrade to Pro"}</button>
+            >{primaryCtaLabel}</button>
           )}
         </div>
 
@@ -619,6 +636,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           sessionsUsed={sessionsUsed}
           user={user}
           currentTier={user?.subscriptionTier || "free"}
+          starterExhausted={starterExhausted}
           onPaymentSuccess={(tier, start, end) => {
             setShowUpgradeModal(false);
             setPaymentBanner("success");
