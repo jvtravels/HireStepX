@@ -139,6 +139,16 @@ async function saveCachedReport(sessionId: string, userId: string, report: Sessi
         // same session. Writing both in ONE atomic PATCH guarantees
         // report_json.overallScore and sessions.score can never diverge.
         score: report.overallScore,
+        // Overwrite ai_feedback and skill_scores with server-derived values.
+        // save-session.ts no longer accepts these from the client — they must
+        // only be written here after LLM evaluation completes.
+        skill_scores: report.skills.length > 0
+          ? Object.fromEntries(report.skills.map(s => [s.name, s.score]))
+          : null,
+        ai_feedback: [
+          ...(report.wins || []).slice(0, 2).map(w => w.text),
+          ...(report.fixes || []).slice(0, 2).map(f => f.text),
+        ].filter(Boolean).join(" · ") || null,
       }),
     });
     if (!res.ok) {

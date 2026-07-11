@@ -41,10 +41,10 @@ function fmtWhen(startUtc: string, tz: string): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Fail closed: accept Vercel's cron header or an explicit bearer secret.
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
+  // Require CRON_SECRET unconditionally. x-vercel-cron is NOT stripped by Vercel
+  // on inbound external requests — any caller can spoof it, so it provides no auth.
   const hasSecret = CRON_SECRET && req.headers.authorization === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasSecret) {
+  if (!hasSecret) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) {

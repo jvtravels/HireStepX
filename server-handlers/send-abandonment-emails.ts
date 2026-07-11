@@ -92,11 +92,11 @@ async function sendEmail(intent: PaymentIntent): Promise<boolean> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Auth: Vercel Cron or CRON_SECRET header
+  // Require CRON_SECRET unconditionally. x-vercel-cron is NOT stripped by Vercel
+  // on inbound external requests — any caller can spoof it, so it provides no auth.
   const authHeader = req.headers.authorization || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
   const hasSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasSecret) {
+  if (!hasSecret) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

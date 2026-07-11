@@ -1,7 +1,7 @@
 /* Vercel Edge Function — Per-invite list for the signed-in referrer.
    GET only. Joins referrals → profiles via the service role (RLS bypassed)
-   so we can surface the referred user's display name + email without
-   exposing other profile fields to the client. */
+   to surface the referred user's display name without exposing other
+   profile fields to the referrer. Email is intentionally excluded. */
 
 export const config = { runtime: "edge" };
 
@@ -22,13 +22,11 @@ interface ReferralRow {
 interface ProfileRow {
   id: string;
   name: string | null;
-  email: string | null;
 }
 
 export interface ReferralInvite {
   id: string;
   name: string;
-  email: string;
   status: "pending" | "redeemed" | "rewarded";
   createdAt: string;
 }
@@ -72,7 +70,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (referredIds.length > 0) {
       const idList = referredIds.map(encodeURIComponent).join(",");
       const profRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idList})&select=id,name,email`,
+        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idList})&select=id,name`,
         { headers: dbHeaders },
       );
       if (profRes.ok) {
@@ -83,12 +81,9 @@ export default async function handler(req: Request): Promise<Response> {
 
     const invites: ReferralInvite[] = referrals.map(r => {
       const profile = r.referred_id ? profilesById.get(r.referred_id) : undefined;
-      const email = profile?.email || r.referred_email || "";
-      const fallbackName = email ? email.split("@")[0] : "Invited";
       return {
         id: r.id,
-        name: profile?.name?.trim() || fallbackName,
-        email,
+        name: profile?.name?.trim() || "Invited User",
         status: r.status,
         createdAt: r.created_at,
       };

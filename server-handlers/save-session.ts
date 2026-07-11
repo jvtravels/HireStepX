@@ -335,8 +335,9 @@ export default async function handler(req: Request): Promise<Response> {
     score: asNumber(body.score),
     questions: asNumber(body.questions),
     transcript: sanitizeTranscript(body.transcript),
-    ai_feedback: asString(body.ai_feedback, 20000),
-    skill_scores: (body.skill_scores && typeof body.skill_scores === "object") ? body.skill_scores : null,
+    // ai_feedback and skill_scores are intentionally omitted here — they must
+    // only be written by evaluate-session.ts after LLM grading completes.
+    // Accepting them from the client allows score/feedback fabrication.
     job_description: asString(body.job_description, 20000) || null,
     jd_analysis: (body.jd_analysis && typeof body.jd_analysis === "object") ? body.jd_analysis : null,
     resume_version_id: resolvedVersionId,
@@ -385,7 +386,9 @@ export default async function handler(req: Request): Promise<Response> {
     console.error(`[save-session] session insert failed HTTP ${res.status}: ${errText.slice(0, 300)}`);
     return new Response(JSON.stringify({
       error: "Session save failed",
-      details: errText.slice(0, 300),
+      // Intentionally omit raw DB error text — it can expose constraint names
+      // and column names. The request ID lets us correlate in server logs.
+      requestId: headers["X-Request-ID"] || "",
       strippedColumns: strippedSession,
     }), { status: res.status >= 400 && res.status < 500 ? 400 : 502, headers });
   }

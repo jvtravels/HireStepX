@@ -33,12 +33,11 @@ const WINDOW_DAYS = 7;
 const MAX_ROWS = 5000; // safety cap; weekly volume should fit easily
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  /* Auth: Vercel Cron sets x-vercel-cron=1; manual triggers use Bearer
-     CRON_SECRET. Either accepted; anything else is rejected. */
+  // Require CRON_SECRET unconditionally. x-vercel-cron is NOT stripped by Vercel
+  // on inbound external requests — any caller can spoof it, so it provides no auth.
   const authHeader = (req.headers.authorization as string) || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
   const hasValidSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasValidSecret) {
+  if (!hasValidSecret) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

@@ -203,12 +203,10 @@ export default async function handler(req: Request): Promise<Response> {
   if (pre instanceof Response) return pre;
   const { headers, auth, quota } = pre;
 
-  // Session limit enforcement is deferred to AFTER the Redis cache check below.
-  // Reason: the cache check requires the parsed request body (which is a stream
-  // that can only be read once), so the body must be parsed first. Moving the
-  // limit check after the cache avoids consuming a purchased session credit on
-  // every page refresh — a cache hit means the questions were already generated
-  // and paid for in the same 300-second window, so no new credit should be spent.
+  // Credit enforcement: availability is checked (without consuming) before the
+  // cache read so zero-credit users cannot exploit cross-user cache entries.
+  // Consumption is deferred to the cache-MISS path so the same user re-querying
+  // the same question set within the TTL window is not charged twice.
 
   // Hoisted so the catch block can read what the user asked for. We parse
   // optimistically with safe defaults — even a malformed body shouldn't crash
@@ -240,6 +238,18 @@ export default async function handler(req: Request): Promise<Response> {
     if (typeof role === "string") requestRole = role;
     if (typeof experienceLevel === "string") requestExperienceLevel = experienceLevel;
     const isMini = mini === true;
+
+    // Credit availability check BEFORE the cache lookup. A zero-credit user must
+    // not obtain questions for free by matching another user's active cache entry.
+    // We check without consuming here; consumption happens on a cache MISS below,
+    // ensuring the same user hitting the same query twice within the TTL is not
+    // charged twice.
+    if (auth.userId) {
+      const creditCheck = await checkSessionLimit(auth.userId, { tier: quota?.tier, consumeCredit: false });
+      if (!creditCheck.allowed) {
+        return new Response(JSON.stringify({ error: creditCheck.reason }), { status: 403, headers });
+      }
+    }
 
     /* Response cache — keyed on the stable hash of the full request body.
      * Same input within the TTL window returns the cached questions without
@@ -315,10 +325,9 @@ export default async function handler(req: Request): Promise<Response> {
       } catch { /* malformed cache entry — fall through to live path */ }
     }
 
-    // Session limit enforcement — runs only on a cache MISS (a genuinely new
-    // LLM call). Cache hits return above without reaching this; the user already
-    // spent a credit when these questions were first generated within this TTL
-    // window, so re-serving them must not spend a second credit.
+    // Credit consumption — runs only on a cache MISS (a genuinely new LLM call).
+    // Cache hits return above; availability was already checked before the cache
+    // read, so the same user re-querying within the TTL is not charged twice.
     // Uses quota.tier resolved by withAuthAndRateLimit to skip the extra profile
     // fetch that was causing an N+1 on every session start.
     if (auth.userId) {

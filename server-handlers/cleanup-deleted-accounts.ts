@@ -9,11 +9,11 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CRON_SECRET = process.env.CRON_SECRET || "";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow from Vercel Cron (x-vercel-cron or Authorization: Bearer CRON_SECRET)
+  // Require CRON_SECRET unconditionally. x-vercel-cron is NOT stripped by Vercel
+  // on inbound external requests — any caller can spoof it, so it provides no auth.
   const authHeader = req.headers.authorization || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
   const hasValidSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasValidSecret) {
+  if (!hasValidSecret) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

@@ -1081,7 +1081,6 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
 interface ReferralInviteRow {
   id: string;
   name: string;
-  email: string;
   status: "pending" | "redeemed" | "rewarded";
   createdAt: string;
 }
@@ -1263,7 +1262,7 @@ function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boo
       }}>{initials}</div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.name}</div>
-        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.email}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>{invite.status === "rewarded" ? "Completed" : invite.status === "redeemed" ? "Joined" : "Pending"}</div>
       </div>
       <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{ts}</div>
       <div style={{

@@ -18,10 +18,11 @@ const CRON_SECRET = process.env.CRON_SECRET || "";
 const RETENTION_DAYS = Math.max(7, parseInt(process.env.LLM_USAGE_RETENTION_DAYS || "30", 10) || 30);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Require CRON_SECRET unconditionally. x-vercel-cron is NOT stripped by Vercel
+  // on inbound external requests — any caller can spoof it, so it provides no auth.
   const authHeader = req.headers.authorization || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
   const hasValidSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasValidSecret) {
+  if (!hasValidSecret) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

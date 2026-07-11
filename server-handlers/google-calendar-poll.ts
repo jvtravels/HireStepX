@@ -22,9 +22,10 @@ const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(
 const RENEW_WINDOW_MS = 86_400_000; // re-register a channel within 1 day of expiry
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
+  // Require CRON_SECRET unconditionally. x-vercel-cron is NOT stripped by Vercel
+  // on inbound external requests — any caller can spoof it, so it provides no auth.
   const hasSecret = CRON_SECRET && req.headers.authorization === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasSecret) {
+  if (!hasSecret) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!googleConfigured({ GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET })) {
