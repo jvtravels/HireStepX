@@ -828,6 +828,29 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * the candidate's own commit. A genuine accept never attributes the accept to
    * "you say". Shared single-source so both gates reject in lockstep. */
   /\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\b(?:\s+(?:it|this|that|the\s+offer))?\s*,?\s*(?:so\s+)?(?:you|they|he|she|we)\s+(?:say|says|said)\b/i,
+  /* PRI-88 (2026-07-11, round-14) — NEVER-EVENT idiom co-occurring with an
+   * accept verb. A stock impossibility EVENT ("cold day in hell", "hell freezes
+   * over", "(when) pigs fly", "snowball's chance (in hell)") asserts the accept
+   * will never happen — "It'll be a cold day in hell before I accept", "Pigs
+   * will fly before I accept", "Not a snowball's chance I accept this". The
+   * PRI-85 arm above owns the "no <noun>" impossibility HEAD; these carry a
+   * different idiom (a future impossible event), and BEFORE_ACCEPT is
+   * clause-initial-anchored so the TRAILING "before I accept" here is not its
+   * job. The idiom appears only in refusals, so co-occurrence with an accept/
+   * take/sign verb in the same sentence (either order, short window) is a safe
+   * veto — a genuine accept never invokes one. */
+  new RegExp(
+    "(?:(?:cold\\s+day\\s+in\\s+hell|hell\\s+(?:will\\s+|would\\s+|'ll\\s+)?(?:freezes?|froze)(?:\\s+over)?|(?:when\\s+)?pigs\\s+(?:will\\s+|would\\s+|might\\s+|could\\s+)?fly|snowball'?s?\\s+chance(?:\\s+in\\s+hell)?)[^.!?]{0,40}\\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\\b)" +
+      "|(?:\\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?)\\b[^.!?]{0,40}(?:cold\\s+day\\s+in\\s+hell|hell\\s+(?:will\\s+|would\\s+|'ll\\s+)?(?:freezes?|froze)(?:\\s+over)?|(?:when\\s+)?pigs\\s+(?:will\\s+|would\\s+|might\\s+|could\\s+)?fly|snowball'?s?\\s+chance(?:\\s+in\\s+hell)?))",
+    "i",
+  ),
+  /* PRI-88 (2026-07-11, round-14) — EQUATIONAL never-idiom: "The day <implausible
+   * event> is the day I accept/sign" frames the accept as contingent on an event
+   * cast as never-arriving ("The day you pay fairly is the day I accept"). Needs
+   * TWO "the day" anchors bracketing an "is", so a genuine present close that
+   * merely mentions a day ("Today is the day I accept the offer" — one "the day")
+   * is left intact. */
+  /\bthe\s+day\b[^.!?]{0,55}\bis\s+the\s+day\b[^.!?]{0,20}\b(?:i\s+(?:will\s+|'ll\s+)?)?(?:accept|sign)\b/i,
 ];
 
 /* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
