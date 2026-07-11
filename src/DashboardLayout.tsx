@@ -6,6 +6,7 @@ import { useAuth } from "./AuthContext";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
+import { starterPackFootnote, planCtaLabel, planCtaTitle } from "./planCardCopy";
 import { daysUntilEvent } from "./dashboardHelpers";
 import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
@@ -214,6 +215,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const proExhausted = tierKnown && isPro && proRemaining === 0;
   const starterExhausted = tierKnown && isStarter && starterRemaining === 0;
   const freeExhausted = tierKnown && isFree && sessionsRemaining === 0;
+  // Primary plan-card CTA (rendered by the else branch below) — label + matching
+  // tooltip/aria derived from plan state. See planCardCopy.ts for the rules.
+  const primaryCtaLabel = planCtaLabel({ starterExhausted, freeExhausted, creditBalance });
+  const primaryCtaTitle = planCtaTitle(primaryCtaLabel);
 
   return (
     // 100dvh accounts for the mobile Safari URL bar — 100vh leaves a
@@ -479,14 +484,16 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   );
                 })()}
 
-                {/* Sprint Pack footnote — a one-off pack of 5 sessions over 30 days.
-                    It does NOT renew and sessions do NOT reset weekly; framing it
-                    that way is what made a fresh pack read as "5 of 5 used". */}
-                {user?.subscriptionEnd && isStarter && (
+                {/* Sprint Pack footnote — a one-off pack that does NOT renew and
+                    does NOT reset weekly. The plan name + validity date already
+                    live in the card header and the "N of 5" count in the usage
+                    row, so this line carries only the pack's one-off nature (and
+                    a spent-status line once used up) — never the pack SIZE, which
+                    used to read as availability directly above a buy CTA. */}
+                {isStarter && (
                   <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
                     marginBottom: 10, marginTop: -6 }}>
-                    5 sessions · valid till {new Date(user.subscriptionEnd).toLocaleDateString("en-IN",
-                      { day: "numeric", month: "short" })}
+                    {starterPackFootnote(starterRemaining)}
                   </p>
                 )}
               </>
@@ -539,11 +546,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             /* Active Starter with sessions remaining — no upsell, Pro isn't purchasable */
             null
           ) : (
-            /* Free / Starter exhausted: primary upgrade prompt */
-            <button onClick={() => setShowUpgradeModal(true)} title="See what's included in Pro — unlimited sessions, STAR coaching, skill tracking" style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.2s" }}
+            /* Free upsell or exhausted Starter: label + tooltip follow plan state.
+               An exhausted Sprint Pack gets a pack-consistent "Buy more sessions"
+               (opens the pack/credit modal), not a mismatched "Upgrade to Pro". */
+            <button onClick={() => setShowUpgradeModal(true)} title={primaryCtaTitle} aria-label={primaryCtaLabel} style={{ width: "100%", padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.2s" }}
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.93)")}
               onMouseLeave={(e) => (e.currentTarget.style.filter = "")}
-            >{freeExhausted && creditBalance > 0 ? "Buy more sessions" : freeExhausted ? "Unlock sessions now" : "Upgrade to Pro"}</button>
+            >{primaryCtaLabel}</button>
           )}
         </div>
 
