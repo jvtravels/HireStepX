@@ -851,6 +851,23 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * merely mentions a day ("Today is the day I accept the offer" — one "the day")
    * is left intact. */
   /\bthe\s+day\b[^.!?]{0,55}\bis\s+the\s+day\b[^.!?]{0,20}\b(?:i\s+(?:will\s+|'ll\s+)?)?(?:accept|sign)\b/i,
+  /* PRI-89 (2026-07-11, round-15 — fresh adversarial probe) — CONCESSIVE frame
+   * "(as) much as I <desire> to accept/take/sign, <refusal>". The "(as) much as"
+   * subordinator means "although": the accept verb sits INSIDE the concession
+   * ("although I want to accept …"), so it is never the actual close, whatever
+   * the main clause says. "Much as I'd love to accept, I can't at 40" was caught
+   * only INCIDENTALLY by MONEY_REJECTION ("can't at 40"); its sibling "As much as
+   * I want to accept, this doesn't work." carries a NON-money refusal nothing
+   * owned, so the bare subordinated "accept" FALSE-CLOSED. The concessive frame
+   * itself is the structural root. Scoped so the desire verb (want/love/like/
+   * long, incl. "'d"/"would" modals) must DIRECTLY govern "to accept/take/sign":
+   *   - "As much as I appreciate the offer, I accept it." — "appreciate" is not a
+   *     desire verb and "accept" is in the MAIN clause → untouched (genuine);
+   *   - "As much as I wanted a bigger raise, I accept." — "wanted" governs "a
+   *     bigger raise", not "to accept" → untouched (genuine).
+   * A genuine accept never subordinates the accept verb under a "much as I want
+   * to" concession. Shared single-source so both gates reject in lockstep. */
+  /\b(?:as\s+)?much\s+as\s+i(?:(?:'|’)d|\s+would)?\s*(?:really\s+|truly\s+|genuinely\s+|honestly\s+|so\s+much\s+|so\s+)?(?:want(?:ed)?|love|like|long)\s+to\s+(?:accept(?:s|ing|ed)?|take|taking|took|sign(?:s|ing|ed)?|say\s+yes|do\s+it)\b/i,
 ];
 
 /* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
