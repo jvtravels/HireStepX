@@ -100,3 +100,43 @@ describe("negotiation report — counter-named coherence across surfaces", () =>
     expect(text.toLowerCase()).toContain("counter");
   });
 });
+
+/* Defect B (2026-07-11, live staging — Senior Product Designer @ Flipkart,
+ * session 734493c9): a NO-AGREEMENT run with a flat offer (opening === closing,
+ * delta 0) rendered "Money you left on the table — you countered at ₹50 but
+ * ACCEPTED THEIR OPENING; the recruiter didn't move" beside the same report's
+ * Outcome "In progress · No deal closed · ₹0 gained". "Accepted" is only ever
+ * true when outcome === "accepted"; on no_agreement / walked_away it is
+ * categorically false. Pin every non-accepted outcome to never claim an
+ * acceptance, across flat and moved offers, countered and not. */
+const NON_ACCEPTED: Array<{ name: string; o: NegotiationOutcome }> = [
+  {
+    name: "no_agreement, flat offer, countered (the live bug)",
+    o: outcome({ outcome: "no_agreement", finalTotal: 30.4, offers: [{ turn: 1, total: 30.4, question: "" }], candidateAsk: 50 }),
+  },
+  {
+    name: "no_agreement, flat offer, no counter",
+    o: outcome({ outcome: "no_agreement", finalTotal: 40, offers: [{ turn: 1, total: 40, question: "" }], candidateAsk: null }),
+  },
+  {
+    name: "walked_away, flat offer, countered",
+    o: outcome({ outcome: "walked_away", finalTotal: 42, offers: [{ turn: 1, total: 42, question: "" }], candidateAsk: 55 }),
+  },
+];
+
+const ACCEPT_CLAIM = /accepted their opening|you accepted|you took it/i;
+
+describe("negotiation report — never claims an acceptance on a non-accepted outcome", () => {
+  it.each(NON_ACCEPTED)("no false-accept copy: $name", ({ o }) => {
+    expect(o.outcome).not.toBe("accepted");
+    const text = renderSurfaces(o);
+    expect(text).not.toMatch(ACCEPT_CLAIM);
+  });
+
+  it("still credits a genuine flat-offer acceptance with 'accepted their opening'", () => {
+    // The accept phrasing is correct — and must survive — when the deal closed.
+    const o = outcome({ outcome: "accepted", finalTotal: 51, offers: [{ turn: 1, total: 51, question: "" }], candidateAsk: 65 });
+    const text = renderSurfaces(o);
+    expect(text.toLowerCase()).toContain("accepted their opening");
+  });
+});

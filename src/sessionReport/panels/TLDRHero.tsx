@@ -97,13 +97,32 @@ export function TLDRHero({
           : "you walked from their opening without naming a counter",
         tone: "bad",
       });
-    } else {
+    } else if (outcome.outcome === "accepted") {
       stats.push({
         label: "Money you left on the table",
         value: "—",
         hint: counterNamed
           ? `you countered at ₹${outcome.candidateAsk} but accepted their opening; the recruiter didn't move`
           : "you accepted at the first number; no counter named",
+        tone: "bad",
+      });
+    } else {
+      /* B (2026-07-11, live staging — Senior Product Designer @ Flipkart,
+       * session 734493c9): a NO-AGREEMENT run with a flat offer (delta===0,
+       * not walked_away) fell into the accept branch and printed "you
+       * countered at ₹50 but ACCEPTED THEIR OPENING; the recruiter didn't
+       * move" — directly beside the same report's Outcome "In progress · No
+       * deal closed · ₹0 gained". The delta===0 math is true, but "accepted"
+       * is categorically false: nothing closed. Same class as the walked_away
+       * gate above (L-1) and the verdict's own no_agreement branch — gate the
+       * accept phrasing on the actual outcome; on no-agreement the offer
+       * simply never moved and no deal closed. */
+      stats.push({
+        label: "Money you left on the table",
+        value: "—",
+        hint: counterNamed
+          ? `you countered at ₹${outcome.candidateAsk} but the offer never moved and no deal closed`
+          : "the offer never moved and no deal closed; no counter named",
         tone: "bad",
       });
     }
