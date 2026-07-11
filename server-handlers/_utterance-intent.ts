@@ -98,6 +98,18 @@ const SWEETENER =
 const CORE_COMP =
   "(?:base(?:\\s+pay)?|fixed(?:\\s+pay|\\s+comp(?:onent)?)?|cash(?:\\s+comp(?:onent)?)?|ctc|package|salary|comp(?:ensation)?)";
 
+/* Named NON-COMP perks a candidate can demand as a close condition ("give me a
+ * corner office and I'll sign", "throw in a parking spot and we have a deal").
+ * SWEETENER already covers generic "perks"/"benefits", but a SPECIFIC perk named
+ * inline slipped it, so the perk-conditioned close false-closed at the un-bumped
+ * offer (batch-15 hostile leak, 2026-07-11). Lexically pinned to concrete perk
+ * nouns (not bare "cover"/"membership", which are ambiguous), and only ever read
+ * as a demand behind a grant verb in the grant-perk core below — so ordinary prose
+ * mentioning an office never trips it. A perk demand is inherently a fresh ask on
+ * top of the standing package, so no offer gate. */
+const NONCOMP_PERK =
+  "(?:corner\\s+office|office|cabin|parking(?:\\s+(?:spot|space|slot))?|company\\s+car|car\\s+lease|chauffeur|driver|gym\\s+membership|club\\s+membership|(?:health|medical|life)\\s+(?:insurance|cover(?:age)?)|macbook|laptop|workstation|relocation\\s+(?:package|assistance))";
+
 /* Decade-band figures for the vague "mid-forties" demand form (see the
  * decade-band core below). Kept lakh-denominated to match figureToLakhs output;
  * the qualifier nudges within the decade. */
@@ -481,6 +493,20 @@ const DEMAND_CORES: DemandCore[] = [
       "i",
     ),
   },
+  /* Named NON-COMP perk GRANT (imperative): "give me a corner office and I'll
+   * sign", "throw in a parking spot", "include a company car". Sibling of
+   * grant-sweetener for the concrete perk nouns SWEETENER omits — a perk welded
+   * to a close is a fresh unmet demand, not an accept (batch-15 hostile leak,
+   * 2026-07-11). Grant-verb gated so ordinary prose naming an office/car never
+   * matches; always unmet (a perk only ever adds to the package), no offer gate. */
+  {
+    reason: "grant-perk",
+    re: new RegExp(
+      `\\b(?:throw\\s+in|toss\\s+in|chip\\s+in|give\\s+me|gimme|get\\s+me|hand\\s+me|include|add|provide|expense|reimburse|sort\\s+out|guarantee|spring\\s+for)\\b` +
+        `[^.!?]{0,20}?\\b${NONCOMP_PERK}\\b`,
+      "i",
+    ),
+  },
   /* Non-imperative sweetener DEMAND — the phrasings the imperative core above
    * misses because the grant verb comes after the noun, is first-person, or is
    * a hypothetical ("relocation added", "I need equity", "would be perfect with
@@ -545,6 +571,20 @@ const DEMAND_CORES: DemandCore[] = [
     absoluteTargetGroup: 1,
     unitGroup: 2,
     re: /\b(?:(?:could|can|would|will)\s+you\s+(?:do|make\s+it|get\s+me\s+to|bump\s+(?:it|the\s+\w+)\s+to|push\s+(?:it|the\s+\w+)\s+to|raise\s+(?:it|the\s+\w+)\s+to|go\s+to|stretch\s+to|come\s+up\s+to)|any\s+chance\s+(?:of|at|for))\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+  },
+  /* Counterfactual accept at a HIGHER figure: "even at 42 I'd accept, but this is
+   * only 40", "at 45 I'd sign". The candidate names the figure the offer WOULD
+   * need to reach — an accept pinned to a target above the standing offer, so the
+   * present offer is implicitly rejected. The bare "I'd accept" dominated and the
+   * utterance false-closed at the un-bumped offer (batch-15 hostile leak,
+   * 2026-07-11). Offer-gated absolute target: only unmet when the named figure
+   * beats the offer, so a genuine "even at 40 I'd accept" against a ₹40 offer
+   * (40 ≤ 40) is met and still closes. */
+  {
+    reason: "counterfactual-accept-higher",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\beven\s+at\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b[^.!?]{0,25}?\bi(?:'?d|\s+would)?\s+(?:accept|sign|take\s+it|be\s+in|do\s+it)\b/i,
   },
 ];
 
