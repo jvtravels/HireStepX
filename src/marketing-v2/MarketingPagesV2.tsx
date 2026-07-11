@@ -1588,16 +1588,16 @@ export function PrivacyV2() {
   return (
     <LegalPage title="Privacy" accent="explained simply." updated="30 May 2026">
       <h2>What we collect</h2>
-      <p>Account email, your resume (uploaded by you), voice recordings of your mock sessions, transcripts of those sessions, and basic usage telemetry (page views, session counts, plan type). No location, no contacts, no microphone access outside of an active interview round.</p>
+      <p>Account email, your resume (uploaded by you), transcripts of your mock sessions, and basic usage telemetry (page views, session counts, plan type). We do not store audio or video recordings of your sessions — if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained. No location, no contacts, no microphone access outside of an active interview round.</p>
 
       <h2>Why we collect it</h2>
-      <p>To run the product. The resume tunes the AI's questions to your background. The recordings + transcripts power scoring and the report you read after each session. Email is for login, receipts, and support replies.</p>
+      <p>To run the product. The resume tunes the AI's questions to your background. The transcripts power scoring and the report you read after each session. Email is for login, receipts, and support replies.</p>
 
       <h2>How long we keep it</h2>
-      <p>Recordings and transcripts auto-delete after 90 days unless you explicitly save a session. Account data persists until you delete your account, after which it's purged within 30 days.</p>
+      <p>Transcripts auto-delete after 90 days unless you explicitly save a session. Account data persists until you delete your account, after which it's purged within 30 days.</p>
 
       <h2>Who we share with</h2>
-      <p>Nobody. We do not share recordings, transcripts, scores, or resumes with employers, recruiters, colleges, or third parties. We use sub-processors (Supabase for database, Groq + Gemini for LLM inference, Cartesia + Deepgram + Sarvam for voice) under data-processing agreements that prevent retention beyond what we authorize.</p>
+      <p>Nobody. We do not share transcripts, scores, or resumes with employers, recruiters, colleges, or third parties. We use sub-processors (Supabase for database, Groq + Gemini for LLM inference, Cartesia + Deepgram + Sarvam for voice) under data-processing agreements that prevent retention beyond what we authorize.</p>
 
       <h2>Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>

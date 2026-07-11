@@ -21,7 +21,7 @@ import { useAuth } from "./AuthContext";
 import { getCreditBalance } from "./supabase";
 import { getAudioContextCtor } from "./_browser-api-guards";
 import { useToast } from "./Toast";
-import { unlockAudio, prefetchTTS } from "./tts";
+import { unlockAudio, prefetchTTS, VOICE_OUTPUT_DISABLED } from "./tts";
 import { UpgradeModal } from "./dashboardComponents";
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
 import { GAP_CTA_MAP } from "./nextMove";
@@ -1340,7 +1340,15 @@ export default function SessionSetup() {
     interviewFocus.length > 0 &&
     !companyMissing &&
     !hardRoleCompanyMismatch;
-  const canProceed = formComplete && micStatus === "granted";
+  /* Mic is only a hard requirement when the AI actually speaks. With the
+     TTS kill-switch on (VOICE_OUTPUT_DISABLED), the interview is text-first
+     and fully answerable by typing — the engine's `?nomic=1` path drives a
+     complete typed session. Requiring mic permission in that state locks
+     mic-denied / locked-down-device users out of a text-only product for no
+     reason. Gate the requirement on the same flag that puts the composer in
+     text mode, so the two never drift apart. */
+  const micRequired = !VOICE_OUTPUT_DISABLED;
+  const canProceed = formComplete && (micStatus === "granted" || !micRequired);
 
   // Launch interview
   const handleStart = () => {
@@ -1419,7 +1427,11 @@ export default function SessionSetup() {
          the insight read queries the wrong bucket. Scoped to hr-round only so
          every other interview type's focus handling stays unchanged. */
       const focusParam = focusType === "hr-round" ? "&focus=hr-round" : "";
-      router.push(`/interview?type=${focusType}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}`);
+      /* Starting without a granted mic (allowed when voice output is off) —
+         hand the engine its text-only hatch so it doesn't try to acquire a
+         mic the user never gave and doesn't render a dead "Listening" state. */
+      const micParam = micStatus === "granted" ? "" : "&nomic=1";
+      router.push(`/interview?type=${focusType}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}${micParam}`);
     }, 1900);
   };
 
@@ -1431,7 +1443,7 @@ export default function SessionSetup() {
       if (e.key !== "Enter" || !(e.metaKey || e.ctrlKey)) return;
       e.preventDefault();
       if (canProceed && !starting && isOnline) handleStart();
-      else if (formComplete && micStatus !== "granted" && micStatus !== "requesting") void requestMic();
+      else if (micRequired && formComplete && micStatus !== "granted" && micStatus !== "requesting") void requestMic();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1890,15 +1902,15 @@ export default function SessionSetup() {
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Permissions</div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      We&apos;ll only use these for this practice session. Nothing is recorded or shared.
+                      Used live for this session only — audio and video are never recorded. Only your session transcript is saved, so you can review your report.
                     </div>
                   </div>
                   <div className="ob-permissions-grid">
                     <PermissionCard
                       kind="mic"
                       label="Microphone"
-                      sublabel="Required"
-                      sublabelTone="copper"
+                      sublabel={micRequired ? "Required" : "Optional"}
+                      sublabelTone={micRequired ? "copper" : "muted"}
                       status={micStatus}
                       onRequest={requestMic}
                       level={micLevel}
@@ -2045,7 +2057,7 @@ export default function SessionSetup() {
           })()}
           <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 48, paddingTop: 24 }}>
             {(() => {
-              const needsMic = formComplete && micStatus !== "granted" && micStatus !== "requesting";
+              const needsMic = micRequired && formComplete && micStatus !== "granted" && micStatus !== "requesting";
               const isHardDisabled = !formComplete || starting || !isOnline || micStatus === "requesting";
               const ctaLabel = starting
                 ? "Starting…"
