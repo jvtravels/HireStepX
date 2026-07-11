@@ -110,6 +110,20 @@ const CORE_COMP =
 const NONCOMP_PERK =
   "(?:corner\\s+office|office|cabin|parking(?:\\s+(?:spot|space|slot))?|company\\s+car|car\\s+lease|chauffeur|driver|gym\\s+membership|club\\s+membership|(?:health|medical|life)\\s+(?:insurance|cover(?:age)?)|macbook|laptop|workstation|relocation\\s+(?:package|assistance))";
 
+/* Non-comp TITLE / seniority nouns a candidate can demand as a close condition
+ * ("give me the senior title and I'll sign", "get me to staff level"). Distinct
+ * from title-upgrade (welded to "make it a …") — a grant/move verb governing one
+ * of these nouns is still an unmet demand, not an accept (batch-17 hostile leak,
+ * 2026-07-11). Only ever read behind a grant/promote verb in the title-grant core
+ * below, so ordinary prose naming a "role" or "level" never trips it. */
+const NONCOMP_TITLE =
+  "(?:title|role|level|band|grade|designation|position|seniority|promotion)";
+/* Seniority RANK names — the target of a "get me to <rank>" / "give me the <rank>
+ * title" upgrade demand. Read only inside title-grant (behind a grant/move verb),
+ * so ordinary prose naming a level never trips them. */
+const RANK =
+  "(?:principal|staff|senior|sr\\b|lead|director|manager|architect|vp\\b|head|distinguished|fellow)";
+
 /* Decade-band figures for the vague "mid-forties" demand form (see the
  * decade-band core below). Kept lakh-denominated to match figureToLakhs output;
  * the qualifier nudges within the decade. */
@@ -432,10 +446,17 @@ const DEMAND_CORES: DemandCore[] = [
    * offer of 46" false-closed at the un-bumped ₹40 offer (batch-6 hostile
    * leak, 2026-07-09): the object list omitted "offer" and "other", so the
    * strict gate read a clean accept. Always unmet (matching a competing
-   * figure is an upward ask), so no offer gate. */
+   * figure is an upward ask), so no offer gate. The possessive-party arm
+   * (`[a-z][\w.-]*'s (offer|number|…)`) was added after "Match Google's offer
+   * and I'll sign." false-closed at the un-bumped offer (batch-17 hostile leak,
+   * 2026-07-11): the object list bound only pronoun determiners (their/the/my),
+   * so a NAMED competitor's offer quoted possessively slipped through. Matching a
+   * third party's offer is inherently an upward ask, and even the ambiguous
+   * "match the company's offer" reading is safe under this module's demand-recall
+   * bias (an over-detect merely costs a turn). */
   {
     reason: "beat-match",
-    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:other\s+)?(?:current|ctc|comp\w*|package|base|salary|pay|number|offer)|(?:a|an|another|the|my|their)\s+(?:competing|rival|outside|other)\s+offer)\b/i,
+    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:other\s+)?(?:current|ctc|comp\w*|package|base|salary|pay|number|offer)|(?:a|an|another|the|my|their)\s+(?:competing|rival|outside|other)\s+offer|[a-z][\w.-]*'s\s+(?:offer|number|figure|comp\w*|package|ctc))\b/i,
   },
   /* Beat/match a bare FIGURE ("beat the 47 Razorpay gave me", "match 46",
    * "exceed the 48 I have"). beat-match above only binds an OBJECT WORD
@@ -526,6 +547,22 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "vague-relative-bump",
     re: /\b(?:bump|nudge|hike|jack|boost|lift|kick)\s+(?:it|that|the\s+(?:number|figure|offer|base|fixed|cash|salary|ctc|package|pay))(?:\s+(?:up|higher|north))?(?:\s+(?:a\s+(?:little|bit|touch|tad|smidge|notch)|slightly|some(?:what)?))?\b/i,
   },
+  /* Directional CONVERGENCE demand (figureless): "round it up", "split the
+   * difference", "meet me halfway", "meet in the middle", "close/bridge/narrow
+   * the gap", "find a middle ground". Each is an imperative to move the standing
+   * offer UPWARD toward the candidate (round up, or land above the offer at a
+   * midpoint / the candidate's ask), yet carries no figure and no named lever, so
+   * every figure- and lever-anchored core missed it and "Let's split the
+   * difference and I'll sign." / "Meet me halfway and I'm in." / "Round it up and
+   * I'll take it." / "Close the gap to my ask and I accept." false-closed at the
+   * un-bumped offer (batch-17 hostile leak, 2026-07-11). Always unmet (all move
+   * the offer up), so no offer gate. The verbs are present-imperative, so PAST-
+   * tense satisfaction ("you met me halfway, I accept" / "closed the gap, deal")
+   * does NOT match — only a live request for movement does. */
+  {
+    reason: "convergence-demand",
+    re: /\b(?:round\s+(?:it|that|(?:the|this)\s+\w+)?\s*up|round\s+up|split\s+the\s+difference|meet\s+(?:me\s+)?(?:half\s?way|in\s+the\s+middle)|(?:close|bridge|narrow|split)\s+the\s+gap|(?:find|reach|hit)\s+(?:a\s+)?middle\s+ground)\b/i,
+  },
   /* Anaphoric terms-change welded to a comp topic: "what about relocation? sort
    * that and I accept", "the equity — fix that and I'm in". improve-lever needs
    * the lever named DIRECTLY after the verb, so a terms-change verb governing the
@@ -584,6 +621,25 @@ const DEMAND_CORES: DemandCore[] = [
   {
     reason: "title-upgrade",
     re: /\bmake\s+it\s+(?:a\s+|an\s+|the\s+)?[^.!?]{0,20}?\b(?:roles?|titles?|designations?|levels?|bands?|grades?|positions?|principal|staff|senior|lead|director|manager|architect)\b/i,
+  },
+  /* Grant/promote a TITLE or level (imperative/first-person): "give me the senior
+   * title and I'll sign", "get me to staff level", "promote me to principal",
+   * "bump me up to lead". title-upgrade only fires on the "make it a …" frame, so
+   * a grant/move verb governing a title noun slipped it and false-closed at the
+   * un-bumped offer (batch-17 hostile leak, 2026-07-11). A title/level upgrade is
+   * a fresh unmet demand on top of the standing package (not an accept), so no
+   * offer gate; the grant/move-verb gate keeps ordinary prose naming a "role" or
+   * "level" ("this role is a great fit, deal") from matching. */
+  {
+    reason: "title-grant",
+    re: new RegExp(
+      // "promote/elevate me" is itself the level-upgrade demand — no noun needed.
+      `\\b(?:promote|elevate|upgrade)\\s+me\\b` +
+        // other grant/move verbs need a title noun OR a rank name to count.
+        `|\\b(?:give\\s+me|gimme|get\\s+me|hand\\s+me|i(?:'?d)?\\s+(?:want|need|expect|deserve)|bump\\s+me(?:\\s+up)?\\s+to|move\\s+me(?:\\s+up)?\\s+to)\\b` +
+        `[^.!?]{0,25}?\\b(?:${NONCOMP_TITLE}|${RANK})\\b`,
+      "i",
+    ),
   },
   /* Bare "give me N" / "I want N" ABSOLUTE — the core the old vetoes
    * MISSED (no increase token, no "to" target, no and/then bridge):
