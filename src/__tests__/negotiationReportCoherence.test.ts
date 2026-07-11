@@ -188,6 +188,47 @@ describe("I-13 — Per-Question Review shows every recorded exchange", () => {
     // No exchanges to recover → keep the single aggregate item, don't invent.
     expect(result.questions).toHaveLength(1);
   });
+
+  /* PRI-96 (2026-07-12, live staging — session 734493c9): the degraded heuristic
+   * path stored an aggregate perQuestion score of 0, and the reconstructed
+   * per-turn items HARDCODED band "partial", so every row rendered "Partial ·
+   * 0/100" — a middling label beside a zero score. The band must never contradict
+   * the number it sits next to: derive it from the carried score. */
+  const twoTurns = [
+    { speaker: "ai", text: "We can offer ₹40 LPA." },
+    { speaker: "user", text: "I'm targeting ₹48 LPA." },
+    { speaker: "ai", text: "That's a stretch." },
+    { speaker: "user", text: "My market data supports it." },
+  ];
+  const reportWithScore = (score: number) =>
+    ({ ...aggregateReport, perQuestion: [{ ...(aggregateReport.perQuestion as unknown[])[0] as object, score }] }) as unknown as SessionReport;
+
+  it("derives a zero-score reconstructed row's band from the score (weak, not partial)", () => {
+    const result = sessionReportToInterviewResult({
+      report: reportWithScore(0),
+      session: baseSession({ transcript: twoTurns, negotiationMetrics: kernel({}) }),
+    });
+    expect(result.questions).toHaveLength(2);
+    // The exact live bug: 0/100 must NOT read as "Partial".
+    for (const q of result.questions) {
+      expect(q.score).toBe(0);
+      expect(q.band).toBe("weak");
+    }
+  });
+
+  it("band tracks the score band across the reconstructed rows", () => {
+    // partial range (40–69) → "partial"; strong range (≥70) → "strong".
+    const mid = sessionReportToInterviewResult({
+      report: reportWithScore(68),
+      session: baseSession({ transcript: twoTurns, negotiationMetrics: kernel({}) }),
+    });
+    for (const q of mid.questions) expect(q.band).toBe("partial");
+    const high = sessionReportToInterviewResult({
+      report: reportWithScore(82),
+      session: baseSession({ transcript: twoTurns, negotiationMetrics: kernel({}) }),
+    });
+    for (const q of high.questions) expect(q.band).toBe("strong");
+  });
 });
 
 describe("REPORT-3b — 'Numbers stated' never contradicts the kernel's anchor", () => {

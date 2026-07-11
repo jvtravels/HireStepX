@@ -1190,6 +1190,16 @@ function adaptQuestion(
   };
 }
 
+/** Map a per-question score to its display band so the row's color/label can
+ *  never contradict the number beside it. Thresholds mirror the report's own
+ *  Hire-band rubric (strong ≥ 70, partial ≥ 40, weak below). "complete" is only
+ *  ever an explicit evaluator verdict, so it is not synthesized here. */
+function bandForQuestionScore(score: number): "weak" | "partial" | "strong" {
+  if (score >= 70) return "strong";
+  if (score >= 40) return "partial";
+  return "weak";
+}
+
 /** I-13 — reconstruct per-turn negotiation exchanges from the recorded
  *  transcript when the evaluator only produced a single aggregate item.
  *
@@ -1198,8 +1208,9 @@ function adaptQuestion(
  *  is the answer. This is a pure re-projection of REAL recorded turns — no
  *  scores or exchanges are invented. Per-turn scores don't exist for a
  *  negotiation (the evaluator scored the call as a whole), so every item carries
- *  a neutral band and the aggregate's score, and the section shows the true
- *  number of exchanges instead of claiming a per-turn breakdown we don't have.
+ *  the aggregate's score with a band DERIVED from that score (so the label never
+ *  contradicts the number), and the section shows the true number of exchanges
+ *  instead of claiming a per-turn breakdown we don't have.
  *
  *  Returns null (caller keeps the aggregate) when the transcript can't yield
  *  MORE exchanges than the aggregate already shows — a legacy row with no stored
@@ -1233,7 +1244,12 @@ function buildNegotiationPerQuestion(
       // the aggregate score with a neutral band rather than fabricate a per-turn
       // number the kernel never recorded.
       score: aggregate?.score ?? 0,
-      band: "partial",
+      // Band must agree with the score it's shown beside — a hardcoded "partial"
+      // rendered "Partial · 0/100" on the degraded heuristic path (aggregate
+      // score 0, live session 734493c9) and would equally misread a healthy
+      // aggregate as "Partial · 90". Derive the band from the carried score so
+      // the label never fights the number.
+      band: bandForQuestionScore(aggregate?.score ?? 0),
       answer: highlightAnswer(entry.text),
       star: { situation: false, task: false, action: false, result: false, learning: false },
       metrics: {
