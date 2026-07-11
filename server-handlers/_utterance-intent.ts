@@ -143,7 +143,13 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "raise-to-target",
     absoluteTargetGroup: 1,
     unitGroup: 2,
-    re: /\b(?:make\s+it|(?:get|bump|push|raise|take|bring|come\s+up|move|nudge)\s+(?:(?:it|the\s+fixed|the\s+base|the\s+cash|fixed|base|cash|total|ctc|package)\s+)?to)\s+(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+    /* Tolerates a rounding filler between the verb and the figure, in BOTH the
+     * "make it <N>" and the "<verb> … to <N>" branches ("make it a round 45",
+     * "get it to a flat 48", "make it an even 50") — the filler defeated the bare
+     * "<verb> <digit>" form and these false-closed at the un-bumped offer
+     * (batch-16 hostile leak, 2026-07-11). Filler sits at the shared pre-figure
+     * position so a single fragment covers every verb branch. */
+    re: /\b(?:make\s+it|(?:get|bump|push|raise|take|bring|come\s+up|move|nudge)\s+(?:(?:it|the\s+fixed|the\s+base|the\s+cash|fixed|base|cash|total|ctc|package)\s+)?to)\s+(?:a\s+round|an?\s+even|a\s+clean|a\s+flat|a\s+nice|a\s+solid|a\s+cool)?\s*(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
   /* Prepositionless landing verb + target: "the base needs to hit 46",
    * "reach 50", "sit at 48", "land on 55". raise-to-target requires an
@@ -504,6 +510,35 @@ const DEMAND_CORES: DemandCore[] = [
     re: new RegExp(
       `\\b(?:throw\\s+in|toss\\s+in|chip\\s+in|give\\s+me|gimme|get\\s+me|hand\\s+me|include|add|provide|expense|reimburse|sort\\s+out|guarantee|spring\\s+for)\\b` +
         `[^.!?]{0,20}?\\b${NONCOMP_PERK}\\b`,
+      "i",
+    ),
+  },
+  /* Vague RELATIVE bump with no figure: "bump it a little", "nudge it up",
+   * "hike it a bit", "push the number higher". verb-magnitude needs an adjacent
+   * figure and improve-lever needs a NAMED lever, so an unquantified upward bump
+   * on the anaphor "it"/"the number" slipped both and "Bump it a little and I'll
+   * sign" false-closed at the un-bumped offer (batch-16 hostile leak,
+   * 2026-07-11). Verbs are inherently upward (bump/nudge/hike/jack/boost/lift),
+   * so it is always an unmet demand; the object is pinned to it/that or a comp
+   * handle (number/figure/offer/base/...), and an optional "up/higher/a little"
+   * tail is allowed — ordinary prose ("take it", "move on") never matches. */
+  {
+    reason: "vague-relative-bump",
+    re: /\b(?:bump|nudge|hike|jack|boost|lift|kick)\s+(?:it|that|the\s+(?:number|figure|offer|base|fixed|cash|salary|ctc|package|pay))(?:\s+(?:up|higher|north))?(?:\s+(?:a\s+(?:little|bit|touch|tad|smidge|notch)|slightly|some(?:what)?))?\b/i,
+  },
+  /* Anaphoric terms-change welded to a comp topic: "what about relocation? sort
+   * that and I accept", "the equity — fix that and I'm in". improve-lever needs
+   * the lever named DIRECTLY after the verb, so a terms-change verb governing the
+   * anaphor "that"/"it"/"this" (referring back to a comp lever raised earlier in
+   * the utterance) slipped it (batch-16 hostile leak, 2026-07-11). Gated by a
+   * lookahead requiring a comp/sweetener noun ANYWHERE in the utterance, so the
+   * anaphor demonstrably refers to a comp lever — "I can handle it, I accept"
+   * (no comp noun) and "that works for me" (no terms verb) never match. */
+  {
+    reason: "anaphoric-terms-change",
+    re: new RegExp(
+      `(?=.*\\b(?:${CORE_COMP}|${SWEETENER})\\b)` +
+        `.*\\b(?:fix|sort(?:\\s+out)?|handle|adjust|revise|rework|improve|sweeten)\\s+(?:that|it|this)\\b`,
       "i",
     ),
   },
