@@ -541,11 +541,20 @@ const DEMAND_CORES: DemandCore[] = [
    * sign" false-closed at the un-bumped offer (batch-16 hostile leak,
    * 2026-07-11). Verbs are inherently upward (bump/nudge/hike/jack/boost/lift),
    * so it is always an unmet demand; the object is pinned to it/that or a comp
-   * handle (number/figure/offer/base/...), and an optional "up/higher/a little"
-   * tail is allowed — ordinary prose ("take it", "move on") never matches. */
+   * handle, and an optional "up/higher/a little" tail is allowed — ordinary prose
+   * ("take it", "move on") never matches. The object list is the SHARED lever
+   * vocabulary (CORE_COMP ∪ SWEETENER) plus the generic number/figure/offer/pay
+   * handles: a hardcoded cash-only list ("base/fixed/…") missed equity/esops/
+   * stock/bonus/variable, so "Bump the equity and I accept." false-closed at the
+   * un-bumped offer (batch-19 hostile leak, 2026-07-12). Sourcing the levers from
+   * the same constants the other demand cores use keeps the vocabulary in one
+   * place — a lever added there is covered here for free. */
   {
     reason: "vague-relative-bump",
-    re: /\b(?:bump|nudge|hike|jack|boost|lift|kick)\s+(?:it|that|the\s+(?:number|figure|offer|base|fixed|cash|salary|ctc|package|pay))(?:\s+(?:up|higher|north))?(?:\s+(?:a\s+(?:little|bit|touch|tad|smidge|notch)|slightly|some(?:what)?))?\b/i,
+    re: new RegExp(
+      `\\b(?:bump|nudge|hike|jack|boost|lift|kick)\\s+(?:it|that|the\\s+(?:number|figure|offer|pay|${CORE_COMP}|${SWEETENER}))(?:\\s+(?:up|higher|north))?(?:\\s+(?:a\\s+(?:little|bit|touch|tad|smidge|notch)|slightly|some(?:what)?))?\\b`,
+      "i",
+    ),
   },
   /* Directional CONVERGENCE demand (figureless): "round it up", "split the
    * difference", "meet me halfway", "meet in the middle", "close/bridge/narrow
@@ -590,6 +599,23 @@ const DEMAND_CORES: DemandCore[] = [
   {
     reason: "peer-match-demand",
     re: /\b(?:match|beat|pay\s+me)\b[^.!?]{0,30}?\bwhat\b[^.!?]{0,30}?\b(?:paid|pays?|makes?|earns?|gets?|got|make|earn|are\s+(?:paid|making|on))\b/i,
+  },
+  /* Figureless BENCHMARK-MATCH demand: "match the market", "get me to par with
+   * the team", "get me closer to what I'm worth", "bring me in line with
+   * industry standard". A request to lift the offer to an unnamed external
+   * benchmark — inherently upward, yet distinct from peer-match-demand (which
+   * needs a "what <peer> earns" clause) and beat-match (a possessive OFFER
+   * object), so a bare benchmark noun slipped both and false-closed at the
+   * un-bumped offer (batch-19 hostile leak, 2026-07-12). Two verb frames: the
+   * transitive "match <benchmark>" and the ditransitive "get/bring/move me
+   * (up/closer) to <benchmark>". The benchmark is a closed list (market/par/
+   * parity/industry standard/what I'm worth/what I deserve), so ordinary prose
+   * never matches; the imperative "match" (not "matches") keeps a stative "the
+   * offer matches the market, I accept" (satisfaction) out, and the shared
+   * dismissal-tail guard covers "you don't have to match the market, I accept". */
+  {
+    reason: "benchmark-match-demand",
+    re: /\b(?:match|(?:get|bring|move|take|push)\s+me\s+(?:up\s+)?(?:to|closer\s+to|towards?|nearer\s+to|in\s+line\s+with))\s+(?:the\s+)?(?:market(?:\s+(?:rate|value|average|median))?|par\b|parity|industry\s+(?:standard|average|norm|rate|median)|what\s+i(?:'m|\s+am)\s+worth|what\s+i\s+deserve|my\s+(?:market\s+)?worth)\b/i,
   },
   /* FUTURE-GUARANTEE demand: "guarantee a review in six months", "promise me a
    * raise at review". A demand for a forward commitment (review / raise / bump)
