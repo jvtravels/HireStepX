@@ -1,0 +1,65 @@
+import { describe, it, expect } from "vitest";
+import { starterPackFootnote, planCtaLabel, planCtaTitle } from "../planCardCopy";
+
+describe("starterPackFootnote", () => {
+  it("never prints the pack size as availability", () => {
+    // The bug being fixed: a spent pack advertising "5 sessions" above a buy CTA.
+    for (const remaining of [0, 1, 3, 5]) {
+      expect(starterPackFootnote(remaining)).not.toMatch(/\d+\s*sessions?/i);
+    }
+  });
+
+  it("states the pack is spent when no sessions remain", () => {
+    expect(starterPackFootnote(0)).toBe("Sprint Pack used up");
+  });
+
+  it("treats a negative balance as spent (defensive)", () => {
+    expect(starterPackFootnote(-1)).toBe("Sprint Pack used up");
+  });
+
+  it("communicates the one-off, non-resetting nature while sessions remain", () => {
+    expect(starterPackFootnote(3)).toBe("One-off pack · doesn’t reset");
+    expect(starterPackFootnote(5)).toBe("One-off pack · doesn’t reset");
+  });
+});
+
+describe("planCtaLabel", () => {
+  it("gives an exhausted Sprint Pack a buy CTA, never 'Upgrade to Pro'", () => {
+    // A pack customer is not a Pro lead — and the modal it opens sells packs/credits.
+    expect(planCtaLabel({ starterExhausted: true, freeExhausted: false, creditBalance: 0 }))
+      .toBe("Buy more sessions");
+    // Holding credits doesn't change the pack-out story.
+    expect(planCtaLabel({ starterExhausted: true, freeExhausted: false, creditBalance: 4 }))
+      .toBe("Buy more sessions");
+  });
+
+  it("keeps existing Free behaviour intact", () => {
+    // Active free → upsell.
+    expect(planCtaLabel({ starterExhausted: false, freeExhausted: false, creditBalance: 0 }))
+      .toBe("Upgrade to Pro");
+    // Exhausted free, no credits → unlock prompt.
+    expect(planCtaLabel({ starterExhausted: false, freeExhausted: true, creditBalance: 0 }))
+      .toBe("Unlock sessions now");
+    // Exhausted free, with credits → buy more.
+    expect(planCtaLabel({ starterExhausted: false, freeExhausted: true, creditBalance: 2 }))
+      .toBe("Buy more sessions");
+  });
+
+  it("prefers the pack-out branch when a user is both flagged", () => {
+    // Shouldn't happen in practice, but the exhausted-pack CTA must win over
+    // any free-tier wording so the copy matches the pack modal.
+    expect(planCtaLabel({ starterExhausted: true, freeExhausted: true, creditBalance: 0 }))
+      .toBe("Buy more sessions");
+  });
+});
+
+describe("planCtaTitle", () => {
+  it("pitches Pro only for the upgrade CTA", () => {
+    expect(planCtaTitle("Upgrade to Pro")).toMatch(/Pro/);
+  });
+
+  it("describes buying sessions for every buy CTA", () => {
+    expect(planCtaTitle("Buy more sessions")).toBe("Buy more interview sessions");
+    expect(planCtaTitle("Unlock sessions now")).toBe("Buy more interview sessions");
+  });
+});
