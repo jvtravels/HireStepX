@@ -869,6 +869,19 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * negated expectation verb GOVERNING a commit verb within a short window; a
    * genuine "I accept" carries no "don't expect me to" head. */
   /\bdon.?t\s+(?:expect|count\s+on|bank\s+on|hold\s+your\s+breath\s+(?:for|on))\s+me\b[^.!?]{0,18}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?|do\s+it|join)\b/i,
+  /* PRI-97 (2026-07-12, round-18 offline hostile close battery) — NEGATED-BELIEF
+   * imperative: "Don't think I'll sign that.", "Don't believe I'm going to
+   * accept." The PRI-74 arm above owns the "don't EXPECT ME to sign" form (object
+   * "me"); the belief-verb form has NO "me" object — instead a negated belief verb
+   * governs a FIRST-PERSON embedded clause ("don't think I'll sign"), so it slipped
+   * the strict gate's disbelief frame (which needs "you … think … accept") and
+   * FALSE-CLOSED the medium gate on the embedded "sign"/"accept". The disambiguator
+   * is a first-person subject ("I'll"/"I'm gonna"/"I will"/"I would") sitting
+   * between the negated belief verb and the commit verb — a genuine accept never
+   * says "don't think I'll sign". Scoped so the idiomatic "Don't think twice, I'll
+   * sign." (hesitation idiom, "twice" between "think" and "I'll") is untouched and
+   * still closes. Shared single-source so both gates reject in lockstep. */
+  /\bdon.?t\s+(?:think|believe|assume|imagine|reckon|suppose|count\s+on\s+it)\s+(?:for\s+(?:a\s+|one\s+)?(?:second|moment|minute|instant)\s+)?(?:that\s+)?i(?:'?ll|'?m\s+(?:gonna|going\s+to)|\s+will|\s+would|\s+am\s+going\s+to)\b[^.!?]{0,18}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?|do\s+it|join)\b/i,
   /* PRI-74 (2026-07-10) — COUNTERFACTUAL SUBJUNCTIVE inversion: "Were I you,
    * I'd accept", "Were I in your shoes, I'd sign". The "were I <other-party>"
    * head is a hypothetical about someone ELSE ("but I'm not you"), never the
@@ -1284,6 +1297,21 @@ const NON_PARTY_ATTRIBUTION_PATTERN =
 const TRAILING_NOT_NEGATION_PATTERN =
   /(?:[—–-]{1,2}|\.{2,})\s*not\b[.!\s]*$/i;
 
+/** Veto (PRI-97, 2026-07-12, round-18 offline hostile close battery) — a
+ *  clause-final STANDALONE NEGATOR reversal: "Wow, what a deal. I'll take it.
+ *  (No.)", "Deal. No.", "I'll sign. Nope." The close idiom matches, but the
+ *  candidate ends with a self-contained negator sentence/parenthetical that
+ *  flips the whole thing to a sarcastic refusal. TRAILING_NOT_NEGATION above
+ *  owns only the dash/ellipsis-preceded "— not"; this owns the SENTENCE-FINAL
+ *  bare "no/nope/not really" (optionally parenthesized) sitting as its own
+ *  terminal clause. Scoped hard: the negator must be a WHOLE word immediately
+ *  after a sentence terminator (.!?) and be followed only by closing
+ *  punctuation to end-of-string — so "I'll take it. No question." ("question"
+ *  follows "no"), "Deal, no doubt." (comma, and "doubt" follows), and "I accept.
+ *  Now what?" ("Now" ≠ "no") are all untouched and still close. */
+const TRAILING_NEGATOR_REVERSAL_PATTERN =
+  /[.!?]\s*\(?\s*(?:no|nope|not\s+really|as\s+if|yeah,?\s+right|sike|psych)\b[\s.!?)]*$/i;
+
 /** Veto (PRI-79, 2026-07-10, round-11; temporal head completed PRI-81,
  *  2026-07-10 via the adversarial differential audit) — a commit gated on the
  *  offer first becoming "worth" it: "I'll sign when you offer something worth
@@ -1433,6 +1461,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   OFFER_TO_DISAGREE_PATTERN,
   NON_PARTY_ATTRIBUTION_PATTERN,
   TRAILING_NOT_NEGATION_PATTERN,
+  TRAILING_NEGATOR_REVERSAL_PATTERN,
   WORTH_SIGNING_CONDITIONAL_PATTERN,
   DISMISSIVE_OFFER_CHARACTERIZATION_PATTERN,
   REVIEW_TAIL_PATTERN,
