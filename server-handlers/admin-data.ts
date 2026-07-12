@@ -6,6 +6,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
 import { costBreakdown, kFactor, DEFAULT_COST_RATES } from "./_cost-helpers";
+import { isRateLimited as redisRateLimited } from "./_shared";
 
 /* ─── Config ─── */
 
@@ -22,32 +23,6 @@ const LIMIT_PAYMENTS = 1000;
 const LIMIT_LLM = 2000;
 const LIMIT_RECENT = 30;
 
-/* ─── Rate Limiting (in-memory, per serverless instance) ─── */
-
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) return false;
-  return entry.count >= MAX_ATTEMPTS;
-}
-
-function recordAttempt(ip: string): void {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-  } else {
-    entry.count++;
-  }
-}
-
-function clearAttempts(ip: string): void {
-  loginAttempts.delete(ip);
-}
 
 function getClientIp(req: VercelRequest): string {
   const forwarded = req.headers["x-forwarded-for"];
@@ -1214,19 +1189,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const ip = getClientIp(req);
 
-  // Rate limit check
-  if (isRateLimited(ip)) {
+  // Rate limit check — Redis-backed so it holds across Node.js instances
+  if (await redisRateLimited(ip, "admin-data", 5, 900_000)) {
     return res.status(429).json({ error: "Too many attempts. Try again in 15 minutes." });
   }
 
   const auth = verifyAuth(req);
   if (!auth.ok) {
-    recordAttempt(ip);
     return res.status(401).json({ error: "Unauthorized" });
   }
-
-  // Successful auth — clear rate limit and issue token if this was a password login
-  clearAttempts(ip);
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Not configured" });

@@ -18,40 +18,9 @@
 
 import { createHmac, timingSafeEqual } from "crypto";
 import { adminAuthConfigured, createAdminToken } from "./_admin-auth";
+import { isRateLimited, getClientIp } from "./_shared";
 
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
-
-/* Rate limiting — in-memory per serverless instance, same params as admin-data.ts */
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) return false;
-  return entry.count >= MAX_ATTEMPTS;
-}
-
-function recordAttempt(ip: string): void {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-  } else {
-    entry.count++;
-  }
-}
-
-function clearAttempts(ip: string): void {
-  loginAttempts.delete(ip);
-}
-
-function getClientIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return "unknown";
-}
 
 function verifyPassword(input: string): boolean {
   if (!ADMIN_PASSWORD || !input) return false;
@@ -103,7 +72,7 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
 
   const ip = getClientIp(req);
 
-  if (isRateLimited(ip)) {
+  if (await isRateLimited(ip, "admin-login", 5, 900_000)) {
     return new Response(
       JSON.stringify({ error: "Too many attempts. Try again in 15 minutes." }),
       { status: 429, headers: CORS_HEADERS }
@@ -122,14 +91,11 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
   }
 
   if (!verifyPassword(password)) {
-    recordAttempt(ip);
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: CORS_HEADERS,
     });
   }
-
-  clearAttempts(ip);
 
   const token = createAdminToken();
 

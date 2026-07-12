@@ -214,11 +214,11 @@ export default async function QuestionsSlugPage({
       {/* Structured data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={ldJson(faqSchema)}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        dangerouslySetInnerHTML={ldJson(articleSchema)}
       />
       <script
         type="application/ld+json"

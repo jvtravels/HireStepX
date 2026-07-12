@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 10
+    # Group minor + patch updates together to reduce PR noise.
+    # Security updates always get individual PRs regardless.
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # pdfjs-dist v5 removes /legacy/build/pdf import path used in
+      # resumeParser.ts — skip until migration is done.
+      - dependency-name: "pdfjs-dist"
+        update-types: ["version-update:semver-major"]
