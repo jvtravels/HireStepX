@@ -245,7 +245,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Read the nonce injected by middleware.ts so we can attach it to every
+  // Read the nonce injected by proxy.ts so we can attach it to every
   // <script> tag in this server component. This allows the per-request CSP
   // (which includes 'nonce-{nonce}' in script-src) to greenlight these scripts
   // in browsers that enforce CSP Level 2+, which ignores 'unsafe-inline' when
