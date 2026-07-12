@@ -3,6 +3,7 @@ import { render } from "@testing-library/react";
 import { TLDRHero } from "../sessionReport/panels/TLDRHero";
 import { AnchorBracketPanel } from "../sessionReport/panels/AnchorBracketPanel";
 import { derivePhases, type NegotiationOutcome } from "../sessionReport/derivations";
+import { filterNegotiationStrengths } from "../sessionReport/adapter";
 
 /* Cross-surface counter-coherence invariant (2026-06-27, live staging audit).
  *
@@ -151,5 +152,55 @@ describe("negotiation report — never claims an acceptance on a non-accepted ou
     const o = outcome({ outcome: "accepted", finalTotal: 51, offers: [{ turn: 1, total: 51, question: "" }], candidateAsk: 65 });
     const text = renderSurfaces(o);
     expect(text.toLowerCase()).toContain("accepted their opening");
+  });
+});
+
+/* REPORT-4 (2026-07-12, live staging — session 686b5699). TOP STRENGTHS must
+ * never praise an anchor/counter the kernel says was never named. `wins` is
+ * the one counter-aware surface previously not pinned to candidateAsk; this
+ * gate closes it. Same single source (candidateAsk !== null → counterNamed). */
+describe("negotiation strengths — never claim an anchor the kernel says wasn't named", () => {
+  const ANCHOR_CLAIMS = [
+    "Anchored with a clear target salary",
+    "You anchored high and held firm",
+    "Named a counter above the offer",
+    "Countered their opening confidently",
+    "Stated your number early",
+    "Asked for a higher base",
+    "Set a strong target salary",
+  ];
+  const NON_ANCHOR_STRENGTHS = [
+    "Stayed composed under pressure",
+    "Kept a professional, warm tone",
+    "Researched the market range beforehand",
+    "Asked thoughtful clarifying questions",
+    "Avoided leaking your current CTC",
+  ];
+
+  it("drops every anchor-claiming win when no counter was named", () => {
+    const kept = filterNegotiationStrengths(ANCHOR_CLAIMS, false);
+    // All anchor claims removed → falls back to the single honest, claim-free line.
+    expect(kept).toEqual(["You practised the opening of the conversation."]);
+  });
+
+  it("keeps genuine non-anchor strengths on a no-counter session", () => {
+    const kept = filterNegotiationStrengths(NON_ANCHOR_STRENGTHS, false);
+    expect(kept).toEqual(NON_ANCHOR_STRENGTHS);
+  });
+
+  it("drops only the anchor claim from a mixed list, keeps the rest", () => {
+    const mixed = ["Anchored with a clear target salary", "Stayed composed under pressure"];
+    expect(filterNegotiationStrengths(mixed, false)).toEqual(["Stayed composed under pressure"]);
+  });
+
+  it("passes strengths through verbatim once a counter WAS named", () => {
+    // counterNamed === true → the kernel corroborates the anchor; nothing to gate.
+    expect(filterNegotiationStrengths(ANCHOR_CLAIMS, true)).toEqual(ANCHOR_CLAIMS);
+  });
+
+  it("does not over-match negotiation words inside non-claim strengths", () => {
+    // 'counterproductive' / 'asked' (without a figure) must survive.
+    const safe = ["You avoided being counterproductive", "You asked about the team"];
+    expect(filterNegotiationStrengths(safe, false)).toEqual(safe);
   });
 });

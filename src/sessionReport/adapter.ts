@@ -436,7 +436,12 @@ export function sessionReportToInterviewResult(
     level,
     difficulty,
     aiVerdict: report.verdict,
-    strengths: report.wins.map((w) => w.text),
+    strengths: isNegotiation
+      ? filterNegotiationStrengths(
+          report.wins.map((w) => w.text),
+          negotiationOutcome?.candidateAsk != null,
+        )
+      : report.wins.map((w) => w.text),
     improvements: report.fixes.map((f) => f.text),
     metrics: isNegotiation
       ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null)
@@ -558,6 +563,37 @@ const NEG_BLINDSPOT_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|
 function isNegotiationCompetency(name: string): boolean {
   return NEG_BLINDSPOT_RE.test(name || "");
 }
+
+/* REPORT-4 (2026-07-12, live staging — session 686b5699). A negotiation that
+ * ended before the candidate ever named a number rendered TOP STRENGTHS
+ * "Anchored with a clear target salary" beside the kernel's own "NO COUNTER
+ * NAMED" / "You named a counter number — NOT SHOWN". The LLM `wins` array is
+ * the ONE counter-aware report surface NOT pinned to the kernel's counter-named
+ * truth — `candidateAsk !== null`, the exact single source the cross-surface
+ * counter-coherence invariant (negotiationReportCounterCoherence) and the R-8
+ * blindSpot filter already key off. Praising an anchor/counter the kernel says
+ * never happened is a fabricated strength, the worst report failure mode.
+ *
+ * Gate it at that same single source: when no counter was named, drop any win
+ * whose text CLAIMS an anchor / counter / stated number, and leave every other
+ * strength (composure, tone, research, questions asked) untouched. Once a
+ * counter WAS named the list passes through verbatim. If the gate empties the
+ * list we substitute one honest, claim-free line rather than render an empty
+ * column — true of any session that ran, asserting no performance the kernel
+ * can't back. */
+const WIN_CLAIMS_ANCHOR_RE =
+  /\b(?:anchor(?:ed|ing)?|counter(?:ed|-?offers?|-?offered)?|named (?:a|your|the) (?:number|counter|figure|target|ask)|stated (?:a|your|the) (?:number|figure|target|ask)|clear target (?:salary|number|figure)|target (?:salary|number|figure)|asked for (?:a )?(?:higher|specific|₹|\d))\b/i;
+const NO_COUNTER_STRENGTH_FALLBACK =
+  "You practised the opening of the conversation.";
+export function filterNegotiationStrengths(
+  wins: string[],
+  counterNamed: boolean,
+): string[] {
+  if (counterNamed) return wins;
+  const kept = wins.filter((w) => !WIN_CLAIMS_ANCHOR_RE.test(w));
+  return kept.length > 0 ? kept : [NO_COUNTER_STRENGTH_FALLBACK];
+}
+
 /* PRI-67 — the close-specific axis. Capped on a "no_agreement" outcome, where
  * the close stage was provably never reached (derivePhases.reachedClose false). */
 const NEG_CLOSING_SKILL_RE = /clos(?:e|ing)/i;
