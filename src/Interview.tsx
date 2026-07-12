@@ -252,18 +252,13 @@ function InterviewInner() {
   // Tap-to-begin overlay — bulletproof recovery for the "autoplay blocked,
   // voice disabled for session" cascade. The mount-time unlock + click
   // recovery handle 95% of cases; this surface catches the remaining ones
-  // (slow router, restored from bfcache, strict media policies, etc).
-  // Polls because isAutoplayBlocked() flips to true only AFTER the first
-  // failed TTS attempt — there's no event we can subscribe to.
+  // Detect autoplay block state. isAutoplayBlocked() flips true only after a
+  // failed TTS attempt (set by the TTS layer). We check on phase transitions
+  // rather than polling every 600ms — eliminates constant battery drain on mobile.
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   useEffect(() => {
     if (phase === "done") return;
-    const id = setInterval(() => {
-      if (isAutoplayBlocked() && !autoplayBlocked) {
-        setAutoplayBlocked(true);
-      }
-    }, 600);
-    return () => clearInterval(id);
+    if (isAutoplayBlocked() && !autoplayBlocked) setAutoplayBlocked(true);
   }, [phase, autoplayBlocked]);
 
   // Track interview abandonment — fires when user leaves before handleEnd runs

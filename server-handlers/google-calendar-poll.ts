@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const rowsRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/google_calendar_sync?select=*&limit=1000`,
+      `${SUPABASE_URL}/rest/v1/google_calendar_sync?select=user_id,access_token,refresh_token,sync_token,calendar_id,watch_expiry,watch_channel_id,watch_resource_id&limit=1000`,
       { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` }, signal: AbortSignal.timeout(10_000) },
     );
     if (!rowsRes.ok) {

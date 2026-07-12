@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "../src/index.css";
 
 /* ── Google Fonts via next/font ──
@@ -29,6 +30,24 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
   preload: false,  // Non-critical — used only in metrics/badges below the fold
   fallback: ["SF Mono", "Consolas", "Menlo", "monospace"],
+});
+
+/* ── Satoshi — self-hosted via next/font/local ──
+ * Previously loaded from Fontshare CDN (render-blocking, third-party, no
+ * size-adjusted fallback → CLS). Self-hosting eliminates the CDN dependency,
+ * enables preload, and gives next/font the adjustFontFallback CLS fix.
+ * WOFF2 files in public/fonts/ (~25KB each × 3 weights = 75KB total). */
+const satoshi = localFont({
+  src: [
+    { path: "../public/fonts/satoshi-400.woff2", weight: "400", style: "normal" },
+    { path: "../public/fonts/satoshi-500.woff2", weight: "500", style: "normal" },
+    { path: "../public/fonts/satoshi-700.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-ui",
+  display: "swap",
+  preload: true,
+  fallback: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+  adjustFontFallback: "Arial",
 });
 
 /* ── SEO Metadata ── */
@@ -247,15 +266,8 @@ export default async function RootLayout({
           but only the /interview route actually uses those services. We now
           preconnect from Interview.tsx with useEffect-injected links.
         */}
-        {/* Satoshi — primary UI font. Loaded from Fontshare CDN with a
-            preconnect to eliminate DNS + TLS round-trip on the font request.
-            Inter removed: Satoshi now owns --font-ui end-to-end. */}
-        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap"
-        />
+        {/* Satoshi is self-hosted via next/font/local (public/fonts/satoshi-*.woff2).
+            The CDN preconnects and stylesheet link are no longer needed. */}
         <link rel="preconnect" href="https://esluwqkqoofmquqdevap.supabase.co" crossOrigin="anonymous" />
         {/* dns-prefetch (not preconnect) for LLM/TTS/STT origins — only
             /interview needs a live TCP connection. Prefetch cuts the first-lookup
@@ -276,7 +288,7 @@ export default async function RootLayout({
           />
         ))}
       </head>
-      <body className="bg-[#FAF7F0] text-[#0E0C08]">
+      <body className={`bg-[#FAF7F0] text-[#0E0C08] ${satoshi.variable}`}>
         {/* Route change announcer for screen readers */}
         <div
           id="route-announcer"
