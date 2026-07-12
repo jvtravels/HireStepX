@@ -54,7 +54,7 @@ const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 // analytics hashing rather than shipping a known weak key in source (C-2 fix).
 const PAYMENT_ID_HASH_SECRET = (process.env.PAYMENT_ID_HASH_SECRET || "").trim();
 
-import { captureServerEvent } from "./_posthog";
+import { captureServerEvent, captureServerException } from "./_posthog";
 import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
 
 /** Hash a Razorpay payment id before sending it to analytics. The full id
@@ -757,6 +757,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (err) {
     console.error("Payment verification error:", err);
+    void captureServerException(err, undefined, { endpoint: "verify-payment" });
     return res.status(500).json({ error: "Internal error" });
   }
 }

@@ -1341,7 +1341,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       track("signup_completed", { method: "email" });
       if (userId) {
         identifyClient(userId, { email, name, signup_method: "email" });
-        captureClientEvent("user_signed_up", { method: "email", email });
+        captureClientEvent("user_signed_up", { method: "email" });
       }
       return { success: true, userId };
     } finally {

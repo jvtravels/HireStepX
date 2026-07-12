@@ -24,7 +24,18 @@ export interface FeatureFlag {
  * six were declared but never checked in any component, so they only served
  * to suggest unreleased features that didn't exist. Re-add when shipping.
  */
-export const FLAGS: Record<string, FeatureFlag> = {};
+export const FLAGS: Record<string, FeatureFlag> = {
+  SALARY_NEGOTIATION_MODE: {
+    name: "SALARY_NEGOTIATION_MODE",
+    enabled: true,
+    description: "Salary negotiation interview type. Kill-switch: set enabled:false to hide from session setup + interview flow.",
+  },
+  HOMEPAGE_V2: {
+    name: "HOMEPAGE_V2",
+    enabled: true,
+    description: "New HomepageV2 marketing landing page. Kill-switch: set enabled:false to fall back to legacy homepage.",
+  },
+};
 
 /* ─── Hash for percentage rollout ─── */
 /* FNV-1a 32-bit hash mod 100 — fast, well-distributed, deterministic */

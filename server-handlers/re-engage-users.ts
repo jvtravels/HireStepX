@@ -255,7 +255,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html }),
         });
         if (!emailRes.ok) {
-          console.error(`Re-engage email failed for ${user.email}:`, emailRes.status);
+          console.error(`Re-engage email failed for ${user.id.slice(0, 8)}...:`, emailRes.status);
           return "failed";
         }
         // Update re_engage_sent timestamp (best effort — email is already sent)
@@ -271,7 +271,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }).catch(err => console.warn(`[re-engage] re_engage_sent update failed for ${user.id.slice(0, 8)}:`, err?.message));
         return "sent";
       } catch (err) {
-        console.error(`Re-engage email error for ${user.email}:`, err);
+        console.error(`Re-engage email error for ${user.id.slice(0, 8)}...:`, err);
         return "failed";
       }
     }

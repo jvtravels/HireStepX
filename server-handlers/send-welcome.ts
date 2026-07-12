@@ -409,7 +409,7 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
            attacker only learns about emails sent to their own probe
            address (no information leak). Same per-IP + per-email
            rate limits (3/h IP, 5/24h email) bound abuse cost. */
-        console.log(`[reset] unknown email — sending "no account found" courtesy email: ${normalizedEmail}`);
+        console.log(`[reset] unknown email — sending "no account found" courtesy email: ${normalizedEmail.slice(0, 3)}***`);
         await sendNoAccountFoundEmail(normalizedEmail);
         return res.status(200).json({ ok: true });
       }

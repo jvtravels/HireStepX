@@ -5,6 +5,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard, orderedList } from "./_email-theme";
+import { captureServerEvent } from "./_posthog";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -39,6 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!expiredRes.ok) {
       console.error(`[cron:reset-expired] CRITICAL: expired-query failed (${expiredRes.status}) — paid users may not be downgraded today`);
+      void captureServerEvent("cron_reset_expired_failed", undefined, { step: "query", status: expiredRes.status });
       return res.status(500).json({ error: "Failed to query expired subscriptions" });
     }
 
@@ -132,9 +134,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    if (failed > 0) {
+      void captureServerEvent("cron_reset_expired_failed", undefined, { step: "downgrade", failed, downgraded, total: expired.length });
+    }
     return res.status(200).json({ downgraded, failed, emailsSent, emailsFailed, total: expired.length });
   } catch (err) {
     console.error("Reset expired subscriptions error:", err);
+    void captureServerEvent("cron_reset_expired_failed", undefined, { step: "unhandled_exception" });
     return res.status(500).json({ error: "Internal error" });
   }
 }

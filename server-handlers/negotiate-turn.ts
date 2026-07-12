@@ -28,7 +28,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit, countPriorNegotiationSessions, readPriorNegotiationCompanies } from "./_shared";
 import { computeScenarioSeed, reconstructSeenPersonas, tierBucketForCompanyTier } from "./_scenario-seed";
 import { callLLM } from "./_llm";
-import { captureServerEvent, distinctIdFrom } from "./_posthog";
+import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { deriveKernelEvents, type KernelEvent } from "./_kernel-audit";
 import {
   initState,
@@ -1276,6 +1276,7 @@ export default async function handler(
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
+    void captureServerException(err, undefined, { endpoint: "negotiate-turn" });
     return new Response(JSON.stringify({ error: msg }), { status: 500, headers });
   }
 }

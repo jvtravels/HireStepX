@@ -6,7 +6,7 @@
 export const config = { runtime: "nodejs", maxDuration: 100 };
 
 import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
-import { captureServerEvent, distinctIdFrom } from "./_posthog";
+import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { formatScoringRubric, RECIPES } from "../data/focus-question-recipes";
@@ -1371,6 +1371,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[evaluate-session] FAILED after ${totalMs}ms (${isTimeout ? "timeout" : "error"}): ${msg.slice(0, 200)}`);
+    void captureServerException(err, undefined, { endpoint: "evaluate-session", isTimeout, totalMs });
     return new Response(
       JSON.stringify({ error: isTimeout ? "Evaluation timed out — try again" : `Evaluation error: ${msg.slice(0, 100)}`, retryable: true }),
       { status: isTimeout ? 504 : 500, headers },

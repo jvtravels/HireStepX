@@ -86,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // same (sign in, request a new link if needed). The legitimate
     // double-click case ends up here on the second click, which is
     // benign and produces a clean message.
-    console.warn(`[verify-email] replay attempt for already-used token (email=${email})`);
+    console.warn(`[verify-email] replay attempt for already-used token (email=${String(email).slice(0, 3)}***)`);
     return res.redirect(302, `${APP_URL}/login?verified=already`);
   }
   if (!consumption.ok) {

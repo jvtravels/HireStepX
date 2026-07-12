@@ -3,7 +3,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, checkSessionLimit, sanitizeForLLM, redisGet, redisSetEx, hashStable } from "./_shared";
-import { captureServerEvent, distinctIdFrom } from "./_posthog";
+import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
 import { formatCsvFocusContext, getCsvPrimaryInterviewFocus } from "../data/csv-band-prompt";
@@ -1763,6 +1763,7 @@ Requirements:
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("[generate-questions] Error:", errMsg.slice(0, 300));
+    void captureServerException(err, undefined, { endpoint: "generate-questions", isTimeout });
 
     /* Static fallback — when both LLM providers fail (Groq + Gemini cascade,
      * provider 5xx, TPM exhaustion), return curated questions from the seed
