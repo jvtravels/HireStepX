@@ -93,8 +93,9 @@ export default async function handler(req: Request): Promise<Response> {
   const pre = await withAuthAndRateLimit(req, {
     endpoint: "coach-followup",
     ipLimit: 40,
-    userLimit: 20,
+    userLimit: 10,
     maxBytes: 40_000,
+    checkQuota: true,
   });
   if (pre instanceof Response) return pre;
   const { headers, auth } = pre;
