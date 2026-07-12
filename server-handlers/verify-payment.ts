@@ -136,7 +136,7 @@ async function sendPaymentEmail(
             ]) +
             button("Start practising", `${APP_URL}/dashboard`) +
             para(
-              `This is your payment confirmation. Need a GST invoice for your company? Reply to this email and we'll send a tax-compliant version. If you didn't make this purchase, contact us immediately.`,
+              `This is your payment confirmation. If you didn't make this purchase, contact us immediately.`,
               { small: true, muted: true },
             ),
         }),
@@ -602,9 +602,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         razorpay_order_id,
         plan,
         tier,
-        // M-3: store the actual charged amount, not the list price. promoDiscount
-        // is server-derived from Razorpay order notes (set by create-order.ts)
-        // so this matches what Razorpay captured and enables correct GST reconciliation.
+        // Store the actual charged amount (list price minus any promo discount).
+        // promoDiscount is server-derived from Razorpay order notes (set by create-order.ts).
         amount: Math.max(0, PLAN_AMOUNT[plan] - promoDiscount),
         currency: "INR",
         status: "completed",
