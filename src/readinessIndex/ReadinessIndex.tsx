@@ -45,71 +45,16 @@ function SegControl({ range, onChange }: { range: RangeKey; onChange: (r: RangeK
   );
 }
 
-/* In-page navigation for the long exploratory surface. Each entry targets a
-   zone anchor rendered by the sections (id="zone-…"); the active one is lit by
-   useActiveZone. Restored because the surface is ~18 stacked sections — without
-   a jump rail the only way to reach Negotiation or Practice is a full scroll. */
-const NAV: { id: string; label: string }[] = [
-  { id: "zone-readiness", label: "Readiness" },
-  { id: "zone-pillars", label: "Pillars" },
-  { id: "zone-actions", label: "What to practice" },
-  { id: "zone-competence", label: "Competence" },
-  { id: "zone-delivery", label: "Delivery" },
-  { id: "zone-craft", label: "Answer craft" },
-  { id: "zone-signature", label: "By round type" },
-  { id: "zone-patterns", label: "Patterns" },
-  { id: "zone-closing", label: "Closing" },
-  { id: "zone-negotiation", label: "Negotiation" },
-  { id: "zone-practice", label: "Practice" },
-];
-
-function NavRail({ active }: { active: string }) {
-  return (
-    <nav aria-label="Analytics sections" style={{ position: "sticky", top: 76, alignSelf: "start", display: "flex", flexDirection: "column", gap: 2 }}>
-      <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.6, textTransform: "uppercase", padding: "0 0 8px 12px" }}>On this page</span>
-      {NAV.map((n) => {
-        const on = n.id === active;
-        return (
-          /* Matches the sidebar nav pattern used in the interview result screen:
-             coal dot + weight shift on active, no fill, no border-left accent.
-             Border-left / background-chip variants are reserved for filter pills. */
-          <a key={n.id} href={`#${n.id}`} className="rix-nav-link rix-focus"
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 12px", textDecoration: "none", background: "transparent", borderRadius: 6 }}>
-            <span style={{ width: 5, height: 5, borderRadius: 999, background: on ? t.coal : "transparent", flexShrink: 0, display: "inline-block" }} />
-            <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: on ? 700 : 500, color: on ? t.coal : t.inkSoft }}>{n.label}</span>
-          </a>
-        );
-      })}
-    </nav>
-  );
-}
-
-/* Tracks which zone is in view, to light the matching nav entry. */
-function useActiveZone(enabled: boolean): string {
-  const [active, setActive] = React.useState(NAV[0].id);
-  React.useEffect(() => {
-    if (!enabled || typeof IntersectionObserver === "undefined") return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (vis[0]) setActive(vis[0].target.id);
-      },
-      { rootMargin: "-80px 0px -65% 0px", threshold: 0 },
-    );
-    NAV.forEach((n) => { const el = document.getElementById(n.id); if (el) obs.observe(el); });
-    return () => obs.disconnect();
-  }, [enabled]);
-  return active;
-}
-
 /* Pinned header — RI summary that stays put as the page scrolls, plus the
    range scrubber. The "always know your number" anchor. */
 /* `stickTop` cancels the dashboard <main> scroll container's top padding
-   (44px desktop / 20px mobile in DashboardLayout). A sticky child stuck at
+   (20px desktop / 76px mobile in DashboardLayout). A sticky child stuck at
    top:0 would pin to main's content edge — below its padding — leaving a
    strip above the header through which scrolling content shows. A negative
    top equal to that padding pins the header flush to the real viewport top.
-   Keep these in sync with DashboardLayout's <main> padding. */
+   Over-shooting it (a bigger negative than the padding) pulls the header
+   above the viewport and chops its top — so these MUST equal the actual
+   <main> top padding. Keep them in sync with DashboardLayout's <main>. */
 function StickyHeader({ d, range, onRange, showControls, stickTop = 0 }: { d: Fixture; range: RangeKey; onRange: (r: RangeKey) => void; showControls: boolean; stickTop?: number }) {
   const band = BAND_META[d.band];
   return (
@@ -216,14 +161,12 @@ function AnalyticsBody({ d, narrow, range, activePillar, onPillar }: {
 function DesktopShell({ d }: { d: Fixture }) {
   const [range, setRange] = React.useState<RangeKey>("1m");
   const [activePillar, setActivePillar] = React.useState<Pillar["key"] | null>(null);
-  const activeZone = useActiveZone(true);
   const onPillar = (k: Pillar["key"]) => setActivePillar((cur) => (cur === k ? null : k));
   return (
     <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <StickyHeader d={d} range={range} onRange={setRange} showControls stickTop={-44} />
-      <div style={{ maxWidth: 1360, margin: "0 auto", padding: "22px 28px 64px", display: "grid", gridTemplateColumns: "168px minmax(0, 1fr)", gap: 28, alignItems: "start" }}>
-        <NavRail active={activeZone} />
+      <StickyHeader d={d} range={range} onRange={setRange} showControls stickTop={-20} />
+      <div style={{ maxWidth: 1360, margin: "0 auto", padding: "22px 28px 64px" }}>
         <AnalyticsBody d={d} narrow={false} range={range} activePillar={activePillar} onPillar={onPillar} />
       </div>
     </div>
@@ -237,7 +180,7 @@ function MobileShell({ d }: { d: Fixture }) {
   return (
     <div style={{ minHeight: "100%", background: t.cream, color: t.coal }}>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <StickyHeader d={d} range={range} onRange={setRange} showControls={false} stickTop={-20} />
+      <StickyHeader d={d} range={range} onRange={setRange} showControls={false} stickTop={-76} />
       <div style={{ padding: "14px 0 48px" }}>
         <div style={{ marginBottom: 16 }}><SegControl range={range} onChange={setRange} /></div>
         <AnalyticsBody d={d} narrow range={range} activePillar={activePillar} onPillar={onPillar} />

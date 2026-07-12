@@ -22,8 +22,6 @@ export const SHEET = `
   .rix-seg:hover  { background: ${t.creamSoft}; }
   .rix-pillar { transition: box-shadow 200ms cubic-bezier(.16,1,.3,1), transform 200ms cubic-bezier(.16,1,.3,1); }
   .rix-pillar:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(20,17,10,.04), 0 18px 40px -22px rgba(20,17,10,.22); }
-  .rix-nav-link { transition: color 140ms ease, border-color 140ms ease; }
-  .rix-nav-link:hover { color: ${t.coal}; border-color: ${t.lineStrong}; }
   .rix-focus:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 10px; }
   .rix-evi { transition: background 140ms ease; }
   .rix-evi:hover { background: ${t.creamSoft}; }
