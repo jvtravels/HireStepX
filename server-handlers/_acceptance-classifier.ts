@@ -634,9 +634,19 @@ const IM_IN_HEDGE_PATTERN =
  *  trailing finite-verb predicate is still the disambiguator (this is the same
  *  logic the fixed-noun "terms are" arm already encodes). A genuine close —
  *  "accept this offer", "accept the role" — has a noun head but NO following
- *  finite verb, so it stays untouched. */
+ *  finite verb, so it stays untouched.
+ *
+ *  HINDI COMPLEMENTIZER "ki" (offline hostile sweep, 2026-07-13, round-22) — this
+ *  product targets Indian candidates and supports Hindi-mix speech, where the
+ *  standard complementizer is "ki" (= English "that"): "haan i accept ki company
+ *  acchi hai par number kam hai" ("yes, I accept THAT the company is good, but the
+ *  number is low"), "i accept ki aap sahi ho" ("I accept THAT you are right"). Like
+ *  "that", whatever follows "ki" is an embedded clause — a concession-AGREEMENT,
+ *  never a close on the offer. Treated identically to the "that" complementizer
+ *  arm; a genuine Hinglish close ("haan theek hai, i accept the offer") has no
+ *  "ki" clause and is untouched. */
 const ACCEPT_PROPOSITION_PATTERN =
-  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies)|(?:this|that|the)\s+(?:\w+\s+)?(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?)\b|(?:it|there|things?|you|we|they)\s+(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?|do|does|did|have|has|had)\b)/i;
+  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:(?:that|ki)\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies)|(?:this|that|the)\s+(?:\w+\s+)?(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?)\b|(?:it|there|things?|you|we|they)\s+(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?|do|does|did|have|has|had)\b)/i;
 
 /** Veto (PRI-74, 2026-07-10, offline hostile close battery — round-6) — an
  *  accept verb whose OBJECT is explicitly contrasted AWAY from the offer: "I'd

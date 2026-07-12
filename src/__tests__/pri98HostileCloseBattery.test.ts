@@ -154,3 +154,48 @@ describe("Round-21 — guards: determiner-noun genuine closes still accept", () 
     expect(acc(t)).toBe(true);
   });
 });
+
+/* Round-22 (2026-07-13, offline hostile sweep) — Hindi complementizer "ki".
+ *
+ * This product targets Indian candidates and supports Hindi-mix (Hinglish)
+ * speech, in which the standard complementizer is "ki" (= English "that"). A
+ * punctuation-stripped ASR probe surfaced two false-closes: "haan i accept ki
+ * company acchi hai par number kam hai" ("yes, I accept THAT the company is
+ * good, but the number is low") and "i accept ki aap sahi ho but paisa kam hai"
+ * ("I accept THAT you are right, but the money is low"). Both are propositional
+ * concessions — agreeing to an embedded clause, never a close on the offer — but
+ * ACCEPT_PROPOSITION only knew the English "that"/zero complementizer. Fixed by
+ * teaching that pattern the "ki" complementizer at its single source, so both
+ * gates move in lockstep. A genuine Hinglish close ("haan theek hai, i accept
+ * the offer") carries no "ki" clause and is untouched (guarded below).
+ * These utterances are asserted in ASR form (lowercase, no punctuation) because
+ * that is exactly how the voice STT layer delivers them in production. */
+describe("Round-22 — Hindi complementizer 'ki' proposition veto (both gates)", () => {
+  it("the exact leaks that surfaced (ASR form): accept ki <clause> → concession, not a close", () => {
+    expect(
+      neither("haan i accept ki company acchi hai par number kam hai"),
+    ).toBe(true);
+    expect(neither("i accept ki aap sahi ho but paisa kam hai")).toBe(true);
+  });
+
+  it.each([
+    "haan i accept ki company acchi hai par number kam hai",
+    "i accept ki aap sahi ho but paisa kam hai",
+    "i accept ki budget tight hai but the base is still low",
+    "i accept ki market slow hai right now",
+    "look i accept ki you cannot move but neither can i",
+  ])("REJECTS (Hinglish 'ki' proposition, not the offer): %s", (t) => {
+    expect(neither(t)).toBe(true);
+  });
+});
+
+describe("Round-22 — guards: genuine Hinglish closes still accept", () => {
+  it.each([
+    "haan theek hai i accept the offer",
+    "haan ji i accept the offer",
+    "ok done i accept it",
+    "yes i accept the offer",
+  ])("ACCEPTS: %s", (t) => {
+    expect(acc(t)).toBe(true);
+  });
+});
