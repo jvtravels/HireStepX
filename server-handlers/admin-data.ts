@@ -45,10 +45,23 @@ function verifyPassword(input: string): boolean {
 
 /** Check auth: either password (for login) or token (for subsequent requests) */
 function verifyAuth(req: VercelRequest): { ok: boolean; isLogin?: boolean } {
-  // Check for session token first
+  // Check x-admin-token header (in-memory token from client state)
   const token = req.headers["x-admin-token"];
   if (token && typeof token === "string" && verifyAdminToken(token)) {
     return { ok: true };
+  }
+  // Fallback: read token from HttpOnly admin_token cookie (session resume on
+  // page refresh, when the client has no in-memory token yet).
+  const cookieHeader = typeof req.headers["cookie"] === "string" ? req.headers["cookie"] : "";
+  if (cookieHeader) {
+    const cookieToken = cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("admin_token="))
+      ?.slice("admin_token=".length);
+    if (cookieToken && verifyAdminToken(cookieToken)) {
+      return { ok: true };
+    }
   }
   // Check for password (login attempt)
   const key = req.headers["x-admin-key"];

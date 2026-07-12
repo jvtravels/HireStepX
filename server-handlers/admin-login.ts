@@ -3,16 +3,17 @@
  *
  * This is the only place the raw password is accepted. On success:
  *   1. A signed HMAC session token is minted via _admin-auth.ts.
- *   2. The token is set in a Secure; HttpOnly; SameSite=Strict cookie so
- *      middleware can read it without JS exposure.
- *   3. The token is also returned in the JSON body so the client can store
- *      it in localStorage for subsequent x-admin-token API calls (existing
- *      flow is preserved).
+ *   2. The token is set in a Secure; HttpOnly; SameSite=Strict cookie —
+ *      the sole delivery mechanism. The token is NOT returned in the JSON
+ *      body to prevent client-side JavaScript from ever touching it.
+ *   3. The client reads the token from the subsequent /api/admin-data
+ *      response (_token field) and caches it in memory (React ref) for
+ *      x-admin-token header use. No localStorage involved.
  *
  * When ADMIN_TOTP_SECRET is set, a TOTP second factor is also required.
  *
  * POST /api/admin-login  { password: string, totp?: string }
- *   200  { ok: true, token: string }          — success, cookie set
+ *   200  { ok: true }                         — success, cookie set
  *   401  { error: "Unauthorized" }            — wrong password
  *   401  { error: "Invalid 2FA code" }        — TOTP mismatch (when enabled)
  *   401  { error: "2FA code required" }       — totp field missing (when enabled)
@@ -124,7 +125,7 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
 
   const token = createAdminToken();
 
-  return new Response(JSON.stringify({ ok: true, token }), {
+  return new Response(JSON.stringify({ ok: true }), {
     status: 200,
     headers: {
       ...CORS_HEADERS,

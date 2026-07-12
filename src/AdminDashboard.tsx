@@ -6,7 +6,10 @@ import { QualityContent } from "./AdminQualityDashboard";
 import { EmptyState } from "./components/EmptyState";
 
 /* ─── Token-based auth ─── */
-const TOKEN_KEY = "hirestepx_admin_token";
+// Token lives in a React ref (memory only). The HttpOnly admin_token cookie is
+// the durable credential; the in-memory token is cached here after login / mount
+// probe so subsequent API calls can send it in the x-admin-token header without
+// touching localStorage or reading the HttpOnly cookie from JS (impossible by design).
 
 /* ─── Types ─── */
 
@@ -439,46 +442,36 @@ export default function AdminDashboard() {
   // Client-side cache
   const cache = useRef<Map<string, CacheEntry>>(new Map());
 
-  function getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
-  }
+  // In-memory token ref — the HttpOnly cookie is the durable credential.
+  // This ref holds the rolling session token returned by admin-data responses
+  // so x-admin-token header calls work without ever touching localStorage.
+  const tokenRef = useRef<string | null>(null);
 
-  function setToken(token: string) {
-    localStorage.setItem(TOKEN_KEY, token);
-  }
+  function getToken(): string | null { return tokenRef.current; }
+  function setToken(token: string) { tokenRef.current = token; }
+  function clearToken() { tokenRef.current = null; }
 
-  function clearToken() {
-    localStorage.removeItem(TOKEN_KEY);
-  }
-
-  // Check stored token on mount
+  // Probe for an active session on mount using the HttpOnly cookie.
+  // No localStorage read — the cookie is sent automatically via credentials:"include".
+  // On success the response carries _token which we cache in memory for API calls.
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      fetch("/api/admin-data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-token": token },
-        body: JSON.stringify({ section: "overview" }),
-      }).then(async (res) => {
-        if (res.ok) {
-          const data = await res.json();
-          // Store refreshed token
-          if (data._token) setToken(data._token);
-          setAuthed(true);
-          // Cache the overview data we just got
-          const { _token, ...rest } = data;
-          cache.current.set("overview", { data: rest, ts: Date.now() });
-        } else {
-          clearToken();
-        }
-        setAuthLoading(false);
-      }).catch(() => {
-        clearToken();
-        setAuthLoading(false);
-      });
-    } else {
+    fetch("/api/admin-data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ section: "overview" }),
+    }).then(async (res) => {
+      if (res.ok) {
+        const data = await res.json();
+        if (data._token) setToken(data._token);
+        setAuthed(true);
+        const { _token, ...rest } = data;
+        cache.current.set("overview", { data: rest, ts: Date.now() });
+      }
       setAuthLoading(false);
-    }
+    }).catch(() => {
+      setAuthLoading(false);
+    });
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -504,23 +497,19 @@ export default function AdminDashboard() {
         setLoginBusy(false);
         return;
       }
-      const loginData = await loginRes.json() as { ok: boolean; token?: string };
-      const token = loginData.token;
-      if (token) setToken(token);
-
-      // Fetch overview data using the new token so we can pre-populate the cache.
-      if (token) {
-        const overviewRes = await fetch("/api/admin-data", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-admin-token": token },
-          body: JSON.stringify({ section: "overview" }),
-        });
-        if (overviewRes.ok) {
-          const data = await overviewRes.json();
-          if (data._token) setToken(data._token);
-          const { _token, ...rest } = data;
-          cache.current.set("overview", { data: rest, ts: Date.now() });
-        }
+      // Cookie is now set by the server. Fetch overview via cookie to get
+      // the in-memory token (_token) for subsequent x-admin-token header calls.
+      const overviewRes = await fetch("/api/admin-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ section: "overview" }),
+      });
+      if (overviewRes.ok) {
+        const data = await overviewRes.json();
+        if (data._token) setToken(data._token);
+        const { _token, ...rest } = data;
+        cache.current.set("overview", { data: rest, ts: Date.now() });
       }
 
       setAuthed(true);
@@ -584,6 +573,7 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin-data", {
         method: "POST",
         headers,
+        credentials: "include",
         body: JSON.stringify({ section, ...extra }),
       });
 
@@ -1913,6 +1903,7 @@ export default function AdminDashboard() {
         const res = await fetch("/api/admin-data", {
           method: "POST",
           headers: reqHeaders,
+          credentials: "include",
           body: JSON.stringify({ action: "update-support-status", id, status }),
         });
         if (res.ok) {
