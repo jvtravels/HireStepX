@@ -271,6 +271,166 @@ function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
   );
 }
 
+/* ─── OutcomePrompt ─────────────────────────────────────────────────────────
+   Appears once in the sidebar when the user has sessions older than 30 days
+   and hasn't yet reported a job-search outcome. Dismissable; after submit or
+   dismiss it stays hidden. Backend: GET/POST /api/user-outcome. */
+
+const OUTCOME_DISMISS_KEY = "hirestepx_outcome_dismissed";
+
+function OutcomePrompt({ firstSessionDate }: { firstSessionDate: string | null | undefined }) {
+  const [status, setStatus] = useState<"idle" | "open" | "done" | "dismissed">("idle");
+  const [applied, setApplied] = useState(false);
+  const [interviewed, setInterviewed] = useState(false);
+  const [offer, setOffer] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const [company, setCompany] = useState("");
+  const [roleLanded, setRoleLanded] = useState("");
+  const [testimonial, setTestimonial] = useState("");
+  const [mayShare, setMayShare] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!firstSessionDate) return;
+    const daysSinceFirst = (Date.now() - new Date(firstSessionDate).getTime()) / 86400000;
+    if (daysSinceFirst < 30) return;
+    try {
+      if (localStorage.getItem(OUTCOME_DISMISS_KEY)) return;
+    } catch { /* private mode */ }
+
+    // Check if already reported
+    fetch("/api/user-outcome", { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { outcome: Record<string, unknown> | null } | null) => {
+        if (!data?.outcome) setStatus("open");
+      })
+      .catch(() => { /* best-effort */ });
+  }, [firstSessionDate]);
+
+  const dismiss = () => {
+    try { localStorage.setItem(OUTCOME_DISMISS_KEY, "1"); } catch { /* noop */ }
+    setStatus("dismissed");
+  };
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      await fetch("/api/user-outcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ applied, interviewed, offer, accepted,
+          company: company.trim() || undefined, roleLanded: roleLanded.trim() || undefined,
+          testimonial: testimonial.trim() || undefined, mayShare }),
+      });
+    } catch { /* best-effort */ }
+    setBusy(false);
+    setStatus("done");
+  };
+
+  if (status === "idle" || status === "dismissed") return null;
+
+  if (status === "done") {
+    return (
+      <div style={{
+        padding: "12px 14px", background: t.success100,
+        border: `1px solid ${t.success}`, borderRadius: 10,
+        display: "flex", alignItems: "center", gap: 10,
+      }}>
+        <span style={{ color: t.success, display: "inline-flex" }} aria-hidden>{Icons.check}</span>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: 0, lineHeight: 1.4 }}>
+          Thank you for sharing. Your result helps improve HireStepX for everyone.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "open") {
+    return (
+      <div style={{
+        padding: "14px 16px",
+        background: t.indigo100, border: `1px solid ${t.indigo}`, borderRadius: 10,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
+            How did your job search go?
+          </p>
+          <button
+            type="button" onClick={dismiss} aria-label="Dismiss outcome prompt"
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: t.inkMid, fontSize: 16, lineHeight: 1, padding: 0 }}
+          >×</button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {(
+            [
+              { label: "Applied for a role", value: applied, set: setApplied },
+              { label: "Got an interview",   value: interviewed, set: setInterviewed },
+              { label: "Received an offer",  value: offer, set: setOffer },
+              { label: "Accepted the offer", value: accepted, set: setAccepted },
+            ] as { label: string; value: boolean; set: (v: boolean) => void }[]
+          ).map(({ label, value, set }) => (
+            <label key={label} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+              fontFamily: f.sans, fontSize: 12, color: t.coal, lineHeight: 1.4 }}>
+              <input type="checkbox" checked={value} onChange={e => set(e.target.checked)}
+                style={{ accentColor: t.indigo, width: 14, height: 14, flexShrink: 0 }} />
+              {label}
+            </label>
+          ))}
+        </div>
+        {(offer || accepted) && (
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+            <input
+              type="text" placeholder="Company (optional)" value={company} maxLength={120}
+              onChange={e => setCompany(e.target.value)}
+              aria-label="Company name"
+              style={{ fontFamily: f.sans, fontSize: 12, padding: "6px 10px",
+                border: `1px solid ${t.lineStrong}`, borderRadius: 6, background: t.white,
+                color: t.coal, width: "100%", boxSizing: "border-box" }}
+            />
+            <input
+              type="text" placeholder="Role landed (optional)" value={roleLanded} maxLength={120}
+              onChange={e => setRoleLanded(e.target.value)}
+              aria-label="Role landed"
+              style={{ fontFamily: f.sans, fontSize: 12, padding: "6px 10px",
+                border: `1px solid ${t.lineStrong}`, borderRadius: 6, background: t.white,
+                color: t.coal, width: "100%", boxSizing: "border-box" }}
+            />
+            <textarea
+              placeholder="Short testimonial (optional)"
+              value={testimonial} maxLength={500}
+              onChange={e => setTestimonial(e.target.value)}
+              aria-label="Testimonial"
+              rows={2}
+              style={{ fontFamily: f.sans, fontSize: 12, padding: "6px 10px",
+                border: `1px solid ${t.lineStrong}`, borderRadius: 6, background: t.white,
+                color: t.coal, width: "100%", resize: "vertical", boxSizing: "border-box" }}
+            />
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+              fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+              <input type="checkbox" checked={mayShare} onChange={e => setMayShare(e.target.checked)}
+                style={{ accentColor: t.indigo, width: 14, height: 14, flexShrink: 0 }} />
+              OK to share anonymously on the site
+            </label>
+          </div>
+        )}
+        <button
+          type="button" onClick={submit} disabled={busy}
+          style={{
+            marginTop: 12, width: "100%", padding: "8px 0",
+            fontFamily: f.sans, fontSize: 13, fontWeight: 600,
+            background: t.indigo, color: t.white, border: "none", borderRadius: 8,
+            cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1,
+          }}
+        >
+          {busy ? "Saving…" : "Share result"}
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 /* ─── mock data (demo-only sections) ─── */
 const MOCK_FALLBACK_SESSIONS: DemoSession[] = [
   { title: "Salary negotiation, Razorpay PM", date: "Yesterday, 38 min", score: 88, icon: Icons.meet },
@@ -713,6 +873,9 @@ export default function DashboardHome() {
               nothing when the resume is fresh, missing a parsedAt, or the
               user has dismissed it for this bucket. */}
           <ResumeFreshnessStrip parsedAt={user?.resumeData?.parsedAt} onRefresh={goToResume} />
+
+          {/* Job-search outcome prompt — fires 30 days after first session. */}
+          <OutcomePrompt firstSessionDate={user?.practiceTimestamps?.[0]} />
 
           {/* Resume, inline single line. Copy generic (no fake "4 days ago"). */}
           <div style={{
