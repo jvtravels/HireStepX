@@ -8,6 +8,8 @@ import { useState, FormEvent } from "react";
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
+  const [totp, setTotp] = useState("");
+  const [totpRequired, setTotpRequired] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -16,31 +18,51 @@ export default function AdminLoginPage() {
     setError("");
     setBusy(true);
     try {
+      const body: Record<string, string> = { password };
+      if (totpRequired && totp) body.totp = totp.replace(/\s/g, "");
+
       const res = await fetch("/api/admin-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // ensure Set-Cookie is honoured
-        body: JSON.stringify({ password }),
+        credentials: "include",
+        body: JSON.stringify(body),
       });
+
       if (res.ok) {
         const data = (await res.json()) as { ok: boolean; token?: string };
-        // Mirror the token into localStorage so the AdminDashboard can pick it
-        // up on the next page load via its existing getToken() path.
         if (data.token) {
           try { localStorage.setItem("hirestepx_admin_token", data.token); } catch { /* private browsing */ }
         }
-        // Navigate to the admin dashboard (the cookie is now set).
         window.location.href = "/";
       } else if (res.status === 429) {
         setError("Too many attempts. Try again in 15 minutes.");
       } else {
-        setError("Wrong password.");
+        const data = (await res.json().catch(() => ({}))) as { totp_required?: boolean };
+        if (data.totp_required) {
+          // Password was correct; server now wants a TOTP code.
+          setTotpRequired(true);
+          setError("");
+        } else if (totpRequired) {
+          setError("Invalid 2FA code.");
+        } else {
+          setError("Wrong password.");
+        }
       }
     } catch {
       setError("Connection failed. Check your network.");
     }
     setBusy(false);
   }
+
+  const inputStyle: React.CSSProperties = {
+    background: "#1e1e1e",
+    border: "1px solid #333",
+    borderRadius: 8,
+    padding: "0.6rem 0.8rem",
+    color: "#f5f5f5",
+    fontSize: "0.95rem",
+    outline: "none",
+  };
 
   return (
     <div
@@ -71,26 +93,42 @@ export default function AdminLoginPage() {
           Admin access
         </h1>
 
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-          <span style={{ fontSize: "0.8rem", color: "#888", fontWeight: 500 }}>Password</span>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            /* eslint-disable-next-line jsx-a11y/no-autofocus -- dedicated single-field login page; focusing the only input on mount is expected. */
-            autoFocus
-            required
-            style={{
-              background: "#1e1e1e",
-              border: "1px solid #333",
-              borderRadius: 8,
-              padding: "0.6rem 0.8rem",
-              color: "#f5f5f5",
-              fontSize: "0.95rem",
-              outline: "none",
-            }}
-          />
-        </label>
+        {!totpRequired ? (
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            <span style={{ fontSize: "0.8rem", color: "#888", fontWeight: 500 }}>Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              /* eslint-disable-next-line jsx-a11y/no-autofocus -- dedicated single-field login page */
+              autoFocus
+              required
+              style={inputStyle}
+            />
+          </label>
+        ) : (
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            <span style={{ fontSize: "0.8rem", color: "#888", fontWeight: 500 }}>
+              Authenticator code
+            </span>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="\d{6}"
+              maxLength={6}
+              value={totp}
+              onChange={e => setTotp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              autoFocus
+              autoComplete="one-time-code"
+              placeholder="000000"
+              required
+              style={{ ...inputStyle, letterSpacing: "0.25em", textAlign: "center" }}
+            />
+            <span style={{ fontSize: "0.75rem", color: "#555" }}>
+              Enter the 6-digit code from your authenticator app.
+            </span>
+          </label>
+        )}
 
         {error && (
           <p style={{ margin: 0, fontSize: "0.85rem", color: "#f87171" }}>{error}</p>
@@ -98,7 +136,7 @@ export default function AdminLoginPage() {
 
         <button
           type="submit"
-          disabled={busy || !password}
+          disabled={busy || (!totpRequired && !password) || (totpRequired && totp.length !== 6)}
           style={{
             background: busy ? "#2a2a2a" : "#4f46e5",
             color: "#fff",
@@ -111,7 +149,7 @@ export default function AdminLoginPage() {
             opacity: busy ? 0.6 : 1,
           }}
         >
-          {busy ? "Verifying…" : "Sign in"}
+          {busy ? "Verifying…" : totpRequired ? "Verify code" : "Sign in"}
         </button>
       </form>
     </div>
