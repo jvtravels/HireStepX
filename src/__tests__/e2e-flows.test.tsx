@@ -543,9 +543,11 @@ describe("Flow 8: Calendar", () => {
         ,
       );
     });
-    // Free users see upgrade gate
+    // Free users see the gate. Calendar is unlocked by ANY paid plan (a ₹39
+    // Sprint Pack, not just Pro), so its gate CTA is "See plans", not
+    // "Upgrade to Pro".
     expect(screen.getAllByText(/Interview Calendar/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Upgrade to Pro/i)).toBeInTheDocument();
+    expect(screen.getByText(/See plans/i)).toBeInTheDocument();
   });
 });
 

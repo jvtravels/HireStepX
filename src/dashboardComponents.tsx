@@ -749,8 +749,28 @@ const featureHighlights: Record<string, { icon: string; items: string[] }> = {
   "Interview Calendar": { icon: "calendar", items: ["Month grid view", "Interview countdown timers", "Google Calendar sync", ".ics file export", "Prep reminders before interviews"] },
 };
 
+/* Per-feature gate copy. Most features are Pro-only, so the default (below)
+   pitches Pro. The Interview Calendar is unlocked by ANY paid plan (a ₹39
+   Sprint Pack works, not just Pro), so it gets honest copy — telling a free
+   user to "Upgrade to Pro" there over-sells when the cheaper pack suffices.
+   Note the Pro-only footnote is a Pro price, NOT "₹9/session": per-session
+   credits and packs do NOT unlock Analytics / Readiness. */
+type GateCopy = { body: string; cta: string; footnote: string };
+const gateCopy: Record<string, GateCopy> = {
+  "Interview Calendar": {
+    body: "The Interview Calendar is included with every paid plan — month view, countdown timers, Google Calendar sync, and prep reminders.",
+    cta: "See plans",
+    footnote: "On any paid plan · Sprint Pack from ₹39",
+  },
+};
+
 export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
   const highlights = featureHighlights[feature];
+  const copy: GateCopy = gateCopy[feature] ?? {
+    body: `Upgrade to access ${feature.toLowerCase()}. Unlock full analytics, calendar tools, and unlimited sessions with the Pro plan.`,
+    cta: "Upgrade to Pro",
+    footnote: "Pro from ₹149 / 30 days",
+  };
   return (
     <div style={{ position: "relative", minHeight: "calc(100dvh - 160px)", overflow: "hidden" }}>
       {/* Blurred preview background */}
@@ -775,7 +795,7 @@ export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: 
         </div>
         <h3 style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, marginBottom: 8 }}>{feature}</h3>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, maxWidth: 360, marginBottom: highlights ? 16 : 24 }}>
-          Upgrade to access {feature.toLowerCase()}. Unlock full analytics, calendar tools, and unlimited sessions with the Pro plan.
+          {copy.body}
         </p>
 
         {highlights && (
@@ -793,9 +813,9 @@ export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: 
           onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
           onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
         >
-          Upgrade to Pro
+          {copy.cta}
         </button>
-        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>Starting at just ₹9/session</span>
+        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>{copy.footnote}</span>
       </div>
     </div>
   );
