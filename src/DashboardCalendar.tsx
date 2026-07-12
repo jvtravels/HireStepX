@@ -400,7 +400,7 @@ export default function CalendarPage() {
   };
   const { eventsLoading } = useDashboardSessions();
   const { setShowUpgradeModal, showToast } = useDashboardUI();
-  const { isFree, isStarter } = useDashboardSubscription();
+  const { isFree } = useDashboardSubscription();
   const { user } = useAuth();
   const [events, setEvents] = useState<InterviewEvent[]>(loadEvents);
   const [showForm, setShowForm] = useState(false);
@@ -520,7 +520,10 @@ export default function CalendarPage() {
   };
 
   if (eventsLoading) return <DataLoadingSkeleton />;
-  if (isFree || isStarter) return <ProGate feature="Interview Calendar" onUpgrade={() => setShowUpgradeModal(true)} />;
+  // Calendar is available on any PAID plan (Starter/Sprint Pack + Pro); only
+  // the free tier hits the gate. Prep reminders and countdowns are basic
+  // "don't miss your interview" utility a paying user reasonably expects.
+  if (isFree) return <ProGate feature="Interview Calendar" onUpgrade={() => setShowUpgradeModal(true)} />;
 
   const resetForm = () => {
     setFormTitle("");
