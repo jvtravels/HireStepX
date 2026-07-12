@@ -29,6 +29,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, 
 import { computeScenarioSeed, reconstructSeenPersonas, tierBucketForCompanyTier } from "./_scenario-seed";
 import { callLLM } from "./_llm";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
+import { deriveKernelEvents, type KernelEvent } from "./_kernel-audit";
 import {
   initState,
   applyCandidateAnswer,
@@ -305,6 +306,25 @@ export default async function handler(
   try {
     const distinctId = distinctIdFrom(req, auth.userId);
 
+    /* H4 (2026-07-12) — pipe the structured kernel-audit trail to PostHog.
+     * deriveKernelEvents is the single source of truth for "what changed in
+     * the kernel this transition"; it was fully built and unit-tested but
+     * only ever called from tests, so production had NO fine-grained
+     * decision trail. Emitting each derived event as `kernel_audit` (one
+     * row per transition, discriminated by `audit_type`) surfaces the
+     * decisions the coarse kernel_turn/kernel_terminal events don't carry:
+     * verbal acceptance, band rebase, hard-cap flip, highest-offer bump,
+     * close-floor clamp (the Bug-12 signature), lever fired, joining-bonus
+     * set, walk-away return, fresh-grad disclosure. Fire-and-forget;
+     * captureServerEvent never throws. Call after each kernel mutation:
+     * applyCandidateAnswer (no move) and applyAiMove (pass the move). */
+    const emitKernelAudit = (events: KernelEvent[]): void => {
+      for (const e of events) {
+        const { type, ...rest } = e;
+        void captureServerEvent("kernel_audit", distinctId, { audit_type: type, ...rest }, req);
+      }
+    };
+
     if (body.action === "init") {
       /* Free-session cap enforcement (audit P0-1). generate-questions and
        * evaluate both gate on checkSessionLimit; negotiate-turn previously
@@ -519,7 +539,9 @@ export default async function handler(
       const promptVariant = selectPromptVariant(state.sessionId);
       const { text, source, failureKinds, envelopeMissingAttempts, action: initAction } = await generateAiText(state, move, "", llm, auth.userId, promptVariant, distinctId);
       const initMoveTag: MoveTag = deriveMoveTag(initAction, state);
+      const stateBeforeInitMove = state;
       state = applyAiMove(state, move, text);
+      emitKernelAudit(deriveKernelEvents(stateBeforeInitMove, state, move));
       const terminal = isTerminalPhase(state.phase);
       if (failureKinds.length > 0) {
         void captureServerEvent("kernel_validate_fail", distinctId, {
@@ -765,7 +787,9 @@ export default async function handler(
         }, req);
       }
 
+      const stateBeforeCandidate = state;
       state = applyCandidateAnswer(state, sanitizedAnswer);
+      emitKernelAudit(deriveKernelEvents(stateBeforeCandidate, state));
 
       /* PDF#48 Layer 2 — terminal-intent pre-classifier.
        *
@@ -1093,7 +1117,9 @@ export default async function handler(
         }
       }
 
+      const stateBeforeMove = state;
       state = applyAiMove(state, move, text);
+      emitKernelAudit(deriveKernelEvents(stateBeforeMove, state, move));
       const terminal = isTerminalPhase(state.phase);
 
       /* F2 (2026-05-15) — post-acceptance dispatch. When the kernel
