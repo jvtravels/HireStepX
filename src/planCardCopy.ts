@@ -12,14 +12,17 @@
  * The old footnote hardcoded "5 sessions · valid till <date>",
  * which (a) restated the plan name/date already shown in the card header and
  * usage row, and (b) printed the pack SIZE, not what's left — so a spent pack
- * still advertised "5 sessions" directly above a buy CTA. Here the footnote
- * carries only the one thing nothing else on the card conveys — the pack's
- * one-off, non-resetting nature — and flips to a spent-status line when used up.
+ * still advertised "5 sessions" directly above a buy CTA.
+ *
+ * While sessions remain, the footnote carries the one thing nothing else on
+ * the card conveys — the pack's one-off, non-resetting nature. Once the pack
+ * is spent it returns "" (no footnote): exhaustion is already stated loudly by
+ * the red "N of N" usage row, the full progress bar, the "0 extra sessions"
+ * chip, and the buy CTA, so a "Sprint Pack used up" line only adds redundancy.
+ * Callers must skip rendering the element when this is empty.
  */
 export function starterPackFootnote(starterRemaining: number): string {
-  return starterRemaining <= 0
-    ? "Sprint Pack used up"
-    : "One-off pack · doesn’t reset";
+  return starterRemaining <= 0 ? "" : "One-off pack · doesn’t reset";
 }
 
 /** Inputs that decide the primary plan-card CTA label. */

@@ -9,12 +9,12 @@ describe("starterPackFootnote", () => {
     }
   });
 
-  it("states the pack is spent when no sessions remain", () => {
-    expect(starterPackFootnote(0)).toBe("Sprint Pack used up");
+  it("renders no footnote when the pack is spent — the red usage row + buy CTA already say it", () => {
+    expect(starterPackFootnote(0)).toBe("");
   });
 
-  it("treats a negative balance as spent (defensive)", () => {
-    expect(starterPackFootnote(-1)).toBe("Sprint Pack used up");
+  it("treats a negative balance as spent (defensive) — still no footnote", () => {
+    expect(starterPackFootnote(-1)).toBe("");
   });
 
   it("communicates the one-off, non-resetting nature while sessions remain", () => {
