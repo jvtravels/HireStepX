@@ -1098,10 +1098,11 @@ export function AboutV2() {
    ════════════════════════════════════════════════════════════════════ */
 export function ContactV2() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [ref, setRef] = useState<string | null>(null);
   const channels = [
     {
       name: "General support",
-      detail: "Account, billing, technical issues. Most replies within 4 working hours.",
+      detail: "Account, billing, technical issues. We reply within 1 business day.",
       contact: "support@hirestepx.com",
       href: "mailto:support@hirestepx.com",
     },
@@ -1139,9 +1140,24 @@ export function ContactV2() {
                 e.preventDefault();
                 if (status === "sending" || status === "sent") return;
                 setStatus("sending");
-                /* Production handler posts to /api/contact. Stub resolves
-                   to "sent" after 600ms so the success UI is real. */
-                window.setTimeout(() => setStatus("sent"), 600);
+                const form = e.currentTarget as HTMLFormElement;
+                const data = {
+                  name: (form.querySelector("#contact-name") as HTMLInputElement)?.value ?? "",
+                  email: (form.querySelector("#contact-email") as HTMLInputElement)?.value ?? "",
+                  topic: (form.querySelector("#contact-topic") as HTMLSelectElement)?.value ?? "",
+                  message: (form.querySelector("#contact-message") as HTMLTextAreaElement)?.value ?? "",
+                };
+                fetch("/api/contact", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(data),
+                })
+                  .then(r => r.json())
+                  .then((d: { ok?: boolean; ref?: string }) => {
+                    if (d.ok) { setRef(d.ref ?? null); setStatus("sent"); }
+                    else setStatus("error");
+                  })
+                  .catch(() => setStatus("error"));
               }}
               aria-describedby="contact-form-status"
               style={{
@@ -1173,7 +1189,7 @@ export function ContactV2() {
                   marginBottom: 8,
                 }}
               >
-                Typical reply window: 4 working hours, IST business hours.
+                We reply within 1 business day (IST).
               </p>
               <FieldGroup label="Your name" htmlFor="contact-name">
                 <input id="contact-name" className="mv2p-input" type="text" required placeholder="Aarav Mehta" style={inputStyle} />
@@ -1226,9 +1242,9 @@ export function ContactV2() {
                 }}
               >
                 {status === "sent"
-                  ? "Got it. You'll hear from us within 4 working hours."
+                  ? `Got it${ref ? ` (ref: ${ref})` : ""}. Check your email for a confirmation — we'll reply within 1 business day.`
                   : status === "error"
-                  ? "Couldn't send. Email support@hirestepx.com instead."
+                  ? "Couldn't send. Email support@hirestepx.com directly instead."
                   : ""}
               </p>
             </form>

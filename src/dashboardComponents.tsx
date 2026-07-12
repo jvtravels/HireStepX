@@ -734,7 +734,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         </div>
 
         <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginTop: 8, opacity: 0.7 }}>
-          Secure checkout powered by Razorpay · UPI, Cards, Netbanking · Cancel anytime from Settings
+          Secure checkout powered by Razorpay · UPI, Cards, Netbanking · Cancel anytime from Settings ·{" "}
+          <a href="/refund" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>Refund policy</a>
         </p>
       </div>
     </div>

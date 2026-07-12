@@ -177,7 +177,7 @@ export default async function handler(req: Request): Promise<Response> {
         subject: "We received your message — HireStepX Support",
         html: `
           <p>Hi,</p>
-          <p>We've received your message and will get back to you within 24 hours.</p>
+          <p>We've received your message and will get back to you within 1 business day.</p>
           <p>Here's what you sent:</p>
           <blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#444">${message.slice(0, 500).replace(/\n/g, "<br/>")}${message.length > 500 ? "…" : ""}</blockquote>
           <p>Reply to this email or reach us at <a href="mailto:support@hirestepx.com">support@hirestepx.com</a>.</p>
