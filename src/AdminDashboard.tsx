@@ -42,9 +42,23 @@ interface UserRow {
 }
 
 interface FinancialsData {
-  totalRevenuePaise: number; revenueThisMonthPaise: number; totalPayments: number;
-  byPlan: Record<string, number>; perDay: Record<string, number>;
-  recent: Array<{ id: string; amount: number; currency: string; status: string; plan: string; date: string }>;
+  totalRevenuePaise: number;
+  revenueThisMonthPaise: number;
+  revenueLastMonthPaise: number;
+  momGrowthPct: number;
+  totalPayments: number;
+  failedPayments: number;
+  pendingPayments: number;
+  successRate: number;
+  avgTransactionPaise: number;
+  paidUserCount: number;
+  arpuPaise: number;
+  byPlan: Record<string, { revenue: number; count: number }>;
+  perDay: Record<string, number>;
+  perMonth: Record<string, number>;
+  topSpenders: Array<{ userId: string; name: string; email: string; totalPaise: number; paymentCount: number; lastPayment: string }>;
+  recent: Array<{ id: string; amount: number; currency: string; status: string; plan: string; date: string; userId: string }>;
+  recentFailed: Array<{ id: string; amount: number; plan: string; status: string; date: string }>;
 }
 
 interface ServiceUsage {
@@ -1315,47 +1329,221 @@ export default function AdminDashboard() {
   const renderFinancials = () => {
     if (!financials) return <EmptyState title="No financial data available" />;
 
+    const totalRev = financials.totalRevenuePaise;
+    const momSign = financials.momGrowthPct >= 0 ? "+" : "";
+    const momColor = financials.momGrowthPct >= 0 ? c.sage : c.ember;
+
+    // 12-month chart: convert YYYY-MM keys to short month labels
+    const monthEntries = Object.entries(financials.perMonth);
+    const monthMax = Math.max(...monthEntries.map(([, v]) => v), 1);
+    const monthLabels = monthEntries.map(([k]) => {
+      const [yr, mo] = k.split("-");
+      const d = new Date(Number(yr), Number(mo) - 1, 1);
+      return d.toLocaleString("en-IN", { month: "short" });
+    });
+
     return (
       <div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
+        {/* ── KPI Row ── */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
           <div style={statCard}>
             <p style={labelStyle}>Total Revenue</p>
-            <p style={bigNum}>{paise(financials.totalRevenuePaise)}</p>
+            <p style={bigNum}>{paise(totalRev)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>{financials.totalPayments} successful payments</p>
           </div>
           <div style={statCard}>
             <p style={labelStyle}>This Month</p>
             <p style={bigNum}>{paise(financials.revenueThisMonthPaise)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: momColor }}>
+              {momSign}{financials.momGrowthPct}% vs last 30d
+            </p>
           </div>
           <div style={statCard}>
-            <p style={labelStyle}>Payments</p>
-            <p style={bigNum}>{financials.totalPayments}</p>
+            <p style={labelStyle}>Last 30d</p>
+            <p style={bigNum}>{paise(financials.revenueLastMonthPaise)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>prior period</p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>ARPU</p>
+            <p style={bigNum}>{paise(financials.arpuPaise)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>avg revenue / paid user</p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>Avg Transaction</p>
+            <p style={bigNum}>{paise(financials.avgTransactionPaise)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>per payment</p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>Success Rate</p>
+            <p style={{ ...bigNum, color: financials.successRate >= 90 ? c.sage : c.ember }}>
+              {financials.successRate}%
+            </p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
+              {financials.failedPayments} failed · {financials.pendingPayments} pending
+            </p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>Paid Users</p>
+            <p style={bigNum}>{financials.paidUserCount}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>lifetime unique buyers</p>
           </div>
         </div>
 
+        {/* ── 12-Month Revenue Chart ── */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <p style={{ ...labelStyle, marginBottom: 16 }}>Revenue — Last 12 Months</p>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, marginBottom: 8 }}>
+            {monthEntries.map(([key, v], i) => (
+              <div key={key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end" }}>
+                <div
+                  title={`${key}: ${paise(v)}`}
+                  style={{
+                    width: "100%",
+                    height: `${Math.max(2, (v / monthMax) * 100)}%`,
+                    background: i === monthEntries.length - 1 ? c.gilt : c.sage,
+                    borderRadius: "3px 3px 0 0",
+                    opacity: 0.85,
+                    cursor: "default",
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {monthLabels.map((lbl, i) => (
+              <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 10, color: i === monthLabels.length - 1 ? c.gilt : c.stone, fontFamily: font.mono }}>
+                {lbl}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: c.stone, fontFamily: font.mono }}>
+            <span>Total: {paise(Object.values(financials.perMonth).reduce((a, b) => a + b, 0))}</span>
+            <span style={{ color: c.gilt }}>■ current month</span>
+          </div>
+        </div>
+
+        {/* ── Plan Breakdown + Daily Chart ── */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
-          <div style={{ ...card, flex: 1, minWidth: 250 }}>
+          <div style={{ ...card, flex: 1, minWidth: 260 }}>
             <p style={{ ...labelStyle, marginBottom: 16 }}>Revenue by Plan</p>
             {Object.keys(financials.byPlan).length === 0
               ? <p style={{ color: c.stone, fontSize: 13 }}>No plan data yet</p>
-              : Object.entries(financials.byPlan).sort(([, a], [, b]) => b - a).map(([plan, amount]) => (
-                <div key={plan} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${c.borderSubtle}` }}>
-                  <span style={{ color: c.chalk, fontSize: 13 }}>{plan}</span>
-                  <span style={{ fontFamily: font.mono, color: c.gilt, fontWeight: 600 }}>{paise(amount)}</span>
-                </div>
-              ))
+              : (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: "0 16px", alignItems: "center", marginBottom: 8, fontSize: 10, color: c.stone, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    <span>Plan</span><span style={{ textAlign: "right" }}>Count</span><span style={{ textAlign: "right" }}>Revenue</span><span style={{ textAlign: "right" }}>% Total</span>
+                  </div>
+                  {Object.entries(financials.byPlan).sort(([, a], [, b]) => b.revenue - a.revenue).map(([plan, { revenue, count }]) => {
+                    const pct = totalRev > 0 ? Math.round((revenue / totalRev) * 100) : 0;
+                    return (
+                      <div key={plan} style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: "0 16px", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${c.borderSubtle}` }}>
+                        <span style={{ color: c.chalk, fontSize: 13 }}>{plan}</span>
+                        <span style={{ fontFamily: font.mono, color: c.stone, fontSize: 12, textAlign: "right" }}>{count}</span>
+                        <span style={{ fontFamily: font.mono, color: c.gilt, fontWeight: 600, fontSize: 13, textAlign: "right" }}>{paise(revenue)}</span>
+                        <span style={{ fontFamily: font.mono, color: c.stone, fontSize: 12, textAlign: "right" }}>{pct}%</span>
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: "0 16px", alignItems: "center", padding: "8px 0", marginTop: 4 }}>
+                    <span style={{ color: c.chalk, fontSize: 12, fontWeight: 600 }}>Total</span>
+                    <span style={{ fontFamily: font.mono, color: c.chalk, fontSize: 12, textAlign: "right", fontWeight: 600 }}>{financials.totalPayments}</span>
+                    <span style={{ fontFamily: font.mono, color: c.gilt, fontSize: 13, fontWeight: 700, textAlign: "right" }}>{paise(totalRev)}</span>
+                    <span style={{ fontFamily: font.mono, color: c.stone, fontSize: 12, textAlign: "right" }}>100%</span>
+                  </div>
+                </>
+              )
             }
           </div>
 
-          <div style={{ ...card, flex: 2, minWidth: 380 }}>
+          <div style={{ ...card, flex: 2, minWidth: 340 }}>
             <p style={{ ...labelStyle, marginBottom: 12 }}>Revenue / Day (30d)</p>
             <MiniBarChart data={financials.perDay} color={c.sage} height={100} />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 10, color: c.stone }}>
+              <span>{Object.keys(financials.perDay)[0]}</span>
+              <span>Today</span>
+            </div>
           </div>
         </div>
 
+        {/* ── Top Customers ── */}
+        {financials.topSpenders.length > 0 && (
+          <div style={{ ...card, padding: 0, overflow: "auto", marginBottom: 24 }}>
+            <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={labelStyle}>Top Customers</p>
+              <button
+                onClick={() => exportCsv("top-customers.csv", financials.topSpenders as unknown as Record<string, unknown>[])}
+                style={exportBtn}
+              >Export CSV</button>
+            </div>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>#</th>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Email</th>
+                  <th style={thStyle}>Payments</th>
+                  <th style={thStyle}>Total Spent</th>
+                  <th style={thStyle}>Last Payment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {financials.topSpenders.map((s, i) => (
+                  <tr key={s.userId}>
+                    <td style={{ ...tdStyle, color: c.stone, fontSize: 11, fontFamily: font.mono }}>{i + 1}</td>
+                    <td style={tdStyle}>{s.name}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12, color: c.stone }}>{s.email}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, textAlign: "right" }}>{s.paymentCount}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700, color: c.gilt }}>{paise(s.totalPaise)}</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.lastPayment)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── All Payments ── */}
         {financials.recent.length > 0 ? (
+          <div style={{ ...card, padding: 0, overflow: "auto", marginBottom: 24 }}>
+            <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={labelStyle}>All Payments (last 50)</p>
+              <button
+                onClick={() => exportCsv("payments.csv", financials.recent as unknown as Record<string, unknown>[])}
+                style={exportBtn}
+              >Export CSV</button>
+            </div>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Amount</th>
+                  <th style={thStyle}>Plan</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>User ID</th>
+                  <th style={thStyle}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {financials.recent.map((p, i) => (
+                  <tr key={i}>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600, color: c.gilt }}>{paise(p.amount)}</td>
+                    <td style={tdStyle}>{p.plan}</td>
+                    <td style={tdStyle}><StatusDot ok={p.status === "captured" || p.status === "paid" || p.status === "success"} />{p.status}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11, color: c.stone }}>{p.userId?.slice(0, 8) || "—"}</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(p.date)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState title="No payments recorded yet" />
+        )}
+
+        {/* ── Failed / Pending ── */}
+        {financials.recentFailed.length > 0 && (
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px" }}>
-              <p style={labelStyle}>Recent Payments</p>
+              <p style={{ ...labelStyle, color: c.ember }}>Failed &amp; Cancelled Payments ({financials.failedPayments})</p>
             </div>
             <table style={tableStyle}>
               <thead>
@@ -1367,19 +1555,17 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {financials.recent.map((p, i) => (
+                {financials.recentFailed.map((p, i) => (
                   <tr key={i}>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 600 }}>{paise(p.amount)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{paise(p.amount)}</td>
                     <td style={tdStyle}>{p.plan}</td>
-                    <td style={tdStyle}><StatusDot ok={p.status === "captured" || p.status === "paid"} />{p.status}</td>
+                    <td style={{ ...tdStyle, color: c.ember }}>{p.status}</td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(p.date)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : (
-          <EmptyState title="No payments recorded yet" />
         )}
       </div>
     );

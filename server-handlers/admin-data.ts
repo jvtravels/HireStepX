@@ -434,30 +434,114 @@ async function getSessionDetail(sessionId: string) {
 async function getFinancials() {
   const payments = await fetchJSON<{
     id: string; user_id: string; amount: number; currency: string; status: string; tier: string; plan: string; created_at: string;
-  }>(`payments?select=id,user_id,amount,currency,status,tier,plan,created_at&order=created_at.desc&limit=${LIMIT_PAYMENTS}`);
+  }>(`payments?select=id,user_id,amount,currency,status,tier,plan,created_at&order=created_at.desc&limit=2000`);
 
   const now = Date.now();
-  const monthAgo = daysAgo(30);
-  const success = payments.filter(p => p.status === "captured" || p.status === "paid" || p.status === "success");
+  const isSuccess = (p: { status: string }) =>
+    p.status === "captured" || p.status === "paid" || p.status === "success";
+  const isFailed = (p: { status: string }) =>
+    p.status === "failed" || p.status === "cancelled" || p.status === "cancelled_by_user" || p.status === "expired";
+
+  const success = payments.filter(isSuccess);
+  const failed = payments.filter(isFailed);
+  const pending = payments.filter(p => !isSuccess(p) && !isFailed(p));
 
   const totalRevenue = success.reduce((s, p) => s + (p.amount || 0), 0);
-  const revenueThisMonth = success.filter(p => p.created_at >= monthAgo).reduce((s, p) => s + (p.amount || 0), 0);
 
-  const byPlan: Record<string, number> = {};
-  for (const p of success) { const k = p.plan || p.tier || "unknown"; byPlan[k] = (byPlan[k] || 0) + p.amount; }
+  const monthAgo = daysAgo(30);
+  const lastMonthAgo = daysAgo(60);
+  const thisMonthPayments = success.filter(p => p.created_at >= monthAgo);
+  const lastMonthPayments = success.filter(p => p.created_at >= lastMonthAgo && p.created_at < monthAgo);
+  const revenueThisMonth = thisMonthPayments.reduce((s, p) => s + (p.amount || 0), 0);
+  const revenueLastMonth = lastMonthPayments.reduce((s, p) => s + (p.amount || 0), 0);
+  const momGrowthPct = revenueLastMonth > 0
+    ? Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)
+    : (revenueThisMonth > 0 ? 100 : 0);
 
+  const successRate = payments.length > 0 ? Math.round((success.length / payments.length) * 100) : 100;
+  const avgTransactionPaise = success.length > 0 ? Math.round(totalRevenue / success.length) : 0;
+
+  // Plan breakdown with count
+  const byPlan: Record<string, { revenue: number; count: number }> = {};
+  for (const p of success) {
+    const k = p.plan || p.tier || "unknown";
+    if (!byPlan[k]) byPlan[k] = { revenue: 0, count: 0 };
+    byPlan[k].revenue += p.amount || 0;
+    byPlan[k].count += 1;
+  }
+
+  // Per day (30d)
   const perDay: Record<string, number> = {};
   for (let i = 29; i >= 0; i--) { perDay[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0; }
   for (const p of success) { const d = p.created_at?.slice(0, 10); if (d && d in perDay) perDay[d] += p.amount || 0; }
 
+  // Per month (12 months)
+  const perMonth: Record<string, number> = {};
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now);
+    d.setUTCMonth(d.getUTCMonth() - i, 1);
+    perMonth[d.toISOString().slice(0, 7)] = 0;
+  }
+  for (const p of success) { const m = p.created_at?.slice(0, 7); if (m && m in perMonth) perMonth[m] += p.amount || 0; }
+
+  // Top spenders aggregation
+  const spenderMap = new Map<string, { total: number; count: number; lastDate: string }>();
+  for (const p of success) {
+    if (!p.user_id) continue;
+    const e = spenderMap.get(p.user_id);
+    if (!e) {
+      spenderMap.set(p.user_id, { total: p.amount || 0, count: 1, lastDate: p.created_at });
+    } else {
+      e.total += p.amount || 0;
+      e.count += 1;
+      if (p.created_at > e.lastDate) e.lastDate = p.created_at;
+    }
+  }
+  const topSpenderIds = Array.from(spenderMap.entries())
+    .sort(([, a], [, b]) => b.total - a.total)
+    .slice(0, 10)
+    .map(([id]) => id);
+
+  const profileMap = new Map<string, { name: string; email: string }>();
+  if (topSpenderIds.length > 0) {
+    const idList = topSpenderIds.map(id => `"${id}"`).join(",");
+    const profiles = await fetchJSON<{ id: string; name: string | null; email: string }>(
+      `profiles?select=id,name,email&id=in.(${idList})`,
+    );
+    for (const pr of profiles) profileMap.set(pr.id, { name: pr.name || "(no name)", email: pr.email });
+  }
+
+  const topSpenders = topSpenderIds.map(id => {
+    const data = spenderMap.get(id)!;
+    const pr = profileMap.get(id);
+    return { userId: id, name: pr?.name || "(unknown)", email: pr?.email || "", totalPaise: data.total, paymentCount: data.count, lastPayment: data.lastDate };
+  });
+
+  const paidUserCount = spenderMap.size;
+  const arpuPaise = paidUserCount > 0 ? Math.round(totalRevenue / paidUserCount) : 0;
+
   return {
     totalRevenuePaise: totalRevenue,
     revenueThisMonthPaise: revenueThisMonth,
+    revenueLastMonthPaise: revenueLastMonth,
+    momGrowthPct,
     totalPayments: success.length,
+    failedPayments: failed.length,
+    pendingPayments: pending.length,
+    successRate,
+    avgTransactionPaise,
+    paidUserCount,
+    arpuPaise,
     byPlan,
     perDay,
-    recent: payments.slice(0, LIMIT_RECENT).map(p => ({
-      id: p.id, amount: p.amount, currency: p.currency, status: p.status, plan: p.plan || p.tier, date: p.created_at,
+    perMonth,
+    topSpenders,
+    recent: payments.slice(0, 50).map(p => ({
+      id: p.id, amount: p.amount, currency: p.currency, status: p.status,
+      plan: p.plan || p.tier, date: p.created_at, userId: p.user_id,
+    })),
+    recentFailed: failed.slice(0, 20).map(p => ({
+      id: p.id, amount: p.amount, plan: p.plan || p.tier, status: p.status, date: p.created_at,
     })),
   };
 }
