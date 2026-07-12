@@ -104,8 +104,8 @@ describe("_session-limits — logTurnUsage", () => {
     expect(typeof arg).toBe("string");
     const parsed = JSON.parse(arg as string);
     expect(parsed.kind).toBe("kernel_turn_usage");
-    expect(parsed.sessionId).toBe("sess_abc");
-    expect(parsed.userId).toBe("user_1");
+    expect(parsed.sessionId).toBe("sess_abc…");
+    expect(parsed.userId).toBe("user_1…");
     expect(parsed.inputChars).toBe(120);
     expect(parsed.outputTokens).toBe(80);
     expect(parsed.latencyMs).toBe(250);
@@ -114,6 +114,7 @@ describe("_session-limits — logTurnUsage", () => {
 
   it("tolerates missing optional fields", () => {
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    spy.mockClear();
     logTurnUsage({ sessionId: "sess_x", inputChars: 0 });
     const parsed = JSON.parse(spy.mock.calls[0][0] as string);
     expect(parsed.userId).toBeNull();
