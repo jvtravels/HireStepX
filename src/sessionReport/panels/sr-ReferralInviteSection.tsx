@@ -16,9 +16,9 @@ import { t, f, brand } from "../tokens";
 import { useAuth, referralSignupUrl } from "../../AuthContext";
 import { captureClientEvent } from "../../posthogClient";
 
-/** Show the invite only when the candidate just did well — a weak result is
- *  the wrong moment to ask for a share. Matches the onboarding 70 threshold. */
-const MIN_SCORE = 70;
+/** Show the invite when the candidate has done reasonably well — broadened from
+ *  70 to 50 so most free users see the referral CTA and can earn a free session. */
+const MIN_SCORE = 50;
 
 export function ReferralInviteSection({
   score,

@@ -6,10 +6,11 @@
 // segment exports — the handler's `config.maxDuration` was dead code — so the
 // duration MUST be declared here. The handler uses no edge-only APIs.
 export const runtime = 'nodejs';
-// 100s headroom: worst case is a slow primary fallback (gemini-2.5-flash, up
-// to 50s) + strict retry (up to 40s) + overhead when the Groq primary is
-// rate-limited. The happy path (Groq ~5s) returns immediately.
-export const maxDuration = 100;
+// 150s headroom: worst case is primary fallback (gemini-2.5-flash, ~50s) +
+// strict-prompt retry (~40s) + fast-8b fallback (~20s) + Supabase overhead
+// (~10s) = ~120s. 100s was too tight and caused 504s when all three tiers
+// ran. Vercel Pro allows up to 300s for Node.js serverless.
+export const maxDuration = 150;
 import handler from "../../../server-handlers/evaluate-session";
 
 export async function POST(req: Request) { return handler(req); }

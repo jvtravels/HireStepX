@@ -160,7 +160,7 @@ const structuredData = [
     offers: [
       { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "2 practice sessions" },
       { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
-      { "@type": "Offer", price: "49", priceCurrency: "INR", name: "Weekly", description: "7 sessions over 7 days" },
+      { "@type": "Offer", price: "39", priceCurrency: "INR", name: "Sprint Pack", description: "5 sessions, 30-day validity, renews monthly" },
     ],
     applicationSubCategory: "Interview Preparation",
   },
@@ -206,7 +206,7 @@ const structuredData = [
       {
         "@type": "Question",
         name: "How much does it cost compared to a career coach?",
-        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b99 per session or \u20b949/week for 7 sessions with full AI coaching and analytics, available 24/7." },
+        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b99 per session or \u20b939/month for 5 sessions (Sprint Pack) with full AI coaching and analytics, available 24/7." },
       },
     ],
   },

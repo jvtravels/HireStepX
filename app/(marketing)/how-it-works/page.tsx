@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   description:
     "Five steps from cold start to interview-ready: upload resume, pick role and company, practice voice interview, read a scored STAR report, repeat as skills decay.",
   alternates: { canonical: "/how-it-works" },
+  openGraph: {
+    title: "How HireStepX Works — AI Mock Interviews in 5 Steps",
+    description: "Upload your resume, pick your target company and role, practice a voice interview with AI, get a scored STAR report, and repeat as skills decay.",
+    url: "https://hirestepx.com/how-it-works",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "How HireStepX Works — AI Mock Interviews in 5 Steps",
+    description: "Upload resume, pick role, practice voice interview with AI, get scored report. Start free.",
+  },
 };
 
 export const dynamic = "force-static";

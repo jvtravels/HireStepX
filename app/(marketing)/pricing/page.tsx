@@ -6,6 +6,17 @@ export const metadata: Metadata = {
   description:
     "Free 2 sessions, no card needed. ₹9 per session (no expiry). Sprint Pack: 5 sessions for ₹39, renews monthly. UPI accepted.",
   alternates: { canonical: "/pricing" },
+  openGraph: {
+    title: "HireStepX Pricing — Start Free, ₹9 per session",
+    description: "2 free AI mock interviews, no card needed. ₹9 per session or Sprint Pack: 5 sessions for ₹39/month. Pay by UPI, card, or netbanking.",
+    url: "https://hirestepx.com/pricing",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HireStepX Pricing — Start Free, ₹9 per session",
+    description: "2 free AI mock interviews, no card needed. ₹9 per session or Sprint Pack: 5 sessions for ₹39/month.",
+  },
 };
 
 export const dynamic = "force-static";

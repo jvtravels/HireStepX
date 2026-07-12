@@ -207,6 +207,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               // not the new total balance (credits). If you had 2 and bought 10,
               // the message should read "10 sessions added", not "12 sessions added".
               const purchased = typeof verifyData.quantity === "number" ? verifyData.quantity : null;
+              captureClientEvent("payment_success", { plan: "single", quantity: purchased ?? 1 });
               setCreditSuccess(purchased);
               setLoading(null);
               // Update sidebar balance immediately from the server's reported new
@@ -217,6 +218,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               }
               return;
             }
+            captureClientEvent("payment_success", { plan: pendingVerification?.plan, tier: verifyData?.subscriptionTier });
             captureClientEvent("plan_upgraded", {
               tier: verifyData?.subscriptionTier,
               plan: pendingVerification?.plan,
@@ -359,6 +361,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         // Razorpay closes its sheet on payment.failed; our modal is still
         // mounted. Show an inline reassurance card rather than redirecting
         // the user out of the product to a dead-end /payment-failed page.
+        captureClientEvent("payment_failed", { plan: planId, code, reason: humanReason });
         setPaymentFailed({ reason: humanReason, plan: planId });
         setLoading(null);
       });

@@ -425,7 +425,7 @@ export function PricingPageV2() {
       unit: "/ 5 sessions",
       sub: "Prep for your next interview",
       features: [
-        "5 sessions · 30-day validity",
+        "5 sessions · renews monthly · cancel anytime",
         "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
@@ -667,6 +667,7 @@ export function PricingPageV2() {
                 <a
                   href={tier.href}
                   className="mv2-tap-44"
+                  onClick={() => captureClientEvent("purchase_started", { plan: tier.name.toLowerCase().replace(/ /g, "_"), surface: "pricing_page" })}
                   style={{
                     marginTop: "auto",
                     ...ctaPrimary("md"),

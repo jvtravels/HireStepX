@@ -17,7 +17,10 @@
  * is "no insight row exists" rather than a date window.
  */
 
-export const config = { runtime: "edge" };
+// Runtime declared at route level (app/api/cron/analyze-sessions/route.ts).
+// This handler-level config export is dead code for Next.js App Router but
+// kept for documentation: Node.js, maxDuration 240s.
+export const config = { runtime: "nodejs" };
 
 import { pickAnalyzer, registeredFocuses } from "./analyzers/_dispatch";
 import type { SessionRowForAnalysis } from "./analyzers/_types";

@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   description:
     "Campus placements, first-job interviews, internship rounds. AI mock interviews tuned for Indian students and freshers. 30% off with .ac.in / .edu.in email.",
   alternates: { canonical: "/for-students" },
+  openGraph: {
+    title: "HireStepX for Students — Campus Placements & First-Job Interviews",
+    description: "AI mock interviews for campus placements, TCS NQT, Infosys SP, and first-job rounds. 30% off with .ac.in / .edu.in college email. Start free.",
+    url: "https://hirestepx.com/for-students",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HireStepX for Students — Campus Placements & First-Job Interviews",
+    description: "AI mock interviews for campus placements and first jobs. 30% off with college email. Start free.",
+  },
 };
 
 export const dynamic = "force-static";

@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /dashboard
-Disallow: /interview
-Disallow: /onboarding
-Disallow: /api/
-Sitemap: https://hirestepx.com/sitemap.xml
