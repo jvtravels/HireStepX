@@ -17,7 +17,7 @@
  * trajectory persisted) still fall back to the regex heuristic. */
 import { describe, it, expect } from "vitest";
 import { buildNegotiationOutcome } from "../sessionReport/adapter";
-import { derivePhases, TOTAL_PHASES } from "../sessionReport/derivations";
+import { derivePhases, TOTAL_PHASES, anchorAtLabel, deriveAnchorBracket } from "../sessionReport/derivations";
 import type { SessionReport } from "../dashboardData";
 import type { DashboardSession } from "../dashboardTypes";
 
@@ -158,5 +158,54 @@ describe("legacy rows without a persisted trajectory fall back to the transcript
     expect(outcome!.candidateAsk).toBe(65);
     expect(derivePhases(outcome!)[0].reached).toBe(true); // counter IS named
     expect(derivePhases(outcome!)[0].note).toBe("Asked for ₹65 LPA");
+  });
+
+  /* Live-staging audit (2026-07-13, report 81d0ea0a — Flipkart EM, KERNEL
+   * derivation path). The candidate anchored fixed-only: "I see myself landing
+   * at 65 fixed" (recruiter quoted it back: "On closing at ₹65L fixed…"). The
+   * saved report — a pre-fix artifact — read "NO COUNTER NAMED", "Never
+   * anchored", "0 of 5 stages", and "never named a number" across four surfaces
+   * beside its own "Numbers stated 100%" and "3 levers explored". Root cause:
+   * the persisted `candidateAskLpa` was null because the OLD engine snapshotted
+   * the opaque state's raw total-scoped `candidateTarget` (null for a fixed-only
+   * ask) instead of the fold. The metrics layer (computeNegotiationMetrics →
+   * effectiveTargetCtcLpaLocal) and the per-turn snapshot (7a0fb9e, server-emits
+   * effectiveTargetCtcLpa as candidateTargetAtTurn) now both fold the fixed
+   * anchor. This locks the ADAPTER→DERIVATIONS seam the metrics-layer tests
+   * don't reach: given a folded non-null candidateAskLpa on a KERNEL row, every
+   * report surface must agree the candidate named a counter — no surface may
+   * read "no counter / never anchored" beside the stated ask. */
+  it("fixed-only anchor on a KERNEL row: no surface contradicts the stated counter", () => {
+    // candidateAskLpa 65 = the fold of a "65 fixed" ask (effectiveTargetCtcLpaLocal);
+    // anchorTurn 1 = credited because the snapshot now reads the same fold.
+    const km = kernel({
+      outcome: "accepted",
+      anchorTurn: 1,
+      candidateAskLpa: 65,
+      initialOfferLpa: 32.7,
+      finalOfferLpa: 51,
+      offerTrajectoryLpa: [32.7, 45, 51],
+      leverDiversity: 3,
+    });
+    // A transcript whose fixed-only ask phrasing the regex would MISS — proving
+    // the coherence comes from kernel adoption, not the transcript heuristic.
+    const report = {
+      perQuestion: [
+        { question: "What's your current CTC?", answerText: "I'd rather talk about the role fitment first." },
+        { question: "Where do you see yourself landing?", answerText: "I see myself landing at 65 fixed. That's the number that makes this an easy yes for me." },
+        { question: "That's above the cash band.", answerText: "Understood — let's look at the equity side then." },
+      ],
+    } as unknown as SessionReport;
+
+    const outcome = buildNegotiationOutcome(report, km);
+    expect(outcome!.candidateAsk).toBe(65);
+    // Stage 1 "You named a counter number" must light up.
+    expect(derivePhases(outcome!)[0].reached).toBe(true);
+    expect(derivePhases(outcome!)[0].note).toBe("Asked for ₹65 LPA");
+    // N1 "Anchored at" tile must not read the false "Never anchored".
+    expect(anchorAtLabel(km.anchorTurn, outcome!.candidateAsk)).not.toBe("Never anchored");
+    // Counter-ladder must not render the "NO COUNTER NAMED" none-verdict.
+    const bracket = deriveAnchorBracket(outcome!);
+    expect(bracket?.type).not.toBe("none");
   });
 });
