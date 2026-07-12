@@ -639,6 +639,24 @@ const ACCEPT_NOT_THE_OFFER_PATTERN =
 const WRONG_OBJECT_ACCEPT_PATTERN =
   /\baccept(?:s|ing|ed)?\s+(?:a|an|your|the|another|this|that)\s+(?:counter[\s-]?(?:offer|proposal)|invitation|invite|apology|apologies|challenge|defeat)\b/i;
 
+/** Veto (PRI-98, 2026-07-12, round-19 offline hostile close battery) — an accept
+ *  verb whose OBJECT is an ACCOUNTABILITY noun: "I accept full responsibility, but
+ *  the number stays.", "I accept the blame here.", "I'll accept fault." Taking
+ *  OWNERSHIP of a mistake/blame is a deflection of the offer, never a close.
+ *  WRONG_OBJECT_ACCEPT owns the article-led non-offer objects but its determiner
+ *  set (a/an/your/the/…) can't carry an adjective-qualified bare object ("full
+ *  responsibility", "personal blame") — and its noun list lacks the accountability
+ *  family entirely — so "accept full responsibility" (adjective, no article)
+ *  slipped both it and ACCEPT_PROPOSITION (whose object list is
+ *  reality/fact/position, not responsibility). The accountability noun is the
+ *  single disambiguator: no genuine offer close ever closes on
+ *  responsibility/blame/fault/liability/accountability/culpability. Optional
+ *  qualifier (full/complete/personal/no/the/my/…) and an optional partitive
+ *  fragment ("my SHARE OF the blame", "a PART OF the responsibility") are
+ *  permitted but not required. Shared by both gates via FALSE_CLOSE_VETO_PATTERNS. */
+const ACCEPT_ACCOUNTABILITY_PATTERN =
+  /\baccept(?:s|ing|ed)?\s+(?:(?:a|full|complete|total|personal|partial|sole|entire|some|all|any|no|the|my|your|his|her|their|our|that|this)\s+)?(?:(?:share|part|portion|piece)\s+of\s+(?:the\s+|my\s+|your\s+|this\s+|his\s+|her\s+|their\s+)?)?(?:responsibilit(?:y|ies)|blame|fault|liability|accountability|culpability)\b/i;
+
 /** Veto (PRI-84, 2026-07-10, adversarial probe) — the "accept NO/ZERO excuses"
  *  idiom: "I accept zero excuses for this number", "I'll accept no excuses". The
  *  accept verb fired but the object is "excuses" under a no/zero/any quantifier —
@@ -1432,6 +1450,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   ACCEPT_PROPOSITION_PATTERN,
   ACCEPT_NOT_THE_OFFER_PATTERN,
   WRONG_OBJECT_ACCEPT_PATTERN,
+  ACCEPT_ACCOUNTABILITY_PATTERN,
   ACCEPT_NO_EXCUSES_PATTERN,
   ACCEPT_NOTHING_PATTERN,
   BEFORE_ACCEPT_PATTERN,
