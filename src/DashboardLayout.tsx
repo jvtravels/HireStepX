@@ -225,6 +225,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     // 60-80px gap at the bottom when the bar collapses. The vh value
     // is the fallback for pre-iOS 15.4 / Android <108.
     <div style={{ display: "flex", height: "100dvh", minHeight: "100vh", background: c.obsidian, overflow: "hidden" }}>
+      {/* Preload Razorpay checkout script so it's cached before the user clicks Upgrade */}
+      <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
       {/* Mobile sticky header — logo left, hamburger right. Sits below the
           sidebar overlay (z:19) and sidebar itself (z:20) so the drawer
           slides over it. Replaces the old inline "≡ Menu" content button. */}
@@ -487,10 +489,12 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 {/* Sprint Pack footnote — a one-off pack that does NOT renew and
                     does NOT reset weekly. The plan name + validity date already
                     live in the card header and the "N of 5" count in the usage
-                    row, so this line carries only the pack's one-off nature (and
-                    a spent-status line once used up) — never the pack SIZE, which
-                    used to read as availability directly above a buy CTA. */}
-                {isStarter && (
+                    row, so this line carries only the pack's one-off nature —
+                    never the pack SIZE, which used to read as availability
+                    directly above a buy CTA. Empty once the pack is spent
+                    (exhaustion is already stated by the red usage row + buy
+                    CTA), so only render when the footnote is non-empty. */}
+                {isStarter && starterPackFootnote(starterRemaining) && (
                   <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone,
                     marginBottom: 10, marginTop: -6 }}>
                     {starterPackFootnote(starterRemaining)}

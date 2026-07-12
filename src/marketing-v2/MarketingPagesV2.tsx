@@ -425,7 +425,7 @@ export function PricingPageV2() {
       unit: "/ 5 sessions",
       sub: "Prep for your next interview",
       features: [
-        "5 sessions · renews monthly · cancel anytime",
+        "5 sessions · valid for 30 days · cancel anytime",
         "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
@@ -554,7 +554,7 @@ export function PricingPageV2() {
                       border: `1px solid ${t.lineStrong}`,
                     }}
                   >
-                    Most loved
+                    Best value
                   </span>
                 )}
                 <div>
@@ -678,6 +678,11 @@ export function PricingPageV2() {
                 >
                   {tier.cta} <span style={{ fontSize: 16 }}>→</span>
                 </a>
+                {tier.name !== "Free" && (
+                  <p style={{ margin: "10px 0 0", fontFamily: fonts.sans, fontSize: 11, textAlign: "center", color: tier.featured ? t.creamFaded : t.inkSoft }}>
+                    24h refund if unused · cancel anytime
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -1466,7 +1471,7 @@ export function ForStudentsV2() {
           >
             <p style={{ ...eyebrow, marginBottom: 16 }}>Before you pay</p>
             <p style={{ fontFamily: fonts.serif, fontSize: 22, lineHeight: 1.45, color: t.coal, margin: 0, marginBottom: 16 }}>
-              HireStepX is in early access. Try three full mocks free first — see the
+              HireStepX is in early access. Try two full mocks free first — see the
               voice, the questions, and the scored report yourself before you decide.
               If the free tier doesn't change how you're preparing, paid won't either.
             </p>
