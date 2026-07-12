@@ -10,14 +10,12 @@ import { createHmac } from "crypto";
 
 const RAZORPAY_KEY_SECRET = "test_secret_key_12345";
 
-const PRICE_MAP: Record<string, { amount: number; name: string }> = {
-  weekly: { amount: 4900, name: "HireStepX Starter" },
-  monthly: { amount: 14900, name: "HireStepX Pro" },
-};
+// Import canonical constants from production code — local copies get stale.
+import { PLAN_AMOUNT, PLAN_TIER } from "../../server-handlers/_payment-verification";
 
-const PLAN_TIER: Record<string, string> = {
-  weekly: "starter",
-  monthly: "pro",
+const PRICE_MAP: Record<string, { amount: number; name: string }> = {
+  weekly: { amount: PLAN_AMOUNT.weekly, name: "HireStepX Starter" },
+  monthly: { amount: PLAN_AMOUNT.monthly, name: "HireStepX Pro" },
 };
 
 function verifySignature(orderId: string, paymentId: string, signature: string): boolean {
@@ -40,7 +38,7 @@ function calculateSubscriptionEnd(plan: string, now: Date): Date {
 describe("Payment Flow", () => {
   describe("Plan configuration", () => {
     it("has correct prices for all plans", () => {
-      expect(PRICE_MAP.weekly.amount).toBe(4900); // ₹49 in paise
+      expect(PRICE_MAP.weekly.amount).toBe(3900); // ₹39 in paise
       expect(PRICE_MAP.monthly.amount).toBe(14900); // ₹149 in paise
     });
 

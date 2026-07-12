@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const dbHeaders = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` };
 
     const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=razorpay_subscription_id,subscription_tier,subscription_end,email,name`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=razorpay_subscription_id,subscription_tier,subscription_end,paused_days_remaining,email,name`,
       { headers: dbHeaders },
     );
     const profiles = await profileRes.json();
@@ -112,13 +112,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Update DB flag
+    // On pause: freeze subscription_end by storing the remaining days so the
+    // cron doesn't expire a paused subscription during the pause period.
+    // On resume: restore subscription_end = now + frozen remaining days.
+    const pausePatch: Record<string, unknown> = { subscription_paused: action === "pause" };
+    if (action === "pause" && profile.subscription_end) {
+      const remaining = Math.max(0, Math.ceil((new Date(profile.subscription_end).getTime() - Date.now()) / 86_400_000));
+      pausePatch.paused_days_remaining = remaining;
+      // Push subscription_end far enough out that the cron won't downgrade while paused.
+      // We'll restore to the correct date on resume.
+      const frozenEnd = new Date();
+      frozenEnd.setFullYear(frozenEnd.getFullYear() + 10);
+      pausePatch.subscription_end = frozenEnd.toISOString();
+    } else if (action === "resume" && typeof profile.paused_days_remaining === "number") {
+      const resumedEnd = new Date();
+      resumedEnd.setDate(resumedEnd.getDate() + profile.paused_days_remaining);
+      pausePatch.subscription_end = resumedEnd.toISOString();
+      pausePatch.paused_days_remaining = null;
+    }
+
     const updateRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
       {
         method: "PATCH",
         headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ subscription_paused: action === "pause" }),
+        body: JSON.stringify(pausePatch),
       },
     );
 

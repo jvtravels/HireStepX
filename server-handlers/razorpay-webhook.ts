@@ -303,6 +303,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const payment = event?.payload?.payment?.entity;
         const paymentId = payment?.id;
 
+        // Guard: without a paymentId we cannot dedup this event. Two concurrent
+        // deliveries of the same subscription.charged (no paymentId) would both
+        // extend subscription_end, doubling validity. Reject cleanly so Razorpay
+        // retries with a fully-populated payload before we touch the profile.
+        if (!paymentId) {
+          console.warn(`[webhook] subscription.charged missing paymentId for user ${userId?.slice(0, 8)} — skipping to avoid double-extension`);
+          return res.status(200).json({ received: true, skipped: "missing_payment_id" });
+        }
+
         if (paymentId) {
           // Atomic claim FIRST — wins the cross-instance race before we extend
           // the subscription. "duplicate" means another instance already owns
@@ -679,11 +688,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const dbHeaders = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` };
 
       const pmtRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(refundPaymentId)}&select=user_id`,
+        `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(refundPaymentId)}&select=user_id,plan`,
         { headers: dbHeaders },
       );
       const pmtRows = await pmtRes.json();
       const refundUserId: string | undefined = Array.isArray(pmtRows) && pmtRows[0]?.user_id ? pmtRows[0].user_id : undefined;
+      const refundPlan: string | undefined = Array.isArray(pmtRows) && pmtRows[0]?.plan ? pmtRows[0].plan : undefined;
 
       if (!refundUserId) {
         console.warn(`[webhook] refund: no payment record for ${refundPaymentId.slice(0, 8)}`);
@@ -736,10 +746,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (eventType === "refund.processed") {
         // Refund complete — downgrade to free
+        const refundPatch: Record<string, unknown> = { subscription_tier: "free", cancel_at_period_end: true, razorpay_subscription_id: null };
+        // Single-session credit purchases: revoke any unused credits so a
+        // refunded user can't keep the sessions they got credit for.
+        if (refundPlan === "single") {
+          refundPatch.session_credits = 0;
+        }
         await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(refundUserId)}`, {
           method: "PATCH",
           headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify({ subscription_tier: "free", cancel_at_period_end: true, razorpay_subscription_id: null }),
+          body: JSON.stringify(refundPatch),
         });
         if (RESEND_API_KEY && prof?.email) {
           const safeName = escapeHtml(prof.name || "there");

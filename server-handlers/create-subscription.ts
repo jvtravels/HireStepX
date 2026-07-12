@@ -77,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { plan, userId, email } = req.body;
+    const { plan, email } = req.body;
     if (typeof plan !== "string" || !["weekly", "monthly"].includes(plan)) {
       return res.status(400).json({ error: "Invalid plan" });
     }
@@ -88,7 +88,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
-    const resolvedUserId = authenticatedUserId || (typeof userId === "string" ? userId : "");
+    // Never fall back to a client-supplied userId — if auth passed, we have
+    // authenticatedUserId; if it didn't, we must reject, not trust the body.
+    if (!authenticatedUserId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const resolvedUserId = authenticatedUserId;
 
     const ac = new AbortController();
     const acTimer = setTimeout(() => ac.abort(), 10_000);

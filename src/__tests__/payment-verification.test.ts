@@ -8,9 +8,10 @@ import { createHmac } from "crypto";
  * core cryptographic and business logic directly.
  */
 
+// Import canonical plan constants from the production code so tests break when
+// prices change rather than silently passing against a stale local copy.
+import { PLAN_AMOUNT, PLAN_TIER } from "../../server-handlers/_payment-verification";
 const PLAN_DURATION: Record<string, number> = { weekly: 7, monthly: 30 };
-const PLAN_TIER: Record<string, string> = { weekly: "starter", monthly: "pro" };
-const PLAN_AMOUNT: Record<string, number> = { weekly: 4900, monthly: 14900 };
 
 describe("Payment Verification Logic", () => {
   describe("HMAC-SHA256 signature verification", () => {
@@ -90,8 +91,8 @@ describe("Payment Verification Logic", () => {
       expect(PLAN_TIER["free"]).toBeUndefined();
     });
 
-    it("weekly plan costs ₹49 (4900 paise)", () => {
-      expect(PLAN_AMOUNT["weekly"]).toBe(4900);
+    it("weekly plan costs ₹39 (3900 paise)", () => {
+      expect(PLAN_AMOUNT["weekly"]).toBe(3900);
     });
 
     it("monthly plan costs ₹149 (14900 paise)", () => {
@@ -121,7 +122,7 @@ describe("Payment Verification Logic", () => {
     });
 
     it("accepts correct amount for weekly", () => {
-      expect(PLAN_AMOUNT["weekly"]).toBe(4900);
+      expect(PLAN_AMOUNT["weekly"]).toBe(3900);
     });
 
     it("accepts correct amount for monthly", () => {
