@@ -549,8 +549,18 @@ const OFFER_REFERENCE_PATTERN =
  * team/the company/approvals); the trailing settlement VERB is still required,
  * so a benign temporal "once payroll ran the numbers last year" (no
  * sort/confirm/finalize/… verb) is untouched. */
+/* PRI-96 (2026-07-12, round-17 offline hostile sweep) — GATEKEEPER-CLEARANCE
+ * deferral. The subject list already carries the third-party gatekeepers (hr /
+ * finance / legal / management / approvals), but the settle-verb list owned
+ * sort/confirm/approve/sign-off and NOT the "clears / greenlights / okays"
+ * clearance verbs — so "Happy to sign — as soon as legal clears it." matched
+ * WILLING_TO_COMMIT ("happy to sign") and FALSE-CLOSED while the candidate was
+ * deferring the commit to legal sign-off. A close gated on a gatekeeper first
+ * CLEARING it is not a present accept; adding the clearance verbs to the same
+ * single-source deferral pattern both gates share closes the gap. A genuine
+ * accept carries no "once/as soon as <gatekeeper> clears" head. */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|vest(?:s|ed|ing)?|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|counsel|procurement|compliance|the\s+(?:board|committee|lawyers?|team)|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|clear(?:s|ed)?|greenlights?|green-?lights?|okays?|vest(?:s|ed|ing)?|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
 
 /* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
  * recall-focused accept idioms (PRI-56/57/58) each carry a short substring
@@ -733,6 +743,32 @@ const IN_PRINCIPLE_PATTERN = /\b(?:in\s+principle|pending\b)/i;
 const TENTATIVE_QUALIFIER_PATTERN =
   /\b(?:tentatively|provisionally|hypothetically|under\s+protest|more\s+or\s+less)\b/i;
 
+/* PRI-96 (2026-07-12, round-17) — VAGUE-OBJECT hypothetical. A willingness
+ * idiom ("happy to accept", "I'd take") whose OBJECT is an indefinite
+ * "something / anything / whatever" pinned to an APPROXIMATION tail ("in that
+ * range", "around there", "of that sort", "or so"): "I'd be happy to accept
+ * something in that range." WILLING_TO_COMMIT fired on "happy to accept" and
+ * FALSE-CLOSED, but committing to "something in that range" names no figure and
+ * no concrete offer — it is a willingness band, not a present close. Scoped to
+ * the indefinite object + approximation tail so a genuine "I'll accept anything
+ * at this point" (no approximation tail) and "I accept the offer" (definite
+ * object) are untouched. Shared single-source so both gates reject in lockstep. */
+const VAGUE_RANGE_ACCEPT_PATTERN =
+  /\b(?:accept|take|sign\s+(?:on|off)\s+on|go\s+with|do)\s+(?:something|anything|whatever)\b[^.!?]{0,30}?\b(?:in\s+that\s+(?:range|ballpark|neighbou?rhood|area|region|vicinity|zone|bracket)|around\s+(?:there|that)|like\s+that|of\s+that\s+(?:sort|kind|nature|order|magnitude)|along\s+those\s+lines|thereabouts?|in\s+the\s+ballpark|or\s+so\b)/i;
+
+/* PRI-96 (2026-07-12, round-17) — THEORETICAL qualifier ADJACENT to the accept
+ * idiom. PRI-95's TENTATIVE_QUALIFIER deliberately excluded "in theory /
+ * theoretically" because those markers CAN modify a non-accept clause ("in
+ * theory that works, but I accept in practice"). This refines that carve-out
+ * rather than reversing it: the marker is vetoed ONLY when it sits DIRECTLY
+ * adjacent (whitespace + ≤2 punctuation) to the accept idiom on either side —
+ * "I accept, in theory." / "In theory, I accept." — the one arrangement where
+ * it unambiguously hedges the accept itself. A distant "in theory X … I accept"
+ * keeps its accept because the marker is not adjacent to the close idiom. Both
+ * orders covered; shared single-source so both gates reject in lockstep. */
+const THEORETICAL_ACCEPT_PATTERN =
+  /(?:\baccept(?:s|ing|ed)?\b|\btake\s+it\b|\bi.?m\s+in\b|\bit.?s\s+a\s+deal\b|\bsign\s+me\s+up\b)\s*[,—–-]{0,2}\s*(?:but\s+)?(?:in\s+theory|theoretically)\b|\b(?:in\s+theory|theoretically)\s*(?:speaking)?\s*[,—–-]{0,2}\s*(?:i\s+)?(?:accept(?:s|ing|ed)?|take\s+it|i.?m\s+in|sign\s+me\s+up|it.?s\s+a\s+deal)\b/i;
+
 /* PRI-95 (2026-07-12, round-16) — COMPETITOR REDIRECT reversal. A close idiom
  * ("sign me up", "count me in") flipped by a trailing "..., that is" that
  * reassigns the commitment to a RIVAL: "Sign me up — for the competitor, that
@@ -891,6 +927,15 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * A genuine accept never subordinates the accept verb under a "much as I want
    * to" concession. Shared single-source so both gates reject in lockstep. */
   /\b(?:as\s+)?much\s+as\s+i(?:(?:'|’)d|\s+would)?\s*(?:really\s+|truly\s+|genuinely\s+|honestly\s+|so\s+much\s+|so\s+)?(?:want(?:ed)?|love|like|long)\s+to\s+(?:accept(?:s|ing|ed)?|take|taking|took|sign(?:s|ing|ed)?|say\s+yes|do\s+it)\b/i,
+  /* PRI-96 (2026-07-12, round-17) — RHETORICAL QUOTE-INSTRUCTION. The disbelief
+   * frame above owns "you think/expect … accept"; its sibling reframes the
+   * accept as a WORD the recruiter wants QUOTED back — "You want me to just say
+   * 'I accept'? It's not that simple." The candidate is not accepting; they are
+   * quoting the accept idiom to reject the demand to utter it. Scoped to the
+   * SECOND-PERSON "you (really) want me to (just) SAY … accept/take/sign/deal"
+   * frame, so the genuine first-person "I want to say I accept" (no "you want
+   * me") is untouched. Shared single-source so both gates reject in lockstep. */
+  /\byou\s+(?:really\s+|just\s+|actually\s+|honestly\s+|seriously\s+)?want\s+(?:me|us)\s+to\s+(?:just\s+|simply\s+|merely\s+)?say\b[^.!?]{0,15}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?|deal)\b/i,
 ];
 
 /* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
@@ -1198,7 +1243,7 @@ const GRANT_THEN_CLOSE_PATTERN =
  * Like the rest of this bank, "hard pass" / "hard no" never appear in a genuine
  * accept, so a flat token veto anywhere in the clause is safe. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|monkeys?\s+(?:might\s+|will\s+|could\s+|may\s+|would\s+)?fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|hard\s+(?:pass|no)\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|monkeys?\s+(?:might\s+|will\s+|could\s+|may\s+|would\s+)?fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+a\s+chance|no\s+chance\b|not\s+on\s+your\s+life|yeah\s+no\b|hard\s+(?:pass|no)\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
 
 /** Veto (PRI-79, 2026-07-10, round-11) — an accept verb whose OBJECT is a
  *  GIVING-UP / WALK noun: "I accept defeat — I'm walking", "I accept my
@@ -1367,6 +1412,8 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   CLOSE_THEN_CONDITIONAL_PATTERN,
   IN_PRINCIPLE_PATTERN,
   TENTATIVE_QUALIFIER_PATTERN,
+  VAGUE_RANGE_ACCEPT_PATTERN,
+  THEORETICAL_ACCEPT_PATTERN,
   COMPETITOR_REDIRECT_PATTERN,
   DOUBT_HEDGE_THEN_COMMIT_PATTERN,
   MONEY_REJECTION_PATTERN,
