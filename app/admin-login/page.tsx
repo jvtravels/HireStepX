@@ -118,6 +118,7 @@ export default function AdminLoginPage() {
               maxLength={6}
               value={totp}
               onChange={e => setTotp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              /* eslint-disable-next-line jsx-a11y/no-autofocus -- focus the OTP field when the second step appears; dedicated single-field login page */
               autoFocus
               autoComplete="one-time-code"
               placeholder="000000"
