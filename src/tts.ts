@@ -18,7 +18,7 @@
  * To re-enable: flip TTS_DISABLED to false. No other change needed —
  * the provider chain (Sarvam → Cartesia → Azure → browser) is intact.
  * ───────────────────────────────────────────────────────────────────── */
-const TTS_DISABLED = true;
+const TTS_DISABLED = false;
 
 /* Whether spoken AI output is currently off. The interview engine reads this
  * to default the answer composer to text mode — otherwise the UI shows a live
