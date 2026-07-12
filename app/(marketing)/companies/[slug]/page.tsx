@@ -37,10 +37,19 @@ const FOCUS_LABEL: Record<string, string> = {
 
 const COMPANY_LABEL: Record<string, string> = {
   google: "Google", amazon: "Amazon", microsoft: "Microsoft", meta: "Meta",
+  apple: "Apple", netflix: "Netflix",
   flipkart: "Flipkart", razorpay: "Razorpay", swiggy: "Swiggy", zomato: "Zomato",
   phonepe: "PhonePe", paytm: "Paytm",
-  tcs: "TCS", infosys: "Infosys", wipro: "Wipro",
-  uber: "Uber", atlassian: "Atlassian",
+  cred: "CRED", zerodha: "Zerodha", meesho: "Meesho", oyo: "OYO",
+  freshworks: "Freshworks", zoho: "Zoho",
+  tcs: "TCS", infosys: "Infosys", wipro: "Wipro", cognizant: "Cognizant",
+  accenture: "Accenture", ltimindtree: "LTIMindtree", hcl: "HCL",
+  capgemini: "Capgemini", ibm: "IBM",
+  uber: "Uber", atlassian: "Atlassian", stripe: "Stripe",
+  linkedin: "LinkedIn", adobe: "Adobe",
+  mckinsey: "McKinsey", bcg: "BCG", bain: "Bain", deloitte: "Deloitte",
+  goldman: "Goldman Sachs", jpmc: "JPMorgan",
+  "morgan-stanley": "Morgan Stanley",
 };
 
 /* Fetch matching bank entries for a page. Uses tier fallback so pages
@@ -128,7 +137,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     author: { "@type": "Organization", name: "HireStepX" },
     publisher: { "@type": "Organization", name: "HireStepX", logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" } },
     datePublished: "2026-05-05",
-    dateModified: "2026-05-05",
+    dateModified: "2026-07-12",
     inLanguage: "en-IN",
   };
 
@@ -136,11 +145,69 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
      so the user can practice immediately. */
   const practiceHref = `/signup?source=seo&company=${encodeURIComponent(page.company)}&focus=${encodeURIComponent(page.focus)}${page.roleFamily ? `&role=${encodeURIComponent(page.roleFamily)}` : ""}`;
 
+  /* BreadcrumbList — helps Google display the site hierarchy in search
+     results. Cheap signal, high visible impact. */
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://hirestepx.com" },
+      { "@type": "ListItem", position: 2, name: "Companies", item: "https://hirestepx.com/companies" },
+      { "@type": "ListItem", position: 3, name: page.searchPhrase, item: `https://hirestepx.com/companies/${slug}` },
+    ],
+  };
+
+  /* Course List schema — earns Google SERP carousel (education
+     intent). Requires 3+ Course items from same provider. */
+  const courseListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `${companyLabel} ${focusLabel} Interview Preparation`,
+    description: `Structured practice modules to prepare for ${companyLabel} ${focusLabel.toLowerCase()} interviews.`,
+    itemListElement: [
+      {
+        "@type": "ListItem", position: 1,
+        item: {
+          "@type": "Course",
+          name: `${companyLabel} Interview Overview & Process`,
+          description: `Understand ${companyLabel}'s hiring process, interview rounds, and what evaluators look for.`,
+          provider: { "@type": "Organization", name: "HireStepX", sameAs: "https://hirestepx.com" },
+          educationalLevel: "Intermediate",
+          url: `https://hirestepx.com/companies/${slug}`,
+        },
+      },
+      {
+        "@type": "ListItem", position: 2,
+        item: {
+          "@type": "Course",
+          name: `${focusLabel} Practice Questions — ${companyLabel} Style`,
+          description: `Practice ${questions.length} real ${focusLabel.toLowerCase()} questions asked at ${companyLabel} with AI-graded feedback.`,
+          provider: { "@type": "Organization", name: "HireStepX", sameAs: "https://hirestepx.com" },
+          educationalLevel: "Intermediate",
+          url: `https://hirestepx.com/questions/${slug}`,
+        },
+      },
+      {
+        "@type": "ListItem", position: 3,
+        item: {
+          "@type": "Course",
+          name: `${page.framework.name} Framework — Applied`,
+          description: `Apply the ${page.framework.name} framework to ${companyLabel} interview scenarios with structured AI coaching.`,
+          provider: { "@type": "Organization", name: "HireStepX", sameAs: "https://hirestepx.com" },
+          educationalLevel: "Intermediate",
+          url: practiceHref,
+        },
+      },
+    ],
+  };
+
   return (
     <>
       {/* Schema injection — placed at top so crawlers see them quickly. */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 
       <main style={{
         background: "#FAF7F0", color: "#0E0C08", minHeight: "100dvh",
@@ -214,6 +281,57 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
               {page.framework.summary}
             </p>
           </section>
+
+          {/* Recruitment Process — optional, renders only when data exists. */}
+          {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
+            <section style={{ marginTop: 40 }}>
+              <h2 style={{
+                fontFamily: "var(--font-display), serif", fontSize: 26, fontWeight: 400,
+                letterSpacing: "-0.01em", margin: "0 0 14px",
+              }}>
+                {companyLabel} Recruitment Process
+              </h2>
+              <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 16px", lineHeight: 1.6 }}>
+                The typical hiring timeline at {companyLabel} — from application to offer.
+              </p>
+              <ol style={{ padding: "0 0 0 24px", margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                {page.recruitmentSteps.map((step, i) => (
+                  <li key={i} style={{
+                    fontSize: 15, lineHeight: 1.55, color: "#0E0C08",
+                    fontFamily: "var(--font-ui), system-ui, sans-serif",
+                  }}>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          {/* Interview Rounds — optional, renders only when data exists. */}
+          {page.interviewRounds && page.interviewRounds.length > 0 && (
+            <section style={{
+              marginTop: 36, background: "#FEFCF8",
+              border: "1px solid rgba(20,17,10,0.08)", borderRadius: 12, padding: "20px 24px",
+            }}>
+              <div style={{
+                fontFamily: "var(--font-mono), monospace", fontSize: 10, fontWeight: 700,
+                letterSpacing: "0.10em", textTransform: "uppercase", color: "#6E6759",
+                marginBottom: 14,
+              }}>
+                Interview Rounds
+              </div>
+              <ol style={{ padding: "0 0 0 20px", margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                {page.interviewRounds.map((round, i) => (
+                  <li key={i} style={{
+                    fontSize: 14, lineHeight: 1.6, color: "#3D3929",
+                    fontFamily: "var(--font-ui), system-ui, sans-serif",
+                  }}>
+                    {round}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
           {/* Question list — the meat. Each has been verified ≥2x against
               real candidate post-mortems per the seo-pages curation rules. */}

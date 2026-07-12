@@ -25,7 +25,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
-  const seoPagesLastModified = new Date("2026-05-05");
+  const seoPagesLastModified = new Date("2026-07-12");
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
@@ -70,5 +70,39 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: p.sitemapPriority ?? 0.7,
   }));
 
-  return [...staticEntries, ...questionsIndex, ...questionEntries, ...seoEntries];
+  /* Blog posts — static list kept in sync with the posts array in
+     BlogPage.tsx. The blog uses ISR (dynamicParams: true) so posts
+     aren't known at build time; we enumerate them here so Google
+     discovers all articles without waiting for organic crawling. */
+  const blogSlugs = [
+    "top-10-google-interview-questions",
+    "flipkart-interview-prep-guide",
+    "behavioral-interview-questions-freshers",
+    "razorpay-interview-experience",
+    "ace-case-study-interviews",
+    "tcs-interview-questions-freshers-2025",
+    "infosys-interview-questions-2025",
+    "how-to-introduce-yourself-in-interview",
+    "tell-me-about-yourself-best-answer",
+    "wipro-interview-questions-answers",
+    "hr-interview-questions-answers-india",
+    "amazon-leadership-principles-interview",
+    "system-design-interview-preparation",
+    "salary-negotiation-tips-india",
+    "campus-placement-interview-tips",
+    "mock-interview-practice-guide",
+    "star-method-interview-answers",
+    "cognizant-interview-questions-freshers-2026",
+    "accenture-interview-questions-freshers-2026",
+    "product-manager-interview-questions-india",
+    "hcl-accenture-capgemini-interview-comparison",
+  ];
+  const blogEntries: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
+    url: `${baseUrl}/blog/${slug}`,
+    lastModified: seoPagesLastModified,
+    changeFrequency: "monthly" as const,
+    priority: 0.65,
+  }));
+
+  return [...staticEntries, ...questionsIndex, ...questionEntries, ...seoEntries, ...blogEntries];
 }
