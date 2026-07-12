@@ -170,7 +170,7 @@ export default async function handler(req: Request): Promise<Response> {
   } catch (err) {
     console.error("[credit-reconcile] error:", err instanceof Error ? err.message : err);
     return new Response(
-      JSON.stringify({ error: "reconcile_failed", detail: err instanceof Error ? err.message : "unknown" }),
+      JSON.stringify({ error: "reconcile_failed" }),
       { status: 500, headers: getHeaders },
     );
   }

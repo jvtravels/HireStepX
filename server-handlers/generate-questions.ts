@@ -1879,7 +1879,7 @@ Requirements:
     }
 
     return new Response(
-      JSON.stringify({ error: isTimeout ? "Request timed out — please try again" : "Internal error", detail: errMsg.slice(0, 200) }),
+      JSON.stringify({ error: isTimeout ? "Request timed out — please try again" : "Internal error" }),
       { status: isTimeout ? 504 : 500, headers },
     );
   }

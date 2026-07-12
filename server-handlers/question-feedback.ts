@@ -138,8 +138,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     return new Response(JSON.stringify({ ok: true, persisted: true }), { status: 200, headers });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[question-feedback] threw: ${msg.slice(0, 200)}`);
-    return new Response(JSON.stringify({ ok: false, persisted: false, error: msg }), { status: 200, headers });
+    console.error(`[question-feedback] threw: ${err instanceof Error ? err.message : String(err)}`.slice(0, 200));
+    return new Response(JSON.stringify({ ok: false, persisted: false }), { status: 200, headers });
   }
 }

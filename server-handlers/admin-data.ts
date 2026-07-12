@@ -1239,8 +1239,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Include a fresh token in every response so the client stays authenticated
     return res.status(200).json({ ...data as object, _token: createAdminToken() });
   } catch (err) {
-    console.error("Admin data error:", err);
     const msg = err instanceof Error ? err.message : "Failed to fetch admin data";
-    return res.status(msg.includes("required") || msg.includes("Unknown") ? 400 : 500).json({ error: msg });
+    console.error("Admin data error:", msg);
+    const status = msg.includes("required") || msg.includes("Unknown") ? 400 : 500;
+    return res.status(status).json({ error: status === 400 ? "Bad request" : "Internal server error" });
   }
 }
