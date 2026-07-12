@@ -9,9 +9,13 @@
  *      it in localStorage for subsequent x-admin-token API calls (existing
  *      flow is preserved).
  *
- * POST /api/admin-login  { password: string }
+ * When ADMIN_TOTP_SECRET is set, a TOTP second factor is also required.
+ *
+ * POST /api/admin-login  { password: string, totp?: string }
  *   200  { ok: true, token: string }          — success, cookie set
  *   401  { error: "Unauthorized" }            — wrong password
+ *   401  { error: "Invalid 2FA code" }        — TOTP mismatch (when enabled)
+ *   401  { error: "2FA code required" }       — totp field missing (when enabled)
  *   429  { error: "Too many attempts…" }      — rate limited
  *   503  { error: "Not configured" }          — ADMIN_PASSWORD not set
  */
@@ -19,6 +23,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { adminAuthConfigured, createAdminToken } from "./_admin-auth";
 import { isRateLimited, getClientIp } from "./_shared";
+import { isTotpRequired, verifyAdminTotp } from "./_admin-totp";
 
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
 
@@ -80,9 +85,11 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
   }
 
   let password: string;
+  let totp: string;
   try {
-    const body = await req.json() as { password?: unknown };
+    const body = await req.json() as { password?: unknown; totp?: unknown };
     password = typeof body.password === "string" ? body.password : "";
+    totp = typeof body.totp === "string" ? body.totp.replace(/\s/g, "") : "";
   } catch {
     return new Response(JSON.stringify({ error: "Invalid request body" }), {
       status: 400,
@@ -95,6 +102,24 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
       status: 401,
       headers: CORS_HEADERS,
     });
+  }
+
+  // Second factor: TOTP required when ADMIN_TOTP_SECRET is configured.
+  // Checked AFTER password to avoid leaking whether TOTP is enabled before
+  // the password gate — both factors always look like a plain 401 to attackers.
+  if (isTotpRequired()) {
+    if (!totp) {
+      return new Response(JSON.stringify({ error: "2FA code required", totp_required: true }), {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    if (!(await verifyAdminTotp(totp))) {
+      return new Response(JSON.stringify({ error: "Invalid 2FA code" }), {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
   }
 
   const token = createAdminToken();
