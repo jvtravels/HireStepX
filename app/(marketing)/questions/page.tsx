@@ -15,9 +15,9 @@ export const dynamic = "force-static";
 export const revalidate = 86400; /* 24 h */
 
 export const metadata: Metadata = {
-  title: "Interview Questions by Company & Role | HireStepX",
+  title: "Interview Questions by Company & Role India 2026 | HireStepX",
   description:
-    "Real, verified interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 30+ more companies. Practice answering them with AI voice feedback — 2 sessions free.",
+    "Real, verified interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 60+ more companies. Practice answering them with AI voice feedback — 2 sessions free.",
   keywords: [
     "interview questions",
     "company interview questions",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     type: "website",
     title: "Interview Questions by Company & Role | HireStepX",
     description:
-      "Real verified questions for 30+ companies. Practice answering them with AI voice feedback.",
+      "Real verified questions for 60+ companies. Practice answering them with AI voice feedback.",
     url: "https://hirestepx.com/questions",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Interview Questions by Company & Role | HireStepX",
-    description: "Real verified questions for 30+ companies. Practice with AI voice feedback.",
+    description: "Real verified questions for 60+ companies. Practice with AI voice feedback.",
   },
 };
 

@@ -127,10 +127,16 @@ export const SEO_PAGES: SeoPage[] = [
     slug: "phonepe-engineering-interview-questions",
     searchPhrase: "PhonePe Engineering Interview Questions",
     company: "phonepe", roleFamily: "swe", focus: "system-design",
-    intro: "PhonePe engineering rounds are scale-obsessed. 100M daily UPI transactions is the implicit baseline. Every answer should explicitly address throughput, p99 latency, and cost at India scale. 'It depends' is the right default starting position.",
+    intro: "PhonePe engineering rounds are scale-obsessed. 100M daily UPI transactions is the implicit baseline. Every answer should explicitly address throughput, p99 latency, and cost at India scale. 'It depends' is the right default starting position. PhonePe processes 1B+ transactions per month and their system design questions are grounded in that reality — UPI flows, reconciliation pipelines, and high-availability for India's payment infrastructure.",
     framework: { name: "Scale-first design", summary: "QPS at peak → storage growth → consistency model → caching tiers → cost per million." },
-    metaKeywords: ["phonepe engineering", "phonepe sde interview", "phonepe system design", "phonepe upi interview"],
+    metaKeywords: ["phonepe engineering", "phonepe sde interview", "phonepe system design", "phonepe upi interview", "phonepe technical interview 2026"],
     sitemapPriority: 0.85,
+    interviewRounds: [
+      "Online Assessment (60 min): 2 DSA problems — typically medium-hard. Arrays, graphs, or DP.",
+      "Technical Round 1 (60 min): DSA + architecture discussion. Expect follow-up on time/space complexity.",
+      "Technical Round 2 / System Design (60 min): Design a payment system, notification engine, or settlement pipeline.",
+      "Behavioral Round (45 min): Values + ownership stories. PhonePe values 'builder mindset' — prepare examples of initiative.",
+    ],
   },
 
   /* ── Paytm ─────────────────────────────────────────────────── */
@@ -739,6 +745,101 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Hospitality systems", summary: "Inventory availability in near-realtime → dynamic pricing algorithm → booking idempotency → property onboarding pipeline → partner reconciliation → cancellation policy engine." },
     metaKeywords: ["oyo engineering interview", "oyo sde interview", "oyo system design interview", "oyo technical interview"],
     sitemapPriority: 0.75,
+  },
+
+  {
+    slug: "phonepe-behavioral-interview-questions",
+    searchPhrase: "PhonePe Behavioral Interview Questions — Values and Culture Fit",
+    company: "phonepe", roleFamily: "behavioral", focus: "behavioral",
+    intro: "PhonePe's culture interviews probe a specific set of values: customer obsession, ownership over process, and speed-accuracy balance. They operate in a sector where bugs cost real money — so they specifically probe how you handle high-stakes decisions and production incidents. The behavioral round is eliminatory — PhonePe rejects technically strong candidates who don't demonstrate ownership mentality.",
+    framework: { name: "Ownership-first STAR", summary: "Identify the moment you chose ownership over comfort → specific decision → measurable outcome → what you'd change → connection to PhonePe's mission." },
+    metaKeywords: ["phonepe behavioral interview", "phonepe values interview", "phonepe culture fit", "phonepe hr round questions"],
+    sitemapPriority: 0.8,
+  },
+
+  /* ── Amazon SWE behavioral (LP-focused) ────────────────────────────── */
+  {
+    slug: "amazon-sde-leadership-principles-interview",
+    searchPhrase: "Amazon SDE Behavioral Interview — Leadership Principles",
+    company: "amazon", roleFamily: "swe", focus: "behavioral",
+    intro: "Amazon's behavioral rounds for SDE roles are as important as the coding rounds — candidates who nail all 4 DSA questions but fail the LP (Leadership Principles) interview don't get offers. Amazon uses structured STAR evaluation across all 16 LPs. The trick: you don't need one story per LP. You need 8–10 strong stories that each demonstrate 2–3 principles, and you adapt them to the question asked.",
+    framework: { name: "LP story mapping", summary: "Identify your 8–10 strongest STAR stories → map each to 2–3 Leadership Principles → practice adapting the same story for different LP questions → flag the LP being tested in every answer." },
+    metaKeywords: ["amazon sde behavioral interview", "amazon leadership principles interview india", "amazon lp questions sde", "amazon 2026 behavioral questions"],
+    sitemapPriority: 0.9,
+    interviewRounds: [
+      "Phone Screen (45–60 min): 1–2 coding problems (easy-medium) + 1–2 LP questions.",
+      "Virtual Onsite Round 1 — DSA: Hard problem with optimal-solution requirement.",
+      "Virtual Onsite Round 2 — DSA: Medium-hard + problem extension / edge cases.",
+      "Virtual Onsite Round 3 — System Design (SDE-2+): Design at Amazon's scale (millions of users, global distribution).",
+      "Virtual Onsite Round 4 — Bar Raiser: Pure LP deep-dive. Expect pushback and follow-up on every answer.",
+    ],
+  },
+
+  /* ── Amazon campus India ────────────────────────────────────────────── */
+  {
+    slug: "amazon-campus-placement-india",
+    searchPhrase: "Amazon Campus Placement Interview Questions India Freshers",
+    company: "amazon", roleFamily: "campus", focus: "campus-placement",
+    intro: "Amazon's India campus hiring has grown significantly — they recruit from IITs, NITs, and top private colleges for SDE-1 roles. The campus process is more structured than lateral hiring but equally rigorous on DSA. Amazon campus interviews are notable for combining hard DSA with LP questions even at the fresher level — understanding why 'Ownership' and 'Deliver Results' apply to a college project is a specific preparation need.",
+    framework: { name: "SDE-1 LP anchoring", summary: "Map college projects to LPs → quantify outcomes (users, lines of code, performance improvement) → practice the 'college project version' of each LP story → be ready to extend to production scale." },
+    metaKeywords: ["amazon campus placement india", "amazon sde-1 interview freshers india", "amazon off-campus india 2026", "amazon fresher interview"],
+    sitemapPriority: 0.88,
+    recruitmentSteps: [
+      "Apply via Amazon University Talent Acquisition portal or campus drive",
+      "Online assessment: 2 coding problems + 20 debugging MCQs (90 min)",
+      "Technical interview 1: DSA + 1–2 LP questions",
+      "Technical interview 2: DSA + system-level thinking (no full system design for SDE-1)",
+      "HR interview: LP-deep dive + compensation discussion",
+    ],
+  },
+
+  /* ── IBM campus / consulting ────────────────────────────────────────── */
+  {
+    slug: "ibm-campus-placement-interview-questions",
+    searchPhrase: "IBM Campus Placement Interview Questions India Freshers 2026",
+    company: "ibm", roleFamily: "campus", focus: "campus-placement",
+    intro: "IBM hires several thousand freshers in India annually across the GBS (Global Business Services) and GTS (Global Technology Services) tracks. The campus process is split: GBS has a case/consulting flavour; GTS is technical. The first filter is an IBM aptitude test (Cognitive Ability Assessment) that's harder than TCS but more predictable than Wipro NLTH. IBM's interview for freshers does not require competitive programming — but CS fundamentals at depth are essential.",
+    framework: { name: "IBM values signalling", summary: "Service orientation story → teamwork over individual glory → client-impact metric → willingness to learn new tech → IBM Innovation story link (research, Watson, hybrid cloud)." },
+    metaKeywords: ["ibm campus placement india", "ibm fresher interview 2026", "ibm cognitive ability test", "ibm gbs gts interview india"],
+    sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Apply via IBM campus recruitment portal or participate in campus drive",
+      "Cognitive Ability Assessment (online): Verbal, Numerical, Abstract reasoning",
+      "Group Discussion — for GBS track only",
+      "Technical Interview: CS fundamentals (OOP, DBMS, OS, Networking) + simple coding",
+      "HR Interview: Values alignment, relocation, and career aspirations",
+    ],
+  },
+  {
+    slug: "ibm-consultant-interview-questions",
+    searchPhrase: "IBM Consultant Interview Questions — GBS Strategy and Consulting",
+    company: "ibm", roleFamily: "consultant", focus: "case-study",
+    intro: "IBM GBS (Global Business Services) consulting interviews are case-forward but with a tech twist — IBM differentiates itself from pure-play consultancies by tying solutions to IBM's technology stack (hybrid cloud, AI/ML, SAP). Cases often involve digital transformation for large enterprises. Unlike McKinsey/BCG, IBM GBS cases lean toward 'how would you implement this technically' rather than 'should the client enter this market.'",
+    framework: { name: "IBM consulting framework", summary: "Business problem → technology solution fit → change management → ROI model → phased implementation → client capability building." },
+    metaKeywords: ["ibm gbs interview", "ibm consultant interview india", "ibm consulting case study", "ibm strategy consulting india"],
+    sitemapPriority: 0.78,
+  },
+
+  /* ── Infosys behavioral ─────────────────────────────────────────────── */
+  {
+    slug: "infosys-behavioral-interview-questions",
+    searchPhrase: "Infosys Behavioral and HR Interview Questions — InfyTQ Assessment",
+    company: "infosys", roleFamily: "behavioral", focus: "behavioral",
+    intro: "Infosys behavioral interviews have two distinct formats: the structured HR interview for fresh hires (focused on relocation, team-fit, strength/weakness) and the managerial round for experienced laterals (focused on stakeholder management and conflict resolution). Both are assessed on communication quality as much as content. The InfyTQ platform pre-qualifies many hires — candidates who clear it at high scores often get more in-depth behavioral rounds.",
+    framework: { name: "Infosys cultural fit", summary: "Communication clarity → learning agility story → integrity under pressure example → client-centricity → relocation openness (explicitly required) → why Infosys over competitors." },
+    metaKeywords: ["infosys behavioral interview", "infosys hr round questions", "infosys managerial round", "infosys interview tips 2026"],
+    sitemapPriority: 0.82,
+  },
+
+  /* ── Wipro behavioral ───────────────────────────────────────────────── */
+  {
+    slug: "wipro-behavioral-interview-questions",
+    searchPhrase: "Wipro Behavioral and HR Interview Questions — WILP and NLTH",
+    company: "wipro", roleFamily: "behavioral", focus: "behavioral",
+    intro: "Wipro's HR round is traditionally the easiest filter in their interview process — but candidates who underprep it do fail. The most common reason: vague answers to relocation and night-shift availability questions that have clear expected answers. Wipro's National Level Talent Hunt (NLTH) and TurboHire tracks also vary in behavioral depth. WILP hires get a more rigorous values interview.",
+    framework: { name: "Wipro HR essentials", summary: "Relocation yes (be explicit) → night-shift availability yes → why Wipro (cite WILP/TurboHire/specific practice) → strength with work example → weakness with mitigation → 5-year goal aligned with IT services growth." },
+    metaKeywords: ["wipro hr round questions", "wipro behavioral interview", "wipro interview tips", "wipro nlth interview 2026"],
+    sitemapPriority: 0.8,
   },
 ];
 

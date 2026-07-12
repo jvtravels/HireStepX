@@ -25,13 +25,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
-  const seoPagesLastModified = new Date("2026-07-12");
+  const seoPagesLastModified = new Date("2026-07-13");
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
     { url: `${baseUrl}/pricing`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${baseUrl}/how-it-works`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
     { url: `${baseUrl}/for-students`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+    /* Pillar pages — high topical authority, link to all company/focus trees */
+    { url: `${baseUrl}/interview-prep`, lastModified: now, changeFrequency: "monthly", priority: 0.92 },
+    { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: "monthly", priority: 0.88 },
     { url: `${baseUrl}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
@@ -96,6 +99,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "accenture-interview-questions-freshers-2026",
     "product-manager-interview-questions-india",
     "hcl-accenture-capgemini-interview-comparison",
+    "deloitte-interview-questions-freshers-2026",
+    "group-discussion-topics-campus-placement-2026",
+    "how-to-pass-tcs-nqt-2026",
+    "zoho-interview-questions-freshers-2026",
+    "software-engineer-interview-checklist-2026",
+    "java-interview-questions-freshers-india-2026",
+    "resume-tips-freshers-india-2026",
+    "data-analyst-interview-questions-india-2026",
+    "zomato-product-manager-interview-2026",
+    "python-interview-questions-freshers-india-2026",
+    "goldman-sachs-india-interview-questions",
+    "frontend-developer-interview-questions-india-2026",
+    "product-company-vs-service-company-india-career",
   ];
   const blogEntries: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
     url: `${baseUrl}/blog/${slug}`,

@@ -4,10 +4,32 @@ import HomepageV2 from "@/marketing-v2/HomepageV2";
 import ComingSoon from "@/ComingSoon";
 
 export const metadata: Metadata = {
-  title: "HireStepX — AI Mock Interview Practice for Job Seekers",
+  title: "HireStepX — AI Mock Interview Practice India 2026 | TCS, Google, Flipkart",
   description:
-    "Practice interviews with AI. Get real-time feedback on communication, structure, and strategy. Land your dream job with HireStepX.",
+    "India's AI mock interview platform. Practice interviews for TCS, Google, Flipkart, Amazon, McKinsey and 50+ companies. Voice-based AI interviewer scores your answers in real time. 2 sessions free.",
+  keywords: [
+    "AI mock interview India",
+    "mock interview practice India",
+    "interview preparation India 2026",
+    "TCS interview practice",
+    "Google interview preparation India",
+    "campus placement interview practice",
+    "AI interview coach India",
+  ].join(", "),
   alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    title: "HireStepX — AI Mock Interview Practice India 2026",
+    description: "Practice interviews for TCS, Google, Flipkart, and 50+ companies. Voice AI scores your answers in real time. 2 sessions free.",
+    url: "https://hirestepx.com",
+    siteName: "HireStepX",
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Mock Interview Practice India 2026 | HireStepX",
+    description: "Practice for TCS, Google, Flipkart, and 50+ companies. Voice AI scores your answers. 2 sessions free.",
+  },
 };
 
 /* Organization + SoftwareApplication schema — gives Google the
@@ -45,6 +67,26 @@ const APPLICATION_SCHEMA = {
     { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
     { "@type": "Offer", price: "39", priceCurrency: "INR", name: "Sprint Pack", description: "5 sessions per month, renews monthly, cancel any time" },
   ],
+};
+
+/* WebSite schema — enables Sitelinks Search Box in Google SERP when
+   Google decides to surface it. The SearchAction points to /questions
+   which lists all company × focus pages, the most relevant search target. */
+const WEBSITE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "HireStepX",
+  url: "https://hirestepx.com",
+  description: "AI mock interview practice for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, McKinsey, and 50+ companies.",
+  inLanguage: "en-IN",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: "https://hirestepx.com/questions?q={search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
+  },
 };
 
 /* Pre-launch "Coming Soon" gate (restored 2026-06-16).
@@ -88,6 +130,7 @@ export default async function Page() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
       {gated ? <ComingSoon /> : <HomepageV2 />}
     </>
   );

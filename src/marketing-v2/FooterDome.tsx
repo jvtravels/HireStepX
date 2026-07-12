@@ -21,6 +21,9 @@ const PRODUCT_LINKS: Array<[string, string]> = [
   ["How it works", "/how-it-works"],
   ["Pricing", "/pricing"],
   ["Blog", "/blog"],
+  ["Companies", "/companies"],
+  ["Interview Prep", "/interview-prep"],
+  ["Practice Questions", "/questions"],
 ];
 
 const COMPANY_LINKS: Array<[string, string]> = [
