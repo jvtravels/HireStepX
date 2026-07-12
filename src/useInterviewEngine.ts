@@ -2859,7 +2859,11 @@ export function useInterviewEngine() {
                     lever: initRes.move.lever,
                     newTotalLpa: initRes.move.newTotalLpa,
                     turnIndex: typeof parsedInit.turnIndex === "number" ? parsedInit.turnIndex : 0,
-                    candidateTargetAtTurn: typeof parsedInit.candidateTarget === "number" ? parsedInit.candidateTarget : null,
+                    /* Effective anchor from the server (folds fixed-only asks) —
+                       NOT the opaque state's raw candidateTarget, which misses a
+                       base-only "48 LPA fixed" anchor and false-reads "never
+                       named a number". See NegotiationKernelResponse.candidateAnchorLpa. */
+                    candidateTargetAtTurn: typeof initRes.candidateAnchorLpa === "number" ? initRes.candidateAnchorLpa : null,
                   });
                 } catch { /* non-fatal */ }
               }
@@ -2960,7 +2964,12 @@ export function useInterviewEngine() {
                   lever: turnRes.move.lever,
                   newTotalLpa: turnRes.move.newTotalLpa,
                   turnIndex: typeof parsedState.turnIndex === "number" ? parsedState.turnIndex : kernelMovesRef.current.length,
-                  candidateTargetAtTurn: typeof parsedState.candidateTarget === "number" ? parsedState.candidateTarget : null,
+                  /* Effective anchor from the server (folds fixed-only asks) —
+                     see the init-branch note and NegotiationKernelResponse.
+                     candidateAnchorLpa. Reading the opaque state's raw
+                     candidateTarget here was the source of the "48 LPA fixed →
+                     no counter named" cross-surface divergence. */
+                  candidateTargetAtTurn: typeof turnRes.candidateAnchorLpa === "number" ? turnRes.candidateAnchorLpa : null,
                 });
               } catch {
                 /* serialized state shape changed under us — non-fatal,

@@ -251,6 +251,45 @@ describe("computeNegotiationMetrics", () => {
     expect(m.anchorTurn).toBe(null);
   });
 
+  /* Live-staging cross-surface divergence (2026-07-13, Flipkart SPD report
+   * 686b5699). The candidate opened with "based on market I'm targeting
+   * around 48 LPA fixed" — a FIXED-scoped anchor. The report showed
+   * "Numbers stated 100%" and a non-null YOUR ASK, yet the negotiation
+   * summary read "No counter named / never named a number / 0 of 5 stages",
+   * because the per-turn snapshot recorded the OPAQUE state's raw
+   * candidateTarget (null for a fixed-only ask) instead of the kernel's
+   * effective anchor. The fix routes the snapshot through the SAME accessor
+   * the ASK surface uses (effectiveTargetCtcLpa, which folds a fixed-only
+   * ask into a CTC-equivalent total), emitted server-side as
+   * NegotiationKernelResponse.candidateAnchorLpa. This locks the invariant:
+   * whenever the candidate has an effective ask, anchor-turn detection must
+   * agree — the two surfaces can no longer contradict. */
+  it("fixed-only anchor: anchorTurn agrees with the effective ask (no 'never named a number' beside a stated ask)", () => {
+    const fixedOnly = makeState({
+      phase: "stalemate",
+      candidateTarget: null,
+      candidateTargetFixed: 48,
+    });
+    /* The kernel's effective ask is non-null for a fixed-only anchor. */
+    const effAsk = effectiveTargetCtcLpa(fixedOnly);
+    expect(effAsk).not.toBeNull();
+
+    /* Mirror the negotiate-turn.ts snapshot decision EXACTLY: the per-turn
+       candidateTargetAtTurn is the server-emitted effective anchor, not the
+       raw candidateTarget (which is null here). */
+    const m = computeNegotiationMetrics({
+      finalState: fixedOnly,
+      moves: [
+        move({ turnIndex: 0, candidateTargetAtTurn: null }),
+        move({ turnIndex: 1, candidateTargetAtTurn: effAsk }),
+      ],
+    });
+
+    /* Both surfaces now agree the candidate named a number. */
+    expect(m.candidateAskLpa).toBe(effAsk);
+    expect(m.anchorTurn).toBe(1);
+  });
+
   it("lever diversity counts distinct levers only", () => {
     const m = computeNegotiationMetrics({
       finalState: makeState({}),

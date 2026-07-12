@@ -883,6 +883,14 @@ export interface NegotiationKernelResponse {
    *  way for kernel-authored turns as for `generate-questions` turns. */
   aiTextDisplay: string;
   move: NegotiationKernelMove;
+  /** The candidate's EFFECTIVE anchor as of this turn, in LPA (CTC-equivalent
+   *  total — folds a fixed-only "48 LPA fixed" base ask into an implied total
+   *  via the kernel's effectiveTargetCtcLpa accessor). The engine records this
+   *  as the move's `candidateTargetAtTurn` so end-of-session anchor-turn
+   *  detection ("named a counter") reads the SAME source as the report's
+   *  "YOUR ASK" surface. Null when no anchor of any kind has been stated
+   *  (e.g. at init, before the candidate speaks). */
+  candidateAnchorLpa?: number | null;
   source: "llm" | "llm-retry" | "fallback";
   terminal?: boolean;
   /** True when the server returned a cached response for an

@@ -38,6 +38,7 @@ import {
   serializeState,
   deserializeState,
   isTerminalPhase,
+  effectiveTargetCtcLpa,
   type NegotiationState,
   type AiMove,
 } from "./_negotiation-kernel";
@@ -639,6 +640,15 @@ export default async function handler(
           aiText: initText,
           aiTextDisplay: initText,
           move,
+          /* Per-turn snapshot of the candidate's EFFECTIVE anchor (Class-A
+           * accessor — folds a fixed-only ask into a CTC-equivalent total).
+           * The client records this as candidateTargetAtTurn so anchor-turn
+           * detection ("named a counter") reads the same source of truth as
+           * the report's "YOUR ASK" surface (effectiveTargetCtcLpaLocal).
+           * Prevents the divergence where a "48 LPA fixed" anchor showed as
+           * "Numbers stated 100%" yet "no counter named / never named a
+           * number". Null at init (candidate hasn't spoken). */
+          candidateAnchorLpa: effectiveTargetCtcLpa(state),
           source: initSource,
           terminal,
           moveTag: initMoveTag,
@@ -1246,6 +1256,14 @@ export default async function handler(
         aiText: text,
         aiTextDisplay: text,
         move,
+        /* Per-turn snapshot of the candidate's EFFECTIVE anchor (Class-A
+         * accessor — folds a fixed-only ask into a CTC-equivalent total),
+         * recorded by the client as candidateTargetAtTurn. See the init
+         * branch above: this keeps anchor-turn / "named a counter" detection
+         * on the same source as the report's "YOUR ASK" surface, so a
+         * base-only "48 LPA fixed" anchor can no longer read as "never named
+         * a number" while Delivery Metrics show "Numbers stated 100%". */
+        candidateAnchorLpa: effectiveTargetCtcLpa(state),
         source,
         terminal,
         moveTag,
