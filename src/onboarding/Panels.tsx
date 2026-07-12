@@ -1364,6 +1364,7 @@ export interface NavigationFooterProps {
   onStart?: () => void;
   onStartInterview?: () => void;
   onGoToDashboard?: () => void;
+  onSkip?: () => void;
   resumeScore?: number | null;
   hasResume?: boolean;
   quotaHint?: string | null;

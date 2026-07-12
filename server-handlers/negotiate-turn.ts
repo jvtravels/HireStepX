@@ -1275,8 +1275,7 @@ export default async function handler(
 
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
     void captureServerException(err, undefined, { endpoint: "negotiate-turn" });
-    return new Response(JSON.stringify({ error: msg }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: "An error occurred — please try again or contact support@hirestepx.com" }), { status: 500, headers });
   }
 }

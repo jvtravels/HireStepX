@@ -27,6 +27,7 @@ function sendResendEmail(payload: {
   to: string[];
   subject: string;
   html: string;
+  replyTo?: string;
 }): void {
   if (!RESEND_API_KEY) return;
   fetch("https://api.resend.com/emails", {
@@ -157,6 +158,7 @@ export default async function handler(req: Request): Promise<Response> {
     sendResendEmail({
       from: "HireStepX Support <noreply@hirestepx.com>",
       to: ["support@hirestepx.com"],
+      replyTo: email || undefined,
       subject: `[Support][${type.toUpperCase()}] New message from ${email || auth.userId}`,
       html: `
         <p><strong>User:</strong> ${email || "(no email)"} (ID: ${auth.userId})</p>

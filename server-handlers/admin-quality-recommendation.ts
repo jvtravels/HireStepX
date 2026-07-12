@@ -11,7 +11,9 @@ const ALLOWED = new Set(["pending", "in_progress", "done", "dismissed"]);
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    const origin = req.headers.origin || "";
+    res.setHeader("Access-Control-Allow-Origin", origin || "https://hirestepx.com");
+    res.setHeader("Vary", "Origin");
     res.setHeader("Access-Control-Allow-Headers", "x-admin-token, content-type");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.status(200).end();

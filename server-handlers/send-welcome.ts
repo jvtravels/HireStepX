@@ -18,7 +18,7 @@ import {
 } from "./_email-theme";
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -912,6 +912,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (honeypot) {
     // Pretend success to not alert the bot
     return res.status(200).json({ ok: true });
+  }
+
+  // Require a valid Origin for all email-sending actions — blocks external curl/scripts.
+  // Rate-limit tracking actions and "reset" (no active session) remain open.
+  const EMAIL_SEND_ACTIONS = ["verify", "password-changed", "verify-reminder", "new_device_login", "signup-attempted-existing"];
+  if (EMAIL_SEND_ACTIONS.includes(action) && (!origin || !isAllowedOrigin(origin))) {
+    return res.status(403).json({ error: "Forbidden" });
   }
 
   // Auth rate limiting + Turnstile verification actions (don't require

@@ -119,7 +119,7 @@ function FooterDomeDesktop() {
           loop
           muted
           playsInline
-          preload="auto"
+          preload="none"
           style={{
             width: "25%",
             height: "auto",

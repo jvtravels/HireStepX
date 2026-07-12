@@ -150,7 +150,7 @@ const ResponsiveSheet = () => (
     .mv2-cv-auto { content-visibility: auto; contain-intrinsic-size: 1px 700px; }
     /* Hero load cascade — stepped entrance, one orchestrated moment */
     @keyframes mv2-cascade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    .mv2-cascade { opacity: 0; animation: mv2-cascade 0.72s ${ease} forwards; }
+    .mv2-cascade { animation: mv2-cascade 0.72s ${ease} both; }
     .mv2-cascade-1 { animation-delay: 0ms; }
     .mv2-cascade-2 { animation-delay: 80ms; }
     .mv2-cascade-3 { animation-delay: 160ms; }
@@ -462,7 +462,7 @@ export function NavV2() {
             {scrolled ? (
               <img src="/favicon.svg" alt="HireStepX" style={{ width: 28, height: 28, borderRadius: 6, display: "block" }} />
             ) : (
-              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
+              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} priority style={{ height: 26, width: "auto" }} />
             )}
           </a>
 
@@ -1356,7 +1356,7 @@ export function HeroV2() {
           <div style={{ maxWidth: 600 }}>
             <h1
               id="hd-hero"
-              className="mv2-hero-display mv2-cascade mv2-cascade-2"
+              className="mv2-hero-display mv2-cascade mv2-cascade-1"
               style={{
                 fontFamily: fonts.serif,
                 fontSize: "clamp(40px, 4.6vw, 64px)",

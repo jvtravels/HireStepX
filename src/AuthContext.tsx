@@ -1084,6 +1084,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const refreshedUser = profileToUser(profile, session);
               setUser(refreshedUser);
               cacheTier(session.user.id, refreshedUser.subscriptionTier, refreshedUser.subscriptionEnd, refreshedUser.practiceTimestamps, refreshedUser.targetRole);
+              // Identify Google OAuth users in PostHog — email/password users are
+              // identified in login() and signup(); OAuth users only land here.
+              if (isGoogleProvider) {
+                identifyClient(session.user.id, { email: session.user.email, signup_method: "google" });
+              }
             } else {
               await ensureProfile(session);
             }

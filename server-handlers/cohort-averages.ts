@@ -42,14 +42,26 @@ interface CachedResult {
 
 let CACHE: { result: CachedResult; ts: number } | null = null;
 
-function corsHeaders(): Record<string, string> {
+function corsHeaders(origin?: string): Record<string, string> {
+  const allowed = origin && isAllowedOrigin(origin) ? origin : "https://hirestepx.com";
   return {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": allowed,
+    "Vary": "Origin",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Max-Age": "86400",
     "Cache-Control": "public, max-age=900", // 15min CDN cache too
   };
+}
+
+function isAllowedOrigin(origin: string): boolean {
+  try {
+    const hostname = new URL(origin).hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+    if (hostname === "hirestepx.com" || hostname.endsWith(".hirestepx.com")) return true;
+    if (hostname.endsWith(".vercel.app")) return true;
+  } catch { /* invalid URL */ }
+  return false;
 }
 
 interface SessionRow {
@@ -129,35 +141,37 @@ function aggregate(rows: SessionRow[]): CachedResult {
 }
 
 export default async function handler(req: Request): Promise<Response> {
+  const origin = req.headers.get("origin") || undefined;
+  const h = corsHeaders(origin);
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders() });
+    return new Response(null, { status: 204, headers: h });
   }
   if (req.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: corsHeaders() });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: h });
   }
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-    return new Response(JSON.stringify({ error: "Not configured" }), { status: 503, headers: corsHeaders() });
+    return new Response(JSON.stringify({ error: "Not configured" }), { status: 503, headers: h });
   }
 
   // Cache hit — serve immediately. Edge isolate cold-starts will recompute
   // but a warm instance amortizes the cost across many requests.
   const now = Date.now();
   if (CACHE && now - CACHE.ts < CACHE_TTL_MS) {
-    return new Response(JSON.stringify({ ...CACHE.result, cached: true }), { status: 200, headers: corsHeaders() });
+    return new Response(JSON.stringify({ ...CACHE.result, cached: true }), { status: 200, headers: h });
   }
 
   try {
     const rows = await fetchCorpus();
     const result = aggregate(rows);
     CACHE = { result, ts: now };
-    return new Response(JSON.stringify({ ...result, cached: false }), { status: 200, headers: corsHeaders() });
+    return new Response(JSON.stringify({ ...result, cached: false }), { status: 200, headers: h });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[cohort-averages] failed: ${msg.slice(0, 200)}`);
     // Fall back to last cached value if we have one, otherwise empty.
     if (CACHE) {
-      return new Response(JSON.stringify({ ...CACHE.result, cached: true, stale: true }), { status: 200, headers: corsHeaders() });
+      return new Response(JSON.stringify({ ...CACHE.result, cached: true, stale: true }), { status: 200, headers: h });
     }
-    return new Response(JSON.stringify({ byName: {}, totalSessions: 0, lastUpdated: new Date().toISOString(), error: msg }), { status: 200, headers: corsHeaders() });
+    return new Response(JSON.stringify({ byName: {}, totalSessions: 0, lastUpdated: new Date().toISOString(), error: msg }), { status: 200, headers: h });
   }
 }

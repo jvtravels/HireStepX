@@ -939,6 +939,7 @@ export default function Onboarding() {
             onStart={handleStart}
             onStartInterview={handleStartInterview}
             onGoToDashboard={handleGoToDashboard}
+            onSkip={noResume && !isBusy ? () => finalizeOnboarding("skip") : undefined}
             resumeScore={aiProfile?.resumeScore ?? null}
             hasResume={!!resumeParsed && aiPhase === "done"}
             // #14 — surface free-tier quota near the primary CTA so users

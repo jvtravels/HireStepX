@@ -176,13 +176,12 @@ export function orderedList(items: string[]): string {
   return `<ol style="margin:0 0 26px;padding-left:20px;">${lis}</ol>`;
 }
 
-/** Standard footer — compliance + unsubscribe. `manageUrl` defaults to the
-    settings page; pass an absolute URL. */
+/** Standard footer — compliance + unsubscribe. Defaults to hirestepx.com/settings
+    for manage and /settings#notifications for unsubscribe (CAN-SPAM requires
+    a functional one-click mechanism on all commercial emails). */
 export function footer(opts: { manageUrl?: string; unsubUrl?: string } = {}): string {
-  const manage = opts.manageUrl
-    ? link("Manage notifications", opts.manageUrl)
-    : "Manage notifications";
-  const unsub = opts.unsubUrl ? link("Unsubscribe", opts.unsubUrl) : "Unsubscribe";
+  const manage = link("Manage notifications", opts.manageUrl ?? "https://hirestepx.com/settings");
+  const unsub = link("Unsubscribe", opts.unsubUrl ?? "https://hirestepx.com/settings#notifications");
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:44px;border-top:1px solid ${C.line};">
     <tr><td style="padding-top:22px;font-family:${SANS};font-size:12px;line-height:1.7;color:${C.inkSoft};">
       You're receiving this because you have an account at hirestepx.com.<br>

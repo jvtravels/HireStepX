@@ -276,6 +276,7 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://api.groq.com" />
         <link rel="dns-prefetch" href="https://api.sarvam.ai" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://us.i.posthog.com" />
 
         {/* Structured Data — server-rendered so SEO crawlers see it immediately,
             but moved AFTER preconnects so network scheduling doesn't stall on parsing JSON. */}

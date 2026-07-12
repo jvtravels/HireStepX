@@ -21,7 +21,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -86,11 +86,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (subscriptionId && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
       const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
       try {
-        await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}/cancel`, {
+        const cancelRes = await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}/cancel`, {
           method: "POST",
           headers: { "Authorization": `Basic ${auth}`, "Content-Type": "application/json" },
           body: JSON.stringify({ cancel_at_cycle_end: true }),
         });
+        if (!cancelRes.ok) {
+          console.warn(`[cancel] Razorpay cancel returned ${cancelRes.status} — DB will still be updated but subscription may auto-renew`);
+        }
       } catch (err) {
         console.warn("[cancel] Razorpay API cancel failed (continuing with DB update):", err);
       }

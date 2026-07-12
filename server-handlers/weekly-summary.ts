@@ -24,6 +24,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const CRON_SECRET = process.env.CRON_SECRET || "";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const MAX_EMAILS_PER_RUN = 50;
 const MIN_HOURS_BETWEEN_EMAILS = 6 * 24;
 
@@ -98,7 +100,7 @@ function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: st
         ["Band", band || "Uncalibrated"],
         ["Change from prior", deltaStr],
       ]) +
-      button("View your latest report", "https://app.hirestepx.com/sessions") +
+      button("View your latest report", `${APP_URL}/sessions`) +
       para(`Not useful? You can turn these off anytime from your settings.`, { small: true, muted: true }),
   });
   return { subject, html };
@@ -114,7 +116,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "HireStepX <reports@hirestepx.com>",
+        from: FROM_EMAIL,
         to: [to],
         subject,
         html,
