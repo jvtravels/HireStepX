@@ -32,18 +32,19 @@ import { isAllowedOnGate } from "./src/middlewareGate";
 
 /* ── Per-request CSP nonce ──────────────────────────────────────────────────
  *
- * Keep 'unsafe-inline' alongside the nonce during the transition period.
- * CSP L2+ ignores 'unsafe-inline' when a nonce or hash is present, so modern
- * browsers get nonce-enforced protection. Legacy browsers (CSP L1) fall back
- * to 'unsafe-inline' — same as before. Once staging confirms nonce propagation
- * across all surfaces, remove 'unsafe-inline' from script-src.
+ * 'strict-dynamic' + nonce: CSP L2+ ignores 'unsafe-inline' when a nonce is
+ * present, and 'strict-dynamic' allows scripts dynamically injected by a
+ * trusted (nonced) script — covering Razorpay and PostHog loaders. The host
+ * allowlist is kept as a CSP L1/L2 fallback for browsers that don't support
+ * 'strict-dynamic' (they ignore it and fall back to the host list). No
+ * 'unsafe-inline': inline scripts must carry the nonce from app/layout.tsx.
  */
 function buildCsp(nonce: string): string {
   const n = `'nonce-${nonce}'`;
   return [
     "default-src 'self'",
-    `script-src 'self' ${n} 'unsafe-inline' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com`,
-    `script-src-elem 'self' ${n} 'unsafe-inline' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://us-assets.i.posthog.com`,
+    `script-src 'self' ${n} 'strict-dynamic' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com`,
+    `script-src-elem 'self' ${n} 'strict-dynamic' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://us-assets.i.posthog.com`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com https://api.fontshare.com",
     "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com https://api.fontshare.com",
     "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com",
