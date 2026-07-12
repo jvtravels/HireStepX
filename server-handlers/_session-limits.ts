@@ -161,8 +161,8 @@ export function logTurnUsage(record: TurnUsageRecord): void {
     const payload = {
       kind: "kernel_turn_usage",
       ts: Date.now(),
-      sessionId: record.sessionId,
-      userId: record.userId ?? null,
+      sessionId: record.sessionId ? `${String(record.sessionId).slice(0, 8)}…` : null,
+      userId: record.userId ? `${String(record.userId).slice(0, 8)}…` : null,
       inputChars: record.inputChars,
       inputTokens,
       outputTokens,

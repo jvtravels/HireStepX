@@ -240,7 +240,7 @@ export const AUTH_STYLES = `
     .hsx-login-divider { margin: 14px 0 !important; }
     .hsx-login-google,
     .hsx-login-cta { padding: 13px 16px !important; font-size: 14px !important; }
-    .hsx-login-field-input { font-size: 14.5px !important; padding: 10px 14px !important; }
+    .hsx-login-field-input { font-size: 16px !important; padding: 10px 14px !important; }
     .hsx-login-field-input.has-slot { padding-right: 40px !important; }
     .hsx-login-field-input::placeholder { font-size: 14px !important; }
     .hsx-login-field-label { font-size: 13px !important; margin-bottom: 6px !important; font-weight: 500 !important; }

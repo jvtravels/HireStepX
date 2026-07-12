@@ -19,11 +19,11 @@ Current HEAD: `cca72f5` (Wave-4).
 
 | Layer                 | Commit     | Revert command                                 |
 | --------------------- | ---------- | ---------------------------------------------- |
-| Wave-4 (32 flags)     | `cca72f5`  | `git revert cca72f5 && vercel --prod`          |
-| Wave-3 (25 flags)     | `f250974`  | `git revert f250974 && vercel --prod`          |
-| Wave-2 (20 flags)     | `056b60b`  | `git revert 056b60b && vercel --prod`          |
-| Senior+process layer  | `70eafc2`  | `git revert 70eafc2 && vercel --prod`          |
-| Tier-1 audit layer    | `7e7b0e2`  | `git revert 7e7b0e2 && vercel --prod`          |
+| Wave-4 (32 flags)     | `cca72f5`  | `git revert cca72f5 && git push origin main`   |
+| Wave-3 (25 flags)     | `f250974`  | `git revert f250974 && git push origin main`   |
+| Wave-2 (20 flags)     | `056b60b`  | `git revert 056b60b && git push origin main`   |
+| Senior+process layer  | `70eafc2`  | `git revert 70eafc2 && git push origin main`   |
+| Tier-1 audit layer    | `7e7b0e2`  | `git revert 7e7b0e2 && git push origin main`   |
 
 Rules:
 

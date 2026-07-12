@@ -545,7 +545,7 @@ CRITICAL RULES:
     }
     await captureServerException(err, distinctIdFrom(req, auth.userId), { endpoint: "analyze-resume", timeout: isTimeout });
     return new Response(
-      JSON.stringify({ error: isTimeout ? "Analysis timed out — please try again" : `Analysis error: ${errMsg.slice(0, 100)}` }),
+      JSON.stringify({ error: isTimeout ? "Analysis timed out — please try again" : "Analysis failed — please try again. If this persists, contact support@hirestepx.com" }),
       { status: isTimeout ? 504 : 500, headers },
     );
   }

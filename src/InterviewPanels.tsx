@@ -1376,7 +1376,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             aria-label="Close transcript"
             style={{
               background: e.white, border: `1px solid ${e.line}`,
-              borderRadius: 999, width: 32, height: 32,
+              borderRadius: 999, width: 44, height: 44,
               color: e.inkSoft, cursor: "pointer",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               transition: "background 160ms ease, color 160ms ease",

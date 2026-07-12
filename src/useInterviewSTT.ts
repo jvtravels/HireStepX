@@ -360,16 +360,23 @@ export function useInterviewSTT(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isMuted, speechUnavailable, restartTrigger]);
 
-  // Capture mic stream for waveform visualizer
+  // Capture mic stream for waveform visualizer.
+  // Delayed 800ms so Deepgram's own getUserMedia resolves first — on Android
+  // MIUI a concurrent second getUserMedia triggers a redundant OS permission
+  // dialog mid-interview. The stream is optional (waveform only); missing it
+  // is silent.
   useEffect(() => {
     if (phase !== "listening" || isMuted) { refs.micStreamRef.current = null; return; }
     let cancelled = false;
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-      refs.micStreamRef.current = stream;
-    }).catch(() => {});
+    const timer = window.setTimeout(() => {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        refs.micStreamRef.current = stream;
+      }).catch(() => {});
+    }, 800);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
       refs.micStreamRef.current?.getTracks().forEach(t => t.stop());
       refs.micStreamRef.current = null;
     };

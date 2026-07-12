@@ -106,7 +106,7 @@ CRITICAL:
   } catch (err) {
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
     return new Response(
-      JSON.stringify({ error: isTimeout ? "Polish timed out — please try again" : `Polish error: ${(err as Error).message.slice(0, 100)}` }),
+      JSON.stringify({ error: isTimeout ? "Polish timed out — please try again" : "Polish failed — please try again or contact support@hirestepx.com" }),
       { status: isTimeout ? 504 : 500, headers },
     );
   }

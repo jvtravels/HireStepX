@@ -110,7 +110,7 @@ function UpgradeNudgeStrip({ score, onUpgrade }: { score: number; onUpgrade?: ()
           You scored {score}. Want to see if you can beat it?
         </p>
         <p style={{ margin: "3px 0 0", fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.45 }}>
-          Get 7 more sessions for ₹49 — track your improvement week by week.
+          Get 5 more sessions for ₹39 — track your improvement across a Sprint Pack.
         </p>
       </div>
       <button
@@ -129,7 +129,7 @@ function UpgradeNudgeStrip({ score, onUpgrade }: { score: number; onUpgrade?: ()
           whiteSpace: "nowrap",
         }}
       >
-        Get Weekly Plan — ₹49
+        Get Sprint Pack — ₹39
       </button>
     </div>
   );
