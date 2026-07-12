@@ -622,9 +622,21 @@ const IM_IN_HEDGE_PATTERN =
  *  accept + (this/it/there/things/you/we/they) + a finite copula/epistemic verb.
  *  A finite verb after the subject is the disambiguator: "accept this offer" /
  *  "accept it" / "accept your offer" have a NOUN (or nothing) after the subject,
- *  not a verb, so genuine closes stay untouched. */
+ *  not a verb, so genuine closes stay untouched.
+ *
+ *  DETERMINER-NOUN CLAUSE SUBJECT (offline hostile sweep, 2026-07-13, round-21) —
+ *  the bare-pronoun arm missed a clause whose subject is a full noun phrase:
+ *  "I accept this call is over" (walking away), "I accept the offer is final",
+ *  "I accept that budget is tight". The subject "this/that/the + <noun>" carries
+ *  a noun head between the determiner and the finite verb, so the pronoun arm
+ *  (which required the verb to abut the determiner) slipped it. The determiner
+ *  arm below allows an optional single noun head before the finite verb — the
+ *  trailing finite-verb predicate is still the disambiguator (this is the same
+ *  logic the fixed-noun "terms are" arm already encodes). A genuine close —
+ *  "accept this offer", "accept the role" — has a noun head but NO following
+ *  finite verb, so it stays untouched. */
 const ACCEPT_PROPOSITION_PATTERN =
-  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies)|(?:this|it|there|things?|you|we|they)\s+(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?|do|does|did|have|has|had)\b)/i;
+  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies)|(?:this|that|the)\s+(?:\w+\s+)?(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?)\b|(?:it|there|things?|you|we|they)\s+(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?|do|does|did|have|has|had)\b)/i;
 
 /** Veto (PRI-74, 2026-07-10, offline hostile close battery — round-6) — an
  *  accept verb whose OBJECT is explicitly contrasted AWAY from the offer: "I'd

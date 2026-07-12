@@ -113,3 +113,44 @@ describe("Round-20 — guards: genuine closes untouched by both new vetoes", () 
     expect(acc(t)).toBe(true);
   });
 });
+
+/* Round-21 (2026-07-13, offline hostile sweep) — determiner-noun clause subject.
+ *
+ * The round-20 zero-complementizer arm only caught a BARE pronoun/expletive
+ * subject abutting the finite verb ("I accept this is over"). A clause whose
+ * subject is a full noun phrase — determiner + noun head + finite verb — slipped
+ * it: "I accept this call is over. Goodbye." false-closed (both gates), yet the
+ * candidate is DISENGAGING, not consenting to the offer. Fixed structurally by
+ * extending ACCEPT_PROPOSITION_PATTERN's determiner arm to allow an optional
+ * single noun head before the finite verb (single source; both gates move in
+ * lockstep). The trailing finite verb stays the disambiguator — a genuine
+ * "accept this offer" / "accept the role" has a noun head but NO following verb,
+ * so it is untouched (guarded below). */
+describe("Round-21 — determiner-noun clause-subject veto (both gates)", () => {
+  it("the exact leak that surfaced: accept this call is over → walk-away, not a close", () => {
+    expect(neither("I accept this call is over. Goodbye.")).toBe(true);
+  });
+
+  it.each([
+    "I accept this call is over. Goodbye.",
+    "I accept the offer is final, but I'm out.",
+    "I accept that budget is tight on your side.",
+    "I accept this conversation is going nowhere.",
+    "I accept the market is soft right now.",
+    "I accept this process was rushed.",
+  ])("REJECTS (agreeing a noun-phrase proposition, not the offer): %s", (t) => {
+    expect(neither(t)).toBe(true);
+  });
+});
+
+describe("Round-21 — guards: determiner-noun genuine closes still accept", () => {
+  it.each([
+    "I accept this offer.",
+    "I accept the offer as-is.",
+    "I accept the role.",
+    "I accept this package, let's go.",
+    "I accept the offer, where do I sign?",
+  ])("ACCEPTS: %s", (t) => {
+    expect(acc(t)).toBe(true);
+  });
+});
