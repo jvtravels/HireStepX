@@ -836,6 +836,35 @@ export function applyDifficultyToBand(
   return out;
 }
 
+/* RC-1 minimum concession-spread floor (2026-07-12).
+ *
+ * The recruiter's cash number "barely moving" was the top realism defect in
+ * the holistic audit: the salary-lookup band math (P35 opener → P85 ceiling)
+ * plus the resolver's one-way down-clamps (clampBandToTargetRoleMarket,
+ * clampBandToTierP50) and the posture transforms above (hardline persona
+ * `maxStretch − 1`, hardball difficulty `maxStretch × 0.95`) can independently
+ * compress (maxStretch − initialOffer) down to a fraction of an LPA. A band
+ * with no room to move forces a turn-2 close and reads as fake. No stage of
+ * the pipeline enforced a LOWER bound on the spread — only the degeneracy
+ * guards above (≥0.5L), which is far too tight to feel like a real negotiation.
+ *
+ * Enforce a realistic minimum: the recruiter always keeps at least 12% of the
+ * opening as concession headroom, with a 1.5L absolute floor so low-market
+ * bands don't over-widen (12% of a ₹6L PSU opener is only 0.72L; 1.5L matches
+ * the joining-bonus spread floor at _next-action-planner.ts:6508). Widen the
+ * ceiling UP only — initialOffer and walkAway are untouched, so the frozen
+ * invariant walkAway < initialOffer < maxStretch is strengthened, never broken.
+ *
+ * Applied as the OUTERMOST init transform (after persona + difficulty) so it is
+ * the authoritative final word on the frozen session band. Single source of
+ * truth — no other stage owns the spread floor. */
+function enforceMinimumSpread(base: NegotiationBand): NegotiationBand {
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  const minSpread = Math.max(1.5, round1(base.initialOffer * 0.12));
+  if (base.maxStretch - base.initialOffer >= minSpread) return base;
+  return { ...base, maxStretch: round1(base.initialOffer + minSpread) };
+}
+
 export interface NegotiationState {
   /* Identity */
   readonly sessionId: string;
@@ -2759,9 +2788,11 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     sessionId: input.sessionId,
     role: input.role,
     company: input.company,
-    band: applyDifficultyToBand(
-      applyPersonaToBand({ ...input.band }, input.recruiterPersona ?? "consultative"),
-      input.sessionDifficulty ?? "standard",
+    band: enforceMinimumSpread(
+      applyDifficultyToBand(
+        applyPersonaToBand({ ...input.band }, input.recruiterPersona ?? "consultative"),
+        input.sessionDifficulty ?? "standard",
+      ),
     ),
     phase: "opening",
     turnIndex: 0,
