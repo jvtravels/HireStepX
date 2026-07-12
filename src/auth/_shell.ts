@@ -197,7 +197,10 @@ export interface ComputeRedirectArgs {
  * to buy, so we open the upgrade flow instead of dropping them on the
  * dashboard with no follow-through. Keep in sync with marketing CTAs in
  * src/marketing-v2/{HomepageV2,MarketingPagesV2}.tsx. */
-const PAID_PLANS = new Set(["session", "weekly", "monthly", "starter", "pro"]);
+const PAID_PLANS = new Set(["session", "weekly", "sprint", "monthly", "starter", "pro"]);
+/* "sprint" is the user-facing alias for the "weekly" plan ID — normalize
+ * it here so the backend always receives the canonical plan identifier. */
+const PLAN_ALIASES: Record<string, string> = { sprint: "weekly" };
 
 export function computeAuthRedirect({
   next,
@@ -207,14 +210,15 @@ export function computeAuthRedirect({
   if (next && next.startsWith("/")) return next;
   const base = hasCompletedOnboarding ? "/dashboard" : "/onboarding";
   if (!plan) return base;
+  const resolvedPlan = PLAN_ALIASES[plan] ?? plan;
   /* Paid plan + onboarded → open upgrade modal immediately (the
    * dashboard reads ?upgrade=1 in a useEffect and shows the tier
    * picker). Paid plan + first-time → onboarding first; ?plan= is
    * preserved so we can resume into upgrade after onboarding. */
   if (PAID_PLANS.has(plan) && hasCompletedOnboarding) {
-    return `${base}?upgrade=1&plan=${plan}`;
+    return `${base}?upgrade=1&plan=${resolvedPlan}`;
   }
-  return `${base}?plan=${plan}`;
+  return `${base}?plan=${resolvedPlan}`;
 }
 
 /* ─── Email typo detection (Levenshtein-1 against common domains) ─── */

@@ -429,6 +429,7 @@ export function PricingPageV2() {
         "Voice in & out, all round types",
         "Company-specific rounds",
         "Skill-decay tracking",
+        "90-day report history",
       ],
       cta: "Get Sprint Pack",
       href: "/signup?plan=weekly",
@@ -478,7 +479,7 @@ export function PricingPageV2() {
     ],
     [
       "What happens to unused Sprint Pack sessions?",
-      "Unused sessions carry forward within your active cycle. If you cancel before renewal, you keep access until the cycle ends. If you haven't started any sessions, you can request a full refund within 24 hours of purchase.",
+      "You get 5 fresh sessions each 30-day billing cycle — they don't accumulate across cycles. Unused sessions within the cycle carry forward until the cycle ends. If you cancel before renewal, you keep access until your paid period expires. If you haven't started any sessions, you can request a full refund within 24 hours of purchase.",
     ],
     [
       "Do you have a student discount?",
@@ -504,7 +505,7 @@ export function PricingPageV2() {
         eyebrow="Pricing"
         title="Costs less than"
         accent="one chai a day."
-        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. UPI, cards, and netbanking accepted. 24h refund if unused."
+        lead="Free to start. Buy one session or a 5-session Sprint Pack, whichever matches your prep. Students with .ac.in / .edu.in email get 30% off. UPI, cards, and netbanking accepted. 24h refund if unused."
       />
 
       {/* Tier cards */}
