@@ -849,7 +849,7 @@ export function sanitizeForLLM(s: unknown, maxLen = 200): string {
 // so a generous daily LLM-call budget only widens the abuse window without helping a
 // genuine free user. 15 covers 2 full sessions of retries comfortably. Paid
 // tiers stay generous.
-const DAILY_LLM_LIMITS: Record<string, number> = { free: 15, starter: 60, pro: 200, team: 500 };
+const DAILY_LLM_LIMITS: Record<string, number> = { free: 50, starter: 200, pro: 600, team: 2000 };
 
 /** Check if a user has exceeded their daily LLM API call quota for a specific endpoint. */
 export async function checkLLMQuota(userId: string, endpoint: string): Promise<{ allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string }> {
@@ -869,7 +869,10 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
   }
 
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const key = `llm_quota:${userId}:${today}:${endpoint}`;
+  // Global per-user-per-day key (not per-endpoint) so free users can't
+  // multiply their budget by hitting 8 endpoints × 50 calls each.
+  void endpoint; // kept in signature for logging; not part of the key
+  const key = `llm_quota:${userId}:${today}`;
   try {
     const res = await fetch(`${UPSTASH_URL}/pipeline`, {
       method: "POST",

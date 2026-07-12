@@ -2,7 +2,8 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId, logServiceUsage } from "./_shared";
+import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
+import { capsForTier } from "./_usage-this-month-helpers";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import {
@@ -219,6 +220,30 @@ export default async function handler(req: Request): Promise<Response> {
   if (pre instanceof Response) return pre;
   const { headers, auth } = pre;
 
+  // Monthly resume-parse cap (5/month for all tiers). We pre-increment
+  // and roll back on cache hit to avoid counting cached parses.
+  // Using INCR-then-check (same as checkLLMQuota) so we don't need a
+  // separate GET — the returned value after INCR is the new count.
+  let resumeParseKey: string | null = null;
+  let resumeParseCap = 0;
+  let resumeParseTier = "free";
+  if (auth.userId) {
+    resumeParseTier = await getSubscriptionTier(auth.userId);
+    resumeParseCap = capsForTier(resumeParseTier).resumeParses;
+    const yearMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    resumeParseKey = `resume_parses:${auth.userId}:${yearMonth}`;
+    const ttlSec = 32 * 24 * 3600; // ~32 days
+    const newCount = await redisIncrByWithExpiry(resumeParseKey, 1, ttlSec);
+    if (newCount !== null && newCount > resumeParseCap) {
+      // Decrement so this failed request doesn't consume a slot
+      await redisIncrByWithExpiry(resumeParseKey, -1, ttlSec);
+      return new Response(
+        JSON.stringify({ error: `Monthly resume analysis limit reached (${resumeParseCap}/month for ${resumeParseTier} plan). Limit resets next month.` }),
+        { status: 429, headers },
+      );
+    }
+  }
+
   try {
     const { resumeText, targetRole, domain, fileName, fileHash } = await req.json();
 
@@ -257,6 +282,10 @@ export default async function handler(req: Request): Promise<Response> {
         });
         headers["X-Cache"] = "hit";
         headers["X-Resume-Version-Id"] = cached.id;
+        // Cache hit — roll back the monthly counter increment (no LLM call happened).
+        if (resumeParseKey) {
+          redisIncrByWithExpiry(resumeParseKey, -1, 32 * 24 * 3600).catch(() => {/* fail silently */});
+        }
         // Normalize on read so cached rows that pre-date the renderer
         // contract (e.g. improvements stored as objects) still produce
         // a clean shape for the client. This is a one-time fix-up — the
@@ -446,6 +475,10 @@ CRITICAL RULES:
         });
         headers["X-Cache"] = "race-sibling";
         headers["X-Resume-Version-Id"] = sibling.id;
+        // Race sibling served from cache — roll back our monthly counter slot.
+        if (resumeParseKey) {
+          redisIncrByWithExpiry(resumeParseKey, -1, 32 * 24 * 3600).catch(() => {/* fail silently */});
+        }
         const normalizedSibling = normalizeResumeProfile(sibling.parsed_data as Record<string, unknown>);
         redactProfilePii(normalizedSibling);
         return new Response(JSON.stringify({
@@ -467,6 +500,7 @@ CRITICAL RULES:
       latencyMs: Date.now() - t0,
       meta: { kind: "miss", model: result.model, llmMs: tLLM },
     });
+
     headers["X-Cache"] = "miss";
 
     // Shadow-write the new version row. Best-effort — if the persistence
@@ -505,6 +539,10 @@ CRITICAL RULES:
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error(`[analyze-resume] FAILED after ${totalMs}ms (${isTimeout ? "timeout" : "error"}): ${errMsg.slice(0, 200)}`);
+    // Roll back the monthly slot — no successful LLM parse happened.
+    if (resumeParseKey) {
+      redisIncrByWithExpiry(resumeParseKey, -1, 32 * 24 * 3600).catch(() => {/* fail silently */});
+    }
     await captureServerException(err, distinctIdFrom(req, auth.userId), { endpoint: "analyze-resume", timeout: isTimeout });
     return new Response(
       JSON.stringify({ error: isTimeout ? "Analysis timed out — please try again" : `Analysis error: ${errMsg.slice(0, 100)}` }),
