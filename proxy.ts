@@ -186,9 +186,20 @@ export async function proxy(request: NextRequest) {
   const csp = buildCsp(nonce);
 
   // Helper: attach nonce to request headers so server components can read it,
-  // and set the CSP response header on the final response.
+  // and set the CSP + hardening response headers on the final response.
   function withCsp(response: NextResponse): NextResponse {
     response.headers.set("Content-Security-Policy", csp);
+    // Cross-origin isolation: prevent cross-origin window.opener access and
+    // restrict how this page can be embedded by other origins.
+    response.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    // Restrict what browser features can be used; deny mic/camera/geolocation
+    // except on same-origin (payment and interview pages request mic via JS).
+    response.headers.set(
+      "Permissions-Policy",
+      "camera=(), geolocation=(), payment=(self), microphone=(self), usb=(), bluetooth=()",
+    );
+    // Prevent MIME-type sniffing on responses.
+    response.headers.set("X-Content-Type-Options", "nosniff");
     return response;
   }
   function nextWithNonce(): NextResponse {
