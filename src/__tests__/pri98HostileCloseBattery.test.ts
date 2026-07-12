@@ -59,3 +59,57 @@ describe("PRI-98 — guards: genuine closes still accept", () => {
     expect(acc(t)).toBe(true);
   });
 });
+
+/* Round-20 (2026-07-12, offline hostile sweep) — two new FALSE-CLOSE classes.
+ *
+ * (A) Zero-complementizer propositional clause. English drops the "that":
+ *     "I accept this is a good company", "I accept things are tight" are
+ *     concession-AGREEMENTS, not a close on the offer. ACCEPT_PROPOSITION only
+ *     matched an explicit "that" or a fixed noun (reality/fact/…); a bare
+ *     pronoun subject + finite verb slipped through. Fixed by extending
+ *     ACCEPT_PROPOSITION_PATTERN (single source), so both gates move in lockstep.
+ * (B) Attributed / reported accept. A belief/speech verb fronting "I'll accept"
+ *     ("My wife thinks I'll accept, she's wrong.") makes the accept a reported
+ *     proposition, contingent and usually contradicted — never a same-turn
+ *     commit. Fixed via REPORTED_ACCEPT_PATTERN in FALSE_CLOSE_VETO_PATTERNS. */
+
+describe("Round-20 (A) — zero-complementizer propositional clause veto", () => {
+  it.each([
+    "I accept this is a good company to work for.",
+    "I accept things are tight on your end.",
+    "I accept you are right about the market.",
+    "I accept it is what it is.",
+    "I accept we are far apart on base.",
+    "I accept there is a budget ceiling, but the number's still low.",
+  ])("REJECTS (agreeing a proposition, not the offer): %s", (t) => {
+    expect(neither(t)).toBe(true);
+  });
+});
+
+describe("Round-20 (B) — attributed / reported accept veto", () => {
+  it.each([
+    "My wife thinks I'll accept, she's wrong.",
+    "They assume I'll accept but I won't.",
+    "You expect I'll accept this? No.",
+    "He figured I'd accept without a fight.",
+    "HR presumes I'll sign — I'm not there yet.",
+  ])("REJECTS (accept attributed to another's belief): %s", (t) => {
+    expect(neither(t)).toBe(true);
+  });
+});
+
+describe("Round-20 — guards: genuine closes untouched by both new vetoes", () => {
+  it.each([
+    "Yes, I accept the offer.",
+    "I accept it.",
+    "I accept this offer.",
+    "I accept your offer.",
+    "I'll accept the package.",
+    "I accept the role.",
+    "Okay, forty works for me. I'm in.",
+    "I would like to accept this offer.",
+    "I'm accepting the offer today.",
+  ])("ACCEPTS: %s", (t) => {
+    expect(acc(t)).toBe(true);
+  });
+});

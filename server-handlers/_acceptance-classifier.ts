@@ -610,9 +610,21 @@ const IM_IN_HEDGE_PATTERN =
  *  recall bank matches "I'm accept(ing)", so a bare-stem veto here let the
  *  resigned "I'm accepting the reality here" FALSE-CLOSE — same asymmetry as the
  *  rhetorical veto. The proposition NOUN list (reality/fact/position/…) still
- *  excludes "offer", so a genuine "I'm accepting the offer" is untouched. */
+ *  excludes "offer", so a genuine "I'm accepting the offer" is untouched.
+ *
+ *  ZERO-COMPLEMENTIZER CLAUSE (offline hostile sweep, 2026-07-12, round-20) —
+ *  English routinely drops the "that": "I accept this is a good company", "I
+ *  accept things are tight on your end", "I accept you are right about the
+ *  market" are all propositional AGREEMENTS (conceding a fact), never a close on
+ *  the offer. The explicit-"that" arm and the fixed-noun arm both missed them
+ *  because the complementizer is elided and the clause subject is a bare
+ *  pronoun/expletive, not a listed noun. The final arm catches
+ *  accept + (this/it/there/things/you/we/they) + a finite copula/epistemic verb.
+ *  A finite verb after the subject is the disambiguator: "accept this offer" /
+ *  "accept it" / "accept your offer" have a NOUN (or nothing) after the subject,
+ *  not a verb, so genuine closes stay untouched. */
 const ACCEPT_PROPOSITION_PATTERN =
-  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies))/i;
+  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies)|(?:this|it|there|things?|you|we|they)\s+(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?|do|does|did|have|has|had)\b)/i;
 
 /** Veto (PRI-74, 2026-07-10, offline hostile close battery — round-6) — an
  *  accept verb whose OBJECT is explicitly contrasted AWAY from the offer: "I'd
@@ -625,6 +637,22 @@ const ACCEPT_PROPOSITION_PATTERN =
  *  offer go" has a verb between "not" and "offer" and does not match. */
 const ACCEPT_NOT_THE_OFFER_PATTERN =
   /\baccept(?:s|ing|ed)?\b[^.!?]{0,30}?\bnot\s+(?:this|the|your|that)\s+(?:offer|number|comp(?:ensation)?|package|deal|base|money)\b/i;
+
+/** Veto (offline hostile sweep, 2026-07-12, round-20) — an accept that is
+ *  ATTRIBUTED to a third party's belief/expectation, not asserted first-person
+ *  in this turn: "My wife thinks I'll accept, she's wrong.", "They assume I'll
+ *  accept but I won't.", "You expect I'll accept this? No.". The performative
+ *  bank matched the embedded "I'll accept" substring, but a belief/speech verb
+ *  (thinks/assumes/expects/says/…) FRONTING "I'll accept" makes the accept a
+ *  reported proposition about the speaker, contingent and typically contradicted
+ *  in the same breath — never a same-turn commitment. The mental/speech verb
+ *  immediately before the accept clause is the single disambiguator; a genuine
+ *  first-person "I'll accept the offer" carries no such verb. First-person "I
+ *  think I'll accept" is also caught and is correctly under-accepted: "I think"
+ *  is a hedge, so deferring the close one turn is the safe read. Shared by both
+ *  gates via FALSE_CLOSE_VETO_PATTERNS. */
+const REPORTED_ACCEPT_PATTERN =
+  /\b(?:thinks?|thought|assumes?|assumed|expects?|expected|believes?|believed|figures?|figured|reckons?|reckoned|hopes?|hoped|says?|said|claims?|claimed|presumes?|presumed)\s+(?:that\s+)?i(?:'?ll|\s+will|'?d|\s+would|\s+might|\s+may)\s+(?:accept|take\s+it|sign)\b/i;
 
 /** Veto (PRI-78, 2026-07-10, round-10) — an accept verb whose OBJECT is a
  *  concrete NON-offer noun: "I'm happy to accept a counteroffer, not this", "I
@@ -1449,6 +1477,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
   ACCEPT_NOT_THE_OFFER_PATTERN,
+  REPORTED_ACCEPT_PATTERN,
   WRONG_OBJECT_ACCEPT_PATTERN,
   ACCEPT_ACCOUNTABILITY_PATTERN,
   ACCEPT_NO_EXCUSES_PATTERN,
