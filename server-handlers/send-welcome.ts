@@ -786,9 +786,9 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
     if (normalizedEmail) {
       const emailSignupKey = `rl:signup:email:${normalizedEmail}`;
       const emailCount = await incrRedisKey(emailSignupKey, 24 * 60 * 60);
-      if (emailCount > 3) {
-        // Generic copy — don't tell an attacker their probe is hitting
-        // a real account vs no account.
+      if (emailCount > 2) {
+        // 2/24h per email: covers legit typo→correct flow while blocking
+        // bots hammering a single address. Generic copy — no information leak.
         return res.status(429).json({ locked: true, message: "Too many attempts for this email. Please try again later." });
       }
     }
