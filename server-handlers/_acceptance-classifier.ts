@@ -550,7 +550,7 @@ const OFFER_REFERENCE_PATTERN =
  * so a benign temporal "once payroll ran the numbers last year" (no
  * sort/confirm/finalize/… verb) is untouched. */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|vest(?:s|ed|ing)?|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
 
 /* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
  * recall-focused accept idioms (PRI-56/57/58) each carry a short substring
@@ -719,6 +719,29 @@ const INVERTED_CONDITIONAL_ACCEPT_PATTERN =
  *  "I accept in principle" / "yes, pending board approval" are hedges, not a
  *  terminal close. */
 const IN_PRINCIPLE_PATTERN = /\b(?:in\s+principle|pending\b)/i;
+
+/* PRI-95 (2026-07-12, round-16) — NON-COMMITTAL QUALIFIER. IN_PRINCIPLE owns
+ * "in principle"/"pending"; its siblings are the tentativeness adverbs that
+ * equally negate a firm close: "Agreed, tentatively.", "I accept, hypothetically
+ * speaking.", "Consider it done, more or less.", "I accept under protest." Each
+ * is a hedge the candidate WILL walk back, so a recap that treats it as a done
+ * deal is a soft FALSE-CLOSE. These adverbs never modify a genuine firm accept
+ * (which carries none of them), so bare presence is a safe veto — kept narrow to
+ * the unambiguous tentativeness markers (NOT "theoretically/in theory", which
+ * can modify a non-accept clause). Shared single-source so both gates reject in
+ * lockstep. */
+const TENTATIVE_QUALIFIER_PATTERN =
+  /\b(?:tentatively|provisionally|hypothetically|under\s+protest|more\s+or\s+less)\b/i;
+
+/* PRI-95 (2026-07-12, round-16) — COMPETITOR REDIRECT reversal. A close idiom
+ * ("sign me up", "count me in") flipped by a trailing "..., that is" that
+ * reassigns the commitment to a RIVAL: "Sign me up — for the competitor, that
+ * is." The reversal tag negates the close (the candidate is signing ELSEWHERE),
+ * so it is a refusal, not consent. Scoped to a competitor/rival noun immediately
+ * followed by the "that is" reversal tag; a genuine accept never redirects the
+ * commit to the competition. Shared single-source so both gates reject. */
+const COMPETITOR_REDIRECT_PATTERN =
+  /\bfor\s+(?:the\s+|a\s+|your\s+|our\s+|their\s+)?(?:competitor|competition|rival|other\s+(?:guy|company|side|team))\b[^.!?]{0,12}\bthat\s+is\b/i;
 
 /** Veto: DOUBT / POSSIBILITY governor over an embedded commit idiom (2026-07-09
  *  offline hostile sweep). The performative/idiom banks match the bare "I'll
@@ -1050,8 +1073,16 @@ const REVIEW_TAIL_PATTERN =
  *  later, so it is not a present accept. Scoped to consult/return verbs so
  *  "once you confirm the base I'll sign" (owned by CONDITIONAL_DEFERRAL) and
  *  genuine accepts are untouched. Offline sweep batch 4. */
+/* PRI-95 (2026-07-12, round-16 offline hostile sweep) — COMPARISON deferral.
+ * The consult-deferral verb list owned talk/consult/check/hear but not the
+ * "let me line this up against my other offer" family: "I'll sign — after I
+ * compare with my other offer", "count me in once I've weighed the options".
+ * A close idiom deferred until the candidate COMPARES / WEIGHS / EVALUATES a
+ * competing offer is not a commitment (it is shopping the offer), so add those
+ * verbs to the same single-source deferral pattern both gates share. A genuine
+ * accept carries no "after I compare/weigh/evaluate" head. */
 const CONSULT_DEFERRAL_PATTERN =
-  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)(?:'?ve|'?d|\s+ha(?:ve|d))?\s+(?:talk|speak|consult|discuss|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+(?:by|past|with)|get\s+back|am\s+back))/i;
+  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)(?:'?ve|'?d|\s+ha(?:ve|d))?\s+(?:talk|speak|consult|discuss|compar(?:e[sd]?|ing)|weigh(?:s|ed|ing)?|evaluat(?:e[sd]?|ing)|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+(?:by|past|with)|get\s+back|am\s+back))/i;
 
 /** Veto (offline hostile close battery, 2026-07-08) — the LEADING consult form:
  *  "Let me run it past my spouse and I'll sign", "let me sleep on it and it's a
@@ -1335,6 +1366,8 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   COMPARATIVE_OFFER_ACCEPT_PATTERN,
   CLOSE_THEN_CONDITIONAL_PATTERN,
   IN_PRINCIPLE_PATTERN,
+  TENTATIVE_QUALIFIER_PATTERN,
+  COMPETITOR_REDIRECT_PATTERN,
   DOUBT_HEDGE_THEN_COMMIT_PATTERN,
   MONEY_REJECTION_PATTERN,
   COUNTER_NOT_NUMBER_PATTERN,
