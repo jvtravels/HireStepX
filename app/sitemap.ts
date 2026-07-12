@@ -112,6 +112,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "goldman-sachs-india-interview-questions",
     "frontend-developer-interview-questions-india-2026",
     "product-company-vs-service-company-india-career",
+    "swiggy-interview-questions-2026",
+    "microsoft-india-interview-questions-2026",
+    "sql-interview-questions-freshers-india-2026",
   ];
   const blogEntries: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
     url: `${baseUrl}/blog/${slug}`,

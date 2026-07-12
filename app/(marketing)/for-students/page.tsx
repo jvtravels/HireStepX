@@ -3,20 +3,31 @@ import { ForStudentsV2 } from "@/marketing-v2/MarketingPagesV2";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 
 export const metadata: Metadata = {
-  title: "For students | HireStepX",
+  title: "AI Mock Interviews for Campus Placements India 2026 — Free for Students | HireStepX",
   description:
-    "Campus placements, first-job interviews, internship rounds. AI mock interviews tuned for Indian students and freshers. 30% off with .ac.in / .edu.in email.",
+    "Prepare for TCS NQT, Infosys InfyTQ, Wipro NLTH, and first-job interviews with AI mock interviews. Free 2 sessions + 30% student discount with .ac.in email. Practice behavioral, technical, and HR rounds with voice feedback.",
+  keywords: [
+    "campus placement interview preparation India 2026",
+    "TCS NQT preparation",
+    "Infosys campus placement",
+    "AI mock interview for students India",
+    "fresher interview practice",
+    "college placement interview preparation",
+    "first job interview India 2026",
+  ].join(", "),
   alternates: { canonical: "/for-students" },
   openGraph: {
-    title: "HireStepX for Students — Campus Placements & First-Job Interviews",
-    description: "AI mock interviews for campus placements, TCS NQT, Infosys SP, and first-job rounds. 30% off with .ac.in / .edu.in college email. Start free.",
+    title: "AI Mock Interviews for Campus Placements India 2026 | HireStepX for Students",
+    description: "Practice TCS NQT, Infosys SP, Wipro NLTH, and first-job interviews with AI mock interviews. Free 2 sessions + 30% discount with college email.",
     url: "https://hirestepx.com/for-students",
     type: "website",
+    siteName: "HireStepX",
+    locale: "en_IN",
   },
   twitter: {
     card: "summary_large_image",
-    title: "HireStepX for Students — Campus Placements & First-Job Interviews",
-    description: "AI mock interviews for campus placements and first jobs. 30% off with college email. Start free.",
+    title: "AI Mock Interviews for Campus Placements India 2026 | HireStepX",
+    description: "TCS NQT, Infosys SP, Wipro NLTH — AI mock interview practice for campus placements. Free 2 sessions + 30% student discount.",
   },
 };
 

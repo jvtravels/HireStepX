@@ -3,19 +3,106 @@ import { AboutV2 } from "@/marketing-v2/MarketingPagesV2";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 
 export const metadata: Metadata = {
-  title: "About | HireStepX",
+  title: "About HireStepX — India's AI Mock Interview Platform 2026 | HireStepX",
   description:
-    "HireStepX is an India-first AI mock interview platform. Our mission, our values, and the team building career infrastructure for the next million job seekers.",
+    "HireStepX is India's AI-powered mock interview platform. We help job seekers practice for TCS, Google, Flipkart, Amazon, and 60+ companies with voice AI interviews, scored STAR reports, and skill-decay tracking.",
+  keywords: [
+    "about HireStepX",
+    "AI mock interview platform India",
+    "interview preparation company India",
+    "HireStepX mission",
+  ].join(", "),
   alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About HireStepX — India's AI Mock Interview Platform",
+    description: "HireStepX helps Indian job seekers practice for TCS, Google, Flipkart, Amazon, and 60+ companies with AI voice interviews and scored feedback.",
+    url: "https://hirestepx.com/about",
+    type: "website",
+    siteName: "HireStepX",
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About HireStepX — India's AI Mock Interview Platform 2026",
+    description: "AI mock interviews for 60+ Indian companies. Voice interviews, STAR scoring, skill-decay tracking. Built for India.",
+  },
 };
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
+/* Organization schema — used by Google to build the Knowledge Panel
+   for the HireStepX brand query. Without this, Google guesses the
+   organization data from the homepage; with it, we control what it shows. */
+const ORG_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "HireStepX",
+  url: "https://hirestepx.com",
+  logo: {
+    "@type": "ImageObject",
+    url: "https://hirestepx.com/wordmark.png",
+    width: 200,
+    height: 48,
+  },
+  description: "India's AI-powered mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 60+ companies with voice AI interviews and scored feedback.",
+  foundingDate: "2024",
+  foundingLocation: {
+    "@type": "Place",
+    name: "India",
+    addressCountry: "IN",
+  },
+  areaServed: {
+    "@type": "Country",
+    name: "India",
+  },
+  knowsAbout: [
+    "Interview Preparation",
+    "Artificial Intelligence",
+    "Career Coaching",
+    "Campus Placement",
+    "Mock Interviews",
+  ],
+  sameAs: [
+    "https://www.linkedin.com/company/hirestepx",
+    "https://twitter.com/hirestepx",
+  ],
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    url: "https://hirestepx.com/contact",
+    availableLanguage: ["English", "Hindi"],
+  },
+};
+
+/* SoftwareApplication schema — makes HireStepX eligible for app-rich
+   results in Google (star ratings, review count, price). */
+const APP_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "HireStepX",
+  applicationCategory: "EducationalApplication",
+  operatingSystem: "Web",
+  url: "https://hirestepx.com",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "INR",
+    description: "2 free AI mock interview sessions, no credit card required",
+  },
+  description: "AI-powered mock interview platform for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, and 60+ companies with voice interviews and scored reports.",
+  inLanguage: "en-IN",
+  datePublished: "2024-01-01",
+  dateModified: "2026-07-13",
+  creator: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
+};
+
 export default function Page() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "About", path: "/about" }]))} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_SCHEMA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_SCHEMA) }} />
       <AboutV2 />
     </>
   );

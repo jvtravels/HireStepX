@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../../../../data/seo-pages";
 import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
+import { BLOG_META } from "@/blog-meta";
 
 /* Programmatic SEO landing pages — /companies/{slug}.
  *
@@ -410,10 +411,15 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             </Link>
           </section>
 
+          {/* Blog back-links — company-matched blog articles flow PageRank
+              back into this page cluster. Only renders when ≥1 article
+              matches this company. */}
+          <RelatedBlogPosts companyLabel={companyLabel} />
+
           {/* Internal links — boosts SEO via crawl graph + helps users
               discover related pages. Show up to 4 sibling pages from
               SEO_PAGES (excluding self). */}
-          <section style={{ marginTop: 56, paddingTop: 24, borderTop: "1px solid rgba(20,17,10,0.08)" }}>
+          <section style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid rgba(20,17,10,0.08)" }}>
             <h3 style={{
               fontFamily: "var(--font-mono), monospace", fontSize: 11, fontWeight: 600,
               letterSpacing: "0.10em", textTransform: "uppercase", color: "#6E6759",
@@ -426,6 +432,39 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         </div>
       </main>
     </>
+  );
+}
+
+/* Blog back-links — finds articles in BLOG_META that match the company
+   label and renders them as readable links. Adds a genuine editorial
+   anchor from each company page to the blog cluster. */
+function RelatedBlogPosts({ companyLabel }: { companyLabel: string }) {
+  const matched = BLOG_META.filter(
+    (m) => m.company === companyLabel || m.company === "Campus" && companyLabel === "TCS",
+  ).slice(0, 3);
+  if (matched.length === 0) return null;
+  return (
+    <section style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid rgba(20,17,10,0.08)" }}>
+      <h3 style={{
+        fontFamily: "var(--font-mono), monospace", fontSize: 11, fontWeight: 600,
+        letterSpacing: "0.10em", textTransform: "uppercase", color: "#6E6759",
+        margin: "0 0 14px",
+      }}>
+        In-depth guides
+      </h3>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        {matched.map((m) => (
+          <li key={m.slug}>
+            <Link href={`/blog/${m.slug}`} style={{
+              color: "#B45309", textDecoration: "none", fontSize: 14,
+              fontFamily: "var(--font-ui)", fontWeight: 500,
+            }}>
+              → {m.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
