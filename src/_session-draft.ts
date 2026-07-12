@@ -15,6 +15,13 @@
 import type { InterviewStep } from "./interviewScripts";
 
 export interface InterviewDraftSnapshot {
+  /** Live session id this draft belongs to. Persisted so a mid-interview
+   *  refresh resumes under the SAME id — record-session-start and
+   *  save-session dedup the quota bump on session id, and a fresh id per
+   *  mount would be counted as a second session (H1 double-count). Optional
+   *  on read: drafts persisted before this field existed simply lack it,
+   *  in which case the engine keeps its freshly-minted id. */
+  sessionId?: string;
   /** Conversation transcript so far. */
   transcript: { speaker: "ai" | "user"; text: string; time: string }[];
   /** Live in-progress answer text (so a refresh mid-typing doesn't lose words). */
@@ -37,6 +44,7 @@ export interface InterviewDraftSnapshot {
 }
 
 export interface DraftSnapshotInput {
+  sessionId: string;
   transcript: InterviewDraftSnapshot["transcript"];
   currentTranscript: string;
   currentStep: number;
@@ -55,6 +63,7 @@ export interface DraftSnapshotInput {
  */
 export function buildDraftSnapshot(input: DraftSnapshotInput): InterviewDraftSnapshot {
   return {
+    sessionId: input.sessionId,
     transcript: input.transcript,
     currentTranscript: input.currentTranscript,
     currentStep: input.currentStep,

@@ -64,6 +64,7 @@ import type { InterviewerPersonality } from "./_interview-engine-helpers";
 
 /* ─── Draft data shape (for IDB restore) ─── */
 interface InterviewDraft {
+  sessionId?: string;
   transcript: { speaker: "ai" | "user"; text: string; time: string }[];
   currentStep: number;
   elapsed: number;
@@ -224,6 +225,24 @@ export function useInterviewEngine() {
     }
   }
 
+  /* H1 (2026-07-12) — adopt the restored draft's session id. record-session-
+   * start (at mount) and save-session (at completion) dedup the quota bump on
+   * session id; a fresh UUID minted per mount defeats that guard, so a plain
+   * page refresh mid-interview was counted as a SECOND session. The draft is
+   * the canonical "resume this exact session" payload, so its id is the single
+   * source of truth for identity across a reload. One-time adoption, and only
+   * for drafts that carry an id (older drafts predate the field → keep the
+   * freshly-minted id). Runs during render, before the mount effects fire, so
+   * liveSessionIdRef holds the restored id by the time record-session-start
+   * reads it. */
+  const sessionIdAdoptedRef = useRef(false);
+  if (!sessionIdAdoptedRef.current) {
+    sessionIdAdoptedRef.current = true;
+    if (draftRef.current?.sessionId) {
+      liveSessionIdRef.current = draftRef.current.sessionId;
+    }
+  }
+
   // Strip &new=1 from URL so a page refresh doesn't re-trigger "new session" draft clear
   useEffect(() => {
     if (isNewSession) {
@@ -371,6 +390,15 @@ export function useInterviewEngine() {
           return;
         }
         draftRef.current = d;
+        /* Keep the resumed session's identity stable (H1): save-session and
+         * this session's turns must persist under the id the draft was
+         * started on. Safe here because this branch only runs when no
+         * localStorage draft existed, so no turn has been saved yet under
+         * the freshly-minted id. (The mount-time record-session-start may
+         * already have fired with the fresh id for the rarer IDB-only path;
+         * the common localStorage-refresh path is deduped synchronously
+         * above, before any effect runs.) */
+        if (d.sessionId) liveSessionIdRef.current = d.sessionId;
         setCurrentStep(d.currentStep || 0);
         setTranscript(d.transcript || []);
         setElapsed(d.elapsed || 0);
@@ -951,6 +979,7 @@ export function useInterviewEngine() {
     const saveDraft = () => {
       // Snapshot shape lives in src/_session-draft.ts (testable + reusable).
       const draftData = buildDraftSnapshot({
+        sessionId: liveSessionIdRef.current,
         transcript, currentTranscript,
         currentStep, elapsed,
         interviewType, interviewDifficulty, interviewFocus,
