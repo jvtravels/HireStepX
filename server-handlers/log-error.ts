@@ -7,22 +7,7 @@
 export const config = { runtime: "edge" };
 
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
-
-const _rateLimit = new Map<string, number[]>();
-function checkRate(ip: string, max: number, windowMs: number): boolean {
-  const now = Date.now();
-  const hits = (_rateLimit.get(ip) || []).filter(t => now - t < windowMs);
-  if (hits.length >= max) return false;
-  hits.push(now);
-  _rateLimit.set(ip, hits);
-  return true;
-}
-
-function getClientIp(req: Request): string {
-  return req.headers.get("x-real-ip")?.trim()
-    || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || "unknown";
-}
+import { isRateLimited, getClientIp } from "./_shared";
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") {
@@ -30,7 +15,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const ip = getClientIp(req);
-  if (!checkRate(ip, 20, 60_000)) {
+  if (await isRateLimited(ip, "log-error", 20, 60_000)) {
     return new Response("Too many requests", { status: 429 });
   }
 

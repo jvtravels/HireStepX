@@ -17,11 +17,20 @@ export const config = { runtime: "edge" };
 
 import { googleConfigured } from "./_google-calendar";
 import { getSyncRowByChannel, runIncrementalSync } from "./_google-sync-runner";
+import { isRateLimited, getClientIp } from "./_shared";
 
 declare const process: { env: Record<string, string | undefined> };
 
 export default async function handler(req: Request): Promise<Response> {
   if (!googleConfigured(process.env)) return new Response(null, { status: 200 });
+
+  // Cap flood attempts before doing any DB work. Google sends at most a few
+  // notifications per minute per channel; 120/min per IP is generous headroom
+  // while blocking credential stuffing or enumeration floods.
+  const ip = getClientIp(req);
+  if (await isRateLimited(ip, "gcal-webhook", 120, 60_000)) {
+    return new Response(null, { status: 429 });
+  }
 
   const channelId = req.headers.get("x-goog-channel-id") || "";
   const resourceId = req.headers.get("x-goog-resource-id") || "";
