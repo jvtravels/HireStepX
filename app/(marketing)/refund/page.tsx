@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/refund" },
 };
 
-export const dynamic = "force-static";
 export const revalidate = 86400;
 
 const BREADCRUMB_SCHEMA = {
@@ -19,10 +18,12 @@ const BREADCRUMB_SCHEMA = {
   ],
 };
 
-export default function Page() {
+export default async function Page() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(BREADCRUMB_SCHEMA) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(BREADCRUMB_SCHEMA) }} />
       <RefundPolicyV2 />
     </>
   );

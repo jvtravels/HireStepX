@@ -66,7 +66,6 @@ export async function generateStaticParams() {
   return getAllBlogSlugs().map((slug) => ({ slug }));
 }
 
-export const dynamic = "force-static";
 export const revalidate = 86400;
 export const dynamicParams = true;
 
@@ -74,6 +73,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   const meta = getBlogMetaBySlug(slug);
   const title = meta?.title ?? slugToTitle(slug);
+
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
 
   /* Article JSON-LD — required for eligibility in Google's "Top Stories"
      carousel and article-rich results. */
@@ -113,6 +115,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     <>
       <script
         type="application/ld+json"
+        nonce={nonce || undefined}
         dangerouslySetInnerHTML={ldJson(
           breadcrumb([
             { name: "Blog", path: "/blog" },
@@ -121,10 +124,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         )}
       />
       {articleSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+        <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       )}
       {faqSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+        <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       )}
       <BlogPage />
     </>

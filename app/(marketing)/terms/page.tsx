@@ -8,13 +8,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
 };
 
-export const dynamic = "force-static";
 export const revalidate = 86400;
 
-export default function Page() {
+export default async function Page() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Terms", path: "/terms" }]))} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Terms", path: "/terms" }]))} />
       <TermsV2 />
     </>
   );

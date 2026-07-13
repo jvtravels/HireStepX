@@ -11,7 +11,6 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
  * for getting thin long-tail pages indexed quickly.
  */
 
-export const dynamic = "force-static";
 export const revalidate = 86400; /* 24 h */
 
 export const metadata: Metadata = {
@@ -46,7 +45,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function QuestionsIndexRoute() {
+export default async function QuestionsIndexRoute() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   /* ItemList schema — helps Google understand this is a curated collection
      and may generate a sitelinks-style display in the SERP. */
   const itemListSchema = {
@@ -68,10 +69,12 @@ export default function QuestionsIndexRoute() {
     <>
       {/* Structured data */}
       <script
+        nonce={nonce || undefined}
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
       <script
+        nonce={nonce || undefined}
         type="application/ld+json"
         dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Questions", path: "/questions" }]))}
       />

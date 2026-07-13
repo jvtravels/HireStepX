@@ -19,7 +19,6 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-static";
 export const revalidate = 3600;
 
 /* Per-page JSON-LD:
@@ -71,11 +70,13 @@ const PRICING_SCHEMA = {
   },
 };
 
-export default function Page() {
+export default async function Page() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(BREADCRUMB_SCHEMA) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(PRICING_SCHEMA) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(BREADCRUMB_SCHEMA) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(PRICING_SCHEMA) }} />
       <PricingPageV2 />
     </>
   );

@@ -17,7 +17,6 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
  * answering them with an AI that grades them in real time.
  */
 
-export const dynamic = "force-static";
 export const revalidate = 86400; /* 24 h */
 
 /* ─── Human-readable labels ─────────────────────────────────────────────── */
@@ -161,6 +160,8 @@ export default async function QuestionsSlugPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   const { slug } = await params;
   const page = getSeoPageBySlug(slug);
   if (!page) notFound();
@@ -213,14 +214,17 @@ export default async function QuestionsSlugPage({
     <>
       {/* Structured data */}
       <script
+        nonce={nonce || undefined}
         type="application/ld+json"
         dangerouslySetInnerHTML={ldJson(faqSchema)}
       />
       <script
+        nonce={nonce || undefined}
         type="application/ld+json"
         dangerouslySetInnerHTML={ldJson(articleSchema)}
       />
       <script
+        nonce={nonce || undefined}
         type="application/ld+json"
         dangerouslySetInnerHTML={ldJson(
           breadcrumb([

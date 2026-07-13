@@ -31,13 +31,14 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-static";
 export const revalidate = 3600;
 
-export default function Page() {
+export default async function Page() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "For students", path: "/for-students" }]))} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "For students", path: "/for-students" }]))} />
       <ForStudentsV2 />
     </>
   );

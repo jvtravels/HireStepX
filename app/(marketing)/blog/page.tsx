@@ -30,15 +30,17 @@ export const metadata: Metadata = {
   },
 };
 
-// Blog index — static CDN cache, 1-hour revalidate so new posts go live fast.
-export const dynamic = "force-static";
 export const revalidate = 3600;
 
-export default function Page() {
+export default async function Page() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
+
   return (
     <>
       <script
         type="application/ld+json"
+        nonce={nonce || undefined}
         dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Blog", path: "/blog" }]))}
       />
       <BlogPage />

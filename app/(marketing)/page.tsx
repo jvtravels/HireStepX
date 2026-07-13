@@ -112,6 +112,7 @@ export default async function Page() {
   const override = process.env.NEXT_PUBLIC_COMING_SOON;
 
   let gated: boolean;
+  let nonce = "";
   if (override === "0") {
     gated = false;
   } else if (override === "1") {
@@ -122,15 +123,16 @@ export default async function Page() {
     try {
       const h = await headers();
       host = (h.get("host") || "").toLowerCase().split(":")[0]; // strip port
+      nonce = h.get("x-nonce") ?? "";
     } catch { /* SSR-only API; on edge cases default to the full site */ }
     gated = PRODUCTION_HOSTS.has(host);
   }
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
       {gated ? <ComingSoon /> : <HomepageV2 />}
     </>
   );

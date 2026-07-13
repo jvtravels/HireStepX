@@ -104,6 +104,8 @@ export async function generateMetadata(
 
 /* The page itself. */
 export default async function CompanySeoPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   const { slug } = await params;
   const page = getSeoPageBySlug(slug);
   if (!page) notFound();
@@ -205,10 +207,10 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
   return (
     <>
       {/* Schema injection — placed at top so crawlers see them quickly. */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 
       <main style={{
         background: "#FAF7F0", color: "#0E0C08", minHeight: "100dvh",

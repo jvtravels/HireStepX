@@ -14,7 +14,6 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
  * Schema: ItemList (one ListItem per company group) + BreadcrumbList
  */
 
-export const dynamic = "force-static";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
@@ -90,7 +89,9 @@ const GROUPS: GroupDef[] = [
   },
 ];
 
-export default function CompaniesIndexPage() {
+export default async function CompaniesIndexPage() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   /* ItemList schema — one ListItem per company group */
   const itemListSchema = {
     "@context": "https://schema.org",
@@ -117,8 +118,8 @@ export default function CompaniesIndexPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Companies", path: "/companies" }]))} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Companies", path: "/companies" }]))} />
 
       <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>

@@ -28,7 +28,6 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-static";
 export const revalidate = 3600;
 
 /* Organization schema — used by Google to build the Knowledge Panel
@@ -97,12 +96,15 @@ const APP_SCHEMA = {
   creator: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
 };
 
-export default function Page() {
+export default async function Page() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
+
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "About", path: "/about" }]))} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_SCHEMA) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_SCHEMA) }} />
+      <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "About", path: "/about" }]))} />
+      <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_SCHEMA) }} />
+      <script type="application/ld+json" nonce={nonce || undefined} dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_SCHEMA) }} />
       <AboutV2 />
     </>
   );

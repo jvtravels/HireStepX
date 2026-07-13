@@ -29,7 +29,6 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-static";
 export const revalidate = 3600;
 
 /* HowTo schema: Google may render this as a stepped rich result for the
@@ -52,11 +51,13 @@ const HOWTO_SCHEMA = {
   ],
 };
 
-export default function Page() {
+export default async function Page() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "How it works", path: "/how-it-works" }]))} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(HOWTO_SCHEMA)} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "How it works", path: "/how-it-works" }]))} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(HOWTO_SCHEMA)} />
       <HowItWorksV2 />
     </>
   );

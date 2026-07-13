@@ -15,7 +15,6 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
  *   "best mock interview platform India"
  */
 
-export const dynamic = "force-static";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
@@ -78,7 +77,9 @@ function pageGroup(companies: string[]) {
   return SEO_PAGES.filter((p) => companies.includes(p.company));
 }
 
-export default function InterviewPrepPage() {
+export default async function InterviewPrepPage() {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -153,9 +154,9 @@ export default function InterviewPrepPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Interview Prep", path: "/interview-prep" }]))} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Interview Prep", path: "/interview-prep" }]))} />
 
       <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>

@@ -57,9 +57,6 @@ function buildCsp(nonce: string): string {
     "form-action 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    // Native browser CSP reporting — second channel in addition to the PostHog
-    // SDK listener (covers the case where JS fails to load entirely).
-    "report-uri https://us.i.posthog.com/csp",
   ].join("; ");
 }
 
