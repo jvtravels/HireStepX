@@ -1745,7 +1745,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                   Question {num}
                 </p>
               )}
-              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 30px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.25, letterSpacing: "-0.016em", textWrap: "balance" }}>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.2, letterSpacing: "-0.018em", textWrap: "balance" }}>
                 {headingText}
               </h2>
               <div style={{ fontFamily: fonts.sans, fontSize: 17, color: t.inkSoft, lineHeight: 1.8, whiteSpace: "pre-line" }}>
@@ -1758,7 +1758,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         {/* FAQ Section — accordion */}
         {post.faqs.length > 0 && (
           <section style={{ marginTop: 0, paddingTop: 56, borderTop: `1px solid ${t.line}`, marginBottom: 56 }}>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 30px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.016em" }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.018em" }}>
               Frequently asked questions
             </h2>
             <div style={{ display: "flex", flexDirection: "column" }}>
