@@ -348,6 +348,200 @@ export function QuestionSetPage({
         {/* Framework callout */}
         <FrameworkBox name={page.framework.name} summary={page.framework.summary} />
 
+        {/* Recruitment Process — rendered when steps are available */}
+        {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
+          <section style={{ marginTop: 36 }}>
+            <h2
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: "clamp(18px, 2.5vw, 24px)",
+                fontWeight: 400,
+                letterSpacing: "-0.01em",
+                color: t.coal,
+                margin: "0 0 16px",
+              }}
+            >
+              {companyLabel} Recruitment Process
+            </h2>
+            <ol
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
+            >
+              {page.recruitmentSteps.map((step, i) => (
+                <li
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: 14,
+                    alignItems: "flex-start",
+                    fontFamily: fonts.sans,
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    color: t.inkSoft,
+                  }}
+                >
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      background: t.cream,
+                      border: `1.5px solid ${t.copper}`,
+                      color: t.copper,
+                      fontFamily: fonts.sans,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginTop: 1,
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {/* Interview Rounds detail */}
+        {page.interviewRounds && page.interviewRounds.length > 0 && (
+          <section style={{ marginTop: 32 }}>
+            <h2
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: "clamp(18px, 2.5vw, 24px)",
+                fontWeight: 400,
+                letterSpacing: "-0.01em",
+                color: t.coal,
+                margin: "0 0 16px",
+              }}
+            >
+              What to expect in each round
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {page.interviewRounds.map((round, i) => {
+                /* Split "Round Title (duration):" from the detail text */
+                const colonIdx = round.indexOf(":");
+                const title = colonIdx > -1 ? round.slice(0, colonIdx) : `Round ${i + 1}`;
+                const detail = colonIdx > -1 ? round.slice(colonIdx + 1).trim() : round;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      background: t.cream,
+                      border: `1px solid ${t.line}`,
+                      borderRadius: 10,
+                      padding: "14px 18px",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: fonts.sans,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: t.coal,
+                        margin: "0 0 4px",
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      {title}
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: fonts.sans,
+                        fontSize: 13,
+                        color: t.inkSoft,
+                        margin: 0,
+                        lineHeight: 1.65,
+                      }}
+                    >
+                      {detail}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* How to answer — STAR structure guide for behavioral/HR/campus-placement */}
+        {(page.focus === "behavioral" || page.focus === "hr" || page.focus === "campus-placement") && (
+          <section
+            style={{
+              marginTop: 32,
+              background: t.creamSoft,
+              border: `1px solid ${t.copperMid}`,
+              borderRadius: 12,
+              padding: "20px 22px",
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: "clamp(17px, 2.2vw, 22px)",
+                fontWeight: 400,
+                letterSpacing: "-0.01em",
+                color: t.coal,
+                margin: "0 0 6px",
+              }}
+            >
+              How to structure your answers
+            </h2>
+            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.6 }}>
+              {companyLabel} interviewers score answers on structure and specificity, not just content. Use the STAR method for every behavioral question.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+              {[
+                { label: "S — Situation", text: "Set up the context in 1–2 sentences. Give just enough background for the story to make sense." },
+                { label: "T — Task", text: "State your personal responsibility. What were YOU specifically accountable for — not the team." },
+                { label: "A — Action", text: "This is the longest part. Describe the specific steps you took. Use 'I' not 'we'." },
+                { label: "R — Result", text: "Quantify if possible: numbers, percentages, timeline improvement. Then say what you learnt." },
+              ].map(({ label, text }) => (
+                <div key={label} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span
+                    style={{
+                      fontFamily: fonts.sans,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: t.copper,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {label}
+                  </span>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55 }}>
+                    {text}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 12,
+                color: t.inkFaint,
+                margin: "14px 0 0",
+                lineHeight: 1.55,
+                borderTop: `1px solid ${t.line}`,
+                paddingTop: 12,
+              }}
+            >
+              <strong style={{ color: t.coal }}>Common mistake:</strong> Saying &quot;we did X&quot; throughout. Interviewers score your individual contribution — if you can&apos;t separate what you did from what the team did, it signals low ownership. Practise saying &quot;I&quot; in mock sessions first.
+            </p>
+          </section>
+        )}
+
         <hr style={dividerStyle} />
 
         {/* Question list */}

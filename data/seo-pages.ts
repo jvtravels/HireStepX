@@ -152,13 +152,68 @@ export const SEO_PAGES: SeoPage[] = [
 
   /* ── TCS ───────────────────────────────────────────────────── */
   {
+    slug: "tcs-nqt-interview-questions",
+    searchPhrase: "TCS NQT Interview Questions and Eligibility 2026",
+    company: "tcs", roleFamily: "campus", focus: "campus-placement",
+    intro: "TCS NQT (National Qualifier Test) is the aptitude-based entry gate for TCS fresher hiring in India. Clearing the NQT moves you into the Ninja, Digital, or BPS track depending on your score. The NQT itself tests four sections — Numerical Ability, Verbal Ability, Reasoning Ability, and Programming Logic — and is taken online at home. Eligibility: 60%+ aggregate in 10th, 12th, and graduation; gap year up to 2 years allowed; maximum 1 active backlog at time of joining.",
+    framework: { name: "NQT prep order", summary: "Programming Logic first (highest differential) → Numerical Ability (speed practice) → Verbal Ability (parajumbles + RC) → Reasoning (Syllogisms, Blood Relations) → Mock NQTs under timed conditions." },
+    metaKeywords: ["tcs nqt interview questions", "tcs nqt eligibility 2026", "tcs national qualifier test", "tcs nqt preparation", "tcs fresher hiring 2026"],
+    sitemapPriority: 0.95,
+    recruitmentSteps: [
+      "Register on TCS NextStep portal (nextstep.tcs.com) — use your academic email",
+      "TCS NQT Online Test — 75 min: Numerical Ability (26 min), Verbal Ability (10 min), Reasoning Ability (25 min), Programming Logic (14 min)",
+      "Score determines track: high scorers qualify for Digital (₹7–9 LPA), mid-tier qualify for Ninja (₹3.36 LPA), remaining for BPS (₹2.5 LPA)",
+      "Technical Interview — CS fundamentals, project walkthrough, 1–2 basic coding questions",
+      "Managerial Round (MR) — behavioral questions, team-fit, why TCS",
+      "HR Round — relocation, salary discussion, offer acceptance",
+    ],
+    interviewRounds: [
+      "NQT Online Test (75 min): The only eliminatory filter for most candidates. Programming Logic section has the highest scoring differential — prioritise it.",
+      "Technical Interview (30–45 min): OOP, DBMS, OS, Networking basics, and a 5-minute walkthrough of your final-year project. Defending your architecture choices is essential.",
+      "Managerial Round (20–30 min): Behavioural questions — teamwork, conflict, leadership. 'Why TCS over Infosys/Wipro?' must have a specific, non-generic answer.",
+      "HR Round (15–20 min): Relocation confirmation, shift flexibility, expected CTC, joining timeline. Standard script — no curveballs if you've prepped.",
+    ],
+  },
+  {
     slug: "tcs-ninja-interview-questions",
     searchPhrase: "TCS Ninja Interview Questions for 2026 Freshers",
     company: "tcs", roleFamily: "swe", focus: "technical",
-    intro: "TCS Ninja and Digital tracks lean heavily on CS fundamentals — OOP, OS, DBMS, basic SQL. Expect rapid-fire questions, not deep dives. Final-year project explanation gets 5-6 follow-ups; be ready to defend architecture decisions you may have made hurriedly months ago.",
+    intro: "TCS Ninja is the standard IT engineering track (₹3.36 LPA base) for freshers who clear the NQT at the qualifying threshold. The technical interview leans heavily on CS fundamentals — OOP, OS, DBMS, basic SQL. Expect rapid-fire questions, not deep dives. Final-year project explanation gets 5–6 follow-ups; be ready to defend architecture decisions you may have made hurriedly months ago.",
     framework: { name: "STAR for technical", summary: "Situation (project context) → Task (your specific role) → Action (what you actually built) → Result (measurable outcome)." },
-    metaKeywords: ["tcs ninja interview", "tcs digital interview", "tcs fresher interview", "tcs technical interview", "tcs interview questions 2026"],
+    metaKeywords: ["tcs ninja interview", "tcs ninja technical round", "tcs fresher interview", "tcs technical interview 2026", "tcs 3.36 lpa track"],
     sitemapPriority: 0.95,
+    recruitmentSteps: [
+      "TCS NQT Online Test — qualify at Ninja threshold score",
+      "Technical Interview (30–45 min) — CS fundamentals and project walkthrough",
+      "Managerial Round (MR) — behavioral and team-fit assessment",
+      "HR Round — relocation, shift flexibility, joining timeline",
+    ],
+    interviewRounds: [
+      "Technical Interview (30–45 min): OOP (4 pillars with real examples), DBMS (normalisation, joins, indexes), OS (process vs thread, memory management), basic DSA. Project deep-dive: be ready to defend every design choice.",
+      "Managerial Round (20–30 min): Teamwork story, conflict resolution, 'why TCS specifically', 5-year goal. Non-generic answers are required — interviewers flag rehearsed answers.",
+      "HR Round (15–20 min): Relocation and night-shift availability are binary — Wipro and TCS both require explicit yes. CTC discussion, bond period acknowledgement, joining date.",
+    ],
+  },
+  {
+    slug: "tcs-digital-interview-questions",
+    searchPhrase: "TCS Digital Interview Questions — Higher Package Track 2026",
+    company: "tcs", roleFamily: "swe", focus: "technical",
+    intro: "TCS Digital is the higher-package track (₹7–9 LPA) for freshers who score in the top percentile on the NQT. The Digital interview is noticeably harder than Ninja — expect advanced data structures (graphs, tries, segment trees), system-level design questions, and a harder coding problem. TCS Digital engineers work on client-facing cloud and digital transformation projects; interviewers probe for genuine DSA depth, not just fundamentals.",
+    framework: { name: "Digital-grade DSA", summary: "Optimal solution from first principles → full time/space complexity proof → two alternative approaches and trade-offs → edge case enumeration → clean code with meaningful variable names." },
+    metaKeywords: ["tcs digital interview questions", "tcs digital track 2026", "tcs 7 lpa interview", "tcs digital higher package", "tcs digital eligibility"],
+    sitemapPriority: 0.92,
+    recruitmentSteps: [
+      "TCS NQT Online Test — qualify at Digital threshold (top percentile)",
+      "Coding Round — 1–2 harder DSA problems (medium-hard, 60 min)",
+      "Technical Interview — advanced CS topics, system thinking, project deep-dive",
+      "HR Round — relocation, role discussion, compensation",
+    ],
+    interviewRounds: [
+      "NQT (Digital threshold): Must score in top percentile — typically above 80th percentile in the Programming Logic section. Mock under timed conditions.",
+      "Coding Round (60 min): 1–2 medium-hard problems. Graphs, trees, and sliding window are common. Must submit working code — partial credit is limited.",
+      "Technical Interview (45–60 min): Advanced DSA + OOP at depth + basic cloud/system design questions. Expect 'what's the time complexity of your solution and can you do better?'",
+      "HR Round (15–20 min): Same script as Ninja — relocation, shift, joining, bond acknowledgement.",
+    ],
   },
   {
     slug: "tcs-hr-round-questions",
@@ -168,6 +223,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "PAR for HR", summary: "Problem (their question's underlying concern) → Answer (your direct response) → Reassurance (why you're not a flight risk)." },
     metaKeywords: ["tcs hr interview", "tcs hr round", "tcs hr questions", "tcs interview hr"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Cleared Technical Interview and Managerial Round",
+      "HR Round — the final stage before offer",
+    ],
+    interviewRounds: [
+      "HR Round (15–20 min): Covers relocation (must say yes explicitly), shift flexibility, expected CTC, why TCS, 5-year plan, and bond period confirmation. Non-negotiables: relocation and bond acknowledgement.",
+    ],
   },
 
   /* ── Infosys ───────────────────────────────────────────────── */
@@ -179,6 +241,18 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Project storytelling", summary: "Context (what + why) → Your contribution (specific tasks) → Trade-offs (what you considered but didn't pick) → Outcome (measurable impact)." },
     metaKeywords: ["infosys campus interview", "infosys fresher interview", "infosys interview questions", "infosys placement"],
     sitemapPriority: 0.9,
+    recruitmentSteps: [
+      "InfyTQ Certification (optional but preferred) — online coding and reasoning test on Infosys's own platform",
+      "Online Assessment — Reasoning Ability, Mathematical Ability, Verbal Ability, Pseudocode",
+      "HackWithInfy Coding Round (for SE Power track) — competitive programming problems",
+      "Technical Interview — CS fundamentals, project walkthrough, 1 coding problem",
+      "HR Interview — communication fit, relocation, joining timeline",
+    ],
+    interviewRounds: [
+      "Online Assessment (90–120 min): Reasoning + Math + Verbal + Pseudocode. Pseudocode section differentiates candidates more than aptitude.",
+      "Technical Interview (45 min): OOP, DBMS, OS, networking basics, project deep-dive. The project section is the longest — expect 5–6 follow-up questions on your architecture choices.",
+      "HR Interview (20–30 min): Communication quality is scored explicitly. Relocation confirmation (mandatory), joining timeline, salary discussion.",
+    ],
   },
 
   /* ── Google ────────────────────────────────────────────────── */
@@ -723,6 +797,15 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "TCS-fit signalling", summary: "Process discipline story → team player example → clear relocation/shift yes → why TCS (cite specific initiative) → 5-year goal aligned with TCS growth areas." },
     metaKeywords: ["tcs behavioral interview", "tcs managerial round", "tcs mr round questions", "tcs interview mr"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Cleared NQT Online Test and Technical Interview",
+      "Managerial Round (MR) — behavioral and team-fit screening",
+      "HR Round — final offer stage",
+    ],
+    interviewRounds: [
+      "Managerial Round (20–30 min): 4–6 behavioral questions covering teamwork, conflict, leadership, and cultural fit. 'Why TCS over Infosys/Wipro/Accenture?' is almost always asked — prepare a specific answer citing TCS's digital initiatives or domain of interest.",
+      "HR Round (15–20 min): Relocation and shift flexibility are binary — answer yes explicitly. Bond period, expected CTC, and joining date confirmation.",
+    ],
   },
 
   /* ── Infosys (Power Programmer) ────────────────────────────────────── */
@@ -734,6 +817,16 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "CP-grade prep", summary: "Full complexity analysis (best, average, worst) → space optimisation trade-offs → alternative algorithms + why you chose this one → corner cases (empty input, MAX_INT, null pointers) → clean code under time pressure." },
     metaKeywords: ["infosys power programmer interview", "infosys pp track interview", "infosys 6.5 lpa interview", "infosys coding interview"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "HackWithInfy / InfyTQ qualifying coding round — competitive programming problems",
+      "Technical Interview — advanced DSA, algorithm analysis, project deep-dive",
+      "HR Interview — relocation, joining timeline",
+    ],
+    interviewRounds: [
+      "Coding Round (90 min): 3 problems — easy, medium, hard. Fully solve 2 to qualify. Trees, graphs, and dynamic programming are frequently tested.",
+      "Technical Interview (45–60 min): Advanced DSA at implementation depth. Expect 'write the code for X' not just 'explain X'. Project architecture defence with trade-off reasoning.",
+      "HR Interview (15–20 min): Relocation, joining date, compensation discussion. Standard process — focus on the previous two rounds.",
+    ],
   },
 
   /* ── OYO ───────────────────────────────────────────────────────────── */
@@ -829,6 +922,14 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Infosys cultural fit", summary: "Communication clarity → learning agility story → integrity under pressure example → client-centricity → relocation openness (explicitly required) → why Infosys over competitors." },
     metaKeywords: ["infosys behavioral interview", "infosys hr round questions", "infosys managerial round", "infosys interview tips 2026"],
     sitemapPriority: 0.82,
+    recruitmentSteps: [
+      "Cleared online assessment and technical interview",
+      "HR Interview — behavioral and cultural fit screening",
+    ],
+    interviewRounds: [
+      "HR Interview (20–30 min): Communication quality is scored explicitly — clarity and confidence matter as much as content. Covers strengths, weaknesses, teamwork examples, relocation confirmation, and 'why Infosys.'",
+      "Managerial Round (lateral hires, 30–45 min): Focuses on stakeholder management, conflict resolution, and client delivery scenarios. Uses situational questions — prepare STAR stories from real work.",
+    ],
   },
 
   /* ── Wipro behavioral ───────────────────────────────────────────────── */
@@ -840,6 +941,14 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Wipro HR essentials", summary: "Relocation yes (be explicit) → night-shift availability yes → why Wipro (cite WILP/TurboHire/specific practice) → strength with work example → weakness with mitigation → 5-year goal aligned with IT services growth." },
     metaKeywords: ["wipro hr round questions", "wipro behavioral interview", "wipro interview tips", "wipro nlth interview 2026"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Cleared online assessment and technical interview",
+      "HR Interview — final stage before offer",
+    ],
+    interviewRounds: [
+      "HR Interview (20–30 min): Relocation and night-shift availability are non-negotiables — answer yes explicitly. Covers strength, weakness, 'why Wipro specifically', 5-year goal, and bond period acceptance.",
+      "WILP Behavioral Round (WILP candidates only, 30–45 min): More rigorous values-based interview covering learning agility, initiative, and working in client-facing environments.",
+    ],
   },
 ];
 
