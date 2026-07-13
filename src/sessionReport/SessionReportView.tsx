@@ -56,6 +56,7 @@ import { ReverseInterviewSection } from "./panels/sr-ReverseInterviewSection";
 import { NextStepsSection } from "./panels/sr-NextStepsSection";
 import { FooterSection } from "./panels/sr-FooterSection";
 import { ReferralInviteSection } from "./panels/sr-ReferralInviteSection";
+import { TestimonialNudge } from "./panels/sr-TestimonialNudge";
 import { ScoreCardDownloadButton } from "./panels/sr-ScoreCard";
 import { CampusCgpaCalibrationNote } from "./panels/sr-CampusCgpaCalibrationNote";
 import { CredibilitySection } from "./panels/sr-CredibilitySection";
@@ -478,6 +479,7 @@ export default function SessionReportView({
               onDrillSkill={onDrillSkill}
             />
             <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
+            <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
             <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
           </main>
         </div>
@@ -615,6 +617,7 @@ export default function SessionReportView({
             />
           </div>
           <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
+          <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
           <FooterSection
             onTrustAnswer={onTrustAnswer}
             onUsefulAnswer={onUsefulAnswer}

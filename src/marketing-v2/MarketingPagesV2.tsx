@@ -1853,3 +1853,227 @@ export function PaymentFailedPage() {
   );
 }
 
+/* ─────────────────────── Referral Page ─────────────────────── */
+
+const HOW_IT_WORKS = [
+  {
+    step: "01",
+    heading: "Get your link",
+    body: "Sign up or log in, then visit Dashboard → Settings → Referral to copy your personal link.",
+  },
+  {
+    step: "02",
+    heading: "Share it",
+    body: "Send your link to a friend preparing for interviews — WhatsApp, LinkedIn, or a direct message.",
+  },
+  {
+    step: "03",
+    heading: "Both of you benefit",
+    body: "Your friend gets ₹9 off their first session. You earn ₹9 credit once they complete a paid session.",
+  },
+];
+
+export function ReferralPageV2() {
+  return (
+    <PageShell>
+      {/* Hero */}
+      <section
+        style={{
+          paddingTop: "clamp(80px, 10vw, 140px)",
+          paddingBottom: "clamp(56px, 7vw, 96px)",
+          paddingLeft: 24,
+          paddingRight: 24,
+          textAlign: "center",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: fonts.sans,
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: t.copper,
+            marginBottom: 20,
+          }}
+        >
+          Refer a friend
+        </p>
+        <h1
+          style={{
+            fontFamily: fonts.serif,
+            fontSize: "clamp(42px, 6vw, 72px)",
+            fontWeight: 400,
+            color: t.coal,
+            letterSpacing: "-0.03em",
+            lineHeight: 1.04,
+            margin: "0 auto 24px",
+            maxWidth: 760,
+            textWrap: "balance" as const,
+          }}
+        >
+          Give a session,{" "}
+          <span style={{ color: t.copper }}>get a session.</span>
+        </h1>
+        <p
+          style={{
+            fontFamily: fonts.sans,
+            fontSize: "clamp(16px, 2vw, 18px)",
+            lineHeight: 1.65,
+            color: t.inkSoft,
+            maxWidth: 520,
+            margin: "0 auto 40px",
+          }}
+        >
+          Refer a friend preparing for interviews. They get ₹9 off their first
+          session. You earn ₹9 credit once they practise. No codes to track —
+          your link does it automatically.
+        </p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <a
+            href="/signup"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: fonts.sans,
+              fontSize: 15,
+              fontWeight: 700,
+              padding: "13px 28px",
+              borderRadius: 999,
+              background: t.coal,
+              color: t.cream,
+              textDecoration: "none",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Get your referral link →
+          </a>
+          <a
+            href="/dashboard"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: fonts.sans,
+              fontSize: 15,
+              fontWeight: 600,
+              padding: "13px 28px",
+              borderRadius: 999,
+              background: "transparent",
+              color: t.coal,
+              textDecoration: "none",
+              border: `1.5px solid ${t.line}`,
+            }}
+          >
+            Already a member? Go to Settings
+          </a>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section
+        style={{
+          paddingTop: "clamp(48px, 6vw, 80px)",
+          paddingBottom: "clamp(48px, 6vw, 80px)",
+          paddingLeft: 24,
+          paddingRight: 24,
+          borderTop: `1px solid ${t.line}`,
+        }}
+      >
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <p
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: t.inkSoft,
+              textAlign: "center",
+              marginBottom: 48,
+            }}
+          >
+            How it works
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 32,
+            }}
+          >
+            {HOW_IT_WORKS.map((item) => (
+              <div key={item.step} style={{ padding: "28px 32px", border: `1px solid ${t.line}`, borderRadius: 14 }}>
+                <p
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: t.copper,
+                    margin: "0 0 14px",
+                  }}
+                >
+                  {item.step}
+                </p>
+                <p
+                  style={{
+                    fontFamily: fonts.serif,
+                    fontSize: 22,
+                    fontWeight: 400,
+                    color: t.coal,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.2,
+                    margin: "0 0 10px",
+                  }}
+                >
+                  {item.heading}
+                </p>
+                <p
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 14,
+                    lineHeight: 1.65,
+                    color: t.inkSoft,
+                    margin: 0,
+                  }}
+                >
+                  {item.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Terms note */}
+      <section
+        style={{
+          paddingTop: 40,
+          paddingBottom: "clamp(64px, 8vw, 120px)",
+          paddingLeft: 24,
+          paddingRight: 24,
+          textAlign: "center",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: fonts.sans,
+            fontSize: 13,
+            lineHeight: 1.65,
+            color: t.inkSoft,
+            maxWidth: 520,
+            margin: "0 auto",
+          }}
+        >
+          Credit is applied automatically once your referred friend completes
+          their first paid session. Credits are valid for 90 days and apply
+          toward any session type. No limit on referrals.
+        </p>
+      </section>
+    </PageShell>
+  );
+}
+

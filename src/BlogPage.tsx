@@ -1479,6 +1479,370 @@ const posts: BlogPost[] = [
     ],
     cta: "Practice JP Morgan interview rounds on HireStepX — behavioral, technical, and finance domain questions with AI voice scoring and STAR feedback tailored to financial services roles.",
   },
+  {
+    slug: "startup-vs-mnc-india-career",
+    title: "Startup vs MNC India 2026 — Which Should You Choose After Engineering?",
+    metaDescription: "Startup vs MNC career in India 2026: salary comparison, growth speed, job security, learning curve, and a decision framework for engineering graduates.",
+    company: "Career",
+    category: "Career",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=500&fit=crop",
+    heroAlt: "Engineers collaborating representing startup vs MNC career choice in India",
+    datePublished: "2026-07-15",
+    intro: "30 LPA from a Series B startup vs 22 LPA from Microsoft India. The startup pays more today — but which is the better career bet over five years? The answer depends on what you want your resume to look like, not just your bank account.",
+    sections: [
+      {
+        heading: "The Real Trade-off",
+        content: "The startup vs MNC debate is rarely about money alone. The question is: what do you want your career to look like in 2 years? 5 years?\n\n**At a startup (Series B+):**\n- Earlier ownership; you own a feature or system end-to-end in year one\n- Higher variance — 50 LPA is possible at a rocketship, zero is possible at a shut-down\n- Generalist skills by necessity: infra, product, backend, occasionally customer calls\n- Limited job security below Series B\n\n**At a Tier-1 MNC (Google, Microsoft, Amazon, Goldman Sachs):**\n- Structured progression with defined promotion criteria\n- Brand name that travels — globally recognised, opens doors for 10 years\n- Narrower scope per role; deep specialist skill by year 3–4\n- Higher floor, lower ceiling on near-term compensation vs unicorn ESOPs"
+      },
+      {
+        heading: "Salary Comparison 2026",
+        content: "Median total compensation for engineers in India:\n\n**Tier-1 MNCs** (Google, Microsoft, Amazon, Goldman Sachs)\nFresher: ₹22–45 LPA | SDE-2 (3–5 yrs): ₹40–80 LPA | SDE-3 (5–8 yrs): ₹70–1.2 Cr\n\n**Tier-2 MNCs** (Accenture, Infosys, Wipro, TCS — digital tracks)\nFresher: ₹7–18 LPA | SDE-2: ₹18–35 LPA\n\n**Well-funded Startups** (Series B+, unicorns)\nFresher: ₹20–40 LPA | SDE-2 (3–5 yrs): ₹40–90 LPA (wide variance)\n\n**Early-stage Startups** (Seed, Series A)\nFresher: ₹8–20 LPA + significant ESOPs | SDE-2: ₹15–40 LPA + ESOP upside\n\nAt Tier-1 MNCs and funded startups the floor and ceiling overlap. The differentiation is in ESOP potential, progression speed, and job risk."
+      },
+      {
+        heading: "Growth and Promotion Speed",
+        content: "**MNC promotion cycles** are typically 18–24 months for the first promotion. Google L3→L4 averages 22 months in India; Amazon SDE-1→SDE-2 averages 18 months. Criteria are well-defined; you know what you are working toward.\n\n**Startup promotions** are faster on paper but noisier. At a 100-person startup you can become tech lead in 18 months. At a 10-person startup, titles are flexible and mean less in lateral recruiting — the experience and shipped product matter more.\n\n**5-year career arc:**\n- MNC engineer at year 5: SDE-2/SDE-3, recognised brand, ₹50–90 LPA at a FAANG-tier\n- Unicorn startup engineer at year 5: Staff or EM level, generalist breadth, ₹60–1.2 Cr depending on company outcome and vesting"
+      },
+      {
+        heading: "Job Security Post-2022",
+        content: "This changed sharply after the 2022–2023 wave of layoffs:\n\n**MNCs**: Even large MNCs (Google, Meta, Microsoft) ran mass layoffs. Indian employees are exposed. Severance is typically better, rehire rates are high, and the brand still opens doors quickly. Service MNCs (TCS, Infosys) have near-zero layoff risk due to headcount leverage and government relationships.\n\n**Startups**: 90% of startups fail within 5 years — a hard statistic. Series A and below are highest risk. Unicorns have better stability but are not immune: Swiggy cut 15% in 2024, Byju's collapsed entirely, MeeSho and OLA went through multiple rounds of cuts.\n\n**Practical rule**: If a startup has 18+ months of runway AND positive revenue trajectory, the risk is manageable. Avoid startups where the only answer to \"what's your runway\" is \"our next funding round\"."
+      },
+      {
+        heading: "Learning Environment",
+        content: "**MNCs**: Deep, structured learning within a domain. You will learn to build systems at scale — Google's reliability requirements, Amazon's deployment velocity. Internal L&D programs, conference budget, mentoring networks. The downside: you may spend 18 months on a single feature.\n\n**Startups**: Breadth by necessity. You will touch backend, frontend, infra, and occasionally talk to customers in your first year. The pace is intense; the feedback loop is fast. No formal L&D in early-stage companies — self-directed learning is the default.\n\nThe skill that compounds most in both environments: being able to explain technical decisions clearly to non-technical stakeholders. Neither environment trains this explicitly. It is the gap HireStepX helps you close before your next interview."
+      },
+      {
+        heading: "Decision Framework",
+        content: "**Choose a Tier-1 MNC if:**\n- You are a fresher who wants a structured first 2–3 years\n- You want international mobility (FAANG brand travels; startup brand usually does not)\n- Financial stability matters more than upside right now\n- You want recognised deep specialisation in one domain\n\n**Choose a funded startup (Series B+) if:**\n- You want to move fast, ship end-to-end, and own a business metric\n- The startup has named investors, 18+ months runway, and revenue growth you can verify\n- You have the financial cushion to absorb ESOP illiquidity for 3–5 years\n- You are comfortable switching companies if the startup stalls\n\n**Do not join an early-stage startup if:**\n- It is your first job and you have no financial cushion\n- The pitch is dominated by ESOPs at a pre-Series A valuation\n- The founding team cannot explain their runway, customer count, or revenue trajectory clearly\n\nMost high-performing engineers do both over a career: MNC first for depth and brand, then startup for speed and ownership."
+      },
+    ],
+    faqs: [
+      {
+        question: "Do startups pay more than MNCs in India in 2026?",
+        answer: "It depends on stage. Well-funded startups (Series B to pre-IPO) often pay more than mid-tier MNCs but less than Tier-1 MNCs like Google or Goldman Sachs. Early-stage startups typically pay below-market base with ESOP upside that may or may not materialise."
+      },
+      {
+        question: "Is MNC experience better for an MBA application from India?",
+        answer: "A recognised MNC brand (McKinsey, Goldman, Google, Amazon) carries stronger weight at IIM/ISB compared to an unknown startup. However, a high-growth startup role with measurable business impact can be equally compelling — IIM A/B/C value entrepreneurial profiles highly."
+      },
+      {
+        question: "Can you switch from an MNC to a startup after 3 years?",
+        answer: "Yes, and this is the most common high-earning career path in India. MNC-to-startup transitions typically happen at the 3–5 year mark when engineers have enough depth to operate independently. The reverse (startup-to-MNC) is also possible but requires strong DSA and system design preparation for technical rounds."
+      },
+      {
+        question: "How are ESOPs taxed in India for startup employees?",
+        answer: "ESOPs in India are taxed at two points: at exercise (as perquisite income, taxed at your income slab rate) and at sale (capital gains — 20% LTCG with indexation if unlisted shares held 24+ months post exercise). Unlisted company ESOPs are illiquid until an IPO or secondary transaction. Always model the tax cost before exercising a large ESOP grant."
+      },
+    ],
+    relatedSlugs: ["salary-negotiation-tips-india", "product-manager-salary-india-2026", "system-design-interview-preparation"],
+    practicePageSlugs: [
+      { label: "Startup SDE Interview Practice", slug: "startup-software-engineer-interview" },
+      { label: "MNC Technical Interview Practice", slug: "faang-software-engineer-interview" },
+    ],
+    cta: "Switching from a service company to a product company or startup? Practice the technical and behavioral rounds on HireStepX — AI voice mock interviews with STAR scoring and company-specific question banks.",
+  },
+  {
+    slug: "fresher-salary-india-2026",
+    title: "Fresher Salary in India 2026 — What to Expect and How to Negotiate",
+    metaDescription: "Fresher salary in India 2026 by company tier, role, and city. What TCS, Infosys, Wipro, Flipkart, and FAANG pay freshers — and how to negotiate your first offer.",
+    company: "Industry",
+    category: "Salary Guide",
+    readTime: "6 min",
+    heroImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&h=500&fit=crop",
+    heroAlt: "Graduate holding degree representing fresher salary expectations in India",
+    datePublished: "2026-07-15",
+    intro: "The gap between the highest and lowest paying fresher jobs in India is almost 15x. TCS Ninja starts at ₹3.36 LPA; Google India starts at ₹22–32 LPA. Knowing which tier you are targeting — and what's realistic — changes how you prepare.",
+    sections: [
+      {
+        heading: "Tier-1 Product Company Salaries (FAANG and Equivalents)",
+        content: "These companies recruit from IIT/NIT campuses and through rigorous off-campus processes:\n\n**Google India**: ₹22–32 LPA (SDE intern converts typically get ₹25–30 LPA)\n**Microsoft India**: ₹20–30 LPA (varies by team, Hyderabad vs Noida)\n**Amazon India**: ₹18–26 LPA (includes signing bonus, year-1 RSU cliff)\n**Goldman Sachs India**: ₹28–40 LPA (highest paying for freshers with finance exposure)\n**Flipkart SDE-1**: ₹20–28 LPA\n**Razorpay SDE-1**: ₹22–30 LPA\n**CRED SDE-1**: ₹24–32 LPA\n\n**How to get here**: Tier-1 companies run 5–6 technical rounds with LeetCode medium/hard DSA, system design (even for freshers at Google), and behavioral rounds. Strong competitive programming (Codeforces 1600+, Codechef 4-star) combined with 2 relevant internships is the realistic profile."
+      },
+      {
+        heading: "Tier-2 Product Company Salaries",
+        content: "Startups, SaaS companies, and mid-sized tech firms:\n\n**Swiggy SDE-1**: ₹18–25 LPA\n**Zomato SDE-1**: ₹16–22 LPA\n**Zepto/Blinkit SDE-1**: ₹18–26 LPA\n**Freshworks SDE-1**: ₹10–16 LPA\n**Zoho SDE-1**: ₹7–12 LPA\n**PhonePe SDE-1**: ₹18–24 LPA\n**Groww SDE-1**: ₹18–26 LPA\n\nMost Tier-2 product companies run 3–4 technical rounds. DSA at LeetCode medium level + at least one full-stack or backend project is the expected profile."
+      },
+      {
+        heading: "IT Service Company Salaries",
+        content: "Service companies hire in bulk and have structured bands:\n\n**TCS Ninja**: ₹3.36 LPA\n**TCS Digital**: ₹7 LPA\n**TCS Prime**: ₹9–14 LPA (campus-only, top rankers)\n**Infosys Systems Engineer**: ₹3.6–4.25 LPA\n**Infosys Digital Specialist**: ₹8–10 LPA\n**Wipro Turbo NLTH**: ₹6.5–7 LPA\n**Wipro NLTH Standard**: ₹3.5–4.5 LPA\n**Cognizant**: ₹4–5 LPA\n**Capgemini**: ₹4–5 LPA\n**Accenture Packaged App Associate**: ₹4.5–5.5 LPA\n\nThese salaries are on fixed-package bands with limited negotiation room for freshers."
+      },
+      {
+        heading: "Salary by Role",
+        content: "Role determines base; company determines ceiling:\n\n**Software Development Engineer (SDE/SWE)**: ₹3.5–32 LPA depending on tier\n**Data Analyst**: ₹4–12 LPA at service companies; ₹10–22 LPA at product companies\n**Business Analyst**: ₹5–10 LPA at service companies; ₹12–22 LPA at product companies\n**Product Manager (APM programs)**: ₹15–30 LPA at Tier-1 product companies (Google APM, Amazon APM, Flipkart etc.)\n**DevOps/SRE**: ₹6–18 LPA, strong demand especially at cloud-native companies\n**Machine Learning Engineer**: ₹12–35 LPA, high variance — ML roles at FAANG pay near-SDE levels; at startups, ML fresher pay is irregular\n\nSDE roles have the highest volume of high-paying jobs for freshers. Data/ML roles have higher ceilings but fewer openings at top pay."
+      },
+      {
+        heading: "City-wise Salary Adjustment",
+        content: "Most companies have national pay bands, but cost of living and campus proximity create effective differences:\n\n**Bangalore**: Highest demand, most product company offices; SDE pay is 10–15% above national average at Tier-2 companies due to competition\n**Hyderabad**: Strong presence of Microsoft, Google, Amazon, Goldman; pay is comparable to Bangalore\n**Pune**: Tier-2 product companies + IT services hub; SDE pay is 5–10% below Bangalore for equivalent role\n**Mumbai**: Finance-adjacent roles (Goldman, JPMorgan, Citibank tech) pay premium; other SDE roles are 5–8% below Bangalore\n**Chennai**: Majority service IT; product company presence is limited; SDE pay 10–20% below Bangalore at equivalent role\n**Delhi/NCR**: Government tech + startup ecosystem; pay is competitive for NCR-native companies (Paytm, InMobi) but lower average than Bangalore"
+      },
+      {
+        heading: "How to Negotiate Your First Offer",
+        content: "Most freshers believe their first offer is non-negotiable. This is partially true for service IT (TCS, Infosys — fixed band) but false for product companies.\n\n**What you can negotiate:**\n- Joining bonus (often 1–3 LPA; easiest to get them to increase)\n- ESOPs or RSU grant size (especially at startups)\n- Location preference (Bangalore/Hyderabad vs other cities can affect effective pay significantly)\n- Start date (delay start = more time to improve your position)\n\n**What you cannot negotiate (fresher level):**\n- Base salary at service IT companies — it's fixed\n- FAANG base salary (well-defined band for each level)\n\n**Script that works**: \"I have a competing offer from [Company] at ₹X. I'm genuinely excited about this role — is there any flexibility on the joining bonus or RSU grant to close the gap?\"\n\n**Data point to know**: 60% of candidates who negotiate their first offer at product companies get an improvement, according to Glassdoor India 2025 survey data."
+      },
+    ],
+    faqs: [
+      {
+        question: "What is the average salary for freshers in India in 2026?",
+        answer: "The median fresher salary across all engineering disciplines in India in 2026 is approximately ₹4.5–6 LPA. The range is ₹3.36 LPA (TCS Ninja) to ₹32 LPA (Google India SDE-1). The median conceals a bimodal distribution: service IT companies cluster at ₹3.5–7 LPA while product companies cluster at ₹18–30 LPA."
+      },
+      {
+        question: "Is a 10 LPA package good for a fresher in India?",
+        answer: "Yes — ₹10 LPA for a fresher in India 2026 is significantly above the national median and indicates a Tier-2 product company or a strong digital track at a service company (TCS Digital, Infosys DSE). It puts you in roughly the top 15% of fresher compensation nationally."
+      },
+      {
+        question: "How long does it take to get to 20 LPA in India after joining as a fresher?",
+        answer: "At a Tier-1 product company: 2–3 years (one promotion from SDE-1 to SDE-2). At a Tier-2 product company: 3–5 years, possibly requiring a lateral switch. At a service IT company: typically 8–12 years via internal promotions, or 3–5 years via switching to a product company."
+      },
+      {
+        question: "Can freshers negotiate salary in India?",
+        answer: "At product companies: yes — joining bonuses, ESOP grants, and RSU sizes are negotiable even for freshers. At service IT companies (TCS, Infosys, Wipro): base salary is on fixed bands and rarely negotiable, but location and start date can be discussed."
+      },
+    ],
+    relatedSlugs: ["startup-vs-mnc-india-career", "salary-negotiation-tips-india", "campus-placement-interview-tips"],
+    practicePageSlugs: [
+      { label: "Fresher SDE Interview Practice", slug: "fresher-software-engineer-interview" },
+      { label: "HR Interview Practice for Freshers", slug: "hr-behavioral-interview-questions" },
+    ],
+    cta: "Preparing for your first tech job interview? Practice with HireStepX — AI voice mock interviews with STAR scoring tailored to fresher-level behavioral and technical questions.",
+  },
+  {
+    slug: "ibm-interview-questions-india-2026",
+    title: "IBM India Interview Questions 2026 — SDE, GBS Consultant & Systems Analyst",
+    metaDescription: "IBM India interview guide 2026. Covers the full process for SDE, GBS Consulting Analyst, and Systems Analyst roles — aptitude test, technical rounds, behavioral IBM values interview, and salary.",
+    company: "IBM",
+    category: "Company Guides",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=500&fit=crop",
+    heroAlt: "Technology office representing IBM India interview preparation",
+    datePublished: "2026-07-15",
+    intro: "IBM India hires across three distinct tracks — software development, GBS consulting, and infrastructure/cloud services. Each has a different interview format, different technical depth, and different compensation. Here is what to prepare for each.",
+    sections: [
+      {
+        heading: "IBM India Interview Process Overview",
+        content: "IBM India's hiring process varies by track but has a standard skeleton:\n\n**Application**\n→ **IBM Cognitive Assessment** (online; 30 min; tests logical reasoning, numerical aptitude, and verbal ability)\n→ **Technical Round 1** (video/in-person; 45–60 min; role-specific)\n→ **Technical Round 2** (for SDE roles; system design or domain depth)\n→ **HR/Competency Round** (30 min; IBM values alignment)\n→ **Offer\n\n**Campus hiring** (IIT/NIT and IBM-affiliated colleges) skips the cognitive test and goes directly to a technical round.\n\n**Key IBM recruiting fact**: IBM India hires in volume through annual campus drives. For lateral (experienced) hiring, the process is more rigorous and includes a panel technical interview."
+      },
+      {
+        heading: "SDE Technical Questions",
+        content: "IBM SDE roles (Kyndryl-spun services aside) cover software development for internal IBM platforms and client projects:\n\n**Data Structures and Algorithms**\n- Array manipulation: sliding window, prefix sums, two-pointer problems\n- Linked lists: reverse, detect cycle, merge sorted lists\n- Trees: inorder/preorder traversal, LCA, height\n- Dynamic programming: 0/1 knapsack, longest common subsequence\n- Graph: BFS/DFS, Dijkstra (less commonly)\n\nDifficulty: LeetCode Easy to Medium. IBM is not FAANG — you will not see Hard LeetCode problems regularly.\n\n**Core concepts asked in IBM SDE rounds:**\n- OOP fundamentals: inheritance, polymorphism, encapsulation, abstraction\n- DBMS: normalisation (1NF–3NF), JOINs, indexing, ACID properties\n- OS: process vs thread, deadlock conditions, memory management\n- Networking: OSI model layers, TCP vs UDP, HTTP vs HTTPS\n\n**Languages accepted**: Java (most common), Python, C++. IBM uses Java heavily internally."
+      },
+      {
+        heading: "IBM GBS (Global Business Services) Consultant",
+        content: "IBM GBS hires Consulting Analysts and Business Analysts for client delivery roles. The interview focuses on business problem-solving, not coding:\n\n**GBS Round 1: Case-based group discussion or individual case**\n- A business scenario is presented (process improvement, cost reduction, digital transformation)\n- You are expected to structure the problem, identify root causes, recommend solutions with metrics\n- No financial modelling required at the entry level\n\n**GBS Round 2: Competency interview**\n- Behavioral questions against IBM's Leadership Competencies framework\n- STAR format expected: Situation, Task, Action, Result with quantified outcome\n- Common themes: working in ambiguity, stakeholder management, learning agility\n\n**GBS Round 3: HR + values alignment**\n- \"Why IBM?\" (needs a specific answer referencing IBM's industry verticals or recent acquisitions like Apptio or StreamSets)\n- \"Tell me about a time you had to adapt quickly\"\n\nGBS freshers are expected to have at least one internship in consulting, analytics, or operations."
+      },
+      {
+        heading: "IBM Behavioral and Values Questions",
+        content: "IBM uses a values-based interview framework across all tracks. IBM's core values: **Dedication to every client's success**, **Innovation that matters**, **Trust and personal responsibility**.\n\n**Most asked IBM behavioral questions:**\n1. \"Tell me about a time you took ownership of a problem outside your role.\"\n2. \"Describe a time when you had to learn something quickly under pressure.\"\n3. \"Give an example of when you had to influence someone without authority.\"\n4. \"Tell me about a project where you had to balance technical quality with a deadline.\"\n5. \"Describe a time when a plan you made did not go as expected — what did you do?\"\n\n**What IBM values in answers**: clear ownership of the problem, evidence of learning, quantified outcome, and honest reflection on what you'd do differently. Answers that attribute success to \"the team\" without specifying your individual contribution score poorly.\n\n**THINK badge**: IBM's internal recognition program. Mentioning it as a goal shows cultural awareness."
+      },
+      {
+        heading: "IBM India Compensation 2026",
+        content: "IBM India salaries are below Tier-1 MNCs but above mid-tier IT service companies:\n\n**SDE Fresher (Package Application Associate / Associate)**: ₹6.5–9 LPA\n**SDE 2 years experience**: ₹12–18 LPA\n**SDE 5 years (Specialist/Senior)**: ₹20–32 LPA\n\n**GBS Consulting Analyst (Fresher)**: ₹6–8.5 LPA\n**GBS Senior Consultant (4–6 yrs)**: ₹16–28 LPA\n\n**IBM Cloud/AWS Practice roles**: ₹8–14 LPA fresher, higher at senior levels\n\n**Benefits**: IBM offers ESOP-equivalent through RSU grants at senior levels, strong L&D (IBM SkillsBuild), and historically good job security (IBM has not had mass layoffs in India comparable to US operations).\n\n**Negotiation note**: IBM fresher salaries are partially fixed by band but joining bonuses (₹50K–1.5 LPA) and location preferences are negotiable."
+      },
+    ],
+    faqs: [
+      {
+        question: "Is the IBM interview hard for freshers?",
+        answer: "Moderate. The cognitive assessment is the first filter — straightforward with practice. The technical round for SDE roles covers basic DSA (LeetCode Easy–Medium) and core CS fundamentals. GBS rounds are behaviorally intensive but not technically demanding. With 2–3 weeks of targeted preparation, most engineering graduates can clear IBM's fresher rounds."
+      },
+      {
+        question: "What is IBM India fresher salary in 2026?",
+        answer: "IBM India fresher salary in 2026 ranges from ₹6.5–9 LPA for SDE roles and ₹6–8.5 LPA for GBS Consulting Analyst roles. This is significantly above IT service companies (TCS, Infosys) but below Tier-1 product companies (Amazon, Flipkart)."
+      },
+      {
+        question: "What is the IBM cognitive assessment?",
+        answer: "The IBM Cognitive Ability Test (sometimes called the IBM AI-enhanced assessment) is a 30-minute online test covering logical reasoning, numerical aptitude, and verbal ability. It is not a coding test. A score above 65–70% typically clears the filter for most IBM roles."
+      },
+      {
+        question: "Does IBM India hire from non-IIT colleges?",
+        answer: "Yes — IBM India hires heavily from tier-2 and tier-3 colleges through mass campus drives. IBM has partnerships with many deemed universities and conducts off-campus drives. The evaluation is based on the cognitive assessment and technical rounds, not college brand."
+      },
+    ],
+    relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "behavioral-interview-questions-freshers"],
+    practicePageSlugs: [
+      { label: "IBM SDE Interview Practice", slug: "ibm-software-engineer-interview" },
+      { label: "IBM GBS Consultant Interview", slug: "ibm-consulting-analyst-interview" },
+    ],
+    cta: "Preparing for IBM India interviews? Practice behavioral rounds with STAR scoring and technical mock interviews on HireStepX — AI voice feedback tailored to IBM's values-based interview format.",
+  },
+  {
+    slug: "dsa-60-day-preparation-plan",
+    title: "DSA 60-Day Preparation Plan — From Basics to Product Company Ready",
+    metaDescription: "60-day DSA preparation plan for product company interviews in India. Week-by-week schedule covering arrays, trees, graphs, DP, and mock interviews — with time estimates and resource links.",
+    company: "Strategy",
+    category: "Strategy",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=500&fit=crop",
+    heroAlt: "Person studying at desk representing 60-day DSA preparation plan",
+    datePublished: "2026-07-15",
+    intro: "Most DSA preparation advice is either too vague ('solve 500 LeetCode problems') or too scattered to follow consistently. This plan gives you a week-by-week schedule from zero DSA knowledge to product-company-ready — including the behavioral prep that most plans skip.",
+    sections: [
+      {
+        heading: "How to Use This Plan",
+        content: "**Time commitment**: 2–3 hours per day, 6 days per week. Total: ~150 hours over 60 days.\n\n**What you need before starting**:\n- Basic programming in one language (Python, Java, or C++)\n- Comfortable with loops, arrays, functions, basic OOP\n- LeetCode account (free tier is sufficient for this plan)\n\n**Tracking your progress**:\n- Keep a problem log: date | problem name | difficulty | time taken | approach | mistakes\n- Revisit problems you solved more than 3 weeks ago — retention requires repetition\n- Score yourself: Easy solved in <15 min = good. Medium in <30 min = good. Hard in <45 min = good.\n\n**What this plan does NOT cover**: system design (requires a separate 30-day plan), behavioral interviews (see our STAR method guide). Both are required for Tier-1 companies. Plan 10–15 extra minutes daily for behavioral prep in parallel."
+      },
+      {
+        heading: "Weeks 1–2: Arrays, Strings, and Two Pointers",
+        content: "**Week 1: Arrays and prefix sums (Days 1–7)**\n- Day 1–2: Brute force array problems — max subarray, find duplicates, rotate array\n- Day 3–4: Prefix sums — range sum query, subarray sum equals k\n- Day 5–6: Sliding window — longest substring without repeating characters, max sum subarray of size k\n- Day 7: Review + revisit weak problems from the week\n\n**Week 2: Strings and two pointers (Days 8–14)**\n- Day 8–9: String manipulation — anagram check, palindrome, reverse words\n- Day 10–11: Two pointers — container with most water, trapping rain water, 3-sum\n- Day 12–13: Binary search — first and last position, rotated sorted array, search 2D matrix\n- Day 14: Mock session — 3 problems timed at 30 min each with no hints\n\n**Target by end of week 2**: 40 problems solved. Comfortable with all easy, attempting mediums."
+      },
+      {
+        heading: "Weeks 3–4: Linked Lists, Stacks, Queues, and Trees",
+        content: "**Week 3: Linked lists and stacks (Days 15–21)**\n- Day 15–16: Linked list basics — reverse, find middle, detect cycle (Floyd's algorithm)\n- Day 17–18: Merge sorted lists, remove Nth node from end, copy list with random pointer\n- Day 19–20: Stacks — valid parentheses, min stack, next greater element, evaluate expression\n- Day 21: Review + 5 mixed problems from weeks 1–3\n\n**Week 4: Binary trees and BST (Days 22–28)**\n- Day 22–23: Tree traversals — inorder, preorder, postorder (recursive and iterative)\n- Day 24–25: Tree problems — height, diameter, lowest common ancestor, path sum\n- Day 26–27: BST — validate BST, kth smallest, convert sorted array to BST\n- Day 28: Mock session — 4 problems, 2 linked list + 2 tree, timed\n\n**Target by end of week 4**: 90 problems solved. Confident on easy, comfortable on medium."
+      },
+      {
+        heading: "Weeks 5–6: Graphs, Heaps, and Dynamic Programming",
+        content: "**Week 5: Graphs and heaps (Days 29–42)**\n- Day 29–31: Graph basics — BFS and DFS, connected components, number of islands, course schedule\n- Day 32–33: Shortest path — Dijkstra, Bellman-Ford (concept), topological sort\n- Day 34–35: Heap/priority queue — kth largest element, merge k sorted lists, top k frequent elements\n- Day 36: Mock session — 3 graph problems timed\n\n**Week 6: Dynamic programming (Days 37–42)**\n- Day 37–38: 1D DP — climbing stairs, house robber, coin change\n- Day 39–40: 2D DP — longest common subsequence, 0/1 knapsack, minimum path sum\n- Day 41–42: DP on trees and intervals — burst balloons (concept), unique BSTs\n\n**Target by end of week 6**: 150 problems solved. Able to code DP solutions for medium problems."
+      },
+      {
+        heading: "Weeks 7–8: Mock Interviews and Pattern Consolidation",
+        content: "**Week 7: Timed mock sessions (Days 43–49)**\n- Three 60-minute mock sessions per week (2 problems each, competitive format)\n- Identify your 3 weakest pattern categories and do focused drills on those\n- Start writing down your problem-solving approach in English before coding — this is what you will do in real interviews\n\n**Week 8: Company-specific preparation (Days 50–56)**\n- Flipkart/Amazon: practice OOP design questions + behavioral LP questions\n- Google/Microsoft: practice harder DP and graph problems + one system design concept per day\n- TCS/Infosys: practice OA format timed tests — speed matters more than difficulty\n\n**Days 57–60: Final review**\n- Revisit all problems you marked as weak in your problem log\n- Do one full 3-hour mock interview each day\n- Practice talking through your solution out loud — interviews are about communication, not just code\n\n**Target by end of 60 days**: 200+ problems solved, 10+ mock sessions, comfortable in a 45-minute technical interview."
+      },
+      {
+        heading: "Resources and Tools",
+        content: "**Problem banks (in order of recommendation)**:\n1. LeetCode (free tier) — the standard; company tags for targeted practice\n2. NeetCode.io — curated 150-problem list with video explanations; best for beginners\n3. InterviewBit — good for FAANG-India preparation; less popular but high quality\n\n**For system design (parallel prep)**:\n- Grokking the System Design Interview (Educative.io)\n- ByteByteGo by Alex Xu — YouTube channel (free) or book\n\n**For behavioral interviews**:\n- STAR method practice on HireStepX — voice AI scores your answer on structure, specificity, and delivery in real time\n- Amazon Leadership Principles guide (relevant for Amazon but also useful framework for all companies)\n\n**Time management in an actual interview**:\n- 2 min: understand the problem, repeat constraints, ask about edge cases\n- 5 min: brute force approach, confirm with interviewer\n- 15 min: optimal approach, code it\n- 3 min: test with examples, discuss edge cases\n- 5 min: complexity analysis (time and space)"
+      },
+    ],
+    faqs: [
+      {
+        question: "Is 60 days enough for DSA preparation for product companies?",
+        answer: "60 days is enough to go from basic DSA to clearing Tier-2 product company (Swiggy, Zomato, Freshworks) technical rounds. For Tier-1 MNCs (Google, Microsoft, Amazon), 90–120 days is more realistic, especially if you need to develop system design skills in parallel."
+      },
+      {
+        question: "How many LeetCode problems should I solve before the interview?",
+        answer: "Quality beats quantity. 150 well-understood problems (where you can explain the approach from scratch) are more valuable than 500 memorised solutions. Focus on Easy (25), Medium (100), Hard (25) with a bias toward the patterns most relevant to your target company."
+      },
+      {
+        question: "Should I use Python or Java for DSA practice in India?",
+        answer: "Python for practice (less boilerplate, faster to code), Java or C++ for final interviews if your target company is IBM, TCS, or a Java-heavy organisation. FAANG India accepts Python — Google and Amazon India both commonly see Python in interviews. Choose the language you are most fluent in."
+      },
+      {
+        question: "What is the hardest part of DSA preparation for Indian candidates?",
+        answer: "Dynamic programming is consistently reported as the hardest section. The gap between understanding a DP concept and being able to derive it in a 30-minute timed interview is larger than any other topic. Spend at least 10 days on DP — more if you find 2D DP difficult."
+      },
+    ],
+    relatedSlugs: ["system-design-interview-preparation", "faang-interview-preparation-india-2026", "star-method-interview-answers"],
+    practicePageSlugs: [
+      { label: "DSA Mock Interview Practice", slug: "data-structures-algorithm-interview" },
+      { label: "System Design Interview Practice", slug: "system-design-interview-questions" },
+    ],
+    cta: "Once your DSA is solid, practice the communication layer on HireStepX — AI voice mock interviews score how clearly you explain your approach, which is what interviewers actually evaluate.",
+  },
+  {
+    slug: "product-manager-salary-india-2026",
+    title: "Product Manager Salary India 2026 — APM to Director, All Levels",
+    metaDescription: "Product Manager salary in India 2026: APM to Director, by company tier and city. Includes APM program list, skills that command premium, and PM vs SDE salary comparison.",
+    company: "Industry",
+    category: "Salary Guide",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=500&fit=crop",
+    heroAlt: "Product roadmap representing PM salary guide India 2026",
+    datePublished: "2026-07-15",
+    intro: "Product management is one of the highest-paid functions at Indian product companies — Senior PM roles at Swiggy, Razorpay, or PhonePe pay ₹50–80 LPA. But entry points are narrow and the APM path is competitive. Here is what the market actually pays at each level.",
+    sections: [
+      {
+        heading: "APM Salary (Associate/Junior PM)",
+        content: "APM programs are the primary fresher entry to PM roles at product companies. These are structured 12–24 month programs that typically end in a full PM offer:\n\n**Top APM Programs India 2026:**\n- Google APM India: ₹22–30 LPA (application through campus; extremely selective)\n- Amazon APM: ₹20–26 LPA\n- Flipkart APM: ₹18–24 LPA\n- Razorpay APM: ₹16–22 LPA\n- Swiggy APM: ₹15–20 LPA\n- PhonePe APM: ₹16–22 LPA\n- Freshworks APM: ₹12–16 LPA\n\n**How to get into an APM program**: Most require a BTech from a Tier-1 college + 1–2 relevant internships (product intern, growth intern, analytics intern). A few programs (Freshworks, smaller companies) are accessible from Tier-2 colleges with strong product portfolios."
+      },
+      {
+        heading: "PM Salary by Level",
+        content: "Once in a product career, compensation scales rapidly:\n\n**PM-1 / Product Manager (2–4 years experience)**\n- Tier-1 product companies: ₹25–45 LPA\n- Tier-2 product companies: ₹18–32 LPA\n\n**Senior PM (4–7 years experience)**\n- Tier-1 (Flipkart, Razorpay, Swiggy, CRED): ₹45–80 LPA\n- Tier-2: ₹30–55 LPA\n\n**Principal PM / Group PM (7–10 years)**\n- Tier-1: ₹80–1.2 Cr (includes ESOPs)\n- FAANG India: ₹1–1.8 Cr at Staff PM / Group PM equivalent\n\n**Director of Product (10+ years)**\n- ₹1.2–2.5 Cr at Tier-1 product companies\n- VP Product roles at scale-ups: ₹2–4 Cr"
+      },
+      {
+        heading: "PM Salary by Company",
+        content: "Company tier matters more for PMs than almost any other function:\n\n**FAANG India** (Google, Amazon, Microsoft)\nSenior PM: ₹80–1.4 Cr | Principal PM: ₹1.2–2 Cr\n\n**Fintech unicorns** (Razorpay, PhonePe, Groww, CRED)\nSenior PM: ₹50–90 LPA | Group PM: ₹80–1.4 Cr\n\n**Consumer internet** (Swiggy, Zomato, Flipkart, Meesho)\nSenior PM: ₹45–80 LPA | Group PM: ₹70–1.2 Cr\n\n**B2B SaaS** (Freshworks, Zoho, Chargebee, Postman)\nSenior PM: ₹30–55 LPA (below consumer internet but comparable product depth)\n\n**IT Services** (TCS, Infosys, Wipro — digital product roles)\nProduct Manager (BA equivalent): ₹12–24 LPA (not a true PM role; primarily delivery-focused)"
+      },
+      {
+        heading: "Skills That Command a Premium",
+        content: "Not all PM skills pay equally in 2026:\n\n**High-premium skills:**\n- **SQL + data analysis**: PMs who can independently pull and interpret data without depending on analysts get 15–25% higher offers\n- **Growth product experience**: activation, retention, monetisation PMs are in highest demand\n- **B2B/Enterprise product**: harder than consumer, specialised; commands a premium especially at SaaS companies\n- **Payments/fintech domain**: Razorpay, PhonePe, NPCI ecosystem PMs with domain depth are hard to find\n\n**Table-stakes skills (no premium, just required)**:\n- Writing PRDs and user stories\n- Roadmap prioritisation frameworks\n- Stakeholder communication\n- Basic UX research methods\n\n**Skills being phased out**: waterfall delivery PMs with no analytics skills are being replaced; service IT \"product owner\" roles that are actually project management are poorly paid."
+      },
+      {
+        heading: "PM Salary vs SDE Salary in India",
+        content: "A common question: should you stay in SDE or transition to PM?\n\n**At fresher level**: SDE pays more initially — Google SDE-1 ₹25–32 LPA vs Google APM ₹22–30 LPA. But the PM track scales faster as a fraction of equity and senior compensation.\n\n**At senior level (5–8 years)**: PM and SDE are roughly comparable at the same company. A Senior SDE-2/SDE-3 at FAANG India earns ₹70–1.2 Cr. A Senior/Group PM at the same company earns ₹80–1.4 Cr.\n\n**Key difference**: PMs at top companies receive significant equity. ESOP vesting at a pre-IPO company at Senior PM level can represent 2–5x the base salary over a 4-year vest.\n\n**Who should not switch SDE→PM**: Engineers who are deeply satisfied with technical craft and want to stay hands-on in code. PMs at Tier-1 companies write almost no code — the work is communication, prioritisation, and metrics."
+      },
+      {
+        heading: "How to Get Into PM Roles Without an APM Program",
+        content: "The APM route is not the only path into product management:\n\n**Internal transition** (most reliable): Work as an SDE or analyst for 2–3 years, build domain credibility, then apply for an internal PM role. This is the path 40–50% of Indian PMs take. Requires proactively owning product decisions in your current role.\n\n**MBA route**: IIM A/B/C, ISB, or IIM L/K/I place into PM roles at Tier-1 companies. MBA cohort PM offers are typically ₹25–40 LPA fresher. The MBA pays off at ₹1+ Cr senior PM levels later — the question is whether you want to spend 2 years and ₹25–35 LPA in fees.\n\n**Bootcamp/portfolio route** (early-stage only): Build a public product portfolio (app, Notion case study, teardowns), apply to seed/Series A startups. This only works for companies that cannot compete for MBA talent — and the pay reflects that (₹10–18 LPA to start)."
+      },
+    ],
+    faqs: [
+      {
+        question: "What is the starting salary for Product Managers in India in 2026?",
+        answer: "APM/Junior PM salaries at Tier-1 product companies range from ₹15–30 LPA in 2026. Google APM pays the highest at ₹22–30 LPA. Freshworks and Zoho APM programs start at ₹12–16 LPA. The fresher PM salary is lower than senior SDE roles at the same company but scales faster at director level."
+      },
+      {
+        question: "Do product managers need to know coding in India?",
+        answer: "Not required, but a strong advantage. PMs who can read code, understand API contracts, and write basic SQL get significantly faster traction in cross-functional environments. Most Tier-1 Indian product companies do not require coding in PM interviews but do run SQL and analytics case rounds."
+      },
+      {
+        question: "What MBA is best for Product Management in India?",
+        answer: "IIM Ahmedabad, IIM Bangalore, and ISB are the top MBA programs for PM placement in India. Google, Flipkart, Amazon, and McKinsey Digital all recruit from these campuses. IIM Calcutta, Kozhikode, and Lucknow place into Tier-2 product companies. XLRI and MDI place predominantly into consulting, not pure PM roles."
+      },
+      {
+        question: "Is Product Management a good career in India in 2026?",
+        answer: "Yes — but the path is narrow. There are roughly 10–15x more SDE roles than PM roles at Indian product companies. Competition for APM positions is intense. The upside is real: Senior PM compensation at Tier-1 companies (₹50–1 Cr+) is among the highest for non-technical roles in India's tech sector."
+      },
+    ],
+    relatedSlugs: ["startup-vs-mnc-india-career", "zomato-product-manager-interview-2026", "salary-negotiation-tips-india"],
+    practicePageSlugs: [
+      { label: "PM Interview Practice", slug: "product-manager-interview-questions" },
+      { label: "APM Interview Practice", slug: "associate-product-manager-interview" },
+    ],
+    cta: "Preparing for a PM or APM interview? Practice product case studies and behavioral rounds on HireStepX — AI voice scoring with STAR feedback tailored to product management interview formats.",
+  },
+  {
+    slug: "engineering-manager-interview-india-2026",
+    title: "Engineering Manager Interview Questions India 2026 — What to Expect",
+    metaDescription: "Engineering Manager interview preparation for India 2026. Covers what EM interviews test, system design for managers, people management questions, execution questions, and compensation.",
+    company: "Strategy",
+    category: "Career",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&h=500&fit=crop",
+    heroAlt: "Engineering team meeting representing Engineering Manager interview preparation",
+    datePublished: "2026-07-15",
+    intro: "The Engineering Manager interview is one of the hardest to prepare for because it tests two fundamentally different skills simultaneously: technical credibility and people leadership. Most candidates prepare for one and underestimate the other.",
+    sections: [
+      {
+        heading: "What EM Interviews Actually Test",
+        content: "Engineering Manager interviews evaluate four dimensions, weighted differently by company:\n\n**1. Technical credibility** (20–35% of evaluation)\nCan this person earn the respect of senior engineers? Do they understand trade-offs at the architecture level? Have they dealt with real system-scale problems?\n\n**2. People and team management** (30–40% of evaluation)\nHow do they handle performance issues, disagreements, underperformers? Can they grow engineers? How do they build psychological safety?\n\n**3. Execution and delivery** (20–30% of evaluation)\nCan they ship? How do they handle scope creep, changing requirements, competing priorities? What metrics do they own?\n\n**4. Communication and stakeholder management** (10–20% of evaluation)\nCan they represent engineering clearly to product and business leaders? How do they communicate bad news upward?\n\n**What is NOT primarily tested**: ability to write production code. Most EM rounds at Tier-1 companies include a light system design discussion, not a LeetCode coding round."
+      },
+      {
+        heading: "System Design for Engineering Managers",
+        content: "EM system design interviews differ from SDE system design in what they emphasise:\n\n**What they are NOT looking for**: byte-level optimisation, specific algorithm choices, exact database schema.\n\n**What they ARE looking for**:\n- Can you scope a system that a team of 5–8 engineers can build in a quarter?\n- Do you understand when to build vs buy vs integrate?\n- Can you articulate the operational model — who owns each component, how it degrades gracefully, what the on-call implications are?\n- Do you understand how technical debt accumulates and how you would manage it against delivery pressure?\n\n**Common EM system design prompts in India 2026**:\n- Design a ride-booking system (Uber/Ola) — how would you structure the team around this?\n- Design the notification service for a fintech app — what are the reliability requirements and how would you staff for it?\n- How would you migrate a monolith to microservices — roadmap, team structure, risk management?\n\n**Framework**: Problem scope → component ownership → team structure → risk and operational model → tech debt management"
+      },
+      {
+        heading: "People Management Questions",
+        content: "This is where most candidates who come from an IC (individual contributor) background underperform. Practice these explicitly:\n\n**Handling underperformance**:\n- \"Tell me about a time you had to manage an underperforming engineer. What did you do?\"\n- What interviewers want: early identification, clear feedback conversations, a documented improvement plan, either resolution or honest exit. They do not want: avoidance, indefinite coaching without accountability.\n\n**Resolving technical disagreements**:\n- \"Your two best engineers strongly disagree on an architectural decision. How do you handle it?\"\n- What they want: evidence-based decision framework, empowering the team to decide with data, bias for reversible decisions, ownership culture.\n\n**Growing engineers**:\n- \"How do you identify high-potential engineers and develop them?\"\n- What they want: structured 1:1s, career conversation framework, stretch assignments, sponsorship vs mentorship distinction.\n\n**Difficult conversations**:\n- \"Tell me about the hardest feedback you had to give. How did you deliver it?\"\n- Framework: Situation → specific behaviour observed (not person) → impact → ask for their perspective → agreed path forward."
+      },
+      {
+        heading: "Execution and Metrics Questions",
+        content: "EMs are accountable for delivery. These questions probe whether you understand what that means:\n\n**Project delivery under pressure**:\n- \"Tell me about a project that was at risk of missing a deadline. What did you do?\"\n- What they want: early risk identification, scope negotiation, transparent communication, not heroism.\n\n**Defining success metrics**:\n- \"You have been asked to lead a team building X feature. How do you define success?\"\n- Framework: Product metrics (adoption, retention, revenue impact) → Engineering metrics (latency, error rate, uptime) → Team metrics (cycle time, deployment frequency, incident count)\n\n**Managing competing priorities**:\n- \"Your team has three critical projects but only capacity for two. How do you prioritise?\"\n- What they want: structured framework (impact vs effort, dependency mapping), stakeholder alignment, honest communication about what will slip.\n\n**Technical debt vs feature delivery**:\n- \"Your product team is pushing for features but your team is struggling with tech debt that's slowing you down. How do you handle it?\"\n- What they want: quantified case for addressing debt (X hours per sprint lost to Y), 20% time allocation model, partnership with PM on explicit trade-offs."
+      },
+      {
+        heading: "Engineering Manager Compensation India 2026",
+        content: "EM compensation in India 2026 varies significantly by company tier and team size:\n\n**Tier-1 MNCs** (Google, Microsoft, Amazon India)\nEM-1 (team of 5–8): ₹60–1 Cr (base + bonus + RSUs)\nEM-2/Senior EM (team of 10–20): ₹90–1.5 Cr\nSenior Director (multiple teams): ₹1.5–3 Cr\n\n**Fintech unicorns** (Razorpay, PhonePe, Groww, CRED)\nEM: ₹50–80 LPA\nSenior EM/Head of Engineering (domain): ₹80–1.2 Cr\n\n**Consumer internet** (Swiggy, Zomato, Flipkart)\nEM: ₹45–75 LPA\nSenior EM: ₹70–1.1 Cr\n\n**Key negotiation levers at EM level**:\n- RSU/ESOP grant size and vesting schedule — often the largest component at Tier-1\n- Team composition guarantee — joining for a legacy team without backfill is a significant risk\n- Scope clarity — \"managing team X\" vs \"managing the platform tribe\" changes scope materially\n\n**Typical path**: 5–8 years as IC (SDE/SDE-2/Staff), 1–2 years as tech lead, then EM. Most Indian EMs at Tier-1 companies made the IC→EM transition internally, not through external hiring."
+      },
+    ],
+    faqs: [
+      {
+        question: "How many years of experience do you need to become an Engineering Manager in India?",
+        answer: "Typically 5–8 years of IC experience before moving into an EM role at a product company. The transition usually happens at SDE-2/Staff level. Startups may offer EM titles earlier (3–5 years) but with smaller teams and fewer resources. Service IT companies have a separate management track that moves faster but carries less technical credibility."
+      },
+      {
+        question: "Do Engineering Managers need to code at Indian product companies?",
+        answer: "Not in their day-to-day work, but they need to be credible in technical discussions. Most EM interviews at Tier-1 companies include a system design round (not a coding round). EMs who have been out of active coding for more than 3–4 years often score lower on technical credibility — staying close to the code through code reviews is important."
+      },
+      {
+        question: "What is the Engineering Manager salary at Google India in 2026?",
+        answer: "Google India Engineering Manager (L6) salary in 2026 ranges from ₹70–1.1 Cr (base + bonus + RSUs). Senior EM / Director of Engineering (L7) earns ₹1–1.8 Cr. RSUs are the largest component — base alone is typically ₹35–55 LPA."
+      },
+      {
+        question: "What is the best way to prepare for an Engineering Manager interview?",
+        answer: "Three-part preparation: (1) Refresh system design at the architectural level — focus on team ownership and operational model, not algorithm details; (2) prepare 8–10 STAR stories covering people management, execution, conflict, and growth; (3) practice behavioral questions out loud — most candidates who fail EM interviews fail on delivery and structure, not on content."
+      },
+    ],
+    relatedSlugs: ["system-design-interview-preparation", "startup-vs-mnc-india-career", "amazon-leadership-principles-interview"],
+    practicePageSlugs: [
+      { label: "Engineering Manager Interview Practice", slug: "engineering-manager-interview" },
+      { label: "Leadership Behavioral Interview Practice", slug: "leadership-behavioral-interview" },
+    ],
+    cta: "Preparing for an Engineering Manager interview? Practice people management and behavioral rounds on HireStepX — AI voice scoring with STAR feedback helps you sharpen the delivery that EM panels actually evaluate.",
+  },
 ];
 
 /* ─── Helpers ─── */
@@ -1918,18 +2282,18 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           </Link>
         </div>
 
-        {/* Company practice links — cross-links to /companies/[slug] pages */}
+        {/* Company practice links — cross-links to /questions/[slug] pages (canonical) */}
         {post.practicePageSlugs && post.practicePageSlugs.length > 0 && (
           <section style={{ marginTop: 48 }}>
             <h2 style={{
               fontFamily: fonts.sans, fontSize: 12, fontWeight: 700,
               color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14,
             }}>
-              Practice this company on HireStepX
+              Practice these questions on HireStepX
             </h2>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               {post.practicePageSlugs.map(({ label, slug }) => (
-                <Link key={slug} href={`/companies/${slug}`} style={{
+                <Link key={slug} href={`/questions/${slug}`} style={{
                   display: "inline-block", padding: "9px 16px",
                   background: t.creamSoft, border: `1px solid ${t.lineStrong}`,
                   borderRadius: 8, textDecoration: "none",
