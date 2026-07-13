@@ -1696,15 +1696,15 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       {/* Hero — contained column header; image sits inside the reading column with
           rounded corners so it never fights the cream page background. */}
       <header style={{ background: t.cream, paddingTop: 64 }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 32px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 32px", textAlign: "center" }}>
           {/* Plain text eyebrow — company · category — no pills */}
           <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14 }}>
             {post.company} <span style={{ color: t.lineStrong, fontWeight: 400 }}>·</span> {post.category}
           </p>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.4vw, 48px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.022em", lineHeight: 1.06, textWrap: "balance", margin: "0 0 24px", maxWidth: "20ch" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.4vw, 48px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.022em", lineHeight: 1.06, textWrap: "balance", margin: "0 auto 24px", maxWidth: "20ch" }}>
             {post.title}
           </h1>
-          <div className="blog-meta" style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, flexWrap: "wrap" }}>
+          <div className="blog-meta" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, flexWrap: "wrap" }}>
             <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
             <span aria-hidden style={{ color: t.lineStrong }}>·</span>
             <span>{post.readTime} read</span>
