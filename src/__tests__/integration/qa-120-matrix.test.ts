@@ -151,7 +151,7 @@ const STOP = new Set([
   "stages","phase","phases","turn","turns","value","values",
 ]);
 
-function deriveKeywords(passCriteria: string, failurePatterns: string): string[] {
+function deriveKeywords(passCriteria: string, _failurePatterns: string): string[] {
   /* Pass Criteria carries the positive signal; pull noun-ish tokens.
    * Failure Patterns is anti-signal — we surface domain words but only
    * if they also reinforce Pass Criteria. */

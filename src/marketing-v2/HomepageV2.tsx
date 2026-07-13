@@ -1262,20 +1262,18 @@ function ProductMockHero() {
   );
 }
 
-/* Editorial section masthead — numbered hairline used across the page */
-function SectionMasthead({
-  n,
-  label,
-  right,
-  live = false,
-  style,
-}: {
+/* Editorial section masthead — numbered hairline that once headed each
+   section. The design dropped the visible mastheads; the call sites stay
+   (they document section order/labels) but the component renders nothing.
+   Props are accepted-and-ignored via a single `_props` so the neutered
+   stub doesn't trip no-unused-vars. */
+function SectionMasthead(_props: {
   n: string;
   label: string;
   right?: React.ReactNode;
   live?: boolean;
   style?: CSSProperties;
-}) {
+}): null {
   return null;
 }
 

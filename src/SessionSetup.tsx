@@ -327,7 +327,7 @@ function MicMeter({ level, active }: { level: number; active: boolean }) {
    visual language as the focus chips so it feels native to the form. */
 function PermissionCard({
   kind, label, sublabel, sublabelTone, status, onRequest, onSkip, onDisable,
-  level, voiceDetected, denyReason, isIOS, cameraStream, faceLooksGood, cameraSignals,
+  level, voiceDetected, denyReason, isIOS, cameraStream, cameraSignals,
 }: {
   kind: "mic" | "camera";
   label: string;
