@@ -7,6 +7,7 @@ import { BLOG_META } from "@/blog-meta";
 import { tokens as t, fonts } from "../../../../src/auth/_tokens";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
+import { COMPANY_LABEL } from "../../../../data/company-labels";
 
 /* Programmatic SEO landing pages — /companies/{slug}.
  *
@@ -39,22 +40,6 @@ const FOCUS_LABEL: Record<string, string> = {
   "general": "General",
 };
 
-const COMPANY_LABEL: Record<string, string> = {
-  google: "Google", amazon: "Amazon", microsoft: "Microsoft", meta: "Meta",
-  apple: "Apple", netflix: "Netflix",
-  flipkart: "Flipkart", razorpay: "Razorpay", swiggy: "Swiggy", zomato: "Zomato",
-  phonepe: "PhonePe", paytm: "Paytm",
-  cred: "CRED", zerodha: "Zerodha", meesho: "Meesho", oyo: "OYO",
-  freshworks: "Freshworks", zoho: "Zoho",
-  tcs: "TCS", infosys: "Infosys", wipro: "Wipro", cognizant: "Cognizant",
-  accenture: "Accenture", ltimindtree: "LTIMindtree", hcl: "HCL",
-  capgemini: "Capgemini", ibm: "IBM",
-  uber: "Uber", atlassian: "Atlassian", stripe: "Stripe",
-  linkedin: "LinkedIn", adobe: "Adobe",
-  mckinsey: "McKinsey", bcg: "BCG", bain: "Bain", deloitte: "Deloitte",
-  goldman: "Goldman Sachs", jpmc: "JPMorgan",
-  "morgan-stanley": "Morgan Stanley",
-};
 
 const DIFFICULTY_CHIP: Record<string, { background: string; color: string; border: string }> = {
   warmup: { background: t.success100, color: t.success, border: "1px solid rgba(21,128,61,0.15)" },
@@ -232,13 +217,8 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             {" / "}
             <Link href="/companies" style={{ color: t.inkFaint, textDecoration: "none" }}>Companies</Link>
             {" / "}
-            <span style={{ color: t.coal }}>{companyLabel}</span>
+            <span aria-current="page" style={{ color: t.coal }}>{companyLabel}</span>
           </nav>
-
-          {/* Eyebrow */}
-          <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.copper, margin: 0 }}>
-            {companyLabel} · {focusLabel}
-          </p>
 
           {/* H1 mirrors searchPhrase exactly */}
           <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 5vw, 48px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.1, color: t.coal, margin: "12px 0 0", textWrap: "balance" as const }}>
@@ -252,7 +232,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
 
           {/* Primary CTA */}
           <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap", alignItems: "center" }}>
-            <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "13px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
+            <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
               Practice this interview free →
             </Link>
             <span style={{ color: t.inkFaint, fontFamily: fonts.sans, fontSize: 14 }}>
@@ -284,7 +264,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
                 <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint, margin: "0 0 20px", lineHeight: 1.6 }}>
                   Typical timeline from application to offer.
                 </p>
-                <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {page.recruitmentSteps.map((step, i) => (
                     <li key={i} style={{ display: "flex", gap: 20, padding: "16px 0", borderBottom: `1px solid ${t.line}` }}>
                       <span style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 32, opacity: 0.65 }}>
@@ -308,7 +288,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
                 <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 20px", color: t.coal }}>
                   Interview Rounds
                 </h2>
-                <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {page.interviewRounds.map((round, i) => (
                     <li key={i} style={{ display: "flex", gap: 20, padding: "16px 0", borderBottom: `1px solid ${t.line}` }}>
                       <span style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 32, opacity: 0.65 }}>
@@ -333,7 +313,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint, margin: "0 0 24px", lineHeight: 1.6 }}>
               Verified from candidate post-mortems. Click Practice to answer with AI voice feedback.
             </p>
-            <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {questions.map((q, i) => (
                 <li key={i} style={{ display: "flex", gap: 20, padding: "20px 0", borderBottom: `1px solid ${t.line}` }}>
                   <span style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 38, opacity: 0.55 }}>
@@ -354,7 +334,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
                       </p>
                     )}
                   </div>
-                  <Link href={practiceHref} style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", paddingTop: 4 }}>
+                  <Link href={practiceHref} style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", padding: "8px 0 8px 12px" }}>
                     Practice →
                   </Link>
                 </li>
@@ -368,7 +348,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
               Stop just reading,{" "}
               <span style={{ fontStyle: "italic", color: t.copper }}>start answering</span>.
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: 260 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: "min(260px, 100%)" }}>
               <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
                 The AI interviewer asks {companyLabel}-style questions, listens to your voice, and scores your answer in 2 minutes. 2 sessions free, no credit card.
               </p>
@@ -409,7 +389,7 @@ function RelatedBlogPosts({ companyLabel }: { companyLabel: string }) {
       <h3 style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 14px" }}>
         In-depth guides
       </h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+      <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
         {matched.map((m) => (
           <li key={m.slug}>
             <Link href={`/blog/${m.slug}`} style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}>
@@ -436,7 +416,7 @@ function RelatedLinks({ currentSlug }: { currentSlug: string }) {
     .slice(0, 4);
   if (related.length === 0) return null;
   return (
-    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+    <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
       {related.map((p: SeoPage) => (
         <li key={p.slug}>
           <Link href={`/companies/${p.slug}`} style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}>

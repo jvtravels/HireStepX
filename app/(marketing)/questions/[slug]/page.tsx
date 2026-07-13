@@ -6,6 +6,7 @@ import { QuestionSetPage } from "@/marketing-v2/QuestionPages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
+import { COMPANY_LABEL } from "../../../../data/company-labels";
 
 /* /questions/[slug] — static SEO pages for long-tail interview queries.
  *
@@ -39,64 +40,6 @@ const FOCUS_LABEL: Record<string, string> = {
   strategic: "Strategic",
 };
 
-const COMPANY_LABEL: Record<string, string> = {
-  google: "Google",
-  amazon: "Amazon",
-  microsoft: "Microsoft",
-  meta: "Meta",
-  apple: "Apple",
-  netflix: "Netflix",
-  flipkart: "Flipkart",
-  razorpay: "Razorpay",
-  swiggy: "Swiggy",
-  zomato: "Zomato",
-  phonepe: "PhonePe",
-  paytm: "Paytm",
-  cred: "CRED",
-  zerodha: "Zerodha",
-  meesho: "Meesho",
-  freshworks: "Freshworks",
-  zoho: "Zoho",
-  tcs: "TCS",
-  infosys: "Infosys",
-  wipro: "Wipro",
-  cognizant: "Cognizant",
-  accenture: "Accenture",
-  uber: "Uber",
-  atlassian: "Atlassian",
-  stripe: "Stripe",
-  linkedin: "LinkedIn",
-  adobe: "Adobe",
-  mckinsey: "McKinsey",
-  bcg: "BCG",
-  bain: "Bain",
-  deloitte: "Deloitte",
-  goldman: "Goldman Sachs",
-  jpmc: "JPMorgan Chase",
-  "morgan-stanley": "Morgan Stanley",
-  "jane-street": "Jane Street",
-  "de-shaw": "DE Shaw",
-  citadel: "Citadel",
-  openai: "OpenAI",
-  anthropic: "Anthropic",
-  sarvam: "Sarvam AI",
-  salesforce: "Salesforce",
-  cisco: "Cisco",
-  oracle: "Oracle",
-  nvidia: "NVIDIA",
-  hdfc: "HDFC",
-  icici: "ICICI",
-  hul: "HUL",
-  "p&g": "P&G",
-  itc: "ITC",
-  upsc: "UPSC",
-  ssc: "SSC",
-  ibps: "IBPS",
-  rbi: "RBI",
-  isro: "ISRO",
-  drdo: "DRDO",
-  ssb: "SSB",
-};
 
 /* ─── Question fetching with tier fallback ──────────────────────────────── */
 

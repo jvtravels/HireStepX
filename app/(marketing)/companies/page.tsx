@@ -4,6 +4,8 @@ import { SEO_PAGES } from "../../../data/seo-pages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
+import { tokens as t, fonts } from "@/auth/_tokens";
+import { COMPANY_LABEL } from "../../../data/company-labels";
 
 /* /companies — index / hub page listing all 55+ company interview
  * question sets, grouped by company type.
@@ -42,18 +44,6 @@ export const metadata: Metadata = {
 };
 
 /* ── Label maps ─────────────────────────────────────────────────────── */
-const COMPANY_LABEL: Record<string, string> = {
-  google: "Google", amazon: "Amazon", microsoft: "Microsoft", meta: "Meta",
-  apple: "Apple", netflix: "Netflix", linkedin: "LinkedIn", adobe: "Adobe",
-  flipkart: "Flipkart", razorpay: "Razorpay", swiggy: "Swiggy", zomato: "Zomato",
-  phonepe: "PhonePe", paytm: "Paytm", cred: "CRED", zerodha: "Zerodha",
-  meesho: "Meesho", oyo: "OYO", freshworks: "Freshworks", zoho: "Zoho",
-  tcs: "TCS", infosys: "Infosys", wipro: "Wipro", cognizant: "Cognizant",
-  accenture: "Accenture", ltimindtree: "LTIMindtree", hcl: "HCL",
-  capgemini: "Capgemini", ibm: "IBM",
-  mckinsey: "McKinsey", bcg: "BCG", bain: "Bain", deloitte: "Deloitte",
-  goldman: "Goldman Sachs", jpmc: "JPMorgan",
-};
 
 const FOCUS_LABEL: Record<string, string> = {
   behavioral: "Behavioural", technical: "Technical", "system-design": "System Design",
@@ -110,74 +100,38 @@ export default async function CompaniesIndexPage() {
     })),
   };
 
-  const s = { fontFamily: "var(--font-ui), system-ui, sans-serif" };
-  const serif = { fontFamily: "var(--font-display), Georgia, serif" };
-  const mono = { fontFamily: "var(--font-mono), monospace" };
-  const copper = "#B45309";
-  const coal = "#0E0C08";
-  const sand = "#6E6759";
-  const cream = "#FAF7F0";
-
   return (
     <>
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Companies", path: "/companies" }]))} />
 
       <NavV2 />
-      <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
+      <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", padding: "48px 24px 80px", fontFamily: fonts.sans }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
 
-          {/* Eyebrow */}
-          <div style={{ ...mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: copper, marginBottom: 12 }}>
-            {SEO_PAGES.length}+ Company Guides · 2026
-          </div>
-
           {/* H1 */}
-          <h1 style={{ ...serif, fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 400, letterSpacing: "-0.015em", lineHeight: 1.12, margin: 0, textWrap: "balance" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 400, letterSpacing: "-0.015em", lineHeight: 1.12, margin: 0, textWrap: "balance" as const, color: t.coal }}>
             Company Interview Questions, India 2026
           </h1>
 
-          <p style={{ ...serif, fontStyle: "italic", fontSize: 18, lineHeight: 1.55, color: sand, marginTop: 16, maxWidth: 620, textWrap: "balance" }}>
+          <p style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, lineHeight: 1.55, color: t.inkSoft, marginTop: 16, maxWidth: 620, textWrap: "balance" as const }}>
             Each guide covers the exact interview format, real sample questions, coaching frameworks,
             and an AI mock interview tailored to that company.
           </p>
 
-          {/* Search hint + CTA */}
+          {/* CTA row */}
           <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap", alignItems: "center" }}>
             <Link href="/signup?source=companies-index" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              background: copper, color: cream, textDecoration: "none",
-              padding: "12px 22px", borderRadius: 999, fontSize: 14, fontWeight: 500,
+              background: t.copper, color: t.cream, textDecoration: "none",
+              padding: "14px 22px", borderRadius: 999, fontSize: 14, fontWeight: 500,
+              fontFamily: fonts.sans,
             }}>
               Practice any company free — 2 sessions
             </Link>
-            <Link href="/interview-prep" style={{
-              color: copper, textDecoration: "none", fontSize: 13, fontWeight: 500,
-            }}>
+            <Link href="/interview-prep" style={{ color: t.copper, textDecoration: "none", fontSize: 13, fontWeight: 500, fontFamily: fonts.sans }}>
               Interview prep guide →
             </Link>
-          </div>
-
-          {/* Stats bar */}
-          <div style={{
-            display: "flex", gap: 0, marginTop: 32,
-            borderTop: "1px solid rgba(20,17,10,0.08)", borderBottom: "1px solid rgba(20,17,10,0.08)",
-            padding: "16px 0",
-          }}>
-            {[
-              { label: "Companies", value: "55+" },
-              { label: "Interview formats", value: "7" },
-              { label: "Question sets", value: "100+" },
-              { label: "Avg. prep time", value: "3–6 wks" },
-            ].map((stat, i) => (
-              <div key={stat.label} style={{
-                flex: 1, textAlign: "center",
-                borderRight: i < 3 ? "1px solid rgba(20,17,10,0.06)" : "none",
-              }}>
-                <div style={{ ...mono, fontSize: 20, fontWeight: 700, color: copper, letterSpacing: "-0.02em" }}>{stat.value}</div>
-                <div style={{ fontSize: 11, color: sand, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{stat.label}</div>
-              </div>
-            ))}
           </div>
 
           {/* ── Company groups ────────────────────────────────────────── */}
@@ -185,76 +139,61 @@ export default async function CompaniesIndexPage() {
             const groupPages = SEO_PAGES.filter((p) => group.companies.includes(p.company));
             if (groupPages.length === 0) return null;
 
-            /* Sort: sitemapPriority desc so highest-priority pages appear first */
             const sorted = [...groupPages].sort((a, b) => (b.sitemapPriority ?? 0.7) - (a.sitemapPriority ?? 0.7));
 
             return (
-              <section key={group.id} id={group.id} style={{ marginTop: 52 }}>
-                <h2 style={{ ...serif, fontSize: 24, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 4px" }}>
+              <section key={group.id} id={group.id} style={{ marginTop: 56 }}>
+                <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px", color: t.coal }}>
                   {group.label}
                 </h2>
-                <p style={{ fontSize: 13, color: sand, margin: "0 0 18px", lineHeight: 1.6, maxWidth: 600 }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 20px", lineHeight: 1.6, maxWidth: 600 }}>
                   {group.description}
                 </p>
 
-                <ul style={{
-                  listStyle: "none", padding: 0, margin: 0,
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-                  gap: 8,
-                }}>
-                  {sorted.map((page) => (
+                <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {sorted.map((page, i) => (
                     <li key={page.slug}>
                       <Link
                         href={`/companies/${page.slug}`}
                         style={{
-                          display: "block", padding: "14px 16px",
-                          background: "#FEFCF8",
-                          border: "1px solid rgba(20,17,10,0.08)",
-                          borderRadius: 10, textDecoration: "none", color: coal,
-                          transition: "border-color 0.15s",
+                          display: "flex",
+                          gap: 20,
+                          padding: "16px 0",
+                          borderBottom: `1px solid ${t.line}`,
+                          textDecoration: "none",
+                          alignItems: "flex-start",
                         }}
                       >
-                        {/* Company + focus pill */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-                          <span style={{
-                            ...mono, fontSize: 10, fontWeight: 700,
-                            letterSpacing: "0.08em", textTransform: "uppercase", color: copper,
-                          }}>
-                            {COMPANY_LABEL[page.company] ?? page.company}
+                        <span style={{ fontFamily: fonts.serif, fontSize: 22, color: t.copper, opacity: 0.45, lineHeight: 1, flexShrink: 0, minWidth: 36 }}>
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.coal }}>
+                              {COMPANY_LABEL[page.company] ?? page.company}
+                            </span>
+                            <span style={{ fontFamily: fonts.sans, fontSize: 10, color: t.inkFaint, background: t.creamSoft, borderRadius: 4, padding: "1px 6px", textTransform: "capitalize" }}>
+                              {FOCUS_LABEL[page.focus] ?? page.focus}
+                            </span>
+                          </div>
+                          <span style={{ fontFamily: fonts.serif, fontSize: 15, fontStyle: "italic", lineHeight: 1.4, color: t.coal }}>
+                            {page.searchPhrase}
                           </span>
-                          <span style={{
-                            fontSize: 10, color: sand,
-                            background: "rgba(110,103,89,0.10)", borderRadius: 4,
-                            padding: "1px 6px", textTransform: "capitalize",
-                          }}>
-                            {FOCUS_LABEL[page.focus] ?? page.focus}
-                          </span>
                         </div>
-
-                        {/* Search phrase as link text */}
-                        <div style={{
-                          ...serif, fontSize: 14, lineHeight: 1.4, color: coal,
-                          fontStyle: "italic",
-                        }}>
-                          {page.searchPhrase}
-                        </div>
-
-                        {/* Framework name */}
-                        <div style={{ fontSize: 11, color: sand, marginTop: 4 }}>
-                          Framework: {page.framework.name}
-                        </div>
+                        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.copper, flexShrink: 0, paddingTop: 2, whiteSpace: "nowrap" }}>
+                          Prepare →
+                        </span>
                       </Link>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </section>
             );
           })}
 
-          {/* ── Browse all question sets ──────────────────────────────── */}
-          <section style={{ marginTop: 52 }}>
-            <h2 style={{ ...serif, fontSize: 22, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 12px" }}>
+          {/* ── Browse by question type ───────────────────────────────── */}
+          <section style={{ marginTop: 56 }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: 20, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 14px", color: t.coal }}>
               Browse by question type
             </h2>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -269,9 +208,10 @@ export default async function CompaniesIndexPage() {
               ].map((tag) => (
                 <Link key={tag.href} href={tag.href} style={{
                   display: "inline-block",
-                  padding: "8px 16px", fontSize: 13, fontWeight: 500,
-                  background: "#F4EFE3", color: coal, borderRadius: 999,
-                  textDecoration: "none", border: "1px solid rgba(20,17,10,0.06)",
+                  padding: "10px 16px", fontSize: 13, fontWeight: 500,
+                  background: t.creamSoft, color: t.coal, borderRadius: 999,
+                  textDecoration: "none", border: `1px solid ${t.line}`,
+                  fontFamily: fonts.sans,
                 }}>
                   {tag.label}
                 </Link>
@@ -279,25 +219,29 @@ export default async function CompaniesIndexPage() {
             </div>
           </section>
 
-          {/* ── Bottom CTA ───────────────────────────────────────────── */}
+          {/* ── Bottom CTA — editorial split ─────────────────────────── */}
           <section style={{
-            marginTop: 52, padding: "28px 24px",
-            background: "#F4EFE3", borderRadius: 14, textAlign: "center",
+            marginTop: 72,
+            borderTop: `1px solid ${t.lineStrong}`,
+            paddingTop: 56,
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: 40,
+            flexWrap: "wrap",
           }}>
-            <h2 style={{ ...serif, fontSize: 22, fontWeight: 400, margin: 0, letterSpacing: "-0.01em" }}>
-              Pick your company. Start practicing.
-            </h2>
-            <p style={{ fontSize: 13, color: sand, margin: "8px 0 16px", lineHeight: 1.5, maxWidth: 440, marginInline: "auto" }}>
-              The AI interviews you with that company&apos;s exact question style, listens to your voice,
-              and scores your answer on structure and specificity.
+            <p style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.02, maxWidth: "16ch", textWrap: "balance" as const, margin: 0 }}>
+              Pick your company,{" "}
+              <span style={{ fontStyle: "italic", color: t.copper }}>start practicing</span>.
             </p>
-            <Link href="/signup?source=companies-index-cta" style={{
-              display: "inline-flex", alignItems: "center",
-              background: copper, color: cream, textDecoration: "none",
-              padding: "12px 24px", borderRadius: 999, fontSize: 14, fontWeight: 500,
-            }}>
-              Start free — 2 mock interviews →
-            </Link>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: "min(260px, 100%)" }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
+                The AI interviews you with that company&apos;s exact question style, listens to your voice, and scores your answer in 2 minutes.
+              </p>
+              <Link href="/signup?source=companies-index-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 999, textDecoration: "none", background: t.indigo, color: t.white, flexShrink: 0 }}>
+                Start free — 2 mock interviews <span aria-hidden>→</span>
+              </Link>
+            </div>
           </section>
 
         </div>

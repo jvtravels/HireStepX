@@ -15,6 +15,7 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { tokens as t, fonts } from "../auth/_tokens";
+import { COMPANY_LABEL } from "../../data/company-labels";
 import type { BankEntry } from "../../data/interview-question-bank";
 import type { SeoPage } from "../../data/seo-pages";
 
@@ -33,16 +34,6 @@ const pageInner: CSSProperties = {
   padding: "56px 24px 96px",
 };
 
-const eyebrowStyle: CSSProperties = {
-  fontFamily: fonts.sans,
-  fontSize: 11,
-  fontWeight: 700,
-  letterSpacing: "0.12em",
-  textTransform: "uppercase",
-  color: t.copper,
-  margin: 0,
-};
-
 const h1Style: CSSProperties = {
   fontFamily: fonts.serif,
   fontSize: "clamp(30px, 5vw, 48px)",
@@ -59,7 +50,7 @@ const introStyle: CSSProperties = {
   fontStyle: "italic",
   fontSize: 18,
   lineHeight: 1.6,
-  color: t.indigoGray,
+  color: t.inkSoft,
   marginTop: 20,
   marginBottom: 0,
   maxWidth: "68ch",
@@ -193,7 +184,7 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
       {!isBlurred && (
         <Link
           href={practiceHref}
-          style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", paddingTop: 4 }}
+          style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", padding: "8px 0 8px 12px" }}
         >
           Practice →
         </Link>
@@ -237,7 +228,7 @@ function BottomCTA({
         Stop just reading,{" "}
         <span style={{ fontStyle: "italic", color: t.copper }}>start answering</span>.
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: 260 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: "min(260px, 100%)" }}>
         <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
           The AI interviewer asks {companyLabel}-style questions, listens to your voice, and scores your answer in 2 minutes.
           {totalCount > 5 && ` All ${totalCount} questions unlock after signup.`}
@@ -330,13 +321,8 @@ export function QuestionSetPage({
             Questions
           </Link>
           {" / "}
-          <span style={{ color: t.coal }}>{page.searchPhrase}</span>
+          <span aria-current="page" style={{ color: t.coal }}>{page.searchPhrase}</span>
         </nav>
-
-        {/* Eyebrow */}
-        <p style={eyebrowStyle}>
-          {companyLabel} · {focusLabel}
-        </p>
 
         {/* H1 mirrors search phrase exactly for SERP CTR */}
         <h1 style={h1Style}>{page.searchPhrase}</h1>
@@ -348,7 +334,7 @@ export function QuestionSetPage({
         <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap", alignItems: "center" }}>
           <Link
             href={practiceHref}
-            style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "13px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}
           >
             Practice these questions with AI voice feedback →
           </Link>
@@ -383,6 +369,7 @@ export function QuestionSetPage({
           </p>
 
           <ol
+            role="list"
             style={{
               listStyle: "none",
               padding: 0,
@@ -453,11 +440,10 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
             Home
           </Link>
           {" / "}
-          <span style={{ color: t.coal }}>Interview Questions</span>
+          <span aria-current="page" style={{ color: t.coal }}>Interview Questions</span>
         </nav>
 
         {/* Page header */}
-        <p style={eyebrowStyle}>Interview Question Library</p>
         <h1 style={h1Style}>
           Real interview questions —{" "}
           <span style={{ color: t.copper, fontStyle: "italic" }}>practice them with AI</span>
@@ -472,7 +458,7 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
         <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
           <Link
             href="/signup?source=questions-index"
-            style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "13px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}
           >
             Start free practice — 2 sessions, no card →
           </Link>
@@ -480,100 +466,56 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
 
         <hr style={{ ...dividerStyle, marginTop: 48 }} />
 
-        {/* Grouped question-set cards */}
+        {/* Grouped question sets — numbered list rows per company */}
         {companies.map((company) => (
-          <section key={company} style={{ marginBottom: 48 }}>
+          <section key={company} style={{ marginBottom: 52 }}>
             <h2
               style={{
-                fontFamily: fonts.sans,
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: t.copper,
-                margin: "0 0 16px",
+                fontFamily: fonts.serif,
+                fontSize: 22,
+                fontWeight: 400,
+                letterSpacing: "-0.01em",
+                color: t.coal,
+                margin: "0 0 4px",
               }}
             >
-              {company.toUpperCase()}
+              {COMPANY_LABEL[company] ?? (company.charAt(0).toUpperCase() + company.slice(1))}
             </h2>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: 12,
-              }}
+            <ol
+              role="list"
+              style={{ listStyle: "none", padding: 0, margin: 0 }}
             >
-              {grouped[company].map((p) => (
+              {grouped[company].map((p, i) => (
                 <li key={p.slug}>
                   <Link
                     href={`/questions/${p.slug}`}
                     style={{
                       display: "flex",
-                      flexDirection: "column",
-                      gap: 6,
-                      background: t.white,
-                      border: `1px solid ${t.line}`,
-                      borderRadius: 10,
-                      padding: "16px 18px",
+                      gap: 20,
+                      padding: "14px 0",
+                      borderBottom: `1px solid ${t.line}`,
                       textDecoration: "none",
-                      color: "inherit",
+                      alignItems: "flex-start",
                     }}
                   >
-                    <span
-                      style={{
-                        fontFamily: fonts.sans,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: "0.10em",
-                        textTransform: "uppercase",
-                        color: t.copper,
-                      }}
-                    >
-                      {p.focus.replace(/-/g, " ")}
+                    <span style={{ fontFamily: fonts.serif, fontSize: 20, color: t.copper, opacity: 0.45, lineHeight: 1, flexShrink: 0, minWidth: 34 }}>
+                      {String(i + 1).padStart(2, "0")}
                     </span>
-                    <span
-                      style={{
-                        fontFamily: fonts.serif,
-                        fontSize: 16,
-                        fontWeight: 400,
-                        lineHeight: 1.3,
-                        color: t.coal,
-                      }}
-                    >
-                      {p.searchPhrase}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: fonts.sans,
-                        fontSize: 12,
-                        color: t.inkFaint,
-                        lineHeight: 1.5,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {p.intro}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: fonts.sans,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: t.indigo,
-                        marginTop: 4,
-                      }}
-                    >
-                      View questions →
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.inkFaint }}>
+                        {p.focus.replace(/-/g, " ")}
+                      </span>
+                      <p style={{ fontFamily: fonts.serif, fontSize: 16, lineHeight: 1.35, color: t.coal, margin: "4px 0 0" }}>
+                        {p.searchPhrase}
+                      </p>
+                    </div>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.copper, flexShrink: 0, paddingTop: 2, whiteSpace: "nowrap" }}>
+                      View →
                     </span>
                   </Link>
                 </li>
               ))}
-            </ul>
+            </ol>
           </section>
         ))}
 
@@ -583,7 +525,7 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
             Stop just reading,{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>start answering</span>.
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: 260 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: "min(260px, 100%)" }}>
             <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
               AI voice interviewer, real-time answer scoring, STAR framework coaching. 2 free sessions, no credit card required.
             </p>
