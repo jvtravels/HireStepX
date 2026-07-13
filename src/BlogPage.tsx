@@ -1585,7 +1585,7 @@ function BlogIndex() {
       <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "120px 40px 96px" }}>
         {/* Header */}
         <div style={{ marginBottom: 44, textAlign: "center" }}>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 3.6vw, 52px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.06, marginBottom: 16, textWrap: "balance", maxWidth: "22ch", margin: "0 auto 16px" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 2.8vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 auto 16px", whiteSpace: "nowrap" }}>
             Interview prep that actually{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
           </h1>
@@ -1595,7 +1595,7 @@ function BlogIndex() {
         </div>
 
         {/* Category filters — underline tab style */}
-        <div className="blog-filter-scroll" style={{ display: "flex", gap: 24, marginBottom: 40, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
+        <div className="blog-filter-scroll" style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 40, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
           {CATEGORIES.map(cat => (
             <button
               key={cat}
