@@ -230,6 +230,20 @@ const structuredData = [
       email: "support@hirestepx.com",
     },
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "HireStepX",
+    url: "https://hirestepx.com",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://hirestepx.com/companies?q={search_term_string}",
+      },
+      "query-input": "required name=search_term_string",
+    },
+  },
 ];
 
 /* ── Client helpers (extracted to keep layout a server component) ── */

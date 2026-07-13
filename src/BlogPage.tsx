@@ -79,6 +79,7 @@ interface BlogPost {
   faqs: FAQ[];
   relatedSlugs: string[];
   cta: string;
+  author?: string;
   /* Links to /companies/[slug] pages — cross-links blog → company page for PageRank flow */
   practicePageSlugs?: { label: string; slug: string }[];
 }
@@ -229,6 +230,11 @@ const posts: BlogPost[] = [
       { question: "How do I prepare for case study interviews?", answer: "Practice structuring problems using frameworks (not memorized templates), do mental math daily, read business news for case inspiration, and practice out loud — recording yourself helps identify filler words and unclear transitions." },
       { question: "What is the MECE framework?", answer: "MECE stands for Mutually Exclusive, Collectively Exhaustive. It means breaking a problem into categories that don't overlap and together cover all possibilities. It's the foundation of structured problem-solving in consulting." },
     ],
+    practicePageSlugs: [
+      { label: "McKinsey Case Interview Practice", slug: "mckinsey-case-study-interview-questions" },
+      { label: "BCG Case Interview Practice", slug: "bcg-case-interview-practice" },
+      { label: "Deloitte Case Interview Practice", slug: "deloitte-consulting-case-interview" },
+    ],
     relatedSlugs: ["top-10-google-interview-questions", "salary-negotiation-tips-india", "tell-me-about-yourself-best-answer"],
     cta: "Practice case study interviews on HireStepX — the AI will play the interviewer, give you data when asked, and score your structure and recommendation.",
   },
@@ -321,6 +327,11 @@ const posts: BlogPost[] = [
       { question: "Should I mention personal details in my introduction?", answer: "No. Keep your introduction professional — focus on your education, experience, skills, and why you're interested in the role. Only share personal details if specifically asked." },
       { question: "How to introduce yourself as a fresher with no experience?", answer: "Lead with your education and specialization, then highlight college projects, internships, hackathons, or relevant coursework. End with what excites you about the role. No experience ≠ nothing to say." },
     ],
+    practicePageSlugs: [
+      { label: "TCS Behavioral Interview Practice", slug: "tcs-behavioral-interview-questions" },
+      { label: "Amazon Leadership Principles Practice", slug: "amazon-leadership-principles-interview" },
+      { label: "Infosys Behavioral Practice", slug: "infosys-behavioral-interview-questions" },
+    ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
     cta: "Practice your self-introduction with HireStepX's AI — get instant feedback on pacing, clarity, and filler words.",
   },
@@ -347,6 +358,11 @@ const posts: BlogPost[] = [
       { question: "How to answer tell me about yourself for freshers?", answer: "Use the Present-Past-Future formula: Start with your degree and specialization, mention your strongest project or internship with a specific result, then connect to why you're excited about this role. Keep it under 90 seconds." },
       { question: "Should I mention my hobbies in tell me about yourself?", answer: "Only if they're directly relevant to the role or demonstrate a valuable skill. 'I contribute to open-source projects' is relevant for a developer role. 'I like cooking' is not." },
       { question: "What is the best answer for tell me about yourself for experienced professionals?", answer: "Lead with your current role and a quantified achievement, briefly mention your career trajectory, then explain why this specific opportunity interests you. Focus on impact, not job descriptions." },
+    ],
+    practicePageSlugs: [
+      { label: "Google Behavioral Interview Practice", slug: "google-behavioral-interview-questions" },
+      { label: "Amazon Leadership Principles Practice", slug: "amazon-leadership-principles-interview" },
+      { label: "TCS Behavioral Interview Practice", slug: "tcs-behavioral-interview-questions" },
     ],
     relatedSlugs: ["how-to-introduce-yourself-in-interview", "hr-interview-questions-answers-india", "behavioral-interview-questions-freshers"],
     cta: "Practice your 'tell me about yourself' answer with HireStepX — the AI will score your structure, relevance, and delivery in real-time.",
@@ -402,6 +418,11 @@ const posts: BlogPost[] = [
       { question: "Can you get rejected in HR round?", answer: "Yes. HR rejection rates in India are 10-25% even after clearing technical rounds. Common reasons: salary mismatch, poor communication, lack of enthusiasm, or red flags in behavioral answers." },
       { question: "How to answer 'Why should we hire you' for freshers?", answer: "Highlight your relevant skills, a specific project or achievement that demonstrates those skills, and your enthusiasm for the company/role. End with what value you'll bring in the first 90 days." },
       { question: "Should I negotiate salary in an HR interview?", answer: "Yes, but tactfully. Research market rates, give a range (not a single number), and express that you value the total package including learning and growth opportunities." },
+    ],
+    practicePageSlugs: [
+      { label: "TCS HR Round Practice", slug: "tcs-hr-round-questions" },
+      { label: "Accenture Behavioral Practice", slug: "accenture-behavioral-interview-questions" },
+      { label: "Wipro Behavioral Practice", slug: "wipro-behavioral-interview-questions" },
     ],
     relatedSlugs: ["how-to-introduce-yourself-in-interview", "tell-me-about-yourself-best-answer", "salary-negotiation-tips-india"],
     cta: "Practice HR interview questions with HireStepX — the AI evaluates your answers for clarity, confidence, and professionalism.",
@@ -490,6 +511,9 @@ const posts: BlogPost[] = [
       { question: "How much should I counter-offer in India?", answer: "Counter 15-30% above the initial offer for experienced roles. For freshers at mass-hiring companies, counter by 5-10%. Always anchor with a specific number, not a range." },
       { question: "What if they say the offer is non-negotiable?", answer: "Ask about other components: joining bonus, ESOPs, flexible work, title, or learning budget. If everything is truly fixed, evaluate the total package against your alternatives." },
     ],
+    practicePageSlugs: [
+      { label: "Salary Negotiation Practice", slug: "salary-negotiation-india-tech" },
+    ],
     relatedSlugs: ["hr-interview-questions-answers-india", "tell-me-about-yourself-best-answer", "ace-case-study-interviews"],
     cta: "Practice salary negotiation conversations with HireStepX's AI — simulate the back-and-forth and build your confidence before the real thing.",
   },
@@ -515,6 +539,11 @@ const posts: BlogPost[] = [
       { question: "How to prepare for campus placements in 1 month?", answer: "Week 1-2: Focus on aptitude (practice 50 questions daily). Week 3: Review DSA fundamentals and practice 2-3 problems daily. Week 4: Mock interviews for behavioral and technical rounds. Use HireStepX for realistic practice." },
       { question: "What GPA do companies look for in placements?", answer: "Most service companies require 60-65% (6.0-6.5 CGPA). Product companies usually require 70%+ (7.0 CGPA). Some companies like Google don't have a strict GPA cutoff." },
       { question: "How to answer 'Tell me about yourself' in campus placements?", answer: "Use Present-Past-Future: Start with your current status (final year, branch), mention 1-2 relevant projects or internships, then state your career interest. Keep it under 90 seconds." },
+    ],
+    practicePageSlugs: [
+      { label: "TCS Campus Placement Practice", slug: "tcs-ninja-interview-questions" },
+      { label: "Infosys Campus Interview Practice", slug: "infosys-campus-interview-questions" },
+      { label: "Amazon Campus Placement Practice", slug: "amazon-campus-placement-india" },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "behavioral-interview-questions-freshers", "how-to-introduce-yourself-in-interview"],
     cta: "Practice campus placement interview questions with HireStepX — get AI-scored feedback and walk into your placement round prepared.",
@@ -542,6 +571,11 @@ const posts: BlogPost[] = [
       { question: "Should I practice mock interviews alone or with someone?", answer: "Both serve different purposes. Practice alone to rehearse specific answers. Practice with others (or AI) to build adaptability to unexpected questions and follow-ups. AI mock interviews combine the best of both — available anytime with objective, consistent feedback." },
       { question: "Is it possible to over-practice for interviews?", answer: "Yes — if your answers start sounding rehearsed and robotic. The goal is to be naturally structured, not scripted. If you're memorizing answers word-for-word, switch to practicing with random follow-up questions to stay adaptable." },
     ],
+    practicePageSlugs: [
+      { label: "Google Engineering Interview Practice", slug: "google-india-engineering-interview-questions" },
+      { label: "Flipkart SDE Interview Practice", slug: "flipkart-sde-interview-questions" },
+      { label: "Microsoft India SDE Practice", slug: "microsoft-india-sde-interview-questions" },
+    ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "campus-placement-interview-tips", "how-to-introduce-yourself-in-interview"],
     cta: "Start your mock interview practice right now — 2 free AI sessions with scored feedback. See your baseline score in 10 minutes.",
   },
@@ -568,6 +602,11 @@ const posts: BlogPost[] = [
       { question: "How many STAR stories should I prepare?", answer: "Prepare 8-10 stories that cover different competencies (leadership, conflict, failure, initiative, teamwork, technical problem-solving). You can adapt the same story for different questions by emphasizing different aspects." },
       { question: "What if I don't have work experience for STAR answers?", answer: "Use college projects, internships, hackathons, volunteer work, or academic team projects. The framework works the same — just be honest about the context. Freshers are expected to draw from academic and extracurricular experiences." },
       { question: "How long should a STAR answer be?", answer: "90 seconds to 2 minutes. Under 60 seconds feels too brief (missing details). Over 3 minutes loses the interviewer's attention. Practice timing yourself." },
+    ],
+    practicePageSlugs: [
+      { label: "Amazon Leadership Principles Practice", slug: "amazon-leadership-principles-interview" },
+      { label: "Google Behavioral Interview Practice", slug: "google-behavioral-interview-questions" },
+      { label: "Infosys Behavioral Practice", slug: "infosys-behavioral-interview-questions" },
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
     cta: "Practice your STAR answers with HireStepX's AI — it scores your Situation, Task, Action, and Result individually and tells you exactly where to improve.",
@@ -652,6 +691,11 @@ const posts: BlogPost[] = [
       { question: "What is the difference between a PM and APM role in India?", answer: "APM (Associate Product Manager) is an entry-level PM role, typically for 0–2 years experience or fresh MBAs. PM is a mid-level role requiring 3–5 years. The responsibility for APMs is more execution-focused; PMs own the product strategy for their area." },
       { question: "Do Indian PM interviews have case studies?", answer: "Yes, most Indian product companies (Flipkart, Swiggy, Zomato, Meesho) include case studies. Amazon India is an exception — their PM interviews are almost entirely behavioral, mapped to Leadership Principles." },
       { question: "What is a good PM interview score at Flipkart?", answer: "Flipkart PM interviews are scored on product sense, analytical thinking, and communication. A 'strong hire' decision requires scoring above the bar on at least 3 of 4 dimensions. Product sense is the hardest to fake — it's built from using and thinking critically about products regularly." },
+    ],
+    practicePageSlugs: [
+      { label: "Flipkart PM Interview Practice", slug: "flipkart-pm-interview-questions" },
+      { label: "Google PM Interview Practice", slug: "google-pm-interview-questions" },
+      { label: "Amazon PM Interview Practice", slug: "amazon-pm-interview-questions" },
     ],
     relatedSlugs: ["ace-case-study-interviews", "amazon-leadership-principles-interview", "salary-negotiation-tips-india"],
     cta: "Practice PM case study interviews on HireStepX — the AI plays the interviewer, gives you data, and scores your structure and recommendation.",
@@ -740,6 +784,11 @@ const posts: BlogPost[] = [
       { question: "How do I perform well in a group discussion?", answer: "Speak 3–4 times minimum, each time with a clear point backed by a fact or example. Build on others' ideas, use the person's name when you reference their point, and avoid dominating airtime." },
       { question: "Does GD performance affect final placement chances?", answer: "Yes — GDs are eliminatory at most companies including Deloitte, Accenture, Wipro, Cognizant, and most PSUs. Typically 30–50% of candidates are eliminated at the GD stage." },
     ],
+    practicePageSlugs: [
+      { label: "TCS Campus Interview Practice", slug: "tcs-ninja-interview-questions" },
+      { label: "Infosys Campus Interview Practice", slug: "infosys-campus-interview-questions" },
+      { label: "IBM Campus Placement Practice", slug: "ibm-campus-placement-interview-questions" },
+    ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "deloitte-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison"],
     cta: "Practice group discussion speaking skills with HireStepX's AI — get scored feedback on communication clarity, argument quality, and structure.",
   },
@@ -796,6 +845,10 @@ const posts: BlogPost[] = [
       { question: "Is Zoho a good company for freshers?", answer: "Yes — Zoho pays above average for freshers (₹5–8 LPA vs ₹3.36L at TCS), has no bond period, strong engineering culture, and hands-on work from day one. The main trade-off is that brand recognition for FAANG moves is lower than Flipkart or Razorpay." },
       { question: "How long is Zoho's interview process?", answer: "Zoho's 5-round process typically spans 1–2 days. Rounds 1–3 are tests (aptitude + programming), and Rounds 4–5 are interviews. The process can extend across 2 different days if multiple candidates are being evaluated." },
     ],
+    practicePageSlugs: [
+      { label: "Freshworks SDE Interview Practice", slug: "freshworks-sde-interview-questions" },
+      { label: "Zerodha Engineering Interview Practice", slug: "zerodha-engineering-interview-questions" },
+    ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison", "cognizant-interview-questions-freshers-2026"],
     cta: "Practice the Zoho-style technical and HR interview on HireStepX — AI coaching on CS fundamentals and code explanation answers.",
   },
@@ -822,6 +875,11 @@ const posts: BlogPost[] = [
       { question: "How early should I arrive for an in-person SDE interview?", answer: "Aim to arrive 15 minutes before the scheduled time. Earlier than that makes you anxious waiting; later than 5 minutes signals poor preparation." },
       { question: "What questions should I ask at the end of an interview?", answer: "Ask specific questions about the team, product, or challenges — not generic questions like 'What's the culture?' Better questions: 'What's the most challenging engineering problem the team is working on right now?' or 'How does the team decide what to prioritise each quarter?'" },
     ],
+    practicePageSlugs: [
+      { label: "Google Engineering Interview Practice", slug: "google-india-engineering-interview-questions" },
+      { label: "Microsoft India SDE Practice", slug: "microsoft-india-sde-interview-questions" },
+      { label: "Flipkart SDE Interview Practice", slug: "flipkart-sde-interview-questions" },
+    ],
     relatedSlugs: ["mock-interview-practice-guide", "system-design-interview-preparation", "star-method-interview-answers"],
     cta: "Complete a full mock interview in 48 hours — get realistic feedback on DSA, behavioral, and system design rounds before your real interview.",
   },
@@ -846,6 +904,11 @@ const posts: BlogPost[] = [
     faqs: [
       { question: "What Java version is asked in Indian interviews in 2026?", answer: "Most Indian interviews test core Java (Java 8 features are standard). Java 11 and 17 LTS features (records, sealed classes, text blocks) are asked at product companies but rarely at service IT companies." },
       { question: "Should I prepare Java or Python for TCS/Infosys interviews?", answer: "For TCS and Infosys, Java is preferred since most projects use it. For product companies, Python is increasingly accepted for DSA coding rounds. Prepare both if time allows, but be fluent in one." },
+    ],
+    practicePageSlugs: [
+      { label: "TCS Campus Placement Practice", slug: "tcs-ninja-interview-questions" },
+      { label: "Infosys Campus Interview Practice", slug: "infosys-campus-interview-questions" },
+      { label: "Wipro Freshers Interview Practice", slug: "wipro-freshers-interview-questions" },
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "system-design-interview-preparation", "campus-placement-interview-tips"],
     cta: "Practice technical Java questions in a mock interview format on HireStepX — AI evaluates your explanation depth, not just whether the answer is correct.",
@@ -873,6 +936,11 @@ const posts: BlogPost[] = [
       { question: "Should I include my 10th and 12th marks on a fresher resume?", answer: "Yes for India campus placements — they're often required for ATS cutoffs at service companies. Include them until you have 2+ years of work experience, then they can be removed." },
       { question: "How long should a fresher resume be?", answer: "One page for freshers. No exceptions under 2 years of experience." },
     ],
+    practicePageSlugs: [
+      { label: "TCS Campus Placement Practice", slug: "tcs-ninja-interview-questions" },
+      { label: "Amazon Campus Placement Practice", slug: "amazon-campus-placement-india" },
+      { label: "IBM Campus Placement Practice", slug: "ibm-campus-placement-interview-questions" },
+    ],
     relatedSlugs: ["campus-placement-interview-tips", "behavioral-interview-questions-freshers", "tcs-interview-questions-freshers-2026"],
     cta: "After building your resume, practice explaining your projects and experience in mock interviews on HireStepX — the gap between resume and interview is where most candidates lose.",
   },
@@ -897,6 +965,11 @@ const posts: BlogPost[] = [
       { question: "What is data analyst salary in India in 2026?", answer: "Data Analyst salaries in India: Junior DA at IT services ₹4–7 LPA; Mid-level at Indian startups ₹10–20 LPA; Senior DA at unicorns (Flipkart, Swiggy) ₹25–40 LPA; Analytics roles at FAANG India ₹35–60 LPA." },
       { question: "Which is better for data analyst — SQL or Python?", answer: "SQL is the universal requirement — every company tests it. Python (Pandas, NumPy) is additionally required at product companies and FAANG. For service IT companies, Excel/Tableau may be the primary tool. Learn SQL first, then Python." },
       { question: "Is data science the same as data analyst?", answer: "No. Data Analyst: SQL, dashboards, business reports, A/B tests — explains what happened. Data Scientist: machine learning, predictive models — predicts what will happen. The interview bar is different; data science roles require ML/statistics depth beyond typical DA interviews." },
+    ],
+    practicePageSlugs: [
+      { label: "Google Engineering Interview Practice", slug: "google-india-engineering-interview-questions" },
+      { label: "Flipkart SDE Interview Practice", slug: "flipkart-sde-interview-questions" },
+      { label: "PhonePe Engineering Interview Practice", slug: "phonepe-engineering-interview-questions" },
     ],
     relatedSlugs: ["system-design-interview-preparation", "razorpay-interview-experience", "product-manager-interview-questions-india"],
     cta: "Practice data analyst interview questions on HireStepX — SQL case studies, A/B testing explanations, and business case walk-throughs with AI scoring.",
@@ -948,6 +1021,11 @@ const posts: BlogPost[] = [
     faqs: [
       { question: "Is Python good for Java-dominated interview questions in India?", answer: "Yes — Python is accepted at all major product companies (Flipkart, Amazon, Swiggy, Razorpay, Google India). For service IT companies (TCS, Infosys), Java or C++ is still the dominant choice for interviews, but Python is increasingly accepted." },
       { question: "What Python version should I prepare for interviews?", answer: "Python 3.10+ is standard. Know Python 3.7+ features (f-strings, dict ordering, walrus operator :=). Python 2 is dead — don't waste time on it." },
+    ],
+    practicePageSlugs: [
+      { label: "Freshworks SDE Interview Practice", slug: "freshworks-sde-interview-questions" },
+      { label: "Microsoft India SDE Practice", slug: "microsoft-india-sde-interview-questions" },
+      { label: "Google Engineering Interview Practice", slug: "google-india-engineering-interview-questions" },
     ],
     relatedSlugs: ["java-interview-questions-freshers-india-2026", "data-analyst-interview-questions-india-2026", "system-design-interview-preparation"],
     cta: "Practice Python technical questions in a voice mock interview on HireStepX — explain your code and reasoning out loud, scored by AI in real time.",
@@ -1381,7 +1459,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             {post.title}
           </h1>
           <div className="blog-meta" style={{ marginTop: 28, display: "flex", alignItems: "center", gap: 12, fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, flexWrap: "wrap" }}>
-            <span style={{ color: t.coal, fontWeight: 600 }}>HireStepX Team</span>
+            <span style={{ color: t.coal, fontWeight: 600 }}>{post.author ?? "HireStepX Editorial Team"}</span>
             <span aria-hidden style={{ color: t.inkFaint }}>·</span>
             <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
             <span aria-hidden style={{ color: t.inkFaint }}>·</span>
