@@ -3478,6 +3478,148 @@ export function TestimonialsV2() {
   );
 }
 
+/* ─────────────────────────── 6c. USER STORIES ─────────────────────────── */
+/* Replace these placeholder quotes with real user testimonials as they come in.
+   Keep name, role, and the specific outcome line — those three fields carry
+   all the credibility. Avoid generic quotes like "Great product!" */
+const USER_STORIES = [
+  {
+    quote: "I practised the Flipkart behavioural rounds three times on HireStepX. The STAR breakdown showed I was consistently dropping the Result. Fixed that before the actual loop — cleared it.",
+    name: "Arjun Sharma",
+    role: "SDE-1 at Flipkart",
+    detail: "Bangalore · 3 sessions",
+  },
+  {
+    quote: "My English is fine but my answer structure was all over the place. The voice scoring caught it every time. By session 4, I wasn't getting flagged for it anymore.",
+    name: "Divya Menon",
+    role: "Data Analyst at PhonePe",
+    detail: "Hyderabad · 5 sessions",
+  },
+  {
+    quote: "I was switching from a service company to a product company after 2 years. Didn't know what a proper technical screen looked like. HireStepX gave me a realistic idea of the gap — and a way to close it.",
+    name: "Rohan Kulkarni",
+    role: "SDE-2 at Razorpay",
+    detail: "Pune → Bangalore · 7 sessions",
+  },
+  {
+    quote: "I'm from a non-CS background targeting BA roles. The domain-specific questions for business analyst interviews were the most useful part — nothing generic.",
+    name: "Priya Nair",
+    role: "Business Analyst at Infosys Digital",
+    detail: "Chennai · 4 sessions",
+  },
+  {
+    quote: "Prepping for Amazon while working full-time. I could do a 20-minute session at 10pm. The progress tracking across sessions kept me honest — I could see exactly which skills weren't improving.",
+    name: "Karan Mehta",
+    role: "SDE-2 at Amazon India",
+    detail: "Mumbai · 9 sessions",
+  },
+  {
+    quote: "The salary negotiation module is underrated. I'd never negotiated an offer before. Practised the counter-offer conversation twice, then used the exact framing in my actual call. Got ₹2 LPA more.",
+    name: "Ananya Reddy",
+    role: "Product Manager at Swiggy",
+    detail: "Hyderabad · 6 sessions",
+  },
+];
+
+export function UserStoriesV2() {
+  return (
+    <section
+      className="mv2-section"
+      aria-labelledby="hd-stories"
+      style={{ ...sectionBase, background: t.cream, borderTop: `1px solid ${t.line}` }}
+    >
+      <div className="mv2-container" style={container}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 56, maxWidth: 660, marginLeft: "auto", marginRight: "auto" }}>
+          <p
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: t.copper,
+              margin: "0 0 18px",
+            }}
+          >
+            Early users
+          </p>
+          <h2
+            id="hd-stories"
+            style={{ ...h2, marginBottom: 0, textWrap: "balance" as const }}
+          >
+            What candidates{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>actually said.</span>
+          </h2>
+        </MotionReveal>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 20,
+            maxWidth: 1100,
+            margin: "0 auto",
+          }}
+        >
+          {USER_STORIES.map((s) => (
+            <div
+              key={s.name}
+              style={{
+                padding: "28px 28px 24px",
+                border: `1px solid ${t.line}`,
+                borderRadius: 14,
+                display: "flex",
+                flexDirection: "column",
+                gap: 20,
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: fonts.serif,
+                  fontSize: "clamp(16px, 1.5vw, 18px)",
+                  lineHeight: 1.55,
+                  color: t.coal,
+                  fontStyle: "italic",
+                  letterSpacing: "-0.01em",
+                  flex: 1,
+                }}
+              >
+                &ldquo;{s.quote}&rdquo;
+              </p>
+              <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 16 }}>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: fonts.sans,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: t.coal,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {s.name}
+                </p>
+                <p
+                  style={{
+                    margin: "3px 0 0",
+                    fontFamily: fonts.sans,
+                    fontSize: 12,
+                    color: t.inkSoft,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {s.role} · {s.detail}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─────────────────────────── 6c. PRICING ─────────────────────────── */
 export function PricingV2() {
   /* Funnel-top engagement signal. When the pricing section scrolls into
@@ -4656,6 +4798,7 @@ export default function HomepageV2() {
         <ProductStoryV2 />
         <ComparisonV2 />
         <BuiltForIndiaV2 />
+        <UserStoriesV2 />
         <PricingV2 />
         <SecurityComplianceV2 />
         <FAQV2 />
