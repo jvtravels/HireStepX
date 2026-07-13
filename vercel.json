@@ -49,6 +49,10 @@
     {
       "path": "/api/prune-llm-usage",
       "schedule": "45 3 * * *"
+    },
+    {
+      "path": "/api/send-onboarding-drip",
+      "schedule": "30 12 * * *"
     }
   ]
 }
