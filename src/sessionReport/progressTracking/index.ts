@@ -140,6 +140,29 @@ export function computeTrend(
   };
 }
 
+/* Scope a multi-session point series to END at a specific session.
+ *
+ * A session report's Skill Progress panel must trend the VIEWED session vs
+ * the sessions before it — not vs whatever the user's globally-latest
+ * session happens to be. Since `fetchSkillProgressTrends` pulls the whole
+ * recent history (newest-first) and `computeTrend` treats the chronologically
+ * last point as "latest", opening any non-latest report would otherwise show
+ * the newest session's numbers for every skill. (The anchor axis alone looked
+ * session-correct because it's grounded per-viewed-session upstream — which is
+ * exactly what produced the "8 skills identical across reports, anchor varies"
+ * incoherence.) Drop every point newer than the viewed session by completedAt
+ * so the viewed session becomes the trend's endpoint. If the viewed session
+ * isn't in the series (e.g. older than the fetch window), return unchanged. */
+export function capHistoryToSession(
+  history: SkillProgressPoint[],
+  viewedSessionId: string,
+): SkillProgressPoint[] {
+  const viewed = history.filter((p) => p.sessionId === viewedSessionId);
+  if (viewed.length === 0) return history;
+  const cutoff = Math.max(...viewed.map((p) => p.completedAt));
+  return history.filter((p) => p.completedAt <= cutoff);
+}
+
 /* Convenience: compute trends for every unique skill present in
  * `history`. Order: alphabetical by skill name for stable rendering. */
 export function computeAllTrends(history: SkillProgressPoint[]): SkillTrend[] {

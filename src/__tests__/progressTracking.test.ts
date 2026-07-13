@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  capHistoryToSession,
   computeAllTrends,
   computeTrend,
   computeTrendsForSkills,
@@ -357,5 +358,54 @@ describe("groundNoCounterSkillScores", () => {
     expect(byLabel("Specificity")).toBe(35);
     expect(byLabel("Leverage Use")).toBe(80);
     expect(byLabel("Package Thinking")).toBe(88);
+  });
+});
+
+describe("capHistoryToSession — scope trend to the viewed session", () => {
+  // Three sessions of the SAME skill, ascending in time. Each session also
+  // carries a stable skill (Leverage) that only moved once, early on — the
+  // shape that produced the live bug where an OLD report showed the NEWEST
+  // session's Leverage number.
+  const history: SkillProgressPoint[] = [
+    pt("Anchoring", 35, 0, "s-old"),
+    pt("Leverage Use", 50, 0, "s-old"),
+    pt("Anchoring", 70, 1, "s-mid"),
+    pt("Leverage Use", 75, 1, "s-mid"),
+    pt("Anchoring", 40, 2, "s-new"),
+    pt("Leverage Use", 75, 2, "s-new"),
+  ];
+
+  it("ends the trend at the viewed session, not the globally-latest one", () => {
+    // Viewing the MIDDLE session: latest Anchoring must be 70 (that session's
+    // own value), NOT 40 (the newest session's). Pre-fix this returned 40.
+    const scoped = capHistoryToSession(history, "s-mid");
+    const anchor = computeAllTrends(scoped).find((t) => t.skill === "Anchoring")!;
+    expect(anchor.latestScore).toBe(70);
+    expect(anchor.deltaVsLast).toBe(35); // 70 vs the prior s-old 35
+  });
+
+  it("drops every point newer than the viewed session", () => {
+    const scoped = capHistoryToSession(history, "s-mid");
+    expect(scoped.every((p) => p.sessionId !== "s-new")).toBe(true);
+    expect(scoped.some((p) => p.sessionId === "s-old")).toBe(true);
+  });
+
+  it("is a no-op for the newest session (common case: viewing latest report)", () => {
+    const scoped = capHistoryToSession(history, "s-new");
+    expect(scoped).toHaveLength(history.length);
+  });
+
+  it("returns history unchanged when the viewed session isn't in the window", () => {
+    const scoped = capHistoryToSession(history, "s-absent");
+    expect(scoped).toBe(history);
+  });
+
+  it("keeps ties at the cutoff (points sharing the viewed session's timestamp)", () => {
+    // A second skill point at the same completedAt as the viewed session is
+    // kept — the cutoff is inclusive so the viewed session's full skill set
+    // survives.
+    const withTie = [...history, pt("Composure", 80, 1, "s-mid")];
+    const scoped = capHistoryToSession(withTie, "s-mid");
+    expect(scoped.some((p) => p.skill === "Composure")).toBe(true);
   });
 });

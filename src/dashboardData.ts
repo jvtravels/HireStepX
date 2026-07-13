@@ -1349,6 +1349,7 @@ export async function fetchSkillProgressTrends(
     const {
       sessionRowsToProgressPoints,
       computeAllTrends,
+      capHistoryToSession,
       humanizeSkillKey,
       groundNoCounterSkillScores,
     } = await import("./sessionReport/progressTracking");
@@ -1386,7 +1387,14 @@ export async function fetchSkillProgressTrends(
       })),
       humanizeSkillKey,
     );
-    return computeAllTrends(points);
+    /* Scope the trend to END at the viewed session so an older report shows
+     * its own skills vs its predecessors — not the globally-latest session's
+     * numbers (which made 8/10 skills render identically across reports while
+     * only the per-session-grounded anchor axis varied). */
+    const scoped = currentSession
+      ? capHistoryToSession(points, currentSession.id)
+      : points;
+    return computeAllTrends(scoped);
   } catch (err) {
     console.warn(
       "[fetchSkillProgressTrends] unexpected error:",
