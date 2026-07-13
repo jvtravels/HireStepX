@@ -1397,6 +1397,50 @@ export function ForStudentsV2() {
         }
       />
 
+      {/* Practice links — direct links to the most-searched fresher tracks */}
+      <section className="mv2p-section" aria-label="Practice by company track" style={{ paddingTop: 40, paddingBottom: 40 }}>
+        <div className="mv2-container" style={container}>
+          <p style={{ ...eyebrow, marginBottom: 20 }}>Practice by company track</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {([
+              ["TCS NQT 2026", "/questions/tcs-nqt-interview-questions"],
+              ["TCS Ninja", "/questions/tcs-ninja-interview-questions"],
+              ["TCS Digital", "/questions/tcs-digital-interview-questions"],
+              ["Infosys Campus", "/questions/infosys-campus-interview-questions"],
+              ["Infosys Power Programmer", "/questions/infosys-power-programmer-interview"],
+              ["Wipro Freshers", "/questions/wipro-freshers-interview-questions"],
+              ["Wipro Turbo", "/questions/wipro-turbo-technical-interview"],
+              ["Cognizant GenC", "/questions/cognizant-genc-interview-questions"],
+              ["Accenture ASE", "/questions/accenture-ase-interview-questions"],
+              ["Capgemini Freshers", "/questions/capgemini-freshers-interview-questions"],
+              ["HCL Freshers", "/questions/hcl-freshers-interview-questions"],
+              ["LTIMindtree Freshers", "/questions/ltimindtree-freshers-interview-questions"],
+            ] as [string, string][]).map(([label, href]) => (
+              <a
+                key={label}
+                href={href}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "8px 16px",
+                  borderRadius: 999,
+                  border: `1px solid ${t.line}`,
+                  background: t.white,
+                  fontFamily: fonts.sans,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: t.coal,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* What's included for students */}
       <section className="mv2p-section" aria-label="What's included for students" style={{ paddingTop: 56, paddingBottom: 56 }}>
         <div className="mv2-container" style={container}>
@@ -1405,7 +1449,7 @@ export function ForStudentsV2() {
             style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}
           >
             {[
-              ["Campus rounds", "TCS Digital, Infosys SP/PP, Wipro Elite, Capgemini, plus your private engineering college pool."],
+              ["Campus rounds", "TCS NQT, Ninja, Digital, Infosys SP/PP, Wipro Elite, Capgemini, plus your private engineering college pool."],
               ["Off-campus prep", "Cred, Razorpay, Zomato, Flipkart tech rounds with rubrics from real recent panels."],
               ["HR + behavioral", "The 'tell me about yourself' that doesn't sound like a Wikipedia page. STAR-scored."],
               ["Salary negotiation", "Your first job, ₹4 LPA vs ₹5.5 LPA, said with confidence. We practice the script."],
