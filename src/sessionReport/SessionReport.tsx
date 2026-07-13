@@ -896,7 +896,17 @@ export const SessionReport = memo(function SessionReport({
       return;
     }
     let cancelled = false;
-    fetchSkillProgressTrends({ negotiationOnly: true })
+    fetchSkillProgressTrends({
+      negotiationOnly: true,
+      /* Ground THIS session's own point to its authoritative counter truth so
+         the Skill Progress panel can't show "Anchoring 70" beside the same
+         report's grounded Skills Breakdown "Anchor strength 35" (rows saved
+         before the write-seam fix carry raw values). */
+      currentSession: {
+        id: session.id,
+        candidateAsk: viewData.negotiationOutcome.candidateAsk,
+      },
+    })
       .then((trends) => {
         if (!cancelled) setProgressTrends(trends.length > 0 ? trends : undefined);
       })
@@ -906,7 +916,7 @@ export const SessionReport = memo(function SessionReport({
     return () => {
       cancelled = true;
     };
-  }, [viewData]);
+  }, [viewData, session.id]);
 
   /* ── Report-derivation canary (telemetry) ──
      Fires once per rendered negotiation report with which path produced the

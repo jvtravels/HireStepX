@@ -1328,13 +1328,30 @@ export async function fetchRecentSessionScores(limit = 10): Promise<SessionTrend
  * simply omits the panel.
  */
 export async function fetchSkillProgressTrends(
-  opts: { negotiationOnly?: boolean; limit?: number } = {},
+  opts: {
+    negotiationOnly?: boolean;
+    limit?: number;
+    /* The session currently being viewed, with its AUTHORITATIVE (superset:
+     * kernel-persisted OR transcript-recovered) candidate ask from the report
+     * adapter. When candidateAsk is null the kernel says no counter was named,
+     * so this row's persisted anchor/counter/specificity skill_scores are
+     * grounded into the weak band BEFORE the trend is computed — otherwise a
+     * row saved before the write-seam fix renders "Anchoring 70" on the Skill
+     * Progress panel while the same report's Skills Breakdown reads 35. Only
+     * this one row is grounded (we have its authoritative ask); prior rows keep
+     * their persisted values and self-heal forward via the write seam. */
+    currentSession?: { id: string; candidateAsk: number | null };
+  } = {},
 ): Promise<SkillTrend[]> {
-  const { negotiationOnly = false, limit = 30 } = opts;
+  const { negotiationOnly = false, limit = 30, currentSession } = opts;
   try {
     const { getSupabase } = await import("./supabase");
-    const { sessionRowsToProgressPoints, computeAllTrends, humanizeSkillKey } =
-      await import("./sessionReport/progressTracking");
+    const {
+      sessionRowsToProgressPoints,
+      computeAllTrends,
+      humanizeSkillKey,
+      groundNoCounterSkillScores,
+    } = await import("./sessionReport/progressTracking");
     const client = await getSupabase();
     const { data: sessionData } = await client.auth.getSession();
     const userId = sessionData.session?.user?.id;
@@ -1361,7 +1378,10 @@ export async function fetchSkillProgressTrends(
       rows.map((r) => ({
         sessionId: r.id,
         completedAt: new Date(r.created_at).getTime(),
-        skillScores: r.skill_scores,
+        skillScores:
+          currentSession && r.id === currentSession.id
+            ? groundNoCounterSkillScores(r.skill_scores, currentSession.candidateAsk)
+            : r.skill_scores,
         sector: r.target_company ?? undefined,
       })),
       humanizeSkillKey,

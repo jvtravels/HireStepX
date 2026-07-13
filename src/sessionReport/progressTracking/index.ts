@@ -247,3 +247,46 @@ export function sessionRowsToProgressPoints(
   }
   return points;
 }
+
+/* ── No-counter anchor grounding (single source) ────────────────────────
+ * When the negotiation kernel says the candidate never named a counter,
+ * any anchor / counter / specificity skill score is a provable failure: an
+ * anchor score IS the strength of the number you named, and none was named.
+ * This is the ONE grounding rule the whole app applies wherever ungrounded
+ * persisted skill_scores are consumed:
+ *   - the write seam (save-session.ts) — so the stored row is coherent, and
+ *   - the cross-session read seam (fetchSkillProgressTrends) — so the Skill
+ *     Progress panel matches the same report's Skills Breakdown / hero for
+ *     the session being viewed (rows saved before the write fix carry raw
+ *     values otherwise).
+ * Keyed on candidateAsk (null ⇒ no counter). Only invoked when the caller
+ * has an AUTHORITATIVE candidateAsk for the row — the render adapter's
+ * superset value (kernel-persisted OR transcript-recovered), never a
+ * kernel-only field — so a counter the kernel missed but the transcript
+ * caught is not wrongly capped. Leverage / package / composure axes,
+ * demonstrable without a hard counter, pass through untouched. Values are
+ * a bare number or a legacy { score } wrapper — both shapes preserved. */
+export const NEG_ANCHOR_SKILL_KEY_RE = /anchor|counter|specificity/i;
+export const NO_ANCHOR_CEILING = 35;
+export function groundNoCounterSkillScores<T extends Record<string, unknown>>(
+  skillScores: T | null | undefined,
+  candidateAsk: number | null,
+): T | null | undefined {
+  if (!skillScores || candidateAsk !== null) return skillScores;
+  const out: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(skillScores)) {
+    if (NEG_ANCHOR_SKILL_KEY_RE.test(key)) {
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        out[key] = Math.min(raw, NO_ANCHOR_CEILING);
+        continue;
+      }
+      if (raw && typeof raw === "object" && typeof (raw as { score?: unknown }).score === "number") {
+        const r = raw as { score: number };
+        out[key] = { ...r, score: Math.min(r.score, NO_ANCHOR_CEILING) };
+        continue;
+      }
+    }
+    out[key] = raw;
+  }
+  return out as T;
+}

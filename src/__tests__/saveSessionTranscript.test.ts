@@ -186,82 +186,25 @@ describe("sanitizeNegotiationMetrics — persists the full kernel shape (DATA-1)
   });
 });
 
-/* REPORT-4b (write-time) regression guard.
+/* REPORT-4b write-time grounding — boundary check only.
  *
  * The persisted skill_scores column feeds the cross-session Skill Progress
- * panel, which BYPASSES the report adapter's render-time grounding. So an
- * anchor/counter/specificity score inflated by the LLM is written raw and
- * shows up on that panel contradicting the SAME session's "no counter named"
- * kernel truth. groundNoCounterSkillScores caps those axes into the weak band
- * (≤35) at the single write seam when the kernel says no counter was named
- * (candidateAskLpa === null). Keys are the engine's camelCase skill_scores
- * keys; values are either a bare number or a { score } object. */
-describe("groundNoCounterSkillScores — write-time anchor grounding (REPORT-4b)", () => {
-  const inflated = () => ({
-    anchoring: 72,
-    specificity: 70,
-    closingTechnique: 66,
-    leverageUse: 80,
-    packageThinking: 88,
-    composure: 74,
-    concessionStrategy: 60,
-  });
-
-  it("caps anchor/specificity into the weak band when no counter was named", () => {
-    const out = groundNoCounterSkillScores(inflated(), null) as Record<string, number>;
-    expect(out.anchoring).toBe(35);
-    expect(out.specificity).toBe(35);
-  });
-
-  it("caps a 'counter'-named key too", () => {
-    const out = groundNoCounterSkillScores(
-      { counterOfferJudgement: 90 },
-      null,
-    ) as Record<string, number>;
-    expect(out.counterOfferJudgement).toBe(35);
-  });
-
-  it("leaves leverage / package / composure / concession / closing untouched", () => {
-    const out = groundNoCounterSkillScores(inflated(), null) as Record<string, number>;
-    expect(out.leverageUse).toBe(80);
-    expect(out.packageThinking).toBe(88);
-    expect(out.composure).toBe(74);
-    expect(out.concessionStrategy).toBe(60);
-    expect(out.closingTechnique).toBe(66);
-  });
-
-  it("does not raise a score already below the ceiling", () => {
-    const out = groundNoCounterSkillScores({ anchoring: 20 }, null) as Record<string, number>;
-    expect(out.anchoring).toBe(20);
-  });
-
-  it("caps the { score } object shape, preserving sibling fields", () => {
-    const out = groundNoCounterSkillScores(
-      { anchoring: { score: 88, label: "Anchoring", weight: 2 } },
-      null,
-    ) as Record<string, { score: number; label: string; weight: number }>;
-    expect(out.anchoring.score).toBe(35);
-    expect(out.anchoring.label).toBe("Anchoring");
-    expect(out.anchoring.weight).toBe(2);
-  });
-
-  it("is a no-op once a counter WAS named (numeric candidateAskLpa)", () => {
-    const scores = inflated();
-    const out = groundNoCounterSkillScores(scores, 30);
-    expect(out).toBe(scores);
-  });
-
-  it("is a no-op for null skillScores regardless of ask", () => {
-    expect(groundNoCounterSkillScores(null, null)).toBeNull();
-    expect(groundNoCounterSkillScores(null, 30)).toBeNull();
-  });
-
-  it("leaves non-numeric anchor values (garbage) untouched rather than coercing", () => {
-    const out = groundNoCounterSkillScores(
-      { anchoring: "n/a", specificity: null },
-      null,
-    ) as Record<string, unknown>;
-    expect(out.anchoring).toBe("n/a");
-    expect(out.specificity).toBeNull();
+ * panel, which BYPASSES the report adapter's render-time grounding, so a
+ * no-counter session's anchor/counter/specificity scores must be capped
+ * before persistence. save-session applies the ONE shared grounding rule
+ * (groundNoCounterSkillScores) at the write seam; its behaviour is pinned
+ * exhaustively in progressTracking.test.ts. Here we only verify save-session
+ * re-exports the shared binding so the write seam and read seam can't drift
+ * to two implementations. */
+describe("groundNoCounterSkillScores — re-exported from save-session (single source)", () => {
+  it("caps anchor axes on a no-counter row and no-ops once a counter is named", () => {
+    const capped = groundNoCounterSkillScores({ anchoring: 72, leverageUse: 80 }, null) as Record<
+      string,
+      number
+    >;
+    expect(capped.anchoring).toBe(35);
+    expect(capped.leverageUse).toBe(80);
+    const named = { anchoring: 72 };
+    expect(groundNoCounterSkillScores(named, 30)).toBe(named);
   });
 });

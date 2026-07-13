@@ -11,6 +11,7 @@ import {
   computeTrend,
   computeTrendsForSkills,
   createInMemoryProgressStore,
+  groundNoCounterSkillScores,
   humanizeSkillKey,
   sessionRowsToProgressPoints,
   type SessionSkillRow,
@@ -273,5 +274,88 @@ describe("createInMemoryProgressStore", () => {
     expect(u1.length).toBe(2);
     expect(u2.length).toBe(1);
     expect(u2[0].scorePct).toBe(99);
+  });
+});
+
+/* The ONE no-counter grounding rule, shared by the write seam
+ * (save-session) and the cross-session read seam (fetchSkillProgressTrends).
+ * A no-counter session's anchor/counter/specificity persisted skill_scores
+ * must not render above the same report's grounded Skills Breakdown. */
+describe("groundNoCounterSkillScores", () => {
+  const inflated = () => ({
+    anchoring: 72,
+    specificity: 70,
+    closingTechnique: 66,
+    leverageUse: 80,
+    packageThinking: 88,
+    composure: 74,
+    concessionStrategy: 60,
+  });
+
+  it("caps anchor/specificity/counter axes into the weak band when no counter was named", () => {
+    const out = groundNoCounterSkillScores(
+      { ...inflated(), counterOfferJudgement: 90 },
+      null,
+    ) as Record<string, number>;
+    expect(out.anchoring).toBe(35);
+    expect(out.specificity).toBe(35);
+    expect(out.counterOfferJudgement).toBe(35);
+  });
+
+  it("leaves leverage / package / composure / concession / closing untouched", () => {
+    const out = groundNoCounterSkillScores(inflated(), null) as Record<string, number>;
+    expect(out.leverageUse).toBe(80);
+    expect(out.packageThinking).toBe(88);
+    expect(out.composure).toBe(74);
+    expect(out.concessionStrategy).toBe(60);
+    expect(out.closingTechnique).toBe(66);
+  });
+
+  it("does not raise a score already below the ceiling", () => {
+    const out = groundNoCounterSkillScores({ anchoring: 20 }, null) as Record<string, number>;
+    expect(out.anchoring).toBe(20);
+  });
+
+  it("caps the legacy { score } wrapper shape, preserving sibling fields", () => {
+    const out = groundNoCounterSkillScores(
+      { anchoring: { score: 88, label: "Anchoring" } },
+      null,
+    ) as Record<string, { score: number; label: string }>;
+    expect(out.anchoring.score).toBe(35);
+    expect(out.anchoring.label).toBe("Anchoring");
+  });
+
+  it("is a no-op once a counter WAS named (numeric ask) — returns the same ref", () => {
+    const scores = inflated();
+    expect(groundNoCounterSkillScores(scores, 30)).toBe(scores);
+  });
+
+  it("is a no-op for null / undefined skillScores", () => {
+    expect(groundNoCounterSkillScores(null, null)).toBeNull();
+    expect(groundNoCounterSkillScores(undefined, null)).toBeUndefined();
+  });
+
+  it("leaves non-numeric anchor garbage untouched rather than coercing", () => {
+    const out = groundNoCounterSkillScores(
+      { anchoring: "n/a" as unknown as number, specificity: 90 },
+      null,
+    ) as Record<string, unknown>;
+    expect(out.anchoring).toBe("n/a");
+    expect(out.specificity).toBe(35);
+  });
+
+  it("flows through sessionRowsToProgressPoints so the current session's point is grounded", () => {
+    // Mirrors the read-seam usage: ground the viewed row's skill_scores with
+    // its authoritative (null) ask before flattening into progress points.
+    const grounded = groundNoCounterSkillScores(inflated(), null);
+    const points = sessionRowsToProgressPoints(
+      [{ sessionId: "cur", completedAt: t0, skillScores: grounded, sector: "Flipkart" }],
+      humanizeSkillKey,
+    );
+    const byLabel = (label: string) => points.find((p) => p.skill === label)?.scorePct;
+    expect(byLabel("Anchoring")).toBe(35);
+    expect(byLabel("Specificity")).toBe(35);
+    expect(byLabel("Leverage Use")).toBe(80);
+    expect(byLabel("Package Thinking")).toBe(88);
   });
 });
