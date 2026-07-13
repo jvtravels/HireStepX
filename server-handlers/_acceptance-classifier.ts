@@ -92,8 +92,17 @@ export interface AcceptanceResult {
  *  noun is excluded by lookahead so "I'll take 40 minutes", "I'll do 3 rounds",
  *  "I'll take 5%" never match. The verb "take it/the offer" (no number) is
  *  unchanged — it stays with the performative bank. */
+/* Extended 2026-07-13 (offline hostile probe): three natural accept-at-offer
+ * phrasings fell through to no-match because the frame demanded verb-and-number
+ * adjacency: a definite article ("I'll take THE 40"), an adverbial filler
+ * ("I'll JUST take 40", "let's JUST close this at 40"), and an interposed object
+ * in the close idiom ("let's close THIS at 40"). Each is a real concession the
+ * bot silently ignored → it kept countering a done deal. All still route through
+ * the caller's step-2.4 offer gate, so "take the 45" / "close this at 45" (above
+ * a 40 offer) capture the number and correctly fall through as counters — the
+ * broadening cannot manufacture a false accept. */
 const ACCEPT_FRAME_NUMBER_PATTERN =
-  /\b(?:i(?:'?ll|\s+will|\s+would|\s+can|\s+could)?\s+(?:take|do|go\s+with|accept|settle\s+for)|happy\s+(?:with|at)|fine\s+(?:with|at)|good\s+(?:with|at)|ok(?:ay)?\s+(?:with|at)|settle\s+(?:for|at)|let'?s\s+(?:do|close\s+at|go\s+with|settle\s+at))\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lac|l|k)?(?!\s*(?:%|percent|per\s?cent|minutes?|mins?|hours?|hrs?|days?|weeks?|months?|years?|yrs?|people|folks?|things?|reasons?|questions?|calls?|rounds?|candidates?|offers?))\b/i;
+  /\b(?:i(?:'?ll|\s+will|\s+would|\s+can|\s+could)?\s+(?:just\s+)?(?:take|do|go\s+with|accept|settle\s+for)|happy\s+(?:with|at)|fine\s+(?:with|at)|good\s+(?:with|at)|ok(?:ay)?\s+(?:with|at)|settle\s+(?:for|at)|let'?s\s+(?:just\s+)?(?:do|close\s+(?:this\s+|it\s+)?at|go\s+with|settle\s+at))\s+(?:the\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lac|l|k)?(?!\s*(?:%|percent|per\s?cent|minutes?|mins?|hours?|hrs?|days?|weeks?|months?|years?|yrs?|people|folks?|things?|reasons?|questions?|calls?|rounds?|candidates?|offers?))\b/i;
 
 /** Performative acceptance verbs — these alone are strong enough
  *  to count as acceptance regardless of whether an offer reference
