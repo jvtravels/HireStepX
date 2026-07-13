@@ -1418,7 +1418,7 @@ export function HeroV2() {
                   whiteSpace: "nowrap",
                 }}
               >
-                Start round 01
+                Start free — 2 sessions
                 <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 16 }}>→</span>
               </a>
               <a
