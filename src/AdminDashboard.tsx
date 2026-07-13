@@ -204,7 +204,7 @@ export interface SessionDetailData {
   completionTokens?: number;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "quality";
+type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "quality" | "analytics";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
@@ -213,6 +213,7 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "quality", label: "Quality", icon: "🧪" },
   { key: "financials", label: "Financials", icon: "💰" },
   { key: "llm", label: "AI / Services", icon: "🤖" },
+  { key: "analytics", label: "Analytics", icon: "📈" },
   { key: "feedback", label: "Feedback", icon: "💬" },
   { key: "support-messages", label: "Support", icon: "🛟" },
   { key: "outcomes", label: "Outcomes", icon: "🏆" },
@@ -2336,7 +2337,132 @@ export default function AdminDashboard() {
       case "calendar": return renderCalendar();
       case "outcomes": return renderOutcomes();
       case "quality": return <QualityContent />;
+      case "analytics": return renderAnalytics();
     }
+  };
+
+  const renderAnalytics = () => {
+    const tools = [
+      {
+        name: "PostHog",
+        desc: "Pageviews, blog funnel, session recordings, user behavior",
+        color: "#F54E00",
+        links: [
+          { label: "Dashboard", url: "https://us.posthog.com/project/370211/dashboard" },
+          { label: "Blog funnel", url: "https://us.posthog.com/project/370211/insights/new?insight=FUNNELS" },
+          { label: "Live events", url: "https://us.posthog.com/project/370211/activity/explore" },
+          { label: "Recordings", url: "https://us.posthog.com/project/370211/replay" },
+        ],
+      },
+      {
+        name: "Google Analytics 4",
+        desc: "Traffic sources, geography, pages, acquisition channels",
+        color: "#E37400",
+        links: [
+          { label: "Realtime", url: "https://analytics.google.com/analytics/web/#/p" + "G-PVZ0KRLETE" + "/realtime/overview" },
+          { label: "Traffic acquisition", url: "https://analytics.google.com/analytics/web/#/p476946071/reports/explorer?params=_u..nav%3Dmaui%26_r.explorerCard..selmet%3D%5B%22sessions%22%5D%26_r.explorerCard..seldim%3D%5B%22sessionDefaultChannelGroup%22%5D&r=acquisition-traffic-acquisition&ruid=acquisition-traffic-acquisition,life-cycle,acquisition" },
+          { label: "Pages & screens", url: "https://analytics.google.com/analytics/web/#/p476946071/reports/explorer?params=_u..nav%3Dmaui&r=all-pages-and-screens&ruid=all-pages-and-screens,life-cycle,engagement" },
+          { label: "Overview", url: "https://analytics.google.com/analytics/web/#/p476946071/reports/reportinghub" },
+        ],
+      },
+      {
+        name: "Google Search Console",
+        desc: "Search rankings, impressions, CTR, indexed pages",
+        color: "#1A73E8",
+        links: [
+          { label: "Performance", url: "https://search.google.com/search-console/performance/search-analytics?resource_id=sc-domain%3Ahirestepx.com" },
+          { label: "Coverage", url: "https://search.google.com/search-console/index?resource_id=sc-domain%3Ahirestepx.com" },
+          { label: "Sitemaps", url: "https://search.google.com/search-console/sitemaps?resource_id=sc-domain%3Ahirestepx.com" },
+          { label: "URL Inspection", url: "https://search.google.com/search-console/inspect?resource_id=sc-domain%3Ahirestepx.com" },
+        ],
+      },
+      {
+        name: "SERPWatcher",
+        desc: "Keyword rank tracking — 50 keywords, daily updates, India",
+        color: "#6B4FDB",
+        links: [
+          { label: "Rank tracker", url: "https://mangools.com/serpwatcher" },
+          { label: "KW research", url: "https://mangools.com/kwfinder" },
+          { label: "Backlinks", url: "https://mangools.com/linkminer" },
+          { label: "Site metrics", url: "https://mangools.com/siteprofiler" },
+        ],
+      },
+    ];
+
+    const keywords = [
+      "mock interview practice India",
+      "AI mock interview",
+      "TCS interview questions freshers 2026",
+      "behavioral interview questions freshers India",
+      "salary negotiation tips India",
+    ];
+
+    return (
+      <div>
+        <p style={{ ...labelStyle, marginBottom: 20 }}>All active tracking tools — click any link to open the live report</p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16, marginBottom: 32 }}>
+          {tools.map((tool) => (
+            <div key={tool.name} style={{ ...card, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: tool.color, flexShrink: 0 }} />
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: c.ivory, fontFamily: font.ui }}>{tool.name}</p>
+              </div>
+              <p style={{ margin: 0, fontSize: 12, color: c.stone, lineHeight: 1.5 }}>{tool.desc}</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {tool.links.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontSize: 11, fontWeight: 600, fontFamily: font.ui,
+                      padding: "4px 10px", borderRadius: 4,
+                      background: c.onyx, color: c.stone,
+                      textDecoration: "none", border: `1px solid ${c.border}`,
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {link.label} ↗
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ ...card, marginBottom: 24 }}>
+          <p style={{ ...labelStyle, marginBottom: 12 }}>Priority keywords to watch (SERPWatcher)</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {keywords.map((kw) => (
+              <span key={kw} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 4, background: c.onyx, color: c.stone, border: `1px solid ${c.border}`, fontFamily: font.mono }}>
+                {kw}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ ...card }}>
+          <p style={{ ...labelStyle, marginBottom: 12 }}>PostHog blog funnel events</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+            {[
+              { event: "blog_post_view", desc: "User lands on a blog post" },
+              { event: "blog_cta_click", desc: "User clicks \"Start free practice\"" },
+              { event: "user signed up", desc: "User completes signup" },
+            ].map((e) => (
+              <div key={e.event} style={{ background: c.onyx, borderRadius: 6, padding: "12px 14px", border: `1px solid ${c.border}` }}>
+                <p style={{ margin: "0 0 4px", fontSize: 11, fontFamily: font.mono, color: "#F54E00" }}>{e.event}</p>
+                <p style={{ margin: 0, fontSize: 12, color: c.stone }}>{e.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ margin: "14px 0 0", fontSize: 12, color: c.stone }}>
+            Build the funnel in PostHog → Insights → Funnel → add these 3 events in order.
+          </p>
+        </div>
+      </div>
+    );
   };
 
   const renderOutcomes = () => {
