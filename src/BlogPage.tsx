@@ -1727,7 +1727,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "52px 40px 100px" }}>
         {/* Intro dek — editorial rule + italic serif pullquote */}
         <div style={{ borderTop: `2px solid ${t.coal}`, paddingTop: 28, marginBottom: 64 }}>
-          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(17px, 1.8vw, 21px)", fontStyle: "italic", color: t.coal, lineHeight: 1.65, letterSpacing: "-0.005em", maxWidth: "56ch", margin: 0 }}>
+          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(17px, 1.8vw, 21px)", fontStyle: "italic", color: t.coal, lineHeight: 1.65, letterSpacing: "-0.005em", margin: 0 }}>
             {post.intro}
           </p>
         </div>
@@ -1817,7 +1817,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             Ready to{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>practice</span>?
           </p>
-          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.65, marginBottom: 26, maxWidth: "56ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.65, marginBottom: 26 }}>
             {post.cta}
           </p>
           <Link href="/signup" style={{
