@@ -1426,7 +1426,7 @@ function getRelatedPosts(slugs: string[]): BlogPost[] {
 /* ─── Token-derived shadow channel value ──────────────────────────────
  * t.coal = #0E0C08 → channels "14,12,8"
  * Named constant so rgba() in CSS references the token, not a magic number. */
-const coalChannels = "14,12,8";
+const coalChannels = "14,12,8"; /* RGB channels of t.coal (#0E0C08) — keep in sync if token changes */
 
 /* ─── Category filters — 18 raw categories consolidated into 6 user-intent buckets ─── */
 const CATEGORY_MAP: Record<string, string> = {
@@ -1464,7 +1464,7 @@ function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
         </div>
       )}
       <div style={{ padding: "20px 22px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
-        <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
           {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
         </p>
         <h3 style={{ fontFamily: fonts.serif, fontSize: lead ? 21 : 17, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.012em", marginBottom: 10, flex: 1, textWrap: "balance" }}>
@@ -1506,7 +1506,7 @@ function EditorialStrip({ post, imageRight }: { post: BlogPost; imageRight: bool
     >
       {!imageRight && media}
       <div className="blog-strip-text" style={{ padding: "44px 52px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 18 }}>
           {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
         </p>
         <h3 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 30px)", fontWeight: 400, color: t.coal, lineHeight: 1.12, letterSpacing: "-0.02em", marginBottom: 16, textWrap: "balance" }}>
@@ -1579,7 +1579,7 @@ function BlogIndex() {
       <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 40px 96px" }}>
         {/* Header */}
         <div style={{ marginBottom: 44, textAlign: "center" }}>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 2.8vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 auto 16px", whiteSpace: "nowrap" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 2.8vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 auto 16px", textWrap: "balance" }}>
             Interview prep that actually{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
           </h1>
@@ -1617,7 +1617,7 @@ function BlogIndex() {
             {!featuredImgFailed && (
               <div className="blog-featured-media" style={{ position: "relative", minHeight: 360, background: t.creamSoft }}>
                 <Image
-                  src={featured.heroImage} alt={featured.heroAlt} loading="eager"
+                  src={featured.heroImage} alt={featured.heroAlt} priority
                   fill sizes="(max-width: 880px) 100vw, 55vw"
                   onError={() => setFeaturedImgFailed(true)}
                   style={{ objectFit: "cover" }}
@@ -1626,8 +1626,8 @@ function BlogIndex() {
             )}
             <div style={{ padding: "48px 44px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{featured.company}</span>
-                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 999 }}>{featured.category}</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{featured.company}</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.04em", textTransform: "uppercase", padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 999 }}>{featured.category}</span>
               </div>
               <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 2.8vw, 38px)", fontWeight: 400, color: t.coal, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 16, textWrap: "balance" }}>
                 <Link href={`/blog/${featured.slug}`} className="blog-card-link">
@@ -1690,6 +1690,7 @@ function BlogIndex() {
 function BlogPostPage({ post }: { post: BlogPost }) {
   const related = getRelatedPosts(post.relatedSlugs);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [heroFailed, setHeroFailed] = useState(false);
 
   return (
     <BlogShell>
@@ -1698,7 +1699,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       <header style={{ background: t.cream, paddingTop: 64 }}>
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 32px", textAlign: "center" }}>
           {/* Plain text eyebrow — company · category — no pills */}
-          <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14 }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
             {post.company} <span style={{ color: t.lineStrong, fontWeight: 400 }}>·</span> {post.category}
           </p>
           <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.2vw, 46px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.022em", lineHeight: 1.1, textWrap: "balance", margin: "0 auto 24px", maxWidth: "26ch" }}>
@@ -1710,18 +1711,20 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             <span>{post.readTime} read</span>
           </div>
         </div>
-        {/* Hero image — contained in reading column, rounded corners */}
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px" }}>
-          <div className="blog-hero" style={{ position: "relative", height: 360, overflow: "hidden", borderRadius: 16, border: `1px solid ${t.line}`, background: t.creamSoft }}>
-            <Image
-              src={post.heroImage} alt={post.heroAlt}
-              fill sizes="(max-width: 960px) 100vw, 960px"
-              priority
-              onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-              style={{ objectFit: "cover" }}
-            />
+        {/* Hero image — contained in reading column, rounded corners; unmounts on load failure */}
+        {!heroFailed && (
+          <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px" }}>
+            <div className="blog-hero" style={{ position: "relative", height: 360, overflow: "hidden", borderRadius: 16, border: `1px solid ${t.line}`, background: t.creamSoft }}>
+              <Image
+                src={post.heroImage} alt={post.heroAlt}
+                fill sizes="(max-width: 960px) 100vw, 960px"
+                priority
+                onError={() => setHeroFailed(true)}
+                style={{ objectFit: "cover" }}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "52px 40px 100px" }}>
@@ -1741,14 +1744,14 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           return (
             <section key={i} style={{ paddingTop: i === 0 ? 0 : 56, borderTop: i > 0 ? `1px solid ${t.line}` : "none", marginBottom: 0 }}>
               {num && (
-                <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 10 }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                   Question {num}
                 </p>
               )}
               <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.2, letterSpacing: "-0.018em", textWrap: "balance" }}>
                 {headingText}
               </h2>
-              <div style={{ fontFamily: fonts.sans, fontSize: 17, color: t.inkSoft, lineHeight: 1.8, whiteSpace: "pre-line" }}>
+              <div style={{ fontFamily: fonts.sans, fontSize: 17, color: t.inkSoft, lineHeight: 1.8, whiteSpace: "pre-line", maxWidth: "72ch" }}>
                 {section.content}
               </div>
             </section>
@@ -1792,17 +1795,18 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                     </button>
                     <div
                       id={`faq-answer-${i}`}
-                      aria-hidden={!isOpen}
+                      aria-hidden={!isOpen ? "true" : undefined}
                       style={{
-                        overflow: "hidden",
-                        maxHeight: isOpen ? 1200 : 0,
-                        paddingBottom: isOpen ? 22 : 0,
-                        transition: "max-height 280ms cubic-bezier(0.16,1,0.3,1), padding-bottom 280ms cubic-bezier(0.16,1,0.3,1)",
+                        display: "grid",
+                        gridTemplateRows: isOpen ? "1fr" : "0fr",
+                        transition: "grid-template-rows 280ms cubic-bezier(0.16,1,0.3,1)",
                       }}
                     >
-                      <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.75 }}>
-                        {faq.answer}
-                      </p>
+                      <div style={{ overflow: "hidden" }}>
+                        <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.75, paddingBottom: 22 }}>
+                          {faq.answer}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1870,7 +1874,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                       style={{ objectFit: "cover" }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
                       {r.company} · {r.category}
                     </p>
                     <p style={{ fontFamily: fonts.serif, fontSize: 18, fontWeight: 400, color: t.coal, lineHeight: 1.3, letterSpacing: "-0.01em" }}>
