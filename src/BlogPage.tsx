@@ -1570,12 +1570,12 @@ function BlogIndex() {
     <BlogShell>
       <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "120px 40px 96px" }}>
         {/* Header */}
-        <div style={{ marginBottom: 44, maxWidth: 680 }}>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 3.6vw, 52px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.06, marginBottom: 16, textWrap: "balance" }}>
+        <div style={{ marginBottom: 44, textAlign: "center" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 3.6vw, 52px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.06, marginBottom: 16, textWrap: "balance", maxWidth: "22ch", margin: "0 auto 16px" }}>
             Interview prep that actually{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
           </h1>
-          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, maxWidth: "54ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, maxWidth: "54ch", margin: "0 auto" }}>
             Company-specific guides, question banks, and career strategies built for Indian job seekers.
           </p>
         </div>
