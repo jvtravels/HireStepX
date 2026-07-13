@@ -112,7 +112,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&h=500&fit=crop",
     heroAlt: "Google office building representing Google interview preparation",
-    datePublished: "2026-01-15",
+    datePublished: "2026-07-01",
     intro: "Google receives over 3 million applications per year, with an acceptance rate under 1%. The interview process is notoriously rigorous — but predictable. Here are the most-asked questions and how to answer them like a top 1% candidate.",
     sections: [
       { heading: "1. Tell me about a time you led a project with ambiguous requirements", content: "Google loves ambiguity. They want to see structured thinking under uncertainty. Use the STAR method but emphasize the 'situation' — describe the specific ambiguity (unclear stakeholders? shifting goals? no precedent?) and how you created clarity.\n\nSample opener: \"In Q3 last year, I was asked to lead our team's migration to a new data pipeline, but the target architecture hadn't been finalized and three teams had competing requirements...\"" },
@@ -147,7 +147,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&h=500&fit=crop",
     heroAlt: "Team collaborating in a modern office, representing Flipkart interview preparation",
-    datePublished: "2026-01-15",
+    datePublished: "2026-07-01",
     intro: "Flipkart is one of India's most sought-after tech employers, with competitive compensation and challenging problems at scale. Here's everything you need to know about their interview process for SDE roles.",
     sections: [
       { heading: "Interview Structure", content: "Flipkart's process typically has 4-5 rounds:\n\n1. Online Assessment — DSA problems (2-3 questions, 90 minutes)\n2. Machine Coding Round — Build a small system in 90 minutes\n3. Problem Solving (x2) — Whiteboard DSA with follow-ups\n4. System Design — For SDE-2+ roles\n5. Hiring Manager — Behavioral + culture fit" },
@@ -176,7 +176,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&h=500&fit=crop",
     heroAlt: "University students in a campus setting preparing for placement interviews",
-    datePublished: "2026-01-15",
+    datePublished: "2026-07-01",
     intro: "Campus placements are stressful — especially behavioral rounds where you feel like you have 'nothing to talk about.' The truth is: college projects, internships, hackathons, and even group assignments are valid experiences. Here's how to use them.",
     sections: [
       { heading: "The STAR Method for Freshers", content: "STAR stands for Situation, Task, Action, Result. As a fresher, your examples can come from:\n\n• College projects and capstone work\n• Internships (even 2-month ones count)\n• Hackathons and coding competitions\n• Club leadership and event organization\n• Part-time work or freelancing\n\nThe key is specificity — don't say 'I worked in a team.' Say 'I led a 4-person team to build a food delivery app in 48 hours at HackMIT.'" },
@@ -207,7 +207,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&h=500&fit=crop",
     heroAlt: "Fintech workspace representing Razorpay interview preparation",
-    datePublished: "2026-01-15",
+    datePublished: "2026-07-01",
     intro: "Razorpay has grown into one of India's most valuable fintech companies. Their interview process emphasizes problem-solving depth and ownership mindset. Here's what to expect.",
     sections: [
       { heading: "Interview Process Overview", content: "Razorpay's hiring loop:\n\n1. Recruiter screen (30 min) — background, motivation, salary expectations\n2. Online coding round — 2 DSA problems, 60 minutes\n3. Technical round 1 — DSA + problem decomposition\n4. Technical round 2 — System design (for SDE-2+)\n5. Culture round — Values alignment, ownership stories\n6. Hiring manager — Final bar raiser" },
@@ -235,7 +235,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&h=500&fit=crop",
     heroAlt: "Professional analyzing data charts for case study interview preparation",
-    datePublished: "2026-01-15",
+    datePublished: "2026-07-01",
     intro: "Case study interviews test your ability to structure ambiguous problems, analyze data, and communicate recommendations clearly. Whether you're interviewing for McKinsey, a product role, or a startup strategy position — the core skills are the same.",
     sections: [
       { heading: "The Universal Case Framework", content: "Every case can be broken into four steps:\n\n1. Clarify — Ask questions to narrow the problem scope\n2. Structure — Create a framework (don't force-fit MECE; adapt to the problem)\n3. Analyze — Work through each branch with data and logic\n4. Recommend — State your answer, the key driver, risks, and next steps\n\nThe biggest mistake? Jumping to step 3 without doing step 1 properly." },
@@ -268,7 +268,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1200&h=500&fit=crop",
     heroAlt: "Students preparing for TCS campus placement interview",
-    datePublished: "2026-02-01",
+    datePublished: "2026-07-02",
     intro: "TCS (Tata Consultancy Services) is the largest IT employer in India, hiring 40,000+ freshers annually through campus placements. The process is structured and predictable — which means thorough preparation gives you a real edge. Here's your complete guide.",
     sections: [
       { heading: "TCS Interview Process for Freshers", content: "TCS follows a standardized hiring process:\n\n1. TCS NQT (National Qualifier Test) — Online aptitude + coding test\n2. Technical Interview — CS fundamentals, project discussion\n3. Managerial Round — Behavioral + situational questions\n4. HR Round — Offer discussion, joining expectations\n\nThe NQT is the main filter — about 60% of candidates are eliminated here." },
@@ -299,7 +299,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=500&fit=crop",
     heroAlt: "Modern tech office representing Infosys interview preparation",
-    datePublished: "2026-02-01",
+    datePublished: "2026-07-02",
     intro: "Infosys hires 20,000+ freshers annually across three main tracks: Systems Engineer (SE), Power Programmer (PP), and Digital Specialist Engineer (DSE). Each has different interview patterns — here's how to prepare for all of them.",
     sections: [
       { heading: "Infosys Hiring Tracks Explained", content: "Systems Engineer (SE): ₹3.6 LPA — General IT roles, aptitude-focused hiring\nPower Programmer (PP): ₹6.5 LPA — Strong coders, advanced DSA required\nDigital Specialist Engineer (DSE): ₹6.5-9.5 LPA — Specialized tech roles\n\nInfyTQ certification gives you a direct interview call for SE/PP tracks." },
@@ -330,7 +330,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=1200&h=500&fit=crop",
     heroAlt: "Professional introducing themselves in a job interview setting",
-    datePublished: "2026-02-15",
+    datePublished: "2026-07-03",
     intro: "\"Tell me about yourself\" is the first question in 95% of interviews — and most candidates blow it. They either recite their resume or give a 5-minute monologue. Here's how to nail it in 60-90 seconds with a structure that works every time.",
     sections: [
       { heading: "The Perfect Structure (Present-Past-Future)", content: "Follow this 3-part structure:\n\n1. Present — What you do now (role, key skills, recent achievement)\n2. Past — How you got here (education, relevant experience)\n3. Future — Why you're here (what excites you about this role)\n\nKeep it under 90 seconds. Practice with a timer." },
@@ -362,7 +362,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1200&h=500&fit=crop",
     heroAlt: "Confident professional answering tell me about yourself interview question",
-    datePublished: "2026-02-15",
+    datePublished: "2026-07-03",
     intro: "This single question sets the tone for your entire interview. A great answer creates momentum — a weak one puts you on the defensive for the next 45 minutes. Here are proven answer templates for every career stage.",
     sections: [
       { heading: "Why Interviewers Ask This Question", content: "They're evaluating three things:\n\n1. Communication skills — Can you organize thoughts clearly?\n2. Relevance — Do you understand what matters for this role?\n3. Self-awareness — Do you know your own strengths?\n\nThey're NOT asking for your life story. They want a professional highlight reel." },
@@ -394,7 +394,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1504384764586-bb4cdc1707b0?w=1200&h=500&fit=crop",
     heroAlt: "Corporate office environment representing Wipro interview preparation",
-    datePublished: "2026-02-15",
+    datePublished: "2026-07-03",
     intro: "Wipro hires 15,000+ freshers annually through three main programs: Elite NTH (National Talent Hunt), Turbo, and WILP. The selection process is aptitude-heavy with a structured interview format. Here's how to prepare.",
     sections: [
       { heading: "Wipro Hiring Programs", content: "Elite NTH: ₹3.5 LPA — Standard engineering roles via online test + interview\nTurbo: ₹6.5 LPA — Advanced engineering roles, harder coding round\nWILP: ₹3.5 LPA — Work-Integrated Learning Program for non-CS graduates\n\nYour test score determines which track you're eligible for." },
@@ -423,7 +423,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1200&h=500&fit=crop",
     heroAlt: "HR interview in progress with interviewer and candidate",
-    datePublished: "2026-03-01",
+    datePublished: "2026-07-04",
     intro: "HR rounds are often treated as formalities — but they have real elimination power. In India, HR rejection rates range from 10-25% even after clearing technical rounds. Here are the 30 questions you'll face and how to answer them.",
     sections: [
       { heading: "The 10 Universal HR Questions", content: "These appear in almost every Indian company interview:\n\n1. Tell me about yourself\n2. Why do you want to work here?\n3. What are your strengths?\n4. What are your weaknesses?\n5. Where do you see yourself in 5 years?\n6. Why should we hire you?\n7. Tell me about a challenge you faced\n8. How do you handle stress/pressure?\n9. What are your salary expectations?\n10. Do you have any questions for us?" },
@@ -454,7 +454,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=1200&h=500&fit=crop",
     heroAlt: "Amazon headquarters representing Amazon leadership principles interview prep",
-    datePublished: "2026-03-01",
+    datePublished: "2026-07-04",
     intro: "Every Amazon interview question maps to one of their 16 Leadership Principles. Interviewers are trained to assess specific LPs per question. If you understand the principles, you can predict and prepare for nearly every question they'll ask.",
     sections: [
       { heading: "The 5 Most-Tested Principles", content: "While all 16 matter, these 5 appear in 80%+ of interview loops:\n\n1. Customer Obsession — \"Tell me about a time you went above and beyond for a customer\"\n2. Ownership — \"Describe a time you took on something outside your area of responsibility\"\n3. Dive Deep — \"Tell me about a time you had to debug a complex problem\"\n4. Bias for Action — \"Describe a time you made a decision with incomplete data\"\n5. Deliver Results — \"Tell me about your most impactful project\"\n\nPrepare 2 STAR stories for each of these." },
@@ -484,7 +484,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=500&fit=crop",
     heroAlt: "System architecture diagram representing system design interview preparation",
-    datePublished: "2026-03-15",
+    datePublished: "2026-07-05",
     intro: "System design interviews are the highest-signal round for SDE-2+ roles at top companies. They test whether you can think at scale, make tradeoffs, and communicate technical decisions clearly. Here's a step-by-step preparation framework.",
     sections: [
       { heading: "The 5-Step Framework", content: "Follow this framework in every system design interview:\n\n1. Requirements (3-5 min) — Clarify functional and non-functional requirements. Ask about scale, latency, consistency requirements.\n\n2. Estimation (2-3 min) — Back-of-envelope math. How many users? QPS? Storage? Bandwidth?\n\n3. High-Level Design (10 min) — Draw the major components: clients, load balancers, application servers, databases, caches, message queues.\n\n4. Deep Dive (15-20 min) — The interviewer picks 1-2 areas to go deep. This is where you differentiate yourself.\n\n5. Tradeoffs & Extensions (5 min) — Discuss what you'd change for 10x scale, what you'd monitor, how you'd handle failures." },
@@ -515,7 +515,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&h=500&fit=crop",
     heroAlt: "Professional negotiating salary with charts and data",
-    datePublished: "2026-03-15",
+    datePublished: "2026-07-05",
     intro: "Most Indians don't negotiate salary — and leave 20-40% on the table. Companies expect negotiation. They budget for it. When you accept the first offer, you're not being humble — you're being underpaid. Here's how to negotiate effectively.",
     sections: [
       { heading: "When Companies Have Room to Negotiate", content: "Companies always have a budget range. Typical ranges:\n\n• Freshers (mass hiring): ₹0-10% room — Very little flexibility\n• Freshers (product companies): ₹15-30% room\n• Experienced (3-5 yrs): ₹20-40% room\n• Experienced (5+ yrs): ₹25-50% room\n• Leadership: Highly negotiable\n\nRule of thumb: If the company reached out to YOU, there's more room. If you applied cold, less room." },
@@ -544,7 +544,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1523050854058-8df90110c476?w=1200&h=500&fit=crop",
     heroAlt: "College campus representing campus placement interviews",
-    datePublished: "2026-04-01",
+    datePublished: "2026-07-06",
     intro: "Campus placement season is the most stressful time of engineering college. Companies visit for 1-2 days, shortlist in hours, and your career trajectory gets decided in a few rounds. Here's everything you need to know to make the most of it.",
     sections: [
       { heading: "Typical Placement Process", content: "Most companies follow this structure:\n\n1. Pre-Placement Talk (PPT) — Company presentation. Attend every one, even for companies you're unsure about.\n2. Aptitude Test — Quantitative, verbal, logical reasoning (45-90 minutes)\n3. Technical Round — DSA problems, CS fundamentals, project discussion\n4. HR Round — Behavioral questions, salary expectations, joining date\n\nService companies (TCS, Infosys, Wipro): Heavy on aptitude + HR\nProduct companies (Google, Microsoft, Flipkart): Heavy on DSA + system design" },
@@ -575,7 +575,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=500&fit=crop",
     heroAlt: "Person practicing interview preparation with laptop",
-    datePublished: "2026-04-15",
+    datePublished: "2026-07-07",
     intro: "Reading interview tips is not interview practice. It's like reading about swimming — useful, but you won't learn to swim until you get in the water. Here's how to practice mock interviews in a way that actually builds the muscle memory you need for the real thing.",
     sections: [
       { heading: "Why Most Interview Practice Doesn't Work", content: "The 3 most common mistakes:\n\n1. Reading answers instead of speaking them — Your brain processes written and spoken answers differently. You need to practice saying words out loud, under time pressure.\n2. Practicing the same questions over and over — Real interviews have follow-up questions you can't predict. Practice should simulate unpredictability.\n3. No feedback loop — Without objective feedback, you can't identify what you're doing wrong. You'll just repeat the same mistakes with more confidence.\n\nEffective practice requires: speaking out loud + unpredictable questions + specific feedback." },
@@ -606,7 +606,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=500&fit=crop",
     heroAlt: "Professional giving a structured interview answer",
-    datePublished: "2026-05-01",
+    datePublished: "2026-07-08",
     intro: "The STAR method is the single most effective framework for answering behavioral interview questions. It stands for Situation, Task, Action, Result. Here's how to use it — with 10 examples tailored for Indian companies and roles.",
     sections: [
       { heading: "What Is the STAR Method?", content: "STAR is a framework for structuring your interview answers:\n\n• Situation — Set the context (When? Where? What project?)\n• Task — What was your specific responsibility?\n• Action — What did YOU do? (Not your team — you specifically)\n• Result — What was the measurable outcome?\n\nWhy it works: Interviewers are trained to evaluate structured answers. STAR gives them exactly what they're looking for — specific evidence of your capabilities, not vague claims.\n\nThe most common mistake: 80% of candidates describe the situation well but rush through the action and skip the result entirely. The result is the most important part." },
@@ -638,7 +638,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=500&fit=crop",
     heroAlt: "Students preparing for Cognizant campus placement interview",
-    datePublished: "2026-06-01",
+    datePublished: "2026-07-09",
     intro: "Cognizant hires 25,000+ freshers annually through GenC (₹4 LPA) and GenC Pro (₹6.5 LPA) tracks. The CoCubes assessment is the main gateway — time management under pressure, not raw knowledge, is what separates successful candidates. Here's the complete preparation guide.",
     sections: [
       { heading: "GenC vs GenC Pro — Which Track Is Right for You?", content: "GenC (₹4 LPA): General IT role. Aptitude-focused hiring. Assessment is the primary filter. Technical interview covers CS fundamentals and project discussion.\n\nGenC Pro (₹6.5 LPA): Requires a separate advanced coding round (2 medium problems in 60 minutes). Technical interview goes deeper into data structures and algorithms.\n\nHow selection works: All candidates take the same initial CoCubes assessment. Based on your score, you're either considered for GenC or GenC Pro (or both). You cannot directly 'apply' for GenC Pro — performance on the aptitude test qualifies you." },
@@ -667,7 +667,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&h=500&fit=crop",
     heroAlt: "Fresh graduates preparing for Accenture campus placement",
-    datePublished: "2026-06-05",
+    datePublished: "2026-07-10",
     intro: "Accenture is one of India's largest employers of engineering freshers, with the ASE (Associate Software Engineer) program offering competitive packages (₹4.5–8 LPA depending on track). Their process is unique — it heavily evaluates communication skills and 'client readiness.' Here's everything you need to know.",
     sections: [
       { heading: "Accenture Hiring Tracks", content: "Associate Software Engineer (ASE): ₹4.5 LPA — Standard track\nAdvanced ASE (AASE): ₹6–8 LPA — For candidates with stronger technical skills + better iCAT scores\n\nSelecting the track: Accenture reviews your iCAT score, academic percentage, and communication round performance to determine which track you're offered. You apply once, they decide your track." },
@@ -696,7 +696,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=500&fit=crop",
     heroAlt: "Product manager planning and strategising on a whiteboard",
-    datePublished: "2026-06-10",
+    datePublished: "2026-07-11",
     intro: "Product Manager roles in India have exploded across both FAANG and Indian unicorns. The interview format differs sharply by company — McKinsey-style case studies at Flipkart, Leadership Principles at Amazon, philosophical product questions at CRED. Here's the complete guide with examples.",
     sections: [
       { heading: "Types of PM Interview Questions", content: "PM interviews span 5 question types:\n\n1. Product Design — 'Design a feature for [product]' or 'How would you improve [app]?'\n2. Analytical / Metrics — 'How would you diagnose a 20% drop in DAU?'\n3. Estimation / Market Sizing — 'How many Swiggy orders happen in Bangalore daily?'\n4. Strategic / Go-to-market — 'Should Meesho launch a B2B vertical?'\n5. Behavioral / Leadership — 'Tell me about a product you launched that failed.'\n\nTop companies by question type:\n• Flipkart, Swiggy: Heavy case study + metrics\n• Amazon: Almost entirely behavioral (Leadership Principles)\n• CRED: Product philosophy + taste questions\n• Google: Design + metrics + product sense\n• Zomato: Diagnostics + marketplace questions" },
@@ -727,7 +727,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1488229297570-58520851e868?w=1200&h=500&fit=crop",
     heroAlt: "Tech company logos representing IT service company comparison",
-    datePublished: "2026-06-15",
+    datePublished: "2026-07-12",
     intro: "HCL, Accenture, and Capgemini are among the top recruiters at Indian engineering colleges — but their interview difficulty, salaries, and career trajectories are meaningfully different. Here's an honest comparison.",
     sections: [
       { heading: "Interview Difficulty Comparison", content: "HCL (Easiest of the three)\n• Aptitude test: Moderate difficulty\n• Coding: 1–2 easy problems\n• Interview: Conceptual CS + communication, rarely asks hard DSA\n• Filter rate: ~70% move past online assessment\n\nCapgemini (Moderate)\n• IntelliAdapt test: Adaptive difficulty, feels harder than it is\n• Coding: 2 easy-medium problems\n• Interview: Slightly deeper on OOP and databases\n• Filter rate: ~60% move past online assessment\n\nAccenture (Moderate + Communication filter)\n• iCAT test: Similar to Capgemini in technical depth\n• Communication round: Hard elimination filter unique to Accenture\n• Interview: CS fundamentals + client-readiness\n• Filter rate: ~50% move past all rounds (communication round eliminates 20%+)" },
@@ -758,7 +758,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=500&fit=crop",
     heroAlt: "Modern consulting office representing Deloitte interview preparation",
-    datePublished: "2026-06-15",
+    datePublished: "2026-07-12",
     intro: "Deloitte hires thousands of freshers in India every year across Consulting, Technology, and Advisory tracks. The interview is more demanding than typical IT service companies — they look for structured thinking and communication, not just technical skills. Here's exactly what to prepare.",
     sections: [
       { heading: "Deloitte Interview Rounds (2026)", content: "The Deloitte fresher process typically has 4 stages:\n\n1. CogniVue Aptitude Test — Online, 60–90 minutes. Tests numerical reasoning, verbal ability, logical reasoning, and situational judgement. Minimum score threshold varies by track.\n2. Group Discussion (GD) — 8–12 candidates, 15–20 minutes. Evaluated on communication, leadership, and content quality.\n3. Case Interview (Consulting/Advisory track) — 30–45 minutes. A business problem where you structure and present your solution.\n4. HR Round — Fit, motivation, communication, salary discussion.\n\nTechnology track candidates may skip the case round and instead face a technical interview on programming concepts and CS fundamentals." },
