@@ -145,7 +145,9 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     name: `What framework should I use for ${companyLabel} ${focusLabel.toLowerCase()} interviews?`,
     acceptedAnswer: {
       "@type": "Answer",
-      text: `${page.framework.name}: ${page.framework.summary}`,
+      /* HireStepX's recommended framework — clearly attributed as advice,
+         not as an official ${companyLabel} guideline. */
+      text: `HireStepX recommends the ${page.framework.name} framework for this type of interview: ${page.framework.summary}`,
     },
   });
 
@@ -155,7 +157,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       name: q.text,
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Use the ${page.framework.name} framework: ${page.framework.summary} Structure your answer around a specific example from your experience.`,
+        text: `To answer this question well, HireStepX recommends the ${page.framework.name} approach: ${page.framework.summary} Ground your answer in a specific real example from your own experience.`,
       },
     });
   });

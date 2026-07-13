@@ -115,18 +115,59 @@ export default async function QuestionsSlugPage({
   const companyLabel = COMPANY_LABEL[page.company] ?? page.company;
   const focusLabel = FOCUS_LABEL[page.focus] ?? page.focus;
 
-  /* FAQPage schema — expandable accordion in Google mobile SERP. */
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: questions.map((q) => ({
+  /* FAQPage schema — expandable accordion in Google mobile SERP.
+     Content sourced exclusively from seo-pages.ts curated fields and the
+     question bank (≥2-source verified). Framework answers attributed to
+     HireStepX, not the company. */
+  type FaqEntry = { "@type": "Question"; name: string; acceptedAnswer: { "@type": "Answer"; text: string } };
+  const faqEntries: FaqEntry[] = [];
+
+  if (page.recruitmentSteps && page.recruitmentSteps.length > 0) {
+    faqEntries.push({
+      "@type": "Question",
+      name: `What is the recruitment process at ${companyLabel}?`,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: `The typical ${companyLabel} recruitment process has ${page.recruitmentSteps.length} stages: ${page.recruitmentSteps.join(" → ")}.`,
+      },
+    });
+  }
+
+  if (page.interviewRounds && page.interviewRounds.length > 0) {
+    faqEntries.push({
+      "@type": "Question",
+      name: `What are the interview rounds at ${companyLabel}?`,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: `${companyLabel} typically conducts ${page.interviewRounds.length} interview rounds: ${page.interviewRounds.join("; ")}.`,
+      },
+    });
+  }
+
+  faqEntries.push({
+    "@type": "Question",
+    name: `What framework should I use for ${companyLabel} ${focusLabel.toLowerCase()} interviews?`,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: `HireStepX recommends the ${page.framework.name} framework for this type of interview: ${page.framework.summary}`,
+    },
+  });
+
+  questions.slice(0, 5).forEach((q) => {
+    faqEntries.push({
       "@type": "Question",
       name: q.text,
       acceptedAnswer: {
         "@type": "Answer",
-        text: `${page.framework.name}: ${page.framework.summary} Practice this question with HireStepX to get AI-graded feedback on your answer structure, delivery, and specificity.`,
+        text: `To answer this question well, HireStepX recommends the ${page.framework.name} approach: ${page.framework.summary} Ground your answer in a specific real example from your own experience.`,
       },
-    })),
+    });
+  });
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqEntries,
   };
 
   /* Article schema — signals editorial content, not a thin landing page. */
@@ -142,8 +183,10 @@ export default async function QuestionsSlugPage({
       logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
     datePublished: "2026-06-21",
-    dateModified: "2026-06-21",
+    dateModified: "2026-07-13",
     inLanguage: "en-IN",
+    articleSection: focusLabel,
+    keywords: [page.metaKeywords[0], companyLabel, "interview preparation India"].join(", "),
   };
 
   /* Related pages: same company OR same focus area, up to 4. */
