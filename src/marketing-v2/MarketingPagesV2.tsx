@@ -1869,7 +1869,7 @@ const HOW_IT_WORKS = [
   {
     step: "03",
     heading: "Both of you benefit",
-    body: "Your friend gets ₹9 off their first session. You earn ₹9 credit once they complete a paid session.",
+    body: "Your friend gets a free session credit added to their account immediately. You earn one free session credit once they practise.",
   },
 ];
 
@@ -1925,9 +1925,9 @@ export function ReferralPageV2() {
             margin: "0 auto 40px",
           }}
         >
-          Refer a friend preparing for interviews. They get ₹9 off their first
-          session. You earn ₹9 credit once they practise. No codes to track —
-          your link does it automatically.
+          Refer a friend preparing for interviews. They get a free session credit
+          the moment they sign up with your link. You earn one free session
+          credit once they practise. No codes to track — your link does it automatically.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <a

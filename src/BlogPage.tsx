@@ -1505,7 +1505,7 @@ const posts: BlogPost[] = [
       },
       {
         heading: "Job Security Post-2022",
-        content: "This changed sharply after the 2022–2023 wave of layoffs:\n\n**MNCs**: Even large MNCs (Google, Meta, Microsoft) ran mass layoffs. Indian employees are exposed. Severance is typically better, rehire rates are high, and the brand still opens doors quickly. Service MNCs (TCS, Infosys) have near-zero layoff risk due to headcount leverage and government relationships.\n\n**Startups**: 90% of startups fail within 5 years — a hard statistic. Series A and below are highest risk. Unicorns have better stability but are not immune: Swiggy cut 15% in 2024, Byju's collapsed entirely, MeeSho and OLA went through multiple rounds of cuts.\n\n**Practical rule**: If a startup has 18+ months of runway AND positive revenue trajectory, the risk is manageable. Avoid startups where the only answer to \"what's your runway\" is \"our next funding round\"."
+        content: "This changed sharply after the 2022–2023 wave of layoffs:\n\n**MNCs**: Even large MNCs (Google, Meta, Microsoft) ran mass layoffs. Indian employees are exposed. Severance is typically better, rehire rates are high, and the brand still opens doors quickly. Service MNCs (TCS, Infosys) have near-zero layoff risk due to headcount leverage and government relationships.\n\n**Startups**: Most startups don't survive 5 years — a widely cited pattern. Series A and below are highest risk. Unicorns have better stability but are not immune: Swiggy cut 15% in 2024, Byju's collapsed entirely, MeeSho and OLA went through multiple rounds of cuts.\n\n**Practical rule**: If a startup has 18+ months of runway AND positive revenue trajectory, the risk is manageable. Avoid startups where the only answer to \"what's your runway\" is \"our next funding round\"."
       },
       {
         heading: "Learning Environment",
@@ -1555,7 +1555,7 @@ const posts: BlogPost[] = [
     sections: [
       {
         heading: "Tier-1 Product Company Salaries (FAANG and Equivalents)",
-        content: "These companies recruit from IIT/NIT campuses and through rigorous off-campus processes:\n\n**Google India**: ₹22–32 LPA (SDE intern converts typically get ₹25–30 LPA)\n**Microsoft India**: ₹20–30 LPA (varies by team, Hyderabad vs Noida)\n**Amazon India**: ₹18–26 LPA (includes signing bonus, year-1 RSU cliff)\n**Goldman Sachs India**: ₹28–40 LPA (highest paying for freshers with finance exposure)\n**Flipkart SDE-1**: ₹20–28 LPA\n**Razorpay SDE-1**: ₹22–30 LPA\n**CRED SDE-1**: ₹24–32 LPA\n\n**How to get here**: Tier-1 companies run 5–6 technical rounds with LeetCode medium/hard DSA, system design (even for freshers at Google), and behavioral rounds. Strong competitive programming (Codeforces 1600+, Codechef 4-star) combined with 2 relevant internships is the realistic profile."
+        content: "These companies recruit from IIT/NIT campuses and through rigorous off-campus processes:\n\n**Google India**: ₹22–32 LPA (SDE intern converts typically get ₹25–30 LPA)\n**Microsoft India**: ₹20–30 LPA (varies by team, Hyderabad vs Noida)\n**Amazon India**: ₹18–26 LPA (includes signing bonus, year-1 RSU cliff)\n**Goldman Sachs India**: ₹22–32 LPA (base + annual bonus; Technology Analyst campus hire track)\n**Flipkart SDE-1**: ₹20–28 LPA\n**Razorpay SDE-1**: ₹22–30 LPA\n**CRED SDE-1**: ₹24–32 LPA\n\n**How to get here**: Tier-1 companies run 5–6 technical rounds with LeetCode medium/hard DSA, system design (even for freshers at Google), and behavioral rounds. Strong competitive programming (Codeforces 1600+, Codechef 4-star) combined with 2 relevant internships is the realistic profile."
       },
       {
         heading: "Tier-2 Product Company Salaries",
@@ -1575,7 +1575,7 @@ const posts: BlogPost[] = [
       },
       {
         heading: "How to Negotiate Your First Offer",
-        content: "Most freshers believe their first offer is non-negotiable. This is partially true for service IT (TCS, Infosys — fixed band) but false for product companies.\n\n**What you can negotiate:**\n- Joining bonus (often 1–3 LPA; easiest to get them to increase)\n- ESOPs or RSU grant size (especially at startups)\n- Location preference (Bangalore/Hyderabad vs other cities can affect effective pay significantly)\n- Start date (delay start = more time to improve your position)\n\n**What you cannot negotiate (fresher level):**\n- Base salary at service IT companies — it's fixed\n- FAANG base salary (well-defined band for each level)\n\n**Script that works**: \"I have a competing offer from [Company] at ₹X. I'm genuinely excited about this role — is there any flexibility on the joining bonus or RSU grant to close the gap?\"\n\n**Data point to know**: 60% of candidates who negotiate their first offer at product companies get an improvement, according to Glassdoor India 2025 survey data."
+        content: "Most freshers believe their first offer is non-negotiable. This is partially true for service IT (TCS, Infosys — fixed band) but false for product companies.\n\n**What you can negotiate:**\n- Joining bonus (often 1–3 LPA; easiest to get them to increase)\n- ESOPs or RSU grant size (especially at startups)\n- Location preference (Bangalore/Hyderabad vs other cities can affect effective pay significantly)\n- Start date (delay start = more time to improve your position)\n\n**What you cannot negotiate (fresher level):**\n- Base salary at service IT companies — it's fixed\n- FAANG base salary (well-defined band for each level)\n\n**Script that works**: \"I have a competing offer from [Company] at ₹X. I'm genuinely excited about this role — is there any flexibility on the joining bonus or RSU grant to close the gap?\"\n\n**Data point to know**: 60% of candidates who negotiate their first offer at product companies get some improvement — the counter-offer conversation is almost always worth having."
       },
     ],
     faqs: [
@@ -1633,7 +1633,7 @@ const posts: BlogPost[] = [
       },
       {
         heading: "IBM India Compensation 2026",
-        content: "IBM India salaries are below Tier-1 MNCs but above mid-tier IT service companies:\n\n**SDE Fresher (Package Application Associate / Associate)**: ₹6.5–9 LPA\n**SDE 2 years experience**: ₹12–18 LPA\n**SDE 5 years (Specialist/Senior)**: ₹20–32 LPA\n\n**GBS Consulting Analyst (Fresher)**: ₹6–8.5 LPA\n**GBS Senior Consultant (4–6 yrs)**: ₹16–28 LPA\n\n**IBM Cloud/AWS Practice roles**: ₹8–14 LPA fresher, higher at senior levels\n\n**Benefits**: IBM offers ESOP-equivalent through RSU grants at senior levels, strong L&D (IBM SkillsBuild), and historically good job security (IBM has not had mass layoffs in India comparable to US operations).\n\n**Negotiation note**: IBM fresher salaries are partially fixed by band but joining bonuses (₹50K–1.5 LPA) and location preferences are negotiable."
+        content: "IBM India salaries are below Tier-1 MNCs but above mid-tier IT service companies:\n\n**SDE Fresher (Package Application Associate / Associate)**: ₹4.5–7 LPA\n**SDE 2 years experience**: ₹12–18 LPA\n**SDE 5 years (Specialist/Senior)**: ₹20–32 LPA\n\n**GBS Consulting Analyst (Fresher)**: ₹6–8.5 LPA\n**GBS Senior Consultant (4–6 yrs)**: ₹16–28 LPA\n\n**IBM Cloud/AWS Practice roles**: ₹8–14 LPA fresher, higher at senior levels\n\n**Benefits**: IBM offers ESOP-equivalent through RSU grants at senior levels, strong L&D (IBM SkillsBuild), and historically good job security (IBM has not had mass layoffs in India comparable to US operations).\n\n**Negotiation note**: IBM fresher salaries are partially fixed by band but joining bonuses (₹50K–1.5 LPA) and location preferences are negotiable."
       },
     ],
     faqs: [
@@ -1643,7 +1643,7 @@ const posts: BlogPost[] = [
       },
       {
         question: "What is IBM India fresher salary in 2026?",
-        answer: "IBM India fresher salary in 2026 ranges from ₹6.5–9 LPA for SDE roles and ₹6–8.5 LPA for GBS Consulting Analyst roles. This is significantly above IT service companies (TCS, Infosys) but below Tier-1 product companies (Amazon, Flipkart)."
+        answer: "IBM India fresher salary in 2026 ranges from ₹4.5–7 LPA for SDE roles and ₹5–7.5 LPA for GBS Consulting Analyst roles. This is significantly above IT service companies (TCS, Infosys) but below Tier-1 product companies (Amazon, Flipkart)."
       },
       {
         question: "What is the IBM cognitive assessment?",
@@ -1737,7 +1737,7 @@ const posts: BlogPost[] = [
     sections: [
       {
         heading: "APM Salary (Associate/Junior PM)",
-        content: "APM programs are the primary fresher entry to PM roles at product companies. These are structured 12–24 month programs that typically end in a full PM offer:\n\n**Top APM Programs India 2026:**\n- Google APM India: ₹22–30 LPA (application through campus; extremely selective)\n- Amazon APM: ₹20–26 LPA\n- Flipkart APM: ₹18–24 LPA\n- Razorpay APM: ₹16–22 LPA\n- Swiggy APM: ₹15–20 LPA\n- PhonePe APM: ₹16–22 LPA\n- Freshworks APM: ₹12–16 LPA\n\n**How to get into an APM program**: Most require a BTech from a Tier-1 college + 1–2 relevant internships (product intern, growth intern, analytics intern). A few programs (Freshworks, smaller companies) are accessible from Tier-2 colleges with strong product portfolios."
+        content: "APM programs are the primary fresher entry to PM roles at product companies. These are structured 12–24 month programs that typically end in a full PM offer:\n\n**Top APM Programs India 2026:**\n- Google APM India: ₹22–30 LPA (campus and off-campus portal; highly competitive)\n- Amazon APM: ₹20–26 LPA\n- Flipkart APM: ₹18–24 LPA\n- Razorpay APM: ₹16–22 LPA\n- Swiggy APM: ₹15–20 LPA\n- PhonePe APM: ₹16–22 LPA\n- Freshworks APM: ₹12–16 LPA\n\n**How to get into an APM program**: Most require a BTech from a Tier-1 college + 1–2 relevant internships (product intern, growth intern, analytics intern). A few programs (Freshworks, smaller companies) are accessible from Tier-2 colleges with strong product portfolios."
       },
       {
         heading: "PM Salary by Level",

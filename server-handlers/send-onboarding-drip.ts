@@ -87,7 +87,7 @@ function buildDay2Email(
         title("You're in.", { accentWord: "Here's what that means." }) +
         para(`Hi ${safeName}, your plan is active. Here is the fastest way to get value from it before your ${safeRole} prep window closes.`) +
         dataCard(`What's unlocked`, [
-          ["Sessions", isPro ? "Unlimited, every day" : "7 per week"],
+          ["Sessions", isPro ? "Unlimited, every day" : "5 per Sprint Pack"],
           ["Question types", "Behavioral, Technical, Case Study, HR"],
           ...(isPro ? [["Salary negotiation", "Practice your offer conversation with AI"] as [string, string]] : []),
           ["Resume tailoring", "Questions matched to your uploaded resume"],
@@ -128,11 +128,11 @@ function buildDay5Email(
           ["Coach Notes tab", "After every session — the tab most users skip."],
           ...(isPro ? [["Salary negotiation", "Do at least one session before any offer call"] as [string, string]] : []),
         ]) +
-        para(`${b("The Coach Notes tab")} inside your session report is the most important feature nobody uses. After every session the AI writes a specific, personalised list of what to change in your next session. It takes 2 minutes to read and it's why some candidates improve 30 points in a week.`) +
+        para(`${b("The Coach Notes tab")} inside your session report is the most important feature nobody uses. After every session the AI writes a specific, personalised list of what to change in your next session. It takes 2 minutes to read and it's why candidates who use it consistently see noticeably sharper answers within a few sessions.`) +
         button("Start a session and read your Coach Notes", sessionUrl) +
         para(`Your ${b(safeRole)} sessions and all past reports are in your dashboard whenever you need them.`) +
         button("View my dashboard", reportUrl) +
-        para(`${isPro ? "Unlimited sessions" : "7 sessions per week"} — your plan covers you through placement season.`, { small: true, muted: true }),
+        para(`${isPro ? "Unlimited sessions" : "5 sessions per Sprint Pack"} — your plan covers you through placement season.`, { small: true, muted: true }),
     }),
   };
 }
