@@ -2234,7 +2234,7 @@ export function ProductStoryV2() {
   ];
 
   return (
-    <section aria-labelledby="hd-story" style={{ ...sectionBase, background: t.cream }}>
+    <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream }}>
       <div style={container}>
         <SectionMasthead n="04" label="How it works" right="Three steps" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ textAlign: "center", marginBottom: 80 }}>
@@ -2682,7 +2682,7 @@ function BentoRowLabel({ children }: { children: React.ReactNode }) {
 
 export function FeatureGridV2() {
   return (
-    <section aria-labelledby="hd-features" style={{ ...sectionBase, background: t.cream }}>
+    <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, background: t.cream }}>
       <div style={container}>
         <SectionMasthead n="05" label="What sets it apart" right="Distinct mechanics" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ marginBottom: 52 }}>
