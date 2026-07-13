@@ -39,7 +39,7 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-cat-tab.active { color: ${t.coal}; }
         .blog-cat-tab.active::after { transform: scaleX(1); }
         .blog-cat-tab:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 4px; border-radius: 2px; }
-        .blog-back-link { display: inline-flex; align-items: center; gap: 6px; font-family: ${fonts.sans}; font-size: 13px; font-weight: 600; color: ${t.indigoGray}; text-decoration: none; transition: color 160ms, gap 160ms cubic-bezier(0.16,1,0.3,1); }
+        .blog-back-link { display: inline-flex; align-items: center; gap: 6px; font-family: ${fonts.sans}; font-size: 13px; font-weight: 600; color: ${t.copper}; text-decoration: none; transition: color 160ms, gap 160ms cubic-bezier(0.16,1,0.3,1); }
         .blog-back-link:hover { color: ${t.coal}; gap: 10px; }
         .blog-back-link:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 3px; border-radius: 3px; }
         .blog-related-row { display: flex; gap: 20px; padding: 20px 0; border-bottom: 1px solid ${t.line}; text-decoration: none; align-items: center; transition: opacity 160ms cubic-bezier(0.16,1,0.3,1); }
@@ -56,6 +56,8 @@ function BlogShell({ children }: { children: ReactNode }) {
           .blog-editorial-strip { grid-template-columns: 1fr !important; }
           .blog-editorial-strip-media { min-height: 260px !important; order: -1; }
         }
+        .blog-filter-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .blog-filter-scroll::-webkit-scrollbar { display: none; }
         @media (max-width: 640px) {
           .blog-grid { grid-template-columns: 1fr !important; }
           .blog-container { padding: 32px 20px 64px !important; }
@@ -63,8 +65,7 @@ function BlogShell({ children }: { children: ReactNode }) {
           .blog-hero { display: none !important; }
           .blog-meta { padding: 16px 20px !important; }
           main, footer { padding-bottom: 96px !important; }
-          .blog-filter-scroll { overflow-x: auto; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; }
-          .blog-filter-scroll::-webkit-scrollbar { display: none; }
+          .blog-filter-scroll { flex-wrap: nowrap !important; }
           .blog-editorial-strip-media { min-height: 200px !important; }
           .blog-strip-text { padding: 32px 24px !important; }
           .blog-index-cta { flex-direction: column !important; align-items: flex-start !important; }
@@ -1423,8 +1424,17 @@ function getRelatedPosts(slugs: string[]): BlogPost[] {
   return slugs.map(s => posts.find(p => p.slug === s)).filter((p): p is BlogPost => !!p);
 }
 
-/* ─── Category filters ─── */
-const CATEGORIES = ["All", ...Array.from(new Set(posts.map(p => p.category)))];
+/* ─── Category filters — 18 raw categories consolidated into 6 user-intent buckets ─── */
+const CATEGORY_MAP: Record<string, string> = {
+  "Behavioral": "Behavioral", "HR Round": "Behavioral", "Skills": "Behavioral",
+  "Career": "Career", "Preparation": "Career",
+  "Freshers": "Freshers", "Campus": "Freshers", "Campus Placement": "Freshers",
+  "Technical": "Technical", "System Design": "Technical", "FAANG": "Technical",
+  "Product": "Technical", "Product Tech": "Technical", "Finance & Banking Tech": "Technical",
+  "Full Guide": "Company Guides", "Experience": "Company Guides", "Comparison": "Company Guides",
+  "Strategy": "Strategy", "Salary Guide": "Strategy",
+};
+const CATEGORIES = ["All", "Company Guides", "Freshers", "Behavioral", "Technical", "Career", "Strategy"];
 
 /* ─── Compact card — 3-col grid variant ─── */
 function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
@@ -1432,7 +1442,7 @@ function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
     <article
       className="blog-card"
       style={{
-        background: t.white, borderRadius: 14, border: `1px solid ${t.line}`,
+        background: t.creamSoft, borderRadius: 14, border: `1px solid ${t.line}`,
         overflow: "hidden", display: "flex", flexDirection: "column",
       }}
     >
@@ -1483,7 +1493,7 @@ function EditorialStrip({ post, imageRight }: { post: BlogPost; imageRight: bool
         display: "grid",
         gridTemplateColumns: imageRight ? "1fr 420px" : "420px 1fr",
         gap: 0,
-        background: t.white, borderRadius: 18, border: `1px solid ${t.line}`,
+        background: t.creamSoft, borderRadius: 18, border: `1px solid ${t.line}`,
         overflow: "hidden", marginBottom: 20,
       }}
     >
@@ -1497,7 +1507,7 @@ function EditorialStrip({ post, imageRight }: { post: BlogPost; imageRight: bool
             {post.title}
           </Link>
         </h3>
-        <p style={{ fontFamily: fonts.sans, fontSize: 14.5, color: t.indigoGray, lineHeight: 1.65, marginBottom: 22, maxWidth: "48ch" }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 14.5, color: t.inkSoft, lineHeight: 1.65, marginBottom: 22, maxWidth: "48ch" }}>
           {post.metaDescription}
         </p>
         <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
@@ -1540,7 +1550,7 @@ function BlogIndex() {
     },
   });
 
-  const filtered = activeCategory === "All" ? posts : posts.filter(p => p.category === activeCategory);
+  const filtered = activeCategory === "All" ? posts : posts.filter(p => (CATEGORY_MAP[p.category] ?? p.category) === activeCategory);
   const featured = filtered[0];
   const rest = filtered.slice(1);
 
@@ -1560,12 +1570,12 @@ function BlogIndex() {
     <BlogShell>
       <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "120px 40px 96px" }}>
         {/* Header */}
-        <div style={{ marginBottom: 52, maxWidth: 800 }}>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(44px, 5.5vw, 76px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.03em", lineHeight: 0.98, marginBottom: 22, textWrap: "balance" }}>
+        <div style={{ marginBottom: 44, maxWidth: 680 }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 3.6vw, 52px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.06, marginBottom: 16, textWrap: "balance" }}>
             Interview prep that actually{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
           </h1>
-          <p style={{ fontFamily: fonts.sans, fontSize: 18, color: t.indigoGray, lineHeight: 1.55, maxWidth: "58ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, maxWidth: "54ch" }}>
             Company-specific guides, question banks, and career strategies built for Indian job seekers.
           </p>
         </div>
@@ -1645,7 +1655,7 @@ function BlogIndex() {
             <span style={{ fontStyle: "italic", color: t.copper }}>start practicing</span>.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: 260 }}>
-            <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
+            <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
               AI mock interviews with instant feedback. Three sessions free, no card required.
             </p>
             <Link href="/signup" style={{
@@ -1774,7 +1784,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                       }}
                     >
                       <div style={{ overflow: "hidden", paddingBottom: isOpen ? 22 : 0, transition: "padding-bottom 280ms cubic-bezier(0.16,1,0.3,1)" }}>
-                        <p style={{ fontFamily: fonts.sans, fontSize: 15.5, color: t.indigoGray, lineHeight: 1.7, maxWidth: "68ch" }}>
+                        <p style={{ fontFamily: fonts.sans, fontSize: 15.5, color: t.inkSoft, lineHeight: 1.7, maxWidth: "68ch" }}>
                           {faq.answer}
                         </p>
                       </div>
@@ -1792,7 +1802,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             Ready to{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>practice</span>?
           </p>
-          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, lineHeight: 1.65, marginBottom: 26, maxWidth: "56ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.65, marginBottom: 26, maxWidth: "56ch" }}>
             {post.cta}
           </p>
           <Link href="/signup" style={{
@@ -1879,7 +1889,7 @@ export default function BlogPage() {
           <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 4.5vw, 56px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.05, marginBottom: 14 }}>
             Post not found
           </h1>
-          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.indigoGray, marginBottom: 28, maxWidth: "52ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, marginBottom: 28, maxWidth: "52ch" }}>
             That story might have moved or never existed. The blog index still has the rest of it.
           </p>
           <Link href="/blog" style={{

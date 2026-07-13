@@ -117,7 +117,7 @@
       "severity": "High",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "Uh, got it — higher fixed makes sense. Actually, sorry — let me rephrase — is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
+      "prose": "Uh, got it — higher fixed makes sense. Is it about the in-hand monthly going up now, or anchoring a stronger base for the next cycle? Either way I can structure around it.",
       "actionKind": "reactive-followup",
       "keywords": [
         "negotiation",
@@ -1576,7 +1576,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: promise, avoids, fake",
-      "prose": "On appraisal — the cycle runs on the company calendar, and joiners typically come in pro-rated once they've crossed the qualifying tenure. Wait, sorry — what I meant was I'll have the dates and the eligibility rule written into the offer alongside the comp piece.",
+      "prose": "On appraisal — the cycle runs on the company calendar, and joiners typically come in pro-rated once they've crossed the qualifying tenure. I'll have the dates and the eligibility rule written into the offer alongside the comp piece.",
       "actionKind": "answer-direct",
       "keywords": [
         "promise",
@@ -1625,7 +1625,7 @@
       "severity": "Medium",
       "verdict": "PARTIAL",
       "reason": "1/3 keywords present",
-      "prose": "Post the global comp review, on the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? Wait, sorry — what I meant was the clawback is typically 12 months pro-rata.",
+      "prose": "Post the global comp review, on the joining bonus — what's it bridging on your side: a pending variable payout, a gap during notice, or something else? The clawback is typically 12 months pro-rata.",
       "actionKind": "reactive-followup",
       "keywords": [
         "connects",
@@ -1739,8 +1739,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: handles, units",
-      "prose": "In this profitability-first era, 92% variable is significant — what's your comfort with that share, and have you been hitting payouts in full?",
-      "actionKind": "reactive-followup",
+      "prose": "To be fair, quick check — that puts variable at around ₹22 LPA on the ₹24 LPA total, right? Or is the base the full number?",
+      "actionKind": "component-probe",
       "keywords": [
         "handles",
         "units"
@@ -1897,7 +1897,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: professional, safe",
-      "prose": "Honestly, on benefits — over and above the cash CTC: group medical for self + family, gratuity, PF per statute, plus the flexi allowances. Wait, sorry — what I meant was I'll share the full benefits sheet with the offer letter so you have everything in one place.",
+      "prose": "Honestly, on benefits — over and above the cash CTC: group medical for self + family, gratuity, PF per statute, plus the flexi allowances. I'll share the full benefits sheet with the offer letter so you have everything in one place.",
       "actionKind": "answer-direct",
       "keywords": [
         "professional",
