@@ -37,7 +37,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: "monthly", priority: 0.88 },
     { url: `${baseUrl}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: `${baseUrl}/login`, lastModified: now, changeFrequency: "yearly", priority: 0.4 },
     { url: `${baseUrl}/signup`, lastModified: now, changeFrequency: "yearly", priority: 0.6 },
     { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
@@ -126,7 +126,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${baseUrl}/blog/${slug}`,
     lastModified: seoPagesLastModified,
     changeFrequency: "monthly" as const,
-    priority: 0.65,
+    priority: 0.75,
   }));
 
   return [...staticEntries, ...questionsIndex, ...questionEntries, ...seoEntries, ...blogEntries];

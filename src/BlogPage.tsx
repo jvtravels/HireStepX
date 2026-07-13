@@ -1692,6 +1692,45 @@ function BlogPostPage({ post }: { post: BlogPost }) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [heroFailed, setHeroFailed] = useState(false);
 
+  const canonicalUrl = `https://hirestepx.com/blog/${post.slug}`;
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.metaDescription,
+    url: canonicalUrl,
+    datePublished: post.datePublished,
+    dateModified: post.datePublished,
+    image: post.heroImage,
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+    author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
+    publisher: {
+      "@type": "Organization",
+      name: "HireStepX",
+      url: "https://hirestepx.com",
+      logo: { "@type": "ImageObject", url: "https://hirestepx.com/favicon.svg" },
+    },
+    ...(post.faqs.length > 0 && {
+      "@graph": [{
+        "@type": "FAQPage",
+        mainEntity: post.faqs.map(f => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: { "@type": "Answer", text: f.answer },
+        })),
+      }],
+    }),
+  };
+
+  useSEO({
+    title: `${post.title} — HireStepX`,
+    description: post.metaDescription,
+    canonical: canonicalUrl,
+    ogImage: post.heroImage,
+    ogType: "article",
+    jsonLd,
+  });
+
   return (
     <BlogShell>
       {/* Hero — contained column header; image sits inside the reading column with

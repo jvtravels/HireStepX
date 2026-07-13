@@ -109,10 +109,13 @@ export const metadata: Metadata = {
   other: {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-title": "HireStepX",
-    // apple-touch-icon points at the same 512 asset — iOS picks the best
-    // size from the 512 SVG. When we ship a rasterised 180×180 PNG later,
-    // update this href.
     "apple-touch-icon": "/favicon.svg",
+    // Google Search Console ownership verification.
+    // Set NEXT_PUBLIC_GSC_VERIFICATION in Vercel env vars after verifying
+    // the property in GSC (HTML tag method). Redeploy once set.
+    ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION
+      ? { "google-site-verification": process.env.NEXT_PUBLIC_GSC_VERIFICATION }
+      : {}),
   },
 };
 
