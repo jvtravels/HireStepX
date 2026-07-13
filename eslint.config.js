@@ -43,6 +43,13 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "no-console": ["warn", { allow: ["warn", "error"] }],
+      // Allow the deliberate `role="list"` on <ul>/<ol> that also carry
+      // `list-style: none`. Safari + VoiceOver strip the implicit list
+      // semantics the moment list-style is removed, so re-asserting
+      // role="list" is the standard a11y workaround (not cargo-cult) —
+      // used across the pSEO/marketing pages. Every OTHER redundant role
+      // (button, navigation, listitem, …) is still an error.
+      "jsx-a11y/no-redundant-roles": ["error", { ul: ["list"], ol: ["list"] }],
       "@typescript-eslint/no-unused-vars": [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
