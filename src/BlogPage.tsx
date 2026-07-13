@@ -1697,9 +1697,6 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           rounded corners so it never fights the cream page background. */}
       <header style={{ background: t.cream, paddingTop: 64 }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px 32px" }}>
-          <Link href="/blog" className="blog-back-link" aria-label="Back to blog" style={{ marginBottom: 28 }}>
-            <span aria-hidden>←</span> Blog
-          </Link>
           {/* Plain text eyebrow — company · category — no pills */}
           <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14 }}>
             {post.company} <span style={{ color: t.lineStrong, fontWeight: 400 }}>·</span> {post.category}
