@@ -1472,7 +1472,7 @@ function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
             {post.title}
           </Link>
         </h3>
-        <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft }}>
+        <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
           {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} · {post.readTime}
         </p>
       </div>
