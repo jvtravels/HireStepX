@@ -524,7 +524,9 @@ export function sessionReportToInterviewResult(
       ? ctx.resumeImprovements.slice(0, 3)
       : undefined,
     negotiationOutcome,
-    kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
+    kernelMetrics: isNegotiation
+      ? reconcileKernelMetricsForReport(session.negotiationMetrics, negotiationOutcome)
+      : undefined,
     focusBanner: buildFocusBanner(session, report),
     hrReport: isHrRound ? buildHrReport(report) : undefined,
   };
@@ -760,6 +762,28 @@ export function negotiationOutcomeDerivation(
   kernelMetrics?: DashboardSession["negotiationMetrics"],
 ): "kernel" | "heuristic" {
   return kernelMetrics && adoptKernelOutcome(kernelMetrics) ? "kernel" : "heuristic";
+}
+
+/* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM). The N1
+ * "Anchored at" tile renders anchorAtLabel(km.anchorTurn, km.candidateAskLpa) from
+ * the RAW kernel metrics. A legacy fixed-only row persisted candidateAskLpa null
+ * (the old engine snapshotted the total-scoped candidateTarget, which a "65 fixed"
+ * ask leaves null — it sets candidateTargetFixed instead). The report's
+ * authoritative ask — negotiationOutcome.candidateAsk, the single source every
+ * body surface renders (I-10) — recovered ₹65 from the transcript, so N1 read
+ * "Never anchored" beside the body's "you'd countered at ₹65 LPA". Reconcile the
+ * ask N1 sees to that single source: fill candidateAskLpa from the derived ask
+ * ONLY when the kernel didn't persist one. Fresh rows (kernel carries the fold)
+ * are untouched — the sole km.candidateAskLpa consumer in the report layer is
+ * that anchor tile, so this can't introduce a new divergence. */
+export function reconcileKernelMetricsForReport(
+  km: DashboardSession["negotiationMetrics"],
+  outcome: InterviewResultData["negotiationOutcome"],
+): DashboardSession["negotiationMetrics"] {
+  if (!km || typeof km.candidateAskLpa === "number") return km;
+  const derivedAsk = outcome?.candidateAsk;
+  if (typeof derivedAsk !== "number") return km;
+  return { ...km, candidateAskLpa: derivedAsk };
 }
 
 /** Derive the offer trajectory + deal outcome. Prefers the kernel's

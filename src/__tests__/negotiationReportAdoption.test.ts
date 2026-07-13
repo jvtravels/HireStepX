@@ -16,7 +16,7 @@
  * regardless of what the transcript text says. Legacy rows (no
  * trajectory persisted) still fall back to the regex heuristic. */
 import { describe, it, expect } from "vitest";
-import { buildNegotiationOutcome } from "../sessionReport/adapter";
+import { buildNegotiationOutcome, reconcileKernelMetricsForReport } from "../sessionReport/adapter";
 import { derivePhases, TOTAL_PHASES, anchorAtLabel, deriveAnchorBracket } from "../sessionReport/derivations";
 import type { SessionReport } from "../dashboardData";
 import type { DashboardSession } from "../dashboardTypes";
@@ -207,5 +207,46 @@ describe("legacy rows without a persisted trajectory fall back to the transcript
     // Counter-ladder must not render the "NO COUNTER NAMED" none-verdict.
     const bracket = deriveAnchorBracket(outcome!);
     expect(bracket?.type).not.toBe("none");
+  });
+});
+
+/* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM). N1's
+ * "Anchored at" tile renders anchorAtLabel from the RAW kernel metrics, but a
+ * legacy fixed-only row persisted candidateAskLpa null while the report's
+ * authoritative ask (negotiationOutcome.candidateAsk) recovered ₹65 from the
+ * transcript — so N1 read "Never anchored" beside the body's "you'd countered at
+ * ₹65". reconcileKernelMetricsForReport fills the ask N1 sees from that single
+ * source when — and ONLY when — the kernel didn't persist one. */
+describe("N1 anchor tile reconciles to the report's single-source ask", () => {
+  const legacyNoAsk = {
+    outcome: "accepted", anchorTurn: null, leverDiversity: 3, lpaGained: 20.5,
+    lpaPerTurn: 2.9, bandTraversal: 1, overBandViolation: false, totalTurns: 7,
+    score: 47,
+    // legacy fixed-only row: the fold was never persisted
+  } as unknown as KernelMetrics;
+
+  it("fills candidateAskLpa from the derived ask when the kernel row lacks one", () => {
+    const outcome = { candidateAsk: 65 } as NonNullable<ReturnType<typeof buildNegotiationOutcome>>;
+    const reconciled = reconcileKernelMetricsForReport(legacyNoAsk, outcome);
+    expect(reconciled!.candidateAskLpa).toBe(65);
+    // With the ask present, N1's tile reads "Anchored (turn not tracked)" — never
+    // the false "Never anchored" that stood beside the body's stated ₹65.
+    expect(anchorAtLabel(reconciled!.anchorTurn, reconciled!.candidateAskLpa)).toBe(
+      "Anchored (turn not tracked)",
+    );
+  });
+
+  it("never overrides a kernel-persisted ask (fresh rows untouched)", () => {
+    const fresh = { ...legacyNoAsk, candidateAskLpa: 58 } as KernelMetrics;
+    const outcome = { candidateAsk: 65 } as NonNullable<ReturnType<typeof buildNegotiationOutcome>>;
+    const reconciled = reconcileKernelMetricsForReport(fresh, outcome);
+    expect(reconciled!.candidateAskLpa).toBe(58); // kernel's own value wins
+  });
+
+  it("leaves the row unchanged when neither source has an ask (honest 'Never anchored')", () => {
+    const outcome = { candidateAsk: null } as NonNullable<ReturnType<typeof buildNegotiationOutcome>>;
+    const reconciled = reconcileKernelMetricsForReport(legacyNoAsk, outcome);
+    expect(reconciled!.candidateAskLpa).toBeUndefined();
+    expect(anchorAtLabel(reconciled!.anchorTurn, reconciled!.candidateAskLpa)).toBe("Never anchored");
   });
 });
