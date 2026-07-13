@@ -27,7 +27,7 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-skip { position: absolute; left: -9999px; top: 0; }
         .blog-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
         .blog-card { position: relative; transition: border-color 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1); }
-        .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 18px 44px rgba(14,12,8,0.08); transform: translateY(-2px); }
+        .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 18px 44px rgba(${coalChannels},0.08); transform: translateY(-2px); }
         .blog-card-link { color: inherit; text-decoration: none; outline: none; }
         .blog-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
         .blog-card:has(.blog-card-link:focus-visible) { border-color: ${t.copper}; box-shadow: 0 0 0 3px ${t.copperSoft}; }
@@ -1423,6 +1423,14 @@ function getRelatedPosts(slugs: string[]): BlogPost[] {
   return slugs.map(s => posts.find(p => p.slug === s)).filter((p): p is BlogPost => !!p);
 }
 
+/* ─── Token-derived shadow / gradient channel values ──────────────────
+ * t.coal = #0E0C08 → channels "14,12,8"
+ * t.copper = #B45309 → channels "180,83,9"
+ * Defined here so rgba() calls in CSS and JSX reference a named constant
+ * rather than magic numbers. */
+const coalChannels = "14,12,8";
+const copperChannels = "180,83,9";
+
 /* ─── Category filters — 18 raw categories consolidated into 6 user-intent buckets ─── */
 const CATEGORY_MAP: Record<string, string> = {
   "Behavioral": "Behavioral", "HR Round": "Behavioral", "Skills": "Behavioral",
@@ -1435,7 +1443,10 @@ const CATEGORY_MAP: Record<string, string> = {
 };
 const CATEGORIES = ["All", "Company Guides", "Freshers", "Behavioral", "Technical", "Career", "Strategy"];
 
-/* ─── Compact card — 3-col grid variant ─── */
+/* ─── Compact card — 3-col grid variant ───────────────────────────────
+ * lead=true  → image + excerpt + meta (wider 3fr column)
+ * lead=false → text-only: label + title + meta (narrower 2fr column)
+ * The asymmetry breaks the identical-card-grid anti-pattern. */
 function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
   return (
     <article
@@ -1445,26 +1456,30 @@ function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
         overflow: "hidden", display: "flex", flexDirection: "column",
       }}
     >
-      <div style={{ position: "relative", height: lead ? 196 : 152, background: t.creamSoft, flexShrink: 0 }}>
-        <Image
-          src={post.heroImage} alt={post.heroAlt}
-          fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 40vw"
-          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          style={{ objectFit: "cover" }}
-        />
-      </div>
-      <div style={{ padding: lead ? "20px 22px 22px" : "16px 18px 18px", flex: 1, display: "flex", flexDirection: "column" }}>
+      {lead && (
+        <div style={{ position: "relative", height: 196, background: t.creamSoft, flexShrink: 0 }}>
+          <Image
+            src={post.heroImage} alt={post.heroAlt}
+            fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 40vw"
+            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            style={{ objectFit: "cover" }}
+          />
+        </div>
+      )}
+      <div style={{ padding: lead ? "20px 22px 22px" : "22px 20px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
         <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
           {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
         </p>
-        <h3 style={{ fontFamily: fonts.serif, fontSize: lead ? 21 : 18, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.012em", marginBottom: 10, flex: 1, textWrap: "balance" }}>
+        <h3 style={{ fontFamily: fonts.serif, fontSize: lead ? 21 : 17, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.012em", marginBottom: lead ? 10 : 14, flex: 1, textWrap: "balance" }}>
           <Link href={`/blog/${post.slug}`} className="blog-card-link">
             {post.title}
           </Link>
         </h3>
-        <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
-          {post.metaDescription}
-        </p>
+        {lead && (
+          <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
+            {post.metaDescription}
+          </p>
+        )}
         <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft }}>
           {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} · {post.readTime}
         </p>
@@ -1687,7 +1702,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           aria-hidden
           style={{
             position: "absolute", inset: 0,
-            background: "radial-gradient(ellipse 65% 50% at 50% 0%, rgba(180, 83, 9, 0.07) 0%, transparent 70%)",
+            background: `radial-gradient(ellipse 65% 50% at 50% 0%, rgba(${copperChannels},0.07) 0%, transparent 70%)`,
             pointerEvents: "none",
           }}
         />
