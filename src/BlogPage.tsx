@@ -1444,6 +1444,7 @@ const CATEGORIES = ["All", "Company Guides", "Freshers", "Behavioral", "Technica
  * All cards share the same 200px image height for a balanced grid row.
  * Visual hierarchy comes from column width (3fr vs 2fr), not image height. */
 function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <article
       className="blog-card"
@@ -1452,14 +1453,16 @@ function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
         overflow: "hidden", display: "flex", flexDirection: "column",
       }}
     >
-      <div style={{ position: "relative", height: 200, background: t.creamSoft, flexShrink: 0 }}>
-        <Image
-          src={post.heroImage} alt={post.heroAlt}
-          fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 40vw"
-          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          style={{ objectFit: "cover" }}
-        />
-      </div>
+      {!imgFailed && (
+        <div style={{ position: "relative", height: 200, background: t.creamSoft, flexShrink: 0 }}>
+          <Image
+            src={post.heroImage} alt={post.heroAlt}
+            fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 40vw"
+            onError={() => setImgFailed(true)}
+            style={{ objectFit: "cover" }}
+          />
+        </div>
+      )}
       <div style={{ padding: "20px 22px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
         <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
           {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
@@ -1479,22 +1482,23 @@ function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
 
 /* ─── Editorial strip — full-width horizontal card, breaks the uniform grid ─── */
 function EditorialStrip({ post, imageRight }: { post: BlogPost; imageRight: boolean }) {
-  const media = (
+  const [imgFailed, setImgFailed] = useState(false);
+  const media = !imgFailed ? (
     <div className="blog-editorial-strip-media" style={{ position: "relative", minHeight: 300, background: t.creamSoft, flexShrink: 0 }}>
       <Image
         src={post.heroImage} alt={post.heroAlt} fill
         sizes="(max-width: 880px) 100vw, 420px"
-        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+        onError={() => setImgFailed(true)}
         style={{ objectFit: "cover" }}
       />
     </div>
-  );
+  ) : null;
   return (
     <article
       className="blog-card blog-editorial-strip"
       style={{
         display: "grid",
-        gridTemplateColumns: imageRight ? "1fr 420px" : "420px 1fr",
+        gridTemplateColumns: imgFailed ? "1fr" : (imageRight ? "1fr 420px" : "420px 1fr"),
         gap: 0,
         background: t.creamSoft, borderRadius: 18, border: `1px solid ${t.line}`,
         overflow: "hidden", marginBottom: 20,
@@ -1529,6 +1533,7 @@ type EditorialSection =
 /* ─── Blog index (list of all posts) ─── */
 function BlogIndex() {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [featuredImgFailed, setFeaturedImgFailed] = useState(false);
 
   useSEO({
     title: "Interview Prep Blog — HireStepX",
@@ -1602,19 +1607,23 @@ function BlogIndex() {
           <article
             className="blog-featured blog-card"
             style={{
-              display: "grid", gridTemplateColumns: "1.15fr 1fr", gap: 0,
+              display: "grid",
+              gridTemplateColumns: featuredImgFailed ? "1fr" : "1.15fr 1fr",
+              gap: 0,
               background: t.creamSoft, borderRadius: 18, border: `1px solid ${t.line}`,
               overflow: "hidden", marginBottom: 40,
             }}
           >
-            <div className="blog-featured-media" style={{ position: "relative", minHeight: 360, background: t.creamSoft }}>
-              <Image
-                src={featured.heroImage} alt={featured.heroAlt} loading="eager"
-                fill sizes="(max-width: 880px) 100vw, 55vw"
-                onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                style={{ objectFit: "cover" }}
-              />
-            </div>
+            {!featuredImgFailed && (
+              <div className="blog-featured-media" style={{ position: "relative", minHeight: 360, background: t.creamSoft }}>
+                <Image
+                  src={featured.heroImage} alt={featured.heroAlt} loading="eager"
+                  fill sizes="(max-width: 880px) 100vw, 55vw"
+                  onError={() => setFeaturedImgFailed(true)}
+                  style={{ objectFit: "cover" }}
+                />
+              </div>
+            )}
             <div style={{ padding: "48px 44px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
                 <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{featured.company}</span>
