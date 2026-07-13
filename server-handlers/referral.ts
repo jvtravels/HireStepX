@@ -13,16 +13,76 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, withRequestId } from "./_shared";
+import { withAuthAndRateLimit, withRequestId, escapeHtml } from "./_shared";
 import {
   normalizeReferralCode,
   grantReferralReward,
   REFERRAL_REWARD_WINDOW_MS,
 } from "./_referral-reward-helpers";
+import { emailShell, title, para, b, button } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
+
+async function sendReferralRewardEmails(
+  referrerEmail: string,
+  referrerName: string | null,
+  referredEmail: string,
+  referredName: string | null,
+): Promise<void> {
+  if (!RESEND_API_KEY) return;
+  const sessionUrl = `${APP_URL}/session/new`;
+  const refName = escapeHtml(referrerName?.split(" ")[0] || "there");
+  const newName = escapeHtml(referredName?.split(" ")[0] || "there");
+
+  const referrerEmail_ = {
+    from: FROM_EMAIL,
+    to: [referrerEmail],
+    subject: "Your invite worked — you both got a free session",
+    html: emailShell({
+      preview: "A friend joined using your link. Your free session is in your account.",
+      body:
+        title("Your invite", { accentWord: "worked." }) +
+        para(`Hi ${refName}, someone joined HireStepX using your referral link. ${b("You both got a free practice session")} added to your account right now.`) +
+        button("Start your free session", sessionUrl) +
+        para("Keep sharing your link — every person who joins gets you both one more session.", { small: true, muted: true }),
+    }),
+  };
+
+  const referredEmailContent = {
+    from: FROM_EMAIL,
+    to: [referredEmail],
+    subject: "Your invite reward is here — one free session added",
+    html: emailShell({
+      preview: "Your referral credit is in. Start a free session now.",
+      body:
+        title("One free session", { accentWord: "added." }) +
+        para(`Hi ${newName}, a free practice session has been added to your account as a thank you for joining via a friend's invite. ${b("You and your friend both got one.")}`) +
+        button("Start your free session", sessionUrl) +
+        para("Share your own link from the session report and earn more free sessions for every friend who joins.", { small: true, muted: true }),
+    }),
+  };
+
+  // Fire-and-forget — don't block the referral response on email delivery
+  await Promise.allSettled([
+    fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify(referrerEmail_),
+      signal: AbortSignal.timeout(8_000),
+    }).catch(err => console.warn("[referral] referrer email failed:", err?.message)),
+    fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify(referredEmailContent),
+      signal: AbortSignal.timeout(8_000),
+    }).catch(err => console.warn("[referral] referred email failed:", err?.message)),
+  ]);
+}
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 for clarity
@@ -191,6 +251,26 @@ export default async function handler(req: Request): Promise<Response> {
         sinceIso: new Date(now.getTime() - REFERRAL_REWARD_WINDOW_MS).toISOString(),
       });
       rewarded = result.granted;
+
+      // Notify both sides by email — fire-and-forget after the reward is confirmed
+      if (rewarded) {
+        const referrerRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(referrerId)}&select=email,name`,
+          { headers: dbHeaders },
+        ).catch(() => null);
+        if (referrerRes?.ok) {
+          const referrerRows = await referrerRes.json().catch(() => []);
+          const referrer = Array.isArray(referrerRows) ? referrerRows[0] : null;
+          if (referrer?.email && self?.email) {
+            sendReferralRewardEmails(
+              referrer.email as string,
+              (referrer.name as string | null) ?? null,
+              self.email as string,
+              null,
+            ).catch(err => console.warn("[referral] reward email batch failed:", err?.message));
+          }
+        }
+      }
     }
 
     return new Response(JSON.stringify({ success: true, rewarded }), { status: 200, headers });

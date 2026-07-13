@@ -32,7 +32,7 @@ interface SessionRow {
   created_at: string;
 }
 
-type EmailTier = "day1" | "day3" | "day7" | "paid14" | "paid30";
+type EmailTier = "day1" | "day3" | "day7" | "paid14" | "paid30" | "winback";
 
 function getEmailTier(daysSinceLastSession: number, lastEmailSent: string | null, isPaid = false): EmailTier | null {
   const lastSentDays = lastEmailSent
@@ -42,7 +42,8 @@ function getEmailTier(daysSinceLastSession: number, lastEmailSent: string | null
   if (isPaid) {
     // Paid users get at most one email every 10 days
     if (lastSentDays < 10) return null;
-    if (daysSinceLastSession >= 30 && daysSinceLastSession < 42) return "paid30";
+    if (daysSinceLastSession >= 60 && daysSinceLastSession < 90) return "winback";
+    if (daysSinceLastSession >= 30 && daysSinceLastSession < 60) return "paid30";
     if (daysSinceLastSession >= 14 && daysSinceLastSession < 30) return "paid14";
     return null;
   }
@@ -82,6 +83,7 @@ function buildEmail(
     day7: "Your practice sessions are still here",
     paid14: "Two weeks since your last Pro session",
     paid30: "Your Pro plan is active and ready when you are",
+    winback: "We saved your progress — come back whenever you're ready",
   };
 
   const titles: Record<EmailTier, string> = {
@@ -90,6 +92,7 @@ function buildEmail(
     day7: "Still",
     paid14: "Two weeks,",
     paid30: "Right here,",
+    winback: "Still in",
   };
   const accents: Record<EmailTier, string> = {
     day1: "where you left off.",
@@ -97,6 +100,7 @@ function buildEmail(
     day7: "right here.",
     paid14: "still unlimited.",
     paid30: "whenever you are.",
+    winback: "your corner.",
   };
 
   const heroText: Record<EmailTier, string> = {
@@ -109,6 +113,7 @@ function buildEmail(
       : `Hi ${name}, interview skills fade quietly without practice. A quick 10-minute session keeps your edge sharp and your answers ready.`,
     paid14: `Hi ${name}, it has been two weeks since your last Pro session. Your plan includes unlimited practice, and a 10-minute drill today rebuilds the muscle memory that got you this far.`,
     paid30: `Hi ${name}, it has been about a month. Your ${role} skills are still in there, and your Pro plan is ready when you are. A focused 15-minute drill brings it all back.`,
+    winback: `Hi ${name}, it has been a while. Your resume, your target role, and everything you built is still saved exactly as you left it. Whenever you are ready to start again, we are here.`,
   };
 
   const ctaText: Record<EmailTier, string> = {
@@ -117,6 +122,7 @@ function buildEmail(
     day7: "Practise now",
     paid14: "Start a quick session",
     paid30: "Start a focused drill",
+    winback: "Pick up where you left off",
   };
 
   const footerText: Record<EmailTier, string> = {
@@ -125,9 +131,10 @@ function buildEmail(
     day7: "This is our last reminder. We will stop emailing, and your practice sessions will always be here when you are ready.",
     paid14: "You are on the Pro plan, unlimited sessions every day.",
     paid30: "Pause or cancel anytime from your settings. We want you practising only when it helps.",
+    winback: "No pressure. Your practice history and resume are saved. Come back whenever it suits you.",
   };
 
-  const ctaUrl = tier === "day1" || tier === "paid14" || tier === "paid30" ? sessionUrl : dashUrl;
+  const ctaUrl = tier === "day1" || tier === "paid14" || tier === "paid30" || tier === "winback" ? sessionUrl : dashUrl;
 
   const showCard = score && tier !== "day7";
   const cardRows: [string, string][] = [["Last score", `${score}/100`]];
@@ -191,8 +198,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const daysSince = Math.floor((Date.now() - lastPractice.getTime()) / 86400000);
       const isPaid = p.subscription_tier === "starter" || p.subscription_tier === "pro";
       if (isPaid) {
-        // Paid: gently re-engage after 2 weeks idle, stop after 6 weeks
-        return daysSince >= 14 && daysSince < 42;
+        // Paid: re-engage 2–9 weeks idle; winback at 8–13 weeks
+        return daysSince >= 14 && daysSince < 90;
       }
       return daysSince >= 1 && daysSince < 14;
     });
