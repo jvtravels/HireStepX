@@ -77,11 +77,12 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
 
-  /* Article JSON-LD — required for eligibility in Google's "Top Stories"
-     carousel and article-rich results. */
+  /* BlogPosting JSON-LD — the specific subtype required for "Top Stories"
+     carousel eligibility. "Article" works but "BlogPosting" gets stronger
+     signals for blog content. */
   const articleSchema = meta ? {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: meta.title,
     description: meta.metaDescription,
     image: meta.heroImage,
@@ -94,9 +95,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
     inLanguage: "en-IN",
+    articleSection: meta.category,
     url: `https://hirestepx.com/blog/${slug}`,
-    keywords: [meta.company, meta.category, "interview preparation India", "mock interview"].join(", "),
+    keywords: [meta.company, meta.category, "interview preparation India", "mock interview", "HireStepX"].filter(Boolean).join(", "),
     mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/blog/${slug}` },
+    isPartOf: { "@type": "Blog", name: "HireStepX Blog", url: "https://hirestepx.com/blog" },
   } : null;
 
   /* FAQPage JSON-LD — triggers rich accordion in Google SERP. Only injected
