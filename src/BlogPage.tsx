@@ -1444,9 +1444,8 @@ const CATEGORY_MAP: Record<string, string> = {
 const CATEGORIES = ["All", "Company Guides", "Freshers", "Behavioral", "Technical", "Career", "Strategy"];
 
 /* ─── Compact card — 3-col grid variant ───────────────────────────────
- * lead=true  → image + excerpt + meta (wider 3fr column)
- * lead=false → text-only: label + title + meta (narrower 2fr column)
- * The asymmetry breaks the identical-card-grid anti-pattern. */
+ * All cards share the same 200px image height for a balanced grid row.
+ * Visual hierarchy comes from column width (3fr vs 2fr), not image height. */
 function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
   return (
     <article
@@ -1456,30 +1455,23 @@ function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
         overflow: "hidden", display: "flex", flexDirection: "column",
       }}
     >
-      {lead && (
-        <div style={{ position: "relative", height: 196, background: t.creamSoft, flexShrink: 0 }}>
-          <Image
-            src={post.heroImage} alt={post.heroAlt}
-            fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 40vw"
-            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-            style={{ objectFit: "cover" }}
-          />
-        </div>
-      )}
-      <div style={{ padding: lead ? "20px 22px 22px" : "22px 20px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "relative", height: 200, background: t.creamSoft, flexShrink: 0 }}>
+        <Image
+          src={post.heroImage} alt={post.heroAlt}
+          fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 40vw"
+          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          style={{ objectFit: "cover" }}
+        />
+      </div>
+      <div style={{ padding: "20px 22px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
         <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
           {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
         </p>
-        <h3 style={{ fontFamily: fonts.serif, fontSize: lead ? 21 : 17, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.012em", marginBottom: lead ? 10 : 14, flex: 1, textWrap: "balance" }}>
+        <h3 style={{ fontFamily: fonts.serif, fontSize: lead ? 21 : 17, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.012em", marginBottom: 10, flex: 1, textWrap: "balance" }}>
           <Link href={`/blog/${post.slug}`} className="blog-card-link">
             {post.title}
           </Link>
         </h3>
-        {lead && (
-          <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
-            {post.metaDescription}
-          </p>
-        )}
         <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft }}>
           {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} · {post.readTime}
         </p>
