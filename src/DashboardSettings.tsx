@@ -288,6 +288,11 @@ export default function SettingsPage() {
                sticky top is in viewport coords (main spans full viewport).
                56px locks the header flush below the nav. */
             top: 56px !important;
+            /* The sticky header's flow bottom sits 32px above its visual bottom
+               due to the scroll container offset — section content starts inside
+               the sticky header's visual area. Push content down by 40px
+               (32px to clear + 8px breathing room). */
+            margin-bottom: 64px !important;
           }
         }
         /* ── Tab overflow fix at 375px ────────────────────────────────────
