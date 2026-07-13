@@ -629,7 +629,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             const isRepurchasable = plan.id === "weekly";
             const isLowerTier = !isRepurchasable && (TIER_RANK[plan.tier] ?? 0) < (TIER_RANK[currentTier] ?? 0);
             const featured = plan.featured;
-            const ribbonText = featured ? "Most loved" : null;
+            const ribbonText = featured ? "Best value" : null;
             return (
               <div key={plan.id} style={{
                 position: "relative", padding: 22, borderRadius: 20,

@@ -519,7 +519,7 @@ interface UsageResponse {
 function UsageBar({ label, row }: { label: string; row: UsageRow }) {
   const cap = row.cap;
   const pct = cap && cap > 0 ? Math.min(100, Math.round((row.count / cap) * 100)) : 0;
-  const display = cap == null ? `${row.count}` : `${row.count} of ${cap}`;
+  const display = cap == null ? `${row.count}` : `${Math.min(row.count, cap)} of ${cap}`;
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
