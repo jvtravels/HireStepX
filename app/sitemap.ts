@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SEO_PAGES } from "../data/seo-pages";
+import { getAllBlogSlugs } from "../src/blog-meta";
 
 /* sitemap.xml — generated at build time. Includes:
  *   - Static marketing/legal pages (landing, pricing, privacy, terms, refund)
@@ -73,57 +74,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: p.sitemapPriority ?? 0.7,
   }));
 
-  /* Blog posts — static list kept in sync with the posts array in
-     BlogPage.tsx. The blog uses ISR (dynamicParams: true) so posts
-     aren't known at build time; we enumerate them here so Google
-     discovers all articles without waiting for organic crawling. */
-  const blogSlugs = [
-    "top-10-google-interview-questions",
-    "flipkart-interview-prep-guide",
-    "behavioral-interview-questions-freshers",
-    "razorpay-interview-experience",
-    "ace-case-study-interviews",
-    "tcs-interview-questions-freshers-2026",
-    "infosys-interview-questions-2026",
-    "how-to-introduce-yourself-in-interview",
-    "tell-me-about-yourself-best-answer",
-    "wipro-interview-questions-answers",
-    "hr-interview-questions-answers-india",
-    "amazon-leadership-principles-interview",
-    "system-design-interview-preparation",
-    "salary-negotiation-tips-india",
-    "campus-placement-interview-tips",
-    "mock-interview-practice-guide",
-    "star-method-interview-answers",
-    "cognizant-interview-questions-freshers-2026",
-    "accenture-interview-questions-freshers-2026",
-    "product-manager-interview-questions-india",
-    "hcl-accenture-capgemini-interview-comparison",
-    "deloitte-interview-questions-freshers-2026",
-    "group-discussion-topics-campus-placement-2026",
-    "how-to-pass-tcs-nqt-2026",
-    "zoho-interview-questions-freshers-2026",
-    "software-engineer-interview-checklist-2026",
-    "java-interview-questions-freshers-india-2026",
-    "resume-tips-freshers-india-2026",
-    "data-analyst-interview-questions-india-2026",
-    "zomato-product-manager-interview-2026",
-    "python-interview-questions-freshers-india-2026",
-    "goldman-sachs-india-interview-questions",
-    "frontend-developer-interview-questions-india-2026",
-    "product-company-vs-service-company-india-career",
-    "swiggy-interview-questions-2026",
-    "microsoft-india-interview-questions-2026",
-    "sql-interview-questions-freshers-india-2026",
-    "python-developer-salary-india-2026",
-    "data-analyst-salary-india-2026",
-    "how-to-crack-tcs-ion-nqt-2026",
-    "faang-interview-preparation-india-2026",
-    "wipro-elite-nlth-preparation-2026",
-    "react-developer-salary-india-2026",
-    "jp-morgan-interview-questions-india-2026",
-  ];
-  const blogEntries: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
+  /* Blog posts — sourced directly from blog-meta.ts registry so new
+     posts are automatically included without a manual sync step here. */
+  const blogEntries: MetadataRoute.Sitemap = getAllBlogSlugs().map((slug) => ({
     url: `${baseUrl}/blog/${slug}`,
     lastModified: seoPagesLastModified,
     changeFrequency: "monthly" as const,
