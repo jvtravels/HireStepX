@@ -154,7 +154,7 @@ export default async function CompaniesIndexPage() {
                   {sorted.map((page, i) => (
                     <li key={page.slug}>
                       <Link
-                        href={`/companies/${page.slug}`}
+                        href={`/questions/${page.slug}`}
                         style={{
                           display: "flex",
                           gap: 20,

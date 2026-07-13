@@ -178,7 +178,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     author: { "@type": "Organization", name: "HireStepX" },
     publisher: { "@type": "Organization", name: "HireStepX", logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" } },
     datePublished: "2026-05-05",
-    dateModified: "2026-07-13",
+    dateModified: "2026-07-14",
     inLanguage: "en-IN",
   };
 
@@ -343,6 +343,39 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
                     </li>
                   ))}
                 </ol>
+              </section>
+            </>
+          )}
+
+          {/* STAR guide — shown for behavioral / HR / campus-placement focus areas */}
+          {(page.focus === "behavioral" || page.focus === "hr" || page.focus === "campus-placement") && (
+            <>
+              <hr style={{ border: 0, borderTop: `1px solid ${t.line}`, margin: "40px 0" }} />
+              <section style={{ background: t.creamSoft, border: `1px solid ${t.copperMid}`, borderRadius: 12, padding: "20px 24px" }}>
+                <h2 style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px", color: t.coal }}>
+                  How to structure your answers
+                </h2>
+                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>
+                  {companyLabel} interviewers score answers on structure and specificity. Use the STAR method for every behavioral question.
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                  {[
+                    ["S — Situation", "Set context in 1–2 sentences. Give just enough background for the story to make sense."],
+                    ["T — Task", "State YOUR specific responsibility — what were you personally accountable for, not the team."],
+                    ["A — Action", "This is the longest part. Describe specific steps YOU took. Use 'I' not 'we'."],
+                    ["R — Result", "Quantify if possible: numbers, percentages, timelines. Then say what you learnt."],
+                  ].map(([label, text]) => (
+                    <div key={label} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+                        {label}
+                      </span>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55 }}>{text}</span>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "14px 0 0", lineHeight: 1.55, borderTop: `1px solid ${t.line}`, paddingTop: 12 }}>
+                  <strong style={{ color: t.coal }}>Common mistake:</strong> Saying &quot;we did X&quot; throughout. Interviewers score your individual contribution — practise saying &quot;I&quot; in mock sessions first.
+                </p>
               </section>
             </>
           )}
