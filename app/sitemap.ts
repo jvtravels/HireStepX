@@ -115,6 +115,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "swiggy-interview-questions-2026",
     "microsoft-india-interview-questions-2026",
     "sql-interview-questions-freshers-india-2026",
+    "python-developer-salary-india-2026",
+    "data-analyst-salary-india-2026",
+    "how-to-crack-tcs-ion-nqt-2026",
+    "faang-interview-preparation-india-2026",
+    "wipro-elite-nlth-preparation-2026",
+    "react-developer-salary-india-2026",
   ];
   const blogEntries: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
     url: `${baseUrl}/blog/${slug}`,
