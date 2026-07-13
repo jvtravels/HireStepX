@@ -28,29 +28,42 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
         .blog-card { position: relative; transition: border-color 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1); }
         .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 18px 44px rgba(14,12,8,0.08); transform: translateY(-2px); }
+        .blog-featured.blog-card:hover { border-color: ${t.creamLine}; box-shadow: 0 28px 64px rgba(14,12,8,0.28); }
         .blog-card-link { color: inherit; text-decoration: none; outline: none; }
         .blog-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
         .blog-card:has(.blog-card-link:focus-visible) { border-color: ${t.copper}; box-shadow: 0 0 0 3px ${t.copperSoft}; }
         .blog-card .blog-card-meta { position: relative; z-index: 2; }
         .blog-faq-btn:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 2px; border-radius: 4px; }
-        @media (prefers-reduced-motion: reduce) { .blog-card { transition: none; } .blog-card:hover { transform: none; } }
+        .blog-cat-tab { position: relative; padding: 6px 0 10px; background: none; border: none; cursor: pointer; font-family: ${fonts.sans}; font-size: 14px; font-weight: 600; color: ${t.inkSoft}; transition: color 160ms cubic-bezier(0.16,1,0.3,1); white-space: nowrap; flex-shrink: 0; }
+        .blog-cat-tab::after { content: ""; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: ${t.coal}; border-radius: 1px; transform: scaleX(0); transition: transform 200ms cubic-bezier(0.16,1,0.3,1); transform-origin: left; }
+        .blog-cat-tab.active { color: ${t.coal}; }
+        .blog-cat-tab.active::after { transform: scaleX(1); }
+        .blog-cat-tab:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 4px; border-radius: 2px; }
+        .blog-back-link { display: inline-flex; align-items: center; gap: 6px; font-family: ${fonts.sans}; font-size: 13px; font-weight: 600; color: ${t.indigoGray}; text-decoration: none; transition: color 160ms, gap 160ms cubic-bezier(0.16,1,0.3,1); }
+        .blog-back-link:hover { color: ${t.coal}; gap: 10px; }
+        .blog-back-link:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 3px; border-radius: 3px; }
+        .blog-related-row { display: flex; gap: 20px; padding: 20px 0; border-bottom: 1px solid ${t.line}; text-decoration: none; align-items: center; transition: opacity 160ms cubic-bezier(0.16,1,0.3,1); }
+        .blog-related-row:hover { opacity: 0.68; }
+        @media (prefers-reduced-motion: reduce) {
+          .blog-card { transition: none; } .blog-card:hover { transform: none; }
+          .blog-cat-tab::after { transition: none; } .blog-back-link { transition: none; }
+          .blog-related-row { transition: none; }
+        }
         @media (max-width: 880px) {
           .blog-featured { grid-template-columns: 1fr !important; }
-          .blog-featured-media { min-height: 220px !important; }
+          .blog-featured-media { min-height: 280px !important; }
           .blog-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .blog-editorial-strip { grid-template-columns: 1fr !important; }
           .blog-editorial-strip-media { min-height: 260px !important; order: -1; }
-          .blog-related-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 640px) {
           .blog-grid { grid-template-columns: 1fr !important; }
           .blog-container { padding: 32px 20px 64px !important; }
           .blog-article { padding: 0 20px 56px !important; }
-          .blog-hero { height: 220px !important; }
-          .blog-hero-inner { padding: 0 20px 28px !important; }
+          .blog-hero { display: none !important; }
           .blog-meta { padding: 16px 20px !important; }
           main, footer { padding-bottom: 96px !important; }
-          .blog-filter-scroll { overflow-x: auto; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+          .blog-filter-scroll { overflow-x: auto; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; }
           .blog-filter-scroll::-webkit-scrollbar { display: none; }
           .blog-editorial-strip-media { min-height: 200px !important; }
           .blog-strip-text { padding: 32px 24px !important; }
@@ -1414,7 +1427,7 @@ function getRelatedPosts(slugs: string[]): BlogPost[] {
 const CATEGORIES = ["All", ...Array.from(new Set(posts.map(p => p.category)))];
 
 /* ─── Compact card — 3-col grid variant ─── */
-function CompactCard({ post }: { post: BlogPost }) {
+function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
   return (
     <article
       className="blog-card"
@@ -1423,24 +1436,24 @@ function CompactCard({ post }: { post: BlogPost }) {
         overflow: "hidden", display: "flex", flexDirection: "column",
       }}
     >
-      <div style={{ position: "relative", height: 160, background: t.creamSoft, flexShrink: 0 }}>
+      <div style={{ position: "relative", height: lead ? 196 : 152, background: t.creamSoft, flexShrink: 0 }}>
         <Image
           src={post.heroImage} alt={post.heroAlt}
-          fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
+          fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 40vw"
           onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           style={{ objectFit: "cover" }}
         />
       </div>
-      <div style={{ padding: "18px 20px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: lead ? "20px 22px 22px" : "16px 18px 18px", flex: 1, display: "flex", flexDirection: "column" }}>
         <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
           {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
         </p>
-        <h3 style={{ fontFamily: fonts.serif, fontSize: 19, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.012em", marginBottom: 10, flex: 1, textWrap: "balance" }}>
+        <h3 style={{ fontFamily: fonts.serif, fontSize: lead ? 21 : 18, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.012em", marginBottom: 10, flex: 1, textWrap: "balance" }}>
           <Link href={`/blog/${post.slug}`} className="blog-card-link">
             {post.title}
           </Link>
         </h3>
-        <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, marginBottom: 12, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
           {post.metaDescription}
         </p>
         <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>
@@ -1557,65 +1570,55 @@ function BlogIndex() {
           </p>
         </div>
 
-        {/* Category filters — scrollable on mobile */}
-        <div className="blog-filter-scroll" style={{ display: "flex", gap: 8, marginBottom: 44, flexWrap: "wrap" }}>
-          {CATEGORIES.map(cat => {
-            const active = activeCategory === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                style={{
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
-                  padding: "10px 18px",
-                  borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-                  transition: "background 160ms, color 160ms, border-color 160ms",
-                  background: active ? t.coal : "transparent",
-                  color: active ? t.cream : t.coal,
-                  border: `1px solid ${active ? t.coal : t.line}`,
-                }}
-              >
-                {cat}
-              </button>
-            );
-          })}
+        {/* Category filters — underline tab style */}
+        <div className="blog-filter-scroll" style={{ display: "flex", gap: 24, marginBottom: 40, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              className={`blog-cat-tab${activeCategory === cat ? " active" : ""}`}
+              onClick={() => setActiveCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
 
-        {/* Featured post */}
+        {/* Featured post — dark "lead story" treatment */}
         {featured && (
           <article
             className="blog-featured blog-card"
             style={{
-              display: "grid", gridTemplateColumns: "1.05fr 1fr", gap: 0,
-              background: t.white, borderRadius: 18, border: `1px solid ${t.line}`,
-              overflow: "hidden", marginBottom: 40,
+              display: "grid", gridTemplateColumns: "1.15fr 1fr", gap: 0,
+              background: t.coal, borderRadius: 18, border: `1px solid ${t.creamLine}`,
+              overflow: "hidden", marginBottom: 40, color: t.cream,
             }}
           >
-            <div className="blog-featured-media" style={{ position: "relative", minHeight: 340, background: t.creamSoft }}>
+            <div className="blog-featured-media" style={{ position: "relative", minHeight: 360, background: t.coal }}>
               <Image
                 src={featured.heroImage} alt={featured.heroAlt} loading="eager"
-                fill sizes="(max-width: 880px) 100vw, 50vw"
+                fill sizes="(max-width: 880px) 100vw, 55vw"
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                style={{ objectFit: "cover" }}
+                style={{ objectFit: "cover", opacity: 0.88 }}
               />
             </div>
-            <div style={{ padding: "44px 40px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{featured.company}</span>
-                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999 }}>{featured.category}</span>
+            <div style={{ padding: "48px 44px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copperWash, border: `1px solid ${t.copperBorder}`, borderRadius: 999 }}>{featured.company}</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.creamMuted, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.creamLineSoft, border: `1px solid ${t.creamLine}`, borderRadius: 999 }}>{featured.category}</span>
               </div>
-              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 2.6vw, 34px)", fontWeight: 400, color: t.coal, lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 14, textWrap: "balance" }}>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 2.8vw, 38px)", fontWeight: 400, color: t.cream, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 16, textWrap: "balance" }}>
                 <Link href={`/blog/${featured.slug}`} className="blog-card-link">
                   {featured.title}
                 </Link>
               </h2>
-              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, lineHeight: 1.6, marginBottom: 18 }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.creamMuted, lineHeight: 1.65, marginBottom: 24 }}>
                 {featured.metaDescription}
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.creamFaded }}>
                 <span>{featured.readTime} read</span>
-                <span aria-hidden style={{ color: t.inkFaint }}>·</span>
+                <span aria-hidden style={{ color: t.creamLine }}>·</span>
                 <span>{new Date(featured.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+                <span aria-hidden style={{ marginLeft: "auto", color: t.copper, fontSize: 16 }}>→</span>
               </div>
             </div>
           </article>
@@ -1624,8 +1627,8 @@ function BlogIndex() {
         {/* Editorial post grid — alternating card groups and full-width strips */}
         {editorialSections.map((section, si) =>
           section.type === "grid" ? (
-            <div key={`grid-${si}`} className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22, marginBottom: 20 }}>
-              {section.items.map(p => <CompactCard key={p.slug} post={p} />)}
+            <div key={`grid-${si}`} className="blog-grid" style={{ display: "grid", gridTemplateColumns: section.items.length === 3 ? "3fr 2fr 2fr" : `repeat(${section.items.length}, 1fr)`, gap: 22, marginBottom: 20 }}>
+              {section.items.map((p, idx) => <CompactCard key={p.slug} post={p} lead={idx === 0} />)}
             </div>
           ) : (
             <EditorialStrip key={`strip-${si}`} post={section.item} imageRight={section.imageRight} />
@@ -1679,11 +1682,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           }}
         />
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px 40px", position: "relative" }}>
-          <Link href="/blog" style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.indigoGray,
-            textDecoration: "none", marginBottom: 24,
-          }}>
+          <Link href="/blog" className="blog-back-link" style={{ marginBottom: 24 }}>
             <span aria-hidden>←</span> Blog
           </Link>
           <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
@@ -1694,8 +1693,6 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             {post.title}
           </h1>
           <div className="blog-meta" style={{ marginTop: 28, display: "flex", alignItems: "center", gap: 12, fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, flexWrap: "wrap" }}>
-            <span style={{ color: t.coal, fontWeight: 600 }}>{post.author ?? "HireStepX Editorial Team"}</span>
-            <span aria-hidden style={{ color: t.inkFaint }}>·</span>
             <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
             <span aria-hidden style={{ color: t.inkFaint }}>·</span>
             <span>{post.readTime} read</span>
@@ -1832,26 +1829,29 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           </section>
         )}
 
-        {/* Related Posts */}
+        {/* Related Posts — editorial list */}
         {related.length > 0 && (
           <section style={{ marginTop: 72 }}>
-            <h2 style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 20 }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.015em", lineHeight: 1.2, marginBottom: 0 }}>
               Continue reading
             </h2>
-            <div className="blog-related-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(related.length, 3)}, 1fr)`, gap: 18 }}>
+            <div style={{ marginTop: 20, borderTop: `1px solid ${t.line}` }}>
               {related.map(r => (
-                <Link key={r.slug} href={`/blog/${r.slug}`} className="blog-card" style={{
-                  background: t.white, borderRadius: 12, border: `1px solid ${t.line}`,
-                  textDecoration: "none", overflow: "hidden",
-                }}>
-                  <div style={{ position: "relative", width: "100%", height: 110, background: t.creamSoft }}>
-                    <Image src={r.heroImage} alt={r.heroAlt} fill sizes="(max-width: 768px) 100vw, 33vw" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                <Link key={r.slug} href={`/blog/${r.slug}`} className="blog-related-row">
+                  <div style={{ position: "relative", width: 80, height: 60, flexShrink: 0, background: t.creamSoft, borderRadius: 8, overflow: "hidden" }}>
+                    <Image src={r.heroImage} alt={r.heroAlt} fill sizes="80px"
+                      onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                       style={{ objectFit: "cover" }} />
                   </div>
-                  <div style={{ padding: "14px 16px 16px" }}>
-                    <span style={{ fontFamily: fonts.serif, fontSize: 16, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.01em", display: "block", marginBottom: 8 }}>{r.title}</span>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft }}>{r.readTime} read</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
+                      {r.company} · {r.category}
+                    </p>
+                    <p style={{ fontFamily: fonts.serif, fontSize: 17, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.01em" }}>
+                      {r.title}
+                    </p>
                   </div>
+                  <span aria-hidden style={{ color: t.copper, fontSize: 18, flexShrink: 0 }}>→</span>
                 </Link>
               ))}
             </div>
