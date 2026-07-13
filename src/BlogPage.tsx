@@ -1571,7 +1571,7 @@ function BlogIndex() {
 
   return (
     <BlogShell>
-      <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "120px 40px 96px" }}>
+      <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 40px 96px" }}>
         {/* Header */}
         <div style={{ marginBottom: 44, textAlign: "center" }}>
           <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 2.8vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 auto 16px", whiteSpace: "nowrap" }}>
