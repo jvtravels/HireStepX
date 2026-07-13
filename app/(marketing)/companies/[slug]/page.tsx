@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../../../../data/seo-pages";
 import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
 import { BLOG_META } from "@/blog-meta";
+import { tokens as t, fonts } from "../../../../src/auth/_tokens";
 
 /* Programmatic SEO landing pages — /companies/{slug}.
  *
@@ -52,6 +53,13 @@ const COMPANY_LABEL: Record<string, string> = {
   goldman: "Goldman Sachs", jpmc: "JPMorgan",
   "morgan-stanley": "Morgan Stanley",
 };
+
+const DIFFICULTY_CHIP: Record<string, { background: string; color: string; border: string }> = {
+  warmup: { background: t.success100, color: t.success, border: "1px solid rgba(21,128,61,0.15)" },
+  standard: { background: t.warning100, color: t.warning, border: `1px solid ${t.warningLine}` },
+  intense: { background: t.error100, color: t.error, border: "1px solid rgba(185,28,28,0.15)" },
+};
+const DIFFICULTY_LABEL: Record<string, string> = { warmup: "Easy", standard: "Medium", intense: "Hard" };
 
 /* Fetch matching bank entries for a page. Uses tier fallback so pages
    never render with zero questions even if the (company × focus)
@@ -212,175 +220,138 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 
-      <main style={{
-        background: "#FAF7F0", color: "#0E0C08", minHeight: "100dvh",
-        fontFamily: "var(--font-ui), system-ui, sans-serif", padding: "48px 24px 80px",
-      }}>
-        <div style={{ maxWidth: 760, margin: "0 auto" }}>
+      <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
+        <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 24px 96px" }}>
+
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 32 }}>
+            <Link href="/" style={{ color: t.inkFaint, textDecoration: "none" }}>Home</Link>
+            {" / "}
+            <Link href="/companies" style={{ color: t.inkFaint, textDecoration: "none" }}>Companies</Link>
+            {" / "}
+            <span style={{ color: t.coal }}>{companyLabel}</span>
+          </nav>
+
           {/* Eyebrow */}
-          <div style={{
-            fontFamily: "var(--font-mono), monospace", fontSize: 11, fontWeight: 600,
-            letterSpacing: "0.10em", textTransform: "uppercase",
-            color: "#B45309", marginBottom: 12,
-          }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.copper, margin: 0 }}>
             {companyLabel} · {focusLabel}
-          </div>
+          </p>
 
           {/* H1 mirrors searchPhrase exactly */}
-          <h1 style={{
-            fontFamily: "var(--font-display), Georgia, serif", fontSize: "clamp(28px, 5vw, 44px)",
-            fontWeight: 400, letterSpacing: "-0.015em", lineHeight: 1.15, margin: 0,
-            color: "#0E0C08", textWrap: "balance",
-          }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 5vw, 48px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.1, color: t.coal, margin: "12px 0 0", textWrap: "balance" as const }}>
             {page.searchPhrase}
           </h1>
 
           {/* Hand-written intro */}
-          <p style={{
-            fontFamily: "var(--font-display), Georgia, serif", fontStyle: "italic",
-            fontSize: 18, lineHeight: 1.55, color: "#6E6759", marginTop: 20, textWrap: "balance",
-          }}>
+          <p style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, lineHeight: 1.6, color: t.inkSoft, marginTop: 20, marginBottom: 0, maxWidth: "68ch", textWrap: "balance" as const }}>
             {page.intro}
           </p>
 
-          {/* CTA — primary conversion path */}
-          <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
-            <Link href={practiceHref} style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#B45309", color: "#FAF7F0", textDecoration: "none",
-              padding: "14px 24px", borderRadius: 999,
-              fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 500,
-            }}>
-              Practice this interview free → 2 sessions, no card
+          {/* Primary CTA */}
+          <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap", alignItems: "center" }}>
+            <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "13px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
+              Practice this interview free →
             </Link>
-            <Link href="/pricing" style={{
-              display: "inline-flex", alignItems: "center",
-              color: "#B45309", textDecoration: "none",
-              padding: "14px 16px",
-              fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 500,
-            }}>
-              See pricing
-            </Link>
+            <span style={{ color: t.inkFaint, fontFamily: fonts.sans, fontSize: 14 }}>
+              2 sessions, no credit card
+            </span>
           </div>
 
-          {/* Framework callout */}
-          <section style={{
-            background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.08)",
-            borderRadius: 12, padding: "20px 24px", marginTop: 36,
-          }}>
-            <div style={{
-              fontFamily: "var(--font-mono), monospace", fontSize: 10, fontWeight: 700,
-              letterSpacing: "0.10em", textTransform: "uppercase", color: "#6E6759",
-            }}>
-              Framework
-            </div>
-            <h2 style={{
-              fontFamily: "var(--font-display), serif", fontSize: 22, fontWeight: 400,
-              margin: "6px 0 8px", letterSpacing: "-0.01em",
-            }}>
+          {/* Framework */}
+          <section style={{ marginTop: 48 }}>
+            <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.copper, margin: "0 0 10px" }}>
+              Framework to use
+            </p>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 10px", color: t.coal }}>
               {page.framework.name}
             </h2>
-            <p style={{ fontSize: 14, lineHeight: 1.6, color: "#6E6759", margin: 0 }}>
+            <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.65, color: t.inkSoft, margin: 0 }}>
               {page.framework.summary}
             </p>
           </section>
 
-          {/* Recruitment Process — optional, renders only when data exists. */}
+          {/* Recruitment Process */}
           {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
-            <section style={{ marginTop: 40 }}>
-              <h2 style={{
-                fontFamily: "var(--font-display), serif", fontSize: 26, fontWeight: 400,
-                letterSpacing: "-0.01em", margin: "0 0 14px",
-              }}>
-                {companyLabel} Recruitment Process
-              </h2>
-              <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 16px", lineHeight: 1.6 }}>
-                The typical hiring timeline at {companyLabel} — from application to offer.
-              </p>
-              <ol style={{ padding: "0 0 0 24px", margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                {page.recruitmentSteps.map((step, i) => (
-                  <li key={i} style={{
-                    fontSize: 15, lineHeight: 1.55, color: "#0E0C08",
-                    fontFamily: "var(--font-ui), system-ui, sans-serif",
-                  }}>
-                    {step}
-                  </li>
-                ))}
-              </ol>
-            </section>
+            <>
+              <hr style={{ border: 0, borderTop: `1px solid ${t.line}`, margin: "40px 0" }} />
+              <section>
+                <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px", color: t.coal }}>
+                  {companyLabel} Recruitment Process
+                </h2>
+                <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint, margin: "0 0 20px", lineHeight: 1.6 }}>
+                  Typical timeline from application to offer.
+                </p>
+                <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {page.recruitmentSteps.map((step, i) => (
+                    <li key={i} style={{ display: "flex", gap: 20, padding: "16px 0", borderBottom: `1px solid ${t.line}` }}>
+                      <span style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 32, opacity: 0.65 }}>
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.55, color: t.coal, paddingTop: 4 }}>
+                        {step}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            </>
           )}
 
-          {/* Interview Rounds — optional, renders only when data exists. */}
+          {/* Interview Rounds */}
           {page.interviewRounds && page.interviewRounds.length > 0 && (
-            <section style={{
-              marginTop: 36, background: "#FEFCF8",
-              border: "1px solid rgba(20,17,10,0.08)", borderRadius: 12, padding: "20px 24px",
-            }}>
-              <div style={{
-                fontFamily: "var(--font-mono), monospace", fontSize: 10, fontWeight: 700,
-                letterSpacing: "0.10em", textTransform: "uppercase", color: "#6E6759",
-                marginBottom: 14,
-              }}>
-                Interview Rounds
-              </div>
-              <ol style={{ padding: "0 0 0 20px", margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                {page.interviewRounds.map((round, i) => (
-                  <li key={i} style={{
-                    fontSize: 14, lineHeight: 1.6, color: "#3D3929",
-                    fontFamily: "var(--font-ui), system-ui, sans-serif",
-                  }}>
-                    {round}
-                  </li>
-                ))}
-              </ol>
-            </section>
+            <>
+              <hr style={{ border: 0, borderTop: `1px solid ${t.line}`, margin: "40px 0" }} />
+              <section>
+                <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 20px", color: t.coal }}>
+                  Interview Rounds
+                </h2>
+                <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {page.interviewRounds.map((round, i) => (
+                    <li key={i} style={{ display: "flex", gap: 20, padding: "16px 0", borderBottom: `1px solid ${t.line}` }}>
+                      <span style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 32, opacity: 0.65 }}>
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.coal, paddingTop: 4 }}>
+                        {round}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            </>
           )}
 
-          {/* Question list — the meat. Each has been verified ≥2x against
-              real candidate post-mortems per the seo-pages curation rules. */}
-          <section style={{ marginTop: 40 }}>
-            <h2 style={{
-              fontFamily: "var(--font-display), serif", fontSize: 26, fontWeight: 400,
-              letterSpacing: "-0.01em", margin: "0 0 16px",
-            }}>
+          {/* Question list */}
+          <hr style={{ border: 0, borderTop: `1px solid ${t.line}`, margin: "40px 0" }} />
+          <section>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px", color: t.coal }}>
               Real {focusLabel.toLowerCase()} questions {companyLabel} asked
             </h2>
-            <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 20px", lineHeight: 1.6 }}>
-              Each question is a starting point. Click <em>Practice</em> to get an AI interviewer
-              to ask it conversationally, listen to your answer, and grade you on structure,
-              specificity, and delivery — in 2 minutes.
+            <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint, margin: "0 0 24px", lineHeight: 1.6 }}>
+              Verified from candidate post-mortems. Click Practice to answer with AI voice feedback.
             </p>
-            <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+            <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {questions.map((q, i) => (
-                <li key={i} style={{
-                  background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.08)",
-                  borderRadius: 10, padding: "16px 20px",
-                  display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16,
-                  flexWrap: "wrap",
-                }}>
-                  <div style={{ flex: 1, minWidth: 240 }}>
-                    <div style={{
-                      fontFamily: "var(--font-mono), monospace", fontSize: 10, fontWeight: 600,
-                      color: "#A39C8B", marginBottom: 4,
-                    }}>
-                      Q{i + 1}{q.difficulty ? ` · ${q.difficulty}` : ""}
-                    </div>
-                    <p style={{
-                      fontFamily: "var(--font-display), serif", fontSize: 17, lineHeight: 1.45,
-                      color: "#0E0C08", margin: 0,
-                    }}>
+                <li key={i} style={{ display: "flex", gap: 20, padding: "20px 0", borderBottom: `1px solid ${t.line}` }}>
+                  <span style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 38, opacity: 0.55 }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {q.difficulty && (
+                      <span style={{ ...DIFFICULTY_CHIP[q.difficulty], fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, padding: "2px 8px", borderRadius: 999, display: "inline-block", marginBottom: 8 }}>
+                        {DIFFICULTY_LABEL[q.difficulty] ?? q.difficulty}
+                      </span>
+                    )}
+                    <p style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.5, color: t.coal, margin: 0 }}>
                       {q.text}
                     </p>
                     {q.styleNote && (
-                      <p style={{ fontSize: 12, fontStyle: "italic", color: "#6E6759", marginTop: 8, marginBottom: 0 }}>
+                      <p style={{ fontFamily: fonts.sans, fontSize: 12, fontStyle: "italic", color: t.inkSoft, margin: "8px 0 0" }}>
                         {q.styleNote}
                       </p>
                     )}
                   </div>
-                  <Link href={practiceHref} style={{
-                    color: "#B45309", textDecoration: "none", fontSize: 13, fontWeight: 500,
-                    fontFamily: "var(--font-ui)", whiteSpace: "nowrap", padding: "6px 0",
-                  }}>
+                  <Link href={practiceHref} style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", paddingTop: 4 }}>
                     Practice →
                   </Link>
                 </li>
@@ -388,45 +359,29 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             </ol>
           </section>
 
-          {/* Bottom CTA — second chance to convert. */}
-          <section style={{
-            marginTop: 56, padding: "28px 24px",
-            background: "#F4EFE3", borderRadius: 16, textAlign: "center",
-          }}>
-            <h2 style={{
-              fontFamily: "var(--font-display), serif", fontSize: 24, fontWeight: 400,
-              margin: 0, letterSpacing: "-0.01em",
-            }}>
-              Ready to practice {companyLabel}-style questions?
-            </h2>
-            <p style={{ fontSize: 14, color: "#6E6759", margin: "10px 0 18px", lineHeight: 1.5 }}>
-              The AI interviewer asks {companyLabel}-style questions, listens to your voice answer,
-              and gives you scored feedback in 2 minutes. 2 sessions free.
-            </p>
-            <Link href={practiceHref} style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#B45309", color: "#FAF7F0", textDecoration: "none",
-              padding: "14px 28px", borderRadius: 999,
-              fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 500,
-            }}>
-              Start free practice →
-            </Link>
+          {/* Bottom CTA — editorial split */}
+          <section style={{ marginTop: 64, paddingTop: 32, borderTop: `1px solid ${t.lineStrong}` }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "start" }}>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0, color: t.coal, textWrap: "balance" as const }}>
+                Ready to practice {companyLabel}-style questions?
+              </h2>
+              <div>
+                <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.6, color: t.inkSoft, margin: "0 0 20px" }}>
+                  The AI interviewer listens to your voice answer and gives you scored feedback on structure, specificity, and delivery in 2 minutes. 2 sessions free.
+                </p>
+                <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 28px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
+                  Start free practice →
+                </Link>
+              </div>
+            </div>
           </section>
 
-          {/* Blog back-links — company-matched blog articles flow PageRank
-              back into this page cluster. Only renders when ≥1 article
-              matches this company. */}
+          {/* Blog back-links */}
           <RelatedBlogPosts companyLabel={companyLabel} />
 
-          {/* Internal links — boosts SEO via crawl graph + helps users
-              discover related pages. Show up to 4 sibling pages from
-              SEO_PAGES (excluding self). */}
-          <section style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid rgba(20,17,10,0.08)" }}>
-            <h3 style={{
-              fontFamily: "var(--font-mono), monospace", fontSize: 11, fontWeight: 600,
-              letterSpacing: "0.10em", textTransform: "uppercase", color: "#6E6759",
-              margin: "0 0 14px",
-            }}>
+          {/* Internal links */}
+          <section style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${t.line}` }}>
+            <h3 style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 14px" }}>
               Related interview prep
             </h3>
             <RelatedLinks currentSlug={slug} />
@@ -446,21 +401,14 @@ function RelatedBlogPosts({ companyLabel }: { companyLabel: string }) {
   ).slice(0, 3);
   if (matched.length === 0) return null;
   return (
-    <section style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid rgba(20,17,10,0.08)" }}>
-      <h3 style={{
-        fontFamily: "var(--font-mono), monospace", fontSize: 11, fontWeight: 600,
-        letterSpacing: "0.10em", textTransform: "uppercase", color: "#6E6759",
-        margin: "0 0 14px",
-      }}>
+    <section style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${t.line}` }}>
+      <h3 style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 14px" }}>
         In-depth guides
       </h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
         {matched.map((m) => (
           <li key={m.slug}>
-            <Link href={`/blog/${m.slug}`} style={{
-              color: "#B45309", textDecoration: "none", fontSize: 14,
-              fontFamily: "var(--font-ui)", fontWeight: 500,
-            }}>
+            <Link href={`/blog/${m.slug}`} style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}>
               → {m.title}
             </Link>
           </li>
@@ -484,13 +432,10 @@ function RelatedLinks({ currentSlug }: { currentSlug: string }) {
     .slice(0, 4);
   if (related.length === 0) return null;
   return (
-    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
       {related.map((p: SeoPage) => (
         <li key={p.slug}>
-          <Link href={`/companies/${p.slug}`} style={{
-            color: "#B45309", textDecoration: "none", fontSize: 14,
-            fontFamily: "var(--font-ui)", fontWeight: 500,
-          }}>
+          <Link href={`/companies/${p.slug}`} style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}>
             → {p.searchPhrase}
           </Link>
         </li>

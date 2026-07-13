@@ -137,10 +137,10 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
     <li
       style={{
         position: "relative",
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        padding: "20px 24px",
+        display: "flex",
+        gap: 20,
+        padding: "20px 0",
+        borderBottom: `1px solid ${t.line}`,
         overflow: "hidden",
       }}
     >
@@ -151,7 +151,7 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
             position: "absolute",
             inset: 0,
             backdropFilter: "blur(6px)",
-            background: "rgba(250,247,240,0.72)",
+            background: "rgba(250,247,240,0.78)",
             zIndex: 2,
             display: "flex",
             flexDirection: "column",
@@ -160,89 +160,44 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
             gap: 10,
           }}
         >
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 14,
-              color: t.indigoGray,
-              margin: 0,
-              textAlign: "center",
-            }}
-          >
+          <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, textAlign: "center" }}>
             Sign up to see this question + practice with voice AI
           </p>
           <Link
             href={practiceHref}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background: t.indigo,
-              color: t.white,
-              textDecoration: "none",
-              padding: "10px 20px",
-              borderRadius: 999,
-              fontFamily: fonts.sans,
-              fontSize: 13,
-              fontWeight: 600,
-            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, background: t.copper, color: t.cream, textDecoration: "none", padding: "10px 20px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 13, fontWeight: 600 }}
           >
             Sign up free →
           </Link>
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Question number + difficulty chip */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <span
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 11,
-                fontWeight: 700,
-                color: t.inkFaint,
-                letterSpacing: "0.06em",
-              }}
-            >
-              Q{index + 1}
-            </span>
-            <DifficultyChip difficulty={question.difficulty} />
-          </div>
+      {/* Large serif number */}
+      <span style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 38, opacity: 0.55 }}>
+        {String(index + 1).padStart(2, "0")}
+      </span>
 
-          {/* Question text — no answers, to create desire to practice */}
-          <p
-            style={{
-              fontFamily: fonts.serif,
-              fontSize: 17,
-              lineHeight: 1.5,
-              color: t.coal,
-              margin: 0,
-            }}
-          >
-            {question.text}
-          </p>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Difficulty chip */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <DifficultyChip difficulty={question.difficulty} />
         </div>
 
-        {/* Inline practice link */}
-        {!isBlurred && (
-          <Link
-            href={practiceHref}
-            style={{
-              flexShrink: 0,
-              color: t.indigo,
-              textDecoration: "none",
-              fontFamily: fonts.sans,
-              fontSize: 13,
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-              padding: "4px 0",
-            }}
-          >
-            Practice →
-          </Link>
-        )}
+        {/* Question text — no answers, to create desire to practice */}
+        <p style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.5, color: t.coal, margin: 0 }}>
+          {question.text}
+        </p>
       </div>
+
+      {/* Inline practice link */}
+      {!isBlurred && (
+        <Link
+          href={practiceHref}
+          style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", paddingTop: 4 }}
+        >
+          Practice →
+        </Link>
+      )}
     </li>
   );
 }
@@ -251,41 +206,14 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
 
 function FrameworkBox({ name, summary }: { name: string; summary: string }) {
   return (
-    <section
-      style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        padding: "20px 24px",
-        marginTop: 36,
-      }}
-    >
-      <div
-        style={{
-          fontFamily: fonts.sans,
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: t.inkFaint,
-          marginBottom: 6,
-        }}
-      >
+    <section style={{ marginTop: 40 }}>
+      <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.copper, margin: "0 0 10px" }}>
         Framework to use
-      </div>
-      <h2
-        style={{
-          fontFamily: fonts.serif,
-          fontSize: 22,
-          fontWeight: 400,
-          margin: "0 0 8px",
-          letterSpacing: "-0.01em",
-          color: t.coal,
-        }}
-      >
+      </p>
+      <h2 style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, margin: "0 0 10px", letterSpacing: "-0.01em", color: t.coal }}>
         {name}
       </h2>
-      <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.65, color: t.indigoGray, margin: 0 }}>
+      <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.65, color: t.inkSoft, margin: 0 }}>
         {summary}
       </p>
     </section>
@@ -304,59 +232,23 @@ function BottomCTA({
   totalCount: number;
 }) {
   return (
-    <section
-      style={{
-        marginTop: 56,
-        padding: "32px 28px",
-        background: t.creamSoft,
-        borderRadius: 16,
-        textAlign: "center",
-      }}
-    >
-      <h2
-        style={{
-          fontFamily: fonts.serif,
-          fontSize: "clamp(22px, 3vw, 28px)",
-          fontWeight: 400,
-          letterSpacing: "-0.015em",
-          color: t.coal,
-          margin: 0,
-        }}
-      >
-        Ready to practice? Get AI feedback on your answers.
-      </h2>
-      <p
-        style={{
-          fontFamily: fonts.sans,
-          fontSize: 15,
-          lineHeight: 1.55,
-          color: t.indigoGray,
-          margin: "12px 0 22px",
-        }}
-      >
-        The AI interviewer asks {companyLabel}-style questions, listens to your voice answer,
-        and gives scored feedback on structure, specificity, and delivery.
-        {totalCount > 5 && ` All ${totalCount} questions available after signup.`}
-        {" "}2 sessions free, no credit card.
-      </p>
-      <Link
-        href={practiceHref}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          background: t.indigo,
-          color: t.white,
-          textDecoration: "none",
-          padding: "14px 28px",
-          borderRadius: 999,
-          fontFamily: fonts.sans,
-          fontSize: 15,
-          fontWeight: 600,
-        }}
-      >
-        Start free practice →
-      </Link>
+    <section style={{ marginTop: 64, paddingTop: 32, borderTop: `1px solid ${t.lineStrong}` }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "start" }}>
+        <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0, color: t.coal, textWrap: "balance" as const }}>
+          Ready to practice {companyLabel}-style questions?
+        </h2>
+        <div>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.6, color: t.inkSoft, margin: "0 0 20px" }}>
+            The AI interviewer listens to your voice answer and gives you scored feedback on structure,
+            specificity, and delivery in 2 minutes.
+            {totalCount > 5 && ` All ${totalCount} questions unlock after signup.`}
+            {" "}2 sessions free, no credit card.
+          </p>
+          <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 28px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
+            Start free practice →
+          </Link>
+        </div>
+      </div>
     </section>
   );
 }
@@ -389,13 +281,7 @@ export function RelatedLinksSection({
           <li key={p.slug}>
             <Link
               href={`/questions/${p.slug}`}
-              style={{
-                color: t.indigo,
-                textDecoration: "none",
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                fontWeight: 500,
-              }}
+              style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}
             >
               → {p.searchPhrase}
             </Link>
@@ -461,40 +347,16 @@ export function QuestionSetPage({
         <p style={introStyle}>{page.intro}</p>
 
         {/* Primary CTA — above the fold */}
-        <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap", alignItems: "center" }}>
           <Link
             href={practiceHref}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: t.indigo,
-              color: t.white,
-              textDecoration: "none",
-              padding: "13px 22px",
-              borderRadius: 999,
-              fontFamily: fonts.sans,
-              fontSize: 15,
-              fontWeight: 600,
-            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "13px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}
           >
             Practice these questions with AI voice feedback →
           </Link>
-          <Link
-            href="/pricing"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              color: t.indigo,
-              textDecoration: "none",
-              padding: "13px 16px",
-              fontFamily: fonts.sans,
-              fontSize: 14,
-              fontWeight: 500,
-            }}
-          >
-            See pricing
-          </Link>
+          <span style={{ color: t.inkFaint, fontFamily: fonts.sans, fontSize: 14 }}>
+            2 sessions, no credit card
+          </span>
         </div>
 
         {/* Framework callout */}
@@ -612,19 +474,7 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
         <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
           <Link
             href="/signup?source=questions-index"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: t.indigo,
-              color: t.white,
-              textDecoration: "none",
-              padding: "13px 22px",
-              borderRadius: 999,
-              fontFamily: fonts.sans,
-              fontSize: 15,
-              fontWeight: 600,
-            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "13px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}
           >
             Start free practice — 2 sessions, no card →
           </Link>
@@ -729,58 +579,21 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
           </section>
         ))}
 
-        {/* Bottom CTA */}
-        <section
-          style={{
-            marginTop: 32,
-            padding: "32px 28px",
-            background: t.creamSoft,
-            borderRadius: 16,
-            textAlign: "center",
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: fonts.serif,
-              fontSize: "clamp(22px, 3vw, 28px)",
-              fontWeight: 400,
-              letterSpacing: "-0.015em",
-              color: t.coal,
-              margin: 0,
-            }}
-          >
-            Don't just read questions — practice them
-          </h2>
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 15,
-              lineHeight: 1.55,
-              color: t.indigoGray,
-              margin: "12px 0 22px",
-            }}
-          >
-            AI voice interviewer, real-time answer scoring, STAR framework coaching. 2 free
-            sessions, no credit card required.
-          </p>
-          <Link
-            href="/signup?source=questions-index-bottom"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: t.indigo,
-              color: t.white,
-              textDecoration: "none",
-              padding: "14px 28px",
-              borderRadius: 999,
-              fontFamily: fonts.sans,
-              fontSize: 15,
-              fontWeight: 600,
-            }}
-          >
-            Start free practice →
-          </Link>
+        {/* Bottom CTA — editorial split */}
+        <section style={{ marginTop: 64, paddingTop: 32, borderTop: `1px solid ${t.lineStrong}` }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "start" }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0, color: t.coal, textWrap: "balance" as const }}>
+              Don't just read questions — practice them
+            </h2>
+            <div>
+              <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.6, color: t.inkSoft, margin: "0 0 20px" }}>
+                AI voice interviewer, real-time answer scoring, STAR framework coaching. 2 free sessions, no credit card required.
+              </p>
+              <Link href="/signup?source=questions-index-bottom" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 28px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
+                Start free practice →
+              </Link>
+            </div>
+          </div>
         </section>
       </div>
     </main>
