@@ -404,9 +404,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
     };
     document.addEventListener("keydown", handleKeyDown);
-    // Focus first button on mount
-    const first = modalRef.current?.querySelector<HTMLElement>("button");
-    first?.focus();
+    // Focus the modal container on mount (a11y: dialog focus pattern).
+    // Avoids triggering :focus-visible on the close button which shows an
+    // orange outline ring immediately when the modal opens via mouse click.
+    modalRef.current?.focus();
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
@@ -414,7 +415,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog backdrop dismissal
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops click propagation to backdrop */}
-      <div ref={modalRef} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 28px 28px", maxWidth: 1120, width: "96%", maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)" }}>
+      <div ref={modalRef} tabIndex={-1} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 28px 28px", maxWidth: 1120, width: "96%", maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)", outline: "none" }}>
         <button onClick={onClose} aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
