@@ -6,7 +6,6 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
 import { costBreakdown, kFactor, DEFAULT_COST_RATES } from "./_cost-helpers";
-import { isRateLimited as redisRateLimited } from "./_shared";
 
 /* ─── Config ─── */
 
@@ -1283,13 +1282,6 @@ async function getOutcomes() {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return res.status(204).end();
-
-  const ip = getClientIp(req);
-
-  // Rate limit check — Redis-backed so it holds across Node.js instances
-  if (await redisRateLimited(ip, "admin-data", 5, 900_000)) {
-    return res.status(429).json({ error: "Too many attempts. Try again in 15 minutes." });
-  }
 
   const auth = verifyAuth(req);
   if (!auth.ok) {
