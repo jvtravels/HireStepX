@@ -232,24 +232,22 @@ function BottomCTA({
   totalCount: number;
 }) {
   return (
-    <section style={{ marginTop: 64, paddingTop: 32, borderTop: `1px solid ${t.lineStrong}` }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "start" }}>
-        <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0, color: t.coal, textWrap: "balance" as const }}>
-          Ready to practice {companyLabel}-style questions?
-        </h2>
-        <div>
-          <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.6, color: t.inkSoft, margin: "0 0 20px" }}>
-            The AI interviewer listens to your voice answer and gives you scored feedback on structure,
-            specificity, and delivery in 2 minutes.
-            {totalCount > 5 && ` All ${totalCount} questions unlock after signup.`}
-            {" "}2 sessions free, no credit card.
-          </p>
-          <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 28px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
-            Start free practice →
-          </Link>
-        </div>
+    <div style={{ marginTop: 88, borderTop: `1px solid ${t.lineStrong}`, paddingTop: 56, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 40, flexWrap: "wrap" }}>
+      <p style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.02, maxWidth: "16ch", textWrap: "balance" as const, margin: 0 }}>
+        Stop just reading,{" "}
+        <span style={{ fontStyle: "italic", color: t.copper }}>start answering</span>.
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: 260 }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
+          The AI interviewer asks {companyLabel}-style questions, listens to your voice, and scores your answer in 2 minutes.
+          {totalCount > 5 && ` All ${totalCount} questions unlock after signup.`}
+          {" "}2 sessions free, no card.
+        </p>
+        <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 999, textDecoration: "none", background: t.indigo, color: t.white, flexShrink: 0 }}>
+          Start free practice <span aria-hidden>→</span>
+        </Link>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -579,22 +577,21 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
           </section>
         ))}
 
-        {/* Bottom CTA — editorial split */}
-        <section style={{ marginTop: 64, paddingTop: 32, borderTop: `1px solid ${t.lineStrong}` }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "start" }}>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15, margin: 0, color: t.coal, textWrap: "balance" as const }}>
-              Don't just read questions — practice them
-            </h2>
-            <div>
-              <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.6, color: t.inkSoft, margin: "0 0 20px" }}>
-                AI voice interviewer, real-time answer scoring, STAR framework coaching. 2 free sessions, no credit card required.
-              </p>
-              <Link href="/signup?source=questions-index-bottom" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 28px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
-                Start free practice →
-              </Link>
-            </div>
+        {/* Bottom CTA — blog-style editorial split */}
+        <div style={{ marginTop: 88, borderTop: `1px solid ${t.lineStrong}`, paddingTop: 56, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 40, flexWrap: "wrap" }}>
+          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.02, maxWidth: "16ch", textWrap: "balance" as const, margin: 0 }}>
+            Stop just reading,{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>start answering</span>.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: 260 }}>
+            <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
+              AI voice interviewer, real-time answer scoring, STAR framework coaching. 2 free sessions, no credit card required.
+            </p>
+            <Link href="/signup?source=questions-index-bottom" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 999, textDecoration: "none", background: t.indigo, color: t.white, flexShrink: 0 }}>
+              Start free practice <span aria-hidden>→</span>
+            </Link>
           </div>
-        </section>
+        </div>
       </div>
     </main>
   );
