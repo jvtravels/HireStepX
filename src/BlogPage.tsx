@@ -28,13 +28,12 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
         .blog-card { position: relative; transition: border-color 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1); }
         .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 18px 44px rgba(14,12,8,0.08); transform: translateY(-2px); }
-        .blog-featured.blog-card:hover { border-color: ${t.creamLine}; box-shadow: 0 28px 64px rgba(14,12,8,0.28); }
         .blog-card-link { color: inherit; text-decoration: none; outline: none; }
         .blog-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
         .blog-card:has(.blog-card-link:focus-visible) { border-color: ${t.copper}; box-shadow: 0 0 0 3px ${t.copperSoft}; }
         .blog-card .blog-card-meta { position: relative; z-index: 2; }
         .blog-faq-btn:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 2px; border-radius: 4px; }
-        .blog-cat-tab { position: relative; padding: 6px 0 10px; background: none; border: none; cursor: pointer; font-family: ${fonts.sans}; font-size: 14px; font-weight: 600; color: ${t.inkSoft}; transition: color 160ms cubic-bezier(0.16,1,0.3,1); white-space: nowrap; flex-shrink: 0; }
+        .blog-cat-tab { position: relative; padding: 12px 0 14px; background: none; border: none; cursor: pointer; font-family: ${fonts.sans}; font-size: 14px; font-weight: 600; color: ${t.inkSoft}; transition: color 160ms cubic-bezier(0.16,1,0.3,1); white-space: nowrap; flex-shrink: 0; min-height: 44px; display: inline-flex; align-items: center; }
         .blog-cat-tab::after { content: ""; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: ${t.coal}; border-radius: 1px; transform: scaleX(0); transition: transform 200ms cubic-bezier(0.16,1,0.3,1); transform-origin: left; }
         .blog-cat-tab.active { color: ${t.coal}; }
         .blog-cat-tab.active::after { transform: scaleX(1); }
@@ -1466,7 +1465,7 @@ function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
         <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
           {post.metaDescription}
         </p>
-        <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>
+        <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft }}>
           {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} · {post.readTime}
         </p>
       </div>
@@ -1587,6 +1586,7 @@ function BlogIndex() {
               key={cat}
               className={`blog-cat-tab${activeCategory === cat ? " active" : ""}`}
               onClick={() => setActiveCategory(cat)}
+              aria-pressed={activeCategory === cat}
             >
               {cat}
             </button>
@@ -1624,7 +1624,7 @@ function BlogIndex() {
               <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.65, marginBottom: 24 }}>
                 {featured.metaDescription}
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
                 <span>{featured.readTime} read</span>
                 <span aria-hidden style={{ color: t.lineStrong }}>·</span>
                 <span>{new Date(featured.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
@@ -1654,7 +1654,7 @@ function BlogIndex() {
             Stop reading,{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>start practicing</span>.
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: 260 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: "min(260px, 100%)" }}>
             <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
               AI mock interviews with instant feedback. Three sessions free, no card required.
             </p>
@@ -1692,7 +1692,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           }}
         />
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px 40px", position: "relative" }}>
-          <Link href="/blog" className="blog-back-link" style={{ marginBottom: 24 }}>
+          <Link href="/blog" className="blog-back-link" aria-label="Back to blog" style={{ marginBottom: 24 }}>
             <span aria-hidden>←</span> Blog
           </Link>
           <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
@@ -1777,17 +1777,17 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                     </button>
                     <div
                       id={`faq-answer-${i}`}
+                      aria-hidden={!isOpen}
                       style={{
-                        display: "grid",
-                        gridTemplateRows: isOpen ? "1fr" : "0fr",
-                        transition: "grid-template-rows 280ms cubic-bezier(0.16,1,0.3,1)",
+                        overflow: "hidden",
+                        maxHeight: isOpen ? 1200 : 0,
+                        paddingBottom: isOpen ? 22 : 0,
+                        transition: "max-height 280ms cubic-bezier(0.16,1,0.3,1), padding-bottom 280ms cubic-bezier(0.16,1,0.3,1)",
                       }}
                     >
-                      <div style={{ overflow: "hidden", paddingBottom: isOpen ? 22 : 0, transition: "padding-bottom 280ms cubic-bezier(0.16,1,0.3,1)" }}>
-                        <p style={{ fontFamily: fonts.sans, fontSize: 15.5, color: t.inkSoft, lineHeight: 1.7, maxWidth: "68ch" }}>
-                          {faq.answer}
-                        </p>
-                      </div>
+                      <p style={{ fontFamily: fonts.sans, fontSize: 15.5, color: t.inkSoft, lineHeight: 1.7, maxWidth: "68ch" }}>
+                        {faq.answer}
+                      </p>
                     </div>
                   </div>
                 );
@@ -1845,9 +1845,10 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             <h2 style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.015em", lineHeight: 1.2, marginBottom: 0 }}>
               Continue reading
             </h2>
-            <div style={{ marginTop: 20, borderTop: `1px solid ${t.line}` }}>
+            <ul role="list" style={{ marginTop: 20, borderTop: `1px solid ${t.line}`, listStyle: "none", padding: 0, margin: "20px 0 0" }}>
               {related.map(r => (
-                <Link key={r.slug} href={`/blog/${r.slug}`} className="blog-related-row">
+                <li key={r.slug}>
+                <Link href={`/blog/${r.slug}`} className="blog-related-row">
                   <div style={{ position: "relative", width: 80, height: 60, flexShrink: 0, background: t.creamSoft, borderRadius: 8, overflow: "hidden" }}>
                     <Image src={r.heroImage} alt={r.heroAlt} fill sizes="80px"
                       onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
@@ -1863,8 +1864,9 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                   </div>
                   <span aria-hidden style={{ color: t.copper, fontSize: 18, flexShrink: 0 }}>→</span>
                 </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
         )}
       </article>
