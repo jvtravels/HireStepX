@@ -124,6 +124,18 @@ const NONCOMP_TITLE =
 const RANK =
   "(?:principal|staff|senior|sr\\b|lead|director|manager|architect|vp\\b|head|distinguished|fellow)";
 
+/* Coercive contractual CLAUSES a candidate can demand the employer REMOVE as a
+ * close condition ("waive the bond and I'll sign", "drop the lock-in and I'm
+ * in"). Removing an unfavourable term is a concession extracted from the
+ * employer — inherently an unmet demand, distinct from a comp raise or a
+ * sweetener add-on. Common in Indian tech (service bonds, notice-period
+ * buyouts, non-competes), so a close welded to a waiver false-closes at terms
+ * the candidate is explicitly rejecting. Read only behind a REMOVAL verb in the
+ * waive-clause core below, so ordinary prose naming a "bond" or "notice period"
+ * never trips it. */
+const CLAUSE =
+  "(?:bond|lock[-\\s]?in|service\\s+(?:bond|agreement|commitment|contract)|notice\\s+period|non[-\\s]?compete|claw[-\\s]?back|tie[-\\s]?in|retention\\s+clause)";
+
 /* Decade-band figures for the vague "mid-forties" demand form (see the
  * decade-band core below). Kept lakh-denominated to match figureToLakhs output;
  * the qualifier nudges within the decade. */
@@ -335,6 +347,24 @@ const DEMAND_CORES: DemandCore[] = [
       figureToLakhs(m[3], m[4]),
     re: /\b(?:(double|twice|triple|treble|quadruple)|(\d+(?:\.\d+)?)\s*x)\s+(?:my\s+|the\s+)?(?:current|present|existing)\s+(?:ctc|salary|base|pay|package|comp\w*)?\s*(?:of\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
+  /* Figureless MULTIPLIER on a named comp lever: "double the stock", "triple the
+   * equity", "double the base", "2x the bonus". multiplier-current needs a
+   * "current/present/existing" anchor AND a figure to derive the target, so a
+   * multiplier applied directly to a lever with no figure slipped it and "Double
+   * the stock and I'll accept." false-closed at the un-bumped offer (batch-20
+   * hostile leak, 2026-07-13). A multiplier verb (double/twice/triple/2x) is
+   * inherently upward on whatever lever it governs, so it is always an unmet
+   * demand — no figure or offer gate. Lexically pinned to the shared lever
+   * vocabulary (CORE_COMP ∪ SWEETENER), so "double the effort/headcount" (no comp
+   * lever) never matches, and the optional determiner keeps "double my base" and
+   * "double the stock" both covered. */
+  {
+    reason: "multiplier-lever",
+    re: new RegExp(
+      `\\b(?:double|twice|triple|treble|quadruple|\\d+(?:\\.\\d+)?\\s*x)\\s+(?:the|my|your|their)?\\s*(?:${CORE_COMP}|${SWEETENER})\\b`,
+      "i",
+    ),
+  },
   /* Component-specific floor: "the fixed alone is 46", "the base component must
    * be 47". A bare copula ("is"/"must be") pins a figure to a NAMED component,
    * which no landing-verb core caught ("hits/reaches/sits at" only) — so "I'm in
@@ -409,6 +439,27 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "another-more",
     re: new RegExp(
       `\\b(?:another|an?\\s+extra|an?\\s+additional|a\\s+further)\\s+(?:₹|rs\\.?\\s*|inr\\s*)?\\d+(?:\\.\\d+)?\\s*(?:%|(?:percent|per\\s?cent|lpa|lakhs?|lac|l|k)\\b|on\\s+(?:the\\s+)?(?:base|fixed|cash|ctc|salary|package|comp))`,
+      "i",
+    ),
+  },
+  /* Leading INCREASE word directly on a comp lever, no figure: "give me more
+   * RSUs", "more equity", "extra stock", "additional base". another-more requires
+   * a cash/percent unit after the increase word, and demand-for-more needs a
+   * TRAILING more/higher, so a bare "more <lever>" (increase word LEADING a lever
+   * noun) slipped both and "Give me more RSUs and we have a deal." false-closed at
+   * the un-bumped offer (batch-20 hostile leak, 2026-07-13). "more/extra/
+   * additional/further" on a lever is inherently upward → always unmet, no offer
+   * gate. Pinned to the shared lever vocabulary (CORE_COMP ∪ SWEETENER). A
+   * DEFINITE/possessive-determiner negative lookbehind keeps a sweetener referenced
+   * as ALREADY on the table ("the extra equity is great, I accept") from
+   * over-blocking a genuine accept — only an undetermined ask ("more equity",
+   * "give me more equity") is a fresh demand. The global dismissal-tail guard
+   * additionally covers "I don't need more equity, I accept". */
+  {
+    reason: "more-lever",
+    re: new RegExp(
+      `(?<!\\b(?:the|this|that|your|our|their|its|his|her)\\s)` +
+        `\\b(?:more|extra|additional|further)\\s+(?:${CORE_COMP}|${SWEETENER})\\b`,
       "i",
     ),
   },
@@ -628,6 +679,25 @@ const DEMAND_CORES: DemandCore[] = [
   {
     reason: "future-guarantee-demand",
     re: /\b(?:guarantee|promise|commit\s+to|lock\s+in)\s+(?:me\s+)?(?:a|an|the)?\s*(?:review|raise|bump|increase|hike|promotion|re-?visit|reassessment|re-?evaluation)\b/i,
+  },
+  /* WAIVE-A-CLAUSE demand: "waive the bond and I'll sign", "drop the lock-in and
+   * I'm in", "remove the non-compete", "scrap the notice period". A demand that
+   * the employer GIVE UP an unfavourable contractual term — inherently a
+   * concession extracted from the employer, so welding it to a close fabricates
+   * agreement to a waiver never granted, and "Waive the bond and I'll sign."
+   * false-closed at terms the candidate is rejecting (batch-20 hostile leak,
+   * 2026-07-13). Always unmet (a removal only ever moves the deal toward the
+   * candidate), no offer gate. Gated on a present-imperative REMOVAL verb
+   * governing a CLAUSE noun; \b-bounded verbs keep PAST-tense satisfaction ("you
+   * waived the bond, deal" / "dropped the lock-in, I accept") out — only a live
+   * request to remove a term matches. */
+  {
+    reason: "waive-clause",
+    re: new RegExp(
+      `\\b(?:waive|drop|remove|cut|eliminate|scrap|lift|forgo|forego|do\\s+away\\s+with|get\\s+rid\\s+of)\\b` +
+        `[^.!?]{0,15}?\\b${CLAUSE}\\b`,
+      "i",
+    ),
   },
   /* Anaphoric terms-change welded to a comp topic: "what about relocation? sort
    * that and I accept", "the equity — fix that and I'm in". improve-lever needs
