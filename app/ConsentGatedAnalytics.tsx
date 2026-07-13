@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import Script from "next/script";
 import { getCookieConsent } from "./CookieConsent";
 import { initPostHog, upgradePostHogPersistence } from "../src/posthogClient";
+
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 // Dynamically imported only when user accepts — keeps ~20KB out of the default bundle
 const Analytics = dynamic(() => import("@vercel/analytics/next").then(m => m.Analytics), { ssr: false });
@@ -41,6 +44,20 @@ export default function ConsentGatedAnalytics() {
     <>
       <Analytics />
       <SpeedInsights />
+      {GA_ID && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga4-init" strategy="afterInteractive">{`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}', { anonymize_ip: true });
+          `}</Script>
+        </>
+      )}
     </>
   );
 }
