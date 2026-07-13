@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import BlogPage from "@/BlogPage";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { BLOG_META } from "@/blog-meta";
 
 export const metadata: Metadata = {
   title: "Interview Preparation Blog India 2026 — TCS, Google, Flipkart & More | HireStepX",
@@ -32,6 +33,21 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
+const BLOG_ITEM_LIST_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "HireStepX Interview Preparation Blog",
+  description: "Company-specific interview guides for Indian job seekers — TCS, Google, Flipkart, Amazon, and more.",
+  url: "https://hirestepx.com/blog",
+  numberOfItems: BLOG_META.length,
+  itemListElement: BLOG_META.map((post, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    url: `https://hirestepx.com/blog/${post.slug}`,
+    name: post.title,
+  })),
+};
+
 export default async function Page() {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
@@ -42,6 +58,11 @@ export default async function Page() {
         type="application/ld+json"
         nonce={nonce || undefined}
         dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Blog", path: "/blog" }]))}
+      />
+      <script
+        type="application/ld+json"
+        nonce={nonce || undefined}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(BLOG_ITEM_LIST_SCHEMA) }}
       />
       <BlogPage />
     </>

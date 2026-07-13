@@ -1702,52 +1702,16 @@ function BlogPostPage({ post }: { post: BlogPost }) {
   }, [post.slug, post.title, post.category]);
 
   const canonicalUrl = `https://hirestepx.com/blog/${post.slug}`;
-  const jsonLd: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "BlogPosting",
-        headline: post.title,
-        description: post.metaDescription,
-        url: canonicalUrl,
-        datePublished: post.datePublished,
-        dateModified: post.datePublished,
-        image: post.heroImage,
-        mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
-        author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-        publisher: {
-          "@type": "Organization",
-          name: "HireStepX",
-          url: "https://hirestepx.com",
-          logo: { "@type": "ImageObject", url: "https://hirestepx.com/favicon.svg" },
-        },
-      },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: "https://hirestepx.com" },
-          { "@type": "ListItem", position: 2, name: "Blog", item: "https://hirestepx.com/blog" },
-          { "@type": "ListItem", position: 3, name: post.title, item: canonicalUrl },
-        ],
-      },
-      ...(post.faqs.length > 0 ? [{
-        "@type": "FAQPage",
-        mainEntity: post.faqs.map(f => ({
-          "@type": "Question",
-          name: f.question,
-          acceptedAnswer: { "@type": "Answer", text: f.answer },
-        })),
-      }] : []),
-    ],
-  };
 
+  /* JSON-LD is injected server-side by app/(marketing)/blog/[slug]/page.tsx
+     (Article + FAQPage + BreadcrumbList). useSEO handles only <title> and
+     <meta> tags here to avoid duplicate schema on direct page loads. */
   useSEO({
     title: `${post.title} — HireStepX`,
     description: post.metaDescription,
     canonical: canonicalUrl,
     ogImage: post.heroImage,
     ogType: "article",
-    jsonLd,
   });
 
   return (
