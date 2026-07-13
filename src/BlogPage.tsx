@@ -1423,13 +1423,10 @@ function getRelatedPosts(slugs: string[]): BlogPost[] {
   return slugs.map(s => posts.find(p => p.slug === s)).filter((p): p is BlogPost => !!p);
 }
 
-/* ─── Token-derived shadow / gradient channel values ──────────────────
+/* ─── Token-derived shadow channel value ──────────────────────────────
  * t.coal = #0E0C08 → channels "14,12,8"
- * t.copper = #B45309 → channels "180,83,9"
- * Defined here so rgba() calls in CSS and JSX reference a named constant
- * rather than magic numbers. */
+ * Named constant so rgba() in CSS references the token, not a magic number. */
 const coalChannels = "14,12,8";
-const copperChannels = "180,83,9";
 
 /* ─── Category filters — 18 raw categories consolidated into 6 user-intent buckets ─── */
 const CATEGORY_MAP: Record<string, string> = {
@@ -1687,63 +1684,55 @@ function BlogPostPage({ post }: { post: BlogPost }) {
 
   return (
     <BlogShell>
-      {/* Hero — editorial header on cream, not a dark image overlay. Title leads,
-          image follows as a supporting frame instead of fighting the typography. */}
-      <header style={{ position: "relative", padding: "120px 0 0", background: t.cream }}>
-        <div
-          aria-hidden
-          style={{
-            position: "absolute", inset: 0,
-            background: `radial-gradient(ellipse 65% 50% at 50% 0%, rgba(${copperChannels},0.07) 0%, transparent 70%)`,
-            pointerEvents: "none",
-          }}
-        />
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px 40px", position: "relative" }}>
-          <Link href="/blog" className="blog-back-link" aria-label="Back to blog" style={{ marginBottom: 24 }}>
+      {/* Hero — contained column header; image sits inside the reading column with
+          rounded corners so it never fights the cream page background. */}
+      <header style={{ background: t.cream, paddingTop: 72 }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 40px 36px" }}>
+          <Link href="/blog" className="blog-back-link" aria-label="Back to blog" style={{ marginBottom: 20 }}>
             <span aria-hidden>←</span> Blog
           </Link>
-          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
             <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{post.company}</span>
             <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999 }}>{post.category}</span>
           </div>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 5vw, 60px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.05, textWrap: "balance", margin: 0 }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.6vw, 46px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.022em", lineHeight: 1.08, textWrap: "balance", margin: "0 0 20px" }}>
             {post.title}
           </h1>
-          <div className="blog-meta" style={{ marginTop: 28, display: "flex", alignItems: "center", gap: 12, fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, flexWrap: "wrap" }}>
+          <div className="blog-meta" style={{ display: "flex", alignItems: "center", gap: 12, fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, flexWrap: "wrap" }}>
             <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
             <span aria-hidden style={{ color: t.inkFaint }}>·</span>
             <span>{post.readTime} read</span>
           </div>
         </div>
-        <div className="blog-hero" style={{ position: "relative", height: 380, overflow: "hidden", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
-          <Image
-            src={post.heroImage} alt={post.heroAlt}
-            fill sizes="100vw"
-            priority
-            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-            style={{ objectFit: "cover" }}
-          />
+        {/* Hero image — contained in column, rounded, never full-bleed */}
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 40px" }}>
+          <div className="blog-hero" style={{ position: "relative", height: 340, overflow: "hidden", borderRadius: 14, border: `1px solid ${t.line}`, background: t.creamSoft }}>
+            <Image
+              src={post.heroImage} alt={post.heroAlt}
+              fill sizes="(max-width: 720px) 100vw, 720px"
+              priority
+              onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              style={{ objectFit: "cover" }}
+            />
+          </div>
         </div>
       </header>
 
-      <article className="blog-article" style={{ maxWidth: 720, margin: "0 auto", padding: "56px 40px 96px" }}>
+      <article className="blog-article" style={{ maxWidth: 720, margin: "0 auto", padding: "48px 40px 96px" }}>
         {/* Intro / dek */}
-        <p style={{ fontFamily: fonts.serif, fontSize: "clamp(20px, 2.2vw, 24px)", fontStyle: "italic", color: t.coal, lineHeight: 1.5, marginBottom: 48, letterSpacing: "-0.005em", textWrap: "balance" }}>
+        <p style={{ fontFamily: fonts.serif, fontSize: "clamp(18px, 2vw, 22px)", fontStyle: "italic", color: t.coal, lineHeight: 1.55, marginBottom: 44, letterSpacing: "-0.005em", maxWidth: "58ch" }}>
           {post.intro}
         </p>
 
         {/* Sections */}
         {post.sections.map((section, i) => (
-          <section key={i} style={{ marginBottom: 44 }}>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 2.6vw, 30px)", fontWeight: 400, color: t.coal, marginBottom: 16, lineHeight: 1.2, letterSpacing: "-0.015em", textWrap: "balance" }}>
+          <section key={i} style={{ marginBottom: 48 }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(20px, 2.2vw, 26px)", fontWeight: 400, color: t.coal, marginBottom: 14, lineHeight: 1.25, letterSpacing: "-0.012em", textWrap: "balance" }}>
               {section.heading}
             </h2>
-            <div style={{ fontFamily: fonts.sans, fontSize: 16.5, color: t.coal, lineHeight: 1.75, whiteSpace: "pre-line", maxWidth: "68ch" }}>
+            <div style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.8, whiteSpace: "pre-line", maxWidth: "64ch" }}>
               {section.content}
             </div>
-            {i < post.sections.length - 1 && (
-              <div style={{ width: 48, height: 1, background: t.lineStrong, margin: "44px 0 0" }} />
-            )}
           </section>
         ))}
 
