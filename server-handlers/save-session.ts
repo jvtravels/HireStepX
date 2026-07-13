@@ -158,6 +158,47 @@ export function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> 
   };
 }
 
+/* REPORT-4b (write-time twin of the report adapter's capAnchorSkillsIfNoCounter).
+ * The Skill Progress panel reads persisted skill_scores DIRECTLY
+ * (fetchSkillProgressTrends → sessionRowsToProgressPoints), bypassing the report
+ * adapter's render-time grounding — so a no-counter session that persists
+ * `anchoring: 70` renders "Anchoring 70 · +30 pts vs last" on this and every
+ * future report, contradicting the same session's "No counter named" headline,
+ * "Numbers stated 0%", and grounded Skills Breakdown. candidateAskLpa is the
+ * kernel's authoritative ask for the just-finished session; when it is null the
+ * candidate never named a counter, so the anchor / counter / specificity axes
+ * are a provable failure. Cap them into the weak band BEFORE persistence — at
+ * the single write seam — so the stored history is coherent for every
+ * downstream reader. Leverage / package / demeanour axes (demonstrable without a
+ * hard counter) pass through. Only invoked for negotiation rows; a numeric
+ * candidateAskLpa (counter named) returns the scores untouched. Keys are the
+ * engine's camelCase skill_scores keys (anchoring, specificity, …); values are
+ * either a bare number or a { score } object — both shapes are preserved. */
+const NEG_ANCHOR_SKILL_KEY_RE = /anchor|counter|specificity/i;
+const NO_ANCHOR_CEILING = 35;
+export function groundNoCounterSkillScores(
+  skillScores: Record<string, unknown> | null,
+  candidateAskLpa: number | null,
+): Record<string, unknown> | null {
+  if (!skillScores || candidateAskLpa !== null) return skillScores;
+  const out: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(skillScores)) {
+    if (NEG_ANCHOR_SKILL_KEY_RE.test(key)) {
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        out[key] = Math.min(raw, NO_ANCHOR_CEILING);
+        continue;
+      }
+      if (raw && typeof raw === "object" && typeof (raw as { score?: unknown }).score === "number") {
+        const r = raw as { score: number };
+        out[key] = { ...r, score: Math.min(r.score, NO_ANCHOR_CEILING) };
+        continue;
+      }
+    }
+    out[key] = raw;
+  }
+  return out;
+}
+
 function asString(v: unknown, max = 500): string {
   if (typeof v !== "string") return "";
   return v.slice(0, max);
@@ -324,6 +365,23 @@ export default async function handler(req: Request): Promise<Response> {
   const resolvedVersionId = clientVersionId
     || await resolveActiveResumeVersionId(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, asString(body.type, 64));
 
+  /* Sanitize once, reuse for both the negotiation_metrics column AND the
+     write-time skill-score grounding below (REPORT-4b). candidateAskLpa is the
+     kernel's authoritative ask; null ⇒ no counter was ever named. */
+  const negMetrics = sanitizeNegotiationMetrics(body.negotiation_metrics);
+  const rawSkillScores =
+    body.skill_scores && typeof body.skill_scores === "object"
+      ? (body.skill_scores as Record<string, unknown>)
+      : null;
+  const candidateAskLpa =
+    typeof negMetrics?.candidateAskLpa === "number" ? negMetrics.candidateAskLpa : null;
+  /* Ground only for negotiation rows (negMetrics present). Non-negotiation
+     sessions never carry a counter concept, so their skill_scores pass through
+     untouched even if a key happens to match the anchor regex. */
+  const skillScores = negMetrics
+    ? groundNoCounterSkillScores(rawSkillScores, candidateAskLpa)
+    : rawSkillScores;
+
   const sessionRow = {
     id: asString(body.id, 64),
     user_id: auth.userId,
@@ -336,7 +394,7 @@ export default async function handler(req: Request): Promise<Response> {
     questions: asNumber(body.questions),
     transcript: sanitizeTranscript(body.transcript),
     ai_feedback: asString(body.ai_feedback, 20000),
-    skill_scores: (body.skill_scores && typeof body.skill_scores === "object") ? body.skill_scores : null,
+    skill_scores: skillScores,
     job_description: asString(body.job_description, 20000) || null,
     jd_analysis: (body.jd_analysis && typeof body.jd_analysis === "object") ? body.jd_analysis : null,
     resume_version_id: resolvedVersionId,
@@ -347,7 +405,7 @@ export default async function handler(req: Request): Promise<Response> {
        primitive fields so a tampered client can't dump arbitrary
        payload into the column. The column-stripping retry below
        handles environments where the migration hasn't run yet. */
-    negotiation_metrics: sanitizeNegotiationMetrics(body.negotiation_metrics),
+    negotiation_metrics: negMetrics,
   };
 
   if (!sessionRow.id) {

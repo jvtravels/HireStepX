@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeTranscript, toRoleTranscript, sanitizeNegotiationMetrics } from "../../server-handlers/save-session";
+import {
+  sanitizeTranscript,
+  toRoleTranscript,
+  sanitizeNegotiationMetrics,
+  groundNoCounterSkillScores,
+} from "../../server-handlers/save-session";
 
 /* PRI-61 regression guard.
  *
@@ -178,5 +183,85 @@ describe("sanitizeNegotiationMetrics — persists the full kernel shape (DATA-1)
     expect(out!.offerTrajectoryLpa).toBeUndefined();
     // candidateAskLpa is always present (null when unknown) by contract
     expect(out!.candidateAskLpa).toBeNull();
+  });
+});
+
+/* REPORT-4b (write-time) regression guard.
+ *
+ * The persisted skill_scores column feeds the cross-session Skill Progress
+ * panel, which BYPASSES the report adapter's render-time grounding. So an
+ * anchor/counter/specificity score inflated by the LLM is written raw and
+ * shows up on that panel contradicting the SAME session's "no counter named"
+ * kernel truth. groundNoCounterSkillScores caps those axes into the weak band
+ * (≤35) at the single write seam when the kernel says no counter was named
+ * (candidateAskLpa === null). Keys are the engine's camelCase skill_scores
+ * keys; values are either a bare number or a { score } object. */
+describe("groundNoCounterSkillScores — write-time anchor grounding (REPORT-4b)", () => {
+  const inflated = () => ({
+    anchoring: 72,
+    specificity: 70,
+    closingTechnique: 66,
+    leverageUse: 80,
+    packageThinking: 88,
+    composure: 74,
+    concessionStrategy: 60,
+  });
+
+  it("caps anchor/specificity into the weak band when no counter was named", () => {
+    const out = groundNoCounterSkillScores(inflated(), null) as Record<string, number>;
+    expect(out.anchoring).toBe(35);
+    expect(out.specificity).toBe(35);
+  });
+
+  it("caps a 'counter'-named key too", () => {
+    const out = groundNoCounterSkillScores(
+      { counterOfferJudgement: 90 },
+      null,
+    ) as Record<string, number>;
+    expect(out.counterOfferJudgement).toBe(35);
+  });
+
+  it("leaves leverage / package / composure / concession / closing untouched", () => {
+    const out = groundNoCounterSkillScores(inflated(), null) as Record<string, number>;
+    expect(out.leverageUse).toBe(80);
+    expect(out.packageThinking).toBe(88);
+    expect(out.composure).toBe(74);
+    expect(out.concessionStrategy).toBe(60);
+    expect(out.closingTechnique).toBe(66);
+  });
+
+  it("does not raise a score already below the ceiling", () => {
+    const out = groundNoCounterSkillScores({ anchoring: 20 }, null) as Record<string, number>;
+    expect(out.anchoring).toBe(20);
+  });
+
+  it("caps the { score } object shape, preserving sibling fields", () => {
+    const out = groundNoCounterSkillScores(
+      { anchoring: { score: 88, label: "Anchoring", weight: 2 } },
+      null,
+    ) as Record<string, { score: number; label: string; weight: number }>;
+    expect(out.anchoring.score).toBe(35);
+    expect(out.anchoring.label).toBe("Anchoring");
+    expect(out.anchoring.weight).toBe(2);
+  });
+
+  it("is a no-op once a counter WAS named (numeric candidateAskLpa)", () => {
+    const scores = inflated();
+    const out = groundNoCounterSkillScores(scores, 30);
+    expect(out).toBe(scores);
+  });
+
+  it("is a no-op for null skillScores regardless of ask", () => {
+    expect(groundNoCounterSkillScores(null, null)).toBeNull();
+    expect(groundNoCounterSkillScores(null, 30)).toBeNull();
+  });
+
+  it("leaves non-numeric anchor values (garbage) untouched rather than coercing", () => {
+    const out = groundNoCounterSkillScores(
+      { anchoring: "n/a", specificity: null },
+      null,
+    ) as Record<string, unknown>;
+    expect(out.anchoring).toBe("n/a");
+    expect(out.specificity).toBeNull();
   });
 });
