@@ -609,6 +609,24 @@ export function filterNegotiationStrengths(
 const NEG_CLOSING_SKILL_RE = /clos(?:e|ing)/i;
 const NOT_CLOSED_CEILING = 45;
 
+/* REPORT-4b (2026-07-13, live staging — session 686b5699). candidateAsk is the
+ * kernel's single source (persisted OR transcript-recovered) for "did the
+ * candidate name a counter" — the exact field the strengths filter
+ * (filterNegotiationStrengths), the "Numbers stated" metric
+ * (buildNegotiationMetrics), and the hero headline (negotiationHeadlineVerdict)
+ * already key off. The skill bars were the LAST counter-aware surface not pinned
+ * to it: a session that never named a number still rendered "Anchoring 70 /
+ * Specificity 70" beside the same report's "0 of 5 skills" and "No counter
+ * named". An anchor / counter / specificity score is BY DEFINITION the strength
+ * of the number you named — if the kernel says none was named, those axes are a
+ * provable failure, so cap them into the weak band. This applies on EVERY
+ * outcome (a walk-away or stalemate can also be no-counter), so it runs as a
+ * pre-pass before the outcome-specific caps below and composes with them via
+ * Math.min. Demeanour, discovery, package-thinking and leverage axes —
+ * demonstrable without a hard counter — are left untouched. */
+const NEG_ANCHOR_SKILL_RE = /anchor|counter|specificity/i;
+const NO_ANCHOR_CEILING = 35;
+
 /** Report-layer coherence guarantee for salary-negotiation.
  *
  *  Three independent code paths can score a negotiation: the LLM evaluator
@@ -635,6 +653,18 @@ export function groundNegotiationReport(
   const unchanged = { skills, overallScore, band };
   if (!outcome) return unchanged;
 
+  /* REPORT-4b — pre-pass: never render an anchor/counter/specificity bar the
+   * kernel's counter-named truth denies (candidateAsk === null). Runs on every
+   * outcome and composes with the outcome-specific caps below via Math.min. */
+  const baseSkills =
+    outcome.candidateAsk === null
+      ? skills.map((s) =>
+          NEG_ANCHOR_SKILL_RE.test(s.name)
+            ? { ...s, score: Math.min(s.score, NO_ANCHOR_CEILING) }
+            : s,
+        )
+      : skills;
+
   /* PRI-67 (2026-07-07, live staging) — close-stage ↔ Closing-skill coherence.
    * A "no_agreement" kernel outcome (stalemate / ran out of turns) never
    * reached the close stage — derivePhases.reachedClose is false for it — yet
@@ -646,26 +676,27 @@ export function groundNegotiationReport(
    * and walk-aways fall through untouched: they DID reach the close, and
    * PRI-64 says a walk-away's leverage is legitimately high. */
   if (outcome.outcome === "no_agreement") {
-    const groundedSkills = skills.map((s) =>
+    const groundedSkills = baseSkills.map((s) =>
       NEG_CLOSING_SKILL_RE.test(s.name)
         ? { ...s, score: Math.min(s.score, NOT_CLOSED_CEILING) }
         : s,
     );
     return { skills: groundedSkills, overallScore, band };
   }
-  if (outcome.outcome !== "accepted") return unchanged; // walk-away → untouched
+  // walk-away → outcome caps don't apply, but the REPORT-4b anchor pre-pass still does
+  if (outcome.outcome !== "accepted") return { skills: baseSkills, overallScore, band };
   const gap = outcome.gapClosurePct;
-  if (gap == null) return unchanged; // no authoritative gap → don't second-guess the scorer
+  if (gap == null) return { skills: baseSkills, overallScore, band }; // no authoritative gap → keep scorer's numbers (anchor pre-pass still applied)
 
   let ceiling: number | null = null;
   if (gap < 10) ceiling = 45;       // accepted, closed ~nothing → clear cave
   else if (gap < 30) ceiling = 60;  // token movement → mediocre close
   else if (gap < 55) ceiling = 75;  // closed under half the gap → decent, not strong
   // gap ≥ 55 → genuinely closed the gap; leave the scorer's numbers intact.
-  if (ceiling === null) return unchanged;
+  if (ceiling === null) return { skills: baseSkills, overallScore, band };
 
   const cap = ceiling;
-  const groundedSkills = skills.map((s) =>
+  const groundedSkills = baseSkills.map((s) =>
     NEG_OUTCOME_SKILL_RE.test(s.name) ? { ...s, score: Math.min(s.score, cap) } : s,
   );
   const groundedScore = Math.min(overallScore, cap + 15);
