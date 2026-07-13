@@ -20,6 +20,7 @@ import type { DashboardSession } from "../dashboardTypes";
 import { detectBias, countBias, BIAS_LABELS, type BiasPatternKind } from "../biasDetector";
 import { stripProsodyMarkup } from "../_prosody";
 import { pickIdealAnswerSnippet } from "./_idealAnswerSnippets";
+import { negotiationHeadlineVerdict } from "./derivations";
 import type {
   AnswerSpan,
   BehavioralFullReportData,
@@ -435,7 +436,14 @@ export function sessionReportToInterviewResult(
     role,
     level,
     difficulty,
-    aiVerdict: report.verdict,
+    // REPORT-3e: for negotiations the headline is derived from the kernel
+    // outcome (the single source every other hero surface uses), never the raw
+    // LLM verdict — which hallucinated "You negotiated well but didn't quantify
+    // results" on a no-counter/no-deal session. See negotiationHeadlineVerdict.
+    aiVerdict:
+      isNegotiation && negotiationOutcome
+        ? negotiationHeadlineVerdict(negotiationOutcome)
+        : report.verdict,
     strengths: isNegotiation
       ? filterNegotiationStrengths(
           report.wins.map((w) => w.text),

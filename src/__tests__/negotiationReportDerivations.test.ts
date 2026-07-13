@@ -28,6 +28,7 @@ import {
   deriveConcessionsFromOffers,
   deriveAnchorBracket,
   computeNpvRows,
+  negotiationHeadlineVerdict,
   type NegotiationOutcome,
 } from "../sessionReport/derivations";
 
@@ -270,5 +271,77 @@ describe("computeNpvRows (pure function of NPV_MODEL)", () => {
     const rows = computeNpvRows(o);
     expect(rows[1].label).toContain(`${Math.round(NPV_MODEL.incomeTaxRate * 100)}%`);
     expect(rows[2].label).toContain(`${Math.round(NPV_MODEL.annualInflation * 100)}%`);
+  });
+});
+
+/* REPORT-3e (2026-07-13, live staging — session 686b5699, Senior Product
+ * Designer @ Flipkart): the hero headline verdict is now kernel-derived, not the
+ * raw LLM string. On a no-counter/no-deal session the LLM produced "You
+ * negotiated well but didn't quantify results" — a false claim beside the
+ * report's own "0 of 5 skills / never named a number", carrying leaked STAR
+ * phrasing. Pin the headline to the kernel outcome across every branch: it must
+ * never claim negotiation success the kernel denies, and never leak behavioural
+ * ("quantify results") wording. */
+describe("negotiationHeadlineVerdict — kernel-grounded, never a false success claim", () => {
+  const NEGOTIATED_WELL = /negotiated well|great job|strong negotiation|well done/i;
+  const BEHAVIOURAL_LEAK = /quantif|STAR|results|situation|task/i;
+
+  it("no-deal, no counter (the live bug) states the miss plainly", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({ outcome: "no_agreement", candidateAsk: null, offers: [], finalTotal: null }),
+    );
+    expect(v).not.toMatch(NEGOTIATED_WELL);
+    expect(v).not.toMatch(BEHAVIOURAL_LEAK);
+    expect(v.toLowerCase()).toContain("no counter");
+  });
+
+  it("no-deal after countering says the deal never closed", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({ outcome: "no_agreement", candidateAsk: 60, offers: [{ turn: 1, total: 50, question: "" }] }),
+    );
+    expect(v).not.toMatch(NEGOTIATED_WELL);
+    expect(v.toLowerCase()).toContain("never closed");
+  });
+
+  it("accepted with upward movement credits the close", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({
+        outcome: "accepted",
+        candidateAsk: 65,
+        offers: [{ turn: 1, total: 50, question: "" }],
+        finalTotal: 58,
+      }),
+    );
+    expect(v.toLowerCase()).toContain("closed the deal");
+    expect(v).not.toMatch(BEHAVIOURAL_LEAK);
+  });
+
+  it("accepted flat with a counter says they took the opening", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({
+        outcome: "accepted",
+        candidateAsk: 65,
+        offers: [{ turn: 1, total: 51, question: "" }],
+        finalTotal: 51,
+      }),
+    );
+    expect(v.toLowerCase()).toContain("closed the deal");
+    expect(v.toLowerCase()).toContain("opening");
+  });
+
+  it("accepted the first offer with no counter is honest about it", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({ outcome: "accepted", candidateAsk: null, offers: [{ turn: 1, total: 51, question: "" }], finalTotal: 51 }),
+    );
+    expect(v.toLowerCase()).toContain("accepted the first offer");
+  });
+
+  it("walked away is never phrased as an acceptance or success", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({ outcome: "walked_away", candidateAsk: 70, offers: [{ turn: 1, total: 40, question: "" }], finalTotal: null }),
+    );
+    expect(v.toLowerCase()).toContain("walked away");
+    expect(v).not.toMatch(NEGOTIATED_WELL);
+    expect(v.toLowerCase()).not.toContain("accepted");
   });
 });

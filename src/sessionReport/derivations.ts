@@ -222,6 +222,42 @@ export function anchorAtLabel(
   return `Turn ${anchorTurn} (late)`;
 }
 
+/* REPORT-3e (2026-07-13, live staging — session 686b5699, Senior Product
+   Designer @ Flipkart): the hero's one-line headline verdict. Every OTHER
+   negotiation hero surface is grounded in the kernel — strengths are filtered
+   by candidateAsk (filterNegotiationStrengths), delivery metrics by the kernel
+   ask (buildNegotiationMetrics), per-question rebuilt from the transcript — but
+   the headline alone passed the raw LLM `report.verdict` straight through. On a
+   no-counter / no-deal session that string read "You negotiated well but didn't
+   quantify results": "negotiated well" is false beside the report's own "0 of 5
+   skills", 30-second read "never named a number", and N1 "No counter named",
+   while "quantify results" is leaked STAR-behavioural phrasing that has no place
+   in a negotiation report. Derive the headline from the same single source (the
+   kernel outcome) so it can never diverge from the 30-second read it sits above.
+   Terse by design — the rich narrative lives in TLDRHero; this is the pull-quote. */
+export function negotiationHeadlineVerdict(outcome: NegotiationOutcome): string {
+  const offers = outcome.offers ?? [];
+  const opening = offers[0]?.total ?? null;
+  const closing = outcome.finalTotal ?? (offers[offers.length - 1]?.total ?? null);
+  const delta = opening !== null && closing !== null ? closing - opening : null;
+  const counterNamed = outcome.candidateAsk !== null;
+
+  if (outcome.outcome === "accepted") {
+    if (delta !== null && delta > 0) return "You closed the deal and moved the offer up.";
+    if (counterNamed) return "You closed the deal, but took their opening without moving it.";
+    return "You accepted the first offer without countering.";
+  }
+  if (outcome.outcome === "walked_away") {
+    return counterNamed
+      ? "You walked away rather than settle below your counter."
+      : "You walked away without naming a counter.";
+  }
+  // no_agreement — nothing closed.
+  return counterNamed
+    ? "You countered, but the deal never closed."
+    : "No counter named — the recruiter's first number stood.";
+}
+
 export function computeNpvRows(outcome: NegotiationOutcome) {
   const offers = outcome.offers ?? [];
   if (offers.length === 0) return [];
