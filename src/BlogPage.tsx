@@ -1704,31 +1704,41 @@ function BlogPostPage({ post }: { post: BlogPost }) {
   const canonicalUrl = `https://hirestepx.com/blog/${post.slug}`;
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
-    description: post.metaDescription,
-    url: canonicalUrl,
-    datePublished: post.datePublished,
-    dateModified: post.datePublished,
-    image: post.heroImage,
-    mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
-    author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
-    publisher: {
-      "@type": "Organization",
-      name: "HireStepX",
-      url: "https://hirestepx.com",
-      logo: { "@type": "ImageObject", url: "https://hirestepx.com/favicon.svg" },
-    },
-    ...(post.faqs.length > 0 && {
-      "@graph": [{
+    "@graph": [
+      {
+        "@type": "BlogPosting",
+        headline: post.title,
+        description: post.metaDescription,
+        url: canonicalUrl,
+        datePublished: post.datePublished,
+        dateModified: post.datePublished,
+        image: post.heroImage,
+        mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+        author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
+        publisher: {
+          "@type": "Organization",
+          name: "HireStepX",
+          url: "https://hirestepx.com",
+          logo: { "@type": "ImageObject", url: "https://hirestepx.com/favicon.svg" },
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://hirestepx.com" },
+          { "@type": "ListItem", position: 2, name: "Blog", item: "https://hirestepx.com/blog" },
+          { "@type": "ListItem", position: 3, name: post.title, item: canonicalUrl },
+        ],
+      },
+      ...(post.faqs.length > 0 ? [{
         "@type": "FAQPage",
         mainEntity: post.faqs.map(f => ({
           "@type": "Question",
           name: f.question,
           acceptedAnswer: { "@type": "Answer", text: f.answer },
         })),
-      }],
-    }),
+      }] : []),
+    ],
   };
 
   useSEO({

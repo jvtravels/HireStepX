@@ -111,18 +111,59 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
 
   /* FAQPage schema — gets you the expandable accordion in Google's
      mobile SERP. Single biggest rich-result lever for this kind of
-     long-tail page. */
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: questions.map((q) => ({
+     long-tail page.
+     All Q&A content sourced exclusively from hand-curated fields in
+     seo-pages.ts (recruitmentSteps, interviewRounds, framework) —
+     no generated or invented company claims. */
+  type FaqEntry = { "@type": "Question"; name: string; acceptedAnswer: { "@type": "Answer"; text: string } };
+  const faqEntries: FaqEntry[] = [];
+
+  if (page.recruitmentSteps && page.recruitmentSteps.length > 0) {
+    faqEntries.push({
+      "@type": "Question",
+      name: `What is the recruitment process at ${companyLabel}?`,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: `The typical ${companyLabel} recruitment process has ${page.recruitmentSteps.length} stages: ${page.recruitmentSteps.join(" → ")}.`,
+      },
+    });
+  }
+
+  if (page.interviewRounds && page.interviewRounds.length > 0) {
+    faqEntries.push({
+      "@type": "Question",
+      name: `What are the interview rounds at ${companyLabel}?`,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: `${companyLabel} typically conducts ${page.interviewRounds.length} interview rounds: ${page.interviewRounds.join("; ")}.`,
+      },
+    });
+  }
+
+  faqEntries.push({
+    "@type": "Question",
+    name: `What framework should I use for ${companyLabel} ${focusLabel.toLowerCase()} interviews?`,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: `${page.framework.name}: ${page.framework.summary}`,
+    },
+  });
+
+  questions.slice(0, 5).forEach((q) => {
+    faqEntries.push({
       "@type": "Question",
       name: q.text,
       acceptedAnswer: {
         "@type": "Answer",
-        text: `${page.framework.name}: ${page.framework.summary} Practice this question with HireStepX to get AI-graded feedback on your answer structure, delivery, and specificity.`,
+        text: `Use the ${page.framework.name} framework: ${page.framework.summary} Structure your answer around a specific example from your experience.`,
       },
-    })),
+    });
+  });
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqEntries,
   };
 
   /* Article schema — alongside FAQPage, signals "this is editorial
@@ -135,7 +176,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     author: { "@type": "Organization", name: "HireStepX" },
     publisher: { "@type": "Organization", name: "HireStepX", logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" } },
     datePublished: "2026-05-05",
-    dateModified: "2026-07-12",
+    dateModified: "2026-07-13",
     inLanguage: "en-IN",
   };
 
