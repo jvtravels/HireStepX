@@ -155,6 +155,40 @@ describe("negotiation report — never claims an acceptance on a non-accepted ou
   });
 });
 
+/* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM). An
+ * ACCEPTED deal whose offer numbers weren't captured (legacy row, no persisted
+ * trajectory, offer-regex missed the transcript → offers empty, finalTotal null
+ * → delta null) matched neither the `delta > 0` nor the `delta === 0` accept
+ * branch and fell through to the no-agreement `else`, printing "No deal closed …
+ * ₹0 gained … walking away" beside this same component's stage tracker ("you
+ * closed the deal") and N1's "Outcome: Accepted". The close is authoritative
+ * from outcome.outcome; the no-deal narrative must be unreachable on an accept,
+ * whether or not offer numbers survived. */
+const NO_DEAL_CLAIM = /no deal closed|nothing locked in|walking away with ₹0|ended with ₹0|₹0 gained/i;
+
+const ACCEPTED_UNQUANTIFIED: Array<{ name: string; o: NegotiationOutcome }> = [
+  {
+    name: "accepted, no offer numbers, counter named (the live bug)",
+    o: outcome({ outcome: "accepted", finalTotal: null, offers: [], candidateAsk: 65 }),
+  },
+  {
+    name: "accepted, no offer numbers, no counter named",
+    o: outcome({ outcome: "accepted", finalTotal: null, offers: [], candidateAsk: null }),
+  },
+];
+
+describe("negotiation report — an accepted deal never reads as no-deal, even without offer numbers", () => {
+  it.each(ACCEPTED_UNQUANTIFIED)("verdict states the accept and never the no-deal narrative: $name", ({ o }) => {
+    const text = renderSurfaces(o);
+    // The 30-second read must not print the no-agreement narrative on a close.
+    expect(text).not.toMatch(NO_DEAL_CLAIM);
+    // And it must affirmatively state the accept, coherent with N1 / stage tracker.
+    expect(text.toLowerCase()).toContain("you accepted");
+    // The stage tracker's own "you closed the deal" hint must still agree.
+    expect(text.toLowerCase()).toContain("you closed the deal");
+  });
+});
+
 /* REPORT-4 (2026-07-12, live staging — session 686b5699). TOP STRENGTHS must
  * never praise an anchor/counter the kernel says was never named. `wins` is
  * the one counter-aware surface previously not pinned to candidateAsk; this

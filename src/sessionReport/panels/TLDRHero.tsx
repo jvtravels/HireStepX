@@ -37,6 +37,20 @@ export function TLDRHero({
     verdict = counterNamed
       ? `You countered at ₹${outcome.candidateAsk} LPA but accepted their opening ₹${closing} LPA — they held firm and you took it without further movement. Comparable candidates keep pushing 15 to 35% above the opening before accepting.`
       : `You accepted at ₹${closing} LPA, the same as their first offer. No counter, no movement. Comparable candidates typically push 15 to 35% above the opening number.`;
+  } else if (outcome.outcome === "accepted") {
+    /* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM):
+     * an ACCEPTED deal whose offer numbers weren't captured (legacy row with no
+     * persisted trajectory, transcript the offer-regex missed → offers empty,
+     * finalTotal null → delta null) matched neither `delta > 0` nor `delta === 0`
+     * and fell through to the no-agreement `else`, printing "No deal closed …
+     * ₹0 gained … walking away" beside this same component's stage tracker
+     * ("you closed the deal") and N1's "Outcome: Accepted". The close is
+     * authoritative from `outcome.outcome`; the no-deal branch must be reachable
+     * ONLY when the deal did not close. State the accept plainly and DON'T
+     * fabricate a delta we can't compute. */
+    verdict = counterNamed
+      ? `You accepted the ${role} offer at ${company} — you'd countered at ₹${outcome.candidateAsk} LPA. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`
+      : `You accepted the ${role} offer at ${company}. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`;
   } else if (outcome.outcome === "walked_away") {
     /* `closing` can be null when the candidate walked before any offer
      * number landed — never interpolate it raw (that renders "₹null LPA"
