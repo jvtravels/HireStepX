@@ -27,7 +27,7 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-skip { position: absolute; left: -9999px; top: 0; }
         .blog-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
         .blog-card { position: relative; transition: border-color 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1); }
-        .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 18px 44px rgba(${coalChannels},0.08); transform: translateY(-2px); }
+        .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 4px 16px rgba(${coalChannels},0.05); }
         .blog-card-link { color: inherit; text-decoration: none; outline: none; }
         .blog-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
         .blog-card:has(.blog-card-link:focus-visible) { border-color: ${t.copper}; box-shadow: 0 0 0 3px ${t.copperSoft}; }
