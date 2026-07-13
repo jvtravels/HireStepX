@@ -6,7 +6,7 @@
     "build": "next build",
     "build-storybook": "storybook build",
     "chromatic": "chromatic --exit-zero-on-changes",
-    "dev": "TEMPO=true next dev -p 0",
+    "dev": "next dev -p 0",
     "preview": "vite preview",
     "start": "next start -p 0",
     "storybook": "storybook dev -p 6006"

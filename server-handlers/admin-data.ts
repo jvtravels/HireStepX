@@ -12,8 +12,6 @@ import { costBreakdown, kFactor, DEFAULT_COST_RATES } from "./_cost-helpers";
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
-/* Session-token mint/verify live in ./_admin-auth so this issuer and the
- * admin-quality-* verifiers share one signing key (see that module). */
 
 /* Query limits — reasonable caps to prevent huge payloads */
 const LIMIT_PROFILES = 2000;
