@@ -138,9 +138,11 @@ export default async function InterviewPrepPage() {
       logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
     datePublished: "2026-01-01",
-    dateModified: "2026-07-12",
+    dateModified: "2026-07-13",
     inLanguage: "en-IN",
     url: "https://hirestepx.com/interview-prep",
+    keywords: "interview preparation India 2026, mock interview India, campus placement preparation, AI mock interview",
+    articleSection: "Interview Preparation",
   };
 
   const s = { fontFamily: "var(--font-ui), system-ui, sans-serif" };
