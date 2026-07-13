@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import { tokens as t, fonts } from "./auth/_tokens";
 import { NavV2, MobileStickyCTA } from "./marketing-v2/HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./marketing-v2/FooterDome";
-import { useSEO, articleJsonLd, faqJsonLd } from "./useSEO";
+import { useSEO } from "./useSEO";
 
 /* PageShell — mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Satoshi, copper
@@ -28,28 +28,33 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
         .blog-card { position: relative; transition: border-color 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1); }
         .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 18px 44px rgba(14,12,8,0.08); transform: translateY(-2px); }
-        /* Stretched-link pattern: title anchor's ::after covers the whole card so the
-           full surface is clickable, but only the anchor (not the article) is in the
-           tab order. Card focus state mirrors the anchor's focus-visible state. */
         .blog-card-link { color: inherit; text-decoration: none; outline: none; }
         .blog-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
         .blog-card:has(.blog-card-link:focus-visible) { border-color: ${t.copper}; box-shadow: 0 0 0 3px ${t.copperSoft}; }
         .blog-card .blog-card-meta { position: relative; z-index: 2; }
+        .blog-faq-btn:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 2px; border-radius: 4px; }
         @media (prefers-reduced-motion: reduce) { .blog-card { transition: none; } .blog-card:hover { transform: none; } }
         @media (max-width: 880px) {
           .blog-featured { grid-template-columns: 1fr !important; }
           .blog-featured-media { min-height: 220px !important; }
           .blog-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .blog-editorial-strip { grid-template-columns: 1fr !important; }
+          .blog-editorial-strip-media { min-height: 260px !important; order: -1; }
           .blog-related-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 640px) {
           .blog-grid { grid-template-columns: 1fr !important; }
           .blog-container { padding: 32px 20px 64px !important; }
           .blog-article { padding: 0 20px 56px !important; }
-          .blog-hero { height: 280px !important; }
+          .blog-hero { height: 220px !important; }
           .blog-hero-inner { padding: 0 20px 28px !important; }
           .blog-meta { padding: 16px 20px !important; }
           main, footer { padding-bottom: 96px !important; }
+          .blog-filter-scroll { overflow-x: auto; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+          .blog-filter-scroll::-webkit-scrollbar { display: none; }
+          .blog-editorial-strip-media { min-height: 200px !important; }
+          .blog-strip-text { padding: 32px 24px !important; }
+          .blog-index-cta { flex-direction: column !important; align-items: flex-start !important; }
         }
       `}</style>
       <a href="#main" className="blog-skip">Skip to content</a>
@@ -1408,6 +1413,93 @@ function getRelatedPosts(slugs: string[]): BlogPost[] {
 /* ─── Category filters ─── */
 const CATEGORIES = ["All", ...Array.from(new Set(posts.map(p => p.category)))];
 
+/* ─── Compact card — 3-col grid variant ─── */
+function CompactCard({ post }: { post: BlogPost }) {
+  return (
+    <article
+      className="blog-card"
+      style={{
+        background: t.white, borderRadius: 14, border: `1px solid ${t.line}`,
+        overflow: "hidden", display: "flex", flexDirection: "column",
+      }}
+    >
+      <div style={{ position: "relative", height: 160, background: t.creamSoft, flexShrink: 0 }}>
+        <Image
+          src={post.heroImage} alt={post.heroAlt}
+          fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
+          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          style={{ objectFit: "cover" }}
+        />
+      </div>
+      <div style={{ padding: "18px 20px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+          {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
+        </p>
+        <h3 style={{ fontFamily: fonts.serif, fontSize: 19, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.012em", marginBottom: 10, flex: 1, textWrap: "balance" }}>
+          <Link href={`/blog/${post.slug}`} className="blog-card-link">
+            {post.title}
+          </Link>
+        </h3>
+        <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, marginBottom: 12, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
+          {post.metaDescription}
+        </p>
+        <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>
+          {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} · {post.readTime}
+        </p>
+      </div>
+    </article>
+  );
+}
+
+/* ─── Editorial strip — full-width horizontal card, breaks the uniform grid ─── */
+function EditorialStrip({ post, imageRight }: { post: BlogPost; imageRight: boolean }) {
+  const media = (
+    <div className="blog-editorial-strip-media" style={{ position: "relative", minHeight: 300, background: t.creamSoft, flexShrink: 0 }}>
+      <Image
+        src={post.heroImage} alt={post.heroAlt} fill
+        sizes="(max-width: 880px) 100vw, 420px"
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+        style={{ objectFit: "cover" }}
+      />
+    </div>
+  );
+  return (
+    <article
+      className="blog-card blog-editorial-strip"
+      style={{
+        display: "grid",
+        gridTemplateColumns: imageRight ? "1fr 420px" : "420px 1fr",
+        gap: 0,
+        background: t.white, borderRadius: 18, border: `1px solid ${t.line}`,
+        overflow: "hidden", marginBottom: 20,
+      }}
+    >
+      {!imageRight && media}
+      <div className="blog-strip-text" style={{ padding: "44px 52px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>
+          {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
+        </p>
+        <h3 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 30px)", fontWeight: 400, color: t.coal, lineHeight: 1.12, letterSpacing: "-0.02em", marginBottom: 16, textWrap: "balance" }}>
+          <Link href={`/blog/${post.slug}`} className="blog-card-link">
+            {post.title}
+          </Link>
+        </h3>
+        <p style={{ fontFamily: fonts.sans, fontSize: 14.5, color: t.indigoGray, lineHeight: 1.65, marginBottom: 22, maxWidth: "48ch" }}>
+          {post.metaDescription}
+        </p>
+        <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
+          {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} · {post.readTime} read
+        </p>
+      </div>
+      {imageRight && media}
+    </article>
+  );
+}
+
+type EditorialSection =
+  | { type: "grid"; items: BlogPost[] }
+  | { type: "strip"; item: BlogPost; imageRight: boolean };
+
 /* ─── Blog index (list of all posts) ─── */
 function BlogIndex() {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -1439,23 +1531,34 @@ function BlogIndex() {
   const featured = filtered[0];
   const rest = filtered.slice(1);
 
+  const editorialSections: EditorialSection[] = [];
+  for (let gi = 0, si = 0; gi < rest.length;) {
+    const chunk = rest.slice(gi, gi + 3);
+    editorialSections.push({ type: "grid", items: chunk });
+    gi += chunk.length;
+    if (gi < rest.length) {
+      editorialSections.push({ type: "strip", item: rest[gi], imageRight: si % 2 === 1 });
+      gi++;
+      si++;
+    }
+  }
+
   return (
     <BlogShell>
       <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "120px 40px 96px" }}>
         {/* Header */}
-        <div style={{ marginBottom: 48, maxWidth: 720 }}>
-          <p style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: t.copper, marginBottom: 18 }}>Blog</p>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(40px, 5.5vw, 72px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.04, marginBottom: 18, textWrap: "balance" }}>
+        <div style={{ marginBottom: 52, maxWidth: 800 }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(44px, 5.5vw, 76px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.03em", lineHeight: 0.98, marginBottom: 22, textWrap: "balance" }}>
             Interview prep that actually{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>helps</span>
+            <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
           </h1>
-          <p style={{ fontFamily: fonts.sans, fontSize: 18, color: t.indigoGray, lineHeight: 1.55, maxWidth: "62ch" }}>
-            Company-specific guides, question banks, and strategies pulled from real Indian interview patterns.
+          <p style={{ fontFamily: fonts.sans, fontSize: 18, color: t.indigoGray, lineHeight: 1.55, maxWidth: "58ch" }}>
+            Company-specific guides, question banks, and career strategies built for Indian job seekers.
           </p>
         </div>
 
-        {/* Category filters */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 44, flexWrap: "wrap" }}>
+        {/* Category filters — scrollable on mobile */}
+        <div className="blog-filter-scroll" style={{ display: "flex", gap: 8, marginBottom: 44, flexWrap: "wrap" }}>
           {CATEGORIES.map(cat => {
             const active = activeCategory === cat;
             return (
@@ -1463,8 +1566,9 @@ function BlogIndex() {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 style={{
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, padding: "8px 16px",
-                  borderRadius: 999, cursor: "pointer",
+                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                  padding: "10px 18px",
+                  borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
                   transition: "background 160ms, color 160ms, border-color 160ms",
                   background: active ? t.coal : "transparent",
                   color: active ? t.cream : t.coal,
@@ -1517,67 +1621,39 @@ function BlogIndex() {
           </article>
         )}
 
-        {/* Post grid */}
-        <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
-          {rest.map(post => (
-            <article
-              key={post.slug}
-              className="blog-card"
-              style={{
-                background: t.white, borderRadius: 14, border: `1px solid ${t.line}`,
-                overflow: "hidden",
-                display: "flex", flexDirection: "column",
-              }}
-            >
-              <div style={{ position: "relative", height: 168, background: t.creamSoft }}>
-                <Image
-                  src={post.heroImage} alt={post.heroAlt}
-                  fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
-                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                  style={{ objectFit: "cover" }}
-                />
-              </div>
-              <div style={{ padding: "20px 22px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 8px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{post.company}</span>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "3px 8px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999 }}>{post.category}</span>
-                </div>
-                <h3 style={{ fontFamily: fonts.serif, fontSize: 18, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.012em", marginBottom: 12, flex: 1, textWrap: "balance" }}>
-                  <Link href={`/blog/${post.slug}`} className="blog-card-link">
-                    {post.title}
-                  </Link>
-                </h3>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft }}>
-                  <span>{post.readTime} read</span>
-                  <span aria-hidden style={{ color: t.inkFaint }}>·</span>
-                  <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}</span>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+        {/* Editorial post grid — alternating card groups and full-width strips */}
+        {editorialSections.map((section, si) =>
+          section.type === "grid" ? (
+            <div key={`grid-${si}`} className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22, marginBottom: 20 }}>
+              {section.items.map(p => <CompactCard key={p.slug} post={p} />)}
+            </div>
+          ) : (
+            <EditorialStrip key={`strip-${si}`} post={section.item} imageRight={section.imageRight} />
+          )
+        )}
 
-        {/* Bottom CTA */}
-        <div style={{
-          marginTop: 72, textAlign: "center", padding: "48px 32px",
-          background: t.creamSoft, border: `1px solid ${t.line}`,
-          borderRadius: 18,
+        {/* Bottom CTA — editorial, left-aligned */}
+        <div className="blog-index-cta" style={{
+          marginTop: 88, borderTop: `1px solid ${t.lineStrong}`, paddingTop: 56,
+          display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 40, flexWrap: "wrap",
         }}>
-          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(24px, 3vw, 34px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", marginBottom: 10, lineHeight: 1.1 }}>
-            Stop reading, start{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>practicing</span>.
+          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.02, maxWidth: "16ch", textWrap: "balance", margin: 0 }}>
+            Stop reading,{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>start practicing</span>.
           </p>
-          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, marginBottom: 26, maxWidth: 460, margin: "0 auto 26px" }}>
-            AI mock interviews with instant feedback. Three sessions free, no card required.
-          </p>
-          <Link href="/signup" style={{
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
-            padding: "13px 26px", borderRadius: 999, textDecoration: "none",
-            background: t.indigo, color: t.white,
-          }}>
-            Start free practice
-          </Link>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: 260 }}>
+            <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
+              AI mock interviews with instant feedback. Three sessions free, no card required.
+            </p>
+            <Link href="/signup" style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
+              padding: "14px 28px", borderRadius: 999, textDecoration: "none",
+              background: t.indigo, color: t.white, flexShrink: 0,
+            }}>
+              Start free practice <span aria-hidden>→</span>
+            </Link>
+          </div>
         </div>
       </div>
     </BlogShell>
@@ -1586,32 +1662,8 @@ function BlogIndex() {
 
 /* ─── Single blog post ─── */
 function BlogPostPage({ post }: { post: BlogPost }) {
-  const url = `https://hirestepx.com/blog/${post.slug}`;
   const related = getRelatedPosts(post.relatedSlugs);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  // Combine article + FAQ + breadcrumb JSON-LD via @graph
-  const articleLd = articleJsonLd({ title: post.title, description: post.metaDescription, url, image: post.heroImage, datePublished: post.datePublished });
-  const breadcrumbLd = {
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://hirestepx.com" },
-      { "@type": "ListItem", position: 2, name: "Blog", item: "https://hirestepx.com/blog" },
-      { "@type": "ListItem", position: 3, name: post.title, item: url },
-    ],
-  };
-  const faqLd = post.faqs.length > 0 ? faqJsonLd(post.faqs) : null;
-  const graphItems = [articleLd, breadcrumbLd, ...(faqLd ? [faqLd] : [])];
-  const combinedLd = { "@context": "https://schema.org", "@graph": graphItems };
-
-  useSEO({
-    title: `${post.title} — HireStepX`,
-    description: post.metaDescription,
-    canonical: url,
-    ogImage: post.heroImage,
-    ogType: "article",
-    jsonLd: combinedLd,
-  });
 
   return (
     <BlogShell>
@@ -1695,6 +1747,8 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                     <button
                       onClick={() => setOpenFaq(isOpen ? null : i)}
                       aria-expanded={isOpen}
+                      aria-controls={`faq-answer-${i}`}
+                      className="blog-faq-btn"
                       style={{
                         width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
                         padding: "22px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left",
@@ -1714,14 +1768,19 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                         +
                       </span>
                     </button>
-                    <div style={{
-                      maxHeight: isOpen ? 400 : 0, overflow: "hidden",
-                      transition: "max-height 0.3s ease, padding 0.3s ease",
-                      paddingBottom: isOpen ? 22 : 0,
-                    }}>
-                      <p style={{ fontFamily: fonts.sans, fontSize: 15.5, color: t.indigoGray, lineHeight: 1.7, maxWidth: "68ch" }}>
-                        {faq.answer}
-                      </p>
+                    <div
+                      id={`faq-answer-${i}`}
+                      style={{
+                        display: "grid",
+                        gridTemplateRows: isOpen ? "1fr" : "0fr",
+                        transition: "grid-template-rows 280ms cubic-bezier(0.16,1,0.3,1)",
+                      }}
+                    >
+                      <div style={{ overflow: "hidden", paddingBottom: isOpen ? 22 : 0, transition: "padding-bottom 280ms cubic-bezier(0.16,1,0.3,1)" }}>
+                        <p style={{ fontFamily: fonts.sans, fontSize: 15.5, color: t.indigoGray, lineHeight: 1.7, maxWidth: "68ch" }}>
+                          {faq.answer}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1730,26 +1789,22 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           </section>
         )}
 
-        {/* CTA */}
-        <div style={{
-          background: t.creamSoft,
-          border: `1px solid ${t.line}`,
-          borderRadius: 18, padding: "40px 40px", textAlign: "center", marginTop: 56,
-        }}>
-          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.6vw, 30px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", marginBottom: 10, lineHeight: 1.1 }}>
+        {/* CTA — editorial, left-aligned */}
+        <div style={{ marginTop: 56, borderTop: `1px solid ${t.lineStrong}`, paddingTop: 40 }}>
+          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3vw, 36px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: 14, textWrap: "balance" }}>
             Ready to{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>practice</span>?
           </p>
-          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, lineHeight: 1.6, marginBottom: 26, maxWidth: 460, margin: "0 auto 26px" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.indigoGray, lineHeight: 1.65, marginBottom: 26, maxWidth: "56ch" }}>
             {post.cta}
           </p>
           <Link href="/signup" style={{
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            display: "inline-flex", alignItems: "center", gap: 8,
             fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
             padding: "13px 26px", borderRadius: 999, textDecoration: "none",
             background: t.indigo, color: t.white,
           }}>
-            Start free practice
+            Start free practice <span aria-hidden>→</span>
           </Link>
         </div>
 
