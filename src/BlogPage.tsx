@@ -1593,40 +1593,40 @@ function BlogIndex() {
           ))}
         </div>
 
-        {/* Featured post — dark "lead story" treatment */}
+        {/* Featured post — larger editorial card, same cream surface as the rest */}
         {featured && (
           <article
             className="blog-featured blog-card"
             style={{
               display: "grid", gridTemplateColumns: "1.15fr 1fr", gap: 0,
-              background: t.coal, borderRadius: 18, border: `1px solid ${t.creamLine}`,
-              overflow: "hidden", marginBottom: 40, color: t.cream,
+              background: t.creamSoft, borderRadius: 18, border: `1px solid ${t.line}`,
+              overflow: "hidden", marginBottom: 40,
             }}
           >
-            <div className="blog-featured-media" style={{ position: "relative", minHeight: 360, background: t.coal }}>
+            <div className="blog-featured-media" style={{ position: "relative", minHeight: 360, background: t.creamSoft }}>
               <Image
                 src={featured.heroImage} alt={featured.heroAlt} loading="eager"
                 fill sizes="(max-width: 880px) 100vw, 55vw"
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                style={{ objectFit: "cover", opacity: 0.88 }}
+                style={{ objectFit: "cover" }}
               />
             </div>
             <div style={{ padding: "48px 44px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copperWash, border: `1px solid ${t.copperBorder}`, borderRadius: 999 }}>{featured.company}</span>
-                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.creamMuted, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.creamLineSoft, border: `1px solid ${t.creamLine}`, borderRadius: 999 }}>{featured.category}</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{featured.company}</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 999 }}>{featured.category}</span>
               </div>
-              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 2.8vw, 38px)", fontWeight: 400, color: t.cream, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 16, textWrap: "balance" }}>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 2.8vw, 38px)", fontWeight: 400, color: t.coal, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 16, textWrap: "balance" }}>
                 <Link href={`/blog/${featured.slug}`} className="blog-card-link">
                   {featured.title}
                 </Link>
               </h2>
-              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.creamMuted, lineHeight: 1.65, marginBottom: 24 }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.65, marginBottom: 24 }}>
                 {featured.metaDescription}
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.creamFaded }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint }}>
                 <span>{featured.readTime} read</span>
-                <span aria-hidden style={{ color: t.creamLine }}>·</span>
+                <span aria-hidden style={{ color: t.lineStrong }}>·</span>
                 <span>{new Date(featured.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                 <span aria-hidden style={{ marginLeft: "auto", color: t.copper, fontSize: 16 }}>→</span>
               </div>
