@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import Image from "next/image";
 import { c, font, radius } from "./tokens";
-import { QualityContent } from "./AdminQualityDashboard";
 import { EmptyState } from "./components/EmptyState";
 
 /* ─── Token-based auth ─── */
@@ -204,13 +203,12 @@ export interface SessionDetailData {
   completionTokens?: number;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "quality" | "analytics";
+type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
   { key: "users", label: "Users", icon: "👤" },
   { key: "sessions", label: "Sessions", icon: "🎯" },
-  { key: "quality", label: "Quality", icon: "🧪" },
   { key: "financials", label: "Financials", icon: "💰" },
   { key: "llm", label: "AI / Services", icon: "🤖" },
   { key: "analytics", label: "Analytics", icon: "📈" },
@@ -2336,7 +2334,6 @@ export default function AdminDashboard() {
       case "promo-codes": return renderPromoCodes();
       case "calendar": return renderCalendar();
       case "outcomes": return renderOutcomes();
-      case "quality": return <QualityContent />;
       case "analytics": return renderAnalytics();
     }
   };
