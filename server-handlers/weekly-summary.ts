@@ -73,7 +73,22 @@ async function recentSessions(userId: string): Promise<SessionRow[]> {
   return (await res.json()) as SessionRow[];
 }
 
-function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: string; html: string } | null {
+// Cumulative session count across all time (used for Google Review trigger)
+async function totalSessionCount(userId: string): Promise<number> {
+  const path = `sessions?user_id=eq.${encodeURIComponent(userId)}&select=id`;
+  const res = await supa(path);
+  if (!res.ok) return 0;
+  const rows = await res.json().catch(() => []);
+  return Array.isArray(rows) ? rows.length : 0;
+}
+
+const GOOGLE_REVIEW_URL = process.env.GOOGLE_REVIEW_URL || "";
+
+function buildDigest(
+  profile: ProfileRow,
+  sessions: SessionRow[],
+  totalSessions: number,
+): { subject: string; html: string } | null {
   if (sessions.length === 0) return null;
   const latest = sessions[0];
   const latestReport = (latest.report_json || {}) as Record<string, unknown>;
@@ -88,6 +103,9 @@ function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: st
   const safeName = escapeHtml(firstName);
   const sessionCount = `${sessions.length} session${sessions.length === 1 ? "" : "s"}`;
 
+  // Show Google Review ask for users with ≥3 total sessions and latest score ≥75
+  const showReviewAsk = GOOGLE_REVIEW_URL && totalSessions >= 3 && score >= 75;
+
   const subject = `Your HireStepX week: ${sessionCount}, score ${score}`;
   const html = emailShell({
     preview: `${sessionCount} this week, latest score ${score}.`,
@@ -101,6 +119,12 @@ function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: st
         ["Change from prior", deltaStr],
       ]) +
       button("View your latest report", `${APP_URL}/sessions`) +
+      (showReviewAsk
+        ? para(
+            `One small favour: if HireStepX has been useful in your prep, a quick Google review helps other candidates find us. Takes about 60 seconds and makes a real difference.`,
+          ) +
+          button("Leave a Google review", GOOGLE_REVIEW_URL)
+        : "") +
       para(`Not useful? You can turn these off anytime from your settings.`, { small: true, muted: true }),
   });
   return { subject, html };
@@ -150,7 +174,8 @@ export default async function handler(req: Request): Promise<Response> {
   let skipped = 0;
   for (const user of users) {
     const sessions = await recentSessions(user.id);
-    const digest = buildDigest(user, sessions);
+    const total = await totalSessionCount(user.id);
+    const digest = buildDigest(user, sessions, total);
     if (!digest) { skipped++; continue; }
     const ok = await sendEmail(user.email, digest.subject, digest.html);
     if (ok) {

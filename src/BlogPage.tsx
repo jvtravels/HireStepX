@@ -1417,6 +1417,68 @@ const posts: BlogPost[] = [
     ],
     cta: "Practice frontend developer interviews on HireStepX — React, TypeScript, and system design rounds with AI voice scoring tailored to your target company.",
   },
+  {
+    slug: "jp-morgan-interview-questions-india-2026",
+    title: "JP Morgan Interview Questions India 2026 — SDE, Analyst & Quant Roles",
+    metaDescription: "Prepare for JP Morgan interviews in India. Covers SDE, Business Analyst, and Quant roles — coding rounds, HireRight assessment, technical screens, and HR behavioral questions with sample answers.",
+    company: "JP Morgan",
+    category: "Full Guide",
+    readTime: "9 min",
+    heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=500&fit=crop",
+    heroAlt: "Financial district skyline representing JP Morgan interview preparation",
+    datePublished: "2026-07-14",
+    intro: "JP Morgan Chase is one of the most sought-after employers for tech and finance roles in India, with offices in Mumbai, Bangalore, and Hyderabad. The interview process is rigorous and multi-layered — but highly predictable once you know what each round tests. This guide covers SDE, Business Analyst, and Quantitative Analyst roles.",
+    sections: [
+      {
+        heading: "Interview Process Overview",
+        content: "JP Morgan's hiring process typically has 4–6 rounds depending on the role:\n\n1. **HireRight Background Screen** — automated, runs in parallel with interviews\n2. **HackerRank / Codility OA** — 90-minute online assessment, 2–3 coding problems (SDE roles)\n3. **Technical Phone Screen** — 45 min, DSA + 1–2 system design questions\n4. **Technical Panel (x2)** — each 60 min, deeper DSA, architecture, domain knowledge\n5. **Hiring Manager Round** — behavioral + technical, 45 min\n6. **HR Offer Discussion** — compensation, joining date, relocation\n\nBusiness Analyst and Quant roles skip the coding OA but add a case study or quantitative modeling round instead.",
+      },
+      {
+        heading: "SDE — Most-Asked Technical Topics",
+        content: "Based on interview reports from JP Morgan India SDEs:\n\n**Data Structures & Algorithms (heaviest)**\n- Arrays, strings, and hashmaps (every round)\n- Trees and graphs (BFS/DFS, lowest common ancestor)\n- Dynamic programming (medium level: knapsack, LCS, edit distance)\n- Linked list manipulation\n- Sliding window and two-pointer techniques\n\n**System Design (SDE-2+)**\n- Design a rate limiter\n- Design a payment processing system (very common — they want you to think about consistency, idempotency, and failure handling)\n- Design a real-time notification service\n- Design a trading order book\n\n**Finance domain awareness**\nUnlike pure tech companies, JP Morgan interviewers expect you to understand the problem domain. Know what a trade lifecycle looks like, what settlement means, and why consistency > availability in financial systems.",
+      },
+      {
+        heading: "Business Analyst — Case Study Format",
+        content: "The BA interview at JP Morgan India differs significantly from tech roles:\n\n**Round 1 — Quantitative reasoning**: 30 minutes, mental math + data interpretation. Expect questions like \"if transaction volume increases 20% and processing cost per transaction drops 15%, what happens to total cost?\" No calculator.\n\n**Round 2 — Case study**: Given a business problem (e.g. \"our trade reconciliation process takes 3 days, the competitor does it in 4 hours — what would you do?\"), you're expected to structure the problem, ask clarifying questions, hypothesize root causes, and propose a solution with measurable success criteria.\n\n**Round 3 — Behavioral**: Heavy focus on stakeholder management. \"Tell me about a time you had to present a data-backed recommendation to a skeptical senior leader.\" Use STAR structure with emphasis on quantified outcomes.",
+      },
+      {
+        heading: "Quant Analyst — What to Expect",
+        content: "JP Morgan's Quant Analyst roles (Markets, Risk, Model Review) are among the most technically demanding financial interviews:\n\n**Mathematics** — Probability, stochastic calculus basics, linear algebra. Expect brain teasers like \"You roll two dice — what's the probability that the sum is 7 given that the first die shows an odd number?\"\n\n**Statistics** — Regression, hypothesis testing, time series. \"How would you detect if a trading strategy's alpha is statistically significant?\"\n\n**Programming** — Python (pandas, numpy, scipy) or R. Often a live coding exercise on data manipulation or a simple pricing model.\n\n**Domain** — Options pricing (Black-Scholes intuition, not formula derivation), VaR, Greeks. You don't need to be a quant PhD to pass, but you need to be able to speak the language comfortably.",
+      },
+      {
+        heading: "Behavioral Questions — JP Morgan Specific",
+        content: "JP Morgan uses a competency framework called \"Business Principles\" — their behavioral questions map to specific principles:\n\n**Most frequently asked:**\n\n\"Tell me about a time you had to make a decision with incomplete information.\" (Judgment under uncertainty — maps to their risk culture)\n\n\"Describe a time you identified a process inefficiency and drove an improvement.\" (Ownership — they value engineers who don't accept the status quo)\n\n\"Tell me about a conflict with a colleague and how you resolved it.\" (Collaboration)\n\n\"What's the most technically complex problem you've solved?\" (Technical depth — go specific, include the tradeoffs you considered)\n\n\"Why JP Morgan over pure tech companies?\" (This is important — don't say 'stability'. Say you want to work on problems where correctness and consistency matter at a scale that affects real financial outcomes.)",
+      },
+      {
+        heading: "Compensation — India (2026)",
+        content: "JP Morgan India salary ranges (verified from Glassdoor, Levels.fyi, LinkedIn Salary):\n\n**SDE roles:**\n- SDE-1 (Associate): ₹18–28 LPA (base + bonus)\n- SDE-2 (Senior Associate): ₹28–45 LPA\n- VP Engineering: ₹45–75 LPA\n\n**Business Analyst:**\n- Analyst: ₹14–22 LPA\n- Senior Analyst: ₹22–35 LPA\n\n**Quant Analyst:**\n- Junior Quant: ₹20–35 LPA\n- Senior Quant: ₹40–70 LPA\n\nJP Morgan India roles include an annual bonus (10–20% of base for strong performers) and RSUs at the VP level. The base is generally 10–15% below pure tech companies, but the domain expertise and brand carry significant career value.",
+      },
+    ],
+    faqs: [
+      {
+        question: "Does JP Morgan India have a coding test?",
+        answer: "Yes — SDE roles have a 90-minute HackerRank or Codility online assessment with 2–3 DSA problems at medium difficulty. Business Analyst and Quant roles skip this and have quantitative reasoning or case study rounds instead.",
+      },
+      {
+        question: "How long does the JP Morgan India interview process take?",
+        answer: "Typically 3–6 weeks from application to offer. The process can be faster for campus hiring (2–3 weeks) and slower for lateral hires where team matching is involved.",
+      },
+      {
+        question: "What is JP Morgan SDE salary in India 2026?",
+        answer: "JP Morgan SDE-1 (Associate) in India earns ₹18–28 LPA including base and bonus. SDE-2 (Senior Associate) earns ₹28–45 LPA.",
+      },
+      {
+        question: "Does JP Morgan ask finance questions in SDE interviews?",
+        answer: "Not deeply, but interviewers expect basic domain awareness — what a trade lifecycle looks like, why financial systems prioritise consistency over availability, what settlement means. Pure algorithmic knowledge is not enough.",
+      },
+    ],
+    relatedSlugs: ["goldman-sachs-india-interview-questions", "system-design-interview-preparation", "salary-negotiation-tips-india"],
+    practicePageSlugs: [
+      { label: "JP Morgan SDE Practice", slug: "jp-morgan-sde-interview-questions" },
+      { label: "JP Morgan BA Practice", slug: "jp-morgan-business-analyst-interview" },
+    ],
+    cta: "Practice JP Morgan interview rounds on HireStepX — behavioral, technical, and finance domain questions with AI voice scoring and STAR feedback tailored to financial services roles.",
+  },
 ];
 
 /* ─── Helpers ─── */

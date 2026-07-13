@@ -563,6 +563,20 @@ export const BLOG_META: BlogMeta[] = [
       { question: "Which companies pay the most for React developers in India?", answer: "FAANG India (Google, Amazon, Microsoft) pay the highest — ₹28–55 LPA for mid-senior React engineers. Indian unicorns (Razorpay, CRED, PhonePe) pay ₹20–40 LPA. IT service companies pay ₹6–18 LPA for comparable experience." },
     ],
   },
+  {
+    slug: "jp-morgan-interview-questions-india-2026",
+    title: "JP Morgan Interview Questions India 2026 — SDE, Analyst & Quant Roles",
+    metaDescription: "Prepare for JP Morgan interviews in India. Covers SDE, Business Analyst, and Quant roles — coding rounds, HireRight assessment, technical screens, and HR behavioral questions with sample answers.",
+    datePublished: "2026-07-14",
+    heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=630&fit=crop",
+    company: "JP Morgan", category: "Full Guide",
+    faqs: [
+      { question: "Does JP Morgan India have a coding test?", answer: "Yes — SDE roles have a 90-minute HackerRank or Codility online assessment with 2–3 DSA problems at medium difficulty. Business Analyst and Quant roles skip this and have quantitative reasoning or case study rounds instead." },
+      { question: "What is JP Morgan SDE salary in India 2026?", answer: "JP Morgan SDE-1 (Associate) in India earns ₹18–28 LPA including base and bonus. SDE-2 (Senior Associate) earns ₹28–45 LPA." },
+      { question: "How long does the JP Morgan India interview process take?", answer: "Typically 3–6 weeks from application to offer. The process can be faster for campus hiring (2–3 weeks) and slower for lateral hires where team matching is involved." },
+      { question: "Does JP Morgan ask finance questions in SDE interviews?", answer: "Not deeply, but interviewers expect basic domain awareness — what a trade lifecycle looks like, why financial systems prioritise consistency over availability, what settlement means." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {

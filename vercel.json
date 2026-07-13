@@ -53,6 +53,10 @@
     {
       "path": "/api/send-onboarding-drip",
       "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/send-winback-emails",
+      "schedule": "0 13 * * *"
     }
   ]
 }
