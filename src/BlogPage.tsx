@@ -114,7 +114,7 @@ const posts: BlogPost[] = [
     heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&h=500&fit=crop",
     heroAlt: "Google office building representing Google interview preparation",
     datePublished: "2026-07-01",
-    intro: "Google receives over 3 million applications per year, with an acceptance rate under 1%. The interview process is notoriously rigorous — but predictable. Here are the most-asked questions and how to answer them like a top 1% candidate.",
+    intro: "The Google interview is rigorous but not unknowable. Five rounds, four dimensions on a rubric the interviewer fills out after you leave the room. Candidates who do well aren't smarter — they've seen the format and practiced in it. These are the questions that come up most consistently, and what a strong answer actually looks like.",
     sections: [
       { heading: "1. Tell me about a time you led a project with ambiguous requirements", content: "Google loves ambiguity. They want to see structured thinking under uncertainty. Use the STAR method but emphasize the 'situation' — describe the specific ambiguity (unclear stakeholders? shifting goals? no precedent?) and how you created clarity.\n\nSample opener: \"In Q3 last year, I was asked to lead our team's migration to a new data pipeline, but the target architecture hadn't been finalized and three teams had competing requirements...\"" },
       { heading: "2. Describe a time you had to influence without authority", content: "This is the #1 most-asked behavioral question at Google. They operate with a flat hierarchy where ICs regularly need to align cross-functional teams.\n\nKey: Focus on how you built consensus, not how you were right. Mention specific techniques — data-driven proposals, 1:1 conversations, pilot programs." },
@@ -149,7 +149,7 @@ const posts: BlogPost[] = [
     heroImage: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&h=500&fit=crop",
     heroAlt: "Team collaborating in a modern office, representing Flipkart interview preparation",
     datePublished: "2026-07-01",
-    intro: "Flipkart is one of India's most sought-after tech employers, with competitive compensation and challenging problems at scale. Here's everything you need to know about their interview process for SDE roles.",
+    intro: "Flipkart's interview bar is closer to FAANG than to a Tier-2 product company — 5 rounds, hard DSA, and a machine coding round that filters out candidates who only prepared on LeetCode. They also run one of India's larger fresher batches. Here's what the full loop looks like and what gets you through each stage.",
     sections: [
       { heading: "Interview Structure", content: "Flipkart's process typically has 4-5 rounds:\n\n1. Online Assessment — DSA problems (2-3 questions, 90 minutes)\n2. Machine Coding Round — Build a small system in 90 minutes\n3. Problem Solving (x2) — Whiteboard DSA with follow-ups\n4. System Design — For SDE-2+ roles\n5. Hiring Manager — Behavioral + culture fit" },
       { heading: "Most-Asked DSA Topics", content: "Based on interview reports, Flipkart heavily tests:\n\n• Trees and Graphs (especially BFS/DFS variations)\n• Dynamic Programming (medium-hard level)\n• Design Patterns (Strategy, Observer, Factory)\n• Hashmaps and two-pointer techniques\n• Matrix/grid problems" },
@@ -178,7 +178,7 @@ const posts: BlogPost[] = [
     heroImage: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&h=500&fit=crop",
     heroAlt: "University students in a campus setting preparing for placement interviews",
     datePublished: "2026-07-01",
-    intro: "Campus placements are stressful — especially behavioral rounds where you feel like you have 'nothing to talk about.' The truth is: college projects, internships, hackathons, and even group assignments are valid experiences. Here's how to use them.",
+    intro: "The most common behavioral interview mistake freshers make isn't saying the wrong thing — it's assuming they have nothing worth saying. A college project you debugged under a deadline. A hackathon where the team wanted to quit at 2am. A freelance job that fell apart and what you learned. These are the right stories. Behavioral rounds aren't screening for years of corporate experience; they're looking for evidence of how you think under pressure. Here's how to surface those stories from what you've actually done.",
     sections: [
       { heading: "The STAR Method for Freshers", content: "STAR stands for Situation, Task, Action, Result. As a fresher, your examples can come from:\n\n• College projects and capstone work\n• Internships (even 2-month ones count)\n• Hackathons and coding competitions\n• Club leadership and event organization\n• Part-time work or freelancing\n\nThe key is specificity — don't say 'I worked in a team.' Say 'I led a 4-person team to build a food delivery app in 48 hours at HackMIT.'" },
       { heading: "Top 10 Questions for TCS/Infosys/Wipro", content: "Mass recruiters ask predictable questions:\n\n1. Tell me about yourself (keep it 90 seconds)\n2. Why should we hire you?\n3. What are your strengths and weaknesses?\n4. Describe a challenging situation you faced\n5. Where do you see yourself in 5 years?\n6. Why do you want to work here?\n7. Tell me about a team project\n8. How do you handle pressure?\n9. What's your biggest achievement?\n10. Do you have any questions for us?\n\nFor each, prepare a 2-minute answer using STAR." },
@@ -209,7 +209,7 @@ const posts: BlogPost[] = [
     heroImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&h=500&fit=crop",
     heroAlt: "Fintech workspace representing Razorpay interview preparation",
     datePublished: "2026-07-01",
-    intro: "Razorpay has grown into one of India's most valuable fintech companies. Their interview process emphasizes problem-solving depth and ownership mindset. Here's what to expect.",
+    intro: "Razorpay hires lean and pays well — SDE-1 at ₹15–25 LPA with meaningful equity from a pre-IPO company. The interview reflects that bar: 4–5 rounds, genuinely hard DSA, a culture round that's harder to fake than most, and system design questions grounded in real payment problems like idempotency and retry logic. Here's what each stage actually tests.",
     sections: [
       { heading: "Interview Process Overview", content: "Razorpay's hiring loop:\n\n1. Recruiter screen (30 min) — background, motivation, salary expectations\n2. Online coding round — 2 DSA problems, 60 minutes\n3. Technical round 1 — DSA + problem decomposition\n4. Technical round 2 — System design (for SDE-2+)\n5. Culture round — Values alignment, ownership stories\n6. Hiring manager — Final bar raiser" },
       { heading: "What Razorpay Values", content: "Razorpay's culture centers on:\n\n• Ownership — They want people who treat problems as their own, not someone else's\n• Speed — Fintech moves fast; they value velocity with quality\n• Customer empathy — Understanding merchant pain points\n• Technical depth — Not just using tools, but understanding how they work\n\nIn behavioral rounds, tell stories that demonstrate these values." },
@@ -332,7 +332,7 @@ const posts: BlogPost[] = [
     heroImage: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=1200&h=500&fit=crop",
     heroAlt: "Professional introducing themselves in a job interview setting",
     datePublished: "2026-07-03",
-    intro: "\"Tell me about yourself\" is the first question in 95% of interviews — and most candidates blow it. They either recite their resume or give a 5-minute monologue. Here's how to nail it in 60-90 seconds with a structure that works every time.",
+    intro: "\"Tell me about yourself\" sets the frame for everything that follows. A tight 90-second answer — clear arc, one specific hook, forward-looking close — gives the interviewer a mental map for the rest of the conversation. A resume recitation or a five-minute biography hands that control back to them. Here's the structure, with scripts for freshers, career switchers, and experienced candidates.",
     sections: [
       { heading: "The Perfect Structure (Present-Past-Future)", content: "Follow this 3-part structure:\n\n1. Present — What you do now (role, key skills, recent achievement)\n2. Past — How you got here (education, relevant experience)\n3. Future — Why you're here (what excites you about this role)\n\nKeep it under 90 seconds. Practice with a timer." },
       { heading: "Script for Freshers", content: "\"Hi, I'm [Name], a recent [degree] graduate from [College] with a specialization in [field]. During college, I built [specific project] which [result/impact]. I also interned at [Company] where I worked on [specific task]. What I'm most passionate about is [relevant interest], which is exactly why I'm excited about this role at [Company] — specifically [something specific about the job description].\"\n\nTotal: ~60 seconds. Specific. Memorable." },
@@ -1493,7 +1493,7 @@ const posts: BlogPost[] = [
     sections: [
       {
         heading: "The Real Trade-off",
-        content: "The startup vs MNC debate is rarely about money alone. The question is: what do you want your career to look like in 2 years? 5 years?\n\n**At a startup (Series B+):**\n- Earlier ownership; you own a feature or system end-to-end in year one\n- Higher variance — 50 LPA is possible at a rocketship, zero is possible at a shut-down\n- Generalist skills by necessity: infra, product, backend, occasionally customer calls\n- Limited job security below Series B\n\n**At a Tier-1 MNC (Google, Microsoft, Amazon, Goldman Sachs):**\n- Structured progression with defined promotion criteria\n- Brand name that travels — globally recognised, opens doors for 10 years\n- Narrower scope per role; deep specialist skill by year 3–4\n- Higher floor, lower ceiling on near-term compensation vs unicorn ESOPs"
+        content: "The question isn't which pays more — at comparable stages, the ranges overlap significantly. The question is what you want your day-to-day to look like in year two.\n\nAt a well-funded startup, you'll own a feature end-to-end within months. Backend, frontend, production — you'll push code that real users hit daily. When something breaks, you'll know. When the team is 30 people, your fingerprints are on the product. That's exciting if you're ready for it. It's overwhelming if your baseline skills aren't solid yet.\n\nAt a Tier-1 MNC — Google, Amazon, Microsoft — the first 18 months are narrower than most people expect. You'll own a component, not a system. Your code goes through multiple reviewers. Promotions follow a rubric that doesn't accelerate because you're fast. The brand travels in ways no startup name does; a Google L4 can lateral globally or move into consulting in a way most startup resumes cannot.\n\n**Startup (Series B+) in brief**: earlier ownership, higher variance, breadth by necessity, limited security below Series B.\n\n**Tier-1 MNC in brief**: structured progression, a brand that opens doors for a decade, narrower scope per role, higher floor on compensation."
       },
       {
         heading: "Salary Comparison 2026",
@@ -1509,11 +1509,11 @@ const posts: BlogPost[] = [
       },
       {
         heading: "Learning Environment",
-        content: "**MNCs**: Deep, structured learning within a domain. You will learn to build systems at scale — Google's reliability requirements, Amazon's deployment velocity. Internal L&D programs, conference budget, mentoring networks. The downside: you may spend 18 months on a single feature.\n\n**Startups**: Breadth by necessity. You will touch backend, frontend, infra, and occasionally talk to customers in your first year. The pace is intense; the feedback loop is fast. No formal L&D in early-stage companies — self-directed learning is the default.\n\nThe skill that compounds most in both environments: being able to explain technical decisions clearly to non-technical stakeholders. Neither environment trains this explicitly. It is the gap HireStepX helps you close before your next interview."
+        content: "**MNCs**: Deep, structured learning within a domain. You'll learn to build systems at scale — Google's reliability requirements, Amazon's deployment velocity. Internal L&D programs, conference budgets, mentoring networks. The downside is real too: you may spend 18 months on a single feature, shipping incremental improvements to something that already works.\n\n**Startups**: Breadth by necessity. In your first year you'll touch backend, frontend, infra, and occasionally be on a call with a customer. The pace is intense; the feedback loop is fast. No formal L&D — self-directed learning is the default, which suits some engineers and exhausts others.\n\nThe skill that compounds most in both environments: explaining technical decisions clearly to people who don't code. Neither environment trains this deliberately. It usually shows up as a gap when you're in a cross-functional meeting or a promo review and realise you can build the thing but can't sell the decision. Developing this skill early is one of the highest-leverage things a mid-career engineer can do."
       },
       {
         heading: "Decision Framework",
-        content: "**Choose a Tier-1 MNC if:**\n- You are a fresher who wants a structured first 2–3 years\n- You want international mobility (FAANG brand travels; startup brand usually does not)\n- Financial stability matters more than upside right now\n- You want recognised deep specialisation in one domain\n\n**Choose a funded startup (Series B+) if:**\n- You want to move fast, ship end-to-end, and own a business metric\n- The startup has named investors, 18+ months runway, and revenue growth you can verify\n- You have the financial cushion to absorb ESOP illiquidity for 3–5 years\n- You are comfortable switching companies if the startup stalls\n\n**Do not join an early-stage startup if:**\n- It is your first job and you have no financial cushion\n- The pitch is dominated by ESOPs at a pre-Series A valuation\n- The founding team cannot explain their runway, customer count, or revenue trajectory clearly\n\nMost high-performing engineers do both over a career: MNC first for depth and brand, then startup for speed and ownership."
+        content: "If it's your first job, the MNC case is strong. You want structure before speed — code reviews, defined engineering practices, someone experienced to learn from who isn't also doing the sales call. The brand follows you. A Google SDE-1 can lateral to Singapore, pivot into consulting, or walk into a startup at senior level in ways that most startup resumes don't enable.\n\nIf you're 2–3 years in and want to move faster, a funded startup makes sense — Series B or later, 18+ months of runway, and a revenue trajectory you can actually verify before signing. The ESOP upside is real at the right company. So is the breadth.\n\nTwo hard rules if you're considering an early-stage startup: don't join as your first job unless you have a year's savings to fall back on. And don't treat ESOPs as a substitute for salary — the conversation to have is 'what's your current revenue and how long is your runway?' Vague answers mean vague upside.\n\nMost engineers at the top of their field do both over a career: MNC first for depth and the brand, startup later for speed and ownership. The order matters more than most people admit."
       },
     ],
     faqs: [
@@ -1539,7 +1539,7 @@ const posts: BlogPost[] = [
       { label: "Startup SDE Interview Practice", slug: "startup-software-engineer-interview" },
       { label: "MNC Technical Interview Practice", slug: "faang-software-engineer-interview" },
     ],
-    cta: "Switching from a service company to a product company or startup? Practice the technical and behavioral rounds on HireStepX — AI voice mock interviews with STAR scoring and company-specific question banks.",
+    cta: "Switching from a service IT background to a product company? The behavioral bar is higher than most people expect — product companies probe for ownership and impact more deeply than service IT rounds do. HireStepX gives you voice mock interviews with STAR scoring so you can find your weak spots before the actual interview does.",
   },
   {
     slug: "fresher-salary-india-2026",
@@ -1575,7 +1575,7 @@ const posts: BlogPost[] = [
       },
       {
         heading: "How to Negotiate Your First Offer",
-        content: "Most freshers believe their first offer is non-negotiable. This is partially true for service IT (TCS, Infosys — fixed band) but false for product companies.\n\n**What you can negotiate:**\n- Joining bonus (often 1–3 LPA; easiest to get them to increase)\n- ESOPs or RSU grant size (especially at startups)\n- Location preference (Bangalore/Hyderabad vs other cities can affect effective pay significantly)\n- Start date (delay start = more time to improve your position)\n\n**What you cannot negotiate (fresher level):**\n- Base salary at service IT companies — it's fixed\n- FAANG base salary (well-defined band for each level)\n\n**Script that works**: \"I have a competing offer from [Company] at ₹X. I'm genuinely excited about this role — is there any flexibility on the joining bonus or RSU grant to close the gap?\"\n\n**Data point to know**: 60% of candidates who negotiate their first offer at product companies get some improvement — the counter-offer conversation is almost always worth having."
+        content: "Most freshers treat the first offer as final. At TCS, Infosys, or Wipro, that's correct — the bands are fixed and pushing doesn't help. At a product company, it's different.\n\nThe base salary at a product company is on a band and rarely moves much for freshers. But joining bonuses, ESOP or RSU grant sizes, and start dates are genuine levers. Joining bonuses in particular are the easiest to negotiate upward — the recruiter typically has more discretion there than on base. If you have a competing offer, that's your strongest card.\n\nWhat you genuinely can't move: base at service IT companies (truly fixed) and FAANG base bands (level-defined). Don't try.\n\nWhen you do negotiate, keep it simple: 'I have an offer from [Company] at ₹X. I'm excited about this role — is there flexibility on the joining bonus or RSU grant to close the gap?' You don't need a longer script than that. The implied outside option does most of the work.\n\nMost candidates who have this conversation at product companies get some movement, even when the base doesn't shift. The counter-offer conversation is almost always worth having."
       },
     ],
     faqs: [
@@ -1601,7 +1601,7 @@ const posts: BlogPost[] = [
       { label: "Fresher SDE Interview Practice", slug: "fresher-software-engineer-interview" },
       { label: "HR Interview Practice for Freshers", slug: "hr-behavioral-interview-questions" },
     ],
-    cta: "Preparing for your first tech job interview? Practice with HireStepX — AI voice mock interviews with STAR scoring tailored to fresher-level behavioral and technical questions.",
+    cta: "If you're targeting a product company for your first role, the behavioral round is harder than most freshers expect. HireStepX gives you voice mock interviews with real-time STAR scoring — practice until the structure comes naturally, not something you're building mid-answer under pressure.",
   },
   {
     slug: "ibm-interview-questions-india-2026",
@@ -1671,7 +1671,7 @@ const posts: BlogPost[] = [
     heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=500&fit=crop",
     heroAlt: "Person studying at desk representing 60-day DSA preparation plan",
     datePublished: "2026-07-15",
-    intro: "Most DSA preparation advice is either too vague ('solve 500 LeetCode problems') or too scattered to follow consistently. This plan gives you a week-by-week schedule from zero DSA knowledge to product-company-ready — including the behavioral prep that most plans skip.",
+    intro: "The advice to 'solve 500 LeetCode problems' fails most candidates not because the number is wrong, but because there's no sequence. You can grind for months and still freeze on a medium graph problem in the interview if you didn't build the right foundations first. This plan runs 60 days in a fixed order — arrays before trees, trees before graphs, graphs before dynamic programming — with timed mocks built in from week four and behavioral prep woven throughout, not saved as an afterthought for the last week.",
     sections: [
       {
         heading: "How to Use This Plan",
@@ -1721,7 +1721,7 @@ const posts: BlogPost[] = [
       { label: "DSA Mock Interview Practice", slug: "data-structures-algorithm-interview" },
       { label: "System Design Interview Practice", slug: "system-design-interview-questions" },
     ],
-    cta: "Once your DSA is solid, practice the communication layer on HireStepX — AI voice mock interviews score how clearly you explain your approach, which is what interviewers actually evaluate.",
+    cta: "DSA is only half the interview. The other half is explaining your thinking out loud, under pressure, to a real person. HireStepX gives you voice practice where the AI scores not just what you say but how clearly and confidently you say it. Most candidates underestimate this gap until they're in the room.",
   },
   {
     slug: "product-manager-salary-india-2026",
@@ -1733,7 +1733,7 @@ const posts: BlogPost[] = [
     heroImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=500&fit=crop",
     heroAlt: "Product roadmap representing PM salary guide India 2026",
     datePublished: "2026-07-15",
-    intro: "Product management is one of the highest-paid functions at Indian product companies — Senior PM roles at Swiggy, Razorpay, or PhonePe pay ₹50–80 LPA. But entry points are narrow and the APM path is competitive. Here is what the market actually pays at each level.",
+    intro: "Product management is genuinely well-paid in India — a Senior PM at Swiggy or Razorpay earns ₹50–80 LPA, Group PM roles at Flipkart and CRED cross ₹1 Cr. But the entry point is narrower than most people realise. APM programs are competitive, a meaningful fraction of 'PM' roles in the market are project management with a product title, and the SDE-to-PM path takes longer than people expect. Here's what the market actually pays at each level, and what the path actually looks like.",
     sections: [
       {
         heading: "APM Salary (Associate/Junior PM)",
@@ -1749,7 +1749,7 @@ const posts: BlogPost[] = [
       },
       {
         heading: "Skills That Command a Premium",
-        content: "Not all PM skills pay equally in 2026:\n\n**High-premium skills:**\n- **SQL + data analysis**: PMs who can independently pull and interpret data without depending on analysts get 15–25% higher offers\n- **Growth product experience**: activation, retention, monetisation PMs are in highest demand\n- **B2B/Enterprise product**: harder than consumer, specialised; commands a premium especially at SaaS companies\n- **Payments/fintech domain**: Razorpay, PhonePe, NPCI ecosystem PMs with domain depth are hard to find\n\n**Table-stakes skills (no premium, just required)**:\n- Writing PRDs and user stories\n- Roadmap prioritisation frameworks\n- Stakeholder communication\n- Basic UX research methods\n\n**Skills being phased out**: waterfall delivery PMs with no analytics skills are being replaced; service IT \"product owner\" roles that are actually project management are poorly paid."
+        content: "Not all PM skills pay equally in 2026.\n\nSQL and data analysis is the clearest premium. PMs who can pull their own data — without raising a ticket to the analytics team — get more interesting projects, more cross-functional trust, and 15–25% higher offers. It's the single highest-ROI skill gap for most PM candidates in India right now.\n\nGrowth product experience (activation, retention, monetisation) is the most in-demand specialisation. Payments and fintech domain knowledge — specifically NPCI and UPI ecosystem — commands a meaningful premium because people with real depth are genuinely scarce.\n\nThen there are the table-stakes skills everyone lists: PRDs, roadmap frameworks, stakeholder communication, basic UX research. Required, yes. Differentiating, no. If your resume leads with these, it looks like every other PM resume.\n\nOne thing worth naming directly: service IT 'product owner' roles that are really JIRA sprint management don't build transferable PM credibility. If your current role doesn't give you real ownership of outcomes — defining what to build, not just managing who builds it — the PM title won't help much on your next application."
       },
       {
         heading: "PM Salary vs SDE Salary in India",
@@ -1783,7 +1783,7 @@ const posts: BlogPost[] = [
       { label: "PM Interview Practice", slug: "product-manager-interview-questions" },
       { label: "APM Interview Practice", slug: "associate-product-manager-interview" },
     ],
-    cta: "Preparing for a PM or APM interview? Practice product case studies and behavioral rounds on HireStepX — AI voice scoring with STAR feedback tailored to product management interview formats.",
+    cta: "PM and APM interviews are different from SDE interviews in ways that catch people off-guard — product case studies, prioritisation frameworks, and behavioral questions that probe judgment more than structure. If you've never done a product case out loud under time pressure, do it before the real interview. HireStepX gives you voice practice with real-time STAR feedback.",
   },
   {
     slug: "engineering-manager-interview-india-2026",

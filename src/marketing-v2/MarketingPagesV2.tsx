@@ -932,9 +932,9 @@ export function HowItWorksV2() {
             }}
           >
             {[
-              ["Voice-native", "Reading a question silently is not interview prep. We force you to speak, just like the actual room."],
-              ["Rubric-honest", "Every score is paired with the rubric and a model answer. You learn the standard, not just the verdict."],
-              ["India-specific", "TCS Digital, Infosys Power Programmer, Razorpay tech round: we know the actual pattern, not the generic FAANG template."],
+              ["Reading isn't practice", "Preparing for a voice interview by reading questions silently is like practising swimming on land. We make you speak — same pressure, same format as the actual room."],
+              ["You see the rubric", "Every score comes with the rubric and a model answer. You learn what a strong answer actually looks like, not just whether yours was good enough."],
+              ["Built for India, not FAANG", "TCS Digital, Infosys Power Programmer, Razorpay tech round — we know the actual question patterns, not the generic American SWE template."],
             ].map(([title, copy]) => (
               <div
                 key={title}

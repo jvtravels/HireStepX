@@ -2880,7 +2880,7 @@ export function FeatureGridV2() {
               9 times. The room heard uncertainty.
             </h3>
             <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
-              We flag every hedge, filler, and self-diminutive phrase — and show the crisp rewrite beside it.
+              We flag the words that make you sound like you're asking permission — then show what confident sounds like.
             </p>
             <BiasDetectorVisual />
           </BentoCard>
