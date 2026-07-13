@@ -17,9 +17,9 @@ describe("starterPackFootnote", () => {
     expect(starterPackFootnote(-1)).toBe("");
   });
 
-  it("communicates the one-off, non-resetting nature while sessions remain", () => {
-    expect(starterPackFootnote(3)).toBe("One-off pack · doesn’t reset");
-    expect(starterPackFootnote(5)).toBe("One-off pack · doesn’t reset");
+  it("always returns empty — the card header and usage row tell the full story", () => {
+    expect(starterPackFootnote(3)).toBe("");
+    expect(starterPackFootnote(5)).toBe("");
   });
 });
 

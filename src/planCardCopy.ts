@@ -21,8 +21,8 @@
  * chip, and the buy CTA, so a "Sprint Pack used up" line only adds redundancy.
  * Callers must skip rendering the element when this is empty.
  */
-export function starterPackFootnote(starterRemaining: number): string {
-  return starterRemaining <= 0 ? "" : "One-off pack · doesn’t reset";
+export function starterPackFootnote(_starterRemaining: number): string {
+  return "";
 }
 
 /** Inputs that decide the primary plan-card CTA label. */
