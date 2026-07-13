@@ -16,12 +16,17 @@ import { computeProratedDays } from "./_proration-helpers";
  * math. "single" is a one-off credit top-up (free tier), not a term plan. */
 export const PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter", monthly: "pro" };
 export const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900, monthly: 14900 };
-export const PLAN_LABEL: Record<string, string> = { single: "Per Session (₹9)", weekly: "Interview Sprint Pack (₹39 · 5 sessions · 7 days)", monthly: "Pro (₹149/month)" };
+export const PLAN_LABEL: Record<string, string> = { single: "Per Session (₹9)", weekly: "Interview Sprint Pack (₹39 · 5 sessions · 30 days)", monthly: "Pro (₹149/month)" };
 
 /** Subscription term length, in days, for the NEW plan. "single" has no term
  *  (it grants credits, not a tier), so it is absent — callers treat an absent
  *  entry as "not a term purchase". */
-export const PLAN_DAYS: Record<string, number> = { weekly: 7, monthly: 30 };
+// Sprint Pack (`weekly`) is a 30-day, monthly-renewing pack — see the pricing
+// page, JSON-LD Offer in app/layout.tsx, and the webhook's PLAN_DURATION, which
+// all provision 30-day validity. The `weekly` key is a historical fossil from a
+// prior 7-day pack; the sold term is 30 days. Keep this in lockstep with the
+// webhook's PLAN_DURATION and the starter session-window clamp in _shared.ts.
+export const PLAN_DAYS: Record<string, number> = { weekly: 30, monthly: 30 };
 
 export const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2 };
 

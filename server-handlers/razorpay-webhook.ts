@@ -8,7 +8,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { escapeHtml } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
-import { grantSessionCredits } from "./_session-credits";
+import { grantSessionCredits, revokeSessionCredits } from "./_session-credits";
 import { resolveCapturedPayment } from "./_webhook-payment-helpers";
 
 
@@ -747,16 +747,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (eventType === "refund.processed") {
         // Refund complete — downgrade to free
         const refundPatch: Record<string, unknown> = { subscription_tier: "free", cancel_at_period_end: true, razorpay_subscription_id: null };
-        // Single-session credit purchases: revoke any unused credits so a
-        // refunded user can't keep the sessions they got credit for.
-        if (refundPlan === "single") {
-          refundPatch.session_credits = 0;
-        }
         await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(refundUserId)}`, {
           method: "PATCH",
           headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
           body: JSON.stringify(refundPatch),
         });
+        // Single-session credit purchases: revoke unused credits so a refunded
+        // user can't keep the sessions they got credit for. This MUST write the
+        // authoritative session_credits TABLE via reconcile_session_credits —
+        // the old code PATCHed `profiles.session_credits`, a column dropped from
+        // the schema, so the real balance was never touched and refunded buyers
+        // kept every credit.
+        if (refundPlan === "single") {
+          await revokeSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, refundUserId, 0, `refund:${refundPaymentId.slice(0, 12)}`);
+        }
         if (RESEND_API_KEY && prof?.email) {
           const safeName = escapeHtml(prof.name || "there");
           try {

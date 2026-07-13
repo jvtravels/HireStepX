@@ -63,10 +63,10 @@ describe("computeSubscriptionEnd", () => {
   });
 
   describe("fresh purchase (no current sub)", () => {
-    it("weekly plan ends 7 days from now", () => {
+    it("weekly (Sprint Pack) plan ends 30 days from now — matches sold 30-day validity", () => {
       const result = computeSubscriptionEnd({ plan: "weekly", now: NOW });
       expect(result).not.toBeNull();
-      const expected = new Date("2026-06-08T00:00:00Z");
+      const expected = new Date("2026-07-01T00:00:00Z"); // NOW (Jun 1) + 30
       expect(result!.end.toISOString()).toBe(expected.toISOString());
       expect(result!.proratedDays).toBe(0);
     });
@@ -91,7 +91,7 @@ describe("computeSubscriptionEnd", () => {
       });
       expect(result).not.toBeNull();
       // Base is currentEnd (not NOW) since still active + same tier (not upgrade)
-      const expected = new Date("2026-06-17T00:00:00Z"); // June 10 + 7
+      const expected = new Date("2026-07-10T00:00:00Z"); // June 10 + 30
       expect(result!.end.toISOString()).toBe(expected.toISOString());
       expect(result!.proratedDays).toBe(0);
     });
@@ -148,7 +148,7 @@ describe("computeSubscriptionEnd", () => {
       });
       expect(result).not.toBeNull();
       // base = NOW (expired)
-      const expected = new Date("2026-06-08T00:00:00Z");
+      const expected = new Date("2026-07-01T00:00:00Z"); // NOW + 30
       expect(result!.end.toISOString()).toBe(expected.toISOString());
     });
   });

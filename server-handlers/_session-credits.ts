@@ -160,3 +160,30 @@ export async function consumeSessionCredit(
   );
   return patchRes.ok;
 }
+
+/** Revoke a user's session credits by setting the ledger balance to an absolute
+ *  target (default 0). Used on refund.processed to claw back single-session
+ *  credits a refunded buyer would otherwise keep. Writes the authoritative
+ *  `session_credits` TABLE via the `reconcile_session_credits` RPC (which also
+ *  records a credit_ledger entry) — NOT the long-dropped `profiles.session_credits`
+ *  column. Returns the new balance, or null if the RPC failed. */
+export async function revokeSessionCredits(
+  baseUrl: string,
+  serviceKey: string,
+  userId: string,
+  targetBalance = 0,
+  note = "refund revoke",
+  fetchImpl: FetchImpl = fetch,
+): Promise<number | null> {
+  const res = await fetchImpl(`${baseUrl}/rest/v1/rpc/reconcile_session_credits`, {
+    method: "POST",
+    headers: authHeaders(serviceKey, { "Content-Type": "application/json" }),
+    body: JSON.stringify({ p_user_id: userId, p_correct_balance: targetBalance, p_note: note }),
+  });
+  if (!res.ok) {
+    console.error(`reconcile_session_credits RPC failed (${res.status}) revoking credits for ${userId}`);
+    return null;
+  }
+  const newBalance = await res.json().catch(() => null);
+  return typeof newBalance === "number" ? newBalance : null;
+}

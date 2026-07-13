@@ -3,6 +3,7 @@ import {
   getSessionCredits,
   grantSessionCredits,
   consumeSessionCredit,
+  revokeSessionCredits,
 } from "../../server-handlers/_session-credits";
 
 const BASE = "https://proj.supabase.co";
@@ -159,5 +160,26 @@ describe("_session-credits", () => {
   it("reports failure when the consume RPC call fails", async () => {
     const { fn } = mockRpc({ ok: false, result: null });
     expect(await consumeSessionCredit(BASE, KEY, USER, fn)).toBe(false);
+  });
+
+  /* Refund revocation (B5) — the old refund path PATCHed the long-dropped
+   * `profiles.session_credits` column, so refunded single-session buyers kept
+   * every credit. revokeSessionCredits must instead zero the authoritative
+   * session_credits TABLE via reconcile_session_credits. */
+  it("revokes credits by zeroing the ledger via reconcile_session_credits RPC", async () => {
+    const { fn, calls } = mockRpc({ ok: true, result: 0 });
+    expect(await revokeSessionCredits(BASE, KEY, USER, 0, "refund:pay_abc", fn)).toBe(0);
+    const rpc = calls.find(c => c.method === "POST");
+    expect(rpc).toBeTruthy();
+    expect(rpc!.url).toContain("/rpc/reconcile_session_credits");
+    expect(rpc!.url).not.toContain("/profiles"); // never touches the dead column
+    expect((rpc!.body as { p_user_id: string }).p_user_id).toBe(USER);
+    expect((rpc!.body as { p_correct_balance: number }).p_correct_balance).toBe(0);
+    expect((rpc!.body as { p_note: string }).p_note).toBe("refund:pay_abc");
+  });
+
+  it("returns null when the revoke RPC fails (surfaces the error, no silent no-op)", async () => {
+    const { fn } = mockRpc({ ok: false, result: null });
+    expect(await revokeSessionCredits(BASE, KEY, USER, 0, "refund", fn)).toBeNull();
   });
 });

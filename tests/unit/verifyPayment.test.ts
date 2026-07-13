@@ -138,9 +138,9 @@ describe("isUpgrade", () => {
 describe("computeSubscriptionEnd — term length", () => {
   const NOW = new Date("2026-04-15T12:00:00Z");
 
-  it("weekly (Sprint Pack) adds 7 days from now for a fresh purchase", () => {
+  it("weekly (Sprint Pack) adds 30 days from now for a fresh purchase", () => {
     const r = computeSubscriptionEnd({ plan: "weekly", now: NOW });
-    expect(r?.end.toISOString()).toBe(new Date("2026-04-22T12:00:00Z").toISOString());
+    expect(r?.end.toISOString()).toBe(new Date("2026-05-15T12:00:00Z").toISOString());
     expect(r?.proratedDays).toBe(0);
   });
 
@@ -161,16 +161,16 @@ describe("computeSubscriptionEnd — term length", () => {
 describe("computeSubscriptionEnd — renewal extends from current end", () => {
   const now = new Date("2026-04-15T12:00:00Z");
 
-  it("extends from the current end when still active (Sprint Pack: +7 days)", () => {
+  it("extends from the current end when still active (Sprint Pack: +30 days)", () => {
     const currentEndMs = new Date("2026-04-20T12:00:00Z").getTime();
     const r = computeSubscriptionEnd({ plan: "weekly", now, currentEndMs, currentTier: "starter" });
-    expect(r?.end.toISOString()).toBe(new Date("2026-04-27T12:00:00Z").toISOString());
+    expect(r?.end.toISOString()).toBe(new Date("2026-05-20T12:00:00Z").toISOString());
   });
 
-  it("starts from now when the current subscription has expired (Sprint Pack: +7 days)", () => {
+  it("starts from now when the current subscription has expired (Sprint Pack: +30 days)", () => {
     const currentEndMs = new Date("2026-04-10T12:00:00Z").getTime();
     const r = computeSubscriptionEnd({ plan: "weekly", now, currentEndMs, currentTier: "starter" });
-    expect(r?.end.toISOString()).toBe(new Date("2026-04-22T12:00:00Z").toISOString());
+    expect(r?.end.toISOString()).toBe(new Date("2026-05-15T12:00:00Z").toISOString());
   });
 });
 
@@ -223,9 +223,9 @@ describe("computeSubscriptionEnd — month-end edges", () => {
     expect(r?.end.toISOString()).toBe(new Date("2026-03-02T12:00:00Z").toISOString());
   });
 
-  it("Feb 28 + 7 days = March 7 (Sprint Pack validity)", () => {
+  it("Feb 28 + 30 days = March 30 (Sprint Pack validity)", () => {
     const r = computeSubscriptionEnd({ plan: "weekly", now: new Date("2026-02-28T12:00:00Z") });
-    expect(r?.end.toISOString()).toBe(new Date("2026-03-07T12:00:00Z").toISOString());
+    expect(r?.end.toISOString()).toBe(new Date("2026-03-30T12:00:00Z").toISOString());
   });
 
   it("Dec 25 + 30 days = Jan 24 next year", () => {

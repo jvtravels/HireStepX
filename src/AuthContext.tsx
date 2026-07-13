@@ -1876,6 +1876,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (periodicAction === "adopt" && serverDeviceToken) {
           storeDeviceToken(serverDeviceToken);
         } else if (periodicAction === "evict") {
+          // Defer the destructive signout if an interview is in progress —
+          // mirrors the JWT-expiry branch below (_interviewRefcount guard). A
+          // mid-negotiation eviction here would skip handleEnd, so no scored
+          // report is generated, and the already-debited session credit is lost.
+          // The device stays displaced; the next 60s tick evicts cleanly once
+          // the interview ends. Real-time turns saved before this point survive.
+          if (_interviewRefcount > 0) {
+            console.warn("[auth] Displaced by another device during interview — deferring signout until session ends.");
+            return;
+          }
           const confirmed = await resolveDeviceWithServer(client, localDeviceToken);
           if (confirmed.action === "evict") {
             logAuditEvent("single_device_kicked", { userId: userRef.current?.id });

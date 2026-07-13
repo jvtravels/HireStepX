@@ -438,13 +438,16 @@ export async function checkSessionLimit(
       }
 
       // H-6: guard against a tampered or corrupted subscription_start that was
-      // moved back in time. A start date more than 8 days ago would make
-      // all sessions appear outside the current pack window and allow unlimited
-      // re-use across pack renewals. Clamp to now minus 8 days at most —
-      // the window is strictly the 7-day validity of the purchased pack.
+      // moved back in time. A start date older than the pack's own validity
+      // would make all sessions appear outside the current window and allow
+      // unlimited re-use across pack renewals. Clamp to the Sprint Pack's
+      // 30-day validity (+1 day slack) — the pack renews at 30 days, so a
+      // legitimate subscription_start is at most ~30 days old. Using a shorter
+      // window here (it was 8 days, a fossil from the old 7-day pack) fail-closes
+      // paying users for the back ~22 days of their 30-day pack.
       const packStartMs = new Date(packStart).getTime();
-      const eightDaysMs = 8 * 24 * 60 * 60 * 1000;
-      if (!Number.isFinite(packStartMs) || packStartMs < Date.now() - eightDaysMs) {
+      const packValidityMs = 31 * 24 * 60 * 60 * 1000;
+      if (!Number.isFinite(packStartMs) || packStartMs < Date.now() - packValidityMs) {
         console.error("[checkSessionLimit] starter subscription_start is invalid or too far in the past", { userId, packStart });
         // Fail-closed: a clearly wrong start date is a data integrity problem;
         // require the user to contact support rather than silently granting access.
