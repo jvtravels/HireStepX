@@ -377,7 +377,11 @@ export function sessionReportToInterviewResult(
         report.calibration?.bands,
       )
     : { skills: report.skills, overallScore: report.overallScore, band: report.band };
-  const weakestSkill = pickWeakestSkill(grounded.skills);
+  // REPORT-4b — cap anchor/counter/specificity bars the kernel's counter truth
+  // denies (candidateAsk === null). Ungated: keyed only on candidateAsk, it
+  // reaches heuristic/legacy rows that skip grounding, unlike the gap-based caps.
+  const groundedSkills = capAnchorSkillsIfNoCounter(grounded.skills, negotiationOutcome);
+  const weakestSkill = pickWeakestSkill(groundedSkills);
 
   /* R-4 (2026-07-10, live staging) — sparkline / headline coherence. The hero
    * gauge renders the GROUNDED overall score (grounded.overallScore), but the
@@ -454,7 +458,7 @@ export function sessionReportToInterviewResult(
     metrics: isNegotiation
       ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null)
       : buildMetrics(report),
-    skills: buildSkills(grounded.skills),
+    skills: buildSkills(groundedSkills),
     weakestSkill: {
       name: weakestSkill?.name || "—",
       tip:
@@ -619,13 +623,33 @@ const NOT_CLOSED_CEILING = 45;
  * Specificity 70" beside the same report's "0 of 5 skills" and "No counter
  * named". An anchor / counter / specificity score is BY DEFINITION the strength
  * of the number you named — if the kernel says none was named, those axes are a
- * provable failure, so cap them into the weak band. This applies on EVERY
- * outcome (a walk-away or stalemate can also be no-counter), so it runs as a
- * pre-pass before the outcome-specific caps below and composes with them via
- * Math.min. Demeanour, discovery, package-thinking and leverage axes —
- * demonstrable without a hard counter — are left untouched. */
+ * provable failure, so cap them into the weak band. Demeanour, discovery,
+ * package-thinking and leverage axes — demonstrable without a hard counter —
+ * are left untouched.
+ *
+ * CRITICAL — why this is NOT folded into groundNegotiationReport: that pass is
+ * gated on `outcomeIsAuthoritative` (a KERNEL-derived outcome), because its
+ * other caps key off gapClosurePct, a field only trustworthy on kernel rows.
+ * But candidateAsk is the superset detector (kernel OR transcript-recovered)
+ * and is reliable on EVERY row — the same field the ungated headline
+ * (negotiationHeadlineVerdict) and "Numbers stated" metric already key off. A
+ * heuristic/legacy no-counter row (live: session 686b5699) skips grounding
+ * entirely, so a cap living inside it would never reach exactly the reports
+ * that show the contradiction. It therefore runs UNGATED at the call site,
+ * after grounding, composing with any gap cap via Math.min. */
 const NEG_ANCHOR_SKILL_RE = /anchor|counter|specificity/i;
 const NO_ANCHOR_CEILING = 35;
+export function capAnchorSkillsIfNoCounter(
+  skills: Array<{ name: string; score: number; weight?: number }>,
+  outcome: InterviewResultData["negotiationOutcome"],
+): Array<{ name: string; score: number; weight?: number }> {
+  if (!outcome || outcome.candidateAsk !== null) return skills;
+  return skills.map((s) =>
+    NEG_ANCHOR_SKILL_RE.test(s.name)
+      ? { ...s, score: Math.min(s.score, NO_ANCHOR_CEILING) }
+      : s,
+  );
+}
 
 /** Report-layer coherence guarantee for salary-negotiation.
  *
@@ -653,18 +677,6 @@ export function groundNegotiationReport(
   const unchanged = { skills, overallScore, band };
   if (!outcome) return unchanged;
 
-  /* REPORT-4b — pre-pass: never render an anchor/counter/specificity bar the
-   * kernel's counter-named truth denies (candidateAsk === null). Runs on every
-   * outcome and composes with the outcome-specific caps below via Math.min. */
-  const baseSkills =
-    outcome.candidateAsk === null
-      ? skills.map((s) =>
-          NEG_ANCHOR_SKILL_RE.test(s.name)
-            ? { ...s, score: Math.min(s.score, NO_ANCHOR_CEILING) }
-            : s,
-        )
-      : skills;
-
   /* PRI-67 (2026-07-07, live staging) — close-stage ↔ Closing-skill coherence.
    * A "no_agreement" kernel outcome (stalemate / ran out of turns) never
    * reached the close stage — derivePhases.reachedClose is false for it — yet
@@ -676,27 +688,26 @@ export function groundNegotiationReport(
    * and walk-aways fall through untouched: they DID reach the close, and
    * PRI-64 says a walk-away's leverage is legitimately high. */
   if (outcome.outcome === "no_agreement") {
-    const groundedSkills = baseSkills.map((s) =>
+    const groundedSkills = skills.map((s) =>
       NEG_CLOSING_SKILL_RE.test(s.name)
         ? { ...s, score: Math.min(s.score, NOT_CLOSED_CEILING) }
         : s,
     );
     return { skills: groundedSkills, overallScore, band };
   }
-  // walk-away → outcome caps don't apply, but the REPORT-4b anchor pre-pass still does
-  if (outcome.outcome !== "accepted") return { skills: baseSkills, overallScore, band };
+  if (outcome.outcome !== "accepted") return unchanged; // walk-away → untouched
   const gap = outcome.gapClosurePct;
-  if (gap == null) return { skills: baseSkills, overallScore, band }; // no authoritative gap → keep scorer's numbers (anchor pre-pass still applied)
+  if (gap == null) return unchanged; // no authoritative gap → don't second-guess the scorer
 
   let ceiling: number | null = null;
   if (gap < 10) ceiling = 45;       // accepted, closed ~nothing → clear cave
   else if (gap < 30) ceiling = 60;  // token movement → mediocre close
   else if (gap < 55) ceiling = 75;  // closed under half the gap → decent, not strong
   // gap ≥ 55 → genuinely closed the gap; leave the scorer's numbers intact.
-  if (ceiling === null) return { skills: baseSkills, overallScore, band };
+  if (ceiling === null) return unchanged;
 
   const cap = ceiling;
-  const groundedSkills = baseSkills.map((s) =>
+  const groundedSkills = skills.map((s) =>
     NEG_OUTCOME_SKILL_RE.test(s.name) ? { ...s, score: Math.min(s.score, cap) } : s,
   );
   const groundedScore = Math.min(overallScore, cap + 15);

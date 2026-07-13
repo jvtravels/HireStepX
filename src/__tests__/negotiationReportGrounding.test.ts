@@ -12,6 +12,7 @@
 import { describe, it, expect } from "vitest";
 import {
   groundNegotiationReport,
+  capAnchorSkillsIfNoCounter,
   sessionReportToInterviewResult,
   type AdapterContext,
 } from "../sessionReport/adapter";
@@ -203,9 +204,14 @@ describe("groundNegotiationReport — report-layer coherence", () => {
  * not pinned to candidateAsk: a session that never named a number rendered
  * "Anchoring 70 / Specificity 70" beside the same report's "0 of 5 skills",
  * "Numbers stated 0%", and the "No counter named" headline. An anchor score IS
- * the strength of the number you named — none named ⇒ provable failure. The cap
- * runs on EVERY outcome and composes with the outcome-specific caps via Math.min. */
-describe("groundNegotiationReport — REPORT-4b anchor/counter grounding on no-counter", () => {
+ * the strength of the number you named — none named ⇒ provable failure.
+ *
+ * It is a SEPARATE, UNGATED pass (not folded into groundNegotiationReport) so it
+ * reaches heuristic/legacy rows that skip grounding — the live session 686b5699
+ * that first exposed the contradiction was exactly such a row. It keys only on
+ * candidateAsk (reliable on every row) and composes with any gap cap via
+ * Math.min at the call site. */
+describe("capAnchorSkillsIfNoCounter — REPORT-4b anchor grounding on no-counter", () => {
   const noCounter = (over: Partial<NonNullable<Outcome>> = {}) =>
     outcome({ candidateAsk: null, ...over });
 
@@ -215,70 +221,59 @@ describe("groundNegotiationReport — REPORT-4b anchor/counter grounding on no-c
       { name: "Specificity", score: 92 },
       { name: "Counter-Offer Handling", score: 90 },
     ];
-    // no_agreement so the outcome caps stay off the anchor axes — isolate 4b.
-    const r = groundNegotiationReport(
-      skills, 70, "hire",
-      noCounter({ outcome: "no_agreement", gapClosurePct: null }), FLIPKART_BANDS,
-    );
-    expect(byName(r.skills, "Anchoring")).toBeLessThanOrEqual(35);
-    expect(byName(r.skills, "Specificity")).toBeLessThanOrEqual(35);
-    expect(byName(r.skills, "Counter-Offer Handling")).toBeLessThanOrEqual(35);
+    const r = capAnchorSkillsIfNoCounter(skills, noCounter());
+    expect(byName(r, "Anchoring")).toBeLessThanOrEqual(35);
+    expect(byName(r, "Specificity")).toBeLessThanOrEqual(35);
+    expect(byName(r, "Counter-Offer Handling")).toBeLessThanOrEqual(35);
   });
 
   it("caps the DETERMINISTIC-scorer anchor/counter axes on a no-counter session", () => {
     const detSkills = NEG_AXES.map((name) => ({ name, score: 95 }));
-    const r = groundNegotiationReport(
-      detSkills, 70, "hire",
-      noCounter({ outcome: "no_agreement", gapClosurePct: null }), FLIPKART_BANDS,
-    );
-    expect(byName(r.skills, "Anchor strength")).toBeLessThanOrEqual(35);
-    expect(byName(r.skills, "Counter-offer judgement")).toBeLessThanOrEqual(35);
+    const r = capAnchorSkillsIfNoCounter(detSkills, noCounter());
+    expect(byName(r, "Anchor strength")).toBeLessThanOrEqual(35);
+    expect(byName(r, "Counter-offer judgement")).toBeLessThanOrEqual(35);
   });
 
   it("does NOT touch demeanour / discovery / package / leverage axes on no-counter", () => {
-    const r = groundNegotiationReport(
-      inflatedSkills(), 70, "hire",
-      noCounter({ outcome: "no_agreement", gapClosurePct: null }), FLIPKART_BANDS,
-    );
+    const r = capAnchorSkillsIfNoCounter(inflatedSkills(), noCounter());
     // A candidate can research the package and stay composed without a counter.
-    expect(byName(r.skills, "Composure")).toBe(90);
-    expect(byName(r.skills, "Professional Tone")).toBe(88);
-    expect(byName(r.skills, "Leverage Use")).toBe(95);
-    expect(byName(r.skills, "Package Thinking")).toBe(95);
+    expect(byName(r, "Composure")).toBe(90);
+    expect(byName(r, "Professional Tone")).toBe(88);
+    expect(byName(r, "Leverage Use")).toBe(95);
+    expect(byName(r, "Package Thinking")).toBe(95);
   });
 
-  it("applies on a WALK-AWAY that named no counter (walked without asking)", () => {
-    const r = groundNegotiationReport(
-      inflatedSkills(), 70, "hire",
-      noCounter({ outcome: "walked_away", gapClosurePct: 0 }), FLIPKART_BANDS,
-    );
-    // The anchor pre-pass still fires; leverage (walk-away discipline) is left.
-    expect(byName(r.skills, "Anchoring")).toBeLessThanOrEqual(35);
-    expect(byName(r.skills, "Leverage Use")).toBe(95);
+  it("fires regardless of outcome — walk-away, stalemate, or accepted", () => {
+    for (const o of ["walked_away", "no_agreement", "accepted"] as const) {
+      const r = capAnchorSkillsIfNoCounter(inflatedSkills(), noCounter({ outcome: o }));
+      expect(byName(r, "Anchoring")).toBeLessThanOrEqual(35);
+    }
   });
 
   it("composes with the accepted fold cap via Math.min (takes the lower)", () => {
-    // Accepted a 0%-gap fold AND never named a counter: outcome cap is 45,
-    // anchor cap is 35 → the anchor axis must land at the lower (≤35).
-    const r = groundNegotiationReport(
+    // groundNegotiationReport caps outcome axes to 45 on a fold; the ungated
+    // anchor pass then lowers the anchor axis further to ≤35.
+    const grounded = groundNegotiationReport(
       inflatedSkills(), 79, "hire",
       noCounter({ outcome: "accepted", gapClosurePct: 0 }), FLIPKART_BANDS,
     );
-    expect(byName(r.skills, "Anchoring")).toBeLessThanOrEqual(35);
-    // A non-anchor outcome axis still caps at the fold ceiling (45), not 35.
-    expect(byName(r.skills, "Leverage Use")).toBeLessThanOrEqual(45);
-    expect(byName(r.skills, "Leverage Use")).toBeGreaterThan(35);
+    const r = capAnchorSkillsIfNoCounter(grounded.skills, noCounter({ outcome: "accepted", gapClosurePct: 0 }));
+    expect(byName(r, "Anchoring")).toBeLessThanOrEqual(35);
+    // A non-anchor outcome axis stays at the fold ceiling (45), not 35.
+    expect(byName(r, "Leverage Use")).toBeLessThanOrEqual(45);
+    expect(byName(r, "Leverage Use")).toBeGreaterThan(35);
   });
 
   it("leaves anchor bars intact once a counter WAS named (candidateAsk set)", () => {
-    // Same weak no_agreement, but the candidate DID name a counter → the axes
-    // are legitimately scoreable; REPORT-4b must not fire.
-    const r = groundNegotiationReport(
-      inflatedSkills(), 70, "hire",
-      outcome({ candidateAsk: 62, outcome: "no_agreement", gapClosurePct: null }),
-      FLIPKART_BANDS,
-    );
-    expect(byName(r.skills, "Anchoring")).toBe(95);
+    const skills = inflatedSkills();
+    const r = capAnchorSkillsIfNoCounter(skills, outcome({ candidateAsk: 62 }));
+    expect(r).toBe(skills); // untouched reference
+    expect(byName(r, "Anchoring")).toBe(95);
+  });
+
+  it("is a no-op for a non-negotiation (undefined outcome)", () => {
+    const skills = inflatedSkills();
+    expect(capAnchorSkillsIfNoCounter(skills, undefined)).toBe(skills);
   });
 });
 
