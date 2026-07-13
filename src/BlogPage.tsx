@@ -1696,7 +1696,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       {/* Hero — contained column header; image sits inside the reading column with
           rounded corners so it never fights the cream page background. */}
       <header style={{ background: t.cream, paddingTop: 64 }}>
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px 32px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 32px" }}>
           {/* Plain text eyebrow — company · category — no pills */}
           <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14 }}>
             {post.company} <span style={{ color: t.lineStrong, fontWeight: 400 }}>·</span> {post.category}
@@ -1711,11 +1711,11 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           </div>
         </div>
         {/* Hero image — contained in reading column, rounded corners */}
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px" }}>
           <div className="blog-hero" style={{ position: "relative", height: 360, overflow: "hidden", borderRadius: 16, border: `1px solid ${t.line}`, background: t.creamSoft }}>
             <Image
               src={post.heroImage} alt={post.heroAlt}
-              fill sizes="(max-width: 760px) 100vw, 760px"
+              fill sizes="(max-width: 960px) 100vw, 960px"
               priority
               onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
               style={{ objectFit: "cover" }}
@@ -1724,7 +1724,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         </div>
       </header>
 
-      <article className="blog-article" style={{ maxWidth: 760, margin: "0 auto", padding: "52px 40px 100px" }}>
+      <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "52px 40px 100px" }}>
         {/* Intro dek — editorial rule + italic serif pullquote */}
         <div style={{ borderTop: `2px solid ${t.coal}`, paddingTop: 28, marginBottom: 64 }}>
           <p style={{ fontFamily: fonts.serif, fontSize: "clamp(17px, 1.8vw, 21px)", fontStyle: "italic", color: t.coal, lineHeight: 1.65, letterSpacing: "-0.005em", maxWidth: "56ch", margin: 0 }}>
