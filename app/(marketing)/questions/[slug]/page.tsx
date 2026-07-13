@@ -4,6 +4,8 @@ import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../..
 import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
 import { QuestionSetPage } from "@/marketing-v2/QuestionPages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
+import { FooterDome } from "@/marketing-v2/FooterDome";
 
 /* /questions/[slug] — static SEO pages for long-tail interview queries.
  *
@@ -234,6 +236,7 @@ export default async function QuestionsSlugPage({
         )}
       />
 
+      <NavV2 />
       {/* Page body */}
       <QuestionSetPage
         slug={slug}
@@ -243,6 +246,8 @@ export default async function QuestionsSlugPage({
         focusLabel={focusLabel}
         relatedPages={relatedPages}
       />
+      <FooterDome />
+      <MobileStickyCTA />
     </>
   );
 }

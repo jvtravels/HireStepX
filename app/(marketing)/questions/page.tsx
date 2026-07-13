@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { QuestionsIndexPage } from "@/marketing-v2/QuestionPages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
+import { FooterDome } from "@/marketing-v2/FooterDome";
 
 /* /questions — directory listing of all question sets.
  *
@@ -79,6 +81,7 @@ export default async function QuestionsIndexRoute() {
         dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Questions", path: "/questions" }]))}
       />
 
+      <NavV2 />
       {/* Page body */}
       <QuestionsIndexPage
         pages={SEO_PAGES.map((p) => ({
@@ -90,6 +93,8 @@ export default async function QuestionsIndexRoute() {
           sitemapPriority: p.sitemapPriority,
         }))}
       />
+      <FooterDome />
+      <MobileStickyCTA />
     </>
   );
 }

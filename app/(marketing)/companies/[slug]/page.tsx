@@ -5,6 +5,8 @@ import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../..
 import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
 import { BLOG_META } from "@/blog-meta";
 import { tokens as t, fonts } from "../../../../src/auth/_tokens";
+import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
+import { FooterDome } from "@/marketing-v2/FooterDome";
 
 /* Programmatic SEO landing pages — /companies/{slug}.
  *
@@ -220,6 +222,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 
+      <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 24px 96px" }}>
 
@@ -387,6 +390,8 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
           </section>
         </div>
       </main>
+      <FooterDome />
+      <MobileStickyCTA />
     </>
   );
 }

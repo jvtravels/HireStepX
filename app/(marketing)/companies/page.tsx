@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
+import { FooterDome } from "@/marketing-v2/FooterDome";
 
 /* /companies — index / hub page listing all 55+ company interview
  * question sets, grouped by company type.
@@ -121,6 +123,7 @@ export default async function CompaniesIndexPage() {
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Companies", path: "/companies" }]))} />
 
+      <NavV2 />
       <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
 
@@ -299,6 +302,8 @@ export default async function CompaniesIndexPage() {
 
         </div>
       </main>
+      <FooterDome />
+      <MobileStickyCTA />
     </>
   );
 }
