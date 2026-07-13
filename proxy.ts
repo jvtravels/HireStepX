@@ -115,14 +115,15 @@ async function verifyAdminTokenCookie(token: string): Promise<boolean> {
     if (!key) return false;
 
     const dataStr = atob(dataB64);
-    const expectedSigBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(dataStr));
-    const expectedSigHex = Array.from(new Uint8Array(expectedSigBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
 
-    // Constant-time hex comparison
-    if (sigHex.length !== expectedSigHex.length) return false;
-    let diff = 0;
-    for (let i = 0; i < sigHex.length; i++) diff |= sigHex.charCodeAt(i) ^ expectedSigHex.charCodeAt(i);
-    if (diff !== 0) return false;
+    // Convert hex signature to bytes and use crypto.subtle.verify() — this is
+    // the correct usage for a key imported with ["verify"]. The previous code
+    // called crypto.subtle.sign() on a ["verify"] key, which throws a
+    // NotSupportedError caught silently, causing every valid cookie to be rejected.
+    if (sigHex.length % 2 !== 0) return false;
+    const sigBytes = new Uint8Array(sigHex.match(/.{2}/g)!.map(b => parseInt(b, 16)));
+    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(dataStr));
+    if (!valid) return false;
 
     const payload = JSON.parse(dataStr) as { exp?: unknown };
     if (typeof payload.exp !== "number" || Date.now() > payload.exp) return false;
@@ -238,6 +239,12 @@ export async function proxy(request: NextRequest) {
 
     // /admin-login is the unauthenticated entry point — let it through always.
     if (pathname === "/admin-login") {
+      return nextWithNonce();
+    }
+
+    // The service worker script must be served directly — browsers reject SW
+    // registration when the script URL returns a redirect, even on authed subdomains.
+    if (pathname === "/sw.js") {
       return nextWithNonce();
     }
 
