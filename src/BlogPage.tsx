@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
+import { captureClientEvent } from "./posthogClient";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -1671,7 +1672,7 @@ function BlogIndex() {
             <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
               AI mock interviews with instant feedback. Three sessions free, no card required.
             </p>
-            <Link href="/signup" style={{
+            <Link href="/signup" onClick={() => captureClientEvent("blog_cta_click", { location: "blog_index" })} style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
               padding: "14px 28px", borderRadius: 999, textDecoration: "none",
@@ -1691,6 +1692,14 @@ function BlogPostPage({ post }: { post: BlogPost }) {
   const related = getRelatedPosts(post.relatedSlugs);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [heroFailed, setHeroFailed] = useState(false);
+
+  useEffect(() => {
+    captureClientEvent("blog_post_view", {
+      slug: post.slug,
+      title: post.title,
+      category: post.category,
+    });
+  }, [post.slug, post.title, post.category]);
 
   const canonicalUrl = `https://hirestepx.com/blog/${post.slug}`;
   const jsonLd: Record<string, unknown> = {
@@ -1863,7 +1872,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.65, marginBottom: 26 }}>
             {post.cta}
           </p>
-          <Link href="/signup" style={{
+          <Link href="/signup" onClick={() => captureClientEvent("blog_cta_click", { slug: post.slug, title: post.title, location: "post_body" })} style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
             padding: "13px 26px", borderRadius: 999, textDecoration: "none",
