@@ -1701,7 +1701,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14 }}>
             {post.company} <span style={{ color: t.lineStrong, fontWeight: 400 }}>·</span> {post.category}
           </p>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 2.6vw, 38px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.018em", lineHeight: 1.12, textWrap: "balance", margin: "0 auto 24px", maxWidth: "28ch" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.2vw, 46px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.022em", lineHeight: 1.1, textWrap: "balance", margin: "0 auto 24px", maxWidth: "26ch" }}>
             {post.title}
           </h1>
           <div className="blog-meta" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, flexWrap: "wrap" }}>
@@ -1727,7 +1727,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "52px 40px 100px" }}>
         {/* Intro dek — editorial rule + italic serif pullquote */}
         <div style={{ borderTop: `2px solid ${t.coal}`, paddingTop: 28, marginBottom: 64 }}>
-          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(17px, 1.8vw, 21px)", fontStyle: "italic", color: t.coal, lineHeight: 1.65, letterSpacing: "-0.005em", margin: 0 }}>
+          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(18px, 1.9vw, 22px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.7, letterSpacing: "-0.005em", margin: 0 }}>
             {post.intro}
           </p>
         </div>
@@ -1745,10 +1745,10 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                   Question {num}
                 </p>
               )}
-              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(19px, 2vw, 24px)", fontWeight: 400, color: t.coal, marginBottom: 18, lineHeight: 1.3, letterSpacing: "-0.012em", textWrap: "balance" }}>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 30px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.25, letterSpacing: "-0.016em", textWrap: "balance" }}>
                 {headingText}
               </h2>
-              <div style={{ fontFamily: fonts.sans, fontSize: 16.5, color: t.inkSoft, lineHeight: 1.85, whiteSpace: "pre-line" }}>
+              <div style={{ fontFamily: fonts.sans, fontSize: 17, color: t.inkSoft, lineHeight: 1.8, whiteSpace: "pre-line" }}>
                 {section.content}
               </div>
             </section>
@@ -1758,7 +1758,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         {/* FAQ Section — accordion */}
         {post.faqs.length > 0 && (
           <section style={{ marginTop: 0, paddingTop: 56, borderTop: `1px solid ${t.line}`, marginBottom: 56 }}>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 28px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.018em" }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 30px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.016em" }}>
               Frequently asked questions
             </h2>
             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -1776,7 +1776,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                         padding: "22px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left",
                       }}
                     >
-                      <span style={{ fontFamily: fonts.sans, fontSize: 18, fontWeight: 600, color: t.coal, lineHeight: 1.4, paddingRight: 16 }}>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 16, fontWeight: 600, color: t.coal, lineHeight: 1.4, paddingRight: 16 }}>
                         {faq.question}
                       </span>
                       <span
@@ -1800,7 +1800,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                         transition: "max-height 280ms cubic-bezier(0.16,1,0.3,1), padding-bottom 280ms cubic-bezier(0.16,1,0.3,1)",
                       }}
                     >
-                      <p style={{ fontFamily: fonts.sans, fontSize: 15.5, color: t.inkSoft, lineHeight: 1.7, maxWidth: "68ch" }}>
+                      <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.75 }}>
                         {faq.answer}
                       </p>
                     </div>
@@ -1873,7 +1873,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                     <p style={{ fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
                       {r.company} · {r.category}
                     </p>
-                    <p style={{ fontFamily: fonts.serif, fontSize: 17, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.01em" }}>
+                    <p style={{ fontFamily: fonts.serif, fontSize: 18, fontWeight: 400, color: t.coal, lineHeight: 1.3, letterSpacing: "-0.01em" }}>
                       {r.title}
                     </p>
                   </div>
