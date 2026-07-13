@@ -1095,7 +1095,26 @@ function buildNegotiationMetrics(
   let numbersStated = candidateAnswers.length > 0
     ? Math.round((answersWithAnchor / candidateAnswers.length) * 100)
     : 0;
-  if (kernelAnchored) numbersStated = Math.max(numbersStated, 25);
+  if (kernelAnchored) {
+    numbersStated = Math.max(numbersStated, 25);
+  } else {
+    // REPORT-3d (2026-07-13, live staging — session 686b5699, Senior Product
+    // Designer @ Flipkart): the symmetric case the REPORT-3b/3c floor left open.
+    // `kernelAsk` is negotiationOutcome.candidateAsk — the SUPERSET ask detector
+    // (kernel-persisted OR recovered from the transcript). When it is null, NO
+    // source found a counter, so every kernel surface commits to "no counter on
+    // the table / never named a number" (30-second read, 0-of-5 stages, N1 "No
+    // counter named"). The bespoke `anchorRe` above is a weaker, divergent second
+    // detector over raw answerText: it false-positives on figures that are NOT
+    // the candidate's counter — a disclosed current CTC ("I'm at ₹30 LPA") or a
+    // market reference — and here inflated to "Numbers stated 100% · Anchor a
+    // figure · Good" beside the report's own "never naming a number". Stating a
+    // figure that isn't YOUR counter is not anchoring, and the superset detector
+    // already had first crack at the transcript, so bind the CEILING to the
+    // kernel too (mirroring the floor): no credited ask ⇒ 0% · Needs Work, the
+    // honest, coherent verdict.
+    numbersStated = 0;
+  }
   const numbersBand: DeliveryMetric["band"] =
     numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork";
 

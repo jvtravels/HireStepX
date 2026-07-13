@@ -311,6 +311,40 @@ describe("REPORT-3b — 'Numbers stated' never contradicts the kernel's anchor",
    * rendering "Numbers stated 0% · On Target" beside "Asked for ₹50 LPA". The
    * VALUE and BAND must never tell different stories: an anchored candidate
    * reads a non-zero value AND an on-target band even with no answerText. */
+  /* REPORT-3d (2026-07-13, live staging — session 686b5699, Senior Product
+   * Designer @ Flipkart): the symmetric case the 3b/3c floor left open. The
+   * kernel recorded NO counter (candidateAsk null), yet a candidate answer
+   * carried a unit-adjacent figure that was NOT a counter — a disclosed current
+   * CTC — so anchorRe matched and "Numbers stated" read 100% · Good beside the
+   * report's own "never naming a number / no counter on the table". The kernel's
+   * ask is the superset detector; when it is null the anchorRe hit is a false
+   * positive, so the ceiling is bound to the kernel too. */
+  it("does not credit an anchor the kernel never recorded, even when answerText has a unit figure", () => {
+    const disclosureReport = {
+      ...unitlessReport,
+      perQuestion: [
+        // A disclosed current CTC — a figure with a unit, but NOT a counter.
+        "My current CTC is ₹30 LPA.",
+        "I'm at ₹30 LPA right now.",
+      ].map((answerText, idx) => ({
+        idx,
+        question: "q",
+        answerText,
+        score: 40,
+        verdict: "partial",
+        starPresence: { S: false, T: false, A: false, R: false },
+      })),
+    } as unknown as SessionReport;
+    const result = sessionReportToInterviewResult({
+      report: disclosureReport,
+      session: negSession({ negotiationMetrics: kernel({ candidateAskLpa: null }) }),
+    });
+    const m = result.metrics.find((x) => x.label === "Numbers stated")!;
+    // anchorRe would score this 100%; the kernel says no counter → 0% · Needs Work.
+    expect(m.value).toBe(0);
+    expect(m.band).toBe("needsWork");
+  });
+
   it("value and band agree for an anchored candidate even with no answerText (denom 0)", () => {
     const empty = {
       ...unitlessReport,
