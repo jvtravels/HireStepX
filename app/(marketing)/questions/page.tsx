@@ -13,7 +13,9 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
  * for getting thin long-tail pages indexed quickly.
  */
 
-export const revalidate = 86400; /* 24 h */
+/* Accessing searchParams makes this page dynamic — intentional. The ?focus=
+   filter renders a subset of SEO_PAGES without duplicate-content risk since
+   filtered URLs are not in the sitemap and carry rel=canonical pointing here. */
 
 export const metadata: Metadata = {
   title: "Interview Questions by Company & Role India 2026 | HireStepX",
@@ -47,9 +49,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function QuestionsIndexRoute() {
+export default async function QuestionsIndexRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ focus?: string }>;
+}) {
   const { headers } = await import("next/headers");
   const nonce = (await headers()).get("x-nonce") ?? "";
+  const { focus } = await searchParams;
+
+  /* When a ?focus= param is present, show only matching pages. The full
+     ItemList schema always lists all pages so Google indexes the complete
+     set regardless of filter state. */
+  const filteredPages = focus
+    ? SEO_PAGES.filter((p) => p.focus === focus)
+    : SEO_PAGES;
+
   /* ItemList schema — helps Google understand this is a curated collection
      and may generate a sitelinks-style display in the SERP. */
   const itemListSchema = {
@@ -84,7 +99,7 @@ export default async function QuestionsIndexRoute() {
       <NavV2 />
       {/* Page body */}
       <QuestionsIndexPage
-        pages={SEO_PAGES.map((p) => ({
+        pages={filteredPages.map((p) => ({
           slug: p.slug,
           searchPhrase: p.searchPhrase,
           company: p.company,
@@ -92,6 +107,7 @@ export default async function QuestionsIndexRoute() {
           intro: p.intro,
           sitemapPriority: p.sitemapPriority,
         }))}
+        activeFilter={focus}
       />
       <FooterDome />
       <MobileStickyCTA />

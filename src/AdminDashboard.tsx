@@ -2349,9 +2349,11 @@ export default function AdminDashboard() {
         color: "#F54E00",
         links: [
           { label: "Dashboard", url: "https://us.posthog.com/project/370211/dashboard" },
-          { label: "Blog funnel", url: "https://us.posthog.com/project/370211/insights/new?insight=FUNNELS" },
+          { label: "Funnels", url: "https://us.posthog.com/project/370211/insights/new?insight=FUNNELS" },
           { label: "Live events", url: "https://us.posthog.com/project/370211/activity/explore" },
           { label: "Recordings", url: "https://us.posthog.com/project/370211/replay" },
+          { label: "Persons", url: "https://us.posthog.com/project/370211/persons" },
+          { label: "Feature flags", url: "https://us.posthog.com/project/370211/feature_flags" },
         ],
       },
       {
@@ -2359,32 +2361,79 @@ export default function AdminDashboard() {
         desc: "Traffic sources, geography, pages, acquisition channels",
         color: "#E37400",
         links: [
-          { label: "Realtime", url: "https://analytics.google.com/analytics/web/#/p" + "G-PVZ0KRLETE" + "/realtime/overview" },
-          { label: "Traffic acquisition", url: "https://analytics.google.com/analytics/web/#/p476946071/reports/explorer?params=_u..nav%3Dmaui%26_r.explorerCard..selmet%3D%5B%22sessions%22%5D%26_r.explorerCard..seldim%3D%5B%22sessionDefaultChannelGroup%22%5D&r=acquisition-traffic-acquisition&ruid=acquisition-traffic-acquisition,life-cycle,acquisition" },
-          { label: "Pages & screens", url: "https://analytics.google.com/analytics/web/#/p476946071/reports/explorer?params=_u..nav%3Dmaui&r=all-pages-and-screens&ruid=all-pages-and-screens,life-cycle,engagement" },
+          { label: "Realtime", url: "https://analytics.google.com/analytics/web/#/p" + "476946071" + "/realtime/overview" },
+          { label: "Acquisition", url: "https://analytics.google.com/analytics/web/#/p476946071/reports/explorer?params=_u..nav%3Dmaui%26_r.explorerCard..selmet%3D%5B%22sessions%22%5D%26_r.explorerCard..seldim%3D%5B%22sessionDefaultChannelGroup%22%5D&r=acquisition-traffic-acquisition&ruid=acquisition-traffic-acquisition,life-cycle,acquisition" },
+          { label: "Pages", url: "https://analytics.google.com/analytics/web/#/p476946071/reports/explorer?params=_u..nav%3Dmaui&r=all-pages-and-screens&ruid=all-pages-and-screens,life-cycle,engagement" },
           { label: "Overview", url: "https://analytics.google.com/analytics/web/#/p476946071/reports/reportinghub" },
         ],
       },
       {
         name: "Google Search Console",
-        desc: "Search rankings, impressions, CTR, indexed pages",
+        desc: "Search rankings, impressions, CTR, indexed pages, Core Web Vitals",
         color: "#1A73E8",
         links: [
           { label: "Performance", url: "https://search.google.com/search-console/performance/search-analytics?resource_id=sc-domain%3Ahirestepx.com" },
           { label: "Coverage", url: "https://search.google.com/search-console/index?resource_id=sc-domain%3Ahirestepx.com" },
+          { label: "Core Web Vitals", url: "https://search.google.com/search-console/core-web-vitals?resource_id=sc-domain%3Ahirestepx.com" },
           { label: "Sitemaps", url: "https://search.google.com/search-console/sitemaps?resource_id=sc-domain%3Ahirestepx.com" },
           { label: "URL Inspection", url: "https://search.google.com/search-console/inspect?resource_id=sc-domain%3Ahirestepx.com" },
+          { label: "Rich results", url: "https://search.google.com/search-console/enhancement-status?resource_id=sc-domain%3Ahirestepx.com" },
         ],
       },
       {
         name: "SERPWatcher",
-        desc: "Keyword rank tracking — 50 keywords, daily updates, India",
+        desc: "Keyword rank tracking — daily updates, India target",
         color: "#6B4FDB",
         links: [
           { label: "Rank tracker", url: "https://mangools.com/serpwatcher" },
-          { label: "KW research", url: "https://mangools.com/kwfinder" },
-          { label: "Backlinks", url: "https://mangools.com/linkminer" },
-          { label: "Site metrics", url: "https://mangools.com/siteprofiler" },
+          { label: "KW Finder", url: "https://mangools.com/kwfinder" },
+          { label: "Link Miner", url: "https://mangools.com/linkminer" },
+          { label: "Site Profiler", url: "https://mangools.com/siteprofiler" },
+        ],
+      },
+      {
+        name: "Vercel",
+        desc: "Deployment status, build logs, Web Analytics, Speed Insights, Edge logs",
+        color: "#FFFFFF",
+        links: [
+          { label: "Deployments", url: "https://vercel.com/hirestepx/hirestepx" },
+          { label: "Web Analytics", url: "https://vercel.com/hirestepx/hirestepx/analytics" },
+          { label: "Speed Insights", url: "https://vercel.com/hirestepx/hirestepx/speed-insights" },
+          { label: "Functions", url: "https://vercel.com/hirestepx/hirestepx/logs" },
+          { label: "Edge config", url: "https://vercel.com/hirestepx/hirestepx/edge-config" },
+        ],
+      },
+      {
+        name: "Razorpay",
+        desc: "Payments, settlements, refunds, UPI, orders, webhooks",
+        color: "#0E6CF0",
+        links: [
+          { label: "Dashboard", url: "https://dashboard.razorpay.com/" },
+          { label: "Orders", url: "https://dashboard.razorpay.com/app/orders" },
+          { label: "Payments", url: "https://dashboard.razorpay.com/app/payments" },
+          { label: "Settlements", url: "https://dashboard.razorpay.com/app/settlements" },
+          { label: "Webhooks", url: "https://dashboard.razorpay.com/app/webhooks" },
+        ],
+      },
+      {
+        name: "Resend",
+        desc: "Transactional email delivery — open rates, bounces, domains",
+        color: "#000000",
+        links: [
+          { label: "Overview", url: "https://resend.com/overview" },
+          { label: "Emails", url: "https://resend.com/emails" },
+          { label: "Domains", url: "https://resend.com/domains" },
+          { label: "API keys", url: "https://resend.com/api-keys" },
+        ],
+      },
+      {
+        name: "Upstash Redis",
+        desc: "Rate-limit counters, question cache (gq:* keys), request budgets",
+        color: "#00C389",
+        links: [
+          { label: "Console", url: "https://console.upstash.com/" },
+          { label: "Data browser", url: "https://console.upstash.com/redis" },
+          { label: "Metrics", url: "https://console.upstash.com/redis" },
         ],
       },
     ];
@@ -2395,17 +2444,94 @@ export default function AdminDashboard() {
       "TCS interview questions freshers 2026",
       "behavioral interview questions freshers India",
       "salary negotiation tips India",
+      "Infosys interview preparation 2026",
+      "campus placement AI practice",
+      "Wipro interview questions",
+      "Accenture behavioral interview",
+      "how to prepare for TCS interview",
     ];
+
+    /* Schema health — links to Google Rich Results Test for each page type we now have structured data on */
+    const schemaPages = [
+      { label: "Homepage", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2F" },
+      { label: "/blog (ItemList)", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Fblog" },
+      { label: "Blog post (sample)", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Fblog%2Ftcs-interview-questions-freshers" },
+      { label: "/questions (ItemList)", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Fquestions" },
+      { label: "/questions/tcs-behavioral", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Fquestions%2Ftcs-behavioral" },
+      { label: "/companies/tcs-behavioral", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Fcompanies%2Ftcs-behavioral" },
+      { label: "/for-students", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Ffor-students" },
+      { label: "/interview-prep", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Finterview-prep" },
+      { label: "/pricing", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Fpricing" },
+      { label: "/about", url: "https://search.google.com/test/rich-results?url=https%3A%2F%2Fhirestepx.com%2Fabout" },
+    ];
+
+    /* Schemas currently deployed — for quick audit reference */
+    const schemaMatrix = [
+      { page: "/", schemas: ["WebSite", "Organization", "SiteNavigationElement", "BreadcrumbList"] },
+      { page: "/blog", schemas: ["ItemList (52 posts)", "BreadcrumbList"] },
+      { page: "/blog/[slug]", schemas: ["BlogPosting", "BreadcrumbList", "FAQPage"] },
+      { page: "/questions", schemas: ["ItemList (62 question sets)", "BreadcrumbList"] },
+      { page: "/questions/[slug]", schemas: ["Article", "BreadcrumbList", "FAQPage"] },
+      { page: "/companies/[slug]", schemas: ["Article", "BreadcrumbList", "FAQPage"] },
+      { page: "/for-students", schemas: ["Article", "FAQPage", "BreadcrumbList"] },
+      { page: "/interview-prep", schemas: ["Article", "FAQPage", "BreadcrumbList"] },
+      { page: "/pricing", schemas: ["Product", "BreadcrumbList"] },
+      { page: "/about", schemas: ["Organization", "SoftwareApplication", "BreadcrumbList"] },
+    ];
+
+    /* Full user conversion funnel events */
+    const funnelEvents = [
+      { event: "pageview /", desc: "User lands on homepage", stage: "top" },
+      { event: "blog_post_view", desc: "User reads a blog post", stage: "top" },
+      { event: "company_page_view", desc: "User views a /companies or /questions page", stage: "top" },
+      { event: "blog_cta_click", desc: "User clicks any \"Start practice\" CTA", stage: "mid" },
+      { event: "signup_started", desc: "User opens the signup page", stage: "mid" },
+      { event: "user signed up", desc: "User completes email signup", stage: "mid" },
+      { event: "interview_session_started", desc: "User starts their first mock interview", stage: "activation" },
+      { event: "interview_session_completed", desc: "User finishes an interview and sees the report", stage: "activation" },
+      { event: "upgrade_modal_shown", desc: "User hits the paywall", stage: "revenue" },
+      { event: "payment_initiated", desc: "User opens Razorpay checkout", stage: "revenue" },
+      { event: "payment_success", desc: "Payment confirmed — user is now paid tier", stage: "revenue" },
+    ];
+
+    /* SEO action checklist */
+    const seoActions = [
+      { task: "Submit new sitemaps to GSC after any slug addition", cadence: "On deploy", done: true },
+      { task: "Request indexing for new company/questions pages via GSC URL Inspection", cadence: "On deploy", done: true },
+      { task: "Check GSC Coverage → 'Crawled – not indexed' for any blocked pages", cadence: "Weekly", done: false },
+      { task: "Review GSC Performance → filter by company/questions pages, look for CTR < 2%", cadence: "Weekly", done: false },
+      { task: "Build PostHog funnel (Insights → Funnel → 11 events above)", cadence: "One-time", done: false },
+      { task: "Track 10 priority keywords in SERPWatcher targeting India", cadence: "One-time", done: false },
+      { task: "Write 1 comparison blog post (HireStepX vs AlmaLinked vs Pramp)", cadence: "Monthly", done: false },
+      { task: "Post 2 Reddit/Quora answers/week (r/cscareerquestionsIndia, r/developersIndia)", cadence: "Weekly", done: false },
+      { task: "List on G2, Product Hunt, Futurepedia, AlternativeTo", cadence: "One-time", done: false },
+      { task: "Validate schema with Rich Results Test after any schema code change", cadence: "On deploy", done: true },
+    ];
+
+    const stagePill = (stage: string) => {
+      const colors: Record<string, string> = { top: "#1A73E8", mid: "#E37400", activation: "#1E8E3E", revenue: "#6B4FDB" };
+      return (
+        <span style={{
+          fontSize: 9, fontWeight: 700, fontFamily: font.ui, letterSpacing: "0.06em",
+          padding: "2px 6px", borderRadius: 3,
+          background: colors[stage] ?? c.onyx, color: "#fff",
+          textTransform: "uppercase",
+        }}>
+          {stage}
+        </span>
+      );
+    };
 
     return (
       <div>
         <p style={{ ...labelStyle, marginBottom: 20 }}>All active tracking tools — click any link to open the live report</p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16, marginBottom: 32 }}>
+        {/* ── Tool cards ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, marginBottom: 32 }}>
           {tools.map((tool) => (
             <div key={tool.name} style={{ ...card, display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: tool.color, flexShrink: 0 }} />
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: tool.color, flexShrink: 0, border: tool.color === "#FFFFFF" || tool.color === "#000000" ? `1px solid ${c.border}` : "none" }} />
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: c.ivory, fontFamily: font.ui }}>{tool.name}</p>
               </div>
               <p style={{ margin: 0, fontSize: 12, color: c.stone, lineHeight: 1.5 }}>{tool.desc}</p>
@@ -2432,8 +2558,69 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        {/* ── Full conversion funnel ── */}
         <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 12 }}>Priority keywords to watch (SERPWatcher)</p>
+          <p style={{ ...labelStyle, marginBottom: 4 }}>Full conversion funnel — PostHog events</p>
+          <p style={{ margin: "0 0 16px", fontSize: 12, color: c.stone }}>
+            Build in PostHog → Insights → Funnel → add events below in order. Stages: top (discovery) → mid (intent) → activation → revenue.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {funnelEvents.map((e, i) => (
+              <div key={e.event} style={{ display: "flex", alignItems: "center", gap: 12, background: c.onyx, borderRadius: 6, padding: "10px 14px", border: `1px solid ${c.border}` }}>
+                <span style={{ fontSize: 11, fontFamily: font.mono, color: c.stone, minWidth: 18, textAlign: "right" }}>{i + 1}</span>
+                <span style={{ fontSize: 11, fontFamily: font.mono, color: "#F54E00", flex: "0 0 auto", minWidth: 260 }}>{e.event}</span>
+                <span style={{ fontSize: 12, color: c.stone, flex: 1 }}>{e.desc}</span>
+                {stagePill(e.stage)}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Schema health ── */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <p style={{ ...labelStyle, marginBottom: 4 }}>Schema markup — deployed coverage</p>
+          <p style={{ margin: "0 0 16px", fontSize: 12, color: c.stone }}>
+            Pages with structured data injected server-side. Validate any page in Google Rich Results Test using the links below.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, marginBottom: 16, border: `1px solid ${c.border}`, borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ display: "contents" }}>
+              {schemaMatrix.map((row, i) => (
+                <>
+                  <div key={row.page + "-page"} style={{ padding: "8px 14px", background: i % 2 === 0 ? c.onyx : "transparent", borderBottom: `1px solid ${c.border}`, fontSize: 12, fontFamily: font.mono, color: c.stone }}>{row.page}</div>
+                  <div key={row.page + "-schemas"} style={{ padding: "8px 14px", background: i % 2 === 0 ? c.onyx : "transparent", borderBottom: `1px solid ${c.border}`, fontSize: 11, color: c.stone, display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+                    {row.schemas.map((s) => (
+                      <span key={s} style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 3, padding: "1px 6px", fontSize: 10, fontFamily: font.mono, color: "#1A73E8" }}>{s}</span>
+                    ))}
+                  </div>
+                </>
+              ))}
+            </div>
+          </div>
+          <p style={{ ...labelStyle, marginBottom: 10 }}>Validate pages with Rich Results Test</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {schemaPages.map((p) => (
+              <a
+                key={p.label}
+                href={p.url}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  fontSize: 11, fontWeight: 600, fontFamily: font.ui,
+                  padding: "4px 10px", borderRadius: 4,
+                  background: c.onyx, color: "#1A73E8",
+                  textDecoration: "none", border: `1px solid ${c.border}`,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {p.label} ↗
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Keywords ── */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <p style={{ ...labelStyle, marginBottom: 12 }}>Priority keywords to track (SERPWatcher → India region)</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {keywords.map((kw) => (
               <span key={kw} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 4, background: c.onyx, color: c.stone, border: `1px solid ${c.border}`, fontFamily: font.mono }}>
@@ -2443,23 +2630,19 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* ── SEO action checklist ── */}
         <div style={{ ...card }}>
-          <p style={{ ...labelStyle, marginBottom: 12 }}>PostHog blog funnel events</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-            {[
-              { event: "blog_post_view", desc: "User lands on a blog post" },
-              { event: "blog_cta_click", desc: "User clicks \"Start free practice\"" },
-              { event: "user signed up", desc: "User completes signup" },
-            ].map((e) => (
-              <div key={e.event} style={{ background: c.onyx, borderRadius: 6, padding: "12px 14px", border: `1px solid ${c.border}` }}>
-                <p style={{ margin: "0 0 4px", fontSize: 11, fontFamily: font.mono, color: "#F54E00" }}>{e.event}</p>
-                <p style={{ margin: 0, fontSize: 12, color: c.stone }}>{e.desc}</p>
+          <p style={{ ...labelStyle, marginBottom: 4 }}>SEO action checklist</p>
+          <p style={{ margin: "0 0 16px", fontSize: 12, color: c.stone }}>Recurring and one-time tasks to keep SEO health green.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {seoActions.map((action) => (
+              <div key={action.task} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 14px", borderRadius: 6, background: c.onyx, border: `1px solid ${c.border}` }}>
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{action.done ? "✓" : "○"}</span>
+                <span style={{ flex: 1, fontSize: 12, color: action.done ? c.stone : c.ivory, lineHeight: 1.5, textDecoration: action.done ? "line-through" : "none", textDecorationColor: c.stone }}>{action.task}</span>
+                <span style={{ fontSize: 10, fontFamily: font.mono, color: c.stone, flexShrink: 0, whiteSpace: "nowrap" }}>{action.cadence}</span>
               </div>
             ))}
           </div>
-          <p style={{ margin: "14px 0 0", fontSize: 12, color: c.stone }}>
-            Build the funnel in PostHog → Insights → Funnel → add these 3 events in order.
-          </p>
         </div>
       </div>
     );

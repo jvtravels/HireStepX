@@ -7,6 +7,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
+import { BLOG_META } from "../../../../src/blog-meta";
 
 /* /questions/[slug] — static SEO pages for long-tail interview queries.
  *
@@ -198,6 +199,12 @@ export default async function QuestionsSlugPage({
     .slice(0, 4)
     .map((p: SeoPage) => ({ slug: p.slug, searchPhrase: p.searchPhrase }));
 
+  /* Related blog posts: same company (BLOG_META.company is title-case, SEO company is lowercase). */
+  const relatedBlogPosts = BLOG_META
+    .filter((post) => post.company.toLowerCase() === page.company)
+    .slice(0, 3)
+    .map((post) => ({ slug: post.slug, title: post.title }));
+
   return (
     <>
       {/* Structured data */}
@@ -231,6 +238,7 @@ export default async function QuestionsSlugPage({
         companyLabel={companyLabel}
         focusLabel={focusLabel}
         relatedPages={relatedPages}
+        relatedBlogPosts={relatedBlogPosts}
       />
       <FooterDome />
       <MobileStickyCTA />

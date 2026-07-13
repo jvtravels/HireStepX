@@ -290,6 +290,7 @@ export interface QuestionSetPageProps {
   companyLabel: string;
   focusLabel: string;
   relatedPages: { slug: string; searchPhrase: string }[];
+  relatedBlogPosts?: { slug: string; title: string }[];
 }
 
 export function QuestionSetPage({
@@ -299,6 +300,7 @@ export function QuestionSetPage({
   companyLabel,
   focusLabel,
   relatedPages,
+  relatedBlogPosts = [],
 }: QuestionSetPageProps) {
   const practiceHref = `/signup?source=questions-seo&company=${encodeURIComponent(page.company)}&focus=${encodeURIComponent(page.focus)}${page.roleFamily ? `&role=${encodeURIComponent(page.roleFamily)}` : ""}`;
 
@@ -400,6 +402,37 @@ export function QuestionSetPage({
 
         {/* Related links — internal link graph for crawlability */}
         <RelatedLinksSection relatedPages={relatedPages} />
+
+        {/* Related blog posts — cross-links to /blog/[slug] */}
+        {relatedBlogPosts.length > 0 && (
+          <section style={{ marginTop: 36, paddingTop: 24, borderTop: `1px solid ${t.line}` }}>
+            <h3
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: t.inkFaint,
+                margin: "0 0 14px",
+              }}
+            >
+              Read our guides
+            </h3>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+              {relatedBlogPosts.map((post) => (
+                <li key={post.slug}>
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}
+                  >
+                    → {post.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </main>
   );
@@ -416,9 +449,18 @@ export interface QuestionsIndexPageProps {
     intro: string;
     sitemapPriority?: number;
   }>;
+  activeFilter?: string;
 }
 
-export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
+const FOCUS_DISPLAY: Record<string, string> = {
+  behavioral: "Behavioural", technical: "Technical", "system-design": "System Design",
+  "case-study": "Case Study", "campus-placement": "Campus Placement",
+  hr: "HR Round", "salary-negotiation": "Salary Negotiation",
+  leadership: "Leadership", general: "General", management: "Management",
+  "government-psu": "Government / PSU", strategic: "Strategic",
+};
+
+export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPageProps) {
   /* Group by company for a cleaner layout. */
   const grouped = pages.reduce<Record<string, typeof pages>>((acc, p) => {
     const key = p.company;
@@ -463,6 +505,24 @@ export function QuestionsIndexPage({ pages }: QuestionsIndexPageProps) {
             Start free practice — 2 sessions, no card →
           </Link>
         </div>
+
+        {/* Active focus filter indicator */}
+        {activeFilter && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 20 }}>
+            <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+              Showing:
+            </span>
+            <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 6, padding: "3px 10px" }}>
+              {FOCUS_DISPLAY[activeFilter] ?? activeFilter}
+            </span>
+            <Link
+              href="/questions"
+              style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, textDecoration: "none" }}
+            >
+              Clear filter →
+            </Link>
+          </div>
+        )}
 
         <hr style={{ ...dividerStyle, marginTop: 48 }} />
 

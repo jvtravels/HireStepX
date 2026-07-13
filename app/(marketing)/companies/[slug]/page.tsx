@@ -462,7 +462,7 @@ function RelatedLinks({ currentSlug }: { currentSlug: string }) {
     <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
       {related.map((p: SeoPage) => (
         <li key={p.slug}>
-          <Link href={`/companies/${p.slug}`} style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}>
+          <Link href={`/questions/${p.slug}`} style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}>
             → {p.searchPhrase}
           </Link>
         </li>
