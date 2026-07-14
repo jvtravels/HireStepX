@@ -126,7 +126,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "razorpay", roleFamily: "pm", focus: "case-study",
     intro: "Razorpay PM interviews skew operational. Expect questions about pricing for new merchant tiers, expansion to D2C brands, or feature priority for scale. Indian fintech context matters — knowing UPI vs cards economics is implicitly assumed. The Razorpay PM loop runs 4–5 rounds covering product thinking, case study, technical literacy, and a behavioral culture round. Candidates who treat it like a standard product company PM interview routinely underperform — Razorpay wants PMs who understand merchant economics and payment flows, not just user experience frameworks. The culture round tests merchant empathy the same way the engineering culture round does: can you explain a feature decision in terms of what a merchant actually experiences when a payment fails?",
     framework: { name: "Pricing-first PM", summary: "Customer segment → willingness-to-pay → competitor anchor → price ladder → roll-out." },
-    metaKeywords: ["razorpay pm interview india", "razorpay product manager 2026", "razorpay fintech interview"],
+    metaKeywords: ["razorpay pm interview india", "razorpay product manager 2026", "razorpay fintech interview", "razorpay pm case study", "razorpay product manager interview questions"],
     sitemapPriority: 0.85,
     recruitmentSteps: [
       "Recruiter screen — background, product sense, and fintech context (30 min)",
@@ -162,7 +162,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "zomato", roleFamily: "pm", focus: "case-study",
     intro: "Zomato interviews lean on real product diagnostics grounded in their India-first delivery and dining marketplace. Restaurant ratings are dropping in tier-2 cities — diagnose. Delivery times are climbing — root-cause. The format rewards candidates who can decompose ambiguity quickly and segment by geography, cohort, and time. Unlike consumer-app PMs, Zomato interviewers test restaurant-side economics alongside consumer experience — understanding both sides of the marketplace is a prerequisite. Rounds also probe how you'd measure success for a new market entry like quick commerce (Blinkit integration) or dining-out discovery — knowing the product from a user and operator perspective separates 'strong hire' from 'close call.'",
     framework: { name: "Diagnose framework", summary: "Define metric → segment by axis (geo/cohort/time) → form hypothesis → test → recommend." },
-    metaKeywords: ["zomato pm interview", "zomato product manager", "zomato case study"],
+    metaKeywords: ["zomato pm interview", "zomato product manager", "zomato case study", "zomato product interview india 2026", "zomato pm case study questions"],
     sitemapPriority: 0.8,
     recruitmentSteps: [
       "Resume screening + recruiter call",
@@ -348,7 +348,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "google", roleFamily: "pm", focus: "case-study",
     intro: "Google PM interviews favour candidates who decompose ambiguity quickly and don't get attached to their first answer. India-specific products come up frequently — YouTube (India is the world's largest YouTube market), GPay (UPI integration, merchant payouts), and Search-in-India (voice queries, regional language intent) are recurring case study surfaces. Knowing the local nuances vs the global product is a meaningful differentiator. Google PM rounds evaluate four dimensions: product sense (what makes a great product?), analytical ability (how do you measure success?), leadership (how do you influence without authority?), and design thinking (how do you build for a billion users?). The onsite loop runs 4 rounds with dedicated interviewers for each dimension — no round covers multiple dimensions. Prepare to say 'I'd approach this differently than my first answer' when pushed — changing your mind under pressure is considered a signal of strength, not weakness.",
     framework: { name: "PM CIRCLES", summary: "Comprehend the problem → Identify the user → Report their needs → Cut by impact → List solutions → Evaluate → Summarise." },
-    metaKeywords: ["google pm interview", "google product manager", "google case study"],
+    metaKeywords: ["google pm interview", "google product manager", "google case study", "google apm interview india", "google pm interview india 2026"],
     sitemapPriority: 0.85,
     recruitmentSteps: [
       "Recruiter screen + resume review — referrals carry significant weight",
@@ -388,7 +388,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "amazon", roleFamily: "swe", focus: "system-design",
     intro: "Amazon SDE-2/3 system design rounds lean operational — design Prime's recommendation engine, the order-fulfilment pipeline, or a scale-resilient cart. The bar-raiser probes failure modes aggressively: be ready for 'what happens if this region goes down?', 'how do you handle a 10x traffic spike?', and 'what's the data loss window if your primary fails?' Amazon system design interviews are distinct from Google or Meta in their operational focus — they care less about elegant abstractions and more about how your system handles failure gracefully. Leadership Principles surface in the design discussion: 'Frugality' means justifying your infrastructure choices by cost at scale; 'Dive Deep' means knowing exactly what breaks and why. SDE-2 candidates should prepare one e-commerce system and one Amazon-specific system (recommendation, fulfilment, or cart/checkout) in depth before the loop.",
     framework: { name: "Operational design", summary: "Functional requirements → non-functional (latency, availability) → API contracts → data model → component diagram → failure modes + recovery." },
-    metaKeywords: ["amazon system design", "amazon sde interview", "amazon technical interview"],
+    metaKeywords: ["amazon system design", "amazon sde interview", "amazon technical interview", "amazon system design india 2026", "amazon sde system design questions"],
     sitemapPriority: 0.85,
     recruitmentSteps: [
       "Online Assessment — 2–3 DSA problems + LP behavioral questions",
@@ -507,7 +507,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "cognizant", roleFamily: "swe", focus: "technical",
     intro: "Cognizant technical interviews for experienced hires differ sharply from their campus rounds. The panel expects production-grade thinking — SOLID principles, REST API design, deployment pipeline ownership, and real-world trade-off reasoning. 'I used it but don't know why' is a critical red flag: interviewers are specifically trained to probe whether candidates used frameworks and tools passively or understood their underlying mechanics. Come ready to explain every tool in your resume at the component level. Cognizant's experienced-hire technical rounds are role-specific: Java developers face Spring Boot microservice questions; Python candidates face async processing and data pipeline questions; cloud roles probe AWS or Azure service selection. Cognizant also evaluates 'delivery mindset' — the expectation that you can translate technical decisions into client business outcomes, especially for Manager and Senior positions.",
     framework: { name: "SOLID + Deploy", summary: "SOLID design principles → REST contract → Database choice rationale → Deployment/CI pipeline → observability." },
-    metaKeywords: ["cognizant technical interview", "cognizant sde interview", "cognizant interview questions 2026"],
+    metaKeywords: ["cognizant technical interview", "cognizant sde interview", "cognizant interview questions 2026", "cognizant lateral hire interview", "cognizant experienced interview india"],
     sitemapPriority: 0.75,
     recruitmentSteps: [
       "Online application + resume shortlisting",
@@ -545,7 +545,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "accenture", roleFamily: "behavioral", focus: "behavioral",
     intro: "Accenture's behavioral rounds for experienced hires probe client-management competencies more than technical depth. Expect questions about stakeholder conflict, scope creep, and timeline pressure — scenarios drawn directly from consulting and IT services delivery. Stories where you calmed a difficult client, recovered a delayed project, or navigated competing priorities between onshore and offshore teams resonate most with Accenture panels. The assessment also measures communication quality explicitly — Accenture is a client-facing organisation and unclear or low-confidence answers are a red flag independent of content accuracy. STAR stories should include specific outcomes: percentage improvement in delivery timelines, client satisfaction scores recovered, or team headcount managed. Lateral hires targeting Manager or above should prepare a story about managing upward — influencing stakeholder decisions at a director or partner level.",
     framework: { name: "CAR for consulting behavior", summary: "Context (client/delivery situation) → Action (your specific intervention, not the team's) → Result (deliverable shipped, escalation avoided, relationship preserved)." },
-    metaKeywords: ["accenture behavioral interview", "accenture interview questions", "accenture values interview"],
+    metaKeywords: ["accenture behavioral interview", "accenture interview questions", "accenture values interview", "accenture experienced hire interview", "accenture consulting behavioral india"],
     sitemapPriority: 0.75,
     recruitmentSteps: [
       "Resume shortlisting for lateral or experienced-hire positions",
@@ -585,7 +585,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "ltimindtree", roleFamily: "campus", focus: "campus-placement",
     intro: "LTIMindtree (formed from the 2022 merger of Larsen and Toubro Infotech and Mindtree) has unified its fresher hiring with a stronger emphasis on coding ability than most service-company peers. The online assessment is measurably harder than TCS or Wipro — expect 3 coding problems of increasing difficulty rather than 2 easy ones. LTIMindtree specifically looks for engineers who can write production-grade code with clean structure, not just passing pseudocode. The technical interview probes CS fundamentals including OOPS, data structures, and database basics, alongside a walkthrough of your final-year or personal project. LTIMindtree's clients span banking (BFSI), manufacturing, and retail — mentioning interest in any of these verticals during the HR round is a positive signal. The HR round is shorter and more conversational than the TCS or Infosys equivalent.",
     framework: { name: "Code quality focus", summary: "Correct first → readable variable names → edge case handling → time-complexity comment → test mentally before submitting." },
-    metaKeywords: ["ltimindtree interview questions freshers", "ltimindtree campus placement 2026", "lti mindtree interview"],
+    metaKeywords: ["ltimindtree interview questions freshers", "ltimindtree campus placement 2026", "lti mindtree interview", "ltimindtree technical interview 2026", "ltimindtree fresher hiring india"],
     sitemapPriority: 0.85,
     recruitmentSteps: [
       "Online Assessment — Aptitude + 3 Coding Problems",
@@ -606,7 +606,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "ibm", roleFamily: "campus", focus: "campus-placement",
     intro: "IBM's fresher hiring (Application Developer, ₹4.5–6.5 LPA) focuses more on problem-solving attitude than raw coding speed. The interview has a strong written and verbal communication section — IBM is a client-facing consulting and technology firm, and unclear answers are penalised explicitly. IBM specifically asks about 'curiosity and continuous learning,' their cultural cornerstone — candidates with self-learning certifications (IBM Badge, AWS Cloud Practitioner, Google Cloud) stand out significantly over those without. IBM's India offices (Bangalore, Hyderabad, Pune, Delhi NCR, Kolkata) primarily hire freshers for software development, testing, and IT consulting roles. The Cognitive Ability and Technical Assessment filters on coding fundamentals and logical reasoning. Candidates should prepare to discuss one project deeply (architecture, their contribution, one trade-off) and be ready to connect IBM's hybrid-cloud strategy (Red Hat OpenShift, IBM Cloud Pak) to why they want to join.",
     framework: { name: "THINK for IBM", summary: "Thoughtful problem breakdown → Human impact of solution → Inclusion of edge cases → New learning demonstrated → Knowledge of IBM services." },
-    metaKeywords: ["ibm freshers interview", "ibm application developer interview", "ibm campus placement 2026"],
+    metaKeywords: ["ibm freshers interview", "ibm application developer interview", "ibm campus placement 2026", "ibm fresher interview india 2026", "ibm hiring freshers 2026"],
     sitemapPriority: 0.8,
     recruitmentSteps: [
       "Online Application + academic filter (typically 65%+)",
@@ -649,7 +649,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "deloitte", roleFamily: "consultant", focus: "case-study",
     intro: "Deloitte consulting cases lean on operations and digital transformation more than pure strategy — a distinct contrast to McKinsey and BCG's market-entry and growth-strategy emphasis. Expect government and public sector client scenarios, large-scale IT transformation cases, and organisational turnaround situations. Candidates who demonstrate prior exposure to programme management, cost reduction, or large-scale digital rollouts consistently land best with Deloitte panels. The Deloitte case format typically runs 20–25 minutes, is interviewer-led, and includes a fit interview in the same session. 'USI' (US India) roles at Deloitte's India offices often involve client-delivery execution — the case evaluates structured thinking and delivery confidence, not just market-entry logic. Prepare 2–3 transformation scenarios from India's public sector (government digitisation, healthcare, financial inclusion) as well as private sector IT outsourcing turnarounds.",
     framework: { name: "OD-Consult", summary: "Objective clarity → Diagnosis (current-state gap) → Levers (controllable vs. structural) → Trade-off matrix → Phased delivery plan → Risk flagging." },
-    metaKeywords: ["deloitte consulting case interview india", "deloitte case study 2026", "deloitte strategy interview india"],
+    metaKeywords: ["deloitte consulting case interview india", "deloitte case study 2026", "deloitte strategy interview india", "deloitte india consulting interview", "deloitte case interview preparation india"],
     sitemapPriority: 0.8,
     recruitmentSteps: [
       "Application via Deloitte campus drive or careers portal",
@@ -758,7 +758,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "cred", roleFamily: "pm", focus: "case-study",
     intro: "CRED PM interviews are deceptively philosophical for a fintech company. Questions often start with 'What does trust mean in a financial product?' or 'How do you design for a premium user who doesn't need to be incentivised?' The product team obsesses over micro-interactions, copy quality, and friction removal — CRED's 750-credit-score user base is among India's highest-earning, and the product philosophy is that every extra tap is a design failure. Cases test taste as much as market sizing: a product analysis question at CRED is less 'estimate monthly active users' and more 'is this feature worth building and why?' Candidates with a background in consumer-fintech (Zerodha, INDmoney, Jupiter) or premium consumer products (Apple, Figma) bring transferable product taste that resonates in CRED interviews. CRED has a significantly lower hiring volume than Flipkart or Swiggy — preparation should include in-depth use of the app itself.",
     framework: { name: "Premium product lens", summary: "User trust foundation → friction removal over feature addition → signal quality over quantity → premium cohort behaviour → qualitative research over A/B tests." },
-    metaKeywords: ["cred pm interview", "cred product manager interview", "cred fintech product interview"],
+    metaKeywords: ["cred pm interview", "cred product manager interview", "cred fintech product interview", "cred pm india 2026", "cred product design interview"],
     sitemapPriority: 0.8,
     recruitmentSteps: [
       "Resume screening + portfolio or product work review",
@@ -797,7 +797,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "meesho", roleFamily: "pm", focus: "case-study",
     intro: "Meesho PM interviews focus on tier-2/3 India constraints that urban-educated candidates consistently underestimate. Their typical framing: 'Design for a seller who uses a feature-phone, has a 2G connection, and speaks only Kannada.' Empathy with non-English, low-bandwidth, first-time-online users is a genuine differentiator — candidates who grew up in metro cities and haven't directly used Meesho as a seller are at a structural disadvantage without preparation. Cases reward simplification and offline-first distribution strategy over sophisticated UX: Meesho's reseller model distributes through WhatsApp shares, so product design must account for zero in-app discoverability. Meesho PM interviews also test shareholder economics — the reseller margin structure, COD return rates, and seller payment timelines are core product constraints that distinguish Meesho's marketplace from Flipkart or Amazon.",
     framework: { name: "Bharat-first PM", summary: "Language + connectivity constraints first → literacy level (visual over text) → trust signals for first transactions → distribution via WhatsApp/share chain → reseller economics." },
-    metaKeywords: ["meesho pm interview", "meesho product manager interview", "meesho case study interview"],
+    metaKeywords: ["meesho pm interview", "meesho product manager interview", "meesho case study interview", "meesho pm india 2026", "meesho bharat product interview"],
     sitemapPriority: 0.75,
     recruitmentSteps: [
       "Resume screening + recruiter call",
@@ -865,7 +865,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "freshworks", roleFamily: "pm", focus: "case-study",
     intro: "Freshworks PM interviews start with an unusual premise for consumer-product-trained candidates: the primary user is the support agent or CRM operator, not the end customer. Their PM cases ask you to design for operational efficiency — reducing average handle time, automating ticket routing, improving agent sentiment scores. Cases favour candidates who understand the B2B SaaS buying journey: a decision made by a VP of Customer Success, implemented by IT, and used daily by 200 support agents is a fundamentally different product motion than a consumer app. Freshworks competes in a global B2B SaaS market against Zendesk, ServiceNow, and Salesforce — knowing what differentiates Freshdesk, Freshsales, and Freshservice at a product level is expected preparation for PM interviews. The company has a strong Chennai engineering base and Chennai-specific PM roles often focus on building for SMB customers across Southeast Asia.",
     framework: { name: "B2B SaaS PM", summary: "Define the agent/operator persona → identify friction in their workflow → prioritise by time-saved per agent × agent count → build-vs-integrate decision → success metric (AHT reduction, CSAT lift)." },
-    metaKeywords: ["freshworks pm interview", "freshworks product manager interview", "freshworks case study"],
+    metaKeywords: ["freshworks pm interview", "freshworks product manager interview", "freshworks case study", "freshworks b2b saas pm interview", "freshworks pm india 2026"],
     sitemapPriority: 0.75,
     recruitmentSteps: [
       "Resume screening + recruiter call",
@@ -905,7 +905,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "microsoft", roleFamily: "pm", focus: "case-study",
     intro: "Microsoft PM interviews are known for asking 'How would you improve [Microsoft product] for a specific market?' India-specific questions come up — Teams for rural education, Bing for Bharat, Office for SMBs with limited English. The Growth Mindset cultural lens means interviewers reward candidates who show they changed their mind based on evidence. Microsoft PMs are technical orchestrators who write specs and own feature delivery across engineering teams — they need enough technical depth to call out infeasible designs. The interview loop runs 4–5 rounds covering product thinking, technical breadth, and behavioral. Specificity is rewarded: walking through a feature from customer pain to ship plan beats answering with frameworks alone.",
     framework: { name: "Improve product loop", summary: "Define the user segment precisely → identify top unmet need with data → propose feature → define success metrics → call out risks + growth mindset moment." },
-    metaKeywords: ["microsoft pm interview india", "microsoft product manager interview 2026", "microsoft program manager interview india"],
+    metaKeywords: ["microsoft pm interview india", "microsoft product manager interview 2026", "microsoft program manager interview india", "microsoft apm interview india", "microsoft pm case study questions"],
     sitemapPriority: 0.85,
     recruitmentSteps: [
       "Resume screen / referral — technical PM background or engineering-to-PM transition strongly preferred",
@@ -921,7 +921,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "microsoft", roleFamily: "behavioral", focus: "behavioral",
     intro: "Microsoft's behavioral interviews are anchored in the Growth Mindset model introduced by CEO Satya Nadella. The most valued answer is one where you describe clearly updating your beliefs or behaviour based on evidence — this is not just a nice story, it's the explicit evaluative lens every Microsoft behavioral interviewer uses. 'I was right all along' stories are red flags because they signal a fixed mindset. 'Here is what I learned I was wrong about, and here is what I changed' stories resonate strongly with Microsoft panels across all roles and levels. The behavioral round is typically the final round in the India onsite loop — it carries significant weight because Microsoft tracks behavioral fit separately from technical fit in hiring decisions. Hyderabad is Microsoft's largest India engineering office; Bangalore and Noida are secondary sites. Product teams, engineering teams, and sales teams all use the same Growth Mindset behavioral rubric.",
     framework: { name: "Growth story", summary: "Initial belief or assumption → evidence that challenged it → specific change you made → outcome after the change → reflection on why you held the old belief." },
-    metaKeywords: ["microsoft behavioral interview", "microsoft growth mindset interview", "microsoft interview questions india"],
+    metaKeywords: ["microsoft behavioral interview", "microsoft growth mindset interview", "microsoft interview questions india", "microsoft behavioral india 2026", "microsoft onsite behavioral round"],
     sitemapPriority: 0.8,
     recruitmentSteps: [
       "Online Assessment (HackerRank) — coding problems + MCQ; filters approximately 70% of applicants",
@@ -962,7 +962,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "meta", roleFamily: "behavioral", focus: "behavioral",
     intro: "Meta's behavioral interviews systematically map every answer to their 5 core values: Move Fast, Be Bold, Be Open, Build Social Value, and Focus on Impact. The interviewer actively tracks which value each story illustrates — making this mapping explicit in your answer ('this is an example of Moving Fast because...') is not just acceptable, it's the expected format. Meta specifically probes for candidates who moved quickly with incomplete information rather than waiting for full alignment, and who publicly disagree but commit fully once a team decision is made. Stories about reversing a decision mid-project — with clear reasoning — are valued more than stories about getting it right the first time. Meta's onsite loop includes a dedicated behavioral round separate from technical rounds; hiring committee decisions can be influenced significantly by the behavioral score. Indian candidates at Meta's Hyderabad and Bangalore offices should prepare at least 6–8 distinct STAR stories and map each to 2–3 core values before the loop.",
     framework: { name: "Meta values map", summary: "Identify the Meta value → Situation (why it was high-stakes) → Your specific action → Impact (must be quantified or scoped) → explicit callout of which value it illustrates." },
-    metaKeywords: ["meta behavioral interview", "meta values interview", "facebook behavioral interview india"],
+    metaKeywords: ["meta behavioral interview", "meta values interview", "facebook behavioral interview india", "meta core values interview", "meta behavioral india 2026"],
     sitemapPriority: 0.8,
     recruitmentSteps: [
       "Recruiter screen and resume review — referrals carry significant weight at Meta",
@@ -980,7 +980,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "netflix", roleFamily: "swe", focus: "system-design",
     intro: "Netflix engineering interviews have a distinct culture fit layer: they pay exceptionally well and expect senior-level judgment from every engineer. Interviews probe not just technical skill but strategic thinking — chaos engineering (Simian Army philosophy), microservice resilience, and global CDN strategies are recurring themes. Netflix's 'Freedom and Responsibility' culture means the behavioral bar is as rigorous as the technical one: candidates must demonstrate they can operate autonomously with minimal supervision. System design questions center on streaming infrastructure — video encoding pipelines, content caching at edge, and recommendation systems. Netflix India has offices in Hyderabad and primarily hires senior engineers, so the difficulty bar is higher than most product companies.",
     framework: { name: "Chaos-resilient design", summary: "Define failure blast radius → circuit breaker placement → graceful degradation paths → observability (distributed tracing) → runbook for on-call → chaos experiment design." },
-    metaKeywords: ["netflix engineering interview india", "netflix sde interview", "netflix system design interview 2026"],
+    metaKeywords: ["netflix engineering interview india", "netflix sde interview", "netflix system design interview 2026", "netflix technical interview india", "netflix freedom responsibility interview"],
     sitemapPriority: 0.8,
     recruitmentSteps: [
       "Recruiter screen — background, seniority calibration, and compensation discussion",
@@ -1034,7 +1034,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "linkedin", roleFamily: "pm", focus: "case-study",
     intro: "LinkedIn PM interviews are unique because you're interviewing at the platform you used to get the interview. Interviewers will ask 'How would you improve LinkedIn Jobs?' or 'Design a feature for LinkedIn India's blue-collar workers.' Having a specific, data-backed opinion about LinkedIn's product shortcomings — and a constructive improvement — is the most memorable thing you can do. LinkedIn's interview loop runs 4–5 rounds covering product thinking, execution depth, analytical reasoning, and behavioral fit. The platform's dual economy — job seekers and recruiters — means PM candidates must understand both sides of the marketplace, not just one user persona.",
     framework: { name: "Platform insider", summary: "User segment (creators vs consumers vs job seekers) → current friction point (with example) → feature proposal → success metric (engagement + retention) → monetisation upside." },
-    metaKeywords: ["linkedin pm interview india", "linkedin product manager interview 2026", "linkedin india interview"],
+    metaKeywords: ["linkedin pm interview india", "linkedin product manager interview 2026", "linkedin india interview", "linkedin pm case study", "linkedin product manager india 2026"],
     sitemapPriority: 0.75,
     recruitmentSteps: [
       "Recruiter screen — product background, motivation, and LinkedIn product familiarity (30 min)",
