@@ -8,7 +8,6 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 import { COMPANY_LABEL } from "../../../data/company-labels";
 import {
   editorialCSS,
-  EditorialHero,
   SectionHead,
   DarkBand,
   ctaPrimaryStyle,
@@ -130,24 +129,83 @@ export default async function CompaniesIndexPage() {
         @media (max-width: 720px) {
           .co-group-split { flex-direction: column !important; gap: 32px !important; }
           .co-group-label { width: 100% !important; }
+          .co-hero-split { flex-direction: column !important; gap: 40px !important; }
+          .co-hero-nav { width: 100% !important; }
         }
       `}</style>
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
-        <EditorialHero
-          eyebrow="Company interview prep · India 2026"
-          titleLead="Every company's interview,"
-          accent="decoded."
-          lead="Fifty-plus hiring guides. Each one lays out the exact interview format, real questions candidates were asked, the framework that scores, and an AI mock tailored to that company."
-        >
-          <Link href="/signup?source=companies-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-            Practice any company free <span className="ed-cta-arrow" aria-hidden>→</span>
-          </Link>
-          <Link href="/interview-prep" style={ctaGhostStyle("lg")}>
-            Interview prep guide
-          </Link>
-        </EditorialHero>
+        {/* ── Hero — two-column ─────────────────────────────────────── */}
+        <header style={{ paddingTop: 88, paddingBottom: 80, borderBottom: `1px solid ${t.line}` }}>
+          <div className="ed-container">
+            <div className="co-hero-split" style={{ display: "flex", gap: 80, alignItems: "flex-start" }}>
+
+              {/* Left — headline + CTA */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: t.copper, margin: "0 0 24px" }}>
+                  Company interview prep · India 2026
+                </p>
+                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(38px, 5.2vw, 64px)", fontWeight: 400, lineHeight: 1.04, letterSpacing: "-0.026em", color: t.coal, margin: "0 0 24px", maxWidth: "18ch" }}>
+                  Every company&apos;s interview,{" "}
+                  <span style={{ fontStyle: "italic", color: t.copper }}>decoded.</span>
+                </h1>
+                <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.7, color: t.inkSoft, margin: "0 0 36px", maxWidth: "46ch" }}>
+                  Fifty-plus hiring guides. Each one lays out the exact interview format, real questions, the framework that scores, and an AI mock tailored to that company.
+                </p>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  <Link href="/signup?source=companies-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                    Practice any company free <span className="ed-cta-arrow" aria-hidden>→</span>
+                  </Link>
+                  <Link href="/interview-prep" style={ctaGhostStyle("lg")}>
+                    Interview prep guide
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right — quick-jump nav panel */}
+              <nav className="co-hero-nav" aria-label="Jump to company group" style={{ flexShrink: 0, width: 340, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "24px 0", overflow: "hidden" }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px", padding: "0 24px" }}>
+                  Jump to
+                </p>
+                {GROUPS.map((group, gi) => {
+                  const count = SEO_PAGES.filter((p) => group.companies.includes(p.company)).length;
+                  return (
+                    <Link
+                      key={group.id}
+                      href={`#${group.id}`}
+                      className="ed-cta"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        padding: "16px 24px",
+                        textDecoration: "none",
+                        borderTop: gi === 0 ? `1px solid ${t.line}` : "none",
+                        borderBottom: `1px solid ${t.line}`,
+                        marginTop: gi === 0 ? 12 : 0,
+                      }}
+                    >
+                      <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, color: t.copper, opacity: 0.5, lineHeight: 1, flexShrink: 0, width: 20 }}>
+                        {gi + 1}
+                      </span>
+                      <span style={{ flex: 1, fontFamily: fonts.sans, fontSize: 14, fontWeight: 500, color: t.coal, lineHeight: 1.35 }}>
+                        {group.label}
+                      </span>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, flexShrink: 0 }}>
+                        {count} <span className="ed-cta-arrow" aria-hidden style={{ display: "inline-block" }}>→</span>
+                      </span>
+                    </Link>
+                  );
+                })}
+                <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "14px 24px 0", lineHeight: 1.5 }}>
+                  {SEO_PAGES.length} guides total · AI voice practice free
+                </p>
+              </nav>
+
+            </div>
+          </div>
+        </header>
 
         {/* ── Company groups ────────────────────────────────────────── */}
         {GROUPS.map((group, gi) => {
