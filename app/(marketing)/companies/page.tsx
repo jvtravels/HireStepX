@@ -137,38 +137,57 @@ export default async function CompaniesIndexPage() {
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
         {/* ── Hero — two-column ─────────────────────────────────────── */}
-        <header style={{ paddingTop: 88, paddingBottom: 80, borderBottom: `1px solid ${t.line}` }}>
+        <header style={{ paddingTop: 96, paddingBottom: 88, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
-            <div className="co-hero-split" style={{ display: "flex", gap: 80, alignItems: "flex-start" }}>
+            <div className="co-hero-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
 
               {/* Left — headline + CTA */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: t.copper, margin: "0 0 24px" }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase" as const, color: t.copper, margin: "0 0 20px" }}>
                   Company interview prep · India 2026
                 </p>
-                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(38px, 5.2vw, 64px)", fontWeight: 400, lineHeight: 1.04, letterSpacing: "-0.026em", color: t.coal, margin: "0 0 24px", maxWidth: "18ch" }}>
-                  Every company&apos;s interview,{" "}
-                  <span style={{ fontStyle: "italic", color: t.copper }}>decoded.</span>
+                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(40px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.025em", color: t.coal, margin: "0 0 28px" }}>
+                  Every company&apos;s<br />
+                  interview,{" "}
+                  <em style={{ fontStyle: "italic", color: t.copper }}>decoded.</em>
                 </h1>
-                <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.7, color: t.inkSoft, margin: "0 0 36px", maxWidth: "46ch" }}>
-                  Fifty-plus hiring guides. Each one lays out the exact interview format, real questions, the framework that scores, and an AI mock tailored to that company.
+                <p style={{ fontFamily: fonts.sans, fontStyle: "normal", fontSize: 16, fontWeight: 400, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 10px", maxWidth: "40ch" }}>
+                  Format, real questions, scoring framework, and 2 free AI mocks — one guide per company.
+                </p>
+                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "0 0 36px" }}>
+                  {SEO_PAGES.length} companies covered · India 2026
                 </p>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
                   <Link href="/signup?source=companies-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-                    Practice any company free <span className="ed-cta-arrow" aria-hidden>→</span>
+                    Pick a company, start free <span className="ed-cta-arrow" aria-hidden>→</span>
                   </Link>
                   <Link href="/interview-prep" style={ctaGhostStyle("lg")}>
-                    Interview prep guide
+                    How prep works
                   </Link>
                 </div>
               </div>
 
-              {/* Right — quick-jump nav panel */}
-              <nav className="co-hero-nav" aria-label="Jump to company group" style={{ flexShrink: 0, width: 340, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "24px 0", overflow: "hidden" }}>
-                <p style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px", padding: "0 24px" }}>
-                  Jump to
-                </p>
-                {GROUPS.map((group, gi) => {
+              {/* Right — browse panel */}
+              <nav className="co-hero-nav" aria-label="Browse company categories" style={{ flexShrink: 0, width: 348, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
+
+                {/* Panel header */}
+                <div style={{ padding: "22px 24px 18px", borderBottom: `1px solid ${t.line}` }}>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
+                    Browse by category
+                  </p>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: 0 }}>
+                    {SEO_PAGES.length} guides · jump to any section
+                  </p>
+                </div>
+
+                {/* Category rows */}
+                {[
+                  { group: GROUPS[0], hint: "TCS · Infosys · Wipro" },
+                  { group: GROUPS[1], hint: "Flipkart · Razorpay · Swiggy" },
+                  { group: GROUPS[2], hint: "Google · Amazon · Microsoft" },
+                  { group: GROUPS[3], hint: "McKinsey · BCG · Deloitte" },
+                  { group: GROUPS[4], hint: "HR rounds · Campus drives" },
+                ].map(({ group, hint }, gi) => {
                   const count = SEO_PAGES.filter((p) => group.companies.includes(p.company)).length;
                   return (
                     <Link
@@ -178,29 +197,30 @@ export default async function CompaniesIndexPage() {
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 14,
-                        padding: "16px 24px",
+                        gap: 12,
+                        padding: "14px 24px",
                         textDecoration: "none",
-                        borderTop: gi === 0 ? `1px solid ${t.line}` : "none",
-                        borderBottom: `1px solid ${t.line}`,
-                        marginTop: gi === 0 ? 12 : 0,
+                        borderBottom: gi < 4 ? `1px solid ${t.line}` : "none",
                       }}
                     >
-                      <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, color: t.copper, opacity: 0.5, lineHeight: 1, flexShrink: 0, width: 20 }}>
+                      <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: t.copper, opacity: 0.6, lineHeight: 1, flexShrink: 0, width: 16, paddingTop: 1 }}>
                         {gi + 1}
                       </span>
-                      <span style={{ flex: 1, fontFamily: fonts.sans, fontSize: 14, fontWeight: 500, color: t.coal, lineHeight: 1.35 }}>
-                        {group.label}
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: "block", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>
+                          {group.label}
+                        </span>
+                        <span style={{ display: "block", fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint, lineHeight: 1.4, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {hint}
+                        </span>
                       </span>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, flexShrink: 0 }}>
-                        {count} <span className="ed-cta-arrow" aria-hidden style={{ display: "inline-block" }}>→</span>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.inkFaint, flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
+                        {count} <span className="ed-cta-arrow" aria-hidden>→</span>
                       </span>
                     </Link>
                   );
                 })}
-                <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "14px 24px 0", lineHeight: 1.5 }}>
-                  {SEO_PAGES.length} guides total · AI voice practice free
-                </p>
+
               </nav>
 
             </div>
