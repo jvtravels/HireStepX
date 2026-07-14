@@ -29,8 +29,8 @@ function BlogShell({ children }: { children: ReactNode }) {
       <style>{`
         .blog-skip { position: absolute; left: -9999px; top: 0; }
         .blog-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
-        .blog-card { position: relative; transition: border-color 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1); }
-        .blog-card:hover { border-color: ${t.lineStrong}; box-shadow: 0 4px 16px rgba(${coalChannels},0.05); }
+        .blog-card { position: relative; transition: opacity 180ms cubic-bezier(0.16,1,0.3,1); }
+        .blog-card:hover { opacity: 0.82; }
         .blog-card-link { color: inherit; text-decoration: none; outline: none; }
         .blog-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
         .blog-card:has(.blog-card-link:focus-visible) { border-color: ${t.copper}; box-shadow: 0 0 0 3px ${t.copperSoft}; }
@@ -1859,11 +1859,6 @@ function getRelatedPosts(slugs: string[]): BlogPost[] {
   return slugs.map(s => posts.find(p => p.slug === s)).filter((p): p is BlogPost => !!p);
 }
 
-/* ─── Token-derived shadow channel value ──────────────────────────────
- * t.coal = #0E0C08 → channels "14,12,8"
- * Named constant so rgba() in CSS references the token, not a magic number. */
-const coalChannels = "14,12,8"; /* RGB channels of t.coal (#0E0C08) — keep in sync if token changes */
-
 /* ─── Category filters — 18 raw categories consolidated into 6 user-intent buckets ─── */
 const CATEGORY_MAP: Record<string, string> = {
   "Behavioral": "Behavioral", "HR Round": "Behavioral", "Skills": "Behavioral",
@@ -1885,12 +1880,9 @@ function CompactCard({ post }: { post: BlogPost }) {
   const dateLabel = [d.getDate(), d.getMonth() + 1, d.getFullYear() % 100]
     .map(n => String(n).padStart(2, "0")).join(".");
   return (
-    <article className="blog-card" style={{
-      background: t.white, borderRadius: 14, border: `1px solid ${t.lineStrong}`,
-      overflow: "hidden", display: "flex", flexDirection: "column",
-    }}>
-      {/* Image area with overlay badges */}
-      <div style={{ position: "relative", aspectRatio: "4 / 3", background: t.creamSoft, flexShrink: 0, overflow: "hidden" }}>
+    <article className="blog-card" style={{ display: "flex", flexDirection: "column" }}>
+      {/* Image — frameless, portrait ratio, badges float on top */}
+      <div style={{ position: "relative", aspectRatio: "4 / 5", background: t.creamSoft, flexShrink: 0, overflow: "hidden", borderRadius: 12 }}>
         {!imgFailed && (
           <Image
             src={post.heroImage} alt={post.heroAlt}
@@ -1914,11 +1906,11 @@ function CompactCard({ post }: { post: BlogPost }) {
         </div>
       </div>
 
-      {/* Text below image */}
-      <div style={{ padding: "18px 20px 22px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+      {/* Text — sits directly on page background, no card box */}
+      <div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 7, flex: 1 }}>
         <h3
           className="blog-clamp2"
-          style={{ fontFamily: fonts.serif, fontSize: 20, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.014em", margin: 0 }}
+          style={{ fontFamily: fonts.serif, fontSize: 21, fontWeight: 400, color: t.coal, lineHeight: 1.2, letterSpacing: "-0.016em", margin: 0 }}
         >
           <Link href={`/blog/${post.slug}`} className="blog-card-link">
             {post.title}
