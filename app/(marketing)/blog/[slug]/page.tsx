@@ -87,7 +87,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     description: meta.metaDescription,
     image: meta.heroImage,
     datePublished: meta.datePublished,
-    dateModified: "2026-07-13",
+    dateModified: "2026-07-14",
     author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     publisher: {
       "@type": "Organization",
