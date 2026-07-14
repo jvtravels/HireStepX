@@ -511,7 +511,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         </section>
 
         {/* Closing band */}
-        <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering.">
+        <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering." videoSrc="/cta.mp4">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "38ch", margin: 0 }}>
             The AI asks {companyLabel}-style questions, listens to your voice, and scores your answer in two minutes. Two sessions free, no credit card.
           </p>

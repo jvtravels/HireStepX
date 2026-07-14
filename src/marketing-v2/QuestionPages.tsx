@@ -492,7 +492,7 @@ export function QuestionSetPage({
         </div>
 
         {/* Closing CTA */}
-        <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering.">
+        <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering." videoSrc="/cta.mp4">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>
             The AI asks {companyLabel}-style questions, listens to your voice, and scores your answer in two minutes.
             {" "}2 sessions free, no card.
@@ -712,7 +712,7 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
         </div>
 
         {/* Closing CTA — full-bleed coal band */}
-        <DarkBand eyebrow="Stop just reading" title="Start" accent="answering.">
+        <DarkBand eyebrow="Stop just reading" title="Start" accent="answering." videoSrc="/cta.mp4">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>
             AI voice interviewer, real-time answer scoring, STAR framework coaching. 2 free sessions, no credit card required.
           </p>

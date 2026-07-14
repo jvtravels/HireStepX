@@ -455,6 +455,7 @@ export function SalaryCompanyPage({
           <DarkBand
             eyebrow="Practice rounds"
             title={`Prepare for your ${companyLabel} interview`}
+            videoSrc="/cta.mp4"
           >
             <p
               style={{
