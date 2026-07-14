@@ -370,11 +370,13 @@ export function DarkBand({
   title,
   accent,
   children,
+  videoSrc,
 }: {
   eyebrow?: string;
   title: string;
   accent?: string;
   children?: ReactNode;
+  videoSrc?: string;
 }) {
   return (
     <section
@@ -388,6 +390,26 @@ export function DarkBand({
         overflow: "hidden",
       }}
     >
+      {videoSrc && (
+        <video
+          aria-hidden
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: 0.22,
+            pointerEvents: "none",
+          }}
+        >
+          <source src={videoSrc} type="video/mp4" />
+        </video>
+      )}
       <div
         aria-hidden
         style={{

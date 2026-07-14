@@ -340,7 +340,7 @@ export default async function CompaniesIndexPage() {
         </section>
 
         {/* ── Closing band ──────────────────────────────────────────── */}
-        <DarkBand eyebrow="Reading won't get you hired" title="Pick your company," accent="start answering.">
+        <DarkBand eyebrow="Reading won't get you hired" title="Pick your company," accent="start answering." videoSrc="/cta.mp4">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "38ch", margin: 0 }}>
             The AI interviews you in that company&apos;s exact question style, listens to your voice, and scores your answer in two minutes.
           </p>
