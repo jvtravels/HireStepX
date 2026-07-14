@@ -23,11 +23,13 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: "AI Mock Interviews for Campus Placements India 2026 | HireStepX" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "AI Mock Interviews for Campus Placements India 2026 | HireStepX",
     description: "TCS NQT, Infosys SP, Wipro NLTH — AI mock interview practice for campus placements. Free 2 sessions + 30% student discount.",
+    images: ["https://hirestepx.com/og-default.png"],
   },
 };
 
@@ -41,12 +43,14 @@ const ARTICLE_SCHEMA = {
   "@type": "Article",
   headline: "AI Mock Interviews for Campus Placements India 2026",
   description: "AI mock interview practice for TCS NQT, Infosys InfyTQ, Wipro NLTH, and campus placement interviews. 2 free sessions, no credit card. 30% student discount with .ac.in email.",
+  image: "https://hirestepx.com/og-default.png",
   author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
   publisher: { "@type": "Organization", name: "HireStepX", logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" } },
   datePublished: "2026-01-01",
-  dateModified: "2026-07-13",
+  dateModified: "2026-07-14",
   inLanguage: "en-IN",
   url: "https://hirestepx.com/for-students",
+  mainEntityOfPage: { "@type": "WebPage", "@id": "https://hirestepx.com/for-students" },
   keywords: "campus placement interview preparation India 2026, TCS NQT preparation, AI mock interview for students India",
   articleSection: "Campus Placement",
 };

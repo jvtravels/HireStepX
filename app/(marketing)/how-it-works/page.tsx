@@ -21,11 +21,13 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: "How HireStepX AI Mock Interviews Work" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "How AI Mock Interviews Work — HireStepX 5-Step Guide India 2026",
     description: "Upload resume, pick role + company, practice voice interview with AI, get scored report. 2 sessions free.",
+    images: ["https://hirestepx.com/og-default.png"],
   },
 };
 

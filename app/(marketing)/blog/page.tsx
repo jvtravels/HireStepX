@@ -23,11 +23,13 @@ export const metadata: Metadata = {
     url: "https://hirestepx.com/blog",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: "HireStepX Interview Preparation Blog" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Interview Preparation Blog India 2026 | HireStepX",
     description: "Company-specific interview guides for Indian candidates. TCS, Google, Flipkart, Amazon, and 20+ more.",
+    images: ["https://hirestepx.com/og-default.png"],
   },
 };
 

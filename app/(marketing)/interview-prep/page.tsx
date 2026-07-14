@@ -40,11 +40,13 @@ export const metadata: Metadata = {
     url: "https://hirestepx.com/interview-prep",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: "Interview Preparation Guide India 2026 | HireStepX" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Interview Preparation Guide India 2026 | HireStepX",
     description: "Complete guide + AI mock interview practice for 50+ Indian companies.",
+    images: ["https://hirestepx.com/og-default.png"],
   },
 };
 
@@ -132,15 +134,17 @@ export default async function InterviewPrepPage() {
     "@type": "Article",
     headline: "Complete Interview Preparation Guide for India 2026",
     description: "Comprehensive guide covering how to prepare for job interviews at service companies, product startups, FAANG, and consulting firms in India — with AI mock interview practice.",
-    author: { "@type": "Organization", name: "HireStepX" },
+    image: "https://hirestepx.com/og-default.png",
+    author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     publisher: {
       "@type": "Organization", name: "HireStepX",
       logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
     datePublished: "2026-01-01",
-    dateModified: "2026-07-13",
+    dateModified: "2026-07-14",
     inLanguage: "en-IN",
     url: "https://hirestepx.com/interview-prep",
+    mainEntityOfPage: { "@type": "WebPage", "@id": "https://hirestepx.com/interview-prep" },
     keywords: "interview preparation India 2026, mock interview India, campus placement preparation, AI mock interview",
     articleSection: "Interview Preparation",
   };
