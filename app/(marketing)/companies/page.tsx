@@ -7,12 +7,8 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
 import {
   editorialCSS,
-  edEyebrow,
-  edSansLead,
-  ED_PADDING,
   DarkBand,
   ctaPrimaryStyle,
-  ctaGhostStyle,
 } from "@/marketing-v2/_editorial";
 
 /* /companies — index / hub page listing all 55+ company interview
@@ -130,100 +126,56 @@ export default async function CompaniesIndexPage() {
         @media (max-width: 720px) {
           .co-group-split { flex-direction: column !important; gap: 32px !important; }
           .co-group-label { width: 100% !important; }
-          .co-hero-split { flex-direction: column !important; gap: 40px !important; }
-          .co-hero-nav { width: 100% !important; }
         }
       `}</style>
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
-        {/* ── Hero — two-column ─────────────────────────────────────── */}
-        <header style={{ paddingTop: ED_PADDING.heroTop, paddingBottom: ED_PADDING.heroBottom, borderBottom: `1px solid ${t.line}` }}>
+        {/* ── Hero — compact single-column ─────────────────────────── */}
+        <header style={{ paddingTop: 72, paddingBottom: 64, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
-            <div className="co-hero-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
-
-              {/* Left — headline + CTA */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ ...edEyebrow, margin: "0 0 20px" }}>
-                  Company interview prep · India 2026
-                </p>
-                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(40px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.025em", color: t.coal, margin: "0 0 28px" }}>
-                  Every company&apos;s<br />
-                  interview,{" "}
-                  <em style={{ fontStyle: "italic", color: t.copper }}>decoded.</em>
-                </h1>
-                <p style={{ ...edSansLead, margin: "0 0 36px", maxWidth: "40ch" }}>
-                  Format, real questions, scoring framework, and 2 free AI mocks — one guide per company.
-                </p>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                  <Link href="/signup?source=companies-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-                    Pick a company, start free <span className="ed-cta-arrow" aria-hidden>→</span>
-                  </Link>
-                  <Link href="/questions" style={ctaGhostStyle("lg")}>
-                    Browse all guides
-                  </Link>
-                </div>
-              </div>
-
-              {/* Right — browse panel */}
-              <nav className="co-hero-nav" aria-label="Browse company categories" style={{ flexShrink: 0, width: 348, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
-
-                {/* Panel header */}
-                <div style={{ padding: "22px 24px 18px", borderBottom: `1px solid ${t.line}` }}>
-                  <p style={{ ...edEyebrow, color: t.inkFaint, margin: "0 0 4px" }}>
-                    Browse by category
-                  </p>
-                  <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: 0 }}>
-                    {SEO_PAGES.length} guides · jump to any section
-                  </p>
-                </div>
-
-                {/* Category rows */}
-                {([
-                  { group: GROUPS[0], hint: "TCS · Infosys · Wipro" },
-                  { group: GROUPS[1], hint: "Flipkart · Razorpay · Swiggy" },
-                  { group: GROUPS[2], hint: "Google · Amazon · Microsoft" },
-                  { group: GROUPS[3], hint: "McKinsey · BCG · Deloitte" },
-                  { group: GROUPS[4], hint: "HR rounds · Campus drives" },
-                ] as const).map(({ group, hint }, gi, arr) => {
-                  const count = SEO_PAGES.filter((p) => group.companies.includes(p.company)).length;
-                  return (
-                    <Link
-                      key={group.id}
-                      href={`#${group.id}`}
-                      className="ed-cta"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        padding: "14px 24px",
-                        textDecoration: "none",
-                        borderBottom: gi < arr.length - 1 ? `1px solid ${t.line}` : "none",
-                      }}
-                    >
-                      <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: t.copper, opacity: 0.6, lineHeight: 1, flexShrink: 0, width: 16, paddingTop: 1 }}>
-                        {gi + 1}
-                      </span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: "block", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>
-                          {group.label}
-                        </span>
-                        <span style={{ display: "block", fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint, lineHeight: 1.4, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {hint}
-                        </span>
-                      </span>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.inkFaint, flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
-                        {count} guides <span className="ed-cta-arrow" aria-hidden>→</span>
-                      </span>
-                    </Link>
-                  );
-                })}
-
-              </nav>
-
+            <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 4.2vw, 54px)", fontWeight: 400, lineHeight: 1.08, letterSpacing: "-0.024em", color: t.coal, margin: "0 0 20px", maxWidth: "22ch" }}>
+              Every company&apos;s interview,{" "}
+              <em style={{ fontStyle: "italic", color: t.copper }}>decoded.</em>
+            </h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+              <Link href="/signup?source=companies-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                Pick a company, start free <span className="ed-cta-arrow" aria-hidden>→</span>
+              </Link>
+              <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>
+                {SEO_PAGES.length} guides · 2 free AI mocks per company
+              </span>
             </div>
           </div>
         </header>
+
+        {/* ── Category nav strip ────────────────────────────────────── */}
+        <div style={{ borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
+          <div className="ed-container">
+            <nav aria-label="Browse company categories" style={{ display: "flex", gap: 0, overflowX: "auto" as const }}>
+              {([
+                { group: GROUPS[0], hint: "TCS · Infosys · Wipro" },
+                { group: GROUPS[1], hint: "Flipkart · Razorpay · Swiggy" },
+                { group: GROUPS[2], hint: "Google · Amazon · Microsoft" },
+                { group: GROUPS[3], hint: "McKinsey · BCG · Deloitte" },
+                { group: GROUPS[4], hint: "HR rounds · Campus drives" },
+              ] as const).map(({ group, hint }, gi) => {
+                const count = SEO_PAGES.filter((p) => group.companies.includes(p.company)).length;
+                return (
+                  <Link
+                    key={group.id}
+                    href={`#${group.id}`}
+                    className="ed-cta"
+                    style={{ display: "flex", flexDirection: "column" as const, gap: 2, padding: "16px 24px 14px", textDecoration: "none", borderRight: gi < GROUPS.length - 1 ? `1px solid ${t.line}` : "none", flexShrink: 0, whiteSpace: "nowrap" as const }}
+                  >
+                    <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{group.label}</span>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>{hint} · {count} guides</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
 
         {/* ── Company groups ────────────────────────────────────────── */}
         {GROUPS.map((group, gi) => {
@@ -249,7 +201,7 @@ export default async function CompaniesIndexPage() {
 
                   {/* Left panel */}
                   <div className="co-group-label" style={{ flexShrink: 0, width: 256 }}>
-                    <p style={{ ...edEyebrow, color: t.inkFaint, margin: "0 0 12px" }}>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 12px" }}>
                       {String(gi + 1).padStart(2, "0")} / {String(GROUPS.length).padStart(2, "0")}
                     </p>
                     <h2 style={{ fontFamily: fonts.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: "0 0 12px", lineHeight: 1.3, letterSpacing: "-0.01em" }}>
