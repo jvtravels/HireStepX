@@ -910,6 +910,40 @@ export function HowItWorksV2() {
         </div>
       </section>
 
+      {/* Pillar page cross-links — pick your path before starting */}
+      <section className="mv2p-section" aria-label="Choose where to start" style={{ paddingTop: 48, paddingBottom: 48, borderTop: `1px solid ${t.line}` }}>
+        <div className="mv2-container" style={containerNarrow}>
+          <p style={{ ...eyebrow, marginBottom: 20, textAlign: "center" }}>Choose where to start</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+            {([
+              ["Practice Questions", "67+ sets for TCS, Google, Flipkart & more", "/questions"],
+              ["Campus Placement", "HR rounds, NQT, NLTH — for freshers & students", "/for-students"],
+              ["All Companies", "Browse by company type — IT, product, consulting", "/companies"],
+              ["Interview Prep Guide", "How to prepare step by step for any company", "/interview-prep"],
+            ] as [string, string, string][]).map(([title, desc, href]) => (
+              <a
+                key={href}
+                href={href}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  padding: "18px 20px",
+                  background: t.white,
+                  border: `1px solid ${t.line}`,
+                  borderRadius: 12,
+                  textDecoration: "none",
+                }}
+              >
+                <span style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, color: t.coal }}>{title}</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.4 }}>{desc}</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.copper, marginTop: 4 }}>Start →</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Why it works */}
       <section
         className="mv2p-section"
