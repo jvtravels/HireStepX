@@ -69,6 +69,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "CIRCLES", summary: "Comprehend → Identify customer → Report needs → Cut prioritise → List solutions → Evaluate → Summarise." },
     metaKeywords: ["flipkart pm interview", "flipkart product manager interview india", "flipkart case study interview", "flipkart interview questions india", "flipkart pm 2026"],
     sitemapPriority: 0.9,
+    recruitmentSteps: [
+      "Resume screen + recruiter call — portfolio and product work motivation",
+      "PM case study round 1 — product sense, user empathy, and metric definition for a Flipkart vertical",
+      "PM case study round 2 — prioritisation, roadmap trade-offs, and execution planning",
+      "Behavioral round — ownership, cross-functional leadership, and conflict resolution",
+      "Hiring manager round — alignment on vertical, growth philosophy, and culture fit",
+    ],
   },
   {
     slug: "flipkart-sde-interview-questions",
@@ -139,6 +146,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Marketplace prioritisation", summary: "Identify the constrained side → unit economics → growth lever → defensibility." },
     metaKeywords: ["swiggy pm interview", "swiggy product manager", "swiggy case study", "swiggy marketplace interview"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Resume screening + recruiter call",
+      "Product sense case — 3-sided marketplace dynamics, restaurant partner economics, delivery unit economics",
+      "Analytics or growth case — diagnosis, root-cause analysis, and metric-based recommendation",
+      "Behavioral round — cross-functional alignment and stakeholder management stories",
+      "Hiring manager round",
+    ],
   },
 
   /* ── Zomato ────────────────────────────────────────────────── */
@@ -150,6 +164,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Diagnose framework", summary: "Define metric → segment by axis (geo/cohort/time) → form hypothesis → test → recommend." },
     metaKeywords: ["zomato pm interview", "zomato product manager", "zomato case study"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Resume screening + recruiter call",
+      "Product diagnostic case — metrics drop, root-cause analysis across geo/cohort/time dimensions",
+      "Product design case — new feature or market expansion with clear success metrics",
+      "Behavioral round — ownership and rapid experimentation stories",
+      "Hiring manager round",
+    ],
   },
 
   /* ── PhonePe ───────────────────────────────────────────────── */
@@ -184,6 +205,12 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Adversarial design", summary: "Threat model → detection signals → mitigation tiers → false-positive cost." },
     metaKeywords: ["paytm engineering interview", "paytm sde", "paytm system design", "paytm fintech interview"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Online coding assessment — 2–3 DSA problems, medium difficulty",
+      "Technical round 1 — DSA with follow-up questions on edge cases and optimisation",
+      "Technical round 2 / System design — fraud detection, merchant payout, or cashback system design",
+      "Behavioral round — ownership, speed, and adversarial-user mindset",
+    ],
   },
 
   /* ── TCS ───────────────────────────────────────────────────── */
@@ -323,6 +350,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "PM CIRCLES", summary: "Comprehend the problem → Identify the user → Report their needs → Cut by impact → List solutions → Evaluate → Summarise." },
     metaKeywords: ["google pm interview", "google product manager", "google case study"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Recruiter screen + resume review — referrals carry significant weight",
+      "PM phone screen — one product design question and one metric/success question (60 min)",
+      "Onsite loop (4 rounds) — product strategy, analytics, leadership, and product design",
+      "Hiring committee review — multiple reviewers score your packet independently",
+      "Team match + offer",
+    ],
   },
 
   /* ── Amazon ────────────────────────────────────────────────── */
@@ -356,6 +390,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Operational design", summary: "Functional requirements → non-functional (latency, availability) → API contracts → data model → component diagram → failure modes + recovery." },
     metaKeywords: ["amazon system design", "amazon sde interview", "amazon technical interview"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Online Assessment — 2–3 DSA problems + LP behavioral questions",
+      "Technical phone screen — coding problem + architecture discussion (45 min)",
+      "System design deep-dive rounds (×1–2) — operational scale, failure modes, and recovery paths",
+      "Bar raiser round — probes architecture decisions and failure scenarios aggressively",
+      "Debrief and offer — decision typically within 1 week",
+    ],
   },
 
   /* ── Salary negotiation ─────────────────────────────────────── */
@@ -367,6 +408,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "BATNA-first negotiation", summary: "Know your walk-away → anchor first with a specific number → cite market data → tier the package (base / variable / equity / signing / benefits) → never accept on the first call." },
     metaKeywords: ["salary negotiation india", "salary negotiation tech", "ctc negotiation india", "indian tech salary negotiation"],
     sitemapPriority: 0.9,
+    recruitmentSteps: [
+      "Receive written offer from HR — do not accept on the spot; ask for 48–72 hours to review",
+      "Research your market rate — compare against similar roles and levels at target companies",
+      "Counter in writing — name a specific number 15–25% above the offer with one sentence of rationale",
+      "Negotiation call — anchor on total compensation (base, variable, equity, joining bonus) not just base",
+      "Close or walk away — know your walk-away number before the call begins",
+    ],
   },
 
   /* ── Wipro ─────────────────────────────────────────────────────────── */
@@ -399,6 +447,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "DRACO for DSA", summary: "Define constraints → Recognise pattern → Approach out loud → Code cleanly → Optimise time/space → Complexity proof." },
     metaKeywords: ["wipro turbo interview", "wipro turbo technical round", "wipro turbo preparation", "wipro 6.5 lpa track"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Online Application via Wipro WILP portal or campus TnP cell",
+      "Aptitude + Written Communication Test — qualifying score required for Turbo track selection",
+      "Additional Coding Round (Turbo-specific) — 3 medium-hard DSA problems, 90 minutes",
+      "Technical Interview — CS fundamentals, project walkthrough, clean code expected",
+      "HR Interview — relocation, shift flexibility, expected CTC, bond acceptance",
+    ],
   },
 
   /* ── HCL ───────────────────────────────────────────────────────────── */
@@ -454,6 +509,12 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "SOLID + Deploy", summary: "SOLID design principles → REST contract → Database choice rationale → Deployment/CI pipeline → observability." },
     metaKeywords: ["cognizant technical interview", "cognizant sde interview", "cognizant interview questions 2026"],
     sitemapPriority: 0.75,
+    recruitmentSteps: [
+      "Online application + resume shortlisting",
+      "Technical interview round 1 — coding problem + CS fundamentals, SOLID principles, and REST API design",
+      "Technical interview round 2 — system design or architecture deep-dive",
+      "HR round — communication quality, culture fit, and compensation discussion",
+    ],
   },
 
   /* ── Accenture ─────────────────────────────────────────────────────── */
@@ -486,6 +547,12 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "CAR for consulting behavior", summary: "Context (client/delivery situation) → Action (your specific intervention, not the team's) → Result (deliverable shipped, escalation avoided, relationship preserved)." },
     metaKeywords: ["accenture behavioral interview", "accenture interview questions", "accenture values interview"],
     sitemapPriority: 0.75,
+    recruitmentSteps: [
+      "Resume shortlisting for lateral or experienced-hire positions",
+      "Technical assessment (role-dependent)",
+      "Behavioral interview — client management, stakeholder conflict, and delivery recovery stories",
+      "HR round — communication quality, compensation alignment, and joining timeline",
+    ],
   },
 
   /* ── Capgemini ─────────────────────────────────────────────────────── */
@@ -618,6 +685,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "BCG 3C", summary: "Client's core objective → Context (industry, constraints, data gaps) → Creative synthesis (non-obvious recommendation with quantified upside)." },
     metaKeywords: ["bcg case interview india", "bcg interview questions", "bcg consulting india", "bcg case study practice"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Online application + resume and cover letter review",
+      "First round — 2 cases (1 BCG-led structured case, 1 candidate-led case) + 30-min fit interview",
+      "Second round — 2 additional cases at higher difficulty + partner fit conversation",
+      "Partner interview — final cultural and judgment assessment",
+      "Offer decision within 2–3 business days of final round",
+    ],
   },
 
   /* ── Goldman Sachs / JPMorgan ──────────────────────────────────────── */
@@ -686,6 +760,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Premium product lens", summary: "User trust foundation → friction removal over feature addition → signal quality over quantity → premium cohort behaviour → qualitative research over A/B tests." },
     metaKeywords: ["cred pm interview", "cred product manager interview", "cred fintech product interview"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Resume screening + portfolio or product work review",
+      "Product taste round — design for premium users, trust-driven financial products",
+      "Case study round — product analytics, growth, or 'what would you build next?' problem",
+      "Behavioral round — values alignment with CRED's simplicity and premium culture",
+      "Hiring manager round — judgment and taste calibration",
+    ],
   },
 
   /* ── Meesho ────────────────────────────────────────────────────────── */
@@ -718,6 +799,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Bharat-first PM", summary: "Language + connectivity constraints first → literacy level (visual over text) → trust signals for first transactions → distribution via WhatsApp/share chain → reseller economics." },
     metaKeywords: ["meesho pm interview", "meesho product manager interview", "meesho case study interview"],
     sitemapPriority: 0.75,
+    recruitmentSteps: [
+      "Resume screening + recruiter call",
+      "Product design round — design for tier-2/3 India: low bandwidth, regional language, feature-phone constraints",
+      "Case study round — seller acquisition, reseller economics, or Bharat distribution strategy",
+      "Behavioral round — speed, first-principles thinking, and user empathy for non-metro India",
+      "Hiring manager round",
+    ],
   },
 
   /* ── Swiggy (engineering) ──────────────────────────────────────────── */
@@ -779,6 +867,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "B2B SaaS PM", summary: "Define the agent/operator persona → identify friction in their workflow → prioritise by time-saved per agent × agent count → build-vs-integrate decision → success metric (AHT reduction, CSAT lift)." },
     metaKeywords: ["freshworks pm interview", "freshworks product manager interview", "freshworks case study"],
     sitemapPriority: 0.75,
+    recruitmentSteps: [
+      "Resume screening + recruiter call",
+      "Product design round — design for B2B SaaS operators (agents, support leads), focus on workflow efficiency",
+      "Analytics round — define success metrics, diagnose a product problem with data",
+      "Behavioral round — stakeholder management, roadmap trade-offs, and customer empathy",
+      "Hiring manager round",
+    ],
   },
 
   /* ── Microsoft ─────────────────────────────────────────────────────── */
@@ -828,6 +923,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Growth story", summary: "Initial belief or assumption → evidence that challenged it → specific change you made → outcome after the change → reflection on why you held the old belief." },
     metaKeywords: ["microsoft behavioral interview", "microsoft growth mindset interview", "microsoft interview questions india"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Online Assessment (HackerRank) — coding problems + MCQ; filters approximately 70% of applicants",
+      "Recruiter screen",
+      "Onsite / virtual loop (4–5 rounds) — DSA (×2–3), system design, and behavioral",
+      "Growth Mindset behavioral round — 'I was wrong and changed' stories score highest; have 2 prepared",
+      "Hiring committee review + offer",
+    ],
   },
 
   /* ── Meta ──────────────────────────────────────────────────────────── */
@@ -862,6 +964,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Meta values map", summary: "Identify the Meta value → Situation (why it was high-stakes) → Your specific action → Impact (must be quantified or scoped) → explicit callout of which value it illustrates." },
     metaKeywords: ["meta behavioral interview", "meta values interview", "facebook behavioral interview india"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Recruiter screen and resume review — referrals carry significant weight at Meta",
+      "Coding phone screen (45 min) — 2 medium-hard problems",
+      "Onsite loop — DSA (×2), system design, and behavioral rounds",
+      "Values interview — each story must explicitly name the Meta core value it demonstrates",
+      "Hiring committee review + offer",
+    ],
   },
 
   /* ── Netflix ───────────────────────────────────────────────────────── */
@@ -945,6 +1054,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Document + Data design", summary: "Real-time collaboration (operational transforms or CRDT) → versioning and conflict resolution → multi-tenant data isolation → high-throughput event pipeline → access control granularity." },
     metaKeywords: ["adobe engineering interview india", "adobe sde interview", "adobe technical interview noida", "adobe system design"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Online application + recruiter screen — Adobe Noida and Bangalore offices",
+      "DSA round (60 min) — medium-hard problems with graph or DP focus",
+      "Low-level design round (60 min) — OOP class design for document editor, calendar, or booking system",
+      "System design round (60 min) — document collaboration or analytics pipeline architecture",
+      "Behavioral round (45 min) — creativity and customer-obsession stories",
+    ],
     interviewRounds: [
       "DSA Round (60 min): Medium–hard problems. Graph or DP focus.",
       "Low-Level Design (60 min): Design a class system (document editor, calendar, booking system). OOP depth matters.",
@@ -1035,6 +1151,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "LP story mapping", summary: "Identify your 8–10 strongest STAR stories → map each to 2–3 Leadership Principles → practice adapting the same story for different LP questions → flag the LP being tested in every answer." },
     metaKeywords: ["amazon sde behavioral interview", "amazon leadership principles interview india", "amazon lp questions sde", "amazon 2026 behavioral questions"],
     sitemapPriority: 0.9,
+    recruitmentSteps: [
+      "Phone Screen (45–60 min) — 1–2 coding problems (easy-medium) + 1–2 LP questions",
+      "Virtual Onsite DSA Round 1 — hard problem with optimal-solution requirement",
+      "Virtual Onsite DSA Round 2 — medium-hard + extension and edge case follow-ups",
+      "Virtual Onsite System Design (SDE-2+) — design at Amazon's scale with global distribution",
+      "Bar Raiser round — pure LP deep-dive; expect pushback and follow-up on every answer",
+    ],
     interviewRounds: [
       "Phone Screen (45–60 min): 1–2 coding problems (easy-medium) + 1–2 LP questions.",
       "Virtual Onsite Round 1 — DSA: Hard problem with optimal-solution requirement.",
@@ -1087,6 +1210,13 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "IBM consulting framework", summary: "Business problem → technology solution fit → change management → ROI model → phased implementation → client capability building." },
     metaKeywords: ["ibm gbs interview", "ibm consultant interview india", "ibm consulting case study", "ibm strategy consulting india"],
     sitemapPriority: 0.78,
+    recruitmentSteps: [
+      "Online application + resume screening",
+      "HR screening call — background, motivation, and understanding of IBM GBS service lines",
+      "Case interview round 1 — structured business problem tied to technology solution",
+      "Case interview round 2 — digital transformation or cloud migration case",
+      "Final round — culture fit and values alignment with IBM; offer decision within 1–2 weeks",
+    ],
   },
 
   /* ── Infosys behavioral ─────────────────────────────────────────────── */
