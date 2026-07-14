@@ -98,12 +98,20 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Razorpay ──────────────────────────────────────────────── */
   {
     slug: "razorpay-engineering-interview-questions",
-    searchPhrase: "Razorpay Engineering Interview Questions",
+    searchPhrase: "Razorpay Engineering Interview Questions India 2026",
     company: "razorpay", roleFamily: "swe", focus: "system-design",
-    intro: "Razorpay engineering rounds love production scenarios — UPI failure spikes, NPCI rate limits, settlement reconciliation, idempotent payment retries. Be specific. Generic 'I'd add caching' answers don't land here; they want to know which cache, what TTL, what happens on cache stampede.",
+    intro: "Razorpay engineering rounds love production scenarios — UPI failure spikes, NPCI rate limits, settlement reconciliation, idempotent payment retries. Be specific. Generic 'I'd add caching' answers don't land here; they want to know which cache, what TTL, what happens on cache stampede. The hiring loop runs 4–5 rounds and pays well for the bar it sets: SDE-1 at ₹15–25 LPA with meaningful equity from a pre-IPO company. The culture round is harder to fake than most — interviewers listen for genuine conviction about ownership, not keyword alignment. What distinguishes strong Razorpay candidates is being able to explain a technical choice — say, why you'd design an idempotent API a certain way — in terms of what a merchant actually experiences when a payment fails at checkout.",
     framework: { name: "Reliability-first", summary: "Failure modes first → circuit breakers + idempotency → eventual consistency → reconciliation paths → monitoring." },
-    metaKeywords: ["razorpay engineering interview", "razorpay sde", "razorpay system design", "razorpay payments interview"],
+    metaKeywords: ["razorpay engineering interview", "razorpay sde interview india", "razorpay system design", "razorpay payments interview", "razorpay interview questions 2026"],
     sitemapPriority: 0.9,
+    recruitmentSteps: [
+      "Recruiter screen — background, motivation, and salary expectations (30 min)",
+      "Online coding round — 2 DSA problems, 60 minutes (medium-hard difficulty)",
+      "Technical round 1 — DSA + problem decomposition and code quality review",
+      "Technical round 2 — System design with payments-specific architecture (SDE-2+ roles primarily)",
+      "Culture round — Values alignment and ownership stories; evaluates genuine conviction not keyword alignment",
+      "Hiring manager round — Final bar raiser and compensation discussion",
+    ],
   },
   {
     slug: "razorpay-pm-interview-questions",
@@ -536,9 +544,9 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Deloitte ──────────────────────────────────────────────────────── */
   {
     slug: "deloitte-analyst-interview-questions",
-    searchPhrase: "Deloitte Analyst Interview Questions India",
+    searchPhrase: "Deloitte Analyst Interview Questions India 2026",
     company: "deloitte", roleFamily: "behavioral", focus: "behavioral",
-    intro: "Deloitte's analyst interviews (USI, Advisory, Technology) are structured competency assessments. Each question maps to one of Deloitte's PACE principles (Purpose, Aspiration, Commitment, Excellence). The partner or manager interviewing you has a scorecard. Stories with clear professional impact, stakeholder complexity, and personal ownership score highest.",
+    intro: "Deloitte's analyst interviews (USI, Advisory, Technology) are structured competency assessments. Each question maps to one of Deloitte's PACE principles (Purpose, Aspiration, Commitment, Excellence). The partner or manager interviewing you has a scorecard. Stories with clear professional impact, stakeholder complexity, and personal ownership score highest. The entry gate is the CogniVue aptitude test — harder than most candidates expect, covering numerical reasoning, verbal ability, logical reasoning, and situational judgement. Candidates who clear CogniVue face a group discussion round before the PACE-based panel interview. Consulting and advisory track candidates additionally sit a case interview that tests structured business problem-solving.",
     framework: { name: "PACE stories", summary: "Purpose (why the work mattered) → Aspiration (the target you set for yourself, not just the team) → Commitment (how you stayed engaged when hard) → Excellence (the measurable result)." },
     metaKeywords: ["deloitte analyst interview india", "deloitte interview questions", "deloitte ustech interview", "deloitte consulting india"],
     sitemapPriority: 0.85,
@@ -635,12 +643,18 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Meesho ────────────────────────────────────────────────────────── */
   {
     slug: "meesho-engineering-interview-questions",
-    searchPhrase: "Meesho Engineering Interview Questions",
+    searchPhrase: "Meesho Engineering Interview Questions India 2026",
     company: "meesho", roleFamily: "swe", focus: "system-design",
-    intro: "Meesho engineering interviews blend social commerce with supply-chain scale. Their system design questions often model real Meesho infrastructure — catalog search for 150M SKUs, seller-payout settlement, or return-logistics orchestration across tier-3 PIN codes. They expect product awareness alongside system design depth.",
+    intro: "Meesho engineering interviews blend social commerce with supply-chain scale. Their system design questions often model real Meesho infrastructure — catalog search for 150M SKUs, seller-payout settlement, or return-logistics orchestration across tier-3 PIN codes. They expect product awareness alongside system design depth. The bar has risen significantly as Meesho scales: frontend rounds now expect TypeScript generics and micro-frontend architecture; backend rounds probe eventual consistency in distributed inventory and COD return flow idempotency. Speed over perfection is Meesho's culture — interviewers value candidates who can articulate trade-offs quickly and ship iteratively.",
     framework: { name: "Commerce + Logistics", summary: "Write path vs. read path separation → Catalog sharding strategy → Eventual consistency in inventory → COD return flow idempotency → Seller payout reconciliation." },
-    metaKeywords: ["meesho engineering interview", "meesho sde interview", "meesho system design", "meesho technical interview"],
+    metaKeywords: ["meesho engineering interview", "meesho sde interview india", "meesho system design", "meesho technical interview 2026"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Online Assessment — 2–3 DSA problems (medium-hard level, 60–90 minutes)",
+      "DSA round — Graphs, DP, or string manipulation with optimisation follow-up",
+      "System design round — Social commerce or logistics system at Meesho scale",
+      "Behavioral + hiring manager — Ownership, first-principles thinking, speed-vs-correctness trade-offs",
+    ],
     interviewRounds: [
       "Online Assessment: 2–3 DSA problems. Medium–hard level.",
       "DSA Round (60 min): Graphs, DP, string manipulation — one hard problem with optimisation follow-up.",
@@ -661,12 +675,19 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Swiggy (engineering) ──────────────────────────────────────────── */
   {
     slug: "swiggy-engineering-interview-questions",
-    searchPhrase: "Swiggy Engineering Interview Questions",
+    searchPhrase: "Swiggy Engineering Interview Questions India 2026",
     company: "swiggy", roleFamily: "swe", focus: "system-design",
-    intro: "Swiggy's engineering interviews probe real-time logistics systems under adversarial conditions — monsoon zone outages, restaurant denial cascades, surge demand from cricket finals. The system design bar is high and operationally specific: how do you ensure a delivery-partner notification reaches them in under 200ms when 5000 orders are simultaneously dispatched?",
+    intro: "Swiggy's engineering interviews probe real-time logistics systems under adversarial conditions — monsoon zone outages, restaurant denial cascades, surge demand from cricket finals. The system design bar is high and operationally specific: how do you ensure a delivery-partner notification reaches them in under 200ms when 5000 orders are simultaneously dispatched? The interview loop runs 4–5 rounds covering an online assessment, two coding rounds, and a system design round that consistently involves location-based delivery or notification architecture. Frontend engineers additionally face React 18 specifics — useTransition, concurrent mode — and Core Web Vitals questions grounded in Swiggy's consumer app. SQL fluency and product intuition around food-delivery unit economics are tested for data and analytics roles.",
     framework: { name: "Logistics reliability", summary: "Geospatial indexing strategy → push vs. pull notification → demand prediction model → rebalancing algorithm → fallback path → delivery SLA breach escalation." },
-    metaKeywords: ["swiggy engineering interview", "swiggy sde interview", "swiggy system design", "swiggy technical interview"],
+    metaKeywords: ["swiggy engineering interview", "swiggy sde interview india", "swiggy system design", "swiggy technical interview 2026"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Online assessment — 2–3 DSA coding problems (medium difficulty, 60–90 minutes)",
+      "Technical round 1 — Coding: arrays, graphs, or dynamic programming",
+      "Technical round 2 — Coding + problem decomposition and optimization discussion",
+      "System design round — Real-time logistics or notification architecture at India scale",
+      "Behavioral round — Ownership, speed under uncertainty, and cross-functional collaboration",
+    ],
   },
 
   /* ── Zerodha ───────────────────────────────────────────────────────── */
@@ -703,9 +724,9 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Microsoft ─────────────────────────────────────────────────────── */
   {
     slug: "microsoft-india-sde-interview-questions",
-    searchPhrase: "Microsoft India SDE Interview Questions",
+    searchPhrase: "Microsoft India SDE Interview Questions 2026",
     company: "microsoft", roleFamily: "swe", focus: "system-design",
-    intro: "Microsoft India SDE interviews (Hyderabad, Bangalore) follow the global Microsoft loop: 4–5 rounds of DSA + one system design + a behavioral round. Microsoft has a high bar on code quality — interviewers expect readable, commented code and a discussion of testing strategy. The system design round often involves Azure services; knowing Azure vs. AWS trade-offs is a differentiator.",
+    intro: "Microsoft India SDE interviews (Hyderabad, Bangalore) follow the global Microsoft loop: 4–5 rounds of DSA, one system design, and a behavioral round explicitly grounded in the growth mindset framework Satya Nadella made central to Microsoft's culture. Microsoft has a high bar on code quality — interviewers expect readable, commented code and a discussion of testing strategy. The system design round often involves Azure services; knowing Azure vs. AWS trade-offs is a differentiator. The HackerRank online assessment filters about 70% of applicants. The 'As Appropriate' interviewer in the final onsite carries significant weight — they can advocate strongly for or block a candidate regardless of other interviewers' votes.",
     framework: { name: "Azure-aware design", summary: "Functional requirements → Azure service selection rationale → data store choice → message bus (Service Bus vs Event Hub) → monitoring + alerting → cost at scale." },
     metaKeywords: ["microsoft india sde interview", "microsoft hyderabad interview", "microsoft technical interview india", "microsoft azure system design"],
     sitemapPriority: 0.9,
@@ -745,12 +766,19 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Meta ──────────────────────────────────────────────────────────── */
   {
     slug: "meta-engineering-interview-questions",
-    searchPhrase: "Meta Engineering Interview Questions",
+    searchPhrase: "Meta Engineering Interview Questions India 2026",
     company: "meta", roleFamily: "swe", focus: "system-design",
-    intro: "Meta's SDE interviews are among the hardest in the industry. Coding rounds require speed — 2 medium-hard problems in 45 minutes, often graph or DP. System design rounds probe social graph architecture, content ranking algorithms, and ad delivery at planetary scale. The bar raiser culture means one interviewer can block an offer even if all others say yes.",
+    intro: "Meta's SDE interviews are among the hardest in the industry. Coding rounds require speed — 2 medium-hard problems in 45 minutes, often graph or DP. System design rounds probe social graph architecture, content ranking algorithms, and ad delivery at planetary scale. The bar raiser culture means one interviewer can block an offer even if all others say yes. India onsites run at Meta's Hyderabad and Bangalore offices. The behavioral lens maps every answer to Meta's core values — Move Fast, Be Bold, Be Open, Focus on Impact — and candidates must make this mapping explicit. Solving 150+ medium and 30+ hard LeetCode problems is the realistic preparation floor for Indian candidates.",
     framework: { name: "Social graph design", summary: "Feed generation algorithm → graph traversal at scale → ranking signal selection → write path vs read path → privacy partitioning → abuse signal integration." },
-    metaKeywords: ["meta engineering interview", "meta sde interview", "meta system design interview", "facebook interview india"],
+    metaKeywords: ["meta engineering interview india", "meta sde interview", "meta system design interview", "facebook interview india 2026"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Recruiter screen and resume review — referrals carry significant weight at Meta",
+      "Coding screen (45 min) — 2 medium-hard problems; expect clean code in 40 minutes",
+      "DSA rounds ×2 — graphs or trees, then DP or strings; must fully solve both",
+      "System design round (60 min) — social or ad-system design at 3B-user scale",
+      "Behavioral round (45 min) — Meta core values mapping; stories must name the value explicitly",
+    ],
     interviewRounds: [
       "Coding Screen (45 min): 2 medium–hard problems. Meta expects clean, well-commented code in 40 minutes.",
       "DSA Round 1 (45 min): Graphs or trees. Expect follow-up complexity questions.",
@@ -772,12 +800,19 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Netflix ───────────────────────────────────────────────────────── */
   {
     slug: "netflix-engineering-interview-questions",
-    searchPhrase: "Netflix Engineering Interview Questions",
+    searchPhrase: "Netflix Engineering Interview Questions India 2026",
     company: "netflix", roleFamily: "swe", focus: "system-design",
-    intro: "Netflix engineering interviews have a distinct culture fit layer: they pay exceptionally well and expect senior-level judgment from every engineer. Interviews probe not just technical skill but strategic thinking. Chaos engineering (Netflix Simian Army philosophy), microservice resilience, and global CDN strategies are recurring themes.",
+    intro: "Netflix engineering interviews have a distinct culture fit layer: they pay exceptionally well and expect senior-level judgment from every engineer. Interviews probe not just technical skill but strategic thinking — chaos engineering (Simian Army philosophy), microservice resilience, and global CDN strategies are recurring themes. Netflix's 'Freedom and Responsibility' culture means the behavioral bar is as rigorous as the technical one: candidates must demonstrate they can operate autonomously with minimal supervision. System design questions center on streaming infrastructure — video encoding pipelines, content caching at edge, and recommendation systems. Netflix India has offices in Hyderabad and primarily hires senior engineers, so the difficulty bar is higher than most product companies.",
     framework: { name: "Chaos-resilient design", summary: "Define failure blast radius → circuit breaker placement → graceful degradation paths → observability (distributed tracing) → runbook for on-call → chaos experiment design." },
-    metaKeywords: ["netflix engineering interview", "netflix sde interview", "netflix system design interview"],
+    metaKeywords: ["netflix engineering interview india", "netflix sde interview", "netflix system design interview 2026"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Recruiter screen — background, seniority calibration, and compensation discussion",
+      "Technical phone screen — 1–2 coding problems (medium-hard, 60 min) with a senior engineer",
+      "Onsite loop (4–5 rounds) — DSA, system design, and culture-fit rounds in one day",
+      "System design round — streaming infrastructure, CDN architecture, or recommendation system",
+      "Values interview — 'Freedom and Responsibility' fit; autonomous decision-making and judgment stories",
+    ],
   },
 
   /* ── Amazon PM ─────────────────────────────────────────────────────── */
