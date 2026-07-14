@@ -321,14 +321,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         {/* Two-column hero — breadcrumb + h1 left, stats sidebar right */}
         <header className="ed-hero" style={{ paddingTop: ED_PADDING.heroTop, paddingBottom: ED_PADDING.heroBottom, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
-            {/* Breadcrumb */}
-            <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 36 }}>
-              <Link href="/" className="ed-link" style={{ color: t.inkFaint }}>Home</Link>
-              <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
-              <Link href="/companies" className="ed-link" style={{ color: t.inkFaint }}>Companies</Link>
-              <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
-              <span aria-current="page" style={{ color: t.coal }}>{companyLabel}</span>
-            </nav>
+
 
             <div className="co-hero-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
               {/* Left column */}

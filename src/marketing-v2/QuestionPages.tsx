@@ -279,14 +279,6 @@ export function QuestionSetPage({
         <header className="ed-hero" style={{ background: t.cream, paddingTop: 96, paddingBottom: 80, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
 
-            {/* Breadcrumb */}
-            <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 28 }}>
-              <Link href="/" style={{ color: t.inkFaint, textDecoration: "none" }}>Home</Link>
-              {" / "}
-              <Link href="/questions" style={{ color: t.inkFaint, textDecoration: "none" }}>Questions</Link>
-              {" / "}
-              <span aria-current="page">{focusLabel}</span>
-            </nav>
 
             {/* Two-column split */}
             <div className="ed-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
@@ -654,11 +646,6 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
 
               {/* Left: heading + lead + CTA */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 28 }}>
-                  <Link href="/" style={{ color: t.inkFaint, textDecoration: "none" }}>Home</Link>
-                  {" / "}
-                  <span aria-current="page" style={{ color: t.copper }}>Interview Questions</span>
-                </nav>
                 <p style={{ ...edEyebrow, margin: "0 0 20px" }}>Interview questions · India 2026</p>
                 <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(38px, 4.8vw, 60px)", fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.028em", color: t.coal, margin: "0 0 24px" }}>
                   Real interview questions,{" "}
