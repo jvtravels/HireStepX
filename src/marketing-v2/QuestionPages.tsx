@@ -225,46 +225,6 @@ export function CompanyContextBox({ company, companyLabel }: { company: string; 
   );
 }
 
-/* ─── RelatedLinksSection — exported so the page layer can inject SEO_PAGES */
-
-export function RelatedLinksSection({
-  relatedPages,
-}: {
-  relatedPages: { slug: string; searchPhrase: string }[];
-}) {
-  if (relatedPages.length === 0) return null;
-  return (
-    <section style={{ marginTop: 48, paddingTop: 24, borderTop: `1px solid ${t.line}` }}>
-      <h3
-        style={{
-          fontFamily: fonts.sans,
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: t.inkFaint,
-          margin: "0 0 14px",
-        }}
-      >
-        Related interview prep
-      </h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-        {relatedPages.map((p) => (
-          <li key={p.slug}>
-            <Link
-              href={`/questions/${p.slug}`}
-              className="ed-link"
-              style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}
-            >
-              {p.searchPhrase}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 /* ─── QuestionSetPage — the main export for /questions/[slug] ─────────── */
 
 export interface QuestionSetPageProps {
@@ -552,38 +512,77 @@ export function QuestionSetPage({
 
         {/* Internal link graph — related question sets + guides */}
         <div className="ed-container" style={{ paddingTop: 56, paddingBottom: 88 }}>
-          <RelatedLinksSection relatedPages={relatedPages} />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: relatedBlogPosts.length > 0 ? "1fr 1fr" : "1fr",
+              gap: "0 64px",
+              borderTop: `1px solid ${t.line}`,
+              paddingTop: 32,
+            }}
+          >
+            {relatedPages.length > 0 && (
+              <section>
+                <h3
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: t.inkFaint,
+                    margin: "0 0 16px",
+                  }}
+                >
+                  Related interview prep
+                </h3>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {relatedPages.map((p) => (
+                    <li key={p.slug}>
+                      <Link
+                        href={`/questions/${p.slug}`}
+                        className="ed-link"
+                        style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}
+                      >
+                        {p.searchPhrase}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-          {relatedBlogPosts.length > 0 && (
-            <section style={{ marginTop: 36, paddingTop: 24, borderTop: `1px solid ${t.line}` }}>
-              <h3
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: t.inkFaint,
-                  margin: "0 0 14px",
-                }}
-              >
-                Read our guides
-              </h3>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                {relatedBlogPosts.map((post) => (
-                  <li key={post.slug}>
-                    <Link
-                      href={`/blog/${post.slug}`}
-                      className="ed-link"
-                      style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}
-                    >
-                      {post.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+            {relatedBlogPosts.length > 0 && (
+              <section style={{ borderLeft: relatedPages.length > 0 ? `1px solid ${t.line}` : "none", paddingLeft: relatedPages.length > 0 ? 64 : 0 }}>
+                <h3
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: t.inkFaint,
+                    margin: "0 0 16px",
+                  }}
+                >
+                  Read our guides
+                </h3>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {relatedBlogPosts.map((post) => (
+                    <li key={post.slug}>
+                      <Link
+                        href={`/blog/${post.slug}`}
+                        className="ed-link"
+                        style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}
+                      >
+                        {post.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
         </div>
       </main>
     </>
