@@ -165,7 +165,7 @@ export function ctaPrimaryStyle(size: "md" | "lg" = "lg"): CSSProperties {
     fontSize: size === "lg" ? 16 : 14,
     fontWeight: 600,
     padding: size === "lg" ? "15px 26px" : "11px 18px",
-    borderRadius: 999,
+    borderRadius: 8,
     background: t.copper,
     color: t.cream,
     textDecoration: "none",
@@ -185,7 +185,7 @@ export function ctaGhostStyle(size: "md" | "lg" = "lg"): CSSProperties {
     fontSize: size === "lg" ? 16 : 14,
     fontWeight: 600,
     padding: size === "lg" ? "15px 26px" : "11px 18px",
-    borderRadius: 999,
+    borderRadius: 8,
     background: "transparent",
     color: t.coal,
     textDecoration: "none",
@@ -473,7 +473,7 @@ export function DarkBand({
             {accent && (
               <>
                 {" "}
-                <span style={{ fontStyle: "italic", color: t.copper }}>{accent}</span>
+                <span style={{ fontStyle: "italic" }}>{accent}</span>
               </>
             )}
           </h2>
