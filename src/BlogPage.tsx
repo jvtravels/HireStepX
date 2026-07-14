@@ -203,6 +203,8 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "how-to-introduce-yourself-in-interview", "hr-interview-questions-answers-india"],
     practicePageSlugs: [
+      { label: "Why Should We Hire You — Practice", slug: "why-should-we-hire-you-answer-india" },
+      { label: "Common HR Questions — Practice", slug: "common-hr-interview-questions-freshers-india" },
       { label: "TCS NQT 2026", slug: "tcs-nqt-interview-questions" },
       { label: "TCS Ninja Interview", slug: "tcs-ninja-interview-questions" },
       { label: "Infosys Campus Placement", slug: "infosys-campus-interview-questions" },
@@ -359,6 +361,7 @@ const posts: BlogPost[] = [
       { question: "How to introduce yourself as a fresher with no experience?", answer: "Lead with your education and specialization, then highlight college projects, internships, hackathons, or relevant coursework. End with what excites you about the role. No experience ≠ nothing to say." },
     ],
     practicePageSlugs: [
+      { label: "Tell Me About Yourself — Fresher Practice", slug: "tell-me-about-yourself-answer-freshers-india" },
       { label: "TCS Behavioral Interview Practice", slug: "tcs-behavioral-interview-questions" },
       { label: "Amazon Leadership Principles Practice", slug: "amazon-leadership-principles-interview" },
       { label: "Infosys Behavioral Practice", slug: "infosys-behavioral-interview-questions" },
@@ -392,6 +395,7 @@ const posts: BlogPost[] = [
     ],
     practicePageSlugs: [
       { label: "Google Behavioral Interview Practice", slug: "google-behavioral-interview-questions" },
+      { label: "Tell Me About Yourself — Fresher Practice", slug: "tell-me-about-yourself-answer-freshers-india" },
       { label: "Amazon Leadership Principles Practice", slug: "amazon-leadership-principles-interview" },
       { label: "TCS Behavioral Interview Practice", slug: "tcs-behavioral-interview-questions" },
     ],
@@ -453,6 +457,7 @@ const posts: BlogPost[] = [
       { question: "Should I negotiate salary in an HR interview?", answer: "Yes, but tactfully. Research market rates, give a range (not a single number), and express that you value the total package including learning and growth opportunities." },
     ],
     practicePageSlugs: [
+      { label: "Common HR Questions — Fresher Practice", slug: "common-hr-interview-questions-freshers-india" },
       { label: "TCS HR Round Practice", slug: "tcs-hr-round-questions" },
       { label: "Accenture Behavioral Practice", slug: "accenture-behavioral-interview-questions" },
       { label: "Wipro Behavioral Practice", slug: "wipro-behavioral-interview-questions" },
@@ -574,6 +579,9 @@ const posts: BlogPost[] = [
       { question: "How to answer 'Tell me about yourself' in campus placements?", answer: "Use Present-Past-Future: Start with your current status (final year, branch), mention 1-2 relevant projects or internships, then state your career interest. Keep it under 90 seconds." },
     ],
     practicePageSlugs: [
+      { label: "Why Should We Hire You — Practice", slug: "why-should-we-hire-you-answer-india" },
+      { label: "Tell Me About Yourself — Practice", slug: "tell-me-about-yourself-answer-freshers-india" },
+      { label: "Common HR Questions — Practice", slug: "common-hr-interview-questions-freshers-india" },
       { label: "TCS Campus Placement Practice", slug: "tcs-ninja-interview-questions" },
       { label: "Infosys Campus Interview Practice", slug: "infosys-campus-interview-questions" },
       { label: "Amazon Campus Placement Practice", slug: "amazon-campus-placement-india" },
@@ -1911,6 +1919,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
     practicePageSlugs: [
+      { label: "Why Should We Hire You — AI Practice", slug: "why-should-we-hire-you-answer-india" },
       { label: "TCS HR Round Practice", slug: "tcs-hr-round-questions" },
       { label: "Wipro Behavioral Interview Practice", slug: "wipro-behavioral-interview-questions" },
       { label: "Infosys Campus Interview Practice", slug: "infosys-campus-interview-questions" },

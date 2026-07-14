@@ -73,6 +73,9 @@ function questionsForPage(p: SeoPage): BankEntry[] {
   return focusOnly.slice(0, 8);
 }
 
+export const revalidate = 86400; /* 24 h ISR — refresh content daily without a full rebuild */
+export const dynamicParams = true; /* on-demand render for slugs not in generateStaticParams */
+
 /* Static params — pre-renders all SEO pages at build time so they're
    served as static HTML for fast LCP + crawl-friendliness. */
 export async function generateStaticParams() {
