@@ -397,6 +397,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Bar raiser round — probes architecture decisions and failure scenarios aggressively",
       "Debrief and offer — decision typically within 1 week",
     ],
+    interviewRounds: [
+      "Online Assessment (90 min): 2–3 DSA problems (medium to hard) + Leadership Principles behavioral questions. The LP questions are short-answer, not STAR format — be direct.",
+      "Technical Phone Screen (45 min): One coding problem + architecture discussion. The architecture question probes operational thinking: 'how would you handle a 10x traffic spike?' rather than abstract elegance.",
+      "System Design Deep-Dive (×1–2, 60 min each): Design a system Amazon operates at scale — recommendation engine, order fulfilment, cart/checkout, or delivery-route optimisation. Failure mode probing is aggressive: 'what happens if this region goes down?', 'what is your data loss window?' Leadership Principles surface in the design: 'Frugality' means justifying infrastructure cost at scale; 'Dive Deep' means knowing exactly what breaks first.",
+      "Bar Raiser Round (60 min): An independent senior engineer probes your architecture decisions for inconsistencies. They will focus on the part of your design you are least confident about. Prepare your failure-mode analysis as thoroughly as your happy path.",
+    ],
   },
 
   /* ── Salary negotiation ─────────────────────────────────────── */
@@ -453,6 +459,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Additional Coding Round (Turbo-specific) — 3 medium-hard DSA problems, 90 minutes",
       "Technical Interview — CS fundamentals, project walkthrough, clean code expected",
       "HR Interview — relocation, shift flexibility, expected CTC, bond acceptance",
+    ],
+    interviewRounds: [
+      "Aptitude + Written Communication Test: The score here determines whether you enter the Elite NTH or Turbo track. Top decile selection is required for Turbo.",
+      "Turbo Coding Round (90 min): 3 medium-hard DSA problems — graph traversal, dynamic programming, and sliding window are the most common patterns. Articulate your approach before coding; Wipro interviewers weight reasoning as much as a working solution.",
+      "Technical Interview (45–60 min): Probes CS fundamentals aggressively: OOP design, DBMS normalisation, OS scheduling, and a project walkthrough. Clean, commented code is expected; interviewers reward candidates who optimise incrementally and explain trade-offs.",
+      "HR Interview (20–30 min): Relocation, shift flexibility, bond acceptance, and CTC discussion. Any hesitation on the bond or relocation questions is scored negatively — prepare a direct yes with no qualifiers.",
     ],
   },
 
@@ -515,6 +527,11 @@ export const SEO_PAGES: SeoPage[] = [
       "Technical interview round 2 — system design or architecture deep-dive",
       "HR round — communication quality, culture fit, and compensation discussion",
     ],
+    interviewRounds: [
+      "Technical Round 1 — Coding + Fundamentals (45–60 min): One coding problem (medium difficulty), followed by questions on SOLID design principles, REST API design, and database choice rationale. The key signal: interviewers probe whether you used frameworks passively or understood their mechanics. Every tool on your resume is fair game.",
+      "Technical Round 2 — System Design or Architecture (45 min): Design a production system relevant to your role — Java/Spring candidates design a microservice; Python candidates design a data pipeline; cloud candidates justify service selection. Cognizant evaluates 'delivery mindset': can you explain a technical decision in terms of client business outcomes?",
+      "HR Round (20–30 min): Communication quality is scored explicitly — Accenture and Cognizant are client-facing firms. Expect questions on compensation, joining timeline, and cultural fit. Low-confidence delivery on any answer is noted in the debrief.",
+    ],
   },
 
   /* ── Accenture ─────────────────────────────────────────────────────── */
@@ -552,6 +569,11 @@ export const SEO_PAGES: SeoPage[] = [
       "Technical assessment (role-dependent)",
       "Behavioral interview — client management, stakeholder conflict, and delivery recovery stories",
       "HR round — communication quality, compensation alignment, and joining timeline",
+    ],
+    interviewRounds: [
+      "Technical Assessment (role-dependent): Varies by band — ASE candidates get a short coding test; managers may skip it. Preparation depends on JD.",
+      "Behavioral Interview (45–60 min): The main evaluation round. Client-management stories are the expected currency — stakeholder conflict, scope creep, deadline pressure, managing difficult onshore/offshore dynamics. STAR answers must include specific outcomes (delivery recovered, client satisfaction restored, headcount managed). 'We' answers score poorly; use 'I' to claim your contribution.",
+      "HR Round (20 min): Communication quality assessment alongside compensation and joining timeline. Low-confidence delivery is flagged here even on non-technical questions.",
     ],
   },
 
@@ -1321,6 +1343,11 @@ export const SEO_PAGES: SeoPage[] = [
       "Add a company-specific close — one sentence on why this company specifically (product you use, problem they solve)",
       "Practice the answer 10+ times until it sounds natural — confident delivery, not recitation",
     ],
+    interviewRounds: [
+      "When it appears: 'Why should we hire you?' is asked in the HR round at TCS, Infosys, Wipro, Cognizant, and Accenture — and sometimes also at the close of the technical round as a final synthesis check. Prepare it for both contexts.",
+      "Answer structure (45–60 seconds): Name 2 skills the job description specifically asks for → give one proof point per skill (a project, a result, a measurable outcome) → close with why this company specifically. Generic answers ending in 'I am hardworking and passionate' are filtered negatively.",
+      "Delivery check: Interviewers score confidence alongside content. Practice aloud until the answer sounds owned, not recited. Candidates who answer conversationally with natural pacing consistently score higher than those reciting a memorised paragraph.",
+    ],
   },
   {
     slug: "tell-me-about-yourself-answer-freshers-india",
@@ -1337,6 +1364,11 @@ export const SEO_PAGES: SeoPage[] = [
       "Practice in front of a mirror or record yourself — check for filler words, eye contact, and pace",
       "Customise the 'connection to role' sentence for each company — a TCS HR round and a Razorpay technical screen need different closes",
     ],
+    interviewRounds: [
+      "When it appears: 'Tell me about yourself' opens nearly every Indian interview — campus HR rounds, lateral technical screens, and walk-in drives. It sets the tone for everything that follows. The first 30 seconds are your personal branding statement.",
+      "Answer structure (60–90 seconds): Present (who you are now: major, graduation year, primary skill) → Achievement (your strongest proof point with a measurable result) → Future (connection to the role + what you want to contribute in year one). Do not answer chronologically. Biographical answers starting from your hometown or school are the most common failure pattern.",
+      "Delivery check: Indian interviewers at campus drives score this answer on communication confidence as much as content. Time yourself aloud; if you're above 90 seconds, cut the weakest sentence. Filler words ('basically', 'like', 'you know') reduce your perceived confidence score.",
+    ],
   },
   {
     slug: "common-hr-interview-questions-freshers-india",
@@ -1352,6 +1384,11 @@ export const SEO_PAGES: SeoPage[] = [
       "Practice 'tell me about yourself' and 'why should we hire you' first — they appear in 95%+ of HR rounds",
       "Research the target company specifically — generic 'why this company' answers are instantly penalised",
       "Do a full mock HR round end-to-end before your actual interview — HireStepX AI simulates the full HR question flow with scoring",
+    ],
+    interviewRounds: [
+      "High-frequency HR questions (prepare these first): 'Tell me about yourself', 'Why should we hire you?', 'What is your greatest strength?', 'What is your weakness and how are you improving it?', 'Where do you see yourself in 5 years?' — these appear in 90%+ of fresher HR rounds at Indian IT companies.",
+      "Company-specific questions (prepare separately per company): 'Why this company specifically?', 'What do you know about our products / services?', 'Are you willing to relocate?', 'What is your expected CTC?' — generic answers on the 'why this company' question are the most common HR round elimination trigger.",
+      "Scoring dimensions: Indian HR interviewers score on communication clarity (structured answers, no filler words), logical consistency (does your story hold together), and cultural fit (willingness to relocate, adapt to client demands, work in a service environment). Content correctness matters less than confident, specific delivery.",
     ],
   },
 ];
