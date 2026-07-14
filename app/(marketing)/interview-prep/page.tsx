@@ -338,6 +338,48 @@ export default async function InterviewPrepPage() {
             focusLabel={FOCUS_LABEL}
           />
 
+          {/* ── Freshers & Campus HR prep ─────────────────────────────── */}
+          <section style={{ marginTop: 56 }}>
+            <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
+              Freshers &amp; Campus Placement — HR Prep
+            </h2>
+            <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
+              Every campus interview ends with an HR round. These guides cover the questions that appear in 90%+ of Indian campus drives — with structured answer frameworks you can practice out loud.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+              {[
+                {
+                  title: "Why Should We Hire You?",
+                  desc: "The most consequential question in campus interviews. Most freshers waste it with vague claims. Learn the Skills → Proof → Fit structure.",
+                  href: "/companies/why-should-we-hire-you-answer-india",
+                },
+                {
+                  title: "Tell Me About Yourself",
+                  desc: "Opens every interview. The wrong structure is chronological. Learn the Present → Achievement → Future format that interviewers want.",
+                  href: "/companies/tell-me-about-yourself-answer-freshers-india",
+                },
+                {
+                  title: "Common HR Interview Questions",
+                  desc: "10 questions that appear in 95%+ of fresher HR rounds — strength, weakness, 5-year goal, why this company, relocation, and more.",
+                  href: "/companies/common-hr-interview-questions-freshers-india",
+                },
+              ].map((item) => (
+                <Link key={item.href} href={item.href} style={{
+                  ...card, padding: "20px 22px", textDecoration: "none", color: "inherit", display: "block",
+                }}>
+                  <div style={{ ...mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: copper, marginBottom: 8 }}>
+                    HR Round · Freshers
+                  </div>
+                  <h3 style={{ ...serif, fontSize: 17, fontWeight: 400, margin: "0 0 8px", letterSpacing: "-0.01em", color: coal }}>
+                    {item.title}
+                  </h3>
+                  <p style={{ fontSize: 13, color: sand, margin: "0 0 14px", lineHeight: 1.55 }}>{item.desc}</p>
+                  <span style={{ color: copper, fontSize: 13, fontWeight: 500 }}>Practice with AI →</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
           {/* ── FAQ ──────────────────────────────────────────────────── */}
           <section style={{ marginTop: 56 }}>
             <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 20px" }}>

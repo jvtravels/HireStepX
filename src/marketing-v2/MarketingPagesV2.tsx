@@ -1415,6 +1415,9 @@ export function ForStudentsV2() {
               ["Capgemini Freshers", "/questions/capgemini-freshers-interview-questions"],
               ["HCL Freshers", "/questions/hcl-freshers-interview-questions"],
               ["LTIMindtree Freshers", "/questions/ltimindtree-freshers-interview-questions"],
+              ["Why Should We Hire You?", "/questions/why-should-we-hire-you-answer-india"],
+              ["Tell Me About Yourself", "/questions/tell-me-about-yourself-answer-freshers-india"],
+              ["Common HR Questions", "/questions/common-hr-interview-questions-freshers-india"],
             ] as [string, string][]).map(([label, href]) => (
               <a
                 key={label}

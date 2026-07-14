@@ -226,6 +226,7 @@ export default async function QuestionsSlugPage({
     datePublished: "2026-06-21",
     dateModified: "2026-07-14",
     inLanguage: "en-IN",
+    url: `https://hirestepx.com/questions/${slug}`,
     mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/questions/${slug}` },
     articleSection: focusLabel,
     keywords: [page.metaKeywords[0], companyLabel, "interview preparation India"].join(", "),
