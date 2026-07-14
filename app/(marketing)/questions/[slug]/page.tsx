@@ -159,7 +159,7 @@ export default async function QuestionsSlugPage({
     },
   });
 
-  questions.slice(0, 5).forEach((q) => {
+  questions.slice(0, 8).forEach((q) => {
     faqEntries.push({
       "@type": "Question",
       name: q.text,
@@ -167,6 +167,16 @@ export default async function QuestionsSlugPage({
         "@type": "Answer",
         text: `To answer this question well, HireStepX recommends the ${page.framework.name} approach: ${page.framework.summary} Ground your answer in a specific real example from your own experience.`,
       },
+    });
+  });
+
+  /* Optional extra Q&As from curated faqExtra field — content must be
+     sourced from the codebase (intro, framework, known facts), never invented. */
+  (page.faqExtra ?? []).forEach(({ q, a }) => {
+    faqEntries.push({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
     });
   });
 
