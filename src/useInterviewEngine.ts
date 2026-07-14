@@ -139,6 +139,13 @@ export function useInterviewEngine() {
   );
   // Negotiation band (populated by LLM question generation for salary-neg)
   const negotiationBandRef = useRef<NegotiationBandData | null>(null);
+  /* Kernel-authoritative candidate ask (₹LPA), captured when negotiation
+   * metrics are computed at save time. Threaded to the post-session
+   * DealSummaryCard so its "Your Ask" tile shows the SAME value the durable
+   * SessionReport renders (I-10 cross-surface coherence). Null until the
+   * kernel metrics land / for non-kernel sessions → card falls back to
+   * transcript extraction. */
+  const [negotiationCandidateAskLpa, setNegotiationCandidateAskLpa] = useState<number | null>(null);
   /* Canonical negotiation kernel: serialized state passed back to the
      server on each turn. Null until the kernel path initialises it
      on first follow-up. */
@@ -3661,6 +3668,9 @@ export function useInterviewEngine() {
           "../server-handlers/_decision-log-readers"
         );
         const flagSummary = guardrailFlagSummary(finalState);
+        /* Surface the kernel-authoritative ask to the transient DealSummaryCard
+         * so its "Your Ask" tile matches the durable report (I-10). */
+        setNegotiationCandidateAskLpa(m.candidateAskLpa ?? null);
         negotiationMetrics = {
           ...m,
           score: scoreNegotiationBehaviour(m),
@@ -4098,6 +4108,7 @@ export function useInterviewEngine() {
     isSalaryNegotiation: interviewType === "salary-negotiation",
     negotiationStyle: negotiationStyle || undefined,
     negotiationBand: negotiationBandRef.current,
+    negotiationCandidateAskLpa,
     targetSalary,
     setTargetSalary,
     highestOffer: highestOfferRef.current,

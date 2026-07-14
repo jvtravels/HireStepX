@@ -234,7 +234,7 @@ function InterviewInner() {
     isPanelInterview, panelMembers, activePersona,
     ttsDurationMs, speechEnded,
     saveWarning, liveMetrics,
-    isSalaryNegotiation, negotiationBand, negotiationStyle,
+    isSalaryNegotiation, negotiationBand, negotiationStyle, negotiationCandidateAskLpa,
 
     setCurrentTranscript, setSpeechUnavailable, setIsMuted,
     setShowTranscript, setShowEndModal,
@@ -710,6 +710,7 @@ function InterviewInner() {
                 transcript={transcript}
                 negotiationBand={negotiationBand}
                 negotiationStyle={negotiationStyle}
+                candidateAskLpa={negotiationCandidateAskLpa}
                 onReplay={(style) => {
                   const params = new URLSearchParams(window.location.search);
                   params.set("negotiationStyle", style);

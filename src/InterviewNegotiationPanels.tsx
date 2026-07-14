@@ -1,7 +1,7 @@
 import React, { memo, useState } from "react";
 import { e, ef } from "./interviewTokens";
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote } from "./_ctc-breakdown";
-import { extractCandidateAskLpa } from "./negotiationDealSummary";
+import { resolveCandidateAskLpa } from "./negotiationDealSummary";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
 
@@ -182,7 +182,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
 
 /* ─── Post-Interview Deal Summary (shown after salary negotiation) ─── */
 
-export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negotiationBand, onReplay, negotiationStyle, recentBuybackNote }: {
+export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negotiationBand, onReplay, negotiationStyle, recentBuybackNote, candidateAskLpa }: {
   transcript: { speaker: string; text: string; time: string }[];
   negotiationBand?: { initialOffer: number; maxStretch: number; walkAway: number } | null;
   onReplay?: (style: string) => void;
@@ -191,6 +191,11 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
    *  provided, lifts the ESOP discount above the 30% baseline for active
    *  buyback companies (e.g. Razorpay → 0.55). */
   recentBuybackNote?: string;
+  /** Kernel-authoritative candidate ask (₹LPA) — the SAME value the durable
+   *  SessionReport renders. When present the "Your Ask" tile defers to it so
+   *  the two surfaces never disagree (I-10). Null on legacy sessions where the
+   *  kernel target wasn't captured → falls back to transcript extraction. */
+  candidateAskLpa?: number | null;
 }) {
   // Extract key numbers from the conversation
   const aiTexts = transcript.filter(t => t.speaker === "ai").map(t => t.text);
@@ -299,7 +304,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
   // Safety: final offer should be at least as high as initial when negotiationBand confirms the initial
   if (negotiationBand && finalOffer < initialOffer) finalOffer = initialOffer;
 
-  const candidateAsk = extractCandidateAskLpa(userTexts);
+  const candidateAsk = resolveCandidateAskLpa(candidateAskLpa, userTexts);
 
   const improvement = initialOffer > 0 ? Math.round(((finalOffer - initialOffer) / initialOffer) * 100) : 0;
 
