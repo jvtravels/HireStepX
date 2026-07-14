@@ -71,15 +71,6 @@ function BlogShell({ children }: { children: ReactNode }) {
           .blog-strip-text { padding: 32px 24px !important; }
           .blog-index-cta { flex-direction: column !important; align-items: flex-start !important; }
         }
-        /* Editorial drop-cap — opens the first section like a print feature. */
-        .blog-firstpara p:first-of-type::first-letter {
-          float: left; font-family: ${fonts.serif}; font-style: italic; font-weight: 400;
-          font-size: 58px; line-height: 0.88; color: ${t.copper};
-          padding: 4px 12px 0 0; margin-top: 2px;
-        }
-        @media (max-width: 640px) {
-          .blog-firstpara p:first-of-type::first-letter { font-size: 46px; line-height: 0.88; padding-right: 8px; }
-        }
       `}</style>
       <style>{editorialCSS}</style>
       <a href="#main" className="blog-skip">Skip to content</a>
@@ -2192,8 +2183,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
               </h2>
               <MarkdownProse
                 text={section.content}
-                className={i === 0 ? "blog-firstpara" : undefined}
-                style={{ maxWidth: "72ch" }}
+style={{ maxWidth: "72ch" }}
               />
             </section>
           );
