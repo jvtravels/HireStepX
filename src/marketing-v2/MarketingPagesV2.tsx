@@ -782,6 +782,14 @@ export function PricingPageV2() {
               <FAQItem key={q} q={q} a={a} first={i === 0} />
             ))}
           </div>
+          <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, textAlign: "center", marginTop: 32, lineHeight: 1.6 }}>
+            Not sure what to practice?{" "}
+            <a href="/questions" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Browse question sets →</a>
+            {" · "}
+            <a href="/for-students" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Campus placement guide →</a>
+            {" · "}
+            <a href="/how-it-works" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>See how it works →</a>
+          </p>
         </div>
       </section>
     </PageShell>
