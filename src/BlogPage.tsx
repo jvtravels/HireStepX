@@ -30,8 +30,6 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-skip { position: absolute; left: -9999px; top: 0; }
         .blog-skip:focus { left: 16px; top: 16px; z-index: 100; background: ${t.coal}; color: ${t.cream}; padding: 10px 16px; border-radius: 8px; font-family: ${fonts.sans}; font-size: 14px; text-decoration: none; }
         .blog-card { position: relative; }
-        .blog-card-img { transition: transform 420ms cubic-bezier(0.16,1,0.3,1); }
-        .blog-card:hover .blog-card-img { transform: scale(1.04); }
         .blog-card-title { transition: color 200ms cubic-bezier(0.16,1,0.3,1); }
         .blog-card:hover .blog-card-title { color: ${t.copper}; }
         .blog-card-link { color: inherit; text-decoration: none; outline: none; }
@@ -1891,7 +1889,6 @@ function CompactCard({ post }: { post: BlogPost }) {
             src={post.heroImage} alt={post.heroAlt}
             fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
             onError={() => setImgFailed(true)}
-            className="blog-card-img"
             style={{ objectFit: "cover" }}
           />
         )}
