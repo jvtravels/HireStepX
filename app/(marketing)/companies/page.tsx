@@ -94,6 +94,12 @@ const GROUPS: GroupDef[] = [
     description: "Case-study driven hiring with a completely different evaluation framework from tech.",
     companies: ["mckinsey", "bcg", "bain", "deloitte", "goldman", "jpmc"],
   },
+  {
+    id: "campus-freshers",
+    label: "Freshers & Campus HR Prep",
+    description: "HR round questions that appear in 95%+ of Indian campus drives — with structured answer frameworks for freshers.",
+    companies: ["campus"],
+  },
 ];
 
 export default async function CompaniesIndexPage() {
@@ -120,7 +126,12 @@ export default async function CompaniesIndexPage() {
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Companies", path: "/companies" }]))} />
 
-      <style>{editorialCSS}</style>
+      <style>{editorialCSS + `
+        @media (max-width: 720px) {
+          .co-group-split { flex-direction: column !important; gap: 32px !important; }
+          .co-group-label { width: 100% !important; }
+        }
+      `}</style>
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
@@ -151,53 +162,68 @@ export default async function CompaniesIndexPage() {
               id={group.id}
               className="ed-section ed-reveal"
               style={{
-                paddingTop: 72,
-                paddingBottom: 72,
+                paddingTop: 80,
+                paddingBottom: 80,
                 borderBottom: `1px solid ${t.line}`,
                 background: gi % 2 === 1 ? t.creamSoft : t.cream,
               }}
             >
               <div className="ed-container">
-                <SectionHead
-                  index={String(gi + 1).padStart(2, "0")}
-                  eyebrow={`${sorted.length} guides`}
-                  title={group.label}
-                  sub={group.description}
-                />
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-                  {sorted.map((page) => (
-                    <Link
-                      key={page.slug}
-                      href={`/questions/${page.slug}`}
-                      className="ed-card ed-cta"
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
-                        padding: "22px 24px",
-                        background: t.white,
-                        border: `1px solid ${t.line}`,
-                        borderRadius: 16,
-                        textDecoration: "none",
-                        boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 12px 32px -20px rgba(20,17,10,.10)",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: t.copper }}>
-                          {COMPANY_LABEL[page.company] ?? page.company}
+                {/* Two-column: editorial anchor left, card grid right */}
+                <div className="co-group-split" style={{ display: "flex", gap: 64, alignItems: "flex-start" }}>
+
+                  {/* Left panel — sticky anchor */}
+                  <div className="co-group-label" style={{ flexShrink: 0, width: 256 }}>
+                    <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 72, color: t.copper, opacity: 0.25, lineHeight: 1, display: "block", marginBottom: 16 }}>
+                      {gi + 1}
+                    </span>
+                    <h2 style={{ fontFamily: fonts.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: "0 0 12px", lineHeight: 1.3, letterSpacing: "-0.01em" }}>
+                      {group.label}
+                    </h2>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.65, margin: "0 0 18px" }}>
+                      {group.description}
+                    </p>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.inkFaint }}>
+                      {sorted.length} {sorted.length === 1 ? "guide" : "guides"}
+                    </span>
+                  </div>
+
+                  {/* Right: card grid */}
+                  <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+                    {sorted.map((page) => (
+                      <Link
+                        key={page.slug}
+                        href={`/questions/${page.slug}`}
+                        className="ed-card ed-cta"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 10,
+                          padding: "20px 22px",
+                          background: "transparent",
+                          border: `1px solid ${t.line}`,
+                          borderRadius: 14,
+                          textDecoration: "none",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.copper }}>
+                            {COMPANY_LABEL[page.company] ?? page.company}
+                          </span>
+                          <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 999, padding: "2px 8px", textTransform: "capitalize" as const }}>
+                            {FOCUS_LABEL[page.focus] ?? page.focus}
+                          </span>
+                        </div>
+                        <span style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.35, color: t.coal, letterSpacing: "-0.01em", flex: 1 }}>
+                          {page.searchPhrase}
                         </span>
-                        <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999, padding: "2px 9px", textTransform: "capitalize" }}>
-                          {FOCUS_LABEL[page.focus] ?? page.focus}
+                        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.copper, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          Prepare <span className="ed-cta-arrow" aria-hidden>→</span>
                         </span>
-                      </div>
-                      <span style={{ fontFamily: fonts.serif, fontSize: 19, lineHeight: 1.3, color: t.coal, letterSpacing: "-0.01em", flex: 1 }}>
-                        {page.searchPhrase}
-                      </span>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.copper, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        Prepare <span className="ed-cta-arrow" aria-hidden>→</span>
-                      </span>
-                    </Link>
-                  ))}
+                      </Link>
+                    ))}
+                  </div>
+
                 </div>
               </div>
             </section>

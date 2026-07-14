@@ -11,7 +11,6 @@ import { COMPANY_LABEL } from "../../../../data/company-labels";
 import {
   editorialCSS,
   edEyebrow,
-  EditorialHero,
   SectionHead,
   SpecTimeline,
   DarkBand,
@@ -192,6 +191,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     datePublished: "2026-05-05",
     dateModified: "2026-07-14",
     inLanguage: "en-IN",
+    url: `https://hirestepx.com/companies/${slug}`,
     mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/companies/${slug}` },
     articleSection: focusLabel,
     keywords: [page.metaKeywords[0], companyLabel, "interview preparation India"].join(", "),
@@ -304,38 +304,84 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 
-      <style>{editorialCSS}</style>
+      <style>{editorialCSS + `
+        @media (max-width: 768px) {
+          .co-hero-split { flex-direction: column !important; gap: 40px !important; }
+          .co-hero-sidebar { width: 100% !important; }
+        }
+      `}</style>
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
-        <EditorialHero
-          eyebrow={`${companyLabel} · ${focusLabel}`}
-          titleLead={page.searchPhrase}
-          lead={page.intro}
-          meta={
-            <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+        {/* Two-column hero — breadcrumb + h1 left, stats sidebar right */}
+        <header className="ed-hero" style={{ paddingTop: 72, paddingBottom: 64, borderBottom: `1px solid ${t.line}` }}>
+          <div className="ed-container">
+            {/* Breadcrumb */}
+            <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 36 }}>
               <Link href="/" className="ed-link" style={{ color: t.inkFaint }}>Home</Link>
-              <span style={{ opacity: 0.5 }}> / </span>
+              <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
               <Link href="/companies" className="ed-link" style={{ color: t.inkFaint }}>Companies</Link>
-              <span style={{ opacity: 0.5 }}> / </span>
+              <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
               <span aria-current="page" style={{ color: t.coal }}>{companyLabel}</span>
             </nav>
-          }
-        >
-          <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
-            Practice this interview free <span className="ed-cta-arrow" aria-hidden>→</span>
-          </Link>
-          <span style={{ color: t.inkFaint, fontFamily: fonts.sans, fontSize: 14 }}>
-            2 sessions, no credit card
-          </span>
-        </EditorialHero>
+
+            <div className="co-hero-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
+              {/* Left column */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 20px" }}>
+                  {companyLabel} · {focusLabel}
+                </p>
+                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(34px, 4.5vw, 56px)", fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.024em", color: t.coal, margin: "0 0 22px", maxWidth: "22ch" }}>
+                  {page.searchPhrase}
+                </h1>
+                <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.7, color: t.inkSoft, margin: "0 0 32px", maxWidth: "52ch" }}>
+                  {page.intro.split(".")[0].trim()}.
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+                  <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                    Practice free <span className="ed-cta-arrow" aria-hidden>→</span>
+                  </Link>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>2 sessions, no card</span>
+                </div>
+              </div>
+
+              {/* Right sidebar — stats */}
+              <aside className="co-hero-sidebar" style={{ flexShrink: 0, width: 240, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "24px 26px" }}>
+                <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: `1px solid ${t.line}` }}>
+                  <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 52, color: t.coal, lineHeight: 1 }}>
+                    {questions.length}
+                  </span>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, marginLeft: 8 }}>questions</span>
+                </div>
+                <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div>
+                    <dt style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 3 }}>Focus</dt>
+                    <dd style={{ margin: 0, fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{focusLabel}</dd>
+                  </div>
+                  <div>
+                    <dt style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 3 }}>Framework</dt>
+                    <dd style={{ margin: 0, fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{page.framework.name}</dd>
+                  </div>
+                  {(page.interviewRounds?.length ?? page.recruitmentSteps?.length ?? 0) > 0 && (
+                    <div>
+                      <dt style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 3 }}>Rounds</dt>
+                      <dd style={{ margin: 0, fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>
+                        {page.interviewRounds?.length ?? page.recruitmentSteps?.length} stages
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </aside>
+            </div>
+          </div>
+        </header>
 
         {/* Framework + verified company facts */}
         <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
             <SectionHead eyebrow="The framework that scores" title={page.framework.name} />
             <div className="ed-reading">
-              <p style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.72, color: t.indigoGray, margin: 0 }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.72, color: t.inkSoft, margin: 0 }}>
                 {page.framework.summary}
               </p>
               {/* verified facts from COMPANY_KNOWN_FACTS; renders nothing when absent */}
@@ -415,46 +461,46 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
               accent={`${companyLabel} asked.`}
               sub="Verified from candidate post-mortems. Answer any one aloud and the AI scores it in two minutes."
             />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
+            <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {questions.map((q, i) => (
-                <div
+                <li
                   key={i}
                   className="ed-card"
                   style={{
                     display: "flex",
-                    flexDirection: "column",
-                    gap: 12,
-                    padding: "24px 24px 20px",
-                    background: t.white,
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 16,
-                    boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 12px 32px -20px rgba(20,17,10,.10)",
+                    gap: 24,
+                    alignItems: "flex-start",
+                    padding: "28px 0",
+                    borderBottom: `1px solid ${t.line}`,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, color: t.inkFaintWeak, letterSpacing: "0.06em" }}>
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    {q.difficulty && (
-                      <span style={{ ...DIFFICULTY_CHIP[q.difficulty], fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, padding: "3px 10px", borderRadius: 999 }}>
-                        {DIFFICULTY_LABEL[q.difficulty] ?? q.difficulty}
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ fontFamily: fonts.serif, fontSize: 20, lineHeight: 1.35, color: t.coal, margin: 0, letterSpacing: "-0.01em", flex: 1 }}>
-                    {q.text}
-                  </p>
-                  {q.styleNote && (
-                    <p style={{ fontFamily: fonts.sans, fontSize: 13, fontStyle: "italic", color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
-                      {q.styleNote}
+                  {/* Number */}
+                  <span style={{ flexShrink: 0, fontFamily: fonts.serif, fontStyle: "italic", fontSize: 22, color: t.copper, opacity: 0.6, lineHeight: 1, minWidth: 32, paddingTop: 3 }}>
+                    {i + 1}
+                  </span>
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: fonts.serif, fontSize: 20, lineHeight: 1.4, color: t.coal, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
+                      {q.text}
                     </p>
+                    {q.styleNote && (
+                      <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "0 0 12px", lineHeight: 1.5, fontStyle: "italic" }}>
+                        {q.styleNote}
+                      </p>
+                    )}
+                    <Link href={practiceHref} className="ed-cta" style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      Answer this <span className="ed-cta-arrow" aria-hidden>→</span>
+                    </Link>
+                  </div>
+                  {/* Difficulty chip */}
+                  {q.difficulty && (
+                    <span style={{ flexShrink: 0, alignSelf: "flex-start", ...DIFFICULTY_CHIP[q.difficulty], fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, padding: "3px 10px", borderRadius: 999, marginTop: 4 }}>
+                      {DIFFICULTY_LABEL[q.difficulty] ?? q.difficulty}
+                    </span>
                   )}
-                  <Link href={practiceHref} className="ed-cta" style={{ marginTop: 4, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    Practice this <span className="ed-cta-arrow" aria-hidden>→</span>
-                  </Link>
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
         </section>
 
