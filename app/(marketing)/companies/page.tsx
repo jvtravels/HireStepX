@@ -165,7 +165,7 @@ export default async function CompaniesIndexPage() {
                   <Link
                     key={group.id}
                     href={`#${group.id}`}
-                    className="ed-cta"
+                    className="ed-cta ed-tab"
                     style={{ display: "flex", flexDirection: "column" as const, gap: 2, padding: "16px 24px 14px", textDecoration: "none", borderRight: gi < GROUPS.length - 1 ? `1px solid ${t.line}` : "none", flexShrink: 0, whiteSpace: "nowrap" as const }}
                   >
                     <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{group.label}</span>
@@ -221,14 +221,15 @@ export default async function CompaniesIndexPage() {
                       <Link
                         key={page.slug}
                         href={`/questions/${page.slug}`}
-                        className="ed-cta"
+                        className="ed-cta ed-row"
                         style={{
                           display: "flex",
                           alignItems: "center",
                           gap: 18,
-                          padding: "14px 0",
+                          padding: "14px 8px",
                           borderBottom: `1px solid ${t.line}`,
                           textDecoration: "none",
+                          margin: "0 -8px",
                         }}
                       >
                         <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: t.copper, opacity: 0.55, lineHeight: 1, flexShrink: 0, minWidth: 22 }}>

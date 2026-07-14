@@ -53,6 +53,15 @@ export const editorialCSS = `
   .ed-link::after { content: ""; position: absolute; left: 0; bottom: -2px; height: 1px; width: 100%; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 0.4s ${EASE}; }
   .ed-link:hover::after { transform: scaleX(1); }
 
+  /* Row background tint — list items, company/question rows */
+  .ed-row { transition: background 0.15s ease; border-radius: 6px; }
+  .ed-row:hover { background: rgba(180, 83, 9, 0.045); }
+
+  /* Tab hover — category nav strip, filter pills */
+  .ed-tab { transition: background 0.15s ease; }
+  .ed-tab:hover { background: rgba(14, 12, 8, 0.06); }
+  .ed-tab-active { background: rgba(14, 12, 8, 0.08); }
+
   /* Timeline connecting rule */
   .ed-tl-item:last-child .ed-tl-rule { display: none; }
 
@@ -82,7 +91,7 @@ export const editorialCSS = `
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ed-rise, .ed-reveal, .ed-card, .ed-cta-arrow, .ed-link::after { animation: none !important; transition: none !important; }
+    .ed-rise, .ed-reveal, .ed-card, .ed-cta-arrow, .ed-link::after, .ed-row, .ed-tab { animation: none !important; transition: none !important; }
     .ed-rise { opacity: 1 !important; transform: none !important; }
   }
 `;

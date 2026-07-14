@@ -102,11 +102,13 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
 
   return (
     <li
+      className="ed-row"
       style={{
         position: "relative",
         display: "flex",
         gap: 20,
-        padding: "20px 0",
+        padding: "20px 8px",
+        margin: "0 -8px",
         borderBottom: `1px solid ${t.line}`,
         overflow: "hidden",
       }}
@@ -586,8 +588,8 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
                   <Link
                     key={label}
                     href={`/questions?focus=${focus}`}
-                    className="ed-cta"
-                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 24px", textDecoration: "none", borderBottom: i < arr.length - 1 ? `1px solid ${t.line}` : "none" }}
+                    className="ed-cta ed-row"
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 24px", textDecoration: "none", borderBottom: i < arr.length - 1 ? `1px solid ${t.line}` : "none", borderRadius: 0 }}
                   >
                     <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 14, color: t.copper, opacity: 0.6, lineHeight: 1, flexShrink: 0, width: 16 }}>{i + 1}</span>
                     <span style={{ flex: 1, minWidth: 0 }}>
@@ -625,7 +627,7 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
                   {/* All chip */}
                   <Link
                     href="/questions"
-                    className="ed-cta"
+                    className={`ed-cta${!activeFilter ? "" : " ed-tab"}`}
                     style={{
                       fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
                       padding: "6px 14px", borderRadius: 999, textDecoration: "none",
@@ -643,7 +645,7 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
                       <Link
                         key={f}
                         href={`/questions?focus=${f}`}
-                        className="ed-cta"
+                        className={`ed-cta${isActive ? "" : " ed-tab"}`}
                         style={{
                           fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
                           padding: "6px 14px", borderRadius: 999, textDecoration: "none",
@@ -679,14 +681,15 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
                   <li key={p.slug}>
                     <Link
                       href={`/questions/${p.slug}`}
-                      className="ed-cta"
+                      className="ed-cta ed-row"
                       style={{
                         display: "flex",
                         gap: 22,
-                        padding: "18px 0",
+                        padding: "18px 8px",
                         borderBottom: `1px solid ${t.line}`,
                         textDecoration: "none",
                         alignItems: "flex-start",
+                        margin: "0 -8px",
                       }}
                     >
                       <span style={{ fontFamily: fonts.serif, fontSize: 22, fontStyle: "italic", color: t.copper, opacity: 0.5, lineHeight: 1, flexShrink: 0, minWidth: 34 }}>
