@@ -9,6 +9,7 @@ import { tokens as t, fonts } from "./auth/_tokens";
 import { NavV2, MobileStickyCTA } from "./marketing-v2/HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./marketing-v2/FooterDome";
 import { useSEO } from "./useSEO";
+import { editorialCSS, MarkdownProse, DarkBand, ctaPrimaryStyle } from "./marketing-v2/_editorial";
 
 /* PageShell — mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Satoshi, copper
@@ -70,7 +71,17 @@ function BlogShell({ children }: { children: ReactNode }) {
           .blog-strip-text { padding: 32px 24px !important; }
           .blog-index-cta { flex-direction: column !important; align-items: flex-start !important; }
         }
+        /* Editorial drop-cap — opens the first section like a print feature. */
+        .blog-firstpara p:first-of-type::first-letter {
+          float: left; font-family: ${fonts.serif}; font-style: italic; font-weight: 400;
+          font-size: 74px; line-height: 0.66; color: ${t.copper};
+          padding: 8px 14px 0 0; margin-top: 4px;
+        }
+        @media (max-width: 640px) {
+          .blog-firstpara p:first-of-type::first-letter { font-size: 58px; padding-right: 10px; }
+        }
       `}</style>
+      <style>{editorialCSS}</style>
       <a href="#main" className="blog-skip">Skip to content</a>
       <NavV2 />
       <main id="main">{children}</main>
@@ -2085,30 +2096,17 @@ function BlogIndex() {
           )
         )}
 
-        {/* Bottom CTA — editorial, left-aligned */}
-        <div className="blog-index-cta" style={{
-          marginTop: 88, borderTop: `1px solid ${t.lineStrong}`, paddingTop: 56,
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 40, flexWrap: "wrap",
-        }}>
-          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.02, maxWidth: "16ch", textWrap: "balance", margin: 0 }}>
-            Stop reading,{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>start practicing</span>.
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: "min(260px, 100%)" }}>
-            <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
-              AI mock interviews with instant feedback. Three sessions free, no card required.
-            </p>
-            <Link href="/signup" onClick={() => captureClientEvent("blog_cta_click", { location: "blog_index" })} style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
-              padding: "14px 28px", borderRadius: 999, textDecoration: "none",
-              background: t.indigo, color: t.white, flexShrink: 0,
-            }}>
-              Start free practice <span aria-hidden>→</span>
-            </Link>
-          </div>
-        </div>
       </div>
+
+      {/* Closing CTA — full-bleed coal band */}
+      <DarkBand eyebrow="Stop reading" title="Start" accent="practicing.">
+        <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>
+          AI mock interviews with instant feedback. Three sessions free, no card required.
+        </p>
+        <Link href="/signup" onClick={() => captureClientEvent("blog_cta_click", { location: "blog_index" })} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+          Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
+        </Link>
+      </DarkBand>
     </BlogShell>
   );
 }
@@ -2199,9 +2197,11 @@ function BlogPostPage({ post }: { post: BlogPost }) {
               <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.2, letterSpacing: "-0.018em", textWrap: "balance" }}>
                 {headingText}
               </h2>
-              <div style={{ fontFamily: fonts.sans, fontSize: 17, color: t.inkSoft, lineHeight: 1.8, whiteSpace: "pre-line", maxWidth: "72ch" }}>
-                {section.content}
-              </div>
+              <MarkdownProse
+                text={section.content}
+                className={i === 0 ? "blog-firstpara" : undefined}
+                style={{ maxWidth: "72ch" }}
+              />
             </section>
           );
         })}
@@ -2251,9 +2251,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                       }}
                     >
                       <div style={{ overflow: "hidden" }}>
-                        <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.75, paddingBottom: 22 }}>
-                          {faq.answer}
-                        </p>
+                        <MarkdownProse text={faq.answer} style={{ fontSize: 16, lineHeight: 1.75, paddingBottom: 22 }} />
                       </div>
                     </div>
                   </div>
@@ -2262,25 +2260,6 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             </div>
           </section>
         )}
-
-        {/* CTA — editorial, left-aligned */}
-        <div style={{ marginTop: 56, borderTop: `1px solid ${t.lineStrong}`, paddingTop: 40 }}>
-          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3vw, 36px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: 14, textWrap: "balance" }}>
-            Ready to{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>practice</span>?
-          </p>
-          <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.65, marginBottom: 26 }}>
-            {post.cta}
-          </p>
-          <Link href="/signup" onClick={() => captureClientEvent("blog_cta_click", { slug: post.slug, title: post.title, location: "post_body" })} style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
-            padding: "13px 26px", borderRadius: 999, textDecoration: "none",
-            background: t.indigo, color: t.white,
-          }}>
-            Start free practice <span aria-hidden>→</span>
-          </Link>
-        </div>
 
         {/* Company practice links — cross-links to /questions/[slug] pages (canonical) */}
         {post.practicePageSlugs && post.practicePageSlugs.length > 0 && (
@@ -2337,6 +2316,16 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           </section>
         )}
       </article>
+
+      {/* Closing CTA — full-bleed coal band, the editorial rhythm break */}
+      <DarkBand eyebrow="Reading is step one" title="Now go" accent="practice it.">
+        <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "34ch", margin: 0 }}>
+          {post.cta}
+        </p>
+        <Link href="/signup" onClick={() => captureClientEvent("blog_cta_click", { slug: post.slug, title: post.title, location: "post_body" })} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+          Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
+        </Link>
+      </DarkBand>
     </BlogShell>
   );
 }
