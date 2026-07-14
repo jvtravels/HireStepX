@@ -263,8 +263,8 @@ function MotionReveal({
 const container: CSSProperties = {
   maxWidth: 1240,
   margin: "0 auto",
-  paddingLeft: 32,
-  paddingRight: 32,
+  paddingLeft: 48,
+  paddingRight: 48,
 };
 
 const sectionBase: CSSProperties = {
