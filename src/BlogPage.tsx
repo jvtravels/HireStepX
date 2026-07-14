@@ -5,7 +5,7 @@ import { captureClientEvent } from "./posthogClient";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { tokens as t, fonts, shadows } from "./auth/_tokens";
+import { tokens as t, fonts } from "./auth/_tokens";
 import { NavV2, MobileStickyCTA, VideoCtaV2 } from "./marketing-v2/HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./marketing-v2/FooterDome";
 import { useSEO } from "./useSEO";
@@ -68,7 +68,7 @@ function BlogShell({ children }: { children: ReactNode }) {
         @media (max-width: 640px) {
           .blog-grid { grid-template-columns: 1fr !important; }
           .blog-container { padding: 32px 20px 64px !important; max-width: 100% !important; }
-          .blog-article { padding: 32px 20px 56px !important; }
+          .blog-article { padding: 24px 20px 56px !important; }
           .blog-hero { display: none !important; }
           .blog-meta { padding: 16px 20px !important; }
           .blog-related-grid { grid-template-columns: 1fr !important; }
@@ -2930,7 +2930,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       {/* Hero: contained column header; image sits inside the reading column with
           rounded corners so it never fights the cream page background. */}
       <header style={{ background: t.cream, paddingTop: 88 }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 36px", textAlign: "center" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 20px", textAlign: "center" }}>
           {/* Plain text eyebrow: company · category: no pills */}
           <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
             {post.company} <span style={{ color: t.lineStrong, fontWeight: 400 }}>·</span> {post.category}
@@ -2946,134 +2946,95 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         </div>
       </header>
 
-      <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "52px 40px 100px" }}>
-        {/* Intro dek: editorial rule + italic serif pullquote */}
-        <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 28, marginBottom: 64 }}>
-          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(18px, 1.9vw, 22px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.7, letterSpacing: "-0.005em", margin: "0 auto", maxWidth: "64ch" }}>
-            {post.intro}
-          </p>
-        </div>
+      <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "28px 40px 100px" }}>
 
-        {/* Sections: numbered question chapters with eyebrow labels */}
-        {post.sections.map((section, i) => {
-          /* Extract leading number: "1. Tell me..." → num="01", text="Tell me..." */
-          const match = section.heading.match(/^(\d+)\.\s+(.+)$/);
-          const num = match ? match[1].padStart(2, "0") : null;
-          const headingText = match ? match[2] : section.heading;
-          const visual = SECTION_VISUALS[`${post.slug}||${section.heading}`];
-          return (
-            <section key={i} style={{ paddingTop: i === 0 ? 0 : 56, borderTop: i > 0 ? `1px solid ${t.line}` : "none", marginBottom: 0 }}>
-              {num && (
-                <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.inkFaint, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
-                  Question {num}
-                </p>
-              )}
-              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.6vw, 44px)", fontWeight: 400, color: t.coal, marginBottom: 24, lineHeight: 1.15, letterSpacing: "-0.02em", textWrap: "balance" }}>
-                {headingText}
-              </h2>
-              <MarkdownProse
-                text={section.content}
-                style={{ maxWidth: "72ch" }}
-              />
-              {visual}
-            </section>
-          );
-        })}
+        {/* Single reading column — all prose content stays in this 720px lane */}
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
 
-        {/* FAQ Section: matches homepage FAQ design */}
-        {post.faqs.length > 0 && (
-          <section style={{ marginTop: 0, paddingTop: 56, borderTop: `1px solid ${t.line}`, marginBottom: 56 }}>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.6vw, 44px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.02em" }}>
-              Frequently asked questions
-            </h2>
-            <div style={{
-              background: t.white,
-              border: `1px solid ${t.line}`,
-              borderRadius: 16,
-              boxShadow: shadows.card,
-              overflow: "hidden",
-            }}>
-              {post.faqs.map((faq, i) => (
-                <details
-                  key={i}
-                  className="mv2p-faq"
-                  style={{
-                    borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
-                    padding: "20px 24px",
-                  }}
-                >
-                  <summary style={{
-                    cursor: "pointer",
-                    fontFamily: fonts.serif,
-                    fontSize: 18,
-                    color: t.coal,
-                    letterSpacing: "-0.01em",
-                    listStyle: "none",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 16,
-                    fontWeight: 400,
-                  }}>
-                    {faq.question}
-                    <span aria-hidden className="mv2p-faq-marker" style={{
-                      color: t.copper, fontSize: 22, fontFamily: fonts.sans,
-                      fontWeight: 300, lineHeight: 1, display: "inline-block", flexShrink: 0,
-                    }}>+</span>
-                  </summary>
-                  <div style={{ margin: "12px 0 0" }}>
-                    <MarkdownProse text={faq.answer} style={{ fontSize: 15, lineHeight: 1.65, color: t.inkSoft }} />
-                  </div>
-                </details>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Company practice links: cross-links to /questions/[slug] pages (canonical) */}
-        {post.practicePageSlugs && post.practicePageSlugs.length > 0 && (
-          <section style={{ marginTop: 48 }}>
-            <p style={{
-              fontFamily: fonts.sans, fontSize: 12, fontWeight: 700,
-              color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14,
-            }}>
-              Practice these questions on HireStepX
+          {/* Intro dek: editorial rule + italic serif pullquote */}
+          <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 28, marginBottom: 56 }}>
+            <p style={{ fontFamily: fonts.serif, fontSize: "clamp(18px, 1.9vw, 22px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.7, letterSpacing: "-0.005em", margin: 0 }}>
+              {post.intro}
             </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-              {post.practicePageSlugs.map(({ label, slug }) => (
-                <Link key={slug} href={`/questions/${slug}`} style={{
-                  display: "inline-block", padding: "9px 16px",
-                  background: t.creamSoft, border: `1px solid ${t.lineStrong}`,
-                  borderRadius: 8, textDecoration: "none",
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal,
-                }}>
-                  {label} →
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+          </div>
 
-        {post.relatedLinks && post.relatedLinks.length > 0 && (
-          <section style={{ marginTop: 16 }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-              {post.relatedLinks.map(({ label, href }) => (
-                <Link key={href} href={href} style={{
-                  display: "inline-block", padding: "9px 16px",
-                  background: t.copper100, border: `1px solid ${t.lineStrong}`,
-                  borderRadius: 8, textDecoration: "none",
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal,
-                }}>
-                  {label} →
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+          {/* Sections */}
+          {post.sections.map((section, i) => {
+            const match = section.heading.match(/^(\d+)\.\s+(.+)$/);
+            const num = match ? match[1].padStart(2, "0") : null;
+            const headingText = match ? match[2] : section.heading;
+            const visual = SECTION_VISUALS[`${post.slug}||${section.heading}`];
+            return (
+              <section key={i} style={{ paddingTop: i === 0 ? 0 : 52, borderTop: i > 0 ? `1px solid ${t.line}` : "none" }}>
+                {num && (
+                  <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>
+                    Question {num}
+                  </p>
+                )}
+                <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.2, letterSpacing: "-0.02em", textWrap: "balance" }}>
+                  {headingText}
+                </h2>
+                <MarkdownProse text={section.content} />
+                {visual}
+              </section>
+            );
+          })}
 
-        {/* Related Posts: card grid */}
+          {/* FAQ */}
+          {post.faqs.length > 0 && (
+            <section style={{ paddingTop: 52, borderTop: `1px solid ${t.line}`, marginBottom: 52 }}>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 20, letterSpacing: "-0.02em" }}>
+                Frequently asked questions
+              </h2>
+              <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, overflow: "hidden" }}>
+                {post.faqs.map((faq, i) => (
+                  <details key={i} className="mv2p-faq" style={{ borderTop: i === 0 ? "none" : `1px solid ${t.line}`, padding: "20px 24px" }}>
+                    <summary style={{ cursor: "pointer", fontFamily: fonts.serif, fontSize: 17, color: t.coal, letterSpacing: "-0.01em", listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, fontWeight: 400 }}>
+                      {faq.question}
+                      <span aria-hidden className="mv2p-faq-marker" style={{ color: t.copper, fontSize: 22, fontFamily: fonts.sans, fontWeight: 300, lineHeight: 1, display: "inline-block", flexShrink: 0 }}>+</span>
+                    </summary>
+                    <div style={{ margin: "12px 0 0" }}>
+                      <MarkdownProse text={faq.answer} style={{ fontSize: 15, lineHeight: 1.65, color: t.inkSoft }} />
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Practice + related links */}
+          {post.practicePageSlugs && post.practicePageSlugs.length > 0 && (
+            <section style={{ marginTop: 48, paddingTop: 48, borderTop: `1px solid ${t.line}` }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
+                Practice these questions on HireStepX
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {post.practicePageSlugs.map(({ label, slug }) => (
+                  <Link key={slug} href={`/questions/${slug}`} className="ed-cta" style={{ display: "inline-block", padding: "9px 16px", background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 8, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal }}>
+                    {label} <span className="ed-cta-arrow" aria-hidden>→</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {post.relatedLinks && post.relatedLinks.length > 0 && (
+            <section style={{ marginTop: 16 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {post.relatedLinks.map(({ label, href }) => (
+                  <Link key={href} href={href} className="ed-cta" style={{ display: "inline-block", padding: "9px 16px", background: t.copper100, border: `1px solid ${t.lineStrong}`, borderRadius: 8, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal }}>
+                    {label} <span className="ed-cta-arrow" aria-hidden>→</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+        </div>{/* end reading column */}
+
+        {/* Continue reading — spans full article width, outside the reading column */}
         {related.length > 0 && (
-          <section style={{ marginTop: 72, paddingTop: 48, borderTop: `1px solid ${t.line}` }}>
+          <section style={{ marginTop: 80, paddingTop: 48, borderTop: `1px solid ${t.line}` }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 28 }}>
               <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.6vw, 30px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.018em", margin: 0 }}>
                 Continue reading
@@ -3087,6 +3048,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             </div>
           </section>
         )}
+
       </article>
 
       {/* Closing CTA: homepage video CTA with post-specific copy */}
