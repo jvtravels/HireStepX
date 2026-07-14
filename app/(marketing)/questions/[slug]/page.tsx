@@ -94,8 +94,9 @@ export async function generateMetadata(
       url: `https://hirestepx.com/questions/${slug}`,
       siteName: "HireStepX",
       locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: { card: "summary_large_image", title, description, images: ["https://hirestepx.com/og-default.png"] },
   };
 }
 
@@ -209,13 +210,15 @@ export default async function QuestionsSlugPage({
     })),
   } : null;
 
-  /* Article schema — signals editorial content, not a thin landing page. */
+  /* Article schema — signals editorial content, not a thin landing page.
+     image is required for Google Discover/News eligibility. */
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: page.searchPhrase,
     description: page.intro,
-    author: { "@type": "Organization", name: "HireStepX" },
+    image: "https://hirestepx.com/og-default.png",
+    author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     publisher: {
       "@type": "Organization",
       name: "HireStepX",
@@ -224,6 +227,7 @@ export default async function QuestionsSlugPage({
     datePublished: "2026-06-21",
     dateModified: "2026-07-14",
     inLanguage: "en-IN",
+    mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/questions/${slug}` },
     articleSection: focusLabel,
     keywords: [page.metaKeywords[0], companyLabel, "interview preparation India"].join(", "),
   };
