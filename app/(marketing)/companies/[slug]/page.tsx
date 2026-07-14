@@ -8,6 +8,15 @@ import { tokens as t, fonts } from "../../../../src/auth/_tokens";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
+import {
+  editorialCSS,
+  edEyebrow,
+  EditorialHero,
+  SectionHead,
+  SpecTimeline,
+  DarkBand,
+  ctaPrimaryStyle,
+} from "@/marketing-v2/_editorial";
 import { CompanyContextBox } from "@/marketing-v2/QuestionPages";
 
 /* Programmatic SEO landing pages — /companies/{slug}.
@@ -251,206 +260,181 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 
+      <style>{editorialCSS}</style>
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 24px 96px" }}>
 
-          {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 32 }}>
-            <Link href="/" style={{ color: t.inkFaint, textDecoration: "none" }}>Home</Link>
-            {" / "}
-            <Link href="/companies" style={{ color: t.inkFaint, textDecoration: "none" }}>Companies</Link>
-            {" / "}
-            <span aria-current="page" style={{ color: t.coal }}>{companyLabel}</span>
-          </nav>
+        <EditorialHero
+          eyebrow={`${companyLabel} · ${focusLabel}`}
+          titleLead={page.searchPhrase}
+          lead={page.intro}
+          meta={
+            <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+              <Link href="/" className="ed-link" style={{ color: t.inkFaint }}>Home</Link>
+              <span style={{ opacity: 0.5 }}> / </span>
+              <Link href="/companies" className="ed-link" style={{ color: t.inkFaint }}>Companies</Link>
+              <span style={{ opacity: 0.5 }}> / </span>
+              <span aria-current="page" style={{ color: t.coal }}>{companyLabel}</span>
+            </nav>
+          }
+        >
+          <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+            Practice this interview free <span className="ed-cta-arrow" aria-hidden>→</span>
+          </Link>
+          <span style={{ color: t.inkFaint, fontFamily: fonts.sans, fontSize: 14 }}>
+            2 sessions, no credit card
+          </span>
+        </EditorialHero>
 
-          {/* H1 mirrors searchPhrase exactly */}
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 5vw, 48px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.1, color: t.coal, margin: "12px 0 0", textWrap: "balance" as const }}>
-            {page.searchPhrase}
-          </h1>
-
-          {/* Hand-written intro */}
-          <p style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, lineHeight: 1.6, color: t.inkSoft, marginTop: 20, marginBottom: 0, maxWidth: "68ch", textWrap: "balance" as const }}>
-            {page.intro}
-          </p>
-
-          {/* Primary CTA */}
-          <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap", alignItems: "center" }}>
-            <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, textDecoration: "none", padding: "14px 22px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600 }}>
-              Practice this interview free →
-            </Link>
-            <span style={{ color: t.inkFaint, fontFamily: fonts.sans, fontSize: 14 }}>
-              2 sessions, no credit card
-            </span>
+        {/* Framework + verified company facts */}
+        <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, borderBottom: `1px solid ${t.line}` }}>
+          <div className="ed-container">
+            <SectionHead eyebrow="The framework that scores" title={page.framework.name} />
+            <div className="ed-reading">
+              <p style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.72, color: t.indigoGray, margin: 0 }}>
+                {page.framework.summary}
+              </p>
+              {/* verified facts from COMPANY_KNOWN_FACTS; renders nothing when absent */}
+              <CompanyContextBox company={page.company} companyLabel={companyLabel} />
+            </div>
           </div>
+        </section>
 
-          {/* Framework */}
-          <section style={{ marginTop: 48 }}>
-            <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.copper, margin: "0 0 10px" }}>
-              Framework to use
-            </p>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 10px", color: t.coal }}>
-              {page.framework.name}
-            </h2>
-            <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.65, color: t.inkSoft, margin: 0 }}>
-              {page.framework.summary}
-            </p>
+        {/* Recruitment process — timeline */}
+        {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
+          <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
+            <div className="ed-container">
+              <SectionHead
+                index="01"
+                eyebrow="Application to offer"
+                title={`${companyLabel} recruitment process`}
+                sub="The typical timeline candidates walk through, stage by stage."
+              />
+              <div className="ed-reading">
+                <SpecTimeline items={page.recruitmentSteps.map((step) => ({ label: step }))} />
+              </div>
+            </div>
           </section>
+        )}
 
-          {/* About the company — verified facts from COMPANY_KNOWN_FACTS,
-              shared with /questions/[slug]. Renders nothing when the
-              company has no known-facts entry. */}
-          <CompanyContextBox company={page.company} companyLabel={companyLabel} />
+        {/* Interview rounds — timeline */}
+        {page.interviewRounds && page.interviewRounds.length > 0 && (
+          <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, borderBottom: `1px solid ${t.line}` }}>
+            <div className="ed-container">
+              <SectionHead index="02" eyebrow="What each round tests" title="Interview rounds" />
+              <div className="ed-reading">
+                <SpecTimeline items={page.interviewRounds.map((round) => ({ label: round }))} />
+              </div>
+            </div>
+          </section>
+        )}
 
-          {/* Recruitment Process */}
-          {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
-            <>
-              <hr style={{ border: 0, borderTop: `1px solid ${t.line}`, margin: "40px 0" }} />
-              <section>
-                <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px", color: t.coal }}>
-                  {companyLabel} Recruitment Process
-                </h2>
-                <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Typical timeline from application to offer.
-                </p>
-                <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                  {page.recruitmentSteps.map((step, i) => (
-                    <li key={i} style={{ display: "flex", gap: 20, padding: "16px 0", borderBottom: `1px solid ${t.line}` }}>
-                      <span style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 32, opacity: 0.65 }}>
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.55, color: t.coal, paddingTop: 4 }}>
-                        {step}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            </>
-          )}
-
-          {/* Interview Rounds */}
-          {page.interviewRounds && page.interviewRounds.length > 0 && (
-            <>
-              <hr style={{ border: 0, borderTop: `1px solid ${t.line}`, margin: "40px 0" }} />
-              <section>
-                <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 20px", color: t.coal }}>
-                  Interview Rounds
-                </h2>
-                <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                  {page.interviewRounds.map((round, i) => (
-                    <li key={i} style={{ display: "flex", gap: 20, padding: "16px 0", borderBottom: `1px solid ${t.line}` }}>
-                      <span style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 32, opacity: 0.65 }}>
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.coal, paddingTop: 4 }}>
-                        {round}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            </>
-          )}
-
-          {/* STAR guide — shown for behavioral / HR / campus-placement focus areas */}
-          {(page.focus === "behavioral" || page.focus === "hr" || page.focus === "campus-placement") && (
-            <>
-              <hr style={{ border: 0, borderTop: `1px solid ${t.line}`, margin: "40px 0" }} />
-              <section style={{ background: t.creamSoft, border: `1px solid ${t.copperMid}`, borderRadius: 12, padding: "20px 24px" }}>
-                <h2 style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px", color: t.coal }}>
-                  How to structure your answers
-                </h2>
-                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>
-                  {companyLabel} interviewers score answers on structure and specificity. Use the STAR method for every behavioral question.
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-                  {[
-                    ["S — Situation", "Set context in 1–2 sentences. Give just enough background for the story to make sense."],
-                    ["T — Task", "State YOUR specific responsibility — what were you personally accountable for, not the team."],
-                    ["A — Action", "This is the longest part. Describe specific steps YOU took. Use 'I' not 'we'."],
-                    ["R — Result", "Quantify if possible: numbers, percentages, timelines. Then say what you learnt."],
-                  ].map(([label, text]) => (
-                    <div key={label} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
-                        {label}
-                      </span>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55 }}>{text}</span>
+        {/* STAR guide — behavioral / HR / campus-placement */}
+        {(page.focus === "behavioral" || page.focus === "hr" || page.focus === "campus-placement") && (
+          <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
+            <div className="ed-container">
+              <SectionHead
+                eyebrow="Answer structure"
+                title="Every story,"
+                accent="four beats."
+                sub={`${companyLabel} interviewers score on structure and specificity. Run every behavioural answer through STAR.`}
+              />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+                {[
+                  ["S", "Situation", "Set context in one or two sentences. Just enough background for the story to land."],
+                  ["T", "Task", "State YOUR specific responsibility, not the team's. What were you accountable for?"],
+                  ["A", "Action", "The longest beat. The specific steps YOU took. Say 'I', not 'we'."],
+                  ["R", "Result", "Quantify it: numbers, percentages, timelines. Then what you learnt."],
+                ].map(([letter, label, text]) => (
+                  <div key={label} className="ed-card" style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "20px 22px" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+                      <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 30, color: t.copper, lineHeight: 1 }}>{letter}</span>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.coal }}>{label}</span>
                     </div>
-                  ))}
-                </div>
-                <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "14px 0 0", lineHeight: 1.55, borderTop: `1px solid ${t.line}`, paddingTop: 12 }}>
-                  <strong style={{ color: t.coal }}>Common mistake:</strong> Saying &quot;we did X&quot; throughout. Interviewers score your individual contribution — practise saying &quot;I&quot; in mock sessions first.
-                </p>
-              </section>
-            </>
-          )}
+                    <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>{text}</p>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "20px 0 0", lineHeight: 1.6, maxWidth: "62ch" }}>
+                <strong style={{ color: t.coal }}>The most common miss:</strong> saying &quot;we did X&quot; throughout. Interviewers score your individual contribution, so practise saying &quot;I&quot; out loud in a mock session first.
+              </p>
+            </div>
+          </section>
+        )}
 
-          {/* Question list */}
-          <hr style={{ border: 0, borderTop: `1px solid ${t.line}`, margin: "40px 0" }} />
-          <section>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px", color: t.coal }}>
-              Real {focusLabel.toLowerCase()} questions {companyLabel} asked
-            </h2>
-            <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint, margin: "0 0 24px", lineHeight: 1.6 }}>
-              Verified from candidate post-mortems. Click Practice to answer with AI voice feedback.
-            </p>
-            <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        {/* Question set */}
+        <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, borderBottom: `1px solid ${t.line}` }}>
+          <div className="ed-container">
+            <SectionHead
+              eyebrow="The practice set"
+              title={`Real ${focusLabel.toLowerCase()} questions`}
+              accent={`${companyLabel} asked.`}
+              sub="Verified from candidate post-mortems. Answer any one aloud and the AI scores it in two minutes."
+            />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
               {questions.map((q, i) => (
-                <li key={i} style={{ display: "flex", gap: 20, padding: "20px 0", borderBottom: `1px solid ${t.line}` }}>
-                  <span style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 38, opacity: 0.55 }}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  key={i}
+                  className="ed-card"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                    padding: "24px 24px 20px",
+                    background: t.white,
+                    border: `1px solid ${t.line}`,
+                    borderRadius: 16,
+                    boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 12px 32px -20px rgba(20,17,10,.10)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, color: t.inkFaintWeak, letterSpacing: "0.06em" }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                     {q.difficulty && (
-                      <span style={{ ...DIFFICULTY_CHIP[q.difficulty], fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, padding: "2px 8px", borderRadius: 999, display: "inline-block", marginBottom: 8 }}>
+                      <span style={{ ...DIFFICULTY_CHIP[q.difficulty], fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, padding: "3px 10px", borderRadius: 999 }}>
                         {DIFFICULTY_LABEL[q.difficulty] ?? q.difficulty}
                       </span>
                     )}
-                    <p style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.5, color: t.coal, margin: 0 }}>
-                      {q.text}
-                    </p>
-                    {q.styleNote && (
-                      <p style={{ fontFamily: fonts.sans, fontSize: 12, fontStyle: "italic", color: t.inkSoft, margin: "8px 0 0" }}>
-                        {q.styleNote}
-                      </p>
-                    )}
                   </div>
-                  <Link href={practiceHref} style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", padding: "8px 0 8px 12px" }}>
-                    Practice →
+                  <p style={{ fontFamily: fonts.serif, fontSize: 20, lineHeight: 1.35, color: t.coal, margin: 0, letterSpacing: "-0.01em", flex: 1 }}>
+                    {q.text}
+                  </p>
+                  {q.styleNote && (
+                    <p style={{ fontFamily: fonts.sans, fontSize: 13, fontStyle: "italic", color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+                      {q.styleNote}
+                    </p>
+                  )}
+                  <Link href={practiceHref} className="ed-cta" style={{ marginTop: 4, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    Practice this <span className="ed-cta-arrow" aria-hidden>→</span>
                   </Link>
-                </li>
+                </div>
               ))}
-            </ol>
-          </section>
-
-          {/* Bottom CTA — blog-style editorial split */}
-          <div style={{ marginTop: 88, borderTop: `1px solid ${t.lineStrong}`, paddingTop: 56, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 40, flexWrap: "wrap" }}>
-            <p style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.02, maxWidth: "16ch", textWrap: "balance" as const, margin: 0 }}>
-              Stop just reading,{" "}
-              <span style={{ fontStyle: "italic", color: t.copper }}>start answering</span>.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: "min(260px, 100%)" }}>
-              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
-                The AI interviewer asks {companyLabel}-style questions, listens to your voice, and scores your answer in 2 minutes. 2 sessions free, no credit card.
-              </p>
-              <Link href={practiceHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 999, textDecoration: "none", background: t.indigo, color: t.white, flexShrink: 0 }}>
-                Practice {companyLabel} interview free <span aria-hidden>→</span>
-              </Link>
             </div>
           </div>
+        </section>
 
-          {/* Blog back-links */}
-          <RelatedBlogPosts companyLabel={companyLabel} />
+        {/* Related links */}
+        <section className="ed-section" style={{ paddingTop: 64, paddingBottom: 64, background: t.creamSoft }}>
+          <div className="ed-container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 40 }}>
+            <RelatedBlogPosts companyLabel={companyLabel} />
+            <div>
+              <p style={{ ...edEyebrow, color: t.inkFaint, marginBottom: 16 }}>Related interview prep</p>
+              <RelatedLinks currentSlug={slug} />
+            </div>
+          </div>
+        </section>
 
-          {/* Internal links */}
-          <section style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${t.line}` }}>
-            <h3 style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 14px" }}>
-              Related interview prep
-            </h3>
-            <RelatedLinks currentSlug={slug} />
-          </section>
-        </div>
+        {/* Closing band */}
+        <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering.">
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "38ch", margin: 0 }}>
+            The AI asks {companyLabel}-style questions, listens to your voice, and scores your answer in two minutes. Two sessions free, no credit card.
+          </p>
+          <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+            Practice {companyLabel} interview free <span className="ed-cta-arrow" aria-hidden>→</span>
+          </Link>
+        </DarkBand>
+
       </main>
       <FooterDome />
       <MobileStickyCTA />
@@ -467,20 +451,18 @@ function RelatedBlogPosts({ companyLabel }: { companyLabel: string }) {
   ).slice(0, 3);
   if (matched.length === 0) return null;
   return (
-    <section style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${t.line}` }}>
-      <h3 style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 14px" }}>
-        In-depth guides
-      </h3>
-      <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+    <div>
+      <p style={{ ...edEyebrow, color: t.inkFaint, marginBottom: 16 }}>In-depth guides</p>
+      <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
         {matched.map((m) => (
           <li key={m.slug}>
-            <Link href={`/blog/${m.slug}`} style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}>
-              → {m.title}
+            <Link href={`/blog/${m.slug}`} className="ed-link" style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}>
+              {m.title}
             </Link>
           </li>
         ))}
       </ul>
-    </section>
+    </div>
   );
 }
 
@@ -498,11 +480,11 @@ function RelatedLinks({ currentSlug }: { currentSlug: string }) {
     .slice(0, 4);
   if (related.length === 0) return null;
   return (
-    <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+    <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
       {related.map((p: SeoPage) => (
         <li key={p.slug}>
-          <Link href={`/questions/${p.slug}`} style={{ color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 14, fontWeight: 500 }}>
-            → {p.searchPhrase}
+          <Link href={`/questions/${p.slug}`} className="ed-link" style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}>
+            {p.searchPhrase}
           </Link>
         </li>
       ))}

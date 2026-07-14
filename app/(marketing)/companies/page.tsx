@@ -6,6 +6,14 @@ import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
 import { COMPANY_LABEL } from "../../../data/company-labels";
+import {
+  editorialCSS,
+  EditorialHero,
+  SectionHead,
+  DarkBand,
+  ctaPrimaryStyle,
+  ctaGhostStyle,
+} from "@/marketing-v2/_editorial";
 
 /* /companies — index / hub page listing all 55+ company interview
  * question sets, grouped by company type.
@@ -105,98 +113,98 @@ export default async function CompaniesIndexPage() {
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Companies", path: "/companies" }]))} />
 
+      <style>{editorialCSS}</style>
       <NavV2 />
-      <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", padding: "48px 24px 80px", fontFamily: fonts.sans }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
-          {/* H1 */}
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 400, letterSpacing: "-0.015em", lineHeight: 1.12, margin: 0, textWrap: "balance" as const, color: t.coal }}>
-            Company Interview Questions, India 2026
-          </h1>
+        <EditorialHero
+          eyebrow="Company interview prep · India 2026"
+          titleLead="Every company's interview,"
+          accent="decoded."
+          lead="Fifty-plus hiring guides. Each one lays out the exact interview format, real questions candidates were asked, the framework that scores, and an AI mock tailored to that company."
+        >
+          <Link href="/signup?source=companies-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+            Practice any company free <span className="ed-cta-arrow" aria-hidden>→</span>
+          </Link>
+          <Link href="/interview-prep" style={ctaGhostStyle("lg")}>
+            Interview prep guide
+          </Link>
+        </EditorialHero>
 
-          <p style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 18, lineHeight: 1.55, color: t.inkSoft, marginTop: 16, maxWidth: 620, textWrap: "balance" as const }}>
-            Each guide covers the exact interview format, real sample questions, coaching frameworks,
-            and an AI mock interview tailored to that company.
-          </p>
+        {/* ── Company groups ────────────────────────────────────────── */}
+        {GROUPS.map((group, gi) => {
+          const groupPages = SEO_PAGES.filter((p) => group.companies.includes(p.company));
+          if (groupPages.length === 0) return null;
 
-          {/* CTA row */}
-          <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap", alignItems: "center" }}>
-            <Link href="/signup?source=companies-index" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: t.copper, color: t.cream, textDecoration: "none",
-              padding: "14px 22px", borderRadius: 999, fontSize: 14, fontWeight: 500,
-              fontFamily: fonts.sans,
-            }}>
-              Practice any company free — 2 sessions
-            </Link>
-            <Link href="/interview-prep" style={{ color: t.copper, textDecoration: "none", fontSize: 13, fontWeight: 500, fontFamily: fonts.sans }}>
-              Interview prep guide →
-            </Link>
-          </div>
+          const sorted = [...groupPages].sort((a, b) => (b.sitemapPriority ?? 0.7) - (a.sitemapPriority ?? 0.7));
 
-          {/* ── Company groups ────────────────────────────────────────── */}
-          {GROUPS.map((group) => {
-            const groupPages = SEO_PAGES.filter((p) => group.companies.includes(p.company));
-            if (groupPages.length === 0) return null;
-
-            const sorted = [...groupPages].sort((a, b) => (b.sitemapPriority ?? 0.7) - (a.sitemapPriority ?? 0.7));
-
-            return (
-              <section key={group.id} id={group.id} style={{ marginTop: 56 }}>
-                <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px", color: t.coal }}>
-                  {group.label}
-                </h2>
-                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 20px", lineHeight: 1.6, maxWidth: 600 }}>
-                  {group.description}
-                </p>
-
-                <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                  {sorted.map((page, i) => (
-                    <li key={page.slug}>
-                      <Link
-                        href={`/questions/${page.slug}`}
-                        style={{
-                          display: "flex",
-                          gap: 20,
-                          padding: "16px 0",
-                          borderBottom: `1px solid ${t.line}`,
-                          textDecoration: "none",
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <span style={{ fontFamily: fonts.serif, fontSize: 22, color: t.copper, opacity: 0.45, lineHeight: 1, flexShrink: 0, minWidth: 36 }}>
-                          {String(i + 1).padStart(2, "0")}
+          return (
+            <section
+              key={group.id}
+              id={group.id}
+              className="ed-section ed-reveal"
+              style={{
+                paddingTop: 76,
+                paddingBottom: 76,
+                borderBottom: `1px solid ${t.line}`,
+                background: gi % 2 === 1 ? t.creamSoft : t.cream,
+              }}
+            >
+              <div className="ed-container">
+                <SectionHead
+                  index={String(gi + 1).padStart(2, "0")}
+                  eyebrow={`${sorted.length} guides`}
+                  title={group.label}
+                  sub={group.description}
+                />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+                  {sorted.map((page) => (
+                    <Link
+                      key={page.slug}
+                      href={`/questions/${page.slug}`}
+                      className="ed-card ed-cta"
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                        padding: "22px 24px",
+                        background: t.white,
+                        border: `1px solid ${t.line}`,
+                        borderRadius: 16,
+                        textDecoration: "none",
+                        boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 12px 32px -20px rgba(20,17,10,.10)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: t.copper }}>
+                          {COMPANY_LABEL[page.company] ?? page.company}
                         </span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                            <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.coal }}>
-                              {COMPANY_LABEL[page.company] ?? page.company}
-                            </span>
-                            <span style={{ fontFamily: fonts.sans, fontSize: 10, color: t.inkFaint, background: t.creamSoft, borderRadius: 4, padding: "1px 6px", textTransform: "capitalize" }}>
-                              {FOCUS_LABEL[page.focus] ?? page.focus}
-                            </span>
-                          </div>
-                          <span style={{ fontFamily: fonts.serif, fontSize: 15, fontStyle: "italic", lineHeight: 1.4, color: t.coal }}>
-                            {page.searchPhrase}
-                          </span>
-                        </div>
-                        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.copper, flexShrink: 0, paddingTop: 2, whiteSpace: "nowrap" }}>
-                          Prepare →
+                        <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999, padding: "2px 9px", textTransform: "capitalize" }}>
+                          {FOCUS_LABEL[page.focus] ?? page.focus}
                         </span>
-                      </Link>
-                    </li>
+                      </div>
+                      <span style={{ fontFamily: fonts.serif, fontSize: 19, lineHeight: 1.3, color: t.coal, letterSpacing: "-0.01em", flex: 1 }}>
+                        {page.searchPhrase}
+                      </span>
+                      <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.copper, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        Prepare <span className="ed-cta-arrow" aria-hidden>→</span>
+                      </span>
+                    </Link>
                   ))}
-                </ol>
-              </section>
-            );
-          })}
+                </div>
+              </div>
+            </section>
+          );
+        })}
 
-          {/* ── Browse by question type ───────────────────────────────── */}
-          <section style={{ marginTop: 56 }}>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: 20, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 14px", color: t.coal }}>
-              Browse by question type
-            </h2>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {/* ── Browse by question type ───────────────────────────────── */}
+        <section className="ed-section ed-reveal" style={{ paddingTop: 76, paddingBottom: 76 }}>
+          <div className="ed-container">
+            <SectionHead
+              eyebrow="Or start from the format"
+              title="Browse by question type"
+            />
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {[
                 { label: "Campus Placement", href: "/questions?focus=campus-placement" },
                 { label: "Technical DSA", href: "/questions?focus=technical" },
@@ -206,45 +214,30 @@ export default async function CompaniesIndexPage() {
                 { label: "HR Round", href: "/questions?focus=hr" },
                 { label: "All questions", href: "/questions" },
               ].map((tag) => (
-                <Link key={tag.href} href={tag.href} style={{
+                <Link key={tag.href} href={tag.href} className="ed-card" style={{
                   display: "inline-block",
-                  padding: "10px 16px", fontSize: 13, fontWeight: 500,
-                  background: t.creamSoft, color: t.coal, borderRadius: 999,
-                  textDecoration: "none", border: `1px solid ${t.line}`,
+                  padding: "11px 18px", fontSize: 14, fontWeight: 600,
+                  background: t.white, color: t.coal, borderRadius: 999,
+                  textDecoration: "none", border: `1px solid ${t.lineStrong}`,
                   fontFamily: fonts.sans,
                 }}>
                   {tag.label}
                 </Link>
               ))}
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* ── Bottom CTA — editorial split ─────────────────────────── */}
-          <section style={{
-            marginTop: 72,
-            borderTop: `1px solid ${t.lineStrong}`,
-            paddingTop: 56,
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            gap: 40,
-            flexWrap: "wrap",
-          }}>
-            <p style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.02, maxWidth: "16ch", textWrap: "balance" as const, margin: 0 }}>
-              Pick your company,{" "}
-              <span style={{ fontStyle: "italic", color: t.copper }}>start practicing</span>.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start", minWidth: "min(260px, 100%)" }}>
-              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.6, maxWidth: "36ch", margin: 0 }}>
-                The AI interviews you with that company&apos;s exact question style, listens to your voice, and scores your answer in 2 minutes.
-              </p>
-              <Link href="/signup?source=companies-index-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 999, textDecoration: "none", background: t.indigo, color: t.white, flexShrink: 0 }}>
-                Start free — 2 mock interviews <span aria-hidden>→</span>
-              </Link>
-            </div>
-          </section>
+        {/* ── Closing band ──────────────────────────────────────────── */}
+        <DarkBand eyebrow="Reading won't get you hired" title="Pick your company," accent="start answering.">
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "38ch", margin: 0 }}>
+            The AI interviews you in that company&apos;s exact question style, listens to your voice, and scores your answer in two minutes.
+          </p>
+          <Link href="/signup?source=companies-index-cta" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+            Start free — 2 mock interviews <span className="ed-cta-arrow" aria-hidden>→</span>
+          </Link>
+        </DarkBand>
 
-        </div>
       </main>
       <FooterDome />
       <MobileStickyCTA />
