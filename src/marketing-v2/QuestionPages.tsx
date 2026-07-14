@@ -16,6 +16,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { tokens as t, fonts } from "../auth/_tokens";
 import { COMPANY_LABEL } from "../../data/company-labels";
+import { COMPANY_KNOWN_FACTS } from "../../data/company-known-facts";
 import type { BankEntry } from "../../data/interview-question-bank";
 import type { SeoPage } from "../../data/seo-pages";
 
@@ -211,6 +212,46 @@ function FrameworkBox({ name, summary }: { name: string; summary: string }) {
   );
 }
 
+/* CompanyContextBox — renders verified company facts (description /
+   products / competitors / scale) from COMPANY_KNOWN_FACTS. Only the
+   neutral, publicly-verifiable fields are surfaced; interview-signal
+   `notes`/`themes`/`techHints` are deliberately omitted. Renders nothing
+   when the company has no known-facts entry. */
+function CompanyContextBox({ company, companyLabel }: { company: string; companyLabel: string }) {
+  const facts = COMPANY_KNOWN_FACTS[company];
+  if (!facts) return null;
+
+  const rows: Array<{ label: string; value: string }> = [];
+  if (facts.products?.length) rows.push({ label: "Products", value: facts.products.join(" · ") });
+  if (facts.competitors?.length) rows.push({ label: "Competitors", value: facts.competitors.join(" · ") });
+  if (facts.scale) rows.push({ label: "Scale", value: facts.scale });
+
+  return (
+    <section style={{ marginTop: 36, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12, padding: "20px 22px" }}>
+      <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.copper, margin: "0 0 10px" }}>
+        About {companyLabel}
+      </p>
+      <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.65, color: t.inkSoft, margin: 0 }}>
+        {facts.description}
+      </p>
+      {rows.length > 0 && (
+        <dl style={{ margin: "16px 0 0", display: "flex", flexDirection: "column", gap: 10 }}>
+          {rows.map(({ label, value }) => (
+            <div key={label} style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+              <dt style={{ flexShrink: 0, minWidth: 96, fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const, color: t.inkFaint }}>
+                {label}
+              </dt>
+              <dd style={{ flex: 1, minWidth: 200, margin: 0, fontFamily: fonts.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </section>
+  );
+}
+
 /* ─── Bottom CTA section ────────────────────────────────────────────────── */
 
 function BottomCTA({
@@ -347,6 +388,12 @@ export function QuestionSetPage({
 
         {/* Framework callout */}
         <FrameworkBox name={page.framework.name} summary={page.framework.summary} />
+
+        {/* About the company — verified facts from company-known-facts.ts
+            (description / products / competitors / scale only; interview-
+            signal notes are intentionally not surfaced). Adds unique,
+            entity-rich, indexable content per company page. */}
+        <CompanyContextBox company={page.company} companyLabel={companyLabel} />
 
         {/* Recruitment Process — rendered when steps are available */}
         {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
