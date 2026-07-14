@@ -157,7 +157,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "tcs", roleFamily: "campus", focus: "campus-placement",
     intro: "TCS NQT (National Qualifier Test) is the aptitude-based entry gate for TCS fresher hiring in India. Clearing the NQT moves you into the Ninja, Digital, or BPS track depending on your score. The NQT itself tests four sections — Numerical Ability, Verbal Ability, Reasoning Ability, and Programming Logic — and is taken online at home. Eligibility: 60%+ aggregate in 10th, 12th, and graduation; gap year up to 2 years allowed; maximum 1 active backlog at time of joining.",
     framework: { name: "NQT prep order", summary: "Programming Logic first (highest differential) → Numerical Ability (speed practice) → Verbal Ability (parajumbles + RC) → Reasoning (Syllogisms, Blood Relations) → Mock NQTs under timed conditions." },
-    metaKeywords: ["tcs nqt interview questions", "tcs nqt eligibility 2026", "tcs national qualifier test", "tcs nqt preparation", "tcs fresher hiring 2026"],
+    metaKeywords: ["tcs nqt preparation 2026", "tcs nqt interview questions", "tcs nqt eligibility 2026", "tcs national qualifier test", "tcs nqt preparation", "tcs fresher hiring 2026"],
     sitemapPriority: 0.95,
     recruitmentSteps: [
       "Register on TCS NextStep portal (nextstep.tcs.com) — use your academic email",
@@ -313,7 +313,7 @@ export const SEO_PAGES: SeoPage[] = [
     company: "wipro", roleFamily: "campus", focus: "campus-placement",
     intro: "Wipro's fresher hiring runs through two tracks: Elite NTH (₹3.5 LPA) for general engineering and Turbo (₹6.5 LPA) for strong coders. The online test is the main filter — around 70% of candidates don't make it past the aptitude section. Know your data structures, master a readable coding style, and prepare every HR answer from the 'relocation is fine' baseline.",
     framework: { name: "APH for campus", summary: "Aptitude (score above 65%) → Project depth (defend every trade-off) → HR yes-set (relocation, shifts, bond) → specific Wipro reason." },
-    metaKeywords: ["wipro interview questions freshers", "wipro elite nth", "wipro campus placement", "wipro interview preparation 2026"],
+    metaKeywords: ["wipro nlth preparation 2026", "wipro interview questions freshers", "wipro elite nth", "wipro campus placement", "wipro interview preparation 2026"],
     sitemapPriority: 0.9,
     recruitmentSteps: [
       "Online Application via Wipro WILP portal or campus TnP cell",
@@ -929,6 +929,29 @@ export const SEO_PAGES: SeoPage[] = [
     interviewRounds: [
       "HR Interview (20–30 min): Communication quality is scored explicitly — clarity and confidence matter as much as content. Covers strengths, weaknesses, teamwork examples, relocation confirmation, and 'why Infosys.'",
       "Managerial Round (lateral hires, 30–45 min): Focuses on stakeholder management, conflict resolution, and client delivery scenarios. Uses situational questions — prepare STAR stories from real work.",
+    ],
+  },
+
+  /* ── Wipro NLTH preparation ─────────────────────────────────────────── */
+  {
+    slug: "wipro-nlth-preparation-2026",
+    searchPhrase: "Wipro NLTH Preparation 2026 — Elite NTH Online Test Guide",
+    company: "wipro", roleFamily: "campus", focus: "campus-placement",
+    intro: "Wipro's National Level Talent Hunt (NLTH) and Elite NTH are the main off-campus routes for engineering freshers in 2026. NLTH offers ₹3.5–4.5 LPA; Elite NTH offers ₹6.5–7 LPA. Both routes share the same online test — Aptitude, Verbal, and Coding — before Technical and HR rounds. The biggest preparation mistake is treating this like a standard campus recruitment: the Wipro aptitude section runs at 1 minute per question with no negative marking, so speed matters more than elimination strategy.",
+    framework: { name: "NTH Speed Protocol", summary: "Aptitude speed first (16 questions in 16 min — 1 minute each, no skipping) → Verbal accuracy (22 questions in 18 min — grammar and RC) → Coding: easy problem fully solved before medium (60 min total) → Technical basics (OOP + SQL + OS for TR round) → HR yes-set (relocation and night shift must be answered yes explicitly)." },
+    metaKeywords: ["wipro nlth preparation 2026", "wipro nth preparation 2026", "wipro elite nth 2026", "wipro online test syllabus 2026", "wipro nlth selection process"],
+    sitemapPriority: 0.9,
+    recruitmentSteps: [
+      "Register on Wipro Careers portal or via campus TnP cell for NLTH/NTH drive",
+      "Online Assessment — Aptitude (16 questions, 16 min), Verbal (22 questions, 18 min), Coding (2 problems, 60 min). No negative marking.",
+      "Shortlisting — Turbo track candidates face a harder coding section and higher scoring bar",
+      "Technical Interview — OOP, DBMS, OS, SQL basics, 1 coding question, project walkthrough",
+      "HR Interview — Relocation, night-shift flexibility, bond period acceptance, joining timeline",
+    ],
+    interviewRounds: [
+      "Online Assessment (94 min total): Aptitude section is the main eliminator — 1 minute per question, no negative marking. Coding: solve the easy problem fully before attempting the medium one.",
+      "Technical Round (45 min): OOP concepts (inheritance, polymorphism, abstraction), basic SQL queries, OS fundamentals, and 1 coding question (easy to medium). Bring 1–2 college projects to discuss.",
+      "HR Round (20–30 min): Relocation and night-shift availability must be answered yes explicitly. Covers salary expectations (quote the standard track CTC), bond acceptance, and joining timeline.",
     ],
   },
 

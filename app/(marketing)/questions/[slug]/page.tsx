@@ -116,7 +116,10 @@ export default async function QuestionsSlugPage({
   const companyLabel = COMPANY_LABEL[page.company] ?? page.company;
   const focusLabel = FOCUS_LABEL[page.focus] ?? page.focus;
 
-  /* FAQPage schema — expandable accordion in Google mobile SERP.
+  /* FAQPage schema — structured Q&A data for Google's understanding.
+     Note: FAQ rich results (visual accordion in SERP) were deprecated by
+     Google on May 7, 2026. The schema is kept for structured-data signal;
+     the HowTo schema below is the live rich-result opportunity.
      Content sourced exclusively from seo-pages.ts curated fields and the
      question bank (≥2-source verified). Framework answers attributed to
      HireStepX, not the company. */
@@ -171,6 +174,27 @@ export default async function QuestionsSlugPage({
     mainEntity: faqEntries,
   };
 
+  /* HowTo schema — still generates visual step-by-step rich results in Google
+     SERP as of 2026. The framework summary uses " → " as step separators,
+     which we split into named HowTo steps. */
+  const howToSteps = page.framework.summary
+    .split(/\s*→\s*/)
+    .filter(Boolean)
+    .map((step, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: step.split("(")[0].trim(),
+      text: step,
+    }));
+
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: `How to prepare for ${companyLabel} ${focusLabel.toLowerCase()} interviews`,
+    description: page.intro,
+    step: howToSteps,
+  };
+
   /* Article schema — signals editorial content, not a thin landing page. */
   const articleSchema = {
     "@context": "https://schema.org",
@@ -213,6 +237,13 @@ export default async function QuestionsSlugPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={ldJson(faqSchema)}
       />
+      {howToSteps.length > 0 && (
+        <script
+          nonce={nonce || undefined}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={ldJson(howToSchema)}
+        />
+      )}
       <script
         nonce={nonce || undefined}
         type="application/ld+json"

@@ -102,8 +102,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     isPartOf: { "@type": "Blog", name: "HireStepX Blog", url: "https://hirestepx.com/blog" },
   } : null;
 
-  /* FAQPage JSON-LD — triggers rich accordion in Google SERP. Only injected
-     when the post has faqs defined and the array is non-empty. */
+  /* FAQPage JSON-LD — structured Q&A data. Note: FAQ rich results
+     (visual accordion in SERP) were deprecated May 7, 2026; Article schema
+     carries the main editorial signal. Only injected when faqs are defined. */
   const faqSchema = (meta?.faqs && meta.faqs.length > 0) ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",

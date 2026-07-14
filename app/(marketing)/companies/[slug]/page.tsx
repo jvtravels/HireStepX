@@ -119,9 +119,9 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
   const companyLabel = COMPANY_LABEL[page.company] ?? page.company;
   const focusLabel = FOCUS_LABEL[page.focus] ?? page.focus;
 
-  /* FAQPage schema — gets you the expandable accordion in Google's
-     mobile SERP. Single biggest rich-result lever for this kind of
-     long-tail page.
+  /* FAQPage schema — structured Q&A data for Google's understanding.
+     Note: FAQ rich results (expandable accordion) were deprecated by
+     Google on May 7, 2026. Schema is kept for structured-data signal.
      All Q&A content sourced exclusively from hand-curated fields in
      seo-pages.ts (recruitmentSteps, interviewRounds, framework) —
      no generated or invented company claims. */
