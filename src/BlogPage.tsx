@@ -204,6 +204,7 @@ const posts: BlogPost[] = [
       { label: "TCS NQT 2026", slug: "tcs-nqt-interview-questions" },
       { label: "TCS Ninja Interview", slug: "tcs-ninja-interview-questions" },
       { label: "Infosys Campus Placement", slug: "infosys-campus-interview-questions" },
+      { label: "PhonePe Behavioral Interview", slug: "phonepe-behavioral-interview-questions" },
     ],
     cta: "Most freshers discover their filler words and vague transitions only after the interview, in the elevator. Say your answers out loud on HireStepX before that — you'll get scored on STAR structure and clarity while there's still time to fix them.",
   },
@@ -232,6 +233,7 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Razorpay Engineering Interview", slug: "razorpay-engineering-interview-questions" },
       { label: "Razorpay PM Interview", slug: "razorpay-pm-interview-questions" },
+      { label: "Paytm Engineering Interview", slug: "paytm-engineering-interview-questions" },
     ],
     cta: "Razorpay's system design round will ask you about idempotency, retry logic, or webhook delivery guarantees — problems specific to payment infrastructure. If you haven't practiced those scenarios out loud, the first time you'll hear yourself explain them is in the room. HireStepX runs fintech-focused system design rounds so that's not how it goes.",
   },
@@ -420,6 +422,8 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Wipro Campus Placement", slug: "wipro-freshers-interview-questions" },
       { label: "Wipro Behavioral Round", slug: "wipro-behavioral-interview-questions" },
+      { label: "Wipro NLTH Preparation 2026", slug: "wipro-nlth-preparation-2026" },
+      { label: "Wipro Turbo Technical Interview", slug: "wipro-turbo-technical-interview" },
     ],
     cta: "Wipro's HR round is short but it has teeth — candidates who hesitate on relocation or shift flexibility get flagged in the notes. Practice the full sequence on HireStepX so your answers on the friction questions sound like decisions, not deliberations.",
   },
@@ -664,6 +668,7 @@ const posts: BlogPost[] = [
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers", "behavioral-interview-questions-freshers"],
     practicePageSlugs: [
       { label: "Cognizant Campus Placement", slug: "cognizant-genc-interview-questions" },
+      { label: "Cognizant Technical Interview", slug: "cognizant-technical-interview-questions" },
     ],
     cta: "After the CoCubes cut, the technical and HR rounds are where offers actually close. HireStepX lets you run through both with AI-graded feedback — so you're not winging the interview after surviving the assessment.",
   },
@@ -723,6 +728,10 @@ const posts: BlogPost[] = [
       { label: "Flipkart PM Interview Practice", slug: "flipkart-pm-interview-questions" },
       { label: "Google PM Interview Practice", slug: "google-pm-interview-questions" },
       { label: "Amazon PM Interview Practice", slug: "amazon-pm-interview-questions" },
+      { label: "CRED PM Interview Practice", slug: "cred-pm-interview-questions" },
+      { label: "Meesho PM Interview Practice", slug: "meesho-pm-interview-questions" },
+      { label: "Freshworks PM Interview Practice", slug: "freshworks-pm-interview-questions" },
+      { label: "LinkedIn PM Interview Practice", slug: "linkedin-pm-interview-questions" },
     ],
     relatedSlugs: ["ace-case-study-interviews", "amazon-leadership-principles-interview", "salary-negotiation-tips-india"],
     cta: "PM case study interviews are hard to practice alone because you need someone to play the interviewer — feeding you constraints, asking follow-ups, and pushing back on your recommendation. HireStepX's AI runs the case with you: it gives you the scenario, drip-feeds data when you ask for it, and scores whether your structure and recommendation actually hold together.",
@@ -755,6 +764,7 @@ const posts: BlogPost[] = [
       { label: "HCL Campus Placement", slug: "hcl-freshers-interview-questions" },
       { label: "Accenture Campus Placement", slug: "accenture-ase-interview-questions" },
       { label: "Capgemini Campus Placement", slug: "capgemini-freshers-interview-questions" },
+      { label: "LTIMindtree Freshers Interview", slug: "ltimindtree-freshers-interview-questions" },
     ],
     cta: "Each of these companies has a different interview personality — HCL's technical screen is lighter, Accenture's group exercise catches people off guard, Capgemini's CoCubes cut matters more than most candidates realise. HireStepX runs you through the specific rounds that trip candidates up, with AI feedback on the exact things each company's panel actually scores.",
   },
@@ -785,6 +795,7 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Deloitte Case Study Interview", slug: "deloitte-consulting-case-interview" },
       { label: "McKinsey Case Study Interview", slug: "mckinsey-case-study-interview-questions" },
+      { label: "Deloitte Analyst Interview", slug: "deloitte-analyst-interview-questions" },
     ],
     cta: "Most Deloitte rejections happen in the PI round, not the aptitude test — candidates know their content but can't structure a verbal answer under pressure. HireStepX puts you in that room: open-ended questions, a timer, AI feedback on whether your response actually had a point.",
   },
@@ -1209,6 +1220,8 @@ const posts: BlogPost[] = [
     relatedSlugs: ["top-10-google-interview-questions", "system-design-interview-preparation", "behavioral-interview-questions-freshers"],
     practicePageSlugs: [
       { label: "Microsoft Engineering Interview", slug: "microsoft-india-sde-interview-questions" },
+      { label: "Microsoft PM Interview", slug: "microsoft-pm-interview-questions" },
+      { label: "Microsoft Behavioral Interview", slug: "microsoft-behavioral-interview-questions" },
     ],
     cta: "Microsoft's behavioral rounds are where unprepared candidates lose offers they could have gotten. The growth mindset questions aren't just soft questions — they're evaluated against a specific rubric. HireStepX runs voice mock interviews where you practice STAR answers out loud, and the AI flags when your answers lack the self-reflection Microsoft specifically looks for.",
   },
@@ -1365,6 +1378,10 @@ const posts: BlogPost[] = [
       { label: "Google Engineering Interview Practice", slug: "google-india-engineering-interview-questions" },
       { label: "Amazon Leadership Principles Practice", slug: "amazon-leadership-principles-interview" },
       { label: "Microsoft India SDE Practice", slug: "microsoft-india-sde-interview-questions" },
+      { label: "Meta Engineering Interview", slug: "meta-engineering-interview-questions" },
+      { label: "Meta Behavioral Interview", slug: "meta-behavioral-interview-questions" },
+      { label: "Netflix Engineering Interview", slug: "netflix-engineering-interview-questions" },
+      { label: "Adobe Engineering Interview", slug: "adobe-engineering-interview-questions" },
     ],
     cta: "You can spend 6 months on LeetCode and still fail a FAANG interview because you never practiced explaining your solutions out loud. HireStepX runs voice mock interviews where you talk through DSA problems, system design, and Amazon LP stories — and the AI tells you whether your communication is at the level FAANG interviewers expect, not just whether the logic is correct.",
   },
@@ -1394,6 +1411,7 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Wipro Freshers Interview Practice", slug: "wipro-freshers-interview-questions" },
       { label: "Wipro Behavioral Interview Practice", slug: "wipro-behavioral-interview-questions" },
+      { label: "Wipro NLTH Preparation 2026", slug: "wipro-nlth-preparation-2026" },
     ],
     cta: "The Wipro HR round eliminates candidates who sound rehearsed in a bad way — scripted, flat, or unable to handle a follow-up question. HireStepX runs voice mock interviews where you practice HR and behavioral answers out loud, and the AI tells you where your answers sound generic or where your STAR structure breaks down. 20 minutes of this is worth more than re-reading the 'top 20 HR questions' list a fifth time.",
   },
@@ -1546,6 +1564,9 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Startup SDE Interview Practice", slug: "razorpay-engineering-interview-questions" },
       { label: "MNC Technical Interview Practice", slug: "google-india-engineering-interview-questions" },
+      { label: "OYO Engineering Interview", slug: "oyo-engineering-interview-questions" },
+      { label: "Meesho Engineering Interview", slug: "meesho-engineering-interview-questions" },
+      { label: "CRED Engineering Interview", slug: "cred-engineering-interview-questions" },
     ],
     cta: "Switching from a service IT background to a product company? The behavioral bar is higher than most people expect — product companies probe for ownership and impact more deeply than service IT rounds do. HireStepX gives you voice mock interviews with STAR scoring so you can find your weak spots before the actual interview does.",
   },
@@ -2194,6 +2215,656 @@ const SECTION_VISUALS: Record<string, ReactNode> = {
       { number: "03", label: "Analyze", hint: "Work through each branch with data, logic, and estimation. Show your reasoning." },
       { number: "04", label: "Recommend", hint: "State your answer, the key driver, the main risk, and what you'd verify next." },
     ]} />
+  ),
+
+  /* Flipkart — compensation */
+  "flipkart-interview-prep-guide||Compensation Expectations (2026)": (
+    <SalaryLadder maxLPA={90} rows={[
+      { role: "SDE-1", min: 18, max: 28 },
+      { role: "SDE-2", min: 30, max: 50 },
+      { role: "SDE-3", min: 50, max: 80 },
+      { role: "Senior Staff", min: 80, max: 90, note: "LPA+" },
+    ]} caption="Pre-ESOP cash comp, 2026" />
+  ),
+
+  /* STAR method — 30-60-10 rule */
+  "star-method-interview-answers||The 30-60-10 Rule": (
+    <FrameworkSteps steps={[
+      { number: "30%", label: "Situation + Task", hint: "Set context quickly. Don't over-explain the background — keep this to one or two sentences." },
+      { number: "60%", label: "Action", hint: "This is where you show your value. Be specific about what YOU did, not what the team did." },
+      { number: "10%", label: "Result", hint: "One clear metric or outcome. Numbers make your answer memorable and credible." },
+    ]} />
+  ),
+
+  /* Cognizant — GenC vs GenC Pro */
+  "cognizant-interview-questions-freshers-2026||GenC vs GenC Pro — Which Track Is Right for You?": (
+    <TierCompare cards={[
+      {
+        tier: "GenC",
+        examples: "General IT roles",
+        rows: [
+          { label: "Starting salary", range: "₹4 LPA" },
+          { label: "Coding requirement", range: "1 medium problem" },
+        ],
+      },
+      {
+        tier: "GenC Pro",
+        examples: "Advanced engineering roles",
+        rows: [
+          { label: "Starting salary", range: "₹6.5 LPA" },
+          { label: "Coding requirement", range: "2 medium problems, 60 min" },
+        ],
+      },
+    ]} />
+  ),
+
+  /* Cognizant — salary */
+  "cognizant-interview-questions-freshers-2026||Salary & Benefits (2026)": (
+    <SalaryLadder maxLPA={8} rows={[
+      { role: "GenC", min: 0, max: 4, note: "base ₹3.2L + variable ₹0.8L" },
+      { role: "GenC Pro", min: 0, max: 6.5, note: "base ₹5.2L + variable ₹1.3L" },
+    ]} caption="Cognizant fresher packages 2026" />
+  ),
+
+  /* Accenture — hiring tracks salary */
+  "accenture-interview-questions-freshers-2026||Accenture Hiring Tracks": (
+    <SalaryLadder maxLPA={9} rows={[
+      { role: "ASE (Standard)", min: 0, max: 4.5 },
+      { role: "AASE (Advanced)", min: 6, max: 8 },
+    ]} caption="Accenture fresher packages 2026" />
+  ),
+
+  /* Accenture — iCAT test structure */
+  "accenture-interview-questions-freshers-2026||iCAT Online Test — What to Expect": (
+    <RoundFlow rounds={[
+      { label: "Cognitive Assessment", duration: "35 min", detail: "25 questions — logical, quantitative, verbal" },
+      { label: "Technical Assessment", duration: "40 min", detail: "40 questions — CS fundamentals, OOP, DBMS" },
+      { label: "Coding Module", duration: "45 min", detail: "2 problems — 1 easy + 1 medium" },
+    ]} />
+  ),
+
+  /* Product Manager — salary by level */
+  "product-manager-interview-questions-india||Salary Expectations for PMs in India (2026)": (
+    <SalaryLadder maxLPA={200} rows={[
+      { role: "APM / Associate PM", min: 18, max: 35 },
+      { role: "PM (3–5 years)", min: 35, max: 70 },
+      { role: "Senior PM (5–8 years)", min: 70, max: 120 },
+      { role: "Director of Product", min: 120, max: 200 },
+    ]} caption="Indicative 2026 ranges (incl. ESOP)" />
+  ),
+
+  /* HCL vs Accenture vs Capgemini */
+  "hcl-accenture-capgemini-interview-comparison||Salary Comparison (2026)": (
+    <TierCompare cards={[
+      {
+        tier: "HCL",
+        examples: "GET to Technology Evangelist track",
+        rows: [{ label: "Fresher range", range: "₹3.8–6 LPA" }],
+      },
+      {
+        tier: "Capgemini",
+        examples: "Analyst to Senior Analyst",
+        rows: [{ label: "Fresher range", range: "₹4.35–7 LPA" }],
+      },
+      {
+        tier: "Accenture",
+        examples: "ASE to Advanced ASE",
+        rows: [{ label: "Fresher range", range: "₹4.5–8 LPA" }],
+      },
+    ]} />
+  ),
+
+  /* Deloitte — interview rounds */
+  "deloitte-interview-questions-freshers-2026||Deloitte Interview Rounds (2026)": (
+    <RoundFlow rounds={[
+      { label: "CogniVue Test", duration: "60–90 min", detail: "Numerical, verbal, logical, situational judgement" },
+      { label: "Group Discussion", duration: "15–20 min", detail: "8–12 candidates evaluated on content + communication" },
+      { label: "Case Interview", duration: "30–45 min", detail: "Business problem — structure and present solution" },
+      { label: "HR Round", duration: "30 min", detail: "Fit, motivation, salary discussion" },
+    ]} />
+  ),
+
+  /* Deloitte — salary by track */
+  "deloitte-interview-questions-freshers-2026||Salary and Tracks (2026)": (
+    <SalaryLadder maxLPA={13} rows={[
+      { role: "Business Technology Analyst", min: 7, max: 9 },
+      { role: "Consulting Analyst", min: 9, max: 12 },
+      { role: "Risk Advisory Analyst", min: 7, max: 10 },
+      { role: "Audit & Assurance", min: 6, max: 8 },
+    ]} caption="Deloitte India fresher tracks 2026" />
+  ),
+
+  /* Deloitte — case interview framework */
+  "deloitte-interview-questions-freshers-2026||Case Interview Basics for Freshers": (
+    <FrameworkSteps steps={[
+      { number: "01", label: "Clarify", hint: "Ask 2–3 questions to narrow the problem. Confirm scope, stakeholders, and constraints before diving in." },
+      { number: "02", label: "Structure", hint: "Form a hypothesis-first framework. Adapt to the problem — don't force-fit a memorised template." },
+      { number: "03", label: "Analyze", hint: "Ask for data as needed. Work through each branch with logic and estimation." },
+      { number: "04", label: "Recommend", hint: "Synthesize findings and give a clear recommendation with measurable success criteria." },
+    ]} />
+  ),
+
+  /* TCS NQT — test structure */
+  "how-to-pass-tcs-nqt-2026||TCS NQT 2026 Structure": (
+    <RoundFlow rounds={[
+      { label: "Numerical Ability", duration: "~20 min", detail: "12–15 questions — arithmetic, percentages, ratios" },
+      { label: "Verbal Ability", duration: "~20 min", detail: "~15 questions — reading comprehension, grammar" },
+      { label: "Reasoning Ability", duration: "~20 min", detail: "8–10 questions — logical reasoning, series" },
+      { label: "Coding", duration: "60 min", detail: "2 problems — determines Ninja/Digital/Prime track" },
+    ]} />
+  ),
+
+  /* TCS NQT — score to salary */
+  "how-to-pass-tcs-nqt-2026||NQT Cutoffs — What Score Do You Need?": (
+    <SalaryLadder maxLPA={10} rows={[
+      { role: "TCS Ninja (~70–75%)", min: 0, max: 3.36, note: "most common path" },
+      { role: "TCS Digital (~80–85%)", min: 0, max: 7 },
+      { role: "TCS Prime (top 5%)", min: 0, max: 9, note: "near-perfect score" },
+    ]} caption="NQT score determines salary band" />
+  ),
+
+  /* Zoho — hiring process */
+  "zoho-interview-questions-freshers-2026||Zoho's Hiring Process — What Makes It Different": (
+    <RoundFlow rounds={[
+      { label: "Aptitude Test", detail: "Written, pen-paper — harder than TCS/Infosys" },
+      { label: "Programming Round 2", detail: "Arrays, strings, basic recursion, patterns" },
+      { label: "Advanced Coding Round 3", detail: "Data structures, algorithms, OOP, small system design" },
+      { label: "Technical Interview", detail: "CS fundamentals + code walkthrough from rounds 2 & 3" },
+      { label: "HR Interview", detail: "Culture fit, joining timeline, compensation" },
+    ]} />
+  ),
+
+  /* Zoho — salary */
+  "zoho-interview-questions-freshers-2026||Salary and Perks (2026)": (
+    <SalaryLadder maxLPA={9} rows={[
+      { role: "Software Engineer (fresher)", min: 5, max: 6 },
+      { role: "Senior Software Engineer", min: 7, max: 8, note: "1–2 yr promotion" },
+    ]} caption="Zoho 2026 packages (+ profit sharing)" />
+  ),
+
+  /* System Design — 5-step framework */
+  "system-design-interview-preparation||The 5-Step Framework": (
+    <FrameworkSteps steps={[
+      { number: "01", label: "Requirements", hint: "Clarify functional and non-functional requirements. Ask about scale, latency, and consistency needs. (3–5 min)" },
+      { number: "02", label: "Estimation", hint: "Back-of-envelope math — users, QPS, storage, bandwidth. Shows scale thinking. (2–3 min)" },
+      { number: "03", label: "High-Level Design", hint: "Draw major components: clients, load balancers, application servers, databases, caches, queues. (10 min)" },
+      { number: "04", label: "Deep Dive", hint: "The interviewer picks 1–2 areas to go deep. This is where you differentiate yourself. (15–20 min)" },
+      { number: "05", label: "Tradeoffs & Extensions", hint: "Discuss what you'd change for 10x scale, what to monitor, how you'd handle failures. (5 min)" },
+    ]} />
+  ),
+
+  /* System Design — 4-week prep plan */
+  "system-design-interview-preparation||Preparation Timeline (4 Weeks)": (
+    <FrameworkSteps steps={[
+      { number: "W1", label: "Fundamentals", hint: "Learn caching, databases, load balancing, and message queues. Build the vocabulary for tradeoff discussions." },
+      { number: "W2", label: "Classic Problems", hint: "Practice 3 classic problems: URL shortener, chat app, news feed. Focus on requirements and high-level design." },
+      { number: "W3", label: "Harder Problems", hint: "Practice 3 harder problems: payment system, search autocomplete, ride-sharing. Focus on deep dives." },
+      { number: "W4", label: "Mock Interviews", hint: "Practice explaining your design out loud. Simulate real time pressure. Get feedback on tradeoff reasoning." },
+    ]} />
+  ),
+
+  /* Amazon — interview structure */
+  "amazon-leadership-principles-interview||How Amazon Interviews Are Structured": (
+    <RoundFlow rounds={[
+      { label: "Coding ×2", duration: "45–60 min", detail: "LeetCode medium-hard DSA problems" },
+      { label: "System Design", duration: "45–60 min", detail: "Architecture + tradeoffs (SDE-2+)" },
+      { label: "Behavioral ×1–2", duration: "45–60 min", detail: "Leadership Principles STAR stories" },
+      { label: "Bar Raiser", duration: "45–60 min", detail: "Cross-team interviewer with veto power" },
+    ]} />
+  ),
+
+  /* Amazon — India salary */
+  "amazon-leadership-principles-interview||Amazon India-Specific Tips": (
+    <SalaryLadder maxLPA={65} rows={[
+      { role: "SDE-1", min: 22, max: 35 },
+      { role: "SDE-2", min: 35, max: 60 },
+    ]} caption="Amazon India Bangalore / Hyderabad 2026" />
+  ),
+
+  /* Wipro — hiring programs salary */
+  "wipro-interview-questions-answers||Wipro Hiring Programs": (
+    <SalaryLadder maxLPA={7} rows={[
+      { role: "Elite NTH (standard)", min: 0, max: 3.5 },
+      { role: "Turbo", min: 0, max: 6.5, note: "harder coding round" },
+      { role: "WILP", min: 0, max: 3.5, note: "non-CS graduates" },
+    ]} caption="Score on online test determines track" />
+  ),
+
+  /* Goldman Sachs — interview process */
+  "goldman-sachs-india-interview-questions||Goldman Sachs India Hiring Process (2026)": (
+    <RoundFlow rounds={[
+      { label: "HireVue Screen", duration: "30 min", detail: "Async video — 3–4 behavioral questions" },
+      { label: "Online Coding Assessment", duration: "90 min", detail: "2–3 DSA problems on HackerRank" },
+      { label: "Technical Phone Screen", duration: "45 min", detail: "1 medium coding + CS theory" },
+      { label: "Super Day ×3–4", duration: "45–60 min each", detail: "Coding + system design + behavioral + partner" },
+      { label: "HR + Offer", detail: "Background check takes 3–4 weeks" },
+    ]} />
+  ),
+
+  /* Goldman Sachs — salary */
+  "goldman-sachs-india-interview-questions||Goldman Sachs Salary in India 2026": (
+    <SalaryLadder maxLPA={90} rows={[
+      { role: "SDE-1 / Analyst (0–2 yr)", min: 25, max: 43, note: "base + bonus" },
+      { role: "SDE-2 / Associate (3–5 yr)", min: 38, max: 73, note: "base + bonus" },
+      { role: "Vice President (7–10 yr)", min: 65, max: 90, note: "+ variable bonus" },
+    ]} caption="Goldman Sachs India 2026 (Jan bonus included)" />
+  ),
+
+  /* Swiggy — hiring process */
+  "swiggy-interview-questions-2026||Swiggy Hiring Process 2026": (
+    <RoundFlow rounds={[
+      { label: "Resume Screen", detail: "Referral or portal application" },
+      { label: "Online Assessment", duration: "90 min", detail: "2 coding problems (1 medium + 1 hard) on HackerRank" },
+      { label: "Technical Round 1", duration: "45 min", detail: "DSA + code walkthrough" },
+      { label: "Technical Round 2", duration: "45 min", detail: "System design (mid/senior) or DSA (SDE-1)" },
+      { label: "Hiring Manager", detail: "Culture fit + depth questions + bar raiser" },
+    ]} />
+  ),
+
+  /* Swiggy — salary */
+  "swiggy-interview-questions-2026||Swiggy Salary 2026": (
+    <SalaryLadder maxLPA={70} rows={[
+      { role: "SDE-1 (0–3 yr)", min: 18, max: 25 },
+      { role: "SDE-2 (3–6 yr)", min: 28, max: 42 },
+      { role: "SDE-3 / Staff", min: 48, max: 70 },
+      { role: "PM-1 (0–3 yr)", min: 28, max: 38 },
+      { role: "Senior PM (3–6 yr)", min: 42, max: 60 },
+    ]} caption="Swiggy post-restructuring packages 2026" />
+  ),
+
+  /* Microsoft India — interview process */
+  "microsoft-india-interview-questions-2026||Microsoft India Interview Process 2026": (
+    <RoundFlow rounds={[
+      { label: "Resume Screen", detail: "Referral significantly increases visibility" },
+      { label: "Online Assessment", duration: "90 min", detail: "2–3 coding problems: 1 easy + 1 medium + 1 medium-hard" },
+      { label: "Technical Phone Screen", duration: "45 min", detail: "1–2 coding problems + project discussion" },
+      { label: "Virtual Onsite ×4", duration: "45–60 min each", detail: "Coding, systems, behavioral, As Appropriate" },
+    ]} />
+  ),
+
+  /* Microsoft India — salary */
+  "microsoft-india-interview-questions-2026||Microsoft India Salary 2026": (
+    <SalaryLadder maxLPA={140} rows={[
+      { role: "SDE-1 (0–2 yr)", min: 25, max: 38 },
+      { role: "SDE-2 (2–5 yr)", min: 38, max: 60 },
+      { role: "SDE-3 / Principal (5–8 yr)", min: 60, max: 90 },
+      { role: "Senior Principal", min: 90, max: 140 },
+    ]} caption="Microsoft India Hyderabad / Bengaluru 2026" />
+  ),
+
+  /* Product vs service salary gap */
+  "product-company-vs-service-company-india-career||Salary Difference: The Numbers (2026)": (
+    <TierCompare cards={[
+      {
+        tier: "Fresher (0–1 yr)",
+        examples: "TCS vs Flipkart",
+        rows: [
+          { label: "TCS Ninja", range: "₹3.36 LPA" },
+          { label: "Flipkart SDE-1", range: "₹20–25 LPA" },
+          { label: "Razorpay SDE-1", range: "₹22–28 LPA" },
+        ],
+      },
+      {
+        tier: "Mid-level (3–5 yr)",
+        examples: "IT Services vs Product",
+        rows: [
+          { label: "TCS/Infosys/Wipro Band B–C", range: "₹8–14 LPA" },
+          { label: "Flipkart SDE-2", range: "₹35–55 LPA" },
+          { label: "Razorpay SDE-2", range: "₹38–55 LPA" },
+        ],
+      },
+    ]} />
+  ),
+
+  /* FAANG — interview structure */
+  "faang-interview-preparation-india-2026||The FAANG Interview Structure for Indian Candidates": (
+    <RoundFlow rounds={[
+      { label: "Online Assessment", duration: "60–90 min", detail: "2–3 LeetCode-style problems" },
+      { label: "Technical Phone Screen", duration: "45 min", detail: "1–2 coding problems with senior engineer" },
+      { label: "Virtual Onsite ×4–6", duration: "45–60 min each", detail: "Coding + system design + behavioral" },
+    ]} />
+  ),
+
+  /* JP Morgan — interview process */
+  "jp-morgan-interview-questions-india-2026||Interview Process Overview": (
+    <RoundFlow rounds={[
+      { label: "HackerRank OA", duration: "90 min", detail: "2–3 coding problems (SDE roles)" },
+      { label: "Technical Phone Screen", duration: "45 min", detail: "DSA + 1–2 system design questions" },
+      { label: "Technical Panel ×2", duration: "60 min each", detail: "Deeper DSA, architecture, domain knowledge" },
+      { label: "Hiring Manager", duration: "45 min", detail: "Behavioral + technical" },
+      { label: "HR Offer", detail: "Compensation, joining date, relocation" },
+    ]} />
+  ),
+
+  /* JP Morgan — compensation */
+  "jp-morgan-interview-questions-india-2026||Compensation — India (2026)": (
+    <TierCompare cards={[
+      {
+        tier: "SDE Roles",
+        examples: "JP Morgan India Engineering",
+        rows: [
+          { label: "SDE-1 (Associate)", range: "₹18–28 LPA" },
+          { label: "SDE-2 (Senior Associate)", range: "₹28–45 LPA" },
+          { label: "VP Engineering", range: "₹45–75 LPA" },
+        ],
+      },
+      {
+        tier: "Business Analyst",
+        examples: "JP Morgan India BA",
+        rows: [
+          { label: "Analyst", range: "₹14–22 LPA" },
+          { label: "Senior Analyst", range: "₹22–35 LPA" },
+        ],
+      },
+      {
+        tier: "Quant Analyst",
+        examples: "Markets / Risk",
+        rows: [
+          { label: "Junior Quant", range: "₹20–35 LPA" },
+          { label: "Senior Quant", range: "₹40–70 LPA" },
+        ],
+      },
+    ]} />
+  ),
+
+  /* Startup vs MNC — salary comparison */
+  "startup-vs-mnc-india-career||Salary Comparison 2026": (
+    <TierCompare cards={[
+      {
+        tier: "Tier-1 MNCs",
+        examples: "Google · Microsoft · Amazon · Goldman Sachs",
+        rows: [
+          { label: "Fresher", range: "₹22–45 LPA" },
+          { label: "SDE-2 (3–5 yr)", range: "₹40–80 LPA" },
+        ],
+      },
+      {
+        tier: "Well-funded Startups",
+        examples: "Razorpay · CRED · Meesho · Swiggy",
+        rows: [
+          { label: "Fresher", range: "₹20–40 LPA" },
+          { label: "SDE-2 (3–5 yr)", range: "₹40–90 LPA" },
+        ],
+      },
+      {
+        tier: "Tier-2 MNCs",
+        examples: "Accenture · Infosys · Wipro · TCS Digital",
+        rows: [
+          { label: "Fresher", range: "₹7–18 LPA" },
+          { label: "SDE-2", range: "₹18–35 LPA" },
+        ],
+      },
+    ]} />
+  ),
+
+  /* Fresher salary — tier-1 product companies */
+  "fresher-salary-india-2026||Tier-1 Product Company Salaries (FAANG and Equivalents)": (
+    <SalaryLadder maxLPA={35} rows={[
+      { role: "Google India SDE-1", min: 22, max: 32 },
+      { role: "Microsoft India SDE-1", min: 20, max: 30 },
+      { role: "Goldman Sachs India", min: 22, max: 32 },
+      { role: "Razorpay SDE-1", min: 22, max: 30 },
+      { role: "CRED SDE-1", min: 24, max: 32 },
+      { role: "Amazon India SDE-1", min: 18, max: 26 },
+      { role: "Flipkart SDE-1", min: 20, max: 28 },
+    ]} caption="Tier-1 product company fresher packages 2026" />
+  ),
+
+  /* Fresher salary — IT service companies */
+  "fresher-salary-india-2026||IT Service Company Salaries": (
+    <SalaryLadder maxLPA={15} rows={[
+      { role: "TCS Ninja", min: 0, max: 3.36 },
+      { role: "TCS Digital", min: 0, max: 7 },
+      { role: "TCS Prime", min: 9, max: 14 },
+      { role: "Infosys SE", min: 3.6, max: 4.25 },
+      { role: "Wipro Turbo NLTH", min: 6.5, max: 7 },
+      { role: "Accenture ASE", min: 4.5, max: 5.5 },
+    ]} caption="Service company fixed bands 2026" />
+  ),
+
+  /* IBM — interview process */
+  "ibm-interview-questions-india-2026||IBM India Interview Process Overview": (
+    <RoundFlow rounds={[
+      { label: "IBM Cognitive Assessment", duration: "30 min", detail: "Logical reasoning, numerical aptitude, verbal ability" },
+      { label: "Technical Round 1", duration: "45–60 min", detail: "Role-specific — DSA, CS fundamentals" },
+      { label: "Technical Round 2", duration: "45 min", detail: "SDE roles only — system design or domain depth" },
+      { label: "HR / Competency Round", duration: "30 min", detail: "IBM values alignment: client success, innovation, trust" },
+    ]} />
+  ),
+
+  /* IBM — salary */
+  "ibm-interview-questions-india-2026||IBM India Compensation 2026": (
+    <SalaryLadder maxLPA={35} rows={[
+      { role: "SDE Fresher", min: 4.5, max: 7 },
+      { role: "SDE 2 years", min: 12, max: 18 },
+      { role: "SDE 5 years (Senior)", min: 20, max: 32 },
+      { role: "GBS Consulting Analyst (Fresher)", min: 6, max: 8.5 },
+    ]} caption="IBM India 2026 (below Tier-1, above service IT)" />
+  ),
+
+  /* DSA 60-day — weeks 1-2 */
+  "dsa-60-day-preparation-plan||Weeks 1–2: Arrays, Strings, and Two Pointers": (
+    <FrameworkSteps steps={[
+      { number: "W1", label: "Arrays & Prefix Sums", hint: "Days 1–7: max subarray, find duplicates, rotate array, range sum query, sliding window basics." },
+      { number: "W2", label: "Strings & Two Pointers", hint: "Days 8–14: anagram check, palindrome, two pointers (3-sum, trapping rainwater), binary search variants." },
+      { number: "Mock", label: "Week 2 Baseline", hint: "Day 14: 3 timed problems at 30 min each with no hints. Baseline your speed and accuracy." },
+    ]} />
+  ),
+
+  /* DSA 60-day — weeks 5-6 */
+  "dsa-60-day-preparation-plan||Weeks 5–6: Graphs, Heaps, and Dynamic Programming": (
+    <FrameworkSteps steps={[
+      { number: "W5a", label: "Graphs", hint: "Days 29–33: BFS/DFS, connected components, number of islands, course schedule, shortest path (Dijkstra)." },
+      { number: "W5b", label: "Heaps", hint: "Days 34–35: kth largest element, merge k sorted lists, top k frequent elements using priority queue." },
+      { number: "W6a", label: "1D Dynamic Programming", hint: "Days 37–38: climbing stairs, house robber, coin change — build intuition for memoization." },
+      { number: "W6b", label: "2D Dynamic Programming", hint: "Days 39–40: LCS, 0/1 knapsack, minimum path sum — practice drawing the DP table." },
+    ]} />
+  ),
+
+  /* PM salary — APM programs */
+  "product-manager-salary-india-2026||APM Salary (Associate/Junior PM)": (
+    <SalaryLadder maxLPA={32} rows={[
+      { role: "Google APM India", min: 22, max: 30 },
+      { role: "Amazon APM", min: 20, max: 26 },
+      { role: "Flipkart APM", min: 18, max: 24 },
+      { role: "PhonePe APM", min: 16, max: 22 },
+      { role: "Razorpay APM", min: 16, max: 22 },
+      { role: "Swiggy APM", min: 15, max: 20 },
+      { role: "Freshworks APM", min: 12, max: 16 },
+    ]} caption="APM program packages India 2026" />
+  ),
+
+  /* PM salary — by company tier */
+  "product-manager-salary-india-2026||PM Salary by Company": (
+    <TierCompare cards={[
+      {
+        tier: "FAANG India",
+        examples: "Google · Amazon · Microsoft",
+        rows: [
+          { label: "Senior PM", range: "₹80 L – 1.4 Cr" },
+          { label: "Principal PM", range: "₹1.2 – 2 Cr" },
+        ],
+      },
+      {
+        tier: "Fintech Unicorns",
+        examples: "Razorpay · PhonePe · CRED",
+        rows: [
+          { label: "Senior PM", range: "₹50–90 LPA" },
+          { label: "Group PM", range: "₹80 L – 1.4 Cr" },
+        ],
+      },
+      {
+        tier: "Consumer Internet",
+        examples: "Swiggy · Zomato · Flipkart",
+        rows: [
+          { label: "Senior PM", range: "₹45–80 LPA" },
+          { label: "Group PM", range: "₹70 L – 1.2 Cr" },
+        ],
+      },
+    ]} />
+  ),
+
+  /* Why hire you — SPR framework */
+  "why-should-we-hire-you-answer-india||The SPR Framework: Skill, Proof, Relevance": (
+    <FrameworkSteps steps={[
+      { number: "S", label: "Skill", hint: "Name one concrete capability. Not 'I'm good at coding' — 'I'm strong in Java with hands-on Spring Boot experience.'" },
+      { number: "P", label: "Proof", hint: "Back it with one specific example: a project, hackathon, internship task — anything real with a measurable outcome." },
+      { number: "R", label: "Relevance", hint: "Connect it explicitly to what this company does. Show you researched — name a product, division, or technical challenge." },
+    ]} />
+  ),
+
+  /* Self-introduction — present-past-future */
+  "how-to-introduce-yourself-in-interview||The Perfect Structure (Present-Past-Future)": (
+    <FrameworkSteps steps={[
+      { number: "01", label: "Present", hint: "Who you are professionally right now: your role, key skills, and your strongest recent achievement." },
+      { number: "02", label: "Past", hint: "How you got here: relevant education and experience that created the trajectory you're on." },
+      { number: "03", label: "Future", hint: "Why you're here: what excites you about this specific role at this specific company. Be concrete." },
+    ]} />
+  ),
+
+  /* Python developer salary */
+  "python-developer-salary-india-2026||Python Developer Salary by Experience Level (2026)": (
+    <SalaryLadder maxLPA={80} rows={[
+      { role: "Fresher (0–1 yr) — service co.", min: 3.5, max: 6 },
+      { role: "Fresher (0–1 yr) — product co.", min: 6, max: 10 },
+      { role: "Junior (1–3 yr)", min: 7, max: 14 },
+      { role: "Mid-level (3–6 yr)", min: 14, max: 25 },
+      { role: "Senior (6+ yr)", min: 25, max: 45 },
+      { role: "Staff / Principal", min: 45, max: 80 },
+    ]} caption="Python developer salaries India 2026" />
+  ),
+
+  /* Python salary by company type */
+  "python-developer-salary-india-2026||Python Salaries by Company Type": (
+    <TierCompare cards={[
+      {
+        tier: "FAANG India",
+        examples: "Google · Amazon · Microsoft · Meta",
+        rows: [{ label: "Range (by level)", range: "₹20–60 LPA + RSUs" }],
+      },
+      {
+        tier: "Unicorn Startups",
+        examples: "Razorpay · PhonePe · CRED · Meesho",
+        rows: [{ label: "Range", range: "₹15–40 LPA + equity" }],
+      },
+      {
+        tier: "IT Service Companies",
+        examples: "TCS · Infosys · Wipro · HCL",
+        rows: [{ label: "Range", range: "₹4–18 LPA" }],
+      },
+    ]} />
+  ),
+
+  /* Data analyst salary by experience */
+  "data-analyst-salary-india-2026||Data Analyst Salary by Experience (India 2026)": (
+    <SalaryLadder maxLPA={50} rows={[
+      { role: "Entry Level (0–1 yr)", min: 3, max: 6 },
+      { role: "Junior Analyst (1–3 yr)", min: 6, max: 12 },
+      { role: "Mid-level (3–6 yr)", min: 12, max: 22 },
+      { role: "Senior Analyst (6+ yr)", min: 22, max: 35 },
+      { role: "Analytics Lead / Manager", min: 30, max: 50 },
+    ]} caption="Data analyst salaries India 2026" />
+  ),
+
+  /* Data roles comparison */
+  "data-analyst-salary-india-2026||Data Analyst vs Data Engineer vs Data Scientist Salary": (
+    <TierCompare cards={[
+      {
+        tier: "Data Analyst",
+        examples: "SQL · BI · Business insights",
+        rows: [{ label: "Salary range", range: "₹3–30 LPA" }],
+      },
+      {
+        tier: "Data Engineer",
+        examples: "Pipelines · PySpark · Cloud",
+        rows: [{ label: "Salary range", range: "₹8–45 LPA" }],
+      },
+      {
+        tier: "Data Scientist",
+        examples: "ML · Statistics · Modelling",
+        rows: [{ label: "Salary range", range: "₹8–40 LPA" }],
+      },
+    ]} />
+  ),
+
+  /* TCS iON NQT — exam pattern */
+  "how-to-crack-tcs-ion-nqt-2026||TCS NQT 2026 Exam Pattern and Sections": (
+    <RoundFlow rounds={[
+      { label: "Verbal Ability", duration: "30 min", detail: "24 questions — RC, vocabulary, error spotting" },
+      { label: "Reasoning Ability", duration: "50 min", detail: "30 questions — logical, blood relations, seating" },
+      { label: "Numerical Ability", duration: "40 min", detail: "26 questions — arithmetic, DI, time-speed-distance" },
+      { label: "Programming Logic", duration: "15 min", detail: "10 questions — flowcharts, pseudocode, algorithms" },
+      { label: "Coding (Digital only)", duration: "45 min", detail: "2 medium-difficulty programming problems" },
+    ]} />
+  ),
+
+  /* TCS iON NQT — 30-day plan */
+  "how-to-crack-tcs-ion-nqt-2026||30-Day NQT Preparation Plan": (
+    <FrameworkSteps steps={[
+      { number: "W1", label: "Baseline + Verbal / Reasoning", hint: "Take a full mock before prep. Identify weakest section. Days 1–7: 1 hr verbal + 1 hr reasoning daily." },
+      { number: "W2", label: "Numerical + Programming Logic", hint: "Days 8–14: arithmetic shortcuts, percentage tricks, profit-loss. 30 min programming logic daily." },
+      { number: "W3", label: "Speed Drills + Mocks", hint: "Days 15–21: timed drills for slow question types. Take 2 full mock tests, review mistakes between each." },
+      { number: "W4", label: "Simulation + HR Prep", hint: "Days 22–28: 3 full mock tests spaced for review. Practice 5 HR questions out loud daily with STAR structure." },
+    ]} />
+  ),
+
+  /* Wipro Elite NTH vs NLTH */
+  "wipro-elite-nlth-preparation-2026||Wipro Elite NTH vs NLTH — What's the Difference?": (
+    <SalaryLadder maxLPA={8} rows={[
+      { role: "NLTH Standard", min: 3.5, max: 4.5, note: "60%+ academics" },
+      { role: "Elite NTH (Turbo)", min: 6.5, max: 7, note: "65%+ academics, harder coding" },
+    ]} caption="Both routes use same interview process" />
+  ),
+
+  /* React developer salary */
+  "react-developer-salary-india-2026||React Developer Salary by Experience (India 2026)": (
+    <SalaryLadder maxLPA={70} rows={[
+      { role: "Fresher (0–1 yr)", min: 4, max: 8 },
+      { role: "Junior (1–3 yr)", min: 8, max: 16 },
+      { role: "Mid-level (3–6 yr)", min: 16, max: 28 },
+      { role: "Senior Frontend Eng. (6+ yr)", min: 28, max: 45 },
+      { role: "Staff / Principal", min: 45, max: 70 },
+    ]} caption="React developer salaries India 2026" />
+  ),
+
+  /* Zomato PM — interview process */
+  "zomato-product-manager-interview-2026||Zomato's Interview Process (2026)": (
+    <RoundFlow rounds={[
+      { label: "Recruiter Call", duration: "30 min", detail: "Background, motivation, 'Why Zomato?' must be specific" },
+      { label: "Case Round 1", duration: "60 min", detail: "Product sense or improvement case (restaurant discovery, order frequency)" },
+      { label: "Case Round 2", duration: "60 min", detail: "Metric / analytics case (diagnose reorder rate drop, define Gold metrics)" },
+      { label: "Behavioral Round", duration: "45 min", detail: "Ownership, data-driven decisions, customer empathy" },
+      { label: "Leadership Round", duration: "45 min", detail: "Product strategy + cross-functional alignment stories" },
+    ]} />
+  ),
+
+  /* Campus placements — typical process */
+  "campus-placement-interview-tips||Typical Placement Process": (
+    <RoundFlow rounds={[
+      { label: "PPT", detail: "Pre-Placement Talk — attend every one, even for uncertain companies" },
+      { label: "Aptitude Test", duration: "45–90 min", detail: "Quantitative, verbal, logical reasoning — eliminates 60–80%" },
+      { label: "Technical Round", detail: "DSA + CS fundamentals + project discussion" },
+      { label: "HR Round", detail: "Behavioral questions, salary expectations, joining date" },
+    ]} />
+  ),
+
+  /* Mock interview — 3-session framework */
+  "mock-interview-practice-guide||The 3-Session Framework": (
+    <FrameworkSteps steps={[
+      { number: "01", label: "Baseline Session", hint: "Do a full mock without preparation. Record yourself. Establishes where you actually are — not where you think you are." },
+      { number: "02", label: "Targeted Practice", hint: "Focus on the 2–3 weaknesses from Session 1. If answers lack structure, drill STAR. If filler words, practice pausing." },
+      { number: "03", label: "Full Simulation", hint: "Simulate the real interview as closely as possible: different question types, time pressure, follow-ups. Builds confidence through realism." },
+    ]} />
+  ),
+
+  /* Salary negotiation — headroom by level */
+  "salary-negotiation-tips-india||When Companies Have Room to Negotiate": (
+    <SalaryLadder maxLPA={100} rows={[
+      { role: "Freshers — mass hiring", min: 0, max: 10, note: "0–10% room" },
+      { role: "Freshers — product companies", min: 15, max: 30, note: "15–30% room" },
+      { role: "Experienced (3–5 yrs)", min: 20, max: 40, note: "20–40% room" },
+      { role: "Experienced (5+ yrs)", min: 25, max: 50, note: "25–50% room" },
+    ]} caption="Negotiation headroom as % of initial offer" />
   ),
 };
 
