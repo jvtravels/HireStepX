@@ -185,24 +185,12 @@ export function EditorialHero({
     <section
       className="ed-hero"
       style={{
-        position: "relative",
         paddingTop: 96,
         paddingBottom: 72,
         background: t.cream,
         borderBottom: `1px solid ${t.line}`,
-        overflow: "hidden",
       }}
     >
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse 68% 54% at 28% 0%, rgba(180, 83, 9, 0.09) 0%, transparent 68%)",
-          pointerEvents: "none",
-        }}
-      />
       <div className="ed-container" style={{ position: "relative" }}>
         {meta && (
           <div className="ed-rise ed-d1" style={{ marginBottom: 22 }}>
