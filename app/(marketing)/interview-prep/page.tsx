@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
+import { FooterDome } from "@/marketing-v2/FooterDome";
 
 /* /interview-prep — pillar page targeting broad "interview preparation
  * India" head terms. Acts as the hub for the entire company × focus
@@ -164,6 +166,7 @@ export default async function InterviewPrepPage() {
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Interview Prep", path: "/interview-prep" }]))} />
 
+      <NavV2 />
       <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
 
@@ -431,6 +434,8 @@ export default async function InterviewPrepPage() {
 
         </div>
       </main>
+      <FooterDome />
+      <MobileStickyCTA />
     </>
   );
 }
