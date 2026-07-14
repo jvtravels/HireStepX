@@ -36,6 +36,8 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-card:has(.blog-card-link:focus-visible) { border-color: ${t.copper}; box-shadow: 0 0 0 3px ${t.copperSoft}; }
         .blog-card .blog-card-meta { position: relative; z-index: 2; }
         .blog-faq-btn:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 2px; border-radius: 4px; }
+        .blog-clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .blog-clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .blog-cat-tab { position: relative; padding: 12px 0 14px; background: none; border: none; cursor: pointer; font-family: ${fonts.sans}; font-size: 14px; font-weight: 600; color: ${t.inkSoft}; transition: color 160ms cubic-bezier(0.16,1,0.3,1); white-space: nowrap; flex-shrink: 0; min-height: 44px; display: inline-flex; align-items: center; }
         .blog-cat-tab::after { content: ""; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: ${t.coal}; border-radius: 1px; transform: scaleX(0); transition: transform 200ms cubic-bezier(0.16,1,0.3,1); transform-origin: left; }
         .blog-cat-tab.active { color: ${t.coal}; }
@@ -1877,37 +1879,56 @@ const CATEGORIES = ["All", "Company Guides", "Freshers", "Behavioral", "Technica
 /* ─── Compact card — 3-col grid variant ───────────────────────────────
  * All cards share the same 200px image height for a balanced grid row.
  * Visual hierarchy comes from column width (3fr vs 2fr), not image height. */
-function CompactCard({ post, lead }: { post: BlogPost; lead?: boolean }) {
+function CompactCard({ post }: { post: BlogPost }) {
   const [imgFailed, setImgFailed] = useState(false);
+  const d = new Date(post.datePublished);
+  const dateLabel = [d.getDate(), d.getMonth() + 1, d.getFullYear() % 100]
+    .map(n => String(n).padStart(2, "0")).join(".");
   return (
-    <article
-      className="blog-card"
-      style={{
-        background: t.creamSoft, borderRadius: 14, border: `1px solid ${t.line}`,
-        overflow: "hidden", display: "flex", flexDirection: "column",
-      }}
-    >
-      {!imgFailed && (
-        <div style={{ position: "relative", height: 200, background: t.creamSoft, flexShrink: 0 }}>
+    <article className="blog-card" style={{
+      background: t.white, borderRadius: 14, border: `1px solid ${t.lineStrong}`,
+      overflow: "hidden", display: "flex", flexDirection: "column",
+    }}>
+      {/* Image area with overlay badges */}
+      <div style={{ position: "relative", aspectRatio: "4 / 3", background: t.creamSoft, flexShrink: 0, overflow: "hidden" }}>
+        {!imgFailed && (
           <Image
             src={post.heroImage} alt={post.heroAlt}
-            fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 40vw"
+            fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
             onError={() => setImgFailed(true)}
             style={{ objectFit: "cover" }}
           />
+        )}
+        {/* Category + date pills overlaid on image */}
+        <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6 }}>
+          <span style={{
+            fontFamily: fonts.sans, fontSize: 11, fontWeight: 500, color: t.coal,
+            background: "rgba(255,255,255,0.92)", borderRadius: 999,
+            padding: "4px 11px", backdropFilter: "blur(4px)",
+          }}>{post.category}</span>
+          <span style={{
+            fontFamily: fonts.sans, fontSize: 11, fontWeight: 500, color: t.coal,
+            background: "rgba(255,255,255,0.92)", borderRadius: 999,
+            padding: "4px 11px", backdropFilter: "blur(4px)",
+          }}>{dateLabel}</span>
         </div>
-      )}
-      <div style={{ padding: "20px 22px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
-        <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-          {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
-        </p>
-        <h3 style={{ fontFamily: fonts.serif, fontSize: lead ? 21 : 17, fontWeight: 400, color: t.coal, lineHeight: 1.25, letterSpacing: "-0.012em", marginBottom: 10, flex: 1, textWrap: "balance" }}>
+      </div>
+
+      {/* Text below image */}
+      <div style={{ padding: "18px 20px 22px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+        <h3
+          className="blog-clamp2"
+          style={{ fontFamily: fonts.serif, fontSize: 20, fontWeight: 400, color: t.coal, lineHeight: 1.22, letterSpacing: "-0.014em", margin: 0 }}
+        >
           <Link href={`/blog/${post.slug}`} className="blog-card-link">
             {post.title}
           </Link>
         </h3>
-        <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
-          {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} · {post.readTime}
+        <p
+          className="blog-clamp3"
+          style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.62, margin: 0 }}
+        >
+          {post.metaDescription}
         </p>
       </div>
     </article>
@@ -2084,8 +2105,8 @@ function BlogIndex() {
         {/* Editorial post grid — alternating card groups and full-width strips */}
         {editorialSections.map((section, si) =>
           section.type === "grid" ? (
-            <div key={`grid-${si}`} className="blog-grid" style={{ display: "grid", gridTemplateColumns: section.items.length === 3 ? "3fr 2fr 2fr" : `repeat(${section.items.length}, 1fr)`, gap: 22, marginBottom: 20 }}>
-              {section.items.map((p, idx) => <CompactCard key={p.slug} post={p} lead={idx === 0} />)}
+            <div key={`grid-${si}`} className="blog-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(section.items.length, 3)}, 1fr)`, gap: 22, marginBottom: 20 }}>
+              {section.items.map((p) => <CompactCard key={p.slug} post={p} />)}
             </div>
           ) : (
             <EditorialStrip key={`strip-${si}`} post={section.item} imageRight={section.imageRight} />
