@@ -357,6 +357,13 @@ export const SEO_PAGES: SeoPage[] = [
       "Hiring committee review — multiple reviewers score your packet independently",
       "Team match + offer",
     ],
+    interviewRounds: [
+      "PM Phone Screen (60 min): One product design question + one metrics/success question. India-specific products come up frequently: YouTube, GPay, Search-in-Hindi. Changing your answer when pushed is expected, not penalised.",
+      "Onsite — Product Sense Round (45 min): How do you build a great product? User empathy, trade-off reasoning, and insight quality matter more than framework name-dropping.",
+      "Onsite — Analytics Round (45 min): Define success metrics, diagnose a metric drop, or design an A/B test. Be specific about north star vs. guardrail metrics.",
+      "Onsite — Leadership Round (45 min): Influence-without-authority stories. Cross-functional conflict, prioritisation under constraint, and stakeholder alignment scenarios.",
+      "Onsite — Product Design Round (45 min): Design a Google product for an underserved Indian user segment. Demonstrate understanding of local constraints (low-bandwidth, regional language, first-time smartphone user).",
+    ],
   },
 
   /* ── Amazon ────────────────────────────────────────────────── */
@@ -420,6 +427,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Counter in writing — name a specific number 15–25% above the offer with one sentence of rationale",
       "Negotiation call — anchor on total compensation (base, variable, equity, joining bonus) not just base",
       "Close or walk away — know your walk-away number before the call begins",
+    ],
+    interviewRounds: [
+      "Offer Receipt: Do not accept on the spot. Ask for 48–72 hours to review. This single action opens room to negotiate — most HR professionals expect it and it does not risk the offer.",
+      "Counter Offer (written): Name a specific number 15–25% above the offer with one sentence of rationale. Do not give a range — the company will anchor on the lower bound. Reference market data for your role and level.",
+      "Negotiation Call: Anchor on total compensation — base, variable pay, joining bonus, ESOPs/RSUs (at Series B+ and public companies), and notice-period buyout. Indian candidates leave 10–15% on the table by negotiating base only.",
+      "Close: Never accept on the first counter. If the company says 'this is the final offer', ask for one small non-monetary item (extra leave, earlier promotion review, remote flexibility) before accepting.",
     ],
   },
 
@@ -680,6 +693,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Case interview (Consulting/Advisory track) — operations or digital transformation case (30–45 min)",
       "HR round — cultural fit, motivation, salary discussion, and track preference",
     ],
+    interviewRounds: [
+      "CogniVue Aptitude Test (60–90 min): Numerical, verbal, and logical reasoning plus situational judgement. This is the first filter — candidates scoring below the band are not advanced regardless of interview performance.",
+      "Group Discussion (15–20 min): 8–12 candidates on a business or social topic. Evaluators score substantive contribution and respectful debate — speaking time doesn't correlate with scores, content does.",
+      "Case Interview (30–45 min): Deloitte cases are interviewer-led and lean on operations and digital transformation — government digitisation, IT outsourcing turnaround, healthcare transformation. Prepare 2–3 India public-sector scenarios alongside private IT sector cases.",
+      "HR Round (20–30 min): Cultural fit, motivation for consulting, track preference (USI delivery vs. strategy), and salary discussion. 'Why Deloitte over MBB' question is common — answer specifically by referencing Deloitte's USI model or a practice area.",
+    ],
   },
 
   /* ── McKinsey / BCG ────────────────────────────────────────────────── */
@@ -698,6 +717,11 @@ export const SEO_PAGES: SeoPage[] = [
       "Final-round interviews (×2–3) — senior partner-led cases; higher stakes and less structured",
       "Offer discussion — practice area preference, office location, and joining timeline",
     ],
+    interviewRounds: [
+      "McKinsey Solve Game / PST: Online cognitive assessment testing data interpretation, systems thinking, and logical reasoning under time pressure. This filters most candidates before interviews — prepare with past PST papers or ecosystem game walkthroughs.",
+      "First-Round Case Interview (×2, ~50 min each): One candidate-led case + one PEI (Personal Experience Interview). McKinsey cases are unstructured — the interviewer withholds information deliberately. State a hypothesis in the first 30 seconds, then structure the proof. Rigid framework recitation without insight is the most common first-round rejection reason.",
+      "Final-Round Interviews (×2–3, partner-led): Senior McKinsey partners run less structured cases with greater ambiguity. The PEI at this level probes leadership depth — one story that holds up to 30 minutes of follow-up is the required preparation target.",
+    ],
   },
   {
     slug: "bcg-case-interview-practice",
@@ -713,6 +737,11 @@ export const SEO_PAGES: SeoPage[] = [
       "Second round — 2 additional cases at higher difficulty + partner fit conversation",
       "Partner interview — final cultural and judgment assessment",
       "Offer decision within 2–3 business days of final round",
+    ],
+    interviewRounds: [
+      "First Round (2 cases + 30-min fit): One BCG-led structured case + one candidate-led case. BCG specifically alternates formats within the same loop — be ready to drive structure independently in the candidate-led case with no cues.",
+      "Second Round (2 cases + partner fit): Higher difficulty cases — market sizing with conflicting data, profitability diagnosis with ambiguous inputs. The 'it depends' answer is expected; have a framework for resolving what it depends on.",
+      "PEI (Personal Experience Interview, runs in every round): One leadership/impact story that must hold up to 30 minutes of follow-up questioning. Prepare a single experience in full depth rather than multiple stories at surface level.",
     ],
   },
 
@@ -1205,6 +1234,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Technical interview 2: DSA + system-level thinking (no full system design for SDE-1)",
       "HR interview: LP-deep dive + compensation discussion",
     ],
+    interviewRounds: [
+      "Online Assessment (90 min): 2 coding problems (LeetCode Medium equivalent) + 20 debugging MCQs. LP behavioral questions may appear in short-answer form — the same Leadership Principles as lateral interviews, but asked about college-level scope.",
+      "Technical Round 1 — DSA + LP (45–60 min): One hard DSA problem + 1–2 LP behavioral questions. LP questions at campus level probe college project examples: 'tell me about a time you took ownership in a team project.' Quantify outcomes even if the scale is small.",
+      "Technical Round 2 — DSA + System Thinking (45–60 min): Another DSA problem + conceptual system-level questions. No full system design for SDE-1 freshers — expect questions like 'how would you design a URL shortener at a high level?' rather than detailed distributed systems.",
+      "HR Interview (30 min): LP deep-dive + compensation discussion. Amazon campus SDE-1 packages at IITs/NITs range from ₹24–50 LPA all-in — recruiters expect you to know the ballpark, not negotiate blind.",
+    ],
   },
 
   /* ── IBM campus / consulting ────────────────────────────────────────── */
@@ -1223,6 +1258,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Technical Interview: CS fundamentals (OOP, DBMS, OS, Networking) + simple coding",
       "HR Interview: Values alignment, relocation, and career aspirations",
     ],
+    interviewRounds: [
+      "Cognitive Ability Assessment (online, 60 min): Verbal, numerical, and abstract reasoning — harder on logical reasoning than TCS NQT but more predictable in format. This is the main filter for IBM campus recruitment.",
+      "Group Discussion (GBS track only, 15–20 min): A business or social topic evaluated on substantive contribution, not speaking time. IBM GBS culture values collaborative reasoning — respectful disagreement with evidence is rewarded over domination.",
+      "Technical Interview (45 min): CS fundamentals at depth — OOP, DBMS normalisation, OS scheduling, networking basics — plus 1–2 simple coding questions. IBM interviews reward learning agility: 'I don't know this yet but here is how I would find out' is an acceptable answer when paired with a concrete learning story.",
+      "HR Interview (20–30 min): Values alignment (IBM's 'Think' culture — curiosity, collaboration, courage), relocation readiness, and career aspirations. Mentioning interest in IBM's AI (Watson), hybrid cloud (OpenShift), or a specific GBS practice area is a meaningful positive signal.",
+    ],
   },
   {
     slug: "ibm-consultant-interview-questions",
@@ -1238,6 +1279,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Case interview round 1 — structured business problem tied to technology solution",
       "Case interview round 2 — digital transformation or cloud migration case",
       "Final round — culture fit and values alignment with IBM; offer decision within 1–2 weeks",
+    ],
+    interviewRounds: [
+      "HR Screening Call (30 min): Background, motivation for IBM GBS specifically, and understanding of IBM's service lines (consulting + technology together). Candidates who confuse IBM GBS with pure-play strategy consulting are filtered here.",
+      "Case Interview Round 1 (45 min): Structured business problem tied to a technology solution. Unlike McKinsey/BCG cases, IBM GBS expects the solution to reference IBM's tech stack — hybrid cloud (Red Hat), Watson AI, or SAP implementation. Every recommendation needs a phased rollout plan.",
+      "Case Interview Round 2 (45 min): Digital transformation or cloud migration case — typically for a bank, manufacturer, or government client. The answer must include a change management plan alongside the technical migration path.",
+      "Final Round (30–45 min): Culture fit and IBM values alignment. Lateral hires are probed on delivery credibility — interviewers want evidence you have shipped a transformation initiative, not just advised on one. Offer decisions within 1–2 weeks.",
     ],
   },
 
