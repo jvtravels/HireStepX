@@ -67,7 +67,7 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-filter-scroll::-webkit-scrollbar { display: none; }
         @media (max-width: 640px) {
           .blog-grid { grid-template-columns: 1fr !important; }
-          .blog-container { padding: 32px 20px 64px !important; }
+          .blog-container { padding: 32px 20px 64px !important; max-width: 100% !important; }
           .blog-article { padding: 0 20px 56px !important; }
           .blog-hero { display: none !important; }
           .blog-meta { padding: 16px 20px !important; }
@@ -2023,7 +2023,7 @@ function BlogIndex() {
 
   return (
     <BlogShell>
-      <div className="blog-container" style={{ padding: "56px 40px 96px" }}>
+      <div className="blog-container" style={{ maxWidth: 1240, margin: "0 auto", padding: "56px 48px 96px" }}>
         {/* Header */}
         <div style={{ marginBottom: 44, textAlign: "center" }}>
           <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(40px, 5vw, 72px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.08, margin: "0 auto 16px", textWrap: "balance" }}>
