@@ -3000,39 +3000,8 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                 All posts →
               </Link>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${related.length}, 1fr)`, gap: 20 }}>
-              {related.map(r => (
-                <Link key={r.slug} href={`/blog/${r.slug}`} className="blog-card" style={{
-                  display: "flex", flexDirection: "column", textDecoration: "none",
-                  background: t.white, borderRadius: 14, border: `1px solid ${t.lineStrong}`,
-                  overflow: "hidden",
-                }}>
-                  {/* Image with category overlay */}
-                  <div style={{ position: "relative", aspectRatio: "16 / 10", background: t.creamSoft, flexShrink: 0, overflow: "hidden" }}>
-                    <Image
-                      src={r.heroImage} alt={r.heroAlt}
-                      fill sizes="(max-width: 640px) 100vw, 33vw"
-                      style={{ objectFit: "cover" }}
-                      onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                    />
-                    <span style={{
-                      position: "absolute", top: 10, left: 10,
-                      fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.coal,
-                      background: "rgba(255,255,255,0.92)", borderRadius: 999,
-                      padding: "3px 10px", backdropFilter: "blur(4px)",
-                    }}>{r.category}</span>
-                  </div>
-                  {/* Company + title */}
-                  <div style={{ padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 7, flex: 1 }}>
-                    <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>
-                      {r.company}
-                    </p>
-                    <h3 className="blog-clamp2" style={{ fontFamily: fonts.serif, fontSize: 17, fontWeight: 400, color: t.coal, lineHeight: 1.3, letterSpacing: "-0.01em", margin: 0 }}>
-                      {r.title}
-                    </h3>
-                  </div>
-                </Link>
-              ))}
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${related.length}, 1fr)`, gap: 24 }}>
+              {related.map(r => <CompactCard key={r.slug} post={r} />)}
             </div>
           </section>
         )}
