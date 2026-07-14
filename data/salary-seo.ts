@@ -44,7 +44,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "business-analyst", label: "Business Analyst" },
       { roleKey: "ux-designer", label: "UX Designer" },
     ],
-    questionSlug: "tcs-campus-interview-questions",
+    questionSlug: "tcs-ninja-interview-questions",
     hubNote: "Ninja · Digital · Prime tracks — three CTC bands",
   },
   {
@@ -56,7 +56,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: "infosys-behavioral-hr-interview-questions-india-2026",
+    questionSlug: "infosys-behavioral-interview-questions",
     hubNote: "InStep → Systems Engineer → Technical Lead ladder",
   },
   {
@@ -68,7 +68,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: "wipro-behavioral-hr-interview-questions-india-2026",
+    questionSlug: "wipro-behavioral-interview-questions",
     hubNote: "NLTH · Elite · Turbo — salary varies by track",
   },
   {
@@ -82,7 +82,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "data-analyst", label: "Data Analyst" },
       { roleKey: "ux-designer", label: "UX Designer" },
     ],
-    questionSlug: "razorpay-sde-system-design-interview",
+    questionSlug: "razorpay-engineering-interview-questions",
     hubNote: "ESOP-heavy comp — pre-IPO equity matters",
   },
   {
@@ -96,7 +96,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "data-analyst", label: "Data Analyst" },
       { roleKey: "ux-designer", label: "UX Designer" },
     ],
-    questionSlug: "phonepe-sde-system-design-interview",
+    questionSlug: "phonepe-engineering-interview-questions",
     hubNote: "India's largest UPI app — competitive equity bands",
   },
   {
@@ -109,7 +109,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: "flipkart-pm-case-study-interview",
+    questionSlug: "flipkart-sde-interview-questions",
     hubNote: "Walmart-owned — RSU + strong bonus structure",
   },
   {
@@ -122,7 +122,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: "swiggy-pm-case-study-interview",
+    questionSlug: "swiggy-engineering-interview-questions",
     hubNote: "Listed in 2024 — RSU liquidity now available",
   },
   {
@@ -135,7 +135,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: "zomato-pm-case-study-interview",
+    questionSlug: "zomato-product-interview-questions",
     hubNote: "Early-movers got significant RSU appreciation",
   },
   {
@@ -147,7 +147,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
     ],
-    questionSlug: "meesho-pm-case-study-interview",
+    questionSlug: "meesho-engineering-interview-questions",
     hubNote: "Listed December 2025 — ESOP liquidity improving",
   },
   {
@@ -160,7 +160,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: "google-sde-system-design-interview",
+    questionSlug: "google-india-engineering-interview-questions",
     hubNote: "RSU + refreshes — total comp compounds fast at Google",
   },
   {
@@ -173,7 +173,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: "amazon-sde-behavioral-interview-questions-india-2026",
+    questionSlug: "amazon-sde-leadership-principles-interview",
     hubNote: "Signing bonus front-loads year-1 — important for fresher negotiation",
   },
   {
@@ -186,7 +186,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "product-manager", label: "Product Manager" },
       { roleKey: "data-analyst", label: "Data Analyst" },
     ],
-    questionSlug: "microsoft-behavioral-interview-questions-india-2026",
+    questionSlug: "microsoft-behavioral-interview-questions",
     hubNote: "RSU + ESPP — some of the highest total comp in India",
   },
   {
@@ -198,7 +198,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: "cognizant-campus-placement-interview-questions-freshers-2026",
+    questionSlug: "cognizant-genc-interview-questions",
     hubNote: "GenC, GenC Next, GenC Elevate — three fresher bands",
   },
   {
@@ -210,7 +210,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: "hcl-campus-placement-interview-questions-freshers-2026",
+    questionSlug: "hcl-freshers-interview-questions",
     hubNote: "HCL TechBee + campus route — know your track",
   },
   {
@@ -222,7 +222,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: "capgemini-campus-placement-interview-questions-freshers-2026",
+    questionSlug: "capgemini-freshers-interview-questions",
     hubNote: "InfraServices vs. Insights & Data track differ",
   },
   {
@@ -234,7 +234,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: "ltimindtree-campus-placement-interview-questions-freshers-2026",
+    questionSlug: "ltimindtree-freshers-interview-questions",
     hubNote: "Post-merger comp standardization still ongoing",
   },
   {
@@ -269,7 +269,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "consultant", label: "Consultant" },
       { roleKey: "business-analyst", label: "Business Analyst" },
     ],
-    questionSlug: "deloitte-campus-placement-interview-questions-freshers-2026",
+    questionSlug: "deloitte-analyst-interview-questions",
     hubNote: "USI vs. Deloitte Consulting — very different comp",
   },
 ];
