@@ -2030,7 +2030,7 @@ function BlogIndex() {
             Interview prep that actually{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
           </h1>
-          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, maxWidth: "54ch", margin: "0 auto" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, whiteSpace: "nowrap", margin: "0 auto" }}>
             Company-specific guides, question banks, and career strategies built for Indian job seekers.
           </p>
         </div>
