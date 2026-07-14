@@ -1015,7 +1015,7 @@ const posts: BlogPost[] = [
       { question: "What is Zomato PM salary in 2026?", answer: "Zomato PM salary ranges from ₹25–45 LPA at the PM level, ₹45–70 LPA for Senior PM, and ₹70–100 LPA+ for Group PM/Director levels. The compensation includes ESOPs which can significantly add up as Zomato is a publicly listed company." },
       { question: "How hard is the Zomato PM interview?", answer: "Moderately hard — harder than Ola/MakeMyTrip, slightly easier than Flipkart/Razorpay. The bar is high on product context (knowing Zomato's products deeply) and metric cases. Candidates who use generic frameworks without Zomato-specific examples are typically rejected." },
     ],
-    relatedSlugs: ["swiggy-pm-interview-questions", "product-manager-interview-questions-india", "ace-case-study-interviews"],
+    relatedSlugs: ["swiggy-interview-questions-2026", "product-manager-interview-questions-india", "ace-case-study-interviews"],
     practicePageSlugs: [
       { label: "Zomato Product Interview", slug: "zomato-product-interview-questions" },
     ],
