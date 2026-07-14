@@ -26,11 +26,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
-  /* Bumped 2026-07-14: added 4 new pages (zoho-engineering, why-should-we-hire-you,
-     tell-me-about-yourself, common-hr-interview-questions freshers India); updated
-     22 searchPhrases to include "India"/"2026"; all 67 pages now have India-specific
-     search intent signals. */
-  const seoPagesLastModified = new Date("2026-07-14");
+  /* Bumped 2026-07-15: all 67 SEO pages now have interviewRounds field with
+     round-by-round preparation guidance; canonical URL consolidated to /questions/;
+     filter chip bar added to /questions index with campus-placement, hr, behavioral
+     focus chips prominent for Indian fresher demographic. */
+  const seoPagesLastModified = new Date("2026-07-15");
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
