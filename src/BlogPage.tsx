@@ -5,7 +5,7 @@ import { captureClientEvent } from "./posthogClient";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { tokens as t, fonts } from "./auth/_tokens";
+import { tokens as t, fonts, shadows } from "./auth/_tokens";
 import { NavV2, MobileStickyCTA, VideoCtaV2 } from "./marketing-v2/HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./marketing-v2/FooterDome";
 import { useSEO } from "./useSEO";
@@ -72,6 +72,10 @@ function BlogShell({ children }: { children: ReactNode }) {
           .blog-strip-text { padding: 32px 24px !important; }
           .blog-index-cta { flex-direction: column !important; align-items: flex-start !important; }
         }
+        .mv2p-faq[open] .mv2p-faq-marker { transform: rotate(45deg); }
+        .mv2p-faq-marker { transition: transform 180ms cubic-bezier(0.16,1,0.3,1); }
+        .mv2p-faq summary::-webkit-details-marker { display: none; }
+        @media (prefers-reduced-motion: reduce) { .mv2p-faq-marker { transition: none !important; } }
       `}</style>
       <style>{editorialCSS}</style>
       <a href="#main" className="blog-skip">Skip to content</a>
@@ -2205,7 +2209,6 @@ const SECTION_VISUALS: Record<string, ReactNode> = {
 /* ─── Single blog post ─── */
 function BlogPostPage({ post }: { post: BlogPost }) {
   const related = getRelatedPosts(post.relatedSlugs);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   /* Derive video CTA copy from the post's company / category */
   const videoCta = (() => {
@@ -2298,57 +2301,52 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           );
         })}
 
-        {/* FAQ Section — accordion */}
+        {/* FAQ Section — matches homepage FAQ design */}
         {post.faqs.length > 0 && (
           <section style={{ marginTop: 0, paddingTop: 56, borderTop: `1px solid ${t.line}`, marginBottom: 56 }}>
             <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.018em" }}>
               Frequently asked questions
             </h2>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {post.faqs.map((faq, i) => {
-                const isOpen = openFaq === i;
-                return (
-                  <div key={i} style={{ borderBottom: `1px solid ${t.line}` }}>
-                    <button
-                      onClick={() => setOpenFaq(isOpen ? null : i)}
-                      aria-expanded={isOpen}
-                      aria-controls={`faq-answer-${i}`}
-                      className="blog-faq-btn"
-                      style={{
-                        width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
-                        padding: "22px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left",
-                      }}
-                    >
-                      <span style={{ fontFamily: fonts.sans, fontSize: 16, fontWeight: 600, color: t.coal, lineHeight: 1.4, paddingRight: 16 }}>
-                        {faq.question}
-                      </span>
-                      <span
-                        aria-hidden
-                        style={{
-                          flexShrink: 0, color: t.copper, fontSize: 22, lineHeight: 1, display: "inline-block",
-                          transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1)",
-                          transform: isOpen ? "rotate(45deg)" : "rotate(0)",
-                        }}
-                      >
-                        +
-                      </span>
-                    </button>
-                    <div
-                      id={`faq-answer-${i}`}
-                      aria-hidden={!isOpen ? "true" : undefined}
-                      style={{
-                        display: "grid",
-                        gridTemplateRows: isOpen ? "1fr" : "0fr",
-                        transition: "grid-template-rows 280ms cubic-bezier(0.16,1,0.3,1)",
-                      }}
-                    >
-                      <div style={{ overflow: "hidden" }}>
-                        <MarkdownProse text={faq.answer} style={{ fontSize: 16, lineHeight: 1.75, paddingBottom: 22 }} />
-                      </div>
-                    </div>
+            <div style={{
+              background: t.white,
+              border: `1px solid ${t.line}`,
+              borderRadius: 16,
+              boxShadow: shadows.card,
+              overflow: "hidden",
+            }}>
+              {post.faqs.map((faq, i) => (
+                <details
+                  key={i}
+                  className="mv2p-faq"
+                  style={{
+                    borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
+                    padding: "20px 24px",
+                  }}
+                >
+                  <summary style={{
+                    cursor: "pointer",
+                    fontFamily: fonts.serif,
+                    fontSize: 18,
+                    color: t.coal,
+                    letterSpacing: "-0.01em",
+                    listStyle: "none",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 16,
+                    fontWeight: 400,
+                  }}>
+                    {faq.question}
+                    <span aria-hidden className="mv2p-faq-marker" style={{
+                      color: t.copper, fontSize: 22, fontFamily: fonts.sans,
+                      fontWeight: 300, lineHeight: 1, display: "inline-block", flexShrink: 0,
+                    }}>+</span>
+                  </summary>
+                  <div style={{ margin: "12px 0 0" }}>
+                    <MarkdownProse text={faq.answer} style={{ fontSize: 15, lineHeight: 1.65, color: t.inkSoft }} />
                   </div>
-                );
-              })}
+                </details>
+              ))}
             </div>
           </section>
         )}
