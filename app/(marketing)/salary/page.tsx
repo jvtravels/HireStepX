@@ -54,6 +54,45 @@ export default async function SalaryIndexPage() {
 
   const breadcrumbSchema = breadcrumb([{ name: "Salary Guides", path: "/salary" }]);
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is a good salary for a software engineer fresher in India in 2026?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "For freshers in India in 2026, salary ranges by company tier: Service companies (TCS, Infosys, Wipro, Cognizant) — ₹3.5–7 LPA depending on track. Mid-tier product companies (Freshworks, Zoho, LTIMindtree) — ₹6–12 LPA. Indian startups and unicorns (Razorpay, PhonePe, Meesho, CRED) — ₹15–30 LPA. FAANG India campuses (Google, Amazon, Microsoft, Meta) from IIT/NIT — ₹35–60 LPA all-in. These are total CTC figures including variable pay and benefits.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What components make up a software engineer's CTC in India?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Indian tech CTC typically has 4–6 components: (1) Fixed base salary — the guaranteed monthly component. (2) Variable pay — performance bonus, typically 10–20% of base at service companies and 15–30% at product companies. (3) Joining bonus — one-time payment, common when buying out notice period. (4) ESOPs or RSUs — equity at Series B+ startups and public companies; vests over 4 years with a 1-year cliff. (5) Employer PF contribution — 12% of basic, excluded from gross CTC at some companies. (6) Other allowances — HRA, transport, food. Total CTC is the full cost to company; in-hand salary is significantly lower.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How accurate are AmbitionBox and Glassdoor salary figures for Indian companies?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "AmbitionBox and Glassdoor India salary data is directionally accurate but has known biases: (1) Self-reporting bias — employees who are especially happy or unhappy with their salaries over-represent the dataset. (2) Vintage lag — salary data can be 1–3 years old in fast-moving markets. (3) Variable exclusion — many self-reported figures exclude variable pay, ESOPs, and joining bonuses. HireStepX cross-references AmbitionBox, Glassdoor, and Levels.fyi data with public DRHP filings (for listed companies) and labels each entry with a verification date.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How much can I negotiate above the initial offer in Indian tech?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "For most Indian tech companies, counter-offering 15–25% above the initial offer is the standard negotiation range. Service companies (TCS, Infosys, Wipro) have compressed negotiation room for freshers — typically 5–10%. Product startups and unicorns have more room — 15–25% on base, with additional room on joining bonus, ESOPs, and variable cap. FAANG companies in India have structured bands; negotiation works best by requesting the higher end of the band rather than exceeding it. Knowing your BATNA (Best Alternative To a Negotiated Agreement) before the call is essential.",
+        },
+      },
+    ],
+  };
+
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -71,6 +110,11 @@ export default async function SalaryIndexPage() {
 
   return (
     <>
+      <script
+        nonce={nonce || undefined}
+        type="application/ld+json"
+        dangerouslySetInnerHTML={ldJson(faqSchema)}
+      />
       <script
         nonce={nonce || undefined}
         type="application/ld+json"

@@ -67,6 +67,63 @@ export default async function QuestionsIndexRoute({
     ? SEO_PAGES.filter((p) => p.focus === focus)
     : SEO_PAGES;
 
+  /* FAQPage schema — targets "how to prepare for interview" head terms.
+     Answers sourced from established HireStepX preparation methodology. */
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "How do I prepare for a campus placement interview in India?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Campus placement preparation in India has three layers: (1) Online test — aptitude speed (TCS/Wipro/Cognizant all use timed aptitude with no negative marking), coding fundamentals (arrays, linked lists, sorting, basic DP), and verbal reasoning. (2) Technical interview — CS fundamentals (OOP, OS, DBMS, networking), 1–2 data structure coding problems, and a project walkthrough you can defend end-to-end. (3) HR round — explicit yes on relocation and shift flexibility, a specific 'why this company' answer citing a real initiative, and a 45–60 second 'why should we hire you' answer with one measurable proof point. Practice speaking your answers aloud, not just writing them.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Which companies hire the most freshers in India in 2026?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "The largest fresher hirers in India for 2026 are TCS (NQT/Ninja/Digital tracks), Infosys (SE/SP/PP tracks), Wipro (Elite NTH/Turbo tracks), Cognizant (GenC/GenC Pro), Accenture (ASE), HCL (GET programme), Capgemini (Analyst), and LTIMindtree. These seven companies collectively hire tens of thousands of freshers annually. For higher packages (₹6.5–25 LPA), the next tier includes Zoho, Freshworks, Razorpay, PhonePe, Flipkart, Amazon (SDE-1), and the FAANG companies for candidates from IITs and NITs.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What is the difference between TCS NQT, Ninja, and Digital tracks?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "TCS NQT is the base aptitude test — all candidates take it. Scoring determines which track you qualify for: NQT Ninja (₹3.36 LPA, moderate coding bar, most seats) or NQT Digital (₹7 LPA, hard coding bar, ~15% of total offers). TCS Prime (₹9 LPA+) is a separate off-campus track for exceptional coders. The technical interview and HR round are identical across tracks; the online test performance is the sole differentiator for track placement.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How do I answer 'tell me about yourself' in a fresher interview?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "The correct structure runs in reverse-chronological order with a forward-looking close: (1) Who you are now — your major, graduation year, and primary technical skill. (2) Your strongest proof point — one specific project, internship, or competition result with a measurable outcome. (3) Connection to the role — one sentence on why this company or role specifically. (4) Forward close — what you want to contribute or learn in year one. Target 60–90 seconds spoken. Never start with 'I was born in...' or 'I completed my schooling at...' — begin with who you are today.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What data structures and algorithms should freshers prepare for Indian campus placements?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "For TCS, Infosys, Wipro, Cognizant, and Accenture: arrays, linked lists, stacks, queues, basic trees (BST, traversals), and simple sorting algorithms. Basic dynamic programming (fibonacci, coin change) is tested at Wipro Turbo and Infosys SP/PP tracks. For product companies (Razorpay, Flipkart, PhonePe, Meesho): graphs (BFS, DFS, shortest path), advanced DP, and binary search on answer are commonly tested at medium difficulty. For FAANG (Amazon, Google, Meta, Microsoft): medium-hard LeetCode level — graph traversal, DP with memoisation, sliding window, and two-pointer patterns are the most frequent categories.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How is AI mock interview practice different from practicing with friends or flashcards?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Three key differences: (1) Speaking vs. thinking — knowing the answer and saying it under pressure are different skills. AI voice mock interviews force you to articulate your thinking aloud, which is exactly what a live interview tests. (2) Instant feedback — a human practice partner can't consistently score your STAR framework coverage, communication clarity, or answer completeness across 30 practice sessions. AI can. (3) Available any time — the 72 hours before an interview is when practice matters most, and a practice partner isn't always available then. HireStepX offers 2 free AI practice sessions with no credit card required.",
+        },
+      },
+    ],
+  };
+
   /* ItemList schema — helps Google understand this is a curated collection
      and may generate a sitelinks-style display in the SERP. */
   const itemListSchema = {
@@ -87,6 +144,11 @@ export default async function QuestionsIndexRoute({
   return (
     <>
       {/* Structured data */}
+      <script
+        nonce={nonce || undefined}
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <script
         nonce={nonce || undefined}
         type="application/ld+json"
