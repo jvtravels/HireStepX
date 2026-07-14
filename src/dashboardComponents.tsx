@@ -125,7 +125,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   // Cream palette shadow — matches the marketing /pricing page and settings repaint.
   // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
   const c = {
-    obsidian: T.cream, graphite: "#FDFCF7", carbon: T.creamSoft,
+    obsidian: T.cream, graphite: T.creamRaised, carbon: T.creamSoft,
     ivory: T.coal, chalk: "#3F3A33", stone: "#6B655C",
     gilt: T.copper, giltDark: T.copperDark, giltLight: T.copper100,
     sage: T.success, ember: T.error,

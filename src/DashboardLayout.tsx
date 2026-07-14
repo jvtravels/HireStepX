@@ -470,7 +470,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       border: hasCredits ? "1px solid rgba(21,128,61,0.22)" : "1px solid rgba(180,83,9,0.18)",
                       borderRadius: 8 }}>
                       <span style={{ fontFamily: font.ui, fontSize: 11, display: "flex", alignItems: "center", gap: 5,
-                        color: hasCredits ? "#166534" : c.gilt }}>
+                        color: hasCredits ? T.successInk : c.gilt }}>
                         {hasCredits ? (
                           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         ) : (

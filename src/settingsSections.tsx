@@ -5,33 +5,35 @@ import { authHeaders, type PaymentRecord } from "./supabase";
 import { useAuth, referralSignupUrl } from "./AuthContext";
 import { captureClientEvent } from "./posthogClient";
 import { useDashboardSubscription } from "./DashboardContext";
+import { tokens as t } from "./auth/_tokens";
 
 
-/* Cream-mode local tokens — mirror tempo/designs/canvases/design-system/_tokens.ts
-   and DashboardLayout. Same keys as the old dark `c` so JSX style values
-   keep compiling; values are now cream / coal / copper / indigo. */
+/* Cream-mode local tokens — same keys as the old dark `c` so JSX style
+   values keep compiling. Semantic values reference the shared design
+   tokens (src/auth/_tokens.ts) so the hex-gate has a single source of
+   truth; only the faint tint fills below (no exact token) stay raw. */
 const c = {
-  obsidian: "#FAF7F0",
-  graphite: "#FDFCF7",
-  border: "#EBE5D2",
-  borderStrong: "#D6CDB5",
-  gilt: "#B45309",
-  giltDark: "#923F07",
-  ivory: "#0E0C08",
-  chalk: "#0E0C08",
-  stone: "#6E6759",
-  sage: "#15803D",
-  ember: "#B91C1C",
-  slate: "#6E6759",
-  indigo: "#312E81",
-  indigoDeep: "#1E1B4B",
-  indigo100: "#E5E2F2",
-  copper100: "#F4E5D8",
-  success100: "#DCFCE7",
-  error100: "#FEE2E2",
-  warning100: "#FEF3C7",
-  cream: "#FAF7F0",
-  creamSoft: "#F4EFE3",
+  obsidian: t.cream,
+  graphite: t.creamRaised,
+  border: t.line,
+  borderStrong: t.lineStrong,
+  gilt: t.copper,
+  giltDark: t.copperDark,
+  ivory: t.coal,
+  chalk: t.coal,
+  stone: t.inkSoft,
+  sage: t.success,
+  ember: t.error,
+  slate: t.inkSoft,
+  indigo: t.indigo,
+  indigoDeep: t.indigoDeep,
+  indigo100: t.indigo100,
+  copper100: t.copper100,
+  success100: t.success100,
+  error100: t.error100,
+  warning100: t.warning100,
+  cream: t.cream,
+  creamSoft: t.creamSoft,
 };
 const font = {
   display: "'Instrument Serif', Georgia, serif",
@@ -104,7 +106,7 @@ export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) 
   return (
     <button onClick={onToggle} aria-pressed={on} style={{
       width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-      background: on ? c.indigo : "#EBE5D2",
+      background: on ? c.indigo : c.border,
       padding: 3, transition: "background 0.25s ease", position: "relative",
     }}>
       <div style={{
@@ -582,9 +584,9 @@ function ExtraSessionsInfoBox() {
       border: hasCredits ? `1px solid rgba(21,128,61,0.25)` : "1px solid rgba(180,83,9,0.18)",
     }}>
       <span style={{ fontFamily: font.ui, fontSize: 13, display: "flex", alignItems: "center", gap: 6,
-        color: hasCredits ? "#166534" : c.gilt }}>
+        color: hasCredits ? t.successInk : c.gilt }}>
         {hasCredits ? (
-          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         ) : (
           <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         )}
@@ -1246,10 +1248,10 @@ function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boo
     .toUpperCase() || "?";
   const ts = invite.createdAt ? relativeTime(invite.createdAt) : "";
   const tone = invite.status === "rewarded"
-    ? { label: "Rewarded", bg: "#DCFCE7", fg: c.sage, border: "rgba(21,128,61,0.28)" }
+    ? { label: "Rewarded", bg: c.success100, fg: c.sage, border: "rgba(21,128,61,0.28)" }
     : invite.status === "redeemed"
-      ? { label: "Joined", bg: "#E5E2F2", fg: c.indigo, border: "rgba(49,46,129,0.28)" }
-      : { label: "Pending", bg: "#FEF3C7", fg: "#A16207", border: "rgba(161,98,7,0.28)" };
+      ? { label: "Joined", bg: c.indigo100, fg: c.indigo, border: "rgba(49,46,129,0.28)" }
+      : { label: "Pending", bg: c.warning100, fg: t.warning, border: "rgba(161,98,7,0.28)" };
   return (
     <div className="settings-refer-row" style={{
       display: "grid", gap: 16, alignItems: "center",

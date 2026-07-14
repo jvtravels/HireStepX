@@ -24,11 +24,14 @@ import { join } from "path";
  * raise it.
  */
 
-// Baseline updated 2026-06-22: new panel components (CounterOfferLetterPanel,
-// NextRoundCTA, _primitives, sr-NextStepsSection) and settingsSections.tsx
-// hex literals brought the count from 209 → 230 across 29 files. Gate still
-// ratchets DOWN only — any future addition will fail. Migrate onto tokens.ts.
-const BASELINE_OCCURRENCES = 230;
+// Baseline updated 2026-07-14: detokened settingsSections.tsx (28 → 0) by
+// pointing its local `c` palette at the shared tokens and promoting two reused
+// literals into src/auth/_tokens.ts — creamRaised (#FDFCF7, the warmer raised
+// surface) and successInk (#166534, the AA credits-balance text). The same two
+// literals were then swapped for their new tokens in DashboardSettings.tsx,
+// dashboardComponents.tsx, and DashboardLayout.tsx. Count fell 230 → 215 across
+// 30 files. Gate still ratchets DOWN only — any future addition will fail.
+const BASELINE_OCCURRENCES = 215;
 const BASELINE_FILES = 30;
 
 const HEX = /#[0-9a-fA-F]{6}\b/g;

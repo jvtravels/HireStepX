@@ -18,7 +18,7 @@ import {
 import { tokens as T, fonts as F } from "./auth/_tokens";
 const c = {
   obsidian: T.cream,
-  graphite: "#FDFCF7",         // settings uses a slightly warmer raised surface than dashboard
+  graphite: T.creamRaised,     // settings uses a slightly warmer raised surface than dashboard
   border: T.line,
   borderStrong: T.lineStrong,
   gilt: T.copper,

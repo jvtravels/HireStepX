@@ -7,6 +7,10 @@ export const tokens = {
   cream: "#FAF7F0",
   white: "#FFFFFF",
   creamSoft: "#F4EFE3",
+  // Warmer raised surface — a hair lighter than cream, sits above it for
+  // settings/dashboard cards. Was inlined as `graphite: "#FDFCF7"` in three
+  // dashboard components.
+  creamRaised: "#FDFCF7",
 
   // Ink
   coal: "#0E0C08",
@@ -47,6 +51,10 @@ export const tokens = {
   // Status
   success: "#15803D",
   success100: "#DCFCE7",
+  // Darker success text shade for AA contrast on light/cream surfaces
+  // (~7:1 on success100). Was inlined as "#166534" in the credits-balance
+  // rows of settingsSections + DashboardLayout.
+  successInk: "#166534",
   error: "#B91C1C",
   error100: "#FEE2E2",
   warning: "#A16207",
