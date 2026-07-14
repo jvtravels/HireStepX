@@ -1851,6 +1851,49 @@ const posts: BlogPost[] = [
     ],
     cta: "EM behavioral questions are harder than SDE behavioral questions because the right answers are less formulaic. 'Tell me about a time you managed an underperformer' has no clean STAR template — it requires you to demonstrate judgment about timing, directness, and what accountability actually looks like. HireStepX runs voice mock interviews for EM rounds where the AI evaluates whether your people management answers sound experienced and specific, or vague and theoretical.",
   },
+  {
+    slug: "why-should-we-hire-you-answer-india",
+    title: "Why Should We Hire You? Best Answer for Indian Freshers 2026",
+    metaDescription: "The best answer to 'why should we hire you?' for Indian freshers in 2026. Includes the SPR framework, role-specific examples for TCS, Infosys, Wipro, and Flipkart, and what never to say.",
+    company: "Industry",
+    category: "Behavioral",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=500&fit=crop",
+    heroAlt: "Indian fresher in a job interview confidently answering behavioral questions",
+    datePublished: "2026-07-14",
+    intro: "Most freshers answer 'why should we hire you?' with a list: I'm a quick learner, I'm a team player, I'm passionate about technology. The interviewer has heard this exact answer forty times that week. The problem is not that you're saying the wrong things — it's that you're saying nothing specific. Interviewers asking this question want one thing: evidence that you will add value in this specific role at this specific company. Here is how to give them that.",
+    sections: [
+      {
+        heading: "The SPR Framework: Skill, Proof, Relevance",
+        content: "The three-part answer that works across every Indian fresher interview — TCS, Infosys, Wipro, Flipkart, Accenture — is built on SPR:\n\nSkill: Name one concrete capability. Not 'I'm good at coding' — 'I'm strong in Java with hands-on experience in Spring Boot.'\n\nProof: Back it with one specific example. A college project, a hackathon, an internship task — anything real. 'In my final-year project, I built a REST API that handled 500 concurrent requests in load testing.'\n\nRelevance: Connect it explicitly to what this company does. 'Your role requires backend Java developers who can work in distributed systems — this is exactly what I've been building toward.'\n\nThe full answer runs 90 to 120 words spoken aloud — roughly 45 to 60 seconds at a steady pace. Short enough to stay crisp; long enough to feel complete.",
+      },
+      {
+        heading: "Service Company Answers: TCS, Infosys, Wipro, HCL",
+        content: "Service company interviewers evaluate three things: technical baseline, communication quality, and culture fit. Generic 'I'm passionate' answers fail on all three.\n\nFor TCS Ninja: 'My core skill is object-oriented programming in Java, applied in a two-member team that built a library management system. We handled concurrent book reservations using synchronized methods — hands-on experience with the multithreaded problems that come up in enterprise IT. TCS works on large-scale enterprise applications for global clients, and I want to deepen that backend systems experience in a structured environment like ILP.'\n\nFor Infosys: 'I cleared the InfyTQ Power Programmer certification with 79%, which tested OOP, DBMS, and Python — the same curriculum Infosys fresher training runs on. My project involved a Python Flask backend with MySQL, which maps directly to the GenC Pro track.'\n\nFor Wipro NLTH: 'I've cleared Wipro's mock test with 82% in aptitude through timed practice. Beyond the test, I have 2 Java projects I can walk through in the technical round, and I'm fully flexible on location and shifts.'\n\nKey principle: quote something the company actually does, runs, or values — not a generic statement about innovation.",
+      },
+      {
+        heading: "Product Company Answers: Flipkart, Razorpay, Swiggy",
+        content: "Product company interviewers want ownership, depth of thought, and user empathy. The SPR framework still works, but the Relevance component must be more specific.\n\nFor Flipkart SDE-1: 'My strongest skill is DSA problem-solving — 150+ LeetCode problems focused on trees and graphs. In my major project, I built a product recommendation engine using collaborative filtering, adjacent to the kind of catalog-scale ML infrastructure Flipkart runs. I want to work on systems where my code directly affects millions of transactions.'\n\nFor Razorpay: 'I understand idempotency in distributed systems — I specifically built my API project to handle duplicate requests correctly, thinking about payment retry scenarios. Razorpay's core challenge is reliability in financial infrastructure. I'm building toward that kind of engineering depth, not just feature velocity.'\n\nProduct company answers show you understand the company's specific technical domain — not just that you want a job there.",
+      },
+      {
+        heading: "What Not to Say",
+        content: "These answers actively hurt your chances:\n\n'I'm a quick learner' — everyone says this. It signals you have nothing concrete to point to.\n\n'I'm passionate about technology' — unverifiable. Passion is demonstrated through projects, not stated.\n\n'I'll work hard and give my 100%' — this is the baseline expectation, not a differentiator.\n\n'I have good communication skills' — you're demonstrating communication live in this interview. Don't describe what they can already observe.\n\n'Your company is a leader in the industry' — flattery without specificity. Which division? Which product? Which recent initiative?\n\nThe rule: if your answer could apply to any job at any company, it is not a good answer to 'why should we hire you specifically.'",
+      },
+    ],
+    faqs: [
+      { question: "How long should the 'why should we hire you' answer be?", answer: "90 to 120 words spoken aloud — 45 to 60 seconds at a steady pace. Long enough to include one skill, one proof, and one relevance connection. Short enough to stay crisp. Practice out loud; most candidates underestimate how fast or slow they speak under pressure." },
+      { question: "Can freshers with no work experience answer 'why should we hire you'?", answer: "Yes. College projects, hackathons, certifications, open-source contributions, and lab assignments all count as proof. A final-year project you built and can explain in technical depth is worth more than vague claims about work ethic. Focus on what you actually built and what you learned, not on apologising for the lack of industry experience." },
+      { question: "Should I research the company before answering this question?", answer: "Yes. The Relevance component of your answer must name something specific: a product, a technology stack, a business division, or a challenge the company is known for. Candidates who say 'Wipro is a leading IT company' without specifics have clearly not researched. Candidates who say 'Wipro's WILP program specifically aligns with enterprise Java' have." },
+      { question: "What if the interviewer asks a follow-up to my answer?", answer: "Follow-up questions are a good sign — your answer was specific enough to probe. The most common follow-up is 'tell me more about the project you mentioned.' This is why you should only mention things you can go 3 to 5 minutes deeper on. Never name a project, technology, or skill you cannot explain in detail." },
+    ],
+    relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
+    practicePageSlugs: [
+      { label: "TCS HR Round Practice", slug: "tcs-hr-round-questions" },
+      { label: "Wipro Behavioral Interview Practice", slug: "wipro-behavioral-interview-questions" },
+      { label: "Infosys Campus Interview Practice", slug: "infosys-campus-interview-questions" },
+    ],
+    cta: "Reading the right answer framework is the first step. The gap between knowing the SPR structure and delivering it confidently under interview pressure is where most freshers get caught. HireStepX runs voice mock interviews where you practice 'why should we hire you' out loud — the AI evaluates whether your proof is specific, your relevance connection is genuine, and your delivery sounds natural rather than rehearsed.",
+  },
 ];
 
 /* ─── Helpers ─── */
@@ -1962,7 +2005,7 @@ function BlogIndex() {
 
   return (
     <BlogShell>
-      <div className="blog-container" style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 40px 96px" }}>
+      <div className="blog-container" style={{ padding: "56px 40px 96px" }}>
         {/* Header */}
         <div style={{ marginBottom: 44, textAlign: "center" }}>
           <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 2.8vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 auto 16px", textWrap: "balance" }}>
