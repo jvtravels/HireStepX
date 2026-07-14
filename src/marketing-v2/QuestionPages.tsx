@@ -97,9 +97,7 @@ interface QuestionCardProps {
   showSignupGate: boolean;
 }
 
-function QuestionCard({ question, index, practiceHref, showSignupGate }: QuestionCardProps) {
-  const isBlurred = showSignupGate && index >= 5;
-
+function QuestionCard({ question, index, practiceHref }: Omit<QuestionCardProps, "showSignupGate">) {
   return (
     <li
       className="ed-row"
@@ -113,34 +111,6 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
         overflow: "hidden",
       }}
     >
-      {/* Blur gate overlay for questions 6+ */}
-      {isBlurred && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backdropFilter: "blur(6px)",
-            background: "rgba(250,247,240,0.78)",
-            zIndex: 2,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-          }}
-        >
-          <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, textAlign: "center" }}>
-            Sign up to see this question + practice with voice AI
-          </p>
-          <Link
-            href={practiceHref}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, background: t.copper, color: t.cream, textDecoration: "none", padding: "10px 20px", borderRadius: 999, fontFamily: fonts.sans, fontSize: 13, fontWeight: 600 }}
-          >
-            Sign up free →
-          </Link>
-        </div>
-      )}
-
       {/* Large serif number */}
       <span style={{ fontFamily: fonts.serif, fontSize: 28, fontWeight: 400, color: t.copper, lineHeight: 1, flexShrink: 0, minWidth: 38, opacity: 0.55 }}>
         {String(index + 1).padStart(2, "0")}
@@ -152,22 +122,69 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
           <DifficultyChip difficulty={question.difficulty} />
         </div>
 
-        {/* Question text — no answers, to create desire to practice */}
+        {/* Question text */}
         <p style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.5, color: t.coal, margin: 0 }}>
           {question.text}
         </p>
       </div>
 
       {/* Inline practice link */}
-      {!isBlurred && (
+      <Link
+        href={practiceHref}
+        style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", padding: "8px 0 8px 12px" }}
+      >
+        Practice free →
+      </Link>
+    </li>
+  );
+}
+
+/* Single paywall gate that overlays the bottom portion of the question list */
+function QuestionGate({ practiceHref, hiddenCount }: { practiceHref: string; hiddenCount: number }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: "min(520px, 80%)",
+        pointerEvents: "none",
+        zIndex: 3,
+      }}
+    >
+      {/* Gradient fade from transparent → cream */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: `linear-gradient(to bottom, transparent 0%, ${t.cream} 42%)`,
+      }} />
+      {/* CTA panel — sits in the lower half */}
+      <div style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        paddingBottom: 32,
+        gap: 14,
+        pointerEvents: "auto",
+      }}>
+        <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, textAlign: "center" }}>
+          {hiddenCount} more question{hiddenCount !== 1 ? "s" : ""} — sign up to unlock all
+        </p>
         <Link
           href={practiceHref}
-          style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", padding: "8px 0 8px 12px" }}
+          className="ed-cta"
+          style={{ ...ctaPrimaryStyle("lg"), textDecoration: "none" }}
         >
-          Practice free →
+          Sign up free — unlock all questions <span className="ed-cta-arrow" aria-hidden>→</span>
         </Link>
-      )}
-    </li>
+      </div>
+    </div>
   );
 }
 
@@ -391,13 +408,18 @@ export function QuestionSetPage({
             <section className="ed-reveal" style={{ marginTop: 56 }}>
               <SectionHead
                 title={`${focusLabel} questions ${companyLabel} asked`}
-                sub={`Verified from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback.${showSignupGate ? " First 5 shown free — sign up to unlock all." : ""}`}
+                sub="Verified from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback."
               />
-              <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-                {questions.map((q, i) => (
-                  <QuestionCard key={i} question={q} index={i} practiceHref={practiceHref} showSignupGate={showSignupGate} />
-                ))}
-              </ol>
+              <div style={{ position: "relative" }}>
+                <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {questions.map((q, i) => (
+                    <QuestionCard key={i} question={q} index={i} practiceHref={practiceHref} />
+                  ))}
+                </ol>
+                {showSignupGate && questions.length > 5 && (
+                  <QuestionGate practiceHref={practiceHref} hiddenCount={questions.length - 5} />
+                )}
+              </div>
             </section>
 
           </div>
