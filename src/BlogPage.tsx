@@ -2069,6 +2069,36 @@ function BlogIndex() {
           </p>
         </div>
 
+        {/* Quick links to practice sections */}
+        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, marginBottom: 32 }}>
+          {([
+            ["Practice Questions", "/questions"],
+            ["Campus Placement Prep", "/questions?focus=campus-placement"],
+            ["HR Round Prep", "/questions?focus=hr"],
+            ["For Students", "/for-students"],
+            ["All Companies", "/companies"],
+          ] as [string, string][]).map(([label, href]) => (
+            <a
+              key={href}
+              href={href}
+              style={{
+                display: "inline-block",
+                padding: "6px 14px",
+                border: `1px solid ${t.line}`,
+                borderRadius: 999,
+                fontFamily: fonts.sans,
+                fontSize: 13,
+                fontWeight: 500,
+                color: t.inkSoft,
+                textDecoration: "none",
+                background: t.white,
+              }}
+            >
+              {label} →
+            </a>
+          ))}
+        </div>
+
         {/* Category filters: underline tab style */}
         <div className="blog-filter-scroll" style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 40, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
           {CATEGORIES.map(cat => (
