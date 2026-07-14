@@ -1128,6 +1128,33 @@ export function AboutV2() {
           </div>
         </div>
       </section>
+
+      {/* Start practicing — bridge from mission to product */}
+      <section className="mv2p-section" aria-label="Start practicing" style={{ ...sectionBase, paddingTop: 64, paddingBottom: 64 }}>
+        <div className="mv2-container" style={containerNarrow}>
+          <p style={{ ...eyebrow, marginBottom: 16 }}>Ready to practice?</p>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <a
+              href="/questions"
+              style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.white, background: t.coal, padding: "12px 22px", borderRadius: 8, textDecoration: "none", display: "inline-block" }}
+            >
+              Browse practice questions →
+            </a>
+            <a
+              href="/for-students"
+              style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal, background: "transparent", border: `1px solid ${t.line}`, padding: "12px 22px", borderRadius: 8, textDecoration: "none", display: "inline-block" }}
+            >
+              Campus placement guide →
+            </a>
+            <a
+              href="/companies"
+              style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal, background: "transparent", border: `1px solid ${t.line}`, padding: "12px 22px", borderRadius: 8, textDecoration: "none", display: "inline-block" }}
+            >
+              Browse companies →
+            </a>
+          </div>
+        </div>
+      </section>
     </PageShell>
   );
 }
