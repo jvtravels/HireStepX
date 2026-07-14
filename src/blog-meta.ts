@@ -661,6 +661,20 @@ export const BLOG_META: BlogMeta[] = [
       { question: "What is the best way to prepare for an Engineering Manager interview?", answer: "Three-part preparation: refresh system design at the architectural level (team ownership and operational model, not algorithms); prepare 8–10 STAR stories covering people management, execution, conflict, and growth; practice behavioral questions out loud — most candidates who fail EM interviews fail on delivery, not content." },
     ],
   },
+  {
+    slug: "why-should-we-hire-you-answer-india",
+    title: "Why Should We Hire You? Best Answer for Indian Freshers 2026",
+    metaDescription: "The best answer to 'why should we hire you?' for Indian freshers in 2026. Includes the SPR framework, role-specific examples for TCS, Infosys, Wipro, and Flipkart, and what never to say.",
+    datePublished: "2026-07-14",
+    heroImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=630&fit=crop",
+    company: "Industry", category: "Behavioral",
+    faqs: [
+      { question: "How long should the 'why should we hire you' answer be?", answer: "90 to 120 words spoken aloud — 45 to 60 seconds at a steady pace. Long enough to include one skill, one proof, and one relevance connection. Short enough to stay crisp. Practice out loud; most candidates underestimate how fast or slow they speak under pressure." },
+      { question: "Can freshers with no work experience answer 'why should we hire you'?", answer: "Yes. College projects, hackathons, certifications, open-source contributions, and lab assignments all count as proof. A final-year project you built and can explain in technical depth is worth more than vague claims about work ethic. Focus on what you actually built and what you learned, not on apologising for the lack of industry experience." },
+      { question: "Should I research the company before answering this question?", answer: "Yes. The Relevance component of your answer must name something specific: a product, a technology stack, a business division, or a challenge the company is known for. Candidates who say 'Wipro is a leading IT company' without specifics have clearly not researched. Candidates who say 'Wipro's WILP program specifically aligns with enterprise Java' have." },
+      { question: "What if the interviewer asks a follow-up to my answer?", answer: "Follow-up questions are a good sign — your answer was specific enough to probe. The most common follow-up is 'tell me more about the project you mentioned.' This is why you should only mention things you can go 3 to 5 minutes deeper on. Never name a project, technology, or skill you cannot explain in detail." },
+    ],
+  },
 ];
 
 export function getBlogMetaBySlug(slug: string): BlogMeta | undefined {
