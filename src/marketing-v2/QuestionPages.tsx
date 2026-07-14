@@ -17,11 +17,12 @@ import Link from "next/link";
 import { tokens as t, fonts } from "../auth/_tokens";
 import {
   editorialCSS,
-  EditorialHero,
   SectionHead,
   SpecTimeline,
   DarkBand,
   ctaPrimaryStyle,
+  edEyebrow,
+  ED_PADDING,
 } from "./_editorial";
 import { COMPANY_LABEL } from "../../data/company-labels";
 import { COMPANY_KNOWN_FACTS } from "../../data/company-known-facts";
@@ -301,11 +302,11 @@ export function QuestionSetPage({
                 </p>
                 <h1 style={{
                   fontFamily: fonts.serif,
-                  fontSize: "clamp(36px, 5vw, 58px)",
-                  fontWeight: 400, lineHeight: 1.05,
-                  letterSpacing: "-0.028em",
+                  fontSize: "clamp(22px, 2.4vw, 34px)",
+                  fontWeight: 400, lineHeight: 1.18,
+                  letterSpacing: "-0.018em",
                   color: t.coal, margin: "0 0 22px",
-                  maxWidth: "20ch",
+                  maxWidth: "28ch",
                 }}>
                   {page.searchPhrase}
                 </h1>
@@ -398,7 +399,7 @@ export function QuestionSetPage({
           {/* Recruitment process — numbered timeline */}
           {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
             <section className="ed-reveal" style={{ marginTop: 64 }}>
-              <SectionHead eyebrow="How they hire" title={`${companyLabel} recruitment process`} />
+              <SectionHead title={`${companyLabel} recruitment process`} />
               <div className="ed-reading">
                 <SpecTimeline items={page.recruitmentSteps.map((step) => ({ label: step }))} />
               </div>
@@ -408,7 +409,7 @@ export function QuestionSetPage({
           {/* Interview rounds — numbered timeline with detail */}
           {page.interviewRounds && page.interviewRounds.length > 0 && (
             <section className="ed-reveal" style={{ marginTop: 56 }}>
-              <SectionHead eyebrow="Round by round" title="What to expect in each round" />
+              <SectionHead title="What to expect in each round" />
               <div className="ed-reading">
                 <SpecTimeline
                   items={page.interviewRounds.map((round, i) => {
@@ -426,7 +427,7 @@ export function QuestionSetPage({
           {/* How to answer — STAR structure guide for behavioral/HR/campus-placement */}
           {(page.focus === "behavioral" || page.focus === "hr" || page.focus === "campus-placement") && (
             <section className="ed-reveal" style={{ marginTop: 56 }}>
-              <SectionHead eyebrow="The scoring rubric" title="How to structure your answers" />
+              <SectionHead title="How to structure your answers" />
               <div
                 className="ed-reading"
                 style={{
@@ -487,7 +488,6 @@ export function QuestionSetPage({
           {/* Question list */}
           <section className="ed-reveal" style={{ marginTop: 64 }}>
             <SectionHead
-              eyebrow="Real, verified questions"
               title={`${focusLabel} questions ${companyLabel} asked`}
               sub={`Verified from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback.${showSignupGate ? " First 5 shown free — sign up to unlock all." : ""}`}
             />
@@ -647,26 +647,70 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
     <>
       <style>{editorialCSS}</style>
       <main style={pageShell}>
-        <EditorialHero
-          eyebrow="Interview questions · India 2026"
-          titleLead="Real interview questions,"
-          accent="answered out loud."
-          lead={`${pages.length} question sets across the top Indian and global companies. Each lists real, verified questions, then lets you practice answering them with an AI interviewer that listens, grades, and coaches you in two minutes.`}
-          meta={
-            <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
-              <Link href="/" style={{ color: t.inkFaint, textDecoration: "none" }}>Home</Link>
-              {" / "}
-              <span aria-current="page" style={{ color: t.copper }}>Interview Questions</span>
-            </nav>
-          }
-        >
-          <Link href="/signup?source=questions-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-            Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
-          </Link>
-          <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>
-            2 sessions, no card
-          </span>
-        </EditorialHero>
+        {/* ── Two-column hero ───────────────────────────────────────── */}
+        <header style={{ paddingTop: ED_PADDING.heroTop, paddingBottom: ED_PADDING.heroBottom, borderBottom: `1px solid ${t.line}`, background: t.cream }}>
+          <div className="ed-container">
+            <div style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
+
+              {/* Left: heading + lead + CTA */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 28 }}>
+                  <Link href="/" style={{ color: t.inkFaint, textDecoration: "none" }}>Home</Link>
+                  {" / "}
+                  <span aria-current="page" style={{ color: t.copper }}>Interview Questions</span>
+                </nav>
+                <p style={{ ...edEyebrow, margin: "0 0 20px" }}>Interview questions · India 2026</p>
+                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(38px, 4.8vw, 60px)", fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.028em", color: t.coal, margin: "0 0 24px" }}>
+                  Real interview questions,{" "}
+                  <em style={{ fontStyle: "italic", color: t.copper }}>answered out loud.</em>
+                </h1>
+                <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 36px", maxWidth: "44ch" }}>
+                  {pages.length} question sets across the top Indian and global companies — verified questions you can practice answering with an AI interviewer in two minutes.
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                  <Link href="/signup?source=questions-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                    Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
+                  </Link>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>2 sessions, no card</span>
+                </div>
+              </div>
+
+              {/* Right: company category stat panel */}
+              <nav aria-label="Browse company categories" style={{ flexShrink: 0, width: 340, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
+                <div style={{ padding: "22px 24px 18px", borderBottom: `1px solid ${t.line}` }}>
+                  <p style={{ fontFamily: fonts.serif, fontSize: 40, fontWeight: 400, color: t.coal, lineHeight: 1, margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+                    {pages.length}
+                  </p>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: 0 }}>
+                    question sets · 30+ companies
+                  </p>
+                </div>
+                {[
+                  { label: "Service IT", hint: "TCS · Infosys · Wipro", focus: "campus-placement" },
+                  { label: "Indian Product", hint: "Flipkart · Razorpay · Swiggy", focus: "technical" },
+                  { label: "FAANG & Global", hint: "Google · Amazon · Microsoft", focus: "system-design" },
+                  { label: "Consulting", hint: "McKinsey · BCG · Deloitte", focus: "case-study" },
+                  { label: "Freshers & HR", hint: "All campus drives · HR rounds", focus: "hr" },
+                ].map(({ label, hint, focus }, i, arr) => (
+                  <Link
+                    key={label}
+                    href={`/questions?focus=${focus}`}
+                    className="ed-cta"
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 24px", textDecoration: "none", borderBottom: i < arr.length - 1 ? `1px solid ${t.line}` : "none" }}
+                  >
+                    <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 14, color: t.copper, opacity: 0.6, lineHeight: 1, flexShrink: 0, width: 16 }}>{i + 1}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>{label}</span>
+                      <span style={{ display: "block", fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint, marginTop: 1 }}>{hint}</span>
+                    </span>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.copper, flexShrink: 0 }} aria-hidden>→</span>
+                  </Link>
+                ))}
+              </nav>
+
+            </div>
+          </div>
+        </header>
 
         <div className="ed-container" style={{ paddingTop: 56, paddingBottom: 8 }}>
           {/* Filter chip bar — browse by question type */}

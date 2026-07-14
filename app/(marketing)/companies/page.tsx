@@ -263,33 +263,32 @@ export default async function CompaniesIndexPage() {
                     </span>
                   </div>
 
-                  {/* Right: card grid */}
-                  <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-                    {sorted.map((page) => (
+                  {/* Right: scannable list rows */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {sorted.map((page, i) => (
                       <Link
                         key={page.slug}
                         href={`/questions/${page.slug}`}
-                        className="ed-card ed-cta"
+                        className="ed-cta"
                         style={{
                           display: "flex",
-                          flexDirection: "column",
-                          gap: 12,
-                          padding: "24px 24px",
-                          background: t.white,
-                          border: `1px solid ${t.line}`,
-                          borderRadius: 14,
+                          alignItems: "center",
+                          gap: 18,
+                          padding: "14px 0",
+                          borderBottom: `1px solid ${t.line}`,
                           textDecoration: "none",
                         }}
                       >
-                        <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 999, padding: "3px 9px", alignSelf: "flex-start", textTransform: "capitalize" as const }}>
-                          {FOCUS_LABEL[page.focus] ?? page.focus}
+                        <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: t.copper, opacity: 0.55, lineHeight: 1, flexShrink: 0, minWidth: 22 }}>
+                          {i + 1}
                         </span>
-                        <span style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.4, color: t.coal, letterSpacing: "-0.01em", flex: 1 }}>
+                        <span style={{ flex: 1, fontFamily: fonts.serif, fontSize: 16, lineHeight: 1.35, color: t.coal, letterSpacing: "-0.01em" }}>
                           {page.searchPhrase}
                         </span>
-                        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.copper, display: "inline-flex", alignItems: "center", gap: 5 }}>
-                          Practice free <span className="ed-cta-arrow" aria-hidden>→</span>
+                        <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999, padding: "3px 10px", flexShrink: 0, whiteSpace: "nowrap" as const }}>
+                          {FOCUS_LABEL[page.focus] ?? page.focus}
                         </span>
+                        <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.copper, flexShrink: 0 }} aria-hidden>→</span>
                       </Link>
                     ))}
                   </div>

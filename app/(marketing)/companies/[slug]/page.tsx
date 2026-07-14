@@ -336,7 +336,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
                 <p style={{ ...edEyebrow, color: t.inkFaint, margin: "0 0 20px" }}>
                   {companyLabel} · {focusLabel}
                 </p>
-                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(34px, 4.5vw, 56px)", fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.024em", color: t.coal, margin: "0 0 22px", maxWidth: "22ch" }}>
+                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 34px)", fontWeight: 400, lineHeight: 1.15, letterSpacing: "-0.018em", color: t.coal, margin: "0 0 22px", maxWidth: "28ch" }}>
                   {page.searchPhrase}
                 </h1>
                 <p style={{ ...edSansLead, margin: "0 0 32px", maxWidth: "52ch" }}>
@@ -384,7 +384,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         {/* Framework + verified company facts */}
         <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
-            <SectionHead eyebrow="The framework that scores" title={page.framework.name} />
+            <SectionHead title={page.framework.name} />
             <div className="ed-reading">
               <p style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.72, color: t.inkSoft, margin: 0 }}>
                 {page.framework.summary}
@@ -401,7 +401,6 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             <div className="ed-container">
               <SectionHead
                 index="01"
-                eyebrow="Application to offer"
                 title={`${companyLabel} recruitment process`}
                 sub="The typical timeline candidates walk through, stage by stage."
               />
@@ -416,7 +415,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         {page.interviewRounds && page.interviewRounds.length > 0 && (
           <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, borderBottom: `1px solid ${t.line}` }}>
             <div className="ed-container">
-              <SectionHead index="02" eyebrow="What each round tests" title="Interview rounds" />
+              <SectionHead index="02" title="Interview rounds" />
               <div className="ed-reading">
                 <SpecTimeline items={page.interviewRounds.map((round) => ({ label: round }))} />
               </div>
@@ -429,7 +428,6 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
           <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
             <div className="ed-container">
               <SectionHead
-                eyebrow="Answer structure"
                 title="Every story,"
                 accent="four beats."
                 sub={`${companyLabel} interviewers score on structure and specificity. Run every behavioural answer through STAR.`}
@@ -461,7 +459,6 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
             <SectionHead
-              eyebrow="The practice set"
               title={`Real ${focusLabel.toLowerCase()} questions`}
               accent={`${companyLabel} asked.`}
               sub="Verified from candidate post-mortems. Answer any one aloud and the AI scores it in two minutes."
