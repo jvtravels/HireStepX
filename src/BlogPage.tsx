@@ -736,7 +736,7 @@ const posts: BlogPost[] = [
       { label: "LinkedIn PM Interview Practice", slug: "linkedin-pm-interview-questions" },
     ],
     relatedSlugs: ["ace-case-study-interviews", "amazon-leadership-principles-interview", "salary-negotiation-tips-india"],
-    cta: "PM case study interviews are hard to practice alone because you need someone to play the interviewer: feeding you constraints, asking follow-ups, and pushing back on your recommendation. HireStepX's AI runs the case with you: it gives you the scenario, drip-feeds data when you ask for it, and scores whether your structure and recommendation actually hold together.",
+    cta: "Case interviews need a live interviewer. HireStepX's AI plays that role: it gives you the scenario, drip-feeds data when you ask, and scores your recommendation.",
   },
   {
     slug: "hcl-accenture-capgemini-interview-comparison",
