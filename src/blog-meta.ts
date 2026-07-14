@@ -341,7 +341,7 @@ export const BLOG_META: BlogMeta[] = [
   },
   {
     slug: "java-interview-questions-freshers-india-2026",
-    title: "Java Interview Questions for Freshers India 2026 — Top 60 Q&A",
+    title: "Java Interview Questions for Freshers India 2026",
     metaDescription: "Top 60 Java interview questions for freshers in India 2026. Covers OOP concepts, collections, exception handling, multithreading, and Java 17+ features with sample answers.",
     datePublished: "2026-07-01",
     heroImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop",
@@ -389,7 +389,7 @@ export const BLOG_META: BlogMeta[] = [
   },
   {
     slug: "python-interview-questions-freshers-india-2026",
-    title: "Python Interview Questions for Freshers India 2026 — Top 50 Q&A",
+    title: "Python Interview Questions for Freshers India 2026",
     metaDescription: "Top 50 Python interview questions for freshers in India 2026. Covers data types, OOP, list comprehension, decorators, generators, and common libraries with sample answers.",
     datePublished: "2026-07-01",
     heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=630&fit=crop",
@@ -457,7 +457,7 @@ export const BLOG_META: BlogMeta[] = [
   },
   {
     slug: "sql-interview-questions-freshers-india-2026",
-    title: "SQL Interview Questions for Freshers India 2026 — Top 50 Q&A",
+    title: "SQL Interview Questions for Freshers India 2026",
     metaDescription: "Top 50 SQL interview questions for freshers in India 2026. Covers SELECT queries, JOINs, GROUP BY, subqueries, window functions, indexes, and common HR/analyst interview questions.",
     datePublished: "2026-07-10",
     heroImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=1200&h=630&fit=crop",
@@ -539,7 +539,7 @@ export const BLOG_META: BlogMeta[] = [
   },
   {
     slug: "wipro-elite-nlth-preparation-2026",
-    title: "Wipro Elite NTH & NLTH 2026 — Exam Pattern, Selection Process & Preparation",
+    title: "Wipro NLTH 2026 — Exam Pattern, Preparation & Selection Process",
     metaDescription: "Wipro Elite NTH and NLTH 2026: complete exam pattern, online test sections, qualifying scores, and interview preparation. Everything freshers need to get a Wipro offer.",
     datePublished: "2026-07-13",
     heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=630&fit=crop",
