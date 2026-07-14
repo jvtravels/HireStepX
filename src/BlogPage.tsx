@@ -2109,6 +2109,21 @@ function BlogPostPage({ post }: { post: BlogPost }) {
   const related = getRelatedPosts(post.relatedSlugs);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  /* Derive video CTA copy from the post's company / category */
+  const videoCta = (() => {
+    const { company, category, cta: body } = post;
+    if (category === "Freshers" || company === "Campus") {
+      return { headingPlain: "Nail your", headingItalic: "campus placement.", body, ctaLabel: "Start free practice" };
+    }
+    if (category === "Strategy" || company === "Consulting") {
+      return { headingPlain: "Master the", headingItalic: "case interview.", body, ctaLabel: "Practice a case now" };
+    }
+    if (company === "General" || category === "Skills") {
+      return { headingPlain: "Stop reading,", headingItalic: "start answering.", body, ctaLabel: "Try it free" };
+    }
+    return { headingPlain: `Practice the ${company}`, headingItalic: "interview loop.", body, ctaLabel: `Start ${company} practice` };
+  })();
+
   useEffect(() => {
     captureClientEvent("blog_post_view", {
       slug: post.slug,
@@ -2295,8 +2310,8 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         )}
       </article>
 
-      {/* Closing CTA — homepage video CTA */}
-      <VideoCtaV2 />
+      {/* Closing CTA — homepage video CTA with post-specific copy */}
+      <VideoCtaV2 {...videoCta} ctaHref="/signup" />
     </BlogShell>
   );
 }

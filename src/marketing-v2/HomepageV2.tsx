@@ -4555,7 +4555,19 @@ export function SecurityComplianceV2() {
 }
 
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
-export function VideoCtaV2() {
+export function VideoCtaV2({
+  headingPlain = "Prepare Like Top",
+  headingItalic = "Candidates Do",
+  body = "Practice with AI interviewers trained to simulate real hiring conversations, identify weaknesses, and help you improve before the actual interview.",
+  ctaLabel = "Start your free interview",
+  ctaHref = "/login",
+}: {
+  headingPlain?: string;
+  headingItalic?: string;
+  body?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+} = {}) {
   const [revealed, setRevealed] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -4604,17 +4616,17 @@ export function VideoCtaV2() {
       {/* Content */}
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 1100, margin: "0 auto", alignSelf: "flex-start" }}>
 
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.04, color: t.cream, margin: "0 0 20px", letterSpacing: -2, whiteSpace: "nowrap", ...fadeUp(100) }}>
-          Prepare Like Top <span style={{ fontStyle: "italic" }}>Candidates Do</span>
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(36px, 5.5vw, 72px)", fontWeight: 400, lineHeight: 1.04, color: t.cream, margin: "0 0 20px", letterSpacing: -2, textWrap: "balance" as const, ...fadeUp(100) }}>
+          {headingPlain} <span style={{ fontStyle: "italic" }}>{headingItalic}</span>
         </h2>
 
         <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 560, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
-          Practice with AI interviewers trained to simulate real hiring conversations, identify weaknesses, and help you improve before the actual interview.
+          {body}
         </p>
 
         <div style={{ display: "flex", justifyContent: "center", ...fadeUp(400) }}>
-          <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
-            Start your free interview
+          <a href={ctaHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
+            {ctaLabel}
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </a>
         </div>
