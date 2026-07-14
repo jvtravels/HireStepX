@@ -26,6 +26,7 @@ import {
 import { COMPANY_LABEL } from "../../data/company-labels";
 import { COMPANY_KNOWN_FACTS } from "../../data/company-known-facts";
 import type { BankEntry } from "../../data/interview-question-bank";
+import { SEO_PAGES } from "../../data/seo-pages";
 import type { SeoPage } from "../../data/seo-pages";
 
 /* ─── Shared layout primitives ─────────────────────────────────────────── */
@@ -647,18 +648,63 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
         </EditorialHero>
 
         <div className="ed-container" style={{ paddingTop: 56, paddingBottom: 8 }}>
-          {/* Active focus filter indicator */}
-          {activeFilter && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 44 }}>
-              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>Showing:</span>
-              <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 999, padding: "3px 12px" }}>
-                {FOCUS_DISPLAY[activeFilter] ?? activeFilter}
-              </span>
-              <Link href="/questions" className="ed-link" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper }}>
-                Clear filter
-              </Link>
-            </div>
-          )}
+          {/* Filter chip bar — browse by question type */}
+          {(() => {
+            /* Count pages per focus across ALL SEO pages (not just filtered set) */
+            const focusCounts = SEO_PAGES.reduce<Record<string, number>>((acc, p) => {
+              acc[p.focus] = (acc[p.focus] ?? 0) + 1;
+              return acc;
+            }, {});
+            /* Order chips by relevance to Indian freshers */
+            const CHIP_ORDER = [
+              "campus-placement", "hr", "behavioral", "technical",
+              "system-design", "case-study", "salary-negotiation",
+            ];
+            return (
+              <div style={{ marginBottom: 48 }}>
+                <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 14px" }}>
+                  Browse by type
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {/* All chip */}
+                  <Link
+                    href="/questions"
+                    className="ed-cta"
+                    style={{
+                      fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                      padding: "6px 14px", borderRadius: 999, textDecoration: "none",
+                      border: `1px solid ${!activeFilter ? t.copper : t.line}`,
+                      background: !activeFilter ? t.copper : "transparent",
+                      color: !activeFilter ? "#fff" : t.inkSoft,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    All · {SEO_PAGES.length}
+                  </Link>
+                  {CHIP_ORDER.filter(f => focusCounts[f]).map(f => {
+                    const isActive = activeFilter === f;
+                    return (
+                      <Link
+                        key={f}
+                        href={`/questions?focus=${f}`}
+                        className="ed-cta"
+                        style={{
+                          fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                          padding: "6px 14px", borderRadius: 999, textDecoration: "none",
+                          border: `1px solid ${isActive ? t.copper : t.line}`,
+                          background: isActive ? t.copper : "transparent",
+                          color: isActive ? "#fff" : t.inkSoft,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {FOCUS_DISPLAY[f] ?? f} · {focusCounts[f]}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Grouped question sets — one editorial masthead per company */}
           {companies.map((company) => (
