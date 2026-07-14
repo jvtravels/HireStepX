@@ -460,7 +460,7 @@ function CompanyGroup({
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {pages.map((p) => (
           <li key={p.slug}>
-            <Link href={`/companies/${p.slug}`} style={{
+            <Link href={`/questions/${p.slug}`} style={{
               display: "block", padding: "14px 16px",
               background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.08)", borderRadius: 10,
               textDecoration: "none", color: "#0E0C08",
