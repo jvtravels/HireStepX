@@ -4620,7 +4620,7 @@ export function VideoCtaV2({
           {headingPlain} <span style={{ fontStyle: "italic" }}>{headingItalic}</span>
         </h2>
 
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 560, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
           {body}
         </p>
 
