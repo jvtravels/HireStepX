@@ -296,9 +296,6 @@ const body: CSSProperties = {
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
-    ["Questions", "/questions"],
-    ["Companies", "/companies"],
-    ["For Students", "/for-students"],
     ["Blog", "/blog"],
     ["Pricing", "/#hd-pricing"],
   ];
