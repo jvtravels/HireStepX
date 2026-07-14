@@ -278,8 +278,6 @@ export function QuestionSetPage({
         @media (max-width: 900px) {
           .qs-body { flex-direction: column !important; }
           .qs-sidebar { position: static !important; width: 100% !important; }
-          .qs-hero-split { flex-direction: column !important; gap: 40px !important; }
-          .qs-hero-stat-panel { width: 100% !important; }
         }
       `}</style>
       <main style={pageShell}>
@@ -299,63 +297,25 @@ export function QuestionSetPage({
               <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>{focusLabel}</span>
             </div>
 
-            <div className="qs-hero-split" style={{ display: "flex", gap: 80, alignItems: "flex-start" }}>
-
-              {/* Left: heading + intro + CTA */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{
-                  fontFamily: fonts.serif,
-                  fontSize: "clamp(30px, 3.6vw, 48px)",
-                  fontWeight: 400, lineHeight: 1.08,
-                  letterSpacing: "-0.024em",
-                  color: t.coal, margin: "0 0 20px",
-                  textWrap: "balance",
-                } as React.CSSProperties}>
-                  {page.searchPhrase}
-                </h1>
-                <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 32px", maxWidth: "48ch" }}>
-                  {introFirst}
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                  <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
-                    Practice with AI voice feedback <span className="ed-cta-arrow" aria-hidden>→</span>
-                  </Link>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>2 sessions free · no card</span>
-                </div>
-              </div>
-
-              {/* Right: stat panel */}
-              <div className="qs-hero-stat-panel" style={{ flexShrink: 0, width: 300, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "28px 28px 24px", display: "flex", flexDirection: "column", gap: 0 }}>
-                {/* Big question count */}
-                <div style={{ display: "flex", alignItems: "baseline", gap: 12, paddingBottom: 20, borderBottom: `1px solid ${t.line}`, marginBottom: 20 }}>
-                  <span style={{ fontFamily: fonts.serif, fontSize: 52, fontWeight: 400, color: t.coal, lineHeight: 1, letterSpacing: "-0.03em" }}>{questions.length}</span>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.4 }}>interview<br/>questions</span>
-                </div>
-                {/* Stats rows */}
-                {[
-                  { label: "Focus", value: focusLabel },
-                  ...(roundCount ? [{ label: "Interview rounds", value: String(roundCount) }] : []),
-                  {
-                    label: "Difficulty",
-                    value: diffCounts.hard >= diffCounts.easy && diffCounts.hard >= diffCounts.medium
-                      ? "Hard-heavy"
-                      : diffCounts.easy >= diffCounts.hard && diffCounts.easy >= diffCounts.medium
-                      ? "Accessible"
-                      : "Mixed",
-                  },
-                  { label: "Verified from", value: "2+ candidates" },
-                ].map(({ label, value }) => (
-                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingBottom: 14, marginBottom: 14, borderBottom: `1px solid ${t.line}` }}>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>{label}</span>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{value}</span>
-                  </div>
-                ))}
-                {/* Practice link */}
-                <Link href={practiceHref} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: t.coal, color: t.cream, textDecoration: "none", padding: "12px 20px", borderRadius: 8, fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, marginTop: 4 }}>
-                  Start free mock interview →
-                </Link>
-              </div>
-
+            <h1 style={{
+              fontFamily: fonts.serif,
+              fontSize: "clamp(32px, 4.2vw, 56px)",
+              fontWeight: 400, lineHeight: 1.06,
+              letterSpacing: "-0.026em",
+              color: t.coal, margin: "0 0 22px",
+            }}>
+              {page.searchPhrase}
+            </h1>
+            <p style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 36px", maxWidth: "58ch" }}>
+              {introFirst}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                Practice with AI voice feedback <span className="ed-cta-arrow" aria-hidden>→</span>
+              </Link>
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+                {questions.length} questions · {focusLabel} · 2 sessions free
+              </span>
             </div>
           </div>
         </header>
