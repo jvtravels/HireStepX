@@ -1060,7 +1060,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "microsoft-behavioral-interview-questions",
-    searchPhrase: "Microsoft Behavioral Interview Questions India 2026 — Growth Mindset",
+    searchPhrase: "Microsoft Behavioral Interview Questions India 2026",
     company: "microsoft", roleFamily: "behavioral", focus: "behavioral",
     intro: "Microsoft's behavioral interviews are anchored in the Growth Mindset model introduced by CEO Satya Nadella. The most valued answer is one where you describe clearly updating your beliefs or behaviour based on evidence — this is not just a nice story, it's the explicit evaluative lens every Microsoft behavioral interviewer uses. 'I was right all along' stories are red flags because they signal a fixed mindset. 'Here is what I learned I was wrong about, and here is what I changed' stories resonate strongly with Microsoft panels across all roles and levels. The behavioral round is typically the final round in the India onsite loop — it carries significant weight because Microsoft tracks behavioral fit separately from technical fit in hiring decisions. Hyderabad is Microsoft's largest India engineering office; Bangalore and Noida are secondary sites. Product teams, engineering teams, and sales teams all use the same Growth Mindset behavioral rubric.",
     framework: { name: "Growth story", summary: "Initial belief or assumption → evidence that challenged it → specific change you made → outcome after the change → reflection on why you held the old belief." },
@@ -1179,7 +1179,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Google (behavioral) ───────────────────────────────────────────── */
   {
     slug: "google-behavioral-interview-questions",
-    searchPhrase: "Google Behavioral Interview Questions Googleyness India 2026",
+    searchPhrase: "Google Behavioral Interview Questions India 2026",
     company: "google", roleFamily: "behavioral", focus: "behavioral",
     intro: "Google's 'Googleyness' rounds test four things: cognitive bias awareness, comfort with ambiguity, collaborative problem-solving, and openness to being wrong. These aren't soft-skill fluff rounds — they carry equal weight to coding rounds in the hiring committee. Candidates who give polished, perfectly packaged STAR answers often score lower than those who show genuine reflection and self-awareness. Google India behavioral rounds are part of the 4–6 round onsite loop, evaluated by a dedicated Googleyness interviewer assessing cultural fit independently of the technical bar. The key is to show the moment you updated your beliefs based on evidence — not a story where you were right all along.",
     framework: { name: "Genuine reflection", summary: "Situation (specific, not abstract) → Your initial assumption → Point where you had to update the assumption → What changed → What you'd do differently." },
@@ -1251,7 +1251,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── TCS (behavioral) ──────────────────────────────────────────────── */
   {
     slug: "tcs-behavioral-interview-questions",
-    searchPhrase: "TCS Behavioral Interview Questions India 2026 — Managerial Round",
+    searchPhrase: "TCS Behavioral Interview Questions India 2026",
     company: "tcs", roleFamily: "behavioral", focus: "behavioral",
     intro: "TCS's Managerial Round (MR) is the most misunderstood part of its hiring process. Candidates who cruise through the NQT and Technical Interview often fail here because they answer generic behavioral questions generically — which is the exact failure mode TCS interviewers are trained to detect. The MR specifically tests: relocation willingness (must be explicitly 'yes, anywhere in India'), team conflict handling, communication under pressure, and the 'why TCS over Infosys, Wipro, Cognizant' question that requires a specific, non-generic answer. A strong 'why TCS' answer names a specific TCS initiative — TCS iON (education platform), TCS BaNCS (banking product), TCS Ignio (AI platform), or a specific service practice — and connects it to your career goals. The MR is typically 20-30 minutes. Interviewers also probe your gap-year explanation if applicable (TCS allows up to 2 years gap with justification) and your long-term growth plan within TCS's career framework.",
     framework: { name: "TCS-fit signalling", summary: "Process discipline story → team player example → clear relocation/shift yes → why TCS (cite specific initiative) → 5-year goal aligned with TCS growth areas." },
@@ -1314,7 +1314,7 @@ export const SEO_PAGES: SeoPage[] = [
 
   {
     slug: "phonepe-behavioral-interview-questions",
-    searchPhrase: "PhonePe Behavioral Interview Questions Values Culture Fit 2026",
+    searchPhrase: "PhonePe Behavioral Interview Questions India 2026",
     company: "phonepe", roleFamily: "behavioral", focus: "behavioral",
     intro: "PhonePe's culture interviews probe a specific set of values: customer obsession, ownership over process, and speed-accuracy balance. They operate in a sector where bugs cost real money — so they specifically probe how you handle high-stakes decisions and production incidents. The behavioral round is eliminatory — PhonePe rejects technically strong candidates who don't demonstrate ownership mentality. PhonePe processes 1B+ transactions per month and the evaluation reflects that reality: the best stories are ones where you owned a production failure, picked up a problem that wasn't yours, or made a fast decision with incomplete information and got the outcome right. 'I escalated to my manager' is not the answer PhonePe is looking for.",
     framework: { name: "Ownership-first STAR", summary: "Identify the moment you chose ownership over comfort → specific decision → measurable outcome → what you'd change → connection to PhonePe's mission." },
@@ -1334,7 +1334,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Amazon SWE behavioral (LP-focused) ────────────────────────────── */
   {
     slug: "amazon-sde-leadership-principles-interview",
-    searchPhrase: "Amazon SDE Behavioral Interview India 2026 — Leadership Principles",
+    searchPhrase: "Amazon SDE Behavioral Interview Questions India 2026",
     company: "amazon", roleFamily: "swe", focus: "behavioral",
     intro: "Amazon's behavioral rounds for SDE roles are as important as the coding rounds — candidates who nail all 4 DSA questions but fail the LP (Leadership Principles) interview don't get offers. Amazon uses structured STAR evaluation across all 16 LPs with a Bar Raiser in the final round whose sole purpose is LP assessment. The trick: you don't need one story per LP. You need 8–10 strong stories that each demonstrate 2–3 principles, and you adapt them to the question asked. The Bar Raiser will probe with follow-ups: 'What would you do differently?' and 'Tell me about a time when that approach failed' are characteristic pushbacks designed to surface whether your story is genuine or rehearsed. For SDE roles in India, the five most-tested LPs are Customer Obsession, Ownership, Dive Deep, Bias for Action, and Deliver Results. India-based Amazon SDEs should also prepare a story specifically about operating under ambiguity — a common focus for teams working on Amazon Pay (UPI) and Amazon India logistics.",
     framework: { name: "LP story mapping", summary: "Identify your 8–10 strongest STAR stories → map each to 2–3 Leadership Principles → practice adapting the same story for different LP questions → flag the LP being tested in every answer." },
@@ -1383,7 +1383,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── IBM campus / consulting ────────────────────────────────────────── */
   {
     slug: "ibm-campus-placement-interview-questions",
-    searchPhrase: "IBM Campus Placement Interview Questions India Freshers 2026",
+    searchPhrase: "IBM Campus Placement Interview Questions Freshers 2026",
     company: "ibm", roleFamily: "campus", focus: "campus-placement",
     intro: "IBM hires several thousand freshers in India annually across the GBS (Global Business Services) and GTS (Global Technology Services) tracks. The campus process is split: GBS has a case and consulting flavour suited to engineering graduates interested in business transformation; GTS is technical and focused on application development, testing, and cloud infrastructure. The first filter is IBM's Cognitive Ability Assessment — harder than TCS NQT on logical reasoning but more predictable in format than Wipro NLTH. IBM's interview for freshers does not require competitive programming — CS fundamentals at depth (OOP, OS, DBMS, networking basics) and a well-articulated project walkthrough are far more important. IBM's 'Think' culture values learning agility: being able to say 'I don't know this yet but I learn quickly by doing X' is an acceptable and often appreciated answer, especially when paired with a concrete learning story.",
     framework: { name: "IBM values signalling", summary: "Service orientation story → teamwork over individual glory → client-impact metric → willingness to learn new tech → IBM Innovation story link (research, Watson, hybrid cloud)." },
@@ -1405,7 +1405,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "ibm-consultant-interview-questions",
-    searchPhrase: "IBM Consultant Interview Questions India 2026 — GBS Strategy",
+    searchPhrase: "IBM Consultant Interview Questions India 2026",
     company: "ibm", roleFamily: "consultant", focus: "case-study",
     intro: "IBM GBS (Global Business Services) consulting interviews are case-forward but with a distinctive tech twist — IBM differentiates itself from pure-play strategy consultancies by tying every solution to IBM's technology stack, specifically hybrid cloud (Red Hat OpenShift, IBM Cloud Pak), AI and automation (Watson), and SAP implementation. Cases often involve digital transformation for large enterprises in banking, manufacturing, and government. Unlike McKinsey or BCG cases which ask 'should the client enter this market?', IBM GBS cases lean toward 'how would you implement this change technically and organisationally?' — the answer must include a phased implementation roadmap and a change management plan. IBM India GBS offices in Bangalore, Hyderabad, and Pune hire both freshers from premier institutes and experienced professionals. For lateral hires, the interview probes delivery credibility — interviewers want to know you've shipped a transformation initiative, not just advised on one.",
     framework: { name: "IBM consulting framework", summary: "Business problem → technology solution fit → change management → ROI model → phased implementation → client capability building." },
@@ -1429,7 +1429,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Infosys behavioral ─────────────────────────────────────────────── */
   {
     slug: "infosys-behavioral-interview-questions",
-    searchPhrase: "Infosys Behavioral HR Interview Questions India 2026 — InfyTQ",
+    searchPhrase: "Infosys Behavioral HR Interview Questions India 2026",
     company: "infosys", roleFamily: "behavioral", focus: "behavioral",
     intro: "Infosys behavioral interviews take two distinct formats depending on whether you're a fresh hire or an experienced lateral. Fresh hires face a structured HR interview covering relocation willingness, team-fit scenarios, strengths and weaknesses with examples, and why Infosys over competitors. Experienced laterals face the Managerial Round — a more rigorous assessment of stakeholder management, conflict resolution with clients, and delivery-under-pressure scenarios drawn from IT services. Both formats assess communication quality as explicitly as content: Infosys is a client-delivery firm and interviewers are trained to score language clarity, confidence, and active listening separately from answer quality. The InfyTQ platform pre-qualifies many hires — candidates who clear it at Specialist level often face deeper behavioral rounds that probe learning agility and technical curiosity alongside standard HR questions. Preparing a specific answer for 'why Infosys over Wipro/TCS' that references Infosys's AI-first strategy, Cobalt cloud platform, or a recent acquisition is a meaningful differentiator.",
     framework: { name: "Infosys cultural fit", summary: "Communication clarity → learning agility story → integrity under pressure example → client-centricity → relocation openness (explicitly required) → why Infosys over competitors." },
@@ -1471,7 +1471,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Wipro behavioral ───────────────────────────────────────────────── */
   {
     slug: "wipro-behavioral-interview-questions",
-    searchPhrase: "Wipro Behavioral HR Interview Questions India 2026 — NLTH and WILP",
+    searchPhrase: "Wipro Behavioral HR Interview Questions India 2026",
     company: "wipro", roleFamily: "behavioral", focus: "behavioral",
     intro: "Wipro's HR round is traditionally the easiest filter in their interview process — but candidates who underprep it do fail, particularly when they give vague or ambiguous answers to relocation and night-shift availability questions that have clear expected responses. Relocation must be an explicit 'yes' with no hedging; same for night-shift availability for BPO-adjacent roles. Wipro's National Level Talent Hunt (NLTH) and TurboHire tracks vary in behavioral depth — Turbo hires face a more values-oriented conversation about initiative and coding passion while NTH/Elite hires get a more standard HR format. WILP (Wipro Integrated Learning Program) hires face the most rigorous behavioral interview, probing self-motivation and learning agility since they join fresh from college into a structured 6-month training programme. The 'why Wipro' question requires a company-specific answer — citing Wipro's VLSI design, SAP practice, or cybersecurity practice (depending on your target vertical) is significantly stronger than a generic answer.",
     framework: { name: "Wipro HR essentials", summary: "Relocation yes (be explicit) → night-shift availability yes → why Wipro (cite WILP/TurboHire/specific practice) → strength with work example → weakness with mitigation → 5-year goal aligned with IT services growth." },
@@ -1515,7 +1515,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── CAMPUS PLACEMENT — GENERIC FRESHERS HR ─────────────────────── */
   {
     slug: "why-should-we-hire-you-answer-india",
-    searchPhrase: "Why Should We Hire You — Best Answers for India Freshers 2026",
+    searchPhrase: "Why Should We Hire You — Best Answer India Freshers 2026",
     company: "campus", focus: "hr",
     intro: "\"Why should we hire you?\" is the most consequential question in any Indian campus or fresher interview, and most candidates waste it with claims like 'I am hardworking and passionate.' Interviewers at TCS, Infosys, Wipro, Cognizant, and Accenture ask this question as a synthesis check — can this candidate make a clear case for themselves? The answer has a proven structure: connect your specific skills to the job description's requirements, add one proof point (a project, an achievement, a measurable outcome), and close with your motivation for this specific company. Answers longer than 60 seconds lose the evaluator. Freshers often confuse enthusiasm with evidence. 'I love technology' is not evidence. 'I built a real-time notification system that handles 5,000 concurrent users as part of my final-year project' is evidence. The question also tests communication confidence — delivery matters alongside content. Candidates who answer conversationally, with eye contact and a natural pace, consistently score higher than those who appear to be reciting a memorised paragraph. Practice the answer aloud at least ten times before your first campus interview so it sounds owned, not rehearsed.",
     framework: { name: "Skills → Proof → Fit", summary: "Name the 2 skills they need most (from the job description) → give one specific proof point per skill (project/internship/competition result with a measurable outcome) → connect to this company's work specifically → close with what you want to contribute in year one." },
@@ -1536,7 +1536,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "tell-me-about-yourself-answer-freshers-india",
-    searchPhrase: "Tell Me About Yourself — Best Answer for Freshers India 2026",
+    searchPhrase: "Tell Me About Yourself — Best Answer Freshers India 2026",
     company: "campus", focus: "hr",
     intro: "\"Tell me about yourself\" is the opening question in nearly every Indian interview — campus, lateral, or walk-in — and it sets the tone for everything that follows. Most freshers answer it chronologically: 'I was born in Pune, completed my schooling from X, joined Y college for B.Tech in Computer Science...' This is the wrong structure. Interviewers ask this question to calibrate your communication style and see if you can present yourself confidently and relevantly, not to hear your academic biography. The correct structure runs in reverse-chronological order with a forward-looking close: start with who you are now (final-year student / recent graduate with a specific skill), mention the most relevant thing you have built or achieved, connect it to the role you are applying for, and close with where you are headed. Total time: 60–90 seconds. Freshers have an additional challenge: the narrative must work without work experience. The answer instead pivots to academic projects, internships, open-source contributions, or competitive programming achievements. Indian interviewers at campus drives pay close attention to the first 30 seconds of this answer — it is your personal branding statement, and it determines whether they lean forward or switch off.",
     framework: { name: "Present → Achievement → Future", summary: "Who you are now (major, graduation year, primary skill) → your strongest proof point (project/internship/competition with a measurable result) → connection to the role you are applying for → forward-looking close (what you want to contribute or learn in year one)." },

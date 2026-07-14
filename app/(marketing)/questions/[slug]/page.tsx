@@ -79,7 +79,9 @@ export async function generateMetadata(
   const page = getSeoPageBySlug(slug);
   if (!page) return { title: "Not Found" };
 
-  const title = `${page.searchPhrase} — Practice Free | HireStepX`;
+  /* Keep title under ~65 chars (Google's display window) by using a
+     minimal suffix — the searchPhrase itself carries the keyword signal. */
+  const title = `${page.searchPhrase} | HireStepX`;
   const description = `${page.intro.split(".")[0]}. Practice with AI voice feedback. 2 free sessions, no credit card.`;
 
   return {
