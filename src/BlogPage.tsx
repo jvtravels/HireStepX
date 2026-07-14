@@ -150,6 +150,7 @@ const posts: BlogPost[] = [
       { label: "Google India Engineering", slug: "google-india-engineering-interview-questions" },
       { label: "Google Behavioral", slug: "google-behavioral-interview-questions" },
     ],
+    relatedLinks: [{ label: "Google Salary Guide India 2026", href: "/salary/google" }],
     cta: "Google's rubric scores you on four dimensions simultaneously: most candidates only think about one while they're talking. Run these questions on HireStepX and get per-dimension feedback while the answers are still fresh.",
   },
   {
@@ -179,6 +180,7 @@ const posts: BlogPost[] = [
       { label: "Flipkart SDE Interview Questions", slug: "flipkart-sde-interview-questions" },
       { label: "Flipkart PM Interview Questions", slug: "flipkart-pm-interview-questions" },
     ],
+    relatedLinks: [{ label: "Flipkart Salary Guide India 2026", href: "/salary/flipkart" }],
     cta: "The machine coding round is where most candidates stall: not because they can't code, but because they haven't practiced designing under a time constraint while someone's watching. HireStepX lets you run the full Flipkart loop end to end, so that pressure isn't new when it counts.",
   },
   {
@@ -243,6 +245,7 @@ const posts: BlogPost[] = [
       { label: "Razorpay PM Interview", slug: "razorpay-pm-interview-questions" },
       { label: "Paytm Engineering Interview", slug: "paytm-engineering-interview-questions" },
     ],
+    relatedLinks: [{ label: "Razorpay Salary Guide India 2026", href: "/salary/razorpay" }],
     cta: "Razorpay's system design round will ask you about idempotency, retry logic, or webhook delivery guarantees: problems specific to payment infrastructure. If you haven't practiced those scenarios out loud, the first time you'll hear yourself explain them is in the room. HireStepX runs fintech-focused system design rounds so that's not how it goes.",
   },
   {
@@ -308,7 +311,10 @@ const posts: BlogPost[] = [
       { label: "TCS Behavioral Round", slug: "tcs-behavioral-interview-questions" },
     ],
     cta: "TCS's HR round has elimination power most candidates underestimate: vague answers on relocation or bond concerns get flagged. Run the full TCS interview sequence on HireStepX and get feedback on both your technical explanations and HR answers before the real thing.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "TCS Salary Guide India 2026", href: "/salary/tcs" },
+    ],
   },
   {
     slug: "infosys-interview-questions-2026",
@@ -340,7 +346,10 @@ const posts: BlogPost[] = [
       { label: "Infosys Behavioral Round", slug: "infosys-behavioral-interview-questions" },
     ],
     cta: "The difference between SE and PP/DSE placement often comes down to how you perform in the technical round: specifically whether you can explain your reasoning, not just produce working code. Practice that on HireStepX: get scored on your technical explanations and HR answers across all three Infosys tracks.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "Infosys Salary Guide India 2026", href: "/salary/infosys" },
+    ],
   },
   {
     slug: "how-to-introduce-yourself-in-interview",
@@ -440,7 +449,10 @@ const posts: BlogPost[] = [
       { label: "Wipro Turbo Technical Interview", slug: "wipro-turbo-technical-interview" },
     ],
     cta: "Wipro's HR round is short but it has teeth: candidates who hesitate on relocation or shift flexibility get flagged in the notes. Practice the full sequence on HireStepX so your answers on the friction questions sound like decisions, not deliberations.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "Wipro Salary Guide India 2026", href: "/salary/wipro" },
+    ],
   },
   {
     slug: "hr-interview-questions-answers-india",
@@ -503,6 +515,7 @@ const posts: BlogPost[] = [
       { label: "Amazon SDE + Leadership Principles", slug: "amazon-sde-leadership-principles-interview" },
       { label: "Amazon Campus Placement India", slug: "amazon-campus-placement-india" },
     ],
+    relatedLinks: [{ label: "Amazon Salary Guide India 2026", href: "/salary/amazon" }],
     cta: "Amazon interviewers are trained to probe until your story either holds or breaks. The best way to find the cracks before the loop is to practice with follow-up pressure: HireStepX's AI will map your answer to the LP being tested, score your STAR structure, and ask the follow-ups a real interviewer would.",
   },
   {
@@ -562,6 +575,7 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Salary Negotiation Practice", slug: "salary-negotiation-india-tech" },
     ],
+    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
     relatedSlugs: ["hr-interview-questions-answers-india", "tell-me-about-yourself-best-answer", "ace-case-study-interviews"],
     cta: "The first time you say \"I was hoping for something closer to X\" out loud shouldn't be on a live call with the recruiter. Run the negotiation conversation with HireStepX's AI first: it plays the recruiter, pushes back the way they actually do, and helps you find the phrasing that doesn't make you flinch.",
   },
@@ -692,7 +706,10 @@ const posts: BlogPost[] = [
       { label: "Cognizant Technical Interview", slug: "cognizant-technical-interview-questions" },
     ],
     cta: "After the CoCubes cut, the technical and HR rounds are where offers actually close. HireStepX lets you run through both with AI-graded feedback: so you're not winging the interview after surviving the assessment.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "Cognizant Salary Guide India 2026", href: "/salary/cognizant" },
+    ],
   },
   {
     slug: "accenture-interview-questions-freshers-2026",
@@ -790,7 +807,11 @@ const posts: BlogPost[] = [
       { label: "LTIMindtree Freshers Interview", slug: "ltimindtree-freshers-interview-questions" },
     ],
     cta: "Each of these companies has a different interview personality: HCL's technical screen is lighter, Accenture's group exercise catches people off guard, Capgemini's CoCubes cut matters more than most candidates realise. HireStepX runs you through the specific rounds that trip candidates up, with AI feedback on the exact things each company's panel actually scores.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "HCL Salary Guide India 2026", href: "/salary/hcl" },
+      { label: "Capgemini Salary Guide India 2026", href: "/salary/capgemini" },
+    ],
   },
   {
     slug: "deloitte-interview-questions-freshers-2026",
@@ -822,7 +843,10 @@ const posts: BlogPost[] = [
       { label: "Deloitte Analyst Interview", slug: "deloitte-analyst-interview-questions" },
     ],
     cta: "Most Deloitte rejections happen in the PI round, not the aptitude test: candidates know their content but can't structure a verbal answer under pressure. HireStepX puts you in that room: open-ended questions, a timer, AI feedback on whether your response actually had a point.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "Deloitte Salary Guide India 2026", href: "/salary/deloitte" },
+    ],
   },
   {
     slug: "group-discussion-topics-campus-placement-2026",
@@ -886,7 +910,10 @@ const posts: BlogPost[] = [
       { label: "TCS Digital Interview", slug: "tcs-digital-interview-questions" },
     ],
     cta: "Once the NQT is behind you, the interview is where track placement gets confirmed: and TCS HR rounds are more structured than most candidates expect. HireStepX walks you through the questions TCS actually asks, with scoring on the answers that decide whether you stay on the track you qualified for.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "TCS Salary Guide India 2026", href: "/salary/tcs" },
+    ],
   },
   {
     slug: "zoho-interview-questions-freshers-2026",
@@ -917,7 +944,10 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison", "cognizant-interview-questions-freshers-2026"],
     cta: "Zoho's technical rounds are conversational: they'll ask you to explain your code, not just write it. That's a different skill from passing an online judge, and it's one most candidates haven't practised. HireStepX runs you through that format: write something, then explain it out loud to an AI that actually evaluates the reasoning.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "Zoho Salary Guide India 2026", href: "/salary/zoho" },
+    ],
   },
   {
     slug: "software-engineer-interview-checklist-2026",
@@ -1068,6 +1098,7 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Zomato Product Interview", slug: "zomato-product-interview-questions" },
     ],
+    relatedLinks: [{ label: "Zomato Salary Guide India 2026", href: "/salary/zomato" }],
     cta: "The gap between a good PM answer and a Zomato PM answer is specificity: naming the right metrics, the right user segments, the right trade-offs for their specific context. HireStepX runs you through Zomato-specific cases and scores whether your diagnosis actually fits the product, or just fits the framework.",
   },
   {
@@ -1222,6 +1253,7 @@ const posts: BlogPost[] = [
       { label: "Swiggy Engineering Interview", slug: "swiggy-engineering-interview-questions" },
       { label: "Swiggy PM Interview", slug: "swiggy-pm-interview-questions" },
     ],
+    relatedLinks: [{ label: "Swiggy Salary Guide India 2026", href: "/salary/swiggy" }],
     cta: "Swiggy PM interviews reward people who can reason about logistics tradeoffs, not just recite frameworks. If you've been practicing with generic PM prep material, you'll feel the gap in the room. HireStepX runs voice mock interviews where you think through cases out loud: the AI evaluates how you structure ambiguity, not just whether you hit the right bullet points.",
   },
   {
@@ -1254,6 +1286,7 @@ const posts: BlogPost[] = [
       { label: "Microsoft PM Interview", slug: "microsoft-pm-interview-questions" },
       { label: "Microsoft Behavioral Interview", slug: "microsoft-behavioral-interview-questions" },
     ],
+    relatedLinks: [{ label: "Microsoft Salary Guide India 2026", href: "/salary/microsoft" }],
     cta: "Microsoft's behavioral rounds are where unprepared candidates lose offers they could have gotten. The growth mindset questions aren't just soft questions: they're evaluated against a specific rubric. HireStepX runs voice mock interviews where you practice STAR answers out loud, and the AI flags when your answers lack the self-reflection Microsoft specifically looks for.",
   },
   {
@@ -1318,6 +1351,11 @@ const posts: BlogPost[] = [
       { label: "Freshworks SDE Interview Practice", slug: "freshworks-sde-interview-questions" },
       { label: "Google Engineering Interview Practice", slug: "google-india-engineering-interview-questions" },
     ],
+    relatedLinks: [
+      { label: "Company Salary Guides India 2026", href: "/salary" },
+      { label: "Google Salary Guide", href: "/salary/google" },
+      { label: "Razorpay Salary Guide", href: "/salary/razorpay" },
+    ],
     cta: "The offer band you land in depends almost entirely on how you perform in the technical interview: not how many years of Python you have. A 2-year developer who can clearly explain async programming, database optimization, and system design tradeoffs will out-earn a 5-year developer who can't. HireStepX runs voice mock interviews that score whether your technical explanations are at the level of the offer you're targeting.",
   },
   {
@@ -1347,6 +1385,12 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Google Engineering Interview Practice", slug: "google-india-engineering-interview-questions" },
       { label: "PhonePe Engineering Interview Practice", slug: "phonepe-engineering-interview-questions" },
+    ],
+    relatedLinks: [
+      { label: "Company Salary Guides India 2026", href: "/salary" },
+      { label: "Flipkart Salary Guide", href: "/salary/flipkart" },
+      { label: "Razorpay Salary Guide", href: "/salary/razorpay" },
+      { label: "Swiggy Salary Guide", href: "/salary/swiggy" },
     ],
     cta: "The data analyst interview that gets you ₹18 LPA looks very different from the one that gets you ₹8 LPA: and the difference is whether you can explain your SQL reasoning, walk through a business case out loud, and handle follow-up questions without freezing. HireStepX runs voice mock interviews specifically designed for analyst roles, so you build the verbal fluency to match the technical skills you already have.",
   },
@@ -1447,7 +1491,10 @@ const posts: BlogPost[] = [
       { label: "Wipro NLTH Preparation 2026", slug: "wipro-nlth-preparation-2026" },
     ],
     cta: "The Wipro HR round eliminates candidates who sound rehearsed in a bad way: scripted, flat, or unable to handle a follow-up question. HireStepX runs voice mock interviews where you practice HR and behavioral answers out loud, and the AI tells you where your answers sound generic or where your STAR structure breaks down. 20 minutes of this is worth more than re-reading the 'top 20 HR questions' list a fifth time.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "Wipro Salary Guide India 2026", href: "/salary/wipro" },
+    ],
   },
   {
     slug: "react-developer-salary-india-2026",
@@ -1475,6 +1522,10 @@ const posts: BlogPost[] = [
     practicePageSlugs: [
       { label: "Flipkart SDE Interview Practice", slug: "flipkart-sde-interview-questions" },
       { label: "Freshworks SDE Interview Practice", slug: "freshworks-sde-interview-questions" },
+    ],
+    relatedLinks: [
+      { label: "Company Salary Guides India 2026", href: "/salary" },
+      { label: "Flipkart Salary Guide", href: "/salary/flipkart" },
     ],
     cta: "Most React developer interviews at product companies now include architecture questions, not just component coding. Can you explain why you'd choose RSC over client components? Can you walk through a performance optimization you've done? HireStepX runs voice mock interviews where you practice explaining technical decisions out loud: the skill that separates the ₹12 LPA offer from the ₹22 LPA offer.",
   },
@@ -1665,7 +1716,10 @@ const posts: BlogPost[] = [
       { label: "HR Interview Practice for Freshers", slug: "tcs-hr-round-questions" },
     ],
     cta: "If you're targeting a product company for your first role, the behavioral round is harder than most freshers expect. HireStepX gives you voice mock interviews with real-time STAR scoring: practice until the structure comes naturally, not something you're building mid-answer under pressure.",
-    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Guide for Students", href: "/for-students" },
+      { label: "Company Salary Guides India 2026", href: "/salary" },
+    ],
   },
   {
     slug: "ibm-interview-questions-india-2026",
@@ -1847,6 +1901,7 @@ const posts: BlogPost[] = [
       { label: "PM Interview Practice", slug: "google-pm-interview-questions" },
       { label: "APM Interview Practice", slug: "amazon-pm-interview-questions" },
     ],
+    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
     cta: "PM and APM interviews are different from SDE interviews in ways that catch people off-guard: product case studies, prioritisation frameworks, and behavioral questions that probe judgment more than structure. If you've never done a product case out loud under time pressure, do it before the real interview. HireStepX gives you voice practice with real-time STAR feedback.",
   },
   {
