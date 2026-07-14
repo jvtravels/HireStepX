@@ -210,6 +210,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Marketplace prioritisation", summary: "Identify the constrained side → unit economics → growth lever → defensibility." },
     metaKeywords: ["swiggy pm interview", "swiggy product manager", "swiggy case study", "swiggy marketplace interview"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What is the 3-sided marketplace problem Swiggy tests in PM interviews?",
+        a: "Swiggy's marketplace has three sides: consumers (who want fast delivery and good food), restaurant partners (who want high order volume and low commission), and delivery partners (who want predictable earnings and manageable distances). Optimising for one side hurts the others. For example, reducing delivery fees for consumers reduces delivery partner income; offering restaurants lower commissions reduces Swiggy's ability to incentivise top delivery partners. PM interviews test whether you can hold all three simultaneously and explain the trade-offs explicitly.",
+      },
+      {
+        q: "How do India-specific constraints appear in Swiggy PM interview cases?",
+        a: "India-specific constraints that appear in Swiggy PM cases include: monsoon-season demand spikes (40–60% order volume increase in peak hours) with simultaneous delivery-partner dropout, tier-2 restaurant quality variability (no rating history, inconsistent packaging), and Instamart's 10-minute delivery promise in cities where traffic density varies dramatically by neighbourhood. The expected answer frames each constraint as a variable that changes the unit economics, not just an obstacle.",
+      },
+      {
+        q: "How many rounds does a Swiggy PM interview have?",
+        a: "The Swiggy PM interview loop has 4–5 rounds: Recruiter screen → Product Sense Case (3-sided marketplace, 45 min) → Analytics or Growth Case (metric diagnosis, 45 min) → Behavioral Round (cross-functional alignment stories, 30 min) → Hiring Manager Round (vertical alignment — food delivery, Instamart, or Dineout, 30 min).",
+      },
+    ],
     recruitmentSteps: [
       "Resume screening + recruiter call",
       "Product sense case — 3-sided marketplace dynamics, restaurant partner economics, delivery unit economics",
@@ -1006,6 +1020,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Hypothesis-first", summary: "State your hypothesis in the first 30 seconds → structure the proof → eliminate branches quickly with data questions → update hypothesis → synthesise before time." },
     metaKeywords: ["mckinsey case interview india 2026", "mckinsey interview questions", "mckinsey pei india", "mckinsey india consulting interview"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What is the McKinsey Solve Game and how should I prepare for it?",
+        a: "The McKinsey Solve Game (formerly the Problem-Solving Test / PST) is an online cognitive assessment that filters most candidates before case interviews. It tests data interpretation, systems thinking, and logical reasoning under time pressure. Unlike the old pen-and-paper PST, Solve uses two game scenarios (an ecosystem simulation and a patient care game) to assess structured problem-solving. Prepare with past PST papers for the reasoning pattern, then do 1–2 Solve Game walkthroughs — the game format is learnable in 3–5 hours of focused practice.",
+      },
+      {
+        q: "How is a McKinsey case interview different from BCG or Deloitte?",
+        a: "McKinsey cases are interviewer-led and deliberately unstructured — the interviewer withholds information to test how you ask for it. BCG cases alternate between interviewer-led and candidate-led. Deloitte cases lean toward operations and IT transformation with a more structured interview script. McKinsey's distinguishing feature is the hypothesis-first approach: state what you believe the answer is in the first 30 seconds, then structure the proof. Rigid MECE framework application without a leading hypothesis fails at McKinsey specifically.",
+      },
+      {
+        q: "What are the most common McKinsey case topics in India?",
+        a: "India-specific McKinsey case topics cluster in three areas: consumer retail transformation (how a traditional Indian retailer competes with Reliance Retail or Flipkart), government infrastructure (smart city planning, healthcare delivery expansion), and financial services growth strategy (banking penetration in tier-2/3 cities, insurance adoption). India's financial inclusion push and UPI ecosystem evolution appear regularly in cases from the Delhi and Mumbai offices.",
+      },
+    ],
     recruitmentSteps: [
       "Application via McKinsey careers portal or campus drive",
       "Problem-Solving Test (PST) or McKinsey Solve Game — online cognitive assessment",
@@ -1097,6 +1125,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Financial reliability", summary: "Ledger double-entry (debits = credits) → Idempotency keys for all mutations → Event sourcing for auditability → Compensating transactions on failure → p99 latency budget." },
     metaKeywords: ["cred engineering interview india", "cred sde interview", "cred system design interview 2026", "cred technical interview"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What does the CRED take-home assignment test?",
+        a: "CRED's take-home assignment evaluates code quality and production-readiness thinking, not raw completion speed. Reviewers look for clean architecture, proper error handling, idempotency on write operations, meaningful test coverage, and a README that explains design decisions. Submitting a working solution with poor structure is worse than a partially complete solution with excellent code organisation — CRED's engineering bar is deliberately high because the team is small and selective.",
+      },
+      {
+        q: "Why does CRED emphasise idempotency and ledger consistency in system design?",
+        a: "CRED's core infrastructure handles credit-card reward pipelines, gamification point accrual, and real-time financial data. In any payment or reward system, operations that accidentally run twice (due to retries, network failures, or race conditions) create double-spend or double-credit problems that are extremely hard to audit and recover from. Idempotency keys and ledger double-entry accounting (debits = credits at all times) are the standard mitigations — CRED interviewers expect you to propose these without being prompted.",
+      },
+      {
+        q: "How is CRED's engineering bar different from other Indian unicorns?",
+        a: "CRED's team is deliberately small and selective — they hire fewer engineers than Swiggy, Zomato, or Meesho at similar scale. The interview bar is consequently higher: engineers are expected to have strong opinions on distributed systems, propose clean and maintainable architecture, and own systems end-to-end including failure modes and monitoring. The 5-round loop (take-home, LLD, system design, DSA, hiring manager) is longer than most Indian product companies, and a polished take-home submission is often what separates candidates who reach the final rounds from those who don't.",
+      },
+    ],
     recruitmentSteps: [
       "Take-home assignment — backend or full-stack problem; evaluated on code quality, not completion speed",
       "Low-level design round (60 min) — class system design (parking lot, reward engine, or inventory)",
@@ -1449,6 +1491,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "LP-mapped PM story", summary: "Name the LP → Situation (product context) → Task (your specific PM responsibility) → Action (decisions you made, not the team) → Result (metric) → LP reinforcement." },
     metaKeywords: ["amazon pm interview india 2026", "amazon product manager interview", "amazon apm interview india", "amazon lp pm interview"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "Are Amazon PM interviews mostly product cases or behavioral?",
+        a: "Amazon PM interviews in India are almost entirely behavioral, anchored to the 16 Leadership Principles — a marked contrast to Google, Meta, and most other PM interviews that heavily weight product case studies. 'Tell me about a time you launched a product that failed' and 'Tell me about a time you made a fast decision with insufficient data' are characteristic Amazon PM questions. Each round focuses on LP coverage; the interviewer explicitly tracks which LPs your stories address across the full loop.",
+      },
+      {
+        q: "What India-specific products does Amazon test in PM design rounds?",
+        a: "Amazon PM design rounds in Bangalore and Hyderabad frequently cover: Alexa Shopping for India (voice-commerce in regional languages, rural reach), Amazon Pay UPI integration (competing with PhonePe and Google Pay on the NPCI UPI rail), and fulfillment center technology for tier-2 delivery expansion (last-mile logistics in cities without formal addresses). Knowing the competitive context — why Amazon India trails Flipkart in certain categories, or how Amazon Pay differs from Paytm — is a strong differentiator.",
+      },
+      {
+        q: "What is Amazon's 6-pager format and does it come up in PM interviews?",
+        a: "Amazon's 6-pager is a narrative memo format (prose, no slide decks) that replaces the presentation culture at most companies. Amazon PMs are expected to write and read 6-pagers for major decisions. In PM interviews, this manifests as structured verbal storytelling — interviewers probe whether you think in narrative, can sequence a product decision logically, and can synthesise complexity into a coherent recommendation with a clear ask. The LP story format maps directly to this skill: situation, analysis, decision, result, lesson.",
+      },
+    ],
     recruitmentSteps: [
       "Recruiter screen — background, product sense, and LP alignment (30 min)",
       "Phone screen — 1 product thinking question + 2–3 LP behavioral questions (45 min)",
@@ -1473,6 +1529,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Genuine reflection", summary: "Situation (specific, not abstract) → Your initial assumption → Point where you had to update the assumption → What changed → What you'd do differently." },
     metaKeywords: ["google behavioral interview india", "googleyness interview 2026", "google googliness questions", "google cultural interview india"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What does the Google Googleyness round actually test?",
+        a: "Google's Googleyness round tests four things: cognitive bias awareness (can you identify when you've been wrong?), comfort with ambiguity (can you make progress without full information?), collaborative problem-solving (how do you bring others along?), and openness to being wrong (do you update beliefs under evidence?). It carries equal weight to coding rounds in the hiring committee. The round is evaluated by a dedicated interviewer separate from the technical loop.",
+      },
+      {
+        q: "Why do polished STAR answers score lower in Google's behavioral round?",
+        a: "Google Googleyness interviewers evaluate genuine reflection, not rehearsed storytelling. A perfectly packaged STAR answer that shows you were right all along, handled everything smoothly, and learned a minor lesson scores lower than a messier story where you were genuinely wrong, took time to recognise it, and can articulate what changed in your thinking. The evaluative question is whether you updated your beliefs based on evidence — candidates who can't show a genuine belief update often fail this round despite strong technical scores.",
+      },
+      {
+        q: "Is the Google behavioral round the same as a culture interview?",
+        a: "It is called both 'Googleyness' and 'General Cognitive Ability + Behavioral' in different contexts. It is not just a culture fit screen — it is a cognitive ability assessment conducted through behavioral questions. The interviewer is evaluating how you think, not whether you would be fun to work with. Collaborative problem-solving in ambiguous situations is the primary signal, and Google specifically weights stories where you navigated disagreement constructively (disagreed but committed, updated your position publicly, or called out a problem others had not noticed).",
+      },
+    ],
     recruitmentSteps: [
       "Resume screen / referral — strong open source or competitive programming track record helps",
       "Phone screen (45 min) — 1–2 coding problems with a Googler",
@@ -1779,6 +1849,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Infosys cultural fit", summary: "Communication clarity → learning agility story → integrity under pressure example → client-centricity → relocation openness (explicitly required) → why Infosys over competitors." },
     metaKeywords: ["infosys behavioral interview", "infosys hr round questions", "infosys managerial round", "infosys interview tips 2026"],
     sitemapPriority: 0.82,
+    faqExtra: [
+      {
+        q: "How is the Infosys fresher HR round different from the Managerial Round?",
+        a: "Infosys fresher HR interview is a structured screening covering relocation willingness, team-fit scenarios, strengths and weaknesses with examples, and 'why Infosys over competitors.' It is typically 20–30 minutes and lighter in depth than a managerial round. The Infosys Managerial Round — faced by experienced lateral hires — is a more rigorous assessment of stakeholder management, conflict resolution with clients, and delivery-under-pressure scenarios drawn from IT services projects.",
+      },
+      {
+        q: "Does Infosys score communication quality separately in behavioral interviews?",
+        a: "Yes. Infosys is a client-delivery firm and interviewers are explicitly trained to score language clarity, confidence, and active listening separately from answer quality. A technically correct answer delivered with poor structure or low confidence scores lower than a less detailed answer delivered clearly and conversationally. This is different from most product companies where content dominates the evaluation.",
+      },
+      {
+        q: "What specific Infosys initiative should I mention in 'why Infosys'?",
+        a: "A strong 'why Infosys' answer references a specific initiative: Infosys Cobalt (cloud practice), Infosys Topaz (AI-first strategy launched in 2023), Infosys Finacle (core banking platform used by 100+ banks globally), or InfyTQ (their campus skilling platform). Connecting one of these to your career goals converts a generic answer into a company-specific one. 'I want to work on Finacle's API banking layer — it powers core banking for banks across 100+ countries and I'm specifically interested in the transaction processing challenges at that scale' is the right level of specificity.",
+      },
+    ],
     recruitmentSteps: [
       "Cleared online assessment and technical interview",
       "HR Interview — behavioral and cultural fit screening",
@@ -1854,6 +1938,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "OOP-first DSA", summary: "Core DSA (arrays → trees → DP, explain time-space complexity) → OOP design (model the system, name classes, define interfaces) → code walkthrough with the interviewer → edge cases and error handling → follow-up design questions." },
     metaKeywords: ["zoho engineering interview", "zoho technical interview questions india", "zoho interview questions 2026", "zoho sde interview india", "zoho interview preparation india 2026"],
     sitemapPriority: 0.82,
+    faqExtra: [
+      {
+        q: "Why does Zoho use paper-based or plain-editor coding tests with no IDE?",
+        a: "Zoho uses paper or plain code editors (no IDE, no autocomplete) to test genuine understanding rather than tool-assisted pattern-matching. Zoho is a bootstrapped company that builds every tool in-house and values engineers who understand why their code works, not just how to get it to run. You are expected to reason through edge cases, explain time-space complexity, and justify design decisions aloud — these are the core skills Zoho's interview is designed to surface.",
+      },
+      {
+        q: "What OOP design problems appear in Zoho technical interviews?",
+        a: "Zoho's OOP design round asks you to model a real-world system from scratch: library management system, hospital records system, parking lot manager, hotel booking engine, or bank account system. You must name your classes, define interfaces and inheritance hierarchies, and justify every design decision aloud. Partial designs with clear reasoning score higher than complete designs you cannot explain. Candidates who start by naming classes without asking clarifying questions (multi-storey or single-floor parking lot? — the answer changes the design) miss the mark.",
+      },
+      {
+        q: "Does Zoho give preference to IIT/NIT graduates over others?",
+        a: "No. Zoho has a distinct culture of no-pedigree hiring — IIT and NIT graduates compete on the same terms as candidates from lesser-known colleges, and the same programming test is the entry gate for everyone. Communication clarity in technical explanations is scored as seriously as code correctness. The Zoho interview rewards understanding over pattern-matching, which means candidates from tier-2/3 colleges who genuinely understand fundamentals consistently out-perform IIT candidates who prepared only with LeetCode.",
+      },
+    ],
     recruitmentSteps: [
       "Written/online programming test — 1-2 DSA problems, paper or plain editor, no IDE, 60 minutes",
       "Technical round 1 — DSA deep-dive: arrays, linked lists, trees, DP; time-space complexity explanation required",
