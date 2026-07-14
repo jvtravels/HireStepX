@@ -2029,7 +2029,7 @@ function BlogIndex() {
       <div className="blog-container" style={{ padding: "56px 40px 96px" }}>
         {/* Header */}
         <div style={{ marginBottom: 44, textAlign: "center" }}>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 2.8vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 auto 16px", textWrap: "balance" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(40px, 5vw, 72px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.08, margin: "0 auto 16px", textWrap: "balance" }}>
             Interview prep that actually{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
           </h1>
