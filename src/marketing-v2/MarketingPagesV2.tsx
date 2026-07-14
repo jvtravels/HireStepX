@@ -1506,6 +1506,50 @@ export function ForStudentsV2() {
         </div>
       </section>
 
+      {/* Related reading — links to campus & fresher blog guides */}
+      <section className="mv2p-section" aria-label="Related guides" style={{ ...sectionBase, paddingTop: 56, paddingBottom: 56 }}>
+        <div className="mv2-container" style={container}>
+          <p style={{ ...eyebrow, marginBottom: 20 }}>Guides worth reading before your placement round</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+            {([
+              ["Campus Placement Interview Tips 2026", "/blog/campus-placement-interview-tips"],
+              ["Behavioral Interview Questions for Freshers", "/blog/behavioral-interview-questions-freshers"],
+              ["How to Introduce Yourself in an Interview", "/blog/how-to-introduce-yourself-in-interview"],
+              ["TCS Interview Questions for Freshers 2026", "/blog/tcs-interview-questions-freshers-2026"],
+              ["Infosys Interview Questions 2026", "/blog/infosys-interview-questions-2026"],
+              ["Wipro Interview Questions & Answers", "/blog/wipro-interview-questions-answers"],
+              ["HR Interview Questions & Answers India", "/blog/hr-interview-questions-answers-india"],
+              ["Group Discussion Topics — Campus Placement 2026", "/blog/group-discussion-topics-campus-placement-2026"],
+              ["How to Pass TCS NQT 2026", "/blog/how-to-pass-tcs-nqt-2026"],
+              ["Resume Tips for Freshers India 2026", "/blog/resume-tips-freshers-india-2026"],
+            ] as [string, string][]).map(([label, href]) => (
+              <a
+                key={href}
+                href={href}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "14px 18px",
+                  background: t.white,
+                  border: `1px solid ${t.line}`,
+                  borderRadius: 12,
+                  fontFamily: fonts.sans,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: t.coal,
+                  textDecoration: "none",
+                  gap: 10,
+                  lineHeight: 1.4,
+                }}
+              >
+                <span style={{ color: t.copper, fontSize: 16, flexShrink: 0 }}>→</span>
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Honest pre-launch note */}
       <section className="mv2p-section" aria-label="Pre-launch note" style={sectionBase}>
         <div className="mv2-container" style={containerNarrow}>
