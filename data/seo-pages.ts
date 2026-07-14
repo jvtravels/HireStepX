@@ -115,12 +115,19 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "razorpay-pm-interview-questions",
-    searchPhrase: "Razorpay Product Manager Interview Questions",
+    searchPhrase: "Razorpay Product Manager Interview Questions India 2026",
     company: "razorpay", roleFamily: "pm", focus: "case-study",
-    intro: "Razorpay PM interviews skew operational. Expect questions about pricing for new merchant tiers, expansion to D2C brands, or feature priority for scale. Indian fintech context matters — knowing UPI vs cards economics is implicitly assumed.",
+    intro: "Razorpay PM interviews skew operational. Expect questions about pricing for new merchant tiers, expansion to D2C brands, or feature priority for scale. Indian fintech context matters — knowing UPI vs cards economics is implicitly assumed. The Razorpay PM loop runs 4–5 rounds covering product thinking, case study, technical literacy, and a behavioral culture round. Candidates who treat it like a standard product company PM interview routinely underperform — Razorpay wants PMs who understand merchant economics and payment flows, not just user experience frameworks. The culture round tests merchant empathy the same way the engineering culture round does: can you explain a feature decision in terms of what a merchant actually experiences when a payment fails?",
     framework: { name: "Pricing-first PM", summary: "Customer segment → willingness-to-pay → competitor anchor → price ladder → roll-out." },
-    metaKeywords: ["razorpay pm interview", "razorpay product manager", "razorpay fintech interview"],
+    metaKeywords: ["razorpay pm interview india", "razorpay product manager 2026", "razorpay fintech interview"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Recruiter screen — background, product sense, and fintech context (30 min)",
+      "Product case round — pricing for new merchant tiers, D2C expansion, or feature prioritization",
+      "Technical literacy round — system design familiarity, API understanding, and data analysis",
+      "Culture round — merchant empathy, ownership stories, speed-vs-correctness trade-offs",
+      "Hiring manager — compensation, role expectations, and product roadmap discussion",
+    ],
   },
 
   /* ── Swiggy ────────────────────────────────────────────────── */
@@ -571,23 +578,37 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "deloitte-consulting-case-interview",
-    searchPhrase: "Deloitte Consulting Case Interview Practice",
+    searchPhrase: "Deloitte Consulting Case Interview Practice India 2026",
     company: "deloitte", roleFamily: "consultant", focus: "case-study",
     intro: "Deloitte consulting cases lean on operations and digital transformation more than pure strategy. Expect government/public sector clients, IT transformation scenarios, and turnaround situations. Candidates who demonstrate prior exposure to programme management, cost reduction, or digital rollouts land best with Deloitte panels.",
     framework: { name: "OD-Consult", summary: "Objective clarity → Diagnosis (current-state gap) → Levers (controllable vs. structural) → Trade-off matrix → Phased delivery plan → Risk flagging." },
-    metaKeywords: ["deloitte consulting case interview", "deloitte case study", "deloitte strategy interview india"],
+    metaKeywords: ["deloitte consulting case interview india", "deloitte case study 2026", "deloitte strategy interview india"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Application via Deloitte campus drive or careers portal",
+      "CogniVue aptitude test — numerical, verbal, logical reasoning, and situational judgement (60–90 min)",
+      "Group Discussion — 8–12 candidates on a business or social topic (15–20 min)",
+      "Case interview (Consulting/Advisory track) — operations or digital transformation case (30–45 min)",
+      "HR round — cultural fit, motivation, salary discussion, and track preference",
+    ],
   },
 
   /* ── McKinsey / BCG ────────────────────────────────────────────────── */
   {
     slug: "mckinsey-case-study-interview-questions",
-    searchPhrase: "McKinsey Case Study Interview Questions India",
+    searchPhrase: "McKinsey Case Study Interview Questions India 2026",
     company: "mckinsey", roleFamily: "consultant", focus: "case-study",
     intro: "McKinsey India cases are unstructured by design. The interviewer deliberately withholds information to see how you ask for it. Every case can shift direction mid-way. The bar is hypothesis-first thinking: state what you believe the answer is before proving it, then adjust with evidence. Structured but rigid frameworks fail here.",
     framework: { name: "Hypothesis-first", summary: "State your hypothesis in the first 30 seconds → structure the proof → eliminate branches quickly with data questions → update hypothesis → synthesise before time." },
-    metaKeywords: ["mckinsey case interview india", "mckinsey interview questions", "mckinsey pei india", "mckinsey india consulting interview"],
+    metaKeywords: ["mckinsey case interview india 2026", "mckinsey interview questions", "mckinsey pei india", "mckinsey india consulting interview"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Application via McKinsey careers portal or campus drive",
+      "Problem-Solving Test (PST) or McKinsey Solve Game — online cognitive assessment",
+      "First-round interviews (×2) — candidate-led case + Personal Experience Interview (PEI)",
+      "Final-round interviews (×2–3) — senior partner-led cases; higher stakes and less structured",
+      "Offer discussion — practice area preference, office location, and joining timeline",
+    ],
   },
   {
     slug: "bcg-case-interview-practice",
@@ -720,23 +741,35 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Zerodha ───────────────────────────────────────────────────────── */
   {
     slug: "zerodha-engineering-interview-questions",
-    searchPhrase: "Zerodha Engineering Interview Questions",
+    searchPhrase: "Zerodha Engineering Interview Questions India 2026",
     company: "zerodha", roleFamily: "swe", focus: "technical",
-    intro: "Zerodha engineering interviews are distinctly different from startup norms. No Leetcode marathons — instead, they give you a real Kite (trading platform) problem and ask you to reason about it. They expect deep curiosity about financial markets alongside engineering. Know order types, margin calculations, and SEBI circuit breaker rules. Passion for markets is evaluated, not just code quality.",
+    intro: "Zerodha engineering interviews are distinctly different from startup norms. No Leetcode marathons — instead, they give you a real Kite (trading platform) problem and ask you to reason about it. They expect deep curiosity about financial markets alongside engineering. Know order types, margin calculations, and SEBI circuit breaker rules. Passion for markets is evaluated, not just code quality. Zerodha is profitable and bootstrapped — the culture values engineers who care about the product, not just the stack. The interview process typically runs 3–4 rounds: a technical screen or take-home, a deep domain discussion about financial markets, and a practical coding or system design session grounded in Kite's trading infrastructure.",
     framework: { name: "Markets + Engineering", summary: "Order matching logic → margin risk exposure → real-time P&L computation → regulatory compliance hooks → system fail-safe on circuit break events." },
-    metaKeywords: ["zerodha interview questions", "zerodha engineering interview", "zerodha sde interview", "zerodha kite technical"],
+    metaKeywords: ["zerodha interview questions india", "zerodha engineering interview 2026", "zerodha sde interview", "zerodha kite technical"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Technical screen or take-home — real trading-system problem, evaluated on reasoning quality",
+      "Domain discussion — order types, margin mechanics, SEBI regulations, and market microstructure",
+      "System design — Kite trading platform components, latency, and reliability",
+      "Culture and motivation round — curiosity about financial markets is a hard requirement",
+    ],
   },
 
   /* ── Freshworks ────────────────────────────────────────────────────── */
   {
     slug: "freshworks-sde-interview-questions",
-    searchPhrase: "Freshworks Software Engineer Interview Questions",
+    searchPhrase: "Freshworks Software Engineer Interview Questions India 2026",
     company: "freshworks", roleFamily: "swe", focus: "system-design",
-    intro: "Freshworks SDE interviews have a customer-success flavour that surprises candidates from purely product-company backgrounds. Interviewers explicitly ask: 'How would you explain this architecture decision to a non-technical customer success manager?' The engineering bar is solid — medium-hard DSA + distributed systems — but product empathy is equally weighted.",
+    intro: "Freshworks SDE interviews have a customer-success flavour that surprises candidates from purely product-company backgrounds. Interviewers explicitly ask: 'How would you explain this architecture decision to a non-technical customer success manager?' The engineering bar is solid — medium-hard DSA + distributed systems — but product empathy is equally weighted. Freshworks builds B2B SaaS products (CRM, support, marketing automation) used in 100+ countries; system design questions often involve multi-tenant data isolation, webhook delivery guarantees, and SLA monitoring. The interview loop runs 3–4 rounds including an online assessment, DSA, system design, and a customer-empathy behavioral round.",
     framework: { name: "SaaS reliability", summary: "Multi-tenant data isolation → webhook delivery guarantees → customer-facing API stability → SLA monitoring → graceful degradation on 3rd-party API failures." },
-    metaKeywords: ["freshworks interview questions", "freshworks sde interview", "freshworks system design", "freshworks engineering interview"],
+    metaKeywords: ["freshworks interview questions india", "freshworks sde interview 2026", "freshworks system design", "freshworks engineering interview"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Online assessment — 2 DSA problems (medium difficulty, 60–90 minutes)",
+      "DSA round — medium-hard problems focused on distributed data structures and algorithms",
+      "System design — multi-tenant SaaS architecture, webhook reliability, or API stability",
+      "Behavioral round — product empathy, customer-success thinking, and ownership stories",
+    ],
   },
   {
     slug: "freshworks-pm-interview-questions",
@@ -852,34 +885,55 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Amazon PM ─────────────────────────────────────────────────────── */
   {
     slug: "amazon-pm-interview-questions",
-    searchPhrase: "Amazon Product Manager Interview Questions India",
+    searchPhrase: "Amazon Product Manager Interview Questions India 2026",
     company: "amazon", roleFamily: "pm", focus: "case-study",
     intro: "Amazon PM interviews (India: Bangalore, Hyderabad) are almost entirely behavioral, anchored to the 16 Leadership Principles — unlike most PM interviews that have case studies. 'Tell me about a time you launched a product that failed' and 'Describe a time you had to make a fast decision with insufficient data' are characteristic questions. Every answer must link explicitly to a Leadership Principle.",
     framework: { name: "LP-mapped PM story", summary: "Name the LP → Situation (product context) → Task (your specific PM responsibility) → Action (decisions you made, not the team) → Result (metric) → LP reinforcement." },
-    metaKeywords: ["amazon pm interview india", "amazon product manager interview", "amazon apm interview india", "amazon lp pm interview"],
+    metaKeywords: ["amazon pm interview india 2026", "amazon product manager interview", "amazon apm interview india", "amazon lp pm interview"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Recruiter screen — background, product sense, and LP alignment (30 min)",
+      "Phone screen — 1 product thinking question + 2–3 LP behavioral questions (45 min)",
+      "Virtual onsite (4–5 rounds) — all LP-mapped behavioral, possibly 1 product design round",
+      "Bar raiser round — senior Amazon employee who assesses bar consistency across LP stories",
+      "HR + offer — background check, team matching, and compensation discussion",
+    ],
   },
 
   /* ── Google (behavioral) ───────────────────────────────────────────── */
   {
     slug: "google-behavioral-interview-questions",
-    searchPhrase: "Google Behavioral Interview Questions — Googleyness",
+    searchPhrase: "Google Behavioral Interview Questions Googleyness India 2026",
     company: "google", roleFamily: "behavioral", focus: "behavioral",
-    intro: "Google's 'Googleyness' rounds test four things: cognitive bias awareness, comfort with ambiguity, collaborative problem-solving, and openness to being wrong. These aren't soft-skill fluff rounds — they carry equal weight to coding rounds in the hiring committee. Candidates who give polished, perfectly packaged STAR answers often score lower than those who show genuine reflection and self-awareness.",
+    intro: "Google's 'Googleyness' rounds test four things: cognitive bias awareness, comfort with ambiguity, collaborative problem-solving, and openness to being wrong. These aren't soft-skill fluff rounds — they carry equal weight to coding rounds in the hiring committee. Candidates who give polished, perfectly packaged STAR answers often score lower than those who show genuine reflection and self-awareness. Google India behavioral rounds are part of the 4–6 round onsite loop, evaluated by a dedicated Googleyness interviewer assessing cultural fit independently of the technical bar. The key is to show the moment you updated your beliefs based on evidence — not a story where you were right all along.",
     framework: { name: "Genuine reflection", summary: "Situation (specific, not abstract) → Your initial assumption → Point where you had to update the assumption → What changed → What you'd do differently." },
-    metaKeywords: ["google behavioral interview", "googleyness interview", "google googliness questions", "google cultural interview"],
+    metaKeywords: ["google behavioral interview india", "googleyness interview 2026", "google googliness questions", "google cultural interview india"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Resume screen / referral — strong open source or competitive programming track record helps",
+      "Phone screen (45 min) — 1–2 coding problems with a Googler",
+      "Coding onsite rounds (×3–4) — medium-to-hard LeetCode, graph and DP heavy",
+      "System design round — distributed systems at Google scale with availability trade-offs",
+      "Googleyness round — cognitive bias awareness, ambiguity comfort, and collaborative problem-solving",
+    ],
   },
 
   /* ── LinkedIn ──────────────────────────────────────────────────────── */
   {
     slug: "linkedin-pm-interview-questions",
-    searchPhrase: "LinkedIn Product Manager Interview Questions",
+    searchPhrase: "LinkedIn Product Manager Interview Questions India 2026",
     company: "linkedin", roleFamily: "pm", focus: "case-study",
-    intro: "LinkedIn PM interviews are unique because you're interviewing at the platform you used to get the interview. Interviewers will ask 'How would you improve LinkedIn Jobs?' or 'Design a feature for LinkedIn India's blue-collar workers.' Having a specific, data-backed opinion about LinkedIn's product shortcomings — and a constructive improvement — is the most memorable thing you can do.",
+    intro: "LinkedIn PM interviews are unique because you're interviewing at the platform you used to get the interview. Interviewers will ask 'How would you improve LinkedIn Jobs?' or 'Design a feature for LinkedIn India's blue-collar workers.' Having a specific, data-backed opinion about LinkedIn's product shortcomings — and a constructive improvement — is the most memorable thing you can do. LinkedIn's interview loop runs 4–5 rounds covering product thinking, execution depth, analytical reasoning, and behavioral fit. The platform's dual economy — job seekers and recruiters — means PM candidates must understand both sides of the marketplace, not just one user persona.",
     framework: { name: "Platform insider", summary: "User segment (creators vs consumers vs job seekers) → current friction point (with example) → feature proposal → success metric (engagement + retention) → monetisation upside." },
-    metaKeywords: ["linkedin pm interview", "linkedin product manager interview", "linkedin india interview"],
+    metaKeywords: ["linkedin pm interview india", "linkedin product manager interview 2026", "linkedin india interview"],
     sitemapPriority: 0.75,
+    recruitmentSteps: [
+      "Recruiter screen — product background, motivation, and LinkedIn product familiarity (30 min)",
+      "Product thinking round — improve a LinkedIn feature or design a new one for a specific segment",
+      "Analytical reasoning — data interpretation, metrics definition, and A/B test design",
+      "Execution depth round — prioritization, cross-functional collaboration, and shipping stories",
+      "Behavioral round — leadership, influence without authority, and growth mindset",
+    ],
   },
 
   /* ── Adobe ─────────────────────────────────────────────────────────── */
@@ -943,22 +997,33 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── OYO ───────────────────────────────────────────────────────────── */
   {
     slug: "oyo-engineering-interview-questions",
-    searchPhrase: "OYO Engineering Interview Questions",
+    searchPhrase: "OYO Engineering Interview Questions India 2026",
     company: "oyo", roleFamily: "swe", focus: "system-design",
-    intro: "OYO engineering interviews have evolved significantly post-restructuring. The bar is now rigorous — expect 3–4 rounds with a strong system design component focused on hotel booking, dynamic pricing, and property management systems. OYO interviewers specifically ask about designing for markets where properties go offline unexpectedly — graceful degradation matters here.",
+    intro: "OYO engineering interviews have evolved significantly post-restructuring. The bar is now rigorous — expect 3–4 rounds with a strong system design component focused on hotel booking, dynamic pricing, and property management systems. OYO interviewers specifically ask about designing for markets where properties go offline unexpectedly — graceful degradation matters here. OYO operates in 35+ countries with significant presence in India, Southeast Asia, and Europe; the scale and distribution challenges are real. Candidates who demonstrate understanding of operational complexity — variable property quality, partner onboarding at scale, and cancellation-policy consistency — stand out in both system design and behavioral rounds.",
     framework: { name: "Hospitality systems", summary: "Inventory availability in near-realtime → dynamic pricing algorithm → booking idempotency → property onboarding pipeline → partner reconciliation → cancellation policy engine." },
-    metaKeywords: ["oyo engineering interview", "oyo sde interview", "oyo system design interview", "oyo technical interview"],
+    metaKeywords: ["oyo engineering interview india", "oyo sde interview 2026", "oyo system design interview", "oyo technical interview"],
     sitemapPriority: 0.75,
+    recruitmentSteps: [
+      "Online assessment or recruiter screen — coding round (medium DSA, 60 minutes)",
+      "Technical round 1 — DSA + problem decomposition",
+      "System design round — hotel booking, dynamic pricing, or property management system",
+      "Behavioral + hiring manager — ownership stories, operational failure handling, and scale thinking",
+    ],
   },
 
   {
     slug: "phonepe-behavioral-interview-questions",
-    searchPhrase: "PhonePe Behavioral Interview Questions — Values and Culture Fit",
+    searchPhrase: "PhonePe Behavioral Interview Questions Values Culture Fit 2026",
     company: "phonepe", roleFamily: "behavioral", focus: "behavioral",
-    intro: "PhonePe's culture interviews probe a specific set of values: customer obsession, ownership over process, and speed-accuracy balance. They operate in a sector where bugs cost real money — so they specifically probe how you handle high-stakes decisions and production incidents. The behavioral round is eliminatory — PhonePe rejects technically strong candidates who don't demonstrate ownership mentality.",
+    intro: "PhonePe's culture interviews probe a specific set of values: customer obsession, ownership over process, and speed-accuracy balance. They operate in a sector where bugs cost real money — so they specifically probe how you handle high-stakes decisions and production incidents. The behavioral round is eliminatory — PhonePe rejects technically strong candidates who don't demonstrate ownership mentality. PhonePe processes 1B+ transactions per month and the evaluation reflects that reality: the best stories are ones where you owned a production failure, picked up a problem that wasn't yours, or made a fast decision with incomplete information and got the outcome right. 'I escalated to my manager' is not the answer PhonePe is looking for.",
     framework: { name: "Ownership-first STAR", summary: "Identify the moment you chose ownership over comfort → specific decision → measurable outcome → what you'd change → connection to PhonePe's mission." },
-    metaKeywords: ["phonepe behavioral interview", "phonepe values interview", "phonepe culture fit", "phonepe hr round questions"],
+    metaKeywords: ["phonepe behavioral interview india", "phonepe values interview 2026", "phonepe culture fit", "phonepe hr round questions"],
     sitemapPriority: 0.8,
+    recruitmentSteps: [
+      "Cleared technical rounds — DSA, system design, or coding screen",
+      "Behavioral / culture screen (45 min) — customer obsession, ownership, and speed-accuracy trade-off stories",
+      "Hiring manager round — motivations, PhonePe mission alignment, and past production incident handling",
+    ],
   },
 
   /* ── Amazon SWE behavioral (LP-focused) ────────────────────────────── */
