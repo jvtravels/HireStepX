@@ -217,7 +217,7 @@ function FrameworkBox({ name, summary }: { name: string; summary: string }) {
    neutral, publicly-verifiable fields are surfaced; interview-signal
    `notes`/`themes`/`techHints` are deliberately omitted. Renders nothing
    when the company has no known-facts entry. */
-function CompanyContextBox({ company, companyLabel }: { company: string; companyLabel: string }) {
+export function CompanyContextBox({ company, companyLabel }: { company: string; companyLabel: string }) {
   const facts = COMPANY_KNOWN_FACTS[company];
   if (!facts) return null;
 

@@ -8,6 +8,7 @@ import { tokens as t, fonts } from "../../../../src/auth/_tokens";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { COMPANY_LABEL } from "../../../../data/company-labels";
+import { CompanyContextBox } from "@/marketing-v2/QuestionPages";
 
 /* Programmatic SEO landing pages — /companies/{slug}.
  *
@@ -295,6 +296,11 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
               {page.framework.summary}
             </p>
           </section>
+
+          {/* About the company — verified facts from COMPANY_KNOWN_FACTS,
+              shared with /questions/[slug]. Renders nothing when the
+              company has no known-facts entry. */}
+          <CompanyContextBox company={page.company} companyLabel={companyLabel} />
 
           {/* Recruitment Process */}
           {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
