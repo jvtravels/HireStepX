@@ -7,6 +7,9 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
 import {
   editorialCSS,
+  edEyebrow,
+  edSansLead,
+  ED_PADDING,
   DarkBand,
   ctaPrimaryStyle,
   ctaGhostStyle,
@@ -135,13 +138,13 @@ export default async function CompaniesIndexPage() {
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
         {/* ── Hero — two-column ─────────────────────────────────────── */}
-        <header style={{ paddingTop: 96, paddingBottom: 88, borderBottom: `1px solid ${t.line}` }}>
+        <header style={{ paddingTop: ED_PADDING.heroTop, paddingBottom: ED_PADDING.heroBottom, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
             <div className="co-hero-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
 
               {/* Left — headline + CTA */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase" as const, color: t.copper, margin: "0 0 20px" }}>
+                <p style={{ ...edEyebrow, margin: "0 0 20px" }}>
                   Company interview prep · India 2026
                 </p>
                 <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(40px, 5vw, 62px)", fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.025em", color: t.coal, margin: "0 0 28px" }}>
@@ -149,7 +152,7 @@ export default async function CompaniesIndexPage() {
                   interview,{" "}
                   <em style={{ fontStyle: "italic", color: t.copper }}>decoded.</em>
                 </h1>
-                <p style={{ fontFamily: fonts.sans, fontStyle: "normal", fontSize: 16, fontWeight: 400, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 36px", maxWidth: "40ch" }}>
+                <p style={{ ...edSansLead, margin: "0 0 36px", maxWidth: "40ch" }}>
                   Format, real questions, scoring framework, and 2 free AI mocks — one guide per company.
                 </p>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
@@ -167,7 +170,7 @@ export default async function CompaniesIndexPage() {
 
                 {/* Panel header */}
                 <div style={{ padding: "22px 24px 18px", borderBottom: `1px solid ${t.line}` }}>
-                  <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 4px" }}>
+                  <p style={{ ...edEyebrow, color: t.inkFaint, margin: "0 0 4px" }}>
                     Browse by category
                   </p>
                   <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, margin: 0 }}>
@@ -246,7 +249,7 @@ export default async function CompaniesIndexPage() {
 
                   {/* Left panel */}
                   <div className="co-group-label" style={{ flexShrink: 0, width: 256 }}>
-                    <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 12px" }}>
+                    <p style={{ ...edEyebrow, color: t.inkFaint, margin: "0 0 12px" }}>
                       {String(gi + 1).padStart(2, "0")} / {String(GROUPS.length).padStart(2, "0")}
                     </p>
                     <h2 style={{ fontFamily: fonts.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: "0 0 12px", lineHeight: 1.3, letterSpacing: "-0.01em" }}>

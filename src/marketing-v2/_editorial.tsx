@@ -87,16 +87,30 @@ export const editorialCSS = `
 
 /* ── Shared style atoms ─────────────────────────────────────────────── */
 
+/* Eyebrow label — small uppercase copper/inkFaint tag above headings.
+   Override `color` per context (copper for hero, inkFaint for panels). */
 export const edEyebrow: CSSProperties = {
   fontFamily: fonts.sans,
-  fontSize: 12,
-  fontWeight: 600,
-  letterSpacing: "0.14em",
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: "0.12em",
   textTransform: "uppercase",
   color: t.copper,
   margin: 0,
 };
 
+/* Sans body lead — 16px regular weight for hero sub-headings. */
+export const edSansLead: CSSProperties = {
+  fontFamily: fonts.sans,
+  fontStyle: "normal",
+  fontSize: 16,
+  fontWeight: 400,
+  lineHeight: 1.7,
+  color: t.inkSoft,
+  margin: 0,
+};
+
+/* Serif italic lead — kept for long-form blog article heroes only. */
 export const edLead: CSSProperties = {
   fontFamily: fonts.serif,
   fontStyle: "italic",
@@ -111,9 +125,18 @@ export const edBody: CSSProperties = {
   fontFamily: fonts.sans,
   fontSize: 16,
   lineHeight: 1.72,
-  color: t.indigoGray,
+  color: t.inkSoft,
   margin: 0,
 };
+
+/* ── Shared spacing scale ───────────────────────────────────────────── */
+/* Use these constants so every page's hero/section padding matches. */
+export const ED_PADDING = {
+  heroTop: 96,
+  heroBottom: 80,
+  sectionV: 80,
+  closeV: 100,
+} as const;
 
 /* Accent — renders a headline with an optional italic-copper phrase. */
 export function Accent({ children }: { children: ReactNode }) {
@@ -185,8 +208,8 @@ export function EditorialHero({
     <section
       className="ed-hero"
       style={{
-        paddingTop: 96,
-        paddingBottom: 72,
+        paddingTop: ED_PADDING.heroTop,
+        paddingBottom: ED_PADDING.heroBottom,
         background: t.cream,
         borderBottom: `1px solid ${t.line}`,
       }}
@@ -385,8 +408,8 @@ export function DarkBand({
         position: "relative",
         background: t.coal,
         color: t.cream,
-        paddingTop: 100,
-        paddingBottom: 100,
+        paddingTop: ED_PADDING.closeV,
+        paddingBottom: ED_PADDING.closeV,
         overflow: "hidden",
       }}
     >

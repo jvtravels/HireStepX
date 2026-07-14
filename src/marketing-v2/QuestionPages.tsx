@@ -161,7 +161,7 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
           href={practiceHref}
           style={{ flexShrink: 0, color: t.copper, textDecoration: "none", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", padding: "8px 0 8px 12px" }}
         >
-          Practice →
+          Practice free →
         </Link>
       )}
     </li>

@@ -11,6 +11,8 @@ import { COMPANY_LABEL } from "../../../../data/company-labels";
 import {
   editorialCSS,
   edEyebrow,
+  edSansLead,
+  ED_PADDING,
   SectionHead,
   SpecTimeline,
   DarkBand,
@@ -317,7 +319,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
         {/* Two-column hero — breadcrumb + h1 left, stats sidebar right */}
-        <header className="ed-hero" style={{ paddingTop: 72, paddingBottom: 64, borderBottom: `1px solid ${t.line}` }}>
+        <header className="ed-hero" style={{ paddingTop: ED_PADDING.heroTop, paddingBottom: ED_PADDING.heroBottom, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
             {/* Breadcrumb */}
             <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 36 }}>
@@ -331,13 +333,13 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             <div className="co-hero-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
               {/* Left column */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 20px" }}>
+                <p style={{ ...edEyebrow, color: t.inkFaint, margin: "0 0 20px" }}>
                   {companyLabel} · {focusLabel}
                 </p>
                 <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(34px, 4.5vw, 56px)", fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.024em", color: t.coal, margin: "0 0 22px", maxWidth: "22ch" }}>
                   {page.searchPhrase}
                 </h1>
-                <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.7, color: t.inkSoft, margin: "0 0 32px", maxWidth: "52ch" }}>
+                <p style={{ ...edSansLead, margin: "0 0 32px", maxWidth: "52ch" }}>
                   {page.intro.split(".")[0].trim()}.
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
@@ -380,7 +382,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         </header>
 
         {/* Framework + verified company facts */}
-        <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, borderBottom: `1px solid ${t.line}` }}>
+        <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
             <SectionHead eyebrow="The framework that scores" title={page.framework.name} />
             <div className="ed-reading">
@@ -395,7 +397,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
 
         {/* Recruitment process — timeline */}
         {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
-          <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
+          <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
             <div className="ed-container">
               <SectionHead
                 index="01"
@@ -412,7 +414,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
 
         {/* Interview rounds — timeline */}
         {page.interviewRounds && page.interviewRounds.length > 0 && (
-          <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, borderBottom: `1px solid ${t.line}` }}>
+          <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, borderBottom: `1px solid ${t.line}` }}>
             <div className="ed-container">
               <SectionHead index="02" eyebrow="What each round tests" title="Interview rounds" />
               <div className="ed-reading">
@@ -424,7 +426,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
 
         {/* STAR guide — behavioral / HR / campus-placement */}
         {(page.focus === "behavioral" || page.focus === "hr" || page.focus === "campus-placement") && (
-          <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
+          <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, background: t.creamSoft, borderBottom: `1px solid ${t.line}` }}>
             <div className="ed-container">
               <SectionHead
                 eyebrow="Answer structure"
@@ -456,7 +458,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         )}
 
         {/* Question set */}
-        <section className="ed-section ed-reveal" style={{ paddingTop: 72, paddingBottom: 72, borderBottom: `1px solid ${t.line}` }}>
+        <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
             <SectionHead
               eyebrow="The practice set"
@@ -508,7 +510,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
         </section>
 
         {/* Related links */}
-        <section className="ed-section" style={{ paddingTop: 64, paddingBottom: 64, background: t.creamSoft }}>
+        <section className="ed-section" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, background: t.creamSoft }}>
           <div className="ed-container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 40 }}>
             <RelatedBlogPosts companyLabel={companyLabel} />
             <div>
