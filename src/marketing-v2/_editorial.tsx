@@ -61,9 +61,13 @@ export const editorialCSS = `
   .ed-prose em { font-style: italic; }
   .ed-prose a { color: ${t.copper}; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
   .ed-prose ul { margin: 0 0 1.15em; padding: 0; list-style: none; }
-  .ed-prose li { position: relative; padding-left: 26px; margin-bottom: 0.6em; }
-  .ed-prose li::before { content: ""; position: absolute; left: 4px; top: 0.62em; width: 6px; height: 6px; border-radius: 50%; background: ${t.copper}; }
-  .ed-prose li:last-child { margin-bottom: 0; }
+  .ed-prose ul > li { position: relative; padding-left: 26px; margin-bottom: 0.6em; }
+  .ed-prose ul > li::before { content: ""; position: absolute; left: 4px; top: 0.62em; width: 6px; height: 6px; border-radius: 50%; background: ${t.copper}; }
+  .ed-prose ul > li:last-child { margin-bottom: 0; }
+  .ed-prose ol { margin: 0 0 1.15em; padding: 0; list-style: none; counter-reset: ed-ol; }
+  .ed-prose ol > li { position: relative; padding-left: 38px; margin-bottom: 0.65em; counter-increment: ed-ol; }
+  .ed-prose ol > li::before { content: counter(ed-ol, decimal-leading-zero); position: absolute; left: 0; top: 0.12em; font-family: ${fonts.sans}; font-size: 11px; font-weight: 700; color: ${t.copper}; letter-spacing: 0.04em; }
+  .ed-prose ol > li:last-child { margin-bottom: 0; }
 
   @media (max-width: 720px) {
     .ed-container { padding-left: 20px !important; padding-right: 20px !important; }
@@ -475,22 +479,66 @@ function parseInline(text: string, keyPrefix: string): ReactNode[] {
 export function markdownToNodes(raw: string, keyPrefix = "md"): ReactNode[] {
   const blocks = raw.trim().split(/\n{2,}/);
   const out: ReactNode[] = [];
+
+  const isBulletLine = (l: string) => /^\s*[-*•]\s+/.test(l.trim());
+  const isNumberedLine = (l: string) => /^\s*\d+\.\s+/.test(l.trim());
+  const isListLine = (l: string) => isBulletLine(l) || isNumberedLine(l);
+  const stripBullet = (l: string) => l.trim().replace(/^\s*[-*•]\s+/, "");
+  const stripNumber = (l: string) => l.trim().replace(/^\s*\d+\.\s+/, "");
+  const stripList = (l: string) => isNumberedLine(l) ? stripNumber(l) : stripBullet(l);
+
   blocks.forEach((block, bi) => {
     const lines = block.split("\n");
-    const isBullet = lines.every((l) => /^\s*([-*•])\s+/.test(l.trim()) || l.trim() === "");
-    const bulletLines = lines.filter((l) => /^\s*([-*•])\s+/.test(l.trim()));
-    if (isBullet && bulletLines.length > 0) {
+    const nonEmpty = lines.filter((l) => l.trim() !== "");
+    if (nonEmpty.length === 0) return;
+
+    const allBullet = nonEmpty.every(isBulletLine);
+    const allNumbered = nonEmpty.every(isNumberedLine);
+    // Mixed: first line(s) are a label, remaining are list items
+    const listStart = nonEmpty.findIndex(isListLine);
+    const mixed = !allBullet && !allNumbered && listStart > 0 && nonEmpty.slice(listStart).every(isListLine);
+
+    if (allBullet) {
       out.push(
         <ul key={`${keyPrefix}-ul${bi}`}>
-          {bulletLines.map((l, li) => (
+          {nonEmpty.map((l, li) => (
             <li key={`${keyPrefix}-ul${bi}-li${li}`}>
-              {parseInline(l.trim().replace(/^\s*[-*•]\s+/, ""), `${keyPrefix}-ul${bi}-li${li}`)}
+              {parseInline(stripBullet(l), `${keyPrefix}-ul${bi}-li${li}`)}
             </li>
           ))}
         </ul>,
       );
+    } else if (allNumbered) {
+      out.push(
+        <ol key={`${keyPrefix}-ol${bi}`}>
+          {nonEmpty.map((l, li) => (
+            <li key={`${keyPrefix}-ol${bi}-li${li}`}>
+              {parseInline(stripNumber(l), `${keyPrefix}-ol${bi}-li${li}`)}
+            </li>
+          ))}
+        </ol>,
+      );
+    } else if (mixed) {
+      // Label paragraph(s) before the list
+      const labelText = nonEmpty.slice(0, listStart).join(" ");
+      out.push(
+        <p key={`${keyPrefix}-lbl${bi}`}>
+          {parseInline(labelText, `${keyPrefix}-lbl${bi}`)}
+        </p>,
+      );
+      const listItems = nonEmpty.slice(listStart);
+      const useOl = listItems.every(isNumberedLine);
+      const ListEl = useOl ? "ol" : "ul";
+      out.push(
+        <ListEl key={`${keyPrefix}-ml${bi}`}>
+          {listItems.map((l, li) => (
+            <li key={`${keyPrefix}-ml${bi}-li${li}`}>
+              {parseInline(stripList(l), `${keyPrefix}-ml${bi}-li${li}`)}
+            </li>
+          ))}
+        </ListEl>,
+      );
     } else {
-      // Join wrapped lines within a paragraph with spaces.
       out.push(
         <p key={`${keyPrefix}-p${bi}`}>
           {parseInline(block.replace(/\n/g, " "), `${keyPrefix}-p${bi}`)}
@@ -514,7 +562,7 @@ export function MarkdownProse({
   return (
     <div
       className={`ed-prose${className ? ` ${className}` : ""}`}
-      style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.75, color: t.indigoGray, ...style }}
+      style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.75, color: t.coal, ...style }}
     >
       {markdownToNodes(text)}
     </div>
