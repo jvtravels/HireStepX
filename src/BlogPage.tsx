@@ -41,10 +41,12 @@ function BlogShell({ children }: { children: ReactNode }) {
         .blog-faq-btn:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 2px; border-radius: 4px; }
         .blog-clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .blog-clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .blog-cat-tab { position: relative; padding: 12px 0 14px; background: none; border: none; cursor: pointer; font-family: ${fonts.sans}; font-size: 14px; font-weight: 600; color: ${t.inkSoft}; transition: color 160ms cubic-bezier(0.16,1,0.3,1); white-space: nowrap; flex-shrink: 0; min-height: 44px; display: inline-flex; align-items: center; }
-        .blog-cat-tab::after { content: ""; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: ${t.coal}; border-radius: 1px; transform: scaleX(0); transition: transform 200ms cubic-bezier(0.16,1,0.3,1); transform-origin: left; }
-        .blog-cat-tab.active { color: ${t.coal}; }
-        .blog-cat-tab.active::after { transform: scaleX(1); }
+        .blog-cat-tab { position: relative; padding: 12px 0 14px; background: none; border: none; cursor: pointer; font-family: ${fonts.sans}; font-size: 14px; font-weight: 500; color: #6E6759; transition: color 180ms ease-out; white-space: nowrap; flex-shrink: 0; min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }
+        .blog-cat-tab::after { content: ""; position: absolute; bottom: 0; left: 0; height: 1.5px; width: 0; background: ${t.copper}; transition: width 220ms cubic-bezier(0.16,1,0.3,1); }
+        .blog-cat-tab.active { color: ${t.coal}; font-weight: 600; }
+        .blog-cat-tab.active::after { width: 100%; transition: none; }
+        .blog-cat-tab:hover:not(.active) { color: ${t.coal}; }
+        .blog-cat-tab:hover:not(.active)::after { width: 100%; }
         .blog-cat-tab:focus-visible { outline: 2px solid ${t.copper}; outline-offset: 4px; border-radius: 2px; }
         .blog-back-link { display: inline-flex; align-items: center; gap: 6px; font-family: ${fonts.sans}; font-size: 13px; font-weight: 600; color: ${t.copper}; text-decoration: none; transition: color 160ms, gap 160ms cubic-bezier(0.16,1,0.3,1); }
         .blog-back-link:hover { color: ${t.coal}; gap: 10px; }
