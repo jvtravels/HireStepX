@@ -258,6 +258,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Scale-first design", summary: "QPS at peak → storage growth → consistency model → caching tiers → cost per million." },
     metaKeywords: ["phonepe engineering interview india", "phonepe sde interview", "phonepe system design", "phonepe upi interview 2026"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What does PhonePe look for in system design interviews?",
+        a: "PhonePe system design interviews are scale-obsessed. 100M+ daily UPI transactions is the implicit baseline. Every design answer must explicitly address throughput (QPS at peak), p99 latency targets, storage growth, consistency model, caching tiers, and cost per million operations. Topics are grounded in PhonePe's actual infrastructure: UPI flows, reconciliation pipelines, notification engines, and high-availability for India's payment infrastructure.",
+      },
+      {
+        q: "What is the 'builder mindset' PhonePe evaluates in behavioral rounds?",
+        a: "PhonePe's behavioral lens rewards candidates who demonstrate initiative, fast shipping, and full ownership of failures — not just polished STAR stories. A 'builder mindset' story should show that you identified a problem without being asked, took action despite incomplete information, shipped something imperfect but valuable, and owned the outcome (including what went wrong). Candidates with only polished success stories and no examples of self-initiated work score lower.",
+      },
+      {
+        q: "How many interview rounds does PhonePe have?",
+        a: "PhonePe's interview loop has 4 rounds after an online assessment: Online Assessment (2 DSA problems, 60 min) → Technical Round 1 (DSA + architecture, 60 min) → Technical Round 2 / System Design (payment system or notification engine, 60 min) → Behavioral Round (builder mindset and ownership stories, 45 min).",
+      },
+    ],
     recruitmentSteps: [
       "Online Assessment — 2 DSA problems (medium-hard, 60 minutes)",
       "Technical round 1 — DSA + architecture discussion with time/space complexity follow-ups",
@@ -469,6 +483,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "First-principles design", summary: "What's the actual constraint? → Without prior solutions, what's the simplest correct approach? → Trade-offs at scale → Approximations that matter." },
     metaKeywords: ["google india interview 2026", "google sde interview india", "google engineering interview questions", "google system design interview", "faang interview india"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "How many rounds does the Google India SDE interview have?",
+        a: "Google India's full interview loop has 5–7 stages: Online Assessment (2–3 LeetCode-style problems, 60–90 min) → Technical Phone Screen (45 min, 1–2 coding problems) → Virtual Onsite of 4–6 rounds same day covering coding (×2–3), system design (×1), and a Googleyness/behavioral round (×1) → Hiring Committee Review where all interviewers submit written scores independently.",
+      },
+      {
+        q: "Why does Google reward first-principles thinking over pattern-matching in coding interviews?",
+        a: "Google's interview culture prizes first-principles reasoning because senior engineers regularly face novel problems with no prior art. Bar-raisers probe assumptions aggressively — 'what if X were 100x larger?' — to test whether candidates genuinely understand their solutions or just remember patterns. Candidates who state what they're approximating and why, and who reason from constraints before jumping to a solution, consistently outperform those who pattern-match to a memorised LeetCode solution.",
+      },
+      {
+        q: "What is the Googleyness behavioral round and how is it evaluated?",
+        a: "The Googleyness round (also called the Behavioral/General Cognitive Ability round) evaluates collaboration, handling of ambiguity, and the impact of your work on users. Google specifically looks for candidates who disagree respectfully, change their mind under evidence, and attribute team success appropriately without overstating individual contribution. The Hiring Committee weighs this round alongside technical scores — a strong Googleyness score can strengthen an otherwise borderline technical result.",
+      },
+    ],
     recruitmentSteps: [
       "Apply via Google Careers — referrals significantly improve initial screening odds",
       "Online Assessment — 2–3 LeetCode-style problems, 60–90 minutes",
@@ -577,6 +605,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "BATNA-first negotiation", summary: "Know your walk-away → anchor first with a specific number → cite market data → tier the package (base / variable / equity / signing / benefits) → never accept on the first call." },
     metaKeywords: ["salary negotiation india", "salary negotiation tech", "ctc negotiation india", "indian tech salary negotiation"],
     sitemapPriority: 0.9,
+    faqExtra: [
+      {
+        q: "Should I name a salary number first or wait for the company to anchor?",
+        a: "Name a specific number first. Research consistently shows that whoever anchors first in a salary negotiation has an advantage — the final outcome clusters near that anchor. Give a number 15–25% above the offer with one sentence of rationale referencing market data. Never give a range; the company will anchor on the lower bound.",
+      },
+      {
+        q: "What components beyond base salary can I negotiate in Indian tech offers?",
+        a: "Indian candidates regularly leave 10–15% of potential CTC on the table by negotiating only base salary. The full negotiation surface includes: variable pay percentage and uncapped ceiling, joining bonus (especially if you're buying out a notice period), ESOPs or RSUs (at Series B+ and public companies), notice-period buyout, relocation allowance, and early promotion review timelines.",
+      },
+      {
+        q: "What is BATNA and why does it matter in salary negotiation?",
+        a: "BATNA is your Best Alternative To a Negotiated Agreement — the real walk-away number below which you reject the offer and take another option. Without a real BATNA before the call, you will consistently accept the first counter. Knowing your BATNA converts negotiation from an emotional exercise into a decision with a defined floor. The stronger your BATNA (a competing offer, a competing role), the more credibly you can push back.",
+      },
+    ],
     recruitmentSteps: [
       "Receive written offer from HR — do not accept on the spot; ask for 48–72 hours to review",
       "Research your market rate — compare against similar roles and levels at target companies",
@@ -905,6 +947,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "PACE stories", summary: "Purpose (why the work mattered) → Aspiration (the target you set for yourself, not just the team) → Commitment (how you stayed engaged when hard) → Excellence (the measurable result)." },
     metaKeywords: ["deloitte analyst interview india", "deloitte interview questions", "deloitte ustech interview", "deloitte consulting india"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What is Deloitte's PACE framework and how does it map to interview questions?",
+        a: "PACE stands for Purpose, Aspiration, Commitment, and Excellence — Deloitte's competency framework for evaluating analysts. Interviewers carry a scorecard that maps each behavioral question to one PACE dimension. Purpose: why the work mattered beyond your personal gain. Aspiration: the target you set for yourself, not just the team. Commitment: how you stayed engaged when the work got hard or ambiguous. Excellence: the measurable result. Stories with clear professional impact, stakeholder complexity, and personal ownership score highest.",
+      },
+      {
+        q: "What is the Deloitte CogniVue test?",
+        a: "CogniVue is Deloitte's entry aptitude filter — harder than most candidates expect. It covers numerical reasoning, verbal ability, logical reasoning, and situational judgement (how would you handle this workplace scenario?). The situational section tests Deloitte values alignment: professionalism, inclusiveness, and client service orientation. Candidates who pass CogniVue for consulting and advisory tracks then face a group discussion round before the PACE-based panel interview.",
+      },
+      {
+        q: "Do Deloitte analyst interviews include a case study?",
+        a: "It depends on the track. Consulting and advisory track candidates at Deloitte additionally sit a case interview (20–25 minutes, interviewer-led) that tests structured business problem-solving. Technology and USI (US India delivery) track candidates may face technical questions instead. The case at Deloitte leans toward operations, large-scale IT transformation, and public sector scenarios — a distinct contrast to McKinsey and BCG's market-entry emphasis. Prepare 2–3 transformation scenarios from India's public sector (government digitisation, healthcare, financial inclusion).",
+      },
+    ],
     recruitmentSteps: [
       "Application via Deloitte campus or direct portal",
       "Online Aptitude + Personality Assessment",
@@ -1226,6 +1282,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Azure-aware design", summary: "Functional requirements → Azure service selection rationale → data store choice → message bus (Service Bus vs Event Hub) → monitoring + alerting → cost at scale." },
     metaKeywords: ["microsoft india sde interview", "microsoft hyderabad interview", "microsoft technical interview india", "microsoft azure system design"],
     sitemapPriority: 0.9,
+    faqExtra: [
+      {
+        q: "How many rounds does the Microsoft India SDE interview have?",
+        a: "Microsoft India SDE interviews (Hyderabad, Bangalore) follow the global Microsoft loop: an online HackerRank assessment that filters ~70% of applicants, followed by 4–5 onsite/virtual rounds covering DSA (×2–3 rounds), one system design round, and one behavioral round grounded in the Growth Mindset framework. The final-round 'As Appropriate' interviewer carries significant weight — they can advocate strongly for or block a candidate regardless of other interviewers' votes.",
+      },
+      {
+        q: "Does knowing Azure help in Microsoft India SDE system design interviews?",
+        a: "Yes, it is a meaningful differentiator. Microsoft's system design round often involves Azure services. Candidates who can articulate Azure-specific trade-offs — Azure Service Bus vs Event Hub, Azure Cosmos DB vs SQL, Azure Functions vs AKS — demonstrate product familiarity that generic AWS-focused candidates lack. You don't need deep Azure certification knowledge; understanding the high-level positioning of 3–4 Azure services is sufficient.",
+      },
+      {
+        q: "What is the Growth Mindset framework tested in Microsoft behavioral interviews?",
+        a: "Growth Mindset is the cultural cornerstone Satya Nadella made central to Microsoft. The behavioral round rewards candidates who can demonstrate they changed their mind or approach based on new evidence. Prepare a story structured around: 'I initially believed X → evidence showed Y → I changed approach and the outcome was Z.' Microsoft interviewers score this negatively when candidates only demonstrate fixed competence and never show learning or course-correction.",
+      },
+    ],
     recruitmentSteps: [
       "Online Assessment — Coding problems (HackerRank) + MCQ",
       "Phone Screen with Recruiter",
@@ -1294,6 +1364,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Social graph design", summary: "Feed generation algorithm → graph traversal at scale → ranking signal selection → write path vs read path → privacy partitioning → abuse signal integration." },
     metaKeywords: ["meta engineering interview india", "meta sde interview", "meta system design interview", "facebook interview india 2026"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "How hard is the Meta coding interview compared to Google or Amazon?",
+        a: "Meta's coding rounds require speed — 2 medium-hard problems in 45 minutes is the standard format, which is faster than Google (1 problem in 45 min) and Amazon (1–2 problems in 60 min). Meta expects clean, well-commented code in 40 minutes, leaving 5 minutes for testing and complexity discussion. Solving 150+ medium and 30+ hard LeetCode problems is the realistic preparation floor for Indian candidates. Graphs, DP, and string manipulation appear most often.",
+      },
+      {
+        q: "How do Meta's core values map to behavioral interview questions?",
+        a: "Meta's 5 core values are: Move Fast, Be Bold, Be Open, Build Social Value, and Focus on Impact. Interviewers actively track which value each story illustrates and expect candidates to make this mapping explicit — 'this is an example of Move Fast because...' is the expected answer format. Prepare 6–8 distinct STAR stories and map each to 2–3 values before the loop. Meta specifically rewards stories about moving quickly with incomplete information and publicly disagreeing but then fully committing once a decision is made.",
+      },
+      {
+        q: "Does Meta have a Bar Raiser round like Amazon?",
+        a: "Meta has a bar raiser culture — one interviewer designated to maintain hiring standards can block an offer even if all other interviewers say yes. However, Meta's bar raiser is not a separate named round (unlike Amazon's explicit Bar Raiser round). Any interviewer in the loop can carry this role. Meta's Hyderabad and Bangalore onsites include a dedicated behavioral round separate from technical rounds; the behavioral score can influence hiring committee decisions significantly.",
+      },
+    ],
     recruitmentSteps: [
       "Recruiter screen and resume review — referrals carry significant weight at Meta",
       "Coding screen (45 min) — 2 medium-hard problems; expect clean code in 40 minutes",
@@ -1461,6 +1545,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "TCS-fit signalling", summary: "Process discipline story → team player example → clear relocation/shift yes → why TCS (cite specific initiative) → 5-year goal aligned with TCS growth areas." },
     metaKeywords: ["tcs behavioral interview", "tcs managerial round", "tcs mr round questions", "tcs interview mr"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What is the TCS Managerial Round and how is it different from the HR round?",
+        a: "The TCS Managerial Round (MR) is a structured behavioral interview that occurs after the Technical Interview and before the HR round. It tests: relocation willingness (must be explicitly yes), team conflict handling, communication under pressure, and a specific 'why TCS over Infosys/Wipro/Cognizant' question. The HR round that follows is shorter and covers salary, bond, joining date. Many candidates who pass the NQT and Technical Interview fail the MR because they answer generic behavioral questions generically — which is the exact failure mode MR interviewers are trained to detect.",
+      },
+      {
+        q: "How do I answer 'why TCS specifically' without sounding generic?",
+        a: "Name a specific TCS initiative and connect it to your career goals: TCS iON (education platform), TCS BaNCS (banking software product used across 100+ banks globally), TCS Ignio (AI-powered autonomics platform), or a specific service practice like TCS's VLSI design or SAP Centre of Excellence. A strong answer: 'I want to work on TCS BaNCS — I've read how it powers core banking for several Indian PSU banks and I'm specifically interested in the payment processing layer, which aligns with my final-year project on transaction reconciliation.' Generic answers ending in 'TCS is a great company' score negatively.",
+      },
+      {
+        q: "How should I explain a gap year in the TCS Managerial Round?",
+        a: "TCS allows up to 2 years of gap with justification. The MR interviewer will ask about it directly if it appears on your resume. Prepare a factual, one-sentence explanation with a specific activity that filled the gap — competitive exam preparation, a certification, a family situation, or health. Follow with a sentence on what you learned or achieved during the gap. Vague or evasive answers ('I was taking time to figure things out') raise red flags. Specific and honest answers do not.",
+      },
+    ],
     recruitmentSteps: [
       "Cleared NQT Online Test and Technical Interview",
       "Managerial Round (MR) — behavioral and team-fit screening",
@@ -1481,6 +1579,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "CP-grade prep", summary: "Full complexity analysis (best, average, worst) → space optimisation trade-offs → alternative algorithms + why you chose this one → corner cases (empty input, MAX_INT, null pointers) → clean code under time pressure." },
     metaKeywords: ["infosys power programmer interview", "infosys pp track interview", "infosys 6.5 lpa interview", "infosys coding interview"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "How hard is Infosys Power Programmer compared to regular Infosys SE?",
+        a: "Infosys Power Programmer (₹6.5 LPA) is one of the hardest service-company fresher roles in India. The coding round has 3 problems — candidates must fully solve at least 2 to advance; partial solutions across all 3 are insufficient. The technical interview tests data structures at implementation depth: not 'what is an AVL tree' but 'implement a self-balancing AVL tree and explain the rotation algorithm.' The standard Infosys SE track (₹3.6 LPA) has a much lower coding bar and accepts partial solutions. Power Programmer seat count is typically 5–10% of total Infosys fresher offers.",
+      },
+      {
+        q: "What competitive programming background is needed for Infosys Power Programmer?",
+        a: "Candidates from competitive programming backgrounds — Codeforces (minimum Specialist/Expert), CodeChef, AtCoder — consistently dominate the Power Programmer track because the preparation style maps directly to what the HackWithInfy qualifying round tests. Dynamic programming, advanced graph algorithms (Dijkstra, Floyd-Warshall, SCC), segment trees, and binary search on answers are all fair game. LeetCode alone is insufficient preparation for Power Programmer — competitive programming practice is a hard requirement.",
+      },
+      {
+        q: "What projects do Infosys Power Programmer engineers work on?",
+        a: "Power Programmer engineers at Infosys are placed on higher-complexity projects than standard SE track hires, often in FinTech (banking and insurance), healthcare data systems, or cloud migration programmes. They are expected to contribute meaningfully within the first 3–6 months rather than the 12-month ramp-up typical for SE track hires. This is communicated in the HR interview — knowing this and expressing readiness for early ownership is a strong closing signal.",
+      },
+    ],
     recruitmentSteps: [
       "HackWithInfy / InfyTQ qualifying coding round — competitive programming problems",
       "Technical Interview — advanced DSA, algorithm analysis, project deep-dive",
@@ -1544,6 +1656,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "LP story mapping", summary: "Identify your 8–10 strongest STAR stories → map each to 2–3 Leadership Principles → practice adapting the same story for different LP questions → flag the LP being tested in every answer." },
     metaKeywords: ["amazon sde behavioral interview", "amazon leadership principles interview india", "amazon lp questions sde", "amazon 2026 behavioral questions"],
     sitemapPriority: 0.9,
+    faqExtra: [
+      {
+        q: "How many Leadership Principle stories do I need for an Amazon SDE behavioral interview?",
+        a: "You don't need one story per Leadership Principle (there are 16). Prepare 8–10 strong STAR stories that each demonstrate 2–3 principles, then adapt them to the specific LP question asked. Quality of depth matters more than breadth of coverage. The five most-tested LPs for India SDE roles are Customer Obsession, Ownership, Dive Deep, Bias for Action, and Deliver Results.",
+      },
+      {
+        q: "What is the Bar Raiser round in Amazon interviews?",
+        a: "The Bar Raiser is a specially trained Amazon interviewer — not from your hiring team — whose sole purpose is LP (Leadership Principles) assessment. Their vote can override a positive consensus from every other interviewer. They probe with follow-ups specifically designed to test whether your story is genuine: 'What would you do differently?' and 'Tell me about a time when that approach failed.' Practice handling pushback on every story, not just telling the story itself.",
+      },
+      {
+        q: "What specific LP should Amazon India SDE candidates prepare for Amazon Pay or logistics teams?",
+        a: "For teams working on Amazon Pay (UPI) and Amazon India logistics, operating under ambiguity is a commonly tested LP. These teams work with product requirements that shift rapidly and involve coordination across payment rails (UPI, NEFT, COD), delivery partners, and regulatory bodies. Prepare a story where you made progress on a problem with incomplete information, made a decision anyway, and then adjusted based on what you learned.",
+      },
+    ],
     recruitmentSteps: [
       "Phone Screen (45–60 min) — 1–2 coding problems (easy-medium) + 1–2 LP questions",
       "Virtual Onsite DSA Round 1 — hard problem with optimal-solution requirement",
@@ -1569,6 +1695,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "SDE-1 LP anchoring", summary: "Map college projects to LPs → quantify outcomes (users, lines of code, performance improvement) → practice the 'college project version' of each LP story → be ready to extend to production scale." },
     metaKeywords: ["amazon campus placement india", "amazon sde-1 interview freshers india", "amazon off-campus india 2026", "amazon fresher interview"],
     sitemapPriority: 0.88,
+    faqExtra: [
+      {
+        q: "What colleges does Amazon campus hire from in India?",
+        a: "Amazon's India campus hiring covers IITs, NITs, and top private engineering colleges (BITS Pilani, VIT, Manipal, SRM) for SDE-1 roles. Packages typically range from ₹24–50 LPA all-in depending on the campus tier and team. Off-campus applications go through the Amazon University Talent Acquisition portal — the same online assessment is used.",
+      },
+      {
+        q: "Does Amazon ask Leadership Principle questions to freshers in campus interviews?",
+        a: "Yes. Amazon campus LP questions are softer in scope than lateral hire questions, but they use the same structured STAR evaluation rubric. A typical campus LP question: 'Tell me about a time you took initiative in a team project.' The key difference is that freshers must map college-level experience (final-year projects, college clubs, hackathons) to LP stories — quantify outcomes even if the scale is small (number of users, lines of code, performance improvement percentage).",
+      },
+      {
+        q: "Is there a system design round in Amazon campus SDE-1 interviews?",
+        a: "No full system design for SDE-1 freshers. Amazon campus Technical Round 2 includes conceptual system-level thinking questions — 'How would you design a URL shortener at a high level?' — rather than detailed distributed systems design. The expectation is that you understand high-level components (client, API server, database, cache) and can reason about basic trade-offs, not that you know distributed consensus algorithms.",
+      },
+    ],
     recruitmentSteps: [
       "Apply via Amazon University Talent Acquisition portal or campus drive",
       "Online assessment: 2 coding problems + 20 debugging MCQs (90 min)",
@@ -1658,6 +1798,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "NTH Speed Protocol", summary: "Aptitude speed first (16 questions in 16 min — 1 minute each, no skipping) → Verbal accuracy (22 questions in 18 min — grammar and RC) → Coding: easy problem fully solved before medium (60 min total) → Technical basics (OOP + SQL + OS for TR round) → HR yes-set (relocation and night shift must be answered yes explicitly)." },
     metaKeywords: ["wipro nlth preparation 2026", "wipro nth preparation 2026", "wipro elite nth 2026", "wipro online test syllabus 2026", "wipro nlth selection process"],
     sitemapPriority: 0.9,
+    faqExtra: [
+      {
+        q: "What is the difference between Wipro NLTH and Elite NTH tracks?",
+        a: "Both NLTH (National Level Talent Hunt) and Elite NTH share the same online test format: Aptitude (16 questions, 16 min), Verbal (22 questions, 18 min), and Coding (2 problems, 60 min). The salary and coding bar differ: NLTH offers ₹3.5–4.5 LPA and requires solving the easy coding problem reliably; Elite NTH offers ₹6.5–7 LPA (comparable to on-campus Turbo) and expects a harder coding performance in the same 60-minute window. Both routes are open to freshers from non-Wipro-recruiting colleges who register on Wipro's careers portal.",
+      },
+      {
+        q: "What is the pacing strategy for Wipro NLTH aptitude section?",
+        a: "The Wipro NLTH aptitude section runs at exactly 1 minute per question with no negative marking. The recommended strategy is speed-first: work through questions at a 1-minute pace, skip anything that takes longer than 40 seconds, and return to skipped questions in the remaining time. Unlike GATE or competitive exams, there is no benefit to spending extra time on hard questions — each question is worth the same.",
+      },
+      {
+        q: "What are the HR non-negotiables in Wipro NLTH interview?",
+        a: "Wipro HR interviewers screen explicitly for three non-negotiable answers: relocation (must say yes), night-shift availability (must say yes, especially for BPO-adjacent roles), and bond period acceptance. Any hedging on relocation is scored negatively and has eliminated otherwise-qualified candidates. Answer each with a clear yes and one practical sentence of context — 'Yes, I'm flexible to relocate; I've already discussed this with my family.'",
+      },
+    ],
     recruitmentSteps: [
       "Register on Wipro Careers portal or via campus TnP cell for NLTH/NTH drive",
       "Online Assessment — Aptitude (16 questions, 16 min), Verbal (22 questions, 18 min), Coding (2 problems, 60 min). No negative marking.",
@@ -1725,6 +1879,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Skills → Proof → Fit", summary: "Name the 2 skills they need most (from the job description) → give one specific proof point per skill (project/internship/competition result with a measurable outcome) → connect to this company's work specifically → close with what you want to contribute in year one." },
     metaKeywords: ["why should we hire you answer india", "why should we hire you freshers answer india", "why should we hire you best answer 2026", "why hire me campus placement answer", "why should we hire you answer for freshers india"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What is the correct structure for 'Why should we hire you?' in Indian campus interviews?",
+        a: "The proven structure: Name the 2 skills the job description specifically asks for → give one specific proof point per skill (a project, an internship result, or a competition achievement with a measurable outcome) → connect to this company's specific work in one sentence → close with what you want to contribute in year one. Target 45–60 seconds spoken. Generic closes like 'I am hardworking and passionate' are consistently filtered negatively by TCS, Infosys, Wipro, Cognizant, and Accenture interviewers.",
+      },
+      {
+        q: "Does delivery matter as much as content in 'Why should we hire you?'",
+        a: "Yes. Interviewers at campus drives score communication confidence alongside content quality. Candidates who answer conversationally with natural pacing, eye contact, and a calm tone consistently score higher than those who appear to recite a memorised paragraph even if the content is identical. Practice the answer aloud at least ten times before your first campus interview so it sounds owned, not rehearsed.",
+      },
+      {
+        q: "How do I make 'Why should we hire you?' company-specific without work experience?",
+        a: "Use a product or service you have actually used. 'I use Swiggy Instamart every week and noticed that the out-of-stock recovery flow is slower than competitors — I'd want to work on problems like that' is specific and credible. For IT services companies (TCS, Infosys, Wipro), cite a specific practice or vertical they're known for: Wipro's VLSI design practice, Infosys's Finacle banking product, TCS's BaNCS. One concrete specific detail converts a generic answer into a company-specific one.",
+      },
+    ],
     recruitmentSteps: [
       "Prepare your 3 strongest skills — each must have one specific proof point (project, internship, competition)",
       "Match your skills to the job description — identify the top 2 requirements and address them explicitly",
