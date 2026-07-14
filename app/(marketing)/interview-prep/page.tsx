@@ -378,6 +378,12 @@ export default async function InterviewPrepPage() {
                 </Link>
               ))}
             </div>
+            <p style={{ fontSize: 13, color: sand, margin: "16px 0 0", lineHeight: 1.5 }}>
+              Preparing for a campus placement drive?{" "}
+              <Link href="/for-students" style={{ color: copper, fontWeight: 500, textDecoration: "none" }}>
+                See the full students guide →
+              </Link>
+            </p>
           </section>
 
           {/* ── FAQ ──────────────────────────────────────────────────── */}

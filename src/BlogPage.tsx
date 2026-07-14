@@ -111,6 +111,8 @@ interface BlogPost {
   author?: string;
   /* Links to /companies/[slug] pages: cross-links blog → company page for PageRank flow */
   practicePageSlugs?: { label: string; slug: string }[];
+  /* Arbitrary related page links (not constrained to /questions/) */
+  relatedLinks?: { label: string; href: string }[];
 }
 
 const posts: BlogPost[] = [
@@ -211,6 +213,7 @@ const posts: BlogPost[] = [
       { label: "PhonePe Behavioral Interview", slug: "phonepe-behavioral-interview-questions" },
     ],
     cta: "Most freshers discover their filler words and vague transitions only after the interview, in the elevator. Say your answers out loud on HireStepX before that: you'll get scored on STAR structure and clarity while there's still time to fix them.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "razorpay-interview-experience",
@@ -304,6 +307,7 @@ const posts: BlogPost[] = [
       { label: "TCS Behavioral Round", slug: "tcs-behavioral-interview-questions" },
     ],
     cta: "TCS's HR round has elimination power most candidates underestimate: vague answers on relocation or bond concerns get flagged. Run the full TCS interview sequence on HireStepX and get feedback on both your technical explanations and HR answers before the real thing.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "infosys-interview-questions-2026",
@@ -335,6 +339,7 @@ const posts: BlogPost[] = [
       { label: "Infosys Behavioral Round", slug: "infosys-behavioral-interview-questions" },
     ],
     cta: "The difference between SE and PP/DSE placement often comes down to how you perform in the technical round: specifically whether you can explain your reasoning, not just produce working code. Practice that on HireStepX: get scored on your technical explanations and HR answers across all three Infosys tracks.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "how-to-introduce-yourself-in-interview",
@@ -432,6 +437,7 @@ const posts: BlogPost[] = [
       { label: "Wipro Turbo Technical Interview", slug: "wipro-turbo-technical-interview" },
     ],
     cta: "Wipro's HR round is short but it has teeth: candidates who hesitate on relocation or shift flexibility get flagged in the notes. Practice the full sequence on HireStepX so your answers on the friction questions sound like decisions, not deliberations.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "hr-interview-questions-answers-india",
@@ -588,6 +594,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "behavioral-interview-questions-freshers", "how-to-introduce-yourself-in-interview"],
     cta: "Placement day compresses four rounds into one afternoon. The candidates who stay calm under that pressure are usually the ones who've already said these answers out loud, more than once. Start your mock sessions on HireStepX: free, AI-scored, and specific to the companies visiting your campus.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "mock-interview-practice-guide",
@@ -2988,6 +2995,23 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                 <Link key={slug} href={`/questions/${slug}`} style={{
                   display: "inline-block", padding: "9px 16px",
                   background: t.creamSoft, border: `1px solid ${t.lineStrong}`,
+                  borderRadius: 8, textDecoration: "none",
+                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal,
+                }}>
+                  {label} →
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {post.relatedLinks && post.relatedLinks.length > 0 && (
+          <section style={{ marginTop: 16 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {post.relatedLinks.map(({ label, href }) => (
+                <Link key={href} href={href} style={{
+                  display: "inline-block", padding: "9px 16px",
+                  background: t.copper100, border: `1px solid ${t.lineStrong}`,
                   borderRadius: 8, textDecoration: "none",
                   fontFamily: fonts.sans, fontSize: 13, fontWeight: 500, color: t.coal,
                 }}>
