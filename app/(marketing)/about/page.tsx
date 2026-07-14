@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "HireStepX",
     locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: "About HireStepX — India's AI Mock Interview Platform" }],
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "About HireStepX — India's AI Mock Interview Platform" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "About HireStepX — India's AI Mock Interview Platform 2026",
     description: "AI mock interviews for 60+ Indian companies. Voice interviews, STAR scoring, skill-decay tracking. Built for India.",
-    images: ["https://hirestepx.com/og-default.png"],
+    images: ["https://hirestepx.com/opengraph-image"],
   },
 };
 
@@ -94,7 +94,7 @@ const APP_SCHEMA = {
   description: "AI-powered mock interview platform for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, and 60+ companies with voice interviews and scored reports.",
   inLanguage: "en-IN",
   datePublished: "2024-01-01",
-  dateModified: "2026-07-13",
+  dateModified: "2026-07-14",
   creator: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
 };
 

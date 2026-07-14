@@ -48,13 +48,13 @@ export const metadata: Metadata = {
     url: "https://hirestepx.com/companies",
     siteName: "HireStepX",
     locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: "HireStepX Company Interview Questions" }],
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX Company Interview Questions" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Company Interview Questions India 2026 | HireStepX",
     description: "Practice guides for 50+ companies — AI voice mock interviews available free.",
-    images: ["https://hirestepx.com/og-default.png"],
+    images: ["https://hirestepx.com/opengraph-image"],
   },
 };
 

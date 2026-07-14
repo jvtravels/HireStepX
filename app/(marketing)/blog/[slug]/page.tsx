@@ -34,7 +34,7 @@ export async function generateMetadata({
   const title = meta?.title ?? `${slugToTitle(slug)} | HireStepX Blog`;
   const description = meta?.metaDescription ??
     `Read "${slugToTitle(slug)}" on the HireStepX blog: interview tips, career advice, and job search strategies for Indian candidates.`;
-  const image = meta?.heroImage ?? "https://hirestepx.com/og-default.png";
+  const image = meta?.heroImage ?? "https://hirestepx.com/opengraph-image";
 
   return {
     title: `${meta ? meta.title : slugToTitle(slug)} | HireStepX`,

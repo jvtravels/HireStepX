@@ -24,11 +24,13 @@ export const metadata: Metadata = {
     url: "https://hirestepx.com",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX — AI Mock Interview Practice India 2026" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "AI Mock Interview Practice India 2026 | HireStepX",
     description: "Practice for TCS, Google, Flipkart, and 50+ companies. Voice AI scores your answers. 2 sessions free.",
+    images: ["https://hirestepx.com/opengraph-image"],
   },
 };
 

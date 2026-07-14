@@ -102,9 +102,8 @@ export async function generateMetadata(
       url: `https://hirestepx.com/companies/${slug}`,
       siteName: "HireStepX",
       locale: "en_IN",
-      images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description, images: ["https://hirestepx.com/og-default.png"] },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
@@ -187,7 +186,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
     "@type": "Article",
     headline: page.searchPhrase,
     description: page.intro,
-    image: "https://hirestepx.com/og-default.png",
+    image: `https://hirestepx.com/companies/${slug}/opengraph-image`,
     author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     publisher: { "@type": "Organization", name: "HireStepX", logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" } },
     datePublished: "2026-05-05",
