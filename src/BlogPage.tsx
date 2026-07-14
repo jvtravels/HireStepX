@@ -2870,7 +2870,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.inkFaint, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
             {post.company} <span style={{ color: t.lineStrong, fontWeight: 400 }}>·</span> {post.category}
           </p>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(30px, 3.2vw, 46px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.022em", lineHeight: 1.1, textWrap: "balance", margin: "0 auto 24px", maxWidth: "26ch" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.028em", lineHeight: 1.04, textWrap: "balance", margin: "0 auto 24px", maxWidth: "22ch" }}>
             {post.title}
           </h1>
           <div className="blog-meta" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, flexWrap: "wrap" }}>
