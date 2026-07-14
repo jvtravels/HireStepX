@@ -2883,7 +2883,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
 
       <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "52px 40px 100px" }}>
         {/* Intro dek: editorial rule + italic serif pullquote */}
-        <div style={{ borderTop: `2px solid ${t.coal}`, paddingTop: 28, marginBottom: 64 }}>
+        <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 28, marginBottom: 64 }}>
           <p style={{ fontFamily: fonts.serif, fontSize: "clamp(18px, 1.9vw, 22px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.7, letterSpacing: "-0.005em", margin: 0 }}>
             {post.intro}
           </p>
