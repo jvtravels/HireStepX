@@ -1994,8 +1994,6 @@ function CompactCard({ post }: { post: BlogPost }) {
 /* ─── Blog index (list of all posts) ─── */
 function BlogIndex() {
   const [activeCategory, setActiveCategory] = useState("All");
-  const [featuredImgFailed, setFeaturedImgFailed] = useState(false);
-
   useSEO({
     title: "Interview Prep Blog: HireStepX",
     description: "Company-specific interview preparation guides, question banks, and career strategies for Indian job seekers. Google, Amazon, TCS, Infosys, Flipkart, and more.",
@@ -2020,9 +2018,6 @@ function BlogIndex() {
   });
 
   const filtered = activeCategory === "All" ? posts : posts.filter(p => (CATEGORY_MAP[p.category] ?? p.category) === activeCategory);
-  const featured = filtered[0];
-  const rest = filtered.slice(1);
-
 
   return (
     <BlogShell>
@@ -2052,55 +2047,10 @@ function BlogIndex() {
           ))}
         </div>
 
-        {/* Featured post — larger editorial card, same cream surface as the rest */}
-        {featured && (
-          <article
-            className="blog-featured blog-card"
-            style={{
-              display: "grid",
-              gridTemplateColumns: featuredImgFailed ? "1fr" : "1.15fr 1fr",
-              gap: 0,
-              background: t.creamSoft, borderRadius: 18, border: `1px solid ${t.line}`,
-              overflow: "hidden", marginBottom: 40,
-            }}
-          >
-            {!featuredImgFailed && (
-              <div className="blog-featured-media" style={{ position: "relative", minHeight: 360, background: t.creamSoft }}>
-                <Image
-                  src={featured.heroImage} alt={featured.heroAlt} priority
-                  fill sizes="(max-width: 880px) 100vw, 55vw"
-                  onError={() => setFeaturedImgFailed(true)}
-                  style={{ objectFit: "cover" }}
-                />
-              </div>
-            )}
-            <div style={{ padding: "48px 44px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 10px", background: t.copper100Soft, border: `1px solid ${t.copper100SoftLine}`, borderRadius: 999 }}>{featured.company}</span>
-                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft, letterSpacing: "0.04em", textTransform: "uppercase", padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 999 }}>{featured.category}</span>
-              </div>
-              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 2.8vw, 38px)", fontWeight: 400, color: t.coal, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 16, textWrap: "balance" }}>
-                <Link href={`/blog/${featured.slug}`} className="blog-card-link">
-                  {featured.title}
-                </Link>
-              </h2>
-              <p style={{ fontFamily: fonts.sans, fontSize: 15, color: t.inkSoft, lineHeight: 1.65, marginBottom: 24 }}>
-                {featured.metaDescription}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
-                <span>{featured.readTime} read</span>
-                <span aria-hidden style={{ color: t.lineStrong }}>·</span>
-                <span>{new Date(featured.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
-                <span aria-hidden style={{ marginLeft: "auto", color: t.copper, fontSize: 16 }}>→</span>
-              </div>
-            </div>
-          </article>
-        )}
-
-        {/* Post grid — continuous 3-column layout */}
-        {rest.length > 0 && (
+        {/* Post grid — uniform 3-column layout, all posts */}
+        {filtered.length > 0 && (
           <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }}>
-            {rest.map((p) => <CompactCard key={p.slug} post={p} />)}
+            {filtered.map((p) => <CompactCard key={p.slug} post={p} />)}
           </div>
         )}
 
