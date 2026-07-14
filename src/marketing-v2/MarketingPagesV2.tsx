@@ -786,7 +786,7 @@ export function PricingPageV2() {
             Not sure what to practice?{" "}
             <a href="/questions" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Browse question sets →</a>
             {" · "}
-            <a href="/for-students" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Campus placement guide →</a>
+            <a href="/questions?focus=campus-placement" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Campus placement guide →</a>
             {" · "}
             <a href="/how-it-works" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>See how it works →</a>
           </p>
@@ -925,7 +925,7 @@ export function HowItWorksV2() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
             {([
               ["Practice Questions", "67+ sets for TCS, Google, Flipkart & more", "/questions"],
-              ["Campus Placement", "HR rounds, NQT, NLTH — for freshers & students", "/for-students"],
+              ["Campus Placement", "HR rounds, NQT, NLTH — for freshers & students", "/questions?focus=campus-placement"],
               ["All Companies", "Browse by company type — IT, product, consulting", "/companies"],
               ["Interview Prep Guide", "How to prepare step by step for any company", "/interview-prep"],
             ] as [string, string, string][]).map(([title, desc, href]) => (
@@ -1149,7 +1149,7 @@ export function AboutV2() {
               Browse practice questions →
             </a>
             <a
-              href="/for-students"
+              href="/questions?focus=campus-placement"
               style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal, background: "transparent", border: `1px solid ${t.line}`, padding: "12px 22px", borderRadius: 8, textDecoration: "none", display: "inline-block" }}
             >
               Campus placement guide →

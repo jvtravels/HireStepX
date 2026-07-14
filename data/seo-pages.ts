@@ -186,6 +186,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Pricing-first PM", summary: "Customer segment → willingness-to-pay → competitor anchor → price ladder → roll-out." },
     metaKeywords: ["razorpay pm interview india", "razorpay product manager 2026", "razorpay fintech interview", "razorpay pm case study", "razorpay product manager interview questions"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      { q: "What rounds does the Razorpay PM interview include?", a: "The Razorpay PM loop typically runs 4–5 rounds: Recruiter screen (background, product sense, fintech context), Product case round (pricing for new merchant tiers, D2C expansion, or feature prioritisation), Technical literacy round (system design familiarity, API understanding, data analysis), Culture round (merchant empathy, ownership stories, speed-vs-correctness trade-offs), and Hiring manager round (compensation, role expectations, product roadmap)." },
+      { q: "What makes Razorpay PM interviews different from standard product company interviews?", a: "Razorpay PM interviews skew operational, not just product-strategic. Indian fintech context matters — knowing UPI vs. cards economics is implicitly assumed. Candidates who treat it like a standard consumer PM interview routinely underperform. The culture round tests merchant empathy: can you explain a feature decision in terms of what a merchant actually experiences when a payment fails?" },
+      { q: "What framework does HireStepX recommend for Razorpay PM case questions?", a: "HireStepX recommends the Pricing-first PM framework for Razorpay PM cases: Customer segment → willingness-to-pay → competitor anchor → price ladder → roll-out. This grounds your case answer in the merchant economics lens that Razorpay interviewers expect." },
+    ],
     recruitmentSteps: [
       "Recruiter screen — background, product sense, and fintech context (30 min)",
       "Product case round — pricing for new merchant tiers, D2C expansion, or feature prioritization",
@@ -470,6 +475,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "PAR for HR", summary: "Problem (their question's underlying concern) → Answer (your direct response) → Reassurance (why you're not a flight risk)." },
     metaKeywords: ["tcs hr interview", "tcs hr round", "tcs hr questions", "tcs interview hr"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      { q: "What is asked in the TCS HR round?", a: "The TCS HR round (15–20 min) covers relocation willingness, shift flexibility, expected CTC, why TCS specifically, 5-year career goals, and bond period confirmation. Non-negotiables: relocation must be an explicit yes and bond period must be accepted without hesitation. Communication quality is scored separately from content." },
+      { q: "What are the non-negotiables in TCS HR rounds?", a: "Two responses will eliminate you regardless of technical performance: hesitating on relocation or showing doubt about the bond period. Relocation must be an explicit 'yes' (not 'I'll try') and bond acceptance must be confirmed without qualification. TCS HR panels are experienced at detecting rehearsed answers — be specific about why you're choosing TCS over Infosys, Wipro, or Cognizant, referencing a real TCS initiative (TCS iON, BaNCS, Ignio)." },
+      { q: "What framework does HireStepX recommend for TCS HR round answers?", a: "HireStepX recommends the PAR for HR framework: Problem (identify the underlying concern behind their question) → Answer (your direct, specific response) → Reassurance (why you're not a flight risk). For example, 'Why TCS?' → the concern is whether you'll leave early → give a specific reason tied to a TCS product + reassure with your long-term commitment." },
+    ],
     recruitmentSteps: [
       "Cleared Technical Interview and Managerial Round",
       "HR Round — the final stage before offer",
@@ -562,6 +572,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "PM CIRCLES", summary: "Comprehend the problem → Identify the user → Report their needs → Cut by impact → List solutions → Evaluate → Summarise." },
     metaKeywords: ["google pm interview", "google product manager", "google case study", "google apm interview india", "google pm interview india 2026"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      { q: "What rounds does the Google PM interview include in India?", a: "Google PM interviews run 4–5 rounds: a recruiter screen and resume review (referrals carry weight), a PM phone screen (one product design + one metrics/success question, 60 min), a 4-round onsite loop (product strategy, analytics, leadership, product design), hiring committee review, and team match + offer. The onsite rounds are separate — no round covers multiple dimensions." },
+      { q: "What India-specific products come up in Google PM interviews?", a: "India-specific Google products are frequent case surfaces: YouTube (India is the world's largest YouTube market), GPay (UPI integration, merchant payouts), and Search-in-India (voice queries, regional language intent). Knowing the local nuances versus the global product strategy is a meaningful differentiator in the Product Design and Product Sense rounds." },
+      { q: "What framework does HireStepX recommend for Google PM interviews?", a: "HireStepX recommends the PM CIRCLES framework for Google PM case questions: Comprehend the problem → Identify the user → Report their needs → Cut by impact → List solutions → Evaluate → Summarise. Changing your first answer when pushed with follow-up questions is considered a signal of strength, not weakness, at Google." },
+    ],
     recruitmentSteps: [
       "Recruiter screen + resume review — referrals carry significant weight",
       "PM phone screen — one product design question and one metric/success question (60 min)",
@@ -623,6 +638,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Operational design", summary: "Functional requirements → non-functional (latency, availability) → API contracts → data model → component diagram → failure modes + recovery." },
     metaKeywords: ["amazon system design", "amazon sde interview", "amazon technical interview", "amazon system design india 2026", "amazon sde system design questions"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      { q: "How is Amazon system design different from Google or Meta?", a: "Amazon system design interviews are operationally focused, not just architecturally elegant. They care how your system handles failure — 'what happens if this region goes down?', 'what's the data loss window if your primary fails?', 'how do you handle a 10x traffic spike?' The Leadership Principles surface in the design: Frugality means justifying infrastructure cost at scale; Dive Deep means knowing exactly what breaks first." },
+      { q: "What rounds does an Amazon system design loop include?", a: "The Amazon SDE loop for system design roles includes: Online Assessment (2–3 DSA problems + LP behavioral questions, 90 min), Technical Phone Screen (coding + architecture discussion, 45 min), 1–2 System Design Deep-Dive rounds (60 min each), and a Bar Raiser round that probes architecture decisions aggressively. Offer decisions typically come within 1 week of the final round." },
+      { q: "What framework does HireStepX recommend for Amazon system design questions?", a: "HireStepX recommends the Operational Design framework: Functional requirements → non-functional requirements (latency, availability) → API contracts → data model → component diagram → failure modes + recovery. Always prepare one e-commerce system and one Amazon-specific system (recommendation engine, order fulfilment, or cart/checkout) in depth before the loop." },
+    ],
     recruitmentSteps: [
       "Online Assessment — 2–3 DSA problems + LP behavioral questions",
       "Technical phone screen — coding problem + architecture discussion (45 min)",
@@ -720,6 +740,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "DRACO for DSA", summary: "Define constraints → Recognise pattern → Approach out loud → Code cleanly → Optimise time/space → Complexity proof." },
     metaKeywords: ["wipro turbo interview", "wipro turbo technical round", "wipro turbo preparation", "wipro 6.5 lpa track"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      { q: "What makes Wipro Turbo different from Elite NTH?", a: "Wipro Turbo (₹6.5 LPA) has a significantly harder coding bar than Elite NTH. The Turbo-specific coding round requires 3 medium-hard DSA problems in 90 minutes — graph algorithms, dynamic programming, and sliding window patterns are the most frequent topics. Elite NTH doesn't have this additional coding round. Turbo engineers work on higher-complexity client engagements and are expected to be individually productive from Day 1." },
+      { q: "What is the Wipro Turbo coding round format?", a: "The Turbo-specific coding round is 90 minutes with 3 medium-hard DSA problems. Articulating your approach before coding is rewarded — Wipro interviewers weight reasoning as much as a working solution. Candidates who score in the top decile of the aptitude test and clear all 3 coding problems reliably earn the Turbo track offer. The Technical Interview follows and expects clean, commented code with incremental optimisation." },
+      { q: "What framework does HireStepX recommend for the Wipro Turbo coding round?", a: "HireStepX recommends the DRACO for DSA framework: Define constraints → Recognise pattern → Approach out loud → Code cleanly → Optimise time/space → Complexity proof. Speaking your approach aloud before writing code is particularly important at Wipro Turbo, where interviewers explicitly score reasoning quality alongside solution correctness." },
+    ],
     recruitmentSteps: [
       "Online Application via Wipro WILP portal or campus TnP cell",
       "Aptitude + Written Communication Test — qualifying score required for Turbo track selection",
@@ -816,6 +841,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "SOLID + Deploy", summary: "SOLID design principles → REST contract → Database choice rationale → Deployment/CI pipeline → observability." },
     metaKeywords: ["cognizant technical interview", "cognizant sde interview", "cognizant interview questions 2026", "cognizant lateral hire interview", "cognizant experienced interview india"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      { q: "What does Cognizant's technical interview for experienced hires test?", a: "Cognizant experienced-hire technical interviews test production-grade thinking: SOLID design principles, REST API design, deployment pipeline ownership, and real-world trade-off reasoning. 'I used it but don't know why' is a critical red flag — interviewers are specifically trained to probe whether candidates used frameworks passively or understood their underlying mechanics. Every tool on your resume is fair game at the component level." },
+      { q: "What rounds are in the Cognizant technical interview process?", a: "Cognizant technical interviews for experienced hires run 3–4 rounds: Technical Round 1 (coding problem + SOLID principles + REST API design + database rationale, 45–60 min), Technical Round 2 (system design or architecture deep-dive for your role — Java developers design microservices, Python developers design data pipelines, cloud roles justify service selection), and HR Round (communication quality explicitly scored, compensation, joining timeline)." },
+      { q: "What framework does HireStepX recommend for Cognizant technical interviews?", a: "HireStepX recommends the SOLID + Deploy framework: SOLID design principles → REST contract → Database choice rationale → Deployment/CI pipeline → observability. Cognizant also evaluates delivery mindset — the expectation that you can translate technical decisions into client business outcomes, especially at Manager and Senior levels." },
+    ],
     recruitmentSteps: [
       "Online application + resume shortlisting",
       "Technical interview round 1 — coding problem + CS fundamentals, SOLID principles, and REST API design",
@@ -873,6 +903,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "CAR for consulting behavior", summary: "Context (client/delivery situation) → Action (your specific intervention, not the team's) → Result (deliverable shipped, escalation avoided, relationship preserved)." },
     metaKeywords: ["accenture behavioral interview", "accenture interview questions", "accenture values interview", "accenture experienced hire interview", "accenture consulting behavioral india"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      { q: "What stories work best in Accenture behavioral rounds?", a: "Accenture behavioral rounds for experienced hires probe client-management competencies: stakeholder conflict, scope creep, and timeline pressure from consulting and IT services delivery. Stories where you calmed a difficult client, recovered a delayed project, or navigated competing priorities between onshore and offshore teams resonate most. STAR stories must include specific outcomes: percentage improvement in delivery timelines, client satisfaction scores recovered, or team headcount managed." },
+      { q: "What rounds are in Accenture behavioral interviews for experienced hires?", a: "Accenture experienced-hire interviews run 3 rounds: Technical Assessment (role-dependent — ASE candidates get a short coding test, Managers may skip it), Behavioral Interview (45–60 min, the main evaluation round — client-management stories with specific outcomes, 'I' not 'we'), and HR Round (20 min, communication quality assessment alongside compensation and joining timeline). Unclear or low-confidence answers are flagged in the debrief as a red flag for a client-facing role." },
+      { q: "What framework does HireStepX recommend for Accenture behavioral interviews?", a: "HireStepX recommends the CAR for consulting behavior framework: Context (client/delivery situation) → Action (your specific intervention, not the team's) → Result (deliverable shipped, escalation avoided, relationship preserved). Lateral hires targeting Manager or above should also prepare a story about managing upward — influencing stakeholder decisions at a director or partner level." },
+    ],
     recruitmentSteps: [
       "Resume shortlisting for lateral or experienced-hire positions",
       "Technical assessment (role-dependent)",
@@ -1038,6 +1073,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "OD-Consult", summary: "Objective clarity → Diagnosis (current-state gap) → Levers (controllable vs. structural) → Trade-off matrix → Phased delivery plan → Risk flagging." },
     metaKeywords: ["deloitte consulting case interview india", "deloitte case study 2026", "deloitte strategy interview india", "deloitte india consulting interview", "deloitte case interview preparation india"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      { q: "How do Deloitte case interviews differ from McKinsey or BCG?", a: "Deloitte consulting cases lean on operations and digital transformation more than pure strategy. Expect government and public sector client scenarios, large-scale IT transformation cases, and organisational turnaround situations — a distinct contrast to McKinsey and BCG's market-entry and growth-strategy emphasis. USI (US India) roles involve client-delivery execution: the case evaluates structured thinking and delivery confidence alongside market logic." },
+      { q: "What rounds are in the Deloitte consulting interview process?", a: "The Deloitte consulting interview process includes: CogniVue Aptitude Test (60–90 min, numerical + verbal + logical + situational judgement — first filter), Group Discussion (8–12 candidates on a business or social topic, 15–20 min — content scored, not speaking time), Case Interview (30–45 min, interviewer-led, operations or digital transformation focus), and HR Round (20–30 min, cultural fit, motivation, track preference, salary)." },
+      { q: "What framework does HireStepX recommend for Deloitte case interviews?", a: "HireStepX recommends the OD-Consult framework: Objective clarity → Diagnosis (current-state gap) → Levers (controllable vs. structural) → Trade-off matrix → Phased delivery plan → Risk flagging. Prepare 2–3 India public-sector transformation scenarios (government digitisation, healthcare, financial inclusion) alongside private sector IT outsourcing turnarounds." },
+    ],
     recruitmentSteps: [
       "Application via Deloitte campus drive or careers portal",
       "CogniVue aptitude test — numerical, verbal, logical reasoning, and situational judgement (60–90 min)",
@@ -1097,6 +1137,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "BCG 3C", summary: "Client's core objective → Context (industry, constraints, data gaps) → Creative synthesis (non-obvious recommendation with quantified upside)." },
     metaKeywords: ["bcg case interview india", "bcg interview questions", "bcg consulting india", "bcg case study practice"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      { q: "How does BCG's case format differ from other consulting firms?", a: "BCG India interviews alternate between a candidate-led case and a BCG-led case in the same loop — a format that distinguishes BCG from McKinsey's purely interviewer-led cases. The candidate-led case tests whether you can drive structure without prompts: no guidance on where to start, no cues on direction. BCG India offices in Mumbai and Delhi NCR frequently use consumer retail transformation, financial services growth strategy, and public sector efficiency cases." },
+      { q: "What is the BCG Personal Experience Interview (PEI)?", a: "The BCG PEI (Personal Experience Interview) runs in every round and evaluates leadership, impact, and teamwork through 3–4 deep-dive follow-up questions on a single experience — prepare one story that holds up to 30 minutes of scrutiny. Prepare a single experience in full depth rather than multiple stories at surface level. The PEI runs alongside cases in both first and second rounds." },
+      { q: "What framework does HireStepX recommend for BCG case interviews?", a: "HireStepX recommends the BCG 3C framework: Client's core objective → Context (industry, constraints, data gaps) → Creative synthesis (non-obvious recommendation with quantified upside). For BCG cases with ambiguous or conflicting data, the right answer is always 'it depends, and here is my framework for deciding what it depends on.'" },
+    ],
     recruitmentSteps: [
       "Online application + resume and cover letter review",
       "First round — 2 cases (1 BCG-led structured case, 1 candidate-led case) + 30-min fit interview",
@@ -1156,6 +1201,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "AUDIT + SCALE", summary: "Audit trail (every mutation is loggable) → Uptime (99.99% SLA) → Data integrity → Idempotency → Trade reconciliation → Scale estimation." },
     metaKeywords: ["jpmorgan interview india 2026", "jp morgan sde interview india", "jpmc analyst interview", "jpmorgan bangalore interview"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      { q: "What rounds are in the JP Morgan India interview process?", a: "The JP Morgan India loop runs 4–5 rounds: Online Coding Assessment (medium-difficulty DSA, 60–90 min — code must be clean and commented given the financial audit-trail context), Technical Round 1 (DSA + CS fundamentals + DBMS, 45 min — regulatory awareness of SEBI/RBI norms is a positive differentiator), Technical Round 2 (system design with compliance context: trade reconciliation, settlement pipelines, tamper-evident audit logs, 60 min), Behavioral Round (integrity, client focus, ethical scenarios, 30 min), and Hiring Manager + HR (compensation, location, joining timeline)." },
+      { q: "Why does financial regulation knowledge matter at JP Morgan India interviews?", a: "JPMorgan's Bangalore and Hyderabad offices build core banking and risk infrastructure used globally. System design questions are grounded in financial context — every design must include an audit trail (every mutation is loggable) and an idempotency story. Proposing eventual consistency for financial data (account balances, trade settlements) is a fast rejection path. Awareness of RBI/SEBI regulations instantly separates candidates." },
+      { q: "What framework does HireStepX recommend for JP Morgan system design questions?", a: "HireStepX recommends the AUDIT + SCALE framework: Audit trail (every mutation is loggable) → Uptime (99.99% SLA) → Data integrity → Idempotency → Trade reconciliation → Scale estimation. Every system design answer at JP Morgan must address auditability and compliance alongside the standard scalability concerns." },
+    ],
     recruitmentSteps: [
       "Online coding assessment — DSA problems (medium difficulty, 60–90 minutes)",
       "Technical round 1 — DSA + CS fundamentals (data structures, OS, DB concepts)",
@@ -1218,6 +1268,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Premium product lens", summary: "User trust foundation → friction removal over feature addition → signal quality over quantity → premium cohort behaviour → qualitative research over A/B tests." },
     metaKeywords: ["cred pm interview", "cred product manager interview", "cred fintech product interview", "cred pm india 2026", "cred product design interview"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      { q: "What makes CRED PM interviews different from other fintech companies?", a: "CRED PM interviews are deceptively philosophical — questions like 'What does trust mean in a financial product?' or 'Is this feature worth building and why?' test aesthetic product taste, not just market sizing frameworks. The 750+ credit-score user base expects friction removal over feature addition. Candidates with consumer-fintech (Zerodha, INDmoney, Jupiter) or premium consumer product backgrounds bring transferable product taste that resonates. Deep use of the CRED app itself before the interview is required — candidates who haven't used it are visibly underprepared." },
+      { q: "What rounds are in the CRED PM interview process?", a: "The CRED PM loop runs 4–5 rounds: Resume screening + portfolio review, Product Taste Round (design for premium users who don't need incentivisation, 45 min), Case Study Round (product analytics, growth, or 'what would you build next?' on CRED, 45 min), Behavioral Round (values alignment with CRED's simplicity and premium culture, 30 min), and Hiring Manager round for judgment and taste calibration. CRED has significantly lower hiring volume than Flipkart or Swiggy — each round is high-signal." },
+      { q: "What framework does HireStepX recommend for CRED PM interviews?", a: "HireStepX recommends the Premium Product Lens: User trust foundation → friction removal over feature addition → signal quality over quantity → premium cohort behaviour → qualitative research over A/B tests. For CRED, the expected insight is that the 750+ credit-score user doesn't need to be incentivised — they respond to elegance and trust, not discounts or gamification. Stories about removing friction rather than adding features resonate most in the behavioral round." },
+    ],
     recruitmentSteps: [
       "Resume screening + portfolio or product work review",
       "Product taste round — design for premium users, trust-driven financial products",
@@ -1277,6 +1332,11 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Bharat-first PM", summary: "Language + connectivity constraints first → literacy level (visual over text) → trust signals for first transactions → distribution via WhatsApp/share chain → reseller economics." },
     metaKeywords: ["meesho pm interview", "meesho product manager interview", "meesho case study interview", "meesho pm india 2026", "meesho bharat product interview"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      { q: "What makes Meesho PM interviews unique among Indian e-commerce companies?", a: "Meesho PM interviews focus on tier-2/3 India constraints that urban-educated candidates consistently underestimate. Their typical framing: 'Design for a seller who uses a feature-phone, has a 2G connection, and speaks only Kannada.' Empathy with non-English, low-bandwidth, first-time-online users is a genuine differentiator. Candidates who grew up in metro cities and haven't directly used Meesho as a seller are at a structural disadvantage without preparation. Meesho's reseller model distributes through WhatsApp shares — product design must account for zero in-app discoverability." },
+      { q: "What rounds are in the Meesho PM interview process?", a: "The Meesho PM loop runs 4–5 rounds: Resume screening + recruiter call, Product Design Round (design for tier-2/3 India: low bandwidth, regional language, feature-phone constraints, 45 min), Case Study Round (seller acquisition, reseller economics, or Bharat distribution strategy, 45 min), Behavioral Round (speed over perfection, first-principles thinking about tier-2 users, scrappy execution stories, 30 min), and Hiring Manager round. Speed over perfection is Meesho's culture — stories about shipping quickly with incomplete information resonate." },
+      { q: "What framework does HireStepX recommend for Meesho PM cases?", a: "HireStepX recommends the Bharat-first PM framework: Language + connectivity constraints first → literacy level (visual over text) → trust signals for first transactions → distribution via WhatsApp/share chain → reseller economics. For Meesho cases, the right starting point is always the constraint — a 2G connection, a regional-language user, zero in-app discoverability — before discussing features. Cases also test shareholder economics: reseller margin structure, COD return rates, and seller payment timelines are core product constraints that distinguish Meesho's marketplace from Flipkart or Amazon." },
+    ],
     recruitmentSteps: [
       "Resume screening + recruiter call",
       "Product design round — design for tier-2/3 India: low bandwidth, regional language, feature-phone constraints",

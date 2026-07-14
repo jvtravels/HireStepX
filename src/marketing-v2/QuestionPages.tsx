@@ -379,7 +379,7 @@ export function QuestionSetPage({
                 {(page.focus === "campus-placement" || page.focus === "hr") && (
                   <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "16px 0 0", lineHeight: 1.5 }}>
                     Preparing for a campus placement drive?{" "}
-                    <Link href="/for-students" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>See the full students guide →</Link>
+                    <Link href="/questions?focus=campus-placement" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Browse campus placement questions →</Link>
                   </p>
                 )}
               </section>

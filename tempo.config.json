@@ -1,0 +1,10 @@
+{
+  "framework": "NEXT_JS_APP_ROUTER",
+  "packageManager": "npm",
+  "installCommand": "npm install",
+  "runCommand": "npm run dev",
+  "devServerPort": 3000,
+  "nextjs": {
+    "router": "app"
+  }
+}

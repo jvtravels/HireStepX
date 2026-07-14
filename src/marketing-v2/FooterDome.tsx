@@ -25,7 +25,6 @@ const PRODUCT_LINKS: Array<[string, string]> = [
   ["Interview Prep", "/interview-prep"],
   ["Practice Questions", "/questions"],
   ["Salary Guides", "/salary"],
-  ["For Students", "/for-students"],
 ];
 
 const COMPANY_LINKS: Array<[string, string]> = [

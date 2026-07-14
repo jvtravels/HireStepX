@@ -634,7 +634,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
             <a href="/questions" style={ctaPrimaryStyle("md")}>
               Browse Interview Questions →
             </a>
-            <a href="/for-students" style={ctaGhostStyle("md")}>
+            <a href="/questions?focus=campus-placement" style={ctaGhostStyle("md")}>
               Campus Placement Guide
             </a>
           </div>

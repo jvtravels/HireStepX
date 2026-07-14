@@ -3349,7 +3349,7 @@ export function BuiltForIndiaV2() {
               Browse practice questions →
             </a>
             <a
-              href="/for-students"
+              href="/questions?focus=campus-placement"
               style={{
                 fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
                 color: t.copper100, textDecoration: "none",
