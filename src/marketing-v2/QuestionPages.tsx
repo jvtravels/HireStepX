@@ -291,31 +291,139 @@ export function QuestionSetPage({
   /* Show first 5 free; gate the rest behind a signup prompt. */
   const showSignupGate = questions.length > 5;
 
+  /* Difficulty breakdown for the stats sidebar */
+  const diffCounts = { easy: 0, medium: 0, hard: 0 };
+  for (const q of questions) {
+    if (q.difficulty === "warmup") diffCounts.easy++;
+    else if (q.difficulty === "intense") diffCounts.hard++;
+    else diffCounts.medium++;
+  }
+  const roundCount = page.interviewRounds?.length ?? page.recruitmentSteps?.length ?? null;
+
+  /* First sentence of intro — shown in hero, full intro in body */
+  const introFirst = (() => {
+    const dot = page.intro.indexOf(". ");
+    return dot > -1 ? page.intro.slice(0, dot + 1) : page.intro.slice(0, 180);
+  })();
+
   return (
     <>
       <style>{editorialCSS}</style>
       <main style={pageShell}>
-        <EditorialHero
-          eyebrow={`${companyLabel} · ${focusLabel}`}
-          titleLead={page.searchPhrase}
-          lead={page.intro}
-          meta={
-            <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+
+        {/* ── Custom two-column hero ─────────────────────────────────── */}
+        <header className="ed-hero" style={{ background: t.cream }}>
+          <div className="ed-container">
+
+            {/* Breadcrumb */}
+            <nav aria-label="Breadcrumb" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginBottom: 28 }}>
               <Link href="/" style={{ color: t.inkFaint, textDecoration: "none" }}>Home</Link>
               {" / "}
               <Link href="/questions" style={{ color: t.inkFaint, textDecoration: "none" }}>Questions</Link>
               {" / "}
-              <span aria-current="page" style={{ color: t.copper }}>{focusLabel}</span>
+              <span aria-current="page">{focusLabel}</span>
             </nav>
-          }
-        >
-          <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
-            Practice with AI voice feedback <span className="ed-cta-arrow" aria-hidden>→</span>
-          </Link>
-          <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>
-            2 sessions free, no card
-          </span>
-        </EditorialHero>
+
+            {/* Two-column split */}
+            <div className="ed-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
+
+              {/* Left: eyebrow → h1 → lead → CTA */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{
+                  fontFamily: fonts.sans, fontSize: 12, fontWeight: 700,
+                  letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: t.inkFaint, margin: "0 0 18px",
+                }}>
+                  {companyLabel} · {focusLabel}
+                </p>
+                <h1 style={{
+                  fontFamily: fonts.serif,
+                  fontSize: "clamp(36px, 5vw, 58px)",
+                  fontWeight: 400, lineHeight: 1.05,
+                  letterSpacing: "-0.028em",
+                  color: t.coal, margin: "0 0 22px",
+                  maxWidth: "20ch",
+                }}>
+                  {page.searchPhrase}
+                </h1>
+                <p style={{
+                  fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65,
+                  color: t.inkSoft, margin: "0 0 32px", maxWidth: "46ch",
+                }}>
+                  {introFirst}
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                  <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                    Practice with AI voice feedback <span className="ed-cta-arrow" aria-hidden>→</span>
+                  </Link>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>
+                    2 sessions free, no card
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: stats sidebar */}
+              <div style={{
+                flexShrink: 0, width: 240,
+                background: t.creamSoft, border: `1px solid ${t.line}`,
+                borderRadius: 16, padding: "24px 26px",
+                display: "flex", flexDirection: "column", gap: 20,
+              }}>
+                {/* Question count */}
+                <div>
+                  <div style={{ fontFamily: fonts.serif, fontSize: 36, fontWeight: 400, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                    {questions.length}
+                  </div>
+                  <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, marginTop: 4 }}>
+                    verified questions
+                  </div>
+                </div>
+                {/* Difficulty split */}
+                <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint, marginBottom: 4 }}>
+                    Difficulty
+                  </div>
+                  {diffCounts.easy > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>
+                      <span>Easy</span><span style={{ fontWeight: 600, color: t.coal }}>{diffCounts.easy}</span>
+                    </div>
+                  )}
+                  {diffCounts.medium > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>
+                      <span>Medium</span><span style={{ fontWeight: 600, color: t.coal }}>{diffCounts.medium}</span>
+                    </div>
+                  )}
+                  {diffCounts.hard > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>
+                      <span>Hard</span><span style={{ fontWeight: 600, color: t.coal }}>{diffCounts.hard}</span>
+                    </div>
+                  )}
+                </div>
+                {/* Rounds */}
+                {roundCount !== null && roundCount > 0 && (
+                  <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 18 }}>
+                    <div style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, color: t.coal, lineHeight: 1, letterSpacing: "-0.015em" }}>
+                      {roundCount}
+                    </div>
+                    <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, marginTop: 4 }}>
+                      interview rounds
+                    </div>
+                  </div>
+                )}
+                {/* Focus label */}
+                <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 18 }}>
+                  <div style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint, marginBottom: 6 }}>
+                    Focus
+                  </div>
+                  <div style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>
+                    {focusLabel}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </header>
 
         <div className="ed-container" style={{ paddingTop: 60, paddingBottom: 8 }}>
           {/* Framework + verified company context — narrow reading column */}
