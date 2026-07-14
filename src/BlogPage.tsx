@@ -316,7 +316,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers", "behavioral-interview-questions-freshers"],
     practicePageSlugs: [
-      { label: "Infosys Campus Placement", slug: "infosys-campus-placement-interview" },
+      { label: "Infosys Campus Placement", slug: "infosys-campus-interview-questions" },
       { label: "Infosys Power Programmer", slug: "infosys-power-programmer-interview" },
       { label: "Infosys Behavioral Round", slug: "infosys-behavioral-interview-questions" },
     ],
@@ -410,7 +410,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "behavioral-interview-questions-freshers"],
     practicePageSlugs: [
-      { label: "Wipro Campus Placement", slug: "wipro-campus-placement-interview" },
+      { label: "Wipro Campus Placement", slug: "wipro-freshers-interview-questions" },
       { label: "Wipro Behavioral Round", slug: "wipro-behavioral-interview-questions" },
     ],
     cta: "Wipro's HR round is short but it has teeth — candidates who hesitate on relocation or shift flexibility get flagged in the notes. Practice the full sequence on HireStepX so your answers on the friction questions sound like decisions, not deliberations.",
@@ -655,7 +655,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers", "behavioral-interview-questions-freshers"],
     practicePageSlugs: [
-      { label: "Cognizant Campus Placement", slug: "cognizant-campus-placement-interview" },
+      { label: "Cognizant Campus Placement", slug: "cognizant-genc-interview-questions" },
     ],
     cta: "After the CoCubes cut, the technical and HR rounds are where offers actually close. HireStepX lets you run through both with AI-graded feedback — so you're not winging the interview after surviving the assessment.",
   },
@@ -684,7 +684,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["cognizant-interview-questions-freshers-2026", "tcs-interview-questions-freshers-2026", "wipro-interview-questions-answers"],
     practicePageSlugs: [
-      { label: "Accenture Campus Placement", slug: "accenture-campus-placement-interview" },
+      { label: "Accenture Campus Placement", slug: "accenture-ase-interview-questions" },
     ],
     cta: "Accenture scores communication as heavily as aptitude. If you haven't practiced speaking your answers out loud — not writing them, saying them — you're not actually prepared. HireStepX covers the communication and HR rounds with the same AI scoring it applies to technical questions. Run a session before you go in.",
   },
@@ -744,9 +744,9 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["accenture-interview-questions-freshers-2026", "cognizant-interview-questions-freshers-2026", "tcs-interview-questions-freshers-2026"],
     practicePageSlugs: [
-      { label: "HCL Campus Placement", slug: "hcl-campus-placement-interview" },
-      { label: "Accenture Campus Placement", slug: "accenture-campus-placement-interview" },
-      { label: "Capgemini Campus Placement", slug: "capgemini-campus-placement-interview" },
+      { label: "HCL Campus Placement", slug: "hcl-freshers-interview-questions" },
+      { label: "Accenture Campus Placement", slug: "accenture-ase-interview-questions" },
+      { label: "Capgemini Campus Placement", slug: "capgemini-freshers-interview-questions" },
     ],
     cta: "Each of these companies has a different interview personality — HCL's technical screen is lighter, Accenture's group exercise catches people off guard, Capgemini's CoCubes cut matters more than most candidates realise. HireStepX runs you through the specific rounds that trip candidates up, with AI feedback on the exact things each company's panel actually scores.",
   },
@@ -775,7 +775,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["ace-case-study-interviews", "hcl-accenture-capgemini-interview-comparison", "behavioral-interview-questions-freshers"],
     practicePageSlugs: [
-      { label: "Deloitte Case Study Interview", slug: "deloitte-case-study-interview" },
+      { label: "Deloitte Case Study Interview", slug: "deloitte-consulting-case-interview" },
       { label: "McKinsey Case Study Interview", slug: "mckinsey-case-study-interview-questions" },
     ],
     cta: "Most Deloitte rejections happen in the PI round, not the aptitude test — candidates know their content but can't structure a verbal answer under pressure. HireStepX puts you in that room: open-ended questions, a timer, AI feedback on whether your response actually had a point.",
@@ -1076,7 +1076,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["system-design-interview-preparation", "top-10-google-interview-questions", "salary-negotiation-tips-india"],
     practicePageSlugs: [
-      { label: "Goldman Sachs Engineering Interview", slug: "goldman-sachs-engineering-interview-questions" },
+      { label: "Goldman Sachs Engineering Interview", slug: "goldman-sachs-interview-questions-india" },
     ],
     cta: "GS behavioral rounds aren't a formality — they've rejected candidates who cleared every technical round. The difference is usually specificity: vague answers about 'teamwork' don't hold up when the interviewer asks a follow-up. HireStepX runs voice mock interviews where you practice articulating your reasoning under pressure, with AI feedback on both the technical substance and how clearly you made your case.",
   },
@@ -1475,8 +1475,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["goldman-sachs-india-interview-questions", "system-design-interview-preparation", "salary-negotiation-tips-india"],
     practicePageSlugs: [
-      { label: "JP Morgan SDE Practice", slug: "jp-morgan-sde-interview-questions" },
-      { label: "JP Morgan BA Practice", slug: "jp-morgan-business-analyst-interview" },
+      { label: "JP Morgan Interview Practice", slug: "jpmorgan-interview-questions-india" },
     ],
     cta: "JP Morgan's behavioral rounds use their own competency framework, not the standard STAR template most candidates practice. HireStepX runs voice mock interviews where you practice the specific competencies JPM looks for — ownership, judgment under uncertainty, and influence without authority — and the AI tells you whether your answers would score well or sound generic.",
   },
@@ -1537,8 +1536,8 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["salary-negotiation-tips-india", "product-manager-salary-india-2026", "system-design-interview-preparation"],
     practicePageSlugs: [
-      { label: "Startup SDE Interview Practice", slug: "startup-software-engineer-interview" },
-      { label: "MNC Technical Interview Practice", slug: "faang-software-engineer-interview" },
+      { label: "Startup SDE Interview Practice", slug: "razorpay-engineering-interview-questions" },
+      { label: "MNC Technical Interview Practice", slug: "google-india-engineering-interview-questions" },
     ],
     cta: "Switching from a service IT background to a product company? The behavioral bar is higher than most people expect — product companies probe for ownership and impact more deeply than service IT rounds do. HireStepX gives you voice mock interviews with STAR scoring so you can find your weak spots before the actual interview does.",
   },
@@ -1599,8 +1598,8 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["startup-vs-mnc-india-career", "salary-negotiation-tips-india", "campus-placement-interview-tips"],
     practicePageSlugs: [
-      { label: "Fresher SDE Interview Practice", slug: "fresher-software-engineer-interview" },
-      { label: "HR Interview Practice for Freshers", slug: "hr-behavioral-interview-questions" },
+      { label: "Fresher SDE Interview Practice", slug: "flipkart-sde-interview-questions" },
+      { label: "HR Interview Practice for Freshers", slug: "tcs-hr-round-questions" },
     ],
     cta: "If you're targeting a product company for your first role, the behavioral round is harder than most freshers expect. HireStepX gives you voice mock interviews with real-time STAR scoring — practice until the structure comes naturally, not something you're building mid-answer under pressure.",
   },
@@ -1657,8 +1656,8 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "infosys-interview-questions-2026", "behavioral-interview-questions-freshers"],
     practicePageSlugs: [
-      { label: "IBM SDE Interview Practice", slug: "ibm-software-engineer-interview" },
-      { label: "IBM GBS Consultant Interview", slug: "ibm-consulting-analyst-interview" },
+      { label: "IBM SDE Interview Practice", slug: "ibm-freshers-interview-questions" },
+      { label: "IBM GBS Consultant Interview", slug: "ibm-consultant-interview-questions" },
     ],
     cta: "IBM's behavioral round is the round most candidates are least prepared for, because it's not just STAR — it's STAR answers that explicitly demonstrate IBM's three values. Generic 'I worked hard and delivered results' answers score poorly. HireStepX lets you practice these answers out loud and get specific feedback on whether your answer demonstrates the ownership, innovation, or trust that IBM is actually looking for.",
   },
@@ -1719,8 +1718,8 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["system-design-interview-preparation", "faang-interview-preparation-india-2026", "star-method-interview-answers"],
     practicePageSlugs: [
-      { label: "DSA Mock Interview Practice", slug: "data-structures-algorithm-interview" },
-      { label: "System Design Interview Practice", slug: "system-design-interview-questions" },
+      { label: "DSA Mock Interview Practice", slug: "microsoft-india-sde-interview-questions" },
+      { label: "System Design Interview Practice", slug: "amazon-system-design-interview-questions" },
     ],
     cta: "DSA is only half the interview. The other half is explaining your thinking out loud, under pressure, to a real person. HireStepX gives you voice practice where the AI scores not just what you say but how clearly and confidently you say it. Most candidates underestimate this gap until they're in the room.",
   },
@@ -1781,8 +1780,8 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["startup-vs-mnc-india-career", "zomato-product-manager-interview-2026", "salary-negotiation-tips-india"],
     practicePageSlugs: [
-      { label: "PM Interview Practice", slug: "product-manager-interview-questions" },
-      { label: "APM Interview Practice", slug: "associate-product-manager-interview" },
+      { label: "PM Interview Practice", slug: "google-pm-interview-questions" },
+      { label: "APM Interview Practice", slug: "amazon-pm-interview-questions" },
     ],
     cta: "PM and APM interviews are different from SDE interviews in ways that catch people off-guard — product case studies, prioritisation frameworks, and behavioral questions that probe judgment more than structure. If you've never done a product case out loud under time pressure, do it before the real interview. HireStepX gives you voice practice with real-time STAR feedback.",
   },
@@ -1839,8 +1838,8 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["system-design-interview-preparation", "startup-vs-mnc-india-career", "amazon-leadership-principles-interview"],
     practicePageSlugs: [
-      { label: "Engineering Manager Interview Practice", slug: "engineering-manager-interview" },
-      { label: "Leadership Behavioral Interview Practice", slug: "leadership-behavioral-interview" },
+      { label: "Engineering Manager Interview Practice", slug: "amazon-leadership-principles-interview" },
+      { label: "Leadership Behavioral Interview Practice", slug: "amazon-sde-leadership-principles-interview" },
     ],
     cta: "EM behavioral questions are harder than SDE behavioral questions because the right answers are less formulaic. 'Tell me about a time you managed an underperformer' has no clean STAR template — it requires you to demonstrate judgment about timing, directness, and what accountability actually looks like. HireStepX runs voice mock interviews for EM rounds where the AI evaluates whether your people management answers sound experienced and specific, or vague and theoretical.",
   },
