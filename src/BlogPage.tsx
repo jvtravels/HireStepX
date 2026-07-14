@@ -58,8 +58,6 @@ function BlogShell({ children }: { children: ReactNode }) {
           .blog-featured { grid-template-columns: 1fr !important; }
           .blog-featured-media { min-height: 280px !important; }
           .blog-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .blog-editorial-strip { grid-template-columns: 1fr !important; }
-          .blog-editorial-strip-media { min-height: 260px !important; order: -1; }
         }
         .blog-filter-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .blog-filter-scroll::-webkit-scrollbar { display: none; }
@@ -71,8 +69,6 @@ function BlogShell({ children }: { children: ReactNode }) {
           .blog-meta { padding: 16px 20px !important; }
           main, footer { padding-bottom: 96px !important; }
           .blog-filter-scroll { flex-wrap: nowrap !important; }
-          .blog-editorial-strip-media { min-height: 200px !important; }
-          .blog-strip-text { padding: 32px 24px !important; }
           .blog-index-cta { flex-direction: column !important; align-items: flex-start !important; }
         }
         .mv2p-faq[open] .mv2p-faq-marker { transform: rotate(45deg); }
@@ -1928,55 +1924,6 @@ function CompactCard({ post }: { post: BlogPost }) {
   );
 }
 
-/* ─── Editorial strip — full-width horizontal card, breaks the uniform grid ─── */
-function EditorialStrip({ post, imageRight }: { post: BlogPost; imageRight: boolean }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const media = !imgFailed ? (
-    <div className="blog-editorial-strip-media" style={{ position: "relative", minHeight: 300, background: t.creamSoft, flexShrink: 0 }}>
-      <Image
-        src={post.heroImage} alt={post.heroAlt} fill
-        sizes="(max-width: 880px) 100vw, 420px"
-        onError={() => setImgFailed(true)}
-        style={{ objectFit: "cover" }}
-      />
-    </div>
-  ) : null;
-  return (
-    <article
-      className="blog-card blog-editorial-strip"
-      style={{
-        display: "grid",
-        gridTemplateColumns: imgFailed ? "1fr" : (imageRight ? "1fr 420px" : "420px 1fr"),
-        gap: 0,
-        background: t.creamSoft, borderRadius: 18, border: `1px solid ${t.line}`,
-        overflow: "hidden", marginBottom: 20,
-      }}
-    >
-      {!imageRight && media}
-      <div className="blog-strip-text" style={{ padding: "44px 52px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 18 }}>
-          {post.company} <span style={{ color: t.inkFaintWeak, fontWeight: 400 }}>·</span> {post.category}
-        </p>
-        <h3 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 30px)", fontWeight: 400, color: t.coal, lineHeight: 1.12, letterSpacing: "-0.02em", marginBottom: 16, textWrap: "balance" }}>
-          <Link href={`/blog/${post.slug}`} className="blog-card-link">
-            {post.title}
-          </Link>
-        </h3>
-        <p style={{ fontFamily: fonts.sans, fontSize: 14.5, color: t.inkSoft, lineHeight: 1.65, marginBottom: 22, maxWidth: "48ch" }}>
-          {post.metaDescription}
-        </p>
-        <p className="blog-card-meta" style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>
-          {new Date(post.datePublished).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} · {post.readTime} read
-        </p>
-      </div>
-      {imageRight && media}
-    </article>
-  );
-}
-
-type EditorialSection =
-  | { type: "grid"; items: BlogPost[] }
-  | { type: "strip"; item: BlogPost; imageRight: boolean };
 
 /* ─── Blog index (list of all posts) ─── */
 function BlogIndex() {
@@ -2010,17 +1957,6 @@ function BlogIndex() {
   const featured = filtered[0];
   const rest = filtered.slice(1);
 
-  const editorialSections: EditorialSection[] = [];
-  for (let gi = 0, si = 0; gi < rest.length;) {
-    const chunk = rest.slice(gi, gi + 3);
-    editorialSections.push({ type: "grid", items: chunk });
-    gi += chunk.length;
-    if (gi < rest.length) {
-      editorialSections.push({ type: "strip", item: rest[gi], imageRight: si % 2 === 1 });
-      gi++;
-      si++;
-    }
-  }
 
   return (
     <BlogShell>
@@ -2095,15 +2031,11 @@ function BlogIndex() {
           </article>
         )}
 
-        {/* Editorial post grid — alternating card groups and full-width strips */}
-        {editorialSections.map((section, si) =>
-          section.type === "grid" ? (
-            <div key={`grid-${si}`} className="blog-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(section.items.length, 3)}, 1fr)`, gap: 22, marginBottom: 20 }}>
-              {section.items.map((p) => <CompactCard key={p.slug} post={p} />)}
-            </div>
-          ) : (
-            <EditorialStrip key={`strip-${si}`} post={section.item} imageRight={section.imageRight} />
-          )
+        {/* Post grid — continuous 3-column layout */}
+        {rest.length > 0 && (
+          <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }}>
+            {rest.map((p) => <CompactCard key={p.slug} post={p} />)}
+          </div>
         )}
 
       </div>
