@@ -140,7 +140,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Swiggy ────────────────────────────────────────────────── */
   {
     slug: "swiggy-pm-interview-questions",
-    searchPhrase: "Swiggy Product Manager Interview Questions",
+    searchPhrase: "Swiggy Product Manager Interview Questions India 2026",
     company: "swiggy", roleFamily: "pm", focus: "case-study",
     intro: "Swiggy PM rounds heavily test marketplace dynamics — restaurant partner economics, delivery-partner availability, demand-supply imbalance, and dine-in vs delivery trade-offs. Expect at least one question that requires you to think about 3-sided economics: what happens when you optimise for restaurants, delivery partners, and consumers simultaneously, and why those goals conflict. Swiggy's product loop covers food delivery, Instamart (10-minute grocery), and Dineout — interviewers test whether you can navigate between verticals with different unit economics. India-specific constraints are prominent: monsoon-season demand spikes, delivery-partner dropout at peak hours, tier-2 restaurant quality variability. Candidates who can frame a 'how do you reduce delivery time without burning delivery-partner incentives' question with real trade-offs consistently outperform those who only think from the consumer side.",
     framework: { name: "Marketplace prioritisation", summary: "Identify the constrained side → unit economics → growth lever → defensibility." },
@@ -158,7 +158,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Zomato ────────────────────────────────────────────────── */
   {
     slug: "zomato-product-interview-questions",
-    searchPhrase: "Zomato Product Interview Questions",
+    searchPhrase: "Zomato Product Manager Interview Questions India 2026",
     company: "zomato", roleFamily: "pm", focus: "case-study",
     intro: "Zomato interviews lean on real product diagnostics grounded in their India-first delivery and dining marketplace. Restaurant ratings are dropping in tier-2 cities — diagnose. Delivery times are climbing — root-cause. The format rewards candidates who can decompose ambiguity quickly and segment by geography, cohort, and time. Unlike consumer-app PMs, Zomato interviewers test restaurant-side economics alongside consumer experience — understanding both sides of the marketplace is a prerequisite. Rounds also probe how you'd measure success for a new market entry like quick commerce (Blinkit integration) or dining-out discovery — knowing the product from a user and operator perspective separates 'strong hire' from 'close call.'",
     framework: { name: "Diagnose framework", summary: "Define metric → segment by axis (geo/cohort/time) → form hypothesis → test → recommend." },
@@ -199,7 +199,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Paytm ─────────────────────────────────────────────────── */
   {
     slug: "paytm-engineering-interview-questions",
-    searchPhrase: "Paytm Engineering Interview Questions",
+    searchPhrase: "Paytm Engineering Interview Questions India 2026",
     company: "paytm", roleFamily: "swe", focus: "system-design",
     intro: "Paytm engineering interviews mix scale and abuse-prevention in ways few other companies test. Cashback systems, fraud detection, and merchant payouts all involve adversarial users who actively probe your system for arbitrage. Be ready for 'how do you prevent X' questions where X is explicitly a fraud pattern — double-spending on wallets, referral abuse, QR code replay attacks. The system design bar reflects Paytm's position as India's original payments super-app: their infrastructure handles hundreds of millions of UPI transactions monthly across a fragmented user base with feature phones and poor connectivity. Engineers are expected to reason about idempotency in payment flows, eventual consistency trade-offs in ledger systems, and rate limiting under burst demand. The technical interview also probes deep CS fundamentals — Paytm hires for systems that must not fail under adversarial conditions.",
     framework: { name: "Adversarial design", summary: "Threat model → detection signals → mitigation tiers → false-positive cost." },
@@ -280,7 +280,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "tcs-hr-round-questions",
-    searchPhrase: "TCS HR Round Interview Questions",
+    searchPhrase: "TCS HR Round Interview Questions for Freshers India 2026",
     company: "tcs", roleFamily: "behavioral", focus: "hr",
     intro: "TCS HR rounds are formal, process-oriented, and predictable — but they eliminate more candidates than most freshers expect. The interviewer follows a structured script covering relocation willingness, shift flexibility, salary expectations, why TCS over peers, and 5-year career goals. The critical non-negotiables: relocation must be an explicit 'yes' (not 'I'll try') and bond period acceptance must be confirmed without hesitation. Authenticity beats memorised answers because HR panels at TCS are experienced at detecting rehearsed responses — be specific about why you're choosing TCS over Infosys, Wipro, or Cognizant. A strong answer references a specific TCS initiative (TCS iON, BaNCS, Ignio) and connects it to your own goals. Communication quality is scored separately from content — clear, confident delivery matters even when the answer is simple.",
     framework: { name: "PAR for HR", summary: "Problem (their question's underlying concern) → Answer (your direct response) → Reassurance (why you're not a flight risk)." },
@@ -298,7 +298,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Infosys ───────────────────────────────────────────────── */
   {
     slug: "infosys-campus-interview-questions",
-    searchPhrase: "Infosys Campus Interview Questions for Freshers",
+    searchPhrase: "Infosys Campus Interview Questions for Freshers India 2026",
     company: "infosys", roleFamily: "behavioral", focus: "campus-placement",
     intro: "Infosys campus rounds dwell on the academic project — expect 5-6 follow-up questions on architecture, your specific contribution, and design trade-offs. The interviewer will ask 'why did you choose React over Angular?' or 'why MySQL over MongoDB?' even if your team made the call collectively — own the decision and have a real reason ready. Infosys campus interviews are structured across two formal rounds: a technical interview probing CS fundamentals and project depth, and an HR interview screening for communication clarity, relocation openness, and cultural fit. InfyTQ certification (Infosys's own coding platform) is a strong differentiator — candidates who hold InfyTQ certifications in Python or Java often skip directly to the technical interview. The InfyTQ Specialist track can translate to a higher CTC band at joining, so pursuing it before placement season is a high-ROI preparation step.",
     framework: { name: "Project storytelling", summary: "Context (what + why) → Your contribution (specific tasks) → Trade-offs (what you considered but didn't pick) → Outcome (measurable impact)." },
@@ -344,7 +344,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "google-pm-interview-questions",
-    searchPhrase: "Google Product Manager Interview Questions",
+    searchPhrase: "Google Product Manager Interview Questions India 2026",
     company: "google", roleFamily: "pm", focus: "case-study",
     intro: "Google PM interviews favour candidates who decompose ambiguity quickly and don't get attached to their first answer. India-specific products come up frequently — YouTube (India is the world's largest YouTube market), GPay (UPI integration, merchant payouts), and Search-in-India (voice queries, regional language intent) are recurring case study surfaces. Knowing the local nuances vs the global product is a meaningful differentiator. Google PM rounds evaluate four dimensions: product sense (what makes a great product?), analytical ability (how do you measure success?), leadership (how do you influence without authority?), and design thinking (how do you build for a billion users?). The onsite loop runs 4 rounds with dedicated interviewers for each dimension — no round covers multiple dimensions. Prepare to say 'I'd approach this differently than my first answer' when pushed — changing your mind under pressure is considered a signal of strength, not weakness.",
     framework: { name: "PM CIRCLES", summary: "Comprehend the problem → Identify the user → Report their needs → Cut by impact → List solutions → Evaluate → Summarise." },
@@ -384,7 +384,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "amazon-system-design-interview-questions",
-    searchPhrase: "Amazon System Design Interview Questions",
+    searchPhrase: "Amazon System Design Interview Questions India 2026",
     company: "amazon", roleFamily: "swe", focus: "system-design",
     intro: "Amazon SDE-2/3 system design rounds lean operational — design Prime's recommendation engine, the order-fulfilment pipeline, or a scale-resilient cart. The bar-raiser probes failure modes aggressively: be ready for 'what happens if this region goes down?', 'how do you handle a 10x traffic spike?', and 'what's the data loss window if your primary fails?' Amazon system design interviews are distinct from Google or Meta in their operational focus — they care less about elegant abstractions and more about how your system handles failure gracefully. Leadership Principles surface in the design discussion: 'Frugality' means justifying your infrastructure choices by cost at scale; 'Dive Deep' means knowing exactly what breaks and why. SDE-2 candidates should prepare one e-commerce system and one Amazon-specific system (recommendation, fulfilment, or cart/checkout) in depth before the loop.",
     framework: { name: "Operational design", summary: "Functional requirements → non-functional (latency, availability) → API contracts → data model → component diagram → failure modes + recovery." },
@@ -441,7 +441,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "wipro-turbo-technical-interview",
-    searchPhrase: "Wipro Turbo Technical Interview Questions",
+    searchPhrase: "Wipro Turbo Technical Interview Questions India 2026",
     company: "wipro", roleFamily: "swe", focus: "technical",
     intro: "Wipro Turbo (₹6.5 LPA) has a significantly harder coding bar than the Elite NTH track. The additional coding round — Turbo-specific and not present in Elite — requires 3 medium-hard DSA problems in 90 minutes where graph algorithms, dynamic programming, and sliding window patterns are the most frequent topics. The technical interview that follows probes CS fundamentals aggressively and expects clean, commented code even in a competitive setting — interviewers specifically reward candidates who articulate their thought process aloud and optimise incrementally. Wipro Turbo engineers work on higher-complexity client engagements and are expected to be individually productive from Day 1, which is why the bar is set closer to a product company standard than a service company one. Candidates who score in the top decile of the aptitude test and clear all 3 coding problems reliably earn the Turbo track offer.",
     framework: { name: "DRACO for DSA", summary: "Define constraints → Recognise pattern → Approach out loud → Code cleanly → Optimise time/space → Complexity proof." },
@@ -481,7 +481,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Cognizant ─────────────────────────────────────────────────────── */
   {
     slug: "cognizant-genc-interview-questions",
-    searchPhrase: "Cognizant GenC Interview Questions for Freshers",
+    searchPhrase: "Cognizant GenC Interview Questions for Freshers India 2026",
     company: "cognizant", roleFamily: "campus", focus: "campus-placement",
     intro: "Cognizant runs the largest fresher hiring programme in India through GenC (₹4 LPA) and GenC Pro (₹6.5 LPA) — they hire 30,000+ freshers annually. The CoCubes-proctored online test is strict on time management: most candidates fail due to pacing issues, not insufficient knowledge. The test includes English, Reasoning, Quantitative Ability, and a Technical section. GenC Pro additionally requires a separate coding round with 2 medium-level problems in 60 minutes — comparable in difficulty to a Wipro Ninja round. Both tracks include a structured HR interview that screens for communication quality, relocation flexibility, and technology interest, not just technical skills. Cognizant specifically probes for candidates who can explain technical decisions to non-technical clients — interviewers reward clear language over jargon. GenC Pro engineers typically join higher-complexity digital services projects and are eligible for faster promotion timelines than GenC counterparts.",
     framework: { name: "TIME for aptitude", summary: "Tough questions → skip for now. Identify easy ones first → Mark for review → Execute with exact formulas → return to skipped." },
@@ -520,7 +520,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Accenture ─────────────────────────────────────────────────────── */
   {
     slug: "accenture-ase-interview-questions",
-    searchPhrase: "Accenture ASE Interview Questions for Freshers",
+    searchPhrase: "Accenture ASE Interview Questions for Freshers India 2026",
     company: "accenture", roleFamily: "campus", focus: "campus-placement",
     intro: "Accenture's Associate Software Engineer programme is one of the most-applied-to fresher tracks in India — they hire several thousand ASEs annually across Bangalore, Hyderabad, Mumbai, Pune, and Chennai. The iCAT (intelligent Communication and Aptitude Test) filters on cognitive ability, technical competency, and a coding section in Java, Python, or C++. The interview focuses heavily on communication quality and attitude fit: Accenture is a client-facing IT and consulting firm, and unclear or low-confidence answers hurt more here than at product companies where technical depth dominates. ASE interviews probe 'tell me about yourself,' project explanation with trade-off discussion, basic OOP and DSA fundamentals, and HR fit questions (relocation, why Accenture, 5-year goals). The coding section of the iCAT is moderately difficult — easier than Wipro Turbo, comparable to TCS Digital. Candidates who prepare their project explanation specifically for a client-facing audience significantly outperform those who use technical jargon.",
     framework: { name: "CLIENT framework", summary: "Clarity (no jargon) → Leadership mindset → Initiative examples → Enthusiasm for the role → No-gap reasoning → Teamwork story." },
@@ -541,7 +541,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "accenture-behavioral-interview-questions",
-    searchPhrase: "Accenture Behavioral Interview Questions",
+    searchPhrase: "Accenture Behavioral Interview Questions India 2026",
     company: "accenture", roleFamily: "behavioral", focus: "behavioral",
     intro: "Accenture's behavioral rounds for experienced hires probe client-management competencies more than technical depth. Expect questions about stakeholder conflict, scope creep, and timeline pressure — scenarios drawn directly from consulting and IT services delivery. Stories where you calmed a difficult client, recovered a delayed project, or navigated competing priorities between onshore and offshore teams resonate most with Accenture panels. The assessment also measures communication quality explicitly — Accenture is a client-facing organisation and unclear or low-confidence answers are a red flag independent of content accuracy. STAR stories should include specific outcomes: percentage improvement in delivery timelines, client satisfaction scores recovered, or team headcount managed. Lateral hires targeting Manager or above should prepare a story about managing upward — influencing stakeholder decisions at a director or partner level.",
     framework: { name: "CAR for consulting behavior", summary: "Context (client/delivery situation) → Action (your specific intervention, not the team's) → Result (deliverable shipped, escalation avoided, relationship preserved)." },
@@ -754,7 +754,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "cred-pm-interview-questions",
-    searchPhrase: "CRED Product Manager Interview Questions",
+    searchPhrase: "CRED Product Manager Interview Questions India 2026",
     company: "cred", roleFamily: "pm", focus: "case-study",
     intro: "CRED PM interviews are deceptively philosophical for a fintech company. Questions often start with 'What does trust mean in a financial product?' or 'How do you design for a premium user who doesn't need to be incentivised?' The product team obsesses over micro-interactions, copy quality, and friction removal — CRED's 750-credit-score user base is among India's highest-earning, and the product philosophy is that every extra tap is a design failure. Cases test taste as much as market sizing: a product analysis question at CRED is less 'estimate monthly active users' and more 'is this feature worth building and why?' Candidates with a background in consumer-fintech (Zerodha, INDmoney, Jupiter) or premium consumer products (Apple, Figma) bring transferable product taste that resonates in CRED interviews. CRED has a significantly lower hiring volume than Flipkart or Swiggy — preparation should include in-depth use of the app itself.",
     framework: { name: "Premium product lens", summary: "User trust foundation → friction removal over feature addition → signal quality over quantity → premium cohort behaviour → qualitative research over A/B tests." },
@@ -793,7 +793,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "meesho-pm-interview-questions",
-    searchPhrase: "Meesho Product Manager Interview Questions",
+    searchPhrase: "Meesho Product Manager Interview Questions India 2026",
     company: "meesho", roleFamily: "pm", focus: "case-study",
     intro: "Meesho PM interviews focus on tier-2/3 India constraints that urban-educated candidates consistently underestimate. Their typical framing: 'Design for a seller who uses a feature-phone, has a 2G connection, and speaks only Kannada.' Empathy with non-English, low-bandwidth, first-time-online users is a genuine differentiator — candidates who grew up in metro cities and haven't directly used Meesho as a seller are at a structural disadvantage without preparation. Cases reward simplification and offline-first distribution strategy over sophisticated UX: Meesho's reseller model distributes through WhatsApp shares, so product design must account for zero in-app discoverability. Meesho PM interviews also test shareholder economics — the reseller margin structure, COD return rates, and seller payment timelines are core product constraints that distinguish Meesho's marketplace from Flipkart or Amazon.",
     framework: { name: "Bharat-first PM", summary: "Language + connectivity constraints first → literacy level (visual over text) → trust signals for first transactions → distribution via WhatsApp/share chain → reseller economics." },
@@ -861,7 +861,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "freshworks-pm-interview-questions",
-    searchPhrase: "Freshworks Product Manager Interview Questions",
+    searchPhrase: "Freshworks Product Manager Interview Questions India 2026",
     company: "freshworks", roleFamily: "pm", focus: "case-study",
     intro: "Freshworks PM interviews start with an unusual premise for consumer-product-trained candidates: the primary user is the support agent or CRM operator, not the end customer. Their PM cases ask you to design for operational efficiency — reducing average handle time, automating ticket routing, improving agent sentiment scores. Cases favour candidates who understand the B2B SaaS buying journey: a decision made by a VP of Customer Success, implemented by IT, and used daily by 200 support agents is a fundamentally different product motion than a consumer app. Freshworks competes in a global B2B SaaS market against Zendesk, ServiceNow, and Salesforce — knowing what differentiates Freshdesk, Freshsales, and Freshservice at a product level is expected preparation for PM interviews. The company has a strong Chennai engineering base and Chennai-specific PM roles often focus on building for SMB customers across Southeast Asia.",
     framework: { name: "B2B SaaS PM", summary: "Define the agent/operator persona → identify friction in their workflow → prioritise by time-saved per agent × agent count → build-vs-integrate decision → success metric (AHT reduction, CSAT lift)." },
@@ -917,7 +917,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "microsoft-behavioral-interview-questions",
-    searchPhrase: "Microsoft Behavioral Interview Questions — Growth Mindset",
+    searchPhrase: "Microsoft Behavioral Interview Questions India 2026 — Growth Mindset",
     company: "microsoft", roleFamily: "behavioral", focus: "behavioral",
     intro: "Microsoft's behavioral interviews are anchored in the Growth Mindset model introduced by CEO Satya Nadella. The most valued answer is one where you describe clearly updating your beliefs or behaviour based on evidence — this is not just a nice story, it's the explicit evaluative lens every Microsoft behavioral interviewer uses. 'I was right all along' stories are red flags because they signal a fixed mindset. 'Here is what I learned I was wrong about, and here is what I changed' stories resonate strongly with Microsoft panels across all roles and levels. The behavioral round is typically the final round in the India onsite loop — it carries significant weight because Microsoft tracks behavioral fit separately from technical fit in hiring decisions. Hyderabad is Microsoft's largest India engineering office; Bangalore and Noida are secondary sites. Product teams, engineering teams, and sales teams all use the same Growth Mindset behavioral rubric.",
     framework: { name: "Growth story", summary: "Initial belief or assumption → evidence that challenged it → specific change you made → outcome after the change → reflection on why you held the old belief." },
@@ -958,7 +958,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "meta-behavioral-interview-questions",
-    searchPhrase: "Meta Behavioral Interview Questions",
+    searchPhrase: "Meta Behavioral Interview Questions India 2026",
     company: "meta", roleFamily: "behavioral", focus: "behavioral",
     intro: "Meta's behavioral interviews systematically map every answer to their 5 core values: Move Fast, Be Bold, Be Open, Build Social Value, and Focus on Impact. The interviewer actively tracks which value each story illustrates — making this mapping explicit in your answer ('this is an example of Moving Fast because...') is not just acceptable, it's the expected format. Meta specifically probes for candidates who moved quickly with incomplete information rather than waiting for full alignment, and who publicly disagree but commit fully once a team decision is made. Stories about reversing a decision mid-project — with clear reasoning — are valued more than stories about getting it right the first time. Meta's onsite loop includes a dedicated behavioral round separate from technical rounds; hiring committee decisions can be influenced significantly by the behavioral score. Indian candidates at Meta's Hyderabad and Bangalore offices should prepare at least 6–8 distinct STAR stories and map each to 2–3 core values before the loop.",
     framework: { name: "Meta values map", summary: "Identify the Meta value → Situation (why it was high-stakes) → Your specific action → Impact (must be quantified or scoped) → explicit callout of which value it illustrates." },
@@ -1072,7 +1072,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── TCS (behavioral) ──────────────────────────────────────────────── */
   {
     slug: "tcs-behavioral-interview-questions",
-    searchPhrase: "TCS Behavioral and Managerial Round Interview Questions",
+    searchPhrase: "TCS Behavioral Interview Questions India 2026 — Managerial Round",
     company: "tcs", roleFamily: "behavioral", focus: "behavioral",
     intro: "TCS's Managerial Round (MR) is the most misunderstood part of its hiring process. Candidates who cruise through the NQT and Technical Interview often fail here because they answer generic behavioral questions generically — which is the exact failure mode TCS interviewers are trained to detect. The MR specifically tests: relocation willingness (must be explicitly 'yes, anywhere in India'), team conflict handling, communication under pressure, and the 'why TCS over Infosys, Wipro, Cognizant' question that requires a specific, non-generic answer. A strong 'why TCS' answer names a specific TCS initiative — TCS iON (education platform), TCS BaNCS (banking product), TCS Ignio (AI platform), or a specific service practice — and connects it to your career goals. The MR is typically 20-30 minutes. Interviewers also probe your gap-year explanation if applicable (TCS allows up to 2 years gap with justification) and your long-term growth plan within TCS's career framework.",
     framework: { name: "TCS-fit signalling", summary: "Process discipline story → team player example → clear relocation/shift yes → why TCS (cite specific initiative) → 5-year goal aligned with TCS growth areas." },
@@ -1092,7 +1092,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Infosys (Power Programmer) ────────────────────────────────────── */
   {
     slug: "infosys-power-programmer-interview",
-    searchPhrase: "Infosys Power Programmer Interview Questions",
+    searchPhrase: "Infosys Power Programmer Interview Questions India 2026",
     company: "infosys", roleFamily: "swe", focus: "technical",
     intro: "Infosys Power Programmer (₹6.5 LPA) is the hardest fresher track at Infosys, and one of the hardest service-company fresher roles in India. The coding round has 3 problems — candidates must fully solve at least 2 to advance; a partial solution on all 3 is insufficient. The technical interview digs into data structures at depth that most campus candidates underestimate: not 'what is a binary tree' but 'implement a self-balancing AVL tree and explain the rotation algorithm.' Candidates from competitive programming backgrounds — Codeforces, CodeChef, AtCoder — dominate this track because the preparation style maps directly to what the interview tests. Power Programmer engineers at Infosys are placed on higher-complexity projects, often in FinTech, healthcare, or cloud migration, and are expected to contribute meaningfully within the first 3–6 months of joining. The track has a significantly lower seat count than Infosys Systems Engineer — typically 5–10% of total Infosys fresher offers.",
     framework: { name: "CP-grade prep", summary: "Full complexity analysis (best, average, worst) → space optimisation trade-offs → alternative algorithms + why you chose this one → corner cases (empty input, MAX_INT, null pointers) → clean code under time pressure." },
@@ -1145,7 +1145,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Amazon SWE behavioral (LP-focused) ────────────────────────────── */
   {
     slug: "amazon-sde-leadership-principles-interview",
-    searchPhrase: "Amazon SDE Behavioral Interview — Leadership Principles",
+    searchPhrase: "Amazon SDE Behavioral Interview India 2026 — Leadership Principles",
     company: "amazon", roleFamily: "swe", focus: "behavioral",
     intro: "Amazon's behavioral rounds for SDE roles are as important as the coding rounds — candidates who nail all 4 DSA questions but fail the LP (Leadership Principles) interview don't get offers. Amazon uses structured STAR evaluation across all 16 LPs with a Bar Raiser in the final round whose sole purpose is LP assessment. The trick: you don't need one story per LP. You need 8–10 strong stories that each demonstrate 2–3 principles, and you adapt them to the question asked. The Bar Raiser will probe with follow-ups: 'What would you do differently?' and 'Tell me about a time when that approach failed' are characteristic pushbacks designed to surface whether your story is genuine or rehearsed. For SDE roles in India, the five most-tested LPs are Customer Obsession, Ownership, Dive Deep, Bias for Action, and Deliver Results. India-based Amazon SDEs should also prepare a story specifically about operating under ambiguity — a common focus for teams working on Amazon Pay (UPI) and Amazon India logistics.",
     framework: { name: "LP story mapping", summary: "Identify your 8–10 strongest STAR stories → map each to 2–3 Leadership Principles → practice adapting the same story for different LP questions → flag the LP being tested in every answer." },
@@ -1204,7 +1204,7 @@ export const SEO_PAGES: SeoPage[] = [
   },
   {
     slug: "ibm-consultant-interview-questions",
-    searchPhrase: "IBM Consultant Interview Questions — GBS Strategy and Consulting",
+    searchPhrase: "IBM Consultant Interview Questions India 2026 — GBS Strategy",
     company: "ibm", roleFamily: "consultant", focus: "case-study",
     intro: "IBM GBS (Global Business Services) consulting interviews are case-forward but with a distinctive tech twist — IBM differentiates itself from pure-play strategy consultancies by tying every solution to IBM's technology stack, specifically hybrid cloud (Red Hat OpenShift, IBM Cloud Pak), AI and automation (Watson), and SAP implementation. Cases often involve digital transformation for large enterprises in banking, manufacturing, and government. Unlike McKinsey or BCG cases which ask 'should the client enter this market?', IBM GBS cases lean toward 'how would you implement this change technically and organisationally?' — the answer must include a phased implementation roadmap and a change management plan. IBM India GBS offices in Bangalore, Hyderabad, and Pune hire both freshers from premier institutes and experienced professionals. For lateral hires, the interview probes delivery credibility — interviewers want to know you've shipped a transformation initiative, not just advised on one.",
     framework: { name: "IBM consulting framework", summary: "Business problem → technology solution fit → change management → ROI model → phased implementation → client capability building." },
@@ -1222,7 +1222,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Infosys behavioral ─────────────────────────────────────────────── */
   {
     slug: "infosys-behavioral-interview-questions",
-    searchPhrase: "Infosys Behavioral and HR Interview Questions — InfyTQ Assessment",
+    searchPhrase: "Infosys Behavioral HR Interview Questions India 2026 — InfyTQ",
     company: "infosys", roleFamily: "behavioral", focus: "behavioral",
     intro: "Infosys behavioral interviews take two distinct formats depending on whether you're a fresh hire or an experienced lateral. Fresh hires face a structured HR interview covering relocation willingness, team-fit scenarios, strengths and weaknesses with examples, and why Infosys over competitors. Experienced laterals face the Managerial Round — a more rigorous assessment of stakeholder management, conflict resolution with clients, and delivery-under-pressure scenarios drawn from IT services. Both formats assess communication quality as explicitly as content: Infosys is a client-delivery firm and interviewers are trained to score language clarity, confidence, and active listening separately from answer quality. The InfyTQ platform pre-qualifies many hires — candidates who clear it at Specialist level often face deeper behavioral rounds that probe learning agility and technical curiosity alongside standard HR questions. Preparing a specific answer for 'why Infosys over Wipro/TCS' that references Infosys's AI-first strategy, Cobalt cloud platform, or a recent acquisition is a meaningful differentiator.",
     framework: { name: "Infosys cultural fit", summary: "Communication clarity → learning agility story → integrity under pressure example → client-centricity → relocation openness (explicitly required) → why Infosys over competitors." },
@@ -1264,7 +1264,7 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Wipro behavioral ───────────────────────────────────────────────── */
   {
     slug: "wipro-behavioral-interview-questions",
-    searchPhrase: "Wipro Behavioral and HR Interview Questions — WILP and NLTH",
+    searchPhrase: "Wipro Behavioral HR Interview Questions India 2026 — NLTH and WILP",
     company: "wipro", roleFamily: "behavioral", focus: "behavioral",
     intro: "Wipro's HR round is traditionally the easiest filter in their interview process — but candidates who underprep it do fail, particularly when they give vague or ambiguous answers to relocation and night-shift availability questions that have clear expected responses. Relocation must be an explicit 'yes' with no hedging; same for night-shift availability for BPO-adjacent roles. Wipro's National Level Talent Hunt (NLTH) and TurboHire tracks vary in behavioral depth — Turbo hires face a more values-oriented conversation about initiative and coding passion while NTH/Elite hires get a more standard HR format. WILP (Wipro Integrated Learning Program) hires face the most rigorous behavioral interview, probing self-motivation and learning agility since they join fresh from college into a structured 6-month training programme. The 'why Wipro' question requires a company-specific answer — citing Wipro's VLSI design, SAP practice, or cybersecurity practice (depending on your target vertical) is significantly stronger than a generic answer.",
     framework: { name: "Wipro HR essentials", summary: "Relocation yes (be explicit) → night-shift availability yes → why Wipro (cite WILP/TurboHire/specific practice) → strength with work example → weakness with mitigation → 5-year goal aligned with IT services growth." },
@@ -1277,6 +1277,74 @@ export const SEO_PAGES: SeoPage[] = [
     interviewRounds: [
       "HR Interview (20–30 min): Relocation and night-shift availability are non-negotiables — answer yes explicitly. Covers strength, weakness, 'why Wipro specifically', 5-year goal, and bond period acceptance.",
       "WILP Behavioral Round (WILP candidates only, 30–45 min): More rigorous values-based interview covering learning agility, initiative, and working in client-facing environments.",
+    ],
+  },
+
+  /* ── ZOHO ────────────────────────────────────────────────────────── */
+  {
+    slug: "zoho-engineering-interview-questions",
+    searchPhrase: "Zoho Engineering Interview Questions India 2026",
+    company: "zoho", roleFamily: "swe", focus: "technical",
+    intro: "Zoho engineering interviews stand apart from every other Indian product company: no third-party aptitude vendor, no HR pre-screen, and the entire hiring decision rests on how you perform across three to five back-to-back technical rounds with working Zoho engineers. The first round is almost always a programming problem answered on paper or a plain code editor with no IDE autocomplete. Zoho is a bootstrapped company that builds every tool in-house — CRM, email, office suite, analytics — and interviewers carry that engineering rigour into the hiring bar. Object-oriented design is heavily tested: you will be asked to model a real-world system (library management, parking lot, hospital records) from scratch, naming your classes, defining interfaces, and justifying every design decision aloud. Candidates with GeeksforGeeks-only preparation often struggle because Zoho interviews reward understanding over pattern matching — they will ask you to explain why a data structure works, not just name which one to use. Zoho also has a distinct culture of no-pedigree hiring: IIT and NIT graduates compete on the same terms as candidates from lesser-known colleges, and communication clarity in technical explanations is scored as seriously as code correctness.",
+    framework: { name: "OOP-first DSA", summary: "Core DSA (arrays → trees → DP, explain time-space complexity) → OOP design (model the system, name classes, define interfaces) → code walkthrough with the interviewer → edge cases and error handling → follow-up design questions." },
+    metaKeywords: ["zoho engineering interview", "zoho technical interview questions india", "zoho interview questions 2026", "zoho sde interview india", "zoho interview preparation india 2026"],
+    sitemapPriority: 0.82,
+    recruitmentSteps: [
+      "Written/online programming test — 1-2 DSA problems, paper or plain editor, no IDE, 60 minutes",
+      "Technical round 1 — DSA deep-dive: arrays, linked lists, trees, DP; time-space complexity explanation required",
+      "Technical round 2 — OOP design: model a real-world system from scratch (library, hospital, parking lot)",
+      "Technical round 3 — code review, debugging, or domain-specific deep-dive based on target role",
+      "HR round — culture and values fit; brief compared to the technical bar (Zoho HR is the last gate, not the main filter)",
+    ],
+  },
+
+  /* ── CAMPUS PLACEMENT — GENERIC FRESHERS HR ─────────────────────── */
+  {
+    slug: "why-should-we-hire-you-answer-india",
+    searchPhrase: "Why Should We Hire You — Best Answers for India Freshers 2026",
+    company: "campus", focus: "hr",
+    intro: "\"Why should we hire you?\" is the most consequential question in any Indian campus or fresher interview, and most candidates waste it with claims like 'I am hardworking and passionate.' Interviewers at TCS, Infosys, Wipro, Cognizant, and Accenture ask this question as a synthesis check — can this candidate make a clear case for themselves? The answer has a proven structure: connect your specific skills to the job description's requirements, add one proof point (a project, an achievement, a measurable outcome), and close with your motivation for this specific company. Answers longer than 60 seconds lose the evaluator. Freshers often confuse enthusiasm with evidence. 'I love technology' is not evidence. 'I built a real-time notification system that handles 5,000 concurrent users as part of my final-year project' is evidence. The question also tests communication confidence — delivery matters alongside content. Candidates who answer conversationally, with eye contact and a natural pace, consistently score higher than those who appear to be reciting a memorised paragraph. Practice the answer aloud at least ten times before your first campus interview so it sounds owned, not rehearsed.",
+    framework: { name: "Skills → Proof → Fit", summary: "Name the 2 skills they need most (from the job description) → give one specific proof point per skill (project/internship/competition result with a measurable outcome) → connect to this company's work specifically → close with what you want to contribute in year one." },
+    metaKeywords: ["why should we hire you answer india", "why should we hire you freshers answer india", "why should we hire you best answer 2026", "why hire me campus placement answer", "why should we hire you answer for freshers india"],
+    sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Prepare your 3 strongest skills — each must have one specific proof point (project, internship, competition)",
+      "Match your skills to the job description — identify the top 2 requirements and address them explicitly",
+      "Write your answer draft — aim for 45–60 seconds spoken; test aloud and time yourself",
+      "Add a company-specific close — one sentence on why this company specifically (product you use, problem they solve)",
+      "Practice the answer 10+ times until it sounds natural — confident delivery, not recitation",
+    ],
+  },
+  {
+    slug: "tell-me-about-yourself-answer-freshers-india",
+    searchPhrase: "Tell Me About Yourself — Best Answer for Freshers India 2026",
+    company: "campus", focus: "hr",
+    intro: "\"Tell me about yourself\" is the opening question in nearly every Indian interview — campus, lateral, or walk-in — and it sets the tone for everything that follows. Most freshers answer it chronologically: 'I was born in Pune, completed my schooling from X, joined Y college for B.Tech in Computer Science...' This is the wrong structure. Interviewers ask this question to calibrate your communication style and see if you can present yourself confidently and relevantly, not to hear your academic biography. The correct structure runs in reverse-chronological order with a forward-looking close: start with who you are now (final-year student / recent graduate with a specific skill), mention the most relevant thing you have built or achieved, connect it to the role you are applying for, and close with where you are headed. Total time: 60–90 seconds. Freshers have an additional challenge: the narrative must work without work experience. The answer instead pivots to academic projects, internships, open-source contributions, or competitive programming achievements. Indian interviewers at campus drives pay close attention to the first 30 seconds of this answer — it is your personal branding statement, and it determines whether they lean forward or switch off.",
+    framework: { name: "Present → Achievement → Future", summary: "Who you are now (major, graduation year, primary skill) → your strongest proof point (project/internship/competition with a measurable result) → connection to the role you are applying for → forward-looking close (what you want to contribute or learn in year one)." },
+    metaKeywords: ["tell me about yourself answer freshers india", "tell me about yourself best answer 2026", "introduce yourself freshers interview india", "self introduction for freshers interview india", "tell me about yourself campus placement answer india"],
+    sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Write a 3-sentence draft — one sentence each for: who you are now, your best proof point, and your forward goal",
+      "Add specifics — replace vague phrases ('passionate about technology') with measurable details ('built X using Y, reduced Z by %')",
+      "Time yourself — target 60–90 seconds spoken at a natural pace; cut anything beyond 90 seconds",
+      "Practice in front of a mirror or record yourself — check for filler words, eye contact, and pace",
+      "Customise the 'connection to role' sentence for each company — a TCS HR round and a Razorpay technical screen need different closes",
+    ],
+  },
+  {
+    slug: "common-hr-interview-questions-freshers-india",
+    searchPhrase: "Common HR Interview Questions for Freshers India 2026",
+    company: "campus", focus: "hr",
+    intro: "HR interview questions for freshers in India follow predictable patterns across TCS, Infosys, Wipro, Cognizant, Accenture, and most other service and product companies. Knowing the recurring questions and preparing structured answers — not just knowing what to say but how to say it — is the single fastest way to improve your HR round pass rate. The most commonly asked questions include: 'Tell me about yourself', 'Why should we hire you?', 'What is your greatest strength?', 'What is your weakness and how are you working on it?', 'Where do you see yourself in 5 years?', 'Why this company specifically?', 'Are you willing to relocate?', 'What motivates you?' and 'Do you have any questions for us?' Each question has a structure that scores — and common failure modes that cost candidates who give generic or unprepared answers. Indian interviewers score HR rounds on communication clarity, logical structure, and cultural fit (especially for service companies that place candidates at client sites). The difference between a candidate who passes and one who fails is usually not the content of the answer but the confidence and specificity of delivery.",
+    framework: { name: "STAR-HR", summary: "Situation (briefly) → Task (your specific responsibility) → Action (what YOU did, say 'I' not 'we') → Result (specific measurable outcome) → Reflection (what you learned or would do differently). Apply this structure to every behavioural question, even in HR rounds." },
+    metaKeywords: ["common hr interview questions freshers india", "hr interview questions for freshers india 2026", "hr round questions freshers india", "campus placement hr questions india", "fresher hr interview preparation india 2026"],
+    sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "List the 10 most common HR questions (tell me about yourself, why hire you, strength, weakness, 5-year goal, why this company, relocation, salary expectation, any questions for us, tell me about a challenge)",
+      "Prepare a structured 60–90 second answer for each — use STAR format for behavioural questions",
+      "Practice 'tell me about yourself' and 'why should we hire you' first — they appear in 95%+ of HR rounds",
+      "Research the target company specifically — generic 'why this company' answers are instantly penalised",
+      "Do a full mock HR round end-to-end before your actual interview — HireStepX AI simulates the full HR question flow with scoring",
     ],
   },
 ];

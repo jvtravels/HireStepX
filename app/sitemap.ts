@@ -26,8 +26,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
-  /* Bumped 2026-07-14: added recruitmentSteps to all 63 pages, expanded
-     all intros to ≥80w, added dual HowTo schemas on /questions/[slug]. */
+  /* Bumped 2026-07-14: added 4 new pages (zoho-engineering, why-should-we-hire-you,
+     tell-me-about-yourself, common-hr-interview-questions freshers India); updated
+     22 searchPhrases to include "India"/"2026"; all 67 pages now have India-specific
+     search intent signals. */
   const seoPagesLastModified = new Date("2026-07-14");
 
   const staticEntries: MetadataRoute.Sitemap = [

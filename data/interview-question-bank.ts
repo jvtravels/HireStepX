@@ -45,7 +45,9 @@ export type CompanyKey =
      These dominate tier-2/3 college placements and were previously
      getting routed to generic behavioral. */
   | "l-and-t" | "bhel" | "ongc" | "ntpc" | "mahindra" | "bajaj"
-  | "cummins" | "tata-steel" | "samsung";
+  | "cummins" | "tata-steel" | "samsung"
+  /* Generic campus / fresher pages not tied to a single company. */
+  | "campus";
 
 export type RoleFamily =
   | "swe" | "pm" | "em" | "data" | "design" | "behavioral"

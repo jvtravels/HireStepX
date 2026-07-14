@@ -67,6 +67,9 @@ export const COMPANY_LABEL: Record<string, string> = {
   "p&g": "P&G",
   itc: "ITC",
 
+  // Generic fresher / campus prep pages
+  campus: "Campus Interviews",
+
   // Government / PSU
   upsc: "UPSC",
   ssc: "SSC",
