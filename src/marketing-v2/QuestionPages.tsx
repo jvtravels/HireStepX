@@ -275,7 +275,7 @@ export function QuestionSetPage({
       <main style={pageShell}>
 
         {/* ── Custom two-column hero ─────────────────────────────────── */}
-        <header className="ed-hero" style={{ background: t.cream }}>
+        <header className="ed-hero" style={{ background: t.cream, paddingTop: 96, paddingBottom: 80, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
 
             {/* Breadcrumb */}
@@ -727,13 +727,18 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
             );
           })()}
 
-          {/* Grouped question sets — one editorial masthead per company */}
+          {/* Grouped question sets — compact rule-divider per company */}
           {companies.map((company) => (
-            <section key={company} className="ed-reveal" style={{ marginBottom: 56 }}>
-              <SectionHead
-                eyebrow={`${grouped[company].length} question ${grouped[company].length === 1 ? "set" : "sets"}`}
-                title={COMPANY_LABEL[company] ?? company.charAt(0).toUpperCase() + company.slice(1)}
-              />
+            <section key={company} className="ed-reveal" style={{ marginBottom: 40 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 4, paddingTop: 16 }}>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: t.coal, whiteSpace: "nowrap" }}>
+                  {COMPANY_LABEL[company] ?? company.charAt(0).toUpperCase() + company.slice(1)}
+                </span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkFaint, whiteSpace: "nowrap" }}>
+                  · {grouped[company].length} {grouped[company].length === 1 ? "set" : "sets"}
+                </span>
+                <div style={{ flex: 1, height: 1, background: t.line }} />
+              </div>
               <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {grouped[company].map((p, i) => (
                   <li key={p.slug}>
