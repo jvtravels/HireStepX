@@ -2396,34 +2396,51 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           </section>
         )}
 
-        {/* Related Posts — editorial list */}
+        {/* Related Posts — card grid */}
         {related.length > 0 && (
-          <section style={{ marginTop: 72 }}>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.015em", lineHeight: 1.2, marginBottom: 0 }}>
-              Continue reading
-            </h2>
-            <ul role="list" style={{ marginTop: 20, borderTop: `1px solid ${t.line}`, listStyle: "none", padding: 0, margin: "20px 0 0" }}>
+          <section style={{ marginTop: 72, paddingTop: 48, borderTop: `1px solid ${t.line}` }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 28 }}>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.6vw, 30px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.018em", margin: 0 }}>
+                Continue reading
+              </h2>
+              <Link href="/blog" style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, color: t.copper, textDecoration: "none", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                All posts →
+              </Link>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${related.length}, 1fr)`, gap: 20 }}>
               {related.map(r => (
-                <li key={r.slug}>
-                <Link href={`/blog/${r.slug}`} className="blog-related-row">
-                  <div style={{ position: "relative", width: 80, height: 60, flexShrink: 0, background: t.creamSoft, borderRadius: 8, overflow: "hidden" }}>
-                    <Image src={r.heroImage} alt={r.heroAlt} fill sizes="80px"
+                <Link key={r.slug} href={`/blog/${r.slug}`} className="blog-card" style={{
+                  display: "flex", flexDirection: "column", textDecoration: "none",
+                  background: t.white, borderRadius: 14, border: `1px solid ${t.lineStrong}`,
+                  overflow: "hidden",
+                }}>
+                  {/* Image with category overlay */}
+                  <div style={{ position: "relative", aspectRatio: "16 / 10", background: t.creamSoft, flexShrink: 0, overflow: "hidden" }}>
+                    <Image
+                      src={r.heroImage} alt={r.heroAlt}
+                      fill sizes="(max-width: 640px) 100vw, 33vw"
+                      style={{ objectFit: "cover" }}
                       onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                      style={{ objectFit: "cover" }} />
+                    />
+                    <span style={{
+                      position: "absolute", top: 10, left: 10,
+                      fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.coal,
+                      background: "rgba(255,255,255,0.92)", borderRadius: 999,
+                      padding: "3px 10px", backdropFilter: "blur(4px)",
+                    }}>{r.category}</span>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
-                      {r.company} · {r.category}
+                  {/* Company + title */}
+                  <div style={{ padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 7, flex: 1 }}>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>
+                      {r.company}
                     </p>
-                    <p style={{ fontFamily: fonts.serif, fontSize: 18, fontWeight: 400, color: t.coal, lineHeight: 1.3, letterSpacing: "-0.01em" }}>
+                    <h3 className="blog-clamp2" style={{ fontFamily: fonts.serif, fontSize: 17, fontWeight: 400, color: t.coal, lineHeight: 1.3, letterSpacing: "-0.01em", margin: 0 }}>
                       {r.title}
-                    </p>
+                    </h3>
                   </div>
-                  <span aria-hidden style={{ color: t.copper, fontSize: 18, flexShrink: 0 }}>→</span>
                 </Link>
-                </li>
               ))}
-            </ul>
+            </div>
           </section>
         )}
       </article>
