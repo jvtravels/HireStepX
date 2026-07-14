@@ -5,7 +5,6 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
-import { COMPANY_LABEL } from "../../../data/company-labels";
 import {
   editorialCSS,
   DarkBand,
@@ -150,18 +149,15 @@ export default async function CompaniesIndexPage() {
                   interview,{" "}
                   <em style={{ fontStyle: "italic", color: t.copper }}>decoded.</em>
                 </h1>
-                <p style={{ fontFamily: fonts.sans, fontStyle: "normal", fontSize: 16, fontWeight: 400, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 10px", maxWidth: "40ch" }}>
+                <p style={{ fontFamily: fonts.sans, fontStyle: "normal", fontSize: 16, fontWeight: 400, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 36px", maxWidth: "40ch" }}>
                   Format, real questions, scoring framework, and 2 free AI mocks — one guide per company.
-                </p>
-                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "0 0 36px" }}>
-                  {SEO_PAGES.length} companies covered · India 2026
                 </p>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
                   <Link href="/signup?source=companies-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
                     Pick a company, start free <span className="ed-cta-arrow" aria-hidden>→</span>
                   </Link>
-                  <Link href="/interview-prep" style={ctaGhostStyle("lg")}>
-                    How prep works
+                  <Link href="/questions" style={ctaGhostStyle("lg")}>
+                    Browse all guides
                   </Link>
                 </div>
               </div>
@@ -180,13 +176,13 @@ export default async function CompaniesIndexPage() {
                 </div>
 
                 {/* Category rows */}
-                {[
+                {([
                   { group: GROUPS[0], hint: "TCS · Infosys · Wipro" },
                   { group: GROUPS[1], hint: "Flipkart · Razorpay · Swiggy" },
                   { group: GROUPS[2], hint: "Google · Amazon · Microsoft" },
                   { group: GROUPS[3], hint: "McKinsey · BCG · Deloitte" },
                   { group: GROUPS[4], hint: "HR rounds · Campus drives" },
-                ].map(({ group, hint }, gi) => {
+                ] as const).map(({ group, hint }, gi, arr) => {
                   const count = SEO_PAGES.filter((p) => group.companies.includes(p.company)).length;
                   return (
                     <Link
@@ -199,7 +195,7 @@ export default async function CompaniesIndexPage() {
                         gap: 12,
                         padding: "14px 24px",
                         textDecoration: "none",
-                        borderBottom: gi < 4 ? `1px solid ${t.line}` : "none",
+                        borderBottom: gi < arr.length - 1 ? `1px solid ${t.line}` : "none",
                       }}
                     >
                       <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 15, color: t.copper, opacity: 0.6, lineHeight: 1, flexShrink: 0, width: 16, paddingTop: 1 }}>
@@ -214,7 +210,7 @@ export default async function CompaniesIndexPage() {
                         </span>
                       </span>
                       <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.inkFaint, flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
-                        {count} <span className="ed-cta-arrow" aria-hidden>→</span>
+                        {count} guides <span className="ed-cta-arrow" aria-hidden>→</span>
                       </span>
                     </Link>
                   );
@@ -242,31 +238,30 @@ export default async function CompaniesIndexPage() {
                 paddingTop: 80,
                 paddingBottom: 80,
                 borderBottom: `1px solid ${t.line}`,
-                background: gi % 2 === 1 ? t.creamSoft : t.cream,
+                background: t.cream,
               }}
             >
               <div className="ed-container">
-                {/* Two-column: editorial anchor left, card grid right */}
                 <div className="co-group-split" style={{ display: "flex", gap: 64, alignItems: "flex-start" }}>
 
-                  {/* Left panel — sticky anchor */}
+                  {/* Left panel */}
                   <div className="co-group-label" style={{ flexShrink: 0, width: 256 }}>
-                    <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 72, color: t.copper, opacity: 0.25, lineHeight: 1, display: "block", marginBottom: 16 }}>
-                      {gi + 1}
-                    </span>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 12px" }}>
+                      {String(gi + 1).padStart(2, "0")} / {String(GROUPS.length).padStart(2, "0")}
+                    </p>
                     <h2 style={{ fontFamily: fonts.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: "0 0 12px", lineHeight: 1.3, letterSpacing: "-0.01em" }}>
                       {group.label}
                     </h2>
                     <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.65, margin: "0 0 18px" }}>
                       {group.description}
                     </p>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.inkFaint }}>
+                    <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.copper }}>
                       {sorted.length} {sorted.length === 1 ? "guide" : "guides"}
                     </span>
                   </div>
 
                   {/* Right: card grid */}
-                  <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
                     {sorted.map((page) => (
                       <Link
                         key={page.slug}
@@ -275,27 +270,22 @@ export default async function CompaniesIndexPage() {
                         style={{
                           display: "flex",
                           flexDirection: "column",
-                          gap: 10,
-                          padding: "20px 22px",
-                          background: "transparent",
+                          gap: 12,
+                          padding: "24px 24px",
+                          background: t.white,
                           border: `1px solid ${t.line}`,
                           borderRadius: 14,
                           textDecoration: "none",
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.copper }}>
-                            {COMPANY_LABEL[page.company] ?? page.company}
-                          </span>
-                          <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 999, padding: "2px 8px", textTransform: "capitalize" as const }}>
-                            {FOCUS_LABEL[page.focus] ?? page.focus}
-                          </span>
-                        </div>
-                        <span style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.35, color: t.coal, letterSpacing: "-0.01em", flex: 1 }}>
+                        <span style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.lineStrong}`, borderRadius: 999, padding: "3px 9px", alignSelf: "flex-start", textTransform: "capitalize" as const }}>
+                          {FOCUS_LABEL[page.focus] ?? page.focus}
+                        </span>
+                        <span style={{ fontFamily: fonts.serif, fontSize: 17, lineHeight: 1.4, color: t.coal, letterSpacing: "-0.01em", flex: 1 }}>
                           {page.searchPhrase}
                         </span>
                         <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.copper, display: "inline-flex", alignItems: "center", gap: 5 }}>
-                          Prepare <span className="ed-cta-arrow" aria-hidden>→</span>
+                          Practice free <span className="ed-cta-arrow" aria-hidden>→</span>
                         </span>
                       </Link>
                     ))}
