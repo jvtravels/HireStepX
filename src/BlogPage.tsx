@@ -68,9 +68,10 @@ function BlogShell({ children }: { children: ReactNode }) {
         @media (max-width: 640px) {
           .blog-grid { grid-template-columns: 1fr !important; }
           .blog-container { padding: 32px 20px 64px !important; max-width: 100% !important; }
-          .blog-article { padding: 0 20px 56px !important; }
+          .blog-article { padding: 32px 20px 56px !important; }
           .blog-hero { display: none !important; }
           .blog-meta { padding: 16px 20px !important; }
+          .blog-related-grid { grid-template-columns: 1fr !important; }
           main, footer { padding-bottom: 96px !important; }
           .blog-filter-scroll { flex-wrap: nowrap !important; }
           .blog-index-cta { flex-direction: column !important; align-items: flex-start !important; }
@@ -2060,11 +2061,11 @@ function BlogIndex() {
       <div className="blog-container" style={{ maxWidth: 1240, margin: "0 auto", padding: "56px 48px 96px" }}>
         {/* Header */}
         <div style={{ marginBottom: 44, textAlign: "center" }}>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(38px, 5.6vw, 68px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.028em", lineHeight: 1.04, margin: "0 auto 16px", textWrap: "balance" }}>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(34px, 5vw, 54px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.028em", lineHeight: 1.06, margin: "0 auto 16px", maxWidth: "20ch", textWrap: "balance" }}>
             Interview prep that actually{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
           </h1>
-          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, whiteSpace: "nowrap", margin: "0 auto" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, margin: "0 auto", maxWidth: "56ch" }}>
             Company-specific guides, question banks, and career strategies built for Indian job seekers.
           </p>
         </div>
@@ -2928,8 +2929,8 @@ function BlogPostPage({ post }: { post: BlogPost }) {
     <BlogShell>
       {/* Hero: contained column header; image sits inside the reading column with
           rounded corners so it never fights the cream page background. */}
-      <header style={{ background: t.cream, paddingTop: 64 }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 32px", textAlign: "center" }}>
+      <header style={{ background: t.cream, paddingTop: 88 }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 36px", textAlign: "center" }}>
           {/* Plain text eyebrow: company · category: no pills */}
           <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 700, color: t.copper, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
             {post.company} <span style={{ color: t.lineStrong, fontWeight: 400 }}>·</span> {post.category}
@@ -2948,7 +2949,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "52px 40px 100px" }}>
         {/* Intro dek: editorial rule + italic serif pullquote */}
         <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 28, marginBottom: 64 }}>
-          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(18px, 1.9vw, 22px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.7, letterSpacing: "-0.005em", margin: 0 }}>
+          <p style={{ fontFamily: fonts.serif, fontSize: "clamp(18px, 1.9vw, 22px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.7, letterSpacing: "-0.005em", margin: "0 auto", maxWidth: "64ch" }}>
             {post.intro}
           </p>
         </div>
@@ -3032,12 +3033,12 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         {/* Company practice links: cross-links to /questions/[slug] pages (canonical) */}
         {post.practicePageSlugs && post.practicePageSlugs.length > 0 && (
           <section style={{ marginTop: 48 }}>
-            <h2 style={{
+            <p style={{
               fontFamily: fonts.sans, fontSize: 12, fontWeight: 700,
               color: t.copper, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14,
             }}>
               Practice these questions on HireStepX
-            </h2>
+            </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               {post.practicePageSlugs.map(({ label, slug }) => (
                 <Link key={slug} href={`/questions/${slug}`} style={{
@@ -3081,7 +3082,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                 All posts →
               </Link>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${related.length}, 1fr)`, gap: 24 }}>
+            <div className="blog-related-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${related.length}, 1fr)`, gap: 24 }}>
               {related.map(r => <CompactCard key={r.slug} post={r} />)}
             </div>
           </section>

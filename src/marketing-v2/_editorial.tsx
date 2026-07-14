@@ -61,8 +61,8 @@ export const editorialCSS = `
   .ed-prose em { font-style: italic; }
   .ed-prose a { color: ${t.copper}; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
   .ed-prose ul { margin: 0 0 1.15em; padding: 0; list-style: none; }
-  .ed-prose ul > li { position: relative; padding-left: 26px; margin-bottom: 0.6em; }
-  .ed-prose ul > li::before { content: ""; position: absolute; left: 4px; top: 0.62em; width: 6px; height: 6px; border-radius: 50%; background: ${t.copper}; }
+  .ed-prose ul > li { position: relative; padding-left: 26px; margin-bottom: 0.65em; }
+  .ed-prose ul > li::before { content: ""; position: absolute; left: 4px; top: 0.68em; width: 6px; height: 6px; border-radius: 50%; background: ${t.copper}; }
   .ed-prose ul > li:last-child { margin-bottom: 0; }
   .ed-prose ol { margin: 0 0 1.15em; padding: 0; list-style: none; counter-reset: ed-ol; }
   .ed-prose ol > li { position: relative; padding-left: 38px; margin-bottom: 0.65em; counter-increment: ed-ol; }
