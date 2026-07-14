@@ -913,7 +913,7 @@ export function HowItWorksV2() {
       {/* Why it works */}
       <section
         className="mv2p-section"
-        style={{ ...sectionBase, background: t.indigoDeep, color: t.cream }}
+        style={{ ...sectionBase, background: t.coal, color: t.cream }}
       >
         <div className="mv2-container" style={container}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
