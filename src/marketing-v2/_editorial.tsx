@@ -312,14 +312,12 @@ export function SectionHead({
         <h2
           style={{
             fontFamily: fonts.serif,
-            fontSize: "clamp(28px, 3.6vw, 42px)",
-            lineHeight: 1.08,
-            letterSpacing: "-0.022em",
+            fontSize: "clamp(20px, 2vw, 26px)",
+            lineHeight: 1.1,
+            letterSpacing: "-0.018em",
             color: t.coal,
             margin: 0,
             fontWeight: 400,
-            maxWidth: "20ch",
-            textWrap: "balance" as const,
           }}
         >
           {title}
