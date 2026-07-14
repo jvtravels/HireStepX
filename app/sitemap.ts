@@ -26,6 +26,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
+  /* Bumped 2026-07-14: added recruitmentSteps to all 63 pages, expanded
+     all intros to ≥80w, added dual HowTo schemas on /questions/[slug]. */
   const seoPagesLastModified = new Date("2026-07-14");
 
   const staticEntries: MetadataRoute.Sitemap = [
@@ -63,8 +65,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${baseUrl}/questions`,
       lastModified: seoPagesLastModified,
-      changeFrequency: "monthly" as const,
-      priority: 0.75,
+      changeFrequency: "weekly" as const,
+      priority: 0.88,
     },
   ];
   const questionEntries: MetadataRoute.Sitemap = SEO_PAGES.map((p) => ({

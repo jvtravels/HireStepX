@@ -41,11 +41,13 @@ export const metadata: Metadata = {
     url: "https://hirestepx.com/questions",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: "HireStepX Interview Questions" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Interview Questions by Company & Role | HireStepX",
     description: "Real verified questions for 60+ companies. Practice with AI voice feedback.",
+    images: ["https://hirestepx.com/og-default.png"],
   },
 };
 
