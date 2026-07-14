@@ -10,6 +10,7 @@ import { NavV2, MobileStickyCTA, VideoCtaV2 } from "./marketing-v2/HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./marketing-v2/FooterDome";
 import { useSEO } from "./useSEO";
 import { editorialCSS, MarkdownProse } from "./marketing-v2/_editorial";
+import { RoundFlow, SalaryLadder, TierCompare, FrameworkSteps } from "./marketing-v2/_blog-infographics";
 
 /* PageShell — mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Satoshi, copper
@@ -2095,6 +2096,112 @@ function BlogIndex() {
   );
 }
 
+/* ─── Section infographics ──────────────────────────────────────────────
+   Keyed by "slug||Section Heading". Each value renders after the prose
+   for that section, giving a visual companion to the text content.    */
+const SECTION_VISUALS: Record<string, ReactNode> = {
+  /* Flipkart — interview loop */
+  "flipkart-interview-prep-guide||Interview Structure": (
+    <RoundFlow rounds={[
+      { label: "Online Assessment", duration: "90 min", detail: "DSA filter round" },
+      { label: "Machine Coding", duration: "90 min", detail: "Build a system" },
+      { label: "Problem Solving ×2", duration: "45 min", detail: "Whiteboard DSA" },
+      { label: "System Design", duration: "45–60 min", detail: "SDE-2+ roles" },
+      { label: "Hiring Manager", duration: "30 min", detail: "Culture & ownership" },
+    ]} />
+  ),
+
+  /* Razorpay — interview loop */
+  "razorpay-interview-experience||Interview Process Overview": (
+    <RoundFlow rounds={[
+      { label: "Recruiter Screen", duration: "30 min", detail: "Background & motivation" },
+      { label: "Online Coding", duration: "60 min", detail: "2 DSA problems" },
+      { label: "Technical 1", duration: "~45 min", detail: "DSA + decomposition" },
+      { label: "Technical 2", duration: "~45 min", detail: "System design" },
+      { label: "Culture Round", duration: "~45 min", detail: "Values & ownership" },
+      { label: "Hiring Manager", duration: "30 min", detail: "Final bar raiser" },
+    ]} />
+  ),
+
+  /* Razorpay — compensation */
+  "razorpay-interview-experience||Salary Expectations (2026)": (
+    <SalaryLadder maxLPA={80} rows={[
+      { role: "SDE-1", min: 15, max: 25 },
+      { role: "SDE-2", min: 28, max: 45 },
+      { role: "SDE-3", min: 50, max: 70 },
+      { role: "PM",    min: 25, max: 50 },
+    ]} caption="Pre-ESOP cash comp, 2026" />
+  ),
+
+  /* TCS — interview process */
+  "tcs-interview-questions-freshers-2026||TCS Interview Process for Freshers": (
+    <RoundFlow rounds={[
+      { label: "NQT", detail: "Aptitude + coding filter" },
+      { label: "Technical Interview", detail: "CS fundamentals" },
+      { label: "Managerial Round", detail: "Behavioral & situational" },
+      { label: "HR Round", detail: "Offer & joining" },
+    ]} />
+  ),
+
+  /* TCS — salary bands */
+  "tcs-interview-questions-freshers-2026||TCS Salary for Freshers (2026)": (
+    <SalaryLadder maxLPA={12} rows={[
+      { role: "TCS Ninja",   min: 0, max: 3.36, note: "most common path" },
+      { role: "TCS Digital", min: 0, max: 7.5 },
+      { role: "TCS Prime",   min: 0, max: 9.5 },
+    ]} caption="NQT coding score determines your band" />
+  ),
+
+  /* Infosys — hiring tracks */
+  "infosys-interview-questions-2026||Infosys Hiring Tracks Explained": (
+    <SalaryLadder maxLPA={12} rows={[
+      { role: "Systems Engineer (SE)",       min: 0,   max: 3.6 },
+      { role: "Power Programmer (PP)",       min: 0,   max: 6.5 },
+      { role: "Digital Specialist (DSE)",    min: 6.5, max: 9.5 },
+    ]} caption="InfyTQ certification skips the aptitude filter" />
+  ),
+
+  /* Engineering Manager — compensation by tier */
+  "engineering-manager-interview-india-2026||Engineering Manager Compensation India 2026": (
+    <TierCompare cards={[
+      {
+        tier: "Tier-1 MNCs",
+        examples: "Google · Microsoft · Amazon",
+        rows: [
+          { label: "EM-1 (5–8 person team)", range: "₹60L – 1 Cr" },
+          { label: "Senior EM (10–20 person team)", range: "₹90L – 1.5 Cr" },
+        ],
+      },
+      {
+        tier: "Fintech Unicorns",
+        examples: "Razorpay · PhonePe · CRED",
+        rows: [
+          { label: "Engineering Manager", range: "₹50 – 80 LPA" },
+          { label: "Senior EM / Head of Eng.", range: "₹80L – 1.2 Cr" },
+        ],
+      },
+      {
+        tier: "Consumer Internet",
+        examples: "Swiggy · Zomato · Flipkart",
+        rows: [
+          { label: "Engineering Manager", range: "₹45 – 75 LPA" },
+          { label: "Senior EM", range: "₹70L – 1.1 Cr" },
+        ],
+      },
+    ]} />
+  ),
+
+  /* Case study — universal framework */
+  "ace-case-study-interviews||The Universal Case Framework": (
+    <FrameworkSteps steps={[
+      { number: "01", label: "Clarify", hint: "Ask questions to narrow the problem scope. Don't assume the company, market, or metric." },
+      { number: "02", label: "Structure", hint: "Build a framework adapted to this problem — don't force-fit a memorised template." },
+      { number: "03", label: "Analyze", hint: "Work through each branch with data, logic, and estimation. Show your reasoning." },
+      { number: "04", label: "Recommend", hint: "State your answer, the key driver, the main risk, and what you'd verify next." },
+    ]} />
+  ),
+};
+
 /* ─── Single blog post ─── */
 function BlogPostPage({ post }: { post: BlogPost }) {
   const related = getRelatedPosts(post.relatedSlugs);
@@ -2171,6 +2278,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
           const match = section.heading.match(/^(\d+)\.\s+(.+)$/);
           const num = match ? match[1].padStart(2, "0") : null;
           const headingText = match ? match[2] : section.heading;
+          const visual = SECTION_VISUALS[`${post.slug}||${section.heading}`];
           return (
             <section key={i} style={{ paddingTop: i === 0 ? 0 : 56, borderTop: i > 0 ? `1px solid ${t.line}` : "none", marginBottom: 0 }}>
               {num && (
@@ -2183,8 +2291,9 @@ function BlogPostPage({ post }: { post: BlogPost }) {
               </h2>
               <MarkdownProse
                 text={section.content}
-style={{ maxWidth: "72ch" }}
+                style={{ maxWidth: "72ch" }}
               />
+              {visual}
             </section>
           );
         })}
