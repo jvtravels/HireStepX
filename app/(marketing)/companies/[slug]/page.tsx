@@ -102,8 +102,9 @@ export async function generateMetadata(
       url: `https://hirestepx.com/companies/${slug}`,
       siteName: "HireStepX",
       locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/og-default.png", width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: { card: "summary_large_image", title, description, images: ["https://hirestepx.com/og-default.png"] },
   };
 }
 
@@ -179,18 +180,56 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
   };
 
   /* Article schema — alongside FAQPage, signals "this is editorial
-     content" rather than a thin landing page. */
+     content" rather than a thin landing page. image is required for
+     Google Discover/News eligibility. */
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: page.searchPhrase,
     description: page.intro,
-    author: { "@type": "Organization", name: "HireStepX" },
+    image: "https://hirestepx.com/og-default.png",
+    author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
     publisher: { "@type": "Organization", name: "HireStepX", logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" } },
     datePublished: "2026-05-05",
     dateModified: "2026-07-14",
     inLanguage: "en-IN",
+    mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/companies/${slug}` },
+    articleSection: focusLabel,
+    keywords: [page.metaKeywords[0], companyLabel, "interview preparation India"].join(", "),
   };
+
+  /* HowTo schema (preparation) — framework summary split on → separators. */
+  const howToSteps = page.framework.summary
+    .split(/\s*→\s*/)
+    .filter(Boolean)
+    .map((step, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: step.split("(")[0].trim(),
+      text: step,
+    }));
+
+  const howToSchema = howToSteps.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: `How to prepare for ${companyLabel} ${focusLabel.toLowerCase()} interviews`,
+    description: page.intro,
+    step: howToSteps,
+  } : null;
+
+  /* HowTo schema (recruitment process) — uses recruitmentSteps when present. */
+  const recruitmentHowToSchema = page.recruitmentSteps && page.recruitmentSteps.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: `${companyLabel} interview process — step by step`,
+    description: `A step-by-step breakdown of the ${companyLabel} ${focusLabel.toLowerCase()} interview process for candidates in India.`,
+    step: page.recruitmentSteps.map((step, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: step.split("—")[0].split("(")[0].trim(),
+      text: step,
+    })),
+  } : null;
 
   /* Deep-link into the interview setup with company + role pre-filled
      so the user can practice immediately. */
@@ -257,6 +296,12 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       {/* Schema injection — placed at top so crawlers see them quickly. */}
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      {howToSchema && (
+        <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
+      )}
+      {recruitmentHowToSchema && (
+        <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(recruitmentHowToSchema) }} />
+      )}
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 

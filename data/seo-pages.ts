@@ -508,7 +508,7 @@ export const SEO_PAGES: SeoPage[] = [
     intro: "Cognizant technical interviews for experienced hires differ sharply from their campus rounds. The panel expects production-grade thinking — SOLID principles, REST API design, deployment pipeline ownership, and real-world trade-off reasoning. 'I used it but don't know why' is a critical red flag: interviewers are specifically trained to probe whether candidates used frameworks and tools passively or understood their underlying mechanics. Come ready to explain every tool in your resume at the component level. Cognizant's experienced-hire technical rounds are role-specific: Java developers face Spring Boot microservice questions; Python candidates face async processing and data pipeline questions; cloud roles probe AWS or Azure service selection. Cognizant also evaluates 'delivery mindset' — the expectation that you can translate technical decisions into client business outcomes, especially for Manager and Senior positions.",
     framework: { name: "SOLID + Deploy", summary: "SOLID design principles → REST contract → Database choice rationale → Deployment/CI pipeline → observability." },
     metaKeywords: ["cognizant technical interview", "cognizant sde interview", "cognizant interview questions 2026", "cognizant lateral hire interview", "cognizant experienced interview india"],
-    sitemapPriority: 0.75,
+    sitemapPriority: 0.80,
     recruitmentSteps: [
       "Online application + resume shortlisting",
       "Technical interview round 1 — coding problem + CS fundamentals, SOLID principles, and REST API design",
@@ -546,7 +546,7 @@ export const SEO_PAGES: SeoPage[] = [
     intro: "Accenture's behavioral rounds for experienced hires probe client-management competencies more than technical depth. Expect questions about stakeholder conflict, scope creep, and timeline pressure — scenarios drawn directly from consulting and IT services delivery. Stories where you calmed a difficult client, recovered a delayed project, or navigated competing priorities between onshore and offshore teams resonate most with Accenture panels. The assessment also measures communication quality explicitly — Accenture is a client-facing organisation and unclear or low-confidence answers are a red flag independent of content accuracy. STAR stories should include specific outcomes: percentage improvement in delivery timelines, client satisfaction scores recovered, or team headcount managed. Lateral hires targeting Manager or above should prepare a story about managing upward — influencing stakeholder decisions at a director or partner level.",
     framework: { name: "CAR for consulting behavior", summary: "Context (client/delivery situation) → Action (your specific intervention, not the team's) → Result (deliverable shipped, escalation avoided, relationship preserved)." },
     metaKeywords: ["accenture behavioral interview", "accenture interview questions", "accenture values interview", "accenture experienced hire interview", "accenture consulting behavioral india"],
-    sitemapPriority: 0.75,
+    sitemapPriority: 0.80,
     recruitmentSteps: [
       "Resume shortlisting for lateral or experienced-hire positions",
       "Technical assessment (role-dependent)",
@@ -798,7 +798,7 @@ export const SEO_PAGES: SeoPage[] = [
     intro: "Meesho PM interviews focus on tier-2/3 India constraints that urban-educated candidates consistently underestimate. Their typical framing: 'Design for a seller who uses a feature-phone, has a 2G connection, and speaks only Kannada.' Empathy with non-English, low-bandwidth, first-time-online users is a genuine differentiator — candidates who grew up in metro cities and haven't directly used Meesho as a seller are at a structural disadvantage without preparation. Cases reward simplification and offline-first distribution strategy over sophisticated UX: Meesho's reseller model distributes through WhatsApp shares, so product design must account for zero in-app discoverability. Meesho PM interviews also test shareholder economics — the reseller margin structure, COD return rates, and seller payment timelines are core product constraints that distinguish Meesho's marketplace from Flipkart or Amazon.",
     framework: { name: "Bharat-first PM", summary: "Language + connectivity constraints first → literacy level (visual over text) → trust signals for first transactions → distribution via WhatsApp/share chain → reseller economics." },
     metaKeywords: ["meesho pm interview", "meesho product manager interview", "meesho case study interview", "meesho pm india 2026", "meesho bharat product interview"],
-    sitemapPriority: 0.75,
+    sitemapPriority: 0.80,
     recruitmentSteps: [
       "Resume screening + recruiter call",
       "Product design round — design for tier-2/3 India: low bandwidth, regional language, feature-phone constraints",
@@ -866,7 +866,7 @@ export const SEO_PAGES: SeoPage[] = [
     intro: "Freshworks PM interviews start with an unusual premise for consumer-product-trained candidates: the primary user is the support agent or CRM operator, not the end customer. Their PM cases ask you to design for operational efficiency — reducing average handle time, automating ticket routing, improving agent sentiment scores. Cases favour candidates who understand the B2B SaaS buying journey: a decision made by a VP of Customer Success, implemented by IT, and used daily by 200 support agents is a fundamentally different product motion than a consumer app. Freshworks competes in a global B2B SaaS market against Zendesk, ServiceNow, and Salesforce — knowing what differentiates Freshdesk, Freshsales, and Freshservice at a product level is expected preparation for PM interviews. The company has a strong Chennai engineering base and Chennai-specific PM roles often focus on building for SMB customers across Southeast Asia.",
     framework: { name: "B2B SaaS PM", summary: "Define the agent/operator persona → identify friction in their workflow → prioritise by time-saved per agent × agent count → build-vs-integrate decision → success metric (AHT reduction, CSAT lift)." },
     metaKeywords: ["freshworks pm interview", "freshworks product manager interview", "freshworks case study", "freshworks b2b saas pm interview", "freshworks pm india 2026"],
-    sitemapPriority: 0.75,
+    sitemapPriority: 0.80,
     recruitmentSteps: [
       "Resume screening + recruiter call",
       "Product design round — design for B2B SaaS operators (agents, support leads), focus on workflow efficiency",
@@ -1035,7 +1035,7 @@ export const SEO_PAGES: SeoPage[] = [
     intro: "LinkedIn PM interviews are unique because you're interviewing at the platform you used to get the interview. Interviewers will ask 'How would you improve LinkedIn Jobs?' or 'Design a feature for LinkedIn India's blue-collar workers.' Having a specific, data-backed opinion about LinkedIn's product shortcomings — and a constructive improvement — is the most memorable thing you can do. LinkedIn's interview loop runs 4–5 rounds covering product thinking, execution depth, analytical reasoning, and behavioral fit. The platform's dual economy — job seekers and recruiters — means PM candidates must understand both sides of the marketplace, not just one user persona.",
     framework: { name: "Platform insider", summary: "User segment (creators vs consumers vs job seekers) → current friction point (with example) → feature proposal → success metric (engagement + retention) → monetisation upside." },
     metaKeywords: ["linkedin pm interview india", "linkedin product manager interview 2026", "linkedin india interview", "linkedin pm case study", "linkedin product manager india 2026"],
-    sitemapPriority: 0.75,
+    sitemapPriority: 0.80,
     recruitmentSteps: [
       "Recruiter screen — product background, motivation, and LinkedIn product familiarity (30 min)",
       "Product thinking round — improve a LinkedIn feature or design a new one for a specific segment",
@@ -1118,7 +1118,7 @@ export const SEO_PAGES: SeoPage[] = [
     intro: "OYO engineering interviews have evolved significantly post-restructuring. The bar is now rigorous — expect 3–4 rounds with a strong system design component focused on hotel booking, dynamic pricing, and property management systems. OYO interviewers specifically ask about designing for markets where properties go offline unexpectedly — graceful degradation matters here. OYO operates in 35+ countries with significant presence in India, Southeast Asia, and Europe; the scale and distribution challenges are real. Candidates who demonstrate understanding of operational complexity — variable property quality, partner onboarding at scale, and cancellation-policy consistency — stand out in both system design and behavioral rounds.",
     framework: { name: "Hospitality systems", summary: "Inventory availability in near-realtime → dynamic pricing algorithm → booking idempotency → property onboarding pipeline → partner reconciliation → cancellation policy engine." },
     metaKeywords: ["oyo engineering interview india", "oyo sde interview 2026", "oyo system design interview", "oyo technical interview"],
-    sitemapPriority: 0.75,
+    sitemapPriority: 0.80,
     recruitmentSteps: [
       "Online assessment or recruiter screen — coding round (medium DSA, 60 minutes)",
       "Technical round 1 — DSA + problem decomposition",
