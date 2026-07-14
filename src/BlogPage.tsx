@@ -6,10 +6,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { tokens as t, fonts } from "./auth/_tokens";
-import { NavV2, MobileStickyCTA } from "./marketing-v2/HomepageV2";
+import { NavV2, MobileStickyCTA, VideoCtaV2 } from "./marketing-v2/HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./marketing-v2/FooterDome";
 import { useSEO } from "./useSEO";
-import { editorialCSS, MarkdownProse, DarkBand, ctaPrimaryStyle } from "./marketing-v2/_editorial";
+import { editorialCSS, MarkdownProse } from "./marketing-v2/_editorial";
 
 /* PageShell — mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Satoshi, copper
@@ -2098,15 +2098,8 @@ function BlogIndex() {
 
       </div>
 
-      {/* Closing CTA — full-bleed coal band */}
-      <DarkBand eyebrow="Stop reading" title="Start" accent="practicing.">
-        <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>
-          AI mock interviews with instant feedback. Three sessions free, no card required.
-        </p>
-        <Link href="/signup" onClick={() => captureClientEvent("blog_cta_click", { location: "blog_index" })} className="ed-cta" style={ctaPrimaryStyle("lg")}>
-          Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
-        </Link>
-      </DarkBand>
+      {/* Closing CTA — homepage video CTA */}
+      <VideoCtaV2 />
     </BlogShell>
   );
 }
@@ -2302,15 +2295,8 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         )}
       </article>
 
-      {/* Closing CTA — full-bleed coal band, the editorial rhythm break */}
-      <DarkBand eyebrow="Reading is step one" title="Now go" accent="practice it.">
-        <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "34ch", margin: 0 }}>
-          {post.cta}
-        </p>
-        <Link href="/signup" onClick={() => captureClientEvent("blog_cta_click", { slug: post.slug, title: post.title, location: "post_body" })} className="ed-cta" style={ctaPrimaryStyle("lg")}>
-          Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
-        </Link>
-      </DarkBand>
+      {/* Closing CTA — homepage video CTA */}
+      <VideoCtaV2 />
     </BlogShell>
   );
 }
