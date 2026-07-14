@@ -595,7 +595,7 @@ export function MarkdownProse({
   return (
     <div
       className={`ed-prose${className ? ` ${className}` : ""}`}
-      style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.75, color: t.coal, ...style }}
+      style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.75, color: t.inkSoft, ...style }}
     >
       {markdownToNodes(text)}
     </div>

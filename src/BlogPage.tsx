@@ -2967,7 +2967,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
                   Question {num}
                 </p>
               )}
-              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.2, letterSpacing: "-0.018em", textWrap: "balance" }}>
+              <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.6vw, 44px)", fontWeight: 400, color: t.coal, marginBottom: 24, lineHeight: 1.15, letterSpacing: "-0.02em", textWrap: "balance" }}>
                 {headingText}
               </h2>
               <MarkdownProse
@@ -2982,7 +2982,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         {/* FAQ Section: matches homepage FAQ design */}
         {post.faqs.length > 0 && (
           <section style={{ marginTop: 0, paddingTop: 56, borderTop: `1px solid ${t.line}`, marginBottom: 56 }}>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.018em" }}>
+            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.6vw, 44px)", fontWeight: 400, color: t.coal, marginBottom: 24, letterSpacing: "-0.02em" }}>
               Frequently asked questions
             </h2>
             <div style={{
