@@ -1882,7 +1882,7 @@ function CompactCard({ post }: { post: BlogPost }) {
   return (
     <article className="blog-card" style={{ display: "flex", flexDirection: "column" }}>
       {/* Image — frameless, portrait ratio, badges float on top */}
-      <div style={{ position: "relative", aspectRatio: "4 / 5", background: t.creamSoft, flexShrink: 0, overflow: "hidden", borderRadius: 12 }}>
+      <div style={{ position: "relative", aspectRatio: "4 / 5", background: t.creamSoft, flexShrink: 0, overflow: "hidden", borderRadius: 12, border: `2px solid ${t.lineStrong}` }}>
         {!imgFailed && (
           <Image
             src={post.heroImage} alt={post.heroAlt}
