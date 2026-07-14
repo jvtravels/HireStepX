@@ -174,9 +174,7 @@ export default async function QuestionsSlugPage({
     mainEntity: faqEntries,
   };
 
-  /* HowTo schema — still generates visual step-by-step rich results in Google
-     SERP as of 2026. The framework summary uses " → " as step separators,
-     which we split into named HowTo steps. */
+  /* HowTo schema (preparation) — framework summary split on → separators. */
   const howToSteps = page.framework.summary
     .split(/\s*→\s*/)
     .filter(Boolean)
@@ -194,6 +192,22 @@ export default async function QuestionsSlugPage({
     description: page.intro,
     step: howToSteps,
   };
+
+  /* HowTo schema (recruitment process) — uses recruitmentSteps when present.
+     Google surfaces this as "How it works" steps on job/interview queries.
+     Kept separate from the preparation HowTo so both signal types coexist. */
+  const recruitmentHowToSchema = page.recruitmentSteps && page.recruitmentSteps.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: `${companyLabel} interview process — step by step`,
+    description: `A step-by-step breakdown of the ${companyLabel} ${focusLabel.toLowerCase()} interview process for candidates in India.`,
+    step: page.recruitmentSteps.map((step, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: step.split("—")[0].split("(")[0].trim(),
+      text: step,
+    })),
+  } : null;
 
   /* Article schema — signals editorial content, not a thin landing page. */
   const articleSchema = {
@@ -242,6 +256,13 @@ export default async function QuestionsSlugPage({
           nonce={nonce || undefined}
           type="application/ld+json"
           dangerouslySetInnerHTML={ldJson(howToSchema)}
+        />
+      )}
+      {recruitmentHowToSchema && (
+        <script
+          nonce={nonce || undefined}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={ldJson(recruitmentHowToSchema)}
         />
       )}
       <script
