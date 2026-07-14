@@ -248,6 +248,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Diagnose framework", summary: "Define metric → segment by axis (geo/cohort/time) → form hypothesis → test → recommend." },
     metaKeywords: ["zomato pm interview", "zomato product manager", "zomato case study", "zomato product interview india 2026", "zomato pm case study questions"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What makes Zomato PM interview cases different from other food-delivery companies?",
+        a: "Zomato cases are grounded in real product diagnostics — restaurant ratings dropping in tier-2 cities, delivery times climbing. The format rewards candidates who decompose ambiguity quickly and segment by geography, cohort, and time before forming a hypothesis. Unlike consumer-only PM interviews, Zomato cases test restaurant-side economics alongside consumer experience — candidates who can only reason from the consumer perspective consistently miss the restaurant-partner half of the marketplace.",
+      },
+      {
+        q: "What vertical should I focus on for Zomato PM interviews — food delivery, Blinkit, or dining?",
+        a: "All three come up. Blinkit (quick commerce) integration questions test whether you understand quick-commerce unit economics vs. food delivery. Dining-out (Dineout) discovery questions probe in-restaurant product design. Food delivery questions are the most common. The hiring manager round explicitly screens for vertical interest — it is better to have a genuine preference and explain it specifically than to claim equal interest in all three.",
+      },
+      {
+        q: "How does Zomato evaluate the analytics or growth case round?",
+        a: "Zomato's analytical case asks you to diagnose a metric drop or growth opportunity: define the metric clearly, segment across geography/cohort/time/device dimensions, form a hypothesis for each segment, and make a data-backed recommendation. A clean diagnosis with a clear recommendation beats a comprehensive but inconclusive analysis.",
+      },
+    ],
     recruitmentSteps: [
       "Resume screening + recruiter call",
       "Product diagnostic case — metrics drop, root-cause analysis across geo/cohort/time dimensions",
@@ -309,6 +323,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Adversarial design", summary: "Threat model → detection signals → mitigation tiers → false-positive cost." },
     metaKeywords: ["paytm engineering interview", "paytm sde", "paytm system design", "paytm fintech interview"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What makes Paytm system design interviews unique compared to other fintech companies?",
+        a: "Paytm interviews mix scale and abuse-prevention in ways few other companies test. Cashback systems, fraud detection, and merchant payouts all involve adversarial users who actively probe for arbitrage. Interviewers specifically ask 'how do you prevent X' where X is an explicit fraud pattern — double-spending on wallets, referral abuse, QR code replay attacks. Proposing a naive system without fraud considerations is a fast rejection path.",
+      },
+      {
+        q: "What does idempotency mean in the context of Paytm payment flows?",
+        a: "Idempotency means a payment operation produces the same result whether it runs once or multiple times — critical when network failures cause retries. In Paytm's payment flow, a request can arrive twice due to a network timeout and retry: without an idempotency key tied to the original request, you risk processing the same payment twice and debiting the user's wallet twice. Paytm technical interviews specifically test whether candidates reason about idempotency unprompted — candidates who propose 'just retry on failure' without mentioning duplicate-prevention score poorly.",
+      },
+      {
+        q: "How does Paytm handle payments for feature-phone users with poor connectivity?",
+        a: "Paytm's infrastructure handles hundreds of millions of UPI transactions monthly across a fragmented user base that includes feature phones and poor-connectivity regions. Engineering interviews probe how you design for this: offline-first flows (QR codes that work without internet, SMS-based fallback), eventual consistency for ledger systems (balances sync when connectivity restores), and rate limiting that accounts for burst demand when a connectivity window opens. These constraints are specific to India's payment infrastructure and distinguish Paytm interviews from FAANG fintech questions.",
+      },
+    ],
     recruitmentSteps: [
       "Online coding assessment — 2–3 DSA problems, medium difficulty",
       "Technical round 1 — DSA with follow-up questions on edge cases and optimisation",
@@ -939,6 +967,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "THINK for IBM", summary: "Thoughtful problem breakdown → Human impact of solution → Inclusion of edge cases → New learning demonstrated → Knowledge of IBM services." },
     metaKeywords: ["ibm freshers interview", "ibm application developer interview", "ibm campus placement 2026", "ibm fresher interview india 2026", "ibm hiring freshers 2026"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What does IBM look for in fresher interviews beyond technical skills?",
+        a: "IBM specifically evaluates 'curiosity and continuous learning' — their cultural cornerstone. Candidates with self-learning certifications (IBM Badge, AWS Cloud Practitioner, Google Cloud) stand out significantly over those without. IBM is a client-facing consulting and technology firm, so unclear answers are penalised explicitly — communication quality is scored separately from answer quality. Prepare a project you can discuss deeply (architecture, your specific contribution, one trade-off you made) and connect IBM's hybrid-cloud strategy (Red Hat OpenShift, IBM Cloud Pak) to why you want to join.",
+      },
+      {
+        q: "What is the IBM Cognitive Ability + Technical Assessment?",
+        a: "IBM's online assessment covers aptitude (verbal, numerical, abstract reasoning) plus 1–2 coding problems (Python or Java preferred). The aptitude section is harder on logical reasoning than TCS NQT but more predictable in format. IBM does not require competitive programming ability — CS fundamentals at depth (OOP, OS, DBMS, networking basics) and a well-articulated project walkthrough are far more important.",
+      },
+      {
+        q: "What is the salary range for IBM Application Developer freshers in India?",
+        a: "IBM's fresher Application Developer role offers ₹4.5–6.5 LPA depending on the track (GTS vs. GBS) and academic background. IBM's India offices are in Bangalore, Hyderabad, Pune, Delhi NCR, and Kolkata, primarily hiring freshers for software development, testing, and IT consulting roles. The GBS (Global Business Services) consulting track has a slightly higher package ceiling for strong candidates.",
+      },
+    ],
     recruitmentSteps: [
       "Online Application + academic filter (typically 65%+)",
       "Cognitive Ability + Technical Assessment",
@@ -1078,6 +1120,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Domain + Code", summary: "Financial domain awareness (what does a settlement system do) → DSA pattern recognition → System reliability (idempotency, exactly-once delivery) → Communication under pressure." },
     metaKeywords: ["goldman sachs interview india 2026", "goldman sachs sde interview", "goldman sachs analyst interview india", "gs india interview"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What is the Goldman Sachs Super Day and how is it structured?",
+        a: "Goldman Sachs's Super Day is the final onsite/virtual interview day, consisting of 3–4 back-to-back rounds: a hard DSA round, a system design round (financial domain: settlement, risk, audit trail), a risk/behavioral stories round, and a partner or director interview. The full process before Super Day includes a HireVue async video screen (3–4 behavioral questions, 2–3 minutes each), a HackerRank coding assessment (2–3 problems in 90 min), and a technical phone screen. Background verification post-offer takes 3–4 weeks.",
+      },
+      {
+        q: "Why is eventual consistency a fast rejection path in Goldman Sachs system design?",
+        a: "Goldman Sachs systems demand strong consistency because financial data cannot be eventually correct — a ledger that shows different balances on two nodes simultaneously creates legal and compliance problems. Proposing eventual consistency for financial data (account balances, trade settlements, risk positions) signals that a candidate doesn't understand the regulatory and business constraints of financial infrastructure. Always propose ACID-compliant transactions for financial writes and reserve eventual consistency for non-financial aggregations like reporting dashboards.",
+      },
+      {
+        q: "Do Goldman Sachs SDE interviews test financial domain knowledge?",
+        a: "Yes. Goldman Sachs India SDE interviews include extra emphasis on financial domain awareness beyond what FAANG tests. Expect questions about what a settlement system does, how ACID compliance applies to trading ledgers, and what an audit trail requires from a storage perspective. For campus analyst track interviews (₹20–30 LPA from IITs), finance fundamentals (DCF, market moves, understanding of equity vs. debt) are tested separately from the engineering bar.",
+      },
+    ],
     recruitmentSteps: [
       "HireVue video screen (asynchronous) — 3–4 behavioral questions; 30 seconds prep, 2–3 minutes to answer",
       "Online coding assessment — 2–3 DSA problems on HackerRank, 90 minutes (1 medium + 1–2 hard)",
@@ -1186,6 +1242,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Commerce + Logistics", summary: "Write path vs. read path separation → Catalog sharding strategy → Eventual consistency in inventory → COD return flow idempotency → Seller payout reconciliation." },
     metaKeywords: ["meesho engineering interview", "meesho sde interview india", "meesho system design", "meesho technical interview 2026"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What system design topics appear in Meesho engineering interviews?",
+        a: "Meesho system design questions model real infrastructure: catalog search for 150M+ SKUs (sharding strategy), seller-payout settlement (idempotency and eventual consistency), and return-logistics orchestration across tier-3 PIN codes (COD return flow idempotency). The bar has risen significantly as Meesho scales — backend rounds probe eventual consistency in distributed inventory and COD return flow idempotency specifically. Ask about scale (peak QPS, SKU count) early in the design round.",
+      },
+      {
+        q: "What does 'speed over perfection' mean in Meesho interviews?",
+        a: "Meesho's engineering culture rewards candidates who can articulate trade-offs quickly and ship iteratively rather than designing perfect systems upfront. In interviews, this means: state your trade-offs explicitly instead of trying to solve all problems simultaneously, propose an MVP architecture that ships in 2 weeks and a V2 that handles scale, and show you understand which correctness properties (inventory count, financial ledger) require strict consistency vs. which can tolerate eventual consistency (recommendations, analytics).",
+      },
+      {
+        q: "Does Meesho require TypeScript or React skills in frontend engineering interviews?",
+        a: "Yes. Meesho's frontend rounds now expect TypeScript generics and micro-frontend architecture knowledge in addition to standard React proficiency. As Meesho scales its seller dashboard and buyer app, frontend complexity has increased significantly. Expect questions on React performance optimisation (lazy loading, code splitting, bundle size), micro-frontend patterns (Module Federation), and TypeScript generics for API response typing.",
+      },
+    ],
     recruitmentSteps: [
       "Online Assessment — 2–3 DSA problems (medium-hard level, 60–90 minutes)",
       "DSA round — Graphs, DP, or string manipulation with optimisation follow-up",
@@ -1231,6 +1301,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Logistics reliability", summary: "Geospatial indexing strategy → push vs. pull notification → demand prediction model → rebalancing algorithm → fallback path → delivery SLA breach escalation." },
     metaKeywords: ["swiggy engineering interview", "swiggy sde interview india", "swiggy system design", "swiggy technical interview 2026"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What real-time logistics scenarios does Swiggy test in system design interviews?",
+        a: "Swiggy's system design rounds probe logistics under adversarial conditions specific to India: monsoon zone outages (restaurant and delivery partner dropout in simultaneous rain), restaurant denial cascades (how do you handle 30% of restaurants going offline during a cricket final order surge?), and notification delivery under 200ms for 5000 simultaneous order dispatches. Geospatial indexing strategy (Geohash vs. H3), push vs. pull notification architecture, and fallback paths when the primary notification fails are the core design concepts.",
+      },
+      {
+        q: "Does Swiggy test React in frontend engineering interviews?",
+        a: "Yes. Swiggy frontend rounds test React 18 specifics — useTransition, concurrent mode, Suspense for data fetching — and Core Web Vitals (LCP, CLS, INP) grounded in Swiggy's consumer app performance requirements. App startup time and time-to-interactive are production KPIs Swiggy optimises heavily for, so interviewers test whether candidates understand JavaScript bundle optimisation, lazy loading, and rendering performance, not just component APIs.",
+      },
+      {
+        q: "How many rounds does Swiggy engineering interview have?",
+        a: "Swiggy's engineering interview loop has 4–5 rounds: Online Assessment (2–3 DSA problems, medium difficulty, 60–90 min) → Technical Round 1 (coding: arrays, graphs, or DP, 45–60 min) → Technical Round 2 (coding + problem decomposition, 45–60 min) → System Design (real-time logistics or notification architecture, 60 min) → Behavioral Round (ownership, speed under uncertainty, 30–45 min).",
+      },
+    ],
     recruitmentSteps: [
       "Online assessment — 2–3 DSA coding problems (medium difficulty, 60–90 minutes)",
       "Technical round 1 — Coding: arrays, graphs, or dynamic programming",
@@ -1256,6 +1340,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Markets + Engineering", summary: "Order matching logic → margin risk exposure → real-time P&L computation → regulatory compliance hooks → system fail-safe on circuit break events." },
     metaKeywords: ["zerodha interview questions india", "zerodha engineering interview 2026", "zerodha sde interview", "zerodha kite technical"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "Is knowing financial markets required for Zerodha engineering interviews?",
+        a: "Yes — it is a hard requirement, not a nice-to-have. Zerodha gives you a real Kite (trading platform) problem and asks you to reason about it. Interviewers assess passion for markets alongside technical skill. Candidates who don't trade, haven't used Kite, or can't explain order types (market, limit, stop-loss, GTT), margin calculations, and SEBI circuit breaker rules are at a clear disadvantage. The culture round explicitly evaluates whether you care about the product, not just the engineering stack.",
+      },
+      {
+        q: "What does a Zerodha take-home assignment look like?",
+        a: "Zerodha's take-home is a real Kite trading-system problem evaluated on reasoning quality, not speed. Unlike typical take-homes that measure completion, Zerodha evaluates whether you understood the domain constraints: order idempotency (the same order should never execute twice), margin risk exposure calculation, and real-time P&L computation accuracy. A well-reasoned partial solution that correctly identifies the hard constraints outperforms a complete solution that ignores them.",
+      },
+      {
+        q: "What trading system components does Zerodha test in system design?",
+        a: "Zerodha system design rounds cover Kite's core trading infrastructure: order matching engine (price-time priority), real-time P&L computation, position tracking across multiple instruments, regulatory compliance hooks (SEBI reporting, circuit breaker enforcement), and system fail-safe on circuit break events. Latency and reliability are the primary constraints — trading systems at Zerodha's scale must process orders in under 10ms and must never lose an order even during infrastructure failures.",
+      },
+    ],
     recruitmentSteps: [
       "Technical screen or take-home — real trading-system problem, evaluated on reasoning quality",
       "Domain discussion — order types, margin mechanics, SEBI regulations, and market microstructure",
@@ -1279,6 +1377,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "SaaS reliability", summary: "Multi-tenant data isolation → webhook delivery guarantees → customer-facing API stability → SLA monitoring → graceful degradation on 3rd-party API failures." },
     metaKeywords: ["freshworks interview questions india", "freshworks sde interview 2026", "freshworks system design", "freshworks engineering interview"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What does the 'customer-success flavour' mean in Freshworks engineering interviews?",
+        a: "Freshworks builds B2B SaaS products (CRM, support, marketing automation) used by 100+ countries. Interviewers explicitly ask: 'How would you explain this architecture decision to a non-technical customer success manager?' Engineers at Freshworks regularly interface with customers and implementation partners, so the ability to translate technical decisions into business language is scored as a core competency. Candidates who design a technically sound system but can't explain why they made those choices in plain language consistently score lower.",
+      },
+      {
+        q: "What Freshworks system design topics come up in interviews?",
+        a: "Freshworks system design questions frequently involve: multi-tenant data isolation (how do you ensure data from one Freshdesk customer never leaks to another?), webhook delivery guarantees (at-least-once vs. exactly-once delivery for customer notification webhooks), customer-facing API stability (versioning and backwards compatibility), SLA monitoring (how do you detect that a customer's support response time is about to breach their SLA?), and graceful degradation on 3rd-party API failures (email provider outage, telephony provider down).",
+      },
+      {
+        q: "How many rounds does Freshworks SDE interview have?",
+        a: "Freshworks SDE interview loop: Online Assessment (2 medium-difficulty DSA problems, 60–90 min) → DSA Round (medium-hard with distributed systems flavour, 60 min) → System Design (multi-tenant SaaS architecture, 60 min) → Behavioral Round (product empathy, customer-success mindset, ownership stories, 30–45 min). 3–4 rounds total.",
+      },
+    ],
     recruitmentSteps: [
       "Online assessment — 2 DSA problems (medium difficulty, 60–90 minutes)",
       "DSA round — medium-hard problems focused on distributed data structures and algorithms",
@@ -1467,6 +1579,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Chaos-resilient design", summary: "Define failure blast radius → circuit breaker placement → graceful degradation paths → observability (distributed tracing) → runbook for on-call → chaos experiment design." },
     metaKeywords: ["netflix engineering interview india", "netflix sde interview", "netflix system design interview 2026", "netflix technical interview india", "netflix freedom responsibility interview"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What does Netflix's 'Freedom and Responsibility' culture mean for engineering interviews?",
+        a: "Netflix's culture explicitly doesn't use process as a substitute for judgment. The behavioral interview tests whether you can operate autonomously with minimal supervision and make the right call at high velocity. The evaluative question is: 'Can this person make a senior-level decision without waiting to be told?' Stories where you escalated to a manager before taking action, or waited for full consensus, score negatively. Stories where you identified a problem, made a decision with incomplete information, and executed — and can explain the reasoning clearly — score strongly.",
+      },
+      {
+        q: "What is chaos engineering and why does Netflix test it in system design interviews?",
+        a: "Chaos engineering is the practice of deliberately injecting failures into production systems to discover weaknesses before they cause outages. Netflix's Simian Army (including the famous Chaos Monkey that randomly terminates production instances) pioneered this approach. Netflix system design interviews test whether candidates design systems that are resilient to random component failure: circuit breakers that prevent cascading failures, graceful degradation paths when a downstream service is unavailable, and observability (distributed tracing) to diagnose failures in complex microservice architectures.",
+      },
+      {
+        q: "What is the seniority level Netflix India primarily hires for?",
+        a: "Netflix India primarily hires senior engineers — the difficulty bar is higher than most product companies. Their Hyderabad office focuses on backend infrastructure and data engineering. The coding interviews probe medium-hard DSA at senior level, and the system design round covers streaming infrastructure: video encoding pipelines (adaptive bitrate streaming, codec selection), content caching at edge (CDN strategy, cache invalidation), and recommendation systems (collaborative filtering at scale). Entry-level roles are rare.",
+      },
+    ],
     recruitmentSteps: [
       "Recruiter screen — background, seniority calibration, and compensation discussion",
       "Technical phone screen — 1–2 coding problems (medium-hard, 60 min) with a senior engineer",
@@ -1567,6 +1693,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Platform insider", summary: "User segment (creators vs consumers vs job seekers) → current friction point (with example) → feature proposal → success metric (engagement + retention) → monetisation upside." },
     metaKeywords: ["linkedin pm interview india", "linkedin product manager interview 2026", "linkedin india interview", "linkedin pm case study", "linkedin product manager india 2026"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What makes LinkedIn PM interviews unique compared to other social platform PM roles?",
+        a: "LinkedIn's dual economy — job seekers and recruiters — means PM candidates must understand both sides, not just one user persona. Interviewers ask 'How would you improve LinkedIn Jobs?' and expect you to account for recruiter economics (inmails, candidate response rate, hiring manager approval flow) alongside job-seeker experience. India-specific questions frequently involve LinkedIn's blue-collar worker expansion (low-literacy, vernacular language, feature-phone users) — a fundamentally different product challenge from LinkedIn's knowledge-worker core.",
+      },
+      {
+        q: "How important is genuine product knowledge in LinkedIn PM interviews?",
+        a: "Critical. LinkedIn interviewers will ask about the platform you used to get this interview — having a specific, data-backed opinion about a real LinkedIn shortcoming is the most memorable opening. Generic answers about 'improving the feed algorithm' or 'adding more notifications' fail because every interviewer has heard them. Prepare one concrete, specific product critique with a proposed improvement and a success metric. Example: 'LinkedIn's mobile job application form loses candidates mid-flow because it requires re-entering data already on their profile — I'd propose a one-click apply with profile pre-fill and track completion rate as the primary metric.'",
+      },
+      {
+        q: "What are LinkedIn's India-specific product challenges tested in PM interviews?",
+        a: "LinkedIn India PM interviews frequently probe blue-collar worker expansion: designing for users who are first-time smartphone users, have low English literacy, and are searching for jobs in construction, manufacturing, and gig work. These users have fundamentally different discovery patterns (local language, WhatsApp sharing, voice search) and trust signals (family referral > recruiter badge) than LinkedIn's traditional knowledge-worker segment. Cases that show genuine empathy with this user group stand out from candidates who only design for software engineers.",
+      },
+    ],
     recruitmentSteps: [
       "Recruiter screen — product background, motivation, and LinkedIn product familiarity (30 min)",
       "Product thinking round — improve a LinkedIn feature or design a new one for a specific segment",
@@ -1591,6 +1731,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Document + Data design", summary: "Real-time collaboration (operational transforms or CRDT) → versioning and conflict resolution → multi-tenant data isolation → high-throughput event pipeline → access control granularity." },
     metaKeywords: ["adobe engineering interview india", "adobe sde interview", "adobe technical interview noida", "adobe system design"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What system design topics appear in Adobe India engineering interviews?",
+        a: "Adobe's system design questions frequently involve document collaboration infrastructure (Acrobat, Sign, XD) or digital marketing data pipelines (Analytics, Campaign, Marketo). Recurring prompts include: real-time document collaboration (operational transforms or CRDT for conflict resolution), document versioning and audit trail, multi-tenant data isolation for enterprise Creative Cloud, and high-throughput event pipeline for Adobe Analytics (processing billions of web events daily). Connecting your design choices to Adobe's actual product constraints distinguishes candidates from those with purely academic system design knowledge.",
+      },
+      {
+        q: "What is the Adobe low-level design round and how is it different from system design?",
+        a: "Adobe's low-level design round tests class-level OOP design with interface definitions — not a high-level block diagram. Common prompts: design a document editor (cursor, selection, undo/redo), calendar system (recurring events, timezone handling), or library management system. Interviewers explicitly probe extensibility: 'what if we add feature X next quarter?' tests whether your architecture is rigid or designed for evolution. Clean interface segregation, proper encapsulation, and SOLID principles are evaluated — verbose but poorly structured designs score lower than lean but well-abstracted ones.",
+      },
+      {
+        q: "Which Adobe offices in India hire engineers?",
+        a: "Adobe India primarily hires at two offices: Noida (Delhi NCR) and Bangalore. Noida hires heavily for Creative Cloud and Document Cloud infrastructure teams — Acrobat, Sign, and XD. Bangalore focuses on digital experience and marketing technology — Analytics, Campaign, Marketo, and Experience Manager. Role focus varies significantly by office; clarifying the team's product area before the interview helps tailor system design preparation.",
+      },
+    ],
     recruitmentSteps: [
       "Online application + recruiter screen — Adobe Noida and Bangalore offices",
       "DSA round (60 min) — medium-hard problems with graph or DP focus",
@@ -1684,6 +1838,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Hospitality systems", summary: "Inventory availability in near-realtime → dynamic pricing algorithm → booking idempotency → property onboarding pipeline → partner reconciliation → cancellation policy engine." },
     metaKeywords: ["oyo engineering interview india", "oyo sde interview 2026", "oyo system design interview", "oyo technical interview"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What system design topics does OYO test in engineering interviews?",
+        a: "OYO system design rounds focus on hotel booking, dynamic pricing, and property management systems. OYO-specific design concerns include: inventory availability in near-realtime (properties frequently go offline unexpectedly, so the system must handle stale availability gracefully), dynamic pricing algorithms (demand-based pricing that accounts for occupancy, competitor rates, and advance booking horizon), booking idempotency (handling double-bookings when a property's availability changes between lock and confirmation), and partner reconciliation (settling payments with 50,000+ property partners across 35+ countries).",
+      },
+      {
+        q: "How has OYO's interview bar changed post-restructuring?",
+        a: "OYO engineering interviews have evolved significantly post-restructuring. The bar is now rigorous — expect 3–4 rounds with a strong system design component. Pre-2022, OYO was known for rapid hiring at lower bars; post-restructuring, the team is leaner and the technical and behavioral expectations have risen considerably. Candidates who prepared for the 'old OYO' are sometimes surprised by the depth of system design probing around operational complexity.",
+      },
+      {
+        q: "What does OYO's global operations mean for system design questions?",
+        a: "OYO operates in 35+ countries with significant presence in India, Southeast Asia, and Europe. This surfaces as a specific design constraint in interviews: how does your system handle properties in different timezones, currencies, and tax regimes? How does cancellation policy consistency work across Indian and European regulatory frameworks? Stories involving cross-border or multi-market complexity resonate in the behavioral round — they signal that you understand OYO's operational reality beyond the Indian context.",
+      },
+    ],
     recruitmentSteps: [
       "Online assessment or recruiter screen — coding round (medium DSA, 60 minutes)",
       "Technical round 1 — DSA + problem decomposition",
@@ -1803,6 +1971,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "IBM values signalling", summary: "Service orientation story → teamwork over individual glory → client-impact metric → willingness to learn new tech → IBM Innovation story link (research, Watson, hybrid cloud)." },
     metaKeywords: ["ibm campus placement india", "ibm fresher interview 2026", "ibm cognitive ability test", "ibm gbs gts interview india"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What is the difference between IBM GBS and GTS campus tracks?",
+        a: "IBM's campus hiring has two distinct tracks: GBS (Global Business Services) has a case and consulting flavour suited to engineering graduates interested in business transformation and client advisory work; GTS (Global Technology Services) is technical and focused on application development, testing, and cloud infrastructure. GBS includes a group discussion round; GTS does not. Candidates should identify which track they're applying for before preparing — the interview format, question style, and evaluation criteria differ meaningfully.",
+      },
+      {
+        q: "How hard is IBM's Cognitive Ability Assessment compared to other campus tests?",
+        a: "IBM's Cognitive Ability Assessment (verbal, numerical, and abstract reasoning) is harder than TCS NQT on logical reasoning but more predictable in format than Wipro NLTH. This is the main filter for IBM campus recruitment. IBM does not require competitive programming ability — the coding section tests CS fundamentals (OOP, OS, DBMS, networking basics) at depth rather than algorithm optimization. A well-articulated project walkthrough is far more important to the final hire decision than coding speed.",
+      },
+      {
+        q: "What does IBM's 'Think' culture mean for behavioral interviews?",
+        a: "IBM's 'Think' culture values learning agility. Being able to say 'I don't know this yet but I learn quickly by doing X' is an acceptable and often appreciated answer in IBM interviews, especially when paired with a concrete learning story — a certification completed, a side project started, a new technology adopted within 30 days. This is a distinct contrast to companies that penalise knowledge gaps. IBM interviewers are trained to score curiosity and initiative alongside technical correctness.",
+      },
+    ],
     recruitmentSteps: [
       "Apply via IBM campus recruitment portal or participate in campus drive",
       "Cognitive Ability Assessment (online): Verbal, Numerical, Abstract reasoning",
@@ -1919,6 +2101,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Wipro HR essentials", summary: "Relocation yes (be explicit) → night-shift availability yes → why Wipro (cite WILP/TurboHire/specific practice) → strength with work example → weakness with mitigation → 5-year goal aligned with IT services growth." },
     metaKeywords: ["wipro hr round questions", "wipro behavioral interview", "wipro interview tips", "wipro nlth interview 2026"],
     sitemapPriority: 0.8,
+    faqExtra: [
+      {
+        q: "What specific Wipro initiatives should I mention in 'why Wipro'?",
+        a: "A strong 'why Wipro' answer cites a specific practice or initiative: Wipro's VLSI design practice (one of India's largest), Wipro's SAP Centre of Excellence, Wipro's cybersecurity practice (FullStride Cloud), or the WILP (Wipro Integrated Learning Programme) for freshers. Connecting one to your background or career goal converts a generic answer into a specific one. Example: 'I'm specifically interested in Wipro's SAP practice — I built an ERP module integration in my final-year project and want to work with enterprise customers on SAP implementations.'",
+      },
+      {
+        q: "How does the WILP Wipro behavioral interview differ from the standard HR round?",
+        a: "WILP (Wipro Integrated Learning Programme) hires face the most rigorous behavioral interview. Since WILP candidates join fresh from college into a structured 6-month training programme, Wipro specifically probes self-motivation and learning agility rather than experience. Expect questions about how you handled a challenging learning situation, what you taught yourself outside of college, and how you plan to contribute during the training period. The standard Elite NTH HR round is shorter and covers relocation, shift, bond, and salary — less depth on learning agility.",
+      },
+      {
+        q: "What is Wipro TurboHire and how does it differ from regular HR interviews?",
+        a: "TurboHire refers to Wipro's Turbo track (₹6.5 LPA), not a third-party tool. Turbo hires face a more values-oriented behavioral conversation about initiative and coding passion compared to the NTH/Elite standard HR format. Turbo interviewers specifically probe: what have you built beyond college coursework, what competitive programming achievements do you have, and why do you want a role that requires stronger technical skills than Wipro's standard SE track. The coding commitment story matters here.",
+      },
+    ],
     recruitmentSteps: [
       "Cleared online assessment and technical interview",
       "HR Interview — final stage before offer",
