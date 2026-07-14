@@ -200,7 +200,7 @@ export default async function CompaniesIndexPage() {
                 <div className="co-group-split" style={{ display: "flex", gap: 64, alignItems: "flex-start" }}>
 
                   {/* Left panel */}
-                  <div className="co-group-label" style={{ flexShrink: 0, width: 256 }}>
+                  <div className="co-group-label" style={{ flexShrink: 0, width: 256, position: "sticky", top: 24, alignSelf: "flex-start" }}>
                     <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 12px" }}>
                       {String(gi + 1).padStart(2, "0")} / {String(GROUPS.length).padStart(2, "0")}
                     </p>
