@@ -405,7 +405,7 @@ export const BLOG_META: BlogMeta[] = [
     metaDescription: "Complete Goldman Sachs India interview guide for 2026. Covers the HireVue video screening, technical round (DSA + system design), super day, and salary for SDE and Analyst roles.",
     datePublished: "2026-07-01",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=630&fit=crop",
-    company: "Goldman Sachs", category: "Finance & Banking Tech",
+    company: "goldman", category: "Finance & Banking Tech",
     faqs: [
       { question: "Is Goldman Sachs India different from Wall Street GS?", answer: "The Bengaluru and Hyderabad offices do real engineering work — not outsourced support. GS India builds core trading infrastructure, risk systems, and engineering platforms used globally." },
       { question: "What is Goldman Sachs SDE salary in India 2026?", answer: "Goldman Sachs SDE-1 salary in India 2026 is ₹30–43 LPA (base + bonus). This is comparable to senior SDE roles at Indian unicorns." },
@@ -569,7 +569,7 @@ export const BLOG_META: BlogMeta[] = [
     metaDescription: "Prepare for JP Morgan interviews in India. Covers SDE, Business Analyst, and Quant roles — coding rounds, HireRight assessment, technical screens, and HR behavioral questions with sample answers.",
     datePublished: "2026-07-14",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=630&fit=crop",
-    company: "JP Morgan", category: "Full Guide",
+    company: "jpmc", category: "Full Guide",
     faqs: [
       { question: "Does JP Morgan India have a coding test?", answer: "Yes — SDE roles have a 90-minute HackerRank or Codility online assessment with 2–3 DSA problems at medium difficulty. Business Analyst and Quant roles skip this and have quantitative reasoning or case study rounds instead." },
       { question: "What is JP Morgan SDE salary in India 2026?", answer: "JP Morgan SDE-1 (Associate) in India earns ₹18–28 LPA including base and bonus. SDE-2 (Senior Associate) earns ₹28–45 LPA." },

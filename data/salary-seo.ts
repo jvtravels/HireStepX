@@ -246,6 +246,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
     ],
+    questionSlug: "freshworks-sde-interview-questions",
     hubNote: "Nasdaq-listed — RSU + modest equity in SaaS scale",
   },
   {
@@ -257,6 +258,7 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
       { roleKey: "software-engineer", label: "Software Engineer" },
       { roleKey: "product-manager", label: "Product Manager" },
     ],
+    questionSlug: "zoho-engineering-interview-questions",
     hubNote: "Bootstrapped — no equity, but stable & above-market fixed",
   },
   {
