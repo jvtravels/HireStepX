@@ -151,8 +151,8 @@ export default async function CompaniesIndexPage() {
               id={group.id}
               className="ed-section ed-reveal"
               style={{
-                paddingTop: 76,
-                paddingBottom: 76,
+                paddingTop: 72,
+                paddingBottom: 72,
                 borderBottom: `1px solid ${t.line}`,
                 background: gi % 2 === 1 ? t.creamSoft : t.cream,
               }}

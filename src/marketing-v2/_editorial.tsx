@@ -19,7 +19,7 @@ const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 /* One <style> block, dropped once per page. Namespaced .ed-* so it never
    collides with the homepage's .mv2-* or the blog's .blog-* rules. */
 export const editorialCSS = `
-  .ed-container { max-width: 1120px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }
+  .ed-container { max-width: 1240px; margin: 0 auto; padding-left: 48px; padding-right: 48px; }
   .ed-reading { max-width: 720px; }
 
   /* Load cascade — plays once on first paint. Stagger via delay classes. */
@@ -71,8 +71,8 @@ export const editorialCSS = `
 
   @media (max-width: 720px) {
     .ed-container { padding-left: 20px !important; padding-right: 20px !important; }
-    .ed-hero { padding-top: 56px !important; padding-bottom: 44px !important; }
-    .ed-section { padding-top: 52px !important; padding-bottom: 52px !important; }
+    .ed-hero { padding-top: 64px !important; padding-bottom: 52px !important; }
+    .ed-section { padding-top: 56px !important; padding-bottom: 56px !important; }
     .ed-close { padding-top: 64px !important; padding-bottom: 64px !important; }
     .ed-split { flex-direction: column !important; align-items: flex-start !important; gap: 28px !important; }
     .ed-cta-row { flex-direction: column !important; align-items: stretch !important; }
@@ -186,8 +186,8 @@ export function EditorialHero({
       className="ed-hero"
       style={{
         position: "relative",
-        paddingTop: 88,
-        paddingBottom: 68,
+        paddingTop: 96,
+        paddingBottom: 72,
         background: t.cream,
         borderBottom: `1px solid ${t.line}`,
         overflow: "hidden",
