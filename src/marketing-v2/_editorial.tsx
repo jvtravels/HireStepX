@@ -31,11 +31,13 @@ export const editorialCSS = `
   .ed-d4 { animation-delay: 0.34s; }
   .ed-d5 { animation-delay: 0.44s; }
 
-  /* Scroll reveal — progressive enhancement. Element is visible by default;
-     where animation-timeline is supported it fades up as it enters view. */
+  /* Scroll reveal — progressive enhancement. Element is always visible (opacity
+     never goes to 0); only transform animates so content is never hidden while
+     below the fold (animation-fill-mode:both on opacity caused blank pages with
+     many off-screen sections). */
   @supports (animation-timeline: view()) {
-    @keyframes edReveal { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-    .ed-reveal { animation: edReveal linear both; animation-timeline: view(); animation-range: entry 0% cover 22%; }
+    @keyframes edReveal { from { transform: translateY(20px); } to { transform: none; } }
+    .ed-reveal { animation: edReveal linear forwards; animation-timeline: view(); animation-range: entry 0% cover 25%; }
   }
 
   /* Card hover lift */
