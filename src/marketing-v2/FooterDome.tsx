@@ -20,7 +20,7 @@ import { tokens as t, fonts } from "../auth/_tokens";
 const PRODUCT_LINKS: Array<[string, string]> = [
   ["How it works", "/how-it-works"],
   ["Pricing", "/pricing"],
-  ["Blog", "/blog"],
+  ["Blogs", "/blog"],
   ["Companies", "/companies"],
   ["Interview Prep", "/interview-prep"],
   ["Practice Questions", "/questions"],
