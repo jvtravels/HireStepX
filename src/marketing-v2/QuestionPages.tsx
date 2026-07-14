@@ -236,6 +236,7 @@ export interface QuestionSetPageProps {
   focusLabel: string;
   relatedPages: { slug: string; searchPhrase: string }[];
   relatedBlogPosts?: { slug: string; title: string }[];
+  salaryPageSlug?: string;
 }
 
 export function QuestionSetPage({
@@ -246,6 +247,7 @@ export function QuestionSetPage({
   focusLabel,
   relatedPages,
   relatedBlogPosts = [],
+  salaryPageSlug,
 }: QuestionSetPageProps) {
   const practiceHref = `/signup?source=questions-seo&company=${encodeURIComponent(page.company)}&focus=${encodeURIComponent(page.focus)}${page.roleFamily ? `&role=${encodeURIComponent(page.roleFamily)}` : ""}`;
 
@@ -588,6 +590,17 @@ export function QuestionSetPage({
                       </Link>
                     </li>
                   ))}
+                  {salaryPageSlug && (
+                    <li>
+                      <Link
+                        href={`/salary/${salaryPageSlug}`}
+                        className="ed-link"
+                        style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}
+                      >
+                        {companyLabel} Salary Guide India 2026 →
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </section>
             )}

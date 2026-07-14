@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../../../../data/seo-pages";
+import { getSalaryPage } from "../../../../data/salary-seo";
 import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
 import { QuestionSetPage } from "@/marketing-v2/QuestionPages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
@@ -253,6 +254,9 @@ export default async function QuestionsSlugPage({
     .slice(0, 4)
     .map((p: SeoPage) => ({ slug: p.slug, searchPhrase: p.searchPhrase }));
 
+  /* Salary page cross-link — show when a /salary/[company] page exists for this company. */
+  const salaryPage = getSalaryPage(page.company);
+
   /* Related blog posts: same company (BLOG_META.company is title-case, SEO company is lowercase). */
   const relatedBlogPosts = BLOG_META
     .filter((post) => post.company.toLowerCase() === page.company)
@@ -307,6 +311,7 @@ export default async function QuestionsSlugPage({
         focusLabel={focusLabel}
         relatedPages={relatedPages}
         relatedBlogPosts={relatedBlogPosts}
+        salaryPageSlug={salaryPage?.slug}
       />
       <FooterDome />
       <MobileStickyCTA />

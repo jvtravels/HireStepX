@@ -601,6 +601,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "APH for campus", summary: "Aptitude (score above 65%) → Project depth (defend every trade-off) → HR yes-set (relocation, shifts, bond) → specific Wipro reason." },
     metaKeywords: ["wipro nlth preparation 2026", "wipro interview questions freshers", "wipro elite nth", "wipro campus placement", "wipro interview preparation 2026"],
     sitemapPriority: 0.9,
+    faqExtra: [
+      {
+        q: "What is the difference between Wipro Elite NTH and Turbo track?",
+        a: "Wipro Elite NTH (₹3.5 LPA) is the standard fresher track. Wipro Turbo (₹6.5 LPA) requires clearing an additional coding round with 3 medium-hard DSA problems in 90 minutes. Top decile aptitude scores are required to qualify for the Turbo track.",
+      },
+      {
+        q: "How many rounds are in Wipro campus interview 2026?",
+        a: "Wipro campus interview has 3 rounds: Online Assessment (aptitude + written communication + coding), a Technical Interview (45 min covering OOP, SQL, OS basics, and project walkthrough), and an HR Interview (relocation, shift flexibility, bond acceptance).",
+      },
+      {
+        q: "What are Wipro's non-negotiable HR requirements for freshers?",
+        a: "Wipro HR round requires an explicit 'yes' to all-India relocation, night-shift availability, and the service bond period — typically 1 year with a ₹75,000 penalty for early exit. Any hesitation on relocation is scored negatively. Prepare direct, unqualified answers to all three.",
+      },
+    ],
     recruitmentSteps: [
       "Online Application via Wipro WILP portal or campus TnP cell",
       "Aptitude Test — Quantitative, Verbal, Logical + Written Communication",
@@ -646,6 +660,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "CAP for fresher IT", summary: "Clarity first (explain concepts in plain English) → Application (link every concept to a use case) → Proof (one code snippet or formula to verify)." },
     metaKeywords: ["hcl freshers interview", "hcl get interview questions", "hcl campus placement 2026", "hcl techbee interview"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What is the HCL GET (Graduate Engineer Trainee) programme?",
+        a: "HCL Graduate Engineer Trainee is the primary fresher hiring programme for engineering graduates. The selection includes an online test (aptitude, reasoning, verbal, pseudo-code) followed by a combined technical and HR interview. HCL also runs the TechBee programme for diploma holders as an early-entry route.",
+      },
+      {
+        q: "What is the HCL iStar track and how do I qualify?",
+        a: "HCL iStar is a premium hire track with higher CTC. Qualification requires an academic performance above 7.5 CGPA and a stronger technical interview performance. The online test score is also a factor — top-percentile performers are flagged for iStar consideration.",
+      },
+      {
+        q: "Why does HCL emphasise communication quality in interviews?",
+        a: "HCL is a client-facing IT services company. Interviewers score communication quality explicitly alongside technical accuracy — articulate, confident answers consistently score better than technically correct but unclear ones. This is especially important in the combined technical + HR interview round.",
+      },
+    ],
     recruitmentSteps: [
       "Online Registration at HCL Careers or campus TnP cell",
       "Online Assessment — Aptitude, Logical Reasoning, Verbal, Pseudo Code",
@@ -668,6 +696,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "TIME for aptitude", summary: "Tough questions → skip for now. Identify easy ones first → Mark for review → Execute with exact formulas → return to skipped." },
     metaKeywords: ["cognizant genc interview", "cognizant fresher interview", "cognizant campus placement 2026", "cognizant genc pro"],
     sitemapPriority: 0.9,
+    faqExtra: [
+      {
+        q: "What is the difference between Cognizant GenC and GenC Pro?",
+        a: "Cognizant GenC (₹4 LPA) is the standard fresher track. GenC Pro (₹6.5 LPA) requires clearing an additional coding round with 2 medium-level DSA problems in 60 minutes and is targeted at candidates with stronger coding ability. GenC Pro engineers join higher-complexity digital services projects.",
+      },
+      {
+        q: "How many rounds does Cognizant GenC interview have in 2026?",
+        a: "Cognizant GenC interview has 3–4 rounds: Online Assessment (CoCubes proctored — aptitude, reasoning, English, and coding), GenC Pro additional coding round (if applicable), a Technical Interview (CS fundamentals + project Q&A), and an HR Interview (communication quality, relocation, joining).",
+      },
+      {
+        q: "What is the CoCubes test in Cognizant and how should I prepare?",
+        a: "CoCubes is the online proctored test Cognizant uses for fresher screening. It covers English, reasoning, quantitative ability, and a technical section. The key preparation tip: time management is the differentiator — most candidates fail due to pacing issues, not insufficient knowledge. Practice under timed conditions and skip hard questions to return to later.",
+      },
+    ],
     recruitmentSteps: [
       "Apply via campus TnP or Cognizant Careers portal",
       "Online Assessment (CoCubes) — Aptitude, Reasoning, English, Coding",
@@ -712,6 +754,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "CLIENT framework", summary: "Clarity (no jargon) → Leadership mindset → Initiative examples → Enthusiasm for the role → No-gap reasoning → Teamwork story." },
     metaKeywords: ["accenture ase interview", "accenture fresher interview", "accenture icat test", "accenture campus placement 2026"],
     sitemapPriority: 0.9,
+    faqExtra: [
+      {
+        q: "What is the Accenture iCAT test and how is it structured?",
+        a: "The Accenture iCAT (intelligent Communication and Aptitude Test) is the online filter for ASE candidates. It has three sections: Cognitive Ability, Technical Competency, and a Coding section (Java, Python, or C++). The coding section is moderately difficult — comparable to TCS Digital, easier than Wipro Turbo. At least 1 coding problem must fully pass test cases.",
+      },
+      {
+        q: "How many rounds does Accenture ASE interview have?",
+        a: "Accenture ASE interview has 3 rounds: the iCAT Online Test (cognitive + coding filter), a Technical Interview (45 min covering CS fundamentals, 1 coding problem, and project walkthrough), and an HR Interview (30 min evaluating communication quality, values alignment, and relocation).",
+      },
+      {
+        q: "Why does communication matter more in Accenture interview than technical depth?",
+        a: "Accenture is a client-facing IT services and consulting firm. The ASE programme trains engineers who work directly with clients, so the ability to explain technical decisions in plain language is a core job requirement. Unclear or low-confidence answers hurt more at Accenture than at product companies where only technical depth is evaluated.",
+      },
+    ],
     recruitmentSteps: [
       "Online Registration + resume submission",
       "iCAT Online Test — Cognitive Ability, Technical Competency, Coding (Java/Python/C++)",
@@ -755,6 +811,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Adaptive pacing", summary: "Answer what you know confidently → don't rush when questions get harder (that's a good sign) → skip-flag-return → keep calm on impossible questions (they calibrate the ceiling, not your failure)." },
     metaKeywords: ["capgemini interview questions freshers", "capgemini analyst interview", "capgemini campus 2026", "capgemini intelliadapt test"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "What is the Capgemini IntelliAdapt test and how does it work?",
+        a: "IntelliAdapt is Capgemini's adaptive aptitude test — question difficulty adjusts in real time based on your responses. Answering correctly raises the next question's difficulty; wrong answers lower it. Harder questions signal a higher capability score, so pacing and confidence under pressure matter more than elimination strategy. The test runs alongside a 30-minute programming section testing pseudo-code logic and basic coding.",
+      },
+      {
+        q: "Does Capgemini require relocation flexibility?",
+        a: "Yes. All-India relocation is a prerequisite for the Capgemini Analyst role. The HR interview explicitly screens for geographic flexibility. Capgemini's India headcount is concentrated in Bangalore, Hyderabad, Mumbai, Pune, and Chennai — candidates who express openness to all five locations are at an advantage.",
+      },
+      {
+        q: "What is the group discussion round in Capgemini interviews?",
+        a: "Some Capgemini campus drives include a group discussion or extempore session after the online test. The evaluator scores whether you contribute substantively to the discussion versus just speaking to fill time. Pick a clear position, support it with 1–2 specific points, and acknowledge opposing views — quality of argument outweighs speaking duration.",
+      },
+    ],
     recruitmentSteps: [
       "Online Registration via Capgemini or campus TnP",
       "IntelliAdapt Test — Adaptive Aptitude + Programming test",
@@ -778,6 +848,20 @@ export const SEO_PAGES: SeoPage[] = [
     framework: { name: "Code quality focus", summary: "Correct first → readable variable names → edge case handling → time-complexity comment → test mentally before submitting." },
     metaKeywords: ["ltimindtree interview questions freshers", "ltimindtree campus placement 2026", "lti mindtree interview", "ltimindtree technical interview 2026", "ltimindtree fresher hiring india"],
     sitemapPriority: 0.85,
+    faqExtra: [
+      {
+        q: "How hard is the LTIMindtree coding assessment compared to TCS or Wipro?",
+        a: "The LTIMindtree online assessment is measurably harder than TCS NQT or Wipro Elite. It has 3 coding problems of increasing difficulty instead of 2 easy ones. The 3rd problem is hard — the realistic target is solving 2 problems fully with clean code. LTIMindtree specifically looks for production-grade code with clear structure, not just pseudocode that passes test cases.",
+      },
+      {
+        q: "What does LTIMindtree look for in the technical interview?",
+        a: "LTIMindtree's technical interview probes CS fundamentals (OOPS, data structures, database basics) alongside a walkthrough of your final-year or personal project. Expect stronger DSA follow-ups than TCS or Infosys — graph or dynamic programming questions are common. Be ready to explain your project's architecture, your specific contribution, and one trade-off you made.",
+      },
+      {
+        q: "Does mentioning specific industry domains help in the LTIMindtree HR round?",
+        a: "Yes. LTIMindtree's clients span BFSI (banking, financial services, insurance), manufacturing, and retail. Mentioning genuine interest in any of these verticals during the HR round is a positive signal — it shows awareness of their client base and aligns with where their projects are concentrated. The LTIMindtree HR round is shorter and more conversational than TCS or Infosys equivalents.",
+      },
+    ],
     recruitmentSteps: [
       "Online Assessment — Aptitude + 3 Coding Problems",
       "Technical Interview — DSA, CS fundamentals, project walkthrough",

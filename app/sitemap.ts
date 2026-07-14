@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SEO_PAGES } from "../data/seo-pages";
 import { getAllBlogSlugs } from "../src/blog-meta";
+import { getAllSalarySlugs } from "../data/salary-seo";
 
 /* sitemap.xml — generated at build time. Includes:
  *   - Static marketing/legal pages (landing, pricing, privacy, terms, refund)
@@ -77,5 +78,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.75,
   }));
 
-  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries];
+  /* Salary guide pages — /salary hub + /salary/[company]. Added 2026-07-15. */
+  const salaryIndex: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/salary`,
+      lastModified: seoPagesLastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.85,
+    },
+  ];
+  const salaryEntries: MetadataRoute.Sitemap = getAllSalarySlugs().map((slug) => ({
+    url: `${baseUrl}/salary/${slug}`,
+    lastModified: seoPagesLastModified,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
+
+  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries];
 }
