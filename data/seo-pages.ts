@@ -63,21 +63,36 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Flipkart ──────────────────────────────────────────────── */
   {
     slug: "flipkart-pm-interview-questions",
-    searchPhrase: "Flipkart Product Manager Interview Questions",
+    searchPhrase: "Flipkart Product Manager Interview Questions India 2026",
     company: "flipkart", roleFamily: "pm", focus: "case-study",
-    intro: "Flipkart's PM rounds open with an ongoing problem from a real vertical — typically grocery, fashion, or BBD-scale logistics. Expect detailed probes on metrics, hypothesis structure, and prioritisation. The interviewers don't want frameworks recited at them; they want you to use a framework to drive to a recommendation.",
+    intro: "Flipkart PM interviews are one of the most rigorous product interview loops in India. Rounds open with a real, ongoing problem from a specific vertical — typically grocery, fashion, or BBD-scale logistics — and run deep on metrics, hypothesis structure, and prioritisation. The interviewers don't want frameworks recited at them; they want you to use a framework to drive to a concrete recommendation. Product sense is evaluated on real Flipkart context: India-specific users (COD-first, tier-2 buyers, first-time online shoppers), marketplace dynamics with sellers and buyers, and supply chain constraints unique to the Indian market. Knowing what 'good' looks like for a Flipkart feature — not a generic product — is the difference between a 'strong hire' and a 'close call.' Prepare 2-3 case studies from Flipkart verticals you've actually used.",
     framework: { name: "CIRCLES", summary: "Comprehend → Identify customer → Report needs → Cut prioritise → List solutions → Evaluate → Summarise." },
-    metaKeywords: ["flipkart pm interview", "flipkart product manager", "flipkart case study", "flipkart interview practice"],
+    metaKeywords: ["flipkart pm interview", "flipkart product manager interview india", "flipkart case study interview", "flipkart interview questions india", "flipkart pm 2026"],
     sitemapPriority: 0.9,
   },
   {
     slug: "flipkart-sde-interview-questions",
-    searchPhrase: "Flipkart Software Engineer Interview Questions",
+    searchPhrase: "Flipkart Software Engineer Interview Questions India 2026",
     company: "flipkart", roleFamily: "swe", focus: "system-design",
-    intro: "Flipkart engineering loves India-specific constraints — tier-3 pincodes, monsoon delivery, kirana partnerships. Their bar for SDE-2/3 system design is real: you'll be asked to design at 10x current scale and defend trade-offs explicitly.",
+    intro: "Flipkart's SDE interview process runs 5 rounds and sits closer to FAANG in difficulty than a typical Tier-2 product company. The loop starts with an online assessment (2-3 DSA problems, 90 minutes), a machine coding round where you build a working system from scratch in 90 minutes, two problem-solving whiteboard rounds, a system design round for SDE-2+ roles, and a hiring manager behavioral round. Their system design questions are rooted in India-specific constraints — tier-3 pincode delivery, kirana last-mile logistics, monsoon season traffic spikes — and you'll be asked to design at 10x scale and defend trade-offs explicitly. DSA topics that consistently appear: trees and graphs with BFS/DFS variations, medium-hard dynamic programming, hashmaps and two-pointer techniques, and matrix or grid problems.",
     framework: { name: "Capacity-first design", summary: "Start with QPS + storage estimates → reads/writes ratio → bottlenecks → solution → cost." },
-    metaKeywords: ["flipkart sde interview", "flipkart system design", "flipkart software engineer", "flipkart technical interview"],
+    metaKeywords: ["flipkart sde interview", "flipkart interview questions india", "flipkart system design 2026", "flipkart software engineer interview 2026", "flipkart technical interview"],
     sitemapPriority: 0.9,
+    recruitmentSteps: [
+      "Resume screen — competitive; referrals increase visibility significantly",
+      "Online Assessment — 2-3 DSA problems (medium-hard difficulty), 90 minutes",
+      "Machine Coding Round — build a working system from scratch in 90 minutes with clean OOP design",
+      "Problem Solving x2 — whiteboard-style DSA with follow-up complexity questions",
+      "System Design Round — architecture, trade-offs, and 10x scale thinking (SDE-2+ roles primarily)",
+      "Hiring Manager Round — ownership stories, communication clarity, cultural fit",
+    ],
+    interviewRounds: [
+      "Online Assessment (90 min): 2–3 medium-hard DSA problems — the primary filter. Most candidates don't clear this stage.",
+      "Machine Coding (90 min): Build a full working application (parking lot, ride-sharing, inventory system). OOP design, edge-case handling, and extensibility matter.",
+      "Problem Solving x2 (45 min each): Whiteboard DSA with follow-up complexity questions. Trees, graphs, and DP appear most often.",
+      "System Design (60 min, SDE-2+): Design at 10x scale with India-specific constraints. Start with QPS and storage estimates before solution.",
+      "Hiring Manager (45 min): Ownership stories, communication clarity, and 'would this person raise the bar on our team?'",
+    ],
   },
 
   /* ── Razorpay ──────────────────────────────────────────────── */
@@ -258,12 +273,26 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Google ────────────────────────────────────────────────── */
   {
     slug: "google-india-engineering-interview-questions",
-    searchPhrase: "Google India Engineering Interview Questions",
+    searchPhrase: "Google India Engineering Interview Questions 2026",
     company: "google", roleFamily: "swe", focus: "system-design",
-    intro: "Google's SWE rounds prize first-principles thinking and explicit trade-off articulation. Always discuss what you're approximating. The bar-raiser will probe your assumptions with 'what if X were 100x larger?' — your answer reveals depth or its absence.",
+    intro: "Google India has the highest SDE interview bar among FAANG companies. The process runs an online assessment (2-3 LeetCode problems, 60-90 minutes), a technical phone screen (45 minutes, 1-2 coding problems), then a virtual onsite of 4-6 rounds covering coding, system design, and behavioral questions. The coding difficulty skews Medium (85%) to Hard (15%). What distinguishes Google's interview culture is the explicit prize on first-principles thinking over pattern-matching: always articulate what you're approximating and why. Bar-raisers probe assumptions aggressively — 'what if X were 100x larger?' — and candidates who reason from first principles consistently outperform those who've only memorized LeetCode solutions. System design questions cover large-scale distributed systems: messaging at scale, search indexing, URL shortening, location-based services.",
     framework: { name: "First-principles design", summary: "What's the actual constraint? → Without prior solutions, what's the simplest correct approach? → Trade-offs at scale → Approximations that matter." },
-    metaKeywords: ["google india interview", "google sde interview", "google engineering interview", "google system design"],
+    metaKeywords: ["google india interview 2026", "google sde interview india", "google engineering interview questions", "google system design interview", "faang interview india"],
     sitemapPriority: 0.85,
+    recruitmentSteps: [
+      "Apply via Google Careers — referrals significantly improve initial screening odds",
+      "Online Assessment — 2–3 LeetCode-style problems, 60–90 minutes",
+      "Technical Phone Screen — 45 minutes, 1–2 coding problems; talking through your approach is required",
+      "Virtual Onsite — 4–6 rounds same day: coding (x2–3), system design (x1), behavioral Googleyness round (x1)",
+      "Hiring Committee Review — all interviewers submit written scores; committee decides hire/no-hire independently",
+    ],
+    interviewRounds: [
+      "Online Assessment (60-90 min): 2–3 LeetCode Medium-Hard problems. Thinking out loud and explaining your approach matters as much as the solution.",
+      "Phone Screen (45 min): 1–2 coding problems. Silent coding is a red flag at Google — must articulate your reasoning.",
+      "Coding rounds x2–3 (45 min each): Medium-Hard DSA. Graph traversal, DP, and string manipulation appear most often.",
+      "System Design (45–60 min): Large-scale distributed systems. First-principles reasoning required — always start with constraints before solutions.",
+      "Behavioral/Googleyness (45 min): Collaboration, ambiguity handling, and the impact of your work on users.",
+    ],
   },
   {
     slug: "google-pm-interview-questions",
@@ -278,12 +307,25 @@ export const SEO_PAGES: SeoPage[] = [
   /* ── Amazon ────────────────────────────────────────────────── */
   {
     slug: "amazon-leadership-principles-interview",
-    searchPhrase: "Amazon Leadership Principles Interview Questions",
+    searchPhrase: "Amazon Leadership Principles Interview Questions India 2026",
     company: "amazon", roleFamily: "behavioral", focus: "behavioral",
-    intro: "Amazon rounds map every behavioural answer to one of the 16 Leadership Principles. Be explicit about which principle your story illustrates — 'this is a Customer Obsession story because…' Bar-raisers reward this signposting.",
+    intro: "Amazon runs 4-6 interview rounds, each 45-60 minutes, and every round includes 2-3 Leadership Principles behavioral questions alongside technical work. What makes this distinctive: before your loop, each interviewer is assigned specific LPs to probe and arrives with pre-written follow-up questions designed to get past rehearsed answers. The five most-tested principles are Customer Obsession, Ownership, Dive Deep, Bias for Action, and Deliver Results. For each, prepare two concrete STAR stories — one as your lead, a second for when the interviewer says 'tell me another time.' Being explicit about which principle your story illustrates ('this is a Customer Obsession example because...') is a signposting technique that bar-raisers specifically reward. Amazon has the highest volume of SDE hiring in India among FAANG companies.",
     framework: { name: "STAR + LP signposting", summary: "Pick the LP → Situation that highlights it → Task → Action (your specific behaviour, not the team's) → Result (data) → Brief reflection on what you'd do differently." },
-    metaKeywords: ["amazon leadership principles", "amazon behavioral interview", "amazon star interview", "amazon lp interview"],
+    metaKeywords: ["amazon leadership principles interview", "amazon behavioral interview india", "amazon star interview questions", "amazon lp interview 2026", "amazon sde interview india"],
     sitemapPriority: 0.9,
+    recruitmentSteps: [
+      "Online Assessment — 2-3 LeetCode coding problems; LP behavioral questions sometimes included",
+      "Technical Phone Screen — coding + LP behavioral questions, 45 minutes",
+      "Virtual Onsite — 4–6 rounds: 2 coding, 1 system design, 1–2 dedicated LP behavioral rounds",
+      "Bar Raiser Round — a senior Amazon employee who can independently veto the hiring decision",
+      "Debrief and offer — hiring manager compiles all scores; offer decision typically within 1 week",
+    ],
+    interviewRounds: [
+      "Coding rounds x2 (45 min each): LeetCode Medium level. Always state time/space complexity and handle follow-up variants.",
+      "System Design (45–60 min): Design for operational resilience — recommendation at scale, order fulfilment pipelines, resilient shopping carts.",
+      "LP Behavioral rounds x1–2: 'Tell me about a time when...' Each interviewer probes 2–3 assigned Leadership Principles with deep follow-up questions.",
+      "Bar Raiser (45 min): An independent senior Amazon employee who assesses whether you raise the hiring bar. Can veto any hire.",
+    ],
   },
   {
     slug: "amazon-system-design-interview-questions",
