@@ -114,7 +114,7 @@ interface BlogPost {
 const posts: BlogPost[] = [
   {
     slug: "top-10-google-interview-questions",
-    title: "Top 10 Google Interview Questions (2026) — With Sample Answers",
+    title: "Top 10 Google Interview Questions (2026): With Sample Answers",
     metaDescription: "Prepare for Google interviews with the top 10 most-asked behavioral and technical questions. Includes sample answers and scoring tips from AI analysis.",
     company: "Google",
     category: "Behavioral",
@@ -149,7 +149,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "flipkart-interview-prep-guide",
-    title: "Flipkart Interview Prep Guide — What to Expect in 2026",
+    title: "Flipkart Interview Prep Guide: What to Expect in 2026",
     metaDescription: "Complete Flipkart interview preparation guide. Covers coding rounds, system design, HR behavioral questions, and insider tips for SDE-1 to SDE-3 roles.",
     company: "Flipkart",
     category: "Full Guide",
@@ -178,7 +178,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "behavioral-interview-questions-freshers",
-    title: "50 Behavioral Interview Questions for Freshers — India Campus Placements",
+    title: "50 Behavioral Interview Questions for Freshers: India Campus Placements",
     metaDescription: "Top 50 behavioral interview questions asked in Indian campus placements. Includes STAR method examples for freshers with limited work experience.",
     company: "Campus",
     category: "Freshers",
@@ -209,7 +209,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "razorpay-interview-experience",
-    title: "Razorpay Interview Experience — SDE & PM Roles (2026)",
+    title: "Razorpay Interview Experience: SDE & PM Roles (2026)",
     metaDescription: "Detailed Razorpay interview experience for SDE and PM roles. Covers coding rounds, system design, culture fit, and salary expectations.",
     company: "Razorpay",
     category: "Experience",
@@ -237,7 +237,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "ace-case-study-interviews",
-    title: "How to Ace Case Study Interviews — Framework + Examples",
+    title: "How to Ace Case Study Interviews: Framework + Examples",
     metaDescription: "Master case study interviews with proven frameworks. Includes examples for consulting, product, and strategy roles with step-by-step walkthroughs.",
     company: "Consulting",
     category: "Strategy",
@@ -270,7 +270,7 @@ const posts: BlogPost[] = [
   // ═══════════════════════════════════════════
   {
     slug: "tcs-interview-questions-freshers-2026",
-    title: "TCS Interview Questions for Freshers 2026 — Complete Preparation Guide",
+    title: "TCS Interview Questions for Freshers 2026: Complete Preparation Guide",
     metaDescription: "Complete TCS interview questions guide for freshers 2026. Covers TCS NQT, technical round, HR questions, managerial round with sample answers and tips.",
     company: "TCS",
     category: "Freshers",
@@ -301,7 +301,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "infosys-interview-questions-2026",
-    title: "Infosys Interview Questions 2026 — InfyTQ, Power Programmer & SP Roles",
+    title: "Infosys Interview Questions 2026: InfyTQ, Power Programmer & SP Roles",
     metaDescription: "Infosys interview questions for 2026 freshers. Covers InfyTQ certification, Power Programmer, Systems Engineer roles with technical and HR round preparation.",
     company: "Infosys",
     category: "Freshers",
@@ -332,7 +332,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "how-to-introduce-yourself-in-interview",
-    title: "How to Introduce Yourself in an Interview — Script + Examples (India)",
+    title: "How to Introduce Yourself in an Interview: Script + Examples (India)",
     metaDescription: "Learn how to introduce yourself in an interview with proven scripts and examples. Covers freshers, experienced professionals, and career changers with Indian context.",
     company: "General",
     category: "Skills",
@@ -364,7 +364,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "tell-me-about-yourself-best-answer",
-    title: "\"Tell Me About Yourself\" — Best Answer Examples for 2026 Interviews",
+    title: "\"Tell Me About Yourself\": Best Answer Examples for 2026 Interviews",
     metaDescription: "Best answers for 'Tell me about yourself' in 2026 interviews. Includes scripts for freshers, experienced, managers, and career changers with real examples.",
     company: "General",
     category: "Skills",
@@ -396,7 +396,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "wipro-interview-questions-answers",
-    title: "Wipro Interview Questions & Answers 2026 — Elite NTH & Turbo Roles",
+    title: "Wipro Interview Questions & Answers 2026: Elite NTH & Turbo Roles",
     metaDescription: "Wipro interview questions for freshers 2026. Complete guide for Elite NTH, Turbo, and WILP programs with technical, aptitude, and HR round preparation.",
     company: "Wipro",
     category: "Freshers",
@@ -456,7 +456,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "amazon-leadership-principles-interview",
-    title: "Amazon Leadership Principles Interview Guide — All 16 Principles Explained",
+    title: "Amazon Leadership Principles Interview Guide: All 16 Principles Explained",
     metaDescription: "Master Amazon's 16 Leadership Principles for interviews. Includes STAR examples, most-asked questions per principle, and tips for SDE and PM roles in India.",
     company: "Amazon",
     category: "Behavioral",
@@ -486,7 +486,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "system-design-interview-preparation",
-    title: "System Design Interview Preparation — Complete Guide for Indian Engineers",
+    title: "System Design Interview Preparation: Complete Guide for Indian Engineers",
     metaDescription: "Complete system design interview prep guide. Covers step-by-step framework, top 15 questions, and India-specific tips for Google, Amazon, Flipkart, and startup interviews.",
     company: "General",
     category: "Technical",
@@ -517,7 +517,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "salary-negotiation-tips-india",
-    title: "Salary Negotiation Tips for India — How to Get 20-40% More",
+    title: "Salary Negotiation Tips for India: How to Get 20-40% More",
     metaDescription: "Practical salary negotiation tips for Indian job market. Covers freshers, experienced professionals, counter-offer strategies, and exact scripts to use.",
     company: "General",
     category: "Career",
@@ -546,7 +546,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "campus-placement-interview-tips",
-    title: "Campus Placement Interview Tips — Complete Guide for 2026 Freshers",
+    title: "Campus Placement Interview Tips: Complete Guide for 2026 Freshers",
     metaDescription: "Complete campus placement interview preparation guide for Indian engineering students. Covers aptitude, technical, HR rounds, and insider tips to crack on-campus interviews.",
     company: "General",
     category: "Campus",
@@ -577,7 +577,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "mock-interview-practice-guide",
-    title: "How to Practice Mock Interviews Effectively — The Complete Guide",
+    title: "How to Practice Mock Interviews Effectively: The Complete Guide",
     metaDescription: "Learn how to practice mock interviews for maximum improvement. Covers self-practice, peer practice, AI mock interviews, and the science behind interview skill building.",
     company: "General",
     category: "Career",
@@ -608,7 +608,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "star-method-interview-answers",
-    title: "STAR Method for Interview Answers — With 10 Examples for Indian Job Seekers",
+    title: "STAR Method for Interview Answers: With 10 Examples for Indian Job Seekers",
     metaDescription: "Master the STAR method for behavioral interviews. Includes 10 real examples tailored for Indian job seekers at TCS, Infosys, Google, and other companies.",
     company: "General",
     category: "Behavioral",
@@ -669,7 +669,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "accenture-interview-questions-freshers-2026",
-    title: "Accenture ASE Interview Questions for Freshers 2026 — Complete Guide",
+    title: "Accenture ASE Interview Questions for Freshers 2026: Complete Guide",
     metaDescription: "Complete Accenture ASE interview preparation for freshers 2026. Covers iCAT test, technical interview, communication round, and HR questions with sample answers.",
     company: "Accenture",
     category: "Freshers",
@@ -698,7 +698,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "product-manager-interview-questions-india",
-    title: "Product Manager Interview Questions India — Complete 2026 Guide",
+    title: "Product Manager Interview Questions India: Complete 2026 Guide",
     metaDescription: "Top product manager interview questions asked in India at Flipkart, Swiggy, Meesho, Zomato, and FAANG. Includes case study frameworks, behavioral questions, and salary data.",
     company: "General",
     category: "Product",
@@ -729,7 +729,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "hcl-accenture-capgemini-interview-comparison",
-    title: "HCL vs Accenture vs Capgemini Interview — Which Is the Best for Freshers?",
+    title: "HCL vs Accenture vs Capgemini Interview: Which Is the Best for Freshers?",
     metaDescription: "Compare HCL, Accenture, and Capgemini interview processes for freshers. Covers salary, difficulty, training quality, and which company is best for your career goals.",
     company: "HCL",
     category: "Comparison",
@@ -760,7 +760,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "deloitte-interview-questions-freshers-2026",
-    title: "Deloitte Interview Questions for Freshers — 2026 Off-Campus & Campus",
+    title: "Deloitte Interview Questions for Freshers: 2026 Off-Campus & Campus",
     metaDescription: "Complete Deloitte interview preparation guide for freshers in 2026. Covers the CogniVue aptitude test, case study rounds, behavioral interview, and salary expectations for Analyst roles.",
     company: "Deloitte",
     category: "Freshers",
@@ -790,7 +790,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "group-discussion-topics-campus-placement-2026",
-    title: "Group Discussion Topics for Campus Placements 2026 — 40 Real GD Topics",
+    title: "Group Discussion Topics for Campus Placements 2026: 40 Real GD Topics",
     metaDescription: "40 current group discussion topics for campus placements 2026. Covers technology, business, economy, and social issues with talking points for each topic.",
     company: "Campus",
     category: "Campus Placement",
@@ -821,7 +821,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "how-to-pass-tcs-nqt-2026",
-    title: "How to Pass TCS NQT 2026 — Complete Guide to National Qualifier Test",
+    title: "How to Pass TCS NQT 2026: Complete Guide to National Qualifier Test",
     metaDescription: "Complete guide to the TCS NQT 2026 exam. Covers all 4 sections (Cognitive Skills, Programming Logic, Advanced Coding, English), cutoffs, and preparation strategy.",
     company: "TCS",
     category: "Campus Placement",
@@ -852,7 +852,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "zoho-interview-questions-freshers-2026",
-    title: "Zoho Interview Questions for Freshers 2026 — The Unusual Hiring Process",
+    title: "Zoho Interview Questions for Freshers 2026: The Unusual Hiring Process",
     metaDescription: "Zoho interview preparation guide for freshers. Covers the unique 5-round process, programming test, aptitude, and why Zoho doesn't hire from placement agencies. Salary ₹5–8 LPA.",
     company: "Zoho",
     category: "Freshers",
@@ -882,7 +882,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "software-engineer-interview-checklist-2026",
-    title: "Software Engineer Interview Checklist 2026 — 48 Hours Before the Interview",
+    title: "Software Engineer Interview Checklist 2026: 48 Hours Before the Interview",
     metaDescription: "Complete software engineer interview checklist for India 2026. What to review, practice, and confirm in the 48 hours before your SDE interview at any company.",
     company: "Tech",
     category: "Technical",
@@ -913,7 +913,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "java-interview-questions-freshers-india-2026",
-    title: "Java Interview Questions for Freshers India 2026 — Top 60 Q&A",
+    title: "Java Interview Questions for Freshers India 2026: Top 60 Q&A",
     metaDescription: "Top 60 Java interview questions for freshers in India 2026. Covers OOP concepts, collections, exception handling, multithreading, and Java 17+ features with sample answers.",
     company: "Tech",
     category: "Technical",
@@ -943,7 +943,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "resume-tips-freshers-india-2026",
-    title: "Resume Tips for Freshers India 2026 — What Actually Gets Shortlisted",
+    title: "Resume Tips for Freshers India 2026: What Actually Gets Shortlisted",
     metaDescription: "Practical resume writing tips for Indian freshers in 2026. Covers ATS optimisation, project descriptions, skills section, and what recruiters at TCS, Infosys, Flipkart, and Google actually look for.",
     company: "General",
     category: "Preparation",
@@ -974,7 +974,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "data-analyst-interview-questions-india-2026",
-    title: "Data Analyst Interview Questions India 2026 — SQL, Python, Stats & Case Studies",
+    title: "Data Analyst Interview Questions India 2026: SQL, Python, Stats & Case Studies",
     metaDescription: "Complete data analyst interview preparation guide for India 2026. Covers SQL queries, Python pandas, statistics, A/B testing, and business case questions with sample answers.",
     company: "Tech",
     category: "Technical",
@@ -1004,7 +1004,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "zomato-product-manager-interview-2026",
-    title: "Zomato Product Manager Interview 2026 — Case Study, Metrics & Experience",
+    title: "Zomato Product Manager Interview 2026: Case Study, Metrics & Experience",
     metaDescription: "Complete Zomato PM interview preparation guide for 2026. Covers product cases on restaurant discovery, delivery metrics, Hyperpure B2B, and Zomato Gold monetisation with sample frameworks.",
     company: "Zomato",
     category: "Product",
@@ -1031,7 +1031,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "python-interview-questions-freshers-india-2026",
-    title: "Python Interview Questions for Freshers India 2026 — Top 50 Q&A",
+    title: "Python Interview Questions for Freshers India 2026: Top 50 Q&A",
     metaDescription: "Top 50 Python interview questions for freshers in India 2026. Covers data types, OOP, list comprehension, decorators, generators, and common libraries with sample answers.",
     company: "Tech",
     category: "Technical",
@@ -1060,7 +1060,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "goldman-sachs-india-interview-questions",
-    title: "Goldman Sachs India Interview Questions 2026 — Engineering & Analyst",
+    title: "Goldman Sachs India Interview Questions 2026: Engineering & Analyst",
     metaDescription: "Complete Goldman Sachs India interview guide for 2026. Covers the Hirevue video screening, technical round (DSA + system design), super day, and salary for SDE and Analyst roles.",
     company: "Goldman Sachs",
     category: "Finance & Banking Tech",
@@ -1090,7 +1090,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "frontend-developer-interview-questions-india-2026",
-    title: "Frontend Developer Interview Questions India 2026 — React, JS & System Design",
+    title: "Frontend Developer Interview Questions India 2026: React, JS & System Design",
     metaDescription: "Top frontend developer interview questions for India 2026. Covers JavaScript internals, React hooks, performance, CSS, system design for UI, and company-specific questions from Flipkart, Razorpay, and Swiggy.",
     company: "General",
     category: "Technical",
@@ -1121,7 +1121,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "product-company-vs-service-company-india-career",
-    title: "Product Company vs Service Company India — Honest Career Comparison 2026",
+    title: "Product Company vs Service Company India: Honest Career Comparison 2026",
     metaDescription: "Honest comparison of product company vs IT service company careers in India for 2026. Covers salary difference, work quality, interview difficulty, promotion speed, and when to switch.",
     company: "General",
     category: "Career",
@@ -1153,7 +1153,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "swiggy-interview-questions-2026",
-    title: "Swiggy Interview Questions 2026 — SDE, PM & Analyst Complete Guide",
+    title: "Swiggy Interview Questions 2026: SDE, PM & Analyst Complete Guide",
     metaDescription: "Complete Swiggy interview guide for SDE, PM, and Business Analyst roles in 2026. Covers DSA rounds, system design, product cases, and salary expectations.",
     company: "Swiggy",
     category: "Product Tech",
@@ -1184,7 +1184,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "microsoft-india-interview-questions-2026",
-    title: "Microsoft India Interview Questions 2026 — SDE, Program Manager & More",
+    title: "Microsoft India Interview Questions 2026: SDE, Program Manager & More",
     metaDescription: "Complete Microsoft India interview guide for 2026. Covers the technical phone screen, virtual onsite rounds, behavioral STAR questions, and salary for SDE-1 to SDE-2 roles in Hyderabad and Bengaluru.",
     company: "Microsoft",
     category: "FAANG",
@@ -1214,7 +1214,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "sql-interview-questions-freshers-india-2026",
-    title: "SQL Interview Questions for Freshers India 2026 — Top 50 Q&A",
+    title: "SQL Interview Questions for Freshers India 2026: Top 50 Q&A",
     metaDescription: "Top 50 SQL interview questions for freshers in India 2026. Covers SELECT queries, JOINs, GROUP BY, subqueries, window functions, indexes, and common HR/analyst interview questions.",
     company: "General",
     category: "Technical",
@@ -1245,7 +1245,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "python-developer-salary-india-2026",
-    title: "Python Developer Salary India 2026 — Fresher to Senior Complete Guide",
+    title: "Python Developer Salary India 2026: Fresher to Senior Complete Guide",
     metaDescription: "Python developer salary in India 2026: ₹3.5 LPA fresher to ₹35 LPA senior. City-wise breakdown for Bangalore, Mumbai, Pune, Hyderabad. What to negotiate.",
     company: "Industry",
     category: "Salary Guide",
@@ -1277,7 +1277,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "data-analyst-salary-india-2026",
-    title: "Data Analyst Salary India 2026 — Entry Level to Senior, City-wise Guide",
+    title: "Data Analyst Salary India 2026: Entry Level to Senior, City-wise Guide",
     metaDescription: "Data analyst salary India 2026: ₹3–5 LPA fresher to ₹20–30 LPA senior. Breakdown by city (Bangalore, Mumbai, Hyderabad), company type, and skills that boost your package.",
     company: "Industry",
     category: "Salary Guide",
@@ -1307,8 +1307,8 @@ const posts: BlogPost[] = [
   },
   {
     slug: "how-to-crack-tcs-ion-nqt-2026",
-    title: "How to Crack TCS iON NQT 2026 — Complete Strategy, Pattern & Cutoff",
-    metaDescription: "Crack TCS iON NQT 2026: full exam pattern, section-wise strategy, qualifying cutoffs, and what happens after. 50,000+ students take this every year — here's how to be in the top 20%.",
+    title: "How to Crack TCS iON NQT 2026: Complete Strategy, Pattern & Cutoff",
+    metaDescription: "Crack TCS iON NQT 2026: full exam pattern, section-wise strategy, qualifying cutoffs, and what happens after. 50,000+ students take this every year: here's how to be in the top 20%.",
     company: "TCS",
     category: "Campus Placement",
     readTime: "8 min",
@@ -1339,7 +1339,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "faang-interview-preparation-india-2026",
-    title: "FAANG Interview Preparation India 2026 — Complete Roadmap for Indian Engineers",
+    title: "FAANG Interview Preparation India 2026: Complete Roadmap for Indian Engineers",
     metaDescription: "FAANG interview prep India 2026: complete roadmap covering DSA, system design, behavioral (Amazon LPs), and offer negotiation. Strategies that worked for Indian candidates.",
     company: "Google",
     category: "System Design",
@@ -1370,7 +1370,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "wipro-elite-nlth-preparation-2026",
-    title: "Wipro Elite NTH & NLTH 2026 — Exam Pattern, Selection Process & Preparation",
+    title: "Wipro Elite NTH & NLTH 2026: Exam Pattern, Selection Process & Preparation",
     metaDescription: "Wipro Elite NTH and NLTH 2026: complete exam pattern, online test sections, qualifying scores, and interview preparation. Everything freshers need to get a Wipro offer.",
     company: "Wipro",
     category: "Campus Placement",
@@ -1399,7 +1399,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "react-developer-salary-india-2026",
-    title: "React Developer Salary India 2026 — Complete Guide by Experience & City",
+    title: "React Developer Salary India 2026: Complete Guide by Experience & City",
     metaDescription: "React developer salary India 2026: ₹4–8 LPA fresher to ₹30–45 LPA senior. Breakdown by experience, city, and skills (Next.js, TypeScript, Node.js) that command premiums.",
     company: "Industry",
     category: "Salary Guide",
@@ -1428,8 +1428,8 @@ const posts: BlogPost[] = [
   },
   {
     slug: "jp-morgan-interview-questions-india-2026",
-    title: "JP Morgan Interview Questions India 2026 — SDE, Analyst & Quant Roles",
-    metaDescription: "Prepare for JP Morgan interviews in India. Covers SDE, Business Analyst, and Quant roles — coding rounds, HireRight assessment, technical screens, and HR behavioral questions with sample answers.",
+    title: "JP Morgan Interview Questions India 2026: SDE, Analyst & Quant Roles",
+    metaDescription: "Prepare for JP Morgan interviews in India. Covers SDE, Business Analyst, and Quant roles: coding rounds, HireRight assessment, technical screens, and HR behavioral questions with sample answers.",
     company: "JP Morgan",
     category: "Full Guide",
     readTime: "9 min",
@@ -1489,7 +1489,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "startup-vs-mnc-india-career",
-    title: "Startup vs MNC India 2026 — Which Should You Choose After Engineering?",
+    title: "Startup vs MNC India 2026: Which Should You Choose After Engineering?",
     metaDescription: "Startup vs MNC career in India 2026: salary comparison, growth speed, job security, learning curve, and a decision framework for engineering graduates.",
     company: "Career",
     category: "Career",
@@ -1551,8 +1551,8 @@ const posts: BlogPost[] = [
   },
   {
     slug: "fresher-salary-india-2026",
-    title: "Fresher Salary in India 2026 — What to Expect and How to Negotiate",
-    metaDescription: "Fresher salary in India 2026 by company tier, role, and city. What TCS, Infosys, Wipro, Flipkart, and FAANG pay freshers — and how to negotiate your first offer.",
+    title: "Fresher Salary in India 2026: What to Expect and How to Negotiate",
+    metaDescription: "Fresher salary in India 2026 by company tier, role, and city. What TCS, Infosys, Wipro, Flipkart, and FAANG pay freshers: and how to negotiate your first offer.",
     company: "Industry",
     category: "Salary Guide",
     readTime: "6 min",
@@ -1613,8 +1613,8 @@ const posts: BlogPost[] = [
   },
   {
     slug: "ibm-interview-questions-india-2026",
-    title: "IBM India Interview Questions 2026 — SDE, GBS Consultant & Systems Analyst",
-    metaDescription: "IBM India interview guide 2026. Covers the full process for SDE, GBS Consulting Analyst, and Systems Analyst roles — aptitude test, technical rounds, behavioral IBM values interview, and salary.",
+    title: "IBM India Interview Questions 2026: SDE, GBS Consultant & Systems Analyst",
+    metaDescription: "IBM India interview guide 2026. Covers the full process for SDE, GBS Consulting Analyst, and Systems Analyst roles: aptitude test, technical rounds, behavioral IBM values interview, and salary.",
     company: "IBM",
     category: "Company Guides",
     readTime: "8 min",
@@ -1671,8 +1671,8 @@ const posts: BlogPost[] = [
   },
   {
     slug: "dsa-60-day-preparation-plan",
-    title: "DSA 60-Day Preparation Plan — From Basics to Product Company Ready",
-    metaDescription: "60-day DSA preparation plan for product company interviews in India. Week-by-week schedule covering arrays, trees, graphs, DP, and mock interviews — with time estimates and resource links.",
+    title: "DSA 60-Day Preparation Plan: From Basics to Product Company Ready",
+    metaDescription: "60-day DSA preparation plan for product company interviews in India. Week-by-week schedule covering arrays, trees, graphs, DP, and mock interviews: with time estimates and resource links.",
     company: "Strategy",
     category: "Strategy",
     readTime: "9 min",
@@ -1733,7 +1733,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "product-manager-salary-india-2026",
-    title: "Product Manager Salary India 2026 — APM to Director, All Levels",
+    title: "Product Manager Salary India 2026: APM to Director, All Levels",
     metaDescription: "Product Manager salary in India 2026: APM to Director, by company tier and city. Includes APM program list, skills that command premium, and PM vs SDE salary comparison.",
     company: "Industry",
     category: "Salary Guide",
@@ -1795,7 +1795,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "engineering-manager-interview-india-2026",
-    title: "Engineering Manager Interview Questions India 2026 — What to Expect",
+    title: "Engineering Manager Interview Questions India 2026: What to Expect",
     metaDescription: "Engineering Manager interview preparation for India 2026. Covers what EM interviews test, system design for managers, people management questions, execution questions, and compensation.",
     company: "Strategy",
     category: "Career",
@@ -1933,7 +1933,7 @@ function BlogIndex() {
   const [featuredImgFailed, setFeaturedImgFailed] = useState(false);
 
   useSEO({
-    title: "Interview Prep Blog — HireStepX",
+    title: "Interview Prep Blog: HireStepX",
     description: "Company-specific interview preparation guides, question banks, and career strategies for Indian job seekers. Google, Amazon, TCS, Infosys, Flipkart, and more.",
     ogType: "website",
     jsonLd: {
@@ -2187,7 +2187,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
      (Article + FAQPage + BreadcrumbList). useSEO handles only <title> and
      <meta> tags here to avoid duplicate schema on direct page loads. */
   useSEO({
-    title: `${post.title} — HireStepX`,
+    title: `${post.title}: HireStepX`,
     description: post.metaDescription,
     canonical: canonicalUrl,
     ogImage: post.heroImage,
