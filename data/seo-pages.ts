@@ -76,6 +76,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Behavioral round — ownership, cross-functional leadership, and conflict resolution",
       "Hiring manager round — alignment on vertical, growth philosophy, and culture fit",
     ],
+    interviewRounds: [
+      "PM Case Round 1 — Product Sense (45 min): Product sense for a real Flipkart vertical (grocery, fashion, or BBD-scale logistics). India-specific user constraints — COD-first buyers, tier-2 users, first-time online shoppers — are the expected context. Framework recitation without a concrete Flipkart recommendation scores poorly.",
+      "PM Case Round 2 — Prioritisation + Execution (45 min): Roadmap trade-offs under resource constraints, execution planning, and cross-functional dependency management.",
+      "Behavioral Round (30 min): Ownership under ambiguity, cross-functional leadership stories, conflict resolution in an organisation with strong functional leads (category, logistics, tech).",
+      "Hiring Manager Round (30–45 min): Vertical alignment, growth philosophy, and culture fit. Prepare case studies from Flipkart verticals you've actually used.",
+    ],
   },
   {
     slug: "flipkart-sde-interview-questions",
@@ -119,6 +125,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Culture round — Values alignment and ownership stories; evaluates genuine conviction not keyword alignment",
       "Hiring manager round — Final bar raiser and compensation discussion",
     ],
+    interviewRounds: [
+      "Online Coding Round (60 min): 2 medium-hard DSA problems. Standard filter.",
+      "Technical Round 1 — DSA + Code Quality (60 min): One harder problem with problem decomposition and code review discussion. Razorpay expects production-readiness thinking — how would this code behave in a payment system?",
+      "Technical Round 2 — System Design (60 min, SDE-2+): Payments-specific architecture — UPI failure handling, idempotent payment retries, settlement reconciliation, NPCI rate limiting. 'I'd add caching' is not a sufficient answer — be specific about which cache, what TTL, and what happens on cache stampede.",
+      "Culture Round (45 min): Genuine ownership stories evaluated on conviction, not keyword alignment. Can you explain a technical choice in terms of what a merchant experiences when a payment fails at checkout?",
+    ],
   },
   {
     slug: "razorpay-pm-interview-questions",
@@ -134,6 +146,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Technical literacy round — system design familiarity, API understanding, and data analysis",
       "Culture round — merchant empathy, ownership stories, speed-vs-correctness trade-offs",
       "Hiring manager — compensation, role expectations, and product roadmap discussion",
+    ],
+    interviewRounds: [
+      "Product Case Round (45–60 min): Pricing for new merchant tiers, D2C expansion, or feature prioritisation. Indian fintech context (UPI vs cards economics, merchant working capital) is implicitly assumed — candidates who treat it as a standard consumer PM interview underperform.",
+      "Technical Literacy Round (45 min): System design familiarity (how does an API idempotency key work?), data analysis, and payment-flow understanding at a conceptual level.",
+      "Culture Round (30 min): Merchant empathy + ownership. The evaluative question is whether you can explain a feature decision in terms of what a merchant experiences when a payment fails.",
+      "Hiring Manager Round (30 min): Role expectations, product roadmap alignment, compensation discussion.",
     ],
   },
 
@@ -153,6 +171,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Behavioral round — cross-functional alignment and stakeholder management stories",
       "Hiring manager round",
     ],
+    interviewRounds: [
+      "Product Sense Case (45 min): 3-sided marketplace dynamics — restaurant partner economics, delivery-partner availability, and consumer satisfaction simultaneously. The key question is why goals conflict when you optimise for one side. Monsoon-season demand spikes and tier-2 restaurant quality variability are common India-specific constraints.",
+      "Analytics / Growth Case (45 min): Diagnose a metric drop (delivery time climbing, restaurant ratings dropping in tier-2 cities), perform root-cause analysis across geo/cohort/time dimensions, and make a metric-based recommendation.",
+      "Behavioral Round (30 min): Cross-functional alignment (between restaurant, logistics, tech, and category teams) + stakeholder management stories.",
+      "Hiring Manager Round (30 min): Culture fit and vertical alignment (food delivery, Instamart, or Dineout).",
+    ],
   },
 
   /* ── Zomato ────────────────────────────────────────────────── */
@@ -170,6 +194,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Product design case — new feature or market expansion with clear success metrics",
       "Behavioral round — ownership and rapid experimentation stories",
       "Hiring manager round",
+    ],
+    interviewRounds: [
+      "Product Diagnostic Case (45 min): Root-cause a real Zomato problem — restaurant ratings dropping in tier-2 cities, delivery times climbing. Segment by geography, cohort, and time before forming a hypothesis. Understanding restaurant-side economics (not just consumer experience) is a prerequisite.",
+      "Product Design Case (45 min): New feature or market expansion — quick commerce (Blinkit integration), dining-out discovery, or category expansion. Define success metrics for both sides of the marketplace.",
+      "Behavioral Round (30 min): Ownership and rapid experimentation. Zomato's culture values speed — stories about shipping fast, learning from failures, and iterating quickly resonate.",
+      "Hiring Manager Round (30 min): Culture fit, vertical interest (delivery vs. dining vs. quick commerce), and team alignment.",
     ],
   },
 
@@ -210,6 +240,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Technical round 1 — DSA with follow-up questions on edge cases and optimisation",
       "Technical round 2 / System design — fraud detection, merchant payout, or cashback system design",
       "Behavioral round — ownership, speed, and adversarial-user mindset",
+    ],
+    interviewRounds: [
+      "Online Coding Assessment (60 min): 2–3 medium-difficulty DSA problems. Standard first filter.",
+      "Technical Round 1 — DSA (60 min): One problem with follow-up questions on edge cases and optimisation. Paytm specifically tests idempotency reasoning: what happens if a payment request is processed twice?",
+      "Technical Round 2 / System Design (60 min): Fraud detection system, merchant payout pipeline, or cashback arbitrage prevention. Adversarial user modelling (double-spending on wallets, QR code replay attacks, referral abuse) is a Paytm-specific differentiator.",
+      "Behavioral Round (30 min): Ownership, shipping speed, and adversarial-user mindset. Stories about owning a production incident end-to-end or catching a fraud pattern score well.",
     ],
   },
 
@@ -761,6 +797,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Super Day — 3–4 back-to-back rounds: hard DSA, system design, risk/behavioral, and partner interview",
       "HR + offer — background verification takes 3–4 weeks",
     ],
+    interviewRounds: [
+      "HireVue Video Screen (async): 3–4 behavioral questions. 30 seconds to prepare, 2–3 minutes to answer. First impression — speak to a camera clearly, no notes visible.",
+      "Online Coding Assessment (90 min): 2–3 HackerRank problems (1 medium + 1–2 hard). Financial domain awareness helps — GS systems demand strong consistency; proposing eventual consistency for financial data is a fast rejection path.",
+      "Technical Phone Screen (45 min): 1 coding problem + CS fundamentals + OO design. Expect questions on ACID compliance and financial system reliability.",
+      "Super Day (3–4 back-to-back rounds, ~4 hours): Hard DSA, system design (financial domain: settlement, risk, audit trail), risk/behavioral stories, and a partner/director interview. Background verification post-offer takes 3–4 weeks.",
+    ],
   },
   {
     slug: "jpmorgan-interview-questions-india",
@@ -776,6 +818,13 @@ export const SEO_PAGES: SeoPage[] = [
       "Technical round 2 / System design — Financial systems with compliance and audit constraints",
       "Behavioral round — Integrity, client focus, and regulatory awareness stories",
       "Hiring manager + HR — Compensation discussion, location preference, and joining timeline",
+    ],
+    interviewRounds: [
+      "Online Coding Assessment (60–90 min): Medium-difficulty DSA. JPMorgan doesn't require LeetCode Hard — but code must be clean and well-commented given the financial domain where auditability matters.",
+      "Technical Round 1 — DSA + Fundamentals (45 min): Data structures, OS concepts, DBMS, and basic system understanding. Awareness of financial regulation (SEBI, RBI norms) is a positive differentiator.",
+      "Technical Round 2 — System Design with Compliance (60 min): Trade reconciliation, settlement pipelines, tamper-evident audit logs. Every system design must include an audit trail and idempotency story.",
+      "Behavioral Round (30 min): Integrity, client focus, and regulatory awareness stories. JPMorgan specifically probes ethical decision-making scenarios.",
+      "Hiring Manager + HR (30 min): Compensation, location preference (Bangalore / Hyderabad), joining timeline.",
     ],
   },
 
@@ -818,6 +867,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Behavioral round — values alignment with CRED's simplicity and premium culture",
       "Hiring manager round — judgment and taste calibration",
     ],
+    interviewRounds: [
+      "Product Taste Round (45 min): Design for CRED's 750+ credit-score user who doesn't need incentivisation. Questions like 'What does trust mean in a financial product?' or 'Is this feature worth building and why?' test aesthetic judgment, not just metric frameworks.",
+      "Case Study Round (45 min): Product analytics, growth strategy, or 'what would you build next on CRED?' Using the app deeply before the interview is required preparation — candidates who haven't used it are visibly underprepared.",
+      "Behavioral Round (30 min): CRED values simplicity and premium experience. Stories about removing friction — not adding features — resonate most. Consumer-fintech or premium product background is an explicit advantage.",
+      "Hiring Manager Round (30–45 min): Judgment and taste calibration. CRED has low hiring volume; every candidate is evaluated against a high bar set by the current team.",
+    ],
   },
 
   /* ── Meesho ────────────────────────────────────────────────────────── */
@@ -857,6 +912,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Behavioral round — speed, first-principles thinking, and user empathy for non-metro India",
       "Hiring manager round",
     ],
+    interviewRounds: [
+      "Product Design Round (45 min): Typical framing: 'Design for a seller who uses a feature-phone, has a 2G connection, and speaks only Kannada.' Urban metro candidates who haven't used Meesho as a seller are at a structural disadvantage without preparation.",
+      "Case Study Round (45 min): Seller acquisition, reseller economics, or Bharat distribution strategy. Meesho's reseller model distributes via WhatsApp shares — product design must account for zero in-app discoverability.",
+      "Behavioral Round (30 min): Speed over perfection is Meesho's culture. Stories about shipping quickly with incomplete information, first-principles thinking about tier-2 users, and scrappy execution resonate.",
+      "Hiring Manager Round (30 min): Final judgment + culture alignment check.",
+    ],
   },
 
   /* ── Swiggy (engineering) ──────────────────────────────────────────── */
@@ -875,6 +936,13 @@ export const SEO_PAGES: SeoPage[] = [
       "System design round — Real-time logistics or notification architecture at India scale",
       "Behavioral round — Ownership, speed under uncertainty, and cross-functional collaboration",
     ],
+    interviewRounds: [
+      "Online Assessment (60–90 min): 2–3 DSA problems at medium difficulty. Standard filter.",
+      "Technical Round 1 — Coding (45–60 min): Arrays, graphs, or dynamic programming. One problem with full optimisation discussion.",
+      "Technical Round 2 — Coding + Decomposition (45–60 min): More complex problem with follow-up optimisation and edge-case discussion.",
+      "System Design (60 min): Real-time logistics under adversarial conditions — monsoon outages, restaurant denial cascades, surge demand from cricket finals. Notification delivery under 200ms for 5000 simultaneous orders is a common prompt. Geospatial indexing strategy and push vs pull architecture are key concepts.",
+      "Behavioral Round (30–45 min): Ownership, speed under uncertainty, and cross-functional stories. Swiggy's engineering culture rewards moving fast under pressure.",
+    ],
   },
 
   /* ── Zerodha ───────────────────────────────────────────────────────── */
@@ -891,6 +959,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Domain discussion — order types, margin mechanics, SEBI regulations, and market microstructure",
       "System design — Kite trading platform components, latency, and reliability",
       "Culture and motivation round — curiosity about financial markets is a hard requirement",
+    ],
+    interviewRounds: [
+      "Technical Screen / Take-Home: A real Kite (trading platform) problem evaluated on reasoning quality, not speed. Zerodha doesn't do LeetCode marathons — they give you something from their actual system.",
+      "Domain Discussion (45–60 min): Order types (market, limit, stop-loss, GTT), margin calculations, SEBI circuit breaker rules, and market microstructure. Passion for markets is evaluated alongside technical skill — candidates who don't trade or use Kite are at a clear disadvantage.",
+      "System Design (45–60 min): Kite's trading infrastructure components — order matching, real-time P&L computation, position tracking, and regulatory compliance hooks. Latency and reliability are primary constraints.",
+      "Culture + Motivation Round (30 min): Curiosity about financial markets is a hard requirement. Zerodha is bootstrapped and profitable — they want engineers who care about the product, not just the stack.",
     ],
   },
 
@@ -909,6 +983,12 @@ export const SEO_PAGES: SeoPage[] = [
       "System design — multi-tenant SaaS architecture, webhook reliability, or API stability",
       "Behavioral round — product empathy, customer-success thinking, and ownership stories",
     ],
+    interviewRounds: [
+      "Online Assessment (60–90 min): 2 medium-difficulty DSA problems. Standard filter.",
+      "DSA Round (60 min): Medium-hard problems with a distributed systems flavour — multi-tenant data handling, rate limiting, or SaaS API design.",
+      "System Design (60 min): Multi-tenant SaaS architecture — webhook delivery guarantees, customer-facing API stability, SLA monitoring, graceful degradation on 3rd-party API failures. The interviewer may ask: 'How would you explain this architecture decision to a non-technical customer success manager?'",
+      "Behavioral Round (30–45 min): Product empathy for B2B customers, customer-success mindset, and ownership stories. Freshworks values engineers who understand the business impact of their technical decisions.",
+    ],
   },
   {
     slug: "freshworks-pm-interview-questions",
@@ -924,6 +1004,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Analytics round — define success metrics, diagnose a product problem with data",
       "Behavioral round — stakeholder management, roadmap trade-offs, and customer empathy",
       "Hiring manager round",
+    ],
+    interviewRounds: [
+      "Product Design Round (45 min): Design for B2B SaaS operators — agents, support leads, CRM users. The primary user is NOT the end customer. Success looks like reducing average handle time or improving agent sentiment score, not consumer engagement metrics.",
+      "Analytics Round (45 min): Define success metrics, diagnose a product problem with data. Freshworks measures outcomes for enterprise accounts — think AHT reduction, CSAT lift, or ticket deflection rate rather than DAU/MAU.",
+      "Behavioral Round (30 min): Stakeholder management in a B2B context (VP of Customer Success, IT team, 200 support agents), roadmap trade-offs, and customer empathy. Knowledge of Freshdesk, Freshsales, and Freshservice differentiation is expected.",
+      "Hiring Manager Round (30 min): Final judgment and culture fit. Chennai-based roles may focus on SMB customers across Southeast Asia.",
     ],
   },
 
@@ -965,6 +1051,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Technical depth round — system design understanding and cross-team influence stories",
       "Behavioral round (STAR + growth mindset) — 'what I learned I was wrong about' stories score highest",
     ],
+    interviewRounds: [
+      "Recruiter Phone Screen (30 min): Background, product sense, and motivation. Engineering-to-PM transition is common at Microsoft — technical depth is valued.",
+      "Product Thinking Round (45 min): 'How would you improve [Microsoft product] for [specific market]?' India questions come up — Teams for rural education, Bing for Bharat, Office for SMBs. Specificity is rewarded: walk from customer pain to ship plan.",
+      "Technical Depth Round (45 min): System design understanding at a PM level + cross-team influence stories. Azure services awareness is a differentiator.",
+      "Behavioral Round — Growth Mindset (45 min): Stories about changing your mind based on evidence score highest. Rigid 'I was right all along' stories are red flags. Prepare a 'what I learned I was wrong about' story for each core competency.",
+    ],
   },
   {
     slug: "microsoft-behavioral-interview-questions",
@@ -980,6 +1072,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Onsite / virtual loop (4–5 rounds) — DSA (×2–3), system design, and behavioral",
       "Growth Mindset behavioral round — 'I was wrong and changed' stories score highest; have 2 prepared",
       "Hiring committee review + offer",
+    ],
+    interviewRounds: [
+      "Online Assessment (HackerRank): Coding problems + MCQ. Filters ~70% of applicants. Passing bar is 2 of 3 problems solved.",
+      "DSA Rounds ×2–3 (45 min each): Medium–hard coding problems with follow-up questions on time/space optimisation. Code quality and readability are scored — Microsoft interviewers expect commented code.",
+      "System Design Round (60 min): Azure-flavoured architecture design. Knowing Azure-specific services (Service Bus vs Event Hub, Cosmos DB vs SQL) is a measurable differentiator.",
+      "Behavioral Round — Growth Mindset (45 min): The key question is 'tell me about a time you were wrong.' Prepare 2 stories where you changed your approach based on evidence. The 'As Appropriate' interviewer carries significant weight — they can veto or strongly advocate regardless of other scores.",
     ],
   },
 
@@ -1022,6 +1120,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Values interview — each story must explicitly name the Meta core value it demonstrates",
       "Hiring committee review + offer",
     ],
+    interviewRounds: [
+      "Coding Phone Screen (45 min): 2 medium-hard DSA problems. Same bar as the onsite coding rounds — no warmup questions.",
+      "Onsite DSA Rounds ×2 (45 min each): Graph or tree, then DP or string manipulation. Must fully solve both.",
+      "Onsite System Design (60 min): Social or ad-system design at 3B-user scale. Size your system accordingly from the start.",
+      "Values Interview — Behavioral (45 min): Explicitly map each story to a Meta core value: Move Fast, Be Bold, Be Open, Build Social Value, or Focus on Impact. Saying 'this is an example of Moving Fast because...' is the expected format, not a trick. Stories about reversing decisions mid-project with clear reasoning are valued more than 'I got it right the first time.'",
+    ],
   },
 
   /* ── Netflix ───────────────────────────────────────────────────────── */
@@ -1039,6 +1143,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Onsite loop (4–5 rounds) — DSA, system design, and culture-fit rounds in one day",
       "System design round — streaming infrastructure, CDN architecture, or recommendation system",
       "Values interview — 'Freedom and Responsibility' fit; autonomous decision-making and judgment stories",
+    ],
+    interviewRounds: [
+      "Technical Phone Screen (60 min): 1–2 medium-hard coding problems with a senior Netflix engineer. Netflix primarily hires senior engineers — the difficulty bar is higher than most product companies.",
+      "Onsite DSA Rounds (45 min each): Problem-solving at senior level. Expect complexity follow-ups and optimisation discussion.",
+      "System Design Round (60 min): Streaming infrastructure — video encoding pipelines, content caching at edge, or recommendation systems. Chaos engineering (Simian Army philosophy) and microservice resilience are recurring themes. Design for global CDN and regional failover.",
+      "Values Interview — Freedom and Responsibility (45 min): Autonomous decision-making stories where you operated with minimal supervision and made the right call. Netflix's culture explicitly doesn't use process as a substitute for judgment — demonstrate you can operate independently at high velocity.",
     ],
   },
 
@@ -1058,6 +1168,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Bar raiser round — senior Amazon employee who assesses bar consistency across LP stories",
       "HR + offer — background check, team matching, and compensation discussion",
     ],
+    interviewRounds: [
+      "Phone Screen (45 min): 1 product thinking question + 2–3 LP behavioral questions. Amazon PM interviews are almost entirely LP-anchored — far fewer product cases than most PM interviews.",
+      "Onsite LP Behavioral Rounds ×3–4 (45 min each): 'Tell me about a time you launched a product that failed,' 'Tell me about a time you made a fast decision with insufficient data,' 'Tell me about a customer complaint and what you did.' Each interviewer tracks LP coverage — explicitly name which LP your story illustrates.",
+      "Product Design Round (45 min, not always present): Amazon-specific product — Alexa Shopping for India, Amazon Pay UPI integration, or fulfilment for tier-2 delivery expansion.",
+      "Bar Raiser Round (45 min): A senior Amazon employee who assesses whether LP story quality is consistent across all rounds. Shallow or contradictory stories are caught here. Prepare 8–10 LP-mapped STAR stories that together cover Customer Obsession, Ownership, Invent and Simplify, Dive Deep, and Deliver Results.",
+    ],
   },
 
   /* ── Google (behavioral) ───────────────────────────────────────────── */
@@ -1076,6 +1192,12 @@ export const SEO_PAGES: SeoPage[] = [
       "System design round — distributed systems at Google scale with availability trade-offs",
       "Googleyness round — cognitive bias awareness, ambiguity comfort, and collaborative problem-solving",
     ],
+    interviewRounds: [
+      "Phone Screen (45 min): 1–2 coding problems with a Googler. Standard filter before the full onsite.",
+      "Coding Onsite Rounds ×3–4 (45 min each): Medium-to-hard LeetCode, graph and DP heavy. Full correctness + optimal solution expected.",
+      "System Design Round (60 min): Distributed systems at Google scale — YouTube, Search, Maps, GPay. Availability trade-offs and failure modes at global distribution are the evaluation frame.",
+      "Googleyness Round (45 min): Tests cognitive bias awareness, comfort with ambiguity, collaborative problem-solving, and openness to being wrong. Polished STAR answers often score lower than genuine reflection — the evaluative question is whether you updated your beliefs based on evidence. Candidates who explain 'I was right all along' stories lose here.",
+    ],
   },
 
   /* ── LinkedIn ──────────────────────────────────────────────────────── */
@@ -1093,6 +1215,12 @@ export const SEO_PAGES: SeoPage[] = [
       "Analytical reasoning — data interpretation, metrics definition, and A/B test design",
       "Execution depth round — prioritization, cross-functional collaboration, and shipping stories",
       "Behavioral round — leadership, influence without authority, and growth mindset",
+    ],
+    interviewRounds: [
+      "Product Thinking Round (45 min): 'How would you improve LinkedIn Jobs?' or 'Design a feature for LinkedIn India's blue-collar workers.' Having a specific, data-backed opinion about a real LinkedIn product shortcoming is the most memorable opening. The dual economy (job seekers + recruiters) means both sides must be addressed.",
+      "Analytical Reasoning Round (45 min): Data interpretation, success metric definition, and A/B test design. LinkedIn-specific metrics (inmails sent, connection acceptance rate, recruiter response rate) are common data anchors.",
+      "Execution Depth Round (45 min): Prioritisation under constraint, cross-functional collaboration (engineering, sales, trust & safety), and shipping stories. Focus on sequencing and dependency management.",
+      "Behavioral Round (30 min): Leadership, influence without authority (common at LinkedIn given the global matrix structure), and growth mindset. Stories about shipping a feature that improved the platform you use daily resonate.",
     ],
   },
 
@@ -1176,6 +1304,12 @@ export const SEO_PAGES: SeoPage[] = [
       "System design round — hotel booking, dynamic pricing, or property management system",
       "Behavioral + hiring manager — ownership stories, operational failure handling, and scale thinking",
     ],
+    interviewRounds: [
+      "Online Assessment / Recruiter Screen (60 min): Medium-difficulty DSA coding round. Standard first filter.",
+      "Technical Round 1 — DSA (45–60 min): One DSA problem with problem decomposition discussion. Edge cases and failure handling matter here given OYO's operational domain.",
+      "System Design Round (60 min): Hotel booking availability in near-realtime, dynamic pricing algorithms, property management systems, or partner onboarding pipelines. Graceful degradation for properties that go offline unexpectedly is an OYO-specific design concern.",
+      "Behavioral + Hiring Manager Round (45 min): Ownership stories, operational failure handling, and scale thinking. OYO operates in 35+ countries — stories involving cross-border or multi-market complexity resonate.",
+    ],
   },
 
   {
@@ -1190,6 +1324,10 @@ export const SEO_PAGES: SeoPage[] = [
       "Cleared technical rounds — DSA, system design, or coding screen",
       "Behavioral / culture screen (45 min) — customer obsession, ownership, and speed-accuracy trade-off stories",
       "Hiring manager round — motivations, PhonePe mission alignment, and past production incident handling",
+    ],
+    interviewRounds: [
+      "Behavioral / Culture Screen (45 min): Customer obsession, ownership over process, and speed-accuracy balance. PhonePe specifically eliminates technically strong candidates who don't demonstrate genuine ownership. 'I escalated to my manager' is not the answer they want — the expected story is one where you picked up the problem, resolved it, and communicated the outcome.",
+      "Hiring Manager Round (30–45 min): PhonePe mission alignment, past production incident handling, and motivations for joining a fintech processing 1B+ transactions per month. Stories about owning a failure and making it right under time pressure score best.",
     ],
   },
 

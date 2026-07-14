@@ -8,7 +8,6 @@ import { tokens as t, fonts } from "@/auth/_tokens";
 import { COMPANY_LABEL } from "../../../data/company-labels";
 import {
   editorialCSS,
-  SectionHead,
   DarkBand,
   ctaPrimaryStyle,
   ctaGhostStyle,
@@ -307,37 +306,6 @@ export default async function CompaniesIndexPage() {
             </section>
           );
         })}
-
-        {/* ── Browse by question type ───────────────────────────────── */}
-        <section className="ed-section ed-reveal" style={{ paddingTop: 76, paddingBottom: 76 }}>
-          <div className="ed-container">
-            <SectionHead
-              eyebrow="Or start from the format"
-              title="Browse by question type"
-            />
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {[
-                { label: "Campus Placement", href: "/questions?focus=campus-placement" },
-                { label: "Technical DSA", href: "/questions?focus=technical" },
-                { label: "System Design", href: "/questions?focus=system-design" },
-                { label: "Behavioural", href: "/questions?focus=behavioral" },
-                { label: "Case Study", href: "/questions?focus=case-study" },
-                { label: "HR Round", href: "/questions?focus=hr" },
-                { label: "All questions", href: "/questions" },
-              ].map((tag) => (
-                <Link key={tag.href} href={tag.href} className="ed-card" style={{
-                  display: "inline-block",
-                  padding: "11px 18px", fontSize: 14, fontWeight: 600,
-                  background: t.white, color: t.coal, borderRadius: 999,
-                  textDecoration: "none", border: `1px solid ${t.lineStrong}`,
-                  fontFamily: fonts.sans,
-                }}>
-                  {tag.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* ── Closing band ──────────────────────────────────────────── */}
         <DarkBand eyebrow="Reading won't get you hired" title="Pick your company," accent="start answering." videoSrc="/cta.mp4">
