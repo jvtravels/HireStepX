@@ -109,8 +109,8 @@ const ctaPrimary = (size: "md" | "lg" = "md"): CSSProperties => ({
   fontWeight: 600,
   padding: size === "lg" ? "14px 24px" : "11px 18px",
   borderRadius: 999,
-  background: t.indigo,
-  color: t.white,
+  background: t.copper,
+  color: t.cream,
   textDecoration: "none",
   border: 0,
   cursor: "pointer",
@@ -672,8 +672,8 @@ export function PricingPageV2() {
                   style={{
                     marginTop: "auto",
                     ...ctaPrimary("md"),
-                    background: tier.featured ? t.cream : t.indigo,
-                    color: tier.featured ? t.coal : t.white,
+                    background: tier.featured ? t.cream : t.copper,
+                    color: tier.featured ? t.coal : t.cream,
                     boxShadow: tier.featured ? "none" : shadows.cta,
                   }}
                 >
