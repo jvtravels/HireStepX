@@ -3334,6 +3334,34 @@ export function BuiltForIndiaV2() {
             ))}
           </div>
 
+          {/* Cross-links to pillar pages — signals topical authority to Google */}
+          <div style={{ display: "flex", gap: 16, marginTop: 32, flexWrap: "wrap" }}>
+            <a
+              href="/questions"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.cream, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              Browse practice questions →
+            </a>
+            <a
+              href="/for-students"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.copper100, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              Campus placement guide →
+            </a>
+          </div>
+
         </div>
 
         <div
