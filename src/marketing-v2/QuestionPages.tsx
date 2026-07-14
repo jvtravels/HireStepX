@@ -169,23 +169,6 @@ function QuestionCard({ question, index, practiceHref, showSignupGate }: Questio
   );
 }
 
-/* ─── Framework callout box ─────────────────────────────────────────────── */
-
-function FrameworkBox({ name, summary }: { name: string; summary: string }) {
-  return (
-    <section style={{ marginTop: 40 }}>
-      <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.copper, margin: "0 0 10px" }}>
-        Framework to use
-      </p>
-      <h2 style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, margin: "0 0 10px", letterSpacing: "-0.01em", color: t.coal }}>
-        {name}
-      </h2>
-      <p style={{ fontFamily: fonts.sans, fontSize: 15, lineHeight: 1.65, color: t.inkSoft, margin: 0 }}>
-        {summary}
-      </p>
-    </section>
-  );
-}
 
 /* CompanyContextBox — renders verified company facts (description /
    products / competitors / scale) from COMPANY_KNOWN_FACTS. Only the
@@ -272,240 +255,246 @@ export function QuestionSetPage({
 
   return (
     <>
-      <style>{editorialCSS}</style>
+      <style>{editorialCSS + `
+        @media (max-width: 900px) {
+          .qs-body { flex-direction: column !important; }
+          .qs-sidebar { position: static !important; width: 100% !important; }
+        }
+      `}</style>
       <main style={pageShell}>
 
-        {/* ── Custom two-column hero ─────────────────────────────────── */}
-        <header className="ed-hero" style={{ background: t.cream, paddingTop: 96, paddingBottom: 80, borderBottom: `1px solid ${t.line}` }}>
+        {/* ── Hero — full-width, confident ─────────────────────────────── */}
+        <header style={{ background: t.cream, paddingTop: 80, paddingBottom: 64, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
 
-
-            {/* Two-column split */}
-            <div className="ed-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
-
-              {/* Left: eyebrow → h1 → lead → CTA */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{
-                  fontFamily: fonts.sans, fontSize: 12, fontWeight: 700,
-                  letterSpacing: "0.12em", textTransform: "uppercase",
-                  color: t.inkFaint, margin: "0 0 18px",
-                }}>
-                  {companyLabel} · {focusLabel}
-                </p>
-                <h1 style={{
-                  fontFamily: fonts.serif,
-                  fontSize: "clamp(22px, 2.4vw, 34px)",
-                  fontWeight: 400, lineHeight: 1.18,
-                  letterSpacing: "-0.018em",
-                  color: t.coal, margin: "0 0 22px",
-                  maxWidth: "28ch",
-                }}>
-                  {page.searchPhrase}
-                </h1>
-                <p style={{
-                  fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65,
-                  color: t.inkSoft, margin: "0 0 32px", maxWidth: "46ch",
-                }}>
-                  {introFirst}
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                  <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
-                    Practice with AI voice feedback <span className="ed-cta-arrow" aria-hidden>→</span>
-                  </Link>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>
-                    2 sessions free, no card
-                  </span>
-                </div>
-              </div>
-
-              {/* Right: stats sidebar */}
-              <div style={{
-                flexShrink: 0, width: 240,
-                background: t.creamSoft, border: `1px solid ${t.line}`,
-                borderRadius: 16, padding: "24px 26px",
-                display: "flex", flexDirection: "column", gap: 20,
-              }}>
-                {/* Question count */}
-                <div>
-                  <div style={{ fontFamily: fonts.serif, fontSize: 36, fontWeight: 400, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
-                    {questions.length}
-                  </div>
-                  <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, marginTop: 4 }}>
-                    verified questions
-                  </div>
-                </div>
-                {/* Difficulty split */}
-                <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 18, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint, marginBottom: 4 }}>
-                    Difficulty
-                  </div>
-                  {diffCounts.easy > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>
-                      <span>Easy</span><span style={{ fontWeight: 600, color: t.coal }}>{diffCounts.easy}</span>
-                    </div>
-                  )}
-                  {diffCounts.medium > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>
-                      <span>Medium</span><span style={{ fontWeight: 600, color: t.coal }}>{diffCounts.medium}</span>
-                    </div>
-                  )}
-                  {diffCounts.hard > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>
-                      <span>Hard</span><span style={{ fontWeight: 600, color: t.coal }}>{diffCounts.hard}</span>
-                    </div>
-                  )}
-                </div>
-                {/* Rounds */}
-                {roundCount !== null && roundCount > 0 && (
-                  <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 18 }}>
-                    <div style={{ fontFamily: fonts.serif, fontSize: 24, fontWeight: 400, color: t.coal, lineHeight: 1, letterSpacing: "-0.015em" }}>
-                      {roundCount}
-                    </div>
-                    <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, marginTop: 4 }}>
-                      interview rounds
-                    </div>
-                  </div>
-                )}
-                {/* Focus label */}
-                <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 18 }}>
-                  <div style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint, marginBottom: 6 }}>
-                    Focus
-                  </div>
-                  <div style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>
-                    {focusLabel}
-                  </div>
-                </div>
-              </div>
-
+            {/* Back link + company tag */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
+              <Link href="/questions" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, textDecoration: "none" }}>
+                ← All companies
+              </Link>
+              <span style={{ color: t.line }}>·</span>
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
+                {companyLabel}
+              </span>
+              <span style={{ color: t.line }}>·</span>
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+                {focusLabel}
+              </span>
             </div>
+
+            {/* H1 */}
+            <h1 style={{
+              fontFamily: fonts.serif,
+              fontSize: "clamp(28px, 3.2vw, 44px)",
+              fontWeight: 400, lineHeight: 1.12,
+              letterSpacing: "-0.022em",
+              color: t.coal, margin: "0 0 20px",
+              maxWidth: "16ch",
+              textWrap: "balance",
+            } as React.CSSProperties}>
+              {page.searchPhrase}
+            </h1>
+
+            {/* Lead */}
+            <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 32px", maxWidth: "52ch" }}>
+              {introFirst}
+            </p>
+
+            {/* CTA + stat strip */}
+            <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+              <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                Practice with AI voice feedback <span className="ed-cta-arrow" aria-hidden>→</span>
+              </Link>
+              <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>
+                2 sessions free, no card
+              </span>
+              <span style={{ width: 1, height: 18, background: t.line, flexShrink: 0 }} />
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+                {questions.length} questions
+                {roundCount ? ` · ${roundCount} rounds` : ""}
+                {` · ${focusLabel}`}
+              </span>
+            </div>
+
           </div>
         </header>
 
-        <div className="ed-container" style={{ paddingTop: 60, paddingBottom: 8 }}>
-          {/* Framework + verified company context — narrow reading column */}
-          <div className="ed-reading">
-            <FrameworkBox name={page.framework.name} summary={page.framework.summary} />
+        {/* ── Two-column body ───────────────────────────────────────────── */}
+        <div className="ed-container qs-body" style={{ display: "flex", gap: 64, paddingTop: 64, paddingBottom: 80, alignItems: "flex-start" }}>
+
+          {/* Left: main content */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+
             <CompanyContextBox company={page.company} companyLabel={companyLabel} />
-          </div>
 
-          {/* Recruitment process — numbered timeline */}
-          {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
-            <section className="ed-reveal" style={{ marginTop: 64 }}>
-              <SectionHead title={`${companyLabel} recruitment process`} />
-              <div className="ed-reading">
+            {/* Recruitment process */}
+            {page.recruitmentSteps && page.recruitmentSteps.length > 0 && (
+              <section className="ed-reveal" style={{ marginTop: 56 }}>
+                <SectionHead title={`${companyLabel} recruitment process`} />
                 <SpecTimeline items={page.recruitmentSteps.map((step) => ({ label: step }))} />
-              </div>
-            </section>
-          )}
+              </section>
+            )}
 
-          {/* Interview rounds — numbered timeline with detail */}
-          {page.interviewRounds && page.interviewRounds.length > 0 && (
-            <section className="ed-reveal" style={{ marginTop: 56 }}>
-              <SectionHead title="What to expect in each round" />
-              <div className="ed-reading">
+            {/* Interview rounds */}
+            {page.interviewRounds && page.interviewRounds.length > 0 && (
+              <section className="ed-reveal" style={{ marginTop: 48 }}>
+                <SectionHead title="What to expect in each round" />
                 <SpecTimeline
                   items={page.interviewRounds.map((round, i) => {
-                    /* Split "Round Title (duration):" from the detail text */
                     const colonIdx = round.indexOf(":");
                     const title = colonIdx > -1 ? round.slice(0, colonIdx) : `Round ${i + 1}`;
                     const detail = colonIdx > -1 ? round.slice(colonIdx + 1).trim() : round;
                     return { label: title, body: detail };
                   })}
                 />
-              </div>
-            </section>
-          )}
+              </section>
+            )}
 
-          {/* How to answer — STAR structure guide for behavioral/HR/campus-placement */}
-          {(page.focus === "behavioral" || page.focus === "hr" || page.focus === "campus-placement") && (
-            <section className="ed-reveal" style={{ marginTop: 56 }}>
-              <SectionHead title="How to structure your answers" />
-              <div
-                className="ed-reading"
-                style={{
-                  background: t.creamSoft,
-                  border: `1px solid ${t.copperMid}`,
-                  borderRadius: 16,
-                  padding: "24px 26px",
-                }}
-              >
-                <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>
-                  {companyLabel} interviewers score answers on structure and specificity, not just content. Use the STAR method for every behavioral question.
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 20 }}>
-                  {[
-                    { letter: "S", label: "Situation", text: "Set up the context in 1–2 sentences. Give just enough background for the story to make sense." },
-                    { letter: "T", label: "Task", text: "State your personal responsibility. What were YOU specifically accountable for, not the team." },
-                    { letter: "A", label: "Action", text: "This is the longest part. Describe the specific steps you took. Use 'I' not 'we'." },
-                    { letter: "R", label: "Result", text: "Quantify if possible: numbers, percentages, timeline improvement. Then say what you learnt." },
-                  ].map(({ letter, label, text }) => (
-                    <div key={letter} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <span style={{ fontFamily: fonts.serif, fontSize: 30, fontStyle: "italic", fontWeight: 400, color: t.copper, lineHeight: 1 }}>
-                        {letter}
-                      </span>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.coal, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                        {label}
-                      </span>
-                      <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55 }}>
-                        {text}
-                      </span>
-                    </div>
-                  ))}
+            {/* STAR method — behavioral / HR / campus */}
+            {(page.focus === "behavioral" || page.focus === "hr" || page.focus === "campus-placement") && (
+              <section className="ed-reveal" style={{ marginTop: 48 }}>
+                <SectionHead title="How to structure your answers" />
+                <div style={{ background: t.creamSoft, border: `1px solid ${t.copperMid}`, borderRadius: 16, padding: "24px 26px" }}>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>
+                    {companyLabel} interviewers score answers on structure and specificity, not just content. Use the STAR method for every behavioural question.
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 20 }}>
+                    {[
+                      { letter: "S", label: "Situation", text: "Set up the context in 1–2 sentences. Give just enough background for the story to make sense." },
+                      { letter: "T", label: "Task", text: "State your personal responsibility. What were YOU specifically accountable for, not the team." },
+                      { letter: "A", label: "Action", text: "This is the longest part. Describe the specific steps you took. Use 'I' not 'we'." },
+                      { letter: "R", label: "Result", text: "Quantify if possible: numbers, percentages, timeline improvement. Then say what you learnt." },
+                    ].map(({ letter, label, text }) => (
+                      <div key={letter} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ fontFamily: fonts.serif, fontSize: 30, fontStyle: "italic", fontWeight: 400, color: t.copper, lineHeight: 1 }}>{letter}</span>
+                        <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.coal, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{label}</span>
+                        <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55 }}>{text}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "20px 0 0", lineHeight: 1.55, borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
+                    <strong style={{ color: t.coal }}>Common mistake:</strong> Saying &quot;we did X&quot; throughout. Interviewers score your individual contribution. If you can&apos;t separate what you did from what the team did, it signals low ownership.
+                  </p>
                 </div>
-                <p
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 12,
-                    color: t.inkFaint,
-                    margin: "20px 0 0",
-                    lineHeight: 1.55,
-                    borderTop: `1px solid ${t.line}`,
-                    paddingTop: 14,
-                  }}
-                >
-                  <strong style={{ color: t.coal }}>Common mistake:</strong> Saying &quot;we did X&quot; throughout. Interviewers score your individual contribution. If you can&apos;t separate what you did from what the team did, it signals low ownership. Practise saying &quot;I&quot; in mock sessions first.
-                </p>
-              </div>
-              {(page.focus === "campus-placement" || page.focus === "hr") && (
-                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "16px 0 0", lineHeight: 1.5 }}>
-                  Preparing for a campus placement drive?{" "}
-                  <Link href="/for-students" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>
-                    See the full students guide →
-                  </Link>
-                </p>
-              )}
-            </section>
-          )}
+                {(page.focus === "campus-placement" || page.focus === "hr") && (
+                  <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "16px 0 0", lineHeight: 1.5 }}>
+                    Preparing for a campus placement drive?{" "}
+                    <Link href="/for-students" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>See the full students guide →</Link>
+                  </p>
+                )}
+              </section>
+            )}
 
-          {/* Question list */}
-          <section className="ed-reveal" style={{ marginTop: 64 }}>
-            <SectionHead
-              title={`${focusLabel} questions ${companyLabel} asked`}
-              sub={`Verified from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback.${showSignupGate ? " First 5 shown free — sign up to unlock all." : ""}`}
-            />
-            <ol
-              role="list"
-              className="ed-reading"
-              style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}
-            >
-              {questions.map((q, i) => (
-                <QuestionCard
-                  key={i}
-                  question={q}
-                  index={i}
-                  practiceHref={practiceHref}
-                  showSignupGate={showSignupGate}
-                />
-              ))}
-            </ol>
-          </section>
+            {/* Question list */}
+            <section className="ed-reveal" style={{ marginTop: 56 }}>
+              <SectionHead
+                title={`${focusLabel} questions ${companyLabel} asked`}
+                sub={`Verified from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback.${showSignupGate ? " First 5 shown free — sign up to unlock all." : ""}`}
+              />
+              <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                {questions.map((q, i) => (
+                  <QuestionCard key={i} question={q} index={i} practiceHref={practiceHref} showSignupGate={showSignupGate} />
+                ))}
+              </ol>
+            </section>
+
+          </div>
+
+          {/* Right: sticky sidebar */}
+          <div className="qs-sidebar" style={{ flexShrink: 0, width: 280, position: "sticky", top: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+
+            {/* Dark CTA card */}
+            <div style={{ background: t.coal, borderRadius: 16, padding: "28px 24px" }}>
+              <p style={{ fontFamily: fonts.serif, fontSize: 20, fontWeight: 400, color: t.cream, lineHeight: 1.3, margin: "0 0 18px", letterSpacing: "-0.01em" }}>
+                Practice answering these out loud.
+              </p>
+              <Link href={practiceHref} className="ed-cta" style={{ ...ctaPrimaryStyle("md"), display: "block", textAlign: "center" as const, textDecoration: "none" }}>
+                Start free — 2 sessions →
+              </Link>
+              <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "10px 0 0", textAlign: "center" as const }}>
+                No credit card required
+              </p>
+            </div>
+
+            {/* Framework card */}
+            <div style={{ background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "22px 22px" }}>
+              <div style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 10 }}>
+                Answer framework
+              </div>
+              <div style={{ fontFamily: fonts.serif, fontSize: 17, fontWeight: 400, color: t.coal, lineHeight: 1.3, marginBottom: 12 }}>
+                {page.framework.name}
+              </div>
+              <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
+                {page.framework.summary.length > 160
+                  ? page.framework.summary.slice(0, page.framework.summary.lastIndexOf(" ", 160)) + "…"
+                  : page.framework.summary}
+              </p>
+            </div>
+
+            {/* Stats card */}
+            <div style={{ background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Questions</span>
+                <span style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.02em" }}>{questions.length}</span>
+              </div>
+              {roundCount && roundCount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Interview rounds</span>
+                  <span style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.02em" }}>{roundCount}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Difficulty</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
+                  {diffCounts.hard > diffCounts.easy ? "Hard" : diffCounts.easy > diffCounts.hard ? "Easy" : "Mixed"}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Focus</span>
+                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{focusLabel}</span>
+              </div>
+            </div>
+
+            {/* Related links */}
+            {(relatedPages.length > 0 || relatedBlogPosts.length > 0 || salaryPageSlug) && (
+              <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 20 }}>
+                <div style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 12 }}>
+                  Related prep
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {relatedPages.map((p) => (
+                    <li key={p.slug}>
+                      <Link href={`/questions/${p.slug}`} className="ed-link" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, textDecoration: "none", lineHeight: 1.4, display: "block" }}>
+                        {p.searchPhrase}
+                      </Link>
+                    </li>
+                  ))}
+                  {relatedBlogPosts.map((post) => (
+                    <li key={post.slug}>
+                      <Link href={`/blog/${post.slug}`} className="ed-link" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, textDecoration: "none", lineHeight: 1.4, display: "block" }}>
+                        {post.title}
+                      </Link>
+                    </li>
+                  ))}
+                  {salaryPageSlug && (
+                    <li>
+                      <Link href={`/salary/${salaryPageSlug}`} className="ed-link" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, textDecoration: "none", lineHeight: 1.4, display: "block" }}>
+                        {companyLabel} Salary Guide India 2026 →
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+
+          </div>
+
         </div>
 
-        {/* Closing CTA — full-bleed coal band */}
+        {/* Closing CTA */}
         <DarkBand eyebrow="Reading won't get you hired" title="Stop reading," accent="start answering.">
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "36ch", margin: 0 }}>
             The AI asks {companyLabel}-style questions, listens to your voice, and scores your answer in two minutes.
-            {questions.length > 5 && ` All ${questions.length} questions unlock after signup.`}
             {" "}2 sessions free, no card.
           </p>
           <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
@@ -513,91 +502,6 @@ export function QuestionSetPage({
           </Link>
         </DarkBand>
 
-        {/* Internal link graph — related question sets + guides */}
-        <div className="ed-container" style={{ paddingTop: 56, paddingBottom: 88 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: relatedBlogPosts.length > 0 ? "1fr 1fr" : "1fr",
-              gap: "0 64px",
-              borderTop: `1px solid ${t.line}`,
-              paddingTop: 32,
-            }}
-          >
-            {relatedPages.length > 0 && (
-              <section>
-                <h3
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: t.inkFaint,
-                    margin: "0 0 16px",
-                  }}
-                >
-                  Related interview prep
-                </h3>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-                  {relatedPages.map((p) => (
-                    <li key={p.slug}>
-                      <Link
-                        href={`/questions/${p.slug}`}
-                        className="ed-link"
-                        style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}
-                      >
-                        {p.searchPhrase}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {relatedBlogPosts.length > 0 && (
-              <section style={{ borderLeft: relatedPages.length > 0 ? `1px solid ${t.line}` : "none", paddingLeft: relatedPages.length > 0 ? 64 : 0 }}>
-                <h3
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: t.inkFaint,
-                    margin: "0 0 16px",
-                  }}
-                >
-                  Read our guides
-                </h3>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-                  {relatedBlogPosts.map((post) => (
-                    <li key={post.slug}>
-                      <Link
-                        href={`/blog/${post.slug}`}
-                        className="ed-link"
-                        style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}
-                      >
-                        {post.title}
-                      </Link>
-                    </li>
-                  ))}
-                  {salaryPageSlug && (
-                    <li>
-                      <Link
-                        href={`/salary/${salaryPageSlug}`}
-                        className="ed-link"
-                        style={{ color: t.copper, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}
-                      >
-                        {companyLabel} Salary Guide India 2026 →
-                      </Link>
-                    </li>
-                  )}
-                </ul>
-              </section>
-            )}
-          </div>
-        </div>
       </main>
     </>
   );
