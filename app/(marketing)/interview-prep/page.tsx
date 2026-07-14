@@ -223,19 +223,19 @@ export default async function InterviewPrepPage() {
                   label: "Indian Product Companies", companies: "Flipkart · Razorpay · Swiggy · CRED · Meesho · Zerodha",
                   format: "DSA (medium–hard) → System Design → Behavioral",
                   tip: "Bar is high. Expect 2 DSA problems in 45 min + a system design round tied to India-scale problems.",
-                  href: "/companies/flipkart-sde-interview-questions",
+                  href: "/questions/flipkart-sde-interview-questions",
                 },
                 {
                   label: "FAANG & Global Tech", companies: "Google · Amazon · Microsoft · Meta · Netflix · Adobe",
                   format: "Hard DSA → System Design → Behavioral (LP or Googleyness)",
                   tip: "The highest bar. DSA needs competitive-programming speed. Behavioral rounds are as important as coding.",
-                  href: "/companies/google-india-engineering-interview-questions",
+                  href: "/questions/google-india-engineering-interview-questions",
                 },
                 {
                   label: "Consulting & Finance", companies: "McKinsey · BCG · Deloitte · Goldman · JPMorgan",
                   format: "Case Study → Behavioral (PEI/LP) → Partner round",
                   tip: "Hypothesis-first thinking and structured problem-solving matter more than technical depth.",
-                  href: "/companies/mckinsey-case-study-interview-questions",
+                  href: "/questions/mckinsey-case-study-interview-questions",
                 },
               ].map((type) => (
                 <div key={type.label} style={{ ...card, padding: "20px 22px" }}>
@@ -354,17 +354,17 @@ export default async function InterviewPrepPage() {
                 {
                   title: "Why Should We Hire You?",
                   desc: "The most consequential question in campus interviews. Most freshers waste it with vague claims. Learn the Skills → Proof → Fit structure.",
-                  href: "/companies/why-should-we-hire-you-answer-india",
+                  href: "/questions/why-should-we-hire-you-answer-india",
                 },
                 {
                   title: "Tell Me About Yourself",
                   desc: "Opens every interview. The wrong structure is chronological. Learn the Present → Achievement → Future format that interviewers want.",
-                  href: "/companies/tell-me-about-yourself-answer-freshers-india",
+                  href: "/questions/tell-me-about-yourself-answer-freshers-india",
                 },
                 {
                   title: "Common HR Interview Questions",
                   desc: "10 questions that appear in 95%+ of fresher HR rounds — strength, weakness, 5-year goal, why this company, relocation, and more.",
-                  href: "/companies/common-hr-interview-questions-freshers-india",
+                  href: "/questions/common-hr-interview-questions-freshers-india",
                 },
               ].map((item) => (
                 <Link key={item.href} href={item.href} style={{
