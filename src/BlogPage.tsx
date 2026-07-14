@@ -373,6 +373,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
     cta: "Your self-introduction is the one answer you'll give in every interview, and most people have never actually timed themselves saying it. Run it on HireStepX: you'll find out quickly whether it's ninety seconds or three minutes, and whether your hook lands or disappears into filler.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "tell-me-about-yourself-best-answer",
@@ -406,6 +407,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["how-to-introduce-yourself-in-interview", "hr-interview-questions-answers-india", "behavioral-interview-questions-freshers"],
     cta: "The gap between how your answer sounds in your head and how it lands out loud is usually large. Say it to HireStepX: you'll get scored on structure, relevance, and delivery, and you'll know exactly which thirty seconds to cut.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "wipro-interview-questions-answers",
@@ -470,6 +472,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["how-to-introduce-yourself-in-interview", "tell-me-about-yourself-best-answer", "salary-negotiation-tips-india"],
     cta: "Most people rehearse answers in their head. That's not the same as saying them out loud under mild pressure. HireStepX's AI will push back on vague answers and flag when you've gone off-track: try a free HR mock round and see where you actually stand.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "amazon-leadership-principles-interview",
@@ -688,6 +691,7 @@ const posts: BlogPost[] = [
       { label: "Cognizant Technical Interview", slug: "cognizant-technical-interview-questions" },
     ],
     cta: "After the CoCubes cut, the technical and HR rounds are where offers actually close. HireStepX lets you run through both with AI-graded feedback: so you're not winging the interview after surviving the assessment.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "accenture-interview-questions-freshers-2026",
@@ -717,6 +721,7 @@ const posts: BlogPost[] = [
       { label: "Accenture Campus Placement", slug: "accenture-ase-interview-questions" },
     ],
     cta: "Accenture scores communication as heavily as aptitude. If you haven't practiced speaking your answers out loud: not writing them, saying them: you're not actually prepared. HireStepX covers the communication and HR rounds with the same AI scoring it applies to technical questions. Run a session before you go in.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "product-manager-interview-questions-india",
@@ -784,6 +789,7 @@ const posts: BlogPost[] = [
       { label: "LTIMindtree Freshers Interview", slug: "ltimindtree-freshers-interview-questions" },
     ],
     cta: "Each of these companies has a different interview personality: HCL's technical screen is lighter, Accenture's group exercise catches people off guard, Capgemini's CoCubes cut matters more than most candidates realise. HireStepX runs you through the specific rounds that trip candidates up, with AI feedback on the exact things each company's panel actually scores.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "deloitte-interview-questions-freshers-2026",
@@ -815,6 +821,7 @@ const posts: BlogPost[] = [
       { label: "Deloitte Analyst Interview", slug: "deloitte-analyst-interview-questions" },
     ],
     cta: "Most Deloitte rejections happen in the PI round, not the aptitude test: candidates know their content but can't structure a verbal answer under pressure. HireStepX puts you in that room: open-ended questions, a timer, AI feedback on whether your response actually had a point.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "group-discussion-topics-campus-placement-2026",
@@ -846,6 +853,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "deloitte-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison"],
     cta: "Knowing the topic isn't the gap: articulating a coherent point in under 30 seconds, under pressure, in a room of eight strangers is. HireStepX gives you a place to practice that out loud, with feedback on whether your argument actually landed.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "how-to-pass-tcs-nqt-2026",
@@ -877,6 +885,7 @@ const posts: BlogPost[] = [
       { label: "TCS Digital Interview", slug: "tcs-digital-interview-questions" },
     ],
     cta: "Once the NQT is behind you, the interview is where track placement gets confirmed: and TCS HR rounds are more structured than most candidates expect. HireStepX walks you through the questions TCS actually asks, with scoring on the answers that decide whether you stay on the track you qualified for.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "zoho-interview-questions-freshers-2026",
@@ -907,6 +916,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "hcl-accenture-capgemini-interview-comparison", "cognizant-interview-questions-freshers-2026"],
     cta: "Zoho's technical rounds are conversational: they'll ask you to explain your code, not just write it. That's a different skill from passing an online judge, and it's one most candidates haven't practised. HireStepX runs you through that format: write something, then explain it out loud to an AI that actually evaluates the reasoning.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "software-engineer-interview-checklist-2026",
@@ -968,6 +978,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["tcs-interview-questions-freshers-2026", "system-design-interview-preparation", "campus-placement-interview-tips"],
     cta: "Reading Java answers is not the same as saying them. HireStepX puts you in the mock interview format: you answer out loud, and the AI evaluates whether your explanation would satisfy a panel, not just whether the definition was technically correct.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "resume-tips-freshers-india-2026",
@@ -999,6 +1010,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["campus-placement-interview-tips", "behavioral-interview-questions-freshers", "tcs-interview-questions-freshers-2026"],
     cta: "Your resume gets you in the room. What you say about it determines whether you leave with an offer. Most candidates can't explain their own projects as well on paper as they think they can out loud: HireStepX is where you find out, before the panel does.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "data-analyst-interview-questions-india-2026",
@@ -1085,6 +1097,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["java-interview-questions-freshers-india-2026", "data-analyst-interview-questions-india-2026", "system-design-interview-preparation"],
     cta: "Writing correct Python is one thing. Explaining why your approach is correct: out loud, under pressure, to someone who will ask a follow-up: is a different skill. HireStepX runs voice mock interviews where you narrate your reasoning, and the AI scores both the technical accuracy and how clearly you communicated it.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "goldman-sachs-india-interview-questions",
@@ -1272,6 +1285,7 @@ const posts: BlogPost[] = [
       { label: "Infosys Power Programmer", slug: "infosys-power-programmer-interview" },
     ],
     cta: "Knowing SQL and being able to explain SQL in an interview are different skills. Most candidates discover this gap after they fail a round they thought they were prepared for. HireStepX lets you practice explaining SQL concepts out loud: the AI evaluates whether your explanation of GROUP BY, JOINs, or window functions would actually convince a technical interviewer.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "python-developer-salary-india-2026",
@@ -1366,6 +1380,7 @@ const posts: BlogPost[] = [
       { label: "TCS Behavioral Interview Practice", slug: "tcs-behavioral-interview-questions" },
     ],
     cta: "Most TCS candidates who fail the technical round knew the answers: they just couldn't explain them clearly enough under pressure. The verbal/reasoning/numerical sections of the NQT are one problem, but the technical interview after requires a completely different type of fluency: explaining OOPs, walking through code logic, answering behavioral questions without reading from a script. HireStepX lets you build that verbal fluency through voice mock interviews before you face the real round.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "faang-interview-preparation-india-2026",
@@ -1431,6 +1446,7 @@ const posts: BlogPost[] = [
       { label: "Wipro NLTH Preparation 2026", slug: "wipro-nlth-preparation-2026" },
     ],
     cta: "The Wipro HR round eliminates candidates who sound rehearsed in a bad way: scripted, flat, or unable to handle a follow-up question. HireStepX runs voice mock interviews where you practice HR and behavioral answers out loud, and the AI tells you where your answers sound generic or where your STAR structure breaks down. 20 minutes of this is worth more than re-reading the 'top 20 HR questions' list a fifth time.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "react-developer-salary-india-2026",
@@ -1648,6 +1664,7 @@ const posts: BlogPost[] = [
       { label: "HR Interview Practice for Freshers", slug: "tcs-hr-round-questions" },
     ],
     cta: "If you're targeting a product company for your first role, the behavioral round is harder than most freshers expect. HireStepX gives you voice mock interviews with real-time STAR scoring: practice until the structure comes naturally, not something you're building mid-answer under pressure.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
   {
     slug: "ibm-interview-questions-india-2026",
@@ -1932,6 +1949,7 @@ const posts: BlogPost[] = [
       { label: "Infosys Campus Interview Practice", slug: "infosys-campus-interview-questions" },
     ],
     cta: "Reading the right answer framework is the first step. The gap between knowing the SPR structure and delivering it confidently under interview pressure is where most freshers get caught. HireStepX runs voice mock interviews where you practice 'why should we hire you' out loud: the AI evaluates whether your proof is specific, your relevance connection is genuine, and your delivery sounds natural rather than rehearsed.",
+    relatedLinks: [{ label: "Campus Placement Guide for Students", href: "/for-students" }],
   },
 ];
 
