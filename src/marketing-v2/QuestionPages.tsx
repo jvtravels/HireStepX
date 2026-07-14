@@ -471,6 +471,14 @@ export function QuestionSetPage({
                   <strong style={{ color: t.coal }}>Common mistake:</strong> Saying &quot;we did X&quot; throughout. Interviewers score your individual contribution. If you can&apos;t separate what you did from what the team did, it signals low ownership. Practise saying &quot;I&quot; in mock sessions first.
                 </p>
               </div>
+              {(page.focus === "campus-placement" || page.focus === "hr") && (
+                <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "16px 0 0", lineHeight: 1.5 }}>
+                  Preparing for a campus placement drive?{" "}
+                  <Link href="/for-students" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>
+                    See the full students guide →
+                  </Link>
+                </p>
+              )}
             </section>
           )}
 
