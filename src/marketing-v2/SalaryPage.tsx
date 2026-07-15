@@ -514,6 +514,20 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 12px;
         }
+        /* CSS hover — cannot use onMouseEnter/Leave in a Server Component */
+        .sal-card {
+          display: block;
+          background: #FFFFFF;
+          border: 1px solid #EBE5D2;
+          border-radius: 8px;
+          padding: 20px;
+          text-decoration: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .sal-card:hover {
+          border-color: #B45309;
+          box-shadow: 0 2px 12px rgba(180,83,9,0.10);
+        }
         @media (max-width: 600px) {
           .sal-grid { grid-template-columns: 1fr; }
           .sal-hub-header { padding: 40px 16px 32px !important; }
@@ -557,23 +571,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               <a
                 key={entry.slug}
                 href={`/salary/${entry.slug}`}
-                style={{
-                  display: "block",
-                  background: t.white,
-                  border: `1px solid ${t.line}`,
-                  borderRadius: 8,
-                  padding: "20px 20px",
-                  textDecoration: "none",
-                  transition: "border-color 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.borderColor = t.copper;
-                  (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 2px 12px rgba(180,83,9,0.10)`;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.borderColor = t.line;
-                  (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
-                }}
+                className="sal-card"
               >
                 <p
                   style={{
