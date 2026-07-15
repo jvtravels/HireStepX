@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useState, useRef, type CSSProperties } from "react";
+import { useEffect, useState, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
@@ -1792,7 +1792,7 @@ function CompactStepMock({ step }: { step: number }) {
   };
   if (step === 0) {
     return (
-      <div style={card}>
+      <div style={{ ...card, minHeight: 248 }}>
         <div
           style={{
             padding: 18,
@@ -1803,6 +1803,7 @@ function CompactStepMock({ step }: { step: number }) {
             marginBottom: 14,
           }}
         >
+          {/* Document icon — more meaningful than a generic upload arrow */}
           <div
             style={{
               width: 34,
@@ -1814,10 +1815,14 @@ function CompactStepMock({ step }: { step: number }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 17,
             }}
           >
-            ↑
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14,2 14,8 20,8" />
+              <line x1="9" y1="13" x2="15" y2="13" />
+              <line x1="9" y1="17" x2="13" y2="17" />
+            </svg>
           </div>
           <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, marginTop: 8, marginBottom: 2 }}>Drop your resume</p>
           <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft, margin: 0 }}>PDF, DOCX · auto-parsed in 4s</p>
@@ -1835,7 +1840,7 @@ function CompactStepMock({ step }: { step: number }) {
   }
   if (step === 1) {
     return (
-      <div style={card}>
+      <div style={{ ...card, minHeight: 248 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
           {(
             [
@@ -1887,7 +1892,8 @@ function CompactStepMock({ step }: { step: number }) {
         background: t.coal,
         border: `1px solid ${t.creamLineFaint}`,
         borderRadius: 16,
-        padding: 20,
+        padding: 24,
+        minHeight: 248,
         boxShadow: `0 20px 50px -22px ${t.coalShadow}`,
       }}
     >
@@ -1956,92 +1962,76 @@ export function ProductStoryV2() {
   return (
     <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 72, paddingBottom: 72 }}>
       <div style={container}>
-        <MotionReveal style={{ marginBottom: 48 }}>
+        <MotionReveal style={{ marginBottom: 12 }}>
           <h2 id="hd-story" style={h2}>
             Resume in.{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>Scored answer out.</span>
           </h2>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, margin: "10px 0 0", lineHeight: 1.5 }}>
+            From file upload to scored STAR breakdown — under 10 minutes, no prep materials needed.
+          </p>
         </MotionReveal>
 
-        {/* 3-column always-visible layout — each step visible at once */}
+        {/* 3-column layout — gaps between columns act as dividers */}
         <div
           className="mv2-story-stages"
-          style={{ display: "flex", alignItems: "start" }}
+          style={{ display: "flex", alignItems: "start", gap: 32, marginTop: 40 }}
         >
           {steps.map((step, i) => (
-            <Fragment key={step.kicker}>
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 18,
-                }}
-              >
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <span
-                      style={{
-                        fontFamily: fonts.mono,
-                        fontSize: 12,
-                        color: t.copper,
-                        fontWeight: 600,
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      {step.kicker}
-                    </span>
-                    <span aria-hidden style={{ flex: 1, height: 1, background: t.line }} />
-                  </div>
-                  <h3
+            <div
+              key={step.kicker}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 18,
+              }}
+            >
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <span
                     style={{
-                      fontFamily: fonts.serif,
-                      fontSize: 22,
-                      color: t.coal,
-                      margin: 0,
-                      letterSpacing: "-0.02em",
-                      fontWeight: 400,
-                      lineHeight: 1.2,
-                      textWrap: "balance" as const,
+                      fontFamily: fonts.mono,
+                      fontSize: 12,
+                      color: t.copper,
+                      fontWeight: 600,
+                      letterSpacing: "0.05em",
                     }}
                   >
-                    {step.title}
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: fonts.sans,
-                      fontSize: 14,
-                      color: t.inkSoft,
-                      lineHeight: 1.6,
-                      marginTop: 8,
-                      marginBottom: 0,
-                    }}
-                  >
-                    {step.desc}
-                  </p>
+                    {step.kicker}
+                  </span>
+                  <span aria-hidden style={{ flex: 1, height: 1, background: t.line }} />
                 </div>
-                <CompactStepMock step={i} />
-              </div>
-              {i < 2 && (
-                <div
-                  className="mv2-story-arrow"
-                  aria-hidden
+                <h3
                   style={{
-                    flexShrink: 0,
-                    display: "flex",
-                    alignItems: "flex-start",
-                    paddingTop: 42,
-                    padding: "42px 20px 0",
-                    color: t.copper,
-                    fontSize: 18,
-                    opacity: 0.35,
+                    fontFamily: fonts.serif,
+                    fontSize: 22,
+                    color: t.coal,
+                    margin: 0,
+                    letterSpacing: "-0.02em",
+                    fontWeight: 400,
+                    lineHeight: 1.2,
+                    textWrap: "balance" as const,
                   }}
                 >
-                  →
-                </div>
-              )}
-            </Fragment>
+                  {step.title}
+                </h3>
+                <p
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 14,
+                    color: t.inkSoft,
+                    lineHeight: 1.6,
+                    marginTop: 8,
+                    marginBottom: 0,
+                  }}
+                >
+                  {step.desc}
+                </p>
+              </div>
+              <CompactStepMock step={i} />
+            </div>
           ))}
         </div>
       </div>
