@@ -67,7 +67,7 @@ const APPLICATION_SCHEMA = {
   offers: [
     { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "2 practice sessions" },
     { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
-    { "@type": "Offer", price: "39", priceCurrency: "INR", name: "Sprint Pack", description: "5 sessions, 30-day validity, one-time purchase" },
+    { "@type": "Offer", price: "39", priceCurrency: "INR", name: "Sprint Pack", description: "5 sessions, 30-day validity, renews monthly, cancel anytime" },
   ],
 };
 
