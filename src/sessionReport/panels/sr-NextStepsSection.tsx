@@ -18,7 +18,6 @@ export function NextStepsSection({
   readinessSentence,
   weakestSkill,
   onTryWeakestQuestion,
-  onSaveStory,
   onDrillSkill,
   resumeImprovements,
 }: {
@@ -26,7 +25,6 @@ export function NextStepsSection({
   readinessSentence?: string;
   weakestSkill?: string;
   onTryWeakestQuestion?: () => void;
-  onSaveStory?: () => void;
   onDrillSkill?: () => void;
   /** Resume polish bullets from the AI analysis — shown when present
    *  to connect interview coaching with resume quality. Max 3. */
@@ -79,19 +77,6 @@ export function NextStepsSection({
   const firstCardWithHandler = { ...firstCard, onClick: onTryWeakestQuestion };
   const cards = [
     firstCardWithHandler,
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-        </svg>
-      ),
-      iconBg: t.success100,
-      iconColor: t.success,
-      title: "Save best answer",
-      desc: "Bookmark your top-scoring response for pre-interview review.",
-      cta: "Save to story bank",
-      onClick: onSaveStory,
-    },
     {
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

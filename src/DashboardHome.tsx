@@ -692,8 +692,14 @@ export default function DashboardHome() {
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <Ring value={readiness} size={92} stroke={8} color={t.copper}
-                      label={`Weekly readiness ${readiness} percent`} />
+                <div style={{ position: "relative", width: 92, height: 92, flexShrink: 0 }}>
+                  <Ring value={readiness} size={92} stroke={8} color={t.copper}
+                        label={`Weekly readiness ${readiness} percent`} />
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                    <span style={{ fontFamily: f.mono, fontSize: 20, fontWeight: 700, color: t.copper, lineHeight: 1 }}>{readiness}</span>
+                    <span style={{ fontFamily: f.sans, fontSize: 9, color: t.inkSoft, marginTop: 2 }}>/ 100</span>
+                  </div>
+                </div>
                 <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5 }}>
                   WEEKLY READINESS
                 </div>

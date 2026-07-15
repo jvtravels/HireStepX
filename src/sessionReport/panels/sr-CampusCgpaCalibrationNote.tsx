@@ -73,7 +73,7 @@ export function CampusCgpaCalibrationNote({
         {companyName} baseline {baseCgpaCutoff.toFixed(1)} CGPA{adjustmentText}
         {statedCgpa !== null && (
           <>
-            {" — you're at "}
+            {": you're at "}
             <strong style={{ color: passed ? t.success : t.error }}>
               {statedCgpa.toFixed(1)} {passed ? "✓" : "✗"}
             </strong>
@@ -83,8 +83,8 @@ export function CampusCgpaCalibrationNote({
       </p>
       <p style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
         {collegeLabel === "tier-1"
-          ? "IIT / NIT / BITS / IIIT / IISc get a 0.5 leniency on the cutoff because of harder grading curves."
-          : "Cutoffs combine the company's typical fresher gate with a college-tier adjustment (IIT/NIT/BITS get -0.5)."}
+          ? "IIT / NIT / BITS / IIIT / IISc receive a 0.5 point adjustment reflecting their harder grading curves."
+          : "Your score is benchmarked against the company's standard fresher baseline. IIT / NIT / BITS / IIIT graduates receive a 0.5 adjustment for harder grading curves."}
       </p>
     </section>
   );

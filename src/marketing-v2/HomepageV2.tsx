@@ -323,6 +323,8 @@ const body: CSSProperties = {
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
+    ["Questions", "/questions"],
+    ["Companies", "/companies"],
     ["Blog", "/blog"],
     ["Pricing", "/#hd-pricing"],
     ["Contact", "/contact"],
@@ -1428,7 +1430,7 @@ export function HeroV2() {
             margin: "22px auto 0",
           }}
         >
-          AI mock interviews you actually speak to — scored against the
+          AI mock interviews you actually speak to, scored against the
           rubrics real Indian panels use. STAR breakdown back before your chai
           cools.
         </p>
@@ -1968,7 +1970,7 @@ export function ProductStoryV2() {
             <span style={{ fontStyle: "italic", color: t.copper }}>Scored answer out.</span>
           </h2>
           <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, margin: "10px 0 0", lineHeight: 1.5 }}>
-            From file upload to scored STAR breakdown — under 10 minutes, no prep materials needed.
+            From file upload to scored STAR breakdown: under 10 minutes, no prep materials needed.
           </p>
         </MotionReveal>
 
@@ -2418,7 +2420,7 @@ export function FeatureGridV2() {
               Your resume is <em>the question paper.</em>
             </h3>
             <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 16px", maxWidth: 320 }}>
-              Upload once. Every session drills your actual projects — not someone else&apos;s.
+              Upload once. Every session drills your actual projects, not someone else&apos;s.
             </p>
             <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <ResumeAwareVisual />
@@ -2430,12 +2432,12 @@ export function FeatureGridV2() {
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
               During · Real Conversation
             </span>
-            <h3 aria-label="During the session: real conversation — Vague answer? It asks again. Harder." style={{ fontFamily: fonts.serif, fontSize: 22, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
+            <h3 aria-label="During the session: real conversation. Vague answer? It asks again. Harder." style={{ fontFamily: fonts.serif, fontSize: 22, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
               Vague answer?{" "}
               <span style={{ color: t.copper, fontStyle: "italic" }}>It asks again. Harder.</span>
             </h3>
             <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "0 0 14px" }}>
-              Every follow-up is generated from your answer — not a pre-written script.
+              Every follow-up is generated from your answer, not a pre-written script.
             </p>
             <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <VoiceFollowUpVisual />
@@ -2447,7 +2449,7 @@ export function FeatureGridV2() {
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper100, marginBottom: 12, display: "block" }}>
               During · Salary Negotiation
             </span>
-            <h3 aria-label="During the session: salary negotiation — You left ₹2L on the table. Practice changing that." style={{ fontFamily: fonts.serif, fontSize: 20, color: t.cream, margin: 0, marginBottom: 14, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
+            <h3 aria-label="During the session: salary negotiation. You left ₹2L on the table. Practice changing that." style={{ fontFamily: fonts.serif, fontSize: 20, color: t.cream, margin: 0, marginBottom: 14, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
               You left{" "}
               <span style={{ color: t.copper100, fontStyle: "italic" }}>₹2L on the table.</span>{" "}
               Practice changing that.

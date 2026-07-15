@@ -129,7 +129,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=1200&h=500&fit=crop",
     heroAlt: "Google office building representing Google interview preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-06-20",
     intro: "The Google interview is rigorous but not unknowable. Five rounds, four dimensions on a rubric the interviewer fills out after you leave the room. Candidates who do well aren't smarter: they've seen the format and practiced in it. These are the questions that come up most consistently, and what a strong answer actually looks like.",
     sections: [
       { heading: "1. Tell me about a time you led a project with ambiguous requirements", content: "Google loves ambiguity. They want to see structured thinking under uncertainty. Use the STAR method but emphasize the 'situation': describe the specific ambiguity (unclear stakeholders? shifting goals? no precedent?) and how you created clarity.\n\nSample opener: \"In Q3 last year, I was asked to lead our team's migration to a new data pipeline, but the target architecture hadn't been finalized and three teams had competing requirements...\"" },
@@ -165,7 +165,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&h=500&fit=crop",
     heroAlt: "Team collaborating in a modern office, representing Flipkart interview preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-06-22",
     intro: "Flipkart's interview bar is closer to FAANG than to a Tier-2 product company: 5 rounds, hard DSA, and a machine coding round that filters out candidates who only prepared on LeetCode. They also run one of India's larger fresher batches. Here's what the full loop looks like and what gets you through each stage.",
     sections: [
       { heading: "Interview Structure", content: "Your loop will run 4–5 rounds. Here's what each one tests:\n\n1. Online Assessment: 2-3 DSA problems, 90 minutes. The filter round.\n2. Machine Coding Round: Build a small working system in 90 minutes.\n3. Problem Solving (x2): Whiteboard DSA with follow-up questions.\n4. System Design: For SDE-2+ roles. Architecture, tradeoffs, scale.\n5. Hiring Manager: Behavioral + culture fit. Ownership and communication." },
@@ -195,7 +195,7 @@ const posts: BlogPost[] = [
     readTime: "12 min",
     heroImage: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&h=500&fit=crop",
     heroAlt: "University students in a campus setting preparing for placement interviews",
-    datePublished: "2026-07-01",
+    datePublished: "2026-06-25",
     intro: "The most common behavioral interview mistake freshers make isn't saying the wrong thing: it's assuming they have nothing worth saying. A college project you debugged under a deadline. A hackathon where the team wanted to quit at 2am. A freelance job that fell apart and what you learned. These are the right stories. Behavioral rounds aren't screening for years of corporate experience; they're looking for evidence of how you think under pressure. Here's how to surface those stories from what you've actually done.",
     sections: [
       { heading: "The STAR Method for Freshers", content: "STAR stands for Situation, Task, Action, Result. As a fresher, your examples can come from:\n\n• College projects and capstone work\n• Internships (even 2-month ones count)\n• Hackathons and coding competitions\n• Club leadership and event organization\n• Part-time work or freelancing\n\nThe key is specificity: don't say 'I worked in a team.' Say 'I led a 4-person team to build a food delivery app in 48 hours at HackMIT.'" },
@@ -230,7 +230,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&h=500&fit=crop",
     heroAlt: "Fintech workspace representing Razorpay interview preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-06-28",
     intro: "Razorpay hires lean and pays well: SDE-1 at ₹15–25 LPA with meaningful equity from a pre-IPO company. The interview reflects that bar: 4–5 rounds, genuinely hard DSA, a culture round that's harder to fake than most, and system design questions grounded in real payment problems like idempotency and retry logic. Here's what each stage actually tests.",
     sections: [
       { heading: "Interview Process Overview", content: "Razorpay's hiring loop:\n\n1. Recruiter screen (30 min): background, motivation, salary expectations\n2. Online coding round: 2 DSA problems, 60 minutes\n3. Technical round 1: DSA + problem decomposition\n4. Technical round 2: System design (for SDE-2+)\n5. Culture round: Values alignment, ownership stories\n6. Hiring manager: Final bar raiser" },
@@ -871,7 +871,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1200&h=500&fit=crop",
     heroAlt: "Group of students in a discussion circle representing GD round preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-13",
     intro: "The person who speaks first in a GD is rarely the one who scores highest. Neither is the one who speaks most. Assessors at Infosys, Wipro, and the Big 4 campus drives consistently say the same thing: they're watching for the candidate who actually listens, picks a moment, and makes the group smarter when they speak. You can know everything about every topic and still get eliminated if you can't do that. These 40 topics from 2025–2026 drives come with the key fault lines worth knowing: but more importantly, with the arguments that make you sound like you thought about this, not just read a summary.",
     sections: [
       { heading: "Technology & AI Topics (Most Common in 2026)", content: "1. 'AI will eliminate more jobs than it creates in India': Key angles: automation in BPO/IT services, AI-created roles (prompt engineers, AI auditors), reskilling lag, India's demographic dividend\n\n2. 'Should India develop its own large language model?': Key angles: data sovereignty, cost of compute, dependency on US AI, geopolitical dimension\n\n3. 'Social media does more harm than good for Indian youth': Key angles: mental health data, misinformation, creator economy opportunities, regulatory gap\n\n4. 'Deepfakes are a national security threat': Key angles: election interference, financial fraud, legislation in India vs global frameworks\n\n5. 'Remote work kills company culture': Key angles: collaboration data, employee preferences post-pandemic, office real estate economics, productivity metrics\n\n6. 'India should prioritize AI chips manufacturing': Key angles: semiconductor policy, CHIPS Act comparison, talent availability, 5-year investment thesis\n\n7. 'Generative AI in education will widen India's learning gap': Key angles: tier-1 vs tier-3 city access, exam integrity, teacher role evolution, EdTech penetration data" },
@@ -903,7 +903,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&h=500&fit=crop",
     heroAlt: "Student at a computer taking an online assessment for TCS NQT exam preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-13",
     intro: "A single test score: your TCS NQT result: determines whether you start at ₹3.36 LPA or ₹9 LPA. That's not a rounding error; it's the difference between the Ninja track and Prime, and it's decided in three hours. The test gates 5+ lakh candidates each year, and most of them prepare the wrong things: they over-index on DSA and neglect the aptitude sections that actually move the needle on track placement. This is what a focused four-week prep actually looks like.",
     sections: [
       { heading: "TCS NQT 2026 Structure", content: "The NQT has two parts:\n\nPart 1: Cognitive Skills (60 minutes, ~36 questions)\n• Numerical Ability: Arithmetic, percentages, averages, ratios: typically 12–15 questions\n• Verbal Ability: Reading comprehension, grammar, para-jumbles: typically 15 questions\n• Reasoning Ability: Logical reasoning, series completion, coding-decoding: typically 8–10 questions\n\nPart 2: Coding (60 minutes, 2 questions)\n• For Ninja: 1–2 easy-medium coding problems (arrays, strings, basic logic)\n• For Digital/Prime: 1 medium problem + 1 medium-hard problem (trees, DP, graphs)\n\nThe first part determines if you qualify; the coding section determines your track placement." },
@@ -938,7 +938,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=500&fit=crop",
     heroAlt: "Software engineers at a desk representing Zoho interview preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-14",
     intro: "Zoho interviews you differently from any other Indian tech company, and that's not a coincidence. No placement agencies. No bond period. A 5-round process spread over 2–3 days that is genuinely trying to find out if you can code and think, not whether you memorised the right answers. The compensation for freshers runs ₹5–8 LPA: 50–70% above TCS Ninja: but the offer rate is much lower. You won't get through on aptitude drills and HR practice alone. Here's what the process actually looks like, and how to prepare for the parts that matter.",
     sections: [
       { heading: "Zoho's Hiring Process: What Makes It Different", content: "Zoho does not use campus placement drives at most colleges. They hire directly:\n\n1. Walk-ins at Zoho offices (Chennai, Pune, Delhi, Hyderabad)\n2. Referrals from current Zoho employees\n3. Off-campus drives advertised on their careers portal\n4. ZOHO Schools of Learning alumni (direct hire path)\n\nThis means: if you're waiting for Zoho to come to your campus, you may be waiting forever. Apply directly.\n\nThe process has 5 rounds, sometimes spread over multiple days:\nRound 1: Aptitude test (written, pen-paper)\nRound 2: Technical test: Programming\nRound 3: Advanced Programming\nRound 4: Technical Interview: CS fundamentals + code walkthrough\nRound 5: HR Interview" },
@@ -972,7 +972,7 @@ const posts: BlogPost[] = [
     readTime: "7 min",
     heroImage: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1200&h=500&fit=crop",
     heroAlt: "Developer with checklist preparing for a software engineering interview",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-14",
     intro: "Two days out, and you're probably considering one more full pass through graphs, or re-reading system design notes you've already absorbed. Don't. The research on performance under pressure is consistent: what hurts candidates in the room isn't a gap in knowledge: it's fatigue, anxiety, and small logistical failures that consume mental bandwidth when you need it for actual problems. This checklist is what you should actually do with the 48 hours you have left.",
     sections: [
       { heading: "48 Hours Before: Technical Review", content: "Do NOT try to learn new topics. Instead, review what you already know:\n\n□ Review your 5 strongest data structure patterns (the ones you can code in 20 min)\n□ Re-read your system design notes: focus on the trade-offs you understand well\n□ Re-check your STAR stories for behavioral questions: practice them out loud once each\n□ Review the company's engineering blog or recent tech talks\n□ Check if the role mentions specific technologies (Python, Java, Go) and prep language-specific questions\n\nWhat NOT to do: Cram new algorithms, read new system design papers, or start a new LeetCode problem. The stress-to-gain ratio is terrible at T-48." },
@@ -1004,7 +1004,7 @@ const posts: BlogPost[] = [
     readTime: "13 min",
     heroImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=500&fit=crop",
     heroAlt: "Code on a screen representing Java interview preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-15",
     intro: "Memorising \"polymorphism means many forms\" will get you through the first question. The second: \"show me an example where you'd actually use it\": is where most freshers stall. Java interviews at TCS, Infosys, Wipro, and product companies all follow a similar arc: definitions first, then application, then edge cases you didn't expect. These 60 questions are the ones that actually show up, with answers shaped for out-loud explanation rather than written recitation.",
     sections: [
       { heading: "OOP Fundamentals: Always Asked", content: "1. What are the 4 pillars of OOP?\nEncapsulation (bundling data + methods), Inheritance (IS-A relationship), Polymorphism (many forms: compile-time vs runtime), Abstraction (hiding implementation details). Know concrete examples of each.\n\n2. Difference between Abstraction and Encapsulation?\nAbstraction = hiding complexity (what). Encapsulation = hiding data (how). Abstract class/interface implements abstraction; private fields + getters/setters implement encapsulation.\n\n3. What is method overloading vs overriding?\nOverloading: same method name, different parameters (compile-time polymorphism, same class).\nOverriding: same method signature in subclass (runtime polymorphism, inheritance required).\n\n4. Can we override static methods in Java?\nNo: static methods are resolved at compile time (method hiding, not overriding). This is a common trick question.\n\n5. What is the difference between abstract class and interface?\nAbstract class: can have constructors, state, and partial implementation. Interface (Java 8+): default and static methods allowed; no state. A class can implement multiple interfaces but extend only one abstract class.\n\n6. What is the diamond problem and how does Java solve it?\nWhen multiple inheritance leads to ambiguity in which parent's method is called. Java avoids it by not allowing multiple class inheritance; interfaces with default methods use explicit override to resolve conflicts." },
@@ -1035,7 +1035,7 @@ const posts: BlogPost[] = [
     readTime: "9 min",
     heroImage: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=500&fit=crop",
     heroAlt: "Resume document on a desk representing fresher resume writing tips",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-15",
     intro: "A recruiter at a large campus drive is looking at your resume for about 20 seconds before deciding whether to keep reading. That's not cynicism: it's throughput. At 300 applications per role, even generous reviewers can't give each one more than that on the first pass. The candidates who make that cut usually aren't more qualified. They're more legible. Their resume answers the question \"why this person?\" in the first third of the page, and doesn't make the reader work to find it. Here's what legible looks like in 2026.",
     sections: [
       { heading: "The Single-Page Rule (and When to Break It)", content: "For freshers with under 2 years of experience: one page, always. No exceptions.\n\nWhy: Recruiters at high-volume campuses spend an average of 6 seconds per resume. Anything beyond page 1 rarely gets read. Two-page resumes from freshers signal inability to prioritise: itself a negative signal.\n\nThe only exception: if you have exceptional projects, publications, or research, an Appendix-style second page is acceptable at IIT/NIT-level campus drives for FAANG. Service company recruiters won't read it." },
@@ -1067,7 +1067,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=500&fit=crop",
     heroAlt: "Data charts and analytics dashboard representing data analyst interview preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-16",
     intro: "\"Data analyst\" covers a wider range than most candidates realise, and preparing the wrong way for the wrong company is one of the more common ways to tank an interview that should have been winnable. The person Goldman Sachs wants and the person Swiggy wants are both called data analysts: but Goldman is testing statistics and financial modelling while Swiggy wants SQL fluency and product intuition. TCS and Infosys are somewhere else entirely: Excel, reporting tools, and business communication. This covers what each type actually asks, so you can prepare for the specific job rather than a generic version of the role.",
     sections: [
       { heading: "SQL: The Universal Filter", content: "SQL is asked in virtually every data analyst interview in India. The questions that actually differentiate candidates:\n\n1. Window functions: ROW_NUMBER(), RANK(), DENSE_RANK(), LAG(), LEAD(), PARTITION BY. These are asked at every product company.\n\nExample: 'Find the 2nd highest salary per department.'\nSELECT * FROM (SELECT *, DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) as rk FROM employees) t WHERE rk = 2;\n\n2. Self joins: 'Find all employees who earn more than their manager.'\n\n3. Aggregation + HAVING: 'Find departments with more than 5 employees earning above ₹10L.'\n\n4. Common Table Expressions (CTEs): Readable alternative to subqueries. Interviewers at Flipkart and Amazon specifically look for CTE usage as a signal of SQL maturity.\n\n5. Query optimisation: 'How would you optimise a slow query?': Cover indexing (B-tree vs hash), explain plan, avoiding SELECT *, avoiding functions on indexed columns in WHERE clause." },
@@ -1098,7 +1098,7 @@ const posts: BlogPost[] = [
     readTime: "8 min",
     heroImage: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&h=500&fit=crop",
     heroAlt: "Food delivery packaging representing Zomato product manager interview preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-16",
     intro: "Zomato's PM interview has a specific tell: they'll name a product surface: Blinkit integration, Hyperpure, the Gold/Pro membership tier: and watch how specifically you engage with it. Generic frameworks about \"identifying user pain points\" don't land here. They want to know if you've actually used the product, noticed something broken or interesting, and have a considered point of view about it. The candidate who gives a textbook product answer fails the same way every time: they're answering a generic PM case, not a Zomato case.",
     sections: [
       { heading: "Zomato's Interview Process (2026)", content: "Zomato PM interview rounds:\n\n1. Resume Screen + Recruiter Call (30 min): Background, motivation, product interest. Have a strong answer for 'Why Zomato specifically?' that references their specific products.\n\n2. Case Round 1 (60 min): Product sense or improvement case. Common: 'How would you improve Zomato's restaurant discovery?' or 'Design a feature to increase order frequency.'\n\n3. Case Round 2 (60 min): Metric/analytics case. 'Zomato's reorder rate dropped 12% in July: diagnose.' or 'Define the success metrics for Zomato Gold.'\n\n4. Behavioral Round (45 min): Values alignment: ownership, data-driven decisions, customer empathy.\n\n5. Hiring Manager / Leadership Round: Product strategy + cross-functional alignment stories." },
@@ -1126,7 +1126,7 @@ const posts: BlogPost[] = [
     readTime: "10 min",
     heroImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=500&fit=crop",
     heroAlt: "Python code on a screen representing Python interview preparation",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-17",
     intro: "Most candidates preparing for Python interviews study the wrong things. They drill list comprehensions and `lambda` functions, then get blindsided by a question about mutable default arguments: or asked to explain the GIL to an interviewer at a fintech company with no ML ambitions. Python is accepted at Flipkart, Swiggy, CRED, Amazon, and Google for DSA rounds, and it's the default language for every data science and ML interview. But the questions it generates are specific to Python's own quirks: why your function behaves differently on the second call, what `__slots__` actually buys you, when a generator outperforms a list and when it doesn't. This guide covers 50 questions drawn from actual interview rounds: weighted toward the ones that filter people out, not the ones everyone already knows.",
     sections: [
       { heading: "Core Python: Fundamentals Still Get Asked", content: "**What is the difference between a list and a tuple?**\n\nThe textbook answer: lists are mutable, tuples are immutable: is table stakes. What interviewers actually want to hear is why that immutability matters in practice. Tuples are hashable, so you can use them as dictionary keys or add them to a set. A list of `(lat, lng)` coordinate pairs is the classic example. Tuples also iterate slightly faster. If you're storing data that won't change, a tuple signals intent to anyone reading your code, not just a performance micro-optimisation.\n\n**What is the GIL?**\n\nThe Global Interpreter Lock is CPython's mutex that ensures only one thread executes Python bytecode at a time: which means CPU-bound multi-threaded Python doesn't actually run in parallel on a multi-core machine. The GIL comes up a lot in backend and ML interviews. The honest answer includes the tradeoffs: for I/O-bound tasks (network calls, disk reads), threads work fine because the GIL is released during I/O. For CPU-bound parallelism, you reach for `multiprocessing` (separate processes, each with its own GIL) or Cython. Mentioning that Python 3.13 introduced experimental free-threaded mode shows you're tracking the language.\n\n**Why are mutable default arguments dangerous?**\n\nThis is one of Python's best interview filters because it looks harmless until it isn't. `def add(item, lst=[])`: that list is evaluated once when the function is defined, not each time it's called. Every invocation shares the same list. The fix is `def add(item, lst=None)` with `lst = lst or []` inside the body. A strong answer explains that this isn't a bug in Python: it's a consequence of functions being first-class objects with their own `__defaults__` attribute.\n\n**What are `*args` and `**kwargs`?**\n\n`*args` captures extra positional arguments as a tuple; `**kwargs` captures extra keyword arguments as a dictionary. They're tools for writing APIs that accept flexible input without breaking when the caller passes something new. The distinction interviewers probe is the unpacking side: you can pass `*my_list` to a function to unpack it into positional arguments, and `**my_dict` to unpack keyword arguments. That's where the real gotchas live.\n\n**List comprehension vs generator expression**\n\nBrackets vs parentheses: `[x*2 for x in range(10)]` builds the whole list in memory at once. `(x*2 for x in range(10))` is lazy: it yields one item per iteration and holds almost nothing in memory. For small sequences, the difference is irrelevant. For a file with 10 million rows, the generator is the only sensible choice. The follow-up question is almost always: when would you NOT use a generator? Answer: when you need random access (you can't index into a generator) or when you need to iterate the sequence more than once." },
@@ -1156,7 +1156,7 @@ const posts: BlogPost[] = [
     readTime: "11 min",
     heroImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=500&fit=crop",
     heroAlt: "Financial district skyscrapers representing Goldman Sachs India offices",
-    datePublished: "2026-07-01",
+    datePublished: "2026-07-17",
     intro: "Goldman Sachs's Bengaluru and Hyderabad offices aren't satellite outposts: they run core trading systems, risk infrastructure, and engineering for global desks. SDE-1 offers land between ₹35–55 LPA; Analyst track packages for campus recruits from IITs sit at ₹20–30 LPA. The interview process reflects that weight. You'll face 4–5 rounds covering DSA (medium-to-hard LeetCode difficulty, strong graphs emphasis), system design with financial context, and behavioral rounds where they're explicitly testing for what GS calls 'client focus' and 'integrity and ethics': not just the generic STAR format your consulting prep book taught you. This guide breaks down what those rounds actually look like in 2026 and where candidates lose offers they thought they'd already won.",
     sections: [
       { heading: "Goldman Sachs India Hiring Process (2026)", content: "The GS India hiring pipeline has 4–6 stages:\n\nStage 1: HireVue Screening (30 min, asynchronous video)\nRecorded video responses to 3–4 behavioral questions. You have 30 seconds to prepare and 2–3 minutes to answer. GS uses AI scoring + human review. This is the most-failed first step: candidates underestimate it.\n\nStage 2: Online Coding Assessment (90 min, HackerRank)\n2–3 coding problems. Difficulty: 1 medium + 1 hard (DSA). GS tests not just correctness but time/space complexity. Partial solutions with working test cases score better than brute force.\n\nStage 3: Technical Phone Screen (45 min)\nOne interviewer. Mix of coding (1 medium problem) + CS theory. GS particularly focuses on object-oriented design and system reliability.\n\nStage 4–5: Super Day (3–4 back-to-back interviews, on-site or video)\n• Coding round (1–2 hard DSA problems)\n• System design (SDE-2+ and Analyst)\n• Risk & controls / behavioral (finance-specific)\n• Partner/Director interview (final decision-maker)\n\nStage 6: HR + Offer\nBackground verification takes 3–4 weeks. Verbal offers come from the hiring manager, written from HR." },
@@ -2311,8 +2311,8 @@ const CATEGORIES = ["All", "Company Guides", "Freshers", "Behavioral", "Technica
 function CompactCard({ post }: { post: BlogPost }) {
   const [imgFailed, setImgFailed] = useState(false);
   const d = new Date(post.datePublished);
-  const dateLabel = [d.getDate(), d.getMonth() + 1, d.getFullYear() % 100]
-    .map(n => String(n).padStart(2, "0")).join(".");
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const dateLabel = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   return (
     <article className="blog-card" style={{ display: "flex", flexDirection: "column" }}>
       {/* Image: frameless, portrait ratio, badges float on top */}

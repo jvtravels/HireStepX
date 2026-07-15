@@ -213,7 +213,7 @@ export function SalaryCompanyPage({
         .sal-table tr:last-child td { border-bottom: none; }
         .sal-table tr:hover td { background: ${t.creamSoft}; }
 
-        @media (max-width: 600px) {
+        @media (max-width: 640px) {
           .sal-container { padding: 0 16px !important; }
           .sal-header { padding: 40px 16px 32px !important; }
           .sal-hide-sm { display: none !important; }
@@ -528,7 +528,7 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
           border-color: #B45309;
           box-shadow: 0 2px 12px rgba(180,83,9,0.10);
         }
-        @media (max-width: 600px) {
+        @media (max-width: 640px) {
           .sal-grid { grid-template-columns: 1fr; }
           .sal-hub-header { padding: 40px 16px 32px !important; }
           .sal-hub-container { padding: 0 16px !important; }
