@@ -1962,7 +1962,7 @@ export function ProductStoryV2() {
   return (
     <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 72, paddingBottom: 72 }}>
       <div style={container}>
-        <MotionReveal style={{ marginBottom: 12 }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 12 }}>
           <h2 id="hd-story" style={h2}>
             Resume in.{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>Scored answer out.</span>
@@ -2389,7 +2389,7 @@ export function FeatureGridV2() {
   return (
     <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, paddingTop: 48, paddingBottom: 40, background: t.cream }}>
       <div style={container}>
-        <MotionReveal style={{ marginBottom: 20 }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 20 }}>
           <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2 }}>
             What practice alone{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>never shows you.</span>
