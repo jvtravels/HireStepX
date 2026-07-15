@@ -541,62 +541,24 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
     <>
       <style>{editorialCSS}</style>
       <main style={pageShell}>
-        {/* ── Two-column hero ───────────────────────────────────────── */}
+        {/* ── Hero — single column ──────────────────────────────────── */}
         <header style={{ paddingTop: ED_PADDING.heroTop, paddingBottom: ED_PADDING.heroBottom, borderBottom: `1px solid ${t.line}`, background: t.cream }}>
           <div className="ed-container">
-            <div style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
-
-              {/* Left: heading + lead + CTA */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ ...edEyebrow, margin: "0 0 20px" }}>Interview questions · India 2026</p>
-                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(38px, 4.8vw, 60px)", fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.028em", color: t.coal, margin: "0 0 24px" }}>
-                  Real interview questions,{" "}
-                  <em style={{ fontStyle: "italic", color: t.copper }}>answered out loud.</em>
-                </h1>
-                <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 36px", maxWidth: "44ch" }}>
-                  {pages.length} question sets across the top Indian and global companies — verified questions you can practice answering with an AI interviewer in two minutes.
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                  <Link href="/signup?source=questions-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-                    Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
-                  </Link>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>2 sessions, no card</span>
-                </div>
-              </div>
-
-              {/* Right: company category stat panel */}
-              <nav aria-label="Browse company categories" style={{ flexShrink: 0, width: 340, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
-                <div style={{ padding: "22px 24px 18px", borderBottom: `1px solid ${t.line}` }}>
-                  <p style={{ fontFamily: fonts.serif, fontSize: 40, fontWeight: 400, color: t.coal, lineHeight: 1, margin: "0 0 4px", letterSpacing: "-0.02em" }}>
-                    {pages.length}
-                  </p>
-                  <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: 0 }}>
-                    question sets · 30+ companies
-                  </p>
-                </div>
-                {[
-                  { label: "Service IT", hint: "TCS · Infosys · Wipro", focus: "campus-placement" },
-                  { label: "Indian Product", hint: "Flipkart · Razorpay · Swiggy", focus: "technical" },
-                  { label: "FAANG & Global", hint: "Google · Amazon · Microsoft", focus: "system-design" },
-                  { label: "Consulting", hint: "McKinsey · BCG · Deloitte", focus: "case-study" },
-                  { label: "Freshers & HR", hint: "All campus drives · HR rounds", focus: "hr" },
-                ].map(({ label, hint, focus }, i, arr) => (
-                  <Link
-                    key={label}
-                    href={`/questions?focus=${focus}`}
-                    className="ed-cta ed-row"
-                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 24px", textDecoration: "none", borderBottom: i < arr.length - 1 ? `1px solid ${t.line}` : "none", borderRadius: 0 }}
-                  >
-                    <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 14, color: t.copper, opacity: 0.6, lineHeight: 1, flexShrink: 0, width: 16 }}>{i + 1}</span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, lineHeight: 1.3 }}>{label}</span>
-                      <span style={{ display: "block", fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint, marginTop: 1 }}>{hint}</span>
-                    </span>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.copper, flexShrink: 0 }} aria-hidden>→</span>
-                  </Link>
-                ))}
-              </nav>
-
+            <p style={{ ...edEyebrow, margin: "0 0 24px" }}>Interview questions · India 2026</p>
+            <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(38px, 4.8vw, 60px)", fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.028em", color: t.coal, margin: "0 0 24px" }}>
+              Real interview questions,{" "}
+              <em style={{ fontStyle: "italic", color: t.copper }}>answered out loud.</em>
+            </h1>
+            <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 36px", maxWidth: "52ch" }}>
+              Verified questions from 30+ companies — practice answering with an AI interviewer that scores your answer in two minutes.
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <Link href="/signup?source=questions-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
+              </Link>
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+                {pages.length} question sets · 2 sessions free
+              </span>
             </div>
           </div>
         </header>
