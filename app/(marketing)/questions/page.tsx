@@ -20,7 +20,7 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
 export const metadata: Metadata = {
   title: "Interview Questions by Company & Role India 2026 | HireStepX",
   description:
-    "Real, verified interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 60+ more companies. Practice answering them with AI voice feedback — 2 sessions free.",
+    "Verified interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 60+ companies. Practice with AI voice feedback. 2 sessions free.",
   keywords: [
     "interview questions",
     "company interview questions",

@@ -5,7 +5,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 export const metadata: Metadata = {
   title: "About HireStepX — India's AI Mock Interview Platform 2026 | HireStepX",
   description:
-    "HireStepX is India's AI-powered mock interview platform. We help job seekers practice for TCS, Google, Flipkart, Amazon, and 60+ companies with voice AI interviews, scored STAR reports, and skill-decay tracking.",
+    "India's AI mock interview platform. Voice interviews for TCS, Google, Flipkart, and 60+ companies. STAR scoring and skill-decay tracking. 2 sessions free.",
   keywords: [
     "about HireStepX",
     "AI mock interview platform India",

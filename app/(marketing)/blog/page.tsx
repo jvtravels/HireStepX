@@ -6,7 +6,7 @@ import { BLOG_META } from "@/blog-meta";
 export const metadata: Metadata = {
   title: "Interview Preparation Blog India 2026 — TCS, Google, Flipkart & More | HireStepX",
   description:
-    "Company-specific interview guides for Indian job seekers. TCS NQT, Google behavioral, Flipkart system design, Amazon Leadership Principles, campus placement tips, and salary negotiation — all written for 2026 India.",
+    "Company interview guides for India 2026. TCS NQT, Google behavioral, Flipkart system design, Amazon leadership, campus placement, and salary negotiation.",
   keywords: [
     "interview preparation blog India",
     "TCS interview guide 2026",

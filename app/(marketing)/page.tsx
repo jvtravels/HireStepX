@@ -6,7 +6,7 @@ import ComingSoon from "@/ComingSoon";
 export const metadata: Metadata = {
   title: "HireStepX — AI Mock Interview Practice India 2026 | TCS, Google, Flipkart",
   description:
-    "India's AI mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 50+ companies. Voice AI scores your answers in real time. 2 sessions free.",
+    "India's AI mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 50+ companies. Voice AI scores answers in real time. 2 sessions free.",
   keywords: [
     "AI mock interview India",
     "mock interview practice India",

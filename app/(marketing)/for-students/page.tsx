@@ -18,7 +18,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Campus Placement Interview Preparation Guide India 2026 | HireStepX",
   description:
-    "Complete campus placement interview preparation guide for Indian college students in 2026. Covers aptitude, technical, group discussion, and HR rounds for TCS, Infosys, Wipro, Cognizant, Accenture, HCL, and Capgemini.",
+    "Campus placement guide for India 2026. Aptitude, technical, GD, and HR rounds for TCS, Infosys, Wipro, Cognizant, Accenture, and Capgemini.",
   keywords: [
     "campus placement interview preparation India 2026",
     "fresher interview preparation India",

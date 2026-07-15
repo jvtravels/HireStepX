@@ -5,7 +5,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 export const metadata: Metadata = {
   title: "How AI Mock Interviews Work — 5-Step Practice Guide India 2026 | HireStepX",
   description:
-    "How HireStepX works: upload resume, pick your target company (TCS, Google, Flipkart), practice a voice interview with AI, get a scored STAR report, and repeat as skills decay. Start free — no card needed.",
+    "How HireStepX works: upload resume, pick a company, practice a voice interview with AI, get a scored STAR report. Start free, no card needed.",
   keywords: [
     "how AI mock interview works",
     "AI interview practice India",

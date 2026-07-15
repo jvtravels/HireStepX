@@ -11,7 +11,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Company Salary Guides India 2026 | HireStepX",
   description:
-    "Verified salary ranges for 23 companies hiring in India in 2026 — TCS, Infosys, Razorpay, Google, Amazon, Goldman Sachs, JP Morgan, and more. Total CTC data from AmbitionBox, Glassdoor, and Levels.fyi.",
+    "Verified salary ranges for TCS, Infosys, Razorpay, Google, Amazon, Goldman Sachs, JP Morgan, and more in India 2026. CTC data from AmbitionBox.",
   keywords: [
     "software engineer salary India 2026",
     "TCS salary freshers 2026",

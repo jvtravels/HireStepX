@@ -27,7 +27,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Company Interview Questions — All Companies India 2026 | HireStepX",
   description:
-    "Interview questions and preparation guides for 50+ companies in India — TCS, Infosys, Google, Amazon, Flipkart, Razorpay, McKinsey, and more. Practice with AI voice mock interviews.",
+    "Interview questions for 50+ companies in India — TCS, Infosys, Google, Amazon, Flipkart, Razorpay, and more. Practice with AI voice mock interviews.",
   keywords: [
     "company interview questions India",
     "TCS interview questions 2026",

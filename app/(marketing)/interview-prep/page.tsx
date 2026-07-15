@@ -22,7 +22,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Interview Preparation Guide India 2026 — AI Mock Interviews | HireStepX",
   description:
-    "Complete interview preparation guide for Indian job seekers in 2026. Covers all company types, interview formats, and practice strategies — with AI mock interview practice for TCS, Infosys, Google, Amazon, Flipkart, and 50+ more.",
+    "Interview prep guide for India 2026. AI mock interviews for TCS, Infosys, Google, Amazon, Flipkart, and 50+ companies. All formats covered.",
   keywords: [
     "interview preparation India 2026",
     "how to prepare for job interview India",

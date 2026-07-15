@@ -5,7 +5,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 export const metadata: Metadata = {
   title: "Refer a Friend — Give a Session, Get a Session | HireStepX",
   description:
-    "Refer a friend to HireStepX and both of you get a free session. Share your link — they get a free session credit, you get one once they practise. No codes, no hassle.",
+    "Refer a friend to HireStepX — both of you get a free session credit. Share your link, they practise, you earn a free session. No codes, no hassle.",
   keywords: [
     "HireStepX referral program",
     "refer a friend interview prep India",
