@@ -1478,7 +1478,7 @@ export function HeroV2() {
               </span>
             </div>
 
-            {/* Social proof — rotating testimonial */}
+            {/* Rotating "built for" statement — product philosophy, not user testimonials */}
             <div
               style={{
                 display: "flex",
@@ -1493,15 +1493,17 @@ export function HeroV2() {
             >
               <span
                 aria-hidden
-                className="mv2-pulse-dot"
                 style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  background: t.success,
+                  fontFamily: fonts.mono,
+                  fontSize: 9,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: t.copper,
                   flexShrink: 0,
                 }}
-              />
+              >
+                Built for
+              </span>
               <span
                 key={`quote-${quoteIdx}`}
                 style={{
@@ -1515,9 +1517,8 @@ export function HeroV2() {
                     color: t.coal,
                   }}
                 >
-                  "{quote.text}"
-                </span>{" "}
-                <span style={{ color: t.inkFaint }}>({quote.by})</span>
+                  {quote.text}
+                </span>
               </span>
             </div>
           </div>
@@ -2684,7 +2685,7 @@ export function FeatureGridV2() {
       <div style={container}>
         <SectionMasthead n="05" label="What sets it apart" right="Distinct mechanics" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ marginBottom: 52 }}>
-          <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2, whiteSpace: "nowrap" }}>
+          <h2 id="hd-features" className="mv2-features-h2" style={h2}>
             What practice alone{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>
               never shows you.
@@ -2938,11 +2939,13 @@ export function ComparisonV2() {
 
   return (
     <section
+      aria-labelledby="hd-comparison"
       className="mv2-cv-auto"
       style={{ background: t.cream, padding: "96px 24px 110px", display: "flex", flexDirection: "column", alignItems: "center" }}
     >
       {/* Headline */}
       <h2
+        id="hd-comparison"
         className="mv2-reveal"
         style={{
           fontFamily: fonts.serif,
@@ -2956,8 +2959,9 @@ export function ComparisonV2() {
           maxWidth: 760,
         }}
       >
-        Practice that can&rsquo;t score you{" "}
-        <em style={{ fontStyle: "italic", color: t.copper }}>isn&rsquo;t practice.</em>
+        Other tools give you a question.
+        <br />
+        HireStepX tells you where you lost the panel.
       </h2>
 
       {/* Subhead */}
@@ -2970,8 +2974,8 @@ export function ComparisonV2() {
         maxWidth: 520,
         margin: "0 0 60px",
       }}>
-        A senior&rsquo;s mock is hard to arrange. An AI session agrees with everything.
-        Neither tells you where you lost the HR panel.
+        A senior&rsquo;s mock is hard to arrange. Scripted AI agrees with everything.
+        Neither scores you against the rubric the HR panel actually uses.
       </p>
 
       {/* Three cards — 3-col grid on desktop, 2-col on tablet (HireStepX full-width), 1-col on phone */}
@@ -4292,12 +4296,11 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
     { label: "Project ownership", score: 45, c: t.error },
     { label: "Project depth",     score: 40, c: t.error },
   ];
-  const rptF = { sans: "'Satoshi', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
   /* Arc length for 58% of a semicircle: π × r × 0.58 = π × 33 × 0.58 ≈ 60 */
   const arcLen = 60;
   return (
-    <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
-      <div style={{ background: t.cream, padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ width: 460, background: t.cream, borderRadius: 16, border: `1px solid ${t.line}`, boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: fonts.sans, transition: "box-shadow 0.50s ease" }}>
+      <div style={{ background: t.creamSoft, padding: "9px 16px", borderBottom: `1px solid ${t.line}`, display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: t.copper }}>42%</span>
         <span style={{ fontSize: 8, color: t.inkSoft }}>Infosys SWE Fresher · ~5 sessions to close gap</span>
@@ -4307,15 +4310,15 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.inkSoft, marginBottom: 6 }}>OVERALL SCORE</div>
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
-              <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
+              <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke={t.line} strokeWidth="7" strokeLinecap="round" />
               <path d="M7,46 A33,33 0 0,1 48,14" fill="none" stroke={t.copper} strokeWidth="7" strokeLinecap="round"
                 strokeDasharray={arcLen} strokeDashoffset={revealed ? 0 : arcLen}
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: t.coal, lineHeight: 1 }}>58</div>
-            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkFaintWeak }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkFaint }}>/ 100</div>
           </div>
-          <span style={{ fontSize: 7.5, background: "#FEF3C7", color: t.copperDark, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Lean Hire</span>
+          <span style={{ fontSize: 7.5, background: t.copper100, color: t.copperDark, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Lean Hire</span>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
             <svg width="28" height="12" viewBox="0 0 28 12"><polyline points="0,4 5,7 10,5 16,10 22,8 28,12" fill="none" stroke={t.error} strokeWidth="1.2" /></svg>
             <span style={{ fontSize: 9, color: t.error, fontWeight: 700 }}>↓ 8</span>
@@ -4324,20 +4327,20 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: t.copper, marginBottom: 5 }}>✦ AI CAMPUS VERDICT</div>
           <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 8 }}>Enthusiasm came through. Project section drifted to "we" — distinguish your individual contribution.</div>
-          <div style={{ fontSize: 8, background: t.error100, padding: "4px 8px", borderRadius: 3, color: "#7F1D1D", fontWeight: 600 }}>
+          <div style={{ fontSize: 8, background: t.error100, padding: "4px 8px", borderRadius: 3, color: t.error, fontWeight: 600 }}>
             ⚠ RED FLAG: "we built the backend" — vague project role
           </div>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 8px", background: "#FEFDF8" }}>
-        <span style={{ fontSize: 8, background: "#FEF3C7", color: t.copperDark, padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>CAMPUS PLACEMENT · FULL REPORT</span>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: t.coal, marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your campus interview</div>
+      <div style={{ borderTop: `1px solid ${t.line}`, padding: "10px 16px 8px", background: t.cream }}>
+        <span style={{ fontSize: 8, background: t.copper100, color: t.copperDark, padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>CAMPUS PLACEMENT · FULL REPORT</span>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: t.coal, marginTop: 7, fontFamily: fonts.serif, lineHeight: 1.25 }}>The full breakdown of your campus interview</div>
         <div style={{ fontSize: 8, color: t.inkSoft, marginTop: 3 }}>Each panel turns one campus skill into something you can rehearse.</div>
       </div>
       <div style={{ margin: "10px 16px 0", background: t.indigo, borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
-        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
+        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: t.cream, padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
         <div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>Skill breakdown</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: t.cream }}>Skill breakdown</div>
           <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.65)" }}>Where each axis landed and what to practice next.</div>
         </div>
       </div>
@@ -4345,8 +4348,8 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
         {skills.map((s, i) => (
           <div key={s.label} style={{ marginBottom: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ fontSize: 8.5, color: "#4A4540" }}>{s.label}</span>
-              <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono }}>{s.score}</span>
+              <span style={{ fontSize: 8.5, color: t.inkSoft }}>{s.label}</span>
+              <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: fonts.mono }}>{s.score}</span>
             </div>
             <div style={{ height: 4, background: t.line, borderRadius: 2, overflow: "hidden" }}>
               <div style={{ height: "100%", width: revealed ? `${s.score}%` : "0%", background: s.c, borderRadius: 2, transition: `width 0.7s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 400 + i * 80}ms` }} />
@@ -4681,20 +4684,23 @@ export default function HomepageV2() {
       <StructuredData />
       <a href="#main" className="mv2-skip">Skip to content</a>
       <NavV2 />
-      {/* 12-section composition (matches the planned section list):
+      {/* 12-section composition:
             1. NavV2  2. HeroV2  3. InterviewFocusV2  4. PersonalizedReportsV2
-            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. ComparisonV2  8. BuiltForIndiaV2
-            9. PricingV2  10. SecurityComplianceV2  11. FAQV2  12. VideoCtaV2  13. FooterDome
-            Arc: hook → focus proof → report proof → features → how-it-works → vs-alternatives → buy */}
+            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. PricingV2
+            8. ComparisonV2  9. BuiltForIndiaV2  10. SecurityComplianceV2
+            11. FAQV2  12. VideoCtaV2  13. FooterDome
+            Arc: hook → proof → features → how-it-works → price → vs-alternatives → buy
+            Pricing moved before Comparison so candidates see the cost before the
+            competitor contrast — most decide on price first, then validate "why us". */}
       <main id="main">
         <HeroV2 />
         <InterviewFocusV2 />
         <PersonalizedReportsV2 />
         <FeatureGridV2 />
         <ProductStoryV2 />
+        <PricingV2 />
         <ComparisonV2 />
         <BuiltForIndiaV2 />
-        <PricingV2 />
         <SecurityComplianceV2 />
         <FAQV2 />
         <VideoCtaV2 />
