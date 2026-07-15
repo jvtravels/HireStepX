@@ -4121,56 +4121,69 @@ export function VideoCtaV2({
   ctaLabel?: string;
   ctaHref?: string;
 } = {}) {
+  const [revealed, setRevealed] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setRevealed(true); obs.disconnect(); } },
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const fadeUp = (delay: number): CSSProperties => ({
+    opacity: revealed ? 1 : 0,
+    transform: revealed ? "translateY(0)" : "translateY(28px)",
+    transition: `opacity 0.75s ease ${delay}ms, transform 0.75s ease ${delay}ms`,
+  });
+
   return (
-    <section style={{
-      position: "relative", padding: "120px 40px 100px",
-      background: t.coal, overflow: "hidden",
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      {/* Copper accent gradient */}
-      <div aria-hidden style={{
-        position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse 65% 70% at 15% 0%, rgba(180,83,9,0.32) 0%, transparent 58%)",
-        pointerEvents: "none",
-      }} />
-      {/* Ghost oversized number texture */}
-      <div aria-hidden style={{
-        position: "absolute", bottom: "-0.15em", right: "-0.04em",
-        fontFamily: fonts.serif, fontSize: "clamp(220px, 30vw, 420px)",
-        fontStyle: "italic", color: "rgba(250,247,240,0.028)",
-        lineHeight: 1, pointerEvents: "none", userSelect: "none" as const,
-        letterSpacing: "-0.04em",
-      }}>1</div>
+    <section ref={sectionRef} style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
+
+      {/* Background video */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="none"
+        crossOrigin="anonymous"
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "cover", objectPosition: "center 75%",
+          opacity: revealed ? 1 : 0,
+          transform: revealed ? "scale(1)" : "scale(1.06)",
+          transition: "opacity 1.2s ease 0ms, transform 1.4s ease 0ms",
+        }}
+      >
+        <source src="/cta.mp4" type="video/mp4" />
+      </video>
+
+      {/* Dark gradient — top to transparent */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)", pointerEvents: "none" }} />
 
       {/* Content */}
-      <div style={{ position: "relative", zIndex: 2, textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
-        <h2 style={{
-          fontFamily: fonts.serif, fontSize: "clamp(36px, 5.5vw, 72px)",
-          fontWeight: 400, lineHeight: 1.04, color: t.cream,
-          margin: "0 0 20px", letterSpacing: "-0.03em",
-        }}>
-          {headingPlain}{" "}
-          <span style={{ fontStyle: "italic", color: t.copper100 }}>{headingItalic}</span>
+      <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 1100, margin: "0 auto", alignSelf: "flex-start" }}>
+
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(36px, 5.5vw, 72px)", fontWeight: 400, lineHeight: 1.04, color: t.cream, margin: "0 0 20px", letterSpacing: -2, textWrap: "balance" as const, ...fadeUp(100) }}>
+          {headingPlain} <span style={{ fontStyle: "italic" }}>{headingItalic}</span>
         </h2>
 
-        <p style={{
-          fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65,
-          color: t.creamMuted, margin: "0 auto 44px", maxWidth: 480,
-        }}>
+        <p style={{ fontSize: 15, lineHeight: 1.65, color: "#ffffff", margin: "0 auto 40px", maxWidth: 520, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
           {body}
         </p>
 
-        <a href={ctaHref} style={{
-          display: "inline-flex", alignItems: "center", gap: 10,
-          background: t.copper, color: t.cream, padding: "16px 32px",
-          borderRadius: 999, fontWeight: 600, fontSize: 16,
-          textDecoration: "none", fontFamily: fonts.sans,
-          boxShadow: "0 6px 28px rgba(180,83,9,0.35)",
-          letterSpacing: "-0.01em",
-        }}>
-          {ctaLabel}
-          <span aria-hidden>→</span>
-        </a>
+        <div style={{ display: "flex", justifyContent: "center", ...fadeUp(400) }}>
+          <a href={ctaHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
+            {ctaLabel}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </a>
+        </div>
+
       </div>
     </section>
   );
