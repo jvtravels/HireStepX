@@ -6,45 +6,7 @@
 import { useEffect, type CSSProperties } from "react";
 import { t, f } from "../tokens";
 import { captureClientEvent } from "../../posthogClient";
-
-const CHANNELS = [
-  {
-    key: "linkedin",
-    label: "Share on LinkedIn",
-    icon: "in",
-    bg: "#0a66c2",
-    buildUrl: (score: number, role: string) => {
-      const text = encodeURIComponent(
-        `Just scored ${score}/100 on a ${role} mock interview on @HireStepX — the AI actually caught the gaps I didn't notice myself. Really useful if you're prepping for Indian tech interviews. hirestepx.com`
-      );
-      return `https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fhirestepx.com%2F&summary=${text}`;
-    },
-  },
-  {
-    key: "whatsapp",
-    label: "WhatsApp",
-    icon: "WA",
-    bg: "#25d366",
-    buildUrl: (score: number, role: string) => {
-      const text = encodeURIComponent(
-        `Got ${score}/100 on a ${role} mock interview on HireStepX — the AI voice feedback actually helps. Worth trying: https://hirestepx.com`
-      );
-      return `https://wa.me/?text=${text}`;
-    },
-  },
-  {
-    key: "twitter",
-    label: "Post on X",
-    icon: "𝕏",
-    bg: "#000",
-    buildUrl: (score: number, role: string) => {
-      const text = encodeURIComponent(
-        `Scored ${score}/100 on a ${role} AI mock interview on @HireStepX. The STAR breakdown is genuinely useful for interview prep. hirestepx.com`
-      );
-      return `https://twitter.com/intent/tweet?text=${text}`;
-    },
-  },
-] as const;
+import { SHARE_CHANNELS } from "./_shareChannels";
 
 const iconStyle: CSSProperties = {
   display: "inline-flex",
@@ -131,7 +93,7 @@ export function TestimonialNudge({
         Sharing takes 10 seconds and helps other candidates find their way here too.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-        {CHANNELS.map((ch) => (
+        {SHARE_CHANNELS.map((ch) => (
           <a
             key={ch.key}
             href={ch.buildUrl(score, displayRole)}
