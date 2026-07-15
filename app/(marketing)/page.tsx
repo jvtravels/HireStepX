@@ -108,7 +108,7 @@ const WEBSITE_SCHEMA = {
  * structured data whether they hit Coming Soon or the full homepage. */
 export const dynamic = "force-dynamic";
 
-const PRODUCTION_HOSTS = new Set(["hirestepx.com", "www.hirestepx.com"]);
+const PRODUCTION_HOSTS = new Set<string>([]); // Cleared for public launch
 
 export default async function Page() {
   const override = process.env.NEXT_PUBLIC_COMING_SOON;
