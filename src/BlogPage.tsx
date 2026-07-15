@@ -2132,9 +2132,9 @@ function BlogIndex() {
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, marginBottom: 32 }}>
           {([
             ["Practice Questions", "/questions"],
-            ["Campus Placement Prep", "/questions?focus=campus-placement"],
+            ["Campus Placement Prep", "/for-students"],
             ["HR Round Prep", "/questions?focus=hr"],
-            ["For Students", "/questions?focus=campus-placement"],
+            ["For Students", "/for-students"],
             ["All Companies", "/companies"],
           ] as [string, string][]).map(([label, href]) => (
             <a

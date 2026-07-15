@@ -217,7 +217,7 @@ export default async function InterviewPrepPage() {
                   label: "Service IT Companies", companies: "TCS · Infosys · Wipro · Cognizant · Accenture · HCL · Capgemini",
                   format: "Aptitude test → CS fundamentals → HR",
                   tip: "The aptitude round eliminates 60–80% of candidates. Score well on reasoning and coding basics first.",
-                  href: "/questions?focus=campus-placement",
+                  href: "/for-students",
                 },
                 {
                   label: "Indian Product Companies", companies: "Flipkart · Razorpay · Swiggy · CRED · Meesho · Zerodha",

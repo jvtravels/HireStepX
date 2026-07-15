@@ -287,6 +287,18 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     questionSlug: "accenture-behavioral-interview-questions",
     hubNote: "90-day notice period — plan your timeline early",
   },
+  {
+    slug: "ibm",
+    searchPhrase: "IBM Software Engineer Salary India 2026",
+    metaDescription:
+      "IBM software engineer salary India 2026 — Band 6 to Band 10. Total CTC ranges from Levels.fyi covering Bengaluru, Hyderabad, and Pune offices.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Consultant / BA" },
+    ],
+    questionSlug: "ibm-consultant-interview-questions",
+    hubNote: "RSU-heavy comp — IBM Band 6 fresher starts ₹17-24 LPA",
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */
