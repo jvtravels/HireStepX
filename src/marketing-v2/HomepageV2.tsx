@@ -1327,7 +1327,7 @@ export function HeroV2() {
       className="mv2-hero-section"
       style={{
         ...sectionBase,
-        paddingTop: 120,
+        paddingTop: 96,
         paddingBottom: 40,
         background: t.cream,
         overflowX: "hidden",
@@ -1379,13 +1379,14 @@ export function HeroV2() {
           className="mv2-hero-display mv2-cascade mv2-cascade-2"
           style={{
             fontFamily: fonts.serif,
-            fontSize: "clamp(52px, 7.5vw, 104px)",
+            fontSize: "clamp(48px, 6vw, 86px)",
             lineHeight: 1.03,
             letterSpacing: "-0.035em",
             color: t.coal,
             margin: "0 auto",
             fontWeight: 400,
-            maxWidth: 860,
+            maxWidth: 760,
+            textWrap: "balance" as CSSProperties["textWrap"],
           }}
         >
           Your next interview won&apos;t wait.
@@ -1478,7 +1479,7 @@ export function HeroV2() {
         className="mv2-cascade mv2-cascade-6 mv2-hero-mock-outer"
         style={{
           maxWidth: 1160,
-          margin: "64px auto 0",
+          margin: "48px auto 0",
           padding: "0 32px",
           position: "relative",
           maskImage: "linear-gradient(to bottom, black 0%, black 62%, transparent 100%)",
