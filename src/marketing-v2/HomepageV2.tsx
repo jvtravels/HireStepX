@@ -304,6 +304,7 @@ export function NavV2() {
   const navLinks: Array<[string, string]> = [
     ["Blog", "/blog"],
     ["Pricing", "/#hd-pricing"],
+    ["Contact", "/contact"],
   ];
   /* Auth-aware CTA pair. Supabase session restore is async, so
      useAuth().isLoggedIn starts `false` and flips after restore — which
