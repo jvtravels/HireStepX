@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef, type CSSProperties } from "react";
+import { Fragment, useEffect, useState, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
@@ -1876,137 +1876,50 @@ export function InterviewFocusV2() {
 }
 
 /* ─────────────────────────── 4. 3-STEP PRODUCT STORY ─────────────────────────── */
-function Step03Score() {
-  const target = 7.8;
-  const [val, setVal] = useState(0);
-  const ref = useRef<HTMLSpanElement | null>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let raf = 0;
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (!e.isIntersecting) return;
-        obs.unobserve(el);
-        const start = performance.now();
-        const dur = 1100;
-        const tick = (now: number) => {
-          const p = Math.min(1, (now - start) / dur);
-          const eased = 1 - Math.pow(1 - p, 4);
-          setVal(target * eased);
-          if (p < 1) raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-      });
-    }, { threshold: 0.5 });
-    obs.observe(el);
-    return () => {
-      obs.disconnect();
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-  return (
-    <span ref={ref} style={{ color: t.copper, fontWeight: 600 }}>
-      {val.toFixed(1)} / 10
-    </span>
-  );
-}
 
-function StepMock({ step }: { step: number }) {
-  const wrap: CSSProperties = {
-    padding: 32,
+function CompactStepMock({ step }: { step: number }) {
+  const card: CSSProperties = {
     background: t.white,
-    borderRadius: 20,
     border: `1px solid ${t.line}`,
+    borderRadius: 16,
+    padding: 20,
     boxShadow: shadows.card,
-    minHeight: 360,
-  };
-  const kicker: CSSProperties = {
-    fontFamily: fonts.sans,
-    fontSize: 11,
-    color: t.inkFaint,
-    letterSpacing: "0.14em",
-    fontWeight: 600,
-    margin: 0,
-  };
-  const kickerDark: CSSProperties = {
-    ...kicker,
-    color: t.creamMuted,
   };
   if (step === 0) {
     return (
-      <div style={{ padding: "8px 0", minHeight: 360 }}>
-        <p style={kicker}>STEP 01 / RESUME / 4S</p>
+      <div style={card}>
         <div
           style={{
-            marginTop: 20,
-            padding: 24,
+            padding: 18,
             border: `1.5px dashed ${t.copper}`,
-            borderRadius: 14,
+            borderRadius: 12,
             background: t.copperSoft,
             textAlign: "center",
+            marginBottom: 14,
           }}
         >
           <div
             style={{
-              width: 44,
-              height: 44,
+              width: 34,
+              height: 34,
               margin: "0 auto",
-              borderRadius: 10,
+              borderRadius: 8,
               background: t.copper,
               color: t.white,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 22,
+              fontSize: 17,
             }}
           >
             ↑
           </div>
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 15,
-              fontWeight: 600,
-              color: t.coal,
-              marginTop: 12,
-              marginBottom: 4,
-            }}
-          >
-            Drop your resume
-          </p>
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 12,
-              color: t.inkSoft,
-              margin: 0,
-            }}
-          >
-            PDF, DOCX · auto-parsed in 4s
-          </p>
+          <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, marginTop: 8, marginBottom: 2 }}>Drop your resume</p>
+          <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft, margin: 0 }}>PDF, DOCX · auto-parsed in 4s</p>
         </div>
-        <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-          {[
-            ["Sample Candidate", "Tier-1 Engineering · 2026"],
-            ["Backend Intern", "6 months"],
-            ["Python, Go, Postgres, k8s", "Skills"],
-          ].map(([a, b], idx) => (
-            <div
-              key={a}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontFamily: fonts.sans,
-                fontSize: 13,
-                padding: "10px 14px",
-                borderRadius: 8,
-                background: t.cream,
-                border: `1px solid ${t.line}`,
-                opacity: 0,
-                animation: `mv2-fade-up 0.5s ${ease} ${600 + idx * 220}ms forwards`,
-              }}
-            >
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {[["Backend Intern", "6 months"], ["Python, Go, k8s", "Skills"]].map(([a, b]) => (
+            <div key={a} style={{ display: "flex", justifyContent: "space-between", fontFamily: fonts.sans, fontSize: 12, padding: "7px 11px", borderRadius: 7, background: t.cream, border: `1px solid ${t.line}` }}>
               <span style={{ color: t.coal, fontWeight: 500 }}>{a}</span>
               <span style={{ color: t.inkSoft }}>{b}</span>
             </div>
@@ -2017,75 +1930,39 @@ function StepMock({ step }: { step: number }) {
   }
   if (step === 1) {
     return (
-      <div style={wrap}>
-        <p style={kicker}>STEP 02 / TARGET / 200 ROLES</p>
-        <p
-          style={{
-            fontFamily: fonts.serif,
-            fontSize: 28,
-            color: t.coal,
-            margin: 0,
-            marginTop: 12,
-          }}
-        >
-          Who are you interviewing with?
-        </p>
-        <div
-          style={{
-            marginTop: 20,
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 12,
-          }}
-        >
-          {[
-            ["Razorpay", "Backend SDE-2", true],
-            ["Zomato", "Product Manager", false],
-            ["TCS", "Digital · Fresher", false],
-            ["Flipkart", "Data Analyst", false],
-          ].map(([co, role, active]) => (
+      <div style={card}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          {(
+            [
+              ["Razorpay", "Backend SDE-2", true],
+              ["TCS", "Digital · Fresher", false],
+              ["Zomato", "Product Manager", false],
+              ["Flipkart", "Data Analyst", false],
+            ] as [string, string, boolean][]
+          ).map(([co, role, active]) => (
             <div
-              key={co as string}
+              key={co}
               style={{
-                padding: 16,
-                borderRadius: 12,
+                padding: "9px 11px",
+                borderRadius: 10,
                 background: active ? t.indigo100 : t.cream,
                 border: `1px solid ${active ? t.indigo : t.line}`,
               }}
             >
-              <p
-                style={{
-                  fontFamily: fonts.serif,
-                  fontSize: 18,
-                  color: t.coal,
-                  margin: 0,
-                }}
-              >
-                {co}
-              </p>
-              <p
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 12,
-                  color: t.inkSoft,
-                  marginTop: 4,
-                  marginBottom: 0,
-                }}
-              >
-                {role}
-              </p>
+              <p style={{ fontFamily: fonts.serif, fontSize: 14, color: t.coal, margin: 0 }}>{co}</p>
+              <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft, marginTop: 2, marginBottom: 0 }}>{role}</p>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {["Behavioural", "System Design", "Negotiation"].map((r, i) => (
             <span
               key={r}
               style={{
                 fontFamily: fonts.sans,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 500,
-                padding: "6px 12px",
+                padding: "5px 10px",
                 borderRadius: 999,
                 color: i === 0 ? t.white : t.coal,
                 background: i === 0 ? t.indigo : t.white,
@@ -2102,100 +1979,49 @@ function StepMock({ step }: { step: number }) {
   return (
     <div
       style={{
-        ...wrap,
         background: t.coal,
         border: `1px solid ${t.creamLineFaint}`,
-        /* Quieter: shadow tinted toward coal (was pure black), lower alpha so
-           the step-03 mock sits on the page instead of hovering off it. */
+        borderRadius: 16,
+        padding: 20,
         boxShadow: `0 20px 50px -22px ${t.coalShadow}`,
-        minHeight: undefined,
       }}
     >
-      <p style={kickerDark}>STEP 03 / PRACTICE / 312MS</p>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginTop: 12,
-          marginBottom: 20,
-        }}
-      >
-        <span
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: "50%",
-            background: t.error,
-            boxShadow: `0 0 12px ${t.error}`,
-          }}
-        />
-        <span
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 13,
-            fontWeight: 600,
-            color: t.cream,
-            letterSpacing: "0.05em",
-          }}
-        >
-          REC · 03:14
-        </span>
-        <span style={{ marginLeft: "auto", opacity: 0.7 }}>
-          <Waveform />
-        </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: t.error, boxShadow: `0 0 8px ${t.error}`, flexShrink: 0 }} />
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.cream, letterSpacing: "0.05em" }}>REC · 03:14</span>
+        <span style={{ marginLeft: "auto", opacity: 0.7 }}><Waveform /></span>
       </div>
-      <p
-        style={{
-          fontFamily: fonts.sans,
-          fontSize: 11,
-          color: t.creamMuted,
-          margin: 0,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          fontWeight: 600,
-        }}
-      >
-        Coach
+      <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.cream, lineHeight: 1.5, margin: "0 0 14px" }}>
+        &ldquo;Walk me through how you&apos;d design a UPI fraud detection pipeline.&rdquo;
       </p>
-      <p
-        style={{
-          fontFamily: fonts.sans,
-          fontSize: 16,
-          color: t.cream,
-          lineHeight: 1.55,
-          marginTop: 6,
-          marginBottom: 20,
-        }}
-      >
-        Walk me through how you'd design a UPI fraud detection pipeline.
-      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+        {(
+          [["S", 92], ["T", 78], ["A", 85], ["R", 55]] as [string, number][]
+        ).map(([l, v]) => (
+          <div key={l} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.creamMuted, width: 10 }}>{l}</span>
+            <div style={{ flex: 1, height: 4, background: t.creamLineSoft, borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ width: `${v}%`, height: "100%", background: t.copper, borderRadius: 2 }} />
+            </div>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.creamMuted, width: 22, textAlign: "right" }}>{v}</span>
+          </div>
+        ))}
+      </div>
       <div
         style={{
-          padding: 16,
+          padding: "7px 11px",
           background: t.creamSurfaceLow,
           border: `1px solid ${t.creamLineSoft}`,
-          borderRadius: 10,
+          borderRadius: 8,
           display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.cream }}>
-          Live score:{" "}
-          <Step03Score />
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.cream }}>
+          Score: <span style={{ color: t.copper, fontWeight: 600 }}>8.4 / 10</span>
         </span>
-        <span
-          style={{
-            fontFamily: fonts.mono,
-            fontSize: 11,
-            color: t.success,
-            padding: "3px 8px",
-            background: t.successMist,
-            borderRadius: 6,
-            fontWeight: 600,
-          }}
-        >
+        <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.success, padding: "2px 7px", background: t.successMist, borderRadius: 5, fontWeight: 600 }}>
           STAR · 4/4
         </span>
       </div>
@@ -2204,7 +2030,6 @@ function StepMock({ step }: { step: number }) {
 }
 
 export function ProductStoryV2() {
-  const [activeStep, setActiveStep] = useState(0);
   const steps = [
     {
       kicker: "01",
@@ -2222,125 +2047,98 @@ export function ProductStoryV2() {
       desc: "Real voice in, real voice out. STAR breakdown. Coach fixes after every answer.",
     },
   ];
-  const s = steps[activeStep];
 
   return (
     <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 72, paddingBottom: 72 }}>
       <div style={container}>
         <SectionMasthead n="04" label="How it works" right="Three steps" style={{ marginBottom: 20 }} />
-        <MotionReveal style={{ textAlign: "center", marginBottom: 36 }}>
+        <MotionReveal style={{ marginBottom: 48 }}>
           <h2 id="hd-story" style={h2}>
             Three steps.{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>Zero fluff.</span>
           </h2>
         </MotionReveal>
 
-        {/* Step selector tabs */}
+        {/* 3-column always-visible layout — each step visible at once */}
         <div
-          role="tablist"
-          aria-label="How it works steps"
-          style={{ display: "flex", gap: 8, marginBottom: 36, flexWrap: "wrap" }}
+          className="mv2-story-stages"
+          style={{ display: "flex", alignItems: "start" }}
         >
           {steps.map((step, i) => (
-            <button
-              key={step.kicker}
-              role="tab"
-              aria-selected={activeStep === i}
-              aria-controls="story-panel"
-              onClick={() => setActiveStep(i)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "9px 18px",
-                borderRadius: 999,
-                border: `1px solid ${activeStep === i ? t.indigo : t.line}`,
-                background: activeStep === i ? t.indigo : t.white,
-                cursor: "pointer",
-                fontFamily: fonts.sans,
-                transition: "background 0.18s, border-color 0.18s",
-              }}
-            >
-              <span
+            <Fragment key={step.kicker}>
+              <div
                 style={{
-                  fontFamily: fonts.mono,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: activeStep === i ? t.copper100 : t.copper,
-                  letterSpacing: "0.08em",
+                  flex: 1,
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 18,
                 }}
               >
-                {step.kicker}
-              </span>
-              <span
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: activeStep === i ? t.cream : t.coal,
-                }}
-              >
-                {step.title}
-              </span>
-            </button>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <span
+                      style={{
+                        fontFamily: fonts.mono,
+                        fontSize: 12,
+                        color: t.copper,
+                        fontWeight: 600,
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      {step.kicker}
+                    </span>
+                    <span aria-hidden style={{ flex: 1, height: 1, background: t.line }} />
+                  </div>
+                  <h3
+                    style={{
+                      fontFamily: fonts.serif,
+                      fontSize: 22,
+                      color: t.coal,
+                      margin: 0,
+                      letterSpacing: "-0.02em",
+                      fontWeight: 400,
+                      lineHeight: 1.2,
+                      textWrap: "balance" as const,
+                    }}
+                  >
+                    {step.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: fonts.sans,
+                      fontSize: 14,
+                      color: t.inkSoft,
+                      lineHeight: 1.6,
+                      marginTop: 8,
+                      marginBottom: 0,
+                    }}
+                  >
+                    {step.desc}
+                  </p>
+                </div>
+                <CompactStepMock step={i} />
+              </div>
+              {i < 2 && (
+                <div
+                  className="mv2-story-arrow"
+                  aria-hidden
+                  style={{
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    paddingTop: 42,
+                    padding: "42px 20px 0",
+                    color: t.copper,
+                    fontSize: 18,
+                    opacity: 0.35,
+                  }}
+                >
+                  →
+                </div>
+              )}
+            </Fragment>
           ))}
-        </div>
-
-        {/* Active step content: text left, mock right */}
-        <div
-          id="story-panel"
-          role="tabpanel"
-          className="mv2-story-stage"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(220px, 300px) 1fr",
-            gap: 64,
-            alignItems: "center",
-          }}
-        >
-          <div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 14 }}>
-              <span
-                style={{
-                  fontFamily: fonts.mono,
-                  fontSize: 13,
-                  color: t.copper,
-                  fontWeight: 600,
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {s.kicker}
-              </span>
-              <span aria-hidden style={{ width: 24, height: 1, background: t.line }} />
-            </div>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 34,
-                color: t.coal,
-                margin: 0,
-                letterSpacing: "-0.02em",
-                fontWeight: 400,
-                lineHeight: 1.1,
-                textWrap: "balance" as const,
-              }}
-            >
-              {s.title}
-            </h3>
-            <p
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 16,
-                color: t.inkSoft,
-                lineHeight: 1.6,
-                marginTop: 16,
-                marginBottom: 0,
-                maxWidth: 320,
-              }}
-            >
-              {s.desc}
-            </p>
-          </div>
-          <StepMock step={activeStep} />
         </div>
       </div>
     </section>
