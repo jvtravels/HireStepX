@@ -1933,7 +1933,7 @@ export function ProductStoryV2() {
   ];
 
   return (
-    <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, borderTop: `1px solid ${t.line}`, paddingTop: 96, paddingBottom: 72 }}>
+    <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 96, paddingBottom: 72 }}>
       <div style={container}>
         <MotionReveal style={{ textAlign: "center", marginBottom: 48 }}>
           <h2 id="hd-story" style={h2}>
