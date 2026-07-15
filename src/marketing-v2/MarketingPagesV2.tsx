@@ -1389,12 +1389,11 @@ export function ContactV2() {
                     marginBottom: 8,
                   }}
                 >
-                  Office
+                  Based in
                 </p>
                 <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-                  HireStepX<br />
                   India<br />
-                  Remote-first team, built in India
+                  Remote-first team, no physical office
                 </p>
               </div>
             </div>
