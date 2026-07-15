@@ -54,6 +54,9 @@ const ResponsiveSheet = () => (
       .mv2-hero-margin-note { display: none !important; }
       .mv2-hero-rule-label-end { display: none !important; }
       .mv2-story-stage { grid-template-columns: 1fr !important; gap: 32px !important; padding-top: 40px !important; padding-bottom: 40px !important; }
+      .mv2-story-stages { flex-direction: column !important; }
+      .mv2-story-arrow { display: none !important; }
+      .mv2-bento-resume-row { flex-direction: column !important; gap: 24px !important; }
       .mv2-focus-flagship { grid-template-columns: 1fr !important; gap: 28px !important; padding: 28px !important; }
       .mv2-focus-grid { grid-template-columns: 1fr !important; }
       .mv2-feature-grid { grid-template-columns: 1fr !important; }
@@ -1279,22 +1282,7 @@ function SectionMasthead(_props: {
    yet (founded 2026) — fabricating named quotes would burn credibility
    the second any prospect googles the names. Rotated through the hero
    as a "what this product is for" line. */
-const heroQuotes = [
-  { text: "Walk into the loop already knowing how you sound.", by: "Built for Indian candidates" },
-  { text: "Practice the why-this-company answer until it lands.", by: "Behavioral · campus · negotiation" },
-  { text: "Scored feedback on every answer, every session.", by: "Free first session — no card" },
-];
-
 export function HeroV2() {
-  const [quoteIdx, setQuoteIdx] = useState(0);
-  useEffect(() => {
-    const id = setInterval(
-      () => setQuoteIdx((i) => (i + 1) % heroQuotes.length),
-      6200,
-    );
-    return () => clearInterval(id);
-  }, []);
-  const quote = heroQuotes[quoteIdx];
   return (
     <section
       aria-labelledby="hd-hero"
@@ -1478,21 +1466,18 @@ export function HeroV2() {
               </span>
             </div>
 
-            {/* Rotating "built for" statement — product philosophy, not user testimonials */}
+            {/* Company coverage row */}
             <div
+              className="mv2-cascade mv2-cascade-6"
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
+                flexWrap: "wrap",
+                rowGap: 4,
                 marginTop: 14,
-                fontFamily: fonts.sans,
-                fontSize: 12,
-                color: t.inkFaint,
-                minHeight: 20,
               }}
             >
               <span
-                aria-hidden
                 style={{
                   fontFamily: fonts.mono,
                   fontSize: 9,
@@ -1500,25 +1485,30 @@ export function HeroV2() {
                   textTransform: "uppercase",
                   color: t.copper,
                   flexShrink: 0,
+                  marginRight: 10,
                 }}
               >
-                Built for
+                Covers
               </span>
+              {["TCS", "Razorpay", "Infosys", "Zomato", "Flipkart", "ISRO", "Deloitte"].map((co, i, arr) => (
+                <span key={co} style={{ display: "inline-flex", alignItems: "center" }}>
+                  <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint }}>{co}</span>
+                  {i < arr.length - 1 && (
+                    <span aria-hidden style={{ margin: "0 6px", color: t.lineStrong, fontSize: 10 }}>·</span>
+                  )}
+                </span>
+              ))}
+              <span aria-hidden style={{ margin: "0 6px", color: t.lineStrong, fontSize: 10 }}>·</span>
               <span
-                key={`quote-${quoteIdx}`}
                 style={{
-                  animation: `mv2-fade-up 0.5s ${ease} both`,
+                  fontFamily: fonts.mono,
+                  fontSize: 10,
+                  color: t.copper,
+                  fontWeight: 600,
+                  letterSpacing: "0.05em",
                 }}
               >
-                <span
-                  style={{
-                    fontFamily: fonts.serif,
-                    fontStyle: "italic",
-                    color: t.coal,
-                  }}
-                >
-                  {quote.text}
-                </span>
+                +200 roles
               </span>
             </div>
           </div>
@@ -2728,6 +2718,65 @@ export function FeatureGridV2() {
           </p>
         </MotionReveal>
 
+        {/* ── Row 0: Before the session ── */}
+        <BentoRowLabel>Before the session</BentoRowLabel>
+        <div style={{ marginBottom: 16 }}>
+          <BentoCard large>
+            <div
+              className="mv2-bento-resume-row"
+              style={{ display: "flex", gap: 48, alignItems: "center" }}
+            >
+              <div style={{ flex: "0 0 auto", maxWidth: 360 }}>
+                <span
+                  style={{
+                    fontFamily: fonts.mono,
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: t.copper,
+                    opacity: 0.7,
+                    marginBottom: 14,
+                    display: "block",
+                  }}
+                >
+                  Your resume
+                </span>
+                <h3
+                  style={{
+                    fontFamily: fonts.serif,
+                    fontSize: 26,
+                    color: t.coal,
+                    margin: 0,
+                    marginBottom: 10,
+                    letterSpacing: "-0.015em",
+                    fontWeight: 400,
+                    lineHeight: 1.25,
+                  }}
+                >
+                  Your resume is{" "}
+                  <em>the question paper.</em>
+                </h3>
+                <p
+                  style={{
+                    fontFamily: fonts.sans,
+                    fontSize: 14,
+                    color: t.inkSoft,
+                    lineHeight: 1.55,
+                    margin: 0,
+                    maxWidth: 320,
+                  }}
+                >
+                  Upload once. Every session drills your actual projects — not
+                  someone else&apos;s.
+                </p>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <ResumeAwareVisual />
+              </div>
+            </div>
+          </BentoCard>
+        </div>
+
         {/* ── Row 1: During the session ── */}
         <BentoRowLabel>During the session</BentoRowLabel>
         <div
@@ -2839,46 +2888,10 @@ export function FeatureGridV2() {
           className="mv2-bento-row2"
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
+            gridTemplateColumns: "1fr 1fr",
             gap: 16,
           }}
         >
-          {/* SMALL 3 — Resume-aware */}
-          <BentoCard>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.copper,
-                opacity: 0.7,
-                marginBottom: 14,
-              }}
-            >
-              Your resume
-            </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 20,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 8,
-                letterSpacing: "-0.01em",
-                fontWeight: 400,
-                lineHeight: 1.3,
-              }}
-            >
-              Your resume is{" "}
-              <em>the question paper.</em>
-            </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
-              Upload once. Every session drills your actual projects — not someone else's.
-            </p>
-            <ResumeAwareVisual />
-          </BentoCard>
-
           {/* SMALL 4 — Bias detector */}
           <BentoCard>
             <span

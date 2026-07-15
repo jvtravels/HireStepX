@@ -19,6 +19,7 @@ import {
   ctaPrimaryStyle,
 } from "@/marketing-v2/_editorial";
 import { CompanyContextBox } from "@/marketing-v2/QuestionPages";
+import { COMPANY_KNOWN_FACTS } from "../../../../data/company-known-facts";
 
 /* Programmatic SEO landing pages — /companies/{slug}.
  *
@@ -309,72 +310,37 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
 
-      <style>{editorialCSS + `
-        @media (max-width: 768px) {
-          .co-hero-split { flex-direction: column !important; gap: 40px !important; }
-          .co-hero-sidebar { width: 100% !important; }
-        }
-      `}</style>
+      <style>{editorialCSS}</style>
       <NavV2 />
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
 
-        {/* Two-column hero — breadcrumb + h1 left, stats sidebar right */}
+        {/* Single-column hero — matches /questions/[slug] pattern */}
         <header className="ed-hero" style={{ paddingTop: ED_PADDING.heroTop, paddingBottom: ED_PADDING.heroBottom, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
-
-
-            <div className="co-hero-split" style={{ display: "flex", gap: 72, alignItems: "flex-start" }}>
-              {/* Left column */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ ...edEyebrow, color: t.inkFaint, margin: "0 0 20px" }}>
-                  {companyLabel} · {focusLabel}
-                </p>
-                <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.4vw, 34px)", fontWeight: 400, lineHeight: 1.15, letterSpacing: "-0.018em", color: t.coal, margin: "0 0 22px", maxWidth: "28ch" }}>
-                  {page.searchPhrase}
-                </h1>
-                <p style={{ ...edSansLead, margin: "0 0 32px", maxWidth: "52ch" }}>
-                  {page.intro.split(".")[0].trim()}.
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
-                  <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
-                    Practice free <span className="ed-cta-arrow" aria-hidden>→</span>
-                  </Link>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>2 sessions, no card</span>
-                </div>
-              </div>
-
-              {/* Right sidebar — stats */}
-              <aside className="co-hero-sidebar" style={{ flexShrink: 0, width: 240, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "24px 26px" }}>
-                <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: `1px solid ${t.line}` }}>
-                  <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 52, color: t.coal, lineHeight: 1 }}>
-                    {questions.length}
-                  </span>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, marginLeft: 8 }}>questions</span>
-                </div>
-                <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-                  <div>
-                    <dt style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 3 }}>Focus</dt>
-                    <dd style={{ margin: 0, fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{focusLabel}</dd>
-                  </div>
-                  <div>
-                    <dt style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 3 }}>Framework</dt>
-                    <dd style={{ margin: 0, fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{page.framework.name}</dd>
-                  </div>
-                  {(page.interviewRounds?.length ?? page.recruitmentSteps?.length ?? 0) > 0 && (
-                    <div>
-                      <dt style={{ fontFamily: fonts.sans, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.inkFaint, marginBottom: 3 }}>Rounds</dt>
-                      <dd style={{ margin: 0, fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>
-                        {page.interviewRounds?.length ?? page.recruitmentSteps?.length} stages
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              </aside>
+            <p style={{ ...edEyebrow, color: t.inkFaint, margin: "0 0 24px" }}>
+              {companyLabel} · {focusLabel}
+            </p>
+            <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4.2vw, 56px)", fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.026em", color: t.coal, margin: "0 0 22px" }}>
+              {page.searchPhrase}
+            </h1>
+            <p style={{ ...edSansLead, margin: "0 0 36px", maxWidth: "58ch" }}>
+              {page.intro.split(".")[0].trim()}.
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <Link href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("lg")}>
+                Practice free <span className="ed-cta-arrow" aria-hidden>→</span>
+              </Link>
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint }}>
+                {questions.length} questions · {focusLabel} · 2 sessions free
+              </span>
             </div>
           </div>
         </header>
 
-        {/* Framework + verified company facts */}
+        {/* Company context — verified facts; renders nothing when absent */}
+        <CompanyContextBand company={page.company} companyLabel={companyLabel} />
+
+        {/* Framework */}
         <section className="ed-section ed-reveal" style={{ paddingTop: ED_PADDING.sectionV, paddingBottom: ED_PADDING.sectionV, borderBottom: `1px solid ${t.line}` }}>
           <div className="ed-container">
             <SectionHead title={page.framework.name} />
@@ -382,8 +348,6 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
               <p style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.72, color: t.inkSoft, margin: 0 }}>
                 {page.framework.summary}
               </p>
-              {/* verified facts from COMPANY_KNOWN_FACTS; renders nothing when absent */}
-              <CompanyContextBox company={page.company} companyLabel={companyLabel} />
             </div>
           </div>
         </section>
@@ -432,7 +396,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
                   ["A", "Action", "The longest beat. The specific steps YOU took. Say 'I', not 'we'."],
                   ["R", "Result", "Quantify it: numbers, percentages, timelines. Then what you learnt."],
                 ].map(([letter, label, text]) => (
-                  <div key={label} className="ed-card" style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "20px 22px" }}>
+                  <div key={label} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "20px 22px" }}>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
                       <span style={{ fontFamily: fonts.serif, fontStyle: "italic", fontSize: 30, color: t.copper, lineHeight: 1 }}>{letter}</span>
                       <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: t.coal }}>{label}</span>
@@ -460,12 +424,13 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
               {questions.map((q, i) => (
                 <li
                   key={i}
-                  className="ed-card"
+                  className="ed-row"
                   style={{
                     display: "flex",
                     gap: 24,
                     alignItems: "flex-start",
-                    padding: "28px 0",
+                    padding: "24px 8px",
+                    margin: "0 -8px",
                     borderBottom: `1px solid ${t.line}`,
                   }}
                 >
@@ -524,6 +489,20 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
       <FooterDome />
       <MobileStickyCTA />
     </>
+  );
+}
+
+/* CompanyContextBand — wraps CompanyContextBox in its own section band so
+   verified company facts sit separate from the framework prep advice. Renders
+   nothing when no known-facts entry exists for this company. */
+function CompanyContextBand({ company, companyLabel }: { company: string; companyLabel: string }) {
+  if (!COMPANY_KNOWN_FACTS[company]) return null;
+  return (
+    <section className="ed-section ed-reveal" style={{ paddingTop: 48, paddingBottom: 48, borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
+      <div className="ed-container ed-reading">
+        <CompanyContextBox company={company} companyLabel={companyLabel} />
+      </div>
+    </section>
   );
 }
 
