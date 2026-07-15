@@ -204,7 +204,7 @@ export function CompanyContextBox({ company, companyLabel }: { company: string; 
   if (facts.scale) rows.push({ label: "Scale", value: facts.scale });
 
   return (
-    <section style={{ marginTop: 36, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12, padding: "20px 22px" }}>
+    <section style={{ marginTop: 0, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12, padding: "20px 22px" }}>
       <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.copper, margin: "0 0 10px" }}>
         About {companyLabel}
       </p>
@@ -321,7 +321,7 @@ export function QuestionSetPage({
         </header>
 
         {/* ── Two-column body ───────────────────────────────────────────── */}
-        <div className="ed-container qs-body" style={{ display: "flex", gap: 64, paddingTop: 64, paddingBottom: 80, alignItems: "flex-start" }}>
+        <div className="ed-container qs-body" style={{ display: "flex", gap: 48, paddingTop: 48, paddingBottom: 80, alignItems: "flex-start" }}>
 
           {/* Left: main content */}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -415,7 +415,7 @@ export function QuestionSetPage({
                 Practice answering these out loud.
               </p>
               <Link href={practiceHref} className="ed-cta" style={{ ...ctaPrimaryStyle("md"), display: "block", textAlign: "center" as const, textDecoration: "none" }}>
-                Start free — 2 sessions →
+                Start free — 2 sessions <span className="ed-cta-arrow" aria-hidden>→</span>
               </Link>
               <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "10px 0 0", textAlign: "center" as const }}>
                 No credit card required
@@ -437,27 +437,19 @@ export function QuestionSetPage({
               </p>
             </div>
 
-            {/* Stats card */}
+            {/* Stats card — non-hero stats only: interview rounds + difficulty */}
             <div style={{ background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 16, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Questions</span>
-                <span style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.02em" }}>{questions.length}</span>
-              </div>
               {roundCount && roundCount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Interview rounds</span>
                   <span style={{ fontFamily: fonts.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.02em" }}>{roundCount}</span>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: roundCount && roundCount > 0 ? `1px solid ${t.line}` : "none", paddingTop: roundCount && roundCount > 0 ? 14 : 0 }}>
                 <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Difficulty</span>
                 <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
                   {diffCounts.hard > diffCounts.easy ? "Hard" : diffCounts.easy > diffCounts.hard ? "Easy" : "Mixed"}
                 </span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
-                <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft }}>Focus</span>
-                <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{focusLabel}</span>
               </div>
             </div>
 
