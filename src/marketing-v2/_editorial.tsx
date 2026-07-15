@@ -462,31 +462,30 @@ export function DarkBand({
           pointerEvents: "none",
         }}
       />
-      <div className="ed-container ed-split" style={{ position: "relative", width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 48 }}>
-        <div style={{ maxWidth: "17ch" }}>
-          {eyebrow && <p style={{ ...edEyebrow, color: t.copper, marginBottom: 20 }}>{eyebrow}</p>}
-          <h2
-            style={{
-              fontFamily: fonts.serif,
-              fontSize: "clamp(34px, 5vw, 60px)",
-              lineHeight: 1.02,
-              letterSpacing: "-0.026em",
-              color: t.cream,
-              margin: 0,
-              fontWeight: 400,
-              textWrap: "balance" as const,
-            }}
-          >
-            {title}
-            {accent && (
-              <>
-                {" "}
-                <span style={{ fontStyle: "italic" }}>{accent}</span>
-              </>
-            )}
-          </h2>
-        </div>
-        <div style={{ minWidth: "min(300px, 100%)", display: "flex", flexDirection: "column", gap: 18, alignItems: "flex-start" }}>
+      <div className="ed-container" style={{ position: "relative", textAlign: "center" as const }}>
+        {eyebrow && <p style={{ ...edEyebrow, color: t.copper, marginBottom: 20 }}>{eyebrow}</p>}
+        <h2
+          style={{
+            fontFamily: fonts.serif,
+            fontSize: "clamp(36px, 5.5vw, 68px)",
+            lineHeight: 1.02,
+            letterSpacing: "-0.026em",
+            color: t.cream,
+            margin: "0 auto 28px",
+            fontWeight: 400,
+            maxWidth: "16ch",
+            textWrap: "balance" as const,
+          }}
+        >
+          {title}
+          {accent && (
+            <>
+              {" "}
+              <span style={{ fontStyle: "italic" }}>{accent}</span>
+            </>
+          )}
+        </h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, alignItems: "center" }}>
           {children}
         </div>
       </div>
