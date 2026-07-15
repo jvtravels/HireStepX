@@ -1390,10 +1390,10 @@ export function HeroV2() {
             maxWidth: 860,
           }}
         >
-          Practice the interview.
+          Your next interview won&apos;t wait.
           <br />
           <span style={{ fontStyle: "italic", color: t.copper }}>
-            Not the panic.
+            Neither should your prep.
           </span>
         </h1>
 
@@ -1408,9 +1408,8 @@ export function HeroV2() {
             margin: "22px auto 0",
           }}
         >
-          Speak your answer out loud. The AI interviews you, scores every
-          part, and shows you exactly what to fix. Ready before your chai
-          cools.
+          One session. A STAR breakdown on every answer. Your weak spots
+          caught before HR finds them first.
         </p>
 
         {/* CTAs */}
@@ -1445,7 +1444,7 @@ export function HeroV2() {
               boxShadow: "0 4px 20px rgba(49,46,129,0.28)",
             }}
           >
-            Start free session
+            Start your first free session
             <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 17 }}>→</span>
           </a>
           <a
