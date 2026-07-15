@@ -1147,6 +1147,36 @@ function ProductMockHero() {
             )}
           </p>
           <style>{`@keyframes caret{50%{opacity:0}}`}</style>
+
+          {phase === "done" && (
+            <div style={{
+              marginTop: 20,
+              paddingTop: 16,
+              borderTop: `1px solid ${t.line}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              animation: `mv2-fade-up 0.5s ${ease} 600ms both`,
+            }}>
+              <span style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                fontFamily: fonts.sans,
+                fontSize: 11,
+                color: t.indigo,
+                fontWeight: 600,
+                padding: "3px 10px",
+                background: t.indigo100,
+                borderRadius: 999,
+              }}>
+                3 follow-up questions ready
+              </span>
+              <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>
+                Answer one to keep the round going
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Right: scored answer */}
@@ -1246,19 +1276,26 @@ function ProductMockHero() {
 
           <div
             style={{
-              marginTop: "auto",
-              padding: 12,
-              background: t.white,
-              border: `1px solid ${t.line}`,
+              marginTop: 4,
+              padding: "12px 14px",
+              background: t.copperSoft,
+              border: `1px solid rgba(180,83,9,0.18)`,
               borderRadius: 10,
               fontFamily: fonts.sans,
-              fontSize: 12,
-              color: t.coal,
               lineHeight: 1.5,
             }}
           >
-            <span style={{ color: t.copper, fontWeight: 600 }}>Fix →</span>{" "}
-            {scene.fix}
+            <span style={{
+              fontFamily: fonts.mono,
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase" as const,
+              color: t.copper,
+              display: "block",
+              marginBottom: 5,
+            }}>Coach fix</span>
+            <span style={{ fontSize: 13, color: t.coal }}>{scene.fix}</span>
           </div>
         </div>
       </div>
@@ -1352,9 +1389,9 @@ export function HeroV2() {
             margin: "24px auto 0",
           }}
         >
-          AI mock interviews you actually speak to — scored against the
-          rubrics real Indian panels use. STAR breakdown back before your
-          chai cools.
+          Speak your answer out loud. The AI interviews you, scores every
+          part, and shows you exactly what to fix. Ready before your chai
+          cools.
         </p>
 
         <div
@@ -1387,7 +1424,7 @@ export function HeroV2() {
               whiteSpace: "nowrap",
             }}
           >
-            Start free — 2 sessions
+            Start free: 2 sessions
             <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 16 }}>→</span>
           </a>
           <a
@@ -1432,7 +1469,7 @@ export function HeroV2() {
             2 sessions free
           </span>
           <span aria-hidden style={{ color: t.inkFaint }}>·</span>
-          <span>No card needed</span>
+          <span>Score in under 5 min</span>
           <span aria-hidden style={{ color: t.inkFaint }}>·</span>
           <span>
             <span
