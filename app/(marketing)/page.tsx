@@ -54,7 +54,7 @@ const ORGANIZATION_SCHEMA = {
     "@type": "ContactPoint",
     email: "hello@hirestepx.com",
     contactType: "Customer Support",
-    availableLanguage: ["English", "Hindi"],
+    availableLanguage: ["English"],
   },
 };
 

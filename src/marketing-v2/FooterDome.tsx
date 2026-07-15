@@ -344,7 +344,7 @@ function FooterDomeMobile() {
         gap: 12,
       }}>
         <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint }}>
-          © 2026 HireStepX Labs Pvt Ltd
+          © 2026 HireStepX
         </span>
         <div style={{ display: "flex", gap: 16 }}>
           {LEGAL_LINKS.map(([label, href]) => (

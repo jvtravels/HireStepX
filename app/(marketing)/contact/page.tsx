@@ -44,7 +44,7 @@ const CONTACT_SCHEMA = {
         "@type": "ContactPoint",
         contactType: "customer support",
         email: "hello@hirestepx.com",
-        availableLanguage: ["English", "Hindi"],
+        availableLanguage: ["English"],
         hoursAvailable: {
           "@type": "OpeningHoursSpecification",
           dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],

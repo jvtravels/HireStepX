@@ -987,7 +987,7 @@ export function AboutV2() {
         <div className="mv2-container" style={containerNarrow}>
           <MDXProse>
             <p style={{ fontSize: 18, lineHeight: 1.7 }}>
-              India produces 1.5 million engineering graduates a year. A third can't land a first interview that goes past round one. The reason is rarely talent. It's that interview prep, the way it's taught, was designed for a labor market that doesn't exist anymore: coaching that costs ₹10,000 a session, friends who can only roleplay so many times, and YouTube videos from 2018 about a hiring funnel that's already changed twice.
+              India produces over a million engineering graduates a year. Most can't make it past round one — not because of talent. It's that interview prep, the way it's taught, was designed for a labor market that doesn't exist anymore: coaching that costs ₹5,000 or more a session, friends who can only roleplay so many times, and YouTube videos from 2018 about a hiring funnel that's already changed twice.
             </p>
             <p>
               We've been on both sides of the table. Hiring at unicorns, coaching at colleges, taking the rounds ourselves. The pattern was always the same: the people who got better got <em>reps</em>: specific, scored, immediate. Not generic advice.
@@ -1054,8 +1054,8 @@ export function AboutV2() {
               maxWidth: "60ch",
             }}
           >
-            Built by someone who sat through enough Indian-tech interview cycles
-            — services, GCC, product — to know where the prep most students do
+            We've sat through enough Indian-tech interview cycles
+            — services, GCC, product — to know where the prep most candidates do
             actually breaks. The product reflects that frustration, not a
             placement-cell pitch deck.
           </p>
