@@ -16,6 +16,7 @@ import {
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { BLOG_META } from "@/blog-meta";
 
 /* /salary/[company] — company-specific salary guide pages.
  *
@@ -125,6 +126,9 @@ export default async function SalaryCompanySlugPage({
   const meta = COMPANY_META[company];
   const roles = buildRoleSections(company, page.roles);
 
+  /* Matching blog post — links back to the interview guide for this company. */
+  const blogPost = BLOG_META.find((p) => p.company.toLowerCase() === company);
+
   /* Company description: use verified KnownFacts description, or generic fallback */
   const description =
     knownFacts?.description
@@ -204,6 +208,7 @@ export default async function SalaryCompanySlugPage({
         companyDescription={description}
         roles={roles}
         questionPageSlug={page.questionSlug}
+        blogPostSlug={blogPost?.slug}
         noticePeriodDays={meta?.noticePeriodDays}
         bondPenaltyLpa={meta?.bondPenaltyLpa}
         calibrationDate={CALIBRATION_DATE}

@@ -44,6 +44,7 @@ export interface SalaryPageProps {
   companyDescription: string;
   roles: SalaryRoleSection[];
   questionPageSlug?: string;
+  blogPostSlug?: string;
   noticePeriodDays?: number;
   bondPenaltyLpa?: number;
   calibrationDate: string;
@@ -194,6 +195,7 @@ export function SalaryCompanyPage({
   companyDescription,
   roles,
   questionPageSlug,
+  blogPostSlug,
   noticePeriodDays,
   bondPenaltyLpa,
   calibrationDate,
@@ -444,6 +446,11 @@ export function SalaryCompanyPage({
             >
               Practice {companyLabel} Interview Questions →
             </a>
+            {blogPostSlug && (
+              <a href={`/blog/${blogPostSlug}`} style={ctaGhostStyle("md")}>
+                {companyLabel} Interview Guide
+              </a>
+            )}
             <a href="/salary" style={ctaGhostStyle("md")}>
               All Company Salaries
             </a>
