@@ -11,7 +11,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Company Salary Guides India 2026 | HireStepX",
   description:
-    "Verified salary ranges for 19+ companies hiring in India in 2026 — TCS, Infosys, Razorpay, Google, Amazon, Flipkart, and more. Total CTC data from AmbitionBox, Glassdoor, and Levels.fyi.",
+    "Verified salary ranges for 23 companies hiring in India in 2026 — TCS, Infosys, Razorpay, Google, Amazon, Goldman Sachs, JP Morgan, and more. Total CTC data from AmbitionBox, Glassdoor, and Levels.fyi.",
   keywords: [
     "software engineer salary India 2026",
     "TCS salary freshers 2026",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: "website",
     title: "Company Salary Guides India 2026 | HireStepX",
     description:
-      "Verified salary ranges for 19+ companies — total CTC from AmbitionBox, Glassdoor, and Levels.fyi.",
+      "Verified salary ranges for 23 companies — total CTC from AmbitionBox, Glassdoor, and Levels.fyi.",
     url: "https://hirestepx.com/salary",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -98,7 +98,7 @@ export default async function SalaryIndexPage() {
     "@type": "ItemList",
     name: "Company Salary Guides India 2026",
     description:
-      "Verified total CTC ranges for 19 companies hiring in India — sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
+      "Verified total CTC ranges for 23 companies hiring in India — sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
     numberOfItems: entries.length,
     itemListElement: entries.map((e, i) => ({
       "@type": "ListItem",

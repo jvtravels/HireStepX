@@ -265,6 +265,12 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     notes: "14 Business Principles cultural-fit framework. Multiple-round process; consistency across rounds matters. Engineering rounds = technical depth + market context awareness even for non-trading roles.",
     lastVerified: "2026-05-07",
   },
+  jpmc: {
+    description: "JPMorgan Chase India — one of the largest banking technology centers globally; Bengaluru and Hyderabad offices run core banking, risk, and payments infrastructure.",
+    competitors: ["Goldman Sachs", "Morgan Stanley", "Citi", "Deutsche Bank", "HSBC"],
+    notes: "Strong emphasis on regulatory awareness (RBI/SEBI) in interviews. System design questions grounded in financial compliance — every design must include audit trail and idempotency. AUDIT + SCALE framework recommended. No RSU at India offices — compensation is base + annual bonus.",
+    lastVerified: "2026-05-08",
+  },
   "jane-street": {
     description: "Quantitative trading firm; market-maker across global equities, ETFs, options, crypto, and bonds.",
     competitors: ["Citadel Securities", "Optiver", "IMC", "Hudson River Trading", "Tower Research"],

@@ -339,6 +339,10 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
   bhel: { noticePeriodDays: 90, bondPenaltyLpa: 4, hasDeputation: false, metaSource: "BHEL ET bond — 3yr typical" },
   sbi: { noticePeriodDays: 90, bondPenaltyLpa: 2, hasDeputation: false, metaSource: "SBI PO bond — 2yr typical" },
 
+  /* ─── Global Investment Banks ─── */
+  goldman: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Goldman Sachs India standard — 60-day notice, no bond, no RSU" },
+  jpmc: { noticePeriodDays: 60, hasDeputation: false, metaSource: "JPMorgan Chase India standard — 60-day notice, no bond, no RSU" },
+
   /* ─── Premium Big-Tech GCC ─── */
   databricks: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Databricks India HR policy — premium GCC standard" },
 };

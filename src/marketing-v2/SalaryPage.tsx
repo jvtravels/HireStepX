@@ -540,9 +540,9 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               Company Salary Guides for India 2026
             </h1>
             <p className="ed-rise ed-d2" style={leadStyle}>
-              Verified total CTC ranges for 19 companies hiring in India — from
-              TCS freshers to Google L6. All data sourced from AmbitionBox,
-              Glassdoor, and Levels.fyi. Updated May 2026.
+              Verified total CTC ranges for 23 companies hiring in India — from
+              TCS freshers to Goldman Sachs. All data sourced from AmbitionBox,
+              Glassdoor, and Levels.fyi. Updated July 2026.
             </p>
           </div>
         </div>
