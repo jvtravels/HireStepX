@@ -23,6 +23,7 @@ const PRODUCT_LINKS: Array<[string, string]> = [
   ["Blogs", "/blog"],
   ["Companies", "/companies"],
   ["Interview Prep", "/interview-prep"],
+  ["For Students", "/for-students"],
   ["Practice Questions", "/questions"],
   ["Salary Guides", "/salary"],
 ];

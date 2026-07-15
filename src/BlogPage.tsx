@@ -739,7 +739,10 @@ const posts: BlogPost[] = [
       { label: "Accenture Campus Placement", slug: "accenture-ase-interview-questions" },
     ],
     cta: "Accenture scores communication as heavily as aptitude. If you haven't practiced speaking your answers out loud: not writing them, saying them: you're not actually prepared. HireStepX covers the communication and HR rounds with the same AI scoring it applies to technical questions. Run a session before you go in.",
-    relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
+      { label: "Accenture Salary Guide India 2026", href: "/salary/accenture" },
+    ],
   },
   {
     slug: "product-manager-interview-questions-india",

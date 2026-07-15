@@ -274,6 +274,19 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     questionSlug: "deloitte-analyst-interview-questions",
     hubNote: "USI vs. Deloitte Consulting — very different comp",
   },
+  {
+    slug: "accenture",
+    searchPhrase: "Accenture Salary for Freshers India 2026",
+    metaDescription:
+      "Accenture fresher and analyst salary India 2026. Associate Software Engineer to Consultant bands from AmbitionBox and Glassdoor.",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "ux-designer", label: "UX Designer" },
+    ],
+    questionSlug: "accenture-behavioral-interview-questions",
+    hubNote: "90-day notice period — plan your timeline early",
+  },
 ];
 
 /** Lookup a salary page entry by company slug. */
