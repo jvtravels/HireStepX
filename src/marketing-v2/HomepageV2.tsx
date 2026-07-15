@@ -1687,7 +1687,7 @@ export function InterviewFocusV2() {
         {/* "Available now" label */}
         <MotionReveal style={{
           display: "flex", alignItems: "center", gap: 14,
-          margin: "56px 0 36px",
+          margin: "48px 0 36px",
         }}>
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
@@ -1962,7 +1962,7 @@ export function ProductStoryV2() {
   return (
     <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 72, paddingBottom: 72 }}>
       <div style={container}>
-        <MotionReveal style={{ textAlign: "center", marginBottom: 12 }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 48 }}>
           <h2 id="hd-story" style={h2}>
             Resume in.{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>Scored answer out.</span>
@@ -1975,7 +1975,7 @@ export function ProductStoryV2() {
         {/* 3-column layout — gaps between columns act as dividers */}
         <div
           className="mv2-story-stages"
-          style={{ display: "flex", alignItems: "start", gap: 32, marginTop: 40 }}
+          style={{ display: "flex", alignItems: "start", gap: 32 }}
         >
           {steps.map((step, i) => (
             <div
@@ -2389,7 +2389,7 @@ export function FeatureGridV2() {
   return (
     <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, paddingTop: 48, paddingBottom: 40, background: t.cream }}>
       <div style={container}>
-        <MotionReveal style={{ textAlign: "center", marginBottom: 20 }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 48 }}>
           <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2 }}>
             What practice alone{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>never shows you.</span>
@@ -2994,7 +2994,7 @@ export function TestimonialsV2() {
   return (
     <section className="mv2-section" aria-labelledby="hd-why" style={{ ...sectionBase, background: t.cream, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
-        <MotionReveal style={{ textAlign: "center", marginBottom: 64, maxWidth: 760, marginLeft: "auto", marginRight: "auto" }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 48, maxWidth: 760, marginLeft: "auto", marginRight: "auto" }}>
           <h2 id="hd-why" style={{ ...h2, textWrap: "balance" as const }}>
             The interview help{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>nobody made for you.</span>
@@ -3163,7 +3163,7 @@ export function PricingV2() {
   return (
     <section ref={sectionRef} className="mv2-section" aria-labelledby="hd-pricing" style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
-        <div style={{ textAlign: "center", marginBottom: 56 }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
           <MotionReveal>
             <SectionMasthead n="07" label="Pricing" right="From ₹9 / session" style={{ marginBottom: 16 }} />
           </MotionReveal>
@@ -3498,7 +3498,7 @@ export function FAQV2() {
       style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}
     >
       <div className="mv2-container" style={container}>
-        <MotionReveal style={{ textAlign: "center", marginBottom: 40 }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 48 }}>
           <SectionMasthead n="09" label="FAQ" right="Asked & answered" style={{ marginBottom: 16 }} />
           <h2 id="hd-faq" style={h2}>
             Things you'd ask{" "}
