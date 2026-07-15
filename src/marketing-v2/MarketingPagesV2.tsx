@@ -400,7 +400,6 @@ export function PricingPageV2() {
       cta: "Start free",
       href: "/signup?plan=free",
       featured: false,
-      studentDiscount: false,
       hidden: false,
     },
     {
@@ -417,7 +416,6 @@ export function PricingPageV2() {
       cta: "Buy one session",
       href: "/signup?plan=single",
       featured: false,
-      studentDiscount: false,
       hidden: false,
     },
     {
@@ -436,7 +434,6 @@ export function PricingPageV2() {
       cta: "Get Sprint Pack",
       href: "/signup?plan=weekly",
       featured: true,
-      studentDiscount: true,
       hidden: false,
     },
     {
@@ -456,7 +453,6 @@ export function PricingPageV2() {
       cta: "Go monthly",
       href: "/signup?plan=monthly",
       featured: false,
-      studentDiscount: true,
       hidden: true, // temporarily hidden — re-enable when monthly plan returns
     },
   ];
@@ -471,7 +467,6 @@ export function PricingPageV2() {
     ["Company-specific rounds", "Limited", "Yes", "Yes"],
     ["Skill-decay tracking", "No", "No", "Yes"],
     ["Report retention", "30 days", "30 days", "90 days"],
-    [".ac.in / .edu.in discount", "No", "No", "30% off"],
   ];
 
   const faqs: Array<[string, string]> = [
@@ -482,10 +477,6 @@ export function PricingPageV2() {
     [
       "What happens to unused Sprint Pack sessions?",
       "You get 5 fresh sessions each 30-day billing cycle — they don't accumulate across cycles. Unused sessions within the cycle carry forward until the cycle ends. If you cancel before renewal, you keep access until your paid period expires. If you haven't started any sessions, you can request a full refund within 24 hours of purchase.",
-    ],
-    [
-      "Do you have a student discount?",
-      "Verified .ac.in / .edu.in email = 30% off the Sprint Pack. Apply once, lasts your degree. No re-verification each semester.",
     ],
     [
       "Can I switch plans?",
@@ -615,30 +606,6 @@ export function PricingPageV2() {
                   >
                     {tier.sub}
                   </p>
-                  {tier.studentDiscount && (
-                    <p
-                      style={{
-                        margin: "10px 0 0",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        fontFamily: fonts.sans,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                        padding: "4px 8px",
-                        borderRadius: 999,
-                        color: tier.featured ? t.copper100 : t.copper,
-                        background: tier.featured ? t.copper100Soft : t.copper100,
-                        border: tier.featured
-                          ? `1px solid ${t.copper100SoftLine}`
-                          : `1px solid ${t.lineStrong}`,
-                      }}
-                    >
-                      .ac.in / .edu.in · 30% off
-                    </p>
-                  )}
                 </div>
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {tier.features.map((f) => (
@@ -1848,9 +1815,6 @@ export function RefundPolicyV2() {
 
       <h2>Sprint Pack (₹39 / month)</h2>
       <p>Full refund within 24 hours of purchase if zero sessions from that cycle have been used. After that, no refund for the current month's charge — your remaining sessions stay active until the cycle ends. Cancel any time from Settings before the next billing date to stop the next renewal; cancellation takes effect at the end of the current cycle.</p>
-
-      <h2>Student discount</h2>
-      <p>Refunds on discounted plans are calculated against the discounted price, not the list price.</p>
 
       <h2>How to request a refund</h2>
       <p>Email <code>hello@hirestepx.com</code> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>

@@ -21,7 +21,6 @@ const PRODUCT_LINKS: Array<[string, string]> = [
   ["How it works", "/how-it-works"],
   ["Companies", "/companies"],
   ["Interview Prep", "/interview-prep"],
-  ["For Students", "/for-students"],
   ["Practice Questions", "/questions"],
   ["Salary Guides", "/salary"],
 ];
