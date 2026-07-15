@@ -684,7 +684,6 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
   const purchaseTitle = isSingle
     ? `${sessionQty} extra session${sessionQty !== 1 ? "s" : ""}`
     : isWeekly ? "Interview Sprint Pack"
-    : payment.plan === "monthly" ? "Pro Plan — Monthly"
     : payment.tier
       ? payment.tier.charAt(0).toUpperCase() + payment.tier.slice(1) + " Plan"
       : payment.plan;

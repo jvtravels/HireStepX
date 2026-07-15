@@ -35,12 +35,11 @@ const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 // Razorpay plan IDs — used to validate that the subscription_id returned by the
 // client actually belongs to the plan they claim. An attacker could otherwise
-// submit a weekly subscription_id with plan:"monthly" and get Pro for free.
+// submit a weekly subscription_id and claim a higher-tier plan.
 const RAZORPAY_PLAN_WEEKLY  = (process.env.RAZORPAY_PLAN_WEEKLY  || "").trim();
-const RAZORPAY_PLAN_MONTHLY = (process.env.RAZORPAY_PLAN_MONTHLY || "").trim();
 // Map internal plan keys → Razorpay plan IDs for cross-validation
 const RAZORPAY_PLAN_ID_MAP: Record<string, string> = Object.fromEntries(
-  Object.entries({ weekly: RAZORPAY_PLAN_WEEKLY, monthly: RAZORPAY_PLAN_MONTHLY })
+  Object.entries({ weekly: RAZORPAY_PLAN_WEEKLY })
     .filter(([, v]) => v !== ""),
 );
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -102,7 +101,7 @@ async function sendPaymentEmail(
   const planLabel = PLAN_LABEL[plan] || tier;
   const start = new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   const end = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-  const amountMap: Record<string, string> = { single: "₹9", weekly: "₹39", monthly: "₹149" };
+  const amountMap: Record<string, string> = { single: "₹9", weekly: "₹39" };
   const amount = amountOverride ?? amountMap[plan] ?? "₹49";
 
   try {

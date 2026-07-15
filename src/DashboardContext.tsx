@@ -687,7 +687,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setTimeout(() => setPaymentBanner(null), payment === "success" ? 8000 : 6000);
     }
     const pendingPlan = params.get("plan");
-    if (pendingPlan === "weekly" || pendingPlan === "monthly") {
+    if (pendingPlan === "weekly") {
       setShowUpgradeModal(true);
       window.history.replaceState({}, "", window.location.pathname);
     }

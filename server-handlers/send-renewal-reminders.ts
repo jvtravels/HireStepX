@@ -66,8 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const endDate = new Date(profile.subscription_end);
       const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / 86400000);
       const tier = profile.subscription_tier;
-      const plan = tier === "pro" ? "monthly" : "weekly";
-      const renewUrl = `${APP_URL}/dashboard?plan=${plan}`;
+      const renewUrl = `${APP_URL}/dashboard?plan=weekly`;
 
       const emailBody = JSON.stringify({
         from: FROM_EMAIL,
