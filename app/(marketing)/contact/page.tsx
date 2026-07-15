@@ -3,7 +3,7 @@ import { ContactV2 } from "@/marketing-v2/MarketingPagesV2";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 
 export const metadata: Metadata = {
-  title: "Contact | HireStepX",
+  title: "Contact HireStepX — Support, Partnerships & Press",
   description:
     "Talk to HireStepX. Support, partnerships, press. We reply within one business day.",
   alternates: { canonical: "/contact" },
