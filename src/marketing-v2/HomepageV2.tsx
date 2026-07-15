@@ -4732,7 +4732,6 @@ export default function HomepageV2() {
         <ProductStoryV2 />
         <PricingV2 />
         <ComparisonV2 />
-        <BuiltForIndiaV2 />
         <SecurityComplianceV2 />
         <FAQV2 />
         <VideoCtaV2 />
