@@ -33,6 +33,7 @@ const ResponsiveSheet = () => (
       .mv2-container { padding-left: 18px !important; padding-right: 18px !important; }
       .mv2-hero-display { font-size: clamp(40px, 12vw, 56px) !important; line-height: 1.02 !important; }
       .mv2-hero-cta-row a { width: 100% !important; justify-content: center !important; }
+      .mv2-hero-mock-outer { padding-left: 16px !important; padding-right: 16px !important; }
       main, footer { padding-bottom: 96px !important; }
       .mv2-tap-44 { min-height: 44px !important; }
       .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
@@ -48,11 +49,8 @@ const ResponsiveSheet = () => (
       .mv2-nav-burger { display: inline-flex !important; }
       .mv2-hero-mock-body { grid-template-columns: 1fr !important; }
       .mv2-hero-mock-side { border-left: none !important; border-top: 1px solid var(--mv2-line) !important; }
-      .mv2-hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
       .mv2-hero-section { min-height: 0 !important; display: block !important; }
-      .mv2-hero-mock-wrap { margin-top: 0 !important; }
-      .mv2-hero-margin-note { display: none !important; }
-      .mv2-hero-rule-label-end { display: none !important; }
+      .mv2-hero-mock-outer { padding-left: 20px !important; padding-right: 20px !important; }
       .mv2-story-stage { grid-template-columns: 1fr !important; gap: 32px !important; padding-top: 40px !important; padding-bottom: 40px !important; }
       .mv2-story-stages { flex-direction: column !important; }
       .mv2-story-arrow { display: none !important; }
@@ -888,7 +886,7 @@ function ProductMockHero() {
         position: "relative",
         width: "100%",
         maxWidth: 980,
-        margin: "56px auto 0",
+        margin: "0 auto",
         borderRadius: 20,
         background: t.white,
         border: `1px solid ${t.line}`,
@@ -1289,259 +1287,174 @@ export function HeroV2() {
       className="mv2-hero-section"
       style={{
         ...sectionBase,
-        paddingTop: 56,
-        paddingBottom: 88,
+        paddingTop: 80,
+        paddingBottom: 0,
         background: t.cream,
         overflow: "hidden",
         position: "relative",
       }}
     >
-      {/* Editorial backdrop — copper wash anchored to the mock side */}
+      {/* Centered copper wash — anchored above the headline */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(ellipse 55% 45% at 78% 18%, rgba(180, 83, 9, 0.08) 0%, transparent 65%)",
+            "radial-gradient(ellipse 70% 50% at 50% 15%, rgba(180, 83, 9, 0.07) 0%, transparent 65%)",
           pointerEvents: "none",
           contain: "paint",
         }}
       />
+
+      {/* Centered text block */}
       <div
         style={{
           ...container,
           position: "relative",
-          width: "100%",
+          textAlign: "center",
         }}
       >
-        {/* Asymmetric editorial split — text + mock in two columns, the
-            hero is content-sized (no forced viewport height) so there's
-            no dead-air band below. */}
-        <div
-          className="mv2-hero-grid"
+        <h1
+          id="hd-hero"
+          className="mv2-hero-display mv2-cascade mv2-cascade-1"
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1.2fr",
-            gap: 56,
-            alignItems: "center",
-            marginTop: 32,
+            fontFamily: fonts.serif,
+            fontSize: "clamp(48px, 6.5vw, 88px)",
+            lineHeight: 1.04,
+            letterSpacing: "-0.03em",
+            color: t.coal,
+            margin: "0 auto",
+            fontWeight: 400,
+            maxWidth: 800,
           }}
         >
-          {/* Left — text column */}
-          <div style={{ maxWidth: 600 }}>
-            <h1
-              id="hd-hero"
-              className="mv2-hero-display mv2-cascade mv2-cascade-1"
+          Practice the interview.
+          <br />
+          <span style={{ fontStyle: "italic", color: t.copper }}>
+            Not the panic.
+          </span>
+        </h1>
+
+        <p
+          className="mv2-cascade mv2-cascade-3"
+          style={{
+            fontFamily: fonts.sans,
+            fontSize: 18,
+            lineHeight: 1.55,
+            color: t.inkSoft,
+            maxWidth: 480,
+            margin: "24px auto 0",
+          }}
+        >
+          AI mock interviews you actually speak to — scored against the
+          rubrics real Indian panels use. STAR breakdown back before your
+          chai cools.
+        </p>
+
+        <div
+          className="mv2-hero-cta-row mv2-cascade mv2-cascade-4"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 32,
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
+          <a
+            href="/signup"
+            className="mv2-tap-44 mv2-cta-primary"
+            onClick={() => captureClientEvent("hero_cta_clicked", { cta: "start_free", surface: "hero" })}
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 15,
+              fontWeight: 600,
+              color: t.cream,
+              background: t.copper,
+              padding: "14px 24px",
+              borderRadius: 999,
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Start free — 2 sessions
+            <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 16 }}>→</span>
+          </a>
+          <a
+            href="/how-it-works"
+            className="mv2-tap-44 mv2-cta-secondary"
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 15,
+              fontWeight: 600,
+              color: t.coal,
+              padding: "14px 22px",
+              borderRadius: 999,
+              textDecoration: "none",
+              border: `1px solid ${t.lineStrong}`,
+              background: "transparent",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              whiteSpace: "nowrap",
+            }}
+          >
+            See how it works
+          </a>
+        </div>
+
+        {/* Trust band */}
+        <div
+          className="mv2-cascade mv2-cascade-5"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            marginTop: 28,
+            fontFamily: fonts.sans,
+            fontSize: 13,
+            color: t.inkSoft,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ color: t.coal, fontWeight: 600 }}>
+            2 sessions free
+          </span>
+          <span aria-hidden style={{ color: t.inkFaint }}>·</span>
+          <span>No card needed</span>
+          <span aria-hidden style={{ color: t.inkFaint }}>·</span>
+          <span>
+            <span
               style={{
                 fontFamily: fonts.serif,
-                fontSize: "clamp(40px, 4.6vw, 64px)",
-                lineHeight: 1.04,
-                letterSpacing: "-0.025em",
-                color: t.coal,
-                margin: 0,
-                fontWeight: 400,
+                fontStyle: "italic",
+                color: t.copper,
               }}
             >
-              Practice the interview.
-              <br />
-              <span style={{ fontStyle: "italic", color: t.copper }}>
-                Not the panic.
-              </span>
-            </h1>
-
-            <p
-              className="mv2-cascade mv2-cascade-3"
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 18,
-                lineHeight: 1.55,
-                color: t.inkSoft,
-                maxWidth: 480,
-                margin: "28px 0 0",
-              }}
-            >
-              AI mock interviews you actually speak to — scored against the
-              rubrics real Indian panels use. STAR breakdown back before your
-              chai cools.
-            </p>
-
-            <div
-              className="mv2-hero-cta-row mv2-cascade mv2-cascade-4"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 12,
-                marginTop: 36,
-                flexWrap: "wrap",
-              }}
-            >
-              <a
-                href="/signup"
-                className="mv2-tap-44 mv2-cta-primary"
-                onClick={() => captureClientEvent("hero_cta_clicked", { cta: "start_free", surface: "hero" })}
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: t.cream,
-                  background: t.copper,
-                  padding: "14px 24px",
-                  borderRadius: 999,
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Start free — 2 sessions
-                <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 16 }}>→</span>
-              </a>
-              <a
-                href="/how-it-works"
-                className="mv2-tap-44 mv2-cta-secondary"
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: t.coal,
-                  padding: "14px 22px",
-                  borderRadius: 999,
-                  textDecoration: "none",
-                  border: `1px solid ${t.lineStrong}`,
-                  background: "transparent",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                See how it works
-              </a>
-            </div>
-
-            {/* Single-line trust band — replaces helper + pulse pill */}
-            <div
-              className="mv2-cascade mv2-cascade-5"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginTop: 32,
-                paddingTop: 20,
-                borderTop: `1px solid ${t.line}`,
-                fontFamily: fonts.sans,
-                fontSize: 13,
-                color: t.inkSoft,
-                flexWrap: "wrap",
-              }}
-            >
-              <span style={{ color: t.coal, fontWeight: 600 }}>
-                2 sessions free
-              </span>
-              <span aria-hidden style={{ color: t.inkFaint }}>·</span>
-              <span>No card needed</span>
-              <span aria-hidden style={{ color: t.inkFaint }}>·</span>
-              <span>
-                <span
-                  style={{
-                    fontFamily: fonts.serif,
-                    fontStyle: "italic",
-                    color: t.copper,
-                  }}
-                >
-                  ₹9
-                </span>{" "}
-                per session after
-              </span>
-            </div>
-
-            {/* Company coverage row */}
-            <div
-              className="mv2-cascade mv2-cascade-6"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                flexWrap: "wrap",
-                rowGap: 4,
-                marginTop: 14,
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: fonts.mono,
-                  fontSize: 9,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: t.copper,
-                  flexShrink: 0,
-                  marginRight: 10,
-                }}
-              >
-                Covers
-              </span>
-              {["TCS", "Razorpay", "Infosys", "Zomato", "Flipkart", "ISRO", "Deloitte"].map((co, i, arr) => (
-                <span key={co} style={{ display: "inline-flex", alignItems: "center" }}>
-                  <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint }}>{co}</span>
-                  {i < arr.length - 1 && (
-                    <span aria-hidden style={{ margin: "0 6px", color: t.lineStrong, fontSize: 10 }}>·</span>
-                  )}
-                </span>
-              ))}
-              <span aria-hidden style={{ margin: "0 6px", color: t.lineStrong, fontSize: 10 }}>·</span>
-              <span
-                style={{
-                  fontFamily: fonts.mono,
-                  fontSize: 10,
-                  color: t.copper,
-                  fontWeight: 600,
-                  letterSpacing: "0.05em",
-                }}
-              >
-                +200 roles
-              </span>
-            </div>
-          </div>
-
-          {/* Right — product mock with editorial caption */}
-          <div
-            className="mv2-hero-mock-wrap"
-            style={{ position: "relative", marginTop: -56 }}
-          >
-            <ProductMockHero />
-            {/* Caption row — credits the mock, restores rhythm against left trust band */}
-            <div
-              className="mv2-hero-margin-note"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                marginTop: 18,
-                paddingLeft: 4,
-                fontFamily: fonts.sans,
-                fontSize: 11,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                color: t.inkFaint,
-                fontWeight: 600,
-              }}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span
-                  aria-hidden
-                  style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: "50%",
-                    background: t.copper,
-                  }}
-                />
-                Scored in ~12s after you finish speaking
-              </span>
-            </div>
-          </div>
+              ₹9
+            </span>{" "}
+            per session after
+          </span>
         </div>
+      </div>
+
+      {/* Product mock — full-width showcase below the copy */}
+      <div
+        className="mv2-cascade mv2-cascade-6 mv2-hero-mock-outer"
+        style={{
+          maxWidth: 1088,
+          margin: "48px auto 0",
+          padding: "0 48px",
+          position: "relative",
+        }}
+      >
+        <ProductMockHero />
       </div>
     </section>
   );
