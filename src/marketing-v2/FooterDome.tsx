@@ -283,7 +283,7 @@ function FooterDomeDesktop() {
 /* ── Mobile fallback (<880px) ── */
 function FooterDomeMobile() {
   return (
-    <div style={{ background: t.cream, padding: "48px 24px 32px" }}>
+    <div style={{ background: t.cream, padding: "48px 24px 96px" }}>
       {/* Wordmark */}
       <p style={{
         fontFamily: fonts.sans,

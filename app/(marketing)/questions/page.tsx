@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     type: "website",
     title: "Interview Questions by Company & Role | HireStepX",
     description:
-      "Real verified questions for 60+ companies. Practice answering them with AI voice feedback.",
+      "Curated interview questions for 60+ companies. Practice answering them with AI voice feedback.",
     url: "https://hirestepx.com/questions",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Interview Questions by Company & Role | HireStepX",
-    description: "Real verified questions for 60+ companies. Practice with AI voice feedback.",
+    description: "Curated interview questions for 60+ companies. Practice with AI voice feedback.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };

@@ -421,7 +421,6 @@ export function PricingPageV2() {
     {
       name: "Sprint Pack",
       price: "₹39",
-      compareAt: "₹45",
       unit: "/ 5 sessions",
       sub: "Prep for your next interview",
       features: [
@@ -565,14 +564,9 @@ export function PricingPageV2() {
                   >
                     {tier.name}
                   </p>
-                  {"compareAt" in tier && tier.compareAt && (
-                    <p style={{ margin: "6px 0 0", fontFamily: fonts.sans, fontSize: 13, color: tier.featured ? t.creamFaded : t.inkSoft, textDecoration: "line-through" }}>
-                      {tier.compareAt}
-                    </p>
-                  )}
                   <p
                     style={{
-                      margin: "compareAt" in tier && tier.compareAt ? "2px 0 0" : "10px 0 0",
+                      margin: "10px 0 0",
                       fontFamily: fonts.serif,
                       fontSize: 44,
                       lineHeight: 1,
@@ -813,8 +807,8 @@ export function HowItWorksV2() {
       <PageHero
         eyebrow="How it works"
         title="Five steps from"
-        accent="upload to offer."
-        lead="No fluffy demos. Here's exactly what happens, from the second you drop your resume to the offer call. Total time to first scored mock: under five minutes."
+        accent="upload to ready."
+        lead="No fluffy demos. Here's exactly what happens, from the second you drop your resume to your first scored mock. Total time to first session: under five minutes."
         meta={
           <div className="mv2p-cta-row" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <a href="/signup" style={ctaPrimary("lg")} className="mv2-tap-44">

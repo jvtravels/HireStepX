@@ -75,6 +75,9 @@ function BlogShell({ children }: { children: ReactNode }) {
           main, footer { padding-bottom: 96px !important; }
           .blog-filter-scroll { flex-wrap: nowrap !important; }
           .blog-index-cta { flex-direction: column !important; align-items: flex-start !important; }
+          .blog-post-header { padding-top: 40px !important; }
+          .blog-post-inner { padding: 0 20px !important; }
+          .blog-post-hero { padding: 0 16px !important; }
         }
         .mv2p-faq[open] .mv2p-faq-marker { transform: rotate(45deg); }
         .mv2p-faq-marker { transition: transform 180ms cubic-bezier(0.16,1,0.3,1); }
@@ -2353,6 +2356,9 @@ function CompactCard({ post }: { post: BlogPost }) {
         >
           {post.metaDescription}
         </p>
+        <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: 0, marginTop: 4 }}>
+          HireStepX Team · {post.readTime} read
+        </p>
       </div>
     </article>
   );
@@ -3233,9 +3239,11 @@ function BlogPostPage({ post }: { post: BlogPost }) {
   return (
     <BlogShell>
       {/* Header — tight, centred, no wasted air */}
-      <header style={{ background: t.cream, paddingTop: 64, paddingBottom: 20 }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 40px", textAlign: "center" }}>
+      <header className="blog-post-header" style={{ background: t.cream, paddingTop: 64, paddingBottom: 20 }}>
+        <div className="blog-post-inner" style={{ maxWidth: 720, margin: "0 auto", padding: "0 40px", textAlign: "center" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 18, fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, flexWrap: "wrap" }}>
+            <span>By {post.author ?? "HireStepX Team"}</span>
+            <span aria-hidden style={{ color: t.lineStrong }}>·</span>
             <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
             <span aria-hidden style={{ color: t.lineStrong }}>·</span>
             <span>{post.readTime} read</span>
@@ -3249,7 +3257,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       </header>
 
       {/* Hero image — flush under header, rounded */}
-      <div style={{ maxWidth: 960, margin: "16px auto 0", padding: "0 40px" }}>
+      <div className="blog-post-hero" style={{ maxWidth: 960, margin: "16px auto 0", padding: "0 40px" }}>
         <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "16/7", position: "relative" }}>
           <Image
             src={post.heroImage}
