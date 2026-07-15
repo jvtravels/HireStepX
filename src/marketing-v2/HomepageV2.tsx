@@ -1289,7 +1289,7 @@ function ProductMockHero() {
               fontWeight: 700,
               letterSpacing: "0.14em",
               textTransform: "uppercase" as const,
-              color: t.copper,
+              color: t.copperDark,
               display: "block",
               marginBottom: 5,
             }}>Coach fix</span>
@@ -2029,7 +2029,7 @@ function VoiceFollowUpVisual() {
     >
       {/* Transcript lines */}
       <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaintWeak }}>YOU</span>
+        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint }}>YOU</span>
         <p style={{ margin: "4px 0 0", color: t.inkSoft, lineHeight: 1.45 }}>
           "I improved team communication by setting up weekly syncs…"
         </p>
@@ -2041,7 +2041,7 @@ function VoiceFollowUpVisual() {
           background: t.indigoMist,
         }}
       >
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.indigo, opacity: 0.7 }}>AI INTERVIEWER</span>
+        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.indigoGray }}>AI INTERVIEWER</span>
         <p style={{ margin: "4px 0 0", color: t.coal, lineHeight: 1.45, fontWeight: 500 }}>
           "What metric did you track to know the syncs were working?"
         </p>
@@ -2549,7 +2549,7 @@ export function ComparisonV2() {
             <span style={{
               fontFamily: fonts.sans, fontSize: 10, fontWeight: 600,
               letterSpacing: "0.10em", textTransform: "uppercase" as const,
-              color: t.copper, display: "block", marginBottom: 10, opacity: 0.8,
+              color: t.copper, display: "block", marginBottom: 10,
             }}>What you needed</span>
             <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0 }}>
               Q3: You dropped the STAR structure and never recovered the impact statement.
@@ -2590,7 +2590,7 @@ export function ComparisonV2() {
             <span style={{
               fontFamily: fonts.sans, fontSize: 10, fontWeight: 600,
               letterSpacing: "0.10em", textTransform: "uppercase" as const,
-              color: t.copper, display: "block", marginBottom: 10, opacity: 0.8,
+              color: t.copper, display: "block", marginBottom: 10,
             }}>What you needed</span>
             <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0 }}>
               You gave the same answer to Q2 and Q4. The AI didn&rsquo;t catch it.
