@@ -3249,13 +3249,13 @@ function BlogPostPage({ post }: { post: BlogPost }) {
       </header>
 
       {/* Hero image — flush under header, rounded */}
-      <div style={{ maxWidth: 960, margin: "20px auto 0", padding: "0 40px" }}>
-        <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "21/9", position: "relative" }}>
+      <div style={{ maxWidth: 960, margin: "16px auto 0", padding: "0 40px" }}>
+        <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "16/7", position: "relative" }}>
           <Image
             src={post.heroImage}
             alt={post.heroAlt}
             fill
-            style={{ objectFit: "cover" }}
+            style={{ objectFit: "cover", objectPosition: "center top" }}
             priority
             sizes="(max-width: 720px) 100vw, 880px"
           />
@@ -3268,7 +3268,7 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
 
           {/* Intro dek */}
-          <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 32, marginTop: 36, marginBottom: 40 }}>
+          <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 28, marginTop: 24, marginBottom: 36 }}>
             <p style={{ fontFamily: fonts.serif, fontSize: "clamp(17px, 1.8vw, 20px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.75, letterSpacing: "-0.005em", margin: 0 }}>
               {post.intro}
             </p>
