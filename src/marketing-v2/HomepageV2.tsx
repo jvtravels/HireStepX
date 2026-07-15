@@ -4731,7 +4731,6 @@ export default function HomepageV2() {
         <FeatureGridV2 />
         <ProductStoryV2 />
         <PricingV2 />
-        <ComparisonV2 />
         <SecurityComplianceV2 />
         <FAQV2 />
         <VideoCtaV2 />
