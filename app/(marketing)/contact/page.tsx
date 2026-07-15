@@ -14,6 +14,13 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "Contact HireStepX" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact HireStepX — Support, Partnerships & Press",
+    description: "Reach HireStepX for support or press enquiries. We reply within one business day.",
+    images: ["https://hirestepx.com/opengraph-image"],
   },
 };
 

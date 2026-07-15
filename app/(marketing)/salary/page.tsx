@@ -30,6 +30,13 @@ export const metadata: Metadata = {
     url: "https://hirestepx.com/salary",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "Company Salary Guides India 2026 | HireStepX" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Company Salary Guides India 2026 | HireStepX",
+    description: "Verified salary ranges for 23 companies — total CTC from AmbitionBox, Glassdoor, and Levels.fyi.",
+    images: ["https://hirestepx.com/opengraph-image"],
   },
 };
 

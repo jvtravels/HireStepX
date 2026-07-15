@@ -21,12 +21,14 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "Refer a Friend to HireStepX" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Refer a Friend to HireStepX — Give a Session, Get a Session",
     description:
       "Share your referral link. Both you and your friend earn a free AI mock interview session. No codes, no hassle.",
+    images: ["https://hirestepx.com/opengraph-image"],
   },
 };
 

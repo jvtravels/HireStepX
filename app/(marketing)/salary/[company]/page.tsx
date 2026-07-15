@@ -61,6 +61,13 @@ export async function generateMetadata({
       url: `https://hirestepx.com/salary/${company}`,
       siteName: "HireStepX",
       locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: page.metaDescription,
+      images: ["https://hirestepx.com/opengraph-image"],
     },
   };
 }

@@ -302,6 +302,8 @@ const body: CSSProperties = {
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
+    ["Questions", "/questions"],
+    ["Salaries", "/salary"],
     ["Blog", "/blog"],
     ["Pricing", "/#hd-pricing"],
     ["Contact", "/contact"],
@@ -2129,6 +2131,22 @@ function ResumeAwareVisual() {
       >
         "Walk me through the specific bug you fixed in the Razorpay payment gateway."
       </div>
+      <div
+        style={{
+          padding: "10px 12px",
+          background: t.indigoMist,
+          borderRadius: 8,
+          fontFamily: fonts.sans,
+          fontSize: 12,
+          color: t.coal,
+          lineHeight: 1.4,
+        }}
+      >
+        <span style={{ fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.indigo, display: "block", marginBottom: 4 }}>
+          Follow-up
+        </span>
+        "What was the transaction volume affected? Did you escalate to senior engineers?"
+      </div>
     </div>
   );
 }
@@ -2230,9 +2248,9 @@ function ThoughtBubbleVisual() {
     { q: "Q4", width: "22%", color: "#DC2626" },
   ];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* Per-question bars */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+    <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+      {/* Left: per-question engagement bars */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 160 }}>
         {qs.map(({ q, width, color }) => (
           <div key={q} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span
@@ -2260,9 +2278,10 @@ function ThoughtBubbleVisual() {
           </div>
         ))}
       </div>
-      {/* Trigger sentence */}
+      {/* Right: trigger sentence */}
       <div
         style={{
+          flex: 1,
           padding: "10px 12px",
           background: "rgba(220, 38, 38, 0.05)",
           border: "1px solid rgba(220, 38, 38, 0.14)",
@@ -2353,19 +2372,20 @@ export function FeatureGridV2() {
           </p>
         </MotionReveal>
 
-        {/* Mosaic: Before spans the full left column; During (top row) + After (bottom row) fill right 2 cols */}
+        {/* Mosaic: Before anchors the full left column (3 rows); right side has
+            a wide top strip (Voice), narrow pair in the middle (Salary + Perception),
+            and a wide bottom strip (Thought Bubble) — breaking the identical-stacked rhythm */}
         <div
           className="mv2-bento-mosaic"
           style={{
             display: "grid",
-            gridTemplateColumns: "1.1fr 1fr 1fr",
-            gridTemplateRows: "1fr 1fr",
+            gridTemplateColumns: "1.05fr 1.05fr 1fr",
+            gridTemplateRows: "280px 260px 180px",
             gap: 10,
-            height: 640,
           }}
         >
-          {/* ── Before the session — left column, full height ── */}
-          <BentoCard large style={{ gridColumn: "1", gridRow: "1 / 3", overflow: "hidden", padding: 22, boxSizing: "border-box", height: "100%" }}>
+          {/* ── Before: left column, spans all 3 rows ── */}
+          <BentoCard large style={{ gridColumn: "1", gridRow: "1 / 4", overflow: "hidden", padding: 22, boxSizing: "border-box" }}>
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
               Before · Personalisation
             </span>
@@ -2380,12 +2400,12 @@ export function FeatureGridV2() {
             </div>
           </BentoCard>
 
-          {/* ── During: Voice follow-up ── */}
-          <BentoCard large style={{ gridColumn: "2", gridRow: "1", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
+          {/* ── During: Voice follow-up — wide top strip ── */}
+          <BentoCard large style={{ gridColumn: "2 / 4", gridRow: "1", overflow: "hidden", padding: 20, boxSizing: "border-box" }}>
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
               During · Real Conversation
             </span>
-            <h3 aria-label="During the session: real conversation — Vague answer? It asks again. Harder." style={{ fontFamily: fonts.serif, fontSize: 20, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
+            <h3 aria-label="During the session: real conversation — Vague answer? It asks again. Harder." style={{ fontFamily: fonts.serif, fontSize: 22, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
               Vague answer?{" "}
               <span style={{ color: t.copper, fontStyle: "italic" }}>It asks again. Harder.</span>
             </h3>
@@ -2397,51 +2417,42 @@ export function FeatureGridV2() {
             </div>
           </BentoCard>
 
-          {/* ── During: Salary negotiation ── */}
-          <BentoCard large style={{ gridColumn: "3", gridRow: "1", background: t.indigoDeep, border: "none", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
+          {/* ── During: Salary negotiation — middle left ── */}
+          <BentoCard large style={{ gridColumn: "2", gridRow: "2", background: t.indigoDeep, border: "none", overflow: "hidden", padding: 20, boxSizing: "border-box" }}>
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper100, marginBottom: 12, display: "block" }}>
               During · Salary Negotiation
             </span>
-            <h3 aria-label="During the session: salary negotiation — You left ₹2L on the table. Practice changing that." style={{ fontFamily: fonts.serif, fontSize: 20, color: t.cream, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
+            <h3 aria-label="During the session: salary negotiation — You left ₹2L on the table. Practice changing that." style={{ fontFamily: fonts.serif, fontSize: 20, color: t.cream, margin: 0, marginBottom: 14, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
               You left{" "}
               <span style={{ color: t.copper100, fontStyle: "italic" }}>₹2L on the table.</span>{" "}
               Practice changing that.
             </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.creamMuted, lineHeight: 1.45, margin: "0 0 14px" }}>
-              Counter-offer, anchor high, and hold the silence until HR moves first.
-            </p>
             <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <SalaryNegVisual />
             </div>
           </BentoCard>
 
-          {/* ── After: Perception optimizer ── */}
-          <BentoCard style={{ gridColumn: "2", gridRow: "2", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
+          {/* ── After: Perception optimizer — middle right ── */}
+          <BentoCard style={{ gridColumn: "3", gridRow: "2", overflow: "hidden", padding: 20, boxSizing: "border-box" }}>
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
               After · Perception Optimizer
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 20, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 20, color: t.coal, margin: 0, marginBottom: 14, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
               You said <em>"basically"</em> 9 times.
             </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "0 0 12px" }}>
-              Every hedge word is flagged. The AI marks what signals uncertainty to the panel.
-            </p>
             <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <BiasDetectorVisual />
             </div>
           </BentoCard>
 
-          {/* ── After: Thought bubble ── */}
-          <BentoCard style={{ gridColumn: "3", gridRow: "2", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
+          {/* ── After: Thought Bubble — wide bottom strip ── */}
+          <BentoCard style={{ gridColumn: "2 / 4", gridRow: "3", overflow: "hidden", padding: 20, boxSizing: "border-box" }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 10, display: "block" }}>
               After · Thought Bubble
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 20, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 12, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
               The exact answer <em>that lost the room.</em>
             </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "0 0 12px" }}>
-              Annotated with what the panel was actually scoring for at that moment.
-            </p>
             <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <ThoughtBubbleVisual />
             </div>
@@ -2878,6 +2889,18 @@ export function BuiltForIndiaV2() {
               }}
             >
               Browse practice questions →
+            </a>
+            <a
+              href="/salary"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.cream, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              Salary guides India →
             </a>
             <a
               href="/for-students"
