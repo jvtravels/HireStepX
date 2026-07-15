@@ -3008,6 +3008,20 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         </div>
       </header>
 
+      {/* Hero image — full width of the reading column */}
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px" }}>
+        <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "21/9", position: "relative" }}>
+          <Image
+            src={post.heroImage}
+            alt={post.heroAlt}
+            fill
+            style={{ objectFit: "cover" }}
+            priority
+            sizes="(max-width: 720px) 100vw, 880px"
+          />
+        </div>
+      </div>
+
       <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "28px 40px 100px" }}>
 
         {/* Single reading column — all prose content stays in this 720px lane */}
