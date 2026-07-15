@@ -38,10 +38,12 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
+      // Next.js App Router pages always export both a default component
+      // and generateMetadata/generateStaticParams/config. This rule fires
+      // on every such file (1400+ warnings) and is a false positive for
+      // App Router — fast refresh is handled by the Next.js runtime, not
+      // the Vite/CRA path this rule was designed for.
+      "react-refresh/only-export-components": "off",
       "no-console": ["warn", { allow: ["warn", "error"] }],
       // Allow the deliberate `role="list"` on <ul>/<ol> that also carry
       // `list-style: none`. Safari + VoiceOver strip the implicit list
