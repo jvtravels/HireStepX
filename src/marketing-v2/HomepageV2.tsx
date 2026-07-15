@@ -4058,33 +4058,46 @@ export function SecurityComplianceV2() {
 
   return (
     <section style={{ background: t.cream, padding: "96px 0 80px", overflowX: "hidden" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px", display: "grid", gridTemplateColumns: "1fr 1.15fr", gap: "0 80px", alignItems: "start" }}>
-        {/* Left: heading */}
-        <MotionReveal>
-          <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 4.5vw, 56px)", fontWeight: 400, lineHeight: 1.05, color: t.coal, margin: "0 0 16px", letterSpacing: "-0.02em" }}>
-            Your data stays{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>yours</span>
+      <div className="mv2-container" style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px" }}>
+        {/* Headline */}
+        <MotionReveal style={{ textAlign: "center", margin: "0 auto 16px", maxWidth: 640 }}>
+          <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 56, fontWeight: 400, lineHeight: 1.05, color: t.coal, margin: 0, letterSpacing: -1.5 }}>
+            Your data stays <span style={{ fontStyle: "italic", color: t.copper }}>yours</span>
           </h2>
-          <p style={{ fontSize: 16, lineHeight: 1.65, color: t.inkSoft, margin: 0, fontFamily: fonts.sans, maxWidth: 380 }}>
+        </MotionReveal>
+        <MotionReveal delay={100} style={{ textAlign: "center", margin: "0 auto 64px", maxWidth: 480 }}>
+          <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", margin: 0, fontFamily: fonts.sans }}>
             Built for India&rsquo;s regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.
           </p>
         </MotionReveal>
 
-        {/* Right: trust list */}
-        <div>
+        {/* Cards grid — collapses to 2-col at ≤880px via .mv2-security-grid */}
+        <div className="mv2-security-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {cards.map((c, i) => (
-            <MotionReveal key={c.title} delay={i * 70}>
-              <div style={{
-                padding: "22px 0",
-                borderTop: i === 0 ? `1px solid ${t.line}` : "none",
-                borderBottom: `1px solid ${t.line}`,
-              }}>
-                <div style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 700, color: t.coal, marginBottom: 5 }}>
-                  {c.title}
+            <MotionReveal key={c.title} delay={i * 90}>
+              <div
+                style={{
+                  background: "#FEFDF8",
+                  border: "1px solid rgba(180,83,9,0.1)",
+                  borderRadius: 14,
+                  padding: "28px 24px 28px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  minHeight: 260,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: t.coal, marginBottom: 10, fontFamily: fonts.sans }}>
+                    {c.title}
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "#4A4540", margin: 0, fontFamily: fonts.sans }}>
+                    {c.desc}
+                  </p>
                 </div>
-                <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0 }}>
-                  {c.desc}
-                </p>
+                <div style={{ marginTop: 32 }}>
+                  {c.icon}
+                </div>
               </div>
             </MotionReveal>
           ))}
