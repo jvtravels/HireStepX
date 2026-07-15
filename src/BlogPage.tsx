@@ -277,6 +277,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["top-10-google-interview-questions", "salary-negotiation-tips-india", "tell-me-about-yourself-best-answer"],
     cta: "Case interviews are oral exams where silence costs you more than a wrong turn. HireStepX plays the interviewer: ask for data, walk through your structure, get pushback on your recommendation: and find out where you lose the thread before it happens in a real round.",
+    relatedLinks: [{ label: "Deloitte Salary Guide India 2026", href: "/salary/deloitte" }],
   },
   // ═══════════════════════════════════════════
   // NEW HIGH-VOLUME SEO POSTS
@@ -548,6 +549,10 @@ const posts: BlogPost[] = [
       { label: "PhonePe Engineering Interview", slug: "phonepe-engineering-interview-questions" },
     ],
     cta: "System design only gets sharper with reps. Walk HireStepX's AI through your architecture: it'll probe your tradeoffs, flag where your reasoning is thin, and give you the kind of feedback that only comes from articulating your design out loud.",
+    relatedLinks: [
+      { label: "Google Salary Guide India 2026", href: "/salary/google" },
+      { label: "Flipkart Salary Guide India 2026", href: "/salary/flipkart" },
+    ],
   },
   {
     slug: "salary-negotiation-tips-india",
@@ -644,6 +649,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "campus-placement-interview-tips", "how-to-introduce-yourself-in-interview"],
     cta: "Start your mock interview practice right now: 2 free AI sessions with scored feedback. See your baseline score in 10 minutes.",
+    relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
   },
   {
     slug: "star-method-interview-answers",
@@ -676,6 +682,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["behavioral-interview-questions-freshers", "tell-me-about-yourself-best-answer", "hr-interview-questions-answers-india"],
     cta: "Writing a STAR answer and delivering it are different skills. HireStepX's AI scores each component separately: so if your Situation runs long or your Result lacks specifics, you'll know exactly which part to fix, not just that the answer \"could be stronger.\"",
+    relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
   },
   {
     slug: "cognizant-interview-questions-freshers-2026",
@@ -778,6 +785,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["ace-case-study-interviews", "amazon-leadership-principles-interview", "salary-negotiation-tips-india"],
     cta: "Case interviews need a live interviewer. HireStepX's AI plays that role: it gives you the scenario, drip-feeds data when you ask, and scores your recommendation.",
+    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
   },
   {
     slug: "hcl-accenture-capgemini-interview-comparison",
@@ -982,6 +990,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["mock-interview-practice-guide", "system-design-interview-preparation", "star-method-interview-answers"],
     cta: "If you haven't done a full timed mock interview yet, do one now: not to learn new material, but to feel what the actual pressure is like before you're in it for real. HireStepX runs the full format: DSA, behavioral, system design, with feedback on where your answers stalled.",
+    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
   },
   {
     slug: "java-interview-questions-freshers-india-2026",
@@ -1075,6 +1084,7 @@ const posts: BlogPost[] = [
     ],
     relatedSlugs: ["system-design-interview-preparation", "razorpay-interview-experience", "product-manager-interview-questions-india"],
     cta: "The technical questions are usually the easy part. Explaining your SQL query logic, walking through an A/B test setup, or justifying a business recommendation out loud: that's where interviews are won or lost. HireStepX runs you through those verbal explanations with AI scoring on whether the reasoning actually holds together.",
+    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
   },
   {
     slug: "zomato-product-manager-interview-2026",
@@ -1163,6 +1173,7 @@ const posts: BlogPost[] = [
       { label: "Goldman Sachs Engineering Interview", slug: "goldman-sachs-interview-questions-india" },
     ],
     cta: "GS behavioral rounds aren't a formality: they've rejected candidates who cleared every technical round. The difference is usually specificity: vague answers about 'teamwork' don't hold up when the interviewer asks a follow-up. HireStepX runs voice mock interviews where you practice articulating your reasoning under pressure, with AI feedback on both the technical substance and how clearly you made your case.",
+    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
   },
   {
     slug: "frontend-developer-interview-questions-india-2026",
@@ -1194,6 +1205,10 @@ const posts: BlogPost[] = [
       { label: "Razorpay Engineering Interview", slug: "razorpay-engineering-interview-questions" },
     ],
     cta: "Frontend system design is where most candidates lose points: not because they don't know the answer, but because they struggle to structure an answer out loud in real time. HireStepX runs voice mock interviews specifically for this: you talk through your approach to a checkout widget, a real-time feed, or a micro-frontend architecture, and the AI gives you feedback on structure, depth, and what you skipped.",
+    relatedLinks: [
+      { label: "Flipkart Salary Guide India 2026", href: "/salary/flipkart" },
+      { label: "Razorpay Salary Guide India 2026", href: "/salary/razorpay" },
+    ],
   },
   {
     slug: "product-company-vs-service-company-india-career",
@@ -1226,6 +1241,10 @@ const posts: BlogPost[] = [
       { label: "Razorpay Engineering Interview", slug: "razorpay-engineering-interview-questions" },
     ],
     cta: "The most common failure mode for service-to-product switchers isn't the DSA: it's the behavioral round. Product companies want engineers who have opinions about tradeoffs, not engineers who delivered what the spec said. HireStepX's voice mock interviews let you practice framing your service company experience in terms that resonate with Flipkart and Razorpay interviewers, with AI feedback on how you're positioning yourself.",
+    relatedLinks: [
+      { label: "TCS Salary Guide India 2026", href: "/salary/tcs" },
+      { label: "Flipkart Salary Guide India 2026", href: "/salary/flipkart" },
+    ],
   },
   {
     slug: "swiggy-interview-questions-2026",
@@ -1428,7 +1447,10 @@ const posts: BlogPost[] = [
       { label: "TCS Behavioral Interview Practice", slug: "tcs-behavioral-interview-questions" },
     ],
     cta: "Most TCS candidates who fail the technical round knew the answers: they just couldn't explain them clearly enough under pressure. The verbal/reasoning/numerical sections of the NQT are one problem, but the technical interview after requires a completely different type of fluency: explaining OOPs, walking through code logic, answering behavioral questions without reading from a script. HireStepX lets you build that verbal fluency through voice mock interviews before you face the real round.",
-    relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
+    relatedLinks: [
+      { label: "Campus Placement Interview Guide India 2026", href: "/for-students" },
+      { label: "TCS Salary Guide India 2026", href: "/salary/tcs" },
+    ],
   },
   {
     slug: "faang-interview-preparation-india-2026",
@@ -1464,6 +1486,11 @@ const posts: BlogPost[] = [
       { label: "Adobe Engineering Interview", slug: "adobe-engineering-interview-questions" },
     ],
     cta: "You can spend 6 months on LeetCode and still fail a FAANG interview because you never practiced explaining your solutions out loud. HireStepX runs voice mock interviews where you talk through DSA problems, system design, and Amazon LP stories: and the AI tells you whether your communication is at the level FAANG interviewers expect, not just whether the logic is correct.",
+    relatedLinks: [
+      { label: "Google Salary Guide India 2026", href: "/salary/google" },
+      { label: "Amazon Salary Guide India 2026", href: "/salary/amazon" },
+      { label: "Microsoft Salary Guide India 2026", href: "/salary/microsoft" },
+    ],
   },
   {
     slug: "wipro-elite-nlth-preparation-2026",
@@ -1592,6 +1619,7 @@ const posts: BlogPost[] = [
       { label: "JP Morgan Interview Practice", slug: "jpmorgan-interview-questions-india" },
     ],
     cta: "JP Morgan's behavioral rounds use their own competency framework, not the standard STAR template most candidates practice. HireStepX runs voice mock interviews where you practice the specific competencies JPM looks for: ownership, judgment under uncertainty, and influence without authority: and the AI tells you whether your answers would score well or sound generic.",
+    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
   },
   {
     slug: "startup-vs-mnc-india-career",
@@ -1657,6 +1685,7 @@ const posts: BlogPost[] = [
       { label: "CRED Engineering Interview", slug: "cred-engineering-interview-questions" },
     ],
     cta: "Switching from a service IT background to a product company? The behavioral bar is higher than most people expect: product companies probe for ownership and impact more deeply than service IT rounds do. HireStepX gives you voice mock interviews with STAR scoring so you can find your weak spots before the actual interview does.",
+    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
   },
   {
     slug: "fresher-salary-india-2026",
@@ -1781,6 +1810,7 @@ const posts: BlogPost[] = [
       { label: "IBM GBS Consultant Interview", slug: "ibm-consultant-interview-questions" },
     ],
     cta: "IBM's behavioral round is the round most candidates are least prepared for, because it's not just STAR: it's STAR answers that explicitly demonstrate IBM's three values. Generic 'I worked hard and delivered results' answers score poorly. HireStepX lets you practice these answers out loud and get specific feedback on whether your answer demonstrates the ownership, innovation, or trust that IBM is actually looking for.",
+    relatedLinks: [{ label: "IBM Salary Guide India 2026", href: "/salary/ibm" }],
   },
   {
     slug: "dsa-60-day-preparation-plan",
@@ -1843,6 +1873,10 @@ const posts: BlogPost[] = [
       { label: "System Design Interview Practice", slug: "amazon-system-design-interview-questions" },
     ],
     cta: "DSA is only half the interview. The other half is explaining your thinking out loud, under pressure, to a real person. HireStepX gives you voice practice where the AI scores not just what you say but how clearly and confidently you say it. Most candidates underestimate this gap until they're in the room.",
+    relatedLinks: [
+      { label: "Google Salary Guide India 2026", href: "/salary/google" },
+      { label: "Amazon Salary Guide India 2026", href: "/salary/amazon" },
+    ],
   },
   {
     slug: "product-manager-salary-india-2026",
@@ -1964,6 +1998,7 @@ const posts: BlogPost[] = [
       { label: "Leadership Behavioral Interview Practice", slug: "amazon-sde-leadership-principles-interview" },
     ],
     cta: "EM behavioral questions are harder than SDE behavioral questions because the right answers are less formulaic. 'Tell me about a time you managed an underperformer' has no clean STAR template: it requires you to demonstrate judgment about timing, directness, and what accountability actually looks like. HireStepX runs voice mock interviews for EM rounds where the AI evaluates whether your people management answers sound experienced and specific, or vague and theoretical.",
+    relatedLinks: [{ label: "Google Salary Guide India 2026", href: "/salary/google" }],
   },
   {
     slug: "why-should-we-hire-you-answer-india",
