@@ -34,6 +34,9 @@ const ResponsiveSheet = () => (
       .mv2-hero-display { font-size: clamp(40px, 12vw, 56px) !important; line-height: 1.02 !important; }
       .mv2-hero-cta-row a { width: 100% !important; justify-content: center !important; }
       .mv2-hero-mock-outer { padding-left: 16px !important; padding-right: 16px !important; }
+      /* Mosaic: single column on phones */
+      .mv2-bento-mosaic { grid-template-columns: 1fr !important; }
+      .mv2-bento-mosaic > *:first-child { grid-column: 1 !important; }
       main, footer { padding-bottom: 96px !important; }
       .mv2-tap-44 { min-height: 44px !important; }
       .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
@@ -59,8 +62,10 @@ const ResponsiveSheet = () => (
       .mv2-focus-grid { grid-template-columns: 1fr !important; }
       .mv2-feature-grid { grid-template-columns: 1fr !important; }
       .mv2-feature-span2 { grid-column: span 1 !important; }
-      .mv2-bento-row1 { grid-template-columns: 1fr !important; }
-      .mv2-bento-row2 { grid-template-columns: 1fr !important; }
+      /* Mosaic: collapse to 2-col at tablet (Before card spans full width) */
+      .mv2-bento-mosaic { grid-template-columns: 1fr 1fr !important; grid-template-rows: auto !important; height: auto !important; }
+      .mv2-bento-mosaic > *:first-child { grid-column: 1 / 3 !important; grid-row: auto !important; height: auto !important; min-height: 200px; }
+      .mv2-bento-mosaic > *:not(:first-child) { grid-column: auto !important; grid-row: auto !important; height: auto !important; }
       .mv2-bento-large, .mv2-bento-small { grid-column: 1 / -1 !important; }
       .mv2-india-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
       .mv2-india-logos { justify-content: flex-start !important; }
@@ -2371,291 +2376,127 @@ function BentoCard({
   );
 }
 
-/* Row label — small mono text above each bento row */
-function BentoRowLabel({ children }: { children: React.ReactNode }) {
+/* Compact act-row label embedded inside a card */
+function ActLabel({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
   return (
-    <div
+    <span
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        marginBottom: 12,
+        fontFamily: fonts.mono,
+        fontSize: 9,
+        letterSpacing: "0.2em",
+        textTransform: "uppercase",
+        color: dark ? "rgba(250,247,240,0.4)" : t.inkFaint,
+        marginBottom: 10,
+        display: "block",
       }}
     >
-      <span
-        style={{
-          fontFamily: fonts.mono,
-          fontSize: 10,
-          letterSpacing: "0.2em",
-          textTransform: "uppercase",
-          color: t.inkFaintWeak,
-        }}
-      >
-        {children}
-      </span>
-      <div style={{ flex: 1, height: 1, background: t.line }} />
-    </div>
+      {children}
+    </span>
   );
 }
 
 export function FeatureGridV2() {
   return (
-    <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, background: t.cream }}>
+    <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, paddingTop: 48, paddingBottom: 40, background: t.cream }}>
       <div style={container}>
-        <MotionReveal style={{ marginBottom: 52 }}>
-          <h2 id="hd-features" className="mv2-features-h2" style={h2}>
+        <MotionReveal style={{ marginBottom: 20 }}>
+          <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2, fontSize: "clamp(28px, 4vw, 52px)" }}>
             What practice alone{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>
-              never shows you.
-            </span>
+            <span style={{ fontStyle: "italic", color: t.copper }}>never shows you.</span>
           </h2>
         </MotionReveal>
 
-        {/* ── Row 0: Before the session ── */}
-        <BentoRowLabel>Before the session</BentoRowLabel>
-        <div style={{ marginBottom: 16 }}>
-          <BentoCard large>
-            <div
-              className="mv2-bento-resume-row"
-              style={{ display: "flex", gap: 48, alignItems: "center" }}
-            >
-              <div style={{ flex: "0 0 auto", maxWidth: 360 }}>
-                <span
-                  style={{
-                    fontFamily: fonts.mono,
-                    fontSize: 10,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: t.copper,
-                    opacity: 0.7,
-                    marginBottom: 14,
-                    display: "block",
-                  }}
-                >
-                  Personalisation
-                </span>
-                <h3
-                  style={{
-                    fontFamily: fonts.serif,
-                    fontSize: 26,
-                    color: t.coal,
-                    margin: 0,
-                    marginBottom: 10,
-                    letterSpacing: "-0.015em",
-                    fontWeight: 400,
-                    lineHeight: 1.25,
-                  }}
-                >
-                  Your resume is{" "}
-                  <em>the question paper.</em>
-                </h3>
-                <p
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 14,
-                    color: t.inkSoft,
-                    lineHeight: 1.55,
-                    margin: 0,
-                    maxWidth: 320,
-                  }}
-                >
-                  Upload once. Every session drills your actual projects — not
-                  someone else&apos;s.
-                </p>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <ResumeAwareVisual />
-              </div>
-            </div>
-          </BentoCard>
-        </div>
-
-        {/* ── Row 1: During the session ── */}
-        <BentoRowLabel>During the session</BentoRowLabel>
+        {/* Mosaic: Before spans the full left column; During (top row) + After (bottom row) fill right 2 cols */}
         <div
-          className="mv2-bento-row1"
+          className="mv2-bento-mosaic"
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 16,
-            marginBottom: 16,
+            gridTemplateColumns: "1.1fr 1fr 1fr",
+            gridTemplateRows: "1fr 1fr",
+            gap: 10,
+            height: "min(640px, calc(100vh - 240px))",
           }}
         >
-          {/* LARGE 1 — Voice follow-up */}
-          <BentoCard large>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.indigo,
-                opacity: 0.6,
-                marginBottom: 16,
-              }}
-            >
+          {/* ── Before the session — left column, full height ── */}
+          <BentoCard large style={{ gridColumn: "1", gridRow: "1 / 3", overflow: "hidden", padding: 22, boxSizing: "border-box", height: "100%" }}>
+            <ActLabel>Before the session</ActLabel>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, opacity: 0.7, marginBottom: 10, display: "block" }}>
+              Personalisation
+            </span>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 22, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.015em", fontWeight: 400, lineHeight: 1.25 }}>
+              Your resume is <em>the question paper.</em>
+            </h3>
+            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 16px", maxWidth: 320 }}>
+              Upload once. Every session drills your actual projects — not someone else&apos;s.
+            </p>
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <ResumeAwareVisual />
+            </div>
+          </BentoCard>
+
+          {/* ── During: Voice follow-up ── */}
+          <BentoCard large style={{ gridColumn: "2", gridRow: "1", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
+            <ActLabel>During the session</ActLabel>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.indigo, opacity: 0.6, marginBottom: 10, display: "block" }}>
               Real conversation
             </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 26,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 10,
-                letterSpacing: "-0.015em",
-                fontWeight: 400,
-                lineHeight: 1.25,
-              }}
-            >
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
               Vague answer?{" "}
               <span style={{ color: t.copper, fontStyle: "italic" }}>It asks again. Harder.</span>
             </h3>
-            <p
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                color: t.inkSoft,
-                lineHeight: 1.55,
-                margin: 0,
-                marginBottom: 24,
-                maxWidth: 360,
-              }}
-            >
-              Every follow-up is generated from your answer — not a pre-written script. Specific answers move on. Vague ones get a sharper question back.
+            <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "0 0 14px" }}>
+              Every follow-up is generated from your answer — not a pre-written script.
             </p>
-            <VoiceFollowUpVisual />
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <VoiceFollowUpVisual />
+            </div>
           </BentoCard>
 
-          {/* LARGE 2 — Salary negotiation */}
-          <BentoCard large style={{ background: t.indigoDeep }}>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.copper100,
-                opacity: 0.6,
-                marginBottom: 16,
-              }}
-            >
+          {/* ── During: Salary negotiation ── */}
+          <BentoCard large style={{ gridColumn: "3", gridRow: "1", background: t.indigoDeep, border: "none", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
+            <ActLabel dark>During the session</ActLabel>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper100, opacity: 0.6, marginBottom: 10, display: "block" }}>
               Salary negotiation
             </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 26,
-                color: t.cream,
-                margin: 0,
-                marginBottom: 10,
-                letterSpacing: "-0.015em",
-                fontWeight: 400,
-                lineHeight: 1.25,
-              }}
-            >
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.cream, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
               You left{" "}
               <span style={{ color: t.copper100, fontStyle: "italic" }}>₹2L on the table.</span>{" "}
               Practice changing that.
             </h3>
-            <p
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                color: t.creamMuted,
-                lineHeight: 1.55,
-                margin: 0,
-                marginBottom: 24,
-                maxWidth: 360,
-              }}
-            >
-              The only mode that trains you to counter-offer, anchor high, and hold the silence until HR moves first.
+            <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.creamMuted, lineHeight: 1.45, margin: "0 0 14px" }}>
+              Counter-offer, anchor high, and hold the silence until HR moves first.
             </p>
-            <SalaryNegVisual />
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <SalaryNegVisual />
+            </div>
           </BentoCard>
-        </div>
 
-        {/* ── Row 2: In the report after ── */}
-        <BentoRowLabel>In the report after</BentoRowLabel>
-        <div
-          className="mv2-bento-row2"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 16,
-          }}
-        >
-          {/* SMALL 4 — Bias detector */}
-          <BentoCard>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.copper,
-                opacity: 0.7,
-                marginBottom: 14,
-              }}
-            >
+          {/* ── After: Perception optimizer ── */}
+          <BentoCard style={{ gridColumn: "2", gridRow: "2", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
+            <ActLabel>In the report after</ActLabel>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, opacity: 0.7, marginBottom: 10, display: "block" }}>
               Perception optimizer
             </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 20,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 8,
-                letterSpacing: "-0.01em",
-                fontWeight: 400,
-                lineHeight: 1.3,
-              }}
-            >
-              You said{" "}
-              <em>"basically"</em>{" "}
-              9 times. The room heard uncertainty.
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 17, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.3 }}>
+              You said <em>"basically"</em> 9 times. The room heard uncertainty.
             </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
-              We flag the words that make you sound like you're asking permission — then show what confident sounds like.
-            </p>
-            <BiasDetectorVisual />
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <BiasDetectorVisual />
+            </div>
           </BentoCard>
 
-          {/* SMALL 5 — Thought Bubble */}
-          <BentoCard>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.copper,
-                opacity: 0.7,
-                marginBottom: 14,
-              }}
-            >
+          {/* ── After: Thought bubble ── */}
+          <BentoCard style={{ gridColumn: "3", gridRow: "2", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
+            <ActLabel>In the report after</ActLabel>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, opacity: 0.7, marginBottom: 10, display: "block" }}>
               Thought bubble
             </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 20,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 8,
-                letterSpacing: "-0.01em",
-                fontWeight: 400,
-                lineHeight: 1.3,
-              }}
-            >
-              The exact answer{" "}
-              <em>that lost the room.</em>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 17, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.3 }}>
+              The exact answer <em>that lost the room.</em>
             </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
-              The AI's engagement score per question — with the sentence that triggered the drop.
-            </p>
-            <ThoughtBubbleVisual />
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <ThoughtBubbleVisual />
+            </div>
           </BentoCard>
         </div>
       </div>
