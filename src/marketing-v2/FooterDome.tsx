@@ -19,8 +19,6 @@ import { tokens as t, fonts } from "../auth/_tokens";
 /* ── Nav link data ── */
 const PRODUCT_LINKS: Array<[string, string]> = [
   ["How it works", "/how-it-works"],
-  ["Pricing", "/pricing"],
-  ["Blogs", "/blog"],
   ["Companies", "/companies"],
   ["Interview Prep", "/interview-prep"],
   ["For Students", "/for-students"],
