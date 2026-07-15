@@ -3158,7 +3158,7 @@ export function PricingV2() {
             </h2>
           </MotionReveal>
           <MotionReveal delay={160}>
-            <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16 }}>
+            <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, textAlign: "center" }}>
               Pay when a round is coming. Stop when you&apos;re ready. No subscription, no monthly guilt.
             </p>
           </MotionReveal>
