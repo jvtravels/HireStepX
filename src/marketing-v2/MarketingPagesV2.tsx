@@ -1416,7 +1416,7 @@ export function ForStudentsV2() {
         eyebrow="For students"
         title="Placement week is in"
         accent="six weeks."
-        lead="Built for final-year students. .ac.in email gets 30% off. Practice the actual rounds your seniors got: TCS Digital, Infosys Power Programmer, campus drives, HR rounds. Not generic FAANG."
+        lead="Built for final-year students. Practice the actual rounds your seniors got: TCS Digital, Infosys Power Programmer, campus drives, HR rounds. Not generic FAANG."
         meta={
           <div className="mv2p-cta-row" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <a href="/signup?plan=free" style={ctaPrimary("lg")} className="mv2-tap-44">
@@ -1511,35 +1511,6 @@ export function ForStudentsV2() {
                 <p style={{ ...body, fontSize: 14, lineHeight: 1.6 }}>{copy}</p>
               </article>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Discount band */}
-      <section
-        className="mv2p-section"
-        style={{
-          ...sectionBase,
-          background: t.copper100,
-          borderTop: `1px solid ${t.lineStrong}`,
-          borderBottom: `1px solid ${t.lineStrong}`,
-        }}
-      >
-        <div className="mv2-container" style={containerNarrow}>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ ...eyebrow, marginBottom: 16 }}>Student pricing</p>
-            <h2 style={h2}>
-              30% off Sprint Pack with{" "}
-              <span style={{ fontStyle: "italic", color: t.copper }}>.ac.in / .edu.in</span>
-            </h2>
-            <p style={{ ...lead, marginTop: 24, marginLeft: "auto", marginRight: "auto" }}>
-              Verify your college email once. Discount lasts your full degree; no re-verification each semester. Sprint Pack drops from ₹39 to ₹27. That&apos;s 5 scored mocks for less than a coffee.
-            </p>
-            <div style={{ marginTop: 32 }}>
-              <a href="/signup?plan=weekly&edu" style={ctaPrimary("lg")} className="mv2-tap-44">
-                Verify .ac.in email
-              </a>
-            </div>
           </div>
         </div>
       </section>

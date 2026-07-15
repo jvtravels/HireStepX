@@ -4,6 +4,7 @@ import { SEO_PAGES } from "../../../data/seo-pages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
+import { tokens as t, fonts } from "@/auth/_tokens";
 
 /* /interview-prep — pillar page targeting broad "interview preparation
  * India" head terms. Acts as the hub for the entire company × focus
@@ -151,14 +152,14 @@ export default async function InterviewPrepPage() {
     articleSection: "Interview Preparation",
   };
 
-  const s = { fontFamily: "var(--font-ui), system-ui, sans-serif" };
-  const serif = { fontFamily: "var(--font-display), Georgia, serif" };
-  const mono = { fontFamily: "var(--font-mono), monospace" };
-  const copper = "#B45309";
-  const coal = "#0E0C08";
-  const sand = "#6E6759";
-  const cream = "#FAF7F0";
-  const card = { background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.08)", borderRadius: 10 };
+  const s = { fontFamily: fonts.sans };
+  const serif = { fontFamily: fonts.serif };
+  const mono = { fontFamily: fonts.mono };
+  const copper = t.copper;
+  const coal = t.coal;
+  const sand = t.inkSoft;
+  const cream = t.cream;
+  const card = { background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10 };
 
   return (
     <>
@@ -271,9 +272,9 @@ export default async function InterviewPrepPage() {
               ].map((step, i) => (
                 <li key={step.n} style={{
                   display: "flex", gap: 20, padding: "20px 0",
-                  borderBottom: i < 4 ? "1px solid rgba(20,17,10,0.06)" : "none",
+                  borderBottom: i < 4 ? `1px solid ${t.line}` : "none",
                 }}>
-                  <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: "rgba(180,83,9,0.25)", flexShrink: 0, lineHeight: 1 }}>{step.n}</div>
+                  <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: t.copperBorder, flexShrink: 0, lineHeight: 1 }}>{step.n}</div>
                   <div>
                     <h3 style={{ ...serif, fontSize: 18, fontWeight: 400, margin: "0 0 6px", letterSpacing: "-0.01em" }}>{step.title}</h3>
                     <p style={{ fontSize: 14, lineHeight: 1.65, color: sand, margin: 0 }}>{step.body}</p>
@@ -398,7 +399,7 @@ export default async function InterviewPrepPage() {
               {faqSchema.mainEntity.map((faq, i) => (
                 <div key={i} style={{
                   padding: "20px 0",
-                  borderBottom: i < faqSchema.mainEntity.length - 1 ? "1px solid rgba(20,17,10,0.06)" : "none",
+                  borderBottom: i < faqSchema.mainEntity.length - 1 ? `1px solid ${t.line}` : "none",
                 }}>
                   <h3 style={{ ...serif, fontSize: 17, fontWeight: 400, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
                     {faq.name}
@@ -439,8 +440,8 @@ export default async function InterviewPrepPage() {
                     display: "flex",
                     alignItems: "center",
                     padding: "14px 18px",
-                    background: "#FAFAF8",
-                    border: "1px solid rgba(20,17,10,0.08)",
+                    background: t.white,
+                    border: `1px solid ${t.line}`,
                     borderRadius: 12,
                     fontSize: 14,
                     fontWeight: 500,
@@ -460,7 +461,7 @@ export default async function InterviewPrepPage() {
           {/* ── Bottom CTA ───────────────────────────────────────────── */}
           <section style={{
             marginTop: 56, padding: "32px 28px",
-            background: "#F4EFE3", borderRadius: 16, textAlign: "center",
+            background: t.creamSoft, borderRadius: 16, textAlign: "center",
           }}>
             <h2 style={{ ...serif, fontSize: 26, fontWeight: 400, margin: 0, letterSpacing: "-0.01em" }}>
               Stop reading. Start practicing.
@@ -499,22 +500,22 @@ function CompanyGroup({
   if (pages.length === 0) return null;
   return (
     <section style={{ marginTop: 56 }}>
-      <h2 style={{ fontFamily: "var(--font-display), Georgia, serif", fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px" }}>
+      <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px" }}>
         {heading}
       </h2>
-      <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 18px", lineHeight: 1.6 }}>{description}</p>
+      <p style={{ fontSize: 14, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>{description}</p>
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {pages.map((p) => (
           <li key={p.slug}>
             <Link href={`/questions/${p.slug}`} style={{
               display: "block", padding: "14px 16px",
-              background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.08)", borderRadius: 10,
-              textDecoration: "none", color: "#0E0C08",
+              background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10,
+              textDecoration: "none", color: t.coal,
             }}>
-              <div style={{ fontFamily: "var(--font-mono), monospace", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B45309", marginBottom: 4 }}>
+              <div style={{ fontFamily: fonts.mono, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper, marginBottom: 4 }}>
                 {companyLabel[p.company] ?? p.company} · {focusLabel[p.focus] ?? p.focus}
               </div>
-              <div style={{ fontFamily: "var(--font-display), serif", fontSize: 15, lineHeight: 1.4, color: "#0E0C08" }}>
+              <div style={{ fontFamily: fonts.serif, fontSize: 15, lineHeight: 1.4, color: t.coal }}>
                 {p.searchPhrase}
               </div>
             </Link>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
+import { tokens as t, fonts } from "@/auth/_tokens";
 
 /* /for-students — dedicated campus placement landing page.
  * Targets: "campus placement interview preparation India 2026",
@@ -48,14 +49,14 @@ export const metadata: Metadata = {
   },
 };
 
-const s = { fontFamily: "var(--font-ui), system-ui, sans-serif" };
-const serif = { fontFamily: "var(--font-display), Georgia, serif" };
-const mono = { fontFamily: "var(--font-mono), monospace" };
-const copper = "#B45309";
-const coal = "#0E0C08";
-const sand = "#6E6759";
-const cream = "#FAF7F0";
-const card = { background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.08)", borderRadius: 10 };
+const s = { fontFamily: fonts.sans };
+const serif = { fontFamily: fonts.serif };
+const mono = { fontFamily: fonts.mono };
+const copper = t.copper;
+const coal = t.coal;
+const sand = t.inkSoft;
+const cream = t.cream;
+const card = { background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10 };
 
 /* ── Service company question sets (only confirmed real slugs) ── */
 const SERVICE_COMPANY_GUIDES = [
@@ -293,9 +294,9 @@ export default async function ForStudentsPage() {
               ].map((step, i) => (
                 <div key={step.n} style={{
                   display: "flex", gap: 20, padding: "20px 0",
-                  borderBottom: i < 3 ? "1px solid rgba(20,17,10,0.06)" : "none",
+                  borderBottom: i < 3 ? `1px solid ${t.line}` : "none",
                 }}>
-                  <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: "rgba(180,83,9,0.25)", flexShrink: 0, lineHeight: 1 }}>{step.n}</div>
+                  <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: t.copperBorder, flexShrink: 0, lineHeight: 1 }}>{step.n}</div>
                   <div>
                     <h3 style={{ ...serif, fontSize: 18, fontWeight: 400, margin: "0 0 6px", letterSpacing: "-0.01em" }}>{step.title}</h3>
                     <p style={{ fontSize: 14, lineHeight: 1.65, color: sand, margin: 0 }}>{step.body}</p>
@@ -400,7 +401,7 @@ export default async function ForStudentsPage() {
                 <li key={post.href}>
                   <Link href={post.href} style={{
                     display: "block", padding: "12px 16px",
-                    background: "#FEFCF8", border: "1px solid rgba(20,17,10,0.07)", borderRadius: 8,
+                    background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 8,
                     textDecoration: "none", color: coal, fontSize: 13, lineHeight: 1.4,
                   }}>
                     {post.label} →
@@ -419,7 +420,7 @@ export default async function ForStudentsPage() {
               {faqSchema.mainEntity.map((faq, i) => (
                 <div key={i} style={{
                   padding: "20px 0",
-                  borderBottom: i < faqSchema.mainEntity.length - 1 ? "1px solid rgba(20,17,10,0.06)" : "none",
+                  borderBottom: i < faqSchema.mainEntity.length - 1 ? `1px solid ${t.line}` : "none",
                 }}>
                   <h3 style={{ ...serif, fontSize: 17, fontWeight: 400, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
                     {faq.name}
@@ -435,7 +436,7 @@ export default async function ForStudentsPage() {
           {/* ── Bottom CTA ───────────────────────────────────────────── */}
           <section style={{
             marginTop: 56, padding: "32px 28px",
-            background: "#F4EFE3", borderRadius: 16, textAlign: "center",
+            background: t.creamSoft, borderRadius: 16, textAlign: "center",
           }}>
             <h2 style={{ ...serif, fontSize: 26, fontWeight: 400, margin: 0, letterSpacing: "-0.01em" }}>
               Practice before placement season begins.
