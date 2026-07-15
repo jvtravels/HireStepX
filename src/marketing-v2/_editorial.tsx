@@ -395,8 +395,9 @@ export function SpecTimeline({
 }
 
 /* ── DarkBand ───────────────────────────────────────────────────────────
-   Full-bleed coal section for the closing CTA — the signature rhythm break.
-   Copper eyebrow + serif display in cream + supporting copy + CTA. */
+   Full-bleed closing CTA — video as the primary visual background with a
+   dark top-to-bottom gradient for text contrast, matching VideoCtaV2 on
+   the homepage. Split layout: large serif heading left, copy + CTA right. */
 export function DarkBand({
   eyebrow,
   title,
@@ -415,13 +416,18 @@ export function DarkBand({
       className="ed-close"
       style={{
         position: "relative",
+        /* Coal is the fallback when video hasn't loaded yet */
         background: t.coal,
         color: t.cream,
+        minHeight: 540,
         paddingTop: ED_PADDING.closeV,
         paddingBottom: ED_PADDING.closeV,
         overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
       }}
     >
+      {/* Video — full opacity so it IS the background, matching VideoCtaV2 */}
       {videoSrc && (
         <video
           aria-hidden
@@ -429,30 +435,34 @@ export function DarkBand({
           loop
           muted
           playsInline
+          preload="none"
           style={{
             position: "absolute",
             inset: 0,
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            opacity: 0.22,
+            objectPosition: "center 75%",
+            opacity: 0.9,
             pointerEvents: "none",
           }}
         >
           <source src={videoSrc} type="video/mp4" />
         </video>
       )}
+      {/* Gradient — top-heavy dark for text contrast, fades to reveal video */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(ellipse 60% 60% at 78% 100%, rgba(180, 83, 9, 0.18) 0%, transparent 62%)",
+          background: videoSrc
+            ? "linear-gradient(to bottom, rgba(14,12,8,0.82) 0%, rgba(14,12,8,0.55) 50%, rgba(14,12,8,0.35) 100%)"
+            : "none",
           pointerEvents: "none",
         }}
       />
-      <div className="ed-container ed-split" style={{ position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 48 }}>
+      <div className="ed-container ed-split" style={{ position: "relative", width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 48 }}>
         <div style={{ maxWidth: "17ch" }}>
           {eyebrow && <p style={{ ...edEyebrow, color: t.copper, marginBottom: 20 }}>{eyebrow}</p>}
           <h2
