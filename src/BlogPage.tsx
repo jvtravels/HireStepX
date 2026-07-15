@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { captureClientEvent } from "./posthogClient";
 import Image from "next/image";
@@ -9,7 +9,7 @@ import { tokens as t, fonts } from "./auth/_tokens";
 import { NavV2, MobileStickyCTA, VideoCtaV2 } from "./marketing-v2/HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./marketing-v2/FooterDome";
 import { useSEO } from "./useSEO";
-import { editorialCSS, MarkdownProse } from "./marketing-v2/_editorial";
+import { editorialCSS, MarkdownProse, ctaPrimaryStyle } from "./marketing-v2/_editorial";
 import { RoundFlow, SalaryLadder, TierCompare, FrameworkSteps } from "./marketing-v2/_blog-infographics";
 
 /* PageShell: mirrors marketing-v2 chrome so the blog inherits the
@@ -2989,27 +2989,29 @@ function BlogPostPage({ post }: { post: BlogPost }) {
     ogType: "article",
   });
 
+  /* Table of contents — only for posts with more than 4 sections */
+  const showToc = post.sections.length > 4;
+
   return (
     <BlogShell>
-      {/* Hero: contained column header; image sits inside the reading column with
-          rounded corners so it never fights the cream page background. */}
-      <header style={{ background: t.cream, paddingTop: 88 }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 20px", textAlign: "center" }}>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(32px, 4vw, 48px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.028em", lineHeight: 1.1, textWrap: "balance", margin: "0 auto 24px", maxWidth: "34ch" }}>
-            {post.title}
-          </h1>
-          <div className="blog-meta" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, flexWrap: "wrap" }}>
+      {/* Header — tight, centred, no wasted air */}
+      <header style={{ background: t.cream, paddingTop: 64, paddingBottom: 20 }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 40px", textAlign: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 18, fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, flexWrap: "wrap" }}>
             <span>{new Date(post.datePublished).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
             <span aria-hidden style={{ color: t.lineStrong }}>·</span>
             <span>{post.readTime} read</span>
             <span aria-hidden style={{ color: t.lineStrong }}>·</span>
             <span>{post.category}</span>
           </div>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 40px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.024em", lineHeight: 1.1, textWrap: "balance" as const, margin: 0 }}>
+            {post.title}
+          </h1>
         </div>
       </header>
 
-      {/* Hero image — full width of the reading column */}
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px" }}>
+      {/* Hero image — flush under header, rounded */}
+      <div style={{ maxWidth: 960, margin: "20px auto 0", padding: "0 40px" }}>
         <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "21/9", position: "relative" }}>
           <Image
             src={post.heroImage}
@@ -3022,17 +3024,40 @@ function BlogPostPage({ post }: { post: BlogPost }) {
         </div>
       </div>
 
-      <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "28px 40px 100px" }}>
+      <article className="blog-article" style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 100px" }}>
 
-        {/* Single reading column — all prose content stays in this 720px lane */}
+        {/* Single reading column */}
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
 
-          {/* Intro dek: editorial rule + italic serif pullquote */}
-          <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 28, marginBottom: 56 }}>
-            <p style={{ fontFamily: fonts.serif, fontSize: "clamp(18px, 1.9vw, 22px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.7, letterSpacing: "-0.005em", margin: 0 }}>
+          {/* Intro dek */}
+          <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 32, marginTop: 36, marginBottom: 40 }}>
+            <p style={{ fontFamily: fonts.serif, fontSize: "clamp(17px, 1.8vw, 20px)", fontStyle: "italic", color: t.inkSoft, lineHeight: 1.75, letterSpacing: "-0.005em", margin: 0 }}>
               {post.intro}
             </p>
           </div>
+
+          {/* Table of contents */}
+          {showToc && (
+            <nav aria-label="Contents" style={{ background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 12, padding: "22px 24px", marginBottom: 56 }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 14px" }}>
+                In this guide
+              </p>
+              <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" as const, gap: 10 }}>
+                {post.sections.map((s, i) => {
+                  const match = s.heading.match(/^(\d+)\.\s+(.+)$/);
+                  const label = match ? match[2] : s.heading;
+                  const id = `section-${i}`;
+                  return (
+                    <li key={i} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+                      <span style={{ fontFamily: fonts.serif, fontSize: 13, fontStyle: "italic", color: t.copper, opacity: 0.7, flexShrink: 0, minWidth: 20 }}>{i + 1}</span>
+                      <a href={`#${id}`} style={{ fontFamily: fonts.sans, fontSize: 14, color: t.coal, textDecoration: "none", lineHeight: 1.4 }}
+                        className="ed-link">{label}</a>
+                    </li>
+                  );
+                })}
+              </ol>
+            </nav>
+          )}
 
           {/* Sections */}
           {post.sections.map((section, i) => {
@@ -3040,19 +3065,33 @@ function BlogPostPage({ post }: { post: BlogPost }) {
             const num = match ? match[1].padStart(2, "0") : null;
             const headingText = match ? match[2] : section.heading;
             const visual = SECTION_VISUALS[`${post.slug}||${section.heading}`];
+            /* Inline CTA after every 3rd section (index 2, 5, 8…) but not the last */
+            const showInlineCta = i > 0 && i % 3 === 2 && i < post.sections.length - 1;
             return (
-              <section key={i} style={{ paddingTop: i === 0 ? 0 : 52, borderTop: i > 0 ? `1px solid ${t.line}` : "none" }}>
-                {num && (
-                  <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>
-                    Question {num}
-                  </p>
+              <React.Fragment key={i}>
+                <section id={`section-${i}`} style={{ paddingTop: i === 0 ? 0 : 56, borderTop: i > 0 ? `1px solid ${t.line}` : "none" }}>
+                  {num && (
+                    <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase" as const, marginBottom: 12 }}>
+                      Question {num}
+                    </p>
+                  )}
+                  <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(22px, 2.6vw, 32px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.2, letterSpacing: "-0.02em", textWrap: "balance" as const }}>
+                    {headingText}
+                  </h2>
+                  <MarkdownProse text={section.content} />
+                  {visual}
+                </section>
+                {showInlineCta && (
+                  <div style={{ margin: "48px 0", padding: "24px 28px", background: t.coal, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap" as const }}>
+                    <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.creamMuted, margin: 0, lineHeight: 1.5, flex: 1, minWidth: "18ch" }}>
+                      {post.cta}
+                    </p>
+                    <Link href="/signup?source=blog-inline" className="ed-cta" style={{ ...ctaPrimaryStyle("md"), flexShrink: 0, whiteSpace: "nowrap" as const, textDecoration: "none" }}>
+                      Practice free <span className="ed-cta-arrow" aria-hidden>→</span>
+                    </Link>
+                  </div>
                 )}
-                <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3.2vw, 38px)", fontWeight: 400, color: t.coal, marginBottom: 20, lineHeight: 1.2, letterSpacing: "-0.02em", textWrap: "balance" }}>
-                  {headingText}
-                </h2>
-                <MarkdownProse text={section.content} />
-                {visual}
-              </section>
+              </React.Fragment>
             );
           })}
 
