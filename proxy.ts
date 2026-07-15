@@ -158,9 +158,7 @@ const APP_PREFIXES = [
  * same flag so the two stay in sync.
  */
 const PRE_LAUNCH_HOSTS = new Set<string>([
-  "hirestepx.com",
-  "www.hirestepx.com",
-  "app.hirestepx.com",
+  // Cleared for public launch — gate disabled on all hosts.
 ]);
 
 // Gate allowlist logic (which paths stay reachable while gated) lives in
