@@ -186,6 +186,27 @@ const ResponsiveSheet = () => (
     @media (prefers-reduced-motion: reduce) {
       .mv2-feature-card, .mv2-feature-icon { transition: none !important; transform: none !important; }
     }
+    /* Bento card hover lift */
+    .mv2-bento-large, .mv2-bento-small { transition: transform 0.28s ${ease}, box-shadow 0.28s ${ease}, border-color 0.2s ease; }
+    .mv2-bento-large:hover, .mv2-bento-small:hover { transform: translateY(-3px); box-shadow: ${shadows.featureHover}; border-color: ${t.lineStrong}; }
+    @media (prefers-reduced-motion: reduce) { .mv2-bento-large, .mv2-bento-small { transition: none !important; transform: none !important; } }
+    /* HireStepX comparison card glow on hover */
+    .mv2-cmp-hsx { transition: box-shadow 0.3s ${ease}; }
+    .mv2-cmp-hsx:hover { box-shadow: 0 24px 64px rgba(14,12,8,0.36), 0 6px 20px rgba(14,12,8,0.18); }
+    @media (prefers-reduced-motion: reduce) { .mv2-cmp-hsx { transition: none !important; } }
+    /* Dark-surface cross-links — arrow nudge on hover */
+    .mv2-dark-link { transition: color 0.18s ease; }
+    .mv2-dark-link .mv2-dark-arrow { display: inline-block; transition: transform 0.22s ${ease}; }
+    .mv2-dark-link:hover .mv2-dark-arrow { transform: translateX(3px); }
+    /* Mobile sticky CTA press state */
+    .mv2-sticky-btn { transition: transform 0.15s ease, opacity 0.1s ease; }
+    .mv2-sticky-btn:active { transform: scale(0.96); }
+    @media (prefers-reduced-motion: reduce) { .mv2-sticky-btn { transition: none !important; transform: none !important; } }
+    /* Pricing CTA press state */
+    .mv2-pricing-cta { transition: transform 0.2s ${ease}, opacity 0.15s ease; }
+    .mv2-pricing-cta:hover { transform: translateY(-1px); }
+    .mv2-pricing-cta:active { transform: scale(0.97); transition-duration: 0.08s; }
+    @media (prefers-reduced-motion: reduce) { .mv2-pricing-cta { transition: none !important; transform: none !important; } }
   `}</style>
 );
 
@@ -2884,6 +2905,7 @@ export function BuiltForIndiaV2() {
           <div style={{ display: "flex", gap: 16, marginTop: 32, flexWrap: "wrap" }}>
             <a
               href="/questions"
+              className="mv2-dark-link"
               style={{
                 fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
                 color: t.cream, textDecoration: "none",
@@ -2892,10 +2914,11 @@ export function BuiltForIndiaV2() {
                 paddingBottom: 2,
               }}
             >
-              Browse practice questions →
+              Browse practice questions <span className="mv2-dark-arrow" aria-hidden>→</span>
             </a>
             <a
               href="/salary"
+              className="mv2-dark-link"
               style={{
                 fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
                 color: t.cream, textDecoration: "none",
@@ -2904,10 +2927,11 @@ export function BuiltForIndiaV2() {
                 paddingBottom: 2,
               }}
             >
-              Salary guides India →
+              Salary guides India <span className="mv2-dark-arrow" aria-hidden>→</span>
             </a>
             <a
               href="/for-students"
+              className="mv2-dark-link"
               style={{
                 fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
                 color: t.copper100, textDecoration: "none",
@@ -2916,7 +2940,7 @@ export function BuiltForIndiaV2() {
                 paddingBottom: 2,
               }}
             >
-              Campus placement guide →
+              Campus placement guide <span className="mv2-dark-arrow" aria-hidden>→</span>
             </a>
           </div>
 
@@ -3360,7 +3384,7 @@ export function PricingV2() {
                   Weekly      → cream on coal — primary conversion driver */}
               <a
                 href={tier.price === "₹9" ? `${tier.href}&qty=${singleQty}` : tier.href}
-                className="mv2-tap-44"
+                className="mv2-tap-44 mv2-pricing-cta"
                 style={{
                   marginTop: "auto",
                   display: "inline-flex",
@@ -4303,6 +4327,7 @@ export function MobileStickyCTA() {
       </span>
       <a
         href="/signup"
+        className="mv2-sticky-btn"
         style={{
           fontFamily: fonts.sans,
           fontSize: 13,
