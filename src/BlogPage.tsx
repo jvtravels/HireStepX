@@ -2045,6 +2045,244 @@ const posts: BlogPost[] = [
     cta: "Reading the right answer framework is the first step. The gap between knowing the SPR structure and delivering it confidently under interview pressure is where most freshers get caught. HireStepX runs voice mock interviews where you practice 'why should we hire you' out loud: the AI evaluates whether your proof is specific, your relevance connection is genuine, and your delivery sounds natural rather than rehearsed.",
     relatedLinks: [{ label: "Campus Placement Interview Guide India 2026", href: "/for-students" }],
   },
+  // ═══════════════════════════════════════════
+  {
+    slug: "capgemini-interview-questions-freshers-2026",
+    title: "Capgemini Interview Questions for Freshers 2026 — IntelliAdapt Test, Process & Salary",
+    metaDescription: "Capgemini fresher interview 2026: IntelliAdapt adaptive aptitude test, programming test, technical and HR rounds. Entry salary ₹3.8–6.5 LPA. What to expect and how to prepare.",
+    company: "Capgemini",
+    category: "Campus Placement",
+    readTime: "7 min",
+    heroImage: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&h=500&fit=crop",
+    heroAlt: "Fresher preparing for Capgemini's IntelliAdapt online test",
+    datePublished: "2026-07-15",
+    intro: "Capgemini's fresher hiring process is built around a distinctive online test called IntelliAdapt — an adaptive aptitude assessment where the difficulty of each question adjusts in real time based on how you answered the previous one. A correct answer raises the next question's difficulty; an incorrect one lowers it. Your final score reflects both accuracy and the difficulty level you reached, which means rushing through easy questions is not a winning strategy. Here is what the full process looks like and how to prepare for each round.",
+    sections: [
+      {
+        heading: "The Four-Round Capgemini Fresher Process",
+        content: "Capgemini's fresher recruitment runs in four stages across all campus drives and off-campus openings:\n\n1. Online Registration — Apply via the Capgemini portal or through your campus training and placement office. Off-campus applications are accepted year-round for specific roles.\n\n2. IntelliAdapt Test — Two sections: the IntelliAdapt adaptive aptitude section and a separate programming test. The aptitude section covers quantitative reasoning, logical reasoning, and verbal ability. The programming test assesses problem-solving in a language of your choice — Java, Python, or C++ are the most common choices.\n\n3. Technical Interview — Covers CS fundamentals (data structures, DBMS, OS, computer networks), your academic projects, and one or two live coding problems.\n\n4. HR Interview — Behavioral questions, relocation preference, technology track preference (infrastructure services vs. data and AI), and career goals.",
+      },
+      {
+        heading: "Preparing for the IntelliAdapt Test",
+        content: "The adaptive nature of the IntelliAdapt test rewards accuracy over speed. Attempting a question you are unsure of risks pulling you down to easier, lower-weight questions. Strategy: read each question carefully, skip and return rather than guess blindly, and prioritize sections you are strongest in.\n\nFor the aptitude section: practice standard quantitative reasoning (time-speed-distance, percentages, ratios), syllogisms, and reading comprehension under timed conditions. The difficulty cap is moderate compared to FAANG aptitude — consistent accuracy at the medium level matters more than occasional brilliance at the hard level.\n\nFor the programming test: practice writing clean, correct code in your preferred language. Two problems are typical: one easy array or string manipulation problem and one medium-level logic problem. Capgemini does not penalize for brute-force solutions if they pass the test cases.",
+      },
+      {
+        heading: "Technical Interview Topics",
+        content: "Capgemini's technical interview for freshers tests CS fundamentals at a depth appropriate for new graduates — not competitive-programming-level DSA. Common areas:\n\nData Structures and Algorithms: Arrays, linked lists, stacks, queues, and basic sorting algorithms. Expect questions like 'explain a stack and write a push and pop implementation' or 'sort this array using bubble sort and tell me its time complexity.'\n\nDBMS: SQL SELECT queries with WHERE, GROUP BY, and JOIN. ER diagram basics. Difference between primary key and foreign key. Transaction ACID properties.\n\nOperating Systems: Process vs. thread difference. What is deadlock and the four conditions for it. Virtual memory concept.\n\nComputer Networks: OSI model layers and their functions. TCP vs. UDP. What happens when you type a URL in the browser.\n\nYour Projects: Every fresher should be able to walk through their final-year or best academic project — what problem it solved, what technology stack was used, and what they personally built.",
+      },
+      {
+        heading: "Salary and Job Offer",
+        content: "Capgemini's 2026 fresher compensation varies by the track you are selected for. The standard Analyst track starts at ₹3.8 LPA for most engineering graduates. High-performing candidates on the InfraServices or Insights and Data track can earn up to ₹6.5 LPA total CTC at the entry level. Source: Capgemini 2026 fresher disclosure.\n\nNote: Capgemini typically requires newly joined employees to be flexible with pan-India posting. Location preference is considered but not guaranteed. A bond or notice-period clause applies to early exits — confirm the specific terms in your offer letter.",
+      },
+    ],
+    faqs: [
+      { question: "Is the IntelliAdapt test difficult for freshers?", answer: "Moderate difficulty — harder than most state-board aptitude tests but significantly easier than FAANG-level assessments. The adaptive mechanism means the test gets harder as you answer correctly, which surprises first-time test-takers. Consistent accuracy at the medium difficulty level is the goal. Practice timed aptitude tests for two to three weeks before the drive." },
+      { question: "What programming language should I use for the Capgemini programming test?", answer: "Capgemini accepts Java, Python, and C++ for the programming section. Use whichever language you are fastest and most accurate in. Python is the most forgiving for string manipulation problems. Java is commonly used by CS graduates. Syntax errors cost time in a timed test, so default to your strongest language." },
+      { question: "Does Capgemini require relocation flexibility for freshers?", answer: "Yes. Most Capgemini Analyst offers include a pan-India posting clause. Project allocation depends on client requirement, not candidate preference. If you have a strong preference for a specific city, mention it during the HR interview, but do not make it a condition — offer rejections for this reason are common." },
+      { question: "How soon does Capgemini release the offer letter after campus drives?", answer: "Typically 4 to 12 weeks after the final HR round, depending on the batch size and intake cycle. Capgemini runs large-volume hiring drives and offer-letter timelines can stretch in years with high campus intake. Keep your offer communication email active and follow up through your campus TnP office if the wait exceeds 8 weeks." },
+    ],
+    relatedSlugs: ["how-to-crack-tcs-ion-nqt-2026", "wipro-nlth-preparation-guide-2026", "infosys-campus-interview-guide"],
+    practicePageSlugs: [
+      { label: "Capgemini Fresher Interview Practice", slug: "capgemini-freshers-interview-questions" },
+    ],
+    cta: "Knowing what Capgemini tests is half the preparation. The other half is practicing under the same pressure conditions — timed questions, voice responses for the HR round, and an AI that evaluates whether your technical answers are precise enough to pass a real technical interviewer. HireStepX runs mock sessions that mirror the Capgemini technical and HR rounds, with feedback on answer depth and delivery.",
+    relatedLinks: [
+      { label: "Campus Placement Guide India 2026", href: "/for-students" },
+      { label: "Capgemini Salary Guide India 2026", href: "/salary/capgemini" },
+    ],
+  },
+  // ═══════════════════════════════════════════
+  {
+    slug: "ltimindtree-interview-questions-freshers-2026",
+    title: "LTIMindtree Interview Questions for Freshers 2026 — Harder Coding, Higher Pay",
+    metaDescription: "LTIMindtree fresher interview 2026: online assessment with 3 coding problems (harder than TCS/Wipro), technical interview, HR round. Entry salary ₹4–7 LPA. Complete preparation guide.",
+    company: "LTIMindtree",
+    category: "Campus Placement",
+    readTime: "6 min",
+    heroImage: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=1200&h=500&fit=crop",
+    heroAlt: "Engineering fresher solving coding problems for LTIMindtree online assessment",
+    datePublished: "2026-07-15",
+    intro: "LTIMindtree — formed from the 2022 merger of Larsen and Toubro Infotech and Mindtree — has unified its fresher hiring with a measurably higher coding bar than most service-company peers. The online assessment includes three coding problems of increasing difficulty, compared to the two easier problems typical of TCS or Wipro drives. This reflects LTIMindtree's positioning as a mid-market services company that competes on technical delivery quality, not just headcount. Here is the full process and how to prepare.",
+    sections: [
+      {
+        heading: "The Three-Round LTIMindtree Fresher Process",
+        content: "LTIMindtree campus drives run in three stages:\n\n1. Online Assessment — Two parts: an aptitude section (quantitative, verbal, logical) and a coding section with three problems. The aptitude section is comparable to TCS or Infosys drives. The coding section is the differentiator — expect one easy, one medium, and one medium-hard problem, all to be solved in around 90 minutes.\n\n2. Technical Interview — Data structures and algorithms, CS fundamentals, a walkthrough of your coding test solutions and academic projects.\n\n3. HR Interview — Relocation flexibility, bond terms, career goals, and cultural fit discussion.",
+      },
+      {
+        heading: "The Coding Assessment: What Makes It Harder",
+        content: "Most IT services company coding tests present two problems at an easy-to-medium level. LTIMindtree's three-problem format raises the stakes:\n\nProblem 1 — Easy: Array manipulation, string reversal, or a straightforward pattern. Solvable in 10 to 15 minutes.\n\nProblem 2 — Medium: Involves a data structure (typically a linked list, stack, or queue) or a basic DP pattern. Requires a clean implementation, not just a correct idea.\n\nProblem 3 — Medium-Hard: Often a combination problem — graph traversal, two-pointer with constraints, or a matrix operation. This is what separates shortlisted candidates from those who only passed the aptitude.\n\nStrategy: Solve Problems 1 and 2 completely before touching Problem 3. A full solution to two problems outscores partial attempts at all three. Time management is more important here than at easier drives.",
+      },
+      {
+        heading: "Technical Interview Focus Areas",
+        content: "LTIMindtree technical interviews for freshers focus on the same CS fundamentals as most services companies, but interviewers frequently revisit the coding test — they will ask you to explain your approach to the problems you solved, optimize a solution you wrote, or write a variant on the spot.\n\nData Structures: Arrays, linked lists, stacks, trees (especially BST operations). Be ready to implement, not just describe.\n\nAlgorithms: Sorting (merge sort, quick sort with complexity), binary search, recursion. Time and space complexity for everything you write.\n\nDBMS: SQL queries — GROUP BY, HAVING, JOIN. Normalization up to 3NF. Difference between clustered and non-clustered indexes.\n\nOOP Concepts: Four pillars with examples in Java or Python. Difference between abstract class and interface.\n\nProjects: Walk through your academic project clearly — what the problem was, what you built, what decisions you made, and what you would improve.",
+      },
+      {
+        heading: "Salary and Bond Terms",
+        content: "LTIMindtree's 2026 fresher package for Software Engineer roles starts at ₹4 LPA for standard campus hires and can reach ₹7 LPA total CTC at the higher performance band. Source: LTIMindtree 2026 fresher disclosure.\n\nImportant: LTIMindtree typically includes a notice period of 90 days and a bond clause for early exit. The specific bond penalty is stated in your offer letter — read carefully before accepting. The post-merger integration between legacy LTI and Mindtree is still ongoing, and compensation standardization continues as of 2026.",
+      },
+    ],
+    faqs: [
+      { question: "Is LTIMindtree's coding test harder than TCS NQT?", answer: "Yes. LTIMindtree's three-problem coding assessment is measurably harder than the TCS NQT coding section, which presents two problems at an easier level. LTIMindtree's third problem is typically a medium-hard data structures or algorithm challenge. Candidates who have solved 60+ LeetCode easy-to-medium problems are well prepared; those who have only practiced aptitude tests are not." },
+      { question: "What is LTIMindtree's bond clause for freshers?", answer: "LTIMindtree typically includes a service bond in fresher offer letters. The specific terms — duration and penalty — are stated in the offer letter and should be read carefully before signing. Confirm the exact clause with your campus placement officer or the LTIMindtree HR representative at your drive." },
+      { question: "What is the difference between LTI and Mindtree after the merger?", answer: "LTIMindtree was formed in 2022 when Larsen and Toubro Infotech and Mindtree merged into a single listed entity. Both were mid-tier IT services companies with different client bases. Fresher hiring now runs under a unified process, though internal practices are still being standardized as of 2026." },
+      { question: "Does LTIMindtree hire off-campus freshers?", answer: "Yes. LTIMindtree runs both on-campus drives at engineering colleges and off-campus recruitment programs. Off-campus applicants go through the same online assessment and interview stages. Monitor the LTIMindtree careers portal and their official LinkedIn page for off-campus drive announcements." },
+    ],
+    relatedSlugs: ["how-to-crack-tcs-ion-nqt-2026", "wipro-nlth-preparation-guide-2026", "dsa-60-day-preparation-plan"],
+    practicePageSlugs: [
+      { label: "LTIMindtree Fresher Interview Practice", slug: "ltimindtree-freshers-interview-questions" },
+    ],
+    cta: "Three coding problems under time pressure is a different skill from knowing the theory. HireStepX runs timed mock coding assessments with AI feedback on your approach, time complexity, and edge-case handling — the same dimensions that distinguish shortlisted candidates from those who pass aptitude but fail the coding section.",
+    relatedLinks: [
+      { label: "Campus Placement Guide India 2026", href: "/for-students" },
+      { label: "LTIMindtree Salary Guide India 2026", href: "/salary/ltimindtree" },
+    ],
+  },
+  // ═══════════════════════════════════════════
+  {
+    slug: "freshworks-interview-questions-india-2026",
+    title: "Freshworks SDE Interview Questions India 2026 — B2B SaaS, Customer-Success Engineering",
+    metaDescription: "Freshworks SDE interview 2026: online assessment, DSA, system design for multi-tenant SaaS, and behavioral rounds. Entry salary ₹14–22 LPA + RSU. Complete preparation guide for India.",
+    company: "Freshworks",
+    category: "Full Guide",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=500&fit=crop",
+    heroAlt: "Software engineer preparing for Freshworks SDE interview in Chennai",
+    datePublished: "2026-07-15",
+    intro: "Freshworks (NASDAQ: FRSH) builds B2B SaaS products — CRM, customer support, IT service management, and marketing automation — used by businesses ranging from small shops to enterprise accounts. Its SDE interviews carry what engineers at the company call a customer-success flavour: you are expected to explain architecture decisions as if a non-technical customer success manager might ask you why something works the way it does. That is not just a behavioral expectation — it shows up directly in how system design rounds are framed. Here is the complete picture.",
+    sections: [
+      {
+        heading: "The Four-Round Freshworks SDE Interview Process",
+        content: "Freshworks SDE hiring typically runs in four stages:\n\n1. Online Assessment — Two DSA problems at a medium difficulty level, timed at 60 to 90 minutes. Standard problems, often involving arrays, hash maps, or string manipulation.\n\n2. DSA Round — A live coding round (phone or video) with a medium-to-hard problem, typically involving a distributed data structure or algorithm with real-world constraints.\n\n3. System Design Round — Multi-tenant SaaS architecture problems. Topics include webhook reliability, API versioning and stability, and how to build features that work correctly across many independent business accounts without data leakage between them.\n\n4. Behavioral Round — Product empathy, customer-success thinking, and ownership. Expect questions about how you handled a situation where your code affected a customer's business, or how you balance speed of delivery against reliability.",
+      },
+      {
+        heading: "System Design: Multi-Tenant SaaS Focus",
+        content: "Freshworks system design rounds differ from generic product company design interviews because the problems are framed around B2B SaaS constraints rather than consumer-scale applications.\n\nCommon problem types:\n\nWebhook Reliability — Design a webhook delivery system that guarantees at-least-once delivery to customer endpoints that may be temporarily unavailable. Cover retry logic, exponential backoff, dead-letter queues, and monitoring.\n\nMulti-Tenant Data Isolation — Design a feature where each business customer's data is logically (and sometimes physically) separated. Cover both shared-schema and schema-per-tenant approaches with trade-offs for each.\n\nAPI Stability — How do you design and evolve a public API so that existing customer integrations do not break when Freshworks ships a new version? Cover versioning strategies, deprecation windows, and schema evolution.\n\nThe evaluation emphasis is on correctness and explainability — can you describe your design to a non-technical stakeholder without losing the key trade-offs?",
+      },
+      {
+        heading: "DSA Preparation for Freshworks",
+        content: "Freshworks DSA rounds test medium-to-hard problems with a focus on code quality and correctness over raw algorithmic difficulty. The company does not rely on the hardest LeetCode problems — it tests whether you write clean, maintainable code that handles edge cases.\n\nFocus areas:\n\nHash Maps and Sets: Almost every Freshworks DSA round involves a hash map. Practice counting, grouping, and lookup-optimization problems.\n\nString Manipulation: Parsing, pattern matching, and transformation problems — common in B2B software where configuration and data import are first-class concerns.\n\nGraph Traversal: BFS and DFS for dependency resolution and data flow problems, relevant to the workflow automation products Freshworks builds.\n\nTree Operations: Serialization, level-order traversal, and path-finding in BSTs.\n\nCode quality matters: write self-documenting variable names, handle null and empty inputs explicitly, and explain your approach before writing code.",
+      },
+      {
+        heading: "Compensation: ₹14–22 LPA + Public RSUs",
+        content: "Freshworks is NASDAQ-listed (ticker: FRSH), which means RSUs granted to employees are publicly traded and liquid — unlike ESOP at pre-IPO companies where liquidity depends on a future event.\n\nSDE entry compensation in India in 2026 (Glassdoor, Freshworks SE entry India):\n\n- Total CTC range: ₹14–22 LPA\n- Includes base salary, performance bonus, and RSU grants on a 4-year vest schedule\n\nFreshworks Chennai is the primary engineering hub. Most entry-level SDE roles are based there, with some remote options for senior roles.",
+      },
+    ],
+    faqs: [
+      { question: "What does 'customer-success engineering' mean in Freshworks interviews?", answer: "It means you are expected to reason about technical decisions in terms of their impact on business customers who are not engineers. A Freshworks system design answer is considered strong when you can articulate not just the architecture but why each trade-off matters for a business that depends on the feature working correctly. Interviewers explicitly look for product empathy — do you understand why a webhook delay or an API breaking change is expensive for a business customer?" },
+      { question: "Does Freshworks use competitive programming-style DSA?", answer: "Not typically. Freshworks DSA rounds test medium-difficulty problems with an emphasis on clean, correct implementations rather than obscure algorithmic tricks. Candidates who focus on LeetCode medium problems and code quality consistently outperform those who grind LeetCode hard problems but write unclean or edge-case-failing code." },
+      { question: "Are Freshworks RSUs liquid for employees in India?", answer: "Yes. Freshworks is publicly listed on NASDAQ (FRSH), so RSUs vest into publicly traded shares that can be sold on the open market according to the company's trading window policy. This is different from ESOP at pre-IPO companies where liquidity depends on a secondary transaction or an IPO event." },
+      { question: "Is Freshworks a good company for engineers early in their career?", answer: "Freshworks is well-regarded for engineering quality, product exposure, and compensation relative to Indian product companies. The B2B SaaS context — building for business customers rather than consumers — provides a different engineering perspective and is strong for engineers interested in enterprise software, API design, and reliability engineering." },
+    ],
+    relatedSlugs: ["faang-interview-preparation-india-2026", "system-design-interview-preparation", "software-engineer-interview-checklist-2026"],
+    practicePageSlugs: [
+      { label: "Freshworks SDE Interview Practice", slug: "freshworks-sde-interview-questions" },
+      { label: "Freshworks PM Interview Practice", slug: "freshworks-pm-interview-questions" },
+    ],
+    cta: "Explaining B2B SaaS system design under interview pressure is a skill that requires practice, not just reading. HireStepX runs mock Freshworks-style rounds — live DSA with code quality feedback, system design walkthroughs where the AI plays a skeptical customer success manager asking follow-up questions, and behavioral sessions focused on product empathy.",
+    relatedLinks: [
+      { label: "Freshworks Salary Guide India 2026", href: "/salary/freshworks" },
+    ],
+  },
+  // ═══════════════════════════════════════════
+  {
+    slug: "phonepe-interview-questions-india-2026",
+    title: "PhonePe Engineering Interview Questions India 2026 — Scale, UPI & Builder Mindset",
+    metaDescription: "PhonePe SDE interview 2026: scale-obsessed rounds covering 100M daily UPI transactions, payment system design, and builder-mindset behavioral evaluation. Entry salary ₹11–30.8 LPA.",
+    company: "PhonePe",
+    category: "Full Guide",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&h=500&fit=crop",
+    heroAlt: "Engineer preparing for PhonePe interview focused on UPI scale and payment systems",
+    datePublished: "2026-07-15",
+    intro: "PhonePe's engineering interview rounds are scale-obsessed. One hundred million daily UPI transactions — and over one billion monthly — is the implicit baseline every system design discussion is anchored to. Whether you are asked about notification delivery, payment settlement, or merchant onboarding, the expectation is that your answer explicitly addresses India-scale throughput, p99 latency, and cost efficiency together. Here is how the process works and how to prepare for each round.",
+    sections: [
+      {
+        heading: "The Four-Round PhonePe Interview Process",
+        content: "PhonePe SDE hiring runs in four rounds:\n\n1. Online Assessment — Two DSA problems at a medium-to-hard level, timed at 60 minutes. Problems sometimes carry payment or transaction-adjacent framing.\n\n2. Technical Round 1 — Live DSA plus an architecture discussion. Expect a coding problem followed by a question about how you would structure the code if this were a production service handling tens of millions of requests per day.\n\n3. System Design Round — Payment infrastructure, notification engine, or settlement pipeline at PhonePe scale. The framing is always specific to the domain rather than generic.\n\n4. Behavioral Round — Builder mindset and ownership. PhonePe explicitly evaluates whether candidates have a bias toward building and shipping rather than waiting for perfect specifications.",
+      },
+      {
+        heading: "System Design at PhonePe Scale",
+        content: "PhonePe system design rounds differ from generic product company design interviews because the constraints are always India-scale payment infrastructure:\n\nUPI Payment Flow — Design the end-to-end flow for a UPI payment: from user tap to bank debit, response, and settlement. Cover idempotency at each hop, retry handling for bank timeouts, and the reconciliation pipeline that runs nightly.\n\nNotification Delivery — How do you deliver transaction confirmations at scale within 2 seconds of payment completion, across Android, iOS, and SMS, with fallback when primary channels fail?\n\nMerchant Settlement — Design the batch settlement pipeline that aggregates transactions per merchant, nets refunds, applies fees, and initiates bank transfers with guaranteed exactly-once execution.\n\nKey evaluation criteria: your answers should explicitly address throughput in requests per second, p99 latency targets, cost efficiency at scale, and what happens when any component fails.",
+      },
+      {
+        heading: "DSA and Coding Preparation",
+        content: "PhonePe's online assessment and Technical Round 1 focus on medium-hard DSA with an emphasis on correctness and efficiency:\n\nSliding Window and Two Pointer: Transaction monitoring problems — find the maximum in any time window, or identify duplicate transactions.\n\nHash Maps and Heaps: Top-K problems (top merchants by volume, top fraud categories). Heap-based priority queues for rate limiting.\n\nGraphs: Dependency resolution in payment workflows, cycle detection in transaction graphs.\n\nDynamic Programming: Optimal selection problems, longest common subsequence variants.\n\nPractice writing code that handles null inputs, empty lists, and boundary conditions explicitly. PhonePe interviewers pay attention to whether you address edge cases without being prompted.",
+      },
+      {
+        heading: "Behavioral: The Builder Mindset",
+        content: "PhonePe's behavioral round is explicitly evaluated against what the company describes as a builder mindset — a bias toward building and shipping with imperfect information rather than waiting for all constraints to be defined.\n\nCommon questions:\n\n'Tell me about a time you identified a problem nobody asked you to solve and built something to fix it.'\n\n'Describe a situation where you had to make a technical decision with incomplete information. What did you decide and why?'\n\n'Have you ever disagreed with how a feature was being built? What did you do?'\n\nPrepare four to five STAR stories that demonstrate ownership, proactive problem identification, and comfort with ambiguity. Generic teamwork answers do not land well in PhonePe interviews.",
+      },
+      {
+        heading: "Compensation at PhonePe",
+        content: "PhonePe SDE entry compensation in India in 2026 (AmbitionBox and Glassdoor data):\n\n- Total CTC: ₹11–30.8 LPA (base + bonus + ESOP)\n- Base salary: ₹8.1–22.8 LPA\n- ESOP: 4-year vest schedule with 1-year cliff\n\nPhonePe is a Walmart-backed company. ESOP liquidity depends on a future secondary transaction or IPO event. The cash component (base + bonus) is paid regardless of liquidity events.",
+      },
+    ],
+    faqs: [
+      { question: "How hard is the PhonePe technical interview?", answer: "Harder than most Indian product company interviews outside the FAANG tier. The combination of medium-hard DSA coding, a scale-specific system design round, and a builder-mindset behavioral evaluation makes it a competitive process. Candidates who have solved 100+ LeetCode medium-hard problems and have practiced payment-domain system design are well prepared." },
+      { question: "Does PhonePe focus on payment domain knowledge in interviews?", answer: "Yes — more than most companies. While you do not need prior fintech experience, interviewers at PhonePe expect you to understand basic payment concepts: UPI payment flow, idempotency, settlement, and why financial systems need exactly-once semantics. Reading about UPI payment infrastructure basics before the interview is strongly recommended." },
+      { question: "What is the ESOP situation at PhonePe?", answer: "PhonePe is still a pre-IPO company (Walmart majority stake) as of 2026. ESOP grants vest over 4 years with a 1-year cliff. Liquidity from ESOP depends on a future secondary sale, buyback program, or IPO. The cash component (base + bonus) is paid regardless. Confirm current status from official company communications or your offer letter." },
+      { question: "Where is PhonePe's engineering team based?", answer: "PhonePe's engineering team is primarily based in Bengaluru. Most SDE roles require Bengaluru-based presence. Some senior roles offer flexibility, but entry and junior roles are predominantly office-based in Bengaluru." },
+    ],
+    relatedSlugs: ["faang-interview-preparation-india-2026", "system-design-interview-preparation", "dsa-60-day-preparation-plan"],
+    practicePageSlugs: [
+      { label: "PhonePe Engineering Interview Practice", slug: "phonepe-engineering-interview-questions" },
+      { label: "PhonePe Behavioral Interview Practice", slug: "phonepe-behavioral-interview-questions" },
+    ],
+    cta: "Understanding PhonePe's scale is different from being able to design for it under interview pressure. HireStepX runs mock PhonePe-style system design rounds with India-scale payment constraints — the AI plays the interviewer, pushes on your trade-offs, and asks follow-up questions about failure scenarios and cost efficiency.",
+    relatedLinks: [
+      { label: "PhonePe Salary Guide India 2026", href: "/salary/phonepe" },
+    ],
+  },
+  // ═══════════════════════════════════════════
+  {
+    slug: "meesho-interview-questions-india-2026",
+    title: "Meesho Engineering Interview Questions India 2026 — Social Commerce, Scale & Tier-3 India",
+    metaDescription: "Meesho SDE interview 2026: catalog search for 150M SKUs, seller-payout settlement, logistics across tier-3 India. Entry salary ₹4–15 LPA + RSU. Speed-over-perfection culture guide.",
+    company: "Meesho",
+    category: "Full Guide",
+    readTime: "8 min",
+    heroImage: "https://images.unsplash.com/photo-1609177651781-0fc5ef4ab099?w=1200&h=500&fit=crop",
+    heroAlt: "Engineer studying social commerce platform architecture for Meesho interview preparation",
+    datePublished: "2026-07-15",
+    intro: "Meesho is India's social commerce platform, connecting resellers in tier-2 and tier-3 cities with suppliers and enabling them to sell through WhatsApp and social media. The engineering challenges are shaped by this context: catalog search across 150 million SKUs, seller-payout settlement for millions of small vendors, and return-logistics orchestration across PIN codes that established courier networks do not fully serve. Meesho interviews expect you to reason about India-specific scale constraints, not just abstract distributed systems theory. Here is how the process works.",
+    sections: [
+      {
+        heading: "The Four-Round Meesho Interview Process",
+        content: "Meesho SDE hiring runs in four stages:\n\n1. Online Assessment — Two to three DSA problems at a medium-to-hard level, timed at 60 to 90 minutes. Problems may have an e-commerce or logistics framing.\n\n2. DSA Round — A live coding round focused on graphs, dynamic programming, or string manipulation, with emphasis on correctness and clean code.\n\n3. System Design Round — Social commerce or logistics infrastructure at Meesho scale. Common topics include catalog indexing for 150 million SKUs, seller settlement pipelines, and return-logistics routing.\n\n4. Behavioral and Hiring Manager Round — Ownership, first-principles thinking, and trade-off reasoning. Meesho's culture emphasizes speed over perfection — expect questions about how you make decisions when time is short and all the information is not available.",
+      },
+      {
+        heading: "System Design: Social Commerce at Scale",
+        content: "Meesho system design rounds are grounded in real product problems at India's social commerce scale:\n\nCatalog Search — Design a search system for 150 million product listings. Cover indexing strategy, search relevance (text match vs. sales rank vs. seller rating), and performance requirements for users in tier-3 cities with intermittent connectivity.\n\nSeller Payout Settlement — Meesho's sellers are small-scale resellers. Design the pipeline that calculates net payout per seller (sales minus returns minus platform fees), batches bank transfers, handles failed UPI payouts, and provides sellers with a self-service transaction history.\n\nReturn-Logistics Routing — Meesho serves PIN codes that established delivery networks do not always reach. Design a return pickup routing system that assigns returns to the right logistics partner based on PIN code coverage, pickup SLA, and cost.\n\nEvaluation emphasis: simplicity and correctness over theoretical elegance. Meesho's culture prizes solutions that ship and work over architecturally perfect designs that take twice as long to build.",
+      },
+      {
+        heading: "DSA Preparation for Meesho",
+        content: "Meesho's DSA rounds test medium-to-hard problems across common algorithm families:\n\nGraphs: BFS and DFS for logistics network problems — which routes connect which PIN codes, minimum hops between warehouses.\n\nDynamic Programming: Optimal selection problems — which sellers to batch in a single payout transfer, optimal product bundling.\n\nString and Array Operations: Catalog matching, prefix search, and sorting with custom comparators for product ranking.\n\nHeap and Priority Queue: Top-K sellers by GMV, priority-based return pickup assignment.\n\nClean code is heavily weighted — Meesho interviewers specifically look for readable variable names, explicit edge-case handling, and the ability to articulate your approach before writing code.",
+      },
+      {
+        heading: "Behavioral: Speed Over Perfection",
+        content: "Meesho's behavioral round is evaluated against the company's explicit cultural value of moving fast and learning from production data rather than over-engineering before launch.\n\nCommon questions:\n\n'Tell me about a time you shipped something that was not perfect but was the right call given the timeline.'\n\n'How do you decide when something is good enough to release versus when to keep improving it?'\n\n'Describe a time when you had to figure out a solution with very limited information or ambiguous requirements.'\n\nPrepare STAR stories that demonstrate first-principles reasoning, comfort with imperfect decisions, and a bias toward learning through action. Stories about over-engineering something and regretting it are useful here — Meesho values self-awareness about trade-offs.",
+      },
+      {
+        heading: "Compensation at Meesho",
+        content: "Meesho SDE entry compensation in India in 2026:\n\n- Total CTC: ₹4–15 LPA (base + bonus + RSU), depending on experience level and hiring band\n- RSU: Meesho listed in December 2025, improving ESOP liquidity for employees going forward\n\nThe wide range reflects different hiring bands — fresh graduates typically enter at the lower end of the scale, candidates with internship or prior product company experience at higher bands. Confirm your specific terms in the offer letter.",
+      },
+    ],
+    faqs: [
+      { question: "What kind of system design does Meesho ask in interviews?", answer: "Meesho focuses on social commerce and logistics infrastructure problems: catalog search at 150 million SKU scale, seller-payout settlement pipelines, and logistics routing for tier-3 India PIN codes. The framing is always grounded in Meesho's actual product rather than abstract distributed systems problems. Reading about Meesho's reseller marketplace and the logistics constraints of serving tier-2/3 India helps you understand the context." },
+      { question: "Is Meesho a good company for engineers in India?", answer: "Meesho offers real product engineering challenges at significant scale, a fast-moving culture, and post-IPO RSU liquidity (Meesho listed December 2025). The tier-2/3 India focus is a genuinely different product context from metro-first apps. It is a strong choice for candidates who want product company exposure without the most competitive FAANG-level hiring bar." },
+      { question: "What does Meesho's 'speed over perfection' culture mean in practice?", answer: "It means Meesho favors shipping working solutions quickly and iterating based on user data over waiting to build the theoretically optimal version first. In interviews, this shows up as: they value candidates who can make good decisions with incomplete information, who know when to stop polishing and ship, and who have shipped things and learned from production outcomes. Over-engineering stories without a shipped outcome are less well received." },
+      { question: "Has Meesho had its IPO?", answer: "Meesho listed in December 2025. This means RSU grants to employees vest into publicly traded shares with increasing liquidity compared to the pre-IPO period. Confirm current trading status and your specific RSU terms from your offer letter and Meesho's official communications." },
+    ],
+    relatedSlugs: ["faang-interview-preparation-india-2026", "system-design-interview-preparation", "product-company-vs-service-company-india-career"],
+    practicePageSlugs: [
+      { label: "Meesho Engineering Interview Practice", slug: "meesho-engineering-interview-questions" },
+      { label: "Meesho PM Interview Practice", slug: "meesho-pm-interview-questions" },
+    ],
+    cta: "Reasoning about social commerce scale under interview pressure is a distinct skill. HireStepX runs mock Meesho-style rounds where the AI plays the interviewer with India-specific constraints — catalog search for 150 million SKUs, seller settlement at volume, and logistics across tier-3 PIN codes — and provides detailed feedback on your architecture trade-offs.",
+    relatedLinks: [
+      { label: "Meesho Salary Guide India 2026", href: "/salary/meesho" },
+    ],
+  },
 ];
 
 /* ─── Helpers ─── */
