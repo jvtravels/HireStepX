@@ -2065,8 +2065,7 @@ function VoiceFollowUpVisual() {
       <div
         style={{
           padding: "14px 16px",
-          background: `linear-gradient(135deg, ${t.indigoMist} 0%, transparent 100%)`,
-          borderLeft: `3px solid ${t.indigo}`,
+          background: t.indigoMist,
         }}
       >
         <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.indigo, opacity: 0.7 }}>AI INTERVIEWER</span>
@@ -2375,7 +2374,7 @@ function ActLabel({ children, dark }: { children: React.ReactNode; dark?: boolea
         fontSize: 9,
         letterSpacing: "0.2em",
         textTransform: "uppercase",
-        color: dark ? "rgba(250,247,240,0.4)" : t.inkFaint,
+        color: dark ? t.creamMuted : t.inkFaint,
         marginBottom: 10,
         display: "block",
       }}
@@ -2394,6 +2393,9 @@ export function FeatureGridV2() {
             What practice alone{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>never shows you.</span>
           </h2>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, margin: "14px auto 0", lineHeight: 1.55, maxWidth: "52ch" }}>
+            Your resume, your voice, your blind spots. Things a generic prep sheet never touches.
+          </p>
         </MotionReveal>
 
         {/* Mosaic: Before spans the full left column; During (top row) + After (bottom row) fill right 2 cols */}
@@ -2404,7 +2406,7 @@ export function FeatureGridV2() {
             gridTemplateColumns: "1.1fr 1fr 1fr",
             gridTemplateRows: "1fr 1fr",
             gap: 10,
-            height: "min(640px, calc(100vh - 240px))",
+            height: 640,
           }}
         >
           {/* ── Before the session — left column, full height ── */}
@@ -2419,7 +2421,7 @@ export function FeatureGridV2() {
             <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 16px", maxWidth: 320 }}>
               Upload once. Every session drills your actual projects — not someone else&apos;s.
             </p>
-            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <ResumeAwareVisual />
             </div>
           </BentoCard>
@@ -2430,14 +2432,14 @@ export function FeatureGridV2() {
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.indigo, opacity: 0.6, marginBottom: 10, display: "block" }}>
               Real conversation
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+            <h3 aria-label="During the session: real conversation — Vague answer? It asks again. Harder." style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
               Vague answer?{" "}
               <span style={{ color: t.copper, fontStyle: "italic" }}>It asks again. Harder.</span>
             </h3>
             <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "0 0 14px" }}>
               Every follow-up is generated from your answer — not a pre-written script.
             </p>
-            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <VoiceFollowUpVisual />
             </div>
           </BentoCard>
@@ -2448,7 +2450,7 @@ export function FeatureGridV2() {
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper100, opacity: 0.6, marginBottom: 10, display: "block" }}>
               Salary negotiation
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.cream, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+            <h3 aria-label="During the session: salary negotiation — You left ₹2L on the table. Practice changing that." style={{ fontFamily: fonts.serif, fontSize: 18, color: t.cream, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
               You left{" "}
               <span style={{ color: t.copper100, fontStyle: "italic" }}>₹2L on the table.</span>{" "}
               Practice changing that.
@@ -2456,7 +2458,7 @@ export function FeatureGridV2() {
             <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.creamMuted, lineHeight: 1.45, margin: "0 0 14px" }}>
               Counter-offer, anchor high, and hold the silence until HR moves first.
             </p>
-            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <SalaryNegVisual />
             </div>
           </BentoCard>
@@ -2467,10 +2469,10 @@ export function FeatureGridV2() {
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, opacity: 0.7, marginBottom: 10, display: "block" }}>
               Perception optimizer
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 17, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.3 }}>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.3 }}>
               You said <em>"basically"</em> 9 times. The room heard uncertainty.
             </h3>
-            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <BiasDetectorVisual />
             </div>
           </BentoCard>
@@ -2481,10 +2483,10 @@ export function FeatureGridV2() {
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, opacity: 0.7, marginBottom: 10, display: "block" }}>
               Thought bubble
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 17, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.3 }}>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.3 }}>
               The exact answer <em>that lost the room.</em>
             </h3>
-            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <ThoughtBubbleVisual />
             </div>
           </BentoCard>
