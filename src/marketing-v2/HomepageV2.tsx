@@ -1442,7 +1442,7 @@ export function HeroV2() {
               boxShadow: "0 4px 20px rgba(49,46,129,0.28)",
             }}
           >
-            Start free: 2 sessions
+            Start free session
             <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 17 }}>→</span>
           </a>
           <a
