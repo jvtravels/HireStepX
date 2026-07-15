@@ -813,7 +813,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     } catch {
                       // Persisted path failed — fall back to the user's email client
                       // so the feedback isn't lost.
-                      window.location.href = `mailto:support@hirestepx.com?body=${encodeURIComponent(msg)}`;
+                      window.location.href = `mailto:hello@hirestepx.com?body=${encodeURIComponent(msg)}`;
                     } finally {
                       setHelpSending(false);
                     }
@@ -837,8 +837,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               {/* Secondary email fallback */}
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center" as const, margin: "10px 0 0" }}>
                 Or email{" "}
-                <a href="mailto:support@hirestepx.com" style={{ color: T.copper, textDecoration: "none", fontWeight: 500 }}>
-                  support@hirestepx.com
+                <a href="mailto:hello@hirestepx.com" style={{ color: T.copper, textDecoration: "none", fontWeight: 500 }}>
+                  hello@hirestepx.com
                 </a>
               </p>
             </div>

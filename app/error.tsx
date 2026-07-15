@@ -14,7 +14,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { c, font } from "@/tokens";
 
-const SUPPORT_EMAIL = "support@hirestepx.com";
+const SUPPORT_EMAIL = "hello@hirestepx.com";
 
 export default function GlobalRouteError({
   error,

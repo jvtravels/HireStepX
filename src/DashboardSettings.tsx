@@ -58,7 +58,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/credit-reconcile", { method: "POST", headers: hdrs });
       const json = await res.json() as { ok?: boolean; balance?: number; before?: number; after?: number; reconciled?: boolean; error?: string };
       if (!res.ok || !json.ok) {
-        showToast(json.error === "service_unavailable" ? "Credit sync unavailable — try again shortly." : "Credit sync failed. Contact support@hirestepx.com.");
+        showToast(json.error === "service_unavailable" ? "Credit sync unavailable — try again shortly." : "Credit sync failed. Contact hello@hirestepx.com.");
         return;
       }
       setCreditBalanceDirect(json.balance ?? json.after ?? 0);

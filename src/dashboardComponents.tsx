@@ -225,7 +225,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             });
             onPaymentSuccess(verifyData.subscriptionTier, verifyData.subscriptionStart, verifyData.subscriptionEnd);
           } else {
-            setError(verifyData.error || "Payment verification failed. Please try again or contact support@hirestepx.com");
+            setError(verifyData.error || "Payment verification failed. Please try again or contact hello@hirestepx.com");
             setLoading(null);
           }
         })
@@ -236,7 +236,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             setError("Verification taking longer than expected — retrying...");
             setTimeout(() => { if (!cancelled) attemptVerify(attempt + 1); }, 2000);
           } else {
-            setError("Payment verification failed. Your payment was received — try refreshing, or contact support@hirestepx.com for help.");
+            setError("Payment verification failed. Your payment was received — try refreshing, or contact hello@hirestepx.com for help.");
             setVerifyRetries(attempt + 1);
             setLoading(null);
           }
@@ -277,8 +277,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           // Server returned non-JSON (e.g. Vercel crash page)
           console.error("create-order returned", res.status, "with non-JSON body");
           errMsg = res.status === 503
-            ? "Payments are not configured yet. Please contact support@hirestepx.com"
-            : "Payment server error. Please try again or contact support@hirestepx.com";
+            ? "Payments are not configured yet. Please contact hello@hirestepx.com"
+            : "Payment server error. Please try again or contact hello@hirestepx.com";
         }
         setError(errMsg);
         setLoading(null);
@@ -308,7 +308,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             await new Promise(r => setTimeout(r, 1000));
             await loadRzpScript();
           } catch {
-            setError("Payment system failed to load. Check your connection and try again, or contact support@hirestepx.com");
+            setError("Payment system failed to load. Check your connection and try again, or contact hello@hirestepx.com");
             setLoading(null);
             return;
           }
@@ -384,7 +384,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       } else if (msg.includes("CSP") || msg.includes("Content Security Policy") || msg.includes("unsafe-eval")) {
         setError("Payment blocked by browser security settings. Try disabling browser extensions or use a different browser.");
       } else {
-        setError("Something went wrong. Please try again or contact support@hirestepx.com");
+        setError("Something went wrong. Please try again or contact hello@hirestepx.com");
       }
       setLoading(null);
     }

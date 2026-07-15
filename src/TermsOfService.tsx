@@ -106,7 +106,7 @@ You may delete your account at any time from the Settings page. Upon deletion, y
   },
   {
     title: "14. Contact",
-    body: "For questions about these terms, contact us at support@hirestepx.com.",
+    body: "For questions about these terms, contact us at hello@hirestepx.com.",
   },
 ];
 

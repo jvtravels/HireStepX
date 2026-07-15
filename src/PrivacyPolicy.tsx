@@ -70,7 +70,7 @@ If you withdraw consent (Settings → Privacy), the cross-border processors abov
 - Export: Download your session history and profile data from Settings.
 - Correction: Update your profile information at any time from Settings.
 
-To exercise any of these rights, use the in-app tools or email us at support@hirestepx.com.`,
+To exercise any of these rights, use the in-app tools or email us at hello@hirestepx.com.`,
   },
   {
     title: "6. Cookies and Local Storage",
@@ -102,7 +102,7 @@ You can clear this data at any time through your browser settings.`,
 - We do not sell, rent, or share your personal data with advertisers, brokers, or third parties for marketing.
 - Your data is processed and stored on infrastructure with India-compatible data residency. Where third-party processors are involved (LLM, voice, payments), each is bound by a data processing agreement.
 - You have the right to access, correct, or delete your data, withdraw consent, and nominate a representative. Use the controls in your account settings, or email us.
-- Our Data Protection Officer / Grievance Officer can be reached at privacy@hirestepx.com. We respond to verified data requests within 30 days.
+- Our Data Protection Officer / Grievance Officer can be reached at hello@hirestepx.com. We respond to verified data requests within 30 days.
 
 These rights apply to all users globally, not just Indian residents.`,
   },
@@ -120,7 +120,7 @@ These rights apply to all users globally, not just Indian residents.`,
   },
   {
     title: "12. Contact Us",
-    body: "For privacy concerns, data requests, or questions about this policy, contact us at privacy@hirestepx.com (data protection / grievances) or support@hirestepx.com (general).",
+    body: "For privacy concerns, data requests, or questions about this policy, contact us at hello@hirestepx.com (data protection / grievances) or hello@hirestepx.com (general).",
   },
 ];
 

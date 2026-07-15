@@ -41,7 +41,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         Something broke on our end.
       </h2>
       <p style={{ fontSize: 15, color: t.inkSoft, margin: 0, marginBottom: 28, maxWidth: 480 }}>
-        {error.message || "Reload the page or head back home. If it keeps happening, write to support@hirestepx.com."}
+        {error.message || "Reload the page or head back home. If it keeps happening, write to hello@hirestepx.com."}
       </p>
       <div style={{ display: "flex", gap: 12 }}>
         <button

@@ -230,7 +230,7 @@ const structuredData = [
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
-      email: "support@hirestepx.com",
+      email: "hello@hirestepx.com",
     },
     sameAs: [
       "https://www.linkedin.com/company/hirestepx",

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact" },
   openGraph: {
     title: "Contact HireStepX — Support, Partnerships & Press",
-    description: "Reach HireStepX for support (support@hirestepx.com) or press (press@hirestepx.com). We reply within one business day.",
+    description: "Reach HireStepX for support (hello@hirestepx.com) or press (hello@hirestepx.com). We reply within one business day.",
     url: "https://hirestepx.com/contact",
     type: "website",
     siteName: "HireStepX",
@@ -38,12 +38,12 @@ const CONTACT_SCHEMA = {
     "@type": "Organization",
     name: "HireStepX",
     url: "https://hirestepx.com",
-    email: "support@hirestepx.com",
+    email: "hello@hirestepx.com",
     contactPoint: [
       {
         "@type": "ContactPoint",
         contactType: "customer support",
-        email: "support@hirestepx.com",
+        email: "hello@hirestepx.com",
         availableLanguage: ["English", "Hindi"],
         hoursAvailable: {
           "@type": "OpeningHoursSpecification",
@@ -53,7 +53,7 @@ const CONTACT_SCHEMA = {
       {
         "@type": "ContactPoint",
         contactType: "press",
-        email: "press@hirestepx.com",
+        email: "hello@hirestepx.com",
       },
     ],
   },

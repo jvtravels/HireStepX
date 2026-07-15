@@ -10,7 +10,7 @@
 
 import { useEffect } from "react";
 
-const SUPPORT_EMAIL = "support@hirestepx.com";
+const SUPPORT_EMAIL = "hello@hirestepx.com";
 
 export default function GlobalLayoutError({
   error,

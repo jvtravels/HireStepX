@@ -23,7 +23,7 @@ If you cancel within 7 days of your first subscription payment and have not used
     title: "3. How to Request a Refund",
     body: `To request a refund, you can:
 
-- Email us at support@hirestepx.com with your registered email address and a brief description of your request.
+- Email us at hello@hirestepx.com with your registered email address and a brief description of your request.
 - Use the in-app account deletion feature in Settings if you also wish to close your account.
 
 Please include your registered email and, if available, the Razorpay transaction ID or order ID.`,
@@ -47,7 +47,7 @@ Please include your registered email and, if available, the Razorpay transaction
   },
   {
     title: "7. Disputes",
-    body: "If you believe a charge was made in error or have a billing dispute, please contact us at support@hirestepx.com before initiating a chargeback with your bank. We will work to resolve the issue promptly.",
+    body: "If you believe a charge was made in error or have a billing dispute, please contact us at hello@hirestepx.com before initiating a chargeback with your bank. We will work to resolve the issue promptly.",
   },
   {
     title: "8. Changes to This Policy",
@@ -55,7 +55,7 @@ Please include your registered email and, if available, the Razorpay transaction
   },
   {
     title: "9. Contact",
-    body: "For refund requests or billing questions, contact us at support@hirestepx.com.",
+    body: "For refund requests or billing questions, contact us at hello@hirestepx.com.",
   },
 ];
 

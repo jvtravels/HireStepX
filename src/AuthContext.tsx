@@ -1975,7 +1975,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.status === 429) return { success: false, error: "Too many reset requests. Please try again later." };
       // 4xx other than rate-limit shouldn't happen post-enumeration
       // fix; treat as transient failure rather than leaking specifics.
-      if (!res.ok) return { success: false, error: "We couldn't send the reset email right now. Try again in a moment, or contact support@hirestepx.com" };
+      if (!res.ok) return { success: false, error: "We couldn't send the reset email right now. Try again in a moment, or contact hello@hirestepx.com" };
       return { success: true };
     } catch {
       return { success: false, error: "Connection error. Check your internet and try again." };

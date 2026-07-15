@@ -1178,14 +1178,14 @@ export function ContactV2() {
     {
       name: "General support",
       detail: "Account, billing, technical issues. We reply within 1 business day.",
-      contact: "support@hirestepx.com",
-      href: "mailto:support@hirestepx.com",
+      contact: "hello@hirestepx.com",
+      href: "mailto:hello@hirestepx.com",
     },
     {
       name: "Press + media",
       detail: "Interviews, data requests, founder availability.",
-      contact: "press@hirestepx.com",
-      href: "mailto:press@hirestepx.com",
+      contact: "hello@hirestepx.com",
+      href: "mailto:hello@hirestepx.com",
     },
   ];
 
@@ -1319,7 +1319,7 @@ export function ContactV2() {
                 {status === "sent"
                   ? `Got it${ref ? ` (ref: ${ref})` : ""}. Check your email for a confirmation — we'll reply within 1 business day.`
                   : status === "error"
-                  ? "Couldn't send. Email support@hirestepx.com directly instead."
+                  ? "Couldn't send. Email hello@hirestepx.com directly instead."
                   : ""}
               </p>
             </form>
@@ -1758,7 +1758,7 @@ function LegalPage({
         eyebrow="Legal"
         title={title}
         accent={accent}
-        lead={`Last updated: ${updated}. Written in plain English. If anything's unclear, email legal@hirestepx.com.`}
+        lead={`Last updated: ${updated}. Written in plain English. If anything's unclear, email hello@hirestepx.com.`}
       />
       <section className="mv2p-section" aria-label="Document body" style={sectionBase}>
         <div className="mv2-container" style={containerNarrow}>
@@ -1782,12 +1782,12 @@ export function PrivacyV2() {
       <p>Transcripts auto-delete after 90 days unless you explicitly save a session. Account data persists until you delete your account, after which it's purged within 30 days.</p>
 
       <h2>Who we share with</h2>
-      <p>Nobody. We do not share transcripts, scores, or resumes with employers, recruiters, colleges, or third parties. We use sub-processors (Supabase for database, Groq + Gemini for LLM inference, Cartesia + Deepgram + Sarvam for voice) under data-processing agreements that prevent retention beyond what we authorize.</p>
+      <p>Nobody. We do not share transcripts, scores, or resumes with employers, recruiters, colleges, or third parties. We use third-party sub-processors for database hosting, AI inference, and voice transcription, each under data-processing agreements that prevent retention beyond what we authorize. A current list of sub-processors is available on request at <code>hello@hirestepx.com</code>.</p>
 
       <h2>Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
       <p>Cross-border transfers: we process data within India and the United States, governed by standard contractual clauses with each sub-processor. If a grievance isn't resolved to your satisfaction, you may escalate to the Data Protection Board of India.</p>
-      <p>We respond to any request within 7 working days. Our Data Protection Officer is reachable at <code>dpo@hirestepx.com</code>; general privacy questions go to <code>privacy@hirestepx.com</code>.</p>
+      <p>We respond to any request within 7 working days. Reach us at <code>hello@hirestepx.com</code> for data requests, grievances, or any privacy question.</p>
 
       <h2>Cookies</h2>
       <p>Strictly-necessary cookies only by default (session token, CSRF). Analytics cookies (PostHog) load only after explicit consent via the banner on first visit. No third-party advertising or tracking cookies, ever.</p>
@@ -1850,7 +1850,7 @@ export function RefundPolicyV2() {
       <p>Refunds on discounted plans are calculated against the discounted price, not the list price.</p>
 
       <h2>How to request a refund</h2>
-      <p>Email <code>refunds@hirestepx.com</code> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
+      <p>Email <code>hello@hirestepx.com</code> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
 
       <h2>Disputes</h2>
       <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours.</p>
@@ -1940,7 +1940,7 @@ export function PaymentFailedPage() {
                 Try again <span style={{ fontSize: 16 }}>→</span>
               </a>
               <a
-                href="mailto:support@hirestepx.com"
+                href="mailto:hello@hirestepx.com"
                 style={{
                   ...ctaGhost("md"),
                   minWidth: 240,
@@ -1973,8 +1973,8 @@ export function PaymentFailedPage() {
               }}
             >
               <strong style={{ color: t.coal }}>If your account was debited,</strong> email us at{" "}
-              <a href="mailto:support@hirestepx.com" style={{ color: t.indigo, textDecoration: "underline", textUnderlineOffset: 3 }}>
-                support@hirestepx.com
+              <a href="mailto:hello@hirestepx.com" style={{ color: t.indigo, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                hello@hirestepx.com
               </a>{" "}
               with your UPI transaction ID and we{"'"}ll credit your account within 2 hours.
             </p>
