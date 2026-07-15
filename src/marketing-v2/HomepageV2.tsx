@@ -292,7 +292,7 @@ const h2: CSSProperties = {
 
 const body: CSSProperties = {
   fontFamily: fonts.sans,
-  fontSize: 18,
+  fontSize: 16,
   lineHeight: 1.6,
   color: t.indigoGray,
   margin: 0,
@@ -1345,7 +1345,7 @@ export function HeroV2() {
           className="mv2-cascade mv2-cascade-3"
           style={{
             fontFamily: fonts.sans,
-            fontSize: 18,
+            fontSize: 16,
             lineHeight: 1.55,
             color: t.inkSoft,
             maxWidth: 480,
@@ -2538,7 +2538,7 @@ export function ComparisonV2() {
       {/* Subhead */}
       <p style={{
         fontFamily: fonts.sans,
-        fontSize: 17,
+        fontSize: 16,
         lineHeight: 1.65,
         color: t.inkSoft,
         textAlign: "center",
