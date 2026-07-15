@@ -231,6 +231,7 @@ const structuredData = [
       "@type": "ContactPoint",
       contactType: "customer support",
       email: "hello@hirestepx.com",
+      availableLanguage: ["English"],
     },
     sameAs: [
       "https://www.linkedin.com/company/hirestepx",
