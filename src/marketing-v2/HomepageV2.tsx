@@ -2370,7 +2370,7 @@ export function FeatureGridV2() {
             What practice alone{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>never shows you.</span>
           </h2>
-          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, margin: "14px auto 0", lineHeight: 1.55, maxWidth: "52ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, margin: "14px auto 0", lineHeight: 1.55 }}>
             Your resume, your voice, your blind spots. Things a generic prep sheet never touches.
           </p>
         </MotionReveal>
