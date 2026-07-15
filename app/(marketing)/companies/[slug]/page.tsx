@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getSeoPageBySlug, getAllSeoSlugs, SEO_PAGES, type SeoPage } from "../../../../data/seo-pages";
 import { QUESTION_BANK, type BankEntry } from "../../../../data/interview-question-bank";
@@ -92,7 +92,11 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params;
   const page = getSeoPageBySlug(slug);
-  if (!page) return { title: "Not Found" };
+  if (!page) {
+    const firstForCompany = SEO_PAGES.find(p => p.company === slug);
+    if (firstForCompany) return generateMetadata({ params: Promise.resolve({ slug: firstForCompany.slug }) });
+    return { title: "Not Found" };
+  }
   const title = `${page.searchPhrase} — Practice Free | HireStepX`;
   const description = `${page.intro.split(".")[0]}. Practice with AI mock interviews + real-time feedback. 2 free sessions, no credit card.`;
   return {
@@ -118,7 +122,13 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
   const nonce = (await headers()).get("x-nonce") ?? "";
   const { slug } = await params;
   const page = getSeoPageBySlug(slug);
-  if (!page) notFound();
+  if (!page) {
+    /* If slug is a bare company name (e.g. "flipkart"), redirect to the first
+       SEO page for that company rather than returning 404. */
+    const firstForCompany = SEO_PAGES.find(p => p.company === slug);
+    if (firstForCompany) redirect(`/companies/${firstForCompany.slug}`);
+    notFound();
+  }
 
   const questions = questionsForPage(page);
   const companyLabel = COMPANY_LABEL[page.company] ?? page.company;
@@ -418,7 +428,7 @@ export default async function CompanySeoPage({ params }: { params: Promise<{ slu
             <SectionHead
               title={`Real ${focusLabel.toLowerCase()} questions`}
               accent={`${companyLabel} asked.`}
-              sub="Verified from candidate post-mortems. Answer any one aloud and the AI scores it in two minutes."
+              sub="Sourced from candidate post-mortems. Answer any one aloud and the AI scores it in two minutes."
             />
             <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {questions.map((q, i) => (

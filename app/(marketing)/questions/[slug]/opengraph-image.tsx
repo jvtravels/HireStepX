@@ -142,7 +142,7 @@ export default async function OpengraphImage({
               display: "flex",
             }}
           >
-            Verified questions from real candidate interviews. Practice with AI voice feedback.
+            Curated questions from real candidate interviews. Practice with AI voice feedback.
           </div>
         </div>
 

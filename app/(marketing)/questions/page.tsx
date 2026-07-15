@@ -20,7 +20,7 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
 export const metadata: Metadata = {
   title: "Interview Questions by Company & Role India 2026 | HireStepX",
   description:
-    "Verified interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 60+ companies. Practice with AI voice feedback. 2 sessions free.",
+    "Curated interview questions for Google, Amazon, TCS, Razorpay, Flipkart, McKinsey, and 60+ companies. Practice with AI voice feedback. 2 sessions free.",
   keywords: [
     "interview questions",
     "company interview questions",
@@ -131,7 +131,7 @@ export default async function QuestionsIndexRoute({
     "@type": "ItemList",
     name: "HireStepX Interview Question Sets",
     description:
-      "Curated interview question sets for top Indian and global companies. Each set includes real verified questions and AI-powered practice.",
+      "Curated interview question sets for top Indian and global companies. Each set includes company-specific questions and AI-powered practice.",
     numberOfItems: SEO_PAGES.length,
     itemListElement: SEO_PAGES.map((p, i) => ({
       "@type": "ListItem",

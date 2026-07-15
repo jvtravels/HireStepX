@@ -174,14 +174,14 @@ function QuestionGate({ practiceHref, hiddenCount }: { practiceHref: string; hid
         pointerEvents: "auto",
       }}>
         <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, margin: 0, textAlign: "center" }}>
-          {hiddenCount} more question{hiddenCount !== 1 ? "s" : ""} — sign up to unlock all
+          {hiddenCount} more question{hiddenCount !== 1 ? "s" : ""}. Sign up to unlock all
         </p>
         <Link
           href={practiceHref}
           className="ed-cta"
           style={{ ...ctaPrimaryStyle("lg"), textDecoration: "none" }}
         >
-          Sign up free — unlock all questions <span className="ed-cta-arrow" aria-hidden>→</span>
+          Sign up free: unlock all questions <span className="ed-cta-arrow" aria-hidden>→</span>
         </Link>
       </div>
     </div>
@@ -390,7 +390,7 @@ export function QuestionSetPage({
             <section className="ed-reveal" style={{ marginTop: 56 }}>
               <SectionHead
                 title={`${focusLabel} questions ${companyLabel} asked`}
-                sub="Verified from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback."
+                sub="Sourced from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback."
               />
               <div style={{ position: "relative" }}>
                 <ol role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -415,7 +415,7 @@ export function QuestionSetPage({
                 Practice answering these out loud.
               </p>
               <Link href={practiceHref} className="ed-cta" style={{ ...ctaPrimaryStyle("md"), display: "block", textAlign: "center" as const, textDecoration: "none" }}>
-                Start free — 2 sessions <span className="ed-cta-arrow" aria-hidden>→</span>
+                Start free: 2 sessions <span className="ed-cta-arrow" aria-hidden>→</span>
               </Link>
               <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "10px 0 0", textAlign: "center" as const }}>
                 No credit card required
@@ -550,7 +550,7 @@ export function QuestionsIndexPage({ pages, activeFilter }: QuestionsIndexPagePr
               <em style={{ fontStyle: "italic", color: t.copper }}>answered out loud.</em>
             </h1>
             <p style={{ fontFamily: fonts.sans, fontSize: 16, lineHeight: 1.65, color: t.inkSoft, margin: "0 0 36px", maxWidth: "52ch" }}>
-              Verified questions from 30+ companies — practice answering with an AI interviewer that scores your answer in two minutes.
+              Curated questions from 30+ companies. Practice answering with an AI interviewer that scores your answer in two minutes.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
               <Link href="/signup?source=questions-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>

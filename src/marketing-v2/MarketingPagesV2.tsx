@@ -888,8 +888,8 @@ export function HowItWorksV2() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
             {([
               ["Practice Questions", "67+ sets for TCS, Google, Flipkart & more", "/questions"],
-              ["Campus Placement", "HR rounds, NQT, NLTH — for freshers & students", "/for-students"],
-              ["All Companies", "Browse by company type — IT, product, consulting", "/companies"],
+              ["Campus Placement", "HR rounds, NQT, NLTH: for freshers & students", "/for-students"],
+              ["All Companies", "Browse by company type: IT, product, consulting", "/companies"],
               ["Interview Prep Guide", "How to prepare step by step for any company", "/interview-prep"],
             ] as [string, string, string][]).map(([title, desc, href]) => (
               <a
@@ -937,9 +937,9 @@ export function HowItWorksV2() {
             }}
           >
             {[
-              ["Reading isn't practice", "Preparing for a voice interview by reading questions silently is like practising swimming on land. We make you speak — same pressure, same format as the actual room."],
+              ["Reading isn't practice", "Preparing for a voice interview by reading questions silently is like practising swimming on land. We make you speak, same pressure, same format as the actual room."],
               ["You see the rubric", "Every score comes with the rubric and a model answer. You learn what a strong answer actually looks like, not just whether yours was good enough."],
-              ["Built for India, not FAANG", "TCS Digital, Infosys Power Programmer, Razorpay tech round — we know the actual question patterns, not the generic American SWE template."],
+              ["Built for India, not FAANG", "TCS Digital, Infosys Power Programmer, Razorpay tech round: we know the actual question patterns, not the generic American SWE template."],
             ].map(([title, copy]) => (
               <div
                 key={title}
@@ -1149,7 +1149,7 @@ export function ContactV2() {
       name: "Press + media",
       detail: "Interviews, data requests, founder availability.",
       contact: "hello@hirestepx.com",
-      href: "mailto:hello@hirestepx.com",
+      href: "mailto:hello@hirestepx.com?subject=Press%20inquiry",
     },
   ];
 

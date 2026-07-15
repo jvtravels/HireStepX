@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Company Salary Guides India 2026 | HireStepX",
-    description: "Verified salary ranges for 23 companies — total CTC from AmbitionBox, Glassdoor, and Levels.fyi.",
+    description: "Salary ranges for 23 companies — total CTC sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
@@ -105,7 +105,7 @@ export default async function SalaryIndexPage() {
     "@type": "ItemList",
     name: "Company Salary Guides India 2026",
     description:
-      "Verified total CTC ranges for 23 companies hiring in India — sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
+      "Total CTC ranges for 23 companies hiring in India — sourced from AmbitionBox, Glassdoor, and Levels.fyi.",
     numberOfItems: entries.length,
     itemListElement: entries.map((e, i) => ({
       "@type": "ListItem",
