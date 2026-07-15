@@ -39,7 +39,7 @@ const ResponsiveSheet = () => (
       .mv2-bento-mosaic > *:first-child { grid-column: 1 !important; }
       main, footer { padding-bottom: 96px !important; }
       .mv2-tap-44 { min-height: 44px !important; }
-      .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
+      .mv2-features-h2 { white-space: normal !important; }
       .mv2-hero-section { min-height: 0 !important; display: block !important; }
       /* Focus type icon grids: phone */
       .mv2-focus-live-grid { grid-template-columns: repeat(2, 1fr) !important; }
@@ -1675,7 +1675,7 @@ export function InterviewFocusV2() {
         <SectionMasthead n="03" label="Interview formats" right="10 types · 4 live now" style={{ marginBottom: 44 }} />
 
         <MotionReveal style={{ textAlign: "center", maxWidth: 860, margin: "0 auto" }}>
-          <h2 id="hd-focus" style={{ ...h2, fontSize: 64 }}>
+          <h2 id="hd-focus" style={{ ...h2 }}>
             Walk into any round<br />
             <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it&rsquo;s testing.</span>
           </h2>
@@ -2390,7 +2390,7 @@ export function FeatureGridV2() {
     <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, paddingTop: 48, paddingBottom: 40, background: t.cream }}>
       <div style={container}>
         <MotionReveal style={{ marginBottom: 20 }}>
-          <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2, fontSize: "clamp(28px, 4vw, 52px)" }}>
+          <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2 }}>
             What practice alone{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>never shows you.</span>
           </h2>
@@ -3679,7 +3679,7 @@ const rpt_STYLES = `
   .mv2-rpt-center-card { width: min(520px, calc(100vw - 48px)) !important; }
   /* Shrink top padding and headline for mobile */
   .mv2-rpt-section { padding-top: 60px !important; padding-bottom: 48px !important; }
-  .mv2-rpt-h2 { font-size: 40px !important; letter-spacing: -1px !important; }
+  .mv2-rpt-h2 { letter-spacing: -1px !important; }
   .mv2-rpt-showcase { height: 440px !important; }
 }
 `;
@@ -4012,13 +4012,13 @@ export function PersonalizedReportsV2() {
 
       {/* ── Headline — staggered scroll reveal, each line fires after the cards land ── */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80 }}>
-        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: t.coal, margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(3) : "0ms" }}>
+        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(40px, 5.4vw, 72px)", fontWeight: 400, lineHeight: 1.02, color: t.coal, margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(3) : "0ms" }}>
           Personalized reports after
         </h2>
-        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: t.copper, margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5, opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(4) : "0ms" }}>
+        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(40px, 5.4vw, 72px)", fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: t.copper, margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5, opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(4) : "0ms" }}>
           every interview
         </h2>
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
+        <p style={{ fontSize: 18, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
           STAR scores, bias flags, engagement bars, and a coached rewrite of
           your weakest answer. Ready before you close the tab.
         </p>
