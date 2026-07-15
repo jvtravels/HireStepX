@@ -2227,11 +2227,10 @@ export function FeatureGridV2() {
         >
           {/* ── Before the session — left column, full height ── */}
           <BentoCard large style={{ gridColumn: "1", gridRow: "1 / 3", overflow: "hidden", padding: 22, boxSizing: "border-box", height: "100%" }}>
-            <ActLabel>Before the session</ActLabel>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, opacity: 0.7, marginBottom: 10, display: "block" }}>
-              Personalisation
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
+              Before · Personalisation
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 22, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.015em", fontWeight: 400, lineHeight: 1.25 }}>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 24, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.015em", fontWeight: 400, lineHeight: 1.2 }}>
               Your resume is <em>the question paper.</em>
             </h3>
             <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 16px", maxWidth: 320 }}>
@@ -2244,11 +2243,10 @@ export function FeatureGridV2() {
 
           {/* ── During: Voice follow-up ── */}
           <BentoCard large style={{ gridColumn: "2", gridRow: "1", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
-            <ActLabel>During the session</ActLabel>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.indigo, opacity: 0.6, marginBottom: 10, display: "block" }}>
-              Real conversation
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
+              During · Real Conversation
             </span>
-            <h3 aria-label="During the session: real conversation — Vague answer? It asks again. Harder." style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+            <h3 aria-label="During the session: real conversation — Vague answer? It asks again. Harder." style={{ fontFamily: fonts.serif, fontSize: 20, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
               Vague answer?{" "}
               <span style={{ color: t.copper, fontStyle: "italic" }}>It asks again. Harder.</span>
             </h3>
@@ -2262,11 +2260,10 @@ export function FeatureGridV2() {
 
           {/* ── During: Salary negotiation ── */}
           <BentoCard large style={{ gridColumn: "3", gridRow: "1", background: t.indigoDeep, border: "none", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
-            <ActLabel dark>During the session</ActLabel>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper100, opacity: 0.6, marginBottom: 10, display: "block" }}>
-              Salary negotiation
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper100, marginBottom: 12, display: "block" }}>
+              During · Salary Negotiation
             </span>
-            <h3 aria-label="During the session: salary negotiation — You left ₹2L on the table. Practice changing that." style={{ fontFamily: fonts.serif, fontSize: 18, color: t.cream, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+            <h3 aria-label="During the session: salary negotiation — You left ₹2L on the table. Practice changing that." style={{ fontFamily: fonts.serif, fontSize: 20, color: t.cream, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
               You left{" "}
               <span style={{ color: t.copper100, fontStyle: "italic" }}>₹2L on the table.</span>{" "}
               Practice changing that.
@@ -2281,13 +2278,15 @@ export function FeatureGridV2() {
 
           {/* ── After: Perception optimizer ── */}
           <BentoCard style={{ gridColumn: "2", gridRow: "2", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
-            <ActLabel>In the report after</ActLabel>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, opacity: 0.7, marginBottom: 10, display: "block" }}>
-              Perception optimizer
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
+              After · Perception Optimizer
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.3 }}>
-              You said <em>"basically"</em> 9 times. The room heard uncertainty.
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 20, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+              You said <em>"basically"</em> 9 times.
             </h3>
+            <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "0 0 12px" }}>
+              Every hedge word is flagged. The AI marks what signals uncertainty to the panel.
+            </p>
             <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <BiasDetectorVisual />
             </div>
@@ -2295,13 +2294,15 @@ export function FeatureGridV2() {
 
           {/* ── After: Thought bubble ── */}
           <BentoCard style={{ gridColumn: "3", gridRow: "2", overflow: "hidden", padding: 20, boxSizing: "border-box", height: "100%" }}>
-            <ActLabel>In the report after</ActLabel>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, opacity: 0.7, marginBottom: 10, display: "block" }}>
-              Thought bubble
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 12, display: "block" }}>
+              After · Thought Bubble
             </span>
-            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: 0, marginBottom: 8, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.3 }}>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 20, color: t.coal, margin: 0, marginBottom: 6, letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
               The exact answer <em>that lost the room.</em>
             </h3>
+            <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "0 0 12px" }}>
+              Annotated with what the panel was actually scoring for at that moment.
+            </p>
             <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
               <ThoughtBubbleVisual />
             </div>
