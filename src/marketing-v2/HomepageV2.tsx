@@ -1315,15 +1315,6 @@ export function HeroV2() {
           width: "100%",
         }}
       >
-        <div className="mv2-cascade mv2-cascade-1">
-          <SectionMasthead
-            n="01"
-            label="Practice"
-            live
-            right="Live · Edition 2026"
-          />
-        </div>
-
         {/* Asymmetric editorial split — text + mock in two columns, the
             hero is content-sized (no forced viewport height) so there's
             no dead-air band below. */}
@@ -1371,8 +1362,8 @@ export function HeroV2() {
               }}
             >
               AI mock interviews you actually speak to — scored against the
-              rubrics real Indian panels use. Your first 2 sessions are free, no
-              card needed. STAR breakdown back before your chai cools.
+              rubrics real Indian panels use. STAR breakdown back before your
+              chai cools.
             </p>
 
             <div
@@ -1536,10 +1527,6 @@ export function HeroV2() {
                 fontWeight: 600,
               }}
             >
-              <span style={{ color: t.coal }}>Live mock</span>
-              <span aria-hidden style={{ color: t.line }}>/</span>
-              <span>Behavioural · Razorpay</span>
-              <span aria-hidden style={{ color: t.line }}>/</span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <span
                   aria-hidden
@@ -1550,7 +1537,7 @@ export function HeroV2() {
                     background: t.copper,
                   }}
                 />
-                Scored in ~12s
+                Scored in ~12s after you finish speaking
               </span>
             </div>
           </div>
@@ -2051,11 +2038,10 @@ export function ProductStoryV2() {
   return (
     <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 72, paddingBottom: 72 }}>
       <div style={container}>
-        <SectionMasthead n="04" label="How it works" right="Three steps" style={{ marginBottom: 20 }} />
         <MotionReveal style={{ marginBottom: 48 }}>
           <h2 id="hd-story" style={h2}>
-            Three steps.{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>Zero fluff.</span>
+            Resume in.{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>Scored answer out.</span>
           </h2>
         </MotionReveal>
 
@@ -2503,7 +2489,6 @@ export function FeatureGridV2() {
   return (
     <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, background: t.cream }}>
       <div style={container}>
-        <SectionMasthead n="05" label="What sets it apart" right="Distinct mechanics" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ marginBottom: 52 }}>
           <h2 id="hd-features" className="mv2-features-h2" style={h2}>
             What practice alone{" "}
@@ -2511,9 +2496,6 @@ export function FeatureGridV2() {
               never shows you.
             </span>
           </h2>
-          <p style={{ ...body, marginTop: 16 }}>
-            None of this fits in a question bank.
-          </p>
         </MotionReveal>
 
         {/* ── Row 0: Before the session ── */}
@@ -2537,7 +2519,7 @@ export function FeatureGridV2() {
                     display: "block",
                   }}
                 >
-                  Your resume
+                  Personalisation
                 </span>
                 <h3
                   style={{
@@ -3268,14 +3250,13 @@ export function TestimonialsV2() {
   return (
     <section className="mv2-section" aria-labelledby="hd-why" style={{ ...sectionBase, background: t.cream, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
-        <SectionMasthead n="06" label="Why" right="Three objections" style={{ marginBottom: 24 }} />
         <MotionReveal style={{ textAlign: "center", marginBottom: 64, maxWidth: 760, marginLeft: "auto", marginRight: "auto" }}>
           <h2 id="hd-why" style={{ ...h2, textWrap: "balance" as const }}>
             The interview help{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>nobody made for you.</span>
           </h2>
           <p style={{ ...body, marginTop: 16 }}>
-            Built by candidates who sat through enough Indian loops to know what serious prep actually looks like.
+            Three objections. Three answers. Skip to the one that sounds like you.
           </p>
         </MotionReveal>
 
@@ -3389,8 +3370,7 @@ export function PricingV2() {
       features: [
         "2 mock sessions",
         "Behavioural rounds + basic STAR score",
-        "Email report",
-        "No card required",
+        "Full scored report after each session",
       ],
       cta: "Start free",
       href: "/signup?plan=free",
@@ -3406,7 +3386,7 @@ export function PricingV2() {
         "Buy 1–10 sessions at ₹9 each",
         "Voice in & out, all round types",
         "Full STAR score + report",
-        "Use them anytime, no expiry",
+        "Company-specific rounds",
       ],
       cta: "Buy sessions",
       href: "/signup?plan=single",
@@ -3451,7 +3431,7 @@ export function PricingV2() {
           </MotionReveal>
           <MotionReveal delay={160}>
             <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-              Start with 2 free sessions, no card needed. After that, ₹9 per session or ₹39 for 5. Pay only when you want more.
+              Pay when a round is coming. Stop when you&apos;re ready. No subscription, no monthly guilt.
             </p>
           </MotionReveal>
         </div>
@@ -4295,8 +4275,8 @@ export function PersonalizedReportsV2() {
           every interview
         </h2>
         <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
-          HireStepX gives you a full breakdown after every interview — what landed,
-          what to sharpen, and your exact next practice session.
+          STAR scores, bias flags, engagement bars, and a coached rewrite of
+          your weakest answer. Ready before you close the tab.
         </p>
       </div>
     </section>
@@ -4428,10 +4408,10 @@ export function SecurityComplianceV2() {
 
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
 export function VideoCtaV2({
-  headingPlain = "Prepare Like Top",
-  headingItalic = "Candidates Do",
-  body = "Practice with AI interviewers trained to simulate real hiring conversations, identify weaknesses, and help you improve before the actual interview.",
-  ctaLabel = "Start your free interview",
+  headingPlain = "Your next interview won't wait.",
+  headingItalic = "Neither should your prep.",
+  body = "One session. A STAR breakdown on every answer. Your weak spots caught before HR finds them first.",
+  ctaLabel = "Start your first free session",
   ctaHref = "/login",
 }: {
   headingPlain?: string;
