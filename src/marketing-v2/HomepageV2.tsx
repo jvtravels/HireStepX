@@ -1329,46 +1329,65 @@ export function HeroV2() {
       className="mv2-hero-section"
       style={{
         ...sectionBase,
-        paddingTop: 80,
+        paddingTop: 120,
         paddingBottom: 0,
         background: t.cream,
         overflow: "hidden",
         position: "relative",
       }}
     >
-      {/* Centered copper wash — anchored above the headline */}
+      {/* Copper wash — stronger and wider to anchor the headline */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 15%, rgba(180, 83, 9, 0.07) 0%, transparent 65%)",
+            "radial-gradient(ellipse 90% 60% at 50% 8%, rgba(180,83,9,0.11) 0%, rgba(180,83,9,0.04) 45%, transparent 65%)",
           pointerEvents: "none",
           contain: "paint",
         }}
       />
 
       {/* Centered text block */}
-      <div
-        style={{
-          ...container,
-          position: "relative",
-          textAlign: "center",
-        }}
-      >
+      <div style={{ ...container, position: "relative", textAlign: "center" }}>
+
+        {/* Positioning eyebrow */}
+        <div
+          className="mv2-cascade mv2-cascade-1"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            marginBottom: 28,
+            padding: "6px 16px",
+            background: t.copperSoft,
+            border: `1px solid rgba(180,83,9,0.18)`,
+            borderRadius: 999,
+            fontFamily: fonts.mono,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.13em",
+            textTransform: "uppercase" as const,
+            color: t.copper,
+          }}
+        >
+          <span aria-hidden style={{ width: 5, height: 5, borderRadius: "50%", background: t.copper, display: "inline-block", flexShrink: 0 }} />
+          AI Interview Coach, Built for India
+        </div>
+
         <h1
           id="hd-hero"
-          className="mv2-hero-display mv2-cascade mv2-cascade-1"
+          className="mv2-hero-display mv2-cascade mv2-cascade-2"
           style={{
             fontFamily: fonts.serif,
-            fontSize: "clamp(48px, 6.5vw, 88px)",
-            lineHeight: 1.04,
-            letterSpacing: "-0.03em",
+            fontSize: "clamp(52px, 7.5vw, 104px)",
+            lineHeight: 1.03,
+            letterSpacing: "-0.035em",
             color: t.coal,
             margin: "0 auto",
             fontWeight: 400,
-            maxWidth: 800,
+            maxWidth: 860,
           }}
         >
           Practice the interview.
@@ -1383,10 +1402,10 @@ export function HeroV2() {
           style={{
             fontFamily: fonts.sans,
             fontSize: 16,
-            lineHeight: 1.55,
+            lineHeight: 1.62,
             color: t.inkSoft,
-            maxWidth: 480,
-            margin: "24px auto 0",
+            maxWidth: 500,
+            margin: "22px auto 0",
           }}
         >
           Speak your answer out loud. The AI interviews you, scores every
@@ -1394,13 +1413,14 @@ export function HeroV2() {
           cools.
         </p>
 
+        {/* CTAs */}
         <div
           className="mv2-hero-cta-row mv2-cascade mv2-cascade-4"
           style={{
             display: "inline-flex",
             alignItems: "center",
             gap: 12,
-            marginTop: 32,
+            marginTop: 40,
             flexWrap: "wrap",
             justifyContent: "center",
           }}
@@ -1411,31 +1431,32 @@ export function HeroV2() {
             onClick={() => captureClientEvent("hero_cta_clicked", { cta: "start_free", surface: "hero" })}
             style={{
               fontFamily: fonts.sans,
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 600,
               color: t.cream,
               background: t.copper,
-              padding: "14px 24px",
+              padding: "15px 28px",
               borderRadius: 999,
               textDecoration: "none",
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
               whiteSpace: "nowrap",
+              boxShadow: "0 4px 20px rgba(180,83,9,0.28)",
             }}
           >
             Start free: 2 sessions
-            <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 16 }}>→</span>
+            <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 17 }}>→</span>
           </a>
           <a
             href="/how-it-works"
             className="mv2-tap-44 mv2-cta-secondary"
             style={{
               fontFamily: fonts.sans,
-              fontSize: 15,
-              fontWeight: 600,
+              fontSize: 16,
+              fontWeight: 500,
               color: t.coal,
-              padding: "14px 22px",
+              padding: "15px 26px",
               borderRadius: 999,
               textDecoration: "none",
               border: `1px solid ${t.lineStrong}`,
@@ -1450,7 +1471,7 @@ export function HeroV2() {
           </a>
         </div>
 
-        {/* Trust band */}
+        {/* Trust strip — with top rule to create a visual stop */}
         <div
           className="mv2-cascade mv2-cascade-5"
           style={{
@@ -1459,40 +1480,35 @@ export function HeroV2() {
             justifyContent: "center",
             gap: 12,
             marginTop: 28,
+            paddingTop: 24,
+            borderTop: `1px solid ${t.line}`,
+            maxWidth: 480,
+            marginLeft: "auto",
+            marginRight: "auto",
             fontFamily: fonts.sans,
             fontSize: 13,
             color: t.inkSoft,
             flexWrap: "wrap",
           }}
         >
-          <span style={{ color: t.coal, fontWeight: 600 }}>
-            2 sessions free
-          </span>
+          <span style={{ color: t.coal, fontWeight: 600 }}>2 sessions free</span>
           <span aria-hidden style={{ color: t.inkFaint }}>·</span>
           <span>Score in under 5 min</span>
           <span aria-hidden style={{ color: t.inkFaint }}>·</span>
           <span>
-            <span
-              style={{
-                fontFamily: fonts.serif,
-                fontStyle: "italic",
-                color: t.copper,
-              }}
-            >
-              ₹9
-            </span>{" "}
-            per session after
+            <span style={{ fontFamily: fonts.serif, fontStyle: "italic", color: t.copper }}>₹9</span>
+            {" "}per session after
           </span>
         </div>
       </div>
 
-      {/* Product mock — full-width showcase below the copy */}
+      {/* Product mock — wider, more breathing room above */}
       <div
         className="mv2-cascade mv2-cascade-6 mv2-hero-mock-outer"
         style={{
-          maxWidth: 1088,
-          margin: "48px auto 0",
-          padding: "0 48px",
+          maxWidth: 1160,
+          margin: "64px auto 0",
+          padding: "0 32px",
           position: "relative",
         }}
       >
