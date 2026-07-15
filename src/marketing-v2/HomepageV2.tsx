@@ -1488,16 +1488,134 @@ export function HeroV2() {
 
 /* ─────────────────────────── 3.5. INTERVIEW FOCUS ─────────────────────────── */
 export function InterviewFocusV2() {
+  const G  = "url(#hsx-cg)";
+  const rp = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+
   const LIVE_TYPES = [
-    { label: "Behavioral", desc: "STAR stories · leadership · decisions" },
-    { label: "Campus Placement", desc: "TCS · Infosys · Wipro · Cognizant" },
-    { label: "Salary Negotiation", desc: "Counter-offers · levelling · benefits" },
-    { label: "HR Round", desc: "Culture fit · motivation · expectations" },
+    {
+      label: "Behavioral",
+      desc: "STAR stories · leadership · decisions",
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <path d="M9 8h46a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H28L16 52l2-14H9a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.08"/>
+          <polygon points="32,12 35,21 44,21 37,26 40,35 32,30 24,35 27,26 20,21 29,21"
+            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.26"/>
+        </svg>
+      ),
+    },
+    {
+      label: "Campus Placement",
+      desc: "TCS · Infosys · Wipro · Cognizant",
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <path d="M32 10 L56 24 L32 38 L8 24 Z" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.18"/>
+          <circle cx="32" cy="24" r="5" stroke={G} strokeWidth={1.5} fill={G} fillOpacity="0.55"/>
+          <path d="M32 24 L56 24 L56 46" stroke={G} strokeWidth={2} strokeLinecap="round" fill="none"/>
+          <circle cx="56" cy="51" r="4.5" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.40"/>
+        </svg>
+      ),
+    },
+    {
+      label: "Salary Negotiation",
+      desc: "Counter-offers · levelling · benefits",
+      icon: (
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <text x="32" y="48" textAnchor="middle" fontSize="48"
+            fontFamily='"Satoshi", "Inter", system-ui, sans-serif'
+            fontWeight="500" fill={G}>₹</text>
+        </svg>
+      ),
+    },
+    {
+      label: "HR Round",
+      desc: "Culture fit · motivation · expectations",
+      icon: (
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <circle cx="32" cy="20" r="11" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.12"/>
+          <path d="M6 56 Q6 38 32 38 Q58 38 58 56" stroke={G} strokeWidth={2} strokeLinecap="round" fill={G} fillOpacity="0.08"/>
+          <circle cx="50" cy="46" r="11" fill="#FAF7F0"/>
+          <circle cx="50" cy="46" r="10" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.16"/>
+          <path d="M44 46 L48 50 L56 40" stroke={G} strokeWidth={2.5} {...rp}/>
+        </svg>
+      ),
+    },
   ];
 
   const SOON_TYPES = [
-    "Leadership Round", "Technical Leadership", "Case Study",
-    "Panel Interview", "Management", "Govt / PSU",
+    {
+      label: "Leadership Round",
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M6 50 L6 26 L20 40 L32 8 L44 40 L58 26 L58 50" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.09"/>
+        <rect x="6" y="50" width="52" height="8" rx="2" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.18"/>
+        <circle cx="6" cy="26" r="3.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
+        <circle cx="32" cy="8" r="4.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
+        <circle cx="58" cy="26" r="3.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
+      </svg>),
+    },
+    {
+      label: "Technical Leadership",
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <rect x="8" y="10" width="48" height="34" rx="4" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.07"/>
+        <rect x="12" y="14" width="40" height="26" rx="2" stroke={G} strokeWidth={2} {...rp}/>
+        <path d="M22 23 L15 27 L22 31" stroke={G} strokeWidth={2} {...rp}/>
+        <path d="M42 23 L49 27 L42 31" stroke={G} strokeWidth={2} {...rp}/>
+        <line x1="34" y1="20" x2="30" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <path d="M29 44 L26 54 L38 54 L35 44" stroke={G} strokeWidth={2} {...rp}/>
+        <line x1="22" y1="54" x2="42" y2="54" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+      </svg>),
+    },
+    {
+      label: "Case Study",
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M10 8 h24 l12 12 v36 H10 Z" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.07"/>
+        <path d="M34 8 v12 h12" stroke={G} strokeWidth={2} {...rp}/>
+        <line x1="16" y1="28" x2="30" y2="28" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="16" y1="34" x2="28" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <circle cx="44" cy="46" r="10" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.10"/>
+        <line x1="51" y1="53" x2="57" y2="59" stroke={G} strokeWidth={3} strokeLinecap="round"/>
+      </svg>),
+    },
+    {
+      label: "Panel Interview",
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <circle cx="14" cy="17" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+        <circle cx="32" cy="15" r="8" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.13"/>
+        <circle cx="50" cy="17" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+        <rect x="4" y="36" width="56" height="6" rx="2" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.14"/>
+        <circle cx="32" cy="54" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.07"/>
+      </svg>),
+    },
+    {
+      label: "Management",
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <circle cx="32" cy="14" r="9" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.16"/>
+        <line x1="32" y1="23" x2="32" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="12" y1="34" x2="52" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="12" y1="34" x2="12" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="32" y1="34" x2="32" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="52" y1="34" x2="52" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <circle cx="12" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+        <circle cx="32" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+        <circle cx="52" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+      </svg>),
+    },
+    {
+      label: "Govt / PSU",
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M8 26 L32 6 L56 26" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.10"/>
+        <circle cx="32" cy="17" r="5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.26"/>
+        <circle cx="32" cy="17" r="2" fill={G} fillOpacity="0.60"/>
+        <rect x="8" y="26" width="48" height="5" rx="1" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.10"/>
+        <line x1="14" y1="31" x2="14" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="22" y1="31" x2="22" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="32" y1="31" x2="32" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="42" y1="31" x2="42" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="50" y1="31" x2="50" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <rect x="6" y="53" width="52" height="4" rx="1" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.09"/>
+        <rect x="4" y="57" width="56" height="3" rx="1" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.06"/>
+      </svg>),
+    },
   ];
 
   return (
@@ -1521,72 +1639,110 @@ export function InterviewFocusV2() {
         }
       `}</style>
 
+      {/* Copper gradient — referenced by all icons as url(#hsx-cg) */}
+      <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute", overflow: "hidden" }}>
+        <defs>
+          <linearGradient id="hsx-cg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#E8C4A0" />
+            <stop offset="100%" stopColor="#B45309" />
+          </linearGradient>
+        </defs>
+      </svg>
+
       <div style={{ ...container }}>
         <SectionMasthead n="03" label="Interview formats" right="10 types · 4 live now" style={{ marginBottom: 44 }} />
 
         <MotionReveal style={{ textAlign: "center", maxWidth: 860, margin: "0 auto" }}>
-          <h2 id="hd-focus" style={{ ...h2 }}>
+          <h2 id="hd-focus" style={{ ...h2, fontSize: 64 }}>
             Walk into any round<br />
             <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it&rsquo;s testing.</span>
           </h2>
         </MotionReveal>
 
         {/* ── Available now: divider ── */}
-        <MotionReveal style={{ display: "flex", alignItems: "center", gap: 14, margin: "48px 0 0" }}>
-          <div style={{ flex: 1, height: 1, background: t.line }} />
+        <MotionReveal style={{
+          display: "flex", alignItems: "center", gap: 14,
+          margin: "56px 0 36px",
+        }}>
+          <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
             <span className="hsx-focus-live-dot" />
-            <span style={{ fontFamily: fonts.mono, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.copper, whiteSpace: "nowrap" as const }}>Available now</span>
+            <span style={{
+              fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700,
+              letterSpacing: "0.12em", textTransform: "uppercase" as const,
+              color: t.copper, whiteSpace: "nowrap" as const,
+            }}>Available now</span>
           </div>
-          <div style={{ flex: 1, height: 1, background: t.line }} />
+          <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
         </MotionReveal>
 
-        {/* ── Available now: editorial numbered list ── */}
-        <div>
+        {/* ── Available now: 4-column icon grid ── */}
+        <div
+          className="mv2-focus-live-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "0 32px",
+          }}
+        >
           {LIVE_TYPES.map((type, i) => (
-            <MotionReveal key={type.label} delay={i * 60}>
-              <div style={{
-                display: "flex", alignItems: "baseline", gap: 28,
-                padding: "22px 0",
-                borderBottom: `1px solid ${t.line}`,
-              }}>
-                <span style={{
-                  fontFamily: fonts.serif, fontSize: 18, fontStyle: "italic",
-                  color: t.copper, opacity: 0.65, flexShrink: 0,
-                  width: 28, textAlign: "right" as const,
-                }}>
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{
-                    fontFamily: fonts.serif, fontSize: 22, fontWeight: 400,
-                    color: t.coal, margin: "0 0 3px", lineHeight: 1.2,
-                  }}>{type.label}</h3>
-                  <p style={{
-                    fontFamily: fonts.sans, fontSize: 14,
-                    color: t.inkSoft, margin: 0, lineHeight: 1.5,
-                  }}>{type.desc}</p>
-                </div>
-                <span style={{ fontFamily: fonts.sans, fontSize: 15, color: t.copperSoft, flexShrink: 0, paddingBottom: 2 }}>→</span>
-              </div>
+            <MotionReveal
+              key={type.label}
+              delay={i * 80}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
+            >
+              <div style={{ width: 80, height: 80, marginBottom: 20 }}>{type.icon}</div>
+              <h3 style={{
+                fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
+                color: t.coal, margin: "0 0 6px",
+                letterSpacing: "-0.015em", lineHeight: 1.3,
+              }}>{type.label}</h3>
+              <p style={{
+                fontFamily: fonts.sans, fontSize: 13,
+                color: t.inkSoft, margin: 0, lineHeight: 1.55, maxWidth: 150,
+              }}>{type.desc}</p>
             </MotionReveal>
           ))}
         </div>
 
-        {/* ── Coming soon: inline chip list ── */}
+        {/* ── Coming soon: divider ── */}
+        <MotionReveal style={{
+          display: "flex", alignItems: "center", gap: 14,
+          margin: "52px 0 32px",
+        }}>
+          <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
+          <span style={{
+            fontFamily: fonts.sans, fontSize: 10.5, fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase" as const,
+            color: t.inkFaint, whiteSpace: "nowrap" as const,
+          }}>Coming soon</span>
+          <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
+        </MotionReveal>
+
+        {/* ── Coming soon: 6-column icon grid (faded) ── */}
         <MotionReveal>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "36px 0 20px" }}>
-            <div style={{ flex: 1, height: 1, background: t.line }} />
-            <span style={{ fontFamily: fonts.mono, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, whiteSpace: "nowrap" as const }}>Coming soon</span>
-            <div style={{ flex: 1, height: 1, background: t.line }} />
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 10, justifyContent: "center" as const }}>
-            {SOON_TYPES.map((label) => (
-              <span key={label} style={{
-                fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint,
-                padding: "6px 16px", border: `1px solid ${t.line}`,
-                borderRadius: 999, opacity: 0.5,
-              }}>{label}</span>
+          <div
+            className="mv2-focus-soon-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(6, 1fr)",
+              gap: "0 20px",
+              opacity: 0.3,
+              filter: "saturate(0.45)",
+            }}
+          >
+            {SOON_TYPES.map((type) => (
+              <div
+                key={type.label}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
+              >
+                <div style={{ width: 60, height: 60, marginBottom: 16 }}>{type.icon}</div>
+                <p style={{
+                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                  color: t.coal, margin: 0, lineHeight: 1.3,
+                  letterSpacing: "-0.01em",
+                }}>{type.label}</p>
+              </div>
             ))}
           </div>
         </MotionReveal>
@@ -2182,24 +2338,6 @@ function BentoCard({
 }
 
 /* Compact act-row label embedded inside a card */
-function ActLabel({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
-  return (
-    <span
-      style={{
-        fontFamily: fonts.mono,
-        fontSize: 9,
-        letterSpacing: "0.2em",
-        textTransform: "uppercase",
-        color: dark ? t.creamMuted : t.inkFaint,
-        marginBottom: 10,
-        display: "block",
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
 export function FeatureGridV2() {
   return (
     <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, paddingTop: 48, paddingBottom: 96, background: t.cream }}>
