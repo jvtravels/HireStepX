@@ -237,7 +237,7 @@ export default async function QuestionsSlugPage({
       logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
     datePublished: "2026-06-21",
-    dateModified: "2026-07-14",
+    dateModified: "2026-07-15",
     inLanguage: "en-IN",
     url: `https://hirestepx.com/questions/${slug}`,
     mainEntityOfPage: { "@type": "WebPage", "@id": `https://hirestepx.com/questions/${slug}` },

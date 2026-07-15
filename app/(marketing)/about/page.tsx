@@ -94,7 +94,7 @@ const APP_SCHEMA = {
   description: "AI-powered mock interview platform for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, and 60+ companies with voice interviews and scored reports.",
   inLanguage: "en-IN",
   datePublished: "2024-01-01",
-  dateModified: "2026-07-14",
+  dateModified: "2026-07-15",
   creator: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
 };
 
