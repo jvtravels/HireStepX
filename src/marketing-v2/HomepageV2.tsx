@@ -1473,7 +1473,10 @@ export function HeroV2() {
 
       </div>
 
-      {/* Product mock — wider, more breathing room above */}
+      {/* Product mock — wider, more breathing room above.
+          mask-image fades the bottom third to transparent so the card's
+          shadow and hard edge dissolve into the cream background instead
+          of cutting off abruptly. */}
       <div
         className="mv2-cascade mv2-cascade-6 mv2-hero-mock-outer"
         style={{
@@ -1481,6 +1484,8 @@ export function HeroV2() {
           margin: "64px auto 0",
           padding: "0 32px",
           position: "relative",
+          maskImage: "linear-gradient(to bottom, black 0%, black 62%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 62%, transparent 100%)",
         }}
       >
         <ProductMockHero />
