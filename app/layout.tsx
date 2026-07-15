@@ -232,6 +232,10 @@ const structuredData = [
       contactType: "customer support",
       email: "support@hirestepx.com",
     },
+    sameAs: [
+      "https://www.linkedin.com/company/hirestepx",
+      "https://twitter.com/hirestepx",
+    ],
   },
   {
     "@context": "https://schema.org",
