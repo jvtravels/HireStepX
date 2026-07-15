@@ -2081,7 +2081,7 @@ const posts: BlogPost[] = [
       { question: "Does Capgemini require relocation flexibility for freshers?", answer: "Yes. Most Capgemini Analyst offers include a pan-India posting clause. Project allocation depends on client requirement, not candidate preference. If you have a strong preference for a specific city, mention it during the HR interview, but do not make it a condition — offer rejections for this reason are common." },
       { question: "How soon does Capgemini release the offer letter after campus drives?", answer: "Typically 4 to 12 weeks after the final HR round, depending on the batch size and intake cycle. Capgemini runs large-volume hiring drives and offer-letter timelines can stretch in years with high campus intake. Keep your offer communication email active and follow up through your campus TnP office if the wait exceeds 8 weeks." },
     ],
-    relatedSlugs: ["how-to-crack-tcs-ion-nqt-2026", "wipro-nlth-preparation-guide-2026", "infosys-campus-interview-guide"],
+    relatedSlugs: ["how-to-crack-tcs-ion-nqt-2026", "wipro-elite-nlth-preparation-2026", "hcl-accenture-capgemini-interview-comparison"],
     practicePageSlugs: [
       { label: "Capgemini Fresher Interview Practice", slug: "capgemini-freshers-interview-questions" },
     ],
@@ -2127,7 +2127,7 @@ const posts: BlogPost[] = [
       { question: "What is the difference between LTI and Mindtree after the merger?", answer: "LTIMindtree was formed in 2022 when Larsen and Toubro Infotech and Mindtree merged into a single listed entity. Both were mid-tier IT services companies with different client bases. Fresher hiring now runs under a unified process, though internal practices are still being standardized as of 2026." },
       { question: "Does LTIMindtree hire off-campus freshers?", answer: "Yes. LTIMindtree runs both on-campus drives at engineering colleges and off-campus recruitment programs. Off-campus applicants go through the same online assessment and interview stages. Monitor the LTIMindtree careers portal and their official LinkedIn page for off-campus drive announcements." },
     ],
-    relatedSlugs: ["how-to-crack-tcs-ion-nqt-2026", "wipro-nlth-preparation-guide-2026", "dsa-60-day-preparation-plan"],
+    relatedSlugs: ["how-to-crack-tcs-ion-nqt-2026", "wipro-elite-nlth-preparation-2026", "dsa-60-day-preparation-plan"],
     practicePageSlugs: [
       { label: "LTIMindtree Fresher Interview Practice", slug: "ltimindtree-freshers-interview-questions" },
     ],

@@ -411,6 +411,52 @@ export default async function InterviewPrepPage() {
             </div>
           </section>
 
+          {/* ── Related reading — deep-dive company guides ────────────── */}
+          <section style={{ marginTop: 56 }}>
+            <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
+              Company interview guides
+            </h2>
+            <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
+              Each guide covers the full process for that company — rounds, format, what the interviewers evaluate, and what separates shortlisted candidates.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+              {([
+                ["Freshworks SDE Interview 2026 — B2B SaaS & Customer-Success Engineering", "/blog/freshworks-interview-questions-india-2026"],
+                ["PhonePe Engineering Interview 2026 — Scale, UPI & Builder Mindset", "/blog/phonepe-interview-questions-india-2026"],
+                ["Meesho Engineering Interview 2026 — Social Commerce & Tier-3 India", "/blog/meesho-interview-questions-india-2026"],
+                ["FAANG Interview Preparation India 2026", "/blog/faang-interview-preparation-india-2026"],
+                ["System Design Interview Preparation India", "/blog/system-design-interview-preparation"],
+                ["DSA 60-Day Preparation Plan India 2026", "/blog/dsa-60-day-preparation-plan"],
+                ["Goldman Sachs India Interview Questions 2026", "/blog/goldman-sachs-india-interview-questions"],
+                ["JP Morgan Interview Questions India 2026", "/blog/jp-morgan-interview-questions-india-2026"],
+                ["Software Engineer Interview Checklist 2026", "/blog/software-engineer-interview-checklist-2026"],
+                ["STAR Method Interview Answers India", "/blog/star-method-interview-answers"],
+              ] as [string, string][]).map(([label, href]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "14px 18px",
+                    background: "#FAFAF8",
+                    border: "1px solid rgba(20,17,10,0.08)",
+                    borderRadius: 12,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: coal,
+                    textDecoration: "none",
+                    gap: 10,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  <span style={{ color: copper, fontSize: 16, flexShrink: 0 }}>→</span>
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </section>
+
           {/* ── Bottom CTA ───────────────────────────────────────────── */}
           <section style={{
             marginTop: 56, padding: "32px 28px",

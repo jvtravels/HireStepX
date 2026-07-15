@@ -1587,6 +1587,8 @@ export function ForStudentsV2() {
               ["TCS Interview Questions for Freshers 2026", "/blog/tcs-interview-questions-freshers-2026"],
               ["Infosys Interview Questions 2026", "/blog/infosys-interview-questions-2026"],
               ["Wipro Interview Questions & Answers", "/blog/wipro-interview-questions-answers"],
+              ["Capgemini Interview Questions for Freshers 2026", "/blog/capgemini-interview-questions-freshers-2026"],
+              ["LTIMindtree Interview Questions for Freshers 2026", "/blog/ltimindtree-interview-questions-freshers-2026"],
               ["HR Interview Questions & Answers India", "/blog/hr-interview-questions-answers-india"],
               ["Group Discussion Topics — Campus Placement 2026", "/blog/group-discussion-topics-campus-placement-2026"],
               ["How to Pass TCS NQT 2026", "/blog/how-to-pass-tcs-nqt-2026"],
