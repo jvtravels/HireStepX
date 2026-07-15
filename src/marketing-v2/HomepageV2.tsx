@@ -2214,6 +2214,7 @@ function StepMock({ step }: { step: number }) {
 }
 
 export function ProductStoryV2() {
+  const [activeStep, setActiveStep] = useState(0);
   const steps = [
     {
       kicker: "01",
@@ -2231,95 +2232,126 @@ export function ProductStoryV2() {
       desc: "Real voice in, real voice out. STAR breakdown. Coach fixes after every answer.",
     },
   ];
+  const s = steps[activeStep];
 
   return (
-    <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream }}>
+    <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 72, paddingBottom: 72 }}>
       <div style={container}>
-        <SectionMasthead n="04" label="How it works" right="Three steps" style={{ marginBottom: 24 }} />
-        <MotionReveal style={{ textAlign: "center", marginBottom: 80 }}>
+        <SectionMasthead n="04" label="How it works" right="Three steps" style={{ marginBottom: 20 }} />
+        <MotionReveal style={{ textAlign: "center", marginBottom: 36 }}>
           <h2 id="hd-story" style={h2}>
             Three steps.{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>Zero fluff.</span>
           </h2>
         </MotionReveal>
 
-        <ol
-          className="mv2-story-stages"
-          style={{
-            listStyle: "none",
-            padding: 0,
-            margin: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
+        {/* Step selector tabs */}
+        <div
+          role="tablist"
+          aria-label="How it works steps"
+          style={{ display: "flex", gap: 8, marginBottom: 36, flexWrap: "wrap" }}
         >
-          {steps.map((s, i) => (
-            <li
-              key={s.kicker}
-              className="mv2-story-stage"
+          {steps.map((step, i) => (
+            <button
+              key={step.kicker}
+              role="tab"
+              aria-selected={activeStep === i}
+              aria-controls="story-panel"
+              onClick={() => setActiveStep(i)}
               style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(260px, 360px) 1fr",
-                gap: 80,
+                display: "flex",
                 alignItems: "center",
-                paddingTop: i === 0 ? 0 : 64,
-                paddingBottom: 64,
-                borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
+                gap: 10,
+                padding: "9px 18px",
+                borderRadius: 999,
+                border: `1px solid ${activeStep === i ? t.indigo : t.line}`,
+                background: activeStep === i ? t.indigo : t.white,
+                cursor: "pointer",
+                fontFamily: fonts.sans,
+                transition: "background 0.18s, border-color 0.18s",
               }}
             >
-              <MotionReveal>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 14 }}>
-                  <span
-                    style={{
-                      fontFamily: fonts.mono,
-                      fontSize: 13,
-                      color: t.copper,
-                      fontWeight: 600,
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    {s.kicker}
-                  </span>
-                  <span
-                    aria-hidden
-                    style={{ width: 24, height: 1, background: t.line }}
-                  />
-                </div>
-                <h3
-                  style={{
-                    fontFamily: fonts.serif,
-                    fontSize: 36,
-                    color: t.coal,
-                    margin: 0,
-                    letterSpacing: "-0.02em",
-                    fontWeight: 400,
-                    lineHeight: 1.1,
-                    textWrap: "balance" as const,
-                  }}
-                >
-                  {s.title}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 16,
-                    color: t.inkSoft,
-                    lineHeight: 1.6,
-                    marginTop: 16,
-                    marginBottom: 0,
-                    maxWidth: 380,
-                  }}
-                >
-                  {s.desc}
-                </p>
-              </MotionReveal>
-
-              <MotionReveal delay={80}>
-                <StepMock step={i} />
-              </MotionReveal>
-            </li>
+              <span
+                style={{
+                  fontFamily: fonts.mono,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: activeStep === i ? t.copper100 : t.copper,
+                  letterSpacing: "0.08em",
+                }}
+              >
+                {step.kicker}
+              </span>
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: activeStep === i ? t.cream : t.coal,
+                }}
+              >
+                {step.title}
+              </span>
+            </button>
           ))}
-        </ol>
+        </div>
+
+        {/* Active step content: text left, mock right */}
+        <div
+          id="story-panel"
+          role="tabpanel"
+          className="mv2-story-stage"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(220px, 300px) 1fr",
+            gap: 64,
+            alignItems: "center",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 14 }}>
+              <span
+                style={{
+                  fontFamily: fonts.mono,
+                  fontSize: 13,
+                  color: t.copper,
+                  fontWeight: 600,
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {s.kicker}
+              </span>
+              <span aria-hidden style={{ width: 24, height: 1, background: t.line }} />
+            </div>
+            <h3
+              style={{
+                fontFamily: fonts.serif,
+                fontSize: 34,
+                color: t.coal,
+                margin: 0,
+                letterSpacing: "-0.02em",
+                fontWeight: 400,
+                lineHeight: 1.1,
+                textWrap: "balance" as const,
+              }}
+            >
+              {s.title}
+            </h3>
+            <p
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 16,
+                color: t.inkSoft,
+                lineHeight: 1.6,
+                marginTop: 16,
+                marginBottom: 0,
+                maxWidth: 320,
+              }}
+            >
+              {s.desc}
+            </p>
+          </div>
+          <StepMock step={activeStep} />
+        </div>
       </div>
     </section>
   );
