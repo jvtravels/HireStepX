@@ -143,12 +143,14 @@ function PageHero({
   accent,
   lead: leadText,
   meta,
+  narrow,
 }: {
   eyebrow: string;
   title: string;
   accent?: string;
   lead?: string;
   meta?: ReactNode;
+  narrow?: boolean;
 }) {
   return (
     <section
@@ -172,7 +174,7 @@ function PageHero({
           pointerEvents: "none",
         }}
       />
-      <div className="mv2-container" style={{ ...container, position: "relative" }}>
+      <div className="mv2-container" style={{ ...(narrow ? containerNarrow : container), position: "relative" }}>
         <p style={{ ...eyebrow, marginBottom: 18 }}>{eb}</p>
         <h1 style={h1Display}>
           {title}
@@ -1010,6 +1012,7 @@ export function AboutV2() {
         title="We built the prep we wish"
         accent="we'd had."
         lead="HireStepX exists because the gap between a great resume and a great interview is unforgiving, and the people teaching interview prep mostly aren't the ones still doing them. We're building the coach we wanted when we were the candidate."
+        narrow
       />
 
       {/* Mission block */}
@@ -1758,6 +1761,7 @@ function LegalPage({
         title={title}
         accent={accent}
         lead={`Last updated: ${updated}. Written in plain English. If anything's unclear, email hello@hirestepx.com.`}
+        narrow
       />
       <section className="mv2p-section" aria-label="Document body" style={sectionBase}>
         <div className="mv2-container" style={containerNarrow}>
