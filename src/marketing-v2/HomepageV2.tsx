@@ -1328,9 +1328,9 @@ export function HeroV2() {
       style={{
         ...sectionBase,
         paddingTop: 120,
-        paddingBottom: 0,
+        paddingBottom: 40,
         background: t.cream,
-        overflow: "hidden",
+        overflowX: "hidden",
         position: "relative",
       }}
     >
