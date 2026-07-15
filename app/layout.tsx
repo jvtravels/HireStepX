@@ -222,7 +222,7 @@ const structuredData = [
     logo: "https://hirestepx.com/wordmark.png",
     description:
       "AI-powered mock interview platform for job seekers in India. Practice for Google, TCS, Flipkart, and 50+ companies.",
-    foundingDate: "2026",
+    foundingDate: "2024",
     address: {
       "@type": "PostalAddress",
       addressCountry: "IN",

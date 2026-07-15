@@ -6,7 +6,7 @@ import ComingSoon from "@/ComingSoon";
 export const metadata: Metadata = {
   title: "HireStepX — AI Mock Interview Practice India 2026 | TCS, Google, Flipkart",
   description:
-    "India's AI mock interview platform. Practice interviews for TCS, Google, Flipkart, Amazon, McKinsey and 50+ companies. Voice-based AI interviewer scores your answers in real time. 2 sessions free.",
+    "India's AI mock interview platform. Practice for TCS, Google, Flipkart, Amazon, and 50+ companies. Voice AI scores your answers in real time. 2 sessions free.",
   keywords: [
     "AI mock interview India",
     "mock interview practice India",
@@ -45,7 +45,7 @@ const ORGANIZATION_SCHEMA = {
   url: "https://hirestepx.com",
   logo: "https://hirestepx.com/wordmark.png",
   description: "AI-powered mock interview platform for Indian job seekers. Practice with conversational AI interviewers, get scored feedback, and land your next role.",
-  foundingDate: "2026",
+  foundingDate: "2024",
   sameAs: [
     "https://www.linkedin.com/company/hirestepx",
     "https://twitter.com/hirestepx",
