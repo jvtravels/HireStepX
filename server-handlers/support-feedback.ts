@@ -157,7 +157,7 @@ export default async function handler(req: Request): Promise<Response> {
     // Admin notification — fire and forget
     sendResendEmail({
       from: "HireStepX Support <noreply@hirestepx.com>",
-      to: ["support@hirestepx.com"],
+      to: ["hello@hirestepx.com"],
       replyTo: email || undefined,
       subject: `[Support][${type.toUpperCase()}] New message from ${email || auth.userId}`,
       html: `
@@ -174,7 +174,7 @@ export default async function handler(req: Request): Promise<Response> {
     // Auto-reply to user — only when email is available
     if (email) {
       sendResendEmail({
-        from: "HireStepX Support <support@hirestepx.com>",
+        from: "HireStepX Support <noreply@hirestepx.com>",
         to: [email],
         subject: "We received your message — HireStepX Support",
         html: `
@@ -182,7 +182,7 @@ export default async function handler(req: Request): Promise<Response> {
           <p>We've received your message and will get back to you within 1 business day.</p>
           <p>Here's what you sent:</p>
           <blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#444">${message.slice(0, 500).replace(/\n/g, "<br/>")}${message.length > 500 ? "…" : ""}</blockquote>
-          <p>Reply to this email or reach us at <a href="mailto:support@hirestepx.com">support@hirestepx.com</a>.</p>
+          <p>Reply to this email or reach us at <a href="mailto:hello@hirestepx.com">hello@hirestepx.com</a>.</p>
           <p>— The HireStepX Team</p>
         `,
       });
