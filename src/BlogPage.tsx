@@ -1173,7 +1173,7 @@ const posts: BlogPost[] = [
       { label: "Goldman Sachs Engineering Interview", slug: "goldman-sachs-interview-questions-india" },
     ],
     cta: "GS behavioral rounds aren't a formality: they've rejected candidates who cleared every technical round. The difference is usually specificity: vague answers about 'teamwork' don't hold up when the interviewer asks a follow-up. HireStepX runs voice mock interviews where you practice articulating your reasoning under pressure, with AI feedback on both the technical substance and how clearly you made your case.",
-    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
+    relatedLinks: [{ label: "Goldman Sachs Salary Guide India 2026", href: "/salary/goldman" }],
   },
   {
     slug: "frontend-developer-interview-questions-india-2026",
@@ -1619,7 +1619,7 @@ const posts: BlogPost[] = [
       { label: "JP Morgan Interview Practice", slug: "jpmorgan-interview-questions-india" },
     ],
     cta: "JP Morgan's behavioral rounds use their own competency framework, not the standard STAR template most candidates practice. HireStepX runs voice mock interviews where you practice the specific competencies JPM looks for: ownership, judgment under uncertainty, and influence without authority: and the AI tells you whether your answers would score well or sound generic.",
-    relatedLinks: [{ label: "Company Salary Guides India 2026", href: "/salary" }],
+    relatedLinks: [{ label: "JP Morgan (JPMC) Salary Guide India 2026", href: "/salary/jpmc" }],
   },
   {
     slug: "startup-vs-mnc-india-career",

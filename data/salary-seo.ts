@@ -31,6 +31,8 @@ export interface SalarySeoEntry {
   questionSlug?: string;
   /** Short note shown in the hub page card (plain text, ≤80 chars). */
   hubNote: string;
+  /** Optional sitemap priority override (default 0.7). */
+  sitemapPriority?: number;
 }
 
 export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
@@ -298,6 +300,36 @@ export const SALARY_SEO_PAGES: SalarySeoEntry[] = [
     ],
     questionSlug: "ibm-consultant-interview-questions",
     hubNote: "RSU-heavy comp — IBM Band 6 fresher starts ₹17-24 LPA",
+  },
+  {
+    slug: "goldman",
+    searchPhrase: "Goldman Sachs Salary India 2026",
+    metaDescription:
+      "Goldman Sachs analyst and engineering salary India 2026. SWE, Data Scientist, Business Analyst, and Finance Analyst bands across Bengaluru and Hyderabad offices. Figures from seed dataset (goldman 1.2x).",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer / Analyst" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "finance", label: "Finance Analyst" },
+    ],
+    questionSlug: "goldman-sachs-interview-questions-india",
+    hubNote: "No RSU/equity at India offices — total comp is cash-only",
+    sitemapPriority: 0.78,
+  },
+  {
+    slug: "jpmc",
+    searchPhrase: "JP Morgan (JPMC) Salary India 2026",
+    metaDescription:
+      "JP Morgan Chase (JPMC) salary India 2026. Software Engineer, Data Scientist, Business Analyst, and Finance Analyst bands across Bengaluru, Mumbai, and Hyderabad. Figures from seed dataset (jpmc 1.1x).",
+    roles: [
+      { roleKey: "software-engineer", label: "Software Engineer" },
+      { roleKey: "data-scientist", label: "Data Scientist" },
+      { roleKey: "business-analyst", label: "Business Analyst" },
+      { roleKey: "finance", label: "Finance Analyst" },
+    ],
+    questionSlug: "jpmorgan-interview-questions-india",
+    hubNote: "No RSU at India offices — compensation is base + annual bonus",
+    sitemapPriority: 0.78,
   },
 ];
 
