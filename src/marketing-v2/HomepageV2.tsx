@@ -302,8 +302,6 @@ const body: CSSProperties = {
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
-    ["Questions", "/questions"],
-    ["Salaries", "/salary"],
     ["Blog", "/blog"],
     ["Pricing", "/#hd-pricing"],
     ["Contact", "/contact"],
