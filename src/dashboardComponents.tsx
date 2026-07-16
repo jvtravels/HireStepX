@@ -339,6 +339,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         order_id: data.orderId,
         prefill: { email: user?.email || "", name: user?.name || "" },
         theme: { color: c.gilt },
+        config: { display: { blocks: { banks: { name: "Pay via UPI / Netbanking", instruments: [{ method: "upi" }, { method: "netbanking" }] } }, sequence: ["block.banks"], preferences: { show_default_blocks: true } } },
+        method: { upi: true, card: true, netbanking: true, wallet: true },
         handler: function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
           setPendingVerification({
             razorpay_order_id: response.razorpay_order_id,
