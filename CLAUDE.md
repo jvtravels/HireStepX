@@ -319,5 +319,6 @@ what has been audited + fixed.
 | 36 | Senior Engineer (General Code Quality) | pending |
 | 37 | Frontend Engineer (React patterns, component design, UX consistency) | pending |
 | 38 | Backend Engineer (Edge handlers, API safety, server-handlers patterns) | pending |
+| 39 | QA Engineer (Exploratory testing, edge cases, release checklist, try to break it) | pending |
 
-**Summary:** 10 done ✅ · 28 pending · 38 total
+**Summary:** 10 done ✅ · 29 pending · 39 total
