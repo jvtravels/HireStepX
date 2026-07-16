@@ -2476,26 +2476,6 @@ export function FeatureGridV2() {
             </div>
           </BentoCard>
         </div>
-
-        {/* CTA */}
-        <div style={{ textAlign: "center", marginTop: "clamp(14px,2vh,22px)" }}>
-          <a
-            href="/signup"
-            className="mv2-cta-primary"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              fontFamily: fonts.sans, fontSize: 14, fontWeight: 600,
-              color: t.cream, background: t.coal,
-              borderRadius: 40, padding: "11px 24px",
-              textDecoration: "none", letterSpacing: "-0.01em",
-            }}
-          >
-            Start practicing free <span className="mv2-cta-arrow">→</span>
-          </a>
-          <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint, margin: "8px 0 0" }}>
-            2 free sessions. No card required.
-          </p>
-        </div>
       </div>
     </section>
   );
