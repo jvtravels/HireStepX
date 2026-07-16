@@ -1584,3 +1584,13 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS stt_calls INTEGER DEFAULT 0;
 revoke select (refresh_token, access_token) on google_calendar_sync from authenticated;
 revoke select (refresh_token, access_token) on google_calendar_sync from anon;
 
+-- ═══════════════════════════════════════════════════════
+-- Performance indexes (2026-07-17)
+-- ═══════════════════════════════════════════════════════
+
+-- Cohort-averages queries and nightly analysis sort/filter by created_at and focus;
+-- service_usage cost attribution joins on session_id. All were doing full-table scans.
+CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sessions_focus ON sessions (focus);
+CREATE INDEX IF NOT EXISTS idx_service_usage_session_id ON service_usage (session_id);
+

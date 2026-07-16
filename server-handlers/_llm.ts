@@ -158,7 +158,7 @@ interface LLMResult {
 }
 
 async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
-  const model = opts.fast ? "llama-3.1-8b-instant" : "llama-3.3-70b-versatile";
+  const model = opts.fast ? "llama-3.1-8b-instant" : "llama-3.3-70b-specdec";
   const start = Date.now();
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",

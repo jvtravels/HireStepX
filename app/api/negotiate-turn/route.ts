@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const maxDuration = 60;
 import handler from "../../../server-handlers/negotiate-turn";
 

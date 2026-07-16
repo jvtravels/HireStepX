@@ -2395,19 +2395,23 @@ function BlogIndex() {
 
   return (
     <BlogShell>
-      <div className="blog-container" style={{ maxWidth: 1240, margin: "0 auto", padding: "56px 48px 96px" }}>
-        {/* Header */}
-        <div style={{ marginBottom: 44, textAlign: "center" }}>
-          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.8vw, 46px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.028em", lineHeight: 1.06, margin: "0 auto 16px" }}>
+      {/* ── Hero — consistent with editorial system ── */}
+      <header style={{ paddingTop: 96, paddingBottom: 64, borderBottom: `1px solid ${t.line}`, background: t.cream, textAlign: "center" }}>
+        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 48px" }}>
+          <p style={{ fontFamily: fonts.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.copper, margin: "0 0 18px" }}>
+            Interview guides · India 2026
+          </p>
+          <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 4.8vw, 64px)", fontWeight: 400, color: t.coal, letterSpacing: "-0.025em", lineHeight: 1.05, margin: "0 auto 20px" }}>
             Interview prep that actually{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>works</span>
+            <em style={{ fontStyle: "italic", color: t.copper }}>works.</em>
           </h1>
-          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, margin: "0 auto", maxWidth: "56ch" }}>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, lineHeight: 1.6, margin: "0 auto", maxWidth: "54ch" }}>
             Company-specific guides, question banks, and career strategies built for Indian job seekers.
           </p>
         </div>
+      </header>
 
-
+      <div className="blog-container" style={{ maxWidth: 1240, margin: "0 auto", padding: "40px 48px 96px" }}>
         {/* Category filters: underline tab style */}
         <div className="blog-filter-scroll" style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 40, borderBottom: `1px solid ${t.line}`, paddingBottom: 0 }}>
           {CATEGORIES.map(cat => (

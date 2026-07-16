@@ -398,11 +398,12 @@ export default async function handler(req: Request): Promise<Response> {
       `${SUPABASE_URL}/rest/v1/sessions?id=eq.${encodeURIComponent(sessionRow.id)}&select=user_id`,
       { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
     );
-    if (ownerRes.ok) {
-      const ownerRows = await ownerRes.json().catch(() => []);
-      if (Array.isArray(ownerRows) && ownerRows[0] && ownerRows[0].user_id !== auth.userId) {
-        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
-      }
+    if (!ownerRes.ok) {
+      return new Response(JSON.stringify({ error: "Service unavailable" }), { status: 503, headers });
+    }
+    const ownerRows = await ownerRes.json().catch(() => []);
+    if (Array.isArray(ownerRows) && ownerRows[0] && ownerRows[0].user_id !== auth.userId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
     }
   }
 

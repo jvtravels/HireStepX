@@ -462,6 +462,7 @@ async function _speakWithWebSocketInner(
       if (chunksReceived === 0 && !cancelled) {
         console.warn("[TTS-WS] timeout — no data received, falling back to REST");
         closeCtx();
+        markDone(); // release _utteranceQueue before proxy; prevents deadlock if proxy throws
         settle(() => {});
         speakWithProxy(text, voiceId, onEnd, onError, gender, onDurationKnown, onAudioStarted);
       }

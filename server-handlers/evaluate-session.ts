@@ -491,7 +491,8 @@ export default async function handler(req: Request): Promise<Response> {
     // misleading score around 30 with fabricated critique. Return a typed error
     // instead so the client can show a "mic not working" message.
     const candidateTurns = transcript.filter((t) => t.role === "candidate" && t.text?.trim().length > 0);
-    if (candidateTurns.length === 0) {
+    const candidateTotalChars = candidateTurns.reduce((sum, t) => sum + (t.text?.trim().length ?? 0), 0);
+    if (candidateTurns.length === 0 || candidateTotalChars < 20) {
       return new Response(JSON.stringify({
         error: "no_candidate_answers",
         message: "No answers were recorded. Check your microphone or switch to text mode and try again.",
