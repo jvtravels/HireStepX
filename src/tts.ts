@@ -1447,6 +1447,10 @@ function addBreathCues(text: string): string {
   return out;
 }
 
+/** All available Sarvam female voices — exported so the interview engine
+ *  can pick one at session-start for consistent within-session variety. */
+export const SARVAM_FEMALE_VOICES = ["manisha", "anushka", "vidya", "arya"] as const;
+
 export async function speak(
   text: string,
   onEnd: () => void,
@@ -1454,6 +1458,7 @@ export async function speak(
   gender?: "male" | "female",
   onDurationKnown?: (ms: number) => void,
   onAudioStarted?: () => void,
+  voiceId?: string,
 ): Promise<{ cancel: () => void }> {
   // Kill-switch: resolve as silent success so the interview state
   // machine advances without waiting for audio. See top-of-file
@@ -1568,7 +1573,7 @@ export async function speak(
     handle = await speakWithSarvam(text, wrapEnd, async () => {
       console.warn("Sarvam TTS failed, trying Cartesia fallback");
       await cartesiaFallback();
-    }, gender, undefined, onDurationKnown, wrapStart("sarvam"));
+    }, gender, voiceId, onDurationKnown, wrapStart("sarvam"));
   }
 
   setCancel(handle.cancel);

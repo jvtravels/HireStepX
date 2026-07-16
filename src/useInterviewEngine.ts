@@ -4,7 +4,7 @@ import { track } from "@vercel/analytics";
 import { captureClientEvent } from "./posthogClient";
 
 import { useAuth, setInterviewInProgress } from "./AuthContext";
-import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS, VOICE_OUTPUT_DISABLED } from "./tts";
+import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS, VOICE_OUTPUT_DISABLED, SARVAM_FEMALE_VOICES } from "./tts";
 import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-unlock";
 import { useOnlineOfflineRecovery } from "./_recovery";
 import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
@@ -812,6 +812,15 @@ export function useInterviewEngine() {
   const micStreamRef = useRef<MediaStream | null>(null);
   const interviewerName = useMemo(() => getInterviewerName(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}`), [interviewType, interviewFocus, targetCompany, user?.id]);
   const interviewerGender = useMemo(() => getInterviewerGender(interviewerName), [interviewerName]);
+  // Pick a random female voice once per session (seeded by interviewerName so
+  // the same interviewer always uses the same voice, but different interviewers
+  // give variety across sessions). Male interviewers use no voiceId hint
+  // (server picks from the male pool by default).
+  const interviewerSarvamVoice = useMemo(() => {
+    if (interviewerGender !== "female") return undefined;
+    const hash = interviewerName.split("").reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0);
+    return SARVAM_FEMALE_VOICES[Math.abs(hash) % SARVAM_FEMALE_VOICES.length];
+  }, [interviewerGender, interviewerName]);
 
   /* ─── Personalised intro for behavioural sessions ───
      The static behavioural script opens with anonymous "I'm your AI
@@ -1161,7 +1170,7 @@ export function useInterviewEngine() {
     ttsCancelRef.current?.();
     ttsCancelRef.current = null;
     const instanceId = ++ttsInstanceIdRef.current;
-    speak(stepObj.aiText, () => {}, () => {}, interviewerGender).then((handle) => {
+    speak(stepObj.aiText, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice).then((handle) => {
       if (ttsInstanceIdRef.current === instanceId) {
         ttsCancelRef.current = handle.cancel;
       } else {
@@ -1205,7 +1214,7 @@ export function useInterviewEngine() {
     aiVoiceEnabled,
     currentStep,
     currentTranscript,
-    speak: (text) => speak(text, () => {}, () => {}, interviewerGender),
+    speak: (text) => speak(text, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice),
     pickLine: () => pickRandom(REACTIONS.backchannels),
     ramblingFiredRef,
     softTrackFiredRef,
@@ -1743,7 +1752,7 @@ export function useInterviewEngine() {
           ttsCharsRef.current += (step.aiText ?? "").length;
           return panelVoiceId
             ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onAllTtsProvidersFailed, panelGender, onDurationKnown, revealTranscript)
-            : speak(step.aiText, onSpeechEnd, onAllTtsProvidersFailed, fallbackGender, onDurationKnown, revealTranscript);
+            : speak(step.aiText, onSpeechEnd, onAllTtsProvidersFailed, fallbackGender, onDurationKnown, revealTranscript, interviewerSarvamVoice);
         };
         speakPanel().then(handle => {
           if (ttsInstanceIdRef.current === instanceId) {
@@ -1780,7 +1789,7 @@ export function useInterviewEngine() {
           // Brief micro-pause between phrase and question (300-600ms)
           setTimeout(startSpeaking, randomDelay(300, 600));
         };
-        speak(thinkingPhrase, onPhraseDone, onPhraseDone, interviewerGender).then(handle => {
+        speak(thinkingPhrase, onPhraseDone, onPhraseDone, interviewerGender, undefined, undefined, interviewerSarvamVoice).then(handle => {
           if (ttsInstanceIdRef.current === phraseInstanceId) {
             ttsCancelRef.current = handle.cancel;
           } else {
@@ -1920,7 +1929,7 @@ export function useInterviewEngine() {
         setTimeout(() => {
           if (isStale() || interviewEndedRef.current) return;
           const phraseInstanceId = ++ttsInstanceIdRef.current;
-          speak(thinkingPhrase!, () => {}, () => {}, interviewerGender).then(handle => {
+          speak(thinkingPhrase!, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice).then(handle => {
             if (ttsInstanceIdRef.current === phraseInstanceId) {
               ttsCancelRef.current = handle.cancel;
             } else {
@@ -2433,7 +2442,7 @@ export function useInterviewEngine() {
         setCurrentTranscript("");
         advancingRef.current = false;
         clearTimeout(advancingSafetyTimer);
-        speak(currentStepObj.aiText, () => {}, () => {}, interviewerGender).catch(() => {});
+        speak(currentStepObj.aiText, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice).catch(() => {});
         return;
       }
     }
