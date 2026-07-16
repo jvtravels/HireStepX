@@ -2397,8 +2397,8 @@ export function FeatureGridV2() {
             maxHeight: 660,
           }}
         >
-          {/* ── Before: left column, spans rows 1-2 ── */}
-          <BentoCard large style={{ gridColumn: "1", gridRow: "1 / 3", overflow: "hidden", padding: 18, boxSizing: "border-box" }}>
+          {/* ── Before: left column, spans all 3 rows ── */}
+          <BentoCard large style={{ gridColumn: "1", gridRow: "1 / 4", overflow: "hidden", padding: 18, boxSizing: "border-box" }}>
             <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 8, display: "block" }}>
               Before · Personalisation
             </span>
@@ -2408,20 +2408,6 @@ export function FeatureGridV2() {
             <div aria-hidden="true" style={{ overflow: "hidden" }}>
               <ResumeAwareVisual />
             </div>
-          </BentoCard>
-
-          {/* ── Outcome stat — bottom-left ── */}
-          <BentoCard style={{ gridColumn: "1", gridRow: "3", overflow: "hidden", padding: 18, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper }}>
-              Outcome
-            </span>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontFamily: fonts.serif, fontSize: 46, fontWeight: 400, color: t.coal, letterSpacing: "-0.03em", lineHeight: 1 }}>12</span>
-              <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.3 }}>questions<br />per session</span>
-            </div>
-            <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint, margin: 0 }}>
-              From your resume, not a bank.
-            </p>
           </BentoCard>
 
           {/* ── During: Voice follow-up — wide top strip ── */}
