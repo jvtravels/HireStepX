@@ -77,7 +77,7 @@ const SARVAM_TTS_MODEL = "bulbul:v2" as const;
 /* Sarvam Bulbul voice roster (en-IN). Names map 1:1 to the API's
  * `speaker` field. Picked from Sarvam's published v2 speaker list. */
 const VOICES = {
-  female: ["anushka", "manisha", "vidya", "arya"],
+  female: ["manisha", "anushka", "vidya", "arya"],
   male: ["abhilash", "karun", "hitesh"],
 } as const;
 

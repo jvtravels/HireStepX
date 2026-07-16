@@ -145,8 +145,8 @@ export function getCachedVoices(language = "en_IN"): CartesiaVoice[] {
 
 const DEFAULT_SETTINGS: TTSSettings = {
   provider: "sarvam",
-  voiceId: "anushka",
-  voiceName: "Anushka (Sarvam Indian English)",
+  voiceId: "manisha",
+  voiceName: "Manisha (Sarvam Indian English)",
   language: "en_IN",
 };
 
