@@ -504,44 +504,73 @@ export interface SalaryHubEntry {
   entryMax?: number;
 }
 
+/* Derive a tier badge from the entry-level max CTC */
+function tierBadge(entryMax?: number): { label: string; color: string; bg: string; border: string } {
+  if (entryMax == null) return { label: "–", color: t.inkFaint, bg: t.creamSoft, border: t.line };
+  if (entryMax >= 30) return { label: "FAANG", color: "#1d4ed8", bg: "#EEF3FF", border: "rgba(29,78,216,0.20)" };
+  if (entryMax >= 15) return { label: "Startup", color: t.copper, bg: t.copperWash, border: t.copperBorder };
+  return { label: "Service", color: t.inkFaint, bg: t.creamSoft, border: t.line };
+}
+
+const MAX_CTC_SCALE = 50; // LPA — bar fills at ₹50L+
+
 export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
+  /* Highest-paid first so the grid reads top-to-bottom by compensation */
+  const sorted = [...entries].sort((a, b) => (b.entryMax ?? 0) - (a.entryMax ?? 0));
+
   return (
     <>
       <style>{editorialCSS}</style>
       <style>{`
         .sal-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 12px;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 14px;
         }
-        /* CSS hover — cannot use onMouseEnter/Leave in a Server Component */
         .sal-card {
           display: block;
           background: #FFFFFF;
-          border: 1px solid #EBE5D2;
-          border-radius: 8px;
-          padding: 20px;
+          border: 1px solid ${t.line};
+          border-radius: 10px;
+          padding: 18px 20px 16px;
           text-decoration: none;
-          transition: border-color 0.15s, box-shadow 0.15s;
+          transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
         }
         .sal-card:hover {
-          border-color: #B45309;
-          box-shadow: 0 2px 12px rgba(180,83,9,0.10);
+          border-color: ${t.copper};
+          box-shadow: 0 2px 16px rgba(180,83,9,0.09);
+          transform: translateY(-1px);
+        }
+        .sal-range-track {
+          height: 3px;
+          background: ${t.line};
+          border-radius: 2px;
+          margin-top: 10px;
+          position: relative;
+          overflow: visible;
+        }
+        .sal-range-fill {
+          position: absolute;
+          top: 0;
+          height: 100%;
+          border-radius: 2px;
+          background: ${t.copper};
+          opacity: 0.65;
         }
         @media (max-width: 640px) {
-          .sal-grid { grid-template-columns: 1fr; }
-          .sal-hub-header { padding: 40px 16px 32px !important; }
+          .sal-grid { grid-template-columns: 1fr !important; }
+          .sal-hub-header { padding: 44px 16px 28px !important; }
           .sal-hub-container { padding: 0 16px !important; }
         }
       `}</style>
 
       <div style={{ ...wrap, paddingBottom: 80 }}>
-        {/* Hero */}
+        {/* ── Hero ── */}
         <div
           className="sal-hub-header"
           style={{
             paddingTop: ED_PADDING.heroTop,
-            paddingBottom: ED_PADDING.heroBottom,
+            paddingBottom: 52,
             borderBottom: `1px solid ${t.line}`,
             background: t.creamRaised,
           }}
@@ -551,91 +580,88 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
               Salary Guides · India 2026
             </p>
             <h1 className="ed-rise ed-d1" style={h1Style}>
-              Company Salary Guides for India 2026
+              What 23 Indian companies{" "}
+              <em style={{ fontStyle: "italic", color: t.copper }}>actually pay.</em>
             </h1>
             <p className="ed-rise ed-d2" style={leadStyle}>
-              Total CTC ranges for 23 companies hiring in India — from
-              TCS freshers to Goldman Sachs. Sourced from AmbitionBox,
+              Total CTC from TCS freshers to Goldman Sachs — sourced from AmbitionBox,
               Glassdoor, and Levels.fyi. Updated July 2026.
             </p>
           </div>
         </div>
 
-        {/* Company grid */}
+        {/* ── Company grid ── */}
         <div
           className="sal-hub-container"
-          style={{ ...container, paddingTop: 48 }}
+          style={{ ...container, paddingTop: 32 }}
         >
           <div className="sal-grid">
-            {entries.map((entry) => (
-              <a
-                key={entry.slug}
-                href={`/salary/${entry.slug}`}
-                className="sal-card"
-              >
-                <p
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontWeight: 700,
-                    fontSize: 16,
-                    color: t.coal,
-                    marginBottom: 4,
-                  }}
-                >
-                  {entry.label}
-                </p>
-                <p
-                  style={{
-                    fontFamily: fonts.mono,
-                    fontSize: 10,
-                    letterSpacing: "0.07em",
-                    textTransform: "uppercase",
-                    color: t.copper,
-                    marginBottom: 8,
-                  }}
-                >
-                  {entry.topRoleLabel}
-                  {entry.entryMin != null && entry.entryMax != null && (
-                    <> · {fmt(entry.entryMin)}–{fmt(entry.entryMax)}</>
+            {sorted.map((entry) => {
+              const badge = tierBadge(entry.entryMax);
+              const barMin = entry.entryMin != null
+                ? Math.min((entry.entryMin / MAX_CTC_SCALE) * 100, 100)
+                : 0;
+              const barMax = entry.entryMax != null
+                ? Math.min((entry.entryMax / MAX_CTC_SCALE) * 100, 100)
+                : 0;
+              const hasBar = entry.entryMax != null;
+
+              return (
+                <a key={entry.slug} href={`/salary/${entry.slug}`} className="sal-card">
+                  {/* Company name + tier badge */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                    <p style={{ fontFamily: fonts.sans, fontWeight: 700, fontSize: 16, color: t.coal, margin: 0, lineHeight: 1.2 }}>
+                      {entry.label}
+                    </p>
+                    <span style={{
+                      fontFamily: fonts.mono, fontSize: 9, fontWeight: 700,
+                      letterSpacing: "0.10em", textTransform: "uppercase" as const,
+                      color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`,
+                      borderRadius: 4, padding: "2px 7px", flexShrink: 0, marginTop: 1,
+                    }}>
+                      {badge.label}
+                    </span>
+                  </div>
+
+                  {/* Role + salary range */}
+                  <p style={{
+                    fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.07em",
+                    textTransform: "uppercase" as const, color: t.copper, margin: "6px 0 0",
+                  }}>
+                    {entry.topRoleLabel}
+                    {entry.entryMin != null && entry.entryMax != null && (
+                      <> · {fmt(entry.entryMin)}–{fmt(entry.entryMax)}</>
+                    )}
+                  </p>
+
+                  {/* Range bar — visual salary encoding */}
+                  {hasBar && (
+                    <div className="sal-range-track">
+                      <div
+                        className="sal-range-fill"
+                        style={{ left: `${barMin}%`, width: `${Math.max(barMax - barMin, 3)}%` }}
+                      />
+                    </div>
                   )}
-                </p>
-                <p
-                  style={{
-                    fontFamily: fonts.sans,
-                    fontSize: 13,
-                    color: t.inkSoft,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {entry.hubNote}
-                </p>
-                <p
-                  style={{
-                    fontFamily: fonts.mono,
-                    fontSize: 10,
-                    letterSpacing: "0.07em",
-                    textTransform: "uppercase",
-                    color: t.copper,
-                    marginTop: 12,
-                  }}
-                >
-                  View salary guide →
-                </p>
-              </a>
-            ))}
+
+                  {/* Hub note */}
+                  <p style={{
+                    fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft,
+                    lineHeight: 1.55, margin: "12px 0 0",
+                  }}>
+                    {entry.hubNote}
+                  </p>
+                </a>
+              );
+            })}
           </div>
 
           {/* Bottom cross-links */}
-          <div
-            style={{
-              marginTop: 56,
-              paddingTop: 40,
-              borderTop: `1px solid ${t.line}`,
-              display: "flex",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
-          >
+          <div style={{
+            marginTop: 48, paddingTop: 40,
+            borderTop: `1px solid ${t.line}`,
+            display: "flex", gap: 12, flexWrap: "wrap",
+          }}>
             <a href="/questions" style={ctaPrimaryStyle("md")}>
               Browse Interview Questions →
             </a>
