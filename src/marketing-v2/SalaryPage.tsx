@@ -575,15 +575,23 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
             background: t.creamRaised,
           }}
         >
-          <div style={container}>
-            <p className="ed-rise" style={eyebrow}>
+          <div style={{ ...container, textAlign: "center" }}>
+            <p className="ed-rise" style={{ ...eyebrow, marginBottom: 16 }}>
               Salary Guides · India 2026
             </p>
-            <h1 className="ed-rise ed-d1" style={{ ...h1Style, maxWidth: "22ch" }}>
+            <h1 className="ed-rise ed-d1" style={{
+              fontFamily: fonts.serif,
+              fontSize: "clamp(36px, 4.8vw, 64px)",
+              fontWeight: 400,
+              lineHeight: 1.05,
+              letterSpacing: "-0.025em",
+              color: t.coal,
+              margin: "0 0 20px",
+            }}>
               What 23 Indian companies{" "}
               <em style={{ fontStyle: "italic", color: t.copper }}>actually pay.</em>
             </h1>
-            <p className="ed-rise ed-d2" style={leadStyle}>
+            <p className="ed-rise ed-d2" style={{ ...leadStyle, margin: "0 auto", textAlign: "center" }}>
               Total CTC from TCS freshers to Goldman Sachs — sourced from AmbitionBox,
               Glassdoor, and Levels.fyi. Updated July 2026.
             </p>
