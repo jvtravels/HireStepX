@@ -149,6 +149,7 @@ export async function createDeepgramSTT(
   function cleanup() {
     aborted = true;
     clearTimeout(connectTimeoutId);
+    connectTimeoutId = undefined;
     processorNode?.disconnect();
     sourceNode?.disconnect();
     audioCtx?.close().catch(() => {});
