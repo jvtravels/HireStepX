@@ -2121,49 +2121,58 @@ function ResumeAwareVisual() {
   );
 }
 
-/* Voice follow-up visual: user → typing dots → AI reply → listening waveform */
+/* Voice follow-up visual: 2-exchange conversation showing AI persistence */
 function VoiceFollowUpVisual() {
   const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInViewOnce<HTMLDivElement>();
   const [phase, setPhase] = useState(0);
   const resetting = useRef(false);
 
-  /* frames: user(200ms) → typing(1000ms) → reply(2350ms) → wave(3150ms) */
-  useBentoLoop(inView && !reduced, [200, 1000, 2350, 3150], 6200, (frame) => {
+  /* user1(200) → dots(900) → ai1(2000) → user2(3000) → wave(3900) */
+  useBentoLoop(inView && !reduced, [200, 900, 2000, 3000, 3900], 7200, (frame) => {
     resetting.current = frame === 0;
     setPhase(frame);
   });
 
+  const row = { padding: "9px 14px", borderBottom: `1px solid ${t.line}` } as const;
+  const label = { fontSize: 9, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" } as const;
+  const msg = { margin: "3px 0 0", lineHeight: 1.4, fontSize: 12 } as const;
+
   return (
-    <div ref={ref} style={{ background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12, overflow: "hidden", fontFamily: fonts.sans, fontSize: 13 }}>
-      {/* User message */}
-      <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}`, ...revealStyle(phase >= 1, resetting.current) }}>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaint }}>YOU</span>
-        <p style={{ margin: "4px 0 0", color: t.inkSoft, lineHeight: 1.45 }}>
-          "I improved team communication by setting up weekly syncs…"
-        </p>
+    <div ref={ref} style={{ background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12, overflow: "hidden", fontFamily: fonts.sans }}>
+      {/* YOU 1 */}
+      <div style={{ ...row, ...revealStyle(phase >= 1, resetting.current) }}>
+        <span style={{ ...label, color: t.inkFaint }}>YOU</span>
+        <p style={{ ...msg, color: t.inkSoft }}>"I improved team comms by setting up weekly syncs…"</p>
       </div>
-      {/* AI row: typing dots fade out, message fades in */}
-      <div style={{ padding: "14px 16px", background: t.indigoMist, minHeight: 60, ...revealStyle(phase >= 2, resetting.current) }}>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.indigoGray }}>AI INTERVIEWER</span>
-        {/* Typing dots — shown in phase 2, hidden in phase 3+ */}
-        <div style={{ marginTop: 6, display: "flex", gap: 5, alignItems: "center", height: 18,
-          opacity: phase === 2 ? 1 : 0, transition: phase > 2 ? "opacity 0.2s ease" : "none" }}>
-          {[0, 150, 300].map((delay) => (
-            <span key={delay} style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo, opacity: 0.6,
-              animation: `mv2-dot-bounce 1.1s ${delay}ms ease-in-out infinite` }} />
+      {/* AI 1 — dots then reply */}
+      <div style={{ ...row, background: t.indigoMist, minHeight: 52, ...revealStyle(phase >= 2, resetting.current) }}>
+        <span style={{ ...label, color: t.indigoGray }}>AI INTERVIEWER</span>
+        <div style={{ marginTop: 5, display: "flex", gap: 4, alignItems: "center", height: 14,
+          opacity: phase === 2 ? 1 : 0, transition: "opacity 0.18s ease" }}>
+          {[0, 140, 280].map(d => (
+            <span key={d} style={{ width: 5, height: 5, borderRadius: "50%", background: t.indigo, opacity: 0.6,
+              animation: `mv2-dot-bounce 1.1s ${d}ms ease-in-out infinite` }} />
           ))}
         </div>
-        {/* AI reply text — fades in at phase 3 */}
-        <p style={{ margin: "-18px 0 0", color: t.coal, lineHeight: 1.45, fontWeight: 500,
-          opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? "translateY(0)" : "translateY(4px)",
-          transition: resetting.current ? "none" : "opacity 0.3s ease, transform 0.3s cubic-bezier(0.16,1,0.3,1)" }}>
+        <p style={{ ...msg, margin: "-14px 0 0", color: t.coal, fontWeight: 500,
+          opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? "none" : "translateY(4px)",
+          transition: resetting.current ? "none" : "opacity 0.28s ease, transform 0.28s cubic-bezier(0.16,1,0.3,1)" }}>
           "What metric did you track to know the syncs were working?"
         </p>
       </div>
-      {/* Waveform row */}
-      <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderTop: `1px solid ${t.line}`,
-        ...revealStyle(phase >= 4, resetting.current) }}>
+      {/* YOU 2 — answers with a number */}
+      <div style={{ ...row, ...revealStyle(phase >= 4, resetting.current) }}>
+        <span style={{ ...label, color: t.inkFaint }}>YOU</span>
+        <p style={{ ...msg, color: t.inkSoft }}>
+          "Ticket resolution dropped from{" "}
+          <span style={{ fontFamily: fonts.mono, color: t.coal, fontWeight: 600 }}>5 days → 2</span>
+          {" "}after we started."
+        </p>
+      </div>
+      {/* Waveform — AI listening for more */}
+      <div style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 8,
+        ...revealStyle(phase >= 5, resetting.current) }}>
         <Waveform />
         <span style={{ marginLeft: "auto", fontFamily: fonts.mono, fontSize: 11, color: t.success, fontWeight: 600 }}>listening…</span>
       </div>
@@ -2277,9 +2286,11 @@ function BiasDetectorVisual() {
 function ThoughtBubbleVisual() {
   const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInViewOnce<HTMLDivElement>();
-  const [bars, setBars] = useState([0, 0, 0, 0]);
-  const [showTrigger, setShowTrigger] = useState(false);
-  const [q4Dropping, setQ4Dropping] = useState(false);
+  /* Start in the "story told" state — bars filled, trigger visible — so the card
+     reads immediately before the loop kicks in on scroll. */
+  const [bars, setBars] = useState([88, 80, 66, 22]);
+  const [showTrigger, setShowTrigger] = useState(true);
+  const [q4Dropping, setQ4Dropping] = useState(true);
   const resetting = useRef(false);
   const barTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -2369,7 +2380,7 @@ function BentoCard({
 /* Compact act-row label embedded inside a card */
 export function FeatureGridV2() {
   return (
-    <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, paddingTop: 48, paddingBottom: 96, background: t.cream }}>
+    <section aria-labelledby="hd-features" className="mv2-section" style={{ ...sectionBase, paddingTop: 48, paddingBottom: 60, background: t.cream }}>
       <div style={container}>
         <MotionReveal style={{ textAlign: "center", marginBottom: 48 }}>
           <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2 }}>
@@ -2410,18 +2421,16 @@ export function FeatureGridV2() {
 
           {/* ── Outcome stat — bottom-left ── */}
           <BentoCard style={{ gridColumn: "1", gridRow: "3", overflow: "hidden", padding: 24, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, display: "block" }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper }}>
               Outcome
             </span>
-            <div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
-                <span style={{ fontFamily: fonts.serif, fontSize: 52, fontWeight: 400, color: t.coal, letterSpacing: "-0.03em", lineHeight: 1 }}>12</span>
-                <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.3 }}>questions,<br />tailored per session</span>
-              </div>
-              <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: 0, lineHeight: 1.45 }}>
-                Drawn from your actual resume — not a question bank.
-              </p>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontFamily: fonts.serif, fontSize: 52, fontWeight: 400, color: t.coal, letterSpacing: "-0.03em", lineHeight: 1 }}>12</span>
+              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.3 }}>questions,<br />per session</span>
             </div>
+            <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: 0, lineHeight: 1.45 }}>
+              Drawn from your resume, not a question bank.
+            </p>
           </BentoCard>
 
           {/* ── During: Voice follow-up — wide top strip ── */}
