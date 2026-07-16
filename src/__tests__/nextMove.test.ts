@@ -285,7 +285,7 @@ describe("pickNextMove", () => {
         topGaps: ["cgpa_low_no_framing"],
       });
       expect(out.coachingFocus?.gapCode).toBe("cgpa_low_no_framing");
-      expect(out.ctaHref).toBe("/interview?type=behavioral&focus=campus-placement");
+      expect(out.ctaHref).toBe("/session/new?focus=campus-placement");
       expect(out.coachingSessionFocus).toBe("campus-placement");
       // generic behavioral skill is still exposed but doesn't win the CTA
       expect(out.weakestSkillName).toBe("leverageUse");
@@ -298,7 +298,7 @@ describe("pickNextMove", () => {
         topGaps: ["no_academic_project_discussed"],
       });
       expect(out.coachingFocus?.gapCode).toBe("no_academic_project_discussed");
-      expect(out.ctaHref).toBe("/interview?type=behavioral&focus=campus-placement");
+      expect(out.ctaHref).toBe("/session/new?focus=campus-placement");
       expect(out.ctaLabel).toContain("academic project");
     });
 
@@ -309,7 +309,7 @@ describe("pickNextMove", () => {
         topGaps: ["bond_refusal"],
       });
       expect(out.coachingFocus?.gapCode).toBe("bond_refusal");
-      expect(out.ctaHref).toBe("/interview?type=behavioral&focus=campus-placement");
+      expect(out.ctaHref).toBe("/session/new?focus=campus-placement");
       expect(out.coachingSessionFocus).toBe("campus-placement");
     });
 
@@ -343,7 +343,7 @@ describe("pickNextMove", () => {
         topGaps: ["generic_passion_no_substance"],
       });
       expect(out.coachingFocus?.gapCode).toBe("generic_passion_no_substance");
-      expect(out.ctaHref).toBe("/interview?type=behavioral&focus=campus-placement");
+      expect(out.ctaHref).toBe("/session/new?focus=campus-placement");
     });
 
     it("all six campus-placement gap codes are registered", () => {
