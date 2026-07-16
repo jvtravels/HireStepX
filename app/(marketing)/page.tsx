@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import HomepageV2 from "@/marketing-v2/HomepageV2";
-import ComingSoon from "@/ComingSoon";
 
 export const metadata: Metadata = {
   title: "HireStepX — AI Mock Interview Practice India 2026 | TCS, Google, Flipkart",
@@ -91,51 +89,13 @@ const WEBSITE_SCHEMA = {
   },
 };
 
-/* Pre-launch "Coming Soon" gate (restored 2026-06-16).
- *
- * Coming Soon renders ONLY on the public production apex hosts. Everywhere
- * else (staging, app.*, vercel previews, localhost) shows the real
- * marketing site so the team can keep shipping while the public site is
- * gated. Rendered dynamically (read host header) so a single deploy serves
- * both staging (full site) and www (Coming Soon) without per-env juggling.
- *
- * NEXT_PUBLIC_COMING_SOON manual override (kept in sync with middleware.ts):
- *   - "0" → never gate (force the real site everywhere → public launch)
- *   - "1" → always gate (lock everything down)
- *   - unset → host-based default below
- *
- * The brand JSON-LD is injected on EVERY path so crawlers get the
- * structured data whether they hit Coming Soon or the full homepage. */
-export const dynamic = "force-dynamic";
-
-const PRODUCTION_HOSTS = new Set<string>([]); // Cleared for public launch
-
-export default async function Page() {
-  const override = process.env.NEXT_PUBLIC_COMING_SOON;
-
-  let gated: boolean;
-  let nonce = "";
-  if (override === "0") {
-    gated = false;
-  } else if (override === "1") {
-    gated = true;
-  } else {
-    // Host-based default. headers() needs await in the Next 15 app router.
-    let host = "";
-    try {
-      const h = await headers();
-      host = (h.get("host") || "").toLowerCase().split(":")[0]; // strip port
-      nonce = h.get("x-nonce") ?? "";
-    } catch { /* SSR-only API; on edge cases default to the full site */ }
-    gated = PRODUCTION_HOSTS.has(host);
-  }
-
+export default function Page() {
   return (
     <>
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
-      <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
-      {gated ? <ComingSoon /> : <HomepageV2 />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
+      <HomepageV2 />
     </>
   );
 }
