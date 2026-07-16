@@ -1,4 +1,4 @@
-/* Unified LLM caller — tries Groq first, falls back to Gemini on failure */
+/* Unified LLM caller — Gemini primary for big-model calls, Groq for fast (8b) calls */
 
 import { captureServerEvent } from "./_posthog";
 
@@ -250,8 +250,17 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
 
 export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string }): Promise<LLMResult> {
   const providers: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }[] = [];
-  if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
-  if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
+  // Fast calls (opts.fast=true) use Groq llama-3.1-8b-instant — fast, free, not deprecated.
+  // Slow/big-model calls use Gemini 2.5 Flash first: free tier (250 req/day = ~125 sessions),
+  // negligible cost if exceeded (~₹29/month at 270 sessions). Groq 70b stays as fallback
+  // until it is decommissioned on 2026-08-16, then Cerebras picks up.
+  if (opts.fast) {
+    if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
+    if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
+  } else {
+    if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
+    if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
+  }
   if (CEREBRAS_API_KEY) providers.push({ name: "cerebras", call: (s) => callCerebras(opts, s) });
 
   if (providers.length === 0) throw new Error("No LLM configured — set GROQ_API_KEY, GEMINI_API_KEY, or CEREBRAS_API_KEY");
@@ -315,7 +324,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     }
   };
 
-  // Walk providers in order: groq → gemini → cerebras. First success wins.
+  // Walk providers in order (fast: groq→gemini, slow: gemini→groq→cerebras). First success wins.
   console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")} (timeout: ${timeoutMs}ms)`);
   let lastErr: unknown;
   for (let i = 0; i < providers.length; i++) {
