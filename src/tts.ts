@@ -1515,7 +1515,10 @@ export async function speak(
     // gender match from the dynamic list. Falling back to enInVoices[0]
     // without a gender check caused jarring female→male voice switches
     // when Sarvam failed and Cartesia's first en_IN voice happened to be male.
-    let cartesiaVoice = DEFAULT_VOICE_ID;
+    // Find a gender-matched Cartesia voice. If none exists for the requested
+    // gender, skip Cartesia entirely so Azure (which selects by gender) handles
+    // it — playing a known-wrong-gender voice is worse than the next fallback.
+    let cartesiaVoice: string | null = null;
     try {
       const enInVoices = await fetchCartesiaVoices("en_IN");
       const genderMatch = gender && enInVoices.find(v => v.gender === gender);
@@ -1524,8 +1527,13 @@ export async function speak(
       } else if (!gender) {
         cartesiaVoice = enInVoices[0]?.id || DEFAULT_VOICE_ID;
       }
-      // No gender match: keep DEFAULT_VOICE_ID (female) to avoid a jarring cross-gender switch.
-    } catch { /* keep default voice on fetch failure */ }
+      // gender specified but no match → cartesiaVoice stays null → skip to Azure
+    } catch { cartesiaVoice = DEFAULT_VOICE_ID; /* network error: try with default */ }
+    if (cartesiaVoice === null) {
+      console.warn("Cartesia TTS fallback: no gender-matched voice, skipping to Azure");
+      await azureFallback();
+      return;
+    }
     const prefetchEntry = _prefetchCache.get(text);
     const hasPrefetch = !!prefetchEntry && Date.now() - prefetchEntry.createdAt < PREFETCH_TTL;
     if (hasPrefetch) {

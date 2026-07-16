@@ -82,11 +82,13 @@ const VOICES = {
 } as const;
 
 function pickSpeaker(gender?: "male" | "female", voiceHint?: string): string {
-  // Allow client to pin a specific Sarvam speaker by passing its name in voiceId
+  // Allow client to pin a specific Sarvam speaker by passing its name in voiceId,
+  // but only if the speaker matches the requested gender. A Cartesia UUID passed
+  // as voiceHint won't match any Sarvam name and falls through safely.
   if (voiceHint) {
     const lower = voiceHint.toLowerCase();
-    if ((VOICES.female as readonly string[]).includes(lower)) return lower;
-    if ((VOICES.male as readonly string[]).includes(lower)) return lower;
+    if ((VOICES.female as readonly string[]).includes(lower) && gender !== "male") return lower;
+    if ((VOICES.male as readonly string[]).includes(lower) && gender !== "female") return lower;
   }
   const pool = VOICES[gender || "female"];
   if (voiceHint) {

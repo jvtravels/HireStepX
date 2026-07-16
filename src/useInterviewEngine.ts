@@ -931,10 +931,14 @@ export function useInterviewEngine() {
       let maleIdx = 0, femaleIdx = 0;
       for (const member of panelMembers) {
         const pool = member.gender === "male" ? maleVoices : femaleVoices;
-        const fallbackPool = pool.length > 0 ? pool : (maleVoices.length > 0 ? maleVoices : femaleVoices);
-        const idxRef = member.gender === "male" ? maleIdx : femaleIdx;
-        if (fallbackPool.length > 0) {
-          voiceMap[member.title] = fallbackPool[idxRef % fallbackPool.length].id;
+        // Only assign a Cartesia voice when a gender-matched voice exists.
+        // Assigning a cross-gender fallback voice here would cause a female
+        // panelist to speak in a male voice (or vice versa) via Cartesia.
+        // Leaving the entry absent lets speakAs() fall through to Sarvam/Azure
+        // which select voices by gender correctly.
+        if (pool.length > 0) {
+          const idxRef = member.gender === "male" ? maleIdx : femaleIdx;
+          voiceMap[member.title] = pool[idxRef % pool.length].id;
           if (member.gender === "male") maleIdx++; else femaleIdx++;
         }
       }
