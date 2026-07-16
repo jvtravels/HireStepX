@@ -1204,7 +1204,7 @@ function buildNegotiationMetrics(
       label: "Disclosure leaks",
       value: leaks,
       targetLabel: "Target 0",
-      band: leaks === 0 ? "good" : leaks <= 1 ? "ok" : "needsWork",
+      band: leaks === 0 ? "good" : "needsWork",
     },
   ];
 

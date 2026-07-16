@@ -533,7 +533,7 @@ export default function SessionReportView({
             gap: 16,
           }}
         >
-          <JumpNav hideCoachNotes={!!data.negotiationOutcome} />
+          <JumpNav />
           {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
           <HeroSection data={data} />
           <p

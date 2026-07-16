@@ -7,8 +7,8 @@
 
 export { SectionEyebrow } from "./_primitives";
 
-export function JumpNav({ hideCoachNotes }: { hideCoachNotes?: boolean } = {}) {
-  const allItems = [
+export function JumpNav() {
+  const items = [
     { num: "01", label: "Overview", href: "#ir-section-hero" },
     { num: "02", label: "Delivery", href: "#ir-section-metrics" },
     { num: "03", label: "Skills", href: "#ir-section-skills" },
@@ -16,7 +16,6 @@ export function JumpNav({ hideCoachNotes }: { hideCoachNotes?: boolean } = {}) {
     { num: "05", label: "Coach Notes", href: "#ir-section-coach-notes" },
     { num: "06", label: "Next Steps", href: "#ir-section-next" },
   ];
-  const items = hideCoachNotes ? allItems.filter(i => i.label !== "Coach Notes") : allItems;
   return (
     <nav aria-label="Jump to section" className="ir-jump-nav">
       <div className="ir-jump-nav-inner">
