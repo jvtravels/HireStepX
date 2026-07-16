@@ -664,19 +664,6 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
             })}
           </div>
 
-          {/* Bottom cross-links */}
-          <div style={{
-            marginTop: 48, paddingTop: 40,
-            borderTop: `1px solid ${t.line}`,
-            display: "flex", gap: 12, flexWrap: "wrap",
-          }}>
-            <a href="/questions" style={ctaPrimaryStyle("md")}>
-              Browse Interview Questions →
-            </a>
-            <a href="/for-students" style={ctaGhostStyle("md")}>
-              Campus Placement Guide
-            </a>
-          </div>
         </div>
       </div>
     </>
