@@ -585,18 +585,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { localStorage.removeItem("hirestepx_auth"); } catch { /* expected: localStorage may be unavailable */ }
   }, []);
 
-  // Global unhandled rejection handler — catches promises without .catch()
+  // Register global error reporter: captures unhandled errors + promise rejections
+  // and forwards them to /api/log-error (and optional Sentry). Idempotent.
+  // Dynamic import keeps errorReporter's optional @sentry/browser dynamic import
+  // out of the static module graph (Vitest transform can't resolve @sentry/browser).
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handler = (event: PromiseRejectionEvent) => {
-      const reason = event.reason;
-      const msg = reason instanceof Error ? reason.message : String(reason);
-      // Ignore expected abort errors
-      if (msg.includes("abort") || msg.includes("AbortError")) return;
-      console.error("[unhandled-rejection]", msg, reason);
-    };
-    window.addEventListener("unhandledrejection", handler);
-    return () => window.removeEventListener("unhandledrejection", handler);
+    import("./errorReporter").then(m => m.initErrorReporter()).catch(() => {});
   }, []);
 
   // "Remember me" — clear session on tab/browser close if ephemeral

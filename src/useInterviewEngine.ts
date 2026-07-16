@@ -786,6 +786,17 @@ export function useInterviewEngine() {
   const [reconnecting, setReconnecting] = useState(false);
   const reconnectAttemptRef = useRef(1);
   const noSpeechCountRef = useRef(0);
+  // Clear per-turn STT error state on every question transition so a single
+  // "no-speech" or mic error doesn't permanently silence the mic for the rest
+  // of the session. speechUnavailable is only set forever on explicit user opt-out
+  // (nomic param) or when the whole TTS cascade fails — transient errors should
+  // recover on the next question.
+  useEffect(() => {
+    if (currentStep === 0) return;
+    noSpeechCountRef.current = 0;
+    setMicError("");
+    setMicQuiet(false);
+  }, [currentStep]);
   /* Silence-nudge refs are owned by useListeningInterjections — see
      ./_listening-interjections.ts. */
   /* Conversational continuity — accumulates noun-phrase mentions
@@ -1003,6 +1014,7 @@ export function useInterviewEngine() {
       try {
         const completionRate = totalQuestions > 0 ? currentStep / totalQuestions : 0;
         const body = JSON.stringify({
+          message: "session_abandoned",
           event: "session_abandoned",
           type: interviewType,
           difficulty: interviewDifficulty,
