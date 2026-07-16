@@ -20,30 +20,12 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
+import { base64ToBytes, inferExtension, VERSION_ID_RE } from "./_resume-upload-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const BUCKET = "resume-files";
-
-/** Decode a base64 string into bytes. Edge-safe — atob exists on globalThis. */
-function base64ToBytes(b64: string): Uint8Array {
-  const binary = atob(b64);
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
-/** Map a sniffed MIME type to a file extension we'll use in Storage. */
-function inferExtension(contentType: string, fileName: string): string {
-  if (contentType.includes("pdf")) return "pdf";
-  if (contentType.includes("wordprocessingml") || contentType.includes("docx")) return "docx";
-  if (contentType.includes("text/plain")) return "txt";
-  // Fallback: last segment of the file name
-  const m = fileName.match(/\.([a-z0-9]{2,5})$/i);
-  return m ? m[1].toLowerCase() : "bin";
-}
 
 interface UploadBody {
   resumeVersionId?: unknown;
@@ -84,7 +66,7 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers });
   }
 
-  const versionId = typeof body.resumeVersionId === "string" && /^[0-9a-f-]{32,}$/i.test(body.resumeVersionId)
+  const versionId = typeof body.resumeVersionId === "string" && VERSION_ID_RE.test(body.resumeVersionId)
     ? body.resumeVersionId
     : "";
   const fileName = typeof body.fileName === "string" ? body.fileName.slice(0, 255) : "resume";

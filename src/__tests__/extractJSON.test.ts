@@ -1,46 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { extractJSON } from "../../server-handlers/_llm";
 
-/**
- * Tests for extractJSON — mirrors the real implementation in api/_llm.ts.
- * Ensures robust JSON extraction from LLM responses that may include
- * markdown fences, prose, or malformed output.
- */
-
-function extractJSON<T = unknown>(text: string): T | null {
-  // Try direct parse first
-  try { return JSON.parse(text); } catch { /* fallback: try cleaned formats below */ }
-  // Strip markdown code fences
-  const cleaned = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
-  try { return JSON.parse(cleaned); } catch { /* fallback: try regex extraction below */ }
-  // Try extracting JSON array first (less ambiguous than objects)
-  const arrMatch = cleaned.match(/\[[\s\S]*\]/);
-  if (arrMatch) {
-    try { return JSON.parse(arrMatch[0]); } catch { /* fallback: try object extraction below */ }
-  }
-  // Extract JSON object — find matching braces instead of greedy regex
-  const objStart = cleaned.indexOf("{");
-  if (objStart !== -1) {
-    let depth = 0;
-    let inString = false;
-    let escape = false;
-    for (let i = objStart; i < cleaned.length; i++) {
-      const ch = cleaned[i];
-      if (escape) { escape = false; continue; }
-      if (ch === "\\") { escape = true; continue; }
-      if (ch === '"') { inString = !inString; continue; }
-      if (inString) continue;
-      if (ch === "{") depth++;
-      if (ch === "}") {
-        depth--;
-        if (depth === 0) {
-          try { return JSON.parse(cleaned.slice(objStart, i + 1)); } catch { /* malformed JSON object, return null */ }
-          break;
-        }
-      }
-    }
-  }
-  return null;
-}
+// Suppress the "logUsage disabled" console.warn that fires when _llm.ts is
+// imported without Supabase env vars — irrelevant to extractJSON testing.
+vi.spyOn(console, "warn").mockImplementation(() => {});
 
 describe("extractJSON", () => {
   describe("direct JSON parsing", () => {
@@ -114,8 +77,11 @@ describe("extractJSON", () => {
       expect(extractJSON("{key: value}")).toBeNull();
     });
 
-    it("returns null for incomplete JSON", () => {
+    it("returns null for incomplete JSON — truncated at max_tokens boundary", () => {
+      // This is the real-world failure mode: LLM hits max_tokens mid-object.
+      // extractJSON must return null rather than a partial/corrupt result.
       expect(extractJSON('{"score": 85, "feedback":')).toBeNull();
+      expect(extractJSON('{"questions": [{"text": "Tell me about')).toBeNull();
     });
 
     it("handles JSON with numeric values", () => {
@@ -126,6 +92,16 @@ describe("extractJSON", () => {
     it("handles JSON with boolean and null values", () => {
       const result = extractJSON('{"active": true, "deleted": false, "parent": null}');
       expect(result).toEqual({ active: true, deleted: false, parent: null });
+    });
+
+    it("prefers whichever structure (array vs object) appears first in text", () => {
+      // Array before object in the text — real _llm.ts scans for earliest start index.
+      const r1 = extractJSON('Array first: [1,2,3] then {"x":1}');
+      expect(r1).toEqual([1, 2, 3]);
+
+      // Object before array
+      const r2 = extractJSON('Object first: {"x":1} then [1,2,3]');
+      expect(r2).toEqual({ x: 1 });
     });
   });
 });
