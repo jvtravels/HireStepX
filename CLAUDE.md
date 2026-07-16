@@ -259,66 +259,58 @@ if you need to confirm readiness — do not re-trigger.
 ## Audit Department Registry
 
 When the user asks for "all departments" or "the audit list", pull this section.
-34 departments applicable to HireStepX, grouped by tier. Status column tracks
-what has been audited + fixed.
+27 departments carefully chosen for HireStepX — distinct perspectives only,
+stage-appropriate, all producing actionable findings. Status tracks what has
+been audited + fixed. Removed 12 that overlapped or were premature.
 
-**TIER 1 — Highest business impact**
+**BUSINESS VIABILITY — highest ROI**
 | # | Department | Status |
 |---|---|---|
-| 1 | Y Combinator Partner | pending |
-| 2 | CPO (Chief Product Officer) | pending |
-| 3 | CRO (Chief Revenue Officer) | pending |
-| 4 | India Market Expert | pending |
-| 5 | HR / Recruiting Industry Expert | pending |
-| 6 | Voice / AI Quality | pending |
-| 7 | Competitive Intelligence | pending |
+| 1 | Y Combinator Partner (retention, activation, default alive, unit economics) | pending |
+| 2 | CPO — Chief Product Officer (core loop quality, feature gaps, user journey) | pending |
+| 3 | CFO — Chief Financial Officer (API cost per session vs pricing, unit economics) | pending |
+| 4 | CRO — Chief Revenue Officer (free→paid conversion, upgrade triggers) | pending |
+| 5 | CEO (strategic focus, north star metric, is product scattered or sharp?) | pending |
 
-**TIER 2 — Important, do soon**
+**HIRESTEPX-SPECIFIC — unique to this product and market**
 | # | Department | Status |
 |---|---|---|
-| 8 | CFO (Chief Financial Officer) | pending |
-| 9 | CTO (Chief Technology Officer) | pending |
-| 10 | CMO (Chief Marketing Officer) | pending |
-| 11 | Pricing Strategy | pending |
-| 12 | Retention / Habit Loop | pending |
-| 13 | Onboarding / Activation | pending |
-| 14 | EdTech Industry Expert | pending |
-| 15 | Performance | pending |
+| 6 | India Market Expert (mobile-first, UPI, WhatsApp share, tier-2 trust signals) | pending |
+| 7 | HR / Recruiting Industry Expert (STAR rubric accuracy, question bank quality) | pending |
+| 8 | Voice / AI Quality (TTS quality, STT accuracy, LLM scoring, latency, fallbacks) | pending |
+| 9 | Competitive Intelligence (vs Pramp, Interviewing.io, Indian rivals, ChatGPT) | pending |
 
-**TIER 3 — Solid product hygiene**
+**TECHNICAL HEALTH**
 | # | Department | Status |
 |---|---|---|
-| 16 | Head of Engineering (Tech strategy, team decisions) | pending |
-| 17 | CISO / Security | done ✅ |
-| 18 | CLO / Legal & Compliance | done ✅ |
-| 19 | Head of Design | pending |
-| 20 | Growth / Acquisition | pending |
-| 21 | Email / Notifications | pending |
-| 22 | Payments / Revenue | done ✅ (partial) |
-| 23 | Customer Support | pending |
-| 24 | Database / Data Layer | pending |
-| 25 | Mobile / Responsive | pending |
-| 26 | Error Handling / Observability | pending |
-| 27 | Privacy / Data Governance | done ✅ |
-| 28 | Content / Copy | pending |
+| 10 | Performance (Core Web Vitals, bundle size, India slow-connection load times) | pending |
+| 11 | Mobile / Responsive (iOS audio context, touch targets, low-end Android) | pending |
+| 12 | Database / Data Layer (RLS policy coverage, missing indexes, query performance) | pending |
+| 13 | Error Handling / Observability (what users see when Groq/STT/TTS fails) | pending |
+| 14 | Frontend Engineer (React patterns, component quality, bundle, hooks) | pending |
+| 15 | Backend Engineer (edge runtime compliance, server-handler patterns, API safety) | pending |
+| 16 | QA Engineer (exploratory testing, try to break voice flow, payment, report) | pending |
 
-**TIER 4 — Later stage / launch readiness**
+**GROWTH & GTM**
 | # | Department | Status |
 |---|---|---|
-| 29 | Product Hunt Reviewer | pending |
-| 30 | SEO | done ✅ |
-| 31 | Testing / QA | done ✅ |
-| 32 | CI/CD | done ✅ |
-| 33 | Analytics | done ✅ |
-| 34 | Accessibility (WCAG 2.1 AA) | done ✅ |
+| 17 | CMO — Chief Marketing Officer (SEO content strategy, acquisition channels, brand) | pending |
+| 18 | Pricing Strategy (INR anchoring, plan name clarity, upgrade friction) | pending |
+| 19 | Onboarding / Activation (time-to-first-session, empty states, aha moment) | pending |
+| 20 | Retention / Habit Loop (streak mechanics, re-engagement, spaced repetition) | pending |
+| 21 | Email / Notifications (lifecycle email gaps, deliverability, templates) | pending |
+| 22 | Head of Design (visual consistency, design system maturity, brand polish) | pending |
+| 23 | Content / Copy (marketing copy conversion, CTA clarity, trust signals) | pending |
 
-**TIER 5 — Engineering craft**
+**ALREADY DONE ✅**
 | # | Department | Status |
 |---|---|---|
-| 35 | CEO (Vision / North star / strategic focus) | pending |
-| 36 | Senior Engineer (General Code Quality) | pending |
-| 37 | Frontend Engineer (React patterns, component design, UX consistency) | pending |
-| 38 | Backend Engineer (Edge handlers, API safety, server-handlers patterns) | pending |
-| 39 | QA Engineer (Exploratory testing, edge cases, release checklist, try to break it) | pending |
+| 24 | Security / CISO | done ✅ |
+| 25 | Legal / Compliance (DPDP, IT Rules, CPA 2019, Grievance Officer) | done ✅ |
+| 26 | Accessibility (WCAG 2.1 AA — skip-link, route announce, aria) | done ✅ |
+| 27 | SEO · Testing/QA · CI/CD · SRE · Analytics · Payments (partial) | done ✅ |
 
-**Summary:** 10 done ✅ · 29 pending · 39 total
+**Summary:** 10 done ✅ · 17 pending · 27 total
+**Removed (redundant/premature):** Head of Engineering, Senior Engineer, EdTech Expert,
+Product Hunt Reviewer, Customer Support, Growth/Acquisition (→ CMO), Privacy/Data
+Governance (→ Legal), CISO (→ Security), CLO (→ Legal), Angel/VC investors, COO.
