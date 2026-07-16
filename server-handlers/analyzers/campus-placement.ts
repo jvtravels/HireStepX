@@ -442,7 +442,11 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // Tier-1 global firms (Google/MS/Amazon India) typically gate at 7.5;
     // most others gate at 7.0; service-tier (TCS/Infosys/Wipro) at 6.5.
     const companyTier = classifyCompanyTier(session.target_company);
-    const collegeTier = classifyCollegeTier(userText);
+    /* Prefer resume.school for tier classification — it's structured data.
+     * Fall back to transcript text for candidates who name their college
+     * verbally but didn't upload a resume or whose resume has no school. */
+    const collegeTierFromResume = resume?.school ? classifyCollegeTier(resume.school) : "unknown";
+    const collegeTier = collegeTierFromResume !== "unknown" ? collegeTierFromResume : classifyCollegeTier(userText);
     /* Phase-3 — Persona archetype.
      *
      * companyTier is coarse (TCS == service). The archetype layer is

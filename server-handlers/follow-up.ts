@@ -375,6 +375,35 @@ export default async function handler(req: Request): Promise<Response> {
           return `\nRESUME-LISTED EXPERIENCES (BGV source-of-truth):\n${lines.map(l => `- ${l}`).join("\n")}\nIf the candidate's current answer references a COMPANY or INTERNSHIP that is NOT in the list above, your follow-up MUST probe ("I don't see that role on your resume — when was it, and what shipped?"). Indian campus BGV uses the uploaded resume as ground truth; un-listed roles mid-interview are the #1 disqualifier. Do NOT accept the claim silently. If the mentioned company IS in the list, anchor your probe on the specific bullet ("you mentioned the OCR work at <company> — what trade-off forced that choice?").`;
         })()
       : "";
+
+    /* Campus-placement live probing — CGPA defense + bond awareness.
+     *
+     * The post-session analyzer tracks cgpa_low_no_framing and bond_unprepared
+     * as flags. This block gives the live AI the same signal in-session so it
+     * can probe mid-interview rather than leaving the candidate to read about
+     * it 30 min later. Triggers only when CGPA / bond keywords appear in the
+     * current answer; stays silent otherwise to avoid false probes. */
+    const campusLiveProbeCtx = (() => {
+      if (type !== "campus-placement") return "";
+      const ans = answer || "";
+      const lines: string[] = [];
+      // CGPA probe — detect stated value and flag if borderline
+      const cgpaMatch = ans.match(/\b(\d(?:\.\d{1,2})?)\s*(?:\/\s*10|cgpa|gpa|pointer)\b/i)
+        ?? ans.match(/\bcgpa\b.*?(\d(?:\.\d{1,2})?)/i);
+      if (cgpaMatch) {
+        const val = parseFloat(cgpaMatch[1]);
+        if (Number.isFinite(val) && val >= 1 && val <= 10 && val < 7.5) {
+          lines.push(`CGPA PROBE TRIGGERED — candidate stated ${val.toFixed(1)} CGPA. If not already asked, probe: "Your CGPA is ${val.toFixed(1)} — many ${company ? sanitizeForLLM(company, 40) + " " : ""}shortlists gate at 7.0–7.5. How do you frame that gap in your application?" Accept strong framing (ranking, upward trend, project depth, competitive branch). Challenge evasion.`);
+        }
+      }
+      // Bond / service-agreement probe — detect mention of bond without explicit acceptance
+      if (/\bbond\b|\bservice\s+agreement\b|\bbreakage\b|\b2\s*year\b|\b2yr\b/i.test(ans) &&
+          !/\b(?:ok(?:ay)?|fine|accept|agree|comfortable|no\s+problem|alright|sure)\b/i.test(ans)) {
+        lines.push(`BOND PROBE TRIGGERED — candidate mentioned bond/service-agreement without clear acceptance. Follow up: "TCS / service-tier companies enforce a ${company?.toLowerCase().includes("wipro") ? "15-month ₹2L" : "2-year"} bond in their standard offer. Are you comfortable with that condition?" Evasion or "I'll decide later" is a red flag — probe once more.`);
+      }
+      return lines.length > 0 ? `\n${lines.join("\n")}` : "";
+    })();
+
     const previousContext = previousFollowUps && previousFollowUps.length > 0
       ? `\nPrevious follow-up exchange:\n${previousFollowUps.map(s => sanitizeForLLM(s, 300)).join("\n")}\n\nDO NOT REPEAT phrasing, opening lines, or core content from your previous follow-ups above. The candidate has already heard those words. If your next message would start with the same opener (e.g. "I heard ₹X — that's the absolute top of what I can approve") that you already said, REPHRASE the entire turn or pivot to a different angle (benefits, levers, role scope, decision timeline). Repeating yourself signals you weren't listening.`
       : "";
@@ -1181,10 +1210,15 @@ ${safeStarGap === "action"
        weakness. Conservative regexes (see _cultural-register.ts) — false
        negatives are fine, false positives would over-license Hinglish on
        answers that don't warrant it. */
-    const culturalReg = type === "behavioral"
+    /* Campus-placement shares the Indian cultural-register markers with
+     * behavioral (deferential gratitude, pedigree recital, CGPA recital)
+     * and needs the same LLM hint so pedigree/CGPA recitation is not
+     * scored as padding or filler — it is the canonical services-hiring
+     * opener in India. */
+    const culturalReg = (type === "behavioral" || type === "campus-placement")
       ? detectCulturalRegister(answer)
       : { hedgedDisagreement: false, indirectFailureFraming: false, relationalFraming: false, calendarAnchored: false, deferentialGratitude: false, pedigreeRecital: false, careerLadderNarrative: false };
-    const culturalRegisterHint = (type === "behavioral" && hasAnyIndianRegister(culturalReg))
+    const culturalRegisterHint = ((type === "behavioral" || type === "campus-placement") && hasAnyIndianRegister(culturalReg))
       ? `\nINDIAN-REGISTER DETECTED — the candidate's answer contains: ${[
           culturalReg.hedgedDisagreement ? "hedged disagreement (conviction expressed politely)" : null,
           culturalReg.indirectFailureFraming ? "indirect failure framing (ownership expressed via 'some challenges')" : null,
@@ -1381,7 +1415,7 @@ If the candidate's most recent answer ENDS WITH or PRIMARILY CONTAINS a question
 
 ${tierPromptSuffix(classifyCompanyTier(company))}
 
-${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${regionalDirective}${starGapDirective}${answerShapeDirective}${conflictGapDirective}${failureSpecificityDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
+${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${campusLiveProbeCtx}${regionalDirective}${starGapDirective}${answerShapeDirective}${conflictGapDirective}${failureSpecificityDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
 
 Question asked: "${sanitizeForLLM(question, 500)}"
 Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}
