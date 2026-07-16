@@ -196,6 +196,11 @@ type Session = {
      mock predates the field and older persisted rows may lack it. */
   difficulty?: string;
   draft?: boolean;    // marked when the user bailed mid-round
+  /* Raw focus slug (e.g. "campus-placement", "hr-round") — distinct from
+     the display-name `type` field. Used by the re-run path to reconstruct
+     the correct /interview URL params without converting display names back
+     to slugs. Optional: absent for canvas mock rows and older persisted rows. */
+  focus?: string;
   /* Optional detail-view payloads. Populated when the component is
      driven by real data; absent in canvas / storyboard mode (the
      prototype's hardcoded sample arrays kick in instead). */

@@ -212,6 +212,7 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
             Object.entries(rs.skill_scores).sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0]
           ) || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
         : pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3),
+      focus: rs.focus,
       coaching: rs.coaching,
       focusMetrics: rs.focusMetrics,
       feedback: generateFeedback(type, rs.score),

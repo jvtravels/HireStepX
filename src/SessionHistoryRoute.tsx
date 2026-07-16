@@ -59,6 +59,10 @@ function toHsx(d: DashboardSession, now: number): SessionHistoryItem {
        report_json.coaching by evaluate-session (mvp-8+) and threaded
        through DashboardSession. Undefined for pre-mvp-8 rows — the card
        falls back to topStrength / topGap headlines, never invents copy. */
+    /* Raw focus slug carried through so onRerun can set the correct
+     * /interview URL params without converting display names back to slugs
+     * (e.g. focus="campus-placement" → type=behavioral&focus=campus-placement). */
+    focus: d.focus,
     coaching: d.coaching,
     /* Per-focus signature strip (mvp-9+). Threaded through from
        report_json.focusMetrics. Absent for older rows — the card renders
@@ -226,7 +230,16 @@ export default function SessionHistoryRoute() {
          for /interview. Missing fields drop cleanly. */
       onRerun={s => {
         const params = new URLSearchParams();
-        if (s.type) params.set("type", s.type);
+        /* Use the raw focus slug (e.g. "campus-placement") to derive
+         * the correct type + focus URL params. Display-name types
+         * (e.g. "Campus Placement") are not valid interview type slugs.
+         * campus-placement is stored as type="behavioral" in the DB. */
+        if (s.focus && s.focus !== "general") {
+          params.set("type", s.focus === "campus-placement" ? "behavioral" : s.focus);
+          params.set("focus", s.focus);
+        } else if (s.type) {
+          params.set("type", s.type.toLowerCase().replace(/\s+&?\s*/g, "-").replace(/[^a-z0-9-]/g, ""));
+        }
         if (s.role) params.set("role", s.role);
         if (s.company) params.set("company", s.company);
         if (s.difficulty) params.set("difficulty", s.difficulty);
