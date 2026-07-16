@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SEO_PAGES } from "../data/seo-pages";
-import { getAllBlogSlugs } from "../src/blog-meta";
+import { getAllBlogSlugs, BLOG_META } from "../src/blog-meta";
 import { getAllSalarySlugs } from "../data/salary-seo";
 
 /* sitemap.xml — generated at build time. Includes:
@@ -70,11 +70,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: p.sitemapPriority ?? 0.7,
   }));
 
-  /* Blog posts — sourced directly from blog-meta.ts registry so new
-     posts are automatically included without a manual sync step here. */
+  /* Blog posts — each post uses its own datePublished so Google's freshness
+     signal reflects actual content age, not the deploy timestamp. */
+  const blogMetaMap = new Map(BLOG_META.map((m) => [m.slug, m]));
   const blogEntries: MetadataRoute.Sitemap = getAllBlogSlugs().map((slug) => ({
     url: `${baseUrl}/blog/${slug}`,
-    lastModified: seoPagesLastModified,
+    lastModified: new Date(blogMetaMap.get(slug)?.datePublished ?? seoPagesLastModified),
     changeFrequency: "monthly" as const,
     priority: 0.75,
   }));

@@ -918,6 +918,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   clearDeviceGrace();
                   clearTimeout(safetyTimer);
                   setLoading(false);
+                  router.replace("/login?reason=device_evicted");
                   return;
                 }
                 // Authoritative server disagreed with the stale JWT — keep the
@@ -1897,12 +1898,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const confirmed = await resolveDeviceWithServer(client, localDeviceToken);
           if (confirmed.action === "evict") {
             logAuditEvent("single_device_kicked", { userId: userRef.current?.id });
-            setSessionExpiryWarning("Signed in on another device — signing out here.");
             setUser(null);
             await client.auth.signOut().catch(() => {});
             broadcastLogout();
             try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
             clearDeviceGrace();
+            router.replace("/login?reason=device_evicted");
             return;
           }
           if (confirmed.action === "adopt" && confirmed.serverToken) {

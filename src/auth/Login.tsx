@@ -291,9 +291,10 @@ export default function Login() {
   };
 
   // Notices set by upstream redirects (verify-email handler, OAuth callback,
-  // expired reset link, etc.) — read from query params and surface here.
+  // expired reset link, single-device eviction, etc.) — read from query params.
   const verifiedParam = searchParams?.get("verified") ?? null;
   const errorParam = searchParams?.get("error") ?? null;
+  const reasonParam = searchParams?.get("reason") ?? null;
 
   // Map known error codes to user-facing copy. Falls back to a generic
   // message for unrecognized codes so users never see raw error tokens.
@@ -306,6 +307,11 @@ export default function Login() {
           ? "Your session expired. Please log in again."
           : "Something went wrong. Try again or contact support."
     : null;
+
+  const reasonNotice =
+    reasonParam === "device_evicted"
+      ? "You were signed in on another device, so this session was ended. Log in again to continue."
+      : null;
 
   const verifiedNotice =
     verifiedParam === "true"
@@ -489,9 +495,32 @@ export default function Login() {
               <div style={{ flex: 1, height: 1, background: t.line }} />
             </div>
 
+            {/* Device-eviction notice — shown when single-device enforcement
+                signed the user out on this device. */}
+            {!displayError && reasonNotice && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="hsx-error-banner"
+                style={{
+                  background: "#FFF8EB",
+                  border: "1px solid #D97706",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  marginBottom: 16,
+                  fontFamily: f.sans,
+                  fontSize: 13,
+                  color: "#92400E",
+                  lineHeight: 1.4,
+                }}
+              >
+                {reasonNotice}
+              </div>
+            )}
+
             {/* Success notice from upstream redirects (e.g. /api/verify-email
                 → /login?verified=true). Shown only when there's no error. */}
-            {!displayError && verifiedNotice && (
+            {!displayError && !reasonNotice && verifiedNotice && (
               <div
                 role="status"
                 aria-live="polite"

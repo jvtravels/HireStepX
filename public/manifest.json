@@ -11,16 +11,22 @@
   "id": "com.hirestepx.pwa",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ],
   "categories": ["education", "productivity"],
@@ -30,14 +36,14 @@
       "short_name": "New session",
       "description": "Start a new mock interview session",
       "url": "/session/new",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/apple-icon.png", "sizes": "180x180" }]
     },
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View your practice stats and history",
       "url": "/dashboard",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/apple-icon.png", "sizes": "180x180" }]
     }
   ]
 }

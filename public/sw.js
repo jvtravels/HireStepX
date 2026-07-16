@@ -29,6 +29,28 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+/* ─── Push Notification Receive Handler ───
+ * Fires when the server sends a web push message. Payload is JSON:
+ * { title, body, url, tag }
+ * VAPID keys must be configured in Vercel env:
+ *   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+ */
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  let data = {};
+  try { data = event.data.json(); } catch { data = { title: "HireStepX", body: event.data.text() }; }
+  const title = data.title || "HireStepX";
+  const options = {
+    body: data.body || "",
+    icon: "/apple-icon.png",
+    badge: "/apple-icon.png",
+    tag: data.tag || "hirestepx",
+    data: { url: data.url || "/dashboard" },
+    requireInteraction: false,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
 /* ─── Push Notification Click Handler ─── */
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

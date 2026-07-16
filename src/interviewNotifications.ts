@@ -90,16 +90,16 @@ function showNotification(title: string, body: string, tag: string): void {
       reg.showNotification(title, {
         body,
         tag,
-        icon: "/icons/icon-192.png",
-        badge: "/icons/icon-192.png",
+        icon: "/apple-icon.png",
+        badge: "/apple-icon.png",
         data: { url: "/calendar" },
       });
     }).catch(() => {
       // Fallback to window Notification
-      new Notification(title, { body, tag, icon: "/icons/icon-192.png" });
+      new Notification(title, { body, tag, icon: "/apple-icon.png" });
     });
   } else {
-    new Notification(title, { body, tag, icon: "/icons/icon-192.png" });
+    new Notification(title, { body, tag, icon: "/apple-icon.png" });
   }
 }
 
