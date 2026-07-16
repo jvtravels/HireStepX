@@ -575,11 +575,11 @@ export function SalaryHubPage({ entries }: { entries: SalaryHubEntry[] }) {
             background: t.creamRaised,
           }}
         >
-          <div style={containerNarrow}>
+          <div style={container}>
             <p className="ed-rise" style={eyebrow}>
               Salary Guides · India 2026
             </p>
-            <h1 className="ed-rise ed-d1" style={h1Style}>
+            <h1 className="ed-rise ed-d1" style={{ ...h1Style, maxWidth: "22ch" }}>
               What 23 Indian companies{" "}
               <em style={{ fontStyle: "italic", color: t.copper }}>actually pay.</em>
             </h1>
