@@ -288,7 +288,7 @@ what has been audited + fixed.
 **TIER 3 — Solid product hygiene**
 | # | Department | Status |
 |---|---|---|
-| 16 | CEO (Strategic Focus) | pending |
+| 16 | Head of Engineering (Tech strategy, team decisions) | pending |
 | 17 | CISO / Security | done ✅ |
 | 18 | CLO / Legal & Compliance | done ✅ |
 | 19 | Head of Design | pending |
@@ -312,4 +312,12 @@ what has been audited + fixed.
 | 33 | Analytics | done ✅ |
 | 34 | Accessibility (WCAG 2.1 AA) | done ✅ |
 
-**Summary:** 10 done ✅ · 24 pending · 34 total
+**TIER 5 — Engineering craft**
+| # | Department | Status |
+|---|---|---|
+| 35 | CEO (Vision / North star / strategic focus) | pending |
+| 36 | Senior Engineer (General Code Quality) | pending |
+| 37 | Frontend Engineer (React patterns, component design, UX consistency) | pending |
+| 38 | Backend Engineer (Edge handlers, API safety, server-handlers patterns) | pending |
+
+**Summary:** 10 done ✅ · 28 pending · 38 total
