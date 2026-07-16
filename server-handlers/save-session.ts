@@ -26,6 +26,8 @@ import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
 import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
 import { groundNoCounterSkillScores } from "../src/sessionReport/progressTracking";
+import { computeStreakReward } from "./_streak-reward";
+import { grantSessionCredits } from "./_session-credits";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -387,6 +389,23 @@ export default async function handler(req: Request): Promise<Response> {
 
   const t0 = Date.now();
 
+  // Ownership guard: sessions.id is text (caller-supplied), and the upsert uses
+  // service role which bypasses RLS. Check that any pre-existing row with this
+  // ID belongs to the authenticated user before merging. A crafted ID that matches
+  // another user's session would otherwise silently overwrite their data.
+  {
+    const ownerRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/sessions?id=eq.${encodeURIComponent(sessionRow.id)}&select=user_id`,
+      { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
+    );
+    if (ownerRes.ok) {
+      const ownerRows = await ownerRes.json().catch(() => []);
+      if (Array.isArray(ownerRows) && ownerRows[0] && ownerRows[0].user_id !== auth.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
+      }
+    }
+  }
+
   // 1. Insert the session row. Column-stripping retry for environments where
   //    jd_analysis / job_description haven't been migrated yet.
   const strippedSession: string[] = [];
@@ -502,6 +521,15 @@ export default async function handler(req: Request): Promise<Response> {
       );
       if (patchRes.ok) {
         practiceAppended = true;
+        if (!alreadyCounted) {
+          const bonus = computeStreakReward(existing, nowIso);
+          if (bonus > 0) {
+            const milestone = existing.length + 1;
+            void grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, bonus, fetch, 2)
+              .then(() => captureServerEvent("streak_milestone_reward", auth.userId, { milestone, bonus }))
+              .catch((e: unknown) => console.warn("[save-session] streak reward grant failed:", (e as Error).message));
+          }
+        }
       } else {
         const t = await patchRes.text().catch(() => "");
         console.warn(`[save-session] practice_timestamps patch failed HTTP ${patchRes.status}: ${t.slice(0, 200)}`);

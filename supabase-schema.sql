@@ -438,7 +438,7 @@ alter table report_shares enable row level security;
 -- role from /api/get-shared-report, NOT via RLS.
 drop policy if exists "Users manage own shares" on report_shares;
 create policy "Users manage own shares" on report_shares
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all using ((auth.uid())::text = user_id::text) with check ((auth.uid())::text = user_id::text);
 
 -- 11. Outcome tracking — voluntary self-report so we can build real
 -- "X candidates landed Y offers" case studies (currently the biggest
@@ -464,7 +464,7 @@ create index if not exists idx_user_outcomes_share on user_outcomes(may_share_pu
 alter table user_outcomes enable row level security;
 drop policy if exists "Users manage own outcomes" on user_outcomes;
 create policy "Users manage own outcomes" on user_outcomes
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all using ((auth.uid())::text = user_id::text) with check ((auth.uid())::text = user_id::text);
 
 -- ═══════════════════════════════════════════════════════
 -- 11. Resume management — multi-resume + version history
@@ -1329,7 +1329,7 @@ create index if not exists idx_session_insights_flags on session_insights using 
 alter table session_insights enable row level security;
 drop policy if exists "session_insights_select_own" on session_insights;
 create policy "session_insights_select_own" on session_insights
-  for select using (auth.uid() = user_id);
+  for select using ((auth.uid())::text = user_id::text);
 
 create table if not exists daily_quality_report (
   day date not null,
@@ -1529,7 +1529,7 @@ create index if not exists idx_salary_offers_aggregate on salary_offers(company,
 alter table salary_offers enable row level security;
 drop policy if exists "Users manage own offers" on salary_offers;
 create policy "Users manage own offers" on salary_offers
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all using ((auth.uid())::text = user_id::text) with check ((auth.uid())::text = user_id::text);
 
 -- ── Service Usage Monitoring ──────────────────────────────────────────────────
 -- Tracks TTS, LLM, and STT provider calls for cost and error-rate visibility.

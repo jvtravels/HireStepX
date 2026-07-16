@@ -24,9 +24,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (handlePreflightAndMethod(req, res)) return;
 
-  // Body size check
+  // Body size check — also inspect the parsed body since chunked transfer
+  // encoding can omit Content-Length, making the header-only check bypassable.
   const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
-  if (bodyContentLength > 1048576) {
+  const bodyBytes = req.body != null ? Buffer.byteLength(JSON.stringify(req.body), "utf8") : 0;
+  if (bodyContentLength > 1048576 || bodyBytes > 1048576) {
     return res.status(413).json({ error: "Request too large" });
   }
 

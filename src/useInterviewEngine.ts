@@ -692,7 +692,8 @@ export function useInterviewEngine() {
   // UI alongside a silent interviewer reads as broken. Users can opt into
   // speech via the in-composer "Switch to speaking" control. `?nomic=1` still
   // forces text mode regardless.
-  const [speechUnavailable, setSpeechUnavailable] = useState(searchParams.get("nomic") === "1" || VOICE_OUTPUT_DISABLED);
+  const micIntentionallyDisabledRef = useRef(searchParams.get("nomic") === "1" || VOICE_OUTPUT_DISABLED);
+  const [speechUnavailable, setSpeechUnavailable] = useState(micIntentionallyDisabledRef.current);
 
   // Controls
   const [isMuted, setIsMuted] = useState(false);
@@ -796,6 +797,7 @@ export function useInterviewEngine() {
     noSpeechCountRef.current = 0;
     setMicError("");
     setMicQuiet(false);
+    if (!micIntentionallyDisabledRef.current) setSpeechUnavailable(false);
   }, [currentStep]);
   /* Silence-nudge refs are owned by useListeningInterjections — see
      ./_listening-interjections.ts. */
