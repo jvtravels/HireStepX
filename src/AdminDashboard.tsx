@@ -2538,7 +2538,7 @@ export default function AdminDashboard() {
                     key={link.label}
                     href={link.url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     style={{
                       fontSize: 11, fontWeight: 600, fontFamily: font.ui,
                       padding: "4px 10px", borderRadius: 4,

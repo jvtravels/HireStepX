@@ -752,7 +752,7 @@ export default function Login() {
           <a
             href="/terms"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,
@@ -766,7 +766,7 @@ export default function Login() {
           <a
             href="/privacy"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,

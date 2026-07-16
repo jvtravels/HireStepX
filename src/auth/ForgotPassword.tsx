@@ -263,7 +263,7 @@ export default function ForgotPassword() {
                   <a
                     href={provider.url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="hsx-login-cta"
                     style={{
                       width: "100%",
